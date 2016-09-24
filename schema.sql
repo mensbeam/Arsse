@@ -17,22 +17,24 @@ create table chibi_categories(
 	parent integer,															-- parent category id
 	folder integer not null,												-- first-level category (ownCloud folder)
 	name TEXT not null,														-- category name
+	modified datetime not null default CURRENT_TIMESTAMP,					--
 	unique(owner,name,parent)												-- cannot have multiple categories with the same name under the same parent for the same owner
 );
 
 -- newsfeeds, deduplicated
 create table chibi_feeds(
-	id integer primary key not null,		-- sequence number
-	url TEXT not null,						-- URL of feed
-	title TEXT,								-- default title of feed
-	favicon TEXT,							-- URL of favicon
-	source TEXT,							-- URL of site to which the feed belongs
-	updated datetime,						-- time at which the feed was last fetched
-	err_count integer not null default 0,	-- count of successive times update resulted in error since last successful update
-	err_msg TEXT,							-- last error message
-	username TEXT,							-- HTTP authentication username
-	password TEXT,							-- HTTP authentication password (this is stored in plain text)
-	unique(url,username,password)			-- 
+	id integer primary key not null,						-- sequence number
+	url TEXT not null,										-- URL of feed
+	title TEXT,												-- default title of feed
+	favicon TEXT,											-- URL of favicon
+	source TEXT,											-- URL of site to which the feed belongs
+	updated datetime,										-- time at which the feed was last fetched
+	modified datetime not null default CURRENT_TIMESTAMP,	--
+	err_count integer not null default 0,					-- count of successive times update resulted in error since last successful update
+	err_msg TEXT,											-- last error message
+	username TEXT,											-- HTTP authentication username
+	password TEXT,											-- HTTP authentication password (this is stored in plain text)
+	unique(url,username,password)							-- a URL with particular credentials should only appear once
 );
 
 -- users' subscriptions to newsfeeds, with settings
@@ -41,10 +43,12 @@ create table chibi_subscriptions(
 	owner TEXT references users(id) on delete cascade on update cascade,					-- owner of subscription
 	feed integer references feeds(id) on delete cascade,									-- feed for the subscription
 	added datetime not null default CURRENT_TIMESTAMP,										-- time at which feed was added
+	modified datetime not null default CURRENT_TIMESTAMP,									-- date at which subscription properties were last modified
 	title TEXT,																				-- user-supplied title
 	order_type int not null default 0,														-- ownCloud sort order
 	pinned boolean not null default 0,														-- whether feed is pinned (always sorts at top)
-	category integer references categories(id) on delete set null							-- TT-RSS category (nestable); the first-level category (which acts as ownCloud folder) is joined in when needed
+	category integer references categories(id) on delete set null,							-- TT-RSS category (nestable); the first-level category (which acts as ownCloud folder) is joined in when needed
+	unique(owner,feed)																		-- a given feed should only appear once for a given owner
 );
 
 -- entries in newsfeeds
@@ -58,6 +62,7 @@ create table chibi_articles(
 	edited datetime,										-- time of last edit 
 	guid TEXT,												-- GUID 
 	content TEXT,											-- content, as (X)HTML
+	modified datetime not null default CURRENT_TIMESTAMP,	-- date when article properties were last modified
 	hash varchar(64) not null,								-- ownCloud hash 
 	fingerprint varchar(64) not null,						-- ownCloud fingerprint 
 	enclosures_hash varchar(64),							-- hash of enclosures, if any; since enclosures are not uniquely identified, we need to know when they change
@@ -66,10 +71,11 @@ create table chibi_articles(
 
 -- users' actions on newsfeed entries
 create table chibi_subscription_articles(
-	id integer primary key,
+	id integer primary key not null,
 	article integer references articles(id) on delete cascade,
 	read boolean not null default 0,
-	starred boolean not null default 0
+	starred boolean not null default 0,
+	modified datetime not null default CURRENT_TIMESTAMP
 );
 
 -- enclosures associated with articles
