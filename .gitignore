@@ -1,5 +1,5 @@
 #dependencies
-inc/simplepie/*
+vendor/simplepie/*
 
 #temp files
 cache/*

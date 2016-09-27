@@ -1,7 +1,7 @@
 begin;
 
 -- users
-create table chibi_users(
+create table newssync_users(
 	id TEXT primary key not null,		-- user id
 	password TEXT,						-- password, salted and hashed; if using external authentication this would be blank
 	name TEXT,							-- display name
@@ -11,7 +11,7 @@ create table chibi_users(
 );
 
 -- TT-RSS categories and ownCloud folders
-create table chibi_categories(
+create table newssync_categories(
 	id integer primary key not null,										-- sequence number
 	owner TEXT references users(id) on delete cascade on update cascade,	-- owner of category
 	parent integer,															-- parent category id
@@ -22,7 +22,7 @@ create table chibi_categories(
 );
 
 -- newsfeeds, deduplicated
-create table chibi_feeds(
+create table newssync_feeds(
 	id integer primary key not null,						-- sequence number
 	url TEXT not null,										-- URL of feed
 	title TEXT,												-- default title of feed
@@ -38,7 +38,7 @@ create table chibi_feeds(
 );
 
 -- users' subscriptions to newsfeeds, with settings
-create table chibi_subscriptions(
+create table newssync_subscriptions(
 	id integer primary key not null,														-- sequence number
 	owner TEXT references users(id) on delete cascade on update cascade,					-- owner of subscription
 	feed integer references feeds(id) on delete cascade,									-- feed for the subscription
@@ -52,7 +52,7 @@ create table chibi_subscriptions(
 );
 
 -- entries in newsfeeds
-create table chibi_articles(
+create table newssync_articles(
 	id integer primary key not null,						-- sequence number
 	feed integer references feeds(id) on delete cascade,	-- feed for the subscription
 	url TEXT not null,										-- URL of article
@@ -70,7 +70,7 @@ create table chibi_articles(
 );
 
 -- users' actions on newsfeed entries
-create table chibi_subscription_articles(
+create table newssync_subscription_articles(
 	id integer primary key not null,
 	article integer references articles(id) on delete cascade,
 	read boolean not null default 0,
@@ -79,24 +79,31 @@ create table chibi_subscription_articles(
 );
 
 -- enclosures associated with articles
-create table chibi_enclosures(
+create table newssync_enclosures(
 	article integer references articles(id) on delete cascade,
 	url TEXT,
 	type varchar(255)
 );
 
 -- author labels ("categories" in RSS/Atom parlance) associated with newsfeed entries
-create table chibi_tags(
+create table newssync_tags(
 	article integer references articles(id) on delete cascade,
 	name TEXT
 );
 
 -- user labels associated with newsfeed entries
-create table chibi_labels(
+create table newssync_labels(
 	sub_article integer references subscription_articles(id) on delete cascade,
 	owner TEXT references users(id) on delete cascade on update cascade,
 	name TEXT 
 );
-create index chibi_label_names on chibi_labels(name);
+create index newssync_label_names on newssync_labels(name);
+
+create table newssync_settings(
+	key varchar(255) primary key not null,
+	value varchar(255),
+	type varchar(255) not null
+);
+insert into newssync_settings values('schema_version',0,'int');
 
 commit;
