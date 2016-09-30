@@ -3,6 +3,7 @@ declare(strict_types=1);
 namespace JKingWeb\NewsSync;
 
 const BASE = __DIR__.DIRECTORY_SEPARATOR;
+const NS_BASE = __NAMESPACE__."\\";
 
 spl_autoload_register(function ($class) {
 	if($class=="SimplePie") return;
