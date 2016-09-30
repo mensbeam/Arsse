@@ -6,13 +6,16 @@ class Lang {
 	const PATH = BASE."locale".DIRECTORY_SEPARATOR;
 	const DEFAULT = "en";
 	const REQUIRED = [
-		"Exception.JKingWeb/NewsSync/Lang/Exception.defaultFileMissing" => "Default language file ({0}) missing",
-		"Exception.JKingWeb/NewsSync/Lang/Exception.stringMissing" => "Message string \"{msgID}\" missing from all loaded language files ({fileList})"
+		"Exception.JKingWeb/NewsSync/Lang/Exception.defaultFileMissing"		=> "Default language file \"{0}\" missing",
+		"Exception.JKingWeb/NewsSync/Lang/Exception.fileMissing"			=> "Language file \"{0}\" is not available",
+		"Exception.JKingWeb/NewsSync/Lang/Exception.fileUnreadable"			=> "Insufficient permissions to read language file \"{0}\"",
+		"Exception.JKingWeb/NewsSync/Lang/Exception.fileCorrupt"			=> "Language file \"{0}\" is corrupt or does not conform to expected format",
+		"Exception.JKingWeb/NewsSync/Lang/Exception.stringMissing" 			=> "Message string \"{msgID}\" missing from all loaded language files ({fileList})",
 	];
 
 	static protected $requirementsMet = false;
 	static protected $synched = false;
-	static protected $wanted = "fr";
+	static protected $wanted = self::DEFAULT;
 	static protected $locale = "";
 	static protected $loaded = [];
 	static protected $strings = self::REQUIRED;
@@ -115,7 +118,7 @@ class Lang {
 		foreach($files as $file) {
 			if(!file_exists(self::PATH."$file.php")) throw new Lang\Exception("fileMissing", $file);
 			if(!is_readable(self::PATH."$file.php")) throw new Lang\Exception("fileUnreadable", $file);
-			if(!@include(self::PATH."$file.php")) throw new Lang\Exception("fileCorrupt", $file);
+			if(!$strings[] = (@include self::PATH."$file.php")) throw new Lang\Exception("fileCorrupt", $file);
 		}
 		// apply the results and return
 		self::$strings = call_user_func_array("array_replace_recursive", $strings);
