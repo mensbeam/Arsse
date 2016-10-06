@@ -2,7 +2,7 @@
 declare(strict_types=1);
 namespace JKingWeb\NewsSync\Auth;
 
-class Internal implements AuthInterface {
+class Internal implements Driver {
 	protected $conf;
 	protected $db;
 

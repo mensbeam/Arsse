@@ -3,9 +3,9 @@ declare(strict_types=1);
 namespace JKingWeb\NewsSync;
 
 class RuntimeData {
-	protected $conf;
-	protected $db;
-	protected $auth;
+	public $conf;
+	public $db;
+	public $auth;
 
 	public function __construct(Conf $conf) {
 		$this->conf = $conf;

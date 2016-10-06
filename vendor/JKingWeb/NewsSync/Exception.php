@@ -13,7 +13,7 @@ class Exception extends \Exception {
 		"Lang/Exception.stringMissing" 			=> 10105,
 	];
 
-	public function __construct(string $msgID = "", $vars = null, Throwable $e = null) {
+	public function __construct(string $msgID = "", $vars = null, \Throwable $e = null) {
 		if($msgID=="") {
 			$msg = "";
 			$code = 0;

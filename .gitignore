@@ -4,7 +4,7 @@ vendor/simplepie/*
 #temp files
 cache/*
 test.php
-newssync.db*
+/db
 
 # Windows image file caches
 Thumbs.db
