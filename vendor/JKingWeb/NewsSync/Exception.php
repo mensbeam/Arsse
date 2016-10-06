@@ -11,6 +11,13 @@ class Exception extends \Exception {
 		"Lang/Exception.fileUnreadable"			=> 10103,
 		"Lang/Exception.fileCorrupt"			=> 10104,
 		"Lang/Exception.stringMissing" 			=> 10105,
+		"Db/Exception.extMissing"				=> 10201,
+		"Db/Exception.fileMissing"				=> 10202,
+		"Db/Exception.fileUnusable"				=> 10203,
+		"Db/Exception.fileUnreadable"			=> 10204,
+		"Db/Exception.fileUnwritable"			=> 10205,
+		"Db/Exception.fileUncreatable"			=> 10206,
+		"Db/Exception.fileCorrupt"				=> 10207,
 	];
 
 	public function __construct(string $msgID = "", $vars = null, \Throwable $e = null) {
