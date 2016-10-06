@@ -19,6 +19,11 @@ class StatementSQLite3 implements Statement {
 				case "real":
 				case "numeric":
 					$this->types[] = \SQLITE3_FLOAT; break;
+				case "date":
+				case "time":
+				case "datetime":
+				case "timestamp":
+					$this->types[] = \SQLITE3_TEXT; break;
 				case "blob":
 				case "bin":
 				case "binary":
@@ -26,7 +31,6 @@ class StatementSQLite3 implements Statement {
 				case "text":
 				case "string":
 				case "str":
-					$this->types[] = \SQLITE3_TEXT; break;
 				default:
 					$this->types[] = \SQLITE3_TEXT; break;
 			}
