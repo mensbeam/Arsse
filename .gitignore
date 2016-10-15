@@ -1,5 +1,6 @@
 #dependencies
 vendor/simplepie/*
+vendor/JKingWeb/DrUUID/*
 
 #temp files
 cache/*

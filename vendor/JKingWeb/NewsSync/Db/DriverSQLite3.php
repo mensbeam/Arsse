@@ -20,12 +20,12 @@ class DriverSQLite3 implements Driver {
 			$this->db->enableExceptions(true);
 			$attach = "'".$this->db->escapeString($feedfile)."'";
 			$this->exec("ATTACH DATABASE $attach AS feeds");
-			$this->exec("PRAGMA main.jounral_mode = wal");
-			$this->exec("PRAGMA feeds.jounral_mode = wal");
+			$this->exec("PRAGMA main.journal_mode = wal");
+			$this->exec("PRAGMA feeds.journal_mode = wal");
 			$this->exec("PRAGMA foreign_keys = yes");
 		} catch(\Throwable $e) {
 			// if opening the database doesn't work, check various pre-conditions to find out what the problem might be
-			foreach([$mainfile, $mainfile."-wal", $mainfile."-shm", $feedfile, $feedfile."-wal", $feedfile."-shm"] as $file) {
+			foreach([$mainfile, $feedfile] as $file) {
 				if(!file_exists($file)) {
 					if($install && !is_writable(dirname($file))) throw new Exception("fileUncreatable", dirname($file));
 					throw new Exception("fileMissing", $file);
@@ -60,6 +60,6 @@ class DriverSQLite3 implements Driver {
 	}
 
 	public function prepareArray(string $query, array $paramTypes): Statement {
-		return new StatementSQLite3($query, $paramTypes);
+		return new StatementSQLite3($this->db->prepare($query), $paramTypes);
 	}
 }

@@ -3,28 +3,31 @@ declare(strict_types=1);
 namespace JKingWeb\NewsSync;
 
 class Conf {
-	public $lang 				= "en";
+	public $lang 					= "en";
 	
-	public $dbClass				= NS_BASE."Db\\DriverSQLite3";
-	public $dbSQLite3Path 		= BASE."db";
-	public $dbSQLite3Key 		= "";
-	public $dbPostgreSQLHost 	= "localhost";
-	public $dbPostgreSQLUser 	= "newssync";
-	public $dbPostgreSQLPass 	= "";
-	public $dbPostgreSQLPort 	= 5432;
-	public $dbPostgreSQLDb 		= "newssync";
-	public $dbPostgreSQLSchema 	= "";
-	public $dbMySQLHost 		= "localhost";
-	public $dbMySQLUser 		= "newssync";
-	public $dbMySQLPass 		= "";
-	public $dbMySQLPort 		= 3306;
-	public $dbMySQLDb 			= "newssync";
+	public $dbClass					= NS_BASE."Db\\DriverSQLite3";
+	public $dbSQLite3Path 			= BASE."db";
+	public $dbSQLite3Key 			= "";
+	public $dbSQLite3AutoUpd 		= true;
+	public $dbPostgreSQLHost 		= "localhost";
+	public $dbPostgreSQLUser 		= "newssync";
+	public $dbPostgreSQLPass 		= "";
+	public $dbPostgreSQLPort 		= 5432;
+	public $dbPostgreSQLDb 			= "newssync";
+	public $dbPostgreSQLSchema 		= "";
+	public $dbPostgreSQLAutoUpd 	= false;
+	public $dbMySQLHost 			= "localhost";
+	public $dbMySQLUser 			= "newssync";
+	public $dbMySQLPass 			= "";
+	public $dbMySQLPort 			= 3306;
+	public $dbMySQLDb 				= "newssync";
+	public $dbMySQLAutoUpd 			= false;
 
-	public $authClass 			= NS_BASE."Auth\\DriverInternal";
-	public $authPreferHTTP 		= false;
-	public $authProvision 		= false;
+	public $authClass 				= NS_BASE."Auth\\DriverInternal";
+	public $authPreferHTTP 			= false;
+	public $authAutoAdd 			= false;
 
-	public $simplepieCache 		= BASE.".cache";
+	public $simplepieCache 			= BASE.".cache";
 
 
 	public function __construct(string $import_file = "") {

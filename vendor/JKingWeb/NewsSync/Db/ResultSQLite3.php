@@ -24,7 +24,7 @@ class ResultSQLite3 implements Result {
 
 	public function getSingle() {
 		$res = $this->get();
-		if($res===FALSE) return null;
+		if($res===false) return null;
 		return array_shift($res);
 	}
 }

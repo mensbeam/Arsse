@@ -6,7 +6,7 @@ class StatementSQLite3 implements Statement {
 	protected $st;
 	protected $types;
 
-	public function __construct(\SQLite3Stmt $st, $bindings = null) {
+	public function __construct(\SQLite3Stmt $st, array $bindings = null) {
 		$this->st = $st;
 		$this->types = [];
 		foreach($bindings as $binding) {
@@ -31,6 +31,11 @@ class StatementSQLite3 implements Statement {
 				case "text":
 				case "string":
 				case "str":
+					$this->types[] = \SQLITE3_TEXT; break;
+				case "bool":
+				case "boolean":
+				case "bit":
+					$this->types[] = \SQLITE3_INTEGER; break;
 				default:
 					$this->types[] = \SQLITE3_TEXT; break;
 			}
@@ -59,8 +64,8 @@ class StatementSQLite3 implements Statement {
 			} else {
 				$type = (array_key_exists($a,$this->types)) ? $this->types[$a] : \SQLITE3_TEXT;
 			}
-			$st->bindParam($a+1, $values[$a], $type);
+			$this->st->bindParam($a+1, $values[$a], $type);
 		}
-		return new ResultSQLite3($st->execute());
+		return new ResultSQLite3($this->st->execute());
 	}
 }

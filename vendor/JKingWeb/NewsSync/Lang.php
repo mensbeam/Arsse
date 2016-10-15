@@ -11,6 +11,7 @@ class Lang {
 		"Exception.JKingWeb/NewsSync/Lang/Exception.fileUnreadable"			=> "Insufficient permissions to read language file \"{0}\"",
 		"Exception.JKingWeb/NewsSync/Lang/Exception.fileCorrupt"			=> "Language file \"{0}\" is corrupt or does not conform to expected format",
 		"Exception.JKingWeb/NewsSync/Lang/Exception.stringMissing" 			=> "Message string \"{msgID}\" missing from all loaded language files ({fileList})",
+		"Exception.JKingWeb/NewsSync/Lang/Exception.stringInvalid" 			=> "Message string \"{msgID}\" is not a valid ICU message string (language files loaded: {fileList})",
 	];
 
 	static protected $requirementsMet = false;
@@ -51,7 +52,9 @@ class Lang {
 		if(!array_key_exists($msgID, self::$strings)) throw new Lang\Exception("stringMissing", ['msgID' => $msgID, 'fileList' => implode(", ",self::$loaded)]);
 		// variables fed to MessageFormatter must be contained in array
 		if($vars !== null && !is_array($vars)) $vars = [$vars];
-		return \MessageFormatter::formatMessage(self::$locale, self::$strings[$msgID], $vars);
+		$msg = \MessageFormatter::formatMessage(self::$locale, self::$strings[$msgID], $vars);
+		if($msg===false) throw new Lang\Exception("stringInvalid", ['msgID' => $msgID, 'fileList' => implode(", ",self::$loaded)]);
+		return $msg;
 	}
 
 	static public function list(string $locale = ""): array {
