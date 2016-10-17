@@ -10,7 +10,7 @@ class RuntimeData {
 	public function __construct(Conf $conf) {
 		$this->conf = $conf;
 		Lang::set($conf->lang);
-		$this->db = new Database($this->conf);
+		$this->db = new Database($this);
 		//$this->auth = new Authenticator($this);
 	}
 }

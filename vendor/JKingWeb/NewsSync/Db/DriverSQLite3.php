@@ -6,17 +6,19 @@ class DriverSQLite3 implements Driver {
 	use Common, CommonSQLite3;
 	
 	protected $db;
+	protected $data;
 	
-	private function __construct(\JKingWeb\NewsSync\Conf $conf, bool $install = false) {
+	private function __construct(\JKingWeb\NewsSync\RuntimeData $data, bool $install = false) {
+		$this->data = $data;
 		// normalize the path
-		$path = $conf->dbSQLite3Path;
+		$path = $data->conf->dbSQLite3Path;
 		$sep = \DIRECTORY_SEPARATOR;
 		if(substr($path,-(strlen($sep))) != $sep) $path .= $sep;
 		$mainfile = $path."newssync-main.db";
 		$feedfile = $path."newssync-feeds.db";
 		// if the files exists (or we're initializing the database), try to open it and set initial options
 		try {
-			$this->db = new \SQLite3($mainfile, ($install) ? \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE : \SQLITE3_OPEN_READWRITE, $conf->dbSQLite3Key);
+			$this->db = new \SQLite3($mainfile, ($install) ? \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE : \SQLITE3_OPEN_READWRITE, $data->conf->dbSQLite3Key);
 			$this->db->enableExceptions(true);
 			$attach = "'".$this->db->escapeString($feedfile)."'";
 			$this->exec("ATTACH DATABASE $attach AS feeds");
@@ -44,18 +46,18 @@ class DriverSQLite3 implements Driver {
 		unset($this->db);
 	}
 
-	static public function create(\JKingWeb\NewsSync\Conf $conf, bool $install = false): Driver {
+	static public function create(\JKingWeb\NewsSync\RuntimeData $data, bool $install = false): Driver {
 		// check to make sure required extensions are loaded
 		if(class_exists("SQLite3")) {
-			return new self($conf, $install);
+			return new self($data, $install);
 		} else if(class_exists("PDO") && in_array("sqlite",\PDO::getAvailableDrivers())) {
-			return new DriverSQLite3PDO($conf, $install);
+			return new DriverSQLite3PDO($data, $install);
 		} else {
 			throw new Exception("extMissing", self::driverName());
 		}
 	}
 
-	public function unsafeQuery(string $query): Result {
+	public function query(string $query): Result {
 		return new ResultSQLite3($this->db->query($query));
 	}
 

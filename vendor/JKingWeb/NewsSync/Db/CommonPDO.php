@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace JKingWeb\NewsSync\Db;
 
 Trait CommonPDO {
-	public function unsafeQuery(string $query): Result {
+	public function query(string $query): Result {
 		return new ResultPDO($this->db->query($query));
 	}
 

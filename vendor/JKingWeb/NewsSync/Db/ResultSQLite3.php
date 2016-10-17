@@ -4,6 +4,8 @@ namespace JKingWeb\NewsSync\Db;
 
 class ResultSQLite3 implements Result {
 	protected $set;
+	protected $pos = 0;
+	protected $cur = null;
 
 	public function __construct(\SQLite3Result $resultObj) {
 		$this->set = $resultObj;
@@ -14,17 +16,41 @@ class ResultSQLite3 implements Result {
 		unset($this->set);
 	}
 
-	public function __invoke() {
-		return $this->get();
+	public function valid() {
+		$this->cur = $this->set->fetchArray(\SQLITE3_ASSOC);
+		return ($this->cur !== false);
 	}
 
-	public function get() {
-		return $this->set->fetchArray(\SQLITE3_ASSOC);
+	public function next() {
+		$this->cur = null;
+		$this->pos += 1;
+	}
+
+	public function current() {
+		return $this->cur;
+	}
+
+	public function key() {
+		return $this->pos;
+	}
+
+	public function rewind() {
+		$this->pos = 0;
+		$this->cur = null;
+		$this->set->reset();
 	}
 
 	public function getSingle() {
-		$res = $this->get();
-		if($res===false) return null;
-		return array_shift($res);
+		$this->next();
+		if($this->valid()) {
+			$keys = array_keys($this->cur);
+			return $this->cur[array_shift($keys)];
+		}
+		return null;
+	}
+
+	public function get() {
+		$this->next();
+		return ($this->valid() ? $this->cur : null);
 	}
 }

@@ -2,8 +2,13 @@
 declare(strict_types=1);
 namespace JKingWeb\NewsSync\Db;
 
-interface Result {
-	function __invoke(); // alias of get()
+interface Result extends \Iterator {
+	function current();
+	function key();
+	function next();
+	function rewind();
+	function valid();
+
 	function get();
 	function getSingle();
 }

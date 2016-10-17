@@ -16,4 +16,6 @@ spl_autoload_register(function ($class) {
     }
 });
 
+ignore_user_abort(true);
+
 $data = new RuntimeData(new Conf());

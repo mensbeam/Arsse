@@ -20,14 +20,22 @@ return [
 	"Exception.JKingWeb/NewsSync/Db/Exception.fileUnusable"				=> "Insufficient permissions to open database file \"{0}\" for reading or writing",
 	"Exception.JKingWeb/NewsSync/Db/Exception.fileUncreatable"			=> "Insufficient permissions to create new database file \"{0}\"",
 	"Exception.JKingWeb/NewsSync/Db/Exception.fileCorrupt"				=> "Database file \"{0}\" is corrupt or not a valid database",
-	"Exception.JKingWeb/NewsSync/Db/ExceptionUpdate.manual"				=> 
+	"Exception.JKingWeb/NewsSync/Db/Update/Exception.manual"			=> 
 		"{from_version, select, 
 			0 {{driver_name} database is configured for manual updates and is not initialized; please populate the database with the base schema}	
-			other {{driver_name} database is configured for manual updates; please update from schema version {from_version} to version {to_version}}
+			other {{driver_name} database is configured for manual updates; please update from schema version {current} to version {target}}
 		}",
-	"Exception.JKingWeb/NewsSync/Db/ExceptionUpdate.failed"				=>
-		"{reason select,
-			missing {Automatic updating of the {driver_name} database failed because instructions for updating from version {from_version} are not available}
+	"Exception.JKingWeb/NewsSync/Db/Update/Exception.manualOnly"		=> 
+		"{from_version, select, 
+			0 {{driver_name} database must be updated manually and is not initialized; please populate the database with the base schema}	
+			other {{driver_name} database must be updated manually; please update from schema version {current} to version {target}}
 		}",
-	"Exception.JKingWeb/NewsSync/Db/ExceptionUpdate.tooNew"				=> "Automatic updating of the {driver_name} database failed because its version, {current}, is newer than the requested version, {target}"
+	"Exception.JKingWeb/NewsSync/Db/Update/Exception.missing"			=> "Automatic updating of the {driver_name} database failed due to instructions for updating from version {current} not being available",
+	"Exception.JKingWeb/NewsSync/Db/Update/Exception.unreadable"		=> "Automatic updating of the {driver_name} database failed due to insufficient permissions to read instructions for updating from version {current}",
+	"Exception.JKingWeb/NewsSync/Db/Update/Exception.unusable"			=> "Automatic updating of the {driver_name} database failed due to an error reading instructions for updating from version {current}",
+	"Exception.JKingWeb/NewsSync/Db/Update/Exception.tooNew"			=> 
+		"{difference, select,
+			0 {Automatic updating of the {driver_name} database failed because it is already up to date with the requested version, {target}}
+			other {Automatic updating of the {driver_name} database failed because its version, {current}, is newer than the requested version, {target}}
+		}",
 ];
