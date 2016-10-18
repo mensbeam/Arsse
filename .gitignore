@@ -5,7 +5,7 @@ vendor/JKingWeb/DrUUID/*
 #temp files
 cache/*
 test.php
-/db
+newssync.db*
 
 # Windows image file caches
 Thumbs.db

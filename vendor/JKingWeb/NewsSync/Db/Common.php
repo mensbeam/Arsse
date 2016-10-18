@@ -43,14 +43,14 @@ Trait Common {
 		if($this->schemaVersion() < 1) return true;
 		if($this->isLocked()) return false;
 		$uuid = UUID::mintStr();
-		if(!$this->data->db->setSetting("lock", $uuid)) return false;
+		if(!$this->data->db->settingSet("lock", $uuid)) return false;
 		sleep(1);
-		if($this->data->db->getSetting("lock") != $uuid) return false;
+		if($this->data->db->settingGet("lock") != $uuid) return false;
 		return true;
 	}
 
 	public function unlock(): bool {
-		return $this->data->db->clearSetting("lock");
+		return $this->data->db->settingClear("lock");
 	}
 
 	public function isLocked(): bool {

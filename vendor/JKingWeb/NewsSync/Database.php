@@ -45,7 +45,12 @@ class Database {
 		return $this->db->schemaVersion();
 	}
 
-	public function getSetting(string $key) {
+	public function dbUpdate(): bool {
+		if($this->db->schemaVersion() < self::SCHEMA_VERSION) return $this->db->update(self::SCHEMA_VERSION);
+		return false;
+	}
+
+	public function settingGet(string $key) {
 		$row = $this->db->prepare("SELECT value, type from newssync_settings where key = ?", "str")->run($key)->get();
 		if(!$row) return null;
 		switch($row['type']) {
@@ -62,7 +67,7 @@ class Database {
 		}
 	}
 
-	public function setSetting(string $key, $in, string $type = null): bool {
+	public function settingSet(string $key, $in, string $type = null): bool {
 		if(!$type) {
 			switch(gettype($in)) {
 				case "boolean": 		$type = "bool"; break;
@@ -156,7 +161,7 @@ class Database {
 		$this->db->prepare("REPLACE INTO newssync_settings(key,value,type) values(?,?,?)", "str", (($type=="null") ? "null" : "str"), "str")->run($key, $value, "text");
 	}
 
-	public function clearSetting(string $key): bool {
+	public function settingClear(string $key): bool {
 		$this->db->prepare("DELETE from newssync_settings where key = ?", "str")->run($key);
 		return true;
 	}
@@ -165,13 +170,14 @@ class Database {
 		$this->db->prepare("INSERT INTO newssync_users(id,password,admin) values(?,?,?)", "str", "str", "bool")->run($username,$password,$admin);
 		return $username;
 	}
-	
+
 	public function subscriptionAdd(string $user, string $url, string $fetchUser = null, string $fetchPassword = null): int {
 		$this->db->begin();
-		$qFeed = $this->db->prepare("SELECT id from newssync_feeds where url = ? and username = ? and password = ?", "str", "str", "str");
+		$qFeed = $this->db->prepare("SELECT id from newssync_feeds where url is ? and username is ? and password is ?", "str", "str", "str");
 		if(is_null($id = $qFeed->run($url, $fetchUser, $fetchPassword)->getSingle())) {
 			$this->db->prepare("INSERT INTO newssync_feeds(url,username,password) values(?,?,?)", "str", "str", "str")->run($url, $fetchUser, $fetchPassword);
 			$id = $qFeed->run($url, $fetchUser, $fetchPassword)->getSingle();
+			var_export($id);
 		}
 		$this->db->prepare("INSERT INTO newssync_subscriptions(owner,feed) values(?,?)", "str", "int")->run($user,$id);
 		$this->db->commit();

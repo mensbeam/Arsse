@@ -6,7 +6,7 @@ class Conf {
 	public $lang 					= "en";
 	
 	public $dbClass					= NS_BASE."Db\\DriverSQLite3";
-	public $dbSQLite3Path 			= BASE."db";
+	public $dbSQLite3File 			= BASE."newssync.db";
 	public $dbSQLite3Key 			= "";
 	public $dbSQLite3AutoUpd 		= true;
 	public $dbPostgreSQLHost 		= "localhost";
