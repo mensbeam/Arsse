@@ -66,6 +66,6 @@ class StatementSQLite3 implements Statement {
 			}
 			$this->st->bindParam($a+1, $values[$a], $type);
 		}
-		return new ResultSQLite3($this->st->execute());
+		return new ResultSQLite3($this->st->execute(), $this);
 	}
 }

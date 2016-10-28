@@ -18,6 +18,23 @@ class Exception extends \Exception {
 		"Db/Exception.fileUnwritable"			=> 10205,
 		"Db/Exception.fileUncreatable"			=> 10206,
 		"Db/Exception.fileCorrupt"				=> 10207,
+		"Db/Update/Exception.tooNew"			=> 10211,
+		"Db/Update/Exception.fileMissing"		=> 10212,
+		"Db/Update/Exception.fileUnusable"		=> 10213,
+		"Db/Update/Exception.fileUnreadable"	=> 10214,
+		"Db/Update/Exception.manual"			=> 10215,
+		"Db/Update/Exception.manualOnly"		=> 10216,
+		"Conf/Exception.fileMissing"			=> 10302,
+		"Conf/Exception.fileUnusable"			=> 10303,
+		"Conf/Exception.fileUnreadable"			=> 10304,
+		"Conf/Exception.fileUnwritable"			=> 10305,
+		"Conf/Exception.fileUncreatable"		=> 10306,
+		"Conf/Exception.fileCorrupt"			=> 10307,
+		"User/Exception.functionNotImplemented"	=> 10401, 
+		"User/Exception.doesNotExist"			=> 10402,
+		"User/Exception.alreadyExists"			=> 10403,
+		"User/Exception.authMissing"			=> 10411,
+		"User/Exception.authFailed"				=> 10412,
 	];
 
 	public function __construct(string $msgID = "", $vars = null, \Throwable $e = null) {

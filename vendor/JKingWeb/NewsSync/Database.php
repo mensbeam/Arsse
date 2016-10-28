@@ -9,7 +9,7 @@ class Database {
 	const FORMAT_TIME    = "h:i:s";
 	
 	protected $data;
-	protected $db;
+	public    $db;
 
 	protected function cleanName(string $name): string {
 		return (string) preg_filter("[^0-9a-zA-Z_\.]", "", $name);
@@ -17,7 +17,7 @@ class Database {
 
 	public function __construct(RuntimeData $data) {
 		$this->data = $data;
-		$driver = $data->conf->dbClass;
+		$driver = $data->conf->dbDriver;
 		$this->db = $driver::create($data, INSTALL);
 		$ver = $this->db->schemaVersion();
 		if(!INSTALL && $ver < self::SCHEMA_VERSION) {
@@ -161,20 +161,78 @@ class Database {
 		$this->db->prepare("REPLACE INTO newssync_settings(key,value,type) values(?,?,?)", "str", (($type=="null") ? "null" : "str"), "str")->run($key, $value, "text");
 	}
 
-	public function settingClear(string $key): bool {
+	public function settingRemove(string $key): bool {
 		$this->db->prepare("DELETE from newssync_settings where key = ?", "str")->run($key);
 		return true;
 	}
 
-	public function userAdd(string $username, string $password = null, bool $admin = false): string {
-		$this->db->prepare("INSERT INTO newssync_users(id,password,admin) values(?,?,?)", "str", "str", "bool")->run($username,$password,$admin);
-		return $username;
+	public function userExists(string $username): bool {
+		return (bool) $this->db->prepare("SELECT count(*) from newssync_users where id is ?", "str")->run($username)->getSingle();
 	}
 
-	public function subscriptionAdd(string $user, string $url, string $fetchUser = null, string $fetchPassword = null): int {
+	public function userAdd(string $username, string $password = null): bool {
+		if(strlen($password) > 0) $password = password_hash($password, \PASSWORD_DEFAULT);
+		if($this->db->prepare("SELECT count(*) from newssync_users")->run()->getSingle() < 1) { //if there are no users, the first user should be made a global admin
+			$admin = "global";
+		} else {
+			$admin = null;
+		}
+		$this->db->prepare("INSERT INTO newssync_users(id,password,admin) values(?,?,?)", "str", "str", "str")->run($username,$password,$admin);
+		return true;
+	}
+
+	public function userRemove(string $username): bool {
+		$this->db->prepare("DELETE from newssync_users where id is ?", "str")->run($username);
+		return true;
+	}
+
+	public function userList(string $domain = null): array {
+		if($domain !== null) {
+			$domain = str_replace(["\\","%","_"],["\\\\", "\\%", "\\_"], $domain);
+			$domain = "%@".$domain;
+			$set = $this->db->prepare("SELECT id from newssync_users where id like ?", "str")->run($domain);
+		} else {
+			$set = $this->db->query("SELECT id from newssync_users");
+		}
+		$out = [];
+		foreach($set as $row) {
+			$out[] = $row["id"];
+		}
+		return $out;
+	}
+	
+	public function userPasswordSet($username, $password): bool {
+		if(!$this->userExists($username)) return false;
+		if(strlen($password > 0)) $password = password_hash($password);
+		$this->db->prepare("UPDATE newssync_users set password = ? where id is ?", "str", "str")->run($password, $username);
+		return true;
+	}
+
+	public function userPropertiesGet(string $username): array {
+		$prop = $this->db->prepare("SELECT name,admin from newssync_users where id is ?", "str")->run($username)->get();
+		if(!$prop) return [];
+		return $prop;
+	}
+
+	public function userPropertiesSet(string $username, array &$properties): array {
+		$valid = [ // FIXME: add future properties
+			"name" => "str", 
+			"admin" => "str",
+		];
+		$this->db->begin();
+		foreach($valid as $prop => $type) {
+			if(!array_key_exists($prop, $properties)) continue;
+			$this->db->prepare("UPDATE newssync_users set $prop = ? where id is ?", $type, "str")->run($properties[$prop], $username); 
+		}
+		$this->db->commit();
+		return $this->userPropertiesGet($username);
+	}
+
+	public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = ""): int {
 		$this->db->begin();
 		$qFeed = $this->db->prepare("SELECT id from newssync_feeds where url is ? and username is ? and password is ?", "str", "str", "str");
-		if(is_null($id = $qFeed->run($url, $fetchUser, $fetchPassword)->getSingle())) {
+		$id = $qFeed->run($url, $fetchUser, $fetchPassword)->getSingle();
+		if($id===null) {
 			$this->db->prepare("INSERT INTO newssync_feeds(url,username,password) values(?,?,?)", "str", "str", "str")->run($url, $fetchUser, $fetchPassword);
 			$id = $qFeed->run($url, $fetchUser, $fetchPassword)->getSingle();
 			var_export($id);

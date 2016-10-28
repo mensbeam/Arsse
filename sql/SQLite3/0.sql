@@ -9,8 +9,8 @@ create table newssync_feeds(
 	modified datetime not null default CURRENT_TIMESTAMP,													--
 	err_count integer not null default 0,																	-- count of successive times update resulted in error since last successful update
 	err_msg TEXT,																							-- last error message
-	username TEXT,																							-- HTTP authentication username
-	password TEXT,																							-- HTTP authentication password (this is stored in plain text)
+	username TEXT not null default '',																		-- HTTP authentication username
+	password TEXT not null default '',																		-- HTTP authentication password (this is stored in plain text)
 	unique(url,username,password)																			-- a URL with particular credentials should only appear once
 );
 
@@ -59,9 +59,12 @@ create table newssync_users(
 	id TEXT primary key not null,																			-- user id
 	password TEXT,																							-- password, salted and hashed; if using external authentication this would be blank
 	name TEXT,																								-- display name
-	avatar_type TEXT,																						-- avatar image's MIME content type
-	avatar_data BLOB,																						-- avatar image's binary data
-	admin boolean not null default 0																		-- whether the user is an administrator
+	avatar_url TEXT,																						-- external URL to avatar
+	avatar_type TEXT,																						-- internal avatar image's MIME content type
+	avatar_data BLOB,																						-- internal avatar image's binary data
+	admin TEXT check(
+		admin in('global', 'domain', null)
+	)																										-- whether the user is an administrator
 );
 
 -- TT-RSS categories and ownCloud folders

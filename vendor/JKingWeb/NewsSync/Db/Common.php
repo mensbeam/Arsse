@@ -6,6 +6,14 @@ use JKingWeb\DrUUID\UUID as UUID;
 Trait Common {
 	protected $transDepth = 0;
 	
+	public function schemaVersion(): integer {
+		try {
+			return $this->data->db->settingGet("schema_version");
+		} catch(\Throwable $e) {
+			return 0;
+		}
+	}
+	
 	public function begin(): bool {
 		$this->exec("SAVEPOINT newssync_".($this->transDepth));
 		$this->transDepth += 1;
@@ -50,7 +58,7 @@ Trait Common {
 	}
 
 	public function unlock(): bool {
-		return $this->data->db->settingClear("lock");
+		return $this->data->db->settingRemove("lock");
 	}
 
 	public function isLocked(): bool {

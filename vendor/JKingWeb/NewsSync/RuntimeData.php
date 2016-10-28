@@ -11,6 +11,6 @@ class RuntimeData {
 		$this->conf = $conf;
 		Lang::set($conf->lang);
 		$this->db = new Database($this);
-		//$this->auth = new Authenticator($this);
+		$this->user = new User($this);
 	}
 }

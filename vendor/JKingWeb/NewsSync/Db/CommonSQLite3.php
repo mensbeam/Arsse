@@ -24,10 +24,10 @@ Trait CommonSQLite3 {
 			$this->begin();
 			try {
 				$file = $path.$a.".sql";
-				if(!file_exists($file)) throw new Update\Exception("missing", ['file' => $file, 'driver_name' => $this->driverName()]);
-				if(!is_readable($file)) throw new Update\Exception("unreadable", ['file' => $file, 'driver_name' => $this->driverName()]);
+				if(!file_exists($file)) throw new Update\Exception("fileMissing", ['file' => $file, 'driver_name' => $this->driverName()]);
+				if(!is_readable($file)) throw new Update\Exception("fileUnreadable", ['file' => $file, 'driver_name' => $this->driverName()]);
 				$sql = @file_get_contents($file);
-				if($sql===false) throw new Update\Exception("unusable", ['file' => $file, 'driver_name' => $this->driverName()]);
+				if($sql===false) throw new Update\Exception("fileUnusable", ['file' => $file, 'driver_name' => $this->driverName()]);
 				$this->exec($sql);
 			} catch(\Throwable $e) {
 				// undo any partial changes from the failed update

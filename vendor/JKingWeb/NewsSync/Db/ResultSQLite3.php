@@ -3,12 +3,14 @@ declare(strict_types=1);
 namespace JKingWeb\NewsSync\Db;
 
 class ResultSQLite3 implements Result {
+	protected $st;
 	protected $set;
 	protected $pos = 0;
 	protected $cur = null;
 
-	public function __construct(\SQLite3Result $resultObj) {
-		$this->set = $resultObj;
+	public function __construct($result, $statement = null) {
+		$this->st = $statement; //keeps the statement from being destroyed, invalidating the result set
+		$this->set = $result;
 	}
 
 	public function __destruct() {

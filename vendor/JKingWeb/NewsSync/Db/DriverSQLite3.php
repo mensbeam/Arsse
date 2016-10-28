@@ -3,7 +3,9 @@ declare(strict_types=1);
 namespace JKingWeb\NewsSync\Db;
 
 class DriverSQLite3 implements Driver {
-	use Common, CommonSQLite3;
+	use Common, CommonSQLite3 {
+		CommonSQLite3::schemaVersion insteadof Common;
+	}
 	
 	protected $db;
 	protected $data;

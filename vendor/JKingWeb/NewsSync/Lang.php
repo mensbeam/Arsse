@@ -51,8 +51,13 @@ class Lang {
 		}
 		if(!array_key_exists($msgID, self::$strings)) throw new Lang\Exception("stringMissing", ['msgID' => $msgID, 'fileList' => implode(", ",self::$loaded)]);
 		// variables fed to MessageFormatter must be contained in array
-		if($vars !== null && !is_array($vars)) $vars = [$vars];
-		$msg = \MessageFormatter::formatMessage(self::$locale, self::$strings[$msgID], $vars);
+		$msg = self::$strings[$msgID];
+		if($vars===null) {
+			return $msg;
+		} else if(!is_array($vars)) {
+			$vars = [$vars];
+		}
+		$msg = \MessageFormatter::formatMessage(self::$locale, $msg, $vars);
 		if($msg===false) throw new Lang\Exception("stringInvalid", ['msgID' => $msgID, 'fileList' => implode(", ",self::$loaded)]);
 		return $msg;
 	}
@@ -73,7 +78,7 @@ class Lang {
 	}
 
 	static protected function checkRequirements(): bool {
-		if(!extension_loaded("intl")) throw new FatalException("The \"Intl\" extension is required, but not loaded");
+		if(!extension_loaded("intl")) throw new ExceptionFatal("The \"Intl\" extension is required, but not loaded");
 		self::$requirementsMet = true;
 		return true;
 	}
