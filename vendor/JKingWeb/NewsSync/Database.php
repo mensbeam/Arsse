@@ -166,33 +166,34 @@ class Database {
 		return true;
 	}
 
-	public function userExists(string $username): bool {
-		return (bool) $this->db->prepare("SELECT count(*) from newssync_users where id is ?", "str")->run($username)->getSingle();
+	public function userExists(string $user): bool {
+		if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+		return (bool) $this->db->prepare("SELECT count(*) from newssync_users where id is ?", "str")->run($user)->getSingle();
 	}
 
-	public function userAdd(string $username, string $password = null): bool {
+	public function userAdd(string $user, string $password = null): bool {
+		if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+		if($this->userExists($user)) return false;
 		if(strlen($password) > 0) $password = password_hash($password, \PASSWORD_DEFAULT);
-		if($this->db->prepare("SELECT count(*) from newssync_users")->run()->getSingle() < 1) { //if there are no users, the first user should be made a global admin
-			$admin = "global";
-		} else {
-			$admin = null;
-		}
-		$this->db->prepare("INSERT INTO newssync_users(id,password,admin) values(?,?,?)", "str", "str", "str")->run($username,$password,$admin);
+		$this->db->prepare("INSERT INTO newssync_users(id,password) values(?,?)", "str", "str", "str")->run($user,$password,$admin);
 		return true;
 	}
 
-	public function userRemove(string $username): bool {
-		$this->db->prepare("DELETE from newssync_users where id is ?", "str")->run($username);
+	public function userRemove(string $user): bool {
+		if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+		$this->db->prepare("DELETE from newssync_users where id is ?", "str")->run($user);
 		return true;
 	}
 
 	public function userList(string $domain = null): array {
 		if($domain !== null) {
+			if(!$this->data->user->authorize("@".$domain, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $domain]);
 			$domain = str_replace(["\\","%","_"],["\\\\", "\\%", "\\_"], $domain);
 			$domain = "%@".$domain;
 			$set = $this->db->prepare("SELECT id from newssync_users where id like ?", "str")->run($domain);
 		} else {
-			$set = $this->db->query("SELECT id from newssync_users");
+			if(!$this->data->user->authorize("", __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => "all users"]);
+			$set = $this->db->prepare("SELECT id from newssync_users")->run();
 		}
 		$out = [];
 		foreach($set as $row) {
@@ -201,45 +202,74 @@ class Database {
 		return $out;
 	}
 	
-	public function userPasswordSet($username, $password): bool {
-		if(!$this->userExists($username)) return false;
+	public function userPasswordGet(string $user): string {
+		if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+		if(!$this->userExists($user)) return "";
+		return (string) $this->db->prepare("SELECT password from newssync_users where id is ?", "str")->run($user)->getSingle();
+	}
+	
+	public function userPasswordSet(string $user, string $password = null): bool {
+		if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+		if(!$this->userExists($user)) return false;
 		if(strlen($password > 0)) $password = password_hash($password);
-		$this->db->prepare("UPDATE newssync_users set password = ? where id is ?", "str", "str")->run($password, $username);
+		$this->db->prepare("UPDATE newssync_users set password = ? where id is ?", "str", "str")->run($password, $user);
 		return true;
 	}
 
-	public function userPropertiesGet(string $username): array {
-		$prop = $this->db->prepare("SELECT name,admin from newssync_users where id is ?", "str")->run($username)->get();
+	public function userPropertiesGet(string $user): array {
+		if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+		$prop = $this->db->prepare("SELECT name,rights from newssync_users where id is ?", "str")->run($user)->get();
 		if(!$prop) return [];
 		return $prop;
 	}
 
-	public function userPropertiesSet(string $username, array &$properties): array {
+	public function userPropertiesSet(string $user, array &$properties): array {
+		if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
 		$valid = [ // FIXME: add future properties
 			"name" => "str", 
-			"admin" => "str",
 		];
+		if(!$this->userExists($user)) return [];
 		$this->db->begin();
 		foreach($valid as $prop => $type) {
 			if(!array_key_exists($prop, $properties)) continue;
-			$this->db->prepare("UPDATE newssync_users set $prop = ? where id is ?", $type, "str")->run($properties[$prop], $username); 
+			$this->db->prepare("UPDATE newssync_users set $prop = ? where id is ?", $type, "str")->run($properties[$prop], $user); 
 		}
 		$this->db->commit();
-		return $this->userPropertiesGet($username);
+		return $this->userPropertiesGet($user);
+	}
+
+	public function userRightsGet(string $user): int {
+		if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+		return (int) $this->db->prepare("SELECT rights from newssync_users where id is ?", "str")->run($user)->getSingle();
+	}
+
+	public function userRightsSet(string $user, int $rights): bool {
+		if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+		if(!$this->userExists($user)) return false;
+		$this->db->prepare("UPDATE newssync_users set rights = ? where id is ?", "int", "str")->run($rights, $user);
+		return true;
 	}
 
 	public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = ""): int {
+		if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+		if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
 		$this->db->begin();
 		$qFeed = $this->db->prepare("SELECT id from newssync_feeds where url is ? and username is ? and password is ?", "str", "str", "str");
-		$id = $qFeed->run($url, $fetchUser, $fetchPassword)->getSingle();
-		if($id===null) {
+		$feed = $qFeed->run($url, $fetchUser, $fetchPassword)->getSingle();
+		if($feed===null) {
 			$this->db->prepare("INSERT INTO newssync_feeds(url,username,password) values(?,?,?)", "str", "str", "str")->run($url, $fetchUser, $fetchPassword);
-			$id = $qFeed->run($url, $fetchUser, $fetchPassword)->getSingle();
-			var_export($id);
+			$feed = $qFeed->run($url, $fetchUser, $fetchPassword)->getSingle();
 		}
-		$this->db->prepare("INSERT INTO newssync_subscriptions(owner,feed) values(?,?)", "str", "int")->run($user,$id);
+		$this->db->prepare("INSERT INTO newssync_subscriptions(owner,feed) values(?,?)", "str", "int")->run($user,$feed);
+		$sub = $this->db->prepare("SELECT id from newssync_subscriptions where owner is ? and feed is ?", "str", "int")->run($user, $feed)->getSingle();
 		$this->db->commit();
-		return 0;
+		return $sub;
+	}
+
+	public function subscriptionRemove(int $id): bool {
+		$this->db->begin();
+		$feed = $this->db->prepare("SELECT feed from newssync_subscriptions where id is ?", "int")->run($id)->getSingle();
+		$this->db->prepare("DELETE from newssync_subscriptions where id is ?", "int")->run($id);
 	}
 
 }

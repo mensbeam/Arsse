@@ -35,6 +35,7 @@ class Exception extends \Exception {
 		"User/Exception.alreadyExists"			=> 10403,
 		"User/Exception.authMissing"			=> 10411,
 		"User/Exception.authFailed"				=> 10412,
+		"User/Exception.notAuthorized" 			=> 10421,
 	];
 
 	public function __construct(string $msgID = "", $vars = null, \Throwable $e = null) {

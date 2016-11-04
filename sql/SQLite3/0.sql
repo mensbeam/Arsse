@@ -6,7 +6,7 @@ create table newssync_feeds(
 	favicon TEXT,																							-- URL of favicon
 	source TEXT,																							-- URL of site to which the feed belongs
 	updated datetime,																						-- time at which the feed was last fetched
-	modified datetime not null default CURRENT_TIMESTAMP,													--
+	modified datetime,																						-- time at which the feed last actually changed
 	err_count integer not null default 0,																	-- count of successive times update resulted in error since last successful update
 	err_msg TEXT,																							-- last error message
 	username TEXT not null default '',																		-- HTTP authentication username
@@ -62,9 +62,7 @@ create table newssync_users(
 	avatar_url TEXT,																						-- external URL to avatar
 	avatar_type TEXT,																						-- internal avatar image's MIME content type
 	avatar_data BLOB,																						-- internal avatar image's binary data
-	admin TEXT check(
-		admin in('global', 'domain', null)
-	)																										-- whether the user is an administrator
+	rights integer not null default 0 																		-- any administrative rights the user may have
 );
 
 -- TT-RSS categories and ownCloud folders

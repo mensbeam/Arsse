@@ -44,4 +44,5 @@ return [
 	'Exception.JKingWeb/NewsSync/User/Exception.doesNotExist'			=> 'Could not perform action "{action}" because the user {user} does not exist',
 	'Exception.JKingWeb/NewsSync/User/Exception.authMissing'			=> 'Please log in to proceed',
 	'Exception.JKingWeb/NewsSync/User/Exception.authFailed'				=> 'Authentication failed',
+	'Exception.JKingWeb/NewsSync/User/ExceptionAuthz.notAuthorized'		=> 'Authenticated user is not authorized to perform the action "{action}" on behalf of {user}',
 ];

@@ -9,6 +9,7 @@ class DriverInternal implements Driver {
 	protected $db;
 	protected $functions = [
 		"auth"					=> Driver::FUNC_INTERNAL,
+		"authorize"				=> Driver::FUNC_INTERNAL,
 		"userList"				=> Driver::FUNC_INTERNAL,
 		"userExists"			=> Driver::FUNC_INTERNAL,
 		"userAdd"				=> Driver::FUNC_INTERNAL,
@@ -16,6 +17,8 @@ class DriverInternal implements Driver {
 		"userPasswordSet"		=> Driver::FUNC_INTERNAL,
 		"userPropertiesGet"		=> Driver::FUNC_INTERNAL,
 		"userPropertiesSet"		=> Driver::FUNC_INTERNAL,
+		"userRightsGet"			=> Driver::FUNC_INTERNAL,
+		"userRightsSet"			=> Driver::FUNC_INTERNAL,
 	];
 
 	static public function create(\JKingWeb\NewsSync\RuntimeData $data): Driver {

@@ -6,7 +6,7 @@ use JKingWeb\DrUUID\UUID as UUID;
 Trait Common {
 	protected $transDepth = 0;
 	
-	public function schemaVersion(): integer {
+	public function schemaVersion(): int {
 		try {
 			return $this->data->db->settingGet("schema_version");
 		} catch(\Throwable $e) {
