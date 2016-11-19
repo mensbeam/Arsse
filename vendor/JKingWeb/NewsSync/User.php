@@ -144,7 +144,7 @@ class User {
 		if($this->u->driverFunctions("userAdd") != User\Driver::FUNC_INTERNAL) {
 			if(!$this->data->user->authorize($user, "userAdd")) throw new User\ExceptionAuthz("notAuthorized", ["action" => "userAdd", "user" => $user]);
 		}
-		if($this->exists($user)) throw new User\Exception("alreadyExists", ["user" => $user, "action" => "userAdd"]);
+		if($this->exists($user)) return false;
 		$out = $this->u->userAdd($user, $password);
 		if($out && $this->u->driverFunctions("userAdd") != User\Driver::FUNC_INTERNAL) {
 			try {
@@ -158,7 +158,7 @@ class User {
 		if($this->u->driverFunctions("userRemove") != User\Driver::FUNC_INTERNAL) {
 			if(!$this->data->user->authorize($user, "userRemove")) throw new User\ExceptionAuthz("notAuthorized", ["action" => "userRemove", "user" => $user]);
 		}
-		if(!$this->exists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => "userRemove"]);
+		if(!$this->exists($user)) return false;
 		$out = $this->u->userRemove($user);
 		if($out && $this->u->driverFunctions("userRemove") != User\Driver::FUNC_INTERNAL) {
 			try {
@@ -172,7 +172,7 @@ class User {
 		if($this->u->driverFunctions("userPasswordSet") != User\Driver::FUNC_INTERNAL) {
 			if(!$this->data->user->authorize($user, "userPasswordSet")) throw new User\ExceptionAuthz("notAuthorized", ["action" => "userPasswordSet", "user" => $user]);
 		}
-		if(!$this->exists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => "userPasswordSet"]);
+		if(!$this->exists($user)) return false;
 		return $this->u->userPasswordSet($user, $password);
 	}
 
@@ -180,7 +180,7 @@ class User {
 		if($this->u->driverFunctions("userPropertiesGet") != User\Driver::FUNC_INTERNAL) {
 			if(!$this->data->user->authorize($user, "userPropertiesGet")) throw new User\ExceptionAuthz("notAuthorized", ["action" => "userPropertiesGet", "user" => $user]);
 		}
-		if(!$this->exists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => "userPropertiesGet"]);
+		if(!$this->exists($user)) return false;
 		$domain = null;
 		if($this->data->conf->userComposeNames) $domain = substr($user,strrpos($user,"@")+1);
 		$init = [
@@ -216,7 +216,7 @@ class User {
 		if($this->u->driverFunctions("userRightsSet") != User\Driver::FUNC_INTERNAL) {
 			if(!$this->data->user->authorize($user, "userRightsSet")) throw new User\ExceptionAuthz("notAuthorized", ["action" => "userRightsSet", "user" => $user]);
 		}
-		if(!$this->exists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => "userPromote"]);
+		if(!$this->exists($user)) return false;
 		return $this->u->userRightsSet($user, $level);
 	}
 	

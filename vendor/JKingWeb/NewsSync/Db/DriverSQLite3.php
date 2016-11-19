@@ -50,10 +50,10 @@ class DriverSQLite3 implements Driver {
 	}
 
 	public function query(string $query): Result {
-		return new ResultSQLite3($this->db->query($query));
+		return new ResultSQLite3($this->db->query($query), $this->db->changes());
 	}
 
 	public function prepareArray(string $query, array $paramTypes): Statement {
-		return new StatementSQLite3($this->db->prepare($query), $paramTypes);
+		return new StatementSQLite3($this->db, $this->db->prepare($query), $paramTypes);
 	}
 }

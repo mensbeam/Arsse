@@ -11,4 +11,5 @@ interface Result extends \Iterator {
 
 	function get();
 	function getSingle();
+	function changes();
 }

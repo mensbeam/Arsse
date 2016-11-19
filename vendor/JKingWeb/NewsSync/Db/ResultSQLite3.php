@@ -7,10 +7,12 @@ class ResultSQLite3 implements Result {
 	protected $set;
 	protected $pos = 0;
 	protected $cur = null;
+	protected $rows = 0;
 
-	public function __construct($result, $statement = null) {
+	public function __construct($result, $changes, $statement = null) {
 		$this->st = $statement; //keeps the statement from being destroyed, invalidating the result set
 		$this->set = $result;
+		$this->rows = $changes;
 	}
 
 	public function __destruct() {
@@ -54,5 +56,9 @@ class ResultSQLite3 implements Result {
 	public function get() {
 		$this->next();
 		return ($this->valid() ? $this->cur : null);
+	}
+
+	public function changes() {
+		return $this->rows;
 	}
 }

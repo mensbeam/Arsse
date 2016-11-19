@@ -3,10 +3,12 @@ declare(strict_types=1);
 namespace JKingWeb\NewsSync\Db;
 
 class StatementSQLite3 implements Statement {
+	protected $db;
 	protected $st;
 	protected $types;
 
-	public function __construct($st, array $bindings = null) {
+	public function __construct($db, $st, array $bindings = null) {
+		$this->db = $db;
 		$this->st = $st;
 		$this->types = [];
 		foreach($bindings as $binding) {
@@ -66,6 +68,6 @@ class StatementSQLite3 implements Statement {
 			}
 			$this->st->bindParam($a+1, $values[$a], $type);
 		}
-		return new ResultSQLite3($this->st->execute(), $this);
+		return new ResultSQLite3($this->st->execute(), $this->db->changes(), $this);
 	}
 }

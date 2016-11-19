@@ -268,8 +268,10 @@ class Database {
 
 	public function subscriptionRemove(int $id): bool {
 		$this->db->begin();
-		$feed = $this->db->prepare("SELECT feed from newssync_subscriptions where id is ?", "int")->run($id)->getSingle();
-		$this->db->prepare("DELETE from newssync_subscriptions where id is ?", "int")->run($id);
+		$user = $this->db->prepare("SELECT owner from newssync_subscriptions where id is ?", "int")->run($id)->getSingle();
+		if($user===null) return false;
+		if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+		return (bool) $this->db->prepare("DELETE from newssync_subscriptions where id is ?", "int")->run($id)->changes();
 	}
 
 }
