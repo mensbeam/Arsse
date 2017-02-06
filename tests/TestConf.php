@@ -15,7 +15,7 @@ class TestConf extends \PHPUnit\Framework\TestCase {
 			touch($vfs."/".$file);
 		}
 		chmod($vfs."/confUnreadable", 0000);
-		$validConf = <<<VALID_CONFIGURATION_FILE
+		$validConf = <<<'VALID_CONFIGURATION_FILE'
 <?php
 return Array(
 	"lang" => "xx"

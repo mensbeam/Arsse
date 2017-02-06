@@ -1,6 +1,6 @@
 <?php
 return [
-	'Exception.JKingWeb/NewsSync/Exception.uncoded'                     => 'The specified exception symbol {0} has no code specified in Exception.php',
+	'Exception.JKingWeb/NewsSync/Exception.uncoded'						=> 'The specified exception symbol {0} has no code specified in Exception.php',
 
 	'Exception.JKingWeb/NewsSync/Lang/Exception.defaultFileMissing'		=> 'Default language file "{0}" missing',
 	'Exception.JKingWeb/NewsSync/Lang/Exception.fileMissing'			=> 'Language file "{0}" is not available',
