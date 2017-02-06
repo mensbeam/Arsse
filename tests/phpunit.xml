@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<phpunit
+  colors="true"
+  bootstrap="bootstrap.php"
+  convertErrorsToExceptions="true"
+  convertNoticesToExceptions="true"
+  convertWarningsToExceptions="true"
+  beStrictAboutTestsThatDoNotTestAnything="true"
+  beStrictAboutOutputDuringTests="true"
+  beStrictAboutTestSize="true">
+
+  <testsuite name="Base">
+      <file>TestConf.php</file>
+  </testsuite>
+
+
+
+</phpunit>

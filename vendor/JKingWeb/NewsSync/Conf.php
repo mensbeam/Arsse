@@ -35,16 +35,23 @@ class Conf {
 	}
 
 	public function importFile(string $file): self {
-		if(!file_exists($file)) throw new Conf\Exception("fileMissing");
-		if(!is_readable($file)) throw new Conf\Exception("fileUnreadable");
-		$arr = (@include $file);
-		if(!is_array($arr)) throw new Conf\Exception("fileCorrupt");
+		if(!file_exists($file)) throw new Conf\Exception("fileMissing", $file);
+		if(!is_readable($file)) throw new Conf\Exception("fileUnreadable", $file);
+		try {
+			ob_start();
+			$arr = (@include $file);
+		} catch(\Throwable $e) {
+			$arr = null;
+		} finally {
+			ob_end_clean();
+		}
+		if(!is_array($arr)) throw new Conf\Exception("fileCorrupt", $file);
 		return $this->import($arr);
 	}
 
 	public function import(array $arr): self {
 		foreach($arr as $key => $value) {
-			$this->$$key = $value;
+			$this->$key = $value;
 		}
 		return $this;
 	}

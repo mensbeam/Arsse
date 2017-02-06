@@ -5,7 +5,8 @@ namespace JKingWeb\NewsSync;
 class Exception extends \Exception {
 
 	const CODES = [
-		"Exception.Misc"						=> 10000,
+		"Exception.uncoded"                     => -1,
+		"Exception.misc"						=> 10000,
 		"Lang/Exception.defaultFileMissing"		=> 10101,
 		"Lang/Exception.fileMissing"			=> 10102,
 		"Lang/Exception.fileUnreadable"			=> 10103,
@@ -43,14 +44,16 @@ class Exception extends \Exception {
 			$msg = "";
 			$code = 0;
 		} else {
-			$msg = "Exception.".str_replace("\\","/",get_called_class()).".$msgID";
-			$msg = Lang::msg($msg, $vars);
-			$codeID = str_replace("\\", "/", str_replace(NS_BASE, "", get_called_class()));
+			$codeID = str_replace("\\", "/", str_replace(NS_BASE, "", get_called_class())).".$msgID";
 			if(!array_key_exists($codeID,self::CODES)) {
-				$code = 0;
+				$code = -1;
+				$msg = "Exception.".str_replace("\\","/",__CLASS__).".uncoded";
+				$vars = $msgID;
 			} else {
 				$code = self::CODES[$codeID];
+				$msg = "Exception.".str_replace("\\","/",get_called_class()).".$msgID";
 			}
+			$msg = Lang::msg($msg, $vars);
 		}
 		parent::__construct($msg, $code, $e);
 	}
