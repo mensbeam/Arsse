@@ -10,6 +10,7 @@
   beStrictAboutTestSize="true">
 
   <testsuite name="Base">
+      <file>TestLang.php</file>
       <file>TestConf.php</file>
   </testsuite>
 

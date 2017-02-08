@@ -1,7 +1,8 @@
 #dependencies
-vendor/simplepie/*
-vendor/JKingWeb/DrUUID/*
-vendor/org/bovigo/vfs/*
+vendor/simplepie
+vendor/JKingWeb/DrUUID
+vendor/org
+vendor/Webmozart
 
 #temp files
 cache/*

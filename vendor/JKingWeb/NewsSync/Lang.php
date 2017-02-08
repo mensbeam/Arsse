@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\NewsSync;
+use \Webmozart\Glob\Glob;
 
 class Lang {
 	const PATH = BASE."locale".DIRECTORY_SEPARATOR;
@@ -63,9 +64,9 @@ class Lang {
 		return $msg;
 	}
 
-	static public function list(string $locale = ""): array {
+	static public function list(string $locale = "", string $path = self::PATH): array {
 		$out = [];
-		$files = self::listFiles();
+		$files = self::listFiles($path);
 		foreach($files as $tag) {
 			$out[$tag] = \Locale::getDisplayName($tag, ($locale=="") ? $tag : $locale); 		
 		}
@@ -85,11 +86,13 @@ class Lang {
 	}
 	
 	static protected function listFiles(string $path = self::PATH): array {
-		$out = glob($path."*.php");
-		return array_map(function($file) {
-			$file = substr($file,strrpos($file,DIRECTORY_SEPARATOR)+1);
+		$out = Glob::glob($path."*.php");
+		$out = array_map(function($file) {
+			$file = substr(str_replace(DIRECTORY_SEPARATOR, "/", $file),strrpos($file,"/")+1);
 			return strtolower(substr($file,0,strrpos($file,".")));
 		},$out);
+		natsort($out);
+		return $out;
 	}
 
 	static protected function load(): bool {
@@ -127,7 +130,16 @@ class Lang {
 		foreach($files as $file) {
 			if(!file_exists(self::PATH."$file.php")) throw new Lang\Exception("fileMissing", $file);
 			if(!is_readable(self::PATH."$file.php")) throw new Lang\Exception("fileUnreadable", $file);
-			if(!$strings[] = (@include self::PATH."$file.php")) throw new Lang\Exception("fileCorrupt", $file);
+			try {
+				ob_start();
+				$arr = (include self::PATH."$file.php");
+			} catch(\Throwable $e) {
+				$arr = null;
+			} finally {
+				ob_end_clean();
+			}
+			if(!is_array($arr)) throw new Lang\Exception("fileCorrupt", $file);
+			$strings[] = $arr;
 		}
 		// apply the results and return
 		self::$strings = call_user_func_array("array_replace_recursive", $strings);
