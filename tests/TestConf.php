@@ -11,22 +11,17 @@ class TestConf extends \PHPUnit\Framework\TestCase {
 	static $path;
 
 	static function setUpBeforeClass() {
-		self::$vfs = vfsStream::setup();
+		self::$vfs = vfsStream::setup("root", null, [
+			'confGood'       => '<?php return Array("lang" => "xx");',
+			'confNotArray'   => '<?php return 0;',
+			'confCorrupt'    => '<?php return 0',
+			'confNotPHP'     => 'DEAD BEEF',
+			'confEmpty'      => '',
+			'confUnreadable' => '',
+		]);
 		self::$path = self::$vfs->url();
-		foreach(["confUnreadable","confGood", "confCorrupt", "confNotArray"] as $file) {
-			touch(self::$path."/".$file);
-		}
+		// set up a file without read access
 		chmod(self::$path."/confUnreadable", 0000);
-		$validConf = <<<'VALID_CONFIGURATION_FILE'
-<?php
-return Array(
-	"lang" => "xx"
-);
-VALID_CONFIGURATION_FILE;
-		file_put_contents(self::$path."/confGood",$validConf);
-		file_put_contents(self::$path."/confNotArray", '<?php return 0;');
-		file_put_contents(self::$path."/confCorrupt", '<?php return 0');
-		file_put_contents(self::$path."/confNotPHP", 'DEAD BEEF');
 	}
 
 	static function tearDownAfterClass() {
@@ -65,6 +60,14 @@ VALID_CONFIGURATION_FILE;
 	function testImportFileMissing() {
 		$this->assertException("fileMissing", "Conf");
 		$conf = new Conf(self::$path."/confMissing");
+	}
+
+	/**
+     * @depends testImportFile
+     */
+	function testImportFileEmpty() {
+		$this->assertException("fileCorrupt", "Conf");
+		$conf = new Conf(self::$path."/confEmpty");
 	}
 
 	/**

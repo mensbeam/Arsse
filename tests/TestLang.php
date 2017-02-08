@@ -9,26 +9,26 @@ class TestLang extends \PHPUnit\Framework\TestCase {
 
 	static $vfs;
 	static $path;
-
-	const FILES = [
-		'en.php'    => '<?php return ["Test.presentText" => "and the Philosopher\'s Stone"];',
-		'en-ca.php' => '<?php return [];',
-		'en-us.php' => '<?php return ["Test.presentText" => "and the Sorcerer\'s Stone"];',
-		'fr.php'    => '<?php return ["Test.presentText" => "à l\'école des sorciers"];',
-		'ja.php'    => '<?php return ["Test.absentText"  => "賢者の石"];',
-		// corrupt files
-		'it.php'    => '<?php return 0;',
-		'zh.php'    => '<?php return 0',
-		'ko.php'    => 'DEAD BEEF',
-		// empty file
-		'fr-ca.php' => '',
-		// unreadable file
-		'ru.php'    => '',
-	];
+	static $files;
 
 	static function setUpBeforeClass() {
 		Lang\Exception::$test = true;
-		self::$vfs = vfsStream::setup("langtest", 0777, self::FILES);
+		self::$files = [
+			'en.php'    => '<?php return ["Test.presentText" => "and the Philosopher\'s Stone"];',
+			'en-ca.php' => '<?php return [];',
+			'en-us.php' => '<?php return ["Test.presentText" => "and the Sorcerer\'s Stone"];',
+			'fr.php'    => '<?php return ["Test.presentText" => "à l\'école des sorciers"];',
+			'ja.php'    => '<?php return ["Test.absentText"  => "賢者の石"];',
+			// corrupt files
+			'it.php'    => '<?php return 0;',
+			'zh.php'    => '<?php return 0',
+			'ko.php'    => 'DEAD BEEF',
+			// empty file
+			'fr-ca.php' => '',
+			// unreadable file
+			'ru.php'    => '',
+		];
+		self::$vfs = vfsStream::setup("langtest", 0777, self::$files);
 		self::$path = self::$vfs->url();
 		// set up a file without read access
 		chmod(self::$path."/ru.php", 0000);
@@ -38,9 +38,10 @@ class TestLang extends \PHPUnit\Framework\TestCase {
 		Lang\Exception::$test = false;
 		self::$path = null;
 		self::$vfs = null;
+		self::$files = null;
 	}
 
 	function testList() {
-		$this->assertEquals(sizeof(self::FILES), sizeof(Lang::list("en", "vfs://langtest/")));
+		$this->assertEquals(sizeof(self::$files), sizeof(Lang::list("en", "vfs://langtest/")));
 	}
 }
