@@ -8,32 +8,38 @@ class TestConf extends \PHPUnit\Framework\TestCase {
 	use TestingHelpers;
 	
 	static $vfs;
+	static $path;
 
 	static function setUpBeforeClass() {
-		$vfs = vfsStream::setup()->url();
+		self::$vfs = vfsStream::setup();
+		self::$path = self::$vfs->url();
 		foreach(["confUnreadable","confGood", "confCorrupt", "confNotArray"] as $file) {
-			touch($vfs."/".$file);
+			touch(self::$path."/".$file);
 		}
-		chmod($vfs."/confUnreadable", 0000);
+		chmod(self::$path."/confUnreadable", 0000);
 		$validConf = <<<'VALID_CONFIGURATION_FILE'
 <?php
 return Array(
 	"lang" => "xx"
 );
 VALID_CONFIGURATION_FILE;
-		file_put_contents($vfs."/confGood",$validConf);
-		file_put_contents($vfs."/confNotArray", "<?php return 0;");
-		file_put_contents($vfs."/confCorrupt", "<?php return 0");
-		file_put_contents($vfs."/confNotPHP", "DEAD BEEF");
-		self::$vfs = $vfs;
+		file_put_contents(self::$path."/confGood",$validConf);
+		file_put_contents(self::$path."/confNotArray", '<?php return 0;');
+		file_put_contents(self::$path."/confCorrupt", '<?php return 0');
+		file_put_contents(self::$path."/confNotPHP", 'DEAD BEEF');
+	}
+
+	static function tearDownAfterClass() {
+		self::$path = null;
+		self::$vfs = null;
 	}
 	
-	function testConstruct() {
+	function testConstructor() {
 		$this->assertInstanceOf(Conf::class, new Conf());
 	}
     
 	/**
-     * @depends testConstruct
+     * @depends testConstructor
      */
 	function testImportArray() {
 		$arr = ['lang' => "xx"];
@@ -47,9 +53,9 @@ VALID_CONFIGURATION_FILE;
      */
 	function testImportFile() {
 		$conf = new Conf();
-		$conf->importFile(self::$vfs."/confGood");
+		$conf->importFile(self::$path."/confGood");
 		$this->assertEquals("xx", $conf->lang);
-		$conf = new Conf(self::$vfs."/confGood");
+		$conf = new Conf(self::$path."/confGood");
 		$this->assertEquals("xx", $conf->lang);
 	}
 
@@ -58,7 +64,7 @@ VALID_CONFIGURATION_FILE;
      */
 	function testImportFileMissing() {
 		$this->assertException("fileMissing", "Conf");
-		$conf = new Conf(self::$vfs."/confMissing");
+		$conf = new Conf(self::$path."/confMissing");
 	}
 
 	/**
@@ -66,7 +72,7 @@ VALID_CONFIGURATION_FILE;
      */
 	function testImportFileUnreadable() {
 		$this->assertException("fileUnreadable", "Conf");
-		$conf = new Conf(self::$vfs."/confUnreadable");
+		$conf = new Conf(self::$path."/confUnreadable");
 	}
 
 	/**
@@ -74,7 +80,7 @@ VALID_CONFIGURATION_FILE;
      */
 	function testImportFileNotAnArray() {
 		$this->assertException("fileCorrupt", "Conf");
-		$conf = new Conf(self::$vfs."/confNotArray");
+		$conf = new Conf(self::$path."/confNotArray");
 	}
 
 	/**
@@ -83,7 +89,7 @@ VALID_CONFIGURATION_FILE;
 	function testImportFileNotPHP() {
 		$this->assertException("fileCorrupt", "Conf");
 		// this should not print the output of the non-PHP file
-		$conf = new Conf(self::$vfs."/confNotPHP");
+		$conf = new Conf(self::$path."/confNotPHP");
 	}
 
 	/**
@@ -92,6 +98,6 @@ VALID_CONFIGURATION_FILE;
 	function testImportFileCorrupt() {
 		$this->assertException("fileCorrupt", "Conf");
 		// this should not print the output of the non-PHP file
-		$conf = new Conf(self::$vfs."/confCorrupt");
+		$conf = new Conf(self::$path."/confCorrupt");
 	}
 }
