@@ -4,7 +4,6 @@ namespace JKingWeb\NewsSync;
 use \Webmozart\Glob\Glob;
 
 class Lang {
-	const PATH = BASE."locale".DIRECTORY_SEPARATOR;
 	const DEFAULT = "en";
 	const REQUIRED = [
 		'Exception.JKingWeb/NewsSync/Exception.uncoded'                     => 'The specified exception symbol {0} has no code specified in Exception.php',
@@ -16,6 +15,7 @@ class Lang {
 		'Exception.JKingWeb/NewsSync/Lang/Exception.stringInvalid' 			=> 'Message string "{msgID}" is not a valid ICU message string (language files loaded: {fileList})',
 	];
 
+	static public    $path = BASE."locale".DIRECTORY_SEPARATOR;
 	static protected $requirementsMet = false;
 	static protected $synched = false;
 	static protected $wanted = self::DEFAULT;
@@ -25,13 +25,16 @@ class Lang {
 
 	protected function __construct() {}
 
-	static public function set(string $locale = "", bool $immediate = false): string {
+	static public function set(string $locale, bool $immediate = false): string {
 		if(!self::$requirementsMet) self::checkRequirements();
-		if($locale=="") $locale = self::DEFAULT;
 		if($locale==self::$wanted) return $locale;
-		$list = self::listFiles();
-		if(!in_array(self::DEFAULT, $list)) throw new Lang\Exception("defaultFileMissing", self::DEFAULT);
-		self::$wanted = self::match($locale, $list);
+		if($locale != "") {
+			$list = self::listFiles();
+			if(!in_array(self::DEFAULT, $list)) throw new Lang\Exception("defaultFileMissing", self::DEFAULT);
+			self::$wanted = self::match($locale, $list);
+		} else {
+			self::$wanted = "";
+		}
 		self::$synched = false;
 		if($immediate) self::load();
 		return self::$wanted;
@@ -41,12 +44,15 @@ class Lang {
 		return (self::$locale=="") ? self::DEFAULT : self::$locale;
 	}
 
+	static public function dump(): array {
+		return self::$strings;
+	}
+
 	static public function msg(string $msgID, $vars = null): string {
 		// if we're trying to load the system default language and it fails, we have a chicken and egg problem, so we catch the exception and load no language file instead
 		if(!self::$synched) try {self::load();} catch(Lang\Exception $e) {
 			if(self::$wanted==self::DEFAULT) {
-				self::set();
-				self::load();
+				self::set("", true);
 			} else {
 				throw $e;
 			} 
@@ -64,9 +70,9 @@ class Lang {
 		return $msg;
 	}
 
-	static public function list(string $locale = "", string $path = self::PATH): array {
+	static public function list(string $locale = ""): array {
 		$out = [];
-		$files = self::listFiles($path);
+		$files = self::listFiles();
 		foreach($files as $tag) {
 			$out[$tag] = \Locale::getDisplayName($tag, ($locale=="") ? $tag : $locale); 		
 		}
@@ -85,10 +91,12 @@ class Lang {
 		return true;
 	}
 	
-	static protected function listFiles(string $path = self::PATH): array {
-		$out = Glob::glob($path."*.php");
+	static protected function listFiles(): array {
+		$out = glob(self::$path."*.php");
+		if(empty($out)) $out = Glob::glob(self::$path."*.php");
 		$out = array_map(function($file) {
-			$file = substr(str_replace(DIRECTORY_SEPARATOR, "/", $file),strrpos($file,"/")+1);
+			$file = str_replace(DIRECTORY_SEPARATOR, "/", $file);
+			$file = substr($file, strrpos($file, "/")+1);
 			return strtolower(substr($file,0,strrpos($file,".")));
 		},$out);
 		natsort($out);
@@ -96,21 +104,19 @@ class Lang {
 	}
 
 	static protected function load(): bool {
-		self::$synched = true;
 		if(!self::$requirementsMet) self::checkRequirements();
-		// if we've yet to request a locale, just load the fallback strings and return
+		// if we've requested no locale (""), just load the fallback strings and return
 		if(self::$wanted=="") {
 			self::$strings = self::REQUIRED;
 			self::$locale = self::$wanted;
+			self::$synched = true;
 			return true;
 		}
 		// decompose the requested locale from specific to general, building a list of files to load
 		$tags = \Locale::parseLocale(self::$wanted);
 		$files = [];
-		$loaded = [];
-		$strings = [];
 		while(sizeof($tags) > 0) {
-			$files[] = \Locale::composeLocale($tags);
+			$files[] = strtolower(\Locale::composeLocale($tags));
 			$tag = array_pop($tags);
 		}
 		// include the default locale as the base if the most general locale requested is not the default
@@ -124,15 +130,21 @@ class Lang {
 			$files[] = $file;
 		}
 		// if we need to load all files, start with the fallback strings
-		if($files==$loaded) $strings[] = self::REQUIRED;
+		$strings = [];
+		if($files==$loaded) {
+			$strings[] = self::REQUIRED;
+		} else {
+			// otherwise start with the strings we already have if we're going from e.g. "fr" to "fr_ca"
+			$strings[] = self::$strings;
+		}
 		// read files in reverse order
 		$files = array_reverse($files);
 		foreach($files as $file) {
-			if(!file_exists(self::PATH."$file.php")) throw new Lang\Exception("fileMissing", $file);
-			if(!is_readable(self::PATH."$file.php")) throw new Lang\Exception("fileUnreadable", $file);
+			if(!file_exists(self::$path."$file.php")) throw new Lang\Exception("fileMissing", $file);
+			if(!is_readable(self::$path."$file.php")) throw new Lang\Exception("fileUnreadable", $file);
 			try {
 				ob_start();
-				$arr = (include self::PATH."$file.php");
+				$arr = (include self::$path."$file.php");
 			} catch(\Throwable $e) {
 				$arr = null;
 			} finally {

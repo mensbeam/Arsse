@@ -2,10 +2,7 @@
 declare(strict_types=1);
 namespace JKingWeb\NewsSync;
 
-const BASE = __DIR__.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR;
-const NS_BASE = __NAMESPACE__."\\";
-
-require_once BASE."vendor".DIRECTORY_SEPARATOR."autoload.php";
+require_once __DIR__.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."bootstrap.php";
 
 trait TestingHelpers {
 	function assertException(string $msg, string $prefix = "", string $type = "Exception") {
@@ -20,5 +17,3 @@ trait TestingHelpers {
 		$this->expectExceptionCode($code);
 	}
 }
-
-ignore_user_abort(true);

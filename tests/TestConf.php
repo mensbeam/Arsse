@@ -19,9 +19,9 @@ class TestConf extends \PHPUnit\Framework\TestCase {
 			'confEmpty'      => '',
 			'confUnreadable' => '',
 		]);
-		self::$path = self::$vfs->url();
+		self::$path = self::$vfs->url()."/";
 		// set up a file without read access
-		chmod(self::$path."/confUnreadable", 0000);
+		chmod(self::$path."confUnreadable", 0000);
 	}
 
 	static function tearDownAfterClass() {
@@ -48,9 +48,9 @@ class TestConf extends \PHPUnit\Framework\TestCase {
      */
 	function testImportFile() {
 		$conf = new Conf();
-		$conf->importFile(self::$path."/confGood");
+		$conf->importFile(self::$path."confGood");
 		$this->assertEquals("xx", $conf->lang);
-		$conf = new Conf(self::$path."/confGood");
+		$conf = new Conf(self::$path."confGood");
 		$this->assertEquals("xx", $conf->lang);
 	}
 
@@ -59,7 +59,7 @@ class TestConf extends \PHPUnit\Framework\TestCase {
      */
 	function testImportFileMissing() {
 		$this->assertException("fileMissing", "Conf");
-		$conf = new Conf(self::$path."/confMissing");
+		$conf = new Conf(self::$path."confMissing");
 	}
 
 	/**
@@ -67,7 +67,7 @@ class TestConf extends \PHPUnit\Framework\TestCase {
      */
 	function testImportFileEmpty() {
 		$this->assertException("fileCorrupt", "Conf");
-		$conf = new Conf(self::$path."/confEmpty");
+		$conf = new Conf(self::$path."confEmpty");
 	}
 
 	/**
@@ -75,7 +75,7 @@ class TestConf extends \PHPUnit\Framework\TestCase {
      */
 	function testImportFileUnreadable() {
 		$this->assertException("fileUnreadable", "Conf");
-		$conf = new Conf(self::$path."/confUnreadable");
+		$conf = new Conf(self::$path."confUnreadable");
 	}
 
 	/**
@@ -83,7 +83,7 @@ class TestConf extends \PHPUnit\Framework\TestCase {
      */
 	function testImportFileNotAnArray() {
 		$this->assertException("fileCorrupt", "Conf");
-		$conf = new Conf(self::$path."/confNotArray");
+		$conf = new Conf(self::$path."confNotArray");
 	}
 
 	/**
@@ -92,7 +92,7 @@ class TestConf extends \PHPUnit\Framework\TestCase {
 	function testImportFileNotPHP() {
 		$this->assertException("fileCorrupt", "Conf");
 		// this should not print the output of the non-PHP file
-		$conf = new Conf(self::$path."/confNotPHP");
+		$conf = new Conf(self::$path."confNotPHP");
 	}
 
 	/**
@@ -101,6 +101,6 @@ class TestConf extends \PHPUnit\Framework\TestCase {
 	function testImportFileCorrupt() {
 		$this->assertException("fileCorrupt", "Conf");
 		// this should not print the output of the non-PHP file
-		$conf = new Conf(self::$path."/confCorrupt");
+		$conf = new Conf(self::$path."confCorrupt");
 	}
 }

@@ -18,7 +18,7 @@ class Exception extends \JKingWeb\NewsSync\Exception {
 				$code = self::CODES[$codeID];
 				$msg = "Exception.".str_replace("\\","/",__CLASS__).".$msgID";
 			}
-			\Exception::construct($msg, $code, $e);
+			\Exception::__construct($msg, $code, $e);
 		}
 	}
 }

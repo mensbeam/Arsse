@@ -4,7 +4,7 @@ namespace JKingWeb\NewsSync;
 use \org\bovigo\vfs\vfsStream;
 
 
-class TestLang extends \PHPUnit\Framework\TestCase {
+class TestLangComplex extends \PHPUnit\Framework\TestCase {
 	use TestingHelpers;
 
 	static $vfs;
@@ -49,51 +49,58 @@ class TestLang extends \PHPUnit\Framework\TestCase {
 		Lang::set(Lang::DEFAULT, true);
 	}
 
-	function testList() {
-		$this->assertCount(sizeof(self::$files), Lang::list("en"));
-	}
-
-	/**
-     * @depends testList
-     */
-	function testSet() {
-		$this->assertEquals("en", Lang::set("en"));
-		$this->assertEquals("en_ca", Lang::set("en_ca"));
-		$this->assertEquals("de", Lang::set("de_ch"));
-		$this->assertEquals("en", Lang::set("en_gb_hixie"));
-		$this->assertEquals("en_ca", Lang::set("en_ca_jking"));
-		$this->assertEquals("en", Lang::set("es"));
-		$this->assertEquals("", Lang::set(""));
-	}
-
-	/**
-     * @depends testSet
-     */
-	function testLoadInternalStrings() {
-		$this->assertEquals("", Lang::set("", true));
-		$this->assertCount(sizeof(Lang::REQUIRED), Lang::dump());
-	}
-
-	/**
-     * @depends testLoadInternalStrings
-     */
-	function testLoadDefaultStrings() {
-		$this->assertEquals(Lang::DEFAULT, Lang::set(Lang::DEFAULT, true));
-		$str = Lang::dump();
-		$this->assertArrayHasKey('Exception.JKingWeb/NewsSync/Exception.uncoded', $str);
-		$this->assertArrayHasKey('Test.presentText', $str);
-	}
-
-	/**
-     * @depends testLoadDefaultStrings
-     */
-	function testLoadMultipleFiles() {
+	function setUp() {
 		Lang::set(Lang::DEFAULT, true);
-		$this->assertEquals("ja", Lang::set("ja", true));
-		$str = Lang::dump();
-		$this->assertArrayHasKey('Exception.JKingWeb/NewsSync/Exception.uncoded', $str);
-		$this->assertArrayHasKey('Test.presentText', $str);
-		$this->assertArrayHasKey('Test.absentText', $str);
 	}
 
+	function testLoadLazy() {
+		Lang::set("ja");
+		$this->assertArrayNotHasKey('Test.absentText', Lang::dump());
+	}
+	
+	function testLoadCascade() {
+		Lang::set("ja", true);
+		$this->assertEquals("de", Lang::set("de", true));
+		$str = Lang::dump();
+		$this->assertArrayNotHasKey('Test.absentText', $str);
+		$this->assertEquals('und der Stein der Weisen', $str['Test.presentText']);
+	}
+
+	/**
+     * @depends testLoadCascade
+     */
+	function testLoadSubtag() {
+		$this->assertEquals("en_ca", Lang::set("en_ca", true));
+	}
+	
+	/**
+     * @depends testLoadSubtag
+     */
+	function testMessage() {
+		Lang::set("de", true);
+		$this->assertEquals('und der Stein der Weisen', Lang::msg('Test.presentText'));
+	}
+
+	/**
+     * @depends testMessage
+     */
+	function testMessageNumMSingle() {
+		Lang::set("en_ca", true);
+		$this->assertEquals('Default language file "en" missing', Lang::msg('Exception.JKingWeb/NewsSync/Lang/Exception.defaultFileMissing', Lang::DEFAULT));
+	}
+
+	/**
+     * @depends testMessage
+     */
+	function testMessageNumMulti() {
+		Lang::set("en_ca", true);
+		$this->assertEquals('Happy Rotter and the Philosopher\'s Stone', Lang::msg('Test.presentText', ['Happy Rotter', 'the Philosopher\'s Stone']));
+	}
+
+	/**
+     * @depends testMessage
+     */
+	function testMessageNamed() {
+		$this->assertEquals('Message string "Test.absentText" missing from all loaded language files (en)', Lang::msg('Exception.JKingWeb/NewsSync/Lang/Exception.stringMissing', ['msgID' => 'Test.absentText', 'fileList' => 'en']));
+	}
 }
