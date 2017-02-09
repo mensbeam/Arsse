@@ -46,6 +46,7 @@ class TestLangComplex extends \PHPUnit\Framework\TestCase {
 		self::$path = null;
 		self::$vfs = null;
 		self::$files = null;
+		Lang::set("", true);
 		Lang::set(Lang::DEFAULT, true);
 	}
 
