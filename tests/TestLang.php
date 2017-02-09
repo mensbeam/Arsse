@@ -19,11 +19,11 @@ class TestLang extends \PHPUnit\Framework\TestCase {
 			'en-us.php' => '<?php return ["Test.presentText" => "and the Sorcerer\'s Stone"];',
 			'fr.php'    => '<?php return ["Test.presentText" => "à l\'école des sorciers"];',
 			'ja.php'    => '<?php return ["Test.absentText"  => "賢者の石"];',
+			'de.php'    => '<?php return ["Test.presentText" => "und der Stein der Weisen"];',
 			// corrupt files
 			'it.php'    => '<?php return 0;',
 			'zh.php'    => '<?php return 0',
 			'ko.php'    => 'DEAD BEEF',
-			// empty file
 			'fr-ca.php' => '',
 			// unreadable file
 			'ru.php'    => '',
