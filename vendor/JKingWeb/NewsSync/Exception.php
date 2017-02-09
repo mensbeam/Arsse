@@ -6,7 +6,7 @@ class Exception extends \Exception {
 
 	const CODES = [
 		"Exception.uncoded"                     => -1,
-		"Exception.misc"						=> 10000,
+		"Exception.unknown"						=> 10000,
 		"Lang/Exception.defaultFileMissing"		=> 10101,
 		"Lang/Exception.fileMissing"			=> 10102,
 		"Lang/Exception.fileUnreadable"			=> 10103,
