@@ -41,8 +41,8 @@ class Exception extends \Exception {
 
 	public function __construct(string $msgID = "", $vars = null, \Throwable $e = null) {
 		if($msgID=="") {
-			$msg = "";
-			$code = 0;
+			$msg = "Exception.unknown";
+			$code = 10000;
 		} else {
 			$codeID = str_replace("\\", "/", str_replace(NS_BASE, "", get_called_class())).".$msgID";
 			if(!array_key_exists($codeID,self::CODES)) {

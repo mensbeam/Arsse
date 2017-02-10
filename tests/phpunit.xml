@@ -12,6 +12,7 @@
 <testsuite name="Localization and exceptions">
 	<file>TestLang.php</file>
 	<file>TestLangComplex.php</file>
+	<file>TestException.php</file>
 </testsuite>
 
 <testsuite name="Configuration loading and saving">

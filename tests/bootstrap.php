@@ -55,6 +55,6 @@ trait LanguageTestingHelpers {
 		self::$vfs = null;
 		self::$files = null;
 		Lang::set("", true);
-		Lang::set(Lang::DEFAULT, true);
+		Lang::set(Lang::DEFAULT);
 	}
 }
