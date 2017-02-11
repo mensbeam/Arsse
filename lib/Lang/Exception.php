@@ -2,7 +2,7 @@
 declare(strict_types=1);
 namespace JKingWeb\NewsSync\Lang;
 
-class Exception extends \JKingWeb\NewsSync\Exception {
+class Exception extends \JKingWeb\NewsSync\AbstractException {
 	static $test = false; // used during PHPUnit testing only
 
 	function __construct(string $msgID = "", $vars = null, \Throwable $e = null) {
