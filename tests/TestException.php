@@ -14,32 +14,57 @@ class TestException extends \PHPUnit\Framework\TestCase {
 		Lang::set(Lang::DEFAULT);
 	}
 	
-	function testBasic() {
+	function testBaseClass() {
 		$this->assertException("unknown");
 		throw new Exception("unknown");
 	}
 
 	/**
-     * @depends testBasic
+     * @depends testBaseClass
      */
-	function testPlain() {
+	function testBaseClassWithoutMessage() {
 		$this->assertException("unknown");
 		throw new Exception();
 	}
 	
 	/**
-     * @depends testBasic
+     * @depends testBaseClass
      */
-	function testNamespace() {
+	function testDerivedClass() {
 		$this->assertException("fileMissing", "Lang");
 		throw new Lang\Exception("fileMissing");
 	}
 
 	/**
-     * @depends testNamespace
+     * @depends testDerivedClass
      */
-	function testValues() {
+	function testDerivedClassWithMessageParameters() {
 		$this->assertException("fileMissing", "Lang");
 		throw new Lang\Exception("fileMissing", "en");
 	}
+
+	/**
+     * @depends testBaseClass
+     */
+	function testBaseClassWithUnknownCode() {
+		$this->assertException("uncoded");
+		throw new Exception("testThisExceptionMessageDoesNotExist");
+	}
+
+	/**
+     * @depends testBaseClass
+     */
+	function testBaseClassWithMissingMessage() {
+		$this->assertException("stringMissing", "Lang");
+		throw new Exception("invalid");
+	}
+
+	/**
+     * @depends testBaseClassWithUnknownCode
+     */
+	function testDerivedClassWithMissingMessage() {
+		$this->assertException("uncoded");
+		throw new Lang\Exception("testThisExceptionMessageDoesNotExist");
+	}
+	
 }

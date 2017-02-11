@@ -17,6 +17,19 @@ trait TestingHelpers {
 		$this->expectException($class);
 		$this->expectExceptionCode($code);
 	}
+	
+	function assertExc(string $msg, string $prefix = "", string $type = "Exception") {
+		$class = NS_BASE . ($prefix !== "" ? str_replace("/", "\\", $prefix) . "\\" : "") . $type;
+		$msgID = ($prefix !== "" ? $prefix . "/" : "") . $type. ".$msg";
+		if(array_key_exists($msgID, Exception::CODES)) {
+			$code = Exception::CODES[$msgID];
+		} else {
+			$code = 0;
+		}
+		echo $class."\n";
+		$this->expectException($class);
+		$this->expectExceptionCode($code);
+	}
 }
 
 trait LanguageTestingHelpers {
@@ -31,6 +44,7 @@ trait LanguageTestingHelpers {
 			'fr.php'    => '<?php return ["Test.presentText" => "à l\'école des sorciers"];',
 			'ja.php'    => '<?php return ["Test.absentText"  => "賢者の石"];',
 			'de.php'    => '<?php return ["Test.presentText" => "und der Stein der Weisen"];',
+			'pt_br.php' => '<?php return ["Test.presentText" => "e a Pedra Filosofal"];',
 			'vi.php'    => '<?php return [];',
 			// corrupt files
 			'it.php'    => '<?php return 0;',

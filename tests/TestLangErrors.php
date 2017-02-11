@@ -16,32 +16,37 @@ class TestLangErrors extends \PHPUnit\Framework\TestCase {
 		Lang::set("", true);
 	}
 
-	function testLoadFileEmpty() {
+	function testLoadEmptyFile() {
 		$this->assertException("fileCorrupt", "Lang");
 		Lang::set("fr_ca", true);
 	}
 
-	function testLoadFileNotAnArray() {
+	function testLoadFileWhichDoesNotReturnAnArray() {
 		$this->assertException("fileCorrupt", "Lang");
 		Lang::set("it", true);
 	}
 
-	function testLoadFileNotPhp() {
+	function testLoadFileWhichIsNotPhp() {
 		$this->assertException("fileCorrupt", "Lang");
 		Lang::set("ko", true);
 	}
 
-	function testLoadFileCorrupt() {
+	function testLoadFileWhichIsCorrupt() {
 		$this->assertException("fileCorrupt", "Lang");
 		Lang::set("zh", true);
 	}
 
-	function testLoadFileUnreadable() {
+	function testLoadFileWithooutReadPermission() {
 		$this->assertException("fileUnreadable", "Lang");
 		Lang::set("ru", true);
 	}
 
-	function testLoadDefaultMissing() {
+	function testLoadSubtagOfMissingLanguage() {
+		$this->assertException("fileMissing", "Lang");
+		Lang::set("pt_br", true);
+	}
+
+	function testLoadMissingDefaultLanguage() {
 		// this should be the last test of the series
 		unlink(self::$path.Lang::DEFAULT.".php");
 		$this->assertException("defaultFileMissing", "Lang");

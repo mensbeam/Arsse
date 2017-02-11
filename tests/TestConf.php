@@ -29,14 +29,14 @@ class TestConf extends \PHPUnit\Framework\TestCase {
 		self::$vfs = null;
 	}
 	
-	function testConstructor() {
+	function testLoadDefaultValues() {
 		$this->assertInstanceOf(Conf::class, new Conf());
 	}
     
 	/**
-     * @depends testConstructor
+     * @depends testLoadDefaultValues
      */
-	function testImportArray() {
+	function testImportFromArray() {
 		$arr = ['lang' => "xx"];
 		$conf = new Conf();
 		$conf->import($arr);
@@ -44,9 +44,9 @@ class TestConf extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-     * @depends testImportArray
+     * @depends testImportFromArray
      */
-	function testImportFile() {
+	function testImportFromFile() {
 		$conf = new Conf();
 		$conf->importFile(self::$path."confGood");
 		$this->assertEquals("xx", $conf->lang);
@@ -55,50 +55,50 @@ class TestConf extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-     * @depends testImportFile
+     * @depends testImportFromFile
      */
-	function testImportFileMissing() {
+	function testImportFromMissingFile() {
 		$this->assertException("fileMissing", "Conf");
 		$conf = new Conf(self::$path."confMissing");
 	}
 
 	/**
-     * @depends testImportFile
+     * @depends testImportFromFile
      */
-	function testImportFileEmpty() {
+	function testImportFromEmptyFile() {
 		$this->assertException("fileCorrupt", "Conf");
 		$conf = new Conf(self::$path."confEmpty");
 	}
 
 	/**
-     * @depends testImportFile
+     * @depends testImportFromFile
      */
-	function testImportFileUnreadable() {
+	function testImportFromFileWithoutReadPermission() {
 		$this->assertException("fileUnreadable", "Conf");
 		$conf = new Conf(self::$path."confUnreadable");
 	}
 
 	/**
-     * @depends testImportFile
+     * @depends testImportFromFile
      */
-	function testImportFileNotAnArray() {
+	function testImportFromFileWhichIsNotAnArray() {
 		$this->assertException("fileCorrupt", "Conf");
 		$conf = new Conf(self::$path."confNotArray");
 	}
 
 	/**
-     * @depends testImportFile
+     * @depends testImportFromFile
      */
-	function testImportFileNotPhp() {
+	function testImportFromFileWhichIsNotPhp() {
 		$this->assertException("fileCorrupt", "Conf");
 		// this should not print the output of the non-PHP file
 		$conf = new Conf(self::$path."confNotPHP");
 	}
 
 	/**
-     * @depends testImportFile
+     * @depends testImportFromFile
      */
-	function testImportFileCorrupt() {
+	function testImportFromCorruptFile() {
 		$this->assertException("fileCorrupt", "Conf");
 		// this should not print the output of the non-PHP file
 		$conf = new Conf(self::$path."confCorrupt");

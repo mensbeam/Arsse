@@ -16,12 +16,12 @@ class TestLangComplex extends \PHPUnit\Framework\TestCase {
 		Lang::set(Lang::DEFAULT, true);
 	}
 
-	function testLoadLazy() {
+	function testLazyLoad() {
 		Lang::set("ja");
 		$this->assertArrayNotHasKey('Test.absentText', Lang::dump());
 	}
 	
-	function testLoadCascade() {
+	function testLoadCascadeOfFiles() {
 		Lang::set("ja", true);
 		$this->assertEquals("de", Lang::set("de", true));
 		$str = Lang::dump();
@@ -30,54 +30,51 @@ class TestLangComplex extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-     * @depends testLoadCascade
+     * @depends testLoadCascadeOfFiles
      */
 	function testLoadSubtag() {
 		$this->assertEquals("en_ca", Lang::set("en_ca", true));
 	}
 	
-	/**
-     * @depends testLoadSubtag
-     */
-	function testMessage() {
+	function testFetchAMessage() {
 		Lang::set("de", true);
 		$this->assertEquals('und der Stein der Weisen', Lang::msg('Test.presentText'));
 	}
 
 	/**
-     * @depends testMessage
+     * @depends testFetchAMessage
      */
-	function testMessageNumSingle() {
+	function testFetchAMessageWithSingleNumericParameter() {
 		Lang::set("en_ca", true);
 		$this->assertEquals('Default language file "en" missing', Lang::msg('Exception.JKingWeb/NewsSync/Lang/Exception.defaultFileMissing', Lang::DEFAULT));
 	}
 
 	/**
-     * @depends testMessage
+     * @depends testFetchAMessage
      */
-	function testMessageNumMulti() {
+	function testFetchAMessageWithMultipleNumericParameters() {
 		Lang::set("en_ca", true);
 		$this->assertEquals('Happy Rotter and the Philosopher\'s Stone', Lang::msg('Test.presentText', ['Happy Rotter', 'the Philosopher\'s Stone']));
 	}
 
 	/**
-     * @depends testMessage
+     * @depends testFetchAMessage
      */
-	function testMessageNamed() {
+	function testFetchAMessageWithNamedParameters() {
 		$this->assertEquals('Message string "Test.absentText" missing from all loaded language files (en)', Lang::msg('Exception.JKingWeb/NewsSync/Lang/Exception.stringMissing', ['msgID' => 'Test.absentText', 'fileList' => 'en']));
 	}
 
 	/**
-     * @depends testMessage
+     * @depends testFetchAMessage
      */
-	function testReloadDefaults() {
+	function testReloadDefaultStrings() {
 		Lang::set("de", true);
 		Lang::set("en", true);
 		$this->assertEquals('and the Philosopher\'s Stone', Lang::msg('Test.presentText'));
 	}
 
 	/**
-     * @depends testMessage
+     * @depends testFetchAMessage
      */
 	function testReloadGeneralTagAfterSubtag() {
 		Lang::set("en", true);

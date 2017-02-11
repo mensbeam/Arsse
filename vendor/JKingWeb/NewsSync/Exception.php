@@ -6,6 +6,7 @@ class Exception extends \Exception {
 
 	const CODES = [
 		"Exception.uncoded"                     => -1,
+		"Exception.invalid"                     => 1, // this exception MUST NOT have a message string defined
 		"Exception.unknown"						=> 10000,
 		"Lang/Exception.defaultFileMissing"		=> 10101,
 		"Lang/Exception.fileMissing"			=> 10102,
@@ -46,9 +47,7 @@ class Exception extends \Exception {
 		} else {
 			$codeID = str_replace("\\", "/", str_replace(NS_BASE, "", get_called_class())).".$msgID";
 			if(!array_key_exists($codeID,self::CODES)) {
-				$code = -1;
-				$msg = "Exception.".str_replace("\\","/",__CLASS__).".uncoded";
-				$vars = $msgID;
+				throw new self("uncoded");
 			} else {
 				$code = self::CODES[$codeID];
 				$msg = "Exception.".str_replace("\\","/",get_called_class()).".$msgID";

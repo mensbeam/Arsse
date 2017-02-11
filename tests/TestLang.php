@@ -12,14 +12,14 @@ class TestLang extends \PHPUnit\Framework\TestCase {
 	static $files;
 	static $defaultPath;
 
-	function testList() {
+	function testListLanguages() {
 		$this->assertCount(sizeof(self::$files), Lang::list("en"));
 	}
 
 	/**
-     * @depends testList
+     * @depends testListLanguages
      */
-	function testSet() {
+	function testSetLanguage() {
 		$this->assertEquals("en", Lang::set("en"));
 		$this->assertEquals("en_ca", Lang::set("en_ca"));
 		$this->assertEquals("de", Lang::set("de_ch"));
@@ -30,7 +30,7 @@ class TestLang extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-     * @depends testSet
+     * @depends testSetLanguage
      */
 	function testLoadInternalStrings() {
 		$this->assertEquals("", Lang::set("", true));
@@ -40,7 +40,7 @@ class TestLang extends \PHPUnit\Framework\TestCase {
 	/**
      * @depends testLoadInternalStrings
      */
-	function testLoadDefaultStrings() {
+	function testLoadDefaultLanguage() {
 		$this->assertEquals(Lang::DEFAULT, Lang::set(Lang::DEFAULT, true));
 		$str = Lang::dump();
 		$this->assertArrayHasKey('Exception.JKingWeb/NewsSync/Exception.uncoded', $str);
@@ -48,9 +48,9 @@ class TestLang extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
-     * @depends testLoadDefaultStrings
+     * @depends testLoadDefaultLanguage
      */
-	function testLoadMultipleFiles() {
+	function testLoadSupplementaryLanguage() {
 		Lang::set(Lang::DEFAULT, true);
 		$this->assertEquals("ja", Lang::set("ja", true));
 		$str = Lang::dump();
