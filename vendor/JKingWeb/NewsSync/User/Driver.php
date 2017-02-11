@@ -6,18 +6,18 @@ Interface Driver {
 	const FUNC_NOT_IMPLEMENTED = 0;
 	const FUNC_INTERNAL = 1;
 	const FUNC_EXTERNAL = 2;
-	
+
 	const RIGHTS_NONE           = 0;
 	const RIGHTS_DOMAIN_MANAGER = 25;
 	const RIGHTS_DOMAIN_ADMIN   = 50;
 	const RIGHTS_GLOBAL_MANAGER = 75;
 	const RIGHTS_GLOBAL_ADMIN   = 100;
-	
+
 	static function create(\JKingWeb\NewsSync\RuntimeData $data): Driver;
 	static function driverName(): string;
 	function driverFunctions(string $function = null);
 	function auth(string $user, string $password): bool;
-	function authorize(string $affectedUser, string $action);
+	function authorize(string $affectedUser, string $action): bool;
 	function userExists(string $user): bool;
 	function userAdd(string $user, string $password = null): bool;
 	function userRemove(string $user): bool;
