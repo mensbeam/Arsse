@@ -31,6 +31,7 @@ trait LanguageTestingHelpers {
 			'fr.php'    => '<?php return ["Test.presentText" => "à l\'école des sorciers"];',
 			'ja.php'    => '<?php return ["Test.absentText"  => "賢者の石"];',
 			'de.php'    => '<?php return ["Test.presentText" => "und der Stein der Weisen"];',
+			'vi.php'    => '<?php return [];',
 			// corrupt files
 			'it.php'    => '<?php return 0;',
 			'zh.php'    => '<?php return 0',
@@ -40,12 +41,12 @@ trait LanguageTestingHelpers {
 			'ru.php'    => '',
 		];
 		self::$vfs = vfsStream::setup("langtest", 0777, self::$files);
-		self::$path = self::$vfs->url();
+		self::$path = self::$vfs->url()."/";
 		// set up a file without read access
-		chmod(self::$path."/ru.php", 0000);
+		chmod(self::$path."ru.php", 0000);
 		// make the Lang class use the vfs files
 		self::$defaultPath = Lang::$path;
-		Lang::$path = self::$path."/";
+		Lang::$path = self::$path;
 	}
 
 	static function tearDownAfterClass() {

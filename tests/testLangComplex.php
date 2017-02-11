@@ -47,7 +47,7 @@ class TestLangComplex extends \PHPUnit\Framework\TestCase {
 	/**
      * @depends testMessage
      */
-	function testMessageNumMSingle() {
+	function testMessageNumSingle() {
 		Lang::set("en_ca", true);
 		$this->assertEquals('Default language file "en" missing', Lang::msg('Exception.JKingWeb/NewsSync/Lang/Exception.defaultFileMissing', Lang::DEFAULT));
 	}
@@ -65,5 +65,25 @@ class TestLangComplex extends \PHPUnit\Framework\TestCase {
      */
 	function testMessageNamed() {
 		$this->assertEquals('Message string "Test.absentText" missing from all loaded language files (en)', Lang::msg('Exception.JKingWeb/NewsSync/Lang/Exception.stringMissing', ['msgID' => 'Test.absentText', 'fileList' => 'en']));
+	}
+
+	/**
+     * @depends testMessage
+     */
+	function testReloadDefaults() {
+		Lang::set("de", true);
+		Lang::set("en", true);
+		$this->assertEquals('and the Philosopher\'s Stone', Lang::msg('Test.presentText'));
+	}
+
+	/**
+     * @depends testMessage
+     */
+	function testReloadGeneralTagAfterSubtag() {
+		Lang::set("en", true);
+		Lang::set("en_us", true);
+		$this->assertEquals('and the Sorcerer\'s Stone', Lang::msg('Test.presentText'));
+		Lang::set("en", true);
+		$this->assertEquals('and the Philosopher\'s Stone', Lang::msg('Test.presentText'));
 	}
 }

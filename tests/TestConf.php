@@ -89,7 +89,7 @@ class TestConf extends \PHPUnit\Framework\TestCase {
 	/**
      * @depends testImportFile
      */
-	function testImportFileNotPHP() {
+	function testImportFileNotPhp() {
 		$this->assertException("fileCorrupt", "Conf");
 		// this should not print the output of the non-PHP file
 		$conf = new Conf(self::$path."confNotPHP");

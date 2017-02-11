@@ -7,12 +7,14 @@
 	convertWarningsToExceptions="true"
 	beStrictAboutTestsThatDoNotTestAnything="true"
 	beStrictAboutOutputDuringTests="true"
-	beStrictAboutTestSize="true">
+	beStrictAboutTestSize="true"
+	stopOnError="true">
 
 <testsuite name="Localization and exceptions">
 	<file>TestLang.php</file>
 	<file>TestLangComplex.php</file>
 	<file>TestException.php</file>
+	<file>TestLangErrors.php</file>
 </testsuite>
 
 <testsuite name="Configuration loading and saving">

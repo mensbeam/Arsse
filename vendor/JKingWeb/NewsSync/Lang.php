@@ -94,6 +94,7 @@ class Lang {
 	
 	static protected function listFiles(): array {
 		$out = glob(self::$path."*.php");
+		// built-in glob doesn't work with vfsStream (and this other glob doesn't seem to work with Windows paths), so we try both
 		if(empty($out)) $out = Glob::glob(self::$path."*.php");
 		$out = array_map(function($file) {
 			$file = str_replace(DIRECTORY_SEPARATOR, "/", $file);
