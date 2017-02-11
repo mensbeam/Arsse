@@ -1,6 +1,5 @@
 #dependencies
 vendor
-composer.lock
 
 #temp files
 cache/*
