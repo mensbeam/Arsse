@@ -1,6 +1,5 @@
 #dependencies
 vendor
-!vendor/jkingweb/newssync
 composer.lock
 
 #temp files
