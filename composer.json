@@ -19,7 +19,6 @@
 	],
 	"require": {
 		"php": "^7.0.0",
-		"simplepie/simplepie": "^1.4.3",
 		"jkingweb/druuid": "^3.0.0",
 		"phpseclib/phpseclib": "^2.0.4",
 		"webmozart/glob": "^4.1.0"
@@ -30,6 +29,11 @@
 	"autoload": {
 		"psr-4": {
 			"JKingWeb\\NewsSync\\": "lib/"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"JKingWeb\\NewsSync\\Test\\": "tests/lib/"
 		}
 	}
 }

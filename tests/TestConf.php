@@ -5,7 +5,7 @@ use \org\bovigo\vfs\vfsStream;
 
 
 class TestConf extends \PHPUnit\Framework\TestCase {
-	use TestingHelpers;
+	use Test\Tools;
 	
 	static $vfs;
 	static $path;
@@ -100,7 +100,6 @@ class TestConf extends \PHPUnit\Framework\TestCase {
      */
 	function testImportFromCorruptFile() {
 		$this->assertException("fileCorrupt", "Conf");
-		// this should not print the output of the non-PHP file
 		$conf = new Conf(self::$path."confCorrupt");
 	}
 }

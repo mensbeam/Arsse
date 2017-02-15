@@ -4,7 +4,7 @@ namespace JKingWeb\NewsSync;
 
 
 class TestException extends \PHPUnit\Framework\TestCase {
-	use TestingHelpers;
+	use Test\Tools;
 
 	static function setUpBeforeClass() {
 		Lang::set("");

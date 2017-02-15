@@ -5,7 +5,7 @@ use \org\bovigo\vfs\vfsStream;
 
 
 class TestLangComplex extends \PHPUnit\Framework\TestCase {
-	use TestingHelpers, LanguageTestingHelpers;
+	use Test\Tools, Test\Lang\Setup;
 
 	static $vfs;
 	static $path;

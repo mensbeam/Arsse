@@ -1,28 +1,14 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync;
-require_once __DIR__.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."bootstrap.php";
+namespace JKingWeb\NewsSync\Test\Lang;
+use \org\bovigo\vfs\vfsStream, \JKingWeb\NewsSync\Lang;
 
-use \org\bovigo\vfs\vfsStream;
 
-trait TestingHelpers {
-	function assertException(string $msg, string $prefix = "", string $type = "Exception") {
-		$class = NS_BASE . ($prefix !== "" ? str_replace("/", "\\", $prefix) . "\\" : "") . $type;
-		$msgID = ($prefix !== "" ? $prefix . "/" : "") . $type. ".$msg";
-		if(array_key_exists($msgID, Exception::CODES)) {
-			$code = Exception::CODES[$msgID];
-		} else {
-			$code = 0;
-		}
-		$this->expectException($class);
-		$this->expectExceptionCode($code);
-	}
-}
 
-trait LanguageTestingHelpers {
+trait Setup {
 	static function setUpBeforeClass() {
 		// this is required to keep from having exceptions in Lang::msg() in turn calling Lang::msg() and looping
-		Lang\Exception::$test = true;
+		\JKingWeb\NewsSync\Lang\Exception::$test = true;
 		// test files
 		self::$files = [
 			'en.php'    => '<?php return ["Test.presentText" => "and the Philosopher\'s Stone"];',
@@ -51,7 +37,7 @@ trait LanguageTestingHelpers {
 	}
 
 	static function tearDownAfterClass() {
-		Lang\Exception::$test = false;
+		\JKingWeb\NewsSync\Lang\Exception::$test = false;
 		Lang::$path = self::$defaultPath;
 		self::$path = null;
 		self::$vfs = null;
