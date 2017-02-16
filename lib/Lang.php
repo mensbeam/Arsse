@@ -4,8 +4,8 @@ namespace JKingWeb\NewsSync;
 use \Webmozart\Glob\Glob;
 
 class Lang {
-    const DEFAULT = "en";
-    const REQUIRED = [
+    const DEFAULT = "en"; // fallback locale
+    const REQUIRED = [    // collection of absolutely required strings to handle pathological errors
         'Exception.JKingWeb/NewsSync/Exception.uncoded'                     => 'The specified exception symbol {0} has no code specified in Exception.php',
         'Exception.JKingWeb/NewsSync/Exception.unknown'                     => 'An unknown error has occurred',
         'Exception.JKingWeb/NewsSync/Lang/Exception.defaultFileMissing'     => 'Default language file "{0}" missing',
@@ -16,33 +16,42 @@ class Lang {
         'Exception.JKingWeb/NewsSync/Lang/Exception.stringInvalid'          => 'Message string "{msgID}" is not a valid ICU message string (language files loaded: {fileList})',
     ];
 
-    static public    $path = BASE."locale".DIRECTORY_SEPARATOR;
-    static protected $requirementsMet = false;
-    static protected $synched = false;
-    static protected $wanted = self::DEFAULT;
-    static protected $locale = "";
-    static protected $loaded = [];
-    static protected $strings = self::REQUIRED;
+    static public    $path = BASE."locale".DIRECTORY_SEPARATOR; // path to locale files; this is a public property to facilitate unit testing
+    static protected $requirementsMet = false;                  // whether the Intl extension is loaded
+    static protected $synched = false;                          // whether the wanted locale is actually loaded (lazy loading is used by default)
+    static protected $wanted = self::DEFAULT;                   // the currently requested locale
+    static protected $locale = "";                              // the currently loaded locale
+    static protected $loaded = [];                              // the cascade of loaded locale file names
+    static protected $strings = self::REQUIRED;                 // the loaded locale strings, merged
 
     protected function __construct() {}
 
     static public function set(string $locale, bool $immediate = false): string {
+        // make sure the Intl extension is loaded
         if(!self::$requirementsMet) self::checkRequirements();
-        if($locale==self::$wanted) return $locale;
+        // if requesting the same locale as already wanted, just return (but load first if we've requested an immediate load)
+        if($locale==self::$wanted) {
+            if($immediate && !self::$synched) self::load();
+            return $locale;
+        }
+        // if we've requested a locale other than the null locale, fetch the list of available files and find the closest match e.g. en_ca_somedialect -> en_ca
         if($locale != "") {
             $list = self::listFiles();
+            // if the default locale is unavailable, this is (for now) an error
             if(!in_array(self::DEFAULT, $list)) throw new Lang\Exception("defaultFileMissing", self::DEFAULT);
             self::$wanted = self::match($locale, $list);
         } else {
             self::$wanted = "";
         }
         self::$synched = false;
+        // load right now if asked to, otherwise load later when actually required
         if($immediate) self::load();
         return self::$wanted;
     }
 
-    static public function get(): string {
-        return (self::$locale=="") ? self::DEFAULT : self::$locale;
+    static public function get(bool $loaded = false): string {
+        // we can either return the wanted locale (default) or the currently loaded locale
+        return $loaded ? self::$locale : self::$wanted;
     }
 
     static public function dump(): array {
@@ -58,11 +67,14 @@ class Lang {
                 throw $e;
             }
         }
+        // if the requested message is not present in any of the currently loaded language files, throw an exception
+        // note that this is indicative of a programming error since the default locale should have all strings
         if(!array_key_exists($msgID, self::$strings)) throw new Lang\Exception("stringMissing", ['msgID' => $msgID, 'fileList' => implode(", ",self::$loaded)]);
-        // variables fed to MessageFormatter must be contained in array
         $msg = self::$strings[$msgID];
+        // variables fed to MessageFormatter must be contained in an array
         if($vars===null) {
-            return $msg;
+            // even though strings not given parameters will not get formatted, we do not optimize this case away: we still want to catch invalid strings
+            $vars = [];
         } else if(!is_array($vars)) {
             $vars = [$vars];
         }
@@ -95,12 +107,14 @@ class Lang {
     static protected function listFiles(): array {
         $out = glob(self::$path."*.php");
         // built-in glob doesn't work with vfsStream (and this other glob doesn't seem to work with Windows paths), so we try both
-        if(empty($out)) $out = Glob::glob(self::$path."*.php");
+        if(empty($out)) $out = Glob::glob(self::$path."*.php"); // FIXME: we should just mock glob() in tests instead and make this a dev dependency
+        // trim the returned file paths to return just the language tag
         $out = array_map(function($file) {
             $file = str_replace(DIRECTORY_SEPARATOR, "/", $file);
             $file = substr($file, strrpos($file, "/")+1);
             return strtolower(substr($file,0,strrpos($file,".")));
         },$out);
+        // sort the results
         natsort($out);
         return $out;
     }
@@ -145,6 +159,7 @@ class Lang {
             if(!file_exists(self::$path."$file.php")) throw new Lang\Exception("fileMissing", $file);
             if(!is_readable(self::$path."$file.php")) throw new Lang\Exception("fileUnreadable", $file);
             try {
+                // we use output buffering in case the language file is corrupted
                 ob_start();
                 $arr = (include self::$path."$file.php");
             } catch(\Throwable $e) {
@@ -159,6 +174,7 @@ class Lang {
         self::$strings = call_user_func_array("array_replace_recursive", $strings);
         self::$loaded = $loaded;
         self::$locale = self::$wanted;
+        self::$synched = true;
         return true;
     }
 }

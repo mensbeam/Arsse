@@ -18,7 +18,8 @@ trait Setup {
             'ja.php'    => '<?php return ["Test.absentText"  => "賢者の石"];',
             'de.php'    => '<?php return ["Test.presentText" => "und der Stein der Weisen"];',
             'pt_br.php' => '<?php return ["Test.presentText" => "e a Pedra Filosofal"];',
-            'vi.php'    => '<?php return [];',
+            // corrupted message in valid file
+            'vi.php'    => '<?php return ["Test.presentText" => "{0} and {1"];',
             // corrupt files
             'it.php'    => '<?php return 0;',
             'zh.php'    => '<?php return 0',

@@ -21,6 +21,15 @@ class TestLangComplex extends \PHPUnit\Framework\TestCase {
         $this->assertArrayNotHasKey('Test.absentText', Lang::dump());
     }
     
+    /**
+     * @depends testLazyLoad
+     */
+    function testGetWantedAndLoadedLocale() {
+        Lang::set("ja");
+        $this->assertEquals("ja", Lang::get());
+        $this->assertEquals("en", Lang::get(true));
+    }
+    
     function testLoadCascadeOfFiles() {
         Lang::set("ja", true);
         $this->assertEquals("de", Lang::set("de", true));
@@ -39,6 +48,14 @@ class TestLangComplex extends \PHPUnit\Framework\TestCase {
     function testFetchAMessage() {
         Lang::set("de", true);
         $this->assertEquals('und der Stein der Weisen', Lang::msg('Test.presentText'));
+    }
+
+    /**
+     * @depends testFetchAMessage
+     */
+    function testFetchAMessageWithMissingParameters() {
+        Lang::set("en_ca", true);
+        $this->assertEquals('{0} and {1}', Lang::msg('Test.presentText'));
     }
 
     /**

@@ -13,6 +13,7 @@ abstract class AbstractException extends \Exception {
         "Lang/Exception.fileUnreadable"         => 10103,
         "Lang/Exception.fileCorrupt"            => 10104,
         "Lang/Exception.stringMissing"          => 10105,
+        "Lang/Exception.stringInvalid"          => 10106,
         "Db/Exception.extMissing"               => 10201,
         "Db/Exception.fileMissing"              => 10202,
         "Db/Exception.fileUnusable"             => 10203,
