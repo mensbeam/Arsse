@@ -7,6 +7,7 @@ create table newssync_feeds(
 	source TEXT,																							-- URL of site to which the feed belongs
 	updated datetime,																						-- time at which the feed was last fetched
 	modified datetime,																						-- time at which the feed last actually changed
+	etag TEXT,																								-- HTTP ETag hash used for cache validation, changes each time the content changes
 	err_count integer not null default 0,																	-- count of successive times update resulted in error since last successful update
 	err_msg TEXT,																							-- last error message
 	username TEXT not null default '',																		-- HTTP authentication username
@@ -22,12 +23,12 @@ create table newssync_articles(
 	title TEXT,																								-- article title
 	author TEXT,																							-- author's name
 	published datetime,																						-- time of original publication
-	edited datetime,																						-- time of last edit 
-	guid TEXT,																								-- GUID 
+	edited datetime,																						-- time of last edit
+	guid TEXT,																								-- GUID
 	content TEXT,																							-- content, as (X)HTML
 	modified datetime not null default CURRENT_TIMESTAMP,													-- date when article properties were last modified
-	hash varchar(64) not null,																				-- ownCloud hash 
-	fingerprint varchar(64) not null,																		-- ownCloud fingerprint 
+	hash varchar(64) not null,																				-- ownCloud hash
+	fingerprint varchar(64) not null,																		-- ownCloud fingerprint
 	enclosures_hash varchar(64),																			-- hash of enclosures, if any; since enclosures are not uniquely identified, we need to know when they change
 	tags_hash varchar(64)																					-- hash of RSS/Atom categories included in article; since these categories are not uniquely identified, we need to know when they change
 );
@@ -103,7 +104,7 @@ create table newssync_subscription_articles(
 create table newssync_labels(
 	sub_article integer not null references newssync_subscription_articles(id) on delete cascade,			--
 	owner TEXT not null references newssync_users(id) on delete cascade on update cascade,
-	name TEXT 
+	name TEXT
 );
 create index newssync_label_names on newssync_labels(name);
 
