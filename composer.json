@@ -1,40 +1,40 @@
 {
-	"name": "jkingweb/arsse",
-	"type": "library",
-	"description": "TODO",
-	"keywords": ["rss"],
-	"license": "MIT",
-	"authors": [
-		{
-			"name": "J. King",
-			"email": "jking@jkingweb.ca",
-			"homepage": "https://jkingweb.ca/"
-		},
-		{
-			"name": "Dustin Wilson",
-			"email": "dustin@dustinwilson.com",
-			"homepage": "https://dustinwilson.com/"
-		}
+    "name": "jkingweb/arsse",
+    "type": "library",
+    "description": "TODO",
+    "keywords": ["rss"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "J. King",
+            "email": "jking@jkingweb.ca",
+            "homepage": "https://jkingweb.ca/"
+        },
+        {
+            "name": "Dustin Wilson",
+            "email": "dustin@dustinwilson.com",
+            "homepage": "https://dustinwilson.com/"
+        }
 
-	],
-	"require": {
-		"php": "^7.0.0",
-		"jkingweb/druuid": "^3.0.0",
-		"phpseclib/phpseclib": "^2.0.4",
-		"webmozart/glob": "^4.1.0",
-		"fguillot/picoFeed": ">=0.1.31"
-	},
-	"require-dev": {
-		"mikey179/vfsStream": "^1.6.4"
-	},
-	"autoload": {
-		"psr-4": {
-			"JKingWeb\\NewsSync\\": "lib/"
-		}
-	},
-	"autoload-dev": {
-		"psr-4": {
-			"JKingWeb\\NewsSync\\Test\\": "tests/lib/"
-		}
-	}
+    ],
+    "require": {
+        "php": "^7.0.0",
+        "jkingweb/druuid": "^3.0.0",
+        "phpseclib/phpseclib": "^2.0.4",
+        "webmozart/glob": "^4.1.0",
+        "fguillot/picoFeed": ">=0.1.31"
+    },
+    "require-dev": {
+        "mikey179/vfsStream": "^1.6.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "JKingWeb\\NewsSync\\": "lib/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "JKingWeb\\NewsSync\\Test\\": "tests/lib/"
+        }
+    }
 }

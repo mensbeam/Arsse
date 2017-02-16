@@ -1,23 +1,23 @@
 <?xml version="1.0"?>
 <phpunit
-	colors="true"
-	bootstrap="../bootstrap.php"
-	convertErrorsToExceptions="true"
-	convertNoticesToExceptions="true"
-	convertWarningsToExceptions="true"
-	beStrictAboutTestsThatDoNotTestAnything="true"
-	beStrictAboutOutputDuringTests="true"
-	beStrictAboutTestSize="true"
-	stopOnError="true">
+    colors="true"
+    bootstrap="../bootstrap.php"
+    convertErrorsToExceptions="true"
+    convertNoticesToExceptions="true"
+    convertWarningsToExceptions="true"
+    beStrictAboutTestsThatDoNotTestAnything="true"
+    beStrictAboutOutputDuringTests="true"
+    beStrictAboutTestSize="true"
+    stopOnError="true">
 
 <testsuite name="Localization and exceptions">
-	<file>TestLang.php</file>
-	<file>TestLangComplex.php</file>
-	<file>TestException.php</file>
-	<file>TestLangErrors.php</file>
+    <file>TestLang.php</file>
+    <file>TestLangComplex.php</file>
+    <file>TestException.php</file>
+    <file>TestLangErrors.php</file>
 </testsuite>
 
 <testsuite name="Configuration loading and saving">
-	<file>TestConf.php</file>
+    <file>TestConf.php</file>
 </testsuite>
 </phpunit>
