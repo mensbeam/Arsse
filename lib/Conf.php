@@ -5,7 +5,7 @@ namespace JKingWeb\NewsSync;
 class Conf {
 	public $lang 					= "en";
 	
-	public $dbDriver				= NS_BASE."Db\\DriverSQLite3";
+	public $dbDriver				= Db\DriverSQLite3::class;
 	public $dbSQLite3File 			= BASE."newssync.db";
 	public $dbSQLite3Key 			= "";
 	public $dbSQLite3AutoUpd 		= true;
@@ -23,7 +23,7 @@ class Conf {
 	public $dbMySQLDb 				= "newssync";
 	public $dbMySQLAutoUpd 			= false;
 
-	public $userDriver 				= NS_BASE."User\\DriverInternal";
+	public $userDriver 				= User\DriverInternal::class;
 	public $userAuthPreferHTTP 		= false;
 	public $userComposeNames 		= true;
 
