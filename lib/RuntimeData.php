@@ -5,7 +5,7 @@ namespace JKingWeb\NewsSync;
 class RuntimeData {
     public $conf;
     public $db;
-    public $auth;
+    public $user;
 
     public function __construct(Conf $conf) {
         $this->conf = $conf;

@@ -1,5 +1,7 @@
 <?php
 return [
+    'Driver.User.Internal.Name'                                        => 'Internal',
+    
     'Exception.JKingWeb/NewsSync/Exception.uncoded'                     => 'The specified exception symbol {0} has no code specified in Exception.php',
     //this should not usually be encountered
     'Exception.JKingWeb/NewsSync/Exception.unknown'                     => 'An unknown error has occurred',

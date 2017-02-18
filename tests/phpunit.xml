@@ -11,13 +11,18 @@
     stopOnError="true">
 
 <testsuite name="Localization and exceptions">
-    <file>TestLang.php</file>
-    <file>TestLangComplex.php</file>
-    <file>TestException.php</file>
-    <file>TestLangErrors.php</file>
+    <file>Lang/TestLang.php</file>
+    <file>Lang/TestLangComplex.php</file>
+    <file>Lang/TestException.php</file>
+    <file>Lang/TestLangErrors.php</file>
 </testsuite>
 
 <testsuite name="Configuration loading and saving">
-    <file>TestConf.php</file>
+    <file>Conf/TestConf.php</file>
 </testsuite>
+
+<testsuite name="User management">
+    <file>User/TestUser.php</file>
+</testsuite>
+
 </phpunit>

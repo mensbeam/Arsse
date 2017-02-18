@@ -1,8 +1,9 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\NewsSync\User;
+use JKingWeb\NewsSync\Lang;
 
-class DriverInternal implements Driver {
+final class DriverInternal implements Driver {
     use InternalFunctions;
 
     protected $data;
@@ -25,13 +26,9 @@ class DriverInternal implements Driver {
         return new static($data);
     }
 
-    public function __construct(\JKingWeb\NewsSync\RuntimeData $data) {
-        $this->data = $data;
-        $this->db = $this->data->db;
-    }
-
     static public function driverName(): string {
-        return "Internal";
+        $name = str_replace(Driver::class, "", static::class);
+        return Lang::msg("Driver.User.$name.Name");
     }
 
     public function driverFunctions(string $function = null) {
@@ -42,4 +39,6 @@ class DriverInternal implements Driver {
             return Driver::FUNC_NOT_IMPLEMENTED;
         }
     }
+
+    // see InternalFunctions.php for bulk of methods
 }

@@ -4,7 +4,12 @@ namespace JKingWeb\NewsSync\User;
 
 trait InternalFunctions {    
     protected $actor = [];
-    
+
+    public function __construct(\JKingWeb\NewsSync\RuntimeData $data) {
+        $this->data = $data;
+        $this->db = $this->data->db;
+    }
+
     function auth(string $user, string $password): bool {
         if(!$this->data->user->exists($user)) return false;
         $hash = $this->db->userPasswordGet($user);
