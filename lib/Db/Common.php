@@ -5,7 +5,7 @@ use JKingWeb\DrUUID\UUID as UUID;
 
 Trait Common {
     protected $transDepth = 0;
-    
+
     public function schemaVersion(): int {
         try {
             return $this->data->db->settingGet("schema_version");
@@ -13,7 +13,7 @@ Trait Common {
             return 0;
         }
     }
-    
+
     public function begin(): bool {
         $this->exec("SAVEPOINT newssync_".($this->transDepth));
         $this->transDepth += 1;
@@ -27,7 +27,7 @@ Trait Common {
             $this->transDepth -= 1;
         } else {
             $this->exec("COMMIT TRANSACTION");
-            $this->transDepth = 0;    
+            $this->transDepth = 0;
         }
         return true;
     }
@@ -70,4 +70,13 @@ Trait Common {
         return $this->prepareArray($query, $paramType);
     }
 
+    public static function formatDate(string $date): string {
+        // Force UTC.
+        $timezone = date_default_timezone_get();
+        date_default_timezone_set('UTC');
+        // ISO 8601 with space in the middle instead of T.
+        $date = date('Y-m-d h:i:sP', strtotime($date));
+        date_default_timezone_set($timezone);
+        return $date;
+    }
 }

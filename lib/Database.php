@@ -3,13 +3,17 @@ declare(strict_types=1);
 namespace JKingWeb\NewsSync;
 
 class Database {
+    use PicoFeed\Reader\Reader;
+    use PicoFeed\PicoFeedException;
+
     const SCHEMA_VERSION = 1;
     const FORMAT_TS      = "Y-m-d h:i:s";
     const FORMAT_DATE    = "Y-m-d";
     const FORMAT_TIME    = "h:i:s";
-    
+
     protected $data;
     public    $db;
+    private   $driver;
 
     protected function cleanName(string $name): string {
         return (string) preg_filter("[^0-9a-zA-Z_\.]", "", $name);
@@ -17,8 +21,8 @@ class Database {
 
     public function __construct(RuntimeData $data) {
         $this->data = $data;
-        $driver = $data->conf->dbDriver;
-        $this->db = $driver::create($data, INSTALL);
+        $this->driver = $data->conf->dbDriver;
+        $this->db = $this->driver::create($data, INSTALL);
         $ver = $this->db->schemaVersion();
         if(!INSTALL && $ver < self::SCHEMA_VERSION) {
             $this->db->update(self::SCHEMA_VERSION);
@@ -36,7 +40,7 @@ class Database {
                 if(class_exists($name)) {
                     $classes[$name] = $name::driverName();
                 }
-            }             
+            }
         }
         return $classes;
     }
@@ -72,12 +76,12 @@ class Database {
             switch(gettype($in)) {
                 case "boolean":         $type = "bool"; break;
                 case "integer":         $type = "int"; break;
-                case "double":             $type = "numeric"; break;
+                case "double":          $type = "numeric"; break;
                 case "string":
-                case "array":             $type = "json"; break;
+                case "array":           $type = "json"; break;
                 case "resource":
                 case "unknown type":
-                case "NULL":             $type = "null"; break;
+                case "NULL":            $type = "null"; break;
                 case "object":
                     if($in instanceof DateTimeInterface) {
                         $type = "timestamp";
@@ -85,7 +89,7 @@ class Database {
                         $type = "text";
                     }
                     break;
-                default:                 $type = 'null'; break;
+                default:                $type = 'null'; break;
             }
         }
         $type = strtolower($type);
@@ -113,7 +117,7 @@ class Database {
                     $value = json_encode($in);
                 } else {
                     $value =& $in;
-                } 
+                }
                 break;
             case "datetime":
                 $type = "timestamp";
@@ -201,13 +205,13 @@ class Database {
         }
         return $out;
     }
-    
+
     public function userPasswordGet(string $user): string {
         if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         if(!$this->userExists($user)) return "";
         return (string) $this->db->prepare("SELECT password from newssync_users where id is ?", "str")->run($user)->getSingle();
     }
-    
+
     public function userPasswordSet(string $user, string $password = null): bool {
         if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         if(!$this->userExists($user)) return false;
@@ -226,13 +230,13 @@ class Database {
     public function userPropertiesSet(string $user, array &$properties): array {
         if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         $valid = [ // FIXME: add future properties
-            "name" => "str", 
+            "name" => "str",
         ];
         if(!$this->userExists($user)) return [];
         $this->db->begin();
         foreach($valid as $prop => $type) {
             if(!array_key_exists($prop, $properties)) continue;
-            $this->db->prepare("UPDATE newssync_users set $prop = ? where id is ?", $type, "str")->run($properties[$prop], $user); 
+            $this->db->prepare("UPDATE newssync_users set $prop = ? where id is ?", $type, "str")->run($properties[$prop], $user);
         }
         $this->db->commit();
         return $this->userPropertiesGet($user);
@@ -251,15 +255,55 @@ class Database {
     }
 
     public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = ""): int {
-        if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
+        // If the user isn't authorized to perform this action then throw an exception.
+        if (!$this->data->user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        // If the user doesn't exist throw an exception.
+        if (!$this->userExists($user)) {
+            throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
+        }
+
         $this->db->begin();
+
+        // If the feed doesn't already exist in the database then add it to the database after determining its validity with picoFeed
         $qFeed = $this->db->prepare("SELECT id from newssync_feeds where url is ? and username is ? and password is ?", "str", "str", "str");
         $feed = $qFeed->run($url, $fetchUser, $fetchPassword)->getSingle();
-        if($feed===null) {
-            $this->db->prepare("INSERT INTO newssync_feeds(url,username,password) values(?,?,?)", "str", "str", "str")->run($url, $fetchUser, $fetchPassword);
+        if ($feed === null) {
+            try {
+                $reader = new Reader;
+                $resource = $reader->download($url);
+
+                $parser = $reader->getParser(
+                    $resource->getUrl(),
+                    $resource->getContent(),
+                    $resource->getEncoding()
+                );
+
+                $feed = $parser->execute();
+            } catch (PicoFeedException $e) {
+                // If there's any error while trying to download or parse the feed then return an exception
+                throw new Feed\Exception($url, $e);
+            }
+
+            $this->db->prepare("INSERT INTO newssync_feeds(url,title,favicon,source,updated,modified,etag,username,password) values(?,?,?)", "str", "str", "str", "str", "str", "str", "str", "str", "str")->run(
+                $url,
+                $feed->title,
+                // Grab the favicon for the feed. Returns an empty string if it cannot find one
+                (new PicoFeed\Reader\Favicon)->find($url),
+                $feed->siteUrl,
+                // Convert the date formats to ISO 8601 before inserting
+                $driver::formatDate($feed->date),
+                $driver::formatDate($resource->getLastModified()),
+                $resource->getEtag(),
+                $fetchUser,
+                $fetchPassword
+            );
+
             $feed = $qFeed->run($url, $fetchUser, $fetchPassword)->getSingle();
         }
+
+        // Add the feed to a user's subscriptions.
         $this->db->prepare("INSERT INTO newssync_subscriptions(owner,feed) values(?,?)", "str", "int")->run($user,$feed);
         $sub = $this->db->prepare("SELECT id from newssync_subscriptions where owner is ? and feed is ?", "str", "int")->run($user, $feed)->getSingle();
         $this->db->commit();

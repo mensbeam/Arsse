@@ -39,6 +39,17 @@ abstract class AbstractException extends \Exception {
         "User/Exception.authMissing"            => 10411,
         "User/Exception.authFailed"             => 10412,
         "User/Exception.notAuthorized"          => 10421,
+        "Feed/Exception.invalidCertificate"     => 10501,
+        "Feed/Exception.invalidUrl"             => 10502,
+        "Feed/Exception.maxRedirect"            => 10503,
+        "Feed/Exception.maxSize"                => 10504,
+        "Feed/Exception.timeout"                => 10505,
+        "Feed/Exception.forbidden"              => 10506,
+        "Feed/Exception.unauthorized"           => 10507,
+        "Feed/Exception.malformed"              => 10511,
+        "Feed/Exception.xmlEntity"              => 10512,
+        "Feed/Exception.subscriptionNotFound"   => 10521,
+        "Feed/Exception.unsupportedFeedFormat"  => 10522
     ];
 
     public function __construct(string $msgID = "", $vars = null, \Throwable $e = null) {

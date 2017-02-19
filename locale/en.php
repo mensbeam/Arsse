@@ -51,4 +51,16 @@ return [
     'Exception.JKingWeb/NewsSync/User/Exception.authMissing'            => 'Please log in to proceed',
     'Exception.JKingWeb/NewsSync/User/Exception.authFailed'             => 'Authentication failed',
     'Exception.JKingWeb/NewsSync/User/ExceptionAuthz.notAuthorized'     => 'Authenticated user is not authorized to perform the action "{action}" on behalf of {user}',
+
+    'Exception.JKingWeb/NewsSync/Feed/Exception.invalidCertificate'     => 'Could not download feed "{url}" because its server is serving an invalid SSL certificate',
+    'Exception.JKingWeb/NewsSync/Feed/Exception.invalidURL'             => 'Feed URL "{url}" is invalid',
+    'Exception.JKingWeb/NewsSync/Feed/Exception.maxRedirect'            => 'Could not download feed "{url}" because its server reached its maximum number of HTTP redirections',
+    'Exception.JKingWeb/NewsSync/Feed/Exception.maxSize'                => 'Could not download feed "{url}" because its size exceeds the maximum allowed on its server',
+    'Exception.JKingWeb/NewsSync/Feed/Exception.timeout'                => 'Could not download feed "{url}" because its server timed out',
+    'Exception.JKingWeb/NewsSync/Feed/Exception.forbidden'              => 'Could not download feed "{url}" because you do not have permission to access it',
+    'Exception.JKingWeb/NewsSync/Feed/Exception.unauthorized'           => 'Could not download feed "{url}" because you provided insufficient or invalid credentials',
+    'Exception.JKingWeb/NewsSync/Feed/Exception.malformed'              => 'Could not parse feed "{url}" because it is malformed',
+    'Exception.JKingWeb/NewsSync/Feed/Exception.xxe'                    => 'Refused to parse feed "{url}" because it contains an XXE attack',
+    'Exception.JKingWeb/NewsSync/Feed/Exception.subscriptionNotFound'   => 'Unable to find a feed at location "{url}"',
+    'Exception.JKingWeb/NewsSync/Feed/Exception.unsupportedFormat'      => 'Feed "{url}" is of an unsupported format'
 ];
