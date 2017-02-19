@@ -5,8 +5,8 @@ use JKingWeb\NewsSync\Lang, JKingWeb\NewsSync\User\Driver;
 
 final class DriverInternalMock implements Driver {
 
+    public static $db = [];
     protected $data;
-    protected $db;
     protected $functions = [
         "auth"                    => Driver::FUNC_INTERNAL,
         "authorize"               => Driver::FUNC_INTERNAL,
@@ -43,47 +43,74 @@ final class DriverInternalMock implements Driver {
     }
 
     function auth(string $user, string $password): bool {
-        return true;
+        if(!$this->userExists($user)) return false;
+        if(password_verify($password, static::$db[$user]['password'])) return true;
+        return false;
     }
 
     function authorize(string $affectedUser, string $action, int $newRightsLevel = 0): bool {
-        if($affectedUser==$this->data->user->id) return true;
-		return false;
-    }
-
-    function userExists(string $user): bool {
         return true;
     }
 
+    function userExists(string $user): bool {
+        return array_key_exists($user, static::$db);
+    }
+
     function userAdd(string $user, string $password = null): bool {
+        if($this->userExists($user)) return false;
+        $u = [
+            'password' => $password ? password_hash($password, \PASSWORD_DEFAULT) : null,
+            'rights'   => Driver::RIGHTS_NONE,
+        ];
+        static::$db[$user] = $u;
         return true;
     }
 
     function userRemove(string $user): bool {
+        if(!$this->userExists($user)) return false;
+        unset(static::$db[$user]);
         return true;
     }
 
     function userList(string $domain = null): array {
-        return [];
+        $list = array_keys(static::$db);
+        if($domain===null) {
+            return $list;
+        } else {
+            $suffix = '@'.$domain;
+            $len = -1 * strlen($suffix);
+            return array_filter($list, function($user) use($suffix, $len) {
+                return substr_compare($user, $suffix, $len);
+            });
+        }
     }
     
     function userPasswordSet(string $user, string $newPassword, string $oldPassword): bool {
+        if(!$this->userExists($user)) return false;
+        if(!$this->auth($user, $oldPassword)) return false;
+        static::$db[$user]['password'] = password_hash($newPassword, \PASSWORD_DEFAULT);
         return true;
     }
 
     function userPropertiesGet(string $user): array {
-        return [];
+        if(!$this->userExists($user)) return [];
+        return static::$db[$user];
     }
 
     function userPropertiesSet(string $user, array $properties): array {
-        return [];
+        if(!$this->userExists($user)) return [];
+        static::$db[$user] = array_merge(static::$db[$user], $properties);
+        return $this->userPropertiesGet($user);
     }
 
     function userRightsGet(string $user): int {
-        return 0;
+        if(!$this->userExists($user)) return Driver::RIGHTS_NONE;
+        return static::$db[$user]['rights'];
     }
     
     function userRightsSet(string $user, int $level): bool {
+        if(!$this->userExists($user)) return false;
+        static::$db[$user]['rights'] = $level;
         return true;
     }    
 }

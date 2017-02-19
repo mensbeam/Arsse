@@ -175,7 +175,7 @@ class Database {
         if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         if($this->userExists($user)) return false;
         if(strlen($password) > 0) $password = password_hash($password, \PASSWORD_DEFAULT);
-        $this->db->prepare("INSERT INTO newssync_users(id,password) values(?,?)", "str", "str", "str")->run($user,$password,$admin);
+        $this->db->prepare("INSERT INTO newssync_users(id,password) values(?,?)", "str", "str")->run($user,$password);
         return true;
     }
 
@@ -211,7 +211,7 @@ class Database {
     public function userPasswordSet(string $user, string $password = null): bool {
         if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         if(!$this->userExists($user)) return false;
-        if(strlen($password > 0)) $password = password_hash($password);
+        if(strlen($password > 0)) $password = password_hash($password, \PASSWORD_DEFAULT);
         $this->db->prepare("UPDATE newssync_users set password = ? where id is ?", "str", "str")->run($password, $user);
         return true;
     }
@@ -244,7 +244,7 @@ class Database {
     }
 
     public function userRightsSet(string $user, int $rights): bool {
-        if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!$this->data->user->authorize($user, __FUNCTION__, $rights)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         if(!$this->userExists($user)) return false;
         $this->db->prepare("UPDATE newssync_users set rights = ? where id is ?", "int", "str")->run($rights, $user);
         return true;

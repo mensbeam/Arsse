@@ -144,7 +144,7 @@ class User {
         if($this->u->driverFunctions("userAdd") != User\Driver::FUNC_INTERNAL) {
             if(!$this->data->user->authorize($user, "userAdd")) throw new User\ExceptionAuthz("notAuthorized", ["action" => "userAdd", "user" => $user]);
         }
-        if($this->exists($user)) return false;
+        if($this->exists($user)) throw new User\Exception("alreadyExists", ["action" => "userAdd", "user" => $user]);
         $out = $this->u->userAdd($user, $password);
         if($out && $this->u->driverFunctions("userAdd") != User\Driver::FUNC_INTERNAL) {
             try {
