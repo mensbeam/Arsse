@@ -266,7 +266,7 @@ class Database {
 
         $this->db->begin();
 
-        // If the feed doesn't already exist in the database then add it to the database after determining its validity with picoFeed
+        // If the feed doesn't already exist in the database then add it to the database after determining its validity with PicoFeed.
         $qFeed = $this->db->prepare("SELECT id from newssync_feeds where url is ? and username is ? and password is ?", "str", "str", "str");
         $feed = $qFeed->run($url, $fetchUser, $fetchPassword)->getSingle();
         if ($feed === null) {
@@ -282,17 +282,17 @@ class Database {
 
                 $feed = $parser->execute();
             } catch (PicoFeedException $e) {
-                // If there's any error while trying to download or parse the feed then return an exception
+                // If there's any error while trying to download or parse the feed then return an exception.
                 throw new Feed\Exception($url, $e);
             }
 
             $this->db->prepare("INSERT INTO newssync_feeds(url,title,favicon,source,updated,modified,etag,username,password) values(?,?,?)", "str", "str", "str", "str", "str", "str", "str", "str", "str")->run(
                 $url,
                 $feed->title,
-                // Grab the favicon for the feed. Returns an empty string if it cannot find one
+                // Grab the favicon for the Goodfeed; returns an empty string if it cannot find one.
                 (new PicoFeed\Reader\Favicon)->find($url),
                 $feed->siteUrl,
-                // Convert the date formats to ISO 8601 before inserting
+                // Convert the date formats to SQL date format before inserting.
                 $this->driver::formatDate($feed->date),
                 $this->driver::formatDate($resource->getLastModified()),
                 $resource->getEtag(),
@@ -300,12 +300,15 @@ class Database {
                 $fetchPassword
             );
 
-            $feed = $qFeed->run($url, $fetchUser, $fetchPassword)->getSingle();
+            // TODO: Populate newssync_articles with contents of what was obtained from PicoFeed.
+
+            // Get the ID for the feed that was just added.
+            $feedID = $qFeed->run($url, $fetchUser, $fetchPassword)->getSingle();
         }
 
-        // Add the feed to a user's subscriptions.
-        $this->db->prepare("INSERT INTO newssync_subscriptions(owner,feed) values(?,?)", "str", "int")->run($user,$feed);
-        $sub = $this->db->prepare("SELECT id from newssync_subscriptions where owner is ? and feed is ?", "str", "int")->run($user, $feed)->getSingle();
+        // Add the feed to the user's subscriptions.
+        $this->db->prepare("INSERT INTO newssync_subscriptions(owner,feed) values(?,?)", "str", "int")->run($user, $feedID);
+        $sub = $this->db->prepare("SELECT id from newssync_subscriptions where owner is ? and feed is ?", "str", "int")->run($user, $feedID)->getSingle();
         $this->db->commit();
         return $sub;
     }
