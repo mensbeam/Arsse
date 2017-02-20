@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "953c6b705277c5b622d82a3d6f0c9dfd",
+    "content-hash": "264437f06f643a1413d45660c2a32124",
     "packages": [
         {
             "name": "fguillot/picofeed",
@@ -58,6 +58,46 @@
             "description": "Modern library to handle RSS/Atom feeds",
             "homepage": "https://github.com/fguillot/picoFeed",
             "time": "2017-01-16T03:10:21+00:00"
+        },
+        {
+            "name": "hosteurope/password-generator",
+            "version": "v1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/hosteurope/password-generator.git",
+                "reference": "21bb99eb9ae47191d816368d3d9e54562e3f9a5f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/hosteurope/password-generator/zipball/21bb99eb9ae47191d816368d3d9e54562e3f9a5f",
+                "reference": "21bb99eb9ae47191d816368d3d9e54562e3f9a5f",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.0.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^5.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "PasswordGenerator\\": "src/",
+                    "PasswordGeneratorTests\\": "tests/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Karim Geiger",
+                    "email": "karim.geiger@heg.com"
+                }
+            ],
+            "description": "Password generator for generating policy-compliant passwords.",
+            "time": "2016-12-08T09:32:12+00:00"
         },
         {
             "name": "jkingweb/druuid",

@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\NewsSync;
+use PasswordGenerator\Generator as PassGen;
 
 class Database {
     use PicoFeed\Reader\Reader;
@@ -175,17 +176,19 @@ class Database {
         return (bool) $this->db->prepare("SELECT count(*) from newssync_users where id is ?", "str")->run($user)->getSingle();
     }
 
-    public function userAdd(string $user, string $password = null): bool {
+    public function userAdd(string $user, string $password = null): string {
         if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if($this->userExists($user)) return false;
-        if(strlen($password) > 0) $password = password_hash($password, \PASSWORD_DEFAULT);
-        $this->db->prepare("INSERT INTO newssync_users(id,password) values(?,?)", "str", "str")->run($user,$password);
-        return true;
+        if($this->userExists($user)) throw new User\Exception("alreadyExists", ["action" => __FUNCTION__, "user" => $user]);
+        if($password===null) $password = (new PassGen)->length($this->data->conf->userTempPasswordLength)->get();
+        $hash = "";
+        if(strlen($password) > 0) $hash = password_hash($password, \PASSWORD_DEFAULT);
+        $this->db->prepare("INSERT INTO newssync_users(id,password) values(?,?)", "str", "str")->run($user,$hash);
+        return $password;
     }
 
     public function userRemove(string $user): bool {
         if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        $this->db->prepare("DELETE from newssync_users where id is ?", "str")->run($user);
+        if($this->db->prepare("DELETE from newssync_users where id is ?", "str")->run($user)->changes() < 1) throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         return true;
     }
 
@@ -208,16 +211,18 @@ class Database {
 
     public function userPasswordGet(string $user): string {
         if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if(!$this->userExists($user)) return "";
+        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         return (string) $this->db->prepare("SELECT password from newssync_users where id is ?", "str")->run($user)->getSingle();
     }
 
-    public function userPasswordSet(string $user, string $password = null): bool {
+    public function userPasswordSet(string $user, string $password = null): string {
         if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if(!$this->userExists($user)) return false;
-        if(strlen($password > 0)) $password = password_hash($password, \PASSWORD_DEFAULT);
-        $this->db->prepare("UPDATE newssync_users set password = ? where id is ?", "str", "str")->run($password, $user);
-        return true;
+        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        if($password===null) $password = (new PassGen)->length($this->data->conf->userTempPasswordLength)->get();
+        $hash = "";
+        if(strlen($password > 0)) $hash = password_hash($password, \PASSWORD_DEFAULT);
+        $this->db->prepare("UPDATE newssync_users set password = ? where id is ?", "str", "str")->run($hash, $user);
+        return $password;
     }
 
     public function userPropertiesGet(string $user): array {

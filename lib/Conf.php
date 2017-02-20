@@ -26,6 +26,7 @@ class Conf {
     public $userDriver              = User\DriverInternal::class;
     public $userAuthPreferHTTP      = false;
     public $userComposeNames        = true;
+    public $userTempPasswordLength  = 20;
 
     public $simplepieCache          = BASE.".cache";
 

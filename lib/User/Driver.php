@@ -26,13 +26,13 @@ Interface Driver {
     // checks whether a user exists
     function userExists(string $user): bool;
     // adds a user
-    function userAdd(string $user, string $password = null): bool;
+    function userAdd(string $user, string $password = null): string;
     // removes a user
     function userRemove(string $user): bool;
     // lists all users
     function userList(string $domain = null): array;
     // sets a user's password; if the driver does not require the old password, it may be ignored
-    function userPasswordSet(string $user, string $newPassword, string $oldPassword): bool;
+    function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null): string;
     // gets user metadata (currently not useful)
     function userPropertiesGet(string $user): array;
     // sets user metadata (currently not useful)

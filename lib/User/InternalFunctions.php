@@ -50,7 +50,7 @@ trait InternalFunctions {
         return $this->db->userExists($user);
     }
 
-    function userAdd(string $user, string $password = null): bool {
+    function userAdd(string $user, string $password = null): string {
         return $this->db->userAdd($user, $password);
     }
 
@@ -62,7 +62,7 @@ trait InternalFunctions {
         return $this->db->userList($domain);
     }
     
-    function userPasswordSet(string $user, string $newPassword, string $oldPassword): bool {
+    function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null): bool {
         return $this->db->userPasswordSet($user, $newPassword);
     }
 

@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\NewsSync\Test\User;
-use JKingWeb\NewsSync\Lang, JKingWeb\NewsSync\User\Driver;
+use JKingWeb\NewsSync\Lang, JKingWeb\NewsSync\User\Driver, JKingWeb\NewsSync\User\Exception, PasswordGenerator\Generator as PassGen;
 
 final class DriverInternalMock implements Driver {
 
-    public static $db = [];
+    protected $db = [];
     protected $data;
     protected $functions = [
         "auth"                    => Driver::FUNC_INTERNAL,
@@ -44,7 +44,7 @@ final class DriverInternalMock implements Driver {
 
     function auth(string $user, string $password): bool {
         if(!$this->userExists($user)) return false;
-        if(password_verify($password, static::$db[$user]['password'])) return true;
+        if(password_verify($password, $this->db[$user]['password'])) return true;
         return false;
     }
 
@@ -53,27 +53,28 @@ final class DriverInternalMock implements Driver {
     }
 
     function userExists(string $user): bool {
-        return array_key_exists($user, static::$db);
+        return array_key_exists($user, $this->db);
     }
 
-    function userAdd(string $user, string $password = null): bool {
-        if($this->userExists($user)) return false;
+    function userAdd(string $user, string $password = null): string {
+        if($this->userExists($user)) throw new Exception("alreadyExists", ["action" => __FUNCTION__, "user" => $user]);
+        if($password===null) $password = (new PassGen)->length($this->data->conf->userTempPasswordLength)->get();
         $u = [
             'password' => $password ? password_hash($password, \PASSWORD_DEFAULT) : null,
             'rights'   => Driver::RIGHTS_NONE,
         ];
-        static::$db[$user] = $u;
-        return true;
+        $this->db[$user] = $u;
+        return $password;
     }
 
     function userRemove(string $user): bool {
-        if(!$this->userExists($user)) return false;
-        unset(static::$db[$user]);
+        if(!$this->userExists($user)) throw new Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        unset($this->db[$user]);
         return true;
     }
 
     function userList(string $domain = null): array {
-        $list = array_keys(static::$db);
+        $list = array_keys($this->db);
         if($domain===null) {
             return $list;
         } else {
@@ -85,32 +86,32 @@ final class DriverInternalMock implements Driver {
         }
     }
     
-    function userPasswordSet(string $user, string $newPassword, string $oldPassword): bool {
-        if(!$this->userExists($user)) return false;
-        if(!$this->auth($user, $oldPassword)) return false;
-        static::$db[$user]['password'] = password_hash($newPassword, \PASSWORD_DEFAULT);
-        return true;
+    function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null): string {
+        if(!$this->userExists($user)) throw new Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        if($newPassword===null) $newPassword = (new PassGen)->length($this->data->conf->userTempPasswordLength)->get();
+        $this->db[$user]['password'] = password_hash($newPassword, \PASSWORD_DEFAULT);
+        return $newPassword;
     }
 
     function userPropertiesGet(string $user): array {
-        if(!$this->userExists($user)) return [];
-        return static::$db[$user];
+        if(!$this->userExists($user)) throw new Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        return $this->db[$user];
     }
 
     function userPropertiesSet(string $user, array $properties): array {
-        if(!$this->userExists($user)) return [];
-        static::$db[$user] = array_merge(static::$db[$user], $properties);
+        if(!$this->userExists($user)) throw new Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        $this->db[$user] = array_merge($this->db[$user], $properties);
         return $this->userPropertiesGet($user);
     }
 
     function userRightsGet(string $user): int {
-        if(!$this->userExists($user)) return Driver::RIGHTS_NONE;
-        return static::$db[$user]['rights'];
+        if(!$this->userExists($user)) throw new Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        return $this->db[$user]['rights'];
     }
     
     function userRightsSet(string $user, int $level): bool {
-        if(!$this->userExists($user)) return false;
-        static::$db[$user]['rights'] = $level;
+        if(!$this->userExists($user)) throw new Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        $this->db[$user]['rights'] = $level;
         return true;
     }    
 }
