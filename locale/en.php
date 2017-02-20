@@ -1,7 +1,7 @@
 <?php
 return [
     'Driver.User.Internal.Name'                                        => 'Internal',
-    
+
     'Exception.JKingWeb/NewsSync/Exception.uncoded'                     => 'The specified exception symbol {0} has no code specified in Exception.php',
     //this should not usually be encountered
     'Exception.JKingWeb/NewsSync/Exception.unknown'                     => 'An unknown error has occurred',
@@ -60,7 +60,7 @@ return [
     'Exception.JKingWeb/NewsSync/Feed/Exception.forbidden'              => 'Could not download feed "{url}" because you do not have permission to access it',
     'Exception.JKingWeb/NewsSync/Feed/Exception.unauthorized'           => 'Could not download feed "{url}" because you provided insufficient or invalid credentials',
     'Exception.JKingWeb/NewsSync/Feed/Exception.malformed'              => 'Could not parse feed "{url}" because it is malformed',
-    'Exception.JKingWeb/NewsSync/Feed/Exception.xxe'                    => 'Refused to parse feed "{url}" because it contains an XXE attack',
+    'Exception.JKingWeb/NewsSync/Feed/Exception.xmlEntity'              => 'Refused to parse feed "{url}" because it contains an XXE attack',
     'Exception.JKingWeb/NewsSync/Feed/Exception.subscriptionNotFound'   => 'Unable to find a feed at location "{url}"',
     'Exception.JKingWeb/NewsSync/Feed/Exception.unsupportedFormat'      => 'Feed "{url}" is of an unsupported format'
 ];

@@ -293,8 +293,8 @@ class Database {
                 (new PicoFeed\Reader\Favicon)->find($url),
                 $feed->siteUrl,
                 // Convert the date formats to ISO 8601 before inserting
-                $driver::formatDate($feed->date),
-                $driver::formatDate($resource->getLastModified()),
+                $this->driver::formatDate($feed->date),
+                $this->driver::formatDate($resource->getLastModified()),
                 $resource->getEtag(),
                 $fetchUser,
                 $fetchPassword
