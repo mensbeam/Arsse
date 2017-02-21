@@ -193,7 +193,7 @@ class User {
         }
     }
 
-    public function passwordSet(string $user, string $newPassword = null, $oldPassword = null): bool {
+    public function passwordSet(string $user, string $newPassword = null, $oldPassword = null): string {
         $func = "userPasswordSet";
         switch($this->u->driverFunctions($func)) {
             case User\Driver::FUNC_EXTERNAL:

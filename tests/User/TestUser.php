@@ -18,6 +18,7 @@ class TestUser extends \PHPUnit\Framework\TestCase {
 		$conf->userAuthPreferHTTP = true;
 		$this->data = new Test\RuntimeData($conf);
 		$this->data->user = new User($this->data);
+		$this->data->user->authorizationEnabled(false);
 		$_SERVER['PHP_AUTH_USER'] = self::USER1;
 		$_SERVER['PHP_AUTH_PW'] = "secret";
 	}
@@ -68,5 +69,26 @@ class TestUser extends \PHPUnit\Framework\TestCase {
 		$this->data->user->add(self::USER1, "secret");
 		$this->assertTrue($this->data->user->auth(self::USER1, "secret"));
 		$this->assertFalse($this->data->user->auth(self::USER1, "superman"));
+	}
+
+	function testChangeAPassword() {
+		$this->data->user->add(self::USER1, "secret");
+		$this->assertEquals("superman", $this->data->user->passwordSet(self::USER1, "superman"));
+		$this->assertTrue($this->data->user->auth(self::USER1, "superman"));
+		$this->assertFalse($this->data->user->auth(self::USER1, "secret"));
+		$this->assertEquals($this->data->conf->userTempPasswordLength, strlen($this->data->user->passwordSet(self::USER1)));
+	}
+
+	function testChangeAPasswordForAMissingUser() {
+		$this->assertException("doesNotExist", "User");
+		$this->data->user->passwordSet(self::USER1, "superman");
+	}
+
+	function testGetThePropertiesOfAUser() {
+		$this->data->user->add(self::USER1, "secret");
+		$p = $this->data->user->propertiesGet(self::USER1);
+		$this->assertArrayHasKey('name', $p);
+		$this->assertArrayNotHasKey('password', $p);
+		$this->assertEquals(self::USER1, $p['name']);
 	}
 }

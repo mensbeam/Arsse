@@ -50,7 +50,21 @@ return [
     'Exception.JKingWeb/NewsSync/User/Exception.doesNotExist'           => 'Could not perform action "{action}" because the user {user} does not exist',
     'Exception.JKingWeb/NewsSync/User/Exception.authMissing'            => 'Please log in to proceed',
     'Exception.JKingWeb/NewsSync/User/Exception.authFailed'             => 'Authentication failed',
-    'Exception.JKingWeb/NewsSync/User/ExceptionAuthz.notAuthorized'     => 'Authenticated user is not authorized to perform the action "{action}" on behalf of {user}',
+    'Exception.JKingWeb/NewsSync/User/ExceptionAuthz.notAuthorized'     => 
+        /*'{action, select,
+            userList {{user, select,
+                "*" {Authenticated user is not authorized to view the global user list}
+                other {Authenticated user is not authorized to view the user list for domain {user}}
+            }}
+            other {Authenticated user is not authorized to perform the action "{action}" on behalf of {user}}
+        }',*/
+        '{action, select,
+            userList {{user, select,
+                global {Authenticated user is not authorized to view the global user list}
+                other {Authenticated user is not authorized to view the user list for domain {user}}
+            }}
+            other {Authenticated user is not authorized to perform the action "{action}" on behalf of {user}}
+        }',
 
     'Exception.JKingWeb/NewsSync/Feed/Exception.invalidCertificate'     => 'Could not download feed "{url}" because its server is serving an invalid SSL certificate',
     'Exception.JKingWeb/NewsSync/Feed/Exception.invalidURL'             => 'Feed URL "{url}" is invalid',

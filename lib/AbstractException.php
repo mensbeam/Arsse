@@ -38,7 +38,7 @@ abstract class AbstractException extends \Exception {
         "User/Exception.alreadyExists"          => 10403,
         "User/Exception.authMissing"            => 10411,
         "User/Exception.authFailed"             => 10412,
-        "User/Exception.notAuthorized"          => 10421,
+        "User/ExceptionAuthz.notAuthorized"     => 10421,
         "Feed/Exception.invalidCertificate"     => 10501,
         "Feed/Exception.invalidUrl"             => 10502,
         "Feed/Exception.maxRedirect"            => 10503,
@@ -60,7 +60,7 @@ abstract class AbstractException extends \Exception {
             $class = get_called_class();
             $codeID = str_replace("\\", "/", str_replace(NS_BASE, "", $class)).".$msgID";
             if(!array_key_exists($codeID, self::CODES)) {
-                throw new Exception("uncoded");
+                throw new Exception("uncoded", $codeID);
             } else {
                 $code = self::CODES[$codeID];
                 $msg = "Exception.".str_replace("\\", "/", $class).".$msgID";

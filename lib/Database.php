@@ -199,7 +199,7 @@ class Database {
             $domain = "%@".$domain;
             $set = $this->db->prepare("SELECT id from newssync_users where id like ?", "str")->run($domain);
         } else {
-            if(!$this->data->user->authorize("", __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => "all users"]);
+            if(!$this->data->user->authorize("", __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => "global"]);
             $set = $this->db->prepare("SELECT id from newssync_users")->run();
         }
         $out = [];
