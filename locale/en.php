@@ -51,13 +51,6 @@ return [
     'Exception.JKingWeb/NewsSync/User/Exception.authMissing'            => 'Please log in to proceed',
     'Exception.JKingWeb/NewsSync/User/Exception.authFailed'             => 'Authentication failed',
     'Exception.JKingWeb/NewsSync/User/ExceptionAuthz.notAuthorized'     => 
-        /*'{action, select,
-            userList {{user, select,
-                "*" {Authenticated user is not authorized to view the global user list}
-                other {Authenticated user is not authorized to view the user list for domain {user}}
-            }}
-            other {Authenticated user is not authorized to perform the action "{action}" on behalf of {user}}
-        }',*/
         '{action, select,
             userList {{user, select,
                 global {Authenticated user is not authorized to view the global user list}
