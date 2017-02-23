@@ -10,7 +10,7 @@ Interface Driver {
     const RIGHTS_NONE           = 0;    // normal user
     const RIGHTS_DOMAIN_MANAGER = 25;   // able to act for any normal users on same domain; cannot elevate other users
     const RIGHTS_DOMAIN_ADMIN   = 50;   // able to act for any users on same domain not above themselves; may elevate users on same domain to domain manager or domain admin
-    const RIGHTS_GLOBAL_MANAGER = 75;   // able to act for any user below themselves; can elevate users to domain manager or domain admin
+    const RIGHTS_GLOBAL_MANAGER = 75;   // able to act for any normal users on any domain; cannot elevate other users
     const RIGHTS_GLOBAL_ADMIN   = 100;  // is completely unrestricted
 
     // returns an instance of a class implementing this interface. Implemented as a static method for consistency with database classes
@@ -21,8 +21,6 @@ Interface Driver {
     function driverFunctions(string $function = null);
     // authenticates a user against their name and password
     function auth(string $user, string $password): bool;
-    // checks whether the logged in user is authorized to act for the affected user (used especially when granting rights)
-    function authorize(string $affectedUser, string $action): bool;
     // checks whether a user exists
     function userExists(string $user): bool;
     // adds a user

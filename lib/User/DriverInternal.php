@@ -10,7 +10,6 @@ final class DriverInternal implements Driver {
     protected $db;
     protected $functions = [
         "auth"                    => Driver::FUNC_INTERNAL,
-        "authorize"               => Driver::FUNC_INTERNAL,
         "userList"                => Driver::FUNC_INTERNAL,
         "userExists"              => Driver::FUNC_INTERNAL,
         "userAdd"                 => Driver::FUNC_INTERNAL,

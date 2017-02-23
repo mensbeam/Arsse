@@ -13,7 +13,6 @@ class DriverInternalMock implements Driver {
     protected $data;
     protected $functions = [
         "auth"                    => Driver::FUNC_INTERNAL,
-        "authorize"               => Driver::FUNC_INTERNAL,
         "userList"                => Driver::FUNC_INTERNAL,
         "userExists"              => Driver::FUNC_INTERNAL,
         "userAdd"                 => Driver::FUNC_INTERNAL,
@@ -49,10 +48,6 @@ class DriverInternalMock implements Driver {
     function auth(string $user, string $password): bool {
         if(!$this->userExists($user)) return false;
         if(password_verify($password, $this->db[$user]['password'])) return true;
-        return false;
-    }
-
-    function authorize(string $affectedUser, string $action, int $newRightsLevel = 0): bool {
         return false;
     }
 

@@ -36,6 +36,44 @@ class User {
         return (string) $this->id;
     }
 
+    // checks whether the logged in user is authorized to act for the affected user (used especially when granting rights)
+    function authorize(string $affectedUser, string $action, int $newRightsLevel = 0): bool {
+        // if authorization checks are disabled (either because we're running the installer or the background updater) just return true
+        if(!$this->authz) return true;
+        // if we don't have a logged-in user, fetch credentials
+        if($this->id===null) $this->credentials();
+        // if the affected user is the actor and the actor is not trying to grant themselves rights, accept the request
+        if($affectedUser==$this->data->user->id && $action != "userRightsSet") return true;
+        // get properties of actor if not already available
+        if(!sizeof($this->actor)) $this->actor = $this->propertiesGet($this->data->user->id);
+        $rights =& $this->actor["rights"];
+        // if actor is a global admin, accept the request
+        if($rights==User\Driver::RIGHTS_GLOBAL_ADMIN) return true;
+        // if actor is a common user, deny the request
+        if($rights==User\Driver::RIGHTS_NONE) return false;
+        // if actor is not some other sort of admin, deny the request
+        if(!in_array($rights,[User\Driver::RIGHTS_GLOBAL_MANAGER,User\Driver::RIGHTS_DOMAIN_MANAGER,User\Driver::RIGHTS_DOMAIN_ADMIN],true)) return false;
+        // if actor is a domain admin/manager and domains don't match, deny the request
+        if($this->data->conf->userComposeNames && $this->actor["domain"] && $rights != User\Driver::RIGHTS_GLOBAL_MANAGER) {
+            $test = "@".$this->actor["domain"];
+            if(substr($affectedUser,-1*strlen($test)) != $test) return false;
+        }
+        // certain actions shouldn't check affected user's rights
+        if(in_array($action, ["userRightsGet","userExists","userList"], true)) return true;
+        if($action=="userRightsSet") {
+            // managers can only set their own rights, and only lower
+            if(($rights==User\Driver::RIGHTS_DOMAIN_MANAGER || $rights==User\Driver::RIGHTS_GLOBAL_MANAGER)) {
+                if($affectedUser != $this->data->user->id || $newRightsLevel != User\Driver::RIGHTS_NONE) return false;
+            }
+            // setting rights above your own is not allowed
+            if($newRightsLevel > $rights) return false;
+        }
+        $affectedRights = $this->rightsGet($affectedUser);
+        // acting for users with rights greater than your own (or equal, for managers) is not allowed
+        if($affectedRights > $rights || ($rights != User\Driver::RIGHTS_DOMAIN_ADMIN && $affectedRights==$rights)) return false;
+        return true;
+    }
+    
     public function credentials(): array {
         if($this->data->conf->userAuthPreferHTTP) {
             return $this->credentialsHTTP();
@@ -117,18 +155,6 @@ class User {
             case User\Driver::FUNCT_NOT_IMPLEMENTED:
                 throw new User\ExceptionNotImplemented("notImplemented", ["action" => $func, "user" => $domain]);
         }
-    }
-
-    public function authorize(string $affectedUser, string $action, int $promoteLevel = 0): bool {
-        // if authorization checks are disabled (either because we're running the installer or the background updater) just return true
-        if(!$this->authz) return true;
-        // if we don't have a logged-in user, fetch credentials
-        if($this->id===null) $this->credentials();
-        // if the driver implements authorization, return the result
-        if($this->authzSupported) return $this->u->authorize($affectedUser, $action, $promoteLevel);
-        // if the driver does not implement authorization, only allow operation for the logged-in user (this means no new users can be added)
-        if($affectedUser==$this->id && $action != "userRightsSet") return true;
-        return false;        
     }
 
     public function authorizationEnabled(bool $setting = null): bool {
