@@ -274,7 +274,7 @@ class User {
 
     public function propertiesSet(string $user, array $properties): array {
         // remove from the array any values which should be set specially
-        foreach(['password', 'rights'] as $key) {
+        foreach(['id', 'domain', 'password', 'rights'] as $key) {
             if(array_key_exists($key, $properties)) unset($properties[$key]);
         }
         $func = "userPropertiesSet";
@@ -363,7 +363,7 @@ class User {
         // create the user
         $out = $this->data->db->userAdd($user, $password);
         // set the user rights
-        $this->data->db->userRightsSet($user, $level);
+        $this->data->db->userRightsSet($user, $rights);
         // set the user properties...
         if($properties===null) {
             // if nothing is provided but the driver uses an external function, try to get the current values from the external source
@@ -374,6 +374,7 @@ class User {
             // otherwise if values are provided, use those
             $this->data->db->userPropertiesSet($user, $properties);
         }
+        // re-enable authorization and return
         $this->authorizationEnabled($authz);
         return $out;
     }
