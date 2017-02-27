@@ -98,15 +98,15 @@ class TestUserExternal extends \PHPUnit\Framework\TestCase {
 
 	function testSetThePropertiesOfAUser() {
 		$pSet = [
-			'name' => 'John Doe',
-			'id'   => 'invalid',
-			'domain' => 'localhost',
-			'rights' => User\Driver::RIGHTS_GLOBAL_ADMIN,
+			'name'     => 'John Doe',
+			'id'       => 'invalid',
+			'domain'   => 'localhost',
+			'rights'   => User\Driver::RIGHTS_GLOBAL_ADMIN,
 			'password' => 'superman',
 		];
 		$pGet = [
-			'name' => 'John Doe',
-			'id'   => self::USER1,
+			'name'   => 'John Doe',
+			'id'     => self::USER1,
 			'domain' => 'example.com',
 			'rights' => User\Driver::RIGHTS_NONE,
 		];
