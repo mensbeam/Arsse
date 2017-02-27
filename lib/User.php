@@ -170,7 +170,7 @@ class User {
                 // we handle authorization checks for external drivers
                 if(!$this->authorize($user, $func)) throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
                 $out = $this->u->userExists($user);
-                if($out && !$this->data->db->userExist($user)) $this->autoProvision($user, "");
+                if($out && !$this->data->db->userExists($user)) $this->autoProvision($user, "");
                 return $out;
             case User\Driver::FUNC_INTERNAL:
                 // internal functions handle their own authorization
@@ -285,7 +285,7 @@ class User {
                 $out = $this->u->userPropertiesSet($user, $properties);
                 if($this->data->db->userExists($user)) {
                     // if the property change was successful and the user exists, set the internal properties to the same values
-                    $this->data->db->userPpropertiesSet($user, $out);
+                    $this->data->db->userPropertiesSet($user, $out);
                 } else {
                     // if the user does not exists in the internal database, create it
                     $this->autoProvision($user, "", $out);

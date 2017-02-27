@@ -23,6 +23,7 @@
 
 <testsuite name="User management">
     <file>User/TestUser.php</file>
+    <file>User/TestUserExternal.php</file>
 </testsuite>
 
 </phpunit>
