@@ -5,7 +5,7 @@ use JKingWeb\NewsSync\User\Driver;
 
 class DriverInternalMock extends Database implements Driver {
 
-    protected $db = [];
+    public $db = [];
     protected $data;
     protected $functions = [
         "auth"                    => Driver::FUNC_INTERNAL,

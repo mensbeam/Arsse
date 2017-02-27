@@ -8,6 +8,8 @@ use PasswordGenerator\Generator as PassGen;
 
 class Database extends DriverSkeleton {
 
+    public $db = [];
+
     public function __construct(\JKingWeb\NewsSync\RuntimeData $data) {
         $this->data = $data;
     }

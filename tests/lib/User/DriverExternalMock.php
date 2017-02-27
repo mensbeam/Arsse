@@ -7,7 +7,7 @@ use PasswordGenerator\Generator as PassGen;
 
 class DriverExternalMock extends DriverSkeleton implements Driver {
 
-    protected $db = [];
+    public $db = [];
     protected $data;
     protected $functions = [
         "auth"                    => Driver::FUNC_EXTERNAL,
