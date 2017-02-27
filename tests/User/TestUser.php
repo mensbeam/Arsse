@@ -32,29 +32,29 @@ class TestUser extends \PHPUnit\Framework\TestCase {
 	}
 
 	function testAddAUser() {
-		$this->data->user->add(self::USER1, "secret");
+		$this->data->user->add(self::USER1, "");
 		$this->assertCount(1,$this->data->user->list());
 	}
 
 	function testCheckIfAUserDoesExist() {
-		$this->data->user->add(self::USER1, "secret");
+		$this->data->user->add(self::USER1, "");
 		$this->assertTrue($this->data->user->exists(self::USER1));
 	}
 
 	function testAddADuplicateUser() {
-		$this->data->user->add(self::USER1, "secret");
+		$this->data->user->add(self::USER1, "");
 		$this->assertException("alreadyExists", "User");
-		$this->data->user->add(self::USER1, "secret");
+		$this->data->user->add(self::USER1, "");
 	}
 
 	function testAddMultipleUsers() {
-		$this->data->user->add(self::USER1, "secret");
-		$this->data->user->add(self::USER2, "secret");
+		$this->data->user->add(self::USER1, "");
+		$this->data->user->add(self::USER2, "");
 		$this->assertCount(2,$this->data->user->list());
 	}
 	
 	function testRemoveAUser() {
-		$this->data->user->add(self::USER1, "secret");
+		$this->data->user->add(self::USER1, "");
 		$this->assertCount(1,$this->data->user->list());
 		$this->data->user->remove(self::USER1);
 		$this->assertCount(0,$this->data->user->list());
@@ -118,12 +118,12 @@ class TestUser extends \PHPUnit\Framework\TestCase {
 	}
 
 	function testGetTheRightsOfAUser() {
-		$this->data->user->add(self::USER1, "secret");
+		$this->data->user->add(self::USER1, "");
 		$this->assertEquals(User\Driver::RIGHTS_NONE, $this->data->user->rightsGet(self::USER1));
 	}
 
 	function testSetTheRightsOfAUser() {
-		$this->data->user->add(self::USER1, "secret");
+		$this->data->user->add(self::USER1, "");
 		$this->data->user->rightsSet(self::USER1, User\Driver::RIGHTS_GLOBAL_ADMIN);
 		$this->assertEquals(User\Driver::RIGHTS_GLOBAL_ADMIN, $this->data->user->rightsGet(self::USER1));
 	}
