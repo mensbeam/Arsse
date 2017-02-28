@@ -75,8 +75,8 @@ class User {
         $affectedRights = $this->rightsGet($affectedUser);
         // managers can only act on themselves (checked above) or regular users
         if(in_array($rights,[User\Driver::RIGHTS_GLOBAL_MANAGER,User\Driver::RIGHTS_DOMAIN_MANAGER]) && $affectedRights != User\Driver::RIGHTS_NONE) return false;
-        // acting for users with rights greater than your own (or equal, for managers) is not allowed
-        if($affectedRights > $rights || ($rights != User\Driver::RIGHTS_DOMAIN_ADMIN && $affectedRights==$rights)) return false;
+        // domain admins canot act above themselves
+        if(!in_array($affectedRights,[User\Driver::RIGHTS_NONE,User\Driver::RIGHTS_DOMAIN_MANAGER,User\Driver::RIGHTS_DOMAIN_ADMIN])) return false;
         return true;
     }
     
