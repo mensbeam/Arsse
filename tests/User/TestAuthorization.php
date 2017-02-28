@@ -251,21 +251,21 @@ class TestAuthorization extends \PHPUnit\Framework\TestCase {
 	}
 
 	function testInternalExceptionLogic() {
-		$test = [
-			'userExists',
-			'userRemove',
-			'userAdd',
-			'userPasswordSet',
-			'userPropertiesGet',
-			'userPropertiesSet',
-			'userRightsGet',
-			'userRightsSet',
-			'userList',
+		$tests = [
+			'exists'        => [],
+			'remove'        => [],
+			'add'           => [],
+			'passwordSet'   => [''],
+			'propertiesGet' => [],
+			'propertiesSet' => [[]],
+			'rightsGet'     => [],
+			'rightsSet'     => [User\Driver::RIGHTS_GLOBAL_ADMIN],
+			'list'          => [],
 		];
 		$this->data->user->auth("gadm@example.com", "");
-		$this->assertCount(0, $this->checkExceptions("user@example.org"));
+		$this->assertCount(0, $this->checkExceptions("user@example.org", $tests));
 		$this->data->user->auth("user@example.com", "");
-		$this->assertCount(sizeof($test), $this->checkExceptions("user@example.org"));
+		$this->assertCount(sizeof($tests), $this->checkExceptions("user@example.org", $tests));
 	}
 
 	function testExternalExceptionLogic() {
@@ -275,52 +275,15 @@ class TestAuthorization extends \PHPUnit\Framework\TestCase {
 		$this->testInternalExceptionLogic();
 	}
 
-	protected function checkExceptions(string $user): array {
+	protected function checkExceptions(string $user, $tests): array {
 		$err = [];
-		try {
-			$this->data->user->exists($user);
-		} catch(User\ExceptionAuthz $e) {
-			$err[] = "userExists";
-		}
-		try {
-			$this->data->user->remove($user);
-		} catch(User\ExceptionAuthz $e) {
-			$err[] = "userRemove";
-		}
-		try {
-			$this->data->user->add($user, "");
-		} catch(User\ExceptionAuthz $e) {
-			$err[] = "userAdd";
-		}
-		try {
-			$this->data->user->passwordSet($user, "");
-		} catch(User\ExceptionAuthz $e) {
-			$err[] = "userPasswordSet";
-		}
-		try {
-			$this->data->user->propertiesGet($user);
-		} catch(User\ExceptionAuthz $e) {
-			$err[] = "userPropertiesGet";
-		}
-		try {
-			$this->data->user->propertiesSet($user, []);
-		} catch(User\ExceptionAuthz $e) {
-			$err[] = "userPropertiesSet";
-		}
-		try {
-			$this->data->user->rightsGet($user);
-		} catch(User\ExceptionAuthz $e) {
-			$err[] = "userRightsGet";
-		}
-		try {
-			$this->data->user->rightsSet($user, User\Driver::RIGHTS_GLOBAL_ADMIN);
-		} catch(User\ExceptionAuthz $e) {
-			$err[] = "userRightsSet";
-		}
-		try {
-			$this->data->user->list();
-		} catch(User\ExceptionAuthz $e) {
-			$err[] = "userList";
+		foreach($tests as $func => $args) {
+			array_unshift($args, $user);
+			try {
+				call_user_func_array(array($this->data->user, $func), $args);
+			} catch(User\ExceptionAuthz $e) {
+				$err[] = $func;
+			}
 		}
 		return $err;
 	}
