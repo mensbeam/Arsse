@@ -254,7 +254,7 @@ class TestAuthorization extends \PHPUnit\Framework\TestCase {
 		$tests = [
 			'exists'        => [],
 			'remove'        => [],
-			'add'           => [],
+			'add'           => [''],
 			'passwordSet'   => [''],
 			'propertiesGet' => [],
 			'propertiesSet' => [[]],
@@ -278,7 +278,7 @@ class TestAuthorization extends \PHPUnit\Framework\TestCase {
 	protected function checkExceptions(string $user, $tests): array {
 		$err = [];
 		foreach($tests as $func => $args) {
-			array_unshift($args, $user);
+			if($func != "list") array_unshift($args, $user);
 			try {
 				call_user_func_array(array($this->data->user, $func), $args);
 			} catch(User\ExceptionAuthz $e) {
