@@ -45,6 +45,7 @@ class DriverExternalMock extends DriverSkeleton implements Driver {
 
     function auth(string $user, string $password): bool {
         if(!$this->userExists($user)) return false;
+        if($password==="" && $this->db[$user]['password']==="") return true;
         if(password_verify($password, $this->db[$user]['password'])) return true;
         return false;
     }

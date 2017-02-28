@@ -67,8 +67,10 @@ class TestUser extends \PHPUnit\Framework\TestCase {
 
 	function testAuthenticateAUser() {
 		$this->data->user->add(self::USER1, "secret");
+		$this->data->user->add(self::USER2, "");
 		$this->assertTrue($this->data->user->auth(self::USER1, "secret"));
 		$this->assertFalse($this->data->user->auth(self::USER1, "superman"));
+		$this->assertTrue($this->data->user->auth(self::USER2, ""));
 	}
 
 	function testChangeAPassword() {
@@ -76,6 +78,8 @@ class TestUser extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals("superman", $this->data->user->passwordSet(self::USER1, "superman"));
 		$this->assertTrue($this->data->user->auth(self::USER1, "superman"));
 		$this->assertFalse($this->data->user->auth(self::USER1, "secret"));
+		$this->assertEquals("", $this->data->user->passwordSet(self::USER1, ""));
+		$this->assertTrue($this->data->user->auth(self::USER1, ""));
 		$this->assertEquals($this->data->conf->userTempPasswordLength, strlen($this->data->user->passwordSet(self::USER1)));
 	}
 
