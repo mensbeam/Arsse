@@ -45,13 +45,15 @@ class TestAuthorization extends \PHPUnit\Framework\TestCase {
 
 	protected $data;
 
-    function setUp() {
-		$drv = Test\User\DriverInternalMock::class;
+    function setUp(string $drv = Test\User\DriverInternalMock::class, string $db = null) {
 		$conf = new Conf();
 		$conf->userDriver = $drv;
 		$conf->userAuthPreferHTTP = true;
 		$conf->userComposeNames = true;
 		$this->data = new Test\RuntimeData($conf);
+		if($db !== null) {
+			$this->data->db = new $db($this->data);
+		}
 		$this->data->user = new User($this->data);
 		$this->data->user->authorizationEnabled(false);
 		foreach(self::USERS as $user => $level) {
@@ -246,5 +248,87 @@ class TestAuthorization extends \PHPUnit\Framework\TestCase {
 				$this->assertFalse($this->data->user->authorize($domain, "userList"), "User $actor improperly checked user list for domain '$domain', but the action was allowed.");
 			}
 		}
+	}
+
+	function testInternalExceptionLogic() {
+		$failTest = [
+			'userExists',
+			'userRemove',
+			'userAdd',
+			'userPasswordSet',
+			'userPropertiesGet',
+			'userPropertiesSet',
+			'userRightsGet',
+			'userRightsSet',
+			'userList',
+		];
+		$passTest = [
+			'userRightsSet', 
+			'userList'
+		];
+		sort($failTest);
+		sort($passTest);
+		$actor = "user@example.com";
+		$this->data->user->auth($actor, "");
+		$this->assertEquals($passTest, $this->checkExceptions($actor));
+		$this->assertEquals($failTest, $this->checkExceptions("user@example.org"));
+	}
+
+	function testExternalExceptionLogic() {
+		// set up the test for an external driver
+		$this->setUp(Test\User\DriverExternalMock::class, Test\User\Database::class);
+		// run the previous test with the external driver set up
+		$this->testInternalExceptionLogic();
+	}
+
+	protected function checkExceptions(string $user): array {
+		$err = [];
+		try {
+			$this->data->user->exists($user);
+		} catch(User\ExceptionAuthz $e) {
+			$err[] = "userExists";
+		}
+		try {
+			$this->data->user->remove($user);
+		} catch(User\ExceptionAuthz $e) {
+			$err[] = "userRemove";
+		}
+		try {
+			$this->data->user->add($user, "");
+		} catch(User\ExceptionAuthz $e) {
+			$err[] = "userAdd";
+		}
+		try {
+			$this->data->user->passwordSet($user, "");
+		} catch(User\ExceptionAuthz $e) {
+			$err[] = "userPasswordSet";
+		}
+		try {
+			$this->data->user->propertiesGet($user);
+		} catch(User\ExceptionAuthz $e) {
+			$err[] = "userPropertiesGet";
+		}
+		try {
+			$this->data->user->propertiesSet($user, []);
+		} catch(User\ExceptionAuthz $e) {
+			$err[] = "userPropertiesSet";
+		}
+		try {
+			$this->data->user->rightsGet($user);
+		} catch(User\ExceptionAuthz $e) {
+			$err[] = "userRightsGet";
+		}
+		try {
+			$this->data->user->rightsSet($user, 10000);
+		} catch(User\ExceptionAuthz $e) {
+			$err[] = "userRightsSet";
+		}
+		try {
+			$this->data->user->list();
+		} catch(User\ExceptionAuthz $e) {
+			$err[] = "userList";
+		}
+		sort($err);
+		return $err;
 	}
 }
