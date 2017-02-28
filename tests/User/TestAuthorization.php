@@ -6,8 +6,30 @@ namespace JKingWeb\NewsSync;
 class TestAuthorization extends \PHPUnit\Framework\TestCase {
     use Test\Tools;
     
-	const USER1 = "john.doe@example.com";
-	const USER2 = "jane.doe@example.org";
+	const USERS = [
+		'user@example.com' => User\Driver::RIGHTS_NONE,
+		'user@example.org' => User\Driver::RIGHTS_NONE,
+		'dman@example.com' => User\Driver::RIGHTS_DOMAIN_MANAGER,
+		'dman@example.org' => User\Driver::RIGHTS_DOMAIN_MANAGER,
+		'dadm@example.com' => User\Driver::RIGHTS_DOMAIN_ADMIN,
+		'dadm@example.org' => User\Driver::RIGHTS_DOMAIN_ADMIN,
+		'gman@example.com' => User\Driver::RIGHTS_GLOBAL_MANAGER,
+		'gman@example.org' => User\Driver::RIGHTS_GLOBAL_MANAGER,
+		'gadm@example.com' => User\Driver::RIGHTS_GLOBAL_ADMIN,
+		'gadm@example.org' => User\Driver::RIGHTS_GLOBAL_ADMIN,
+	];
+	const LEVELS = [
+		User\Driver::RIGHTS_NONE,
+		User\Driver::RIGHTS_DOMAIN_MANAGER,
+		User\Driver::RIGHTS_DOMAIN_ADMIN,
+		User\Driver::RIGHTS_GLOBAL_MANAGER,
+		User\Driver::RIGHTS_GLOBAL_ADMIN,
+	];
+	const DOMAINS = [
+		'@example.com',
+		'@example.org',
+		"",
+	];
 
 	protected $data;
 
@@ -16,32 +38,175 @@ class TestAuthorization extends \PHPUnit\Framework\TestCase {
 		$conf = new Conf();
 		$conf->userDriver = $drv;
 		$conf->userAuthPreferHTTP = true;
+		$conf->userComposeNames = true;
 		$this->data = new Test\RuntimeData($conf);
 		$this->data->user = new User($this->data);
 		$this->data->user->authorizationEnabled(false);
-		$users = [
-			'user@example.com' => User\Driver::RIGHTS_NONE,
-			'user@example.org' => User\Driver::RIGHTS_NONE,
-			'dman@example.com' => User\Driver::RIGHTS_DOMAIN_MANAGER,
-			'dman@example.org' => User\Driver::RIGHTS_DOMAIN_MANAGER,
-			'dadm@example.com' => User\Driver::RIGHTS_DOMAIN_ADMIN,
-			'dadm@example.org' => User\Driver::RIGHTS_DOMAIN_ADMIN,
-			'gman@example.com' => User\Driver::RIGHTS_GLOBAL_MANAGER,
-			'gman@example.org' => User\Driver::RIGHTS_GLOBAL_MANAGER,
-			'gadm@example.com' => User\Driver::RIGHTS_GLOBAL_ADMIN,
-			'gadm@example.org' => User\Driver::RIGHTS_GLOBAL_ADMIN,
-		];
-		foreach($users as $user => $level) {
+		foreach(self::USERS as $user => $level) {
 			$this->data->user->add($user, "");
 			$this->data->user->rightsSet($user, $level);
 		}
 		$this->data->user->authorizationEnabled(true);
 	}
 
-	function testRegularUserActingOnSelf() {
-		$u = "user@example.com";
-		$this->data->user->auth($u, "");
-		$this->data->user->remove($u);
-		$this->assertFalse($this->data->user->exists($u));
+	function testSelfActionLogic() {
+		foreach(array_keys(self::USERS) as $user) {
+			$this->data->user->auth($user, "");
+			// users should be able to do basic actions for themselves
+			$this->assertTrue($this->data->user->authorize($user, "userExists"), "User $user could not act for themselves.");
+			$this->assertTrue($this->data->user->authorize($user, "userRemove"), "User $user could not act for themselves.");
+		}
+	}
+
+	function testRegularUserLogic() {
+		foreach(self::USERS as $actor => $rights) {
+			if($rights != User\Driver::RIGHTS_NONE) continue;
+			$this->data->user->auth($actor, "");
+			foreach(array_keys(self::USERS) as $affected) {
+				// regular users should only be able to act for themselves
+				if($actor==$affected) {
+					$this->assertTrue($this->data->user->authorize($affected, "userExists"), "User $actor acted properly for $affected, but the action was denied.");
+					$this->assertTrue($this->data->user->authorize($affected, "userRemove"), "User $actor acted properly for $affected, but the action was denied.");
+				} else {
+					$this->assertFalse($this->data->user->authorize($affected, "userExists"), "User $actor acted improperly for $affected, but the action was allowed.");
+					$this->assertFalse($this->data->user->authorize($affected, "userRemove"), "User $actor acted improperly for $affected, but the action was allowed.");
+				}
+				// they should never be able to set rights
+				foreach(self::LEVELS as $level) {
+					$this->assertFalse($this->data->user->authorize($affected, "userRightsSet", $level), "User $actor acted improperly for $affected settings rights level $level, but the action was allowed.");
+				}
+			}
+			// they should not be able to list users
+			foreach(self::DOMAINS as $domain) {
+				$this->assertFalse($this->data->user->authorize($domain, "userList"), "User $actor improperly checked user list for domain '$domain', but the action was allowed.");
+			}
+		}
+	}
+
+	function testDomainManagerLogic() {
+		foreach(self::USERS as $actor => $actorRights) {
+			if($actorRights != User\Driver::RIGHTS_DOMAIN_MANAGER) continue;
+			$actorDomain = substr($actor,strrpos($actor,"@")+1);
+			$this->data->user->auth($actor, "");
+			foreach(self::USERS as $affected => $affectedRights) {
+				$affectedDomain = substr($affected,strrpos($affected,"@")+1);
+				// domain managers should be able to check any user on the same domain
+				if($actorDomain==$affectedDomain) {
+					$this->assertTrue($this->data->user->authorize($affected, "userExists"), "User $actor acted properly for $affected, but the action was denied.");
+				} else {
+					$this->assertFalse($this->data->user->authorize($affected, "userExists"), "User $actor acted improperly for $affected, but the action was allowed.");
+				}
+				// they should only be able to act for regular users on the same domain
+				if($actor==$affected || ($actorDomain==$affectedDomain && $affectedRights==User\Driver::RIGHTS_NONE)) {
+					$this->assertTrue($this->data->user->authorize($affected, "userRemove"), "User $actor acted properly for $affected, but the action was denied.");
+				} else {
+					$this->assertFalse($this->data->user->authorize($affected, "userRemove"), "User $actor acted improperly for $affected, but the action was allowed.");
+				}
+				// and they should only be able to set their own rights to regular user
+				foreach(self::LEVELS as $level) {
+					if($actor==$affected && in_array($level, [User\Driver::RIGHTS_NONE, User\Driver::RIGHTS_DOMAIN_MANAGER])) {
+						$this->assertTrue($this->data->user->authorize($affected, "userRightsSet", $level), "User $actor acted properly for $affected settings rights level $level, but the action was denied.");
+					} else {
+						$this->assertFalse($this->data->user->authorize($affected, "userRightsSet", $level), "User $actor acted improperly for $affected settings rights level $level, but the action was allowed.");
+					}
+				}
+			}
+			// they should also be able to list all users on their own domain
+			foreach(self::DOMAINS as $domain) {
+				if($domain=="@".$actorDomain) {
+					$this->assertTrue($this->data->user->authorize($domain, "userList"), "User $actor properly checked user list for domain '$domain', but the action was denied.");
+				} else {
+					$this->assertFalse($this->data->user->authorize($domain, "userList"), "User $actor improperly checked user list for domain '$domain', but the action was allowed.");
+				}
+			}
+		}
+	}
+
+	function testDomainAdministratorLogic() {
+		foreach(self::USERS as $actor => $actorRights) {
+			if($actorRights != User\Driver::RIGHTS_DOMAIN_ADMIN) continue;
+			$actorDomain = substr($actor,strrpos($actor,"@")+1);
+			$this->data->user->auth($actor, "");
+			foreach(self::USERS as $affected => $affectedRights) {
+				$affectedDomain = substr($affected,strrpos($affected,"@")+1);
+				// domain admins should be able to check any user on the same domain
+				if($actorDomain==$affectedDomain) {
+					$this->assertTrue($this->data->user->authorize($affected, "userExists"), "User $actor acted properly for $affected, but the action was denied.");
+				} else {
+					$this->assertFalse($this->data->user->authorize($affected, "userExists"), "User $actor acted improperly for $affected, but the action was allowed.");
+				}
+				// they should be able to act for any user on the same domain who is not a global manager or admin
+				if($actorDomain==$affectedDomain && $affectedRights <= User\Driver::RIGHTS_DOMAIN_ADMIN) {
+					$this->assertTrue($this->data->user->authorize($affected, "userRemove"), "User $actor acted properly for $affected, but the action was denied.");
+				} else {
+					$this->assertFalse($this->data->user->authorize($affected, "userRemove"), "User $actor acted improperly for $affected, but the action was allowed.");
+				}
+				// they should be able to set rights for any user on their domain who is not a global manager or admin, up to domain admin level
+				foreach(self::LEVELS as $level) {
+					if($actorDomain==$affectedDomain && $affectedRights <= User\Driver::RIGHTS_DOMAIN_ADMIN && $level <= User\Driver::RIGHTS_DOMAIN_ADMIN) {
+						$this->assertTrue($this->data->user->authorize($affected, "userRightsSet", $level), "User $actor acted properly for $affected settings rights level $level, but the action was denied.");
+					} else {
+						$this->assertFalse($this->data->user->authorize($affected, "userRightsSet", $level), "User $actor acted improperly for $affected settings rights level $level, but the action was allowed.");
+					}
+				}
+			}
+			// they should also be able to list all users on their own domain
+			foreach(self::DOMAINS as $domain) {
+				if($domain=="@".$actorDomain) {
+					$this->assertTrue($this->data->user->authorize($domain, "userList"), "User $actor properly checked user list for domain '$domain', but the action was denied.");
+				} else {
+					$this->assertFalse($this->data->user->authorize($domain, "userList"), "User $actor improperly checked user list for domain '$domain', but the action was allowed.");
+				}
+			}
+		}
+	}
+
+	function testGlobalManagerLogic() {
+		foreach(self::USERS as $actor => $actorRights) {
+			if($actorRights != User\Driver::RIGHTS_GLOBAL_MANAGER) continue;
+			$actorDomain = substr($actor,strrpos($actor,"@")+1);
+			$this->data->user->auth($actor, "");
+			foreach(self::USERS as $affected => $affectedRights) {
+				$affectedDomain = substr($affected,strrpos($affected,"@")+1);
+				// global managers should be able to check any user 
+				$this->assertTrue($this->data->user->authorize($affected, "userExists"), "User $actor acted properly for $affected, but the action was denied.");
+				// they should only be able to act for regular users
+				if($actor==$affected || $affectedRights==User\Driver::RIGHTS_NONE) {
+					$this->assertTrue($this->data->user->authorize($affected, "userRemove"), "User $actor acted properly for $affected, but the action was denied.");
+				} else {
+					$this->assertFalse($this->data->user->authorize($affected, "userRemove"), "User $actor acted improperly for $affected, but the action was allowed.");
+				}
+				// and they should only be able to set their own rights to regular user
+				foreach(self::LEVELS as $level) {
+					if($actor==$affected && in_array($level, [User\Driver::RIGHTS_NONE, User\Driver::RIGHTS_GLOBAL_MANAGER])) {
+						$this->assertTrue($this->data->user->authorize($affected, "userRightsSet", $level), "User $actor acted properly for $affected settings rights level $level, but the action was denied.");
+					} else {
+						$this->assertFalse($this->data->user->authorize($affected, "userRightsSet", $level), "User $actor acted improperly for $affected settings rights level $level, but the action was allowed.");
+					}
+				}
+			}
+			// they should also be able to list all users
+			foreach(self::DOMAINS as $domain) {
+				$this->assertTrue($this->data->user->authorize($domain, "userList"), "User $actor properly checked user list for domain '$domain', but the action was denied.");
+			}
+		}
+	}
+
+	function testGlobalAdministratorLogic() {
+		foreach(self::USERS as $actor => $actorRights) {
+			if($actorRights != User\Driver::RIGHTS_GLOBAL_ADMIN) continue;
+			$this->data->user->auth($actor, "");
+			// global admins can do anything
+			foreach(self::USERS as $affected => $affectedRights) {
+				$this->assertTrue($this->data->user->authorize($affected, "userExists"), "User $actor acted properly for $affected, but the action was denied.");
+				$this->assertTrue($this->data->user->authorize($affected, "userRemove"), "User $actor acted properly for $affected, but the action was denied.");
+				foreach(self::LEVELS as $level) {
+					$this->assertTrue($this->data->user->authorize($affected, "userRightsSet", $level), "User $actor acted properly for $affected settings rights level $level, but the action was denied.");
+				}
+			}
+			foreach(self::DOMAINS as $domain) {
+				$this->assertTrue($this->data->user->authorize($domain, "userList"), "User $actor properly checked user list for domain '$domain', but the action was denied.");
+			}
+		}
 	}
 }

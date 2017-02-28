@@ -62,14 +62,19 @@ class User {
         // certain actions shouldn't check affected user's rights
         if(in_array($action, ["userRightsGet","userExists","userList"], true)) return true;
         if($action=="userRightsSet") {
-            // managers can only set their own rights, and only lower
-            if(($rights==User\Driver::RIGHTS_DOMAIN_MANAGER || $rights==User\Driver::RIGHTS_GLOBAL_MANAGER)) {
-                if($affectedUser != $this->data->user->id || $newRightsLevel != User\Driver::RIGHTS_NONE) return false;
-            }
             // setting rights above your own is not allowed
             if($newRightsLevel > $rights) return false;
+            // setting yourself to rights you already have is harmless and can be allowed
+            if($this->id==$affectedUser && $newRightsLevel==$rights) return true;
+            // managers can only set their own rights, and only to normal user
+            if(in_array($rights, [User\Driver::RIGHTS_DOMAIN_MANAGER, User\Driver::RIGHTS_GLOBAL_MANAGER])) {
+                if($this->id != $affectedUser || $newRightsLevel != User\Driver::RIGHTS_NONE) return false;
+                return true;
+            }
         }
         $affectedRights = $this->rightsGet($affectedUser);
+        // managers can only act on themselves (checked above) or regular users
+        if(in_array($rights,[User\Driver::RIGHTS_GLOBAL_MANAGER,User\Driver::RIGHTS_DOMAIN_MANAGER]) && $affectedRights != User\Driver::RIGHTS_NONE) return false;
         // acting for users with rights greater than your own (or equal, for managers) is not allowed
         if($affectedRights > $rights || ($rights != User\Driver::RIGHTS_DOMAIN_ADMIN && $affectedRights==$rights)) return false;
         return true;
@@ -110,6 +115,7 @@ class User {
             return $this->authForm();
         } else {
             $this->id = $user;
+            $this->actor = [];
             switch($this->u->driverFunctions("auth")) {
                 case User\Driver::FUNC_EXTERNAL:
                     $out = $this->u->auth($user, $password);
