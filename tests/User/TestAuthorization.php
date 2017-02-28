@@ -251,7 +251,7 @@ class TestAuthorization extends \PHPUnit\Framework\TestCase {
 	}
 
 	function testInternalExceptionLogic() {
-		$failTest = [
+		$test = [
 			'userExists',
 			'userRemove',
 			'userAdd',
@@ -262,16 +262,10 @@ class TestAuthorization extends \PHPUnit\Framework\TestCase {
 			'userRightsSet',
 			'userList',
 		];
-		$passTest = [
-			'userRightsSet', 
-			'userList'
-		];
-		sort($failTest);
-		sort($passTest);
-		$actor = "user@example.com";
-		$this->data->user->auth($actor, "");
-		$this->assertEquals($passTest, $this->checkExceptions($actor));
-		$this->assertEquals($failTest, $this->checkExceptions("user@example.org"));
+		$this->data->user->auth("gadm@example.com", "");
+		$this->assertCount(0, $this->checkExceptions("user@example.org"));
+		$this->data->user->auth("user@example.com", "");
+		$this->assertCount(sizeof($test), $this->checkExceptions("user@example.org"));
 	}
 
 	function testExternalExceptionLogic() {
@@ -319,7 +313,7 @@ class TestAuthorization extends \PHPUnit\Framework\TestCase {
 			$err[] = "userRightsGet";
 		}
 		try {
-			$this->data->user->rightsSet($user, 10000);
+			$this->data->user->rightsSet($user, User\Driver::RIGHTS_GLOBAL_ADMIN);
 		} catch(User\ExceptionAuthz $e) {
 			$err[] = "userRightsSet";
 		}
@@ -328,7 +322,6 @@ class TestAuthorization extends \PHPUnit\Framework\TestCase {
 		} catch(User\ExceptionAuthz $e) {
 			$err[] = "userList";
 		}
-		sort($err);
 		return $err;
 	}
 }
