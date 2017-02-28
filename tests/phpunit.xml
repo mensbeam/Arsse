@@ -24,6 +24,7 @@
 <testsuite name="User management">
     <file>User/TestUser.php</file>
     <file>User/TestUserExternal.php</file>
+    <file>User/TestAuthorization.php</file>
 </testsuite>
 
 </phpunit>

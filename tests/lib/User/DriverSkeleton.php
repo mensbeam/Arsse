@@ -18,7 +18,7 @@ abstract class DriverSkeleton {
 
     function userAdd(string $user, string $password = null): string {
         $u = [
-            'password' => $password ? password_hash($password, \PASSWORD_DEFAULT) : null,
+            'password' => $password ? password_hash($password, \PASSWORD_DEFAULT) : "",
             'rights'   => Driver::RIGHTS_NONE,
         ];
         $this->db[$user] = $u;

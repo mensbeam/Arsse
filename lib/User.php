@@ -9,6 +9,7 @@ class User {
     protected $u;
     protected $authz = true;
     protected $authzSupported = 0;
+    protected $actor = [];
     
     static public function listDrivers(): array {
         $sep = \DIRECTORY_SEPARATOR;
@@ -108,6 +109,7 @@ class User {
             if($this->data->conf->userAuthPreferHTTP) return $this->authHTTP();
             return $this->authForm();
         } else {
+            $this->id = $user;
             switch($this->u->driverFunctions("auth")) {
                 case User\Driver::FUNC_EXTERNAL:
                     $out = $this->u->auth($user, $password);
