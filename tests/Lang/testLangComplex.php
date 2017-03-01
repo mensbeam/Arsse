@@ -25,6 +25,7 @@ class TestLangComplex extends \PHPUnit\Framework\TestCase {
      * @depends testLazyLoad
      */
     function testGetWantedAndLoadedLocale() {
+        Lang::set("en", true);
         Lang::set("ja");
         $this->assertEquals("ja", Lang::get());
         $this->assertEquals("en", Lang::get(true));
