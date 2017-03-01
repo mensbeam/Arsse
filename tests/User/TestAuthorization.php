@@ -252,6 +252,7 @@ class TestAuthorization extends \PHPUnit\Framework\TestCase {
 
 	function testInternalExceptionLogic() {
 		$tests = [
+			// methods of User class to test, with parameters besides affected user
 			'exists'        => [],
 			'remove'        => [],
 			'add'           => [''],
@@ -262,8 +263,10 @@ class TestAuthorization extends \PHPUnit\Framework\TestCase {
 			'rightsSet'     => [User\Driver::RIGHTS_GLOBAL_ADMIN],
 			'list'          => [],
 		];
+		// try first with a global admin (there should be no exception)
 		$this->data->user->auth("gadm@example.com", "");
 		$this->assertCount(0, $this->checkExceptions("user@example.org", $tests));
+		// next try with a regular user acting on another user (everything should fail)
 		$this->data->user->auth("user@example.com", "");
 		$this->assertCount(sizeof($tests), $this->checkExceptions("user@example.org", $tests));
 	}
@@ -275,9 +278,12 @@ class TestAuthorization extends \PHPUnit\Framework\TestCase {
 		$this->testInternalExceptionLogic();
 	}
 
+	// meat of testInternalExceptionLogic and testExternalExceptionLogic
+	// calls each requested function with supplied arguments, catches authorization exceptions, and returns an array of caught failed calls
 	protected function checkExceptions(string $user, $tests): array {
 		$err = [];
 		foreach($tests as $func => $args) {
+			// list method does not take an affected user, so do not unshift for that one
 			if($func != "list") array_unshift($args, $user);
 			try {
 				call_user_func_array(array($this->data->user, $func), $args);
