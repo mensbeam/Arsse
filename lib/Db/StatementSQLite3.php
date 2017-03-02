@@ -7,7 +7,7 @@ class StatementSQLite3 implements Statement {
     protected $st;
     protected $types;
 
-    public function __construct($db, $st, array $bindings = null) {
+    public function __construct($db, $st, array $bindings = []) {
         $this->db = $db;
         $this->st = $st;
         $this->types = [];
