@@ -28,4 +28,22 @@ class TestDbStatementSQLite3 extends \PHPUnit\Framework\TestCase {
 	function testConstructStatement() {
 		$this->assertInstanceOf(Db\StatementSQLite3::class, new Db\StatementSQLite3($this->c, $this->s));
 	}
+
+	function testBindMissingValue() {
+		$s = new Db\StatementSQLite3($this->c, $this->s);
+		$val = $s->runArray()->get()['value'];
+		$this->assertSame(null, $val);
+	}
+
+	function testBindNull() {
+		$s = new Db\StatementSQLite3($this->c, $this->s);
+		$val = $s->runArray([null])->get()['value'];
+		$this->assertSame(null, $val);
+	}
+
+	function testBindInteger() {
+		$s = new Db\StatementSQLite3($this->c, $this->s, ["int"]);
+		$val = $s->runArray([2112])->get()['value'];
+		$this->assertSame(2112, $val);
+	}
 }

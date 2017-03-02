@@ -10,9 +10,47 @@ class StatementSQLite3 implements Statement {
     public function __construct($db, $st, array $bindings = []) {
         $this->db = $db;
         $this->st = $st;
+        $this->rebindArray($bindings);
+    }
+
+    public function __destruct() {
+        $this->st->close();
+        unset($this->st);
+    }
+
+    public function __invoke(...$values) {
+        return $this->runArray($values);
+    }
+
+    public function run(...$values): Result {
+        return $this->runArray($values);
+    }
+
+    public function runArray(array $values = null): Result {
+        $this->st->clear();
+        $l = sizeof($values);
+        for($a = 0; $a < $l; $a++) {
+            if($values[$a]===null) {
+                $type = \SQLITE3_NULL;
+            } else {
+                $type = (array_key_exists($a,$this->types)) ? $this->types[$a] : \SQLITE3_TEXT;
+            }
+            $this->st->bindParam($a+1, $values[$a], $type);
+        }
+        return new ResultSQLite3($this->st->execute(), $this->db->changes(), $this);
+    }
+
+    public function rebind(...$bindings): bool {
+        return $this->rebindArray($bindings);
+    }
+
+    public function rebindArray(array $bindings): bool {
         $this->types = [];
         foreach($bindings as $binding) {
             switch(trim(strtolower($binding))) {
+                case "null":
+                case "nil":
+                    $this->types[] = \SQLITE3_NULL; break;
                 case "int":
                 case "integer":
                     $this->types[] = \SQLITE3_INTEGER; break;
@@ -42,32 +80,6 @@ class StatementSQLite3 implements Statement {
                     $this->types[] = \SQLITE3_TEXT; break;
             }
         }
-    }
-
-    public function __destruct() {
-        $this->st->close();
-        unset($this->st);
-    }
-
-    public function __invoke(&...$values) {
-        return $this->runArray($values);
-    }
-
-    public function run(&...$values): Result {
-        return $this->runArray($values);
-    }
-
-    public function runArray(array &$values = null): Result {
-        $this->st->clear();
-        $l = sizeof($values);
-        for($a = 0; $a < $l; $a++) {
-            if($values[$a]===null) {
-                $type = \SQLITE3_NULL;
-            } else {
-                $type = (array_key_exists($a,$this->types)) ? $this->types[$a] : \SQLITE3_TEXT;
-            }
-            $this->st->bindParam($a+1, $values[$a], $type);
-        }
-        return new ResultSQLite3($this->st->execute(), $this->db->changes(), $this);
+    return true;
     }
 }
