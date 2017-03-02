@@ -9,7 +9,29 @@ class ResultSQLite3 implements Result {
     protected $cur = null;
     protected $rows = 0;
 
-    public function __construct($result, $changes, $statement = null) {
+    // actual public methods
+
+    public function getSingle() {
+        $this->next();
+        if($this->valid()) {
+            $keys = array_keys($this->cur);
+            return $this->cur[array_shift($keys)];
+        }
+        return null;
+    }
+
+    public function get() {
+        $this->next();
+        return ($this->valid() ? $this->cur : null);
+    }
+
+    public function changes() {
+        return $this->rows;
+    }
+
+    // constructor/destructor
+
+    public function __construct($result, $changes = 0, $statement = null) {
         $this->st = $statement; //keeps the statement from being destroyed, invalidating the result set
         $this->set = $result;
         $this->rows = $changes;
@@ -19,6 +41,8 @@ class ResultSQLite3 implements Result {
         $this->set->finalize();
         unset($this->set);
     }
+
+    // PHP iterator methods
 
     public function valid() {
         $this->cur = $this->set->fetchArray(\SQLITE3_ASSOC);
@@ -42,23 +66,5 @@ class ResultSQLite3 implements Result {
         $this->pos = 0;
         $this->cur = null;
         $this->set->reset();
-    }
-
-    public function getSingle() {
-        $this->next();
-        if($this->valid()) {
-            $keys = array_keys($this->cur);
-            return $this->cur[array_shift($keys)];
-        }
-        return null;
-    }
-
-    public function get() {
-        $this->next();
-        return ($this->valid() ? $this->cur : null);
-    }
-
-    public function changes() {
-        return $this->rows;
     }
 }

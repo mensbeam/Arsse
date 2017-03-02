@@ -27,4 +27,8 @@
     <file>User/TestAuthorization.php</file>
 </testsuite>
 
+<testsuite name="SQLite3 database driver">
+    <file>Db/SQLite3/TestDbResultSQLite3.php</file>
+</testsuite>
+
 </phpunit>
