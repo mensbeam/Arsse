@@ -31,7 +31,7 @@ class ResultSQLite3 implements Result {
 
     // constructor/destructor
 
-    public function __construct($result, $changes = 0, $statement = null) {
+    public function __construct(\SQLite3Result $result, int $changes = 0, StatementSQLite3 $statement = null) {
         $this->st = $statement; //keeps the statement from being destroyed, invalidating the result set
         $this->set = $result;
         $this->rows = $changes;

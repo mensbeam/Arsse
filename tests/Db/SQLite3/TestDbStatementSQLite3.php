@@ -36,14 +36,45 @@ class TestDbStatementSQLite3 extends \PHPUnit\Framework\TestCase {
 	}
 
 	function testBindNull() {
+		$exp = [
+			"null"      => null,
+			"integer"   => null,
+			"float"     => null,
+			"date"      => null,
+			"time"      => null,
+			"datetime"  => null,
+			"binary"    => null,
+			"text"      => null,
+			"boolean"   => null,
+		];
 		$s = new Db\StatementSQLite3($this->c, $this->s);
-		$val = $s->runArray([null])->get()['value'];
-		$this->assertSame(null, $val);
+		$types = array_unique(Db\Statement::TYPES);
+		foreach($types as $type) {
+			$s->rebindArray([$type]);
+			$val = $s->runArray([null])->get()['value'];
+			$this->assertSame($exp[$type], $val);
+		}
 	}
 
 	function testBindInteger() {
-		$s = new Db\StatementSQLite3($this->c, $this->s, ["int"]);
-		$val = $s->runArray([2112])->get()['value'];
-		$this->assertSame(2112, $val);
+		$exp = [
+		"null"      => null,
+		"integer"   => 2112,
+		"float"     => 2112.0,
+		"date"      => date('Y-m-d', 2112),
+		"time"      => date('h:i:sP', 2112),
+		"datetime"  => date('Y-m-d h:i:sP', 2112),
+		"binary"    => "2112",
+		"text"      => "2112",
+		"boolean"   => 1,
+		];
+		$s = new Db\StatementSQLite3($this->c, $this->s);
+		$types = array_unique(Db\Statement::TYPES);
+		foreach($types as $type) {
+			$s->rebindArray([$type]);
+			$val = $s->runArray([2112])->get()['value'];
+			$this->assertSame($exp[$type], $val, "Type $type failed comparison.");
+		}
 	}
+	
 }

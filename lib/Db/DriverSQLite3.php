@@ -8,7 +8,7 @@ class DriverSQLite3 implements Driver {
     protected $db;
     protected $data;
     
-    private function __construct(\JKingWeb\NewsSync\RuntimeData $data, bool $install = false) {
+    public function __construct(\JKingWeb\NewsSync\RuntimeData $data, bool $install = false) {
         // check to make sure required extension is loaded
         if(!class_exists("SQLite3")) throw new Exception("extMissing", self::driverName());
         $this->data = $data;

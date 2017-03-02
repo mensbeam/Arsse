@@ -70,12 +70,21 @@ Trait Common {
         return $this->prepareArray($query, $paramType);
     }
 
-    public static function formatDate(string $date): string {
+    public static function formatDate($date, int $precision = self::TS_BOTH): string {
         // Force UTC.
         $timezone = date_default_timezone_get();
         date_default_timezone_set('UTC');
+        // convert input to a Unix timestamp
+        // FIXME: there are more kinds of date representations
+        if(is_int($date)) {
+            $time = $date;
+        } else if($date===null) {
+            $time = 0;
+        } else {
+            $time = strtotime($date);
+        }
         // ISO 8601 with space in the middle instead of T.
-        $date = date('Y-m-d h:i:sP', strtotime($date));
+        $date = date(self::TS_FORMAT[$precision], $time);
         date_default_timezone_set($timezone);
         return $date;
     }
