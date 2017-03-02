@@ -9,6 +9,8 @@ class DriverSQLite3 implements Driver {
     protected $data;
     
     private function __construct(\JKingWeb\NewsSync\RuntimeData $data, bool $install = false) {
+        // check to make sure required extension is loaded
+        if(!class_exists("SQLite3")) throw new Exception("extMissing", self::driverName());
         $this->data = $data;
         $file = $data->conf->dbSQLite3File;
         // if the file exists (or we're initializing the database), try to open it and set initial options
@@ -32,19 +34,8 @@ class DriverSQLite3 implements Driver {
     }
 
     public function __destruct() {
-        $this->db->close();
+        try{$this->db->close();} catch(\Exception $e) {}
         unset($this->db);
-    }
-
-    static public function create(\JKingWeb\NewsSync\RuntimeData $data, bool $install = false): Driver {
-        // check to make sure required extensions are loaded
-        if(class_exists("SQLite3")) {
-            return new self($data, $install);
-        } else if(class_exists("PDO") && in_array("sqlite",\PDO::getAvailableDrivers())) {
-            return new DriverSQLite3PDO($data, $install);
-        } else {
-            throw new Exception("extMissing", self::driverName());
-        }
     }
 
     

@@ -22,8 +22,8 @@ class Database {
 
     public function __construct(RuntimeData $data) {
         $this->data = $data;
-        $this->driver = $data->conf->dbDriver;
-        $this->db = $this->driver::create($data, INSTALL);
+        $this->driver = $driver = $data->conf->dbDriver;
+        $this->db = new $driver($data, INSTALL);
         $ver = $this->db->schemaVersion();
         if(!INSTALL && $ver < self::SCHEMA_VERSION) {
             $this->db->update(self::SCHEMA_VERSION);
@@ -298,6 +298,7 @@ class Database {
                 (new PicoFeed\Reader\Favicon)->find($url),
                 $feed->siteUrl,
                 // Convert the date formats to SQL date format before inserting.
+                // FIXME: Dates should be formatted transparently by the driver's Statement wrapper, not here
                 $this->driver::formatDate($feed->date),
                 $this->driver::formatDate($resource->getLastModified()),
                 $resource->getEtag(),

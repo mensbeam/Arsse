@@ -28,7 +28,7 @@ class User {
     public function __construct(\JKingWeb\NewsSync\RuntimeData $data) {
         $this->data = $data;
         $driver = $data->conf->userDriver;
-        $this->u = $driver::create($data);
+        $this->u = new $driver($data);
         $this->authzSupported = $this->u->driverFunctions("authorize");
     }
 

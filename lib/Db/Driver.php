@@ -2,9 +2,8 @@
 declare(strict_types=1);
 namespace JKingWeb\NewsSync\Db;
 
-interface Driver {    
-    // returns an instance of a class implementing this interface. Implemented as a static method so that classes may return their PDO equivalents instead of themselves
-    static function create(\JKingWeb\NewsSync\RuntimeData $data, bool $install = false): Driver;
+interface Driver {
+    function __construct(\JKingWeb\NewsSync\RuntimeData $data, bool $install = false);
     // returns a human-friendly name for the driver (for display in installer, for example)
     static function driverName(): string;
     // returns the version of the scheme of the opened database; if uninitialized should return 0
