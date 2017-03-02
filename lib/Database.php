@@ -291,16 +291,14 @@ class Database {
                 throw new Feed\Exception($url, $e);
             }
 
-            $this->db->prepare("INSERT INTO newssync_feeds(url,title,favicon,source,updated,modified,etag,username,password) values(?,?,?)", "str", "str", "str", "str", "str", "str", "str", "str", "str")->run(
+            $this->db->prepare("INSERT INTO newssync_feeds(url,title,favicon,source,updated,modified,etag,username,password) values(?,?,?,?,?,?,?,?,?)", "str", "str", "str", "str", "datetime", "datetime", "str", "str", "str")->run(
                 $url,
                 $feed->title,
                 // Grab the favicon for the Goodfeed; returns an empty string if it cannot find one.
                 (new PicoFeed\Reader\Favicon)->find($url),
                 $feed->siteUrl,
-                // Convert the date formats to SQL date format before inserting.
-                // FIXME: Dates should be formatted transparently by the driver's Statement wrapper, not here
-                $this->driver::formatDate($feed->date),
-                $this->driver::formatDate($resource->getLastModified()),
+                $feed->date,
+                $resource->getLastModified(),
                 $resource->getEtag(),
                 $fetchUser,
                 $fetchPassword

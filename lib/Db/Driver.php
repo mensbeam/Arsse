@@ -3,16 +3,6 @@ declare(strict_types=1);
 namespace JKingWeb\NewsSync\Db;
 
 interface Driver {
-    const TS_TIME = -1;
-    const TS_DATE = 0;
-    const TS_BOTH = 1;
-
-    const TS_FORMAT = [
-        self::TS_TIME => 'h:i:sP',
-        self::TS_DATE => 'Y-m-d',
-        self::TS_BOTH => 'Y-m-d h:i:sP',
-    ];
-    
     function __construct(\JKingWeb\NewsSync\RuntimeData $data, bool $install = false);
     // returns a human-friendly name for the driver (for display in installer, for example)
     static function driverName(): string;
