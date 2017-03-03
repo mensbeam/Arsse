@@ -38,7 +38,7 @@ class DriverSQLite3 extends AbstractDriver {
 
     
     static public function driverName(): string {
-        return "SQLite 3";
+        return Lang::msg("Driver.Db.$name.Name");
     }
 
     public function schemaVersion(): int {

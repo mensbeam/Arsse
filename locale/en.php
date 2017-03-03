@@ -1,9 +1,10 @@
 <?php
 return [
-    'Driver.User.Internal.Name'                                        => 'Internal',
+    'Driver.User.Internal.Name'                                         => 'Internal',
+    'Driver.Db.SQLite3.Name'                                            => 'SQLite 3',
     
     // this should only be encountered in testing (because tests should cover all exceptions!)
-    'Exception.JKingWeb/NewsSync/Exception.uncoded'                     => 'The specified exception symbol {0} has no code specified in Exception.php',
+    'Exception.JKingWeb/NewsSync/Exception.uncoded'                     => 'The specified exception symbol {0} has no code specified in AbstractException.php',
     // this should not usually be encountered
     'Exception.JKingWeb/NewsSync/Exception.unknown'                     => 'An unknown error has occurred',
 
@@ -29,6 +30,7 @@ return [
     'Exception.JKingWeb/NewsSync/Db/Exception.fileCorrupt'              => 'Database file "{0}" is corrupt or not a valid database',
     'Exception.JKingWeb/NewsSync/Db/Exception.paramTypeInvalid'         => 'Prepared statement parameter type "{0}" is invalid',
     'Exception.JKingWeb/NewsSync/Db/Exception.paramTypeUnknown'         => 'Prepared statement parameter type "{0}" is valid, but not implemented',
+    'Exception.JKingWeb/NewsSync/Db/Exception.paramTypeMissing'         => 'Prepared statement parameter type for parameter #{0} was not specified',
 
     'Exception.JKingWeb/NewsSync/Db/Update/Exception.manual'            =>
         '{from_version, select,

@@ -291,7 +291,10 @@ class Database {
                 throw new Feed\Exception($url, $e);
             }
 
-            $this->db->prepare("INSERT INTO newssync_feeds(url,title,favicon,source,updated,modified,etag,username,password) values(?,?,?,?,?,?,?,?,?)", "str", "str", "str", "str", "datetime", "datetime", "str", "str", "str")->run(
+            $this->db->prepare(
+                "INSERT INTO newssync_feeds(url,title,favicon,source,updated,modified,etag,username,password) values(?,?,?,?,?,?,?,?,?)", 
+                "str", "str", "str", "str", "datetime", "datetime", "str", "str", "str"
+            )->run(
                 $url,
                 $feed->title,
                 // Grab the favicon for the Goodfeed; returns an empty string if it cannot find one.

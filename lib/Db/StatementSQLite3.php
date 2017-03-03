@@ -26,7 +26,7 @@ class StatementSQLite3 extends AbstractStatement {
     }
 
     public function __destruct() {
-        $this->st->close();
+        try {$this->st->close();} catch(\Throwable $e) {}
         unset($this->st);
     }
 
@@ -49,14 +49,14 @@ class StatementSQLite3 extends AbstractStatement {
                 if(!array_key_exists($this->types[$a], self::BINDINGS)) throw new Exception("paramTypeUnknown", $this->types[$a]);
                 $type = self::BINDINGS[$this->types[$a]];
             } else {
-                $type = \SQLITE3_TEXT;
+                throw new Exception("paramTypeMissing", $a+1);
             }
             // cast value if necessary
             $values[$a] = $this->cast($values[$a], $this->types[$a]);
             // re-adjust for null casts
             if($values[$a]===null) $type = \SQLITE3_NULL;
             // perform binding
-            $this->st->bindParam($a+1, $values[$a], $type);
+            $this->st->bindValue($a+1, $values[$a], $type);
         }
         return new ResultSQLite3($this->st->execute(), $this->db->changes(), $this);
     }

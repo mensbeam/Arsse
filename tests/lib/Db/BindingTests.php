@@ -4,13 +4,6 @@ namespace JKingWeb\NewsSync\Test\Db;
 use JKingWeb\NewsSync\Db\Statement;
 
 trait BindingTests {
-	
-	function testBindMissingValue() {
-		$s = new self::$imp($this->c, $this->s);
-		$val = $s->runArray()->get()['value'];
-		$this->assertSame(null, $val);
-	}
-
 	function testBindNull() {
 		$input = null;
 		$exp = [
@@ -225,15 +218,5 @@ trait BindingTests {
 
 	function testBindImmutableDateObject() {
 		$this->testBindMutableDateObject('\DateTimeImmutable');
-	}
-
-	protected function checkBinding($input, array $expectations) {
-		$s = new self::$imp($this->c, $this->s);
-		$types = array_unique(Statement::TYPES);
-		foreach($types as $type) {
-			$s->rebindArray([$type]);
-			$val = $s->runArray([$input])->get()['value'];
-			$this->assertSame($expectations[$type], $val, "Type $type failed comparison.");
-		}
 	}
 }

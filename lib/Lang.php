@@ -6,7 +6,7 @@ use \Webmozart\Glob\Glob;
 class Lang {
     const DEFAULT = "en"; // fallback locale
     const REQUIRED = [    // collection of absolutely required strings to handle pathological errors
-        'Exception.JKingWeb/NewsSync/Exception.uncoded'                     => 'The specified exception symbol {0} has no code specified in Exception.php',
+        'Exception.JKingWeb/NewsSync/Exception.uncoded'                     => 'The specified exception symbol {0} has no code specified in AbstractException.php',
         'Exception.JKingWeb/NewsSync/Exception.unknown'                     => 'An unknown error has occurred',
         'Exception.JKingWeb/NewsSync/Lang/Exception.defaultFileMissing'     => 'Default language file "{0}" missing',
         'Exception.JKingWeb/NewsSync/Lang/Exception.fileMissing'            => 'Language file "{0}" is not available',
