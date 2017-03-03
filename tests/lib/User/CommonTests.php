@@ -1,28 +1,9 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync;
+namespace JKingWeb\NewsSync\Test\User;
+use JKingWeb\NewsSync\User\Driver;
 
-
-class TestUser extends \PHPUnit\Framework\TestCase {
-    use Test\Tools;
-    
-	const USER1 = "john.doe@example.com";
-	const USER2 = "jane.doe@example.com";
-
-	protected $data;
-
-    function setUp() {
-		$drv = Test\User\DriverInternalMock::class;
-		$conf = new Conf();
-		$conf->userDriver = $drv;
-		$conf->userAuthPreferHTTP = true;
-		$this->data = new Test\RuntimeData($conf);
-		$this->data->user = new User($this->data);
-		$this->data->user->authorizationEnabled(false);
-		$_SERVER['PHP_AUTH_USER'] = self::USER1;
-		$_SERVER['PHP_AUTH_PW'] = "secret";
-	}
-
+trait CommonTests {
 	function testListUsers() {
 		$this->assertCount(0,$this->data->user->list());
 	}
@@ -66,8 +47,11 @@ class TestUser extends \PHPUnit\Framework\TestCase {
 	}
 
 	function testAuthenticateAUser() {
+		$_SERVER['PHP_AUTH_USER'] = self::USER1;
+		$_SERVER['PHP_AUTH_PW'] = "secret";
 		$this->data->user->add(self::USER1, "secret");
 		$this->data->user->add(self::USER2, "");
+		$this->assertTrue($this->data->user->auth());
 		$this->assertTrue($this->data->user->auth(self::USER1, "secret"));
 		$this->assertFalse($this->data->user->auth(self::USER1, "superman"));
 		$this->assertTrue($this->data->user->auth(self::USER2, ""));
@@ -104,14 +88,14 @@ class TestUser extends \PHPUnit\Framework\TestCase {
 			'name'     => 'John Doe',
 			'id'       => 'invalid',
 			'domain'   => 'localhost',
-			'rights'   => User\Driver::RIGHTS_GLOBAL_ADMIN,
+			'rights'   => Driver::RIGHTS_GLOBAL_ADMIN,
 			'password' => 'superman',
 		];
 		$pGet = [
 			'name'   => 'John Doe',
 			'id'     => self::USER1,
 			'domain' => 'example.com',
-			'rights' => User\Driver::RIGHTS_NONE,
+			'rights' => Driver::RIGHTS_NONE,
 		];
 		$this->data->user->add(self::USER1, "secret");
 		$this->data->user->propertiesSet(self::USER1, $pSet);
@@ -123,12 +107,12 @@ class TestUser extends \PHPUnit\Framework\TestCase {
 
 	function testGetTheRightsOfAUser() {
 		$this->data->user->add(self::USER1, "");
-		$this->assertEquals(User\Driver::RIGHTS_NONE, $this->data->user->rightsGet(self::USER1));
+		$this->assertEquals(Driver::RIGHTS_NONE, $this->data->user->rightsGet(self::USER1));
 	}
 
 	function testSetTheRightsOfAUser() {
 		$this->data->user->add(self::USER1, "");
-		$this->data->user->rightsSet(self::USER1, User\Driver::RIGHTS_GLOBAL_ADMIN);
-		$this->assertEquals(User\Driver::RIGHTS_GLOBAL_ADMIN, $this->data->user->rightsGet(self::USER1));
+		$this->data->user->rightsSet(self::USER1, Driver::RIGHTS_GLOBAL_ADMIN);
+		$this->assertEquals(Driver::RIGHTS_GLOBAL_ADMIN, $this->data->user->rightsGet(self::USER1));
 	}
 }

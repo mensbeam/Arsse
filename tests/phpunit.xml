@@ -22,8 +22,9 @@
 </testsuite>
 
 <testsuite name="User management">
-    <file>User/TestUser.php</file>
-    <file>User/TestUserExternal.php</file>
+    <file>User/TestUserMockInternal.php</file>
+    <file>User/TestUserMockExternal.php</file>
+    <file>User/TestUserInternalDriver.php</file>
     <file>User/TestAuthorization.php</file>
 </testsuite>
 

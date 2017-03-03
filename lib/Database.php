@@ -2,10 +2,10 @@
 declare(strict_types=1);
 namespace JKingWeb\NewsSync;
 use PasswordGenerator\Generator as PassGen;
+use PicoFeed\Reader\Reader;
+use PicoFeed\PicoFeedException;
 
 class Database {
-    use PicoFeed\Reader\Reader;
-    use PicoFeed\PicoFeedException;
 
     const SCHEMA_VERSION = 1;
     const FORMAT_TS      = "Y-m-d h:i:s";
@@ -26,7 +26,7 @@ class Database {
         $this->db = new $driver($data, INSTALL);
         $ver = $this->db->schemaVersion();
         if(!INSTALL && $ver < self::SCHEMA_VERSION) {
-            $this->db->update(self::SCHEMA_VERSION);
+            $this->db->schemaUpdate(self::SCHEMA_VERSION);
         }
     }
 
@@ -50,7 +50,7 @@ class Database {
         return $this->db->schemaVersion();
     }
 
-    public function dbUpdate(): bool {
+    public function schemaUpdate(): bool {
         if($this->db->schemaVersion() < self::SCHEMA_VERSION) return $this->db->update(self::SCHEMA_VERSION);
         return false;
     }

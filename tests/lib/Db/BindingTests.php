@@ -2,7 +2,6 @@
 declare(strict_types=1);
 namespace JKingWeb\NewsSync\Test\Db;
 use JKingWeb\NewsSync\Db\Statement;
-use JKingWeb\NewsSync\Db\Driver;
 
 trait BindingTests {
 	

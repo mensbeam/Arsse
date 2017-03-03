@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace JKingWeb\NewsSync\Db;
 use JKingWeb\DrUUID\UUID as UUID;
 
-Trait Common {
+abstract class AbstractDriver implements Driver {
     protected $transDepth = 0;
 
     public function schemaVersion(): int {

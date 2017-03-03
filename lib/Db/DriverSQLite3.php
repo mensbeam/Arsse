@@ -2,9 +2,7 @@
 declare(strict_types=1);
 namespace JKingWeb\NewsSync\Db;
 
-class DriverSQLite3 implements Driver {
-    use Common;
-    
+class DriverSQLite3 extends AbstractDriver {    
     protected $db;
     protected $data;
     
@@ -47,7 +45,7 @@ class DriverSQLite3 implements Driver {
         return $this->query("PRAGMA user_version")->getSingle();
     }
 
-    public function update(int $to): bool {
+    public function schemaUpdate(int $to): bool {
         $ver = $this->schemaVersion();
         if(!$this->data->conf->dbSQLite3AutoUpd)  throw new Update\Exception("manual", ['version' => $ver, 'driver_name' => $this->driverName()]);
         if($ver >= $to) throw new Update\Exception("tooNew", ['difference' => ($ver - $to), 'current' => $ver, 'target' => $to, 'driver_name' => $this->driverName()]);

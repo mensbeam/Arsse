@@ -13,7 +13,7 @@ trait InternalFunctions {
     function auth(string $user, string $password): bool {
         if(!$this->data->user->exists($user)) return false;
         $hash = $this->db->userPasswordGet($user);
-        if(!$hash) return false;
+        if($password==="" && $hash==="") return true;
         return password_verify($password, $hash);
     }
 
@@ -33,7 +33,7 @@ trait InternalFunctions {
         return $this->db->userList($domain);
     }
     
-    function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null): bool {
+    function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null): string {
         return $this->db->userPasswordSet($user, $newPassword);
     }
 

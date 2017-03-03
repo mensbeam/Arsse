@@ -76,4 +76,12 @@ class Database extends DriverSkeleton {
         if(!$this->userExists($user)) throw new Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         return parent::userRightsSet($user, $level);
     }
+
+    // specific to mock database
+
+    function userPasswordGet(string $user): string {
+        if(!$this->data->user->authorize($user, __FUNCTION__)) throw new ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!$this->userExists($user)) throw new Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        return $this->db[$user]['password'];
+    }
 }
