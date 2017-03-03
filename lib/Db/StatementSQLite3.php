@@ -52,11 +52,11 @@ class StatementSQLite3 extends AbstractStatement {
                 $type = \SQLITE3_TEXT;
             }
             // cast value if necessary
-            $value = $this->cast($values[$a], $this->types[$a]);
+            $values[$a] = $this->cast($values[$a], $this->types[$a]);
             // re-adjust for null casts
-            if($value===null) $type = \SQLITE3_NULL;
+            if($values[$a]===null) $type = \SQLITE3_NULL;
             // perform binding
-            $this->st->bindParam($a+1, $value, $type);
+            $this->st->bindParam($a+1, $values[$a], $type);
         }
         return new ResultSQLite3($this->st->execute(), $this->db->changes(), $this);
     }

@@ -19,7 +19,7 @@ interface Driver {
     function unlock(): bool;
     function isLocked(): bool;
     // attempt to perform an in-place upgrade of the database schema; this may be a no-op which always throws an exception
-    function update(int $to): bool;
+    function schemaUpdate(int $to): bool;
     // execute one or more unsanitized SQL queries and return an indication of success
     function exec(string $query): bool;
     // perform a single unsanitized query and return a result set

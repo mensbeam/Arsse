@@ -51,7 +51,7 @@ class Database {
     }
 
     public function schemaUpdate(): bool {
-        if($this->db->schemaVersion() < self::SCHEMA_VERSION) return $this->db->update(self::SCHEMA_VERSION);
+        if($this->db->schemaVersion() < self::SCHEMA_VERSION) return $this->db->schemaUpdate(self::SCHEMA_VERSION);
         return false;
     }
 
@@ -163,11 +163,11 @@ class Database {
                 $value =& $in;
                 break;
         }
-        $this->db->prepare("REPLACE INTO newssync_settings(key,value,type) values(?,?,?)", "str", (($type=="null") ? "null" : "str"), "str")->run($key, $value, "text");
+        $this->db->prepare("REPLACE INTO newssync_settings(key,value,type) values(?,?,?)", "str", "str", "str")->run($key, $value, $type);
     }
 
     public function settingRemove(string $key): bool {
-        $this->db->prepare("DELETE from newssync_settings where key = ?", "str")->run($key);
+        $this->db->prepare("DELETE from newssync_settings where key is ?", "str")->run($key);
         return true;
     }
 
@@ -182,7 +182,7 @@ class Database {
         if($password===null) $password = (new PassGen)->length($this->data->conf->userTempPasswordLength)->get();
         $hash = "";
         if(strlen($password) > 0) $hash = password_hash($password, \PASSWORD_DEFAULT);
-        $this->db->prepare("INSERT INTO newssync_users(id,password) values(?,?)", "str", "str")->run($user,$hash);
+        $this->db->prepare("INSERT INTO newssync_users(id,password) values(?,?)", "str", "str")->runArray([$user,$hash]);
         return $password;
     }
 
@@ -295,7 +295,7 @@ class Database {
                 $url,
                 $feed->title,
                 // Grab the favicon for the Goodfeed; returns an empty string if it cannot find one.
-                (new PicoFeed\Reader\Favicon)->find($url),
+                (new \PicoFeed\Reader\Favicon)->find($url),
                 $feed->siteUrl,
                 $feed->date,
                 $resource->getLastModified(),
