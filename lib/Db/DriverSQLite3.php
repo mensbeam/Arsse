@@ -38,6 +38,7 @@ class DriverSQLite3 extends AbstractDriver {
 
     
     static public function driverName(): string {
+        $name = str_replace(Driver::class, "", static::class);
         return Lang::msg("Driver.Db.$name.Name");
     }
 
