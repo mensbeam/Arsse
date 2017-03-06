@@ -56,10 +56,19 @@ class TestDbResultSQLite3 extends \PHPUnit\Framework\TestCase {
     function testGetSingleValues() {
         $set = $this->c->query("SELECT 1867 as year union select 1970 as year union select 2112 as year");
         $test = new Db\ResultSQLite3($set);
-        $this->assertEquals(1867, $test->getSingle());
-        $this->assertEquals(1970, $test->getSingle());
-        $this->assertEquals(2112, $test->getSingle());
-        $this->assertSame(null, $test->getSingle());
+        $this->assertEquals(1867, $test->getValue());
+        $this->assertEquals(1970, $test->getValue());
+        $this->assertEquals(2112, $test->getValue());
+        $this->assertSame(null, $test->getValue());
+    }
+
+    function testGetFirstValuesOnly() {
+        $set = $this->c->query("SELECT 1867 as year, 19 as century union select 1970 as year, 20 as century union select 2112 as year, 22 as century");
+        $test = new Db\ResultSQLite3($set);
+        $this->assertEquals(1867, $test->getValue());
+        $this->assertEquals(1970, $test->getValue());
+        $this->assertEquals(2112, $test->getValue());
+        $this->assertSame(null, $test->getValue());
     }
 
     function testGetRows() {
@@ -72,5 +81,6 @@ class TestDbResultSQLite3 extends \PHPUnit\Framework\TestCase {
         $this->assertEquals($rows[0], $test->get());
         $this->assertEquals($rows[1], $test->get());
         $this->assertSame(null, $test->get());
+        $this->assertEquals($rows, $test->getAll());
     }
 }

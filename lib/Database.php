@@ -173,7 +173,7 @@ class Database {
 
     public function userExists(string $user): bool {
         if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        return (bool) $this->db->prepare("SELECT count(*) from newssync_users where id is ?", "str")->run($user)->getSingle();
+        return (bool) $this->db->prepare("SELECT count(*) from newssync_users where id is ?", "str")->run($user)->getValue();
     }
 
     public function userAdd(string $user, string $password = null): string {
@@ -212,7 +212,7 @@ class Database {
     public function userPasswordGet(string $user): string {
         if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
-        return (string) $this->db->prepare("SELECT password from newssync_users where id is ?", "str")->run($user)->getSingle();
+        return (string) $this->db->prepare("SELECT password from newssync_users where id is ?", "str")->run($user)->getValue();
     }
 
     public function userPasswordSet(string $user, string $password = null): string {
@@ -249,7 +249,7 @@ class Database {
 
     public function userRightsGet(string $user): int {
         if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        return (int) $this->db->prepare("SELECT rights from newssync_users where id is ?", "str")->run($user)->getSingle();
+        return (int) $this->db->prepare("SELECT rights from newssync_users where id is ?", "str")->run($user)->getValue();
     }
 
     public function userRightsSet(string $user, int $rights): bool {
@@ -273,7 +273,7 @@ class Database {
 
         // If the feed doesn't already exist in the database then add it to the database after determining its validity with PicoFeed.
         $qFeed = $this->db->prepare("SELECT id from newssync_feeds where url is ? and username is ? and password is ?", "str", "str", "str");
-        $feed = $qFeed->run($url, $fetchUser, $fetchPassword)->getSingle();
+        $feed = $qFeed->run($url, $fetchUser, $fetchPassword)->getValue();
         if ($feed === null) {
             try {
                 $reader = new Reader;
@@ -310,19 +310,19 @@ class Database {
             // TODO: Populate newssync_articles with contents of what was obtained from PicoFeed.
 
             // Get the ID for the feed that was just added.
-            $feedID = $qFeed->run($url, $fetchUser, $fetchPassword)->getSingle();
+            $feedID = $qFeed->run($url, $fetchUser, $fetchPassword)->getValue();
         }
 
         // Add the feed to the user's subscriptions.
         $this->db->prepare("INSERT INTO newssync_subscriptions(owner,feed) values(?,?)", "str", "int")->run($user, $feedID);
-        $sub = $this->db->prepare("SELECT id from newssync_subscriptions where owner is ? and feed is ?", "str", "int")->run($user, $feedID)->getSingle();
+        $sub = $this->db->prepare("SELECT id from newssync_subscriptions where owner is ? and feed is ?", "str", "int")->run($user, $feedID)->getValue();
         $this->db->commit();
         return $sub;
     }
 
     public function subscriptionRemove(int $id): bool {
         $this->db->begin();
-        $user = $this->db->prepare("SELECT owner from newssync_subscriptions where id is ?", "int")->run($id)->getSingle();
+        $user = $this->db->prepare("SELECT owner from newssync_subscriptions where id is ?", "int")->run($id)->getValue();
         if($user===null) return false;
         if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         return (bool) $this->db->prepare("DELETE from newssync_subscriptions where id is ?", "int")->run($id)->changes();

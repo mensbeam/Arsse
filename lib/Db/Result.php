@@ -10,6 +10,7 @@ interface Result extends \Iterator {
     function valid();
 
     function get();
-    function getSingle();
+    function getAll();
+    function getValue();
     function changes();
 }

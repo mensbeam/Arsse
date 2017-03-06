@@ -11,7 +11,7 @@ class ResultSQLite3 implements Result {
 
     // actual public methods
 
-    public function getSingle() {
+    public function getValue() {
         $this->next();
         if($this->valid()) {
             $keys = array_keys($this->cur);
@@ -23,6 +23,15 @@ class ResultSQLite3 implements Result {
     public function get() {
         $this->next();
         return ($this->valid() ? $this->cur : null);
+    }
+
+    public function getAll() {
+        $out = [];
+        foreach($this as $row) {
+            $out [] = $row;
+        }
+        if(sizeof($out) < 1) return null;
+        return $out;
     }
 
     public function changes() {
