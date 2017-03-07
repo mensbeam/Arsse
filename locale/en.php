@@ -21,31 +21,31 @@ return [
     'Exception.JKingWeb/NewsSync/Conf/Exception.fileUnwritable'         => 'Insufficient permissions to overwrite configuration file "{0}"',
     'Exception.JKingWeb/NewsSync/Conf/Exception.fileCorrupt'            => 'Configuration file "{0}" is corrupt or does not conform to expected format',
 
-    'Exception.JKingWeb/NewsSync/Db/Exception.extMissing'               => 'Required PHP extension for driver "{0}" not installed',
-    'Exception.JKingWeb/NewsSync/Db/Exception.fileMissing'              => 'Database file "{0}" does not exist',
-    'Exception.JKingWeb/NewsSync/Db/Exception.fileUnreadable'           => 'Insufficient permissions to open database file "{0}" for reading',
-    'Exception.JKingWeb/NewsSync/Db/Exception.fileUnwritable'           => 'Insufficient permissions to open database file "{0}" for writing',
-    'Exception.JKingWeb/NewsSync/Db/Exception.fileUnusable'             => 'Insufficient permissions to open database file "{0}" for reading or writing',
-    'Exception.JKingWeb/NewsSync/Db/Exception.fileUncreatable'          => 'Insufficient permissions to create new database file "{0}"',
-    'Exception.JKingWeb/NewsSync/Db/Exception.fileCorrupt'              => 'Database file "{0}" is corrupt or not a valid database',
+    'Exception.JKingWeb/NewsSync/Db/ExceptionStartup.extMissing'        => 'Required PHP extension for driver "{0}" not installed',
+    'Exception.JKingWeb/NewsSync/Db/ExceptionStartup.fileMissing'       => 'Database file "{0}" does not exist',
+    'Exception.JKingWeb/NewsSync/Db/ExceptionStartup.fileUnreadable'    => 'Insufficient permissions to open database file "{0}" for reading',
+    'Exception.JKingWeb/NewsSync/Db/ExceptionStartup.fileUnwritable'    => 'Insufficient permissions to open database file "{0}" for writing',
+    'Exception.JKingWeb/NewsSync/Db/ExceptionStartup.fileUnusable'      => 'Insufficient permissions to open database file "{0}" for reading or writing',
+    'Exception.JKingWeb/NewsSync/Db/ExceptionStartup.fileUncreatable'   => 'Insufficient permissions to create new database file "{0}"',
+    'Exception.JKingWeb/NewsSync/Db/ExceptionStartup.fileCorrupt'       => 'Database file "{0}" is corrupt or not a valid database',
     'Exception.JKingWeb/NewsSync/Db/Exception.paramTypeInvalid'         => 'Prepared statement parameter type "{0}" is invalid',
     'Exception.JKingWeb/NewsSync/Db/Exception.paramTypeUnknown'         => 'Prepared statement parameter type "{0}" is valid, but not implemented',
     'Exception.JKingWeb/NewsSync/Db/Exception.paramTypeMissing'         => 'Prepared statement parameter type for parameter #{0} was not specified',
 
-    'Exception.JKingWeb/NewsSync/Db/Update/Exception.manual'            =>
+    'Exception.JKingWeb/NewsSync/Db/ExceptionUpdate.manual'             =>
         '{from_version, select,
             0 {{driver_name} database is configured for manual updates and is not initialized; please populate the database with the base schema}
             other {{driver_name} database is configured for manual updates; please update from schema version {current} to version {target}}
         }',
-    'Exception.JKingWeb/NewsSync/Db/Update/Exception.manualOnly'        =>
+    'Exception.JKingWeb/NewsSync/Db/ExceptionUpdate.manualOnly'         =>
         '{from_version, select,
             0 {{driver_name} database must be updated manually and is not initialized; please populate the database with the base schema}
             other {{driver_name} database must be updated manually; please update from schema version {current} to version {target}}
         }',
-    'Exception.JKingWeb/NewsSync/Db/Update/Exception.fileMissing'       => 'Automatic updating of the {driver_name} database failed due to instructions for updating from version {current} not being available',
-    'Exception.JKingWeb/NewsSync/Db/Update/Exception.fileUnreadable'    => 'Automatic updating of the {driver_name} database failed due to insufficient permissions to read instructions for updating from version {current}',
-    'Exception.JKingWeb/NewsSync/Db/Update/Exception.fileUnusable'      => 'Automatic updating of the {driver_name} database failed due to an error reading instructions for updating from version {current}',
-    'Exception.JKingWeb/NewsSync/Db/Update/Exception.tooNew'            =>
+    'Exception.JKingWeb/NewsSync/Db/ExceptionUpdate.fileMissing'        => 'Automatic updating of the {driver_name} database failed due to instructions for updating from version {current} not being available',
+    'Exception.JKingWeb/NewsSync/Db/ExceptionUpdate.fileUnreadable'     => 'Automatic updating of the {driver_name} database failed due to insufficient permissions to read instructions for updating from version {current}',
+    'Exception.JKingWeb/NewsSync/Db/ExceptionUpdate.fileUnusable'       => 'Automatic updating of the {driver_name} database failed due to an error reading instructions for updating from version {current}',
+    'Exception.JKingWeb/NewsSync/Db/ExceptionUpdate.tooNew'             =>
         '{difference, select,
             0 {Automatic updating of the {driver_name} database failed because it is already up to date with the requested version, {target}}
             other {Automatic updating of the {driver_name} database failed because its version, {current}, is newer than the requested version, {target}}

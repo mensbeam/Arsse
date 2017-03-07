@@ -19,6 +19,8 @@
     ],
     "require": {
         "php": "^7.0.0",
+        "ext-intl": "*",
+        "ext-iconv": "*",
         "jkingweb/druuid": "^3.0.0",
         "phpseclib/phpseclib": "^2.0.4",
         "webmozart/glob": "^4.1.0",

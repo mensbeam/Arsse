@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\Db;
+namespace JKingWeb\NewsSync\Db\SQLite3;
 
-class ResultSQLite3 implements Result {
+class Result implements \JKingWeb\NewsSync\Db\Result {
     protected $st;
     protected $set;
     protected $pos = 0;
@@ -40,7 +40,7 @@ class ResultSQLite3 implements Result {
 
     // constructor/destructor
 
-    public function __construct(\SQLite3Result $result, int $changes = 0, StatementSQLite3 $statement = null) {
+    public function __construct(\SQLite3Result $result, int $changes = 0, Statement $statement = null) {
         $this->st = $statement; //keeps the statement from being destroyed, invalidating the result set
         $this->set = $result;
         $this->rows = $changes;

@@ -34,14 +34,10 @@ class Database {
         $sep = \DIRECTORY_SEPARATOR;
         $path = __DIR__.$sep."Db".$sep;
         $classes = [];
-        foreach(glob($path."Driver?*.php") as $file) {
-            $name = basename($file, ".php");
-            if(substr($name,-3) != "PDO") {
-                $name = NS_BASE."Db\\$name";
-                if(class_exists($name)) {
-                    $classes[$name] = $name::driverName();
-                }
-            }
+        foreach(glob($path."*".$sep."Driver.php") as $file) {
+            $name = basename(dirname($file));
+            $class = NS_BASE."Db\\$name\\Driver";
+            $classes[$class] = $class::driverName();
         }
         return $classes;
     }
@@ -328,4 +324,38 @@ class Database {
         return (bool) $this->db->prepare("DELETE from newssync_subscriptions where id is ?", "int")->run($id)->changes();
     }
 
+    public function folderAdd(string $user, array $data): int {
+        // If the user isn't authorized to perform this action then throw an exception.
+        if (!$this->data->user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        // If the user doesn't exist throw an exception.
+        if (!$this->userExists($user)) {
+            throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
+        }
+        // if the desired folder name is missing or invalid, throw an exception
+        if(!array_key_exists("name", $data)) {
+            throw new Db\ExceptionInput("missing", ["action" => __FUNCTION__, "field" => "name"]);
+        } else if(!strlen(trim($data['name']))) {
+            throw new Db\ExceptionInput("whitespace", ["action" => __FUNCTION__, "field" => "name"]);
+        } else if(iconv_strlen($data['name']) > 100) {
+            throw new Db\ExceptionInput("tooLong", ["action" => __FUNCTION__, "field" => "name", 'max' => 100]);
+        }
+        // normalize folder's parent, if there is one
+        $parent = array_key_exists("parent", $data) ? (int) $data['parent'] : 0;
+        if($parent===0) {
+            // if no parent is specified, do nothing
+            $parent = null;
+            $root = null;
+        } else {
+            // if a parent is specified, make sure it exists and belongs to the user; get its root (first-level) folder if it's a nested folder
+            $p = $this->db->prepare("SELECT id,root from newssync_folders where owner is ? and id is ?", "str", "int")->run($user, $parent)->get();
+            if($p===null) {
+                throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "parent", 'id' => $parent]);
+            } else {
+                // if the parent does not have a root specified (because it is a first-level folder) use the parent ID as the root ID
+                $root = $p['root']===null ? $parent : $p['root'];
+            }
+        }
+    }
 }

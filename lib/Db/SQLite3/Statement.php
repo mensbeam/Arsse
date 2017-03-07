@@ -1,8 +1,9 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\Db;
+namespace JKingWeb\NewsSync\Db\SQLite3;
+use JKingWeb\NewsSync\Db\Exception;
 
-class StatementSQLite3 extends AbstractStatement {
+class Statement extends \JKingWeb\NewsSync\Db\AbstractStatement {
     const BINDINGS = [
 		"null"      => \SQLITE3_NULL,
 		"integer"   => \SQLITE3_INTEGER,
@@ -38,7 +39,7 @@ class StatementSQLite3 extends AbstractStatement {
         ])[$part];
     }
 
-    public function runArray(array $values = null): Result {
+    public function runArray(array $values = null): \JKingWeb\NewsSync\Db\Result {
         $this->st->clear();
         $l = sizeof($values);
         for($a = 0; $a < $l; $a++) {
@@ -58,6 +59,6 @@ class StatementSQLite3 extends AbstractStatement {
             // perform binding
             $this->st->bindValue($a+1, $values[$a], $type);
         }
-        return new ResultSQLite3($this->st->execute(), $this->db->changes(), $this);
+        return new Result($this->st->execute(), $this->db->changes(), $this);
     }
 }

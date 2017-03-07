@@ -15,12 +15,10 @@ class User {
         $sep = \DIRECTORY_SEPARATOR;
         $path = __DIR__.$sep."User".$sep;
         $classes = [];
-        foreach(glob($path."Driver?*.php") as $file) {
-            $drv = basename($file, ".php");
-            $drv = NS_BASE."Db\\$drv";
-            if(class_exists($drv)) {
-                $classes[$drv] = $drv::driverName();
-            }             
+        foreach(glob($path."*".$sep."Driver.php") as $file) {
+            $name = basename(dirname($file));
+            $class = NS_BASE."User\\$name\\Driver";
+            $classes[$class] = $class::driverName();
         }
         return $classes;
     }

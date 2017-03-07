@@ -1,3 +1,23 @@
+-- settings
+create table newssync_settings(
+    key varchar(255) primary key not null,                                                                  -- setting key
+    value varchar(255),                                                                                     -- setting value, serialized as a string
+    type varchar(255) not null check(
+        type in('int','numeric','text','timestamp','date','time','bool','null','json')
+    ) default 'text'                                                                                        -- the deserialized type of the value
+);
+
+-- users
+create table newssync_users(
+    id TEXT primary key not null,                                                                           -- user id
+    password TEXT,                                                                                          -- password, salted and hashed; if using external authentication this would be blank
+    name TEXT,                                                                                              -- display name
+    avatar_url TEXT,                                                                                        -- external URL to avatar
+    avatar_type TEXT,                                                                                       -- internal avatar image's MIME content type
+    avatar_data BLOB,                                                                                       -- internal avatar image's binary data
+    rights integer not null default 0                                                                       -- any administrative rights the user may have
+);
+
 -- newsfeeds, deduplicated
 create table newssync_feeds(
     id integer primary key not null,                                                                        -- sequence number
@@ -13,6 +33,31 @@ create table newssync_feeds(
     username TEXT not null default '',                                                                      -- HTTP authentication username
     password TEXT not null default '',                                                                      -- HTTP authentication password (this is stored in plain text)
     unique(url,username,password)                                                                           -- a URL with particular credentials should only appear once
+);
+
+-- users' subscriptions to newsfeeds, with settings
+create table newssync_subscriptions(
+    id integer primary key not null,                                                                        -- sequence number
+    owner TEXT not null references newssync_users(id) on delete cascade on update cascade,                  -- owner of subscription
+    feed integer not null references newssync_feeds(id) on delete cascade,                                  -- feed for the subscription
+    added datetime not null default CURRENT_TIMESTAMP,                                                      -- time at which feed was added
+    modified datetime not null default CURRENT_TIMESTAMP,                                                   -- date at which subscription properties were last modified
+    title TEXT,                                                                                             -- user-supplied title
+    order_type int not null default 0,                                                                      -- ownCloud sort order
+    pinned boolean not null default 0,                                                                      -- whether feed is pinned (always sorts at top)
+    folder integer references newssync_folders(id) on delete set null,                                      -- TT-RSS category (nestable); the first-level category (which acts as ownCloud folder) is joined in when needed
+    unique(owner,feed)                                                                                      -- a given feed should only appear once for a given owner
+);
+
+-- TT-RSS categories and ownCloud folders
+create table newssync_folders(
+    id integer primary key not null,                                                                        -- sequence number
+    owner TEXT not null references newssync_users(id) on delete cascade on update cascade,                  -- owner of folder
+    parent integer not null default 0,                                                                      -- parent folder id
+    root integer not null default 0,                                                                        -- first-level folder (ownCloud folder)
+    name TEXT not null,                                                                                     -- folder name
+    modified datetime not null default CURRENT_TIMESTAMP,                                                   --
+    unique(owner,name,parent)                                                                               -- cannot have multiple folders with the same name under the same parent for the same owner
 );
 
 -- entries in newsfeeds
@@ -40,57 +85,6 @@ create table newssync_enclosures(
     type varchar(255)
 );
 
--- author labels ("categories" in RSS/Atom parlance) associated with newsfeed entries
-create table newssync_tags(
-    article integer not null references newssync_articles(id) on delete cascade,
-    name TEXT
-);
-
--- settings
-create table newssync_settings(
-    key varchar(255) primary key not null,                                                                    --
-    value varchar(255),                                                                                        --
-    type varchar(255) not null check(
-        type in('int','numeric','text','timestamp','date','time','bool','null','json')
-    ) default 'text'                                                                                        --
-);
-
--- users
-create table newssync_users(
-    id TEXT primary key not null,                                                                           -- user id
-    password TEXT,                                                                                          -- password, salted and hashed; if using external authentication this would be blank
-    name TEXT,                                                                                              -- display name
-    avatar_url TEXT,                                                                                        -- external URL to avatar
-    avatar_type TEXT,                                                                                       -- internal avatar image's MIME content type
-    avatar_data BLOB,                                                                                       -- internal avatar image's binary data
-    rights integer not null default 0                                                                       -- any administrative rights the user may have
-);
-
--- TT-RSS categories and ownCloud folders
-create table newssync_categories(
-    id integer primary key not null,                                                                        -- sequence number
-    owner TEXT not null references newssync_users(id) on delete cascade on update cascade,                  -- owner of category
-    parent integer,                                                                                         -- parent category id
-    folder integer not null,                                                                                -- first-level category (ownCloud folder)
-    name TEXT not null,                                                                                     -- category name
-    modified datetime not null default CURRENT_TIMESTAMP,                                                   --
-    unique(owner,name,parent)                                                                               -- cannot have multiple categories with the same name under the same parent for the same owner
-);
-
--- users' subscriptions to newsfeeds, with settings
-create table newssync_subscriptions(
-    id integer primary key not null,                                                                        -- sequence number
-    owner TEXT not null references newssync_users(id) on delete cascade on update cascade,                  -- owner of subscription
-    feed integer not null references newssync_feeds(id) on delete cascade,                                  -- feed for the subscription
-    added datetime not null default CURRENT_TIMESTAMP,                                                      -- time at which feed was added
-    modified datetime not null default CURRENT_TIMESTAMP,                                                   -- date at which subscription properties were last modified
-    title TEXT,                                                                                             -- user-supplied title
-    order_type int not null default 0,                                                                      -- ownCloud sort order
-    pinned boolean not null default 0,                                                                      -- whether feed is pinned (always sorts at top)
-    category integer references newssync_categories(id) on delete set null,                                 -- TT-RSS category (nestable); the first-level category (which acts as ownCloud folder) is joined in when needed
-    unique(owner,feed)                                                                                      -- a given feed should only appear once for a given owner
-);
-
 -- users' actions on newsfeed entries
 create table newssync_subscription_articles(
     id integer primary key not null,
@@ -107,6 +101,12 @@ create table newssync_labels(
     name TEXT
 );
 create index newssync_label_names on newssync_labels(name);
+
+-- author labels ("categories" in RSS/Atom parlance) associated with newsfeed entries
+create table newssync_tags(
+    article integer not null references newssync_articles(id) on delete cascade,
+    name TEXT
+);
 
 -- set version marker
 pragma user_version = 1;

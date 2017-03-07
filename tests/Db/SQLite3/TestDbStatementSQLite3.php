@@ -8,7 +8,7 @@ class TestDbStatementSQLite3 extends \PHPUnit\Framework\TestCase {
     use Test\Tools, Test\Db\BindingTests;
 
     protected $c;
-	static protected $imp = Db\StatementSQLite3::class;
+	static protected $imp = Db\SQLite3\Statement::class;
 
     function setUp() {
 		date_default_timezone_set("UTC");
@@ -36,7 +36,7 @@ class TestDbStatementSQLite3 extends \PHPUnit\Framework\TestCase {
 
 	function testConstructStatement() {
         $nativeStatement = $this->c->prepare("SELECT ? as value");
-		$this->assertInstanceOf(Db\StatementSQLite3::class, new Db\StatementSQLite3($this->c, $nativeStatement));
+		$this->assertInstanceOf(Statement::class, new Db\SQLite3\Statement($this->c, $nativeStatement));
 	}
 	
 	function testBindMissingValue() {

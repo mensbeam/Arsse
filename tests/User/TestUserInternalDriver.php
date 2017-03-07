@@ -12,7 +12,7 @@ class TestUserInternalDriver extends \PHPUnit\Framework\TestCase {
 	protected $data;
 
     function setUp() {
-		$drv = User\DriverInternal::class;
+		$drv = User\Internal\Driver::class;
 		$conf = new Conf();
 		$conf->userDriver = $drv;
 		$conf->userAuthPreferHTTP = true;
