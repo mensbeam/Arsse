@@ -52,7 +52,7 @@ return [
     'Exception.JKingWeb/NewsSync/Db/ExceptionInput.whitespace'          => 'Required field "{field}" of action "{action}" may not contain only whitespace',
     'Exception.JKingWeb/NewsSync/Db/ExceptionInput.tooLong'             => 'Required field "{field}" of action "{action}" has a maximum length of {max}',
     'Exception.JKingWeb/NewsSync/Db/ExceptionInput.tooShort'            => 'Required field "{field}" of action "{action}" has a minimum length of {min}',
-    'Exception.JKingWeb/NewsSync/Db/ExceptionInput.idMissing'           => 'Referenced ID in field "{field}" does not exist',
+    'Exception.JKingWeb/NewsSync/Db/ExceptionInput.idMissing'           => 'Referenced ID ({id}) in field "{field}" does not exist',
     'Exception.JKingWeb/NewsSync/Db/ExceptionInput.constraintViolation' => '{0}',
     'Exception.JKingWeb/NewsSync/Db/ExceptionInput.typeViolation'       => '{0}',
     'Exception.JKingWeb/NewsSync/Db/ExceptionTimeout.general'           => '{0}',
