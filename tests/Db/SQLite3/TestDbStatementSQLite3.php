@@ -58,9 +58,17 @@ class TestDbStatementSQLite3 extends \PHPUnit\Framework\TestCase {
     }
 
     function testBindWithoutType() {
-        $this->assertException("paramTypeMissing", "Db");
-		$nativeStatement = $this->c->prepare("SELECT ? as value");
+        $nativeStatement = $this->c->prepare("SELECT ? as value");
+		$this->assertException("paramTypeMissing", "Db");
 		$s = new self::$imp($this->c, $nativeStatement, []);
-		$val = $s->runArray([1])->get();
+		$s->runArray([1])->get();
     }
+
+	function testViolateConstraint() {
+		$this->c->exec("CREATE TABLE test(id integer not null)");
+		$nativeStatement = $this->c->prepare("INSERT INTO test(id) values(?)");
+		$s = new self::$imp($this->c, $nativeStatement, ["int"]);
+		$this->assertException("constraintViolation", "Db", "ExceptionInput");
+		$s->runArray([null])->get();
+	}
 }
