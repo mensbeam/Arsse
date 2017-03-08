@@ -27,9 +27,10 @@ abstract class AbstractException extends \Exception {
         "Db/Exception.updateFileUnreadable"     => 10214,
         "Db/Exception.updateManual"             => 10215,
         "Db/Exception.updateManualOnly"         => 10216,
-        "Db/Exception.paramTypeInvalid"         => 10401,
-        "Db/Exception.paramTypeUnknown"         => 10402,
-        "Db/Exception.paramTypeMissing"         => 10403,
+        "Db/Exception.paramTypeInvalid"         => 10301,
+        "Db/Exception.paramTypeUnknown"         => 10302,
+        "Db/Exception.paramTypeMissing"         => 10303,
+        "Db/Exception.engineErrorGeneral"       => 10401, // this symbol can have engine-specific duplicates to accomodate engine-specific error string construction
         "Conf/Exception.fileMissing"            => 10302,
         "Conf/Exception.fileUnusable"           => 10303,
         "Conf/Exception.fileUnreadable"         => 10304,

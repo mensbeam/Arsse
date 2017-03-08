@@ -28,10 +28,10 @@ return [
     'Exception.JKingWeb/NewsSync/Db/Exception.fileUnusable'             => 'Insufficient permissions to open database file "{0}" for reading or writing',
     'Exception.JKingWeb/NewsSync/Db/Exception.fileUncreatable'          => 'Insufficient permissions to create new database file "{0}"',
     'Exception.JKingWeb/NewsSync/Db/Exception.fileCorrupt'              => 'Database file "{0}" is corrupt or not a valid database',
+    'Exception.JKingWeb/NewsSync/Db/Exception.engineErrorGeneral'       => '{0}',
     'Exception.JKingWeb/NewsSync/Db/Exception.paramTypeInvalid'         => 'Prepared statement parameter type "{0}" is invalid',
     'Exception.JKingWeb/NewsSync/Db/Exception.paramTypeUnknown'         => 'Prepared statement parameter type "{0}" is valid, but not implemented',
     'Exception.JKingWeb/NewsSync/Db/Exception.paramTypeMissing'         => 'Prepared statement parameter type for parameter #{0} was not specified',
-
     'Exception.JKingWeb/NewsSync/Db/Exception.updateManual'             =>
         '{from_version, select,
             0 {{driver_name} database is configured for manual updates and is not initialized; please populate the database with the base schema}

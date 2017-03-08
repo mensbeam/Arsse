@@ -7,8 +7,9 @@ use JKingWeb\NewsSync\Db\ExceptionInput;
 use JKingWeb\NewsSync\Db\ExceptionTimeout;
 
 
-class Driver extends \JKingWeb\NewsSync\Db\AbstractDriver {    
-    const SQLITE_ERROR = 1;
+class Driver extends \JKingWeb\NewsSync\Db\AbstractDriver {
+    use ExceptionBuilder;
+
     const SQLITE_BUSY = 5;
     const SQLITE_CONSTRAINT = 19;
     const SQLITE_MISMATCH = 20;
@@ -78,7 +79,6 @@ class Driver extends \JKingWeb\NewsSync\Db\AbstractDriver {
                 // commit any successful updates if updating by more than one version
                 $this->commit(true);
                 // throw the error received
-                // FIXME: This should create the relevant type of SQL exception
                 throw $e;
             }
             $this->commit();
@@ -89,14 +89,31 @@ class Driver extends \JKingWeb\NewsSync\Db\AbstractDriver {
     }
 
     public function exec(string $query): bool {
-        return (bool) $this->db->exec($query);
+        try {
+            return (bool) $this->db->exec($query);
+        } catch(\Exception $e) {
+            list($excClass, $excMsg, $excData) = $this->exceptionBuild();
+            throw new $excClass($excMsg, $excData);
+        }
     }
 
     public function query(string $query): \JKingWeb\NewsSync\Db\Result {
-        return new Result($this->db->query($query), $this->db->changes());
+        Try {
+            $r = $this->db->query($query);
+        } catch(\Exception $e) {
+            list($excClass, $excMsg, $excData) = $this->exceptionBuild();
+            throw new $excClass($excMsg, $excData);
+        }
+        return new Result($r, $this->db->changes());
     }
 
     public function prepareArray(string $query, array $paramTypes): \JKingWeb\NewsSync\Db\Statement {
-        return new Statement($this->db, $this->db->prepare($query), $paramTypes);
+        try {
+            $s = $this->db->prepare($query);
+        } catch(\Exception $e) {
+            list($excClass, $excMsg, $excData) = $this->exceptionBuild();
+            throw new $excClass($excMsg, $excData);
+        }
+        return new Statement($this->db, $s, $paramTypes);
     }
 }

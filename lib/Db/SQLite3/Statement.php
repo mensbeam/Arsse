@@ -2,8 +2,15 @@
 declare(strict_types=1);
 namespace JKingWeb\NewsSync\Db\SQLite3;
 use JKingWeb\NewsSync\Db\Exception;
+use JKingWeb\NewsSync\Db\ExceptionInput;
+use JKingWeb\NewsSync\Db\ExceptionTimeout;
 
 class Statement extends \JKingWeb\NewsSync\Db\AbstractStatement {
+    use ExceptionBuilder;
+
+    const SQLITE_BUSY = 5;
+    const SQLITE_CONSTRAINT = 19;
+    const SQLITE_MISMATCH = 20;
     const BINDINGS = [
 		"null"      => \SQLITE3_NULL,
 		"integer"   => \SQLITE3_INTEGER,
@@ -59,6 +66,12 @@ class Statement extends \JKingWeb\NewsSync\Db\AbstractStatement {
             // perform binding
             $this->st->bindValue($a+1, $values[$a], $type);
         }
-        return new Result($this->st->execute(), $this->db->changes(), $this);
+        try {
+            $r = $this->st->execute();
+        } catch(\Exception $e) {
+            list($excClass, $excMsg, $excData) = $this->exceptionBuild();
+            throw new $excClass($excMsg, $excData);
+        }
+        return new Result($r, $this->db->changes(), $this);
     }
 }
