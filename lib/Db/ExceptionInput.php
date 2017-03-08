@@ -2,5 +2,5 @@
 declare(strict_types=1);
 namespace JKingWeb\NewsSync\Db;
 
-class ExceptionInput extends Exception {
+class ExceptionInput extends \JKingWeb\NewsSync\AbstractException {
 }
