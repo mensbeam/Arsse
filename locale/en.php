@@ -1,26 +1,24 @@
 <?php
 return [
     'Driver.User.Internal.Name'                                         => 'Internal',
+    
     'Driver.Db.SQLite3.Name'                                            => 'SQLite 3',
     
     // this should only be encountered in testing (because tests should cover all exceptions!)
     'Exception.JKingWeb/NewsSync/Exception.uncoded'                     => 'The specified exception symbol {0} has no code specified in AbstractException.php',
     // this should not usually be encountered
     'Exception.JKingWeb/NewsSync/Exception.unknown'                     => 'An unknown error has occurred',
-
     'Exception.JKingWeb/NewsSync/Lang/Exception.defaultFileMissing'     => 'Default language file "{0}" missing',
     'Exception.JKingWeb/NewsSync/Lang/Exception.fileMissing'            => 'Language file "{0}" is not available',
     'Exception.JKingWeb/NewsSync/Lang/Exception.fileUnreadable'         => 'Insufficient permissions to read language file "{0}"',
     'Exception.JKingWeb/NewsSync/Lang/Exception.fileCorrupt'            => 'Language file "{0}" is corrupt or does not conform to expected format',
     'Exception.JKingWeb/NewsSync/Lang/Exception.stringMissing'          => 'Message string "{msgID}" missing from all loaded language files ({fileList})',
     'Exception.JKingWeb/NewsSync/Lang/Exception.stringInvalid'          => 'Message string "{msgID}" is not a valid ICU message string (language files loaded: {fileList})',
-
     'Exception.JKingWeb/NewsSync/Conf/Exception.fileMissing'            => 'Configuration file "{0}" does not exist',
     'Exception.JKingWeb/NewsSync/Conf/Exception.fileUnreadable'         => 'Insufficient permissions to read configuration file "{0}"',
     'Exception.JKingWeb/NewsSync/Conf/Exception.fileUncreatable'        => 'Insufficient permissions to write new configuration file "{0}"',
     'Exception.JKingWeb/NewsSync/Conf/Exception.fileUnwritable'         => 'Insufficient permissions to overwrite configuration file "{0}"',
     'Exception.JKingWeb/NewsSync/Conf/Exception.fileCorrupt'            => 'Configuration file "{0}" is corrupt or does not conform to expected format',
-
     'Exception.JKingWeb/NewsSync/Db/Exception.extMissing'               => 'Required PHP extension for driver "{0}" not installed',
     'Exception.JKingWeb/NewsSync/Db/Exception.fileMissing'              => 'Database file "{0}" does not exist',
     'Exception.JKingWeb/NewsSync/Db/Exception.fileUnreadable'           => 'Insufficient permissions to open database file "{0}" for reading',
@@ -28,7 +26,6 @@ return [
     'Exception.JKingWeb/NewsSync/Db/Exception.fileUnusable'             => 'Insufficient permissions to open database file "{0}" for reading or writing',
     'Exception.JKingWeb/NewsSync/Db/Exception.fileUncreatable'          => 'Insufficient permissions to create new database file "{0}"',
     'Exception.JKingWeb/NewsSync/Db/Exception.fileCorrupt'              => 'Database file "{0}" is corrupt or not a valid database',
-    'Exception.JKingWeb/NewsSync/Db/Exception.engineErrorGeneral'       => '{0}',
     'Exception.JKingWeb/NewsSync/Db/Exception.paramTypeInvalid'         => 'Prepared statement parameter type "{0}" is invalid',
     'Exception.JKingWeb/NewsSync/Db/Exception.paramTypeUnknown'         => 'Prepared statement parameter type "{0}" is valid, but not implemented',
     'Exception.JKingWeb/NewsSync/Db/Exception.paramTypeMissing'         => 'Prepared statement parameter type for parameter #{0} was not specified',
@@ -50,7 +47,15 @@ return [
             0 {Automatic updating of the {driver_name} database failed because it is already up to date with the requested version, {target}}
             other {Automatic updating of the {driver_name} database failed because its version, {current}, is newer than the requested version, {target}}
         }',
-
+    'Exception.JKingWeb/NewsSync/Db/Exception.engineErrorGeneral'       => '{0}',
+    'Exception.JKingWeb/NewsSync/Db/ExceptionInput.missing'             => 'Required field "{field}" missing while performing action "{action}"',
+    'Exception.JKingWeb/NewsSync/Db/ExceptionInput.whitespace'          => 'Required field "{field}" of action "{action}" may not contain only whitespace',
+    'Exception.JKingWeb/NewsSync/Db/ExceptionInput.tooLong'             => 'Required field "{field}" of action "{action}" has a maximum length of {max}',
+    'Exception.JKingWeb/NewsSync/Db/ExceptionInput.tooShort'            => 'Required field "{field}" of action "{action}" has a minimum length of {min}',
+    'Exception.JKingWeb/NewsSync/Db/ExceptionInput.idMissing'           => 'Referenced ID in field "{field}" does not exist',
+    'Exception.JKingWeb/NewsSync/Db/ExceptionInput.constraintViolation' => '{0}',
+    'Exception.JKingWeb/NewsSync/Db/ExceptionInput.typeViolation'       => '{0}',
+    'Exception.JKingWeb/NewsSync/Db/ExceptionTimeout.general'           => '{0}',
     'Exception.JKingWeb/NewsSync/User/Exception.alreadyExists'          => 'Could not perform action "{action}" because the user {user} already exists',
     'Exception.JKingWeb/NewsSync/User/Exception.doesNotExist'           => 'Could not perform action "{action}" because the user {user} does not exist',
     'Exception.JKingWeb/NewsSync/User/Exception.authMissing'            => 'Please log in to proceed',
@@ -63,7 +68,6 @@ return [
             }}
             other {Authenticated user is not authorized to perform the action "{action}" on behalf of {user}}
         }',
-
     'Exception.JKingWeb/NewsSync/Feed/Exception.invalidCertificate'     => 'Could not download feed "{url}" because its server is serving an invalid SSL certificate',
     'Exception.JKingWeb/NewsSync/Feed/Exception.invalidURL'             => 'Feed URL "{url}" is invalid',
     'Exception.JKingWeb/NewsSync/Feed/Exception.maxRedirect'            => 'Could not download feed "{url}" because its server reached its maximum number of HTTP redirections',

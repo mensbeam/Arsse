@@ -11,7 +11,7 @@ trait ExceptionBuilder {
     public function exceptionBuild() {
         switch($this->db->lastErrorCode()) {
             case self::SQLITE_BUSY:
-                return [ExceptionTimeout::class, 'sqliteBusy', $this->db->lastErrorMsg()];
+                return [ExceptionTimeout::class, 'general', $this->db->lastErrorMsg()];
             case self::SQLITE_CONSTRAINT:
                 return [ExceptionInput::class, 'constraintViolation', $this->db->lastErrorMsg()];
             case self::SQLITE_MISMATCH:
