@@ -61,7 +61,7 @@ class TestDbStatementSQLite3 extends \PHPUnit\Framework\TestCase {
         $nativeStatement = $this->c->prepare("SELECT ? as value");
 		$this->assertException("paramTypeMissing", "Db");
 		$s = new self::$imp($this->c, $nativeStatement, []);
-		$s->runArray([1])->get();
+		$s->runArray([1]);
     }
 
 	function testViolateConstraint() {
@@ -69,6 +69,6 @@ class TestDbStatementSQLite3 extends \PHPUnit\Framework\TestCase {
 		$nativeStatement = $this->c->prepare("INSERT INTO test(id) values(?)");
 		$s = new self::$imp($this->c, $nativeStatement, ["int"]);
 		$this->assertException("constraintViolation", "Db", "ExceptionInput");
-		$s->runArray([null])->get();
+		$s->runArray([null]);
 	}
 }

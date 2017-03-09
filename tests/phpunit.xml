@@ -31,6 +31,7 @@
 <testsuite name="SQLite3 database driver">
     <file>Db/SQLite3/TestDbResultSQLite3.php</file>
     <file>Db/SQLite3/TestDbStatementSQLite3.php</file>
+    <file>Db/SQLite3/TestDbDriverSQLite3.php</file>
 </testsuite>
 
 </phpunit>
