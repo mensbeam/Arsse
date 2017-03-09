@@ -5,7 +5,7 @@ create table newssync_settings(
     type varchar(255) not null check(
         type in('int','numeric','text','timestamp','date','time','bool','null','json')
     ) default 'text'                                                                                        -- the deserialized type of the value
-);
+) without rowid;
 
 -- users
 create table newssync_users(
@@ -16,7 +16,7 @@ create table newssync_users(
     avatar_type TEXT,                                                                                       -- internal avatar image's MIME content type
     avatar_data BLOB,                                                                                       -- internal avatar image's binary data
     rights integer not null default 0                                                                       -- any administrative rights the user may have
-);
+) without rowid;
 
 -- newsfeeds, deduplicated
 create table newssync_feeds(
