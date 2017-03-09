@@ -21,7 +21,7 @@ class Result implements \JKingWeb\NewsSync\Db\Result {
         return null;
     }
 
-    public function get() {
+    public function getRow() {
         $this->next();
         return ($this->valid() ? $this->cur : null);
     }

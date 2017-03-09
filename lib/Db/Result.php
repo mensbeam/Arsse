@@ -9,7 +9,7 @@ interface Result extends \Iterator {
     function rewind();
     function valid();
 
-    function get();
+    function getRow();
     function getAll();
     function getValue();
     

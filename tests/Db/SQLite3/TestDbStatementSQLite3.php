@@ -29,7 +29,7 @@ class TestDbStatementSQLite3 extends \PHPUnit\Framework\TestCase {
 		$types = array_unique(Statement::TYPES);
 		foreach($types as $type) {
 			$s->rebindArray([$type]);
-			$val = $s->runArray([$input])->get()['value'];
+			$val = $s->runArray([$input])->getRow()['value'];
 			$this->assertSame($expectations[$type], $val, "Type $type failed comparison.");
 		}
 	}
@@ -42,7 +42,7 @@ class TestDbStatementSQLite3 extends \PHPUnit\Framework\TestCase {
 	function testBindMissingValue() {
 		$nativeStatement = $this->c->prepare("SELECT ? as value");
 		$s = new self::$imp($this->c, $nativeStatement);
-		$val = $s->runArray()->get()['value'];
+		$val = $s->runArray()->getRow()['value'];
 		$this->assertSame(null, $val);
 	}
 
@@ -53,7 +53,7 @@ class TestDbStatementSQLite3 extends \PHPUnit\Framework\TestCase {
         ];
 		$nativeStatement = $this->c->prepare("SELECT ? as one, ? as two");
 		$s = new self::$imp($this->c, $nativeStatement, ["int", "int"]);
-		$val = $s->runArray([1,2])->get();
+		$val = $s->runArray([1,2])->getRow();
 		$this->assertSame($exp, $val);
     }
 

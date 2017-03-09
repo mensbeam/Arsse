@@ -52,7 +52,7 @@ class Database {
     }
 
     public function settingGet(string $key) {
-        $row = $this->db->prepare("SELECT value, type from newssync_settings where key = ?", "str")->run($key)->get();
+        $row = $this->db->prepare("SELECT value, type from newssync_settings where key = ?", "str")->run($key)->getRow();
         if(!$row) return null;
         switch($row['type']) {
             case "int":       return (int) $row['value'];
@@ -218,7 +218,7 @@ class Database {
 
     public function userPropertiesGet(string $user): array {
         if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        $prop = $this->db->prepare("SELECT name,rights from newssync_users where id is ?", "str")->run($user)->get();
+        $prop = $this->db->prepare("SELECT name,rights from newssync_users where id is ?", "str")->run($user)->getRow();
         if(!$prop) return [];
         return $prop;
     }
@@ -340,7 +340,7 @@ class Database {
             $root = null;
         } else {
             // if a parent is specified, make sure it exists and belongs to the user; get its root (first-level) folder if it's a nested folder
-            $p = $this->db->prepare("SELECT id,root from newssync_folders where owner is ? and id is ?", "str", "int")->run($user, $parent)->get();
+            $p = $this->db->prepare("SELECT id,root from newssync_folders where owner is ? and id is ?", "str", "int")->run($user, $parent)->getRow();
             if($p===null) {
                 throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "parent", 'id' => $parent]);
             } else {

@@ -81,9 +81,9 @@ class TestDbResultSQLite3 extends \PHPUnit\Framework\TestCase {
             ['album' => 'Clockwork Angels', 'track' => 'The Wreckers'],
         ];
         $test = new Db\SQLite3\Result($set);
-        $this->assertEquals($rows[0], $test->get());
-        $this->assertEquals($rows[1], $test->get());
-        $this->assertSame(null, $test->get());
+        $this->assertEquals($rows[0], $test->getRow());
+        $this->assertEquals($rows[1], $test->getRow());
+        $this->assertSame(null, $test->getRow());
         $this->assertEquals($rows, $test->getAll());
     }
 }
