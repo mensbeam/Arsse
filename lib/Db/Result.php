@@ -12,5 +12,7 @@ interface Result extends \Iterator {
     function get();
     function getAll();
     function getValue();
+    
     function changes();
+    function lastId();
 }

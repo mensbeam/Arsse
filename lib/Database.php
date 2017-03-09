@@ -193,16 +193,11 @@ class Database {
             if(!$this->data->user->authorize("@".$domain, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $domain]);
             $domain = str_replace(["\\","%","_"],["\\\\", "\\%", "\\_"], $domain);
             $domain = "%@".$domain;
-            $set = $this->db->prepare("SELECT id from newssync_users where id like ?", "str")->run($domain);
+            return $this->db->prepare("SELECT id from newssync_users where id like ?", "str")->run($domain)->getAll();
         } else {
             if(!$this->data->user->authorize("", __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => "global"]);
-            $set = $this->db->prepare("SELECT id from newssync_users")->run();
+            return $this->db->prepare("SELECT id from newssync_users")->run()->getAll();
         }
-        $out = [];
-        foreach($set as $row) {
-            $out[] = $row["id"];
-        }
-        return $out;
     }
 
     public function userPasswordGet(string $user): string {
@@ -287,7 +282,7 @@ class Database {
                 throw new Feed\Exception($url, $e);
             }
 
-            $this->db->prepare(
+            $feedID = $this->db->prepare(
                 "INSERT INTO newssync_feeds(url,title,favicon,source,updated,modified,etag,username,password) values(?,?,?,?,?,?,?,?,?)", 
                 "str", "str", "str", "str", "datetime", "datetime", "str", "str", "str"
             )->run(
@@ -301,17 +296,13 @@ class Database {
                 $resource->getEtag(),
                 $fetchUser,
                 $fetchPassword
-            );
+            )->lastId();
 
             // TODO: Populate newssync_articles with contents of what was obtained from PicoFeed.
-
-            // Get the ID for the feed that was just added.
-            $feedID = $qFeed->run($url, $fetchUser, $fetchPassword)->getValue();
         }
 
         // Add the feed to the user's subscriptions.
-        $this->db->prepare("INSERT INTO newssync_subscriptions(owner,feed) values(?,?)", "str", "int")->run($user, $feedID);
-        $sub = $this->db->prepare("SELECT id from newssync_subscriptions where owner is ? and feed is ?", "str", "int")->run($user, $feedID)->getValue();
+        $sub = $this->db->prepare("INSERT INTO newssync_subscriptions(owner,feed) values(?,?)", "str", "int")->run($user, $feedID)->lastId();
         $this->db->commit();
         return $sub;
     }

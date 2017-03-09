@@ -72,6 +72,8 @@ class Statement extends \JKingWeb\NewsSync\Db\AbstractStatement {
             list($excClass, $excMsg, $excData) = $this->exceptionBuild();
             throw new $excClass($excMsg, $excData);
         }
-        return new Result($r, $this->db->changes(), $this);
+        $changes = $this->db->changes();
+        $lastId = $this->db->lastInsertRowID();
+        return new Result($r, [$changes, $lastId], $this);
     }
 }

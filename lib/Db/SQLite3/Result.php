@@ -8,6 +8,7 @@ class Result implements \JKingWeb\NewsSync\Db\Result {
     protected $pos = 0;
     protected $cur = null;
     protected $rows = 0;
+    protected $id = 0;
 
     // actual public methods
 
@@ -38,12 +39,17 @@ class Result implements \JKingWeb\NewsSync\Db\Result {
         return $this->rows;
     }
 
+    public function lastId() {
+        return $this->id;
+    }
+
     // constructor/destructor
 
-    public function __construct(\SQLite3Result $result, int $changes = 0, Statement $statement = null) {
+    public function __construct(\SQLite3Result $result, array $changes = [0,0], Statement $statement = null) {
         $this->st = $statement; //keeps the statement from being destroyed, invalidating the result set
         $this->set = $result;
-        $this->rows = $changes;
+        $this->rows = $changes[0];
+        $this->id = $changes[1];
     }
 
     public function __destruct() {

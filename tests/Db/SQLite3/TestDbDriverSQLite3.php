@@ -55,11 +55,11 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 		$this->drv->exec("INSERT INTO test(id) values('ook')");
 	}
 
-	function testValidQuery() {
+	function testMakeAValidQuery() {
 		$this->assertInstanceOf(Db\SQLite3\Result::class, $this->drv->query("SELECT 1"));
 	}
 
-	function testInvalidQuery() {
+	function testMakeAnInvalidQuery() {
 		$this->assertException("engineErrorGeneral", "Db");
 		$this->drv->query("Apollo was astonished; Dionysus thought me mad");
 	}
@@ -81,5 +81,15 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 		$this->drv->exec("CREATE TABLE test(id integer primary key)");
 		$this->assertException("typeViolation", "Db", "ExceptionInput");
 		$this->drv->query("INSERT INTO test(id) values('ook')");
+	}
+
+	function testPrepareAValidQuery() {
+		$s = $this->drv->prepare("SELECT ?, ?", "int", "int");
+		$this->assertInstanceOf(Db\SQLite3\Statement::class, $s);
+	}
+
+	function testPrepareAnInvalidQuery() {
+		$this->assertException("engineErrorGeneral", "Db");
+		$s = $this->drv->prepare("This is an invalid query", "int", "int");
 	}
 }

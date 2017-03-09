@@ -24,11 +24,14 @@ class TestDbResultSQLite3 extends \PHPUnit\Framework\TestCase {
         $this->assertInstanceOf(Db\Result::class, new Db\SQLite3\Result($set));
     }
 
-    function testGetChangeCount() {
+    function testGetChangeCountAndLastInsertId() {
         $this->c->query("CREATE TABLE test(col)");
         $set = $this->c->query("INSERT INTO test(col) values(1)");
         $rows = $this->c->changes();
-        $this->assertEquals($rows, (new Db\SQLite3\Result($set,$rows))->changes());
+        $id = $this->c->lastInsertRowID();
+        $r = new Db\SQLite3\Result($set,[$rows,$id]);
+        $this->assertEquals($rows, $r->changes());
+        $this->assertEquals($id, $r->lastId());
     }
 
     function testIterateOverResults() {

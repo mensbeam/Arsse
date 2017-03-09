@@ -104,7 +104,9 @@ class Driver extends \JKingWeb\NewsSync\Db\AbstractDriver {
             list($excClass, $excMsg, $excData) = $this->exceptionBuild();
             throw new $excClass($excMsg, $excData);
         }
-        return new Result($r, $this->db->changes());
+        $changes = $this->db->changes();
+        $lastId = $this->db->lastInsertRowID();
+        return new Result($r, [$changes, $lastId]);
     }
 
     public function prepareArray(string $query, array $paramTypes): \JKingWeb\NewsSync\Db\Statement {
