@@ -49,6 +49,12 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 		$this->drv->exec("INSERT INTO test(id) values(null)");
 	}
 
+	function testExecTypeViolation() {
+		$this->drv->exec("CREATE TABLE test(id integer primary key)");
+		$this->assertException("typeViolation", "Db", "ExceptionInput");
+		$this->drv->exec("INSERT INTO test(id) values('ook')");
+	}
+
 	function testValidQuery() {
 		$this->assertInstanceOf(Db\SQLite3\Result::class, $this->drv->query("SELECT 1"));
 	}
@@ -69,5 +75,11 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 		$this->drv->exec("CREATE TABLE test(id integer not null)");
 		$this->assertException("constraintViolation", "Db", "ExceptionInput");
 		$this->drv->query("INSERT INTO test(id) values(null)");
+	}
+
+	function testQueryTypeViolation() {
+		$this->drv->exec("CREATE TABLE test(id integer primary key)");
+		$this->assertException("typeViolation", "Db", "ExceptionInput");
+		$this->drv->query("INSERT INTO test(id) values('ook')");
 	}
 }

@@ -71,4 +71,12 @@ class TestDbStatementSQLite3 extends \PHPUnit\Framework\TestCase {
 		$this->assertException("constraintViolation", "Db", "ExceptionInput");
 		$s->runArray([null]);
 	}
+
+	function testMismatchTypes() {
+		$this->c->exec("CREATE TABLE test(id integer primary key)");
+		$nativeStatement = $this->c->prepare("INSERT INTO test(id) values(?)");
+		$s = new self::$imp($this->c, $nativeStatement, ["str"]);
+		$this->assertException("typeViolation", "Db", "ExceptionInput");
+		$s->runArray(['ook']);
+	}
 }
