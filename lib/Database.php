@@ -94,26 +94,26 @@ class Database {
             case "integer":
                 $type = "int";
             case "int":
-                $value =& $in;
+                $value = $in;
                 break;
             case "float":
             case "double":
             case "real":
                 $type = "numeric";
             case "numeric":
-                $value =& $in;
+                $value = $in;
                 break;
             case "str":
             case "string":
                 $type = "text";
             case "text":
-                $value =& $in;
+                $value = $in;
                 break;
             case "json":
                 if(is_array($in) || is_object($in)) {
                     $value = json_encode($in);
                 } else {
-                    $value =& $in;
+                    $value = $in;
                 }
                 break;
             case "datetime":
@@ -156,10 +156,10 @@ class Database {
                 break;
             default:
                 $type = "text";
-                $value =& $in;
+                $value = $in;
                 break;
         }
-        $this->db->prepare("REPLACE INTO newssync_settings(key,value,type) values(?,?,?)", "str", "str", "str")->run($key, $value, $type);
+        return (bool) $this->db->prepare("REPLACE INTO newssync_settings(key,value,type) values(?,?,?)", "str", "str", "str")->run($key, $value, $type)->changes();
     }
 
     public function settingRemove(string $key): bool {

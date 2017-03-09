@@ -246,4 +246,22 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals(2, $this->drv->query($select)->getValue());
 		$this->assertEquals(2, $ch->querySingle($select));
 	}
+
+	function testManipulateAdvisoryLock() {
+		$this->assertFalse($this->drv->isLocked());
+		$this->assertTrue($this->drv->lock());
+		$this->assertFalse($this->drv->isLocked());
+		$this->drv->exec("CREATE TABLE newssync_settings(key primary key, value, type) without rowid; PRAGMA user_version=1");
+		$this->assertTrue($this->drv->lock());
+		$this->assertTrue($this->drv->isLocked());
+		$this->assertFalse($this->drv->lock());
+		$this->drv->exec("PRAGMA user_version=0");
+		$this->assertFalse($this->drv->isLocked());
+		$this->assertTrue($this->drv->lock());
+		$this->assertFalse($this->drv->isLocked());
+		$this->drv->exec("PRAGMA user_version=1");
+		$this->assertTrue($this->drv->isLocked());
+		$this->assertTrue($this->drv->unlock());
+		$this->assertFalse($this->drv->isLocked());
+	}
 }

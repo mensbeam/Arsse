@@ -8,8 +8,8 @@ abstract class AbstractDriver implements Driver {
 
     public function schemaVersion(): int {
         try {
-            return $this->data->db->settingGet("schema_version");
-        } catch(\Throwable $e) {
+            return (int) $this->query("SELECT value from newssync_settings where key is schema_version")->getValue();
+        } catch(Exception $e) {
             return 0;
         }
     }
@@ -47,19 +47,23 @@ abstract class AbstractDriver implements Driver {
         if($this->schemaVersion() < 1) return true;
         if($this->isLocked()) return false;
         $uuid = UUID::mintStr();
-        if(!$this->data->db->settingSet("lock", $uuid)) return false;
+        try {
+            $this->prepare("INSERT INTO newssync_settings(key,value) values(?,?)", "str", "str")->run("lock", $uuid);
+        } catch(ExceptionInput $e) {
+            return false;
+        }
         sleep(1);
-        if($this->data->db->settingGet("lock") != $uuid) return false;
-        return true;
+        return ($this->query("SELECT value from newssync_settings where key is 'lock'")->getValue() == $uuid);
     }
 
     public function unlock(): bool {
-        return $this->data->db->settingRemove("lock");
+        $this->exec("DELETE from newssync_settings where key is 'lock'");
+        return true;
     }
 
     public function isLocked(): bool {
         if($this->schemaVersion() < 1) return false;
-        return ($this->query("SELECT count(*) from newssync_settings where key = 'lock'")->getSingle() > 0);
+        return ($this->query("SELECT count(*) from newssync_settings where key is 'lock'")->getValue() > 0);
     }
 
     public function prepare(string $query, string ...$paramType): Statement {
