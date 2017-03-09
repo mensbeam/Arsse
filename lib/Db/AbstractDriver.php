@@ -15,16 +15,14 @@ abstract class AbstractDriver implements Driver {
     }
 
     public function begin(): bool {
-        $this->exec("SAVEPOINT newssync_".($this->transDepth));
-        $this->transDepth += 1;
+        $this->exec("SAVEPOINT newssync_".(++$this->transDepth));
         return true;
     }
 
     public function commit(bool $all = false): bool {
         if($this->transDepth==0) return false;
         if(!$all) {
-            $this->exec("RELEASE SAVEPOINT newssync_".($this->transDepth - 1));
-            $this->transDepth -= 1;
+            $this->exec("RELEASE SAVEPOINT newssync_".($this->transDepth--));
         } else {
             $this->exec("COMMIT TRANSACTION");
             $this->transDepth = 0;
@@ -35,11 +33,9 @@ abstract class AbstractDriver implements Driver {
     public function rollback(bool $all = false): bool {
         if($this->transDepth==0) return false;
         if(!$all) {
-            $this->exec("ROLLBACK TRANSACTION TO SAVEPOINT newssync_".($this->transDepth - 1));
+            $this->exec("ROLLBACK TRANSACTION TO SAVEPOINT newssync_".($this->transDepth));
             // rollback to savepoint does not collpase the savepoint
-            $this->commit();
-            $this->transDepth -= 1;
-            if($this->transDepth==0) $this->exec("ROLLBACK TRANSACTION");
+            $this->exec("RELEASE SAVEPOINT newssync_".($this->transDepth--));
         } else {
             $this->exec("ROLLBACK TRANSACTION");
             $this->transDepth = 0;

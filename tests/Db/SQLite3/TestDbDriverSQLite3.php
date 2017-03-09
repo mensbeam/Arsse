@@ -92,4 +92,158 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 		$this->assertException("engineErrorGeneral", "Db");
 		$s = $this->drv->prepare("This is an invalid query", "int", "int");
 	}
+
+	function testBeginTransaction() {
+		$select = "SELECT count(*) FROM test";
+		$insert = "INSERT INTO test(id) values(null)";
+		$ch = new \SQLite3($this->data->conf->dbSQLite3File);
+		$this->drv->exec("CREATE TABLE test(id integer primary key)");
+		$this->drv->begin();
+		$this->drv->query($insert);
+		$this->assertEquals(1, $this->drv->query($select)->getValue());
+		$this->assertEquals(0, $ch->querySingle($select));
+		$this->drv->query($insert);
+		$this->assertEquals(2, $this->drv->query($select)->getValue());
+		$this->assertEquals(0, $ch->querySingle($select));
+	}
+
+	function testCommitTransaction() {
+		$select = "SELECT count(*) FROM test";
+		$insert = "INSERT INTO test(id) values(null)";
+		$ch = new \SQLite3($this->data->conf->dbSQLite3File);
+		$this->drv->exec("CREATE TABLE test(id integer primary key)");
+		$this->drv->begin();
+		$this->drv->query($insert);
+		$this->assertEquals(1, $this->drv->query($select)->getValue());
+		$this->assertEquals(0, $ch->querySingle($select));
+		$this->drv->commit();
+		$this->assertEquals(1, $this->drv->query($select)->getValue());
+		$this->assertEquals(1, $ch->querySingle($select));
+	}
+
+	function testRollbackTransaction() {
+		$select = "SELECT count(*) FROM test";
+		$insert = "INSERT INTO test(id) values(null)";
+		$ch = new \SQLite3($this->data->conf->dbSQLite3File);
+		$this->drv->exec("CREATE TABLE test(id integer primary key)");
+		$this->drv->begin();
+		$this->drv->query($insert);
+		$this->assertEquals(1, $this->drv->query($select)->getValue());
+		$this->assertEquals(0, $ch->querySingle($select));
+		$this->drv->rollback();
+		$this->assertEquals(0, $this->drv->query($select)->getValue());
+		$this->assertEquals(0, $ch->querySingle($select));
+	}
+
+	function testBeginChainedTransactions() {
+		$select = "SELECT count(*) FROM test";
+		$insert = "INSERT INTO test(id) values(null)";
+		$ch = new \SQLite3($this->data->conf->dbSQLite3File);
+		$this->drv->exec("CREATE TABLE test(id integer primary key)");
+		$this->drv->begin();
+		$this->drv->query($insert);
+		$this->assertEquals(1, $this->drv->query($select)->getValue());
+		$this->assertEquals(0, $ch->querySingle($select));
+		$this->drv->begin();
+		$this->drv->query($insert);
+		$this->assertEquals(2, $this->drv->query($select)->getValue());
+		$this->assertEquals(0, $ch->querySingle($select));
+	}
+
+	function testCommitChainedTransactions() {
+		$select = "SELECT count(*) FROM test";
+		$insert = "INSERT INTO test(id) values(null)";
+		$ch = new \SQLite3($this->data->conf->dbSQLite3File);
+		$this->drv->exec("CREATE TABLE test(id integer primary key)");
+		$this->drv->begin();
+		$this->drv->query($insert);
+		$this->assertEquals(1, $this->drv->query($select)->getValue());
+		$this->assertEquals(0, $ch->querySingle($select));
+		$this->drv->begin();
+		$this->drv->query($insert);
+		$this->assertEquals(2, $this->drv->query($select)->getValue());
+		$this->assertEquals(0, $ch->querySingle($select));
+		$this->drv->commit();
+		$this->assertEquals(0, $ch->querySingle($select));
+		$this->drv->commit();
+		$this->assertEquals(2, $ch->querySingle($select));
+	}
+
+	function testRollbackChainedTransactions() {
+		$select = "SELECT count(*) FROM test";
+		$insert = "INSERT INTO test(id) values(null)";
+		$ch = new \SQLite3($this->data->conf->dbSQLite3File);
+		$this->drv->exec("CREATE TABLE test(id integer primary key)");
+		$this->drv->begin();
+		$this->drv->query($insert);
+		$this->assertEquals(1, $this->drv->query($select)->getValue());
+		$this->assertEquals(0, $ch->querySingle($select));
+		$this->drv->begin();
+		$this->drv->query($insert);
+		$this->assertEquals(2, $this->drv->query($select)->getValue());
+		$this->assertEquals(0, $ch->querySingle($select));
+		$this->drv->rollback();
+		$this->assertEquals(1, $this->drv->query($select)->getValue());
+		$this->assertEquals(0, $ch->querySingle($select));
+		$this->drv->rollback();
+		$this->assertEquals(0, $this->drv->query($select)->getValue());
+		$this->assertEquals(0, $ch->querySingle($select));
+	}
+
+	function testPartiallyRollbackChainedTransactions() {
+		$select = "SELECT count(*) FROM test";
+		$insert = "INSERT INTO test(id) values(null)";
+		$ch = new \SQLite3($this->data->conf->dbSQLite3File);
+		$this->drv->exec("CREATE TABLE test(id integer primary key)");
+		$this->drv->begin();
+		$this->drv->query($insert);
+		$this->assertEquals(1, $this->drv->query($select)->getValue());
+		$this->assertEquals(0, $ch->querySingle($select));
+		$this->drv->begin();
+		$this->drv->query($insert);
+		$this->assertEquals(2, $this->drv->query($select)->getValue());
+		$this->assertEquals(0, $ch->querySingle($select));
+		$this->drv->rollback();
+		$this->assertEquals(1, $this->drv->query($select)->getValue());
+		$this->assertEquals(0, $ch->querySingle($select));
+		$this->drv->commit();
+		$this->assertEquals(1, $this->drv->query($select)->getValue());
+		$this->assertEquals(1, $ch->querySingle($select));
+	}
+
+	function testFullyRollbackChainedTransactions() {
+		$select = "SELECT count(*) FROM test";
+		$insert = "INSERT INTO test(id) values(null)";
+		$ch = new \SQLite3($this->data->conf->dbSQLite3File);
+		$this->drv->exec("CREATE TABLE test(id integer primary key)");
+		$this->drv->begin();
+		$this->drv->query($insert);
+		$this->assertEquals(1, $this->drv->query($select)->getValue());
+		$this->assertEquals(0, $ch->querySingle($select));
+		$this->drv->begin();
+		$this->drv->query($insert);
+		$this->assertEquals(2, $this->drv->query($select)->getValue());
+		$this->assertEquals(0, $ch->querySingle($select));
+		$this->drv->rollback(true);
+		$this->assertEquals(0, $this->drv->query($select)->getValue());
+		$this->assertEquals(0, $ch->querySingle($select));
+	}
+
+	function testFullyCommitChainedTransactions() {
+		$select = "SELECT count(*) FROM test";
+		$insert = "INSERT INTO test(id) values(null)";
+		$ch = new \SQLite3($this->data->conf->dbSQLite3File);
+		$this->drv->exec("CREATE TABLE test(id integer primary key)");
+		$this->drv->begin();
+		$this->drv->query($insert);
+		$this->assertEquals(1, $this->drv->query($select)->getValue());
+		$this->assertEquals(0, $ch->querySingle($select));
+		$this->drv->begin();
+		$this->drv->query($insert);
+		$this->assertEquals(2, $this->drv->query($select)->getValue());
+		$this->assertEquals(0, $ch->querySingle($select));
+		$this->drv->commit(true);
+		$this->assertEquals(2, $this->drv->query($select)->getValue());
+		$this->assertEquals(2, $ch->querySingle($select));
+	}
 }
