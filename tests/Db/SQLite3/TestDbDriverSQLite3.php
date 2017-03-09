@@ -21,6 +21,11 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 		unlink($this->data->conf->dbSQLite3File);
     }
 
+	function testFetchDriverName() {
+		$class = $this->data->conf->dbDriver;
+		$this->assertTrue(strlen($class::driverName()) > 0);
+	}
+	
 	function testExecAValidStatement() {
 		$this->assertTrue($this->drv->exec("CREATE TABLE test(id integer primary key)"));
 	}
@@ -247,6 +252,15 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals(2, $ch->querySingle($select));
 	}
 
+	function testFetchSchemaVersion() {
+		$this->assertSame(0, $this->drv->schemaVersion());
+		$this->drv->exec("PRAGMA user_version=1");
+		$this->assertSame(1, $this->drv->schemaVersion());
+		$this->drv->exec("PRAGMA user_version=2");
+		$this->assertSame(2, $this->drv->schemaVersion());
+
+	}
+
 	function testManipulateAdvisoryLock() {
 		$this->assertFalse($this->drv->isLocked());
 		$this->assertTrue($this->drv->lock());
@@ -263,5 +277,10 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 		$this->assertTrue($this->drv->isLocked());
 		$this->assertTrue($this->drv->unlock());
 		$this->assertFalse($this->drv->isLocked());
+	}
+
+	function testUpdateTheSchema() {
+		// FIXME: This should be its own test suite with VFS schemata to simulate various error conditions
+		$this->assertTrue($this->drv->schemaUpdate(1));
 	}
 }
