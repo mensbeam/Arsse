@@ -61,21 +61,27 @@ class Driver extends \JKingWeb\NewsSync\Db\AbstractDriver {
         if(!$this->data->conf->dbSQLite3AutoUpd)  throw new Exception("updateManual", ['version' => $ver, 'driver_name' => $this->driverName()]);
         if($ver >= $to) throw new Exception("updateTooNew", ['difference' => ($ver - $to), 'current' => $ver, 'target' => $to, 'driver_name' => $this->driverName()]);
         $sep = \DIRECTORY_SEPARATOR;
-        $path = \JKingWeb\NewsSync\BASE."sql".$sep."SQLite3".$sep;
+        $path = $this->data->conf->dbSchemaBase.$sep."SQLite3".$sep;
         $this->lock();
         $this->begin();
         for($a = $ver; $a < $to; $a++) {
             $this->begin();
             try {
                 $file = $path.$a.".sql";
-                if(!file_exists($file)) throw new Exception("updateFileMissing", ['file' => $file, 'driver_name' => $this->driverName()]);
-                if(!is_readable($file)) throw new Exception("updateFileUnreadable", ['file' => $file, 'driver_name' => $this->driverName()]);
+                if(!file_exists($file)) throw new Exception("updateFileMissing", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]);
+                if(!is_readable($file)) throw new Exception("updateFileUnreadable", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]);
                 $sql = @file_get_contents($file);
-                if($sql===false) throw new Exception("updateFileUnusable", ['file' => $file, 'driver_name' => $this->driverName()]);
-                $this->exec($sql);
+                if($sql===false) throw new Exception("updateFileUnusable", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]);
+                try {
+                    $this->exec($sql);
+                } catch(\Exception $e) {
+                    throw new Exception("updateFileError", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a, 'message' => $this->getError()]);
+                }
+                if($this->schemaVersion() != $a+1) throw new Exception("updateFileIncomplete", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]);
             } catch(\Throwable $e) {
                 // undo any partial changes from the failed update
                 $this->rollback();
+                $this->unlock();
                 // commit any successful updates if updating by more than one version
                 $this->commit(true);
                 // throw the error received
@@ -86,6 +92,10 @@ class Driver extends \JKingWeb\NewsSync\Db\AbstractDriver {
         $this->unlock();
         $this->commit();
         return true;
+    }
+
+    protected function getError(): string {
+        return $this->db->lastErrorMsg();
     }
 
     public function exec(string $query): bool {

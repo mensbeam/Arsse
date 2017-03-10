@@ -57,6 +57,7 @@ abstract class AbstractDriver implements Driver {
     }
 
     public function unlock(): bool {
+        if($this->schemaVersion() < 1) return true;
         $this->exec("DELETE from newssync_settings where key is 'lock'");
         return true;
     }

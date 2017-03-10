@@ -42,6 +42,8 @@ return [
     'Exception.JKingWeb/NewsSync/Db/Exception.updateFileMissing'        => 'Automatic updating of the {driver_name} database failed due to instructions for updating from version {current} not being available',
     'Exception.JKingWeb/NewsSync/Db/Exception.updateFileUnreadable'     => 'Automatic updating of the {driver_name} database failed due to insufficient permissions to read instructions for updating from version {current}',
     'Exception.JKingWeb/NewsSync/Db/Exception.updateFileUnusable'       => 'Automatic updating of the {driver_name} database failed due to an error reading instructions for updating from version {current}',
+    'Exception.JKingWeb/NewsSync/Db/Exception.updateFileError'          => 'Automatic updating of the {driver_name} database failed updating from version {current} with the following error: "{message}"',
+    'Exception.JKingWeb/NewsSync/Db/Exception.updateFileIncomplete'     => 'Automatic updating of the {driver_name} database failed due to instructions for updating from version {current} being incomplete',
     'Exception.JKingWeb/NewsSync/Db/Exception.updateTooNew'             =>
         '{difference, select,
             0 {Automatic updating of the {driver_name} database failed because it is already up to date with the requested version, {target}}

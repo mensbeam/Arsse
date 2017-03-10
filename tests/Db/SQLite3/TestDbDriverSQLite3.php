@@ -6,7 +6,8 @@ namespace JKingWeb\NewsSync;
 class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
     use Test\Tools;
 
-    protected $c;
+    protected $data;
+	protected $drv;
 
     function setUp() {
 		$conf = new Conf();
@@ -262,6 +263,7 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 	}
 
 	function testManipulateAdvisoryLock() {
+		$this->assertTrue($this->drv->unlock());
 		$this->assertFalse($this->drv->isLocked());
 		$this->assertTrue($this->drv->lock());
 		$this->assertFalse($this->drv->isLocked());
@@ -277,10 +279,5 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 		$this->assertTrue($this->drv->isLocked());
 		$this->assertTrue($this->drv->unlock());
 		$this->assertFalse($this->drv->isLocked());
-	}
-
-	function testUpdateTheSchema() {
-		// FIXME: This should be its own test suite with VFS schemata to simulate various error conditions
-		$this->assertTrue($this->drv->schemaUpdate(1));
 	}
 }

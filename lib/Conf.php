@@ -6,6 +6,7 @@ class Conf {
     public $lang                    = "en";
 
     public $dbDriver                = Db\SQLite3\Driver::class;
+    public $dbSchemaBase            = BASE.'sql';
     public $dbSQLite3File           = BASE."newssync.db";
     public $dbSQLite3Key            = "";
     public $dbSQLite3AutoUpd        = true;
@@ -27,8 +28,6 @@ class Conf {
     public $userAuthPreferHTTP      = false;
     public $userComposeNames        = true;
     public $userTempPasswordLength  = 20;
-
-    public $simplepieCache          = BASE.".cache";
 
 
     public function __construct(string $import_file = "") {
