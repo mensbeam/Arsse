@@ -53,8 +53,8 @@ create table newssync_subscriptions(
 create table newssync_folders(
     id integer primary key not null,                                                                        -- sequence number
     owner TEXT not null references newssync_users(id) on delete cascade on update cascade,                  -- owner of folder
-    parent integer not null default 0,                                                                      -- parent folder id
-    root integer not null default 0,                                                                        -- first-level folder (ownCloud folder)
+    parent integer default null,                                                                            -- parent folder id
+    root integer default null,                                                                              -- first-level folder (ownCloud folder)
     name TEXT not null,                                                                                     -- folder name
     modified datetime not null default CURRENT_TIMESTAMP,                                                   --
     unique(owner,name,parent)                                                                               -- cannot have multiple folders with the same name under the same parent for the same owner

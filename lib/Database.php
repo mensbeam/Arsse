@@ -341,12 +341,19 @@ class Database {
         } else {
             // if a parent is specified, make sure it exists and belongs to the user; get its root (first-level) folder if it's a nested folder
             $p = $this->db->prepare("SELECT id,root from newssync_folders where owner is ? and id is ?", "str", "int")->run($user, $parent)->getRow();
-            if($p===null) {
+            if(!$p) {
                 throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "parent", 'id' => $parent]);
             } else {
                 // if the parent does not have a root specified (because it is a first-level folder) use the parent ID as the root ID
                 $root = $p['root']===null ? $parent : $p['root'];
             }
         }
+        // check if a folder by the same name already exists, because nulls are wonky in SQL
+        // FIXME: How should folder name be compared? Should a Unicode normalization be applied before comparison and insertion?
+        if($this->db->prepare("SELECT count(*) from newssync_folders where owner is ? and parent is ? and name is ?", "str", "int", "str")->run($user, $parent, $data['name'])->getValue() > 0) {
+            throw new Db\ExceptionInput("constraintViolation"); // FIXME: There needs to be a practical message here
+        }
+        // actually perform the insert (!)
+        return $this->db->prepare("INSERT INTO newssync_folders(owner,parent,root,name) values(?,?,?,?)", "str", "int", "int", "str")->run($user, $parent, $root, $data['name'])->lastId();
     }
 }
