@@ -13,10 +13,10 @@ class Driver extends \JKingWeb\NewsSync\Db\AbstractDriver {
     const SQLITE_BUSY = 5;
     const SQLITE_CONSTRAINT = 19;
     const SQLITE_MISMATCH = 20;
-    
+
     protected $db;
     protected $data;
-    
+
     public function __construct(\JKingWeb\NewsSync\RuntimeData $data, bool $install = false) {
         // check to make sure required extension is loaded
         if(!class_exists("SQLite3")) throw new Exception("extMissing", self::driverName());
@@ -28,6 +28,9 @@ class Driver extends \JKingWeb\NewsSync\Db\AbstractDriver {
             $this->db->enableExceptions(true);
             $this->exec("PRAGMA journal_mode = wal");
             $this->exec("PRAGMA foreign_keys = yes");
+
+            // Create custom functions
+            $this->db->createFunction('DATEFORMAT', CustomFunctions::dateFormat, 2);
         } catch(\Throwable $e) {
             // if opening the database doesn't work, check various pre-conditions to find out what the problem might be
             if(!file_exists($file)) {
@@ -47,7 +50,7 @@ class Driver extends \JKingWeb\NewsSync\Db\AbstractDriver {
         unset($this->db);
     }
 
-    
+
     static public function driverName(): string {
         return Lang::msg("Driver.Db.SQLite3.Name");
     }
@@ -108,7 +111,7 @@ class Driver extends \JKingWeb\NewsSync\Db\AbstractDriver {
     }
 
     public function query(string $query): \JKingWeb\NewsSync\Db\Result {
-        Try {
+        try {
             $r = $this->db->query($query);
         } catch(\Exception $e) {
             list($excClass, $excMsg, $excData) = $this->exceptionBuild();
