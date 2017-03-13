@@ -22,15 +22,9 @@ class Driver extends \JKingWeb\NewsSync\Db\AbstractDriver {
         if(!class_exists("SQLite3")) throw new Exception("extMissing", self::driverName());
         $this->data = $data;
         $file = $data->conf->dbSQLite3File;
-        // if the file exists (or we're initializing the database), try to open it and set initial options
+        // if the file exists (or we're initializing the database), try to open it
         try {
             $this->db = new \SQLite3($file, ($install) ? \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE : \SQLITE3_OPEN_READWRITE, $data->conf->dbSQLite3Key);
-            $this->db->enableExceptions(true);
-            $this->exec("PRAGMA journal_mode = wal");
-            $this->exec("PRAGMA foreign_keys = yes");
-
-            // Create custom functions
-            $this->db->createFunction('DATEFORMAT', CustomFunctions::dateFormat, 2);
         } catch(\Throwable $e) {
             // if opening the database doesn't work, check various pre-conditions to find out what the problem might be
             if(!file_exists($file)) {
@@ -42,6 +36,17 @@ class Driver extends \JKingWeb\NewsSync\Db\AbstractDriver {
             if(!is_writable($file)) throw new Exception("fileUnwritable", $file);
             // otherwise the database is probably corrupt
             throw new Exception("fileCorrupt", $mainfile);
+        }
+        try {
+            // set initial options
+            $this->db->enableExceptions(true);
+            $this->exec("PRAGMA journal_mode = wal");
+            $this->exec("PRAGMA foreign_keys = yes");
+            // Create custom functions
+            $this->db->createFunction('DATEFORMAT', CustomFunctions::dateFormat, 2);
+        } catch(\Exception $e) {
+            list($excClass, $excMsg, $excData) = $this->exceptionBuild();
+            throw new $excClass($excMsg, $excData);
         }
     }
 
