@@ -43,7 +43,7 @@ class Driver extends \JKingWeb\NewsSync\Db\AbstractDriver {
             $this->exec("PRAGMA journal_mode = wal");
             $this->exec("PRAGMA foreign_keys = yes");
             // Create custom functions
-            $this->db->createFunction('DATEFORMAT', CustomFunctions::dateFormat, 2);
+            $this->db->createFunction('DATEFORMAT', [CustomFunctions::class, 'dateFormat'], 2);
         } catch(\Exception $e) {
             list($excClass, $excMsg, $excData) = $this->exceptionBuild();
             throw new $excClass($excMsg, $excData);
