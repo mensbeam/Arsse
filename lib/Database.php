@@ -2,8 +2,6 @@
 declare(strict_types=1);
 namespace JKingWeb\NewsSync;
 use PasswordGenerator\Generator as PassGen;
-use PicoFeed\Reader\Reader;
-use PicoFeed\PicoFeedException;
 
 class Database {
 
@@ -262,47 +260,64 @@ class Database {
 
         $this->db->begin();
 
-        // If the feed doesn't already exist in the database then add it to the database after determining its validity with PicoFeed.
+        // If the feed doesn't already exist in the database then add it to the database
+        // after determining its validity with PicoFeed.
         $qFeed = $this->db->prepare("SELECT id from newssync_feeds where url is ? and username is ? and password is ?", "str", "str", "str");
         $feed = $qFeed->run($url, $fetchUser, $fetchPassword)->getValue();
         if ($feed === null) {
-            try {
-                $reader = new Reader;
-                $resource = $reader->download($url);
+            $feed = new Feed($url);
+            $feed->parse();
 
-                $parser = $reader->getParser(
-                    $resource->getUrl(),
-                    $resource->getContent(),
-                    $resource->getEncoding()
-                );
-
-                $feed = $parser->execute();
-            } catch (PicoFeedException $e) {
-                // If there's any error while trying to download or parse the feed then return an exception.
-                throw new Feed\Exception($url, $e);
-            }
-
+            // Add the feed to the database and return its Id which will be used when adding
+            // its articles to the database.
             $feedID = $this->db->prepare(
-                "INSERT INTO newssync_feeds(url,title,favicon,source,updated,modified,etag,username,password) values(?,?,?,?,?,?,?,?,?)", 
-                "str", "str", "str", "str", "datetime", "datetime", "str", "str", "str"
-            )->run(
-                $url,
-                $feed->title,
-                // Grab the favicon for the Goodfeed; returns an empty string if it cannot find one.
-                (new \PicoFeed\Reader\Favicon)->find($url),
-                $feed->siteUrl,
-                $feed->date,
-                $resource->getLastModified(),
-                $resource->getEtag(),
-                $fetchUser,
-                $fetchPassword
-            )->lastId();
+                'INSERT INTO newssync_feeds(url,title,favicon,source,updated,modified,etag,username,password)
+                values(?,?,?,?,?,?,?,?,?)',
+                'str', 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str')->run(
+                    $url,
+                    $feed->data->title,
+                    // Grab the favicon for the feed; returns an empty string if it cannot find one.
+                    $feed->favicon,
+                    $feed->data->siteUrl,
+                    $feed->data->date,
+                    $feed->resource->getLastModified(),
+                    $feed->resource->getEtag(),
+                    $fetchUser,
+                    $fetchPassword
+                )->lastId();
 
-            // TODO: Populate newssync_articles with contents of what was obtained from PicoFeed.
+            // Add each of the articles to the database.
+            foreach ($feed->data->items as $i) {
+                $articleID = $this->db->prepare('INSERT INTO newssync_articles(feed,url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash)
+                values(?,?,?,?,?,?,?,?,?,?,?)',
+                'int', 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str')->run(
+                    $feedID,
+                    $i->url,
+                    $i->title,
+                    $i->author,
+                    $i->publishedDate,
+                    $i->updatedDate,
+                    $i->id,
+                    $i->content,
+                    // Since feeds cannot be trusted to have valid ids additional hashes are used for identifiers.
+                    // These hashes are made regardless to check against for changes.
+                    hash('sha256', $i->url.$i->title),
+                    hash('sha256', $i->url.$i->content.$i->enclosureUrl.$i->enclosureType),
+                    hash('sha256', $i->title.$i->content.$i->enclosureUrl.$i->enclosureType)
+                )->lastId();
+
+                // If the article has categories add them into the categories database.
+                $categories = $i->getTag('category');
+                if (count($categories) > 0) {
+                    foreach ($categories as $c) {
+                        $this->db->prepare('INSERT INTO newssync_tags(article,name) values(?,?)', 'int', 'str')->run($articleID, $c);
+                    }
+                }
+            }
         }
 
         // Add the feed to the user's subscriptions.
-        $sub = $this->db->prepare("INSERT INTO newssync_subscriptions(owner,feed) values(?,?)", "str", "int")->run($user, $feedID)->lastId();
+        $sub = $this->db->prepare('INSERT INTO newssync_subscriptions(owner,feed) values(?,?)', 'str', 'int')->run($user, $feedID)->lastId();
         $this->db->commit();
         return $sub;
     }

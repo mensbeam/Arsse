@@ -43,18 +43,18 @@ create table newssync_subscriptions(
     added datetime not null default CURRENT_TIMESTAMP,                                                      -- time at which feed was added
     modified datetime not null default CURRENT_TIMESTAMP,                                                   -- date at which subscription properties were last modified
     title TEXT,                                                                                             -- user-supplied title
-    order_type int not null default 0,                                                                      -- ownCloud sort order
+    order_type int not null default 0,                                                                      -- NextCloud sort order
     pinned boolean not null default 0,                                                                      -- whether feed is pinned (always sorts at top)
-    folder integer references newssync_folders(id) on delete set null,                                      -- TT-RSS category (nestable); the first-level category (which acts as ownCloud folder) is joined in when needed
+    folder integer references newssync_folders(id) on delete set null,                                      -- TT-RSS category (nestable); the first-level category (which acts as NextCloud folder) is joined in when needed
     unique(owner,feed)                                                                                      -- a given feed should only appear once for a given owner
 );
 
--- TT-RSS categories and ownCloud folders
+-- TT-RSS categories and NextCloud folders
 create table newssync_folders(
     id integer primary key not null,                                                                        -- sequence number
     owner TEXT not null references newssync_users(id) on delete cascade on update cascade,                  -- owner of folder
     parent integer default null,                                                                            -- parent folder id
-    root integer default null,                                                                              -- first-level folder (ownCloud folder)
+    root integer default null,                                                                              -- first-level folder (NextCloud folder)
     name TEXT not null,                                                                                     -- folder name
     modified datetime not null default CURRENT_TIMESTAMP,                                                   --
     unique(owner,name,parent)                                                                               -- cannot have multiple folders with the same name under the same parent for the same owner
@@ -72,10 +72,9 @@ create table newssync_articles(
     guid TEXT,                                                                                              -- GUID
     content TEXT,                                                                                           -- content, as (X)HTML
     modified datetime not null default CURRENT_TIMESTAMP,                                                   -- date when article properties were last modified
-    hash varchar(64) not null,                                                                              -- ownCloud hash
-    fingerprint varchar(64) not null,                                                                       -- ownCloud fingerprint
-    enclosures_hash varchar(64),                                                                            -- hash of enclosures, if any; since enclosures are not uniquely identified, we need to know when they change
-    tags_hash varchar(64)                                                                                   -- hash of RSS/Atom categories included in article; since these categories are not uniquely identified, we need to know when they change
+    url_title_hash varchar(64),                                                                             -- hash of URL + title; used when checking for updates and for identification if there is no guid.
+    url_content_hash varchar(64),                                                                           -- hash of URL + content, enclosure URL, & content type; used when checking for updates and for identification if there is no guid.
+    title_content_hash varchar(64),                                                                         -- hash of title + content, enclosure URL, & content type; used when checking for updates and for identification if there is no guid.
 );
 
 -- enclosures associated with articles
