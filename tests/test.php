@@ -13,11 +13,6 @@ $conf->userAuthPreferHTTP = true;
 $data = new RuntimeData($conf);
 $data->db->schemaUpdate();
 
-(new REST($data))->dispatch("GET", "/index.php/apps/news/api/", "");
-exit;
-
-
-
 $data->user->add($user, $pass);
 $data->user->auth();
 $data->user->authorizationEnabled(false);
