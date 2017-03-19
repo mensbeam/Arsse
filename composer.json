@@ -22,7 +22,6 @@
         "ext-intl": "*",
         "ext-iconv": "*",
         "fguillot/picofeed": ">=0.1.31",
-        "respect/rest": "^0.6",
         "jkingweb/druuid": "^3.0",
         "phpseclib/phpseclib": "^2.0",
         "hosteurope/password-generator": "^1.0",

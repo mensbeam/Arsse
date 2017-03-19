@@ -3,7 +3,6 @@ namespace JKingWeb\NewsSync;
 const INSTALL = true;
 require_once "../bootstrap.php";
 
-
 $user = "john.doe@example.com";
 $pass = "secret";
 $_SERVER['PHP_AUTH_USER'] = $user;
@@ -13,6 +12,10 @@ $conf->dbSQLite3File = ":memory:";
 $conf->userAuthPreferHTTP = true;
 $data = new RuntimeData($conf);
 $data->db->schemaUpdate();
+
+(new REST($data))->dispatch("GET", "/index.php/apps/news/api/", "");
+exit;
+
 
 
 $data->user->add($user, $pass);
