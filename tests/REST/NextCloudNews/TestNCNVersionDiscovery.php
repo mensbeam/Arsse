@@ -14,7 +14,7 @@ class TestNCNVersionDiscovery extends \PHPUnit\Framework\TestCase {
 	}
 
 	function testVersionList() {
-		$exp = new Response(200, ['v1-2']);
+		$exp = new Response(200, ['apiLevels' => ['v1-2']]);
 		$req = new Request("GET", "/");
 		$h = new Rest\NextCloudNews\Versions($this->data);
 		$res = $h->dispatch($req);

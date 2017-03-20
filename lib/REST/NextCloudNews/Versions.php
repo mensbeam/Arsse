@@ -17,7 +17,12 @@ class Versions implements \JKingWeb\NewsSync\REST\Handler {
 			return new Response(405);
 		}
 		if(preg_match("<^/?$>",$path)) {
-			return new Response(200, ['v1-2']);
+			$out = [
+				'apiLevels' => [
+					'v1-2'
+				]
+			];
+			return new Response(200, $out);
 		} else {
 			return new Response(404);
 		}
