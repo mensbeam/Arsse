@@ -35,4 +35,8 @@
     <file>Db/SQLite3/TestDbUpdateSQLite3.php</file>
 </testsuite>
 
+<testsuite name="NextCloud News API">
+    <file>REST/NextCloudNews/TestNCNVersionDiscovery.php</file>
+</testsuite>
+
 </phpunit>
