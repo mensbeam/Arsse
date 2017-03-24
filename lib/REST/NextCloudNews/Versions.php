@@ -3,27 +3,28 @@ declare(strict_types=1);
 namespace JKingWeb\NewsSync\REST\NextCloudNews;
 use JKingWeb\NewsSync\REST\Response;
 
-class Versions implements \JKingWeb\NewsSync\REST\Handler {
+class Versions extends \JKingWeb\NewsSync\REST\AbstractHandler {
 	function __construct(\JKingWeb\NewsSync\RuntimeData $data) {
+		// runtime data is not needed; this method is deliberately empty
 	}
 
 	function dispatch(\JKingWeb\NewsSync\REST\Request $req): \JKingWeb\NewsSync\REST\Response {
-		$path = $req->url;
-		$query = "";
-		if(strpos($path, "?") !== false) {
-			list($path, $query) = explode("?", $path);
-		}
+		// parse the URL and populate $path and $query
+		extract($this->parseURL($req->url));
+		// if a method other than GET was used, this is an error
 		if($req->method != "GET") {
 			return new Response(405);
 		}
 		if(preg_match("<^/?$>",$path)) {
+			// if the request path is an empty string or just a slash, return the supported versions
 			$out = [
 				'apiLevels' => [
-					'v1-2'
+					'v1-2',
 				]
 			];
 			return new Response(200, $out);
 		} else {
+			// if the URL path was anything else, the client is probably trying a version we don't support
 			return new Response(404);
 		}
 	}
