@@ -344,8 +344,6 @@ class Database {
             throw new Db\ExceptionInput("missing", ["action" => __FUNCTION__, "field" => "name"]);
         } else if(!strlen(trim($data['name']))) {
             throw new Db\ExceptionInput("whitespace", ["action" => __FUNCTION__, "field" => "name"]);
-        } else if(iconv_strlen($data['name']) > 100) {
-            throw new Db\ExceptionInput("tooLong", ["action" => __FUNCTION__, "field" => "name", 'max' => 100]);
         }
         // normalize folder's parent, if there is one
         $parent = array_key_exists("parent", $data) ? (int) $data['parent'] : 0;
