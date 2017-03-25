@@ -369,4 +369,24 @@ class Database {
         // actually perform the insert (!)
         return $this->db->prepare("INSERT INTO newssync_folders(owner,parent,root,name) values(?,?,?,?)", "str", "int", "int", "str")->run($user, $parent, $root, $data['name'])->lastId();
     }
+
+    public function folderList(string $user, int $parent = null, bool $recursive = true): Db\Result {
+        // if the user isn't authorized to perform this action then throw an exception.
+        if (!$this->data->user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        // if the user doesn't exist throw an exception.
+        if (!$this->userExists($user)) {
+            throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
+        }
+        // if we're not returning a recursive list we can use a simpler query
+        if(!$recursive) {
+            return $this->db->preparre("SELECT id,name,parent from newssync_folders where owner is ? and parent is ?", "str", "int")->run($user, $parent);
+        } else {
+            return $this->db->prepare(
+                "WITH RECURSIVE folders(id) as (SELECT id from newssync_folders where owner is ? and parent is ? union select newssync_folders.id from newssync_folders join folders on newssync_folders.parent=folders.id) ".
+                "SELECT id,name,parent from newssync_folders where id in(SELECT id from folders) order by name",
+             "str", "int")->run($user, $parent);
+        }
+    }
 }
