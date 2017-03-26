@@ -288,31 +288,7 @@ class Database {
 
             // Add each of the articles to the database.
             foreach ($feed->data->items as $i) {
-                $articleID = $this->db->prepare('INSERT INTO newssync_articles(feed,url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash)
-                values(?,?,?,?,?,?,?,?,?,?,?)',
-                'int', 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str')->run(
-                    $feedID,
-                    $i->url,
-                    $i->title,
-                    $i->author,
-                    $i->publishedDate,
-                    $i->updatedDate,
-                    $i->id,
-                    $i->content,
-                    // Since feeds cannot be trusted to have valid ids additional hashes are used for identifiers.
-                    // These hashes are made regardless to check against for changes.
-                    hash('sha256', $i->url.$i->title),
-                    hash('sha256', $i->url.$i->content.$i->enclosureUrl.$i->enclosureType),
-                    hash('sha256', $i->title.$i->content.$i->enclosureUrl.$i->enclosureType)
-                )->lastId();
-
-                // If the article has categories add them into the categories database.
-                $categories = $i->getTag('category');
-                if (count($categories) > 0) {
-                    foreach ($categories as $c) {
-                        $this->db->prepare('INSERT INTO newssync_tags(article,name) values(?,?)', 'int', 'str')->run($articleID, $c);
-                    }
-                }
+                $this->articleAdd($i);
             }
         }
 
@@ -388,5 +364,128 @@ class Database {
                 "SELECT id,name,parent from newssync_folders where id in(SELECT id from folders) order by name",
              "str", "int")->run($user, $parent);
         }
+    }
+
+    public function articleAdd(PicoFeed\Parser\Item $article): int {
+        $this->db->begin();
+
+        $articleId = $this->db->prepare('INSERT INTO newssync_articles(feed,url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash)
+        values(?,?,?,?,?,?,?,?,?,?,?)',
+        'int', 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str')->run(
+            $feedID,
+            $article->url,
+            $article->title,
+            $article->author,
+            $article->publishedDate,
+            $article->updatedDate,
+            $article->id,
+            $article->content,
+            $article->urlTitleHash,
+            $article->urlContentHash,
+            $article->titleContentHash
+        )->lastId();
+
+        // If the article has categories add them into the categories database.
+        $categories = $article->getTag('category');
+        if (count($categories) > 0) {
+            foreach ($categories as $c) {
+                $this->db->prepare('INSERT INTO newssync_tags(article,name) values(?,?)', 'int', 'str')->run($articleId, $c);
+            }
+        }
+
+        $this->db->commit();
+        return 1;
+    }
+
+    public function updateFeeds(): int {
+        $feeds = $this->db->query('SELECT id, url, username, password, DATEFORMAT("http", modified) AS lastmodified, etag FROM newssync_feeds')->getAll();
+        foreach ($feeds as $f) {
+            $feed = new Feed($f['url'], $f['lastmodified'], $f['etag'], $f['username'], $f['password']);
+            // FIXME: What to do if fails? It currently throws an exception which isn't ideal here.
+
+            // If the feed has been updated then
+            if ($feed->resource->isModified()) {
+                $feed->parse();
+
+                $this->db->begin();
+                $articles = $this->db->prepare('SELECT id, url, title, author, DATEFORMAT("http", edited) AS edited_date, guid, content, url_title_hash, url_content_hash, title_content_hash FROM newssync_articles WHERE feed is ? ORDER BY id', 'int')->run($f['id'])->getAll();
+
+                foreach ($feed->data->items as $i) {
+                    // Iterate through the articles in the database to determine a match for the one
+                    // in the just-parsed feed.
+                    $match = null;
+                    foreach ($articles as $a) {
+                        // If the id exists and is equal to one in the database then this is the post.
+                        if ($i->id) {
+                            if ($i->id === $a['guid']) {
+                                $match = $a;
+                            }
+                        }
+
+                        // Otherwise if the id doesn't exist and any of the hashes match then this is
+                        // the post.
+                        elseif ($i->urlTitleHash === $a['url_title_hash'] || $i->urlContentHash === $a['url_content_hash'] || $i->titleContentHash === $a['title_content_hash']) {
+                            $match = $a;
+                        }
+                    }
+
+                    // If there is no match then this is a new post and must be added to the
+                    // database.
+                    if (!$match) {
+                        $this->articleAdd($i);
+                        continue;
+                    }
+
+                    // With that out of the way determine if the post has been updated.
+                    // If there is an updated date, and it doesn't match the database's then update
+                    // the post.
+                    $update = false;
+                    if ($i->updatedDate) {
+                        if ($i->updatedDate !== $match['edited_date']) {
+                            $update = true;
+                        }
+                    }
+                    // Otherwise if there isn't an updated date and any of the hashes don't match
+                    // then update the post.
+                    elseif ($i->urlTitleHash !== $match['url_title_hash'] || $i->urlContentHash !== $match['url_content_hash'] || $i->titleContentHash !== $match['title_content_hash']) {
+                        $update = true;
+                    }
+
+                    if ($update) {
+                        $this->db->prepare('UPDATE newssync_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = ?, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id is ?', 'str', 'str', 'str', 'datetime', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int')->run(
+                            $i->url,
+                            $i->title,
+                            $i->author,
+                            $i->publishedDate,
+                            $i->updatedDate,
+                            time(),
+                            $i->id,
+                            $i->content,
+                            $i->urlTitleHash,
+                            $i->urlContentHash,
+                            $i->titleContentHash,
+                            $match['id']
+                        );
+
+                        // TODO: Update categories
+                    }
+                }
+
+                // Lastly update the feed database itself with updated information.
+                $this->db->prepare('UPDATE newssync_feeds SET url = ?, title = ?, favicon = ?, source = ?, updated = ?, modified = ?, etag = ? WHERE id is ?', 'str', 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'int')->run(
+                    $feed->feedUrl,
+                    $feed->title,
+                    $feed->favicon,
+                    $feed->siteUrl,
+                    $feed->date,
+                    $feed->resource->getLastModified(),
+                    $feed->resource->getEtag(),
+                    $f['id']
+                );
+            }
+        }
+
+        $this->db->commit();
+        return 1;
     }
 }

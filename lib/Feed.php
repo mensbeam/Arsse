@@ -5,18 +5,18 @@ use PicoFeed\PicoFeedException;
 use PicoFeed\Reader\Favicon;
 
 class Feed {
+    public $data = null;
+    public $favicon;
+    public $parser;
     public $reader;
     public $resource;
-    public $parser;
-    public $data;
-    public $favicon;
 
-    public function __construct(string $url, string $lastModified = '', string $etag = '') {
+    public function __construct(string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = '') {
         try {
             $this->reader = new Reader;
-            $this->resource = $reader->download($url, $lastModified, $etag);
+            $this->resource = $reader->download($url, $lastModified, $etag, $username, $password);
             // Grab the favicon for the feed; returns an empty string if it cannot find one.
-            $this->favicon = new Favicon->find($url);
+            $this->favicon = (new Favicon)->find($url);
         } catch (PicoFeedException $e) {
             throw new Feed\Exception($url, $e);
         }
@@ -43,6 +43,12 @@ class Feed {
         // only be reserved for severely broken feeds.
 
         foreach ($feed->items as &$f) {
+            // Hashes used for comparison to check for updates and also to identify when an
+            // id doesn't exist.
+            $f->urlTitleHash = hash('sha256', $i->url.$i->title);
+            $f->urlContentHash = hash('sha256', $i->url.$i->content.$i->enclosureUrl.$i->enclosureType);
+            $f->titleContentHash = hash('sha256', $i->title.$i->content.$i->enclosureUrl.$i->enclosureType);
+
             // If there is an id element then continue. The id is used already.
             $id = (string)$f->xml->id;
             if ($id !== '') {
@@ -63,9 +69,7 @@ class Feed {
                 continue;
             }
 
-            // If there aren't any of those there is no id. Hashes are created when adding
-            // the feed to the database which will serve to identify the post in this
-            // situation.
+            // If there aren't any of those there is no id.
             $f->id = '';
         }
 

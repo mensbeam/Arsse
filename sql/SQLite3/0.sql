@@ -69,12 +69,12 @@ create table newssync_articles(
     author TEXT,                                                                                            -- author's name
     published datetime,                                                                                     -- time of original publication
     edited datetime,                                                                                        -- time of last edit
+    modified datetime not null default CURRENT_TIMESTAMP,                                                   -- date when article properties were last modified
     guid TEXT,                                                                                              -- GUID
     content TEXT,                                                                                           -- content, as (X)HTML
-    modified datetime not null default CURRENT_TIMESTAMP,                                                   -- date when article properties were last modified
     url_title_hash varchar(64),                                                                             -- hash of URL + title; used when checking for updates and for identification if there is no guid.
     url_content_hash varchar(64),                                                                           -- hash of URL + content, enclosure URL, & content type; used when checking for updates and for identification if there is no guid.
-    title_content_hash varchar(64)                                                                         -- hash of title + content, enclosure URL, & content type; used when checking for updates and for identification if there is no guid.
+    title_content_hash varchar(64)                                                                          -- hash of title + content, enclosure URL, & content type; used when checking for updates and for identification if there is no guid.
 );
 
 -- enclosures associated with articles
