@@ -45,7 +45,7 @@ create table newssync_subscriptions(
     title TEXT,                                                                                             -- user-supplied title
     order_type int not null default 0,                                                                      -- NextCloud sort order
     pinned boolean not null default 0,                                                                      -- whether feed is pinned (always sorts at top)
-    folder integer references newssync_folders(id) on delete set null,                                      -- TT-RSS category (nestable); the first-level category (which acts as NextCloud folder) is joined in when needed
+    folder integer references newssync_folders(id) on delete cascade,                                       -- TT-RSS category (nestable); the first-level category (which acts as NextCloud folder) is joined in when needed
     unique(owner,feed)                                                                                      -- a given feed should only appear once for a given owner
 );
 

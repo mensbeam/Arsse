@@ -298,10 +298,7 @@ class Database {
         return $sub;
     }
 
-    public function subscriptionRemove(int $id): bool {
-        $this->db->begin();
-        $user = $this->db->prepare("SELECT owner from newssync_subscriptions where id is ?", "int")->run($id)->getValue();
-        if($user===null) return false;
+    public function subscriptionRemove(string $user, int $id): bool {
         if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         return (bool) $this->db->prepare("DELETE from newssync_subscriptions where id is ?", "int")->run($id)->changes();
     }
@@ -362,7 +359,7 @@ class Database {
             return $this->db->prepare(
                 "WITH RECURSIVE folders(id) as (SELECT id from newssync_folders where owner is ? and parent is ? union select newssync_folders.id from newssync_folders join folders on newssync_folders.parent=folders.id) ".
                 "SELECT id,name,parent from newssync_folders where id in(SELECT id from folders) order by name",
-             "str", "int")->run($user, $parent);
+            "str", "int")->run($user, $parent);
         }
     }
 
@@ -487,5 +484,19 @@ class Database {
 
         $this->db->commit();
         return 1;
+    }
+
+    public function folderRemove(string $user, int $id): bool {
+        if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        // common table expression to list all descendant folders of the target folder
+        $cte = "RECURSIVE folders(id) as (SELECT id from newssync_folders where owner is ? and id is ? union select newssync_folders.id from newssync_folders join folders on newssync_folders.parent=folders.id) ";
+        $changes = 0;
+        $this->db->begin();
+        // first delete any feed subscriptions contained within the folder tree (this may not be necesary because of foreign keys)
+        $changes += $this->db->prepare("WITH $cte"."DELETE FROM newssync_subscriptions where folder in(select id from folders)", "str", "int")->run($user, $id)->changes();
+        // next delete the folders themselves
+        $changes += $this->db->prepare("WITH $cte"."DELETE FROM newssync_folders where id in(select id from folders)", "str", "int")->run($user, $id)->changes();
+        $this->db->commit();
+        return (bool) $changes;
     }
 }
