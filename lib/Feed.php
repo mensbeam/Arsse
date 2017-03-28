@@ -1,5 +1,5 @@
 <?php
-namespace JKingWeb\NewsSync;
+namespace JKingWeb\Arsse;
 use PicoFeed\Reader\Reader;
 use PicoFeed\PicoFeedException;
 use PicoFeed\Reader\Favicon;

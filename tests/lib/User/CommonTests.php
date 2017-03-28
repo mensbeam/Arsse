@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\Test\User;
-use JKingWeb\NewsSync\User\Driver;
+namespace JKingWeb\Arsse\Test\User;
+use JKingWeb\Arsse\User\Driver;
 
 trait CommonTests {
 	function testListUsers() {

@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\User;
+namespace JKingWeb\Arsse\User;
 
-class Exception extends \JKingWeb\NewsSync\AbstractException {
+class Exception extends \JKingWeb\Arsse\AbstractException {
 }

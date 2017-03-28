@@ -32,12 +32,12 @@
     },
     "autoload": {
         "psr-4": {
-            "JKingWeb\\NewsSync\\": "lib/"
+            "JKingWeb\\Arsse\\": "lib/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "JKingWeb\\NewsSync\\Test\\": "tests/lib/"
+            "JKingWeb\\Arsse\\Test\\": "tests/lib/"
         }
     }
 }

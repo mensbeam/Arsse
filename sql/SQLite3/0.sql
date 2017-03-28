@@ -1,5 +1,5 @@
 -- settings
-create table newssync_settings(
+create table arsse_settings(
     key varchar(255) primary key not null,                                                                  -- setting key
     value varchar(255),                                                                                     -- setting value, serialized as a string
     type varchar(255) not null check(
@@ -8,7 +8,7 @@ create table newssync_settings(
 ) without rowid;
 
 -- users
-create table newssync_users(
+create table arsse_users(
     id TEXT primary key not null,                                                                           -- user id
     password TEXT,                                                                                          -- password, salted and hashed; if using external authentication this would be blank
     name TEXT,                                                                                              -- display name
@@ -19,7 +19,7 @@ create table newssync_users(
 ) without rowid;
 
 -- newsfeeds, deduplicated
-create table newssync_feeds(
+create table arsse_feeds(
     id integer primary key not null,                                                                        -- sequence number
     url TEXT not null,                                                                                      -- URL of feed
     title TEXT,                                                                                             -- default title of feed
@@ -36,23 +36,23 @@ create table newssync_feeds(
 );
 
 -- users' subscriptions to newsfeeds, with settings
-create table newssync_subscriptions(
+create table arsse_subscriptions(
     id integer primary key not null,                                                                        -- sequence number
-    owner TEXT not null references newssync_users(id) on delete cascade on update cascade,                  -- owner of subscription
-    feed integer not null references newssync_feeds(id) on delete cascade,                                  -- feed for the subscription
+    owner TEXT not null references arsse_users(id) on delete cascade on update cascade,                  -- owner of subscription
+    feed integer not null references arsse_feeds(id) on delete cascade,                                  -- feed for the subscription
     added datetime not null default CURRENT_TIMESTAMP,                                                      -- time at which feed was added
     modified datetime not null default CURRENT_TIMESTAMP,                                                   -- date at which subscription properties were last modified
     title TEXT,                                                                                             -- user-supplied title
     order_type int not null default 0,                                                                      -- NextCloud sort order
     pinned boolean not null default 0,                                                                      -- whether feed is pinned (always sorts at top)
-    folder integer references newssync_folders(id) on delete cascade,                                       -- TT-RSS category (nestable); the first-level category (which acts as NextCloud folder) is joined in when needed
+    folder integer references arsse_folders(id) on delete cascade,                                       -- TT-RSS category (nestable); the first-level category (which acts as NextCloud folder) is joined in when needed
     unique(owner,feed)                                                                                      -- a given feed should only appear once for a given owner
 );
 
 -- TT-RSS categories and NextCloud folders
-create table newssync_folders(
+create table arsse_folders(
     id integer primary key not null,                                                                        -- sequence number
-    owner TEXT not null references newssync_users(id) on delete cascade on update cascade,                  -- owner of folder
+    owner TEXT not null references arsse_users(id) on delete cascade on update cascade,                  -- owner of folder
     parent integer default null,                                                                            -- parent folder id
     root integer default null,                                                                              -- first-level folder (NextCloud folder)
     name TEXT not null,                                                                                     -- folder name
@@ -61,9 +61,9 @@ create table newssync_folders(
 );
 
 -- entries in newsfeeds
-create table newssync_articles(
+create table arsse_articles(
     id integer primary key not null,                                                                        -- sequence number
-    feed integer not null references newssync_feeds(id) on delete cascade,                                  -- feed for the subscription
+    feed integer not null references arsse_feeds(id) on delete cascade,                                  -- feed for the subscription
     url TEXT not null,                                                                                      -- URL of article
     title TEXT,                                                                                             -- article title
     author TEXT,                                                                                            -- author's name
@@ -78,35 +78,35 @@ create table newssync_articles(
 );
 
 -- enclosures associated with articles
-create table newssync_enclosures(
-    article integer not null references newssync_articles(id) on delete cascade,
+create table arsse_enclosures(
+    article integer not null references arsse_articles(id) on delete cascade,
     url TEXT,
     type varchar(255)
 );
 
 -- users' actions on newsfeed entries
-create table newssync_subscription_articles(
+create table arsse_subscription_articles(
     id integer primary key not null,
-    article integer not null references newssync_articles(id) on delete cascade,
+    article integer not null references arsse_articles(id) on delete cascade,
     read boolean not null default 0,
     starred boolean not null default 0,
     modified datetime not null default CURRENT_TIMESTAMP
 );
 
 -- user labels associated with newsfeed entries
-create table newssync_labels(
-    sub_article integer not null references newssync_subscription_articles(id) on delete cascade,            --
-    owner TEXT not null references newssync_users(id) on delete cascade on update cascade,
+create table arsse_labels(
+    sub_article integer not null references arsse_subscription_articles(id) on delete cascade,            --
+    owner TEXT not null references arsse_users(id) on delete cascade on update cascade,
     name TEXT
 );
-create index newssync_label_names on newssync_labels(name);
+create index arsse_label_names on arsse_labels(name);
 
 -- author labels ("categories" in RSS/Atom parlance) associated with newsfeed entries
-create table newssync_tags(
-    article integer not null references newssync_articles(id) on delete cascade,
+create table arsse_tags(
+    article integer not null references arsse_articles(id) on delete cascade,
     name TEXT
 );
 
 -- set version marker
 pragma user_version = 1;
-insert into newssync_settings values('schema_version',1,'int');
+insert into arsse_settings values('schema_version',1,'int');

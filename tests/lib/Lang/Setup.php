@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\Test\Lang;
-use \org\bovigo\vfs\vfsStream, \JKingWeb\NewsSync\Lang;
+namespace JKingWeb\Arsse\Test\Lang;
+use \org\bovigo\vfs\vfsStream, \JKingWeb\Arsse\Lang;
 
 
 
 trait Setup {
     static function setUpBeforeClass() {
         // this is required to keep from having exceptions in Lang::msg() in turn calling Lang::msg() and looping
-        \JKingWeb\NewsSync\Lang\Exception::$test = true;
+        \JKingWeb\Arsse\Lang\Exception::$test = true;
         // test files
         self::$files = [
             'en.php'    => '<?php return ["Test.presentText" => "and the Philosopher\'s Stone"];',
@@ -38,7 +38,7 @@ trait Setup {
     }
 
     static function tearDownAfterClass() {
-        \JKingWeb\NewsSync\Lang\Exception::$test = false;
+        \JKingWeb\Arsse\Lang\Exception::$test = false;
         Lang::$path = self::$defaultPath;
         self::$path = null;
         self::$vfs = null;

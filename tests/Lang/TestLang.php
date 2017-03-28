@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync;
+namespace JKingWeb\Arsse;
 use \org\bovigo\vfs\vfsStream;
 
 
@@ -43,7 +43,7 @@ class TestLang extends \PHPUnit\Framework\TestCase {
     function testLoadDefaultLanguage() {
         $this->assertEquals(Lang::DEFAULT, Lang::set(Lang::DEFAULT, true));
         $str = Lang::dump();
-        $this->assertArrayHasKey('Exception.JKingWeb/NewsSync/Exception.uncoded', $str);
+        $this->assertArrayHasKey('Exception.JKingWeb/Arsse/Exception.uncoded', $str);
         $this->assertArrayHasKey('Test.presentText', $str);
     }
 
@@ -54,7 +54,7 @@ class TestLang extends \PHPUnit\Framework\TestCase {
         Lang::set(Lang::DEFAULT, true);
         $this->assertEquals("ja", Lang::set("ja", true));
         $str = Lang::dump();
-        $this->assertArrayHasKey('Exception.JKingWeb/NewsSync/Exception.uncoded', $str);
+        $this->assertArrayHasKey('Exception.JKingWeb/Arsse/Exception.uncoded', $str);
         $this->assertArrayHasKey('Test.presentText', $str);
         $this->assertArrayHasKey('Test.absentText', $str);
     }

@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync;
+namespace JKingWeb\Arsse;
 
 
 class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
@@ -267,7 +267,7 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 		$this->assertFalse($this->drv->isLocked());
 		$this->assertTrue($this->drv->lock());
 		$this->assertFalse($this->drv->isLocked());
-		$this->drv->exec("CREATE TABLE newssync_settings(key primary key, value, type) without rowid; PRAGMA user_version=1");
+		$this->drv->exec("CREATE TABLE arsse_settings(key primary key, value, type) without rowid; PRAGMA user_version=1");
 		$this->assertTrue($this->drv->lock());
 		$this->assertTrue($this->drv->isLocked());
 		$this->assertFalse($this->drv->lock());

@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\User;
+namespace JKingWeb\Arsse\User;
 
 Interface Driver {
     const FUNC_NOT_IMPLEMENTED = 0;
@@ -14,7 +14,7 @@ Interface Driver {
     const RIGHTS_GLOBAL_ADMIN   = 100;  // is completely unrestricted
 
     // returns an instance of a class implementing this interface. Implemented as a static method for consistency with database classes
-    function __construct(\JKingWeb\NewsSync\RuntimeData $data);
+    function __construct(\JKingWeb\Arsse\RuntimeData $data);
     // returns a human-friendly name for the driver (for display in installer, for example)
     static function driverName(): string;
     // returns an array (or single queried member of same) of methods defined by this interface and whether the class implements the internal function or a custom version

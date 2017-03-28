@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\Db;
+namespace JKingWeb\Arsse\Db;
 
-class ExceptionTimeout extends \JKingWeb\NewsSync\AbstractException {
+class ExceptionTimeout extends \JKingWeb\Arsse\AbstractException {
 }

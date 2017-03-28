@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync;
+namespace JKingWeb\Arsse;
 
 const BASE = __DIR__.DIRECTORY_SEPARATOR;
 const NS_BASE = __NAMESPACE__."\\";

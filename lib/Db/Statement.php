@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\Db;
+namespace JKingWeb\Arsse\Db;
 
 interface Statement {
     const TS_TIME = -1;

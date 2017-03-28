@@ -1,19 +1,19 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync;
+namespace JKingWeb\Arsse;
 use \Webmozart\Glob\Glob;
 
 class Lang {
     const DEFAULT = "en"; // fallback locale
     const REQUIRED = [    // collection of absolutely required strings to handle pathological errors
-        'Exception.JKingWeb/NewsSync/Exception.uncoded'                     => 'The specified exception symbol {0} has no code specified in AbstractException.php',
-        'Exception.JKingWeb/NewsSync/Exception.unknown'                     => 'An unknown error has occurred',
-        'Exception.JKingWeb/NewsSync/Lang/Exception.defaultFileMissing'     => 'Default language file "{0}" missing',
-        'Exception.JKingWeb/NewsSync/Lang/Exception.fileMissing'            => 'Language file "{0}" is not available',
-        'Exception.JKingWeb/NewsSync/Lang/Exception.fileUnreadable'         => 'Insufficient permissions to read language file "{0}"',
-        'Exception.JKingWeb/NewsSync/Lang/Exception.fileCorrupt'            => 'Language file "{0}" is corrupt or does not conform to expected format',
-        'Exception.JKingWeb/NewsSync/Lang/Exception.stringMissing'          => 'Message string "{msgID}" missing from all loaded language files ({fileList})',
-        'Exception.JKingWeb/NewsSync/Lang/Exception.stringInvalid'          => 'Message string "{msgID}" is not a valid ICU message string (language files loaded: {fileList})',
+        'Exception.JKingWeb/Arsse/Exception.uncoded'                     => 'The specified exception symbol {0} has no code specified in AbstractException.php',
+        'Exception.JKingWeb/Arsse/Exception.unknown'                     => 'An unknown error has occurred',
+        'Exception.JKingWeb/Arsse/Lang/Exception.defaultFileMissing'     => 'Default language file "{0}" missing',
+        'Exception.JKingWeb/Arsse/Lang/Exception.fileMissing'            => 'Language file "{0}" is not available',
+        'Exception.JKingWeb/Arsse/Lang/Exception.fileUnreadable'         => 'Insufficient permissions to read language file "{0}"',
+        'Exception.JKingWeb/Arsse/Lang/Exception.fileCorrupt'            => 'Language file "{0}" is corrupt or does not conform to expected format',
+        'Exception.JKingWeb/Arsse/Lang/Exception.stringMissing'          => 'Message string "{msgID}" missing from all loaded language files ({fileList})',
+        'Exception.JKingWeb/Arsse/Lang/Exception.stringInvalid'          => 'Message string "{msgID}" is not a valid ICU message string (language files loaded: {fileList})',
     ];
 
     static public    $path = BASE."locale".DIRECTORY_SEPARATOR; // path to locale files; this is a public property to facilitate unit testing

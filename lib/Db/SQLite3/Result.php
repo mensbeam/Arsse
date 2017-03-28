@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\Db\SQLite3;
+namespace JKingWeb\Arsse\Db\SQLite3;
 
-class Result implements \JKingWeb\NewsSync\Db\Result {
+class Result implements \JKingWeb\Arsse\Db\Result {
     protected $st;
     protected $set;
     protected $pos = 0;

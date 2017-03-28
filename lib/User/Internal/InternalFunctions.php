@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\User\Internal;
+namespace JKingWeb\Arsse\User\Internal;
 
 trait InternalFunctions {    
     protected $actor = [];
 
-    public function __construct(\JKingWeb\NewsSync\RuntimeData $data) {
+    public function __construct(\JKingWeb\Arsse\RuntimeData $data) {
         $this->data = $data;
         $this->db = $this->data->db;
     }

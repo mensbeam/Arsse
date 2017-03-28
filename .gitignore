@@ -3,7 +3,7 @@ vendor
 
 #temp files
 cache/*
-newssync.db*
+arsse.db*
 
 # Windows image file caches
 Thumbs.db

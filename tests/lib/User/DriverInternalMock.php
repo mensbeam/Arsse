@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\Test\User;
-use JKingWeb\NewsSync\User\Driver;
+namespace JKingWeb\Arsse\Test\User;
+use JKingWeb\Arsse\User\Driver;
 
 class DriverInternalMock extends Database implements Driver {
 
@@ -20,7 +20,7 @@ class DriverInternalMock extends Database implements Driver {
         "userRightsSet"           => Driver::FUNC_INTERNAL,
     ];
 
-    static public function create(\JKingWeb\NewsSync\RuntimeData $data): Driver {
+    static public function create(\JKingWeb\Arsse\RuntimeData $data): Driver {
         return new static($data);
     }
 
@@ -37,7 +37,7 @@ class DriverInternalMock extends Database implements Driver {
         }
     }
 
-    public function __construct(\JKingWeb\NewsSync\RuntimeData $data) {
+    public function __construct(\JKingWeb\Arsse\RuntimeData $data) {
         $this->data = $data;
     }
 

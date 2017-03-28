@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync;
+namespace JKingWeb\Arsse;
 
 class RuntimeData {
     public $conf;

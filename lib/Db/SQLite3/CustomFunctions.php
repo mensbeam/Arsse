@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\Db\SQLite3;
+namespace JKingWeb\Arsse\Db\SQLite3;
 
 class CustomFunctions {
     // Converts from SQLite3's date format to a specified standard date format.

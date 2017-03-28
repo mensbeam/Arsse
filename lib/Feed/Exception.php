@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\Feed;
+namespace JKingWeb\Arsse\Feed;
 
-class Exception extends \JKingWeb\NewsSync\AbstractException {
+class Exception extends \JKingWeb\Arsse\AbstractException {
     public function __construct($url, \Throwable $e) {
         $className = get_class($e);
         // Convert the exception thrown by PicoFeed to the one to be thrown here.

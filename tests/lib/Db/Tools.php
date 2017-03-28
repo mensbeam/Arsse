@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\Test\Db;
+namespace JKingWeb\Arsse\Test\Db;
 
 trait Tools {
-	function prime(\JKingWeb\NewsSync\Db\Driver $drv, array $data): bool {
+	function prime(\JKingWeb\Arsse\Db\Driver $drv, array $data): bool {
 		$drv->begin();
 		foreach($data as $table => $info) {
 			$cols = implode(",", array_keys($info['columns']));
@@ -18,7 +18,7 @@ trait Tools {
 		return true;
 	}
 
-	function compare(\JKingWeb\NewsSync\Db\Driver $drv, array $expected): bool {
+	function compare(\JKingWeb\Arsse\Db\Driver $drv, array $expected): bool {
 		foreach($expected as $table => $info) {
 			$cols = implode(",", array_keys($info['columns']));
 			foreach($drv->prepare("SELECT $cols from $table")->run() as $num => $row) {

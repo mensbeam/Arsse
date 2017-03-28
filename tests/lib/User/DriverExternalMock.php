@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\Test\User;
-use JKingWeb\NewsSync\User\Driver;
-use JKingWeb\NewsSync\User\Exception;
+namespace JKingWeb\Arsse\Test\User;
+use JKingWeb\Arsse\User\Driver;
+use JKingWeb\Arsse\User\Exception;
 use PasswordGenerator\Generator as PassGen;
 
 class DriverExternalMock extends DriverSkeleton implements Driver {
@@ -22,7 +22,7 @@ class DriverExternalMock extends DriverSkeleton implements Driver {
         "userRightsSet"           => Driver::FUNC_EXTERNAL,
     ];
 
-    static public function create(\JKingWeb\NewsSync\RuntimeData $data): Driver {
+    static public function create(\JKingWeb\Arsse\RuntimeData $data): Driver {
         return new static($data);
     }
 
@@ -39,7 +39,7 @@ class DriverExternalMock extends DriverSkeleton implements Driver {
         }
     }
 
-    public function __construct(\JKingWeb\NewsSync\RuntimeData $data) {
+    public function __construct(\JKingWeb\Arsse\RuntimeData $data) {
         $this->data = $data;
     }
 

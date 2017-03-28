@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync;
+namespace JKingWeb\Arsse;
 
 class User {
     public  $id = null;
@@ -23,7 +23,7 @@ class User {
         return $classes;
     }
 
-    public function __construct(\JKingWeb\NewsSync\RuntimeData $data) {
+    public function __construct(\JKingWeb\Arsse\RuntimeData $data) {
         $this->data = $data;
         $driver = $data->conf->userDriver;
         $this->u = new $driver($data);

@@ -1,27 +1,27 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync;
+namespace JKingWeb\Arsse;
 
 class Conf {
     public $lang                    = "en";
 
     public $dbDriver                = Db\SQLite3\Driver::class;
     public $dbSchemaBase            = BASE.'sql';
-    public $dbSQLite3File           = BASE."newssync.db";
+    public $dbSQLite3File           = BASE."arsse.db";
     public $dbSQLite3Key            = "";
     public $dbSQLite3AutoUpd        = true;
     public $dbPostgreSQLHost        = "localhost";
-    public $dbPostgreSQLUser        = "newssync";
+    public $dbPostgreSQLUser        = "arsse";
     public $dbPostgreSQLPass        = "";
     public $dbPostgreSQLPort        = 5432;
-    public $dbPostgreSQLDb          = "newssync";
+    public $dbPostgreSQLDb          = "arsse";
     public $dbPostgreSQLSchema      = "";
     public $dbPostgreSQLAutoUpd     = false;
     public $dbMySQLHost             = "localhost";
-    public $dbMySQLUser             = "newssync";
+    public $dbMySQLUser             = "arsse";
     public $dbMySQLPass             = "";
     public $dbMySQLPort             = 3306;
-    public $dbMySQLDb               = "newssync";
+    public $dbMySQLDb               = "arsse";
     public $dbMySQLAutoUpd          = false;
 
     public $userDriver              = User\Internal\Driver::class;

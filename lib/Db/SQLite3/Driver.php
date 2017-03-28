@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\Db\SQLite3;
-use JKingWeb\NewsSync\Lang;
-use JKingWeb\NewsSync\Db\Exception;
-use JKingWeb\NewsSync\Db\ExceptionInput;
-use JKingWeb\NewsSync\Db\ExceptionTimeout;
+namespace JKingWeb\Arsse\Db\SQLite3;
+use JKingWeb\Arsse\Lang;
+use JKingWeb\Arsse\Db\Exception;
+use JKingWeb\Arsse\Db\ExceptionInput;
+use JKingWeb\Arsse\Db\ExceptionTimeout;
 
 
-class Driver extends \JKingWeb\NewsSync\Db\AbstractDriver {
+class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     use ExceptionBuilder;
 
     const SQLITE_BUSY = 5;
@@ -17,7 +17,7 @@ class Driver extends \JKingWeb\NewsSync\Db\AbstractDriver {
     protected $db;
     protected $data;
 
-    public function __construct(\JKingWeb\NewsSync\RuntimeData $data, bool $install = false) {
+    public function __construct(\JKingWeb\Arsse\RuntimeData $data, bool $install = false) {
         // check to make sure required extension is loaded
         if(!class_exists("SQLite3")) throw new Exception("extMissing", self::driverName());
         $this->data = $data;
@@ -115,7 +115,7 @@ class Driver extends \JKingWeb\NewsSync\Db\AbstractDriver {
         }
     }
 
-    public function query(string $query): \JKingWeb\NewsSync\Db\Result {
+    public function query(string $query): \JKingWeb\Arsse\Db\Result {
         try {
             $r = $this->db->query($query);
         } catch(\Exception $e) {
@@ -127,7 +127,7 @@ class Driver extends \JKingWeb\NewsSync\Db\AbstractDriver {
         return new Result($r, [$changes, $lastId]);
     }
 
-    public function prepareArray(string $query, array $paramTypes): \JKingWeb\NewsSync\Db\Statement {
+    public function prepareArray(string $query, array $paramTypes): \JKingWeb\Arsse\Db\Statement {
         try {
             $s = $this->db->prepare($query);
         } catch(\Exception $e) {

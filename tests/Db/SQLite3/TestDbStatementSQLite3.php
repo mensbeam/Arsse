@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync;
-use JKingWeb\NewsSync\Db\Statement;
+namespace JKingWeb\Arsse;
+use JKingWeb\Arsse\Db\Statement;
 
 
 class TestDbStatementSQLite3 extends \PHPUnit\Framework\TestCase {

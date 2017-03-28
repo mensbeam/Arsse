@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\Db;
+namespace JKingWeb\Arsse\Db;
 
 interface Driver {
-    function __construct(\JKingWeb\NewsSync\RuntimeData $data, bool $install = false);
+    function __construct(\JKingWeb\Arsse\RuntimeData $data, bool $install = false);
     // returns a human-friendly name for the driver (for display in installer, for example)
     static function driverName(): string;
     // returns the version of the scheme of the opened database; if uninitialized should return 0

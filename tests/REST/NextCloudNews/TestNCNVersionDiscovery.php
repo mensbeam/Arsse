@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync;
-use JKingWeb\NewsSync\Rest\Request;
-use JKingWeb\NewsSync\Rest\Response;
+namespace JKingWeb\Arsse;
+use JKingWeb\Arsse\Rest\Request;
+use JKingWeb\Arsse\Rest\Response;
 
 
 class TestNCNVersionDiscovery extends \PHPUnit\Framework\TestCase {

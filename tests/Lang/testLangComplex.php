@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync;
+namespace JKingWeb\Arsse;
 use \org\bovigo\vfs\vfsStream;
 
 
@@ -64,7 +64,7 @@ class TestLangComplex extends \PHPUnit\Framework\TestCase {
      */
     function testFetchAMessageWithSingleNumericParameter() {
         Lang::set("en_ca", true);
-        $this->assertEquals('Default language file "en" missing', Lang::msg('Exception.JKingWeb/NewsSync/Lang/Exception.defaultFileMissing', Lang::DEFAULT));
+        $this->assertEquals('Default language file "en" missing', Lang::msg('Exception.JKingWeb/Arsse/Lang/Exception.defaultFileMissing', Lang::DEFAULT));
     }
 
     /**
@@ -79,7 +79,7 @@ class TestLangComplex extends \PHPUnit\Framework\TestCase {
      * @depends testFetchAMessage
      */
     function testFetchAMessageWithNamedParameters() {
-        $this->assertEquals('Message string "Test.absentText" missing from all loaded language files (en)', Lang::msg('Exception.JKingWeb/NewsSync/Lang/Exception.stringMissing', ['msgID' => 'Test.absentText', 'fileList' => 'en']));
+        $this->assertEquals('Message string "Test.absentText" missing from all loaded language files (en)', Lang::msg('Exception.JKingWeb/Arsse/Lang/Exception.stringMissing', ['msgID' => 'Test.absentText', 'fileList' => 'en']));
     }
 
     /**

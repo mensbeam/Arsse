@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\Db\SQLite3;
-use JKingWeb\NewsSync\Db\Exception;
-use JKingWeb\NewsSync\Db\ExceptionInput;
-use JKingWeb\NewsSync\Db\ExceptionTimeout;
+namespace JKingWeb\Arsse\Db\SQLite3;
+use JKingWeb\Arsse\Db\Exception;
+use JKingWeb\Arsse\Db\ExceptionInput;
+use JKingWeb\Arsse\Db\ExceptionTimeout;
 
 
 trait ExceptionBuilder {

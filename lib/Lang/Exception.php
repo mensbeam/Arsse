@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\Lang;
+namespace JKingWeb\Arsse\Lang;
 
-class Exception extends \JKingWeb\NewsSync\AbstractException {
+class Exception extends \JKingWeb\Arsse\AbstractException {
     static $test = false; // used during PHPUnit testing only
 
     function __construct(string $msgID = "", $vars = null, \Throwable $e = null) {

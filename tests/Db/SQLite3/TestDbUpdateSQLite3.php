@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync;
+namespace JKingWeb\Arsse;
 use \org\bovigo\vfs\vfsStream;
 
 
@@ -12,7 +12,7 @@ class TestDbUpdateSQLite3 extends \PHPUnit\Framework\TestCase {
 	protected $vfs;
 	protected $base;
 
-	const MINIMAL1 = "create table newssync_settings(key text primary key not null, value text, type text not null); pragma user_version=1";
+	const MINIMAL1 = "create table arsse_settings(key text primary key not null, value text, type text not null); pragma user_version=1";
 	const MINIMAL2 = "pragma user_version=2";
 
     function setUp() {
@@ -51,7 +51,7 @@ class TestDbUpdateSQLite3 extends \PHPUnit\Framework\TestCase {
 	}
 
 	function testLoadIncompleteFile() {
-		file_put_contents($this->base."0.sql", "create table newssync_settings(key text primary key not null, value text, type text not null);");
+		file_put_contents($this->base."0.sql", "create table arsse_settings(key text primary key not null, value text, type text not null);");
 		$this->assertException("updateFileIncomplete", "Db");
 	    $this->drv->schemaUpdate(1);
 	}

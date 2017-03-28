@@ -1,16 +1,16 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\Test\User;
-use JKingWeb\NewsSync\User\Driver;
-use JKingWeb\NewsSync\User\Exception;
-use JKingWeb\NewsSync\User\ExceptionAuthz;
+namespace JKingWeb\Arsse\Test\User;
+use JKingWeb\Arsse\User\Driver;
+use JKingWeb\Arsse\User\Exception;
+use JKingWeb\Arsse\User\ExceptionAuthz;
 use PasswordGenerator\Generator as PassGen;
 
 class Database extends DriverSkeleton {
 
     public $db = [];
 
-    public function __construct(\JKingWeb\NewsSync\RuntimeData $data) {
+    public function __construct(\JKingWeb\Arsse\RuntimeData $data) {
         $this->data = $data;
     }
 	

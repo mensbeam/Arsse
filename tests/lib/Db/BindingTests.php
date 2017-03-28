@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\Test\Db;
-use JKingWeb\NewsSync\Db\Statement;
+namespace JKingWeb\Arsse\Test\Db;
+use JKingWeb\Arsse\Db\Statement;
 
 trait BindingTests {
 	function testBindNull() {

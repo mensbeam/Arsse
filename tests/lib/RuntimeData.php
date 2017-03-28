@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\Test;
+namespace JKingWeb\Arsse\Test;
 
-class RuntimeData extends \JKingWeb\NewsSync\RuntimeData {
+class RuntimeData extends \JKingWeb\Arsse\RuntimeData {
     public $conf;
     public $db;
     public $user;
 
-    public function __construct(\JKingWeb\NewsSync\Conf $conf = null) {
+    public function __construct(\JKingWeb\Arsse\Conf $conf = null) {
         $this->conf = $conf;
     }
 }

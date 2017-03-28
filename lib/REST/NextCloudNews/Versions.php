@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\REST\NextCloudNews;
-use JKingWeb\NewsSync\REST\Response;
+namespace JKingWeb\Arsse\REST\NextCloudNews;
+use JKingWeb\Arsse\REST\Response;
 
-class Versions extends \JKingWeb\NewsSync\REST\AbstractHandler {
-	function __construct(\JKingWeb\NewsSync\RuntimeData $data) {
+class Versions extends \JKingWeb\Arsse\REST\AbstractHandler {
+	function __construct(\JKingWeb\Arsse\RuntimeData $data) {
 		// runtime data is not needed; this method is deliberately empty
 	}
 
-	function dispatch(\JKingWeb\NewsSync\REST\Request $req): \JKingWeb\NewsSync\REST\Response {
+	function dispatch(\JKingWeb\Arsse\REST\Request $req): \JKingWeb\Arsse\REST\Response {
 		// parse the URL and populate $path and $query
 		extract($this->parseURL($req->url));
 		// if a method other than GET was used, this is an error

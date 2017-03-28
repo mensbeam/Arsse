@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\User\Internal;
-use JKingWeb\NewsSync\Lang;
-use JKingWeb\NewsSync\User\Driver as Iface;
+namespace JKingWeb\Arsse\User\Internal;
+use JKingWeb\Arsse\Lang;
+use JKingWeb\Arsse\User\Driver as Iface;
 
 final class Driver implements Iface {
     use InternalFunctions;
@@ -22,7 +22,7 @@ final class Driver implements Iface {
         "userRightsSet"           => Iface::FUNC_INTERNAL,
     ];
 
-    static public function create(\JKingWeb\NewsSync\RuntimeData $data): Driver {
+    static public function create(\JKingWeb\Arsse\RuntimeData $data): Driver {
         return new static($data);
     }
 

@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\Db\SQLite3;
-use JKingWeb\NewsSync\Db\Exception;
-use JKingWeb\NewsSync\Db\ExceptionInput;
-use JKingWeb\NewsSync\Db\ExceptionTimeout;
+namespace JKingWeb\Arsse\Db\SQLite3;
+use JKingWeb\Arsse\Db\Exception;
+use JKingWeb\Arsse\Db\ExceptionInput;
+use JKingWeb\Arsse\Db\ExceptionTimeout;
 
-class Statement extends \JKingWeb\NewsSync\Db\AbstractStatement {
+class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     use ExceptionBuilder;
 
     const SQLITE_BUSY = 5;
@@ -46,7 +46,7 @@ class Statement extends \JKingWeb\NewsSync\Db\AbstractStatement {
         ])[$part];
     }
 
-    public function runArray(array $values = null): \JKingWeb\NewsSync\Db\Result {
+    public function runArray(array $values = null): \JKingWeb\Arsse\Db\Result {
         $this->st->clear();
         $l = sizeof($values);
         for($a = 0; $a < $l; $a++) {

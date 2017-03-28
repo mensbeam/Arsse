@@ -1,5 +1,5 @@
 <?php
-namespace JKingWeb\NewsSync;
+namespace JKingWeb\Arsse;
 const INSTALL = true;
 require_once "../bootstrap.php";
 

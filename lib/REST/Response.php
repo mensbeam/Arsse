@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\REST;
+namespace JKingWeb\Arsse\REST;
 
 class Response {
 	const T_JSON = "application/json";

@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\NewsSync\Test\User;
-use JKingWeb\NewsSync\Lang;
-use JKingWeb\NewsSync\User\Driver;
-use JKingWeb\NewsSync\User\Exception;
-use JKingWeb\NewsSync\User\ExceptionAuthz;
+namespace JKingWeb\Arsse\Test\User;
+use JKingWeb\Arsse\Lang;
+use JKingWeb\Arsse\User\Driver;
+use JKingWeb\Arsse\User\Exception;
+use JKingWeb\Arsse\User\ExceptionAuthz;
 use PasswordGenerator\Generator as PassGen;
 
 abstract class DriverSkeleton {
