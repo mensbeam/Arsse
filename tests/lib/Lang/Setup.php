@@ -1,16 +1,16 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\Lang;
-use \org\bovigo\vfs\vfsStream, \JKingWeb\Arsse\Lang;
+use org\bovigo\vfs\vfsStream;
+use JKingWeb\Arsse\Lang;
+use JKingWeb\Arsse\Data;
 
 
 
 trait Setup {
-    static function setUpBeforeClass() {
-        // this is required to keep from having exceptions in Lang::msg() in turn calling Lang::msg() and looping
-        \JKingWeb\Arsse\Lang\Exception::$test = true;
+    function setUp() {
         // test files
-        self::$files = [
+        $this->files = [
             'en.php'    => '<?php return ["Test.presentText" => "and the Philosopher\'s Stone"];',
             'en_ca.php' => '<?php return ["Test.presentText" => "{0} and {1}"];',
             'en_us.php' => '<?php return ["Test.presentText" => "and the Sorcerer\'s Stone"];',
@@ -28,22 +28,24 @@ trait Setup {
             // unreadable file
             'ru.php'    => '',
         ];
-        self::$vfs = vfsStream::setup("langtest", 0777, self::$files);
-        self::$path = self::$vfs->url()."/";
+        $vfs = vfsStream::setup("langtest", 0777, $this->files);
+        $this->path = $vfs->url()."/";
         // set up a file without read access
-        chmod(self::$path."ru.php", 0000);
-        // make the Lang class use the vfs files
-        self::$defaultPath = Lang::$path;
-        Lang::$path = self::$path;
+        chmod($this->path."ru.php", 0000);
+        // make the test Lang class use the vfs files
+        $this->l = new Lang($this->path);
+        // create a mock Lang object to keep exceptions from creating loops
+        $this->clearData(false);
+        $m = $this->getMockBuilder(Lang::class)->setMethods(['__invoke'])->getMock();
+        $m->expects($this->any())->method("__invoke")->with($this->anything(), $this->anything())->will($this->returnValue(""));
+        Data::$l = $m;
+        // call the additional setup method if it exists
+        if(method_exists($this, "setUpSeries")) $this->setUpSeries();
     }
 
-    static function tearDownAfterClass() {
-        \JKingWeb\Arsse\Lang\Exception::$test = false;
-        Lang::$path = self::$defaultPath;
-        self::$path = null;
-        self::$vfs = null;
-        self::$files = null;
-        Lang::set("", true);
-        Lang::set(Lang::DEFAULT);
+    function tearDown() {
+        $this->clearData(true);
+        // call the additional teardiwn method if it exists
+        if(method_exists($this, "tearDownSeries")) $this->tearDownSeries();
     }
 }

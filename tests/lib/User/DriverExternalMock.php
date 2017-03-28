@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\User;
+use JKingWeb\Arsse\Data;
 use JKingWeb\Arsse\User\Driver;
 use JKingWeb\Arsse\User\Exception;
 use PasswordGenerator\Generator as PassGen;
@@ -8,7 +9,6 @@ use PasswordGenerator\Generator as PassGen;
 class DriverExternalMock extends DriverSkeleton implements Driver {
 
     public $db = [];
-    protected $data;
     protected $functions = [
         "auth"                    => Driver::FUNC_EXTERNAL,
         "userList"                => Driver::FUNC_EXTERNAL,
@@ -21,10 +21,6 @@ class DriverExternalMock extends DriverSkeleton implements Driver {
         "userRightsGet"           => Driver::FUNC_EXTERNAL,
         "userRightsSet"           => Driver::FUNC_EXTERNAL,
     ];
-
-    static public function create(\JKingWeb\Arsse\RuntimeData $data): Driver {
-        return new static($data);
-    }
 
     static public function driverName(): string {
         return "Mock External Driver";
@@ -39,8 +35,7 @@ class DriverExternalMock extends DriverSkeleton implements Driver {
         }
     }
 
-    public function __construct(\JKingWeb\Arsse\RuntimeData $data) {
-        $this->data = $data;
+    public function __construct() {
     }
 
     function auth(string $user, string $password): bool {
@@ -56,7 +51,7 @@ class DriverExternalMock extends DriverSkeleton implements Driver {
 
     function userAdd(string $user, string $password = null): string {
         if($this->userExists($user)) throw new Exception("alreadyExists", ["action" => __FUNCTION__, "user" => $user]);
-        if($password===null) $password = (new PassGen)->length($this->data->conf->userTempPasswordLength)->get();
+        if($password===null) $password = (new PassGen)->length(Data::$conf->userTempPasswordLength)->get();
         return parent::userAdd($user, $password);
     }
 
@@ -75,7 +70,7 @@ class DriverExternalMock extends DriverSkeleton implements Driver {
     
     function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null): string {
         if(!$this->userExists($user)) throw new Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
-        if($newPassword===null) $newPassword = (new PassGen)->length($this->data->conf->userTempPasswordLength)->get();
+        if($newPassword===null) $newPassword = (new PassGen)->length(Data::$conf->userTempPasswordLength)->get();
         return parent::userPasswordSet($user, $newPassword);
     }
 

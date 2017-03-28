@@ -18,10 +18,9 @@ class Database {
         return (string) preg_filter("[^0-9a-zA-Z_\.]", "", $name);
     }
 
-    public function __construct(RuntimeData $data) {
-        $this->data = $data;
-        $this->driver = $driver = $data->conf->dbDriver;
-        $this->db = new $driver($data, INSTALL);
+    public function __construct() {
+        $this->driver = $driver = Data::$conf->dbDriver;
+        $this->db = new $driver(INSTALL);
         $ver = $this->db->schemaVersion();
         if(!INSTALL && $ver < self::SCHEMA_VERSION) {
             $this->db->schemaUpdate(self::SCHEMA_VERSION);
@@ -166,14 +165,14 @@ class Database {
     }
 
     public function userExists(string $user): bool {
-        if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         return (bool) $this->db->prepare("SELECT count(*) from arsse_users where id is ?", "str")->run($user)->getValue();
     }
 
     public function userAdd(string $user, string $password = null): string {
-        if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         if($this->userExists($user)) throw new User\Exception("alreadyExists", ["action" => __FUNCTION__, "user" => $user]);
-        if($password===null) $password = (new PassGen)->length($this->data->conf->userTempPasswordLength)->get();
+        if($password===null) $password = (new PassGen)->length(Data::$conf->userTempPasswordLength)->get();
         $hash = "";
         if(strlen($password) > 0) $hash = password_hash($password, \PASSWORD_DEFAULT);
         $this->db->prepare("INSERT INTO arsse_users(id,password) values(?,?)", "str", "str")->runArray([$user,$hash]);
@@ -181,33 +180,33 @@ class Database {
     }
 
     public function userRemove(string $user): bool {
-        if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         if($this->db->prepare("DELETE from arsse_users where id is ?", "str")->run($user)->changes() < 1) throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         return true;
     }
 
     public function userList(string $domain = null): array {
         if($domain !== null) {
-            if(!$this->data->user->authorize("@".$domain, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $domain]);
+            if(!Data::$user->authorize("@".$domain, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $domain]);
             $domain = str_replace(["\\","%","_"],["\\\\", "\\%", "\\_"], $domain);
             $domain = "%@".$domain;
             return $this->db->prepare("SELECT id from arsse_users where id like ?", "str")->run($domain)->getAll();
         } else {
-            if(!$this->data->user->authorize("", __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => "global"]);
+            if(!Data::$user->authorize("", __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => "global"]);
             return $this->db->prepare("SELECT id from arsse_users")->run()->getAll();
         }
     }
 
     public function userPasswordGet(string $user): string {
-        if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         return (string) $this->db->prepare("SELECT password from arsse_users where id is ?", "str")->run($user)->getValue();
     }
 
     public function userPasswordSet(string $user, string $password = null): string {
-        if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
-        if($password===null) $password = (new PassGen)->length($this->data->conf->userTempPasswordLength)->get();
+        if($password===null) $password = (new PassGen)->length(Data::$conf->userTempPasswordLength)->get();
         $hash = "";
         if(strlen($password > 0)) $hash = password_hash($password, \PASSWORD_DEFAULT);
         $this->db->prepare("UPDATE arsse_users set password = ? where id is ?", "str", "str")->run($hash, $user);
@@ -215,14 +214,14 @@ class Database {
     }
 
     public function userPropertiesGet(string $user): array {
-        if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         $prop = $this->db->prepare("SELECT name,rights from arsse_users where id is ?", "str")->run($user)->getRow();
         if(!$prop) return [];
         return $prop;
     }
 
     public function userPropertiesSet(string $user, array &$properties): array {
-        if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         $valid = [ // FIXME: add future properties
             "name" => "str",
         ];
@@ -237,12 +236,12 @@ class Database {
     }
 
     public function userRightsGet(string $user): int {
-        if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         return (int) $this->db->prepare("SELECT rights from arsse_users where id is ?", "str")->run($user)->getValue();
     }
 
     public function userRightsSet(string $user, int $rights): bool {
-        if(!$this->data->user->authorize($user, __FUNCTION__, $rights)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Data::$user->authorize($user, __FUNCTION__, $rights)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         if(!$this->userExists($user)) return false;
         $this->db->prepare("UPDATE arsse_users set rights = ? where id is ?", "int", "str")->run($rights, $user);
         return true;
@@ -250,7 +249,7 @@ class Database {
 
     public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = ""): int {
         // If the user isn't authorized to perform this action then throw an exception.
-        if (!$this->data->user->authorize($user, __FUNCTION__)) {
+        if (!Data::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         // If the user doesn't exist throw an exception.
@@ -299,13 +298,13 @@ class Database {
     }
 
     public function subscriptionRemove(string $user, int $id): bool {
-        if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         return (bool) $this->db->prepare("DELETE from arsse_subscriptions where id is ?", "int")->run($id)->changes();
     }
 
     public function folderAdd(string $user, array $data): int {
         // If the user isn't authorized to perform this action then throw an exception.
-        if (!$this->data->user->authorize($user, __FUNCTION__)) {
+        if (!Data::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         // If the user doesn't exist throw an exception.
@@ -345,7 +344,7 @@ class Database {
 
     public function folderList(string $user, int $parent = null, bool $recursive = true): Db\Result {
         // if the user isn't authorized to perform this action then throw an exception.
-        if (!$this->data->user->authorize($user, __FUNCTION__)) {
+        if (!Data::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         // if the user doesn't exist throw an exception.
@@ -487,7 +486,7 @@ class Database {
     }
 
     public function folderRemove(string $user, int $id): bool {
-        if(!$this->data->user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         // common table expression to list all descendant folders of the target folder
         $cte = "RECURSIVE folders(id) as (SELECT id from arsse_folders where owner is ? and id is ? union select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id) ";
         $changes = 0;

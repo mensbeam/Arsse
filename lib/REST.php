@@ -26,8 +26,7 @@ class REST {
     ];
     protected $data;
     
-    function __construct(RuntimeData $data) {
-        $this->data = $data;
+    function __construct() {
     }
 
     function dispatch(REST\Request $req = null): bool {
@@ -35,7 +34,7 @@ class REST {
         $api = $this->apiMatch($url, $this->apis);
         $req->url = substr($url,strlen($this->apis[$api]['strip']));
         $class = $this->apis[$api]['class'];
-        $drv = new $class($this->data);
+        $drv = new $class();
         $drv->dispatch($req);
         return true;
     }

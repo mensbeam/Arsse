@@ -6,12 +6,15 @@ namespace JKingWeb\Arsse;
 class TestException extends \PHPUnit\Framework\TestCase {
     use Test\Tools;
 
-    static function setUpBeforeClass() {
-        Lang::set("");
+    function setUp() {
+        $this->clearData(false);
+        $m = $this->getMockBuilder(Lang::class)->setMethods(['__invoke'])->getMock();
+        $m->expects($this->any())->method("__invoke")->with($this->anything(), $this->anything())->will($this->returnValue(""));
+        Data::$l = $m;
     }
 
-    static function tearDownAfterClass() {
-        Lang::set(Lang::DEFAULT);
+    function tearDown() {
+        $this->clearData(true);
     }
     
     function testBaseClass() {
@@ -52,19 +55,10 @@ class TestException extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @depends testBaseClass
-     */
-    function testBaseClassWithMissingMessage() {
-        $this->assertException("stringMissing", "Lang");
-        throw new Exception("invalid");
-    }
-
-    /**
      * @depends testBaseClassWithUnknownCode
      */
     function testDerivedClassWithMissingMessage() {
         $this->assertException("uncoded");
         throw new Lang\Exception("testThisExceptionMessageDoesNotExist");
     }
-    
 }

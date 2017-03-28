@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
-use \org\bovigo\vfs\vfsStream;
+use org\bovigo\vfs\vfsStream;
 
 
 class TestConf extends \PHPUnit\Framework\TestCase {
@@ -10,7 +10,8 @@ class TestConf extends \PHPUnit\Framework\TestCase {
     static $vfs;
     static $path;
 
-    static function setUpBeforeClass() {
+    function setUp() {
+        $this->clearData();
         self::$vfs = vfsStream::setup("root", null, [
             'confGood'       => '<?php return Array("lang" => "xx");',
             'confNotArray'   => '<?php return 0;',
@@ -24,9 +25,10 @@ class TestConf extends \PHPUnit\Framework\TestCase {
         chmod(self::$path."confUnreadable", 0000);
     }
 
-    static function tearDownAfterClass() {
+    function tearDown() {
         self::$path = null;
         self::$vfs = null;
+        $this->clearData();
     }
     
     function testLoadDefaultValues() {

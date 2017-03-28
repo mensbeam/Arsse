@@ -1,13 +1,11 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\User\Internal;
-use JKingWeb\Arsse\Lang;
 use JKingWeb\Arsse\User\Driver as Iface;
 
 final class Driver implements Iface {
     use InternalFunctions;
 
-    protected $data;
     protected $db;
     protected $functions = [
         "auth"                    => Iface::FUNC_INTERNAL,
@@ -22,12 +20,8 @@ final class Driver implements Iface {
         "userRightsSet"           => Iface::FUNC_INTERNAL,
     ];
 
-    static public function create(\JKingWeb\Arsse\RuntimeData $data): Driver {
-        return new static($data);
-    }
-
     static public function driverName(): string {
-        return Lang::msg("Driver.User.Internal.Name");
+        return Data::$l->msg("Driver.User.Internal.Name");
     }
 
     public function driverFunctions(string $function = null) {

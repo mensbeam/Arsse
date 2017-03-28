@@ -1,66 +1,64 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
-use \org\bovigo\vfs\vfsStream;
+use org\bovigo\vfs\vfsStream;
 
 
 class TestLangErrors extends \PHPUnit\Framework\TestCase {
     use Test\Tools, Test\Lang\Setup;
 
-    static $vfs;
-    static $path;
-    static $files;
-    static $defaultPath;
+    public $files;
+    public $path;
+    public $l;
 
-    function setUp() {
-        Lang::set("", true);
+    function setUpSeries() {
+        $this->l->set("", true);
     }
 
     function testLoadEmptyFile() {
         $this->assertException("fileCorrupt", "Lang");
-        Lang::set("fr_ca", true);
+        $this->l->set("fr_ca", true);
     }
 
     function testLoadFileWhichDoesNotReturnAnArray() {
         $this->assertException("fileCorrupt", "Lang");
-        Lang::set("it", true);
+        $this->l->set("it", true);
     }
 
     function testLoadFileWhichIsNotPhp() {
         $this->assertException("fileCorrupt", "Lang");
-        Lang::set("ko", true);
+        $this->l->set("ko", true);
     }
 
     function testLoadFileWhichIsCorrupt() {
         $this->assertException("fileCorrupt", "Lang");
-        Lang::set("zh", true);
+        $this->l->set("zh", true);
     }
 
     function testLoadFileWithooutReadPermission() {
         $this->assertException("fileUnreadable", "Lang");
-        Lang::set("ru", true);
+        $this->l->set("ru", true);
     }
 
     function testLoadSubtagOfMissingLanguage() {
         $this->assertException("fileMissing", "Lang");
-        Lang::set("pt_br", true);
+        $this->l->set("pt_br", true);
     }
 
     function testFetchInvalidMessage() {
         $this->assertException("stringInvalid", "Lang");
-        Lang::set("vi", true);
-        $txt = Lang::msg('Test.presentText');
+        $this->l->set("vi", true);
+        $txt = $this->l->msg('Test.presentText');
     }
 
     function testFetchMissingMessage() {
         $this->assertException("stringMissing", "Lang");
-        $txt = Lang::msg('Test.absentText');
+        $txt = $this->l->msg('Test.absentText');
     }
 
     function testLoadMissingDefaultLanguage() {
-        // this should be the last test of the series
-        unlink(self::$path.Lang::DEFAULT.".php");
+        unlink($this->path.Lang::DEFAULT.".php");
         $this->assertException("defaultFileMissing", "Lang");
-        Lang::set("fr", true);
+        $this->l->set("fr", true);
     }
 }

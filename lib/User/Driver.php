@@ -13,8 +13,8 @@ Interface Driver {
     const RIGHTS_GLOBAL_MANAGER = 75;   // able to act for any normal users on any domain; cannot elevate other users
     const RIGHTS_GLOBAL_ADMIN   = 100;  // is completely unrestricted
 
-    // returns an instance of a class implementing this interface. Implemented as a static method for consistency with database classes
-    function __construct(\JKingWeb\Arsse\RuntimeData $data);
+    // returns an instance of a class implementing this interface.
+    function __construct();
     // returns a human-friendly name for the driver (for display in installer, for example)
     static function driverName(): string;
     // returns an array (or single queried member of same) of methods defined by this interface and whether the class implements the internal function or a custom version

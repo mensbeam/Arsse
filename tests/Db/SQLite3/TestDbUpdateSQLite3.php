@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
-use \org\bovigo\vfs\vfsStream;
+use org\bovigo\vfs\vfsStream;
 
 
 class TestDbUpdateSQLite3 extends \PHPUnit\Framework\TestCase {
@@ -16,20 +16,22 @@ class TestDbUpdateSQLite3 extends \PHPUnit\Framework\TestCase {
 	const MINIMAL2 = "pragma user_version=2";
 
     function setUp() {
+		$this->clearData();
         $this->vfs = vfsStream::setup("schemata", null, ['SQLite3' => []]);
 		$conf = new Conf();
 		$conf->dbDriver = Db\SQLite3\Driver::class;
 		$conf->dbSchemaBase = $this->vfs->url();
 		$this->base = $this->vfs->url()."/SQLite3/";
 		$conf->dbSQLite3File = ":memory:";
-		$this->data = new Test\RuntimeData($conf);
-		$this->drv = new Db\SQLite3\Driver($this->data, true);
+		Data::$conf = $conf;
+		$this->drv = new Db\SQLite3\Driver(true);
     }
 
     function tearDown() {
         unset($this->drv);
         unset($this->data);
         unset($this->vfs);
+		$this->clearData();
     }
 
 	function testLoadMissingFile() {
@@ -82,7 +84,7 @@ class TestDbUpdateSQLite3 extends \PHPUnit\Framework\TestCase {
 	}
 
 	function testPerformActualUpdate() {
-	    $this->data->conf->dbSchemaBase = (new Conf())->dbSchemaBase;
+	    Data::$conf->dbSchemaBase = (new Conf())->dbSchemaBase;
 		$this->drv->schemaUpdate(Database::SCHEMA_VERSION);
 		$this->assertEquals(Database::SCHEMA_VERSION, $this->drv->schemaVersion());
 	}

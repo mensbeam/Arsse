@@ -6,7 +6,6 @@ use JKingWeb\Arsse\User\Driver;
 class DriverInternalMock extends Database implements Driver {
 
     public $db = [];
-    protected $data;
     protected $functions = [
         "auth"                    => Driver::FUNC_INTERNAL,
         "userList"                => Driver::FUNC_INTERNAL,
@@ -19,10 +18,6 @@ class DriverInternalMock extends Database implements Driver {
         "userRightsGet"           => Driver::FUNC_INTERNAL,
         "userRightsSet"           => Driver::FUNC_INTERNAL,
     ];
-
-    static public function create(\JKingWeb\Arsse\RuntimeData $data): Driver {
-        return new static($data);
-    }
 
     static public function driverName(): string {
         return "Mock Internal Driver";
@@ -37,8 +32,7 @@ class DriverInternalMock extends Database implements Driver {
         }
     }
 
-    public function __construct(\JKingWeb\Arsse\RuntimeData $data) {
-        $this->data = $data;
+    public function __construct() {
     }
 
     function auth(string $user, string $password): bool {

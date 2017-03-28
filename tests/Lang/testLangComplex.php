@@ -1,40 +1,39 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
-use \org\bovigo\vfs\vfsStream;
+use org\bovigo\vfs\vfsStream;
 
 
 class TestLangComplex extends \PHPUnit\Framework\TestCase {
     use Test\Tools, Test\Lang\Setup;
 
-    static $vfs;
-    static $path;
-    static $files;
-    static $defaultPath;
+    public $files;
+    public $path;
+    public $l;
 
-    function setUp() {
-        Lang::set(Lang::DEFAULT, true);
+    function setUpSeries() {
+        $this->l->set(Lang::DEFAULT, true);
     }
 
     function testLazyLoad() {
-        Lang::set("ja");
-        $this->assertArrayNotHasKey('Test.absentText', Lang::dump());
+        $this->l->set("ja");
+        $this->assertArrayNotHasKey('Test.absentText', $this->l->dump());
     }
     
     /**
      * @depends testLazyLoad
      */
     function testGetWantedAndLoadedLocale() {
-        Lang::set("en", true);
-        Lang::set("ja");
-        $this->assertEquals("ja", Lang::get());
-        $this->assertEquals("en", Lang::get(true));
+        $this->l->set("en", true);
+        $this->l->set("ja");
+        $this->assertEquals("ja", $this->l->get());
+        $this->assertEquals("en", $this->l->get(true));
     }
     
     function testLoadCascadeOfFiles() {
-        Lang::set("ja", true);
-        $this->assertEquals("de", Lang::set("de", true));
-        $str = Lang::dump();
+        $this->l->set("ja", true);
+        $this->assertEquals("de", $this->l->set("de", true));
+        $str = $this->l->dump();
         $this->assertArrayNotHasKey('Test.absentText', $str);
         $this->assertEquals('und der Stein der Weisen', $str['Test.presentText']);
     }
@@ -43,62 +42,62 @@ class TestLangComplex extends \PHPUnit\Framework\TestCase {
      * @depends testLoadCascadeOfFiles
      */
     function testLoadSubtag() {
-        $this->assertEquals("en_ca", Lang::set("en_ca", true));
+        $this->assertEquals("en_ca", $this->l->set("en_ca", true));
     }
     
     function testFetchAMessage() {
-        Lang::set("de", true);
-        $this->assertEquals('und der Stein der Weisen', Lang::msg('Test.presentText'));
+        $this->l->set("de", true);
+        $this->assertEquals('und der Stein der Weisen', $this->l->msg('Test.presentText'));
     }
 
     /**
      * @depends testFetchAMessage
      */
     function testFetchAMessageWithMissingParameters() {
-        Lang::set("en_ca", true);
-        $this->assertEquals('{0} and {1}', Lang::msg('Test.presentText'));
+        $this->l->set("en_ca", true);
+        $this->assertEquals('{0} and {1}', $this->l->msg('Test.presentText'));
     }
 
     /**
      * @depends testFetchAMessage
      */
     function testFetchAMessageWithSingleNumericParameter() {
-        Lang::set("en_ca", true);
-        $this->assertEquals('Default language file "en" missing', Lang::msg('Exception.JKingWeb/Arsse/Lang/Exception.defaultFileMissing', Lang::DEFAULT));
+        $this->l->set("en_ca", true);
+        $this->assertEquals('Default language file "en" missing', $this->l->msg('Exception.JKingWeb/Arsse/Lang/Exception.defaultFileMissing', Lang::DEFAULT));
     }
 
     /**
      * @depends testFetchAMessage
      */
     function testFetchAMessageWithMultipleNumericParameters() {
-        Lang::set("en_ca", true);
-        $this->assertEquals('Happy Rotter and the Philosopher\'s Stone', Lang::msg('Test.presentText', ['Happy Rotter', 'the Philosopher\'s Stone']));
+        $this->l->set("en_ca", true);
+        $this->assertEquals('Happy Rotter and the Philosopher\'s Stone', $this->l->msg('Test.presentText', ['Happy Rotter', 'the Philosopher\'s Stone']));
     }
 
     /**
      * @depends testFetchAMessage
      */
     function testFetchAMessageWithNamedParameters() {
-        $this->assertEquals('Message string "Test.absentText" missing from all loaded language files (en)', Lang::msg('Exception.JKingWeb/Arsse/Lang/Exception.stringMissing', ['msgID' => 'Test.absentText', 'fileList' => 'en']));
+        $this->assertEquals('Message string "Test.absentText" missing from all loaded language files (en)', $this->l->msg('Exception.JKingWeb/Arsse/Lang/Exception.stringMissing', ['msgID' => 'Test.absentText', 'fileList' => 'en']));
     }
 
     /**
      * @depends testFetchAMessage
      */
     function testReloadDefaultStrings() {
-        Lang::set("de", true);
-        Lang::set("en", true);
-        $this->assertEquals('and the Philosopher\'s Stone', Lang::msg('Test.presentText'));
+        $this->l->set("de", true);
+        $this->l->set("en", true);
+        $this->assertEquals('and the Philosopher\'s Stone', $this->l->msg('Test.presentText'));
     }
 
     /**
      * @depends testFetchAMessage
      */
     function testReloadGeneralTagAfterSubtag() {
-        Lang::set("en", true);
-        Lang::set("en_us", true);
-        $this->assertEquals('and the Sorcerer\'s Stone', Lang::msg('Test.presentText'));
-        Lang::set("en", true);
-        $this->assertEquals('and the Philosopher\'s Stone', Lang::msg('Test.presentText'));
+        $this->l->set("en", true);
+        $this->l->set("en_us", true);
+        $this->assertEquals('and the Sorcerer\'s Stone', $this->l->msg('Test.presentText'));
+        $this->l->set("en", true);
+        $this->assertEquals('and the Philosopher\'s Stone', $this->l->msg('Test.presentText'));
     }
 }

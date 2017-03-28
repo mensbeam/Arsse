@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Db\SQLite3;
-use JKingWeb\Arsse\Lang;
+use JKingWeb\Arsse\Data;
 use JKingWeb\Arsse\Db\Exception;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\ExceptionTimeout;
@@ -15,16 +15,14 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     const SQLITE_MISMATCH = 20;
 
     protected $db;
-    protected $data;
 
-    public function __construct(\JKingWeb\Arsse\RuntimeData $data, bool $install = false) {
+    public function __construct(bool $install = false) {
         // check to make sure required extension is loaded
         if(!class_exists("SQLite3")) throw new Exception("extMissing", self::driverName());
-        $this->data = $data;
-        $file = $data->conf->dbSQLite3File;
+        $file = Data::$conf->dbSQLite3File;
         // if the file exists (or we're initializing the database), try to open it
         try {
-            $this->db = new \SQLite3($file, ($install) ? \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE : \SQLITE3_OPEN_READWRITE, $data->conf->dbSQLite3Key);
+            $this->db = new \SQLite3($file, ($install) ? \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE : \SQLITE3_OPEN_READWRITE, Data::$conf->dbSQLite3Key);
         } catch(\Throwable $e) {
             // if opening the database doesn't work, check various pre-conditions to find out what the problem might be
             if(!file_exists($file)) {
@@ -57,7 +55,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
 
 
     static public function driverName(): string {
-        return Lang::msg("Driver.Db.SQLite3.Name");
+        return Data::$l->msg("Driver.Db.SQLite3.Name");
     }
 
     public function schemaVersion(): int {
@@ -66,10 +64,10 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
 
     public function schemaUpdate(int $to): bool {
         $ver = $this->schemaVersion();
-        if(!$this->data->conf->dbSQLite3AutoUpd)  throw new Exception("updateManual", ['version' => $ver, 'driver_name' => $this->driverName()]);
+        if(!Data::$conf->dbSQLite3AutoUpd)  throw new Exception("updateManual", ['version' => $ver, 'driver_name' => $this->driverName()]);
         if($ver >= $to) throw new Exception("updateTooNew", ['difference' => ($ver - $to), 'current' => $ver, 'target' => $to, 'driver_name' => $this->driverName()]);
         $sep = \DIRECTORY_SEPARATOR;
-        $path = $this->data->conf->dbSchemaBase.$sep."SQLite3".$sep;
+        $path = Data::$conf->dbSchemaBase.$sep."SQLite3".$sep;
         $this->lock();
         $this->begin();
         for($a = $ver; $a < $to; $a++) {

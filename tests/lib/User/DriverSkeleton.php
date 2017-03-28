@@ -10,7 +10,6 @@ use PasswordGenerator\Generator as PassGen;
 abstract class DriverSkeleton {
 
 	protected $db = [];
-    protected $data;
 	
 	function userExists(string $user): bool {
         return array_key_exists($user, $this->db);

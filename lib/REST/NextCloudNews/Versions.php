@@ -4,8 +4,7 @@ namespace JKingWeb\Arsse\REST\NextCloudNews;
 use JKingWeb\Arsse\REST\Response;
 
 class Versions extends \JKingWeb\Arsse\REST\AbstractHandler {
-	function __construct(\JKingWeb\Arsse\RuntimeData $data) {
-		// runtime data is not needed; this method is deliberately empty
+	function __construct() {
 	}
 
 	function dispatch(\JKingWeb\Arsse\REST\Request $req): \JKingWeb\Arsse\REST\Response {

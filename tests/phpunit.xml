@@ -10,10 +10,13 @@
     beStrictAboutTestSize="true"
     stopOnError="true">
 
-<testsuite name="Localization and exceptions">
+<testsuite name="Exceptions">
+    <file>Exception/TestException.php</file>
+</testsuite>
+
+<testsuite name="Localization">
     <file>Lang/TestLang.php</file>
     <file>Lang/TestLangComplex.php</file>
-    <file>Lang/TestException.php</file>
     <file>Lang/TestLangErrors.php</file>
 </testsuite>
 

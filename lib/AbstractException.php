@@ -6,7 +6,6 @@ abstract class AbstractException extends \Exception {
 
     const CODES = [
         "Exception.uncoded"                     => -1,
-        "Exception.invalid"                     => 1, // this exception MUST NOT have a message string defined
         "Exception.unknown"                     => 10000,
         "Lang/Exception.defaultFileMissing"     => 10101,
         "Lang/Exception.fileMissing"            => 10102,
@@ -79,7 +78,7 @@ abstract class AbstractException extends \Exception {
                 $code = self::CODES[$codeID];
                 $msg = "Exception.".str_replace("\\", "/", $class).".$msgID";
             }
-            $msg = Lang::msg($msg, $vars);
+            $msg = Data::$l->msg($msg, $vars);
         }
         parent::__construct($msg, $code, $e);
     }

@@ -10,20 +10,22 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 	protected $drv;
 
     function setUp() {
+		$this->clearData();
 		$conf = new Conf();
 		$conf->dbDriver = Db\SQLite3\Driver::class;
 		$conf->dbSQLite3File = tempnam(sys_get_temp_dir(), 'ook');
-		$this->data = new Test\RuntimeData($conf);
-		$this->drv = new Db\SQLite3\Driver($this->data, true);
+		Data::$conf = $conf;
+		$this->drv = new Db\SQLite3\Driver(true);
     }
 
     function tearDown() {
         unset($this->drv);
-		unlink($this->data->conf->dbSQLite3File);
+		unlink(Data::$conf->dbSQLite3File);
+		$this->clearData();
     }
 
 	function testFetchDriverName() {
-		$class = $this->data->conf->dbDriver;
+		$class = Data::$conf->dbDriver;
 		$this->assertTrue(strlen($class::driverName()) > 0);
 	}
 	
@@ -38,12 +40,12 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 
 	function testExecMultipleStatements() {
 		$this->assertTrue($this->drv->exec("CREATE TABLE test(id integer primary key); INSERT INTO test(id) values(2112)"));
-		$ch = new \SQLite3($this->data->conf->dbSQLite3File);
+		$ch = new \SQLite3(Data::$conf->dbSQLite3File);
 		$this->assertEquals(2112, $ch->querySingle("SELECT id from test"));
 	}
 
 	function testExecTimeout() {
-		$ch = new \SQLite3($this->data->conf->dbSQLite3File);
+		$ch = new \SQLite3(Data::$conf->dbSQLite3File);
 		$ch->exec("BEGIN EXCLUSIVE TRANSACTION");
 		$this->assertException("general", "Db", "ExceptionTimeout");
 		$this->drv->exec("CREATE TABLE test(id integer primary key)");
@@ -71,7 +73,7 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 	}
 
 	function testQueryTimeout() {
-		$ch = new \SQLite3($this->data->conf->dbSQLite3File);
+		$ch = new \SQLite3(Data::$conf->dbSQLite3File);
 		$ch->exec("BEGIN EXCLUSIVE TRANSACTION");
 		$this->assertException("general", "Db", "ExceptionTimeout");
 		$this->drv->query("CREATE TABLE test(id integer primary key)");
@@ -102,7 +104,7 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 	function testBeginTransaction() {
 		$select = "SELECT count(*) FROM test";
 		$insert = "INSERT INTO test(id) values(null)";
-		$ch = new \SQLite3($this->data->conf->dbSQLite3File);
+		$ch = new \SQLite3(Data::$conf->dbSQLite3File);
 		$this->drv->exec("CREATE TABLE test(id integer primary key)");
 		$this->drv->begin();
 		$this->drv->query($insert);
@@ -116,7 +118,7 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 	function testCommitTransaction() {
 		$select = "SELECT count(*) FROM test";
 		$insert = "INSERT INTO test(id) values(null)";
-		$ch = new \SQLite3($this->data->conf->dbSQLite3File);
+		$ch = new \SQLite3(Data::$conf->dbSQLite3File);
 		$this->drv->exec("CREATE TABLE test(id integer primary key)");
 		$this->drv->begin();
 		$this->drv->query($insert);
@@ -130,7 +132,7 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 	function testRollbackTransaction() {
 		$select = "SELECT count(*) FROM test";
 		$insert = "INSERT INTO test(id) values(null)";
-		$ch = new \SQLite3($this->data->conf->dbSQLite3File);
+		$ch = new \SQLite3(Data::$conf->dbSQLite3File);
 		$this->drv->exec("CREATE TABLE test(id integer primary key)");
 		$this->drv->begin();
 		$this->drv->query($insert);
@@ -144,7 +146,7 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 	function testBeginChainedTransactions() {
 		$select = "SELECT count(*) FROM test";
 		$insert = "INSERT INTO test(id) values(null)";
-		$ch = new \SQLite3($this->data->conf->dbSQLite3File);
+		$ch = new \SQLite3(Data::$conf->dbSQLite3File);
 		$this->drv->exec("CREATE TABLE test(id integer primary key)");
 		$this->drv->begin();
 		$this->drv->query($insert);
@@ -159,7 +161,7 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 	function testCommitChainedTransactions() {
 		$select = "SELECT count(*) FROM test";
 		$insert = "INSERT INTO test(id) values(null)";
-		$ch = new \SQLite3($this->data->conf->dbSQLite3File);
+		$ch = new \SQLite3(Data::$conf->dbSQLite3File);
 		$this->drv->exec("CREATE TABLE test(id integer primary key)");
 		$this->drv->begin();
 		$this->drv->query($insert);
@@ -178,7 +180,7 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 	function testRollbackChainedTransactions() {
 		$select = "SELECT count(*) FROM test";
 		$insert = "INSERT INTO test(id) values(null)";
-		$ch = new \SQLite3($this->data->conf->dbSQLite3File);
+		$ch = new \SQLite3(Data::$conf->dbSQLite3File);
 		$this->drv->exec("CREATE TABLE test(id integer primary key)");
 		$this->drv->begin();
 		$this->drv->query($insert);
@@ -199,7 +201,7 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 	function testPartiallyRollbackChainedTransactions() {
 		$select = "SELECT count(*) FROM test";
 		$insert = "INSERT INTO test(id) values(null)";
-		$ch = new \SQLite3($this->data->conf->dbSQLite3File);
+		$ch = new \SQLite3(Data::$conf->dbSQLite3File);
 		$this->drv->exec("CREATE TABLE test(id integer primary key)");
 		$this->drv->begin();
 		$this->drv->query($insert);
@@ -220,7 +222,7 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 	function testFullyRollbackChainedTransactions() {
 		$select = "SELECT count(*) FROM test";
 		$insert = "INSERT INTO test(id) values(null)";
-		$ch = new \SQLite3($this->data->conf->dbSQLite3File);
+		$ch = new \SQLite3(Data::$conf->dbSQLite3File);
 		$this->drv->exec("CREATE TABLE test(id integer primary key)");
 		$this->drv->begin();
 		$this->drv->query($insert);
@@ -238,7 +240,7 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 	function testFullyCommitChainedTransactions() {
 		$select = "SELECT count(*) FROM test";
 		$insert = "INSERT INTO test(id) values(null)";
-		$ch = new \SQLite3($this->data->conf->dbSQLite3File);
+		$ch = new \SQLite3(Data::$conf->dbSQLite3File);
 		$this->drv->exec("CREATE TABLE test(id integer primary key)");
 		$this->drv->begin();
 		$this->drv->query($insert);

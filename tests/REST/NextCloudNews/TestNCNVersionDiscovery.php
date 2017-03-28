@@ -9,13 +9,12 @@ class TestNCNVersionDiscovery extends \PHPUnit\Framework\TestCase {
     use Test\Tools;
 
 	function setUp() {
-		$conf = new Conf();
-		$this->data = new Test\RuntimeData($conf);
+		$this->clearData();
 	}
 
 	function testFetchVersionList() {
 		$exp = new Response(200, ['apiLevels' => ['v1-2']]);
-		$h = new Rest\NextCloudNews\Versions($this->data);
+		$h = new Rest\NextCloudNews\Versions();
 		$req = new Request("GET", "/");
 		$res = $h->dispatch($req);
 		$this->assertEquals($exp, $res);
@@ -29,7 +28,7 @@ class TestNCNVersionDiscovery extends \PHPUnit\Framework\TestCase {
 
 	function testUseIncorrectMethod() {
 		$exp = new Response(405);
-		$h = new Rest\NextCloudNews\Versions($this->data);
+		$h = new Rest\NextCloudNews\Versions();
 		$req = new Request("POST", "/");
 		$res = $h->dispatch($req);
 		$this->assertEquals($exp, $res);
@@ -37,7 +36,7 @@ class TestNCNVersionDiscovery extends \PHPUnit\Framework\TestCase {
 
 	function testUseIncorrectPath() {
 		$exp = new Response(404);
-		$h = new Rest\NextCloudNews\Versions($this->data);
+		$h = new Rest\NextCloudNews\Versions();
 		$req = new Request("GET", "/ook");
 		$res = $h->dispatch($req);
 		$this->assertEquals($exp, $res);
