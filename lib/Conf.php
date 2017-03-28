@@ -29,6 +29,7 @@ class Conf {
     public $userComposeNames        = true;
     public $userTempPasswordLength  = 20;
 
+    public $userAgentString         = 'Arsse (https://code.jkingweb.ca/jking/arsse)';
 
     public function __construct(string $import_file = "") {
         if($import_file != "") $this->importFile($import_file);

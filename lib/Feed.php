@@ -1,8 +1,10 @@
 <?php
+declare(strict_types=1);
 namespace JKingWeb\Arsse;
 use PicoFeed\Reader\Reader;
 use PicoFeed\PicoFeedException;
 use PicoFeed\Reader\Favicon;
+use PicoFeed\Config\Config;
 
 class Feed {
     public $data = null;
@@ -13,7 +15,11 @@ class Feed {
 
     public function __construct(string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = '') {
         try {
-            $this->reader = new Reader;
+            $config = new Config;
+            $config->setClientUserAgent(Data::$conf->userAgentString);
+            $config->setGrabberUserAgent(Data::$conf->userAgentString);
+
+            $this->reader = new Reader($config);
             $this->resource = $reader->download($url, $lastModified, $etag, $username, $password);
             // Grab the favicon for the feed; returns an empty string if it cannot find one.
             $this->favicon = (new Favicon)->find($url);
