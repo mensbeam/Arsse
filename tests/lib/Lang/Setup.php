@@ -36,8 +36,8 @@ trait Setup {
         $this->l = new Lang($this->path);
         // create a mock Lang object to keep exceptions from creating loops
         $this->clearData(false);
-        $m = $this->getMockBuilder(Lang::class)->setMethods(['__invoke'])->getMock();
-        $m->expects($this->any())->method("__invoke")->with($this->anything(), $this->anything())->will($this->returnValue(""));
+        $m = $this->getMockBuilder(Lang::class)->setMethods(['msg'])->getMock();
+        $m->expects($this->any())->method("msg")->with($this->anything(), $this->anything())->will($this->returnValue(""));
         Data::$l = $m;
         // call the additional setup method if it exists
         if(method_exists($this, "setUpSeries")) $this->setUpSeries();
