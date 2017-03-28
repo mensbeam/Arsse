@@ -23,7 +23,7 @@ trait Tools {
 			$cols = implode(",", array_keys($info['columns']));
 			foreach($drv->prepare("SELECT $cols from $table")->run() as $num => $row) {
 				$row = array_values($row);
-				$assertSame($expected[$table]['rows']['$num'], $row, "Row $num of table $table does not match expectation.");
+				$assertSame($expected[$table]['rows'][$num], $row, "Row $num of table $table does not match expectation.");
 			}
 		}
 	}
