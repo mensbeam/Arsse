@@ -29,9 +29,16 @@ class Conf {
     public $userComposeNames        = true;
     public $userTempPasswordLength  = 20;
 
-    public $userAgentString         = 'Arsse (https://code.jkingweb.ca/jking/arsse)';
+    public $userAgentString;
 
     public function __construct(string $import_file = "") {
+        $this->userAgentString = sprintf('Arsse/%s (%s %s; %s; https://code.jkingweb.ca/jking/arsse) PicoFeed (https://github.com/fguillot/picoFeed)',
+            VERSION, // Arsse version
+            php_uname('s'), // OS
+            php_uname('r'), // OS version
+            php_uname('m') // platform architecture
+        );
+
         if($import_file != "") $this->importFile($import_file);
     }
 
