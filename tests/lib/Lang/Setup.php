@@ -1,9 +1,10 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\Lang;
-use org\bovigo\vfs\vfsStream;
 use JKingWeb\Arsse\Lang;
 use JKingWeb\Arsse\Data;
+use org\bovigo\vfs\vfsStream;
+use Phake;
 
 
 
@@ -34,16 +35,19 @@ trait Setup {
         chmod($this->path."ru.php", 0000);
         // make the test Lang class use the vfs files
         $this->l = new Lang($this->path);
-        // create a mock Lang object to keep exceptions from creating loops
+        // create a mock Lang object so as not to create a dependency loop
         $this->clearData(false);
-        $m = $this->getMockBuilder(Lang::class)->setMethods(['msg'])->getMock();
-        $m->expects($this->any())->method("msg")->with($this->anything(), $this->anything())->will($this->returnValue(""));
-        Data::$l = $m;
+        Data::$l = Phake::mock(Lang::class);
+        Phake::when(Data::$l)->msg->thenReturn("");
         // call the additional setup method if it exists
         if(method_exists($this, "setUpSeries")) $this->setUpSeries();
     }
 
     function tearDown() {
+        // verify calls to the mock Lang object
+        Phake::verify(Data::$l, Phake::atLeast(0))->msg($this->isType("string"), $this->anything());
+        Phake::verifyNoOtherInteractions(Data::$l);
+        // clean up
         $this->clearData(true);
         // call the additional teardiwn method if it exists
         if(method_exists($this, "tearDownSeries")) $this->tearDownSeries();
