@@ -393,24 +393,43 @@ class Database {
         )->lastId();
 
         // If the article has categories add them into the categories database.
-        $categories = $article->getTag('category');
-        if (count($categories) > 0) {
-            foreach ($categories as $c) {
-                $this->db->prepare('INSERT INTO arsse_tags(article,name) values(?,?)', 'int', 'str')->run($articleId, $c);
-            }
-        }
+        $this->categoriesAdd($article, $articleID);
 
         $this->db->commit();
         return 1;
     }
 
+    public function categoriesAdd(PicoFeed\Parser\Item $article, int $id): int {
+        $this->db->begin();
+
+        $categories = $article->getTag('category');
+        if (count($categories) > 0) {
+            foreach ($categories as $c) {
+                $this->db->prepare('INSERT INTO arsse_categories(article,name) values(?,?)', 'int', 'str')->run($id, $c);
+            }
+        }
+
+        $this->db->commit();
+    }
+
     public function updateFeeds(): int {
         $feeds = $this->db->query('SELECT id, url, username, password, DATEFORMAT("http", modified) AS lastmodified, etag FROM arsse_feeds')->getAll();
         foreach ($feeds as $f) {
-            $feed = new Feed($f['url'], $f['lastmodified'], $f['etag'], $f['username'], $f['password']);
-            // FIXME: What to do if fails? It currently throws an exception which isn't ideal here.
+            // Feed object throws an exception when there are problems, but that isn't ideal
+            // here. When an exception is occurred it should update the database with the
+            // error instead of failing.
+            try {
+                $feed = new Feed($f['url'], $f['lastmodified'], $f['etag'], $f['username'], $f['password']);
+            } catch (Feed\Exception $e) {
+                $this->db->prepare('UPDATE arsse_feeds SET err_count = err_count + 1, err_msg = "" WHERE id is ?', 'str', 'int')->run(
+                    $e->getMessage(),
+                    $f['id']
+                );
 
-            // If the feed has been updated then
+                continue;
+            }
+
+            // If the feed has been updated then update the database.
             if ($feed->resource->isModified()) {
                 $feed->parse();
 
@@ -474,12 +493,14 @@ class Database {
                             $match['id']
                         );
 
-                        // TODO: Update categories
+                        // If the article has categories update them.
+                        $this->db->prepare('DELETE FROM arsse_categories WHERE article is ?', 'int')->run($match['id']);
+                        $this->categoriesAdd($i, $match['id']);
                     }
                 }
 
                 // Lastly update the feed database itself with updated information.
-                $this->db->prepare('UPDATE arsse_feeds SET url = ?, title = ?, favicon = ?, source = ?, updated = ?, modified = ?, etag = ? WHERE id is ?', 'str', 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'int')->run(
+                $this->db->prepare('UPDATE arsse_feeds SET url = ?, title = ?, favicon = ?, source = ?, updated = ?, modified = ?, etag = ?, err_count = 0, err_msg = "" WHERE id is ?', 'str', 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'int')->run(
                     $feed->feedUrl,
                     $feed->title,
                     $feed->favicon,
@@ -502,7 +523,7 @@ class Database {
         $cte = "RECURSIVE folders(id) as (SELECT id from arsse_folders where owner is ? and id is ? union select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id) ";
         $changes = 0;
         $this->db->begin();
-        // first delete any feed subscriptions contained within the folder tree (this may not be necesary because of foreign keys)
+        // first delete any feed subscriptions contained within the folder tree (this may not be necessary because of foreign keys)
         $changes += $this->db->prepare("WITH $cte"."DELETE FROM arsse_subscriptions where folder in(select id from folders)", "str", "int")->run($user, $id)->changes();
         // next delete the folders themselves
         $changes += $this->db->prepare("WITH $cte"."DELETE FROM arsse_folders where id in(select id from folders)", "str", "int")->run($user, $id)->changes();

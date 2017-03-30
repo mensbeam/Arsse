@@ -1,9 +1,9 @@
 <?php
 return [
-    'Driver.User.Internal.Name'                                         => 'Internal',
-    
-    'Driver.Db.SQLite3.Name'                                            => 'SQLite 3',
-    
+    'Driver.User.Internal.Name'                                      => 'Internal',
+
+    'Driver.Db.SQLite3.Name'                                         => 'SQLite 3',
+
     // this should only be encountered in testing (because tests should cover all exceptions!)
     'Exception.JKingWeb/Arsse/Exception.uncoded'                     => 'The specified exception symbol {0} has no code specified in AbstractException.php',
     // this should not usually be encountered
@@ -62,7 +62,7 @@ return [
     'Exception.JKingWeb/Arsse/User/Exception.doesNotExist'           => 'Could not perform action "{action}" because the user {user} does not exist',
     'Exception.JKingWeb/Arsse/User/Exception.authMissing'            => 'Please log in to proceed',
     'Exception.JKingWeb/Arsse/User/Exception.authFailed'             => 'Authentication failed',
-    'Exception.JKingWeb/Arsse/User/ExceptionAuthz.notAuthorized'     => 
+    'Exception.JKingWeb/Arsse/User/ExceptionAuthz.notAuthorized'     =>
         '{action, select,
             userList {{user, select,
                 global {Authenticated user is not authorized to view the global user list}

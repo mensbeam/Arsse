@@ -101,8 +101,8 @@ create table arsse_labels(
 );
 create index arsse_label_names on arsse_labels(name);
 
--- author labels ("categories" in RSS/Atom parlance) associated with newsfeed entries
-create table arsse_tags(
+-- author categories associated with newsfeed entries
+create table arsse_categories(
     article integer not null references arsse_articles(id) on delete cascade,
     name TEXT
 );
