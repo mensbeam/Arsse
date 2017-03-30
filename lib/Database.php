@@ -18,12 +18,17 @@ class Database {
         return (string) preg_filter("[^0-9a-zA-Z_\.]", "", $name);
     }
 
-    public function __construct() {
-        $this->driver = $driver = Data::$conf->dbDriver;
-        $this->db = new $driver(INSTALL);
-        $ver = $this->db->schemaVersion();
-        if(!INSTALL && $ver < self::SCHEMA_VERSION) {
-            $this->db->schemaUpdate(self::SCHEMA_VERSION);
+    public function __construct(Db\Driver $db = null) {
+        // if we're fed a pre-prepared driver, use it'
+        if($db) {
+            $this->db = $db;
+        } else {
+            $this->driver = $driver = Data::$conf->dbDriver;
+            $this->db = new $driver(INSTALL);
+            $ver = $this->db->schemaVersion();
+            if(!INSTALL && $ver < self::SCHEMA_VERSION) {
+                $this->db->schemaUpdate(self::SCHEMA_VERSION);
+            }
         }
     }
 
@@ -186,15 +191,21 @@ class Database {
     }
 
     public function userList(string $domain = null): array {
+        $out = [];
         if($domain !== null) {
             if(!Data::$user->authorize("@".$domain, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $domain]);
             $domain = str_replace(["\\","%","_"],["\\\\", "\\%", "\\_"], $domain);
             $domain = "%@".$domain;
-            return $this->db->prepare("SELECT id from arsse_users where id like ?", "str")->run($domain)->getAll();
+            foreach($this->db->prepare("SELECT id from arsse_users where id like ?", "str")->run($domain) as $user) {
+                $out[] = $user['id'];
+            }
         } else {
             if(!Data::$user->authorize("", __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => "global"]);
-            return $this->db->prepare("SELECT id from arsse_users")->run()->getAll();
+            foreach($this->db->prepare("SELECT id from arsse_users")->run() as $user) {
+                $out[] = $user['id'];
+            }
         }
+        return $out;
     }
 
     public function userPasswordGet(string $user): string {
@@ -208,7 +219,7 @@ class Database {
         if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         if($password===null) $password = (new PassGen)->length(Data::$conf->userTempPasswordLength)->get();
         $hash = "";
-        if(strlen($password > 0)) $hash = password_hash($password, \PASSWORD_DEFAULT);
+        if(strlen($password) > 0) $hash = password_hash($password, \PASSWORD_DEFAULT);
         $this->db->prepare("UPDATE arsse_users set password = ? where id is ?", "str", "str")->run($hash, $user);
         return $password;
     }
@@ -216,16 +227,16 @@ class Database {
     public function userPropertiesGet(string $user): array {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         $prop = $this->db->prepare("SELECT name,rights from arsse_users where id is ?", "str")->run($user)->getRow();
-        if(!$prop) return [];
+        if(!$prop) throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         return $prop;
     }
 
-    public function userPropertiesSet(string $user, array &$properties): array {
+    public function userPropertiesSet(string $user, array $properties): array {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         $valid = [ // FIXME: add future properties
             "name" => "str",
         ];
-        if(!$this->userExists($user)) return [];
+        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         $this->db->begin();
         foreach($valid as $prop => $type) {
             if(!array_key_exists($prop, $properties)) continue;
@@ -242,7 +253,7 @@ class Database {
 
     public function userRightsSet(string $user, int $rights): bool {
         if(!Data::$user->authorize($user, __FUNCTION__, $rights)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if(!$this->userExists($user)) return false;
+        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         $this->db->prepare("UPDATE arsse_users set rights = ? where id is ?", "int", "str")->run($rights, $user);
         return true;
     }
