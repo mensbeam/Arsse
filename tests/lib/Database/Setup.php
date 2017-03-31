@@ -1,11 +1,56 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\Arsse\Test\Db;
+namespace JKingWeb\Arsse\Test\Database;
+use JKingWeb\Arsse\User\Driver as UserDriver;
+use JKingWeb\Arsse\Data;
+use JKingWeb\Arsse\Conf;
+use JKingWeb\Arsse\User;
+use JKingWeb\Arsse\Database;
+use Phake;
 
-trait Tools {
+trait Setup {
 	protected $drv;
-	
-	
+	protected $data = [
+        'arsse_users' => [
+            'columns' => [
+                'id'       => 'str',
+                'password' => 'str',
+                'name'     => 'str',
+                'rights'   => 'int',
+            ],
+            'rows' => [
+                ["admin@example.net", '$2y$10$PbcG2ZR3Z8TuPzM7aHTF8.v61dtCjzjK78gdZJcp4UePE8T9jEgBW', "Hard Lip Herbert", UserDriver::RIGHTS_GLOBAL_ADMIN], // password is hash of "secret"
+                ["jane.doe@example.com", "", "Jane Doe", UserDriver::RIGHTS_NONE],
+                ["john.doe@example.com", "", "John Doe", UserDriver::RIGHTS_NONE],
+            ],
+        ],
+    ];
+
+    function setUp() {
+        // establish a clean baseline
+        $this->clearData();
+        // create a default configuration
+        Data::$conf = new Conf();
+        // configure and create the relevant database driver
+		$this->setUpDriver();
+        // create the database interface with the suitable driver
+        Data::$db = new Database($this->drv);
+        Data::$db->schemaUpdate();
+        // create a mock user manager
+        Data::$user = Phake::mock(User::class);
+        Phake::when(Data::$user)->authorize->thenReturn(true);
+        // call the additional setup method if it exists
+        if(method_exists($this, "setUpSeries")) $this->setUpSeries();
+    }
+
+	function tearDown() {
+        // call the additional teardiwn method if it exists
+        if(method_exists($this, "tearDownSeries")) $this->tearDownSeries();
+        // clean up
+		$this->drv = null;
+        $this->clearData();
+	}
+
 	function primeDatabase(array $data): bool {
 		$this->drv->begin();
 		foreach($data as $table => $info) {

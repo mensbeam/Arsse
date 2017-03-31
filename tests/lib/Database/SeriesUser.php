@@ -1,55 +1,11 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\Arsse;
+namespace JKingWeb\Arsse\Test\Database;
+use JKingWeb\Arsse\Data;
+use JKingWeb\Arsse\User\Driver as UserDriver;
 use Phake;
 
-
-class TestDatabaseUser extends \PHPUnit\Framework\TestCase {
-    use Test\Tools, Test\Db\Tools;
-    
-    protected $drv;
-    protected $data = [
-        'arsse_users' => [
-            'columns' => [
-                'id'       => 'str',
-                'password' => 'str',
-                'name'     => 'str',
-                'rights'   => 'int',
-            ],
-            'rows' => [
-                ["admin@example.net", '$2y$10$PbcG2ZR3Z8TuPzM7aHTF8.v61dtCjzjK78gdZJcp4UePE8T9jEgBW', "Hard Lip Herbert", User\Driver::RIGHTS_GLOBAL_ADMIN], // password is hash of "secret"
-                ["jane.doe@example.com", "", "Jane Doe", User\Driver::RIGHTS_NONE],
-                ["john.doe@example.com", "", "John Doe", User\Driver::RIGHTS_NONE],
-            ],
-        ],
-    ];
-
-    function setUp() {
-        // establish a clean baseline
-        $this->clearData();
-        // create a default configuration
-        Data::$conf = new Conf();
-        // configure and create the relevant database driver
-        Data::$conf->dbSQLite3File = ":memory:";
-        $this->drv = new Db\SQLite3\Driver(true);
-        // create the database interface with the suitable driver
-        Data::$db = new Database($this->drv);
-        Data::$db->schemaUpdate();
-        // create a mock user manager
-        Data::$user = Phake::mock(User::class);
-        Phake::when(Data::$user)->authorize->thenReturn(true);
-        // call the additional setup method if it exists
-        if(method_exists($this, "setUpSeries")) $this->setUpSeries();
-    }
-
-	function tearDown() {
-        // call the additional teardiwn method if it exists
-        if(method_exists($this, "tearDownSeries")) $this->tearDownSeries();
-        // clean up
-		$this->drv = null;
-        $this->clearData();
-	}
-
+trait SeriesUser {
     function setUpSeries() {
         $this->primeDatabase($this->data);
     }
@@ -85,7 +41,7 @@ class TestDatabaseUser extends \PHPUnit\Framework\TestCase {
         $this->assertSame("", Data::$db->userAdd("john.doe@example.org", ""));
         Phake::verify(Data::$user)->authorize("john.doe@example.org", "userAdd");
         $state = $this->primeExpectations($this->data, ['arsse_users' => ['id','name','rights']]);
-        $state['arsse_users']['rows'][] = ["john.doe@example.org", null, User\Driver::RIGHTS_NONE];
+        $state['arsse_users']['rows'][] = ["john.doe@example.org", null, UserDriver::RIGHTS_NONE];
         $this->compareExpectations($state);
     }
 
@@ -192,7 +148,7 @@ class TestDatabaseUser extends \PHPUnit\Framework\TestCase {
     function testGetUserProperties() {
         $exp = [
             'name'   => 'Hard Lip Herbert',
-            'rights' => User\Driver::RIGHTS_GLOBAL_ADMIN,
+            'rights' => UserDriver::RIGHTS_GLOBAL_ADMIN,
         ];
         $props = Data::$db->userPropertiesGet("admin@example.net");
         Phake::verify(Data::$user)->authorize("admin@example.net", "userPropertiesGet");
@@ -215,12 +171,12 @@ class TestDatabaseUser extends \PHPUnit\Framework\TestCase {
         $try = [
             'name'     => 'James Kirk', // only this should actually change
             'password' => '000destruct0',
-            'rights'   => User\Driver::RIGHTS_NONE,
+            'rights'   => UserDriver::RIGHTS_NONE,
             'lifeform' => 'tribble',
         ];
         $exp = [
             'name'   => 'James Kirk',
-            'rights' => User\Driver::RIGHTS_GLOBAL_ADMIN,
+            'rights' => UserDriver::RIGHTS_GLOBAL_ADMIN,
         ];
         $props = Data::$db->userPropertiesSet("admin@example.net", $try);
         Phake::verify(Data::$user)->authorize("admin@example.net", "userPropertiesSet");
@@ -247,14 +203,14 @@ class TestDatabaseUser extends \PHPUnit\Framework\TestCase {
     function testGetUserRights() {
         $user1 = "john.doe@example.com";
         $user2 = "admin@example.net";
-        $this->assertSame(User\Driver::RIGHTS_NONE, Data::$db->userRightsGet($user1));
-        $this->assertSame(User\Driver::RIGHTS_GLOBAL_ADMIN, Data::$db->userRightsGet($user2));
+        $this->assertSame(UserDriver::RIGHTS_NONE, Data::$db->userRightsGet($user1));
+        $this->assertSame(UserDriver::RIGHTS_GLOBAL_ADMIN, Data::$db->userRightsGet($user2));
         Phake::verify(Data::$user)->authorize($user1, "userRightsGet");
         Phake::verify(Data::$user)->authorize($user2, "userRightsGet");
     }
 
     function testGetTheRightsOfAMissingUser() {
-        $this->assertSame(User\Driver::RIGHTS_NONE, Data::$db->userRightsGet("john.doe@example.org"));
+        $this->assertSame(UserDriver::RIGHTS_NONE, Data::$db->userRightsGet("john.doe@example.org"));
         Phake::verify(Data::$user)->authorize("john.doe@example.org", "userRightsGet");
     }
     
@@ -266,7 +222,7 @@ class TestDatabaseUser extends \PHPUnit\Framework\TestCase {
 
     function testSetUserRights() {
         $user = "john.doe@example.com";
-        $rights = User\Driver::RIGHTS_GLOBAL_ADMIN;
+        $rights = UserDriver::RIGHTS_GLOBAL_ADMIN;
         $this->assertTrue(Data::$db->userRightsSet($user, $rights));
         Phake::verify(Data::$user)->authorize($user, "userRightsSet", $rights);
         $state = $this->primeExpectations($this->data, ['arsse_users' => ['id','rights']]);
@@ -275,13 +231,13 @@ class TestDatabaseUser extends \PHPUnit\Framework\TestCase {
     }
 
     function testSetTheRightsOfAMissingUser() {
-        $rights = User\Driver::RIGHTS_GLOBAL_ADMIN;
+        $rights = UserDriver::RIGHTS_GLOBAL_ADMIN;
         $this->assertException("doesNotExist", "User");
         Data::$db->userRightsSet("john.doe@example.org", $rights);
     }
     
     function testSetUserRightsWithoutAuthority() {
-        $rights = User\Driver::RIGHTS_GLOBAL_ADMIN;
+        $rights = UserDriver::RIGHTS_GLOBAL_ADMIN;
         Phake::when(Data::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Data::$db->userRightsSet("john.doe@example.com", $rights);
