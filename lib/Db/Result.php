@@ -10,7 +10,7 @@ interface Result extends \Iterator {
     function valid();
 
     function getRow();
-    function getAll();
+    function getAll(): array;
     function getValue();
     
     function changes();

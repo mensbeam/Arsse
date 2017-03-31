@@ -26,12 +26,11 @@ class Result implements \JKingWeb\Arsse\Db\Result {
         return ($this->valid() ? $this->cur : null);
     }
 
-    public function getAll() {
+    public function getAll(): array {
         $out = [];
         foreach($this as $row) {
             $out [] = $row;
         }
-        if(sizeof($out) < 1) return null;
         return $out;
     }
 

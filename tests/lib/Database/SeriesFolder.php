@@ -99,4 +99,58 @@ trait SeriesFolder {
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Data::$db->folderAdd("john.doe@example.com", ['name' => "Sociology"]);
     }
+
+    function testListRootFolders() {
+        $exp = [
+            ['id' => 5, 'name' => "Politics",   'parent' => null],
+            ['id' => 1, 'name' => "Technology", 'parent' => null],
+        ];
+        $this->assertSame($exp, Data::$db->folderList("john.doe@example.com", null, false)->getAll());
+        $exp = [
+            ['id' => 4, 'name' => "Politics",   'parent' => null],
+        ];
+        $this->assertSame($exp, Data::$db->folderList("jane.doe@example.com", null, false)->getAll());
+        $exp = [];
+        $this->assertSame($exp, Data::$db->folderList("admin@example.net", null, false)->getAll());
+    }
+
+    function testListFoldersRecursively() {
+        $exp = [
+            ['id' => 5, 'name' => "Politics",   'parent' => null],
+            ['id' => 6, 'name' => "Politics",   'parent' => 2],
+            ['id' => 3, 'name' => "Rocketry",   'parent' => 1],
+            ['id' => 2, 'name' => "Software",   'parent' => 1],
+            ['id' => 1, 'name' => "Technology", 'parent' => null],
+        ];
+        $this->assertSame($exp, Data::$db->folderList("john.doe@example.com", null, true)->getAll());
+        $exp = [
+            ['id' => 6, 'name' => "Politics",   'parent' => 2],
+            ['id' => 3, 'name' => "Rocketry",   'parent' => 1],
+            ['id' => 2, 'name' => "Software",   'parent' => 1],
+        ];
+        $this->assertSame($exp, Data::$db->folderList("john.doe@example.com", 1, true)->getAll());
+        $exp = [];
+        $this->assertSame($exp, Data::$db->folderList("jane.doe@example.com", 4, true)->getAll());
+    }
+
+    function testListFoldersOfAMissingParent() {
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Data::$db->folderList("john.doe@example.com", 2112);
+    }
+
+    function testListFoldersOfTheWrongOwner() {
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Data::$db->folderList("john.doe@example.com", 4); // folder ID 4 belongs to Jane
+    }
+
+    function testListFoldersForAMissingUser() {
+        $this->assertException("doesNotExist", "User");
+        Data::$db->folderList("john.doe@example.org");
+    }
+
+    function testListFoldersWithoutAuthority() {
+        Phake::when(Data::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Data::$db->folderList("john.doe@example.com");
+    }
 }

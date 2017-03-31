@@ -362,9 +362,15 @@ class Database {
         if (!$this->userExists($user)) {
             throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
         }
+        // check to make sure the parent exists, if one is specified
+        if(!is_null($parent)) {
+            if(!$this->db->prepare("SELECT count(*) from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $parent)->getValue()) {
+                throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "parent", 'id' => $parent]);
+            }
+        }
         // if we're not returning a recursive list we can use a simpler query
         if(!$recursive) {
-            return $this->db->preparre("SELECT id,name,parent from arsse_folders where owner is ? and parent is ?", "str", "int")->run($user, $parent);
+            return $this->db->prepare("SELECT id,name,parent from arsse_folders where owner is ? and parent is ?", "str", "int")->run($user, $parent);
         } else {
             return $this->db->prepare(
                 "WITH RECURSIVE folders(id) as (SELECT id from arsse_folders where owner is ? and parent is ? union select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id) ".
