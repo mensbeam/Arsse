@@ -258,61 +258,6 @@ class Database {
         return true;
     }
 
-    public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = ""): int {
-        // If the user isn't authorized to perform this action then throw an exception.
-        if (!Data::$user->authorize($user, __FUNCTION__)) {
-            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        }
-        // If the user doesn't exist throw an exception.
-        if (!$this->userExists($user)) {
-            throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
-        }
-
-        $this->db->begin();
-
-        // If the feed doesn't already exist in the database then add it to the database
-        // after determining its validity with PicoFeed.
-        $qFeed = $this->db->prepare("SELECT id from arsse_feeds where url is ? and username is ? and password is ?", "str", "str", "str");
-        $feed = $qFeed->run($url, $fetchUser, $fetchPassword)->getValue();
-        if ($feed === null) {
-            $feed = new Feed($url);
-            $feed->parse();
-
-            // Add the feed to the database and return its Id which will be used when adding
-            // its articles to the database.
-            $feedID = $this->db->prepare(
-                'INSERT INTO arsse_feeds(url,title,favicon,source,updated,modified,etag,username,password)
-                values(?,?,?,?,?,?,?,?,?)',
-                'str', 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str')->run(
-                    $url,
-                    $feed->data->title,
-                    // Grab the favicon for the feed; returns an empty string if it cannot find one.
-                    $feed->favicon,
-                    $feed->data->siteUrl,
-                    $feed->data->date,
-                    $feed->resource->getLastModified(),
-                    $feed->resource->getEtag(),
-                    $fetchUser,
-                    $fetchPassword
-                )->lastId();
-
-            // Add each of the articles to the database.
-            foreach ($feed->data->items as $i) {
-                $this->articleAdd($i);
-            }
-        }
-
-        // Add the feed to the user's subscriptions.
-        $sub = $this->db->prepare('INSERT INTO arsse_subscriptions(owner,feed) values(?,?)', 'str', 'int')->run($user, $feedID)->lastId();
-        $this->db->commit();
-        return $sub;
-    }
-
-    public function subscriptionRemove(string $user, int $id): bool {
-        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        return (bool) $this->db->prepare("DELETE from arsse_subscriptions where id is ?", "int")->run($id)->changes();
-    }
-
     public function folderAdd(string $user, array $data): int {
         // If the user isn't authorized to perform this action then throw an exception.
         if (!Data::$user->authorize($user, __FUNCTION__)) {
@@ -377,6 +322,79 @@ class Database {
                 "SELECT id,name,parent from arsse_folders where id in(SELECT id from folders) order by name",
             "str", "int")->run($user, $parent);
         }
+    }
+
+    public function folderRemove(string $user, int $id): bool {
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        // if the user doesn't exist throw an exception.
+        if (!$this->userExists($user)) {
+            throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
+        }
+        // common table expression to list all descendant folders of the target folder
+        $cte = "RECURSIVE folders(id) as (SELECT id from arsse_folders where owner is ? and id is ? union select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id) ";
+        $changes = 0;
+        $this->db->begin();
+        // first delete any feed subscriptions contained within the folder tree (this may not be necessary because of foreign keys)
+        $changes += $this->db->prepare("WITH $cte"."DELETE FROM arsse_subscriptions where folder in(select id from folders)", "str", "int")->run($user, $id)->changes();
+        // next delete the folders themselves
+        $changes += $this->db->prepare("WITH $cte"."DELETE FROM arsse_folders where id in(select id from folders)", "str", "int")->run($user, $id)->changes();
+        $this->db->commit();
+        return (bool) $changes;
+    }
+
+    public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = ""): int {
+        // If the user isn't authorized to perform this action then throw an exception.
+        if (!Data::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        // If the user doesn't exist throw an exception.
+        if (!$this->userExists($user)) {
+            throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
+        }
+
+        $this->db->begin();
+
+        // If the feed doesn't already exist in the database then add it to the database
+        // after determining its validity with PicoFeed.
+        $qFeed = $this->db->prepare("SELECT id from arsse_feeds where url is ? and username is ? and password is ?", "str", "str", "str");
+        $feed = $qFeed->run($url, $fetchUser, $fetchPassword)->getValue();
+        if ($feed === null) {
+            $feed = new Feed($url);
+            $feed->parse();
+
+            // Add the feed to the database and return its Id which will be used when adding
+            // its articles to the database.
+            $feedID = $this->db->prepare(
+                'INSERT INTO arsse_feeds(url,title,favicon,source,updated,modified,etag,username,password)
+                values(?,?,?,?,?,?,?,?,?)',
+                'str', 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str')->run(
+                    $url,
+                    $feed->data->title,
+                    // Grab the favicon for the feed; returns an empty string if it cannot find one.
+                    $feed->favicon,
+                    $feed->data->siteUrl,
+                    $feed->data->date,
+                    $feed->resource->getLastModified(),
+                    $feed->resource->getEtag(),
+                    $fetchUser,
+                    $fetchPassword
+                )->lastId();
+
+            // Add each of the articles to the database.
+            foreach ($feed->data->items as $i) {
+                $this->articleAdd($i);
+            }
+        }
+
+        // Add the feed to the user's subscriptions.
+        $sub = $this->db->prepare('INSERT INTO arsse_subscriptions(owner,feed) values(?,?)', 'str', 'int')->run($user, $feedID)->lastId();
+        $this->db->commit();
+        return $sub;
+    }
+
+    public function subscriptionRemove(string $user, int $id): bool {
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        return (bool) $this->db->prepare("DELETE from arsse_subscriptions where owner is ? and id is ?", "str", "int")->run($user, $id)->changes();
     }
 
     public function articleAdd(PicoFeed\Parser\Item $article): int {
@@ -521,19 +539,5 @@ class Database {
 
         $this->db->commit();
         return 1;
-    }
-
-    public function folderRemove(string $user, int $id): bool {
-        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        // common table expression to list all descendant folders of the target folder
-        $cte = "RECURSIVE folders(id) as (SELECT id from arsse_folders where owner is ? and id is ? union select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id) ";
-        $changes = 0;
-        $this->db->begin();
-        // first delete any feed subscriptions contained within the folder tree (this may not be necessary because of foreign keys)
-        $changes += $this->db->prepare("WITH $cte"."DELETE FROM arsse_subscriptions where folder in(select id from folders)", "str", "int")->run($user, $id)->changes();
-        // next delete the folders themselves
-        $changes += $this->db->prepare("WITH $cte"."DELETE FROM arsse_folders where id in(select id from folders)", "str", "int")->run($user, $id)->changes();
-        $this->db->commit();
-        return (bool) $changes;
     }
 }

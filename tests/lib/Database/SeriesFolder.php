@@ -153,4 +153,39 @@ trait SeriesFolder {
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Data::$db->folderList("john.doe@example.com");
     }
+
+    function testRemoveAFolder() {
+        $this->assertTrue(Data::$db->folderRemove("john.doe@example.com", 6));
+        $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'root', 'name']]);
+        array_pop($state['arsse_folders']['rows']);
+        $this->compareExpectations($state);
+    }
+
+    function testRemoveAFolderTree() {
+        $this->assertTrue(Data::$db->folderRemove("john.doe@example.com", 1));
+        $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'root', 'name']]);
+        foreach([0,1,2,5] as $index) {
+            unset($state['arsse_folders']['rows'][$index]);
+        }
+        $this->compareExpectations($state);
+    }
+
+    function testRemoveAMissingFolder() {
+        $this->assertFalse(Data::$db->folderRemove("john.doe@example.com", 2112));
+    }
+
+    function testRemoveFolderOfTheWrongOwner() {
+        $this->assertFalse(Data::$db->folderRemove("john.doe@example.com", 4)); // folder ID 4 belongs to Jane
+    }
+
+    function testRemoveAFolderForAMissingUser() {
+        $this->assertException("doesNotExist", "User");
+        Data::$db->folderRemove("john.doe@example.org", 1);
+    }
+
+    function testRemoveAFolderWithoutAuthority() {
+        Phake::when(Data::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Data::$db->folderList("john.doe@example.com", 1);
+    }
 }
