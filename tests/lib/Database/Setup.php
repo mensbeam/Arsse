@@ -71,7 +71,9 @@ trait Setup {
 			$cols = implode(",", array_keys($info['columns']));
 			foreach($this->drv->prepare("SELECT $cols from $table")->run() as $num => $row) {
 				$row = array_values($row);
-				$this->assertSame($expected[$table]['rows'][$num], $row, "Row ".($num+1)." of table $table does not match expectations at array index $num.");
+				$this->assertGreaterThan(0, sizeof($info['rows']), "Expectations contain fewer rows than the database table $table");
+				$exp = array_shift($info['rows']);
+				$this->assertSame($exp, $row, "Row ".($num+1)." of table $table does not match expectations at array index $num.");
 			}
 		}
 		return true;

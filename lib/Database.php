@@ -323,7 +323,7 @@ class Database {
             throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
         }
         // if the desired folder name is missing or invalid, throw an exception
-        if(!array_key_exists("name", $data)) {
+        if(!array_key_exists("name", $data) || $data['name']=="") {
             throw new Db\ExceptionInput("missing", ["action" => __FUNCTION__, "field" => "name"]);
         } else if(!strlen(trim($data['name']))) {
             throw new Db\ExceptionInput("whitespace", ["action" => __FUNCTION__, "field" => "name"]);

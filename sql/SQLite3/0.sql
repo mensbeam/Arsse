@@ -38,21 +38,21 @@ create table arsse_feeds(
 -- users' subscriptions to newsfeeds, with settings
 create table arsse_subscriptions(
     id integer primary key not null,                                                                        -- sequence number
-    owner TEXT not null references arsse_users(id) on delete cascade on update cascade,                  -- owner of subscription
-    feed integer not null references arsse_feeds(id) on delete cascade,                                  -- feed for the subscription
+    owner TEXT not null references arsse_users(id) on delete cascade on update cascade,                     -- owner of subscription
+    feed integer not null references arsse_feeds(id) on delete cascade,                                     -- feed for the subscription
     added datetime not null default CURRENT_TIMESTAMP,                                                      -- time at which feed was added
     modified datetime not null default CURRENT_TIMESTAMP,                                                   -- date at which subscription properties were last modified
     title TEXT,                                                                                             -- user-supplied title
     order_type int not null default 0,                                                                      -- NextCloud sort order
     pinned boolean not null default 0,                                                                      -- whether feed is pinned (always sorts at top)
-    folder integer references arsse_folders(id) on delete cascade,                                       -- TT-RSS category (nestable); the first-level category (which acts as NextCloud folder) is joined in when needed
+    folder integer references arsse_folders(id) on delete cascade,                                          -- TT-RSS category (nestable); the first-level category (which acts as NextCloud folder) is joined in when needed
     unique(owner,feed)                                                                                      -- a given feed should only appear once for a given owner
 );
 
 -- TT-RSS categories and NextCloud folders
 create table arsse_folders(
     id integer primary key not null,                                                                        -- sequence number
-    owner TEXT not null references arsse_users(id) on delete cascade on update cascade,                  -- owner of folder
+    owner TEXT not null references arsse_users(id) on delete cascade on update cascade,                     -- owner of folder
     parent integer default null,                                                                            -- parent folder id
     root integer default null,                                                                              -- first-level folder (NextCloud folder)
     name TEXT not null,                                                                                     -- folder name
@@ -63,7 +63,7 @@ create table arsse_folders(
 -- entries in newsfeeds
 create table arsse_articles(
     id integer primary key not null,                                                                        -- sequence number
-    feed integer not null references arsse_feeds(id) on delete cascade,                                  -- feed for the subscription
+    feed integer not null references arsse_feeds(id) on delete cascade,                                     -- feed for the subscription
     url TEXT not null,                                                                                      -- URL of article
     title TEXT,                                                                                             -- article title
     author TEXT,                                                                                            -- author's name
