@@ -53,8 +53,8 @@ create table arsse_subscriptions(
 create table arsse_folders(
     id integer primary key not null,                                                                        -- sequence number
     owner TEXT not null references arsse_users(id) on delete cascade on update cascade,                     -- owner of folder
-    parent integer default null,                                                                            -- parent folder id
-    root integer default null,                                                                              -- first-level folder (NextCloud folder)
+    parent integer references arsse_folders(id) on delete cascade,                                          -- parent folder id
+    root integer references arsse_folders(id) on delete cascade,                                            -- first-level folder (NextCloud folder)
     name TEXT not null,                                                                                     -- folder name
     modified datetime not null default CURRENT_TIMESTAMP,                                                   --
     unique(owner,name,parent)                                                                               -- cannot have multiple folders with the same name under the same parent for the same owner

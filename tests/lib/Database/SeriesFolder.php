@@ -171,11 +171,13 @@ trait SeriesFolder {
     }
 
     function testRemoveAMissingFolder() {
-        $this->assertFalse(Data::$db->folderRemove("john.doe@example.com", 2112));
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Data::$db->folderRemove("john.doe@example.com", 2112);
     }
 
-    function testRemoveFolderOfTheWrongOwner() {
-        $this->assertFalse(Data::$db->folderRemove("john.doe@example.com", 4)); // folder ID 4 belongs to Jane
+    function testRemoveAFolderOfTheWrongOwner() {
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Data::$db->folderRemove("john.doe@example.com", 4); // folder ID 4 belongs to Jane
     }
 
     function testRemoveAFolderForAMissingUser() {
@@ -186,6 +188,92 @@ trait SeriesFolder {
     function testRemoveAFolderWithoutAuthority() {
         Phake::when(Data::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Data::$db->folderList("john.doe@example.com", 1);
+        Data::$db->folderRemove("john.doe@example.com", 1);
+    }
+
+    function testGetThePropertiesOfAFolder() {
+        $exp = [
+            'id'     => 6,
+            'name'   => "Politics",
+            'parent' => 2,
+        ];
+        $this->assertArraySubset($exp, Data::$db->folderPropertiesGet("john.doe@example.com", 6));
+    }
+
+    function testGetThePropertiesOfAMissingFolder() {
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Data::$db->folderPropertiesGet("john.doe@example.com", 2112);
+    }
+
+    function testGetThePropertiesOfAFolderOfTheWrongOwner() {
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Data::$db->folderPropertiesGet("john.doe@example.com", 4); // folder ID 4 belongs to Jane
+    }
+
+    function testGetThePropertiesOfAFolderForAMissingUser() {
+        $this->assertException("doesNotExist", "User");
+        Data::$db->folderPropertiesGet("john.doe@example.org", 1);
+    }
+
+    function testGetThePropertiesOfAFolderWithoutAuthority() {
+        Phake::when(Data::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Data::$db->folderPropertiesGet("john.doe@example.com", 1);
+    }
+
+    function testRenameAFolder() {
+        $this->assertTrue(Data::$db->folderPropertiesSet("john.doe@example.com", 6, ['name' => "Opinion"]));
+        $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'root', 'name']]);
+        $state['arsse_folders']['rows'][5][4] = "Opinion";
+        $this->compareExpectations($state);
+    }
+
+    function testMoveAFolder() {
+        $this->assertTrue(Data::$db->folderPropertiesSet("john.doe@example.com", 6, ['parent' => 5]));
+        $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'root', 'name']]);
+        $state['arsse_folders']['rows'][5][2] = 5; // parent should have changed
+        $state['arsse_folders']['rows'][5][3] = 5; // root should also have changed
+        $this->compareExpectations($state);
+    }
+
+    function testMoveAFolderToItsDescendant() {
+        $this->assertException("circularDependence", "Db", "ExceptionInput");
+        Data::$db->folderPropertiesSet("john.doe@example.com", 1, ['parent' => 3]);
+    }
+
+    function testMoveAFolderToItself() {
+        $this->assertException("circularDependence", "Db", "ExceptionInput");
+        Data::$db->folderPropertiesSet("john.doe@example.com", 1, ['parent' => 1]);
+    }
+
+    function testMoveAFolderToAMissingParent() {
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Data::$db->folderPropertiesSet("john.doe@example.com", 1, ['parent' => 2112]);
+    }
+
+    function testCauseAFolderCollision() {
+        $this->assertException("constraintViolation", "Db", "ExceptionInput");
+        Data::$db->folderPropertiesSet("john.doe@example.com", 6, ['parent' => null]);
+    }
+
+    function testSetThePropertiesOfAMissingFolder() {
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Data::$db->folderPropertiesSet("john.doe@example.com", 2112, ['parent' => null]);
+    }
+
+    function testSetThePropertiesOfAFolderOfTheWrongOwner() {
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Data::$db->folderPropertiesSet("john.doe@example.com", 4, ['parent' => null]); // folder ID 4 belongs to Jane
+    }
+
+    function testSetThePropertiesOfAFolderForAMissingUser() {
+        $this->assertException("doesNotExist", "User");
+        Data::$db->folderPropertiesSet("john.doe@example.org", 1, ['parent' => null]);
+    }
+
+    function testSetThePropertiesOfAFolderWithoutAuthority() {
+        Phake::when(Data::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Data::$db->folderPropertiesSet("john.doe@example.com", 1, ['parent' => null]);
     }
 }

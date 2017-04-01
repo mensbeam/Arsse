@@ -14,8 +14,27 @@ class Database {
     public    $db;
     private   $driver;
 
-    protected function cleanName(string $name): string {
-        return (string) preg_filter("[^0-9a-zA-Z_\.]", "", $name);
+    protected function processUpdate(array $props, array $valid, array $where): array {
+        $out = [
+            'values' => [],
+            'types'  => [],
+            'set'    => [],
+            'where'  => [],
+        ];
+        foreach($valid as $prop => $type) {
+            if(!array_key_exists($prop, $props)) continue;
+            $out['values'][] = $props[$prop];
+            $out['types'][]  = $type;
+            $out['set'][]    = "$prop = ?";
+        }
+        foreach($where as $field => $value) {
+            $out['values'][] = $value[0];
+            $out['types'][]  = $value[1];
+            $out['where'][]  = "$field is ?";
+        }
+        $out['set']   = implode(", ", $out['set']);
+        $out['where'] = implode(" and ", $out['where']);
+        return $out;
     }
 
     public function __construct(Db\Driver $db = null) {
@@ -233,16 +252,13 @@ class Database {
 
     public function userPropertiesSet(string $user, array $properties): array {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         $valid = [ // FIXME: add future properties
             "name" => "str",
         ];
-        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
-        $this->db->begin();
-        foreach($valid as $prop => $type) {
-            if(!array_key_exists($prop, $properties)) continue;
-            $this->db->prepare("UPDATE arsse_users set $prop = ? where id is ?", $type, "str")->run($properties[$prop], $user);
-        }
-        $this->db->commit();
+        $data = $this->processUpdate($properties, $valid, ['id' => [$user, "str"]]);
+        extract($data);
+        $this->db->prepareArray("UPDATE arsse_users set $set where $where", $types)->runArray($values);
         return $this->userPropertiesGet($user);
     }
 
@@ -260,11 +276,11 @@ class Database {
 
     public function folderAdd(string $user, array $data): int {
         // If the user isn't authorized to perform this action then throw an exception.
-        if (!Data::$user->authorize($user, __FUNCTION__)) {
+        if(!Data::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         // If the user doesn't exist throw an exception.
-        if (!$this->userExists($user)) {
+        if(!$this->userExists($user)) {
             throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
         }
         // if the desired folder name is missing or invalid, throw an exception
@@ -300,11 +316,11 @@ class Database {
 
     public function folderList(string $user, int $parent = null, bool $recursive = true): Db\Result {
         // if the user isn't authorized to perform this action then throw an exception.
-        if (!Data::$user->authorize($user, __FUNCTION__)) {
+        if(!Data::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         // if the user doesn't exist throw an exception.
-        if (!$this->userExists($user)) {
+        if(!$this->userExists($user)) {
             throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
         }
         // check to make sure the parent exists, if one is specified
@@ -326,29 +342,77 @@ class Database {
 
     public function folderRemove(string $user, int $id): bool {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        // if the user doesn't exist throw an exception.
-        if (!$this->userExists($user)) {
-            throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
+        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
+        $changes = $this->db->prepare("DELETE FROM arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $id)->changes();
+        if(!$changes) throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id]);
+        return true;
+    }
+
+    public function folderPropertiesGet(string $user, int $id): array {
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
+        $props = $this->db->prepare("SELECT id,name,parent from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $id)->getRow();
+        if(!$props) throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id]);
+        return $props;
+    }
+
+    public function folderPropertiesSet(string $user, int $id, array $data): bool {
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
+        // layer the existing folder properties onto the new desired one
+        $data = array_merge($this->folderPropertiesGet($user, $id), $data);
+        // if the desired folder name is missing or invalid, throw an exception
+        if(!array_key_exists("name", $data) || $data['name']=="") {
+            throw new Db\ExceptionInput("missing", ["action" => __FUNCTION__, "field" => "name"]);
+        } else if(!strlen(trim($data['name']))) {
+            throw new Db\ExceptionInput("whitespace", ["action" => __FUNCTION__, "field" => "name"]);
         }
-        // common table expression to list all descendant folders of the target folder
-        $cte = "RECURSIVE folders(id) as (SELECT id from arsse_folders where owner is ? and id is ? union select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id) ";
-        $changes = 0;
-        $this->db->begin();
-        // first delete any feed subscriptions contained within the folder tree (this may not be necessary because of foreign keys)
-        $changes += $this->db->prepare("WITH $cte"."DELETE FROM arsse_subscriptions where folder in(select id from folders)", "str", "int")->run($user, $id)->changes();
-        // next delete the folders themselves
-        $changes += $this->db->prepare("WITH $cte"."DELETE FROM arsse_folders where id in(select id from folders)", "str", "int")->run($user, $id)->changes();
-        $this->db->commit();
-        return (bool) $changes;
+        // normalize folder's parent, if there is one
+        $parent = array_key_exists("parent", $data) ? (int) $data['parent'] : 0;
+        if($parent===0) {
+            // if no parent is specified, do nothing
+            $parent = null;
+            $root = null;
+        } else {
+            // if a parent is specified, make sure it exists and belongs to the user; get its root (first-level) folder if it's a nested folder
+            $p = $this->db->prepare(
+                "WITH RECURSIVE folders(id) as (SELECT id from arsse_folders where owner is ? and id is ? union select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id) ".
+                "SELECT id,root,(id not in (select id from folders)) as valid from arsse_folders where owner is ? and id is ?", 
+            "str", "int", "str", "int")->run($user, $id, $user, $parent)->getRow();
+            if(!$p) {
+                throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "parent", 'id' => $parent]);
+            } else {
+                // if using the desired parent would create a circular dependence, throw a constraint violation
+                if(!$p['valid']) throw new Db\ExceptionInput("circularDependence", ["action" => __FUNCTION__, "field" => "parent", 'id' => $parent]);
+                // if the parent does not have a root specified (because it is a first-level folder) use the parent ID as the root ID
+                $root = $p['root']===null ? $parent : $p['root'];
+            }
+        }
+        $data['parent'] = $parent;
+        $data['root']   = $root;
+        // check to make sure the target folder name/location would not create a duplicate (we must di this check because null is not distinct in SQL)
+        $existing = $this->db->prepare("SELECT id from arsse_folders where owner is ? and parent is ? and name is ?", "str", "int", "str")->run($user, $data['parent'], $data['name'])->getValue();
+        if(!is_null($existing) && $existing != $id) {
+            throw new Db\ExceptionInput("constraintViolation"); // FIXME: There needs to be a practical message here
+        }
+        $valid = [
+            'name' => "str",
+            'parent' => "int",
+            'root' => "int",
+        ];
+        $data = $this->processUpdate($data, $valid, ['owner' => [$user, "str"], 'id' => [$id, "int"]]);
+        extract($data);
+        $this->db->prepareArray("UPDATE arsse_folders set $set where $where", $types)->runArray($values);
+        return true;
     }
 
     public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = ""): int {
         // If the user isn't authorized to perform this action then throw an exception.
-        if (!Data::$user->authorize($user, __FUNCTION__)) {
+        if(!Data::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         // If the user doesn't exist throw an exception.
-        if (!$this->userExists($user)) {
+        if(!$this->userExists($user)) {
             throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
         }
 
@@ -358,7 +422,7 @@ class Database {
         // after determining its validity with PicoFeed.
         $qFeed = $this->db->prepare("SELECT id from arsse_feeds where url is ? and username is ? and password is ?", "str", "str", "str");
         $feed = $qFeed->run($url, $fetchUser, $fetchPassword)->getValue();
-        if ($feed === null) {
+        if($feed === null) {
             $feed = new Feed($url);
             $feed->parse();
 
@@ -381,7 +445,7 @@ class Database {
                 )->lastId();
 
             // Add each of the articles to the database.
-            foreach ($feed->data->items as $i) {
+            foreach($feed->data->items as $i) {
                 $this->articleAdd($i);
             }
         }
@@ -427,8 +491,8 @@ class Database {
         $this->db->begin();
 
         $categories = $article->getTag('category');
-        if (count($categories) > 0) {
-            foreach ($categories as $c) {
+        if(count($categories) > 0) {
+            foreach($categories as $c) {
                 $this->db->prepare('INSERT INTO arsse_categories(article,name) values(?,?)', 'int', 'str')->run($id, $c);
             }
         }
@@ -438,7 +502,7 @@ class Database {
 
     public function updateFeeds(): int {
         $feeds = $this->db->query('SELECT id, url, username, password, DATEFORMAT("http", modified) AS lastmodified, etag FROM arsse_feeds')->getAll();
-        foreach ($feeds as $f) {
+        foreach($feeds as $f) {
             // Feed object throws an exception when there are problems, but that isn't ideal
             // here. When an exception is occurred it should update the database with the
             // error instead of failing.
@@ -454,34 +518,34 @@ class Database {
             }
 
             // If the feed has been updated then update the database.
-            if ($feed->resource->isModified()) {
+            if($feed->resource->isModified()) {
                 $feed->parse();
 
                 $this->db->begin();
                 $articles = $this->db->prepare('SELECT id, url, title, author, DATEFORMAT("http", edited) AS edited_date, guid, content, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? ORDER BY id', 'int')->run($f['id'])->getAll();
 
-                foreach ($feed->data->items as $i) {
+                foreach($feed->data->items as $i) {
                     // Iterate through the articles in the database to determine a match for the one
                     // in the just-parsed feed.
                     $match = null;
-                    foreach ($articles as $a) {
+                    foreach($articles as $a) {
                         // If the id exists and is equal to one in the database then this is the post.
-                        if ($i->id) {
-                            if ($i->id === $a['guid']) {
+                        if($i->id) {
+                            if($i->id === $a['guid']) {
                                 $match = $a;
                             }
                         }
 
                         // Otherwise if the id doesn't exist and any of the hashes match then this is
                         // the post.
-                        elseif ($i->urlTitleHash === $a['url_title_hash'] || $i->urlContentHash === $a['url_content_hash'] || $i->titleContentHash === $a['title_content_hash']) {
+                        elseif($i->urlTitleHash === $a['url_title_hash'] || $i->urlContentHash === $a['url_content_hash'] || $i->titleContentHash === $a['title_content_hash']) {
                             $match = $a;
                         }
                     }
 
                     // If there is no match then this is a new post and must be added to the
                     // database.
-                    if (!$match) {
+                    if(!$match) {
                         $this->articleAdd($i);
                         continue;
                     }
@@ -490,18 +554,18 @@ class Database {
                     // If there is an updated date, and it doesn't match the database's then update
                     // the post.
                     $update = false;
-                    if ($i->updatedDate) {
-                        if ($i->updatedDate !== $match['edited_date']) {
+                    if($i->updatedDate) {
+                        if($i->updatedDate !== $match['edited_date']) {
                             $update = true;
                         }
                     }
                     // Otherwise if there isn't an updated date and any of the hashes don't match
                     // then update the post.
-                    elseif ($i->urlTitleHash !== $match['url_title_hash'] || $i->urlContentHash !== $match['url_content_hash'] || $i->titleContentHash !== $match['title_content_hash']) {
+                    elseif($i->urlTitleHash !== $match['url_title_hash'] || $i->urlContentHash !== $match['url_content_hash'] || $i->titleContentHash !== $match['title_content_hash']) {
                         $update = true;
                     }
 
-                    if ($update) {
+                    if($update) {
                         $this->db->prepare('UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = ?, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id is ?', 'str', 'str', 'str', 'datetime', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int')->run(
                             $i->url,
                             $i->title,
