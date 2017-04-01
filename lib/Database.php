@@ -294,16 +294,10 @@ class Database {
         if($parent===0) {
             // if no parent is specified, do nothing
             $parent = null;
-            $root = null;
         } else {
             // if a parent is specified, make sure it exists and belongs to the user; get its root (first-level) folder if it's a nested folder
-            $p = $this->db->prepare("SELECT id,root from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $parent)->getRow();
-            if(!$p) {
-                throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "parent", 'id' => $parent]);
-            } else {
-                // if the parent does not have a root specified (because it is a first-level folder) use the parent ID as the root ID
-                $root = $p['root']===null ? $parent : $p['root'];
-            }
+            $p = $this->db->prepare("SELECT id from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $parent)->getValue();
+            if(!$p) throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "parent", 'id' => $parent]);
         }
         // check if a folder by the same name already exists, because nulls are wonky in SQL
         // FIXME: How should folder name be compared? Should a Unicode normalization be applied before comparison and insertion?
@@ -311,7 +305,7 @@ class Database {
             throw new Db\ExceptionInput("constraintViolation"); // FIXME: There needs to be a practical message here
         }
         // actually perform the insert (!)
-        return $this->db->prepare("INSERT INTO arsse_folders(owner,parent,root,name) values(?,?,?,?)", "str", "int", "int", "str")->run($user, $parent, $root, $data['name'])->lastId();
+        return $this->db->prepare("INSERT INTO arsse_folders(owner,parent,name) values(?,?,?)", "str", "int", "str")->run($user, $parent, $data['name'])->lastId();
     }
 
     public function folderList(string $user, int $parent = null, bool $recursive = true): Db\Result {
@@ -372,24 +366,20 @@ class Database {
         if($parent===0) {
             // if no parent is specified, do nothing
             $parent = null;
-            $root = null;
         } else {
             // if a parent is specified, make sure it exists and belongs to the user; get its root (first-level) folder if it's a nested folder
             $p = $this->db->prepare(
                 "WITH RECURSIVE folders(id) as (SELECT id from arsse_folders where owner is ? and id is ? union select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id) ".
-                "SELECT id,root,(id not in (select id from folders)) as valid from arsse_folders where owner is ? and id is ?", 
+                "SELECT id,(id not in (select id from folders)) as valid from arsse_folders where owner is ? and id is ?", 
             "str", "int", "str", "int")->run($user, $id, $user, $parent)->getRow();
             if(!$p) {
                 throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "parent", 'id' => $parent]);
             } else {
-                // if using the desired parent would create a circular dependence, throw a constraint violation
+                // if using the desired parent would create a circular dependence, throw an exception
                 if(!$p['valid']) throw new Db\ExceptionInput("circularDependence", ["action" => __FUNCTION__, "field" => "parent", 'id' => $parent]);
-                // if the parent does not have a root specified (because it is a first-level folder) use the parent ID as the root ID
-                $root = $p['root']===null ? $parent : $p['root'];
             }
         }
         $data['parent'] = $parent;
-        $data['root']   = $root;
         // check to make sure the target folder name/location would not create a duplicate (we must di this check because null is not distinct in SQL)
         $existing = $this->db->prepare("SELECT id from arsse_folders where owner is ? and parent is ? and name is ?", "str", "int", "str")->run($user, $data['parent'], $data['name'])->getValue();
         if(!is_null($existing) && $existing != $id) {
@@ -398,7 +388,6 @@ class Database {
         $valid = [
             'name' => "str",
             'parent' => "int",
-            'root' => "int",
         ];
         $data = $this->processUpdate($data, $valid, ['owner' => [$user, "str"], 'id' => [$id, "int"]]);
         extract($data);

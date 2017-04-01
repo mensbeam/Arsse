@@ -13,7 +13,6 @@ trait SeriesFolder {
                     'id'     => "int",
                     'owner'  => "str",
                     'parent' => "int",
-                    'root'   => "int",
                     'name'   => "str",
                 ],
                 /* Layout translates to:
@@ -27,12 +26,12 @@ trait SeriesFolder {
                     Politics
                 */
                 'rows' => [
-                    [1, "john.doe@example.com", null, null, "Technology"],
-                    [2, "john.doe@example.com",    1,    1, "Software"],
-                    [3, "john.doe@example.com",    1,    1, "Rocketry"],
-                    [4, "jane.doe@example.com", null, null, "Politics"],        
-                    [5, "john.doe@example.com", null, null, "Politics"],
-                    [6, "john.doe@example.com",    2,    1, "Politics"],
+                    [1, "john.doe@example.com", null, "Technology"],
+                    [2, "john.doe@example.com",    1, "Software"],
+                    [3, "john.doe@example.com",    1, "Rocketry"],
+                    [4, "jane.doe@example.com", null, "Politics"],        
+                    [5, "john.doe@example.com", null, "Politics"],
+                    [6, "john.doe@example.com",    2, "Politics"],
                 ]
             ]
         ];
@@ -45,8 +44,8 @@ trait SeriesFolder {
         $user = "john.doe@example.com";
         $this->assertSame(7, Data::$db->folderAdd($user, ['name' => "Entertainment"]));
         Phake::verify(Data::$user)->authorize($user, "folderAdd");
-        $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'root', 'name']]);
-        $state['arsse_folders']['rows'][] = [7, $user, null, null, "Entertainment"];
+        $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
+        $state['arsse_folders']['rows'][] = [7, $user, null, "Entertainment"];
         $this->compareExpectations($state);
     }
 
@@ -59,8 +58,8 @@ trait SeriesFolder {
         $user = "john.doe@example.com";
         $this->assertSame(7, Data::$db->folderAdd($user, ['name' => "GNOME", 'parent' => 2]));
         Phake::verify(Data::$user)->authorize($user, "folderAdd");
-        $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'root', 'name']]);
-        $state['arsse_folders']['rows'][] = [7, $user, 2, 1, "GNOME"];
+        $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
+        $state['arsse_folders']['rows'][] = [7, $user, 2, "GNOME"];
         $this->compareExpectations($state);
     }
 
@@ -156,14 +155,14 @@ trait SeriesFolder {
 
     function testRemoveAFolder() {
         $this->assertTrue(Data::$db->folderRemove("john.doe@example.com", 6));
-        $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'root', 'name']]);
+        $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
         array_pop($state['arsse_folders']['rows']);
         $this->compareExpectations($state);
     }
 
     function testRemoveAFolderTree() {
         $this->assertTrue(Data::$db->folderRemove("john.doe@example.com", 1));
-        $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'root', 'name']]);
+        $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
         foreach([0,1,2,5] as $index) {
             unset($state['arsse_folders']['rows'][$index]);
         }
@@ -223,16 +222,15 @@ trait SeriesFolder {
 
     function testRenameAFolder() {
         $this->assertTrue(Data::$db->folderPropertiesSet("john.doe@example.com", 6, ['name' => "Opinion"]));
-        $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'root', 'name']]);
-        $state['arsse_folders']['rows'][5][4] = "Opinion";
+        $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
+        $state['arsse_folders']['rows'][5][3] = "Opinion";
         $this->compareExpectations($state);
     }
 
     function testMoveAFolder() {
         $this->assertTrue(Data::$db->folderPropertiesSet("john.doe@example.com", 6, ['parent' => 5]));
-        $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'root', 'name']]);
+        $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
         $state['arsse_folders']['rows'][5][2] = 5; // parent should have changed
-        $state['arsse_folders']['rows'][5][3] = 5; // root should also have changed
         $this->compareExpectations($state);
     }
 

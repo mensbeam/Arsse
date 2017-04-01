@@ -69,12 +69,18 @@ trait Setup {
 	function compareExpectations(array $expected): bool {
 		foreach($expected as $table => $info) {
 			$cols = implode(",", array_keys($info['columns']));
-			foreach($this->drv->prepare("SELECT $cols from $table")->run() as $num => $row) {
-				$row = array_values($row);
-				$this->assertGreaterThan(0, sizeof($info['rows']), "Expectations contain fewer rows than the database table $table");
-				$exp = array_shift($info['rows']);
-				$this->assertSame($exp, $row, "Row ".($num+1)." of table $table does not match expectations at array index $num.");
+			$data = $this->drv->prepare("SELECT $cols from $table")->run()->getAll();
+			$cols = array_keys($info['columns']);
+			foreach($info['rows'] as $index => $values) {
+				$row = [];
+				foreach($values as $key => $value) {
+					$row[$cols[$key]] = $value;
+				}
+				$found = array_search($row, $data);
+				$this->assertNotSame(false, $found, "Table $table does not contain record at array index $index.");
+				unset($data[$found]);
 			}
+			$this->assertSame([], $data);
 		}
 		return true;
 	}
