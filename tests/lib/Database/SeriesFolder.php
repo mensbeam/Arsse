@@ -111,6 +111,9 @@ trait SeriesFolder {
         $this->assertSame($exp, Data::$db->folderList("jane.doe@example.com", null, false)->getAll());
         $exp = [];
         $this->assertSame($exp, Data::$db->folderList("admin@example.net", null, false)->getAll());
+        Phake::verify(Data::$user)->authorize("john.doe@example.com", "folderList");
+        Phake::verify(Data::$user)->authorize("jane.doe@example.com", "folderList");
+        Phake::verify(Data::$user)->authorize("admin@example.net", "folderList");
     }
 
     function testListFoldersRecursively() {
@@ -130,6 +133,8 @@ trait SeriesFolder {
         $this->assertSame($exp, Data::$db->folderList("john.doe@example.com", 1, true)->getAll());
         $exp = [];
         $this->assertSame($exp, Data::$db->folderList("jane.doe@example.com", 4, true)->getAll());
+        Phake::verify(Data::$user, Phake::times(2))->authorize("john.doe@example.com", "folderList");
+        Phake::verify(Data::$user)->authorize("jane.doe@example.com", "folderList");
     }
 
     function testListFoldersOfAMissingParent() {
@@ -155,6 +160,7 @@ trait SeriesFolder {
 
     function testRemoveAFolder() {
         $this->assertTrue(Data::$db->folderRemove("john.doe@example.com", 6));
+        Phake::verify(Data::$user)->authorize("john.doe@example.com", "folderRemove");
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
         array_pop($state['arsse_folders']['rows']);
         $this->compareExpectations($state);
@@ -162,6 +168,7 @@ trait SeriesFolder {
 
     function testRemoveAFolderTree() {
         $this->assertTrue(Data::$db->folderRemove("john.doe@example.com", 1));
+        Phake::verify(Data::$user)->authorize("john.doe@example.com", "folderRemove");
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
         foreach([0,1,2,5] as $index) {
             unset($state['arsse_folders']['rows'][$index]);
@@ -197,6 +204,7 @@ trait SeriesFolder {
             'parent' => 2,
         ];
         $this->assertArraySubset($exp, Data::$db->folderPropertiesGet("john.doe@example.com", 6));
+        Phake::verify(Data::$user)->authorize("john.doe@example.com", "folderPropertiesGet");
     }
 
     function testGetThePropertiesOfAMissingFolder() {
@@ -222,6 +230,7 @@ trait SeriesFolder {
 
     function testRenameAFolder() {
         $this->assertTrue(Data::$db->folderPropertiesSet("john.doe@example.com", 6, ['name' => "Opinion"]));
+        Phake::verify(Data::$user)->authorize("john.doe@example.com", "folderPropertiesSet");
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
         $state['arsse_folders']['rows'][5][3] = "Opinion";
         $this->compareExpectations($state);
@@ -229,6 +238,7 @@ trait SeriesFolder {
 
     function testMoveAFolder() {
         $this->assertTrue(Data::$db->folderPropertiesSet("john.doe@example.com", 6, ['parent' => 5]));
+        Phake::verify(Data::$user)->authorize("john.doe@example.com", "folderPropertiesSet");
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
         $state['arsse_folders']['rows'][5][2] = 5; // parent should have changed
         $this->compareExpectations($state);
