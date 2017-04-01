@@ -20,7 +20,7 @@ class Feed {
             $config->setGrabberUserAgent(Data::$conf->userAgentString);
 
             $this->reader = new Reader($config);
-            $this->resource = $reader->download($url, $lastModified, $etag, $username, $password);
+            $this->resource = $this->reader->download($url, $lastModified, $etag, $username, $password);
             // Grab the favicon for the feed; returns an empty string if it cannot find one.
             $this->favicon = (new Favicon)->find($url);
         } catch (PicoFeedException $e) {
@@ -31,11 +31,10 @@ class Feed {
     public function parse(): bool {
         try {
             $this->parser = $this->reader->getParser(
-                $resource->getUrl(),
-                $resource->getContent(),
-                $resource->getEncoding()
+                $this->resource->getUrl(),
+                $this->resource->getContent(),
+                $this->resource->getEncoding()
             );
-
             $feed = $this->parser->execute();
         } catch (PicoFeedException $e) {
             throw new Feed\Exception($url, $e);
@@ -51,9 +50,9 @@ class Feed {
         foreach ($feed->items as &$f) {
             // Hashes used for comparison to check for updates and also to identify when an
             // id doesn't exist.
-            $f->urlTitleHash = hash('sha256', $i->url.$i->title);
-            $f->urlContentHash = hash('sha256', $i->url.$i->content.$i->enclosureUrl.$i->enclosureType);
-            $f->titleContentHash = hash('sha256', $i->title.$i->content.$i->enclosureUrl.$i->enclosureType);
+            $f->urlTitleHash = hash('sha256', $f->url.$f->title);
+            $f->urlContentHash = hash('sha256', $f->url.$f->content.$f->enclosureUrl.$f->enclosureType);
+            $f->titleContentHash = hash('sha256', $f->title.$f->content.$f->enclosureUrl.$f->enclosureType);
 
             // If there is an id element then continue. The id is used already.
             $id = (string)$f->xml->id;

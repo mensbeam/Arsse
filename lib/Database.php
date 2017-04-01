@@ -435,7 +435,7 @@ class Database {
 
             // Add each of the articles to the database.
             foreach($feed->data->items as $i) {
-                $this->articleAdd($i);
+                $this->articleAdd($feedID, $i);
             }
         }
 
@@ -450,10 +450,10 @@ class Database {
         return (bool) $this->db->prepare("DELETE from arsse_subscriptions where owner is ? and id is ?", "str", "int")->run($user, $id)->changes();
     }
 
-    public function articleAdd(PicoFeed\Parser\Item $article): int {
+    public function articleAdd(int $feedID, \PicoFeed\Parser\Item $article): int {
         $this->db->begin();
 
-        $articleId = $this->db->prepare('INSERT INTO arsse_articles(feed,url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash)
+        $articleID = $this->db->prepare('INSERT INTO arsse_articles(feed,url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash)
         values(?,?,?,?,?,?,?,?,?,?,?)',
         'int', 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str')->run(
             $feedID,
@@ -470,23 +470,24 @@ class Database {
         )->lastId();
 
         // If the article has categories add them into the categories database.
-        $this->categoriesAdd($article, $articleID);
+        $this->categoriesAdd($articleID, $article);
 
         $this->db->commit();
         return 1;
     }
 
-    public function categoriesAdd(PicoFeed\Parser\Item $article, int $id): int {
+    public function categoriesAdd(int $articleID, \PicoFeed\Parser\Item $article): int {
         $this->db->begin();
 
         $categories = $article->getTag('category');
         if(count($categories) > 0) {
             foreach($categories as $c) {
-                $this->db->prepare('INSERT INTO arsse_categories(article,name) values(?,?)', 'int', 'str')->run($id, $c);
+                $this->db->prepare('INSERT INTO arsse_categories(article,name) values(?,?)', 'int', 'str')->run($articleID, $c);
             }
         }
 
         $this->db->commit();
+        return count($categories);
     }
 
     public function updateFeeds(): int {

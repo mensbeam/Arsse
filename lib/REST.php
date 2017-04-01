@@ -24,7 +24,6 @@ class REST {
         // Fever                https://feedafever.com/api
         // NewsBlur             http://www.newsblur.com/api
     ];
-    protected $data;
     
     function __construct() {
     }
