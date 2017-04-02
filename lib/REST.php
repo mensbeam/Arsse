@@ -30,11 +30,14 @@ class REST {
 
     function dispatch(REST\Request $req = null): bool {
         if($req===null) $req = new REST\Request();
-        $api = $this->apiMatch($url, $this->apis);
-        $req->url = substr($url,strlen($this->apis[$api]['strip']));
+        $api = $this->apiMatch($req->url, $this->apis);
+        $req->url = substr($req->url,strlen($this->apis[$api]['strip']));
+        $req->refreshURL();
         $class = $this->apis[$api]['class'];
         $drv = new $class();
-        $drv->dispatch($req);
+        $out = $drv->dispatch($req);
+        echo "Status: ".$out->code."\n";
+        echo json_encode($out->payload,\JSON_PRETTY_PRINT);
         return true;
     }
 

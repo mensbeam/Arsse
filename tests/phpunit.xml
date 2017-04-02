@@ -40,6 +40,7 @@
     </testsuite>
     <testsuite name="NextCloud News API">
         <file>REST/NextCloudNews/TestNCNVersionDiscovery.php</file>
+        <file>REST/NextCloudNews/TestNCNV1_2.php</file>
     </testsuite>
 </testsuites>
 </phpunit>

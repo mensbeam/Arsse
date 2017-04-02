@@ -4,6 +4,12 @@ return [
 
     'Driver.Db.SQLite3.Name'                                         => 'SQLite 3',
 
+    'HTTP.Status.200'                                                => 'OK',
+    'HTTP.Status.204'                                                => 'No Content',
+    'HTTP.Status.401'                                                => 'Unauthorized',
+    'HTTP.Status.404'                                                => 'Not Found',
+    'HTTP.Status.405'                                                => 'Method Not Allowed',
+
     // this should only be encountered in testing (because tests should cover all exceptions!)
     'Exception.JKingWeb/Arsse/Exception.uncoded'                     => 'The specified exception symbol {0} has no code specified in AbstractException.php',
     // this should not usually be encountered
