@@ -8,18 +8,22 @@ class Request {
 	public $path ="";
 	public $query = "";
 	public $type ="";
-	public $stream = "php://input";
+	public $body = "";
 
-	function __construct(string $method = null, string $url = null, string $bodyStream = null, string $contentType = null) {
-		if(is_null($method))      $method = $_SERVER['REQUEST_METHOD'];
-		if(is_null($url))         $url = $_SERVER['REQUEST_URI'];
-		if(is_null($bodyStream))  $bodyStream = "php://input";
+	function __construct(string $method = null, string $url = null, string $body = null, string $contentType = null) {
+		if(is_null($method)) $method = $_SERVER['REQUEST_METHOD'];
+		if(is_null($url))    $url    = $_SERVER['REQUEST_URI'];
+		if(is_null($body))   $body   = file_get_contents("php://input");
 		if(is_null($contentType)) {
-			if(isset($_SERVER['HTTP_CONTENT_TYPE'])) $contentType = $_SERVER['HTTP_CONTENT_TYPE'];
+			if(isset($_SERVER['HTTP_CONTENT_TYPE'])) {
+				$contentType = $_SERVER['HTTP_CONTENT_TYPE'];
+			} else {
+				$contentType = "";
+			}
 		}
 		$this->method = strtoupper($method);
 		$this->url = $url;
-		$this->stream = $bodyStream;
+		$this->body = $body;
 		$this->type = $contentType;
 		$this->refreshURL();
 	}

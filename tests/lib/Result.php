@@ -68,6 +68,6 @@ class Result implements \JKingWeb\Arsse\Db\Result {
     }
 
     public function rewind() {
-        rewind($this->set);
+        reset($this->set);
     }
 }

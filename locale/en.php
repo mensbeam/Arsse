@@ -9,6 +9,7 @@ return [
     'HTTP.Status.401'                                                => 'Unauthorized',
     'HTTP.Status.404'                                                => 'Not Found',
     'HTTP.Status.405'                                                => 'Method Not Allowed',
+    'HTTP.Status.415'                                                => 'Unsupported Media Type',
 
     // this should only be encountered in testing (because tests should cover all exceptions!)
     'Exception.JKingWeb/Arsse/Exception.uncoded'                     => 'The specified exception symbol {0} has no code specified in AbstractException.php',
