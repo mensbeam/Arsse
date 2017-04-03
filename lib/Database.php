@@ -499,7 +499,7 @@ class Database {
             try {
                 $feed = new Feed($f['url'], $f['lastmodified'], $f['etag'], $f['username'], $f['password']);
             } catch (Feed\Exception $e) {
-                $this->db->prepare('UPDATE arsse_feeds SET err_count = err_count + 1, err_msg = "" WHERE id is ?', 'str', 'int')->run(
+                $this->db->prepare('UPDATE arsse_feeds SET err_count = err_count + 1, err_msg = ? WHERE id is ?', 'str', 'int')->run(
                     $e->getMessage(),
                     $f['id']
                 );
