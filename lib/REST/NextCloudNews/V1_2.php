@@ -131,4 +131,29 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         return new Response(204);
     }
+
+    protected function versionGET(array $url, array $data): Response {
+        // if URL is more than '/version' this is an error
+        if(sizeof($url)) return new Response(404);
+        return new Response(200, ['version' => \JKingWeb\Arsse\VERSION]);
+    }
+
+    protected function versionPOST(array $url, array $data): Response {
+        // if URL is more than '/version' this is an error
+        if(sizeof($url)) return new Response(404);
+        return new Response(405, "", "", ['Allow: GET']);
+    }
+
+    protected function versionPUT(array $url, array $data): Response {
+        // if URL is more than '/version' this is an error
+        if(sizeof($url)) return new Response(404);
+        return new Response(405, "", "", ['Allow: GET']);
+    }
+
+    protected function versionDELETE(array $url, array $data): Response {
+        // if URL is more than '/version' this is an error
+        if(sizeof($url)) return new Response(404);
+        return new Response(405, "", "", ['Allow: GET']);
+    }
+
 }

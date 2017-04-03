@@ -38,8 +38,17 @@ class TestNCNV1_2 extends \PHPUnit\Framework\TestCase {
 				['PUT',    "/folders/1/invalid"],
 				['POST',   "/folders/1/invalid"],
 				['DELETE', "/folders/1/invalid"],
+				['GET',    "/version/invalid"],
+				['PUT',    "/version/invalid"],
+				['POST',   "/version/invalid"],
+				['DELETE', "/version/invalid"],
 			],
 			405 => [
+				'GET' => [
+					['PUT',    "/version"],
+					['POST',   "/version"],
+					['DELETE', "/version"],
+				],
 				'GET, POST' => [
 					['PUT',    "/folders"],
 					['DELETE', "/folders"],
@@ -152,5 +161,10 @@ class TestNCNV1_2 extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/1", json_encode($in[4]), 'application/json')));
 		$exp = new Response(404);
 		$this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/3", json_encode($in[0]), 'application/json')));
+	}
+
+	function testRetrieveServerVersion() {
+		$exp = new Response(200, ['version' => \JKingWeb\Arsse\VERSION]);
+		$this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/version")));
 	}
 }
