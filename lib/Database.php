@@ -16,17 +16,17 @@ class Database {
 
     protected function generateSet(array $props, array $valid): array {
         $out = [
-            'setValues' => [],
-            'setTypes'  => [],
-            'set'       => [],
+            [], // query clause
+            [], // binding types
+            [], // binding values
         ];
         foreach($valid as $prop => $type) {
             if(!array_key_exists($prop, $props)) continue;
-            $out['setValues'][] = $props[$prop];
-            $out['setTypes'][]  = $type;
-            $out['set'][]    = "$prop = ?";
+            $out[0][] = "$prop = ?";
+            $out[1][] = $type;
+            $out[2][] = $props[$prop];
         }
-        $out['set']   = implode(", ", $out['set']);
+        $out[0] = implode(", ", $out[0]);
         return $out;
     }
 
@@ -249,9 +249,8 @@ class Database {
         $valid = [ // FIXME: add future properties
             "name" => "str",
         ];
-        $data = $this->generateSet($properties, $valid);
-        extract($data);
-        $this->db->prepare("UPDATE arsse_users set $set where id is ?", $setTypes, "str")->run($setValues, $user);
+        list($setClause, $setTypes, $setValues) = $this->generateSet($properties, $valid);
+        $this->db->prepare("UPDATE arsse_users set $setClause where id is ?", $setTypes, "str")->run($setValues, $user);
         return $this->userPropertiesGet($user);
     }
 
@@ -382,9 +381,8 @@ class Database {
             'name' => "str",
             'parent' => "int",
         ];
-        $data = $this->generateSet($data, $valid);
-        extract($data);
-        $this->db->prepare("UPDATE arsse_folders set $set where owner is ? and id is ?", $setTypes, "str", "int")->run($setValues, $user, $id);
+        list($setClause, $setTypes, $setValues) = $this->generateSet($data, $valid);
+        $this->db->prepare("UPDATE arsse_folders set $setClause where owner is ? and id is ?", $setTypes, "str", "int")->run($setValues, $user, $id);
         return true;
     }
 
