@@ -15,12 +15,17 @@ abstract class AbstractStatement implements Statement {
         return $this->rebindArray($bindings);
     }
 
-    public function rebindArray(array $bindings): bool {
-        $this->types = [];
+    public function rebindArray(array $bindings, bool $append = false): bool {
+        if(!$append) $this->types = [];
         foreach($bindings as $binding) {
-            $binding = trim(strtolower($binding));
-            if(!array_key_exists($binding, self::TYPES)) throw new Exception("paramTypeInvalid", $binding);
-            $this->types[] = self::TYPES[$binding];
+            if(is_array($binding)) {
+                // recursively flatten any arrays, which may be provided for SET or IN() clauses
+                $this->rebindArray($binding, true);
+            } else {
+                $binding = trim(strtolower($binding));
+                if(!array_key_exists($binding, self::TYPES)) throw new Exception("paramTypeInvalid", $binding);
+                $this->types[] = self::TYPES[$binding];
+            }
         }
         return true;
     }

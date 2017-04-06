@@ -25,5 +25,5 @@ interface Driver {
     // perform a single unsanitized query and return a result set
     function query(string $query): Result;
     // ready a prepared statement for later execution
-    function prepare(string $query, string ...$paramType): Statement;
+    function prepare(string $query, ...$paramType): Statement;
 }

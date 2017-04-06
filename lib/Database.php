@@ -14,26 +14,19 @@ class Database {
     public    $db;
     private   $driver;
 
-    protected function processUpdate(array $props, array $valid, array $where): array {
+    protected function generateSet(array $props, array $valid): array {
         $out = [
-            'values' => [],
-            'types'  => [],
-            'set'    => [],
-            'where'  => [],
+            'setValues' => [],
+            'setTypes'  => [],
+            'set'       => [],
         ];
         foreach($valid as $prop => $type) {
             if(!array_key_exists($prop, $props)) continue;
-            $out['values'][] = $props[$prop];
-            $out['types'][]  = $type;
+            $out['setValues'][] = $props[$prop];
+            $out['setTypes'][]  = $type;
             $out['set'][]    = "$prop = ?";
         }
-        foreach($where as $field => $value) {
-            $out['values'][] = $value[0];
-            $out['types'][]  = $value[1];
-            $out['where'][]  = "$field is ?";
-        }
         $out['set']   = implode(", ", $out['set']);
-        $out['where'] = implode(" and ", $out['where']);
         return $out;
     }
 
@@ -256,9 +249,9 @@ class Database {
         $valid = [ // FIXME: add future properties
             "name" => "str",
         ];
-        $data = $this->processUpdate($properties, $valid, ['id' => [$user, "str"]]);
+        $data = $this->generateSet($properties, $valid);
         extract($data);
-        $this->db->prepareArray("UPDATE arsse_users set $set where $where", $types)->runArray($values);
+        $this->db->prepare("UPDATE arsse_users set $set where id is ?", $setTypes, "str")->run($setValues, $user);
         return $this->userPropertiesGet($user);
     }
 
@@ -389,9 +382,9 @@ class Database {
             'name' => "str",
             'parent' => "int",
         ];
-        $data = $this->processUpdate($data, $valid, ['owner' => [$user, "str"], 'id' => [$id, "int"]]);
+        $data = $this->generateSet($data, $valid);
         extract($data);
-        $this->db->prepareArray("UPDATE arsse_folders set $set where $where", $types)->runArray($values);
+        $this->db->prepare("UPDATE arsse_folders set $set where owner is ? and id is ?", $setTypes, "str", "int")->run($setValues, $user, $id);
         return true;
     }
 

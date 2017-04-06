@@ -48,24 +48,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
 
     public function runArray(array $values = null): \JKingWeb\Arsse\Db\Result {
         $this->st->clear();
-        $l = sizeof($values);
-        for($a = 0; $a < $l; $a++) {
-            // find the right SQLite binding type for the value/specified type
-            if($values[$a]===null) {
-                $type = \SQLITE3_NULL;
-            } else if(array_key_exists($a,$this->types)) {
-                if(!array_key_exists($this->types[$a], self::BINDINGS)) throw new Exception("paramTypeUnknown", $this->types[$a]);
-                $type = self::BINDINGS[$this->types[$a]];
-            } else {
-                throw new Exception("paramTypeMissing", $a+1);
-            }
-            // cast value if necessary
-            $values[$a] = $this->cast($values[$a], $this->types[$a]);
-            // re-adjust for null casts
-            if($values[$a]===null) $type = \SQLITE3_NULL;
-            // perform binding
-            $this->st->bindValue($a+1, $values[$a], $type);
-        }
+        if(!is_null($values)) $this->bindValues($values);
         try {
             $r = $this->st->execute();
         } catch(\Exception $e) {
@@ -75,5 +58,33 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         $changes = $this->db->changes();
         $lastId = $this->db->lastInsertRowID();
         return new Result($r, [$changes, $lastId], $this);
+    }
+
+    protected function bindValues(array $values, int $offset = 0): int {
+        $a = $offset;
+        foreach($values as $value) {
+            if(is_array($value)) {
+                // recursively flatten any arrays, which may be provided for SET or IN() clauses
+                $a += $this->bindValues($value, $a);
+            } else {
+                // find the right SQLite binding type for the value/specified type
+                if($value===null) {
+                    $type = \SQLITE3_NULL;
+                } else if(array_key_exists($a,$this->types)) {
+                    if(!array_key_exists($this->types[$a], self::BINDINGS)) throw new Exception("paramTypeUnknown", $this->types[$a]);
+                    $type = self::BINDINGS[$this->types[$a]];
+                } else {
+                    throw new Exception("paramTypeMissing", $a+1);
+                }
+                // cast value if necessary
+                $value = $this->cast($value, $this->types[$a]);
+                // re-adjust for null casts
+                if($value===null) $type = \SQLITE3_NULL;
+                // perform binding
+                $this->st->bindValue($a+1, $value, $type);
+                $a++;
+            }
+        }
+        return $a;
     }
 }

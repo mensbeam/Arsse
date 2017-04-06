@@ -67,7 +67,7 @@ abstract class AbstractDriver implements Driver {
         return ($this->query("SELECT count(*) from arsse_settings where key is 'lock'")->getValue() > 0);
     }
 
-    public function prepare(string $query, string ...$paramType): Statement {
+    public function prepare(string $query, ...$paramType): Statement {
         return $this->prepareArray($query, $paramType);
     }
 }
