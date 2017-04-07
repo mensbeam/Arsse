@@ -29,7 +29,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $data = [];
         }
         // FIXME: Do query parameters take precedence in NextCloud? Is there a conflict error when values differ?
-        $data = array_merge($data, $req->query);		
+        $data = array_merge($data, $req->query);
         // match the path
         if(preg_match("<^/(items|folders|feeds|cleanup|version|status|user)(?:/([^/]+))?(?:/([^/]+))?(?:/([^/]+))?/?$>", $req->path, $url)) {
             // clean up the path

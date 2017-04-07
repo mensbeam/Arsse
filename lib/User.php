@@ -9,7 +9,7 @@ class User {
     protected $authz = true;
     protected $authzSupported = 0;
     protected $actor = [];
-    
+
     static public function listDrivers(): array {
         $sep = \DIRECTORY_SEPARATOR;
         $path = __DIR__.$sep."User".$sep;
@@ -75,7 +75,7 @@ class User {
         if(!in_array($affectedRights,[User\Driver::RIGHTS_NONE,User\Driver::RIGHTS_DOMAIN_MANAGER,User\Driver::RIGHTS_DOMAIN_ADMIN])) return false;
         return true;
     }
-    
+
     public function credentials(): array {
         if(Data::$conf->userAuthPreferHTTP) {
             return $this->credentialsHTTP();
@@ -142,7 +142,7 @@ class User {
     public function driverFunctions(string $function = null) {
         return $this->u->driverFunctions($function);
     }
-    
+
     public function list(string $domain = null): array {
         $func = "userList";
         switch($this->u->driverFunctions($func)) {
@@ -166,7 +166,7 @@ class User {
         $this->authz = $setting;
         return $setting;
     }
-    
+
     public function exists(string $user): bool {
         $func = "userExists";
         switch($this->u->driverFunctions($func)) {
@@ -321,7 +321,7 @@ class User {
                 return User\Driver::RIGHTS_NONE;
         }
     }
-    
+
     public function rightsSet(string $user, int $level): bool {
         $func = "userRightsSet";
         switch($this->u->driverFunctions($func)) {
@@ -346,7 +346,7 @@ class User {
                 throw new User\ExceptionNotImplemented("notImplemented", ["action" => $func, "user" => $user]);
         }
     }
-    
+
     // FIXME: stubs
     public function challenge(): bool     {throw new User\Exception("authFailed");}
     public function challengeForm(): bool {throw new User\Exception("authFailed");}

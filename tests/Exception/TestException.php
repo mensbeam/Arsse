@@ -21,7 +21,7 @@ class TestException extends \PHPUnit\Framework\TestCase {
         // clean up
         $this->clearData(true);
     }
-    
+
     function testBaseClass() {
         $this->assertException("unknown");
         throw new Exception("unknown");
@@ -34,7 +34,7 @@ class TestException extends \PHPUnit\Framework\TestCase {
         $this->assertException("unknown");
         throw new Exception();
     }
-    
+
     /**
      * @depends testBaseClass
      */

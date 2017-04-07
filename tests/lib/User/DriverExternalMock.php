@@ -44,7 +44,7 @@ class DriverExternalMock extends DriverSkeleton implements Driver {
         if(password_verify($password, $this->db[$user]['password'])) return true;
         return false;
     }
-	
+
     function userExists(string $user): bool {
         return parent::userExists($user);
     }
@@ -67,7 +67,7 @@ class DriverExternalMock extends DriverSkeleton implements Driver {
             return parent::userList($domain);
         }
     }
-    
+
     function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null): string {
         if(!$this->userExists($user)) throw new Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         if($newPassword===null) $newPassword = (new PassGen)->length(Data::$conf->userTempPasswordLength)->get();
@@ -89,7 +89,7 @@ class DriverExternalMock extends DriverSkeleton implements Driver {
         if(!$this->userExists($user)) throw new Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         return parent::userRightsGet($user);
     }
-    
+
     function userRightsSet(string $user, int $level): bool {
         if(!$this->userExists($user)) throw new Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         return parent::userRightsSet($user, $level);

@@ -9,9 +9,9 @@ use PasswordGenerator\Generator as PassGen;
 
 abstract class DriverSkeleton {
 
-	protected $db = [];
-	
-	function userExists(string $user): bool {
+    protected $db = [];
+
+    function userExists(string $user): bool {
         return array_key_exists($user, $this->db);
     }
 
@@ -41,7 +41,7 @@ abstract class DriverSkeleton {
             });
         }
     }
-    
+
     function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null): string {
         $this->db[$user]['password'] = password_hash($newPassword, \PASSWORD_DEFAULT);
         return $newPassword;
@@ -60,7 +60,7 @@ abstract class DriverSkeleton {
     function userRightsGet(string $user): int {
         return $this->db[$user]['rights'];
     }
-    
+
     function userRightsSet(string $user, int $level): bool {
         $this->db[$user]['rights'] = $level;
         return true;

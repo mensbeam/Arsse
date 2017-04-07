@@ -9,8 +9,8 @@ use JKingWeb\Arsse\Database;
 use Phake;
 
 trait Setup {
-	protected $drv;
-	protected $data = [
+    protected $drv;
+    protected $data = [
         'arsse_users' => [
             'columns' => [
                 'id'       => 'str',
@@ -32,7 +32,7 @@ trait Setup {
         // create a default configuration
         Data::$conf = new Conf();
         // configure and create the relevant database driver
-		$this->setUpDriver();
+        $this->setUpDriver();
         // create the database interface with the suitable driver
         Data::$db = new Database($this->drv);
         Data::$db->schemaUpdate();
@@ -43,77 +43,77 @@ trait Setup {
         if(method_exists($this, "setUpSeries")) $this->setUpSeries();
     }
 
-	function tearDown() {
+    function tearDown() {
         // call the additional teardiwn method if it exists
         if(method_exists($this, "tearDownSeries")) $this->tearDownSeries();
         // clean up
-		$this->drv = null;
+        $this->drv = null;
         $this->clearData();
-	}
+    }
 
-	function primeDatabase(array $data): bool {
-		$this->drv->begin();
-		foreach($data as $table => $info) {
-			$cols = implode(",", array_keys($info['columns']));
-			$bindings = array_values($info['columns']);
-			$params = implode(",", array_fill(0, sizeof($info['columns']), "?"));
-			$s = $this->drv->prepareArray("INSERT INTO $table($cols) values($params)", $bindings);
-			foreach($info['rows'] as $row) {
-				$this->assertEquals(1, $s->runArray($row)->changes());
-			}
-		}
-		$this->drv->commit();
-		return true;
-	}
+    function primeDatabase(array $data): bool {
+        $this->drv->begin();
+        foreach($data as $table => $info) {
+            $cols = implode(",", array_keys($info['columns']));
+            $bindings = array_values($info['columns']);
+            $params = implode(",", array_fill(0, sizeof($info['columns']), "?"));
+            $s = $this->drv->prepareArray("INSERT INTO $table($cols) values($params)", $bindings);
+            foreach($info['rows'] as $row) {
+                $this->assertEquals(1, $s->runArray($row)->changes());
+            }
+        }
+        $this->drv->commit();
+        return true;
+    }
 
-	function compareExpectations(array $expected): bool {
-		foreach($expected as $table => $info) {
-			$cols = implode(",", array_keys($info['columns']));
-			$data = $this->drv->prepare("SELECT $cols from $table")->run()->getAll();
-			$cols = array_keys($info['columns']);
-			foreach($info['rows'] as $index => $values) {
-				$row = [];
-				foreach($values as $key => $value) {
-					$row[$cols[$key]] = $value;
-				}
-				$found = array_search($row, $data);
-				$this->assertNotSame(false, $found, "Table $table does not contain record at array index $index.");
-				unset($data[$found]);
-			}
-			$this->assertSame([], $data);
-		}
-		return true;
-	}
+    function compareExpectations(array $expected): bool {
+        foreach($expected as $table => $info) {
+            $cols = implode(",", array_keys($info['columns']));
+            $data = $this->drv->prepare("SELECT $cols from $table")->run()->getAll();
+            $cols = array_keys($info['columns']);
+            foreach($info['rows'] as $index => $values) {
+                $row = [];
+                foreach($values as $key => $value) {
+                    $row[$cols[$key]] = $value;
+                }
+                $found = array_search($row, $data);
+                $this->assertNotSame(false, $found, "Table $table does not contain record at array index $index.");
+                unset($data[$found]);
+            }
+            $this->assertSame([], $data);
+        }
+        return true;
+    }
 
-	function primeExpectations(array $source, array $tableSpecs = null): array {
-		$out = [];
-		foreach($tableSpecs as $table => $columns) {
-			if(!isset($source[$table])) {
-				$this->assertTrue(false, "Source for expectations does not contain requested table $table.");
-				return [];
-			}
-			$out[$table] = [
-				'columns' => [],
-				'rows'    => [],
-			];
-			$transformations = [];
-			foreach($columns as $target => $col) {
-				if(!isset($source[$table]['columns'][$col])) {
-					$this->assertTrue(false, "Source for expectations does not contain requested column $col of table $table."); 
-					return [];
-				}
-				$found = array_search($col, array_keys($source[$table]['columns']));
-				$transformations[$found] = $target;
-				$out[$table]['columns'][$col] = $source[$table]['columns'][$col];
-			}
-			foreach($source[$table]['rows'] as $sourceRow) {
-				$newRow = [];
-				foreach($transformations as $from => $to) {
-					$newRow[$to] = $sourceRow[$from];
-				}
-				$out[$table]['rows'][] = $newRow;
-			}
-		}
-		return $out;
-	}
+    function primeExpectations(array $source, array $tableSpecs = null): array {
+        $out = [];
+        foreach($tableSpecs as $table => $columns) {
+            if(!isset($source[$table])) {
+                $this->assertTrue(false, "Source for expectations does not contain requested table $table.");
+                return [];
+            }
+            $out[$table] = [
+                'columns' => [],
+                'rows'    => [],
+            ];
+            $transformations = [];
+            foreach($columns as $target => $col) {
+                if(!isset($source[$table]['columns'][$col])) {
+                    $this->assertTrue(false, "Source for expectations does not contain requested column $col of table $table.");
+                    return [];
+                }
+                $found = array_search($col, array_keys($source[$table]['columns']));
+                $transformations[$found] = $target;
+                $out[$table]['columns'][$col] = $source[$table]['columns'][$col];
+            }
+            foreach($source[$table]['rows'] as $sourceRow) {
+                $newRow = [];
+                foreach($transformations as $from => $to) {
+                    $newRow[$to] = $sourceRow[$from];
+                }
+                $out[$table]['rows'][] = $newRow;
+            }
+        }
+        return $out;
+    }
 }

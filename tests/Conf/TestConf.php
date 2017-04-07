@@ -6,7 +6,7 @@ use org\bovigo\vfs\vfsStream;
 
 class TestConf extends \PHPUnit\Framework\TestCase {
     use Test\Tools;
-    
+
     static $vfs;
     static $path;
 
@@ -30,11 +30,11 @@ class TestConf extends \PHPUnit\Framework\TestCase {
         self::$vfs = null;
         $this->clearData();
     }
-    
+
     function testLoadDefaultValues() {
         $this->assertInstanceOf(Conf::class, new Conf());
     }
-    
+
     /**
      * @depends testLoadDefaultValues
      */

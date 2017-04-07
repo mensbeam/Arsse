@@ -362,7 +362,7 @@ class Database {
             // if a parent is specified, make sure it exists and belongs to the user; get its root (first-level) folder if it's a nested folder
             $p = $this->db->prepare(
                 "WITH RECURSIVE folders(id) as (SELECT id from arsse_folders where owner is ? and id is ? union select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id) ".
-                "SELECT id,(id not in (select id from folders)) as valid from arsse_folders where owner is ? and id is ?", 
+                "SELECT id,(id not in (select id from folders)) as valid from arsse_folders where owner is ? and id is ?",
             "str", "int", "str", "int")->run($user, $id, $user, $parent)->getRow();
             if(!$p) {
                 throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "parent", 'id' => $parent]);

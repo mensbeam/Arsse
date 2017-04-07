@@ -4,5 +4,5 @@ namespace JKingWeb\Arsse\REST;
 
 interface Handler {
     function __construct();
-	function dispatch(Request $req): Response;
+    function dispatch(Request $req): Response;
 }

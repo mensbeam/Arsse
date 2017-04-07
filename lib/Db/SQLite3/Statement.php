@@ -12,17 +12,17 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     const SQLITE_CONSTRAINT = 19;
     const SQLITE_MISMATCH = 20;
     const BINDINGS = [
-		"null"      => \SQLITE3_NULL,
-		"integer"   => \SQLITE3_INTEGER,
-		"float"     => \SQLITE3_FLOAT,
-		"date"      => \SQLITE3_TEXT,
-		"time"      => \SQLITE3_TEXT,
-		"datetime"  => \SQLITE3_TEXT,
-		"binary"    => \SQLITE3_BLOB,
-		"string"    => \SQLITE3_TEXT,
-		"boolean"   => \SQLITE3_INTEGER,
+        "null"      => \SQLITE3_NULL,
+        "integer"   => \SQLITE3_INTEGER,
+        "float"     => \SQLITE3_FLOAT,
+        "date"      => \SQLITE3_TEXT,
+        "time"      => \SQLITE3_TEXT,
+        "datetime"  => \SQLITE3_TEXT,
+        "binary"    => \SQLITE3_BLOB,
+        "string"    => \SQLITE3_TEXT,
+        "boolean"   => \SQLITE3_INTEGER,
     ];
-    
+
     protected $db;
     protected $st;
     protected $types;

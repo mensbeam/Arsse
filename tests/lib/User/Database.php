@@ -13,7 +13,7 @@ class Database extends DriverSkeleton {
 
     public function __construct() {
     }
-	
+
     function userExists(string $user): bool {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         return parent::userExists($user);
@@ -42,7 +42,7 @@ class Database extends DriverSkeleton {
             return parent::userList($domain);
         }
     }
-    
+
     function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null): string {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         if(!$this->userExists($user)) throw new Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
@@ -70,7 +70,7 @@ class Database extends DriverSkeleton {
         if(!$this->userExists($user)) throw new Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         return parent::userRightsGet($user);
     }
-    
+
     function userRightsSet(string $user, int $level): bool {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         if(!$this->userExists($user)) throw new Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);

@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\User\Internal;
 use JKingWeb\Arsse\Data;
 
-trait InternalFunctions {    
+trait InternalFunctions {
     protected $actor = [];
 
     public function __construct() {
@@ -32,7 +32,7 @@ trait InternalFunctions {
     function userList(string $domain = null): array {
         return $this->db->userList($domain);
     }
-    
+
     function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null): string {
         return $this->db->userPasswordSet($user, $newPassword);
     }
@@ -48,8 +48,8 @@ trait InternalFunctions {
     function userRightsGet(string $user): int {
         return $this->db->userRightsGet($user);
     }
-    
+
     function userRightsSet(string $user, int $level): bool {
         return $this->db->userRightsSet($user, $level);
-    } 
+    }
 }
