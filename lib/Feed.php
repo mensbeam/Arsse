@@ -38,7 +38,7 @@ class Feed {
             // Grab the favicon for the feed; returns an empty string if it cannot find one.
             // Some feeds might use a different domain (eg: feedburner), so the site url is
             // used instead of the feed's url.
-            $this->favicon = (new Favicon)->find($siteUrl);
+            $this->favicon = (new Favicon)->find($feed->siteUrl);
         } catch (PicoFeedException $e) {
             throw new Feed\Exception($url, $e);
         }

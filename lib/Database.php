@@ -418,7 +418,7 @@ class Database {
                     $feed->favicon,
                     $feed->data->siteUrl,
                     $feed->data->date,
-                    $feed->resource->getLastModified(),
+                    \DateTime::createFromFormat("!D, d M Y H:i:s e", $feed->resource->getLastModified()),
                     $feed->resource->getEtag(),
                     $fetchUser,
                     $fetchPassword
