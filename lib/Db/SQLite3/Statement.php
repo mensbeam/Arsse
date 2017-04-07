@@ -85,6 +85,6 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
                 $a++;
             }
         }
-        return $a;
+        return $a - $offset;
     }
 }

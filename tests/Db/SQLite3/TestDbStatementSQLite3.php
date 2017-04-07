@@ -57,6 +57,19 @@ class TestDbStatementSQLite3 extends \PHPUnit\Framework\TestCase {
 		$this->assertSame($exp, $val);
     }
 
+	function testBindRecursively() {
+        $exp = [
+            'one'   => 1,
+            'two'   => 2,
+            'three' => 3,
+			'four'  => 4,
+        ];
+		$nativeStatement = $this->c->prepare("SELECT ? as one, ? as two, ? as three, ? as four");
+		$s = new self::$imp($this->c, $nativeStatement, ["int", ["int", "int"], "int"]);
+		$val = $s->runArray([1, [2, 3], 4])->getRow();
+		$this->assertSame($exp, $val);
+	}
+
     function testBindWithoutType() {
         $nativeStatement = $this->c->prepare("SELECT ? as value");
 		$this->assertException("paramTypeMissing", "Db");
