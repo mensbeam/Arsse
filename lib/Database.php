@@ -359,7 +359,7 @@ class Database {
             // if no parent is specified, do nothing
             $parent = null;
         } else {
-            // if a parent is specified, make sure it exists and belongs to the user; get its root (first-level) folder if it's a nested folder
+            // if a parent is specified, make sure it exists and belongs to the user
             $p = $this->db->prepare(
                 "WITH RECURSIVE folders(id) as (SELECT id from arsse_folders where owner is ? and id is ? union select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id) ".
                 "SELECT id,(id not in (select id from folders)) as valid from arsse_folders where owner is ? and id is ?",
@@ -372,7 +372,7 @@ class Database {
             }
         }
         $data['parent'] = $parent;
-        // check to make sure the target folder name/location would not create a duplicate (we must di this check because null is not distinct in SQL)
+        // check to make sure the target folder name/location would not create a duplicate (we must do this check because null is not distinct in SQL)
         $existing = $this->db->prepare("SELECT id from arsse_folders where owner is ? and parent is ? and name is ?", "str", "int", "str")->run($user, $data['parent'], $data['name'])->getValue();
         if(!is_null($existing) && $existing != $id) {
             throw new Db\ExceptionInput("constraintViolation"); // FIXME: There needs to be a practical message here
@@ -395,23 +395,20 @@ class Database {
         if(!$this->userExists($user)) {
             throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
         }
-
         $this->db->begin();
-
-        // If the feed doesn't already exist in the database then add it to the database
-        // after determining its validity with PicoFeed.
-        $qFeed = $this->db->prepare("SELECT id from arsse_feeds where url is ? and username is ? and password is ?", "str", "str", "str");
-        $feed = $qFeed->run($url, $fetchUser, $fetchPassword)->getValue();
-        if($feed === null) {
-            $feed = new Feed($url);
-            $feed->parse();
-
-            // Add the feed to the database and return its Id which will be used when adding
-            // its articles to the database.
-            $feedID = $this->db->prepare(
-                'INSERT INTO arsse_feeds(url,title,favicon,source,updated,modified,etag,username,password)
-                values(?,?,?,?,?,?,?,?,?)',
-                'str', 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str')->run(
+        try {
+            // If the feed doesn't already exist in the database then add it to the database
+            // after determining its validity with PicoFeed.
+            $feedID = $this->db->prepare("SELECT id from arsse_feeds where url is ? and username is ? and password is ?", "str", "str", "str")->run($url, $fetchUser, $fetchPassword)->getValue();
+            if($feedID === null) {
+                $feed = new Feed($url);
+                $feed->parse();
+                // Add the feed to the database and return its Id which will be used when adding
+                // its articles to the database.
+                $feedID = $this->db->prepare(
+                    'INSERT INTO arsse_feeds(url,title,favicon,source,updated,modified,etag,username,password) values(?,?,?,?,?,?,?,?,?)',
+                    'str', 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str'
+                )->run(
                     $url,
                     $feed->data->title,
                     // Grab the favicon for the feed; returns an empty string if it cannot find one.
@@ -423,15 +420,17 @@ class Database {
                     $fetchUser,
                     $fetchPassword
                 )->lastId();
-
-            // Add each of the articles to the database.
-            foreach($feed->data->items as $i) {
-                $this->articleAdd($feedID, $i);
+                // Add each of the articles to the database.
+                foreach($feed->data->items as $i) {
+                    $this->articleAdd($feedID, $i);
+                }
             }
+            // Add the feed to the user's subscriptions.
+            $sub = $this->db->prepare('INSERT INTO arsse_subscriptions(owner,feed) values(?,?)', 'str', 'int')->run($user, $feedID)->lastId();
+        } catch(\Throwable $e) {
+            $this->db->rollback();
+            throw $e;
         }
-
-        // Add the feed to the user's subscriptions.
-        $sub = $this->db->prepare('INSERT INTO arsse_subscriptions(owner,feed) values(?,?)', 'str', 'int')->run($user, $feedID)->lastId();
         $this->db->commit();
         return $sub;
     }
@@ -443,40 +442,46 @@ class Database {
 
     public function articleAdd(int $feedID, \PicoFeed\Parser\Item $article): int {
         $this->db->begin();
-
-        $articleID = $this->db->prepare('INSERT INTO arsse_articles(feed,url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash)
-        values(?,?,?,?,?,?,?,?,?,?,?)',
-        'int', 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str')->run(
-            $feedID,
-            $article->url,
-            $article->title,
-            $article->author,
-            $article->publishedDate,
-            $article->updatedDate,
-            $article->id,
-            $article->content,
-            $article->urlTitleHash,
-            $article->urlContentHash,
-            $article->titleContentHash
-        )->lastId();
-
-        // If the article has categories add them into the categories database.
-        $this->categoriesAdd($articleID, $article);
-
+        try {
+            $articleID = $this->db->prepare(
+                'INSERT INTO arsse_articles(feed,url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash) values(?,?,?,?,?,?,?,?,?,?,?)',
+                'int', 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str'
+            )->run(
+                $feedID,
+                $article->url,
+                $article->title,
+                $article->author,
+                $article->publishedDate,
+                $article->updatedDate,
+                $article->id,
+                $article->content,
+                $article->urlTitleHash,
+                $article->urlContentHash,
+                $article->titleContentHash
+            )->lastId();
+            // If the article has categories add them into the categories database.
+            $this->categoriesAdd($articleID, $article);
+        } catch(\Throwable $e) {
+            $this->db->rollback();
+            throw $e;
+        }
         $this->db->commit();
-        return 1;
+        return $articleID;
     }
 
     public function categoriesAdd(int $articleID, \PicoFeed\Parser\Item $article): int {
-        $this->db->begin();
-
         $categories = $article->getTag('category');
-        if(count($categories) > 0) {
-            foreach($categories as $c) {
-                $this->db->prepare('INSERT INTO arsse_categories(article,name) values(?,?)', 'int', 'str')->run($articleID, $c);
+        $this->db->begin();
+        try {
+            if(count($categories) > 0) {
+                foreach($categories as $c) {
+                    $this->db->prepare('INSERT INTO arsse_categories(article,name) values(?,?)', 'int', 'str')->run($articleID, $c);
+                }
             }
+        } catch(\Throwable $e) {
+            $this->db->rollback();
+            throw $e;
         }
-
         $this->db->commit();
         return count($categories);
     }
@@ -547,13 +552,15 @@ class Database {
                     }
 
                     if($update) {
-                        $this->db->prepare('UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = ?, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id is ?', 'str', 'str', 'str', 'datetime', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int')->run(
+                        $this->db->prepare(
+                            'UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id is ?', 
+                            'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int'
+                        )->run(
                             $i->url,
                             $i->title,
                             $i->author,
                             $i->publishedDate,
                             $i->updatedDate,
-                            time(),
                             $i->id,
                             $i->content,
                             $i->urlTitleHash,

@@ -20,4 +20,4 @@ Data::$user->authorizationEnabled(false);
 Data::$user->rightsSet($user, User\Driver::RIGHTS_GLOBAL_ADMIN);
 Data::$user->authorizationEnabled(true);
 Data::$db->folderAdd($user, ['name' => 'ook']);
-Data::$db->subscriptionAdd($user, "http://www.tbray.org/ongoing/ongoing.atom");
+Data::$db->subscriptionAdd($user, "http://www.pcgamer.com/rss/");
