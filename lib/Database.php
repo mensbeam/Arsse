@@ -387,57 +387,146 @@ class Database {
     }
 
     public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = ""): int {
-        // If the user isn't authorized to perform this action then throw an exception.
-        if(!Data::$user->authorize($user, __FUNCTION__)) {
-            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
+        // If the feed doesn't already exist in the database then add it to the database
+        // after determining its validity with PicoFeed.
+        $feedID = $this->db->prepare("SELECT id from arsse_feeds where url is ? and username is ? and password is ?", "str", "str", "str")->run($url, $fetchUser, $fetchPassword)->getValue();
+        if($feedID === null) {
+            $feedID = $this->feedAdd($url, $fetchUser, $fetchPassword);
         }
-        // If the user doesn't exist throw an exception.
-        if(!$this->userExists($user)) {
-            throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
-        }
-        $this->db->begin();
-        try {
-            // If the feed doesn't already exist in the database then add it to the database
-            // after determining its validity with PicoFeed.
-            $feedID = $this->db->prepare("SELECT id from arsse_feeds where url is ? and username is ? and password is ?", "str", "str", "str")->run($url, $fetchUser, $fetchPassword)->getValue();
-            if($feedID === null) {
-                $feed = new Feed($url);
-                $feed->parse();
-                // Add the feed to the database and return its Id which will be used when adding
-                // its articles to the database.
-                $feedID = $this->db->prepare(
-                    'INSERT INTO arsse_feeds(url,title,favicon,source,updated,modified,etag,username,password) values(?,?,?,?,?,?,?,?,?)',
-                    'str', 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str'
-                )->run(
-                    $url,
-                    $feed->data->title,
-                    // Grab the favicon for the feed; returns an empty string if it cannot find one.
-                    $feed->favicon,
-                    $feed->data->siteUrl,
-                    $feed->data->date,
-                    \DateTime::createFromFormat("!D, d M Y H:i:s e", $feed->resource->getLastModified()),
-                    $feed->resource->getEtag(),
-                    $fetchUser,
-                    $fetchPassword
-                )->lastId();
-                // Add each of the articles to the database.
-                foreach($feed->data->items as $i) {
-                    $this->articleAdd($feedID, $i);
-                }
-            }
-            // Add the feed to the user's subscriptions.
-            $sub = $this->db->prepare('INSERT INTO arsse_subscriptions(owner,feed) values(?,?)', 'str', 'int')->run($user, $feedID)->lastId();
-        } catch(\Throwable $e) {
-            $this->db->rollback();
-            throw $e;
-        }
-        $this->db->commit();
-        return $sub;
+        // Add the feed to the user's subscriptions.
+        return $this->db->prepare('INSERT INTO arsse_subscriptions(owner,feed) values(?,?)', 'str', 'int')->run($user, $feedID)->lastId();
     }
 
     public function subscriptionRemove(string $user, int $id): bool {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         return (bool) $this->db->prepare("DELETE from arsse_subscriptions where owner is ? and id is ?", "str", "int")->run($user, $id)->changes();
+    }
+
+    public function feedAdd(string $url, string $fetchUser = "", string $fetchPassword = ""): int {
+        $feed = new Feed($url, "", "", $fetchUser, $fetchPassword);
+        $feed->parse();
+        $feedID = $this->db->prepare('INSERT INTO arsse_feeds(url,username,password) values(?,?,?)', 'str', 'str', 'str')->run($url, $fetchUser, $fetchPassword)->lastId();
+        // Add the feed to the database and return its Id which will be used when adding
+        // its articles to the database.
+        try {
+            $this->feedUpdate($feedID, $feed);
+        } catch(\Throwable $e) {
+            $this->db->prepare('DELETE from arsse_feeds where id is ?', 'int')->run($feedID);
+            throw $e;
+        }
+        return $feedID;
+    }
+
+    public function feedUpdate(int $feedID, Feed $feed = null): bool {
+        $this->db->begin();
+        try {
+            // upon the very first update of a feed the $feed object is already supplied and already parsed; for all other updates we must parse it ourselves here
+            if(!$feed) {
+                $f = $this->db->prepare('SELECT url, username, password, DATEFORMAT("http", modified) AS lastmodified, etag FROM arsse_feeds where id is ?', "int")->run($feedID)->getRow();
+                if(!$f) throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID]);
+                // Feed object throws an exception when there are problems, but that isn't ideal
+                // here. When an exception is occurred it should update the database with the
+                // error instead of failing.
+                try {
+                    $feed = new Feed($f['url'], $f['lastmodified'], $f['etag'], $f['username'], $f['password']);
+                    if($feed->resource->isModified()) {
+                        $feed->parse();
+                    } else {
+                        $this->db->rollback();
+                        return false;
+                    }
+                } catch (Feed\Exception $e) {
+                    $this->db->prepare('UPDATE arsse_feeds SET err_count = err_count + 1, err_msg = ? WHERE id is ?', 'str', 'int')->run($e->getMessage(),$feedID);
+                    $this->db->commit();
+                    return false;
+                }
+            }
+            $articles = $this->db->prepare('SELECT id, url, title, author, DATEFORMAT("http", edited) AS edited_date, guid, content, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? ORDER BY id', 'int')->run($feedID)->getAll();
+
+            foreach($feed->data->items as $i) {
+                // Iterate through the articles in the database to determine a match for the one
+                // in the just-parsed feed.
+                $match = null;
+                foreach($articles as $a) {
+                    // If the id exists and is equal to one in the database then this is the post.
+                    if($i->id) {
+                        if($i->id === $a['guid']) {
+                            $match = $a;
+                        }
+                    }
+
+                    // Otherwise if the id doesn't exist and any of the hashes match then this is
+                    // the post.
+                    elseif($i->urlTitleHash === $a['url_title_hash'] || $i->urlContentHash === $a['url_content_hash'] || $i->titleContentHash === $a['title_content_hash']) {
+                        $match = $a;
+                    }
+                }
+
+                // If there is no match then this is a new post and must be added to the
+                // database.
+                if(!$match) {
+                    $this->articleAdd($feedID, $i);
+                    continue;
+                }
+
+                // With that out of the way determine if the post has been updated.
+                // If there is an updated date, and it doesn't match the database's then update
+                // the post.
+                $update = false;
+                if($i->updatedDate) {
+                    if($i->updatedDate !== $match['edited_date']) {
+                        $update = true;
+                    }
+                }
+                // Otherwise if there isn't an updated date and any of the hashes don't match
+                // then update the post.
+                elseif($i->urlTitleHash !== $match['url_title_hash'] || $i->urlContentHash !== $match['url_content_hash'] || $i->titleContentHash !== $match['title_content_hash']) {
+                    $update = true;
+                }
+
+                if($update) {
+                    $this->db->prepare(
+                        'UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id is ?', 
+                        'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int'
+                    )->run(
+                        $i->url,
+                        $i->title,
+                        $i->author,
+                        $i->publishedDate,
+                        $i->updatedDate,
+                        $i->id,
+                        $i->content,
+                        $i->urlTitleHash,
+                        $i->urlContentHash,
+                        $i->titleContentHash,
+                        $match['id']
+                    );
+
+                    // If the article has categories update them.
+                    $this->db->prepare('DELETE FROM arsse_categories WHERE article is ?', 'int')->run($match['id']);
+                    $this->categoriesAdd($i, $match['id']);
+                }
+            }
+
+            // Lastly update the feed database itself with updated information.
+            $this->db->prepare('UPDATE arsse_feeds SET url = ?, title = ?, favicon = ?, source = ?, updated = ?, modified = ?, etag = ?, err_count = 0, err_msg = "" WHERE id is ?', 'str', 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'int')->run(
+                $feed->data->feedUrl,
+                $feed->data->title,
+                $feed->favicon,
+                $feed->data->siteUrl,
+                $feed->data->date,
+                \DateTime::createFromFormat("!D, d M Y H:i:s e", $feed->resource->getLastModified()),
+                $feed->resource->getEtag(),
+                $feedID
+            );
+        } catch(\Throwable $e) {
+            $this->db->rollback();
+            throw $e;
+        }
+        $this->db->commit();
+        return true;
     }
 
     public function articleAdd(int $feedID, \PicoFeed\Parser\Item $article): int {
@@ -484,112 +573,5 @@ class Database {
         }
         $this->db->commit();
         return count($categories);
-    }
-
-    public function updateFeeds(): int {
-        $feeds = $this->db->query('SELECT id, url, username, password, DATEFORMAT("http", modified) AS lastmodified, etag FROM arsse_feeds')->getAll();
-        foreach($feeds as $f) {
-            // Feed object throws an exception when there are problems, but that isn't ideal
-            // here. When an exception is occurred it should update the database with the
-            // error instead of failing.
-            try {
-                $feed = new Feed($f['url'], $f['lastmodified'], $f['etag'], $f['username'], $f['password']);
-            } catch (Feed\Exception $e) {
-                $this->db->prepare('UPDATE arsse_feeds SET err_count = err_count + 1, err_msg = ? WHERE id is ?', 'str', 'int')->run(
-                    $e->getMessage(),
-                    $f['id']
-                );
-
-                continue;
-            }
-
-            // If the feed has been updated then update the database.
-            if($feed->resource->isModified()) {
-                $feed->parse();
-
-                $this->db->begin();
-                $articles = $this->db->prepare('SELECT id, url, title, author, DATEFORMAT("http", edited) AS edited_date, guid, content, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? ORDER BY id', 'int')->run($f['id'])->getAll();
-
-                foreach($feed->data->items as $i) {
-                    // Iterate through the articles in the database to determine a match for the one
-                    // in the just-parsed feed.
-                    $match = null;
-                    foreach($articles as $a) {
-                        // If the id exists and is equal to one in the database then this is the post.
-                        if($i->id) {
-                            if($i->id === $a['guid']) {
-                                $match = $a;
-                            }
-                        }
-
-                        // Otherwise if the id doesn't exist and any of the hashes match then this is
-                        // the post.
-                        elseif($i->urlTitleHash === $a['url_title_hash'] || $i->urlContentHash === $a['url_content_hash'] || $i->titleContentHash === $a['title_content_hash']) {
-                            $match = $a;
-                        }
-                    }
-
-                    // If there is no match then this is a new post and must be added to the
-                    // database.
-                    if(!$match) {
-                        $this->articleAdd($i);
-                        continue;
-                    }
-
-                    // With that out of the way determine if the post has been updated.
-                    // If there is an updated date, and it doesn't match the database's then update
-                    // the post.
-                    $update = false;
-                    if($i->updatedDate) {
-                        if($i->updatedDate !== $match['edited_date']) {
-                            $update = true;
-                        }
-                    }
-                    // Otherwise if there isn't an updated date and any of the hashes don't match
-                    // then update the post.
-                    elseif($i->urlTitleHash !== $match['url_title_hash'] || $i->urlContentHash !== $match['url_content_hash'] || $i->titleContentHash !== $match['title_content_hash']) {
-                        $update = true;
-                    }
-
-                    if($update) {
-                        $this->db->prepare(
-                            'UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id is ?', 
-                            'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int'
-                        )->run(
-                            $i->url,
-                            $i->title,
-                            $i->author,
-                            $i->publishedDate,
-                            $i->updatedDate,
-                            $i->id,
-                            $i->content,
-                            $i->urlTitleHash,
-                            $i->urlContentHash,
-                            $i->titleContentHash,
-                            $match['id']
-                        );
-
-                        // If the article has categories update them.
-                        $this->db->prepare('DELETE FROM arsse_categories WHERE article is ?', 'int')->run($match['id']);
-                        $this->categoriesAdd($i, $match['id']);
-                    }
-                }
-
-                // Lastly update the feed database itself with updated information.
-                $this->db->prepare('UPDATE arsse_feeds SET url = ?, title = ?, favicon = ?, source = ?, updated = ?, modified = ?, etag = ?, err_count = 0, err_msg = "" WHERE id is ?', 'str', 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'int')->run(
-                    $feed->feedUrl,
-                    $feed->title,
-                    $feed->favicon,
-                    $feed->siteUrl,
-                    $feed->date,
-                    $feed->resource->getLastModified(),
-                    $feed->resource->getEtag(),
-                    $f['id']
-                );
-            }
-        }
-
-        $this->db->commit();
-        return 1;
     }
 }

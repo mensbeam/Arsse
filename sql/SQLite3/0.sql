@@ -20,14 +20,14 @@ create table arsse_users(
 
 -- newsfeeds, deduplicated
 create table arsse_feeds(
-    id integer primary key not null,                                                                        -- sequence number
+    id integer primary key,                                                                                 -- sequence number
     url TEXT not null,                                                                                      -- URL of feed
     title TEXT,                                                                                             -- default title of feed
     favicon TEXT,                                                                                           -- URL of favicon
     source TEXT,                                                                                            -- URL of site to which the feed belongs
     updated datetime,                                                                                       -- time at which the feed was last fetched
     modified datetime,                                                                                      -- time at which the feed last actually changed
-    etag TEXT,                                                                                              -- HTTP ETag hash used for cache validation, changes each time the content changes
+    etag TEXT not null default '',                                                                          -- HTTP ETag hash used for cache validation, changes each time the content changes
     err_count integer not null default 0,                                                                   -- count of successive times update resulted in error since last successful update
     err_msg TEXT,                                                                                           -- last error message
     username TEXT not null default '',                                                                      -- HTTP authentication username
@@ -37,7 +37,7 @@ create table arsse_feeds(
 
 -- users' subscriptions to newsfeeds, with settings
 create table arsse_subscriptions(
-    id integer primary key not null,                                                                        -- sequence number
+    id integer primary key,                                                                                 -- sequence number
     owner TEXT not null references arsse_users(id) on delete cascade on update cascade,                     -- owner of subscription
     feed integer not null references arsse_feeds(id) on delete cascade,                                     -- feed for the subscription
     added datetime not null default CURRENT_TIMESTAMP,                                                      -- time at which feed was added
@@ -51,7 +51,7 @@ create table arsse_subscriptions(
 
 -- TT-RSS categories and NextCloud folders
 create table arsse_folders(
-    id integer primary key not null,                                                                        -- sequence number
+    id integer primary key,                                                                                 -- sequence number
     owner TEXT not null references arsse_users(id) on delete cascade on update cascade,                     -- owner of folder
     parent integer references arsse_folders(id) on delete cascade,                                          -- parent folder id
     name TEXT not null,                                                                                     -- folder name
@@ -61,7 +61,7 @@ create table arsse_folders(
 
 -- entries in newsfeeds
 create table arsse_articles(
-    id integer primary key not null,                                                                        -- sequence number
+    id integer primary key,                                                                                 -- sequence number
     feed integer not null references arsse_feeds(id) on delete cascade,                                     -- feed for the subscription
     url TEXT not null,                                                                                      -- URL of article
     title TEXT,                                                                                             -- article title
@@ -85,17 +85,23 @@ create table arsse_enclosures(
 
 -- users' actions on newsfeed entries
 create table arsse_subscription_articles(
-    id integer primary key not null,
+    id integer primary key,
     article integer not null references arsse_articles(id) on delete cascade,
+    owner TEXT not null references arsse_users(id) on delete cascade on update cascade,
     read boolean not null default 0,
     starred boolean not null default 0,
     modified datetime not null default CURRENT_TIMESTAMP
 );
 
+-- IDs for specific editions of articles (required for at least NextCloud News)
+create table arsse_editions(
+    id integer primary key,
+    article integer not null references arsse_articles(id) on delete cascade
+);
+
 -- user labels associated with newsfeed entries
 create table arsse_labels(
-    sub_article integer not null references arsse_subscription_articles(id) on delete cascade,            --
-    owner TEXT not null references arsse_users(id) on delete cascade on update cascade,
+    sub_article integer not null references arsse_subscription_articles(id) on delete cascade,
     name TEXT
 );
 create index arsse_label_names on arsse_labels(name);
