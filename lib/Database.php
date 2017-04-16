@@ -405,13 +405,11 @@ class Database {
     }
 
     public function feedAdd(string $url, string $fetchUser = "", string $fetchPassword = ""): int {
-        $feed = new Feed($url, "", "", $fetchUser, $fetchPassword);
-        $feed->parse();
         $feedID = $this->db->prepare('INSERT INTO arsse_feeds(url,username,password) values(?,?,?)', 'str', 'str', 'str')->run($url, $fetchUser, $fetchPassword)->lastId();
         // Add the feed to the database and return its Id which will be used when adding
         // its articles to the database.
         try {
-            $this->feedUpdate($feedID, $feed);
+            $this->feedUpdate($feedID);
         } catch(\Throwable $e) {
             $this->db->prepare('DELETE from arsse_feeds where id is ?', 'int')->run($feedID);
             throw $e;
@@ -419,54 +417,63 @@ class Database {
         return $feedID;
     }
 
-    public function feedUpdate(int $feedID, Feed $feed = null): bool {
+    public function feedUpdate(int $feedID): bool {
         $this->db->begin();
         try {
-            // upon the very first update of a feed the $feed object is already supplied and already parsed; for all other updates we must parse it ourselves here
-            if(!$feed) {
-                $f = $this->db->prepare('SELECT url, username, password, DATEFORMAT("http", modified) AS lastmodified, etag FROM arsse_feeds where id is ?', "int")->run($feedID)->getRow();
-                if(!$f) throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID]);
-                // Feed object throws an exception when there are problems, but that isn't ideal
-                // here. When an exception is occurred it should update the database with the
-                // error instead of failing.
-                try {
-                    $feed = new Feed($f['url'], $f['lastmodified'], $f['etag'], $f['username'], $f['password']);
-                    if($feed->resource->isModified()) {
-                        $feed->parse();
-                    } else {
-                        $this->db->rollback();
-                        return false;
-                    }
-                } catch (Feed\Exception $e) {
-                    $this->db->prepare('UPDATE arsse_feeds SET err_count = err_count + 1, err_msg = ? WHERE id is ?', 'str', 'int')->run($e->getMessage(),$feedID);
+            // check to make sure the feed exists
+            $f = $this->db->prepare('SELECT url, username, password, DATEFORMAT("http", modified) AS lastmodified, etag FROM arsse_feeds where id is ?', "int")->run($feedID)->getRow();
+            if(!$f) throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID]);
+            // the Feed object throws an exception when there are problems, but that isn't ideal
+            // here. When an exception is thrown it should update the database with the
+            // error instead of failing; if other exceptions are thrown, we should simply roll back
+            try {
+                $feed = new Feed($f['url'], (string)$f['lastmodified'], $f['etag'], $f['username'], $f['password']);
+                if($feed->resource->isModified()) {
+                    $feed->parse();
+                } else {
+                    $next = $this->feedNextFetch($feedID);
+                    $this->db->prepare('UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id is ?', 'datetime', 'int')->run($next, $feedID);
                     $this->db->commit();
                     return false;
                 }
+            } catch (Feed\Exception $e) {
+                $next = $this->feedNextFetch($feedID);
+                $this->db->prepare('UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ?, err_count = err_count + 1, err_msg = ? WHERE id is ?', 'datetime', 'str', 'int')->run($next, $e->getMessage(),$feedID);
+                $this->db->commit();
+                return false;
+            } catch(\Throwable $e) {
+                $this->db->rollback();
+                throw $e;
             }
-            $articles = $this->db->prepare('SELECT id, url, title, author, DATEFORMAT("http", edited) AS edited_date, guid, content, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? ORDER BY id', 'int')->run($feedID)->getAll();
-
-            foreach($feed->data->items as $i) {
+            // array if items in the fetched feed
+            $items = $feed->data->items;
+            // get as many of the latest articles in the database as there are in the feed
+            $articles = $this->db->prepare(
+                'SELECT id, DATEFORMAT("http", edited) AS edited_date, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? ORDER BY edited desc limit ?', 
+                'int', 'int'
+            )->run(
+                $feedID, 
+                sizeof($items)
+            )->getAll();
+            foreach($items as $index => $i) {
                 // Iterate through the articles in the database to determine a match for the one
                 // in the just-parsed feed.
                 $match = null;
                 foreach($articles as $a) {
                     // If the id exists and is equal to one in the database then this is the post.
-                    if($i->id) {
-                        if($i->id === $a['guid']) {
-                            $match = $a;
-                        }
+                    if($i->id && $i->id === $a['guid']) {
+                        $match = $a;
                     }
-
                     // Otherwise if the id doesn't exist and any of the hashes match then this is
                     // the post.
                     elseif($i->urlTitleHash === $a['url_title_hash'] || $i->urlContentHash === $a['url_content_hash'] || $i->titleContentHash === $a['title_content_hash']) {
                         $match = $a;
                     }
                 }
-
                 // If there is no match then this is a new post and must be added to the
                 // database.
                 if(!$match) {
+                    // FIXME: First perform a second pass
                     $this->articleAdd($feedID, $i);
                     continue;
                 }
@@ -511,14 +518,15 @@ class Database {
             }
 
             // Lastly update the feed database itself with updated information.
-            $this->db->prepare('UPDATE arsse_feeds SET url = ?, title = ?, favicon = ?, source = ?, updated = ?, modified = ?, etag = ?, err_count = 0, err_msg = "" WHERE id is ?', 'str', 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'int')->run(
+            $next = $this->feedNextFetch($feedID, $feed);
+            $this->db->prepare('UPDATE arsse_feeds SET url = ?, title = ?, favicon = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = "", next_fetch = ? WHERE id is ?', 'str', 'str', 'str', 'str', 'datetime', 'str', 'datetime', 'int')->run(
                 $feed->data->feedUrl,
                 $feed->data->title,
                 $feed->favicon,
                 $feed->data->siteUrl,
-                $feed->data->date,
                 \DateTime::createFromFormat("!D, d M Y H:i:s e", $feed->resource->getLastModified()),
                 $feed->resource->getEtag(),
+                $next,
                 $feedID
             );
         } catch(\Throwable $e) {
@@ -527,6 +535,11 @@ class Database {
         }
         $this->db->commit();
         return true;
+    }
+
+    protected function feedNextFetch(int $feedID, Feed $feed = null): \DateTime {
+        // FIXME: stub
+        return new \DateTime("now + 3 hours", new \DateTimeZone("UTC"));
     }
 
     public function articleAdd(int $feedID, \PicoFeed\Parser\Item $article): int {

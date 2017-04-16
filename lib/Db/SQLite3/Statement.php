@@ -40,9 +40,9 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
 
     public static function dateFormat(int $part = self::TS_BOTH): string {
         return ([
-            self::TS_TIME => 'h:i:sP',
+            self::TS_TIME => 'h:i:s',
             self::TS_DATE => 'Y-m-d',
-            self::TS_BOTH => 'Y-m-d h:i:sP',
+            self::TS_BOTH => 'Y-m-d h:i:s',
         ])[$part];
     }
 
