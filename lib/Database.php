@@ -14,22 +14,6 @@ class Database {
     public    $db;
     private   $driver;
 
-    protected function generateSet(array $props, array $valid): array {
-        $out = [
-            [], // query clause
-            [], // binding types
-            [], // binding values
-        ];
-        foreach($valid as $prop => $type) {
-            if(!array_key_exists($prop, $props)) continue;
-            $out[0][] = "$prop = ?";
-            $out[1][] = $type;
-            $out[2][] = $props[$prop];
-        }
-        $out[0] = implode(", ", $out[0]);
-        return $out;
-    }
-
     public function __construct(Db\Driver $db = null) {
         // if we're fed a pre-prepared driver, use it'
         if($db) {
@@ -63,6 +47,34 @@ class Database {
     public function schemaUpdate(): bool {
         if($this->db->schemaVersion() < self::SCHEMA_VERSION) return $this->db->schemaUpdate(self::SCHEMA_VERSION);
         return false;
+    }
+
+    protected function generateSet(array $props, array $valid): array {
+        $out = [
+            [], // query clause
+            [], // binding types
+            [], // binding values
+        ];
+        foreach($valid as $prop => $type) {
+            if(!array_key_exists($prop, $props)) continue;
+            $out[0][] = "$prop = ?";
+            $out[1][] = $type;
+            $out[2][] = $props[$prop];
+        }
+        $out[0] = implode(", ", $out[0]);
+        return $out;
+    }
+
+    protected function generateIn(array $values, string $type) {
+        $out = [
+            [], // query clause
+            [], // binding types
+        ];
+        // the query clause is just a series of question marks separated by commas
+        $out[0] = implode(",",array_fill(0,sizeof($values),"?"));
+        // the binding types are just a repetition of the supplied type
+        $out[1] = array_fill(0,sizeof($values),$type);
+        return $out;
     }
 
     public function settingGet(string $key) {
@@ -431,12 +443,14 @@ class Database {
                 if($feed->resource->isModified()) {
                     $feed->parse();
                 } else {
+                    // if the feed hasn't changed, just compute the next fetch time and record it
                     $next = $this->feedNextFetch($feedID);
                     $this->db->prepare('UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id is ?', 'datetime', 'int')->run($next, $feedID);
                     $this->db->commit();
                     return false;
                 }
             } catch (Feed\Exception $e) {
+                // update the database with the resultant error and the next fetch time, incrementing the error count
                 $next = $this->feedNextFetch($feedID);
                 $this->db->prepare('UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ?, err_count = err_count + 1, err_msg = ? WHERE id is ?', 'datetime', 'str', 'int')->run($next, $e->getMessage(),$feedID);
                 $this->db->commit();
@@ -445,79 +459,112 @@ class Database {
                 $this->db->rollback();
                 throw $e;
             }
+            // FIXME: first perform deduplication on the feed itself
             // array if items in the fetched feed
             $items = $feed->data->items;
             // get as many of the latest articles in the database as there are in the feed
             $articles = $this->db->prepare(
-                'SELECT id, DATEFORMAT("http", edited) AS edited_date, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? ORDER BY edited desc limit ?', 
+                'SELECT id, DATEFORMAT("unix", edited) AS edited_date, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? ORDER BY edited desc limit ?', 
                 'int', 'int'
             )->run(
-                $feedID, 
-                sizeof($items)
+                $feedID, sizeof($items)
             )->getAll();
+            // arrays holding new, edited, and tentatively new items
+            // items may be tentatively new because we perform two passes
+            $new = $tentative = $edited = [];
+            // iterate through the articles and for each determine whether it is existing, edited, or entirely new
             foreach($items as $index => $i) {
-                // Iterate through the articles in the database to determine a match for the one
-                // in the just-parsed feed.
-                $match = null;
                 foreach($articles as $a) {
-                    // If the id exists and is equal to one in the database then this is the post.
-                    if($i->id && $i->id === $a['guid']) {
-                        $match = $a;
+                    if(
+                        // the item matches if the GUID matches...
+                        ($i->id && $i->id === $a['guid']) ||
+                        // ... or if any one of the hashes match
+                        $i->urlTitleHash     === $a['url_title_hash']     ||
+                        $i->urlContentHash   === $a['url_content_hash']   ||
+                        $i->titleContentHash === $a['title_content_hash']
+                    ) {
+                        if($i->updatedDate && $i->updatedDate->getTimestamp() !== $match['edited_date']) {
+                            // if the item has an edit timestamp and it doesn't match that of the article in the database, the the article has been edited
+                            // we store the item index and database record ID as a key/value pair
+                            $edited[$index] = $a['id'];
+                            break;
+                        } else if($i->urlTitleHash !== $a['url_title_hash'] || $i->urlContentHash !== $a['url_content_hash'] || $i->titleContentHash !== $a['title_content_hash']) {
+                            // if any of the hashes do not match, then the article has been edited
+                            $edited[$index] = $a['id'];
+                            break;
+                        } else {
+                            // otherwise the item is unchanged and we can ignore it
+                            break;
+                        }
+                    } else {
+                        // if we don't have a match, add the item to the tentatively new list
+                        $tentative[] = $index;
                     }
-                    // Otherwise if the id doesn't exist and any of the hashes match then this is
-                    // the post.
-                    elseif($i->urlTitleHash === $a['url_title_hash'] || $i->urlContentHash === $a['url_content_hash'] || $i->titleContentHash === $a['title_content_hash']) {
-                        $match = $a;
-                    }
-                }
-                // If there is no match then this is a new post and must be added to the
-                // database.
-                if(!$match) {
-                    // FIXME: First perform a second pass
-                    $this->articleAdd($feedID, $i);
-                    continue;
-                }
-
-                // With that out of the way determine if the post has been updated.
-                // If there is an updated date, and it doesn't match the database's then update
-                // the post.
-                $update = false;
-                if($i->updatedDate) {
-                    if($i->updatedDate !== $match['edited_date']) {
-                        $update = true;
-                    }
-                }
-                // Otherwise if there isn't an updated date and any of the hashes don't match
-                // then update the post.
-                elseif($i->urlTitleHash !== $match['url_title_hash'] || $i->urlContentHash !== $match['url_content_hash'] || $i->titleContentHash !== $match['title_content_hash']) {
-                    $update = true;
-                }
-
-                if($update) {
-                    $this->db->prepare(
-                        'UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id is ?', 
-                        'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int'
-                    )->run(
-                        $i->url,
-                        $i->title,
-                        $i->author,
-                        $i->publishedDate,
-                        $i->updatedDate,
-                        $i->id,
-                        $i->content,
-                        $i->urlTitleHash,
-                        $i->urlContentHash,
-                        $i->titleContentHash,
-                        $match['id']
-                    );
-
-                    // If the article has categories update them.
-                    $this->db->prepare('DELETE FROM arsse_categories WHERE article is ?', 'int')->run($match['id']);
-                    $this->categoriesAdd($i, $match['id']);
                 }
             }
-
-            // Lastly update the feed database itself with updated information.
+            if(sizeof($tentative)) {
+                // if we need to, perform a second pass on the database looking specifically for IDs and hashes of the new items
+                $vId = $vHashUT = $vHashUC = $vHashTC = [];
+                foreach($tentative as $index) {
+                    $i = $items[$index];
+                    if($i->id) $vId[] = $id->id;
+                    $vHashUT[] = $i->urlTitleHash;
+                    $vHashUC[] = $i->urlContentHash;
+                    $vHashTC[] = $i->titleContentHash;
+                }
+                // compile SQL IN() clauses and necessary type bindings for the four identifier lists
+                list($cId,     $tId)     = $thiis->generateIn($vId, "str");
+                list($cHashUT, $tHashUT) = $thiis->generateIn($vHashUT, "str");
+                list($cHashUC, $tHashUC) = $thiis->generateIn($vHashUC, "str");
+                list($cHashTC, $tHashTC) = $thiis->generateIn($vHashTC, "str");
+                // perform the query
+                $articles = $this->db->prepare(
+                    'SELECT id, DATEFORMAT("unix", edited) AS edited_date, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles '.
+                    'WHERE feed is ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC)', 
+                    'int', $tId, $tHashUT, $tHashUC, $tHashTC
+                )->run(
+                    $feedID, $vId, $vHashUT, $vHashUC, $vHashTC
+                )->getAll();
+                foreach($tentative as $index) {
+                    $i = $items[$index];
+                    foreach($articles as $a) {
+                        if(
+                            // the item matches if the GUID matches...
+                            ($i->id && $i->id === $a['guid']) ||
+                            // ... or if any one of the hashes match
+                            $i->urlTitleHash     === $a['url_title_hash']     ||
+                            $i->urlContentHash   === $a['url_content_hash']   ||
+                            $i->titleContentHash === $a['title_content_hash']
+                        ) {
+                            if($i->updatedDate && $i->updatedDate->getTimestamp() !== $match['edited_date']) {
+                                // if the item has an edit timestamp and it doesn't match that of the article in the database, the the article has been edited
+                                // we store the item index and database record ID as a key/value pair
+                                $edited[$index] = $a['id'];
+                                break;
+                            } else if($i->urlTitleHash !== $a['url_title_hash'] || $i->urlContentHash !== $a['url_content_hash'] || $i->titleContentHash !== $a['title_content_hash']) {
+                                // if any of the hashes do not match, then the article has been edited
+                                $edited[$index] = $a['id'];
+                                break;
+                            } else {
+                                // otherwise the item is unchanged and we can ignore it
+                                break;
+                            }
+                        } else {
+                            // if we don't have a match, add the item to the definite new list
+                            $new[] = $index;
+                        }
+                    }
+                }
+            }
+            // FIXME: fetch full content when appropriate
+            // finally actually perform updates
+            foreach($new as $index) {
+                $this->articleAdd($feedID, $items[$index]);
+            }
+            foreach($edited as $index => $id) {
+                $this->articleAdd($feedID, $items[$index], $id);
+            }
+            // lastly update the feed database itself with updated information.
             $next = $this->feedNextFetch($feedID, $feed);
             $this->db->prepare('UPDATE arsse_feeds SET url = ?, title = ?, favicon = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = "", next_fetch = ? WHERE id is ?', 'str', 'str', 'str', 'str', 'datetime', 'str', 'datetime', 'int')->run(
                 $feed->data->feedUrl,
@@ -542,27 +589,49 @@ class Database {
         return new \DateTime("now + 3 hours", new \DateTimeZone("UTC"));
     }
 
-    public function articleAdd(int $feedID, \PicoFeed\Parser\Item $article): int {
+    public function articleAdd(int $feedID, \PicoFeed\Parser\Item $article, int $articleID = null): int {
         $this->db->begin();
         try {
-            $articleID = $this->db->prepare(
-                'INSERT INTO arsse_articles(feed,url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash) values(?,?,?,?,?,?,?,?,?,?,?)',
-                'int', 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str'
-            )->run(
-                $feedID,
-                $article->url,
-                $article->title,
-                $article->author,
-                $article->publishedDate,
-                $article->updatedDate,
-                $article->id,
-                $article->content,
-                $article->urlTitleHash,
-                $article->urlContentHash,
-                $article->titleContentHash
-            )->lastId();
+            if(is_null($articleID)) {
+                $articleID = $this->db->prepare(
+                    'INSERT INTO arsse_articles(feed,url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash) values(?,?,?,?,?,?,?,?,?,?,?)',
+                    'int', 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str'
+                )->run(
+                    $feedID,
+                    $article->url,
+                    $article->title,
+                    $article->author,
+                    $article->publishedDate,
+                    $article->updatedDate,
+                    $article->id,
+                    $article->content,
+                    $article->urlTitleHash,
+                    $article->urlContentHash,
+                    $article->titleContentHash
+                )->lastId();
+            } else {
+                $this->db->prepare(
+                    'UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id is ?', 
+                    'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int'
+                )->run(
+                    $article->url,
+                    $article->title,
+                    $article->author,
+                    $article->publishedDate,
+                    $article->updatedDate,
+                    $article->id,
+                    $article->content,
+                    $article->urlTitleHash,
+                    $article->urlContentHash,
+                    $article->titleContentHash,
+                    $articleID
+                );
+            }
             // If the article has categories add them into the categories database.
+            $this->db->prepare('DELETE FROM arsse_categories WHERE article is ?', 'int')->run($articleID);
             $this->categoriesAdd($articleID, $article);
+            // increease the article edition ID
+            $this->db->prepare('INSERT INTO arse_editions(article) values(?)', 'int')->run($articleID);
         } catch(\Throwable $e) {
             $this->db->rollback();
             throw $e;
