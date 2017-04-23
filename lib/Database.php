@@ -441,7 +441,7 @@ class Database {
             try {
                 $feed = new Feed($f['url'], (string)$f['lastmodified'], $f['etag'], $f['username'], $f['password']);
                 if($feed->resource->isModified()) {
-                    $feed->parse();
+                    $feed->parse($feedID);
                 } else {
                     // if the feed hasn't changed, just compute the next fetch time and record it
                     $next = $this->feedNextFetch($feedID);
@@ -459,110 +459,12 @@ class Database {
                 $this->db->rollback();
                 throw $e;
             }
-            // FIXME: first perform deduplication on the feed itself
-            // array if items in the fetched feed
-            $items = $feed->data->items;
-            // get as many of the latest articles in the database as there are in the feed
-            $articles = $this->db->prepare(
-                'SELECT id, DATEFORMAT("unix", edited) AS edited_date, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? ORDER BY edited desc limit ?', 
-                'int', 'int'
-            )->run(
-                $feedID, sizeof($items)
-            )->getAll();
-            // arrays holding new, edited, and tentatively new items
-            // items may be tentatively new because we perform two passes
-            $new = $tentative = $edited = [];
-            // iterate through the articles and for each determine whether it is existing, edited, or entirely new
-            foreach($items as $index => $i) {
-                foreach($articles as $a) {
-                    if(
-                        // the item matches if the GUID matches...
-                        ($i->id && $i->id === $a['guid']) ||
-                        // ... or if any one of the hashes match
-                        $i->urlTitleHash     === $a['url_title_hash']     ||
-                        $i->urlContentHash   === $a['url_content_hash']   ||
-                        $i->titleContentHash === $a['title_content_hash']
-                    ) {
-                        if($i->updatedDate && $i->updatedDate->getTimestamp() !== $match['edited_date']) {
-                            // if the item has an edit timestamp and it doesn't match that of the article in the database, the the article has been edited
-                            // we store the item index and database record ID as a key/value pair
-                            $edited[$index] = $a['id'];
-                            break;
-                        } else if($i->urlTitleHash !== $a['url_title_hash'] || $i->urlContentHash !== $a['url_content_hash'] || $i->titleContentHash !== $a['title_content_hash']) {
-                            // if any of the hashes do not match, then the article has been edited
-                            $edited[$index] = $a['id'];
-                            break;
-                        } else {
-                            // otherwise the item is unchanged and we can ignore it
-                            break;
-                        }
-                    } else {
-                        // if we don't have a match, add the item to the tentatively new list
-                        $tentative[] = $index;
-                    }
-                }
-            }
-            if(sizeof($tentative)) {
-                // if we need to, perform a second pass on the database looking specifically for IDs and hashes of the new items
-                $vId = $vHashUT = $vHashUC = $vHashTC = [];
-                foreach($tentative as $index) {
-                    $i = $items[$index];
-                    if($i->id) $vId[] = $id->id;
-                    $vHashUT[] = $i->urlTitleHash;
-                    $vHashUC[] = $i->urlContentHash;
-                    $vHashTC[] = $i->titleContentHash;
-                }
-                // compile SQL IN() clauses and necessary type bindings for the four identifier lists
-                list($cId,     $tId)     = $thiis->generateIn($vId, "str");
-                list($cHashUT, $tHashUT) = $thiis->generateIn($vHashUT, "str");
-                list($cHashUC, $tHashUC) = $thiis->generateIn($vHashUC, "str");
-                list($cHashTC, $tHashTC) = $thiis->generateIn($vHashTC, "str");
-                // perform the query
-                $articles = $this->db->prepare(
-                    'SELECT id, DATEFORMAT("unix", edited) AS edited_date, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles '.
-                    'WHERE feed is ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC)', 
-                    'int', $tId, $tHashUT, $tHashUC, $tHashTC
-                )->run(
-                    $feedID, $vId, $vHashUT, $vHashUC, $vHashTC
-                )->getAll();
-                foreach($tentative as $index) {
-                    $i = $items[$index];
-                    foreach($articles as $a) {
-                        if(
-                            // the item matches if the GUID matches...
-                            ($i->id && $i->id === $a['guid']) ||
-                            // ... or if any one of the hashes match
-                            $i->urlTitleHash     === $a['url_title_hash']     ||
-                            $i->urlContentHash   === $a['url_content_hash']   ||
-                            $i->titleContentHash === $a['title_content_hash']
-                        ) {
-                            if($i->updatedDate && $i->updatedDate->getTimestamp() !== $match['edited_date']) {
-                                // if the item has an edit timestamp and it doesn't match that of the article in the database, the the article has been edited
-                                // we store the item index and database record ID as a key/value pair
-                                $edited[$index] = $a['id'];
-                                break;
-                            } else if($i->urlTitleHash !== $a['url_title_hash'] || $i->urlContentHash !== $a['url_content_hash'] || $i->titleContentHash !== $a['title_content_hash']) {
-                                // if any of the hashes do not match, then the article has been edited
-                                $edited[$index] = $a['id'];
-                                break;
-                            } else {
-                                // otherwise the item is unchanged and we can ignore it
-                                break;
-                            }
-                        } else {
-                            // if we don't have a match, add the item to the definite new list
-                            $new[] = $index;
-                        }
-                    }
-                }
-            }
-            // FIXME: fetch full content when appropriate
             // finally actually perform updates
-            foreach($new as $index) {
-                $this->articleAdd($feedID, $items[$index]);
+            foreach($feed->newItems as $item) {
+                $this->articleAdd($feedID, $item);
             }
-            foreach($edited as $index => $id) {
-                $this->articleAdd($feedID, $items[$index], $id);
+            foreach($feed->changedItems as $id => $item) {
+                $this->articleAdd($feedID, $item, $id);
             }
             // lastly update the feed database itself with updated information.
             $next = $this->feedNextFetch($feedID, $feed);
@@ -583,12 +485,33 @@ class Database {
         $this->db->commit();
         return true;
     }
-
+    
     protected function feedNextFetch(int $feedID, Feed $feed = null): \DateTime {
         // FIXME: stub
         return new \DateTime("now + 3 hours", new \DateTimeZone("UTC"));
     }
 
+    public function articleMatchLatest(int $feedID, int $count): Db\Result {
+        return $this->db->prepare(
+            'SELECT id, DATEFORMAT("unix", edited) AS edited_date, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? ORDER BY edited desc limit ?', 
+            'int', 'int'
+        )->run($feedID, $count);
+    }
+
+    public function articleMatchIds(int $feedID, array $ids = [], array $hashesUT = [], array $hashesUC = [], array $hashesTC = []): Db\Result {
+        // compile SQL IN() clauses and necessary type bindings for the four identifier lists
+        list($cId,     $tId)     = $this->generateIn($ids, "str");
+        list($cHashUT, $tHashUT) = $this->generateIn($hashesUT, "str");
+        list($cHashUC, $tHashUC) = $this->generateIn($hashesUC, "str");
+        list($cHashTC, $tHashTC) = $this->generateIn($hashesTC, "str");
+        // perform the query
+        return $articles = $this->db->prepare(
+            'SELECT id, DATEFORMAT("unix", edited) AS edited_date, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles '.
+            'WHERE feed is ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC)', 
+            'int', $tId, $tHashUT, $tHashUC, $tHashTC
+        )->run($feedID, $ids, $hashesUT, $hashesUC, $hashesTC);
+    }
+    
     public function articleAdd(int $feedID, \PicoFeed\Parser\Item $article, int $articleID = null): int {
         $this->db->begin();
         try {
