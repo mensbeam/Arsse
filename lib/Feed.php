@@ -12,6 +12,8 @@ class Feed {
     public $parser;
     public $reader;
     public $resource;
+    public $modified = false;
+    public $lastModified = null;
     public $newItems = [];
     public $changedItems = [];
 
@@ -23,6 +25,11 @@ class Feed {
 
             $this->reader = new Reader($config);
             $this->resource = $this->reader->download($url, $lastModified, $etag, $username, $password);
+            $lastMod = $this->resource->getLastModified();
+            if(strlen($lastMod)) {
+                $this->$lastModified = \DateTime::createFromFormat("!D, d M Y H:i:s e", $lastMod);
+            }
+            $this->modified = $this->resource->isModified();
         } catch (PicoFeedException $e) {
             throw new Feed\Exception($url, $e);
         }
@@ -217,5 +224,30 @@ class Feed {
             $this->changedItems[$id] = $items[$index];
         }
         return true;
+    }
+
+    public function nextFetch(): \DateTime {
+        if(!$this->modified) {
+            $now = time();
+            $diff = $now - $this->lastModified->getTimestamp();
+            if($diff < (30 * 60)) { // less than 30 minutes
+                $offset = "15 minutes";
+            } else if($diff < (60 * 60)) { // less than an hour
+                $offset = "30 minutes";
+            } else if($diff < (3 * 60 * 60)) { // less than three hours
+                $offset = "1 hour";
+            } else if($diff > (36 * 60 * 60)) { // more than 36 hours
+                $offset = "1 day";
+            } else {
+                $offset = "3 hours";
+            }
+            $t = new \DateTime();
+            $t->setTimestamp($now);
+            $t->modify("+".$offset);
+            return $t;
+        } else {
+            // FIXME: implement algorithm to use when a feed has been updated
+            return new \DateTime("now + 3 hours");
+        }
     }
 }

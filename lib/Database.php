@@ -517,10 +517,9 @@ class Database {
         try {
             if(is_null($articleID)) {
                 $articleID = $this->db->prepare(
-                    'INSERT INTO arsse_articles(feed,url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash) values(?,?,?,?,?,?,?,?,?,?,?)',
-                    'int', 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str'
+                    'INSERT INTO arsse_articles(url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash,feed) values(?,?,?,?,?,?,?,?,?,?,?)',
+                    'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int'
                 )->run(
-                    $feedID,
                     $article->url,
                     $article->title,
                     $article->author,
@@ -530,7 +529,8 @@ class Database {
                     $article->content,
                     $article->urlTitleHash,
                     $article->urlContentHash,
-                    $article->titleContentHash
+                    $article->titleContentHash,
+                    $feedID
                 )->lastId();
             } else {
                 $this->db->prepare(
@@ -553,7 +553,7 @@ class Database {
             // If the article has categories add them into the categories database.
             $this->db->prepare('DELETE FROM arsse_categories WHERE article is ?', 'int')->run($articleID);
             $this->categoriesAdd($articleID, $article);
-            // increease the article edition ID
+            // add a new article edition ID
             $this->db->prepare('INSERT INTO arse_editions(article) values(?)', 'int')->run($articleID);
         } catch(\Throwable $e) {
             $this->db->rollback();
