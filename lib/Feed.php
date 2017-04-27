@@ -227,27 +227,51 @@ class Feed {
     }
 
     public function nextFetch(): \DateTime {
+        $now = new \DateTime();
         if(!$this->modified) {
-            $now = time();
-            $diff = $now - $this->lastModified->getTimestamp();
-            if($diff < (30 * 60)) { // less than 30 minutes
-                $offset = "15 minutes";
-            } else if($diff < (60 * 60)) { // less than an hour
-                $offset = "30 minutes";
-            } else if($diff < (3 * 60 * 60)) { // less than three hours
-                $offset = "1 hour";
-            } else if($diff > (36 * 60 * 60)) { // more than 36 hours
-                $offset = "1 day";
-            } else {
-                $offset = "3 hours";
-            }
-            $t = new \DateTime();
-            $t->setTimestamp($now);
-            $t->modify("+".$offset);
-            return $t;
+            $diff = $now->getTimestamp() - $this->lastModified->getTimestamp();
+            $offset = $this->normalizeDateDiff($diff);
+            $now->modify("+".$offset);
         } else {
-            // FIXME: implement algorithm to use when a feed has been updated
-            return new \DateTime("now + 3 hours");
+            $dates = [];
+            $offsets = [];
+            foreach($this->data->items as $item) {
+                if($item->updatedDate) $dates[] = $item->updatedDate->getTimestamp();
+                if($item->publishedDate) $dates[] = $item->publishedDate->getTimestamp();
+            }
+            $dates = array_unique($dates, \SORT_NUMERIC);
+            rsort($dates);
+            if(sizeof($dates) > 3) {
+                for($a = 0; $a < 3; $a++) {
+                    $diff = $dates[$a+1] - $dates[$a];
+                    $offsets[] = $this->normalizeDateDiff($diff);
+                }
+                if($offsets[0]==$offsets[1] || $offsets[0]==$offsets[2]) {
+                    $now->modify("+".$offsets[0]);
+                } else if($offsets[1]==$offsets[2]) {
+                    $now->modify("+".$offsets[1]);
+                } else {
+                    $now->modify("+ 1 hour");
+                }
+            } else {
+                $now->modify("+ 1 hour");
+            }
         }
+        return $now;
+    }
+
+    protected function normalizeDateDiff(int $diff): string {
+        if($diff < (30 * 60)) { // less than 30 minutes
+            $offset = "15 minutes";
+        } else if($diff < (60 * 60)) { // less than an hour
+            $offset = "30 minutes";
+        } else if($diff < (3 * 60 * 60)) { // less than three hours
+            $offset = "1 hour";
+        } else if($diff > (36 * 60 * 60)) { // more than 36 hours
+            $offset = "1 day";
+        } else {
+            $offset = "3 hours";
+        }
+        return $offset;
     }
 }
