@@ -458,15 +458,65 @@ class Database {
                 $this->db->rollback();
                 throw $e;
             }
-            // finally actually perform updates
-            foreach($feed->newItems as $item) {
-                $this->articleAdd($feedID, $item);
+            //prepare the necessary statements to perform the update
+            if(sizeof($feed->newItems) || sizeof($feed->changedItems)) {
+                $qInsertCategory = $this->db->prepare('INSERT INTO arsse_categories(article,name) values(?,?)', 'int', 'str');
+                $qInsertEdition = $this->db->prepare('INSERT INTO arse_editions(article) values(?)', 'int');
             }
-            foreach($feed->changedItems as $id => $item) {
-                $this->articleAdd($feedID, $item, $id);
+            if(sizeof($feed->newItems)) {
+                $qInsertArticle = $this->db->prepare(
+                    'INSERT INTO arsse_articles(url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash,feed) values(?,?,?,?,?,?,?,?,?,?,?)',
+                    'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int'
+                );
+            }
+            if(sizeof($feed->changedItems)) {
+                $qDeleteCategories = $this->db->prepare('DELETE FROM arsse_categories WHERE article is ?', 'int');
+                $qUpdateArticle = $this->db->prepare(
+                    'UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id is ?', 
+                    'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int'
+                );
+            }
+            // actually perform updates
+            foreach($feed->newItems as $article) {
+                $articleID = $qInsertArticle->run(
+                    $article->url,
+                    $article->title,
+                    $article->author,
+                    $article->publishedDate,
+                    $article->updatedDate,
+                    $article->id,
+                    $article->content,
+                    $article->urlTitleHash,
+                    $article->urlContentHash,
+                    $article->titleContentHash,
+                    $feedID
+                )->lastId();
+                foreach($article->getTag('category') as $c) {
+                    $qInsertCategories->run($articleID, $c);
+                }
+                $qInsertEdition->run($articleID);
+            }
+            foreach($feed->changedItems as $articleID => $article) {
+                $qUpdateArticle->run(
+                    $article->url,
+                    $article->title,
+                    $article->author,
+                    $article->publishedDate,
+                    $article->updatedDate,
+                    $article->id,
+                    $article->content,
+                    $article->urlTitleHash,
+                    $article->urlContentHash,
+                    $article->titleContentHash,
+                    $articleID
+                );
+                $qDeleteCategories->run($articleID);
+                foreach($article->getTag('category') as $c) {
+                    $qInsertCategories->run($articleID, $c);
+                }
+                $qInsertEdition->run($articleID);
             }
             // lastly update the feed database itself with updated information.
-            $next = $this->feedNextFetch($feedID, $feed);
             $this->db->prepare(
                 'UPDATE arsse_feeds SET url = ?, title = ?, favicon = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = "", next_fetch = ? WHERE id is ?', 
                 'str', 'str', 'str', 'str', 'datetime', 'str', 'datetime', 'int'
@@ -507,73 +557,5 @@ class Database {
             'WHERE feed is ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC)', 
             'int', $tId, $tHashUT, $tHashUC, $tHashTC
         )->run($feedID, $ids, $hashesUT, $hashesUC, $hashesTC);
-    }
-    
-    public function articleAdd(int $feedID, \PicoFeed\Parser\Item $article, int $articleID = null): int {
-        $this->db->begin();
-        try {
-            if(is_null($articleID)) {
-                $articleID = $this->db->prepare(
-                    'INSERT INTO arsse_articles(url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash,feed) values(?,?,?,?,?,?,?,?,?,?,?)',
-                    'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int'
-                )->run(
-                    $article->url,
-                    $article->title,
-                    $article->author,
-                    $article->publishedDate,
-                    $article->updatedDate,
-                    $article->id,
-                    $article->content,
-                    $article->urlTitleHash,
-                    $article->urlContentHash,
-                    $article->titleContentHash,
-                    $feedID
-                )->lastId();
-            } else {
-                $this->db->prepare(
-                    'UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id is ?', 
-                    'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int'
-                )->run(
-                    $article->url,
-                    $article->title,
-                    $article->author,
-                    $article->publishedDate,
-                    $article->updatedDate,
-                    $article->id,
-                    $article->content,
-                    $article->urlTitleHash,
-                    $article->urlContentHash,
-                    $article->titleContentHash,
-                    $articleID
-                );
-            }
-            // If the article has categories add them into the categories database.
-            $this->db->prepare('DELETE FROM arsse_categories WHERE article is ?', 'int')->run($articleID);
-            $this->categoriesAdd($articleID, $article);
-            // add a new article edition ID
-            $this->db->prepare('INSERT INTO arse_editions(article) values(?)', 'int')->run($articleID);
-        } catch(\Throwable $e) {
-            $this->db->rollback();
-            throw $e;
-        }
-        $this->db->commit();
-        return $articleID;
-    }
-
-    public function categoriesAdd(int $articleID, \PicoFeed\Parser\Item $article): int {
-        $categories = $article->getTag('category');
-        $this->db->begin();
-        try {
-            if(count($categories) > 0) {
-                foreach($categories as $c) {
-                    $this->db->prepare('INSERT INTO arsse_categories(article,name) values(?,?)', 'int', 'str')->run($articleID, $c);
-                }
-            }
-        } catch(\Throwable $e) {
-            $this->db->rollback();
-            throw $e;
-        }
-        $this->db->commit();
-        return count($categories);
     }
 }
