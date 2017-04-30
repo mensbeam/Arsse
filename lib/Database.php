@@ -433,26 +433,25 @@ class Database {
         $this->db->begin();
         try {
             // check to make sure the feed exists
-            $f = $this->db->prepare('SELECT url, username, password, DATEFORMAT("http", modified) AS lastmodified, etag FROM arsse_feeds where id is ?', "int")->run($feedID)->getRow();
+            $f = $this->db->prepare('SELECT url, username, password, DATEFORMAT("http", modified) AS lastmodified, etag, err_count FROM arsse_feeds where id is ?', "int")->run($feedID)->getRow();
             if(!$f) throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID]);
             // the Feed object throws an exception when there are problems, but that isn't ideal
             // here. When an exception is thrown it should update the database with the
             // error instead of failing; if other exceptions are thrown, we should simply roll back
             try {
-                $feed = new Feed($f['url'], (string)$f['lastmodified'], $f['etag'], $f['username'], $f['password']);
-                if($feed->resource->isModified()) {
-                    $feed->parse($feedID);
-                } else {
+                $feed = new Feed($feedID, $f['url'], (string)$f['lastmodified'], $f['etag'], $f['username'], $f['password']);
+                if(!$feed->modified) {
                     // if the feed hasn't changed, just compute the next fetch time and record it
-                    $next = $this->feedNextFetch($feedID);
-                    $this->db->prepare('UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id is ?', 'datetime', 'int')->run($next, $feedID);
+                    $this->db->prepare('UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id is ?', 'datetime', 'int')->run($feed->nextFetch, $feedID);
                     $this->db->commit();
                     return false;
                 }
             } catch (Feed\Exception $e) {
                 // update the database with the resultant error and the next fetch time, incrementing the error count
-                $next = $this->feedNextFetch($feedID);
-                $this->db->prepare('UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ?, err_count = err_count + 1, err_msg = ? WHERE id is ?', 'datetime', 'str', 'int')->run($next, $e->getMessage(),$feedID);
+                $this->db->prepare(
+                    'UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ?, err_count = err_count + 1, err_msg = ? WHERE id is ?', 
+                    'datetime', 'str', 'int'
+                )->run(Feed::nextFetchOnError($f['err_count']), $e->getMessage(),$feedID);
                 $this->db->commit();
                 return false;
             } catch(\Throwable $e) {
@@ -468,14 +467,17 @@ class Database {
             }
             // lastly update the feed database itself with updated information.
             $next = $this->feedNextFetch($feedID, $feed);
-            $this->db->prepare('UPDATE arsse_feeds SET url = ?, title = ?, favicon = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = "", next_fetch = ? WHERE id is ?', 'str', 'str', 'str', 'str', 'datetime', 'str', 'datetime', 'int')->run(
+            $this->db->prepare(
+                'UPDATE arsse_feeds SET url = ?, title = ?, favicon = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = "", next_fetch = ? WHERE id is ?', 
+                'str', 'str', 'str', 'str', 'datetime', 'str', 'datetime', 'int'
+            )->run(
                 $feed->data->feedUrl,
                 $feed->data->title,
                 $feed->favicon,
                 $feed->data->siteUrl,
-                \DateTime::createFromFormat("!D, d M Y H:i:s e", $feed->resource->getLastModified()),
+                $feed->lastModified,
                 $feed->resource->getEtag(),
-                $next,
+                $feed->nextFetch,
                 $feedID
             );
         } catch(\Throwable $e) {
@@ -484,11 +486,6 @@ class Database {
         }
         $this->db->commit();
         return true;
-    }
-    
-    protected function feedNextFetch(int $feedID, Feed $feed = null): \DateTime {
-        // FIXME: stub
-        return new \DateTime("now + 3 hours", new \DateTimeZone("UTC"));
     }
 
     public function articleMatchLatest(int $feedID, int $count): Db\Result {

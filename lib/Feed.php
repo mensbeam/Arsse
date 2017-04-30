@@ -13,11 +13,35 @@ class Feed {
     public $reader;
     public $resource;
     public $modified = false;
-    public $lastModified = null;
+    public $lastModified;
+    public $nextFetch;
     public $newItems = [];
     public $changedItems = [];
 
-    public function __construct(string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = '') {
+    public function __construct(int $feedID = null, string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = '') {
+        // fetch the feed
+        $this->download($url, $lastModified, $etag, $username, $password);
+        // format the HTTP Last-Modified date returned
+        $lastMod = $this->resource->getLastModified();
+        if(strlen($lastMod)) {
+            $this->$lastModified = \DateTime::createFromFormat("!D, d M Y H:i:s e", $lastMod);
+        }
+        $this->modified = $this->resource->isModified();
+        //parse the feed, if it has been modified
+        if($this->modified) {
+            $this->parse();
+            // ascertain whether there are any articles not in the database
+            $this->matchToDatabase($feedID);
+            // if caching header fields are not sent by the server, try to ascertain a last-modified date from the feed contents
+            if(!$this->lastModified) $this->lastModified = $this->computeLastModified();
+            // we only really care if articles have been modified; if there are no new articles, act as if the feed is unchanged
+            if(!sizeof($this->newItems) && !sizeof($this->changedItems)) $this->modified = false;
+        }
+        // compute the time at which the feed should next be fetched
+        $this->nextFetch = $this->computeNextFetch();
+    }
+
+    public function download(string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = ''): bool {
         try {
             $config = new Config;
             $config->setClientUserAgent(Data::$conf->userAgentString);
@@ -25,17 +49,13 @@ class Feed {
 
             $this->reader = new Reader($config);
             $this->resource = $this->reader->download($url, $lastModified, $etag, $username, $password);
-            $lastMod = $this->resource->getLastModified();
-            if(strlen($lastMod)) {
-                $this->$lastModified = \DateTime::createFromFormat("!D, d M Y H:i:s e", $lastMod);
-            }
-            $this->modified = $this->resource->isModified();
         } catch (PicoFeedException $e) {
             throw new Feed\Exception($url, $e);
         }
+        return true;
     }
 
-    public function parse(int $feedID = null): bool {
+    public function parse(): bool {
         try {
             $this->parser = $this->reader->getParser(
                 $this->resource->getUrl(),
@@ -90,10 +110,6 @@ class Feed {
             $f->id = '';
         }
         $this->data = $feed;
-        // if a feedID is supplied, determine which items are already in the database, which are not, and which might have been edited
-        if(!is_null($feedID)) {
-            $this->matchToDatabase($feedID);
-        }
         return true;
     }
 
@@ -137,7 +153,7 @@ class Feed {
         return $out;
     }
 
-    protected function matchToDatabase(int $feedID): bool {
+    public function matchToDatabase(int $feedID): bool {
         // first perform deduplication on items
         $items = $this->deduplicateItems($this->data->items);
         // get as many of the latest articles in the database as there are in the feed
@@ -226,21 +242,15 @@ class Feed {
         return true;
     }
 
-    public function nextFetch(): \DateTime {
+    public function computeNextFetch(): \DateTime {
         $now = new \DateTime();
         if(!$this->modified) {
             $diff = $now->getTimestamp() - $this->lastModified->getTimestamp();
             $offset = $this->normalizeDateDiff($diff);
             $now->modify("+".$offset);
         } else {
-            $dates = [];
             $offsets = [];
-            foreach($this->data->items as $item) {
-                if($item->updatedDate) $dates[] = $item->updatedDate->getTimestamp();
-                if($item->publishedDate) $dates[] = $item->publishedDate->getTimestamp();
-            }
-            $dates = array_unique($dates, \SORT_NUMERIC);
-            rsort($dates);
+            $dates = $this->gatherDates();
             if(sizeof($dates) > 3) {
                 for($a = 0; $a < 3; $a++) {
                     $diff = $dates[$a+1] - $dates[$a];
@@ -260,6 +270,17 @@ class Feed {
         return $now;
     }
 
+    public static function nextFetchOnError($errCount): \DateTime {
+        if($errCount < 3) {
+            $offset = "5 minutes";
+        } else if($errCount < 15) {
+            $offset = "3 hours";
+        } else {
+            $offset = "1 day";
+        }
+        return new \DateTime("now + ".$offset);
+    }
+
     protected function normalizeDateDiff(int $diff): string {
         if($diff < (30 * 60)) { // less than 30 minutes
             $offset = "15 minutes";
@@ -273,5 +294,31 @@ class Feed {
             $offset = "3 hours";
         }
         return $offset;
+    }
+
+    public function computeLastModified() {
+        if(!$this->modified) {
+            return $this->lastModified;
+        } else {
+            $dates = $this->gatherDates();
+        }
+        if(sizeof($dates)) {
+            $now = new \DateTime();
+            $now->setTimestamp($dates[0]);
+            return $now;
+        } else {
+            return null;
+        }
+    }
+
+    protected function gatherDates(): array {
+        $dates = [];
+        foreach($this->data->items as $item) {
+            if($item->updatedDate) $dates[] = $item->updatedDate->getTimestamp();
+            if($item->publishedDate) $dates[] = $item->publishedDate->getTimestamp();
+        }
+        $dates = array_unique($dates, \SORT_NUMERIC);
+        rsort($dates);
+        return $dates;
     }
 }
