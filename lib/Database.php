@@ -421,7 +421,7 @@ class Database {
         // Add the feed to the database and return its Id which will be used when adding
         // its articles to the database.
         try {
-            $this->feedUpdate($feedID);
+            $this->feedUpdate($feedID, true);
         } catch(\Throwable $e) {
             $this->db->prepare('DELETE from arsse_feeds where id is ?', 'int')->run($feedID);
             throw $e;
@@ -429,7 +429,7 @@ class Database {
         return $feedID;
     }
 
-    public function feedUpdate(int $feedID): bool {
+    public function feedUpdate(int $feedID, bool $throwError = false): bool {
         $this->db->begin();
         try {
             // check to make sure the feed exists
@@ -453,6 +453,7 @@ class Database {
                     'datetime', 'str', 'int'
                 )->run(Feed::nextFetchOnError($f['err_count']), $e->getMessage(),$feedID);
                 $this->db->commit();
+                if($throwError) throw $e;
                 return false;
             } catch(\Throwable $e) {
                 $this->db->rollback();
