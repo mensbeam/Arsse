@@ -472,6 +472,7 @@ class Database {
             }
             if(sizeof($feed->changedItems)) {
                 $qDeleteCategories = $this->db->prepare('DELETE FROM arsse_categories WHERE article is ?', 'int');
+                $qClearReadMarks = $this->db->prepare('UPDATE arsse_subscription_articles SET read = 0, modified = CURRENT_TIMESTAMP WHERE article is ?', 'int');
                 $qUpdateArticle = $this->db->prepare(
                     'UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id is ?', 
                     'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int'
@@ -516,6 +517,7 @@ class Database {
                     $qInsertCategories->run($articleID, $c);
                 }
                 $qInsertEdition->run($articleID);
+                $qClearReadMarks->run($articleID);
             }
             // lastly update the feed database itself with updated information.
             $this->db->prepare(
