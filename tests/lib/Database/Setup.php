@@ -5,7 +5,7 @@ use JKingWeb\Arsse\User\Driver as UserDriver;
 use JKingWeb\Arsse\Data;
 use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\User;
-use JKingWeb\Arsse\Database;
+use JKingWeb\Arsse\Test\Database;
 use Phake;
 
 trait Setup {

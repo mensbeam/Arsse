@@ -14,17 +14,12 @@ class Database {
     public    $db;
     private   $driver;
 
-    public function __construct(Db\Driver $db = null) {
-        // if we're fed a pre-prepared driver, use it'
-        if($db) {
-            $this->db = $db;
-        } else {
-            $this->driver = $driver = Data::$conf->dbDriver;
-            $this->db = new $driver(INSTALL);
-            $ver = $this->db->schemaVersion();
-            if(!INSTALL && $ver < self::SCHEMA_VERSION) {
-                $this->db->schemaUpdate(self::SCHEMA_VERSION);
-            }
+    public function __construct() {
+        $this->driver = $driver = Data::$conf->dbDriver;
+        $this->db = new $driver(INSTALL);
+        $ver = $this->db->schemaVersion();
+        if(!INSTALL && $ver < self::SCHEMA_VERSION) {
+            $this->db->schemaUpdate(self::SCHEMA_VERSION);
         }
     }
 
