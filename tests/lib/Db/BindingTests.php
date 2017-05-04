@@ -18,6 +18,20 @@ trait BindingTests {
             "boolean"   => null,
         ];
         $this->checkBinding($input, $exp);
+        // types may also be strict (e.g. "strict integer") and never pass null to the database; this is useful for NOT NULL columns
+        // only null input should yield different results, so only this test has different expectations
+        $exp = [
+            "null"      => null,
+            "integer"   => 0,
+            "float"     => 0.0,
+            "date"      => date(self::$imp::dateFormat(Statement::TS_DATE), 0),
+            "time"      => date(self::$imp::dateFormat(Statement::TS_TIME), 0),
+            "datetime"  => date(self::$imp::dateFormat(Statement::TS_BOTH), 0),
+            "binary"    => "",
+            "string"    => "",
+            "boolean"   => 0,
+        ];
+        $this->checkBinding($input, $exp, true);
     }
 
     function testBindTrue() {
@@ -34,6 +48,7 @@ trait BindingTests {
             "boolean"   => 1,
         ];
         $this->checkBinding($input, $exp);
+        $this->checkBinding($input, $exp, true);
     }
 
     function testBindFalse() {
@@ -50,6 +65,7 @@ trait BindingTests {
             "boolean"   => 0,
         ];
         $this->checkBinding($input, $exp);
+        $this->checkBinding($input, $exp, true);
     }
 
     function testBindInteger() {
@@ -66,6 +82,7 @@ trait BindingTests {
             "boolean"   => 1,
         ];
         $this->checkBinding($input, $exp);
+        $this->checkBinding($input, $exp, true);
     }
 
     function testBindIntegerZero() {
@@ -82,6 +99,7 @@ trait BindingTests {
             "boolean"   => 0,
         ];
         $this->checkBinding($input, $exp);
+        $this->checkBinding($input, $exp, true);
     }
 
     function testBindFloat() {
@@ -98,6 +116,7 @@ trait BindingTests {
             "boolean"   => 1,
         ];
         $this->checkBinding($input, $exp);
+        $this->checkBinding($input, $exp, true);
     }
 
     function testBindFloatZero() {
@@ -114,6 +133,7 @@ trait BindingTests {
             "boolean"   => 0,
         ];
         $this->checkBinding($input, $exp);
+        $this->checkBinding($input, $exp, true);
     }
 
     function testBindAsciiString() {
@@ -130,6 +150,7 @@ trait BindingTests {
             "boolean"   => 1,
         ];
         $this->checkBinding($input, $exp);
+        $this->checkBinding($input, $exp, true);
     }
 
     function testBindUtf8String() {
@@ -146,6 +167,7 @@ trait BindingTests {
             "boolean"   => 1,
         ];
         $this->checkBinding($input, $exp);
+        $this->checkBinding($input, $exp, true);
     }
 
     function testBindBinaryString() {
@@ -163,6 +185,7 @@ trait BindingTests {
             "boolean"   => 1,
         ];
         $this->checkBinding($input, $exp);
+        $this->checkBinding($input, $exp, true);
     }
 
     function testBindIso8601DateString() {
@@ -180,6 +203,7 @@ trait BindingTests {
             "boolean"   => 1,
         ];
         $this->checkBinding($input, $exp);
+        $this->checkBinding($input, $exp, true);
     }
 
     function testBindArbitraryDateString() {
@@ -197,6 +221,7 @@ trait BindingTests {
             "boolean"   => 1,
         ];
         $this->checkBinding($input, $exp);
+        $this->checkBinding($input, $exp, true);
     }
 
     function testBindMutableDateObject($class = '\DateTime') {
@@ -214,6 +239,7 @@ trait BindingTests {
             "boolean"   => 1,
         ];
         $this->checkBinding($input, $exp);
+        $this->checkBinding($input, $exp, true);
     }
 
     function testBindImmutableDateObject() {

@@ -23,12 +23,12 @@ class TestDbStatementSQLite3 extends \PHPUnit\Framework\TestCase {
         unset($this->c);
     }
 
-    protected function checkBinding($input, array $expectations) {
+    protected function checkBinding($input, array $expectations, bool $strict = false) {
         $nativeStatement = $this->c->prepare("SELECT ? as value");
         $s = new self::$imp($this->c, $nativeStatement);
         $types = array_unique(Statement::TYPES);
         foreach($types as $type) {
-            $s->rebindArray([$type]);
+            $s->rebindArray([$strict ? "strict $type" : $type]);
             $val = $s->runArray([$input])->getRow()['value'];
             $this->assertSame($expectations[$type], $val, "Type $type failed comparison.");
         }
