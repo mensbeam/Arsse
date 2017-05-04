@@ -3,6 +3,8 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Db;
 
 abstract class AbstractStatement implements Statement {
+    protected $types = [];
+    protected $isNullable = [];
 
     abstract function runArray(array $values): Result;
     abstract static function dateFormat(int $part = self::TS_BOTH): string;
@@ -23,6 +25,13 @@ abstract class AbstractStatement implements Statement {
                 $this->rebindArray($binding, true);
             } else {
                 $binding = trim(strtolower($binding));
+                if(strpos($binding, "strict ")===0) {
+                    // "strict" types' values may never be null; null values will later be cast to the type specified
+                    $this->isNullable[] = false;
+                    $binding = substr($binding, 7);
+                } else {
+                    $this->isNullable[] = true;
+                }
                 if(!array_key_exists($binding, self::TYPES)) throw new Exception("paramTypeInvalid", $binding);
                 $this->types[] = self::TYPES[$binding];
             }
@@ -30,13 +39,16 @@ abstract class AbstractStatement implements Statement {
         return true;
     }
 
-    protected function cast($v, string $t) {
+    protected function cast($v, string $t, bool $nullable) {
         switch($t) {
             case "date":
+                if(is_null($v) && !$nullable) $v = 0;
                 return $this->formatDate($v, self::TS_DATE);
             case "time":
+                if(is_null($v) && !$nullable) $v = 0;
                 return $this->formatDate($v, self::TS_TIME);
             case "datetime":
+                if(is_null($v) && !$nullable) $v = 0;
                 return $this->formatDate($v, self::TS_BOTH);
             case "null":
             case "integer":

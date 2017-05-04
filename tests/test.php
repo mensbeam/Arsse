@@ -1,7 +1,7 @@
 <?php
 namespace JKingWeb\Arsse;
 const INSTALL = true;
-require_once "../bootstrap.php";
+require_once __DIR__."/../bootstrap.php";
 
 
 $user = "john.doe@example.com";
@@ -21,4 +21,10 @@ Data::$user->rightsSet($user, User\Driver::RIGHTS_GLOBAL_ADMIN);
 Data::$user->authorizationEnabled(true);
 Data::$db->folderAdd($user, ['name' => 'ook']);
 Data::$db->subscriptionAdd($user, "https://jkingweb.ca/test.atom");
+Data::$db->subscriptionPropertiesSet($user, 1, [
+    'title'      => "OOOOOOOOK!",
+    'folder'     => null,
+    'order_type' => null,
+    'pinned'     => null,
+]);
 var_export(Data::$db->subscriptionList($user)->getAll());

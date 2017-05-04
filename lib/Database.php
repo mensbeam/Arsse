@@ -352,10 +352,10 @@ class Database {
     public function folderPropertiesSet(string $user, int $id, array $data): bool {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
-        // layer the existing folder properties onto the new desired one
+        // layer the existing folder properties onto the new desired ones; this also has the effect of checking whether the folder is valid
         $data = array_merge($this->folderPropertiesGet($user, $id), $data);
         // if the desired folder name is missing or invalid, throw an exception
-        if(!array_key_exists("name", $data) || $data['name']=="") {
+        if($data['name']=="") {
             throw new Db\ExceptionInput("missing", ["action" => __FUNCTION__, "field" => "name"]);
         } else if(!strlen(trim($data['name']))) {
             throw new Db\ExceptionInput("whitespace", ["action" => __FUNCTION__, "field" => "name"]);
@@ -389,8 +389,7 @@ class Database {
             'parent' => "int",
         ];
         list($setClause, $setTypes, $setValues) = $this->generateSet($data, $valid);
-        $this->db->prepare("UPDATE arsse_folders set $setClause where owner is ? and id is ?", $setTypes, "str", "int")->run($setValues, $user, $id);
-        return true;
+        return (bool) $this->db->prepare("UPDATE arsse_folders set $setClause where owner is ? and id is ?", $setTypes, "str", "int")->run($setValues, $user, $id)->changes();
     }
 
     public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = ""): int {
@@ -414,21 +413,64 @@ class Database {
         return $this->db->prepare('INSERT INTO arsse_subscriptions(owner,feed) values(?,?)', 'str', 'int')->run($user, $feedID)->lastId();
     }
 
+    public function subscriptionList(string $user, int $folder = null, int $id = null): Db\Result {
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
+        // check to make sure the folder exists, if one is specified
+        $query = 
+            "SELECT 
+                arsse_subscriptions.id,
+                url,favicon,source,folder,added,pinned,err_count,err_msg,order_type,
+                CASE WHEN arsse_subscriptions.title THEN arsse_subscriptions.title ELSE arsse_feeds.title END as title,
+                (SELECT count(*) from arsse_articles where feed is arsse_subscriptions.feed) - (SELECT count(*) from (SELECT article,feed from arsse_subscription_articles join arsse_articles on article = arsse_articles.id where owner is ? and feed is arsse_feeds.id and read is 1)) as unread
+             from arsse_subscriptions join arsse_feeds on feed = arsse_feeds.id where owner is ?";
+        if(!is_null($folder)) {
+            if(!$this->db->prepare("SELECT count(*) from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $folder)->getValue()) {
+                throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $folder]);
+            }
+            return $this->db->prepare(
+                "WITH RECURSIVE folders(folder) as (SELECT ? union select id from arsse_folders join folders on parent is folder) $query and folder in (select folder from folders)", 
+                "int", "str", "str"
+            )->run($folder, $user, $user);
+        } else if(!is_null($id)) {
+            // this condition facilitates the implementation of subscriptionPropertiesGet, which would otherwise have to duplicate the complex query
+            return $this->db->prepare("$query and arsse_subscriptions.id is ?", "str", "str", "int")->run($user, $user, $id);
+        } else {
+            return $this->db->prepare($query, "str", "str")->run($user, $user);
+        }
+    }
+
     public function subscriptionRemove(string $user, int $id): bool {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         return (bool) $this->db->prepare("DELETE from arsse_subscriptions where owner is ? and id is ?", "str", "int")->run($user, $id)->changes();
     }
 
-    public function subscriptionList(string $user, int $folder = null): Db\Result {
+    public function subscriptionPropertiesGet(string $user, int $id): array {
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        // disable authorization checks for the list call
+        Data::$user->authorizationEnabled(false);
+        $sub = $this->subscriptionList($user, null, $id)->getRow();
+        Data::$user->authorizationEnabled(true);
+        if(!$sub) throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
+        return $sub;
+    }
+
+    public function subscriptionPropertiesSet(string $user, int $id, array $data): bool {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
-        // check to make sure the folder exists, if one is specified
-        if(!is_null($folder)) {
-            if(!$this->db->prepare("SELECT count(*) from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $folder)->getValue()) {
-                throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $folder]);
-            }
+        $this->db->begin();
+        if(!$this->db->prepare("SELECT count(*) from arsse_subscriptions where owner is ? and id is ?", "str", "int")->run($user, $id)->getValue()) {
+            // if the ID doesn't exist or doesn't belong to the user, throw an exception
+            throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
         }
-        return $this->db->prepare("SELECT arsse_subscriptions.id, arsse_feeds.url, arsse_feeds.title from arsse_subscriptions join arsse_feeds on feed = arsse_feeds.id where arsse_subscriptions.owner is ?", "str")->run($user);
+        $valid = [
+            'title'      => "str",
+            'folder'     => "int",
+            'order_type' => "strict int",
+            'pinned'     => "strict bool",
+        ];
+        list($setClause, $setTypes, $setValues) = $this->generateSet($data, $valid);
+        return (bool) $this->db->prepare("UPDATE arsse_subscriptions set $setClause where owner is ? and id is ?", $setTypes, "str", "int")->run($setValues, $user, $id)->changes();
     }
 
     public function feedUpdate(int $feedID, bool $throwError = false): bool {
@@ -496,7 +538,7 @@ class Database {
                     $feedID
                 )->lastId();
                 foreach($article->getTag('category') as $c) {
-                    $qInsertCategories->run($articleID, $c);
+                    $qInsertCategory->run($articleID, $c);
                 }
                 $qInsertEdition->run($articleID);
             }
@@ -516,7 +558,7 @@ class Database {
                 );
                 $qDeleteCategories->run($articleID);
                 foreach($article->getTag('category') as $c) {
-                    $qInsertCategories->run($articleID, $c);
+                    $qInsertCategory->run($articleID, $c);
                 }
                 $qInsertEdition->run($articleID);
                 $qClearReadMarks->run($articleID);
