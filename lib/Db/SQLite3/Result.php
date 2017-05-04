@@ -52,7 +52,7 @@ class Result implements \JKingWeb\Arsse\Db\Result {
     }
 
     public function __destruct() {
-        $this->set->finalize();
+        try{$this->set->finalize();} catch(\Throwable $e) {}
         unset($this->set);
     }
 

@@ -24,7 +24,7 @@ class Feed {
         // format the HTTP Last-Modified date returned
         $lastMod = $this->resource->getLastModified();
         if(strlen($lastMod)) {
-            $this->$lastModified = \DateTime::createFromFormat("!D, d M Y H:i:s e", $lastMod);
+            $this->lastModified = \DateTime::createFromFormat("!D, d M Y H:i:s e", $lastMod);
         }
         $this->modified = $this->resource->isModified();
         //parse the feed, if it has been modified
@@ -162,6 +162,7 @@ class Feed {
         $new = $tentative = $edited = [];
         // iterate through the articles and for each determine whether it is existing, edited, or entirely new
         foreach($items as $index => $i) {
+            $found = false;
             foreach($articles as $a) {
                 if(
                     // the item matches if the GUID matches...
@@ -174,28 +175,29 @@ class Feed {
                     if($i->updatedDate && $i->updatedDate->getTimestamp() !== $match['edited_date']) {
                         // if the item has an edit timestamp and it doesn't match that of the article in the database, the the article has been edited
                         // we store the item index and database record ID as a key/value pair
+                        $found = true;
                         $edited[$index] = $a['id'];
                         break;
                     } else if($i->urlTitleHash !== $a['url_title_hash'] || $i->urlContentHash !== $a['url_content_hash'] || $i->titleContentHash !== $a['title_content_hash']) {
                         // if any of the hashes do not match, then the article has been edited
+                        $found = true;
                         $edited[$index] = $a['id'];
                         break;
                     } else {
                         // otherwise the item is unchanged and we can ignore it
+                        $found = true;
                         break;
                     }
-                } else {
-                    // if we don't have a match, add the item to the tentatively new list
-                    $tentative[] = $index;
                 }
             }
+            if(!$found) $tentative[] = $index;
         }
         if(sizeof($tentative)) {
             // if we need to, perform a second pass on the database looking specifically for IDs and hashes of the new items
             $ids = $hashesUT = $hashesUC = $hashesTC = [];
             foreach($tentative as $index) {
                 $i = $items[$index];
-                if($i->id) $ids[] = $id->id;
+                if($i->id) $ids[] = $i->id;
                 $hashesUT[] = $i->urlTitleHash;
                 $hashesUC[] = $i->urlContentHash;
                 $hashesTC[] = $i->titleContentHash;
@@ -203,6 +205,7 @@ class Feed {
             $articles = Data::$db->articleMatchIds($feedID, $ids, $hashesUT, $hashesUC, $hashesTC);
             foreach($tentative as $index) {
                 $i = $items[$index];
+                $found = false;
                 foreach($articles as $a) {
                     if(
                         // the item matches if the GUID matches...
@@ -215,14 +218,17 @@ class Feed {
                         if($i->updatedDate && $i->updatedDate->getTimestamp() !== $match['edited_date']) {
                             // if the item has an edit timestamp and it doesn't match that of the article in the database, the the article has been edited
                             // we store the item index and database record ID as a key/value pair
+                            $found = true;
                             $edited[$index] = $a['id'];
                             break;
                         } else if($i->urlTitleHash !== $a['url_title_hash'] || $i->urlContentHash !== $a['url_content_hash'] || $i->titleContentHash !== $a['title_content_hash']) {
                             // if any of the hashes do not match, then the article has been edited
+                            $found = true;
                             $edited[$index] = $a['id'];
                             break;
                         } else {
                             // otherwise the item is unchanged and we can ignore it
+                            $found = true;
                             break;
                         }
                     } else {
@@ -230,6 +236,7 @@ class Feed {
                         $new[] = $index;
                     }
                 }
+                if(!$found) $new[] = $index;
             }
         }
         // FIXME: fetch full content when appropriate

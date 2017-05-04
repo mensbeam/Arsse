@@ -398,7 +398,7 @@ class Database {
         if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
         // check to see if the feed exists
         $feedID = $this->db->prepare("SELECT id from arsse_feeds where url is ? and username is ? and password is ?", "str", "str", "str")->run($url, $fetchUser, $fetchPassword)->getValue();
-        if(is_nill($feedID)) {
+        if(is_null($feedID)) {
             // if the feed doesn't exist add it to the database; we do this unconditionally so as to lock SQLite databases for as little time as possible
             $feedID = $this->db->prepare('INSERT INTO arsse_feeds(url,username,password) values(?,?,?)', 'str', 'str', 'str')->run($url, $fetchUser, $fetchPassword)->lastId();
             try {
@@ -417,6 +417,18 @@ class Database {
     public function subscriptionRemove(string $user, int $id): bool {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         return (bool) $this->db->prepare("DELETE from arsse_subscriptions where owner is ? and id is ?", "str", "int")->run($user, $id)->changes();
+    }
+
+    public function subscriptionList(string $user, int $folder = null): Db\Result {
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
+        // check to make sure the folder exists, if one is specified
+        if(!is_null($folder)) {
+            if(!$this->db->prepare("SELECT count(*) from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $folder)->getValue()) {
+                throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $folder]);
+            }
+        }
+        return $this->db->prepare("SELECT arsse_subscriptions.id, arsse_feeds.url, arsse_feeds.title from arsse_subscriptions join arsse_feeds on feed = arsse_feeds.id where arsse_subscriptions.owner is ?", "str")->run($user);
     }
 
     public function feedUpdate(int $feedID, bool $throwError = false): bool {
@@ -452,7 +464,7 @@ class Database {
             //prepare the necessary statements to perform the update
             if(sizeof($feed->newItems) || sizeof($feed->changedItems)) {
                 $qInsertCategory = $this->db->prepare('INSERT INTO arsse_categories(article,name) values(?,?)', 'int', 'str');
-                $qInsertEdition = $this->db->prepare('INSERT INTO arse_editions(article) values(?)', 'int');
+                $qInsertEdition = $this->db->prepare('INSERT INTO arsse_editions(article) values(?)', 'int');
             }
             if(sizeof($feed->newItems)) {
                 $qInsertArticle = $this->db->prepare(
@@ -547,7 +559,7 @@ class Database {
         // perform the query
         return $articles = $this->db->prepare(
             'SELECT id, DATEFORMAT("unix", edited) AS edited_date, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles '.
-            'WHERE feed is ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC)', 
+            'WHERE feed is ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC))', 
             'int', $tId, $tHashUT, $tHashUC, $tHashTC
         )->run($feedID, $ids, $hashesUT, $hashesUC, $hashesTC);
     }

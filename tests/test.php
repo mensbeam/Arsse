@@ -20,4 +20,5 @@ Data::$user->authorizationEnabled(false);
 Data::$user->rightsSet($user, User\Driver::RIGHTS_GLOBAL_ADMIN);
 Data::$user->authorizationEnabled(true);
 Data::$db->folderAdd($user, ['name' => 'ook']);
-Data::$db->subscriptionAdd($user, "http://www.pcgamer.com/rss/");
+Data::$db->subscriptionAdd($user, "https://jkingweb.ca/test.atom");
+var_export(Data::$db->subscriptionList($user)->getAll());
