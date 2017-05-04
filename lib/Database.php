@@ -396,32 +396,27 @@ class Database {
     public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = ""): int {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
-        // If the feed doesn't already exist in the database then add it to the database
-        // after determining its validity with PicoFeed.
+        // check to see if the feed exists
         $feedID = $this->db->prepare("SELECT id from arsse_feeds where url is ? and username is ? and password is ?", "str", "str", "str")->run($url, $fetchUser, $fetchPassword)->getValue();
-        if($feedID === null) {
-            $feedID = $this->feedAdd($url, $fetchUser, $fetchPassword);
+        if(is_nill($feedID)) {
+            // if the feed doesn't exist add it to the database; we do this unconditionally so as to lock SQLite databases for as little time as possible
+            $feedID = $this->db->prepare('INSERT INTO arsse_feeds(url,username,password) values(?,?,?)', 'str', 'str', 'str')->run($url, $fetchUser, $fetchPassword)->lastId();
+            try {
+                // perform an initial update on the newly added feed
+                $this->feedUpdate($feedID, true);
+            } catch(\Throwable $e) {
+                // if the update fails, delete the feed we just added
+                $this->db->prepare('DELETE from arsse_feeds where id is ?', 'int')->run($feedID);
+                throw $e;
+            }
         }
-        // Add the feed to the user's subscriptions.
+        // Add the feed to the user's subscriptions and return the new subscription's ID.
         return $this->db->prepare('INSERT INTO arsse_subscriptions(owner,feed) values(?,?)', 'str', 'int')->run($user, $feedID)->lastId();
     }
 
     public function subscriptionRemove(string $user, int $id): bool {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         return (bool) $this->db->prepare("DELETE from arsse_subscriptions where owner is ? and id is ?", "str", "int")->run($user, $id)->changes();
-    }
-
-    public function feedAdd(string $url, string $fetchUser = "", string $fetchPassword = ""): int {
-        $feedID = $this->db->prepare('INSERT INTO arsse_feeds(url,username,password) values(?,?,?)', 'str', 'str', 'str')->run($url, $fetchUser, $fetchPassword)->lastId();
-        // Add the feed to the database and return its Id which will be used when adding
-        // its articles to the database.
-        try {
-            $this->feedUpdate($feedID, true);
-        } catch(\Throwable $e) {
-            $this->db->prepare('DELETE from arsse_feeds where id is ?', 'int')->run($feedID);
-            throw $e;
-        }
-        return $feedID;
     }
 
     public function feedUpdate(int $feedID, bool $throwError = false): bool {
