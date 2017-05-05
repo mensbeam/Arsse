@@ -192,7 +192,7 @@ class Feed {
             }
             if(!$found) $tentative[] = $index;
         }
-        if(sizeof($tentative)) {
+        if(sizeof($tentative) && sizeof($items)==sizeof($articles)) {
             // if we need to, perform a second pass on the database looking specifically for IDs and hashes of the new items
             $ids = $hashesUT = $hashesUC = $hashesTC = [];
             foreach($tentative as $index) {
@@ -238,6 +238,9 @@ class Feed {
                 }
                 if(!$found) $new[] = $index;
             }
+        } else {
+            // if there are no tentatively new articles and/or the number of stored articles is less than the size of the feed, don't do a second pass; assume any tentatively new items are in fact new
+            $new = $tentative;
         }
         // FIXME: fetch full content when appropriate
         foreach($new as $index) {
