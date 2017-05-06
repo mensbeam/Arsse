@@ -106,7 +106,7 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
         $insert = "INSERT INTO test(id) values(null)";
         $ch = new \SQLite3(Data::$conf->dbSQLite3File);
         $this->drv->exec("CREATE TABLE test(id integer primary key)");
-        $this->drv->begin();
+        $tr = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $ch->querySingle($select));
@@ -120,11 +120,11 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
         $insert = "INSERT INTO test(id) values(null)";
         $ch = new \SQLite3(Data::$conf->dbSQLite3File);
         $this->drv->exec("CREATE TABLE test(id integer primary key)");
-        $this->drv->begin();
+        $tr = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $ch->querySingle($select));
-        $this->drv->commit();
+        $tr->commit();
         $this->assertEquals(1, $this->drv->query($select)->getValue());
         $this->assertEquals(1, $ch->querySingle($select));
     }
@@ -134,11 +134,11 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
         $insert = "INSERT INTO test(id) values(null)";
         $ch = new \SQLite3(Data::$conf->dbSQLite3File);
         $this->drv->exec("CREATE TABLE test(id integer primary key)");
-        $this->drv->begin();
+        $tr = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $ch->querySingle($select));
-        $this->drv->rollback();
+        $tr->rollback();
         $this->assertEquals(0, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $ch->querySingle($select));
     }
@@ -148,11 +148,11 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
         $insert = "INSERT INTO test(id) values(null)";
         $ch = new \SQLite3(Data::$conf->dbSQLite3File);
         $this->drv->exec("CREATE TABLE test(id integer primary key)");
-        $this->drv->begin();
+        $tr1 = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $ch->querySingle($select));
-        $this->drv->begin();
+        $tr2 = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(2, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $ch->querySingle($select));
@@ -163,17 +163,17 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
         $insert = "INSERT INTO test(id) values(null)";
         $ch = new \SQLite3(Data::$conf->dbSQLite3File);
         $this->drv->exec("CREATE TABLE test(id integer primary key)");
-        $this->drv->begin();
+        $tr1 = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $ch->querySingle($select));
-        $this->drv->begin();
+        $tr2 = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(2, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $ch->querySingle($select));
-        $this->drv->commit();
+        $tr2->commit();
         $this->assertEquals(0, $ch->querySingle($select));
-        $this->drv->commit();
+        $tr1->commit();
         $this->assertEquals(2, $ch->querySingle($select));
     }
 
@@ -182,18 +182,18 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
         $insert = "INSERT INTO test(id) values(null)";
         $ch = new \SQLite3(Data::$conf->dbSQLite3File);
         $this->drv->exec("CREATE TABLE test(id integer primary key)");
-        $this->drv->begin();
+        $tr1 = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $ch->querySingle($select));
-        $this->drv->begin();
+        $tr2 = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(2, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $ch->querySingle($select));
-        $this->drv->rollback();
+        $tr2->rollback();
         $this->assertEquals(1, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $ch->querySingle($select));
-        $this->drv->rollback();
+        $tr1->rollback();
         $this->assertEquals(0, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $ch->querySingle($select));
     }
@@ -203,56 +203,20 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
         $insert = "INSERT INTO test(id) values(null)";
         $ch = new \SQLite3(Data::$conf->dbSQLite3File);
         $this->drv->exec("CREATE TABLE test(id integer primary key)");
-        $this->drv->begin();
+        $tr1 = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $ch->querySingle($select));
-        $this->drv->begin();
+        $tr2 = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(2, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $ch->querySingle($select));
-        $this->drv->rollback();
+        $tr2->rollback();
         $this->assertEquals(1, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $ch->querySingle($select));
-        $this->drv->commit();
+        $tr1->commit();
         $this->assertEquals(1, $this->drv->query($select)->getValue());
         $this->assertEquals(1, $ch->querySingle($select));
-    }
-
-    function testFullyRollbackChainedTransactions() {
-        $select = "SELECT count(*) FROM test";
-        $insert = "INSERT INTO test(id) values(null)";
-        $ch = new \SQLite3(Data::$conf->dbSQLite3File);
-        $this->drv->exec("CREATE TABLE test(id integer primary key)");
-        $this->drv->begin();
-        $this->drv->query($insert);
-        $this->assertEquals(1, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $ch->querySingle($select));
-        $this->drv->begin();
-        $this->drv->query($insert);
-        $this->assertEquals(2, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $ch->querySingle($select));
-        $this->drv->rollback(true);
-        $this->assertEquals(0, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $ch->querySingle($select));
-    }
-
-    function testFullyCommitChainedTransactions() {
-        $select = "SELECT count(*) FROM test";
-        $insert = "INSERT INTO test(id) values(null)";
-        $ch = new \SQLite3(Data::$conf->dbSQLite3File);
-        $this->drv->exec("CREATE TABLE test(id integer primary key)");
-        $this->drv->begin();
-        $this->drv->query($insert);
-        $this->assertEquals(1, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $ch->querySingle($select));
-        $this->drv->begin();
-        $this->drv->query($insert);
-        $this->assertEquals(2, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $ch->querySingle($select));
-        $this->drv->commit(true);
-        $this->assertEquals(2, $this->drv->query($select)->getValue());
-        $this->assertEquals(2, $ch->querySingle($select));
     }
 
     function testFetchSchemaVersion() {

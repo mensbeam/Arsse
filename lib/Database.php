@@ -458,7 +458,7 @@ class Database {
     public function subscriptionPropertiesSet(string $user, int $id, array $data): bool {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
-        $this->db->begin();
+        $tr = $this->db->begin();
         if(!$this->db->prepare("SELECT count(*) from arsse_subscriptions where owner is ? and id is ?", "str", "int")->run($user, $id)->getValue()) {
             // if the ID doesn't exist or doesn't belong to the user, throw an exception
             throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
@@ -470,118 +470,112 @@ class Database {
             'pinned'     => "strict bool",
         ];
         list($setClause, $setTypes, $setValues) = $this->generateSet($data, $valid);
-        return (bool) $this->db->prepare("UPDATE arsse_subscriptions set $setClause where owner is ? and id is ?", $setTypes, "str", "int")->run($setValues, $user, $id)->changes();
+        $out = (bool) $this->db->prepare("UPDATE arsse_subscriptions set $setClause where owner is ? and id is ?", $setTypes, "str", "int")->run($setValues, $user, $id)->changes();
+        $tr->commit();
+        return $out;
     }
 
     public function feedUpdate(int $feedID, bool $throwError = false): bool {
-        $this->db->begin();
+        $tr = $this->db->begin();
+        // check to make sure the feed exists
+        $f = $this->db->prepare('SELECT url, username, password, DATEFORMAT("http", modified) AS lastmodified, etag, err_count FROM arsse_feeds where id is ?', "int")->run($feedID)->getRow();
+        if(!$f) throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID]);
+        // the Feed object throws an exception when there are problems, but that isn't ideal
+        // here. When an exception is thrown it should update the database with the
+        // error instead of failing; if other exceptions are thrown, we should simply roll back
         try {
-            // check to make sure the feed exists
-            $f = $this->db->prepare('SELECT url, username, password, DATEFORMAT("http", modified) AS lastmodified, etag, err_count FROM arsse_feeds where id is ?', "int")->run($feedID)->getRow();
-            if(!$f) throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID]);
-            // the Feed object throws an exception when there are problems, but that isn't ideal
-            // here. When an exception is thrown it should update the database with the
-            // error instead of failing; if other exceptions are thrown, we should simply roll back
-            try {
-                $feed = new Feed($feedID, $f['url'], (string)$f['lastmodified'], $f['etag'], $f['username'], $f['password']);
-                if(!$feed->modified) {
-                    // if the feed hasn't changed, just compute the next fetch time and record it
-                    $this->db->prepare('UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id is ?', 'datetime', 'int')->run($feed->nextFetch, $feedID);
-                    $this->db->commit();
-                    return false;
-                }
-            } catch (Feed\Exception $e) {
-                // update the database with the resultant error and the next fetch time, incrementing the error count
-                $this->db->prepare(
-                    'UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ?, err_count = err_count + 1, err_msg = ? WHERE id is ?', 
-                    'datetime', 'str', 'int'
-                )->run(Feed::nextFetchOnError($f['err_count']), $e->getMessage(),$feedID);
-                $this->db->commit();
-                if($throwError) throw $e;
+            $feed = new Feed($feedID, $f['url'], (string)$f['lastmodified'], $f['etag'], $f['username'], $f['password']);
+            if(!$feed->modified) {
+                // if the feed hasn't changed, just compute the next fetch time and record it
+                $this->db->prepare('UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id is ?', 'datetime', 'int')->run($feed->nextFetch, $feedID);
+                $tr->commit();
                 return false;
-            } catch(\Throwable $e) {
-                $this->db->rollback();
-                throw $e;
             }
-            //prepare the necessary statements to perform the update
-            if(sizeof($feed->newItems) || sizeof($feed->changedItems)) {
-                $qInsertCategory = $this->db->prepare('INSERT INTO arsse_categories(article,name) values(?,?)', 'int', 'str');
-                $qInsertEdition = $this->db->prepare('INSERT INTO arsse_editions(article) values(?)', 'int');
-            }
-            if(sizeof($feed->newItems)) {
-                $qInsertArticle = $this->db->prepare(
-                    'INSERT INTO arsse_articles(url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash,feed) values(?,?,?,?,?,?,?,?,?,?,?)',
-                    'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int'
-                );
-            }
-            if(sizeof($feed->changedItems)) {
-                $qDeleteCategories = $this->db->prepare('DELETE FROM arsse_categories WHERE article is ?', 'int');
-                $qClearReadMarks = $this->db->prepare('UPDATE arsse_subscription_articles SET read = 0, modified = CURRENT_TIMESTAMP WHERE article is ?', 'int');
-                $qUpdateArticle = $this->db->prepare(
-                    'UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id is ?', 
-                    'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int'
-                );
-            }
-            // actually perform updates
-            foreach($feed->newItems as $article) {
-                $articleID = $qInsertArticle->run(
-                    $article->url,
-                    $article->title,
-                    $article->author,
-                    $article->publishedDate,
-                    $article->updatedDate,
-                    $article->id,
-                    $article->content,
-                    $article->urlTitleHash,
-                    $article->urlContentHash,
-                    $article->titleContentHash,
-                    $feedID
-                )->lastId();
-                foreach($article->getTag('category') as $c) {
-                    $qInsertCategory->run($articleID, $c);
-                }
-                $qInsertEdition->run($articleID);
-            }
-            foreach($feed->changedItems as $articleID => $article) {
-                $qUpdateArticle->run(
-                    $article->url,
-                    $article->title,
-                    $article->author,
-                    $article->publishedDate,
-                    $article->updatedDate,
-                    $article->id,
-                    $article->content,
-                    $article->urlTitleHash,
-                    $article->urlContentHash,
-                    $article->titleContentHash,
-                    $articleID
-                );
-                $qDeleteCategories->run($articleID);
-                foreach($article->getTag('category') as $c) {
-                    $qInsertCategory->run($articleID, $c);
-                }
-                $qInsertEdition->run($articleID);
-                $qClearReadMarks->run($articleID);
-            }
-            // lastly update the feed database itself with updated information.
+        } catch (Feed\Exception $e) {
+            // update the database with the resultant error and the next fetch time, incrementing the error count
             $this->db->prepare(
-                'UPDATE arsse_feeds SET url = ?, title = ?, favicon = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = "", next_fetch = ? WHERE id is ?', 
-                'str', 'str', 'str', 'str', 'datetime', 'str', 'datetime', 'int'
-            )->run(
-                $feed->data->feedUrl,
-                $feed->data->title,
-                $feed->favicon,
-                $feed->data->siteUrl,
-                $feed->lastModified,
-                $feed->resource->getEtag(),
-                $feed->nextFetch,
-                $feedID
-            );
-        } catch(\Throwable $e) {
-            $this->db->rollback();
-            throw $e;
+                'UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ?, err_count = err_count + 1, err_msg = ? WHERE id is ?', 
+                'datetime', 'str', 'int'
+            )->run(Feed::nextFetchOnError($f['err_count']), $e->getMessage(),$feedID);
+            $tr->commit();
+            if($throwError) throw $e;
+            return false;
         }
-        $this->db->commit();
+        //prepare the necessary statements to perform the update
+        if(sizeof($feed->newItems) || sizeof($feed->changedItems)) {
+            $qInsertCategory = $this->db->prepare('INSERT INTO arsse_categories(article,name) values(?,?)', 'int', 'str');
+            $qInsertEdition = $this->db->prepare('INSERT INTO arsse_editions(article) values(?)', 'int');
+        }
+        if(sizeof($feed->newItems)) {
+            $qInsertArticle = $this->db->prepare(
+                'INSERT INTO arsse_articles(url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash,feed) values(?,?,?,?,?,?,?,?,?,?,?)',
+                'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int'
+            );
+        }
+        if(sizeof($feed->changedItems)) {
+            $qDeleteCategories = $this->db->prepare('DELETE FROM arsse_categories WHERE article is ?', 'int');
+            $qClearReadMarks = $this->db->prepare('UPDATE arsse_subscription_articles SET read = 0, modified = CURRENT_TIMESTAMP WHERE article is ?', 'int');
+            $qUpdateArticle = $this->db->prepare(
+                'UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id is ?', 
+                'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int'
+            );
+        }
+        // actually perform updates
+        foreach($feed->newItems as $article) {
+            $articleID = $qInsertArticle->run(
+                $article->url,
+                $article->title,
+                $article->author,
+                $article->publishedDate,
+                $article->updatedDate,
+                $article->id,
+                $article->content,
+                $article->urlTitleHash,
+                $article->urlContentHash,
+                $article->titleContentHash,
+                $feedID
+            )->lastId();
+            foreach($article->getTag('category') as $c) {
+                $qInsertCategory->run($articleID, $c);
+            }
+            $qInsertEdition->run($articleID);
+        }
+        foreach($feed->changedItems as $articleID => $article) {
+            $qUpdateArticle->run(
+                $article->url,
+                $article->title,
+                $article->author,
+                $article->publishedDate,
+                $article->updatedDate,
+                $article->id,
+                $article->content,
+                $article->urlTitleHash,
+                $article->urlContentHash,
+                $article->titleContentHash,
+                $articleID
+            );
+            $qDeleteCategories->run($articleID);
+            foreach($article->getTag('category') as $c) {
+                $qInsertCategory->run($articleID, $c);
+            }
+            $qInsertEdition->run($articleID);
+            $qClearReadMarks->run($articleID);
+        }
+        // lastly update the feed database itself with updated information.
+        $this->db->prepare(
+            'UPDATE arsse_feeds SET url = ?, title = ?, favicon = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = "", next_fetch = ? WHERE id is ?', 
+            'str', 'str', 'str', 'str', 'datetime', 'str', 'datetime', 'int'
+        )->run(
+            $feed->data->feedUrl,
+            $feed->data->title,
+            $feed->favicon,
+            $feed->data->siteUrl,
+            $feed->lastModified,
+            $feed->resource->getEtag(),
+            $feed->nextFetch,
+            $feedID
+        );
+        $tr->commit();
         return true;
     }
 

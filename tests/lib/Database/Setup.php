@@ -52,7 +52,7 @@ trait Setup {
     }
 
     function primeDatabase(array $data): bool {
-        $this->drv->begin();
+        $tr = $this->drv->begin();
         foreach($data as $table => $info) {
             $cols = implode(",", array_keys($info['columns']));
             $bindings = array_values($info['columns']);
@@ -62,7 +62,7 @@ trait Setup {
                 $this->assertEquals(1, $s->runArray($row)->changes());
             }
         }
-        $this->drv->commit();
+        $tr->commit();
         return true;
     }
 

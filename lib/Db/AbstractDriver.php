@@ -14,12 +14,16 @@ abstract class AbstractDriver implements Driver {
         }
     }
 
-    public function begin(): bool {
+    public function begin(): Transaction {
+        return new Transaction($this);
+    }
+    
+    public function savepointCreate(): bool {
         $this->exec("SAVEPOINT arsse_".(++$this->transDepth));
         return true;
     }
 
-    public function commit(bool $all = false): bool {
+    public function savepointRelease(bool $all = false): bool {
         if($this->transDepth==0) return false;
         if(!$all) {
             $this->exec("RELEASE SAVEPOINT arsse_".($this->transDepth--));
@@ -30,7 +34,7 @@ abstract class AbstractDriver implements Driver {
         return true;
     }
 
-    public function rollback(bool $all = false): bool {
+    public function savepointUndo(bool $all = false): bool {
         if($this->transDepth==0) return false;
         if(!$all) {
             $this->exec("ROLLBACK TRANSACTION TO SAVEPOINT arsse_".($this->transDepth));

@@ -69,9 +69,9 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $sep = \DIRECTORY_SEPARATOR;
         $path = Data::$conf->dbSchemaBase.$sep."SQLite3".$sep;
         $this->lock();
-        $this->begin();
+        $this->savepointCreate();
         for($a = $ver; $a < $to; $a++) {
-            $this->begin();
+            $this->savepointCreate();
             try {
                 $file = $path.$a.".sql";
                 if(!file_exists($file)) throw new Exception("updateFileMissing", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]);
@@ -86,17 +86,17 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
                 if($this->schemaVersion() != $a+1) throw new Exception("updateFileIncomplete", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]);
             } catch(\Throwable $e) {
                 // undo any partial changes from the failed update
-                $this->rollback();
+                $this->savepointUndo();
                 $this->unlock();
                 // commit any successful updates if updating by more than one version
-                $this->commit(true);
+                $this->savepointRelease(true);
                 // throw the error received
                 throw $e;
             }
-            $this->commit();
+            $this->savepointRelease();
         }
         $this->unlock();
-        $this->commit();
+        $this->savepointRelease();
         return true;
     }
 

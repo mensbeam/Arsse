@@ -8,12 +8,14 @@ interface Driver {
     static function driverName(): string;
     // returns the version of the scheme of the opened database; if uninitialized should return 0
     function schemaVersion(): int;
-    // begin a real or synthetic transactions, with real or synthetic nesting
-    function begin(): bool;
-    // commit either the latest or all pending nested transactions; use of this method should assume a partial commit is a no-op
-    function commit(bool $all = false): bool;
-    // rollback either the latest or all pending nested transactions; use of this method should assume a partial rollback will not work
-    function rollback(bool $all = false): bool;
+    // return a Transaction object
+    function begin(): Transaction;
+    // manually begin a real or synthetic transactions, with real or synthetic nesting
+    function savepointCreate(): bool;
+    // manually commit either the latest or all pending nested transactions
+    function savepointRelease(bool $all = false): bool;
+    // manually rollback either the latest or all pending nested transactions
+    function savepointUndo(bool $all = false): bool;
     // attempt to advise other processes that they should not attempt to access the database; used during live upgrades
     function lock(): bool;
     function unlock(): bool;
