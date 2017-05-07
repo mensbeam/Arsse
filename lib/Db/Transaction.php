@@ -3,11 +3,12 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Db;
 
 class Transaction {
+    protected $index;
     protected $pending = false;
     protected $drv;
 
     function __construct(Driver $drv) {
-        $drv->savepointCreate();
+        $this->index = $drv->savepointCreate();
         $this->drv = $drv;
         $this->pending = true;
     }
@@ -15,7 +16,7 @@ class Transaction {
     function __destruct() {
         if($this->pending) {
             try {
-                $this->drv->savepointUndo();
+                $this->drv->savepointUndo($this->index);
             } catch(\Throwable $e) {
                 // do nothing
             }
@@ -23,22 +24,22 @@ class Transaction {
     }
 
     function commit(): bool {
-        if($this->pending) {
-            $this->drv->savepointRelease();
-            $this->pending = false;
-            return true;
-        } else {
-            return false;
-        }
+        $out = $this->drv->savepointRelease($this->index);
+        $this->pending = false;
+        return $out;
     }
 
     function rollback(): bool {
-        if($this->pending) {
-            $this->drv->savepointUndo();
-            $this->pending = false;
-            return true;
-        } else {
-            return false;
-        }
+        $out = $this->drv->savepointUndo($this->index);
+        $this->pending = false;
+        return $out;
+    }
+
+    function getIndex(): int {
+        return $this->index;
+    }
+
+    function isPending(): bool {
+        return $this->pending;
     }
 }

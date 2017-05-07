@@ -57,6 +57,7 @@ return [
             other {Automatic updating of the {driver_name} database failed because its version, {current}, is newer than the requested version, {target}}
         }',
     'Exception.JKingWeb/Arsse/Db/Exception.engineErrorGeneral'       => '{0}',
+    'Exception.JKingWeb/Arsse/Db/Exception.unknownSavepointStatus'   => 'Savepoint status code {0} not implemented',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.missing'             => 'Required field "{field}" missing while performing action "{action}"',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.whitespace'          => 'Required field "{field}" of action "{action}" may not contain only whitespace',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.tooLong'             => 'Required field "{field}" of action "{action}" has a maximum length of {max}',
@@ -66,6 +67,8 @@ return [
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.constraintViolation' => '{0}',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.typeViolation'       => '{0}',
     'Exception.JKingWeb/Arsse/Db/ExceptionTimeout.general'           => '{0}',
+    'Exception.JKingWeb/Arsse/Db/ExceptionSavepoint.invalid'         => 'Tried to {action} invalid savepoint {index}',
+    'Exception.JKingWeb/Arsse/Db/ExceptionSavepoint.stale'           => 'Tried to {action} stale savepoint {index}',
     'Exception.JKingWeb/Arsse/User/Exception.alreadyExists'          => 'Could not perform action "{action}" because the user {user} already exists',
     'Exception.JKingWeb/Arsse/User/Exception.doesNotExist'           => 'Could not perform action "{action}" because the user {user} does not exist',
     'Exception.JKingWeb/Arsse/User/Exception.authMissing'            => 'Please log in to proceed',

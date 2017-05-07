@@ -3,6 +3,12 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Db;
 
 interface Driver {
+    const TR_PEND = 0;
+    const TR_COMMIT = 1;
+    const TR_ROLLBACK = 2;
+    const TR_PEND_COMMIT = -1;
+    const TR_PEND_ROLLBACK = -2;
+    
     function __construct(bool $install = false);
     // returns a human-friendly name for the driver (for display in installer, for example)
     static function driverName(): string;
@@ -11,11 +17,11 @@ interface Driver {
     // return a Transaction object
     function begin(): Transaction;
     // manually begin a real or synthetic transactions, with real or synthetic nesting
-    function savepointCreate(): bool;
+    function savepointCreate(): int;
     // manually commit either the latest or all pending nested transactions
-    function savepointRelease(bool $all = false): bool;
+    function savepointRelease(int $index = null): bool;
     // manually rollback either the latest or all pending nested transactions
-    function savepointUndo(bool $all = false): bool;
+    function savepointUndo(int $index = null): bool;
     // attempt to advise other processes that they should not attempt to access the database; used during live upgrades
     function lock(): bool;
     function unlock(): bool;

@@ -5,6 +5,7 @@ use JKingWeb\DrUUID\UUID as UUID;
 
 abstract class AbstractDriver implements Driver {
     protected $transDepth = 0;
+    protected $transStatus = [];
 
     public function schemaVersion(): int {
         try {
@@ -18,33 +19,89 @@ abstract class AbstractDriver implements Driver {
         return new Transaction($this);
     }
     
-    public function savepointCreate(): bool {
+    public function savepointCreate(): int {
         $this->exec("SAVEPOINT arsse_".(++$this->transDepth));
-        return true;
+        $this->transStatus[$this->transDepth] = self::TR_PEND;
+        return $this->transDepth;
     }
 
-    public function savepointRelease(bool $all = false): bool {
-        if($this->transDepth==0) return false;
-        if(!$all) {
-            $this->exec("RELEASE SAVEPOINT arsse_".($this->transDepth--));
+    public function savepointRelease(int $index = null): bool {
+        if(is_null($index)) $index = $this->transDepth;
+        if(array_key_exists($index, $this->transStatus)) {
+            switch($this->transStatus[$index]) {
+                case self::TR_PEND:
+                    $this->exec("RELEASE SAVEPOINT arsse_".$index);
+                    $this->transStatus[$index] = self::TR_COMMIT;
+                    $a = $index;
+                    while(++$a && $a <= $this->transDepth) {
+                        if($this->transStatus[$a] <= self::TR_PEND) $this->transStatus[$a] = self::TR_PEND_COMMIT;
+                    }
+                    $out = true;
+                    break;
+                case self::TR_PEND_COMMIT:
+                    $this->transStatus[$index] = self::TR_COMMIT;
+                    $out = true;
+                    break;
+                case self::TR_PEND_ROLLBACK:
+                    $this->transStatus[$index] = self::TR_COMMIT;
+                    $out = false;
+                    break;
+                case self::TR_COMMIT:
+                case self::TR_ROLLBACK:
+                    throw new ExceptionSavepoint("stale", ['action' => "commit", 'index' => $index]);
+                default:
+                    throw new Exception("unknownSavepointStatus", $this->transStatus[$index]);
+            }
+            if($index==$this->transDepth) {
+                while($this->transDepth > 0 && $this->transStatus[$this->transDepth] > self::TR_PEND) {
+                    array_pop($this->transStatus);
+                    $this->transDepth--;
+                }
+            }
+            return $out;
         } else {
-            $this->exec("COMMIT TRANSACTION");
-            $this->transDepth = 0;
+            throw new ExceptionSavepoint("invalid", ['action' => "commit", 'index' => $index]);
         }
-        return true;
     }
 
-    public function savepointUndo(bool $all = false): bool {
-        if($this->transDepth==0) return false;
-        if(!$all) {
-            $this->exec("ROLLBACK TRANSACTION TO SAVEPOINT arsse_".($this->transDepth));
-            // rollback to savepoint does not collpase the savepoint
-            $this->exec("RELEASE SAVEPOINT arsse_".($this->transDepth--));
+    public function savepointUndo(int $index = null): bool {
+        if(is_null($index)) $index = $this->transDepth;
+        if(array_key_exists($index, $this->transStatus)) {
+            switch($this->transStatus[$index]) {
+                case self::TR_PEND:
+                    $this->exec("ROLLBACK TRANSACTION TO SAVEPOINT arsse_".$index);
+                    $this->exec("RELEASE SAVEPOINT arsse_".$index);
+                    $this->transStatus[$index] = self::TR_ROLLBACK;
+                    $a = $index;
+                    while(++$a && $a <= $this->transDepth) {
+                        if($this->transStatus[$a] <= self::TR_PEND) $this->transStatus[$a] = self::TR_PEND_ROLLBACK;
+                    }
+                    $out = true;
+                    break;
+                case self::TR_PEND_COMMIT:
+                    $this->transStatus[$index] = self::TR_ROLLBACK;
+                    $out = false;
+                    break;
+                case self::TR_PEND_ROLLBACK:
+                    $this->transStatus[$index] = self::TR_ROLLBACK;
+                    $out = true;
+                    break;
+                case self::TR_COMMIT:
+                case self::TR_ROLLBACK:
+                    throw new ExceptionSavepoint("stale", ['action' => "rollback", 'index' => $index]);
+                default:
+                    throw new Exception("unknownSavepointStatus", $this->transStatus[$index]);
+            }
+            if($index==$this->transDepth) {
+                while($this->transDepth > 0 && $this->transStatus[$this->transDepth] > self::TR_PEND) {
+                    array_pop($this->transStatus);
+                    $this->transDepth--;
+                }
+            }
+            return $out;
         } else {
-            $this->exec("ROLLBACK TRANSACTION");
-            $this->transDepth = 0;
+            throw new ExceptionSavepoint("invalid", ['action' => "rollback", 'index' => $index]);
         }
-        return true;
     }
 
     public function lock(): bool {

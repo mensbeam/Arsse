@@ -69,7 +69,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $sep = \DIRECTORY_SEPARATOR;
         $path = Data::$conf->dbSchemaBase.$sep."SQLite3".$sep;
         $this->lock();
-        $this->savepointCreate();
+        $tr = $this->savepointCreate();
         for($a = $ver; $a < $to; $a++) {
             $this->savepointCreate();
             try {
@@ -87,9 +87,9 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
             } catch(\Throwable $e) {
                 // undo any partial changes from the failed update
                 $this->savepointUndo();
-                $this->unlock();
                 // commit any successful updates if updating by more than one version
-                $this->savepointRelease(true);
+                $this->unlock();
+                $this->savepointRelease();
                 // throw the error received
                 throw $e;
             }

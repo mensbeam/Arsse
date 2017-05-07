@@ -32,6 +32,9 @@ abstract class AbstractException extends \Exception {
         "Db/Exception.paramTypeUnknown"         => 10222,
         "Db/Exception.paramTypeMissing"         => 10223,
         "Db/Exception.engineErrorGeneral"       => 10224, // this symbol may have engine-specific duplicates to accomodate engine-specific error string construction
+        "Db/Exception.unknownSavepointStatus"   => 10225,
+        "Db/ExceptionSavepoint.invalid"         => 10226,
+        "Db/ExceptionSavepoint.stale"           => 10227,
         "Db/ExceptionInput.missing"             => 10231,
         "Db/ExceptionInput.whitespace"          => 10232,
         "Db/ExceptionInput.tooLong"             => 10233,
