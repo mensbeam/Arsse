@@ -7,45 +7,16 @@ use Phake;
 
 trait SeriesFolder {
     function setUpSeries() {
-        $data = [
-            'arsse_folders' => [
-                'columns' => [
-                    'id'     => "int",
-                    'owner'  => "str",
-                    'parent' => "int",
-                    'name'   => "str",
-                ],
-                /* Layout translates to:
-                Jane
-                    Politics
-                John
-                    Technology
-                        Software
-                            Politics
-                        Rocketry
-                    Politics
-                */
-                'rows' => [
-                    [1, "john.doe@example.com", null, "Technology"],
-                    [2, "john.doe@example.com",    1, "Software"],
-                    [3, "john.doe@example.com",    1, "Rocketry"],
-                    [4, "jane.doe@example.com", null, "Politics"],        
-                    [5, "john.doe@example.com", null, "Politics"],
-                    [6, "john.doe@example.com",    2, "Politics"],
-                ]
-            ]
-        ];
-        // merge folder table with base user table
-        $this->data = array_merge($this->data, $data);
         $this->primeDatabase($this->data);
     }
 
     function testAddARootFolder() {
         $user = "john.doe@example.com";
-        $this->assertSame(7, Data::$db->folderAdd($user, ['name' => "Entertainment"]));
+        $folderID = $this->nextID("arsse_folders");
+        $this->assertSame($folderID, Data::$db->folderAdd($user, ['name' => "Entertainment"]));
         Phake::verify(Data::$user)->authorize($user, "folderAdd");
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
-        $state['arsse_folders']['rows'][] = [7, $user, null, "Entertainment"];
+        $state['arsse_folders']['rows'][] = [$folderID, $user, null, "Entertainment"];
         $this->compareExpectations($state);
     }
 
@@ -56,10 +27,11 @@ trait SeriesFolder {
 
     function testAddANestedFolder() {
         $user = "john.doe@example.com";
-        $this->assertSame(7, Data::$db->folderAdd($user, ['name' => "GNOME", 'parent' => 2]));
+        $folderID = $this->nextID("arsse_folders");
+        $this->assertSame($folderID, Data::$db->folderAdd($user, ['name' => "GNOME", 'parent' => 2]));
         Phake::verify(Data::$user)->authorize($user, "folderAdd");
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
-        $state['arsse_folders']['rows'][] = [7, $user, 2, "GNOME"];
+        $state['arsse_folders']['rows'][] = [$folderID, $user, 2, "GNOME"];
         $this->compareExpectations($state);
     }
 

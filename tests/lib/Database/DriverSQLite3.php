@@ -9,4 +9,8 @@ trait DriverSQLite3 {
         Data::$conf->dbSQLite3File = ":memory:";
         $this->drv = new Driver(true);
     }
+
+    function nextID(string $table): int {
+        return $this->drv->query("SELECT (case when max(id) then max(id) else 0 end)+1 from $table")->getValue();
+    }
 }
