@@ -37,6 +37,7 @@
     <testsuite name="SQLite3 database functions">
         <file>Db/SQLite3/Database/TestDatabaseUserSQLite3.php</file>
         <file>Db/SQLite3/Database/TestDatabaseFolderSQLite3.php</file>
+        <file>Db/SQLite3/Database/TestDatabaseSubscriptionSQLite3.php</file>
     </testsuite>
     <testsuite name="NextCloud News API">
         <file>REST/NextCloudNews/TestNCNVersionDiscovery.php</file>
