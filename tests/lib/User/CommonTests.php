@@ -5,6 +5,7 @@ use JKingWeb\Arsse\Data;
 use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\User\Driver;
+use Phake;
 
 trait CommonTests {
 
@@ -15,8 +16,8 @@ trait CommonTests {
         $conf->userAuthPreferHTTP = true;
         Data::$conf = $conf;
         Data::$db = new Database();
-        Data::$user = new User();
-        Data::$user->authorizationEnabled(false);
+        Data::$user = Phake::PartialMock(User::class);
+        Phake::when(Data::$user)->authorize->thenReturn(true);
         $_SERVER['PHP_AUTH_USER'] = self::USER1;
         $_SERVER['PHP_AUTH_PW'] = "secret";
         // call the additional setup method if it exists

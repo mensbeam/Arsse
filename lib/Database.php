@@ -278,10 +278,6 @@ class Database {
         if(!Data::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
-        // If the user doesn't exist throw an exception.
-        if(!$this->userExists($user)) {
-            throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
-        }
         // if the desired folder name is missing or invalid, throw an exception
         if(!array_key_exists("name", $data) || $data['name']=="") {
             throw new Db\ExceptionInput("missing", ["action" => __FUNCTION__, "field" => "name"]);
@@ -312,10 +308,6 @@ class Database {
         if(!Data::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
-        // if the user doesn't exist throw an exception.
-        if(!$this->userExists($user)) {
-            throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
-        }
         // check to make sure the parent exists, if one is specified
         if(!is_null($parent)) {
             if(!$this->db->prepare("SELECT count(*) from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $parent)->getValue()) {
@@ -335,7 +327,6 @@ class Database {
 
     public function folderRemove(string $user, int $id): bool {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
         $changes = $this->db->prepare("DELETE FROM arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $id)->changes();
         if(!$changes) throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id]);
         return true;
@@ -343,7 +334,6 @@ class Database {
 
     public function folderPropertiesGet(string $user, int $id): array {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
         $props = $this->db->prepare("SELECT id,name,parent from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $id)->getRow();
         if(!$props) throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id]);
         return $props;
@@ -351,7 +341,6 @@ class Database {
 
     public function folderPropertiesSet(string $user, int $id, array $data): bool {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
         // layer the existing folder properties onto the new desired ones; this also has the effect of checking whether the folder is valid
         $data = array_merge($this->folderPropertiesGet($user, $id), $data);
         // if the desired folder name is missing or invalid, throw an exception
@@ -394,7 +383,6 @@ class Database {
 
     public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = ""): int {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
         // check to see if the feed exists
         $feedID = $this->db->prepare("SELECT id from arsse_feeds where url is ? and username is ? and password is ?", "str", "str", "str")->run($url, $fetchUser, $fetchPassword)->getValue();
         if(is_null($feedID)) {
@@ -415,7 +403,6 @@ class Database {
 
     public function subscriptionList(string $user, int $folder = null, int $id = null): Db\Result {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
         // check to make sure the folder exists, if one is specified
         $query = 
             "SELECT 
@@ -442,7 +429,9 @@ class Database {
 
     public function subscriptionRemove(string $user, int $id): bool {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        return (bool) $this->db->prepare("DELETE from arsse_subscriptions where owner is ? and id is ?", "str", "int")->run($user, $id)->changes();
+        $changes = $this->db->prepare("DELETE from arsse_subscriptions where owner is ? and id is ?", "str", "int")->run($user, $id)->changes();
+        if(!$changes) throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id]);
+        return true;
     }
 
     public function subscriptionPropertiesGet(string $user, int $id): array {
@@ -457,7 +446,6 @@ class Database {
 
     public function subscriptionPropertiesSet(string $user, int $id, array $data): bool {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["user" => $user, "action" => __FUNCTION__]);
         $tr = $this->db->begin();
         if(!$this->db->prepare("SELECT count(*) from arsse_subscriptions where owner is ? and id is ?", "str", "int")->run($user, $id)->getValue()) {
             // if the ID doesn't exist or doesn't belong to the user, throw an exception

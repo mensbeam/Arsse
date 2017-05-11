@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
+use Phake;
 
 
 class TestAuthorization extends \PHPUnit\Framework\TestCase {
@@ -55,19 +56,28 @@ class TestAuthorization extends \PHPUnit\Framework\TestCase {
         if($db !== null) {
             Data::$db = new $db();
         }
-        Data::$user = new User();
-        Data::$user->authorizationEnabled(false);
+        Data::$user = Phake::PartialMock(User::class);
+        Phake::when(Data::$user)->authorize->thenReturn(true);
         foreach(self::USERS as $user => $level) {
             Data::$user->add($user, "");
             Data::$user->rightsSet($user, $level);
         }
-        Data::$user->authorizationEnabled(true);
+        Phake::reset(Data::$user);
     }
 
     function tearDown() {
         $this->clearData();
     }
 
+    function testToggleLogic() {
+        $this->assertTrue(Data::$user->authorizationEnabled());
+        $this->assertTrue(Data::$user->authorizationEnabled(true));
+        $this->assertFalse(Data::$user->authorizationEnabled(false));
+        $this->assertFalse(Data::$user->authorizationEnabled(false));
+        $this->assertFalse(Data::$user->authorizationEnabled(true));
+        $this->assertTrue(Data::$user->authorizationEnabled(true));
+    }
+    
     function testSelfActionLogic() {
         foreach(array_keys(self::USERS) as $user) {
             Data::$user->auth($user, "");
@@ -297,5 +307,12 @@ class TestAuthorization extends \PHPUnit\Framework\TestCase {
             }
         }
         return $err;
+    }
+
+    function testMissingUserLogic() {
+        Data::$user->auth("gadm@example.com", "");
+        $this->assertTrue(Data::$user->authorize("user@example.com", "someFunction"));
+        $this->assertException("doesNotExist", "User");
+        Data::$user->authorize("this_user_does_not_exist@example.org", "someFunction");
     }
 }

@@ -45,11 +45,6 @@ trait SeriesFolder {
         Data::$db->folderAdd("john.doe@example.com", ['name' => "Sociology", 'parent' => 4]); // folder ID 4 belongs to Jane
     }
 
-    function testAddAFolderForAMissingUser() {
-        $this->assertException("doesNotExist", "User");
-        Data::$db->folderAdd("john.doe@example.org", ['name' => "Sociology"]);
-    }
-
     function testAddAFolderWithAMissingName() {
         $this->assertException("missing", "Db", "ExceptionInput");
         Data::$db->folderAdd("john.doe@example.com", []);
@@ -119,11 +114,6 @@ trait SeriesFolder {
         Data::$db->folderList("john.doe@example.com", 4); // folder ID 4 belongs to Jane
     }
 
-    function testListFoldersForAMissingUser() {
-        $this->assertException("doesNotExist", "User");
-        Data::$db->folderList("john.doe@example.org");
-    }
-
     function testListFoldersWithoutAuthority() {
         Phake::when(Data::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
@@ -158,11 +148,6 @@ trait SeriesFolder {
         Data::$db->folderRemove("john.doe@example.com", 4); // folder ID 4 belongs to Jane
     }
 
-    function testRemoveAFolderForAMissingUser() {
-        $this->assertException("doesNotExist", "User");
-        Data::$db->folderRemove("john.doe@example.org", 1);
-    }
-
     function testRemoveAFolderWithoutAuthority() {
         Phake::when(Data::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
@@ -187,11 +172,6 @@ trait SeriesFolder {
     function testGetThePropertiesOfAFolderOfTheWrongOwner() {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Data::$db->folderPropertiesGet("john.doe@example.com", 4); // folder ID 4 belongs to Jane
-    }
-
-    function testGetThePropertiesOfAFolderForAMissingUser() {
-        $this->assertException("doesNotExist", "User");
-        Data::$db->folderPropertiesGet("john.doe@example.org", 1);
     }
 
     function testGetThePropertiesOfAFolderWithoutAuthority() {
@@ -244,11 +224,6 @@ trait SeriesFolder {
     function testSetThePropertiesOfAFolderOfTheWrongOwner() {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Data::$db->folderPropertiesSet("john.doe@example.com", 4, ['parent' => null]); // folder ID 4 belongs to Jane
-    }
-
-    function testSetThePropertiesOfAFolderForAMissingUser() {
-        $this->assertException("doesNotExist", "User");
-        Data::$db->folderPropertiesSet("john.doe@example.org", 1, ['parent' => null]);
     }
 
     function testSetThePropertiesOfAFolderWithoutAuthority() {

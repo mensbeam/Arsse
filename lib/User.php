@@ -6,7 +6,7 @@ class User {
     public  $id = null;
 
     protected $u;
-    protected $authz = true;
+    protected $authz = 0;
     protected $authzSupported = 0;
     protected $actor = [];
 
@@ -36,14 +36,18 @@ class User {
     // checks whether the logged in user is authorized to act for the affected user (used especially when granting rights)
     function authorize(string $affectedUser, string $action, int $newRightsLevel = 0): bool {
         // if authorization checks are disabled (either because we're running the installer or the background updater) just return true
-        if(!$this->authz) return true;
+        if(!$this->authorizationEnabled()) return true;
         // if we don't have a logged-in user, fetch credentials
         if($this->id===null) $this->credentials();
         // if the affected user is the actor and the actor is not trying to grant themselves rights, accept the request
         if($affectedUser==Data::$user->id && $action != "userRightsSet") return true;
+        // if we're authorizing something other than a user function and the affected user is not the actor, make sure the affected user exists
+        $this->authorizationEnabled(false);
+        if(Data::$user->id != $affectedUser && strpos($action, "user")!==0 && !$this->exists($affectedUser)) throw new User\Exception("doesNotExist", ["action" => $action, "user" => $affectedUser]);
+        $this->authorizationEnabled(true);
         // get properties of actor if not already available
         if(!sizeof($this->actor)) $this->actor = $this->propertiesGet(Data::$user->id);
-        $rights =& $this->actor["rights"];
+        $rights = $this->actor["rights"];
         // if actor is a global admin, accept the request
         if($rights==User\Driver::RIGHTS_GLOBAL_ADMIN) return true;
         // if actor is a common user, deny the request
@@ -162,9 +166,10 @@ class User {
     }
 
     public function authorizationEnabled(bool $setting = null): bool {
-        if($setting===null) return $this->authz;
-        $this->authz = $setting;
-        return $setting;
+        if(is_null($setting)) return !$this->authz;
+        $this->authz += ($setting ? -1 : 1);
+        if($this->authz < 0) $this->authz = 0;
+        return !$this->authz;
     }
 
     public function exists(string $user): bool {

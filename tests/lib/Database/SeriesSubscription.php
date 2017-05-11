@@ -20,6 +20,7 @@ trait SeriesSubscription {
                 ],
                 'rows' => [
                     [1,"http://example.com/feed1", "Ook", "", ""],
+                    [2,"http://example.com/feed2", "Eek", "", ""],
                 ]
             ],
             'arsse_subscriptions' => [
@@ -27,13 +28,14 @@ trait SeriesSubscription {
                     'id'    => "int",
                     'owner' => "str",
                     'feed'  => "int",
+                    'title' => "str",
                 ],
                 'rows' => [
-
+                    [1,"john.doe@example.com",2,null],
                 ]
             ]
         ];
-        // merge folder table with base user table
+        // merge tables
         $this->data = array_merge($this->data, $data);
         $this->primeDatabase($this->data);
         // initialize a partial mock of the Database object to later manipulate the feedUpdate method
@@ -78,7 +80,6 @@ trait SeriesSubscription {
         $user = "john.doe@example.com";
         $url = "http://example.org/feed1";
         $feedID = $this->nextID("arsse_feeds");
-        $subID = $this->nextID("arsse_subscriptions");
         Phake::when(Data::$db)->feedUpdate->thenThrow(new FeedException($url, new \PicoFeed\Client\InvalidUrlException()));
         try {
             Data::$db->subscriptionAdd($user, $url);
@@ -93,5 +94,20 @@ trait SeriesSubscription {
             $this->assertException("invalidUrl", "Feed");
             throw $e;
         }
+    }
+
+    function testAddADuplicateSubscription() {
+        $user = "john.doe@example.com";
+        $url = "http://example.com/feed2";
+        $this->assertException("constraintViolation", "Db", "ExceptionInput");
+        Data::$db->subscriptionAdd($user, $url);
+    }
+
+    function testAddAFeedWithoutAuthority() {
+        $user = "john.doe@example.com";
+        $url = "http://example.com/feed1";
+        Phake::when(Data::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Data::$db->subscriptionAdd($user, $url);
     }
 }
