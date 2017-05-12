@@ -367,7 +367,6 @@ class User {
 
     protected function autoProvision(string $user, string $password = null, array $properties = null, int $rights = 0): string {
         // temporarily disable authorization checks, to avoid potential problems
-        $authz = $this->authorizationEnabled();
         $this->authorizationEnabled(false);
         // create the user
         $out = Data::$db->userAdd($user, $password);
@@ -384,7 +383,7 @@ class User {
             Data::$db->userPropertiesSet($user, $properties);
         }
         // re-enable authorization and return
-        $this->authorizationEnabled($authz);
+        $this->authorizationEnabled(true);
         return $out;
     }
 }

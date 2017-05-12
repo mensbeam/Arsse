@@ -32,6 +32,7 @@ trait SeriesSubscription {
                 ],
                 'rows' => [
                     [1,"john.doe@example.com",2,null],
+                    [2,"jane.doe@example.com",2,null],
                 ]
             ]
         ];
@@ -103,11 +104,41 @@ trait SeriesSubscription {
         Data::$db->subscriptionAdd($user, $url);
     }
 
-    function testAddAFeedWithoutAuthority() {
+    function testAddASubscriptionWithoutAuthority() {
         $user = "john.doe@example.com";
         $url = "http://example.com/feed1";
         Phake::when(Data::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Data::$db->subscriptionAdd($user, $url);
+    }
+
+    function testRemoveASubscription() {
+        $user = "john.doe@example.com";
+        $this->assertTrue(Data::$db->subscriptionRemove($user, 1));
+        Phake::verify(Data::$user)->authorize($user, "subscriptionRemove");
+        $state = $this->primeExpectations($this->data, [
+            'arsse_feeds'         => ['id','url','username','password'],
+            'arsse_subscriptions' => ['id','owner','feed'],
+        ]);
+        array_shift($state['arsse_subscriptions']['rows']);
+        $this->compareExpectations($state);
+    }
+
+    function testRemoveAMissingSubscription() {
+        $user = "john.doe@example.com";
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Data::$db->subscriptionRemove($user, 2112);
+    }
+
+    function testRemoveASubscriptionForTheWrongOwner() {
+        $user = "jane.doe@example.com";
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Data::$db->subscriptionRemove($user, 1);
+    }
+
+    function testRemoveASubscriptionWithoutAuthority() {
+        Phake::when(Data::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Data::$db->subscriptionRemove("john.doe@example.com", 1);
     }
 }
