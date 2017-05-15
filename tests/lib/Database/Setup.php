@@ -6,6 +6,7 @@ use JKingWeb\Arsse\Data;
 use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Test\Database;
+use JKingWeb\Arsse\Db\Result;
 use Phake;
 
 trait Setup {
@@ -141,5 +142,33 @@ trait Setup {
             }
         }
         return $out;
+    }
+
+    function assertResult(array $expected, Result $res) {
+        $exp = $expected;
+        $res = $res->getAll();
+        $this->assertSame(sizeof($exp), sizeof($res), "Number of result rows (".sizeof($res).") differs from number of expected rows (".sizeof($exp).")");
+        foreach($res as $r) {
+            $found = false;
+            foreach($exp as $index => $x) {
+                foreach($x as $field => $value) {
+                    $valid = true;
+                    if(!array_key_exists($field, $r) || $r[$field] !== $value) {
+                        echo "$field\n";
+                        $valid = false;
+                        break;
+                    }
+                }
+                if($valid) {
+                    $found = true;
+                    $this->assertArraySubset($x, $r);
+                    unset($exp[$index]);
+                    break;
+                }
+            }
+            if(!$found) {
+                $this->assertArraySubset($r, $expected);
+            }
+        }
     }
 }

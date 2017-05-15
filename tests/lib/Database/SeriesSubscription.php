@@ -21,20 +21,23 @@ trait SeriesSubscription {
                 'rows' => [
                     [1,"http://example.com/feed1", "Ook", "", ""],
                     [2,"http://example.com/feed2", "Eek", "", ""],
+                    [3,"http://example.com/feed3", "Ack", "", ""],
                 ]
             ],
             'arsse_subscriptions' => [
                 'columns' => [
-                    'id'    => "int",
-                    'owner' => "str",
-                    'feed'  => "int",
-                    'title' => "str",
+                    'id'     => "int",
+                    'owner'  => "str",
+                    'feed'   => "int",
+                    'title'  => "str",
+                    'folder' => "int",
                 ],
                 'rows' => [
-                    [1,"john.doe@example.com",2,null],
-                    [2,"jane.doe@example.com",2,null],
+                    [1,"john.doe@example.com",2,null,null],
+                    [2,"jane.doe@example.com",2,null,null],
+                    [3,"john.doe@example.com",3,"Ook",2],
                 ]
-            ]
+            ],
         ];
         // merge tables
         $this->data = array_merge($this->data, $data);
@@ -140,5 +143,34 @@ trait SeriesSubscription {
         Phake::when(Data::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Data::$db->subscriptionRemove("john.doe@example.com", 1);
+    }
+
+    function testListSubscriptions() {
+        $user = "john.doe@example.com";
+        $exp = [
+            [
+                'url' => "http://example.com/feed2",
+                'title' => "Eek",
+                'folder' => null,
+            ],
+            [
+                'url' => "http://example.com/feed3",
+                'title' => "Ook",
+                'folder' => 2,
+            ],
+        ];
+        $this->assertResult($exp, Data::$db->subscriptionList($user));
+    }
+
+    function testListSubscriptionsInAFolder() {
+        $user = "john.doe@example.com";
+        $exp = [
+            [
+                'url' => "http://example.com/feed3",
+                'title' => "Ook",
+                'folder' => 2,
+            ],
+        ];
+        $this->assertResult($exp, Data::$db->subscriptionList($user, 2));
     }
 }
