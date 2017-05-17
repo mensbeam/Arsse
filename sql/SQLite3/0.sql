@@ -91,7 +91,8 @@ create table arsse_marks(
     owner TEXT not null references arsse_users(id) on delete cascade on update cascade,
     read boolean not null default 0,
     starred boolean not null default 0,
-    modified datetime not null default CURRENT_TIMESTAMP
+    modified datetime not null default CURRENT_TIMESTAMP,
+    unique(article,owner)
 );
 
 -- IDs for specific editions of articles (required for at least NextCloud News)

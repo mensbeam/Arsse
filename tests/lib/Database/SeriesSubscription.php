@@ -76,7 +76,7 @@ trait SeriesSubscription {
                     [8,8,"jane.doe@example.com",true,false],
                     [9, 1,"john.doe@example.com",true,false],
                     [10,7,"john.doe@example.com",true,false],
-                    [11,8,"john.doe@example.com",true,false],
+                    [11,8,"john.doe@example.com",false,false],
                 ]
             ],
         ];
@@ -199,7 +199,7 @@ trait SeriesSubscription {
                 'url' => "http://example.com/feed3",
                 'title' => "Ook",
                 'folder' => 2,
-                'unread' => 1,
+                'unread' => 2,
             ],
         ];
         $this->assertResult($exp, Data::$db->subscriptionList($user));
