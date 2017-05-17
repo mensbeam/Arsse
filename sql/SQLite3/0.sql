@@ -64,7 +64,7 @@ create table arsse_folders(
 create table arsse_articles(
     id integer primary key,                                                                                 -- sequence number
     feed integer not null references arsse_feeds(id) on delete cascade,                                     -- feed for the subscription
-    url TEXT not null,                                                                                      -- URL of article
+    url TEXT,                                                                                               -- URL of article
     title TEXT,                                                                                             -- article title
     author TEXT,                                                                                            -- author's name
     published datetime,                                                                                     -- time of original publication
@@ -72,9 +72,9 @@ create table arsse_articles(
     modified datetime not null default CURRENT_TIMESTAMP,                                                   -- date when article properties were last modified
     guid TEXT,                                                                                              -- GUID
     content TEXT,                                                                                           -- content, as (X)HTML
-    url_title_hash varchar(64),                                                                             -- hash of URL + title; used when checking for updates and for identification if there is no guid.
-    url_content_hash varchar(64),                                                                           -- hash of URL + content, enclosure URL, & content type; used when checking for updates and for identification if there is no guid.
-    title_content_hash varchar(64)                                                                          -- hash of title + content, enclosure URL, & content type; used when checking for updates and for identification if there is no guid.
+    url_title_hash TEXT not null,                                                                           -- hash of URL + title; used when checking for updates and for identification if there is no guid.
+    url_content_hash TEXT not null,                                                                         -- hash of URL + content, enclosure URL, & content type; used when checking for updates and for identification if there is no guid.
+    title_content_hash TEXT not null                                                                        -- hash of title + content, enclosure URL, & content type; used when checking for updates and for identification if there is no guid.
 );
 
 -- enclosures associated with articles
@@ -85,7 +85,7 @@ create table arsse_enclosures(
 );
 
 -- users' actions on newsfeed entries
-create table arsse_subscription_articles(
+create table arsse_marks(
     id integer primary key,
     article integer not null references arsse_articles(id) on delete cascade,
     owner TEXT not null references arsse_users(id) on delete cascade on update cascade,

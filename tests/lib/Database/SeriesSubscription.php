@@ -38,6 +38,47 @@ trait SeriesSubscription {
                     [3,"john.doe@example.com",3,"Ook",2],
                 ]
             ],
+            'arsse_articles' => [
+                'columns' => [
+                    'id' => "int",
+                    'feed' => "int",
+                    'url_title_hash' => "str",
+                    'url_content_hash' => "str",
+                    'title_content_hash' => "str",
+                ],
+                'rows' => [
+                    [1,2,"","",""],
+                    [2,2,"","",""],
+                    [3,2,"","",""],
+                    [4,2,"","",""],
+                    [5,2,"","",""],
+                    [6,3,"","",""],
+                    [7,3,"","",""],
+                    [8,3,"","",""],
+                ]
+            ],
+            'arsse_marks' => [
+                'columns' => [
+                    'id'      => "int",
+                    'article' => "int",
+                    'owner'   => "str",
+                    'read'    => "bool",
+                    'starred' => "bool",
+                ],
+                'rows' => [
+                    [1,1,"jane.doe@example.com",true,false],
+                    [2,2,"jane.doe@example.com",true,false],
+                    [3,3,"jane.doe@example.com",true,false],
+                    [4,4,"jane.doe@example.com",true,false],
+                    [5,5,"jane.doe@example.com",true,false],
+                    [6,6,"jane.doe@example.com",true,false],
+                    [7,7,"jane.doe@example.com",true,false],
+                    [8,8,"jane.doe@example.com",true,false],
+                    [9, 1,"john.doe@example.com",true,false],
+                    [10,7,"john.doe@example.com",true,false],
+                    [11,8,"john.doe@example.com",true,false],
+                ]
+            ],
         ];
         // merge tables
         $this->data = array_merge($this->data, $data);
@@ -152,11 +193,13 @@ trait SeriesSubscription {
                 'url' => "http://example.com/feed2",
                 'title' => "Eek",
                 'folder' => null,
+                'unread' => 4,
             ],
             [
                 'url' => "http://example.com/feed3",
                 'title' => "Ook",
                 'folder' => 2,
+                'unread' => 1,
             ],
         ];
         $this->assertResult($exp, Data::$db->subscriptionList($user));

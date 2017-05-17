@@ -154,7 +154,6 @@ trait Setup {
                 foreach($x as $field => $value) {
                     $valid = true;
                     if(!array_key_exists($field, $r) || $r[$field] !== $value) {
-                        echo "$field\n";
                         $valid = false;
                         break;
                     }

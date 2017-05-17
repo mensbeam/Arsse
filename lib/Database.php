@@ -409,7 +409,7 @@ class Database {
                 arsse_subscriptions.id,
                 url,favicon,source,folder,added,pinned,err_count,err_msg,order_type,
                 CASE WHEN arsse_subscriptions.title is not null THEN arsse_subscriptions.title ELSE arsse_feeds.title END as title,
-                (SELECT count(*) from arsse_articles where feed is arsse_subscriptions.feed) - (SELECT count(*) from (SELECT article,feed from arsse_subscription_articles join arsse_articles on article = arsse_articles.id where owner is ? and feed is arsse_feeds.id and read is 1)) as unread
+                (SELECT count(*) from arsse_articles where feed is arsse_subscriptions.feed) - (SELECT count(*) from (SELECT article,feed from arsse_marks join arsse_articles on article = arsse_articles.id where owner is ? and feed is arsse_feeds.id and read is 1)) as unread
              from arsse_subscriptions join arsse_feeds on feed = arsse_feeds.id where owner is ?";
         if(!is_null($folder)) {
             if(!$this->db->prepare("SELECT count(*) from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $folder)->getValue()) {
@@ -502,7 +502,7 @@ class Database {
         }
         if(sizeof($feed->changedItems)) {
             $qDeleteCategories = $this->db->prepare('DELETE FROM arsse_categories WHERE article is ?', 'int');
-            $qClearReadMarks = $this->db->prepare('UPDATE arsse_subscription_articles SET read = 0, modified = CURRENT_TIMESTAMP WHERE article is ?', 'int');
+            $qClearReadMarks = $this->db->prepare('UPDATE arsse_marks SET read = 0, modified = CURRENT_TIMESTAMP WHERE article is ?', 'int');
             $qUpdateArticle = $this->db->prepare(
                 'UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id is ?', 
                 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int'
