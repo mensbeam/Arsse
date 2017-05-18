@@ -103,7 +103,7 @@ trait Setup {
                 foreach($values as $key => $value) {
                     $row[$cols[$key]] = $value;
                 }
-                $found = array_search($row, $data);
+                $found = array_search($row, $data, true);
                 $this->assertNotSame(false, $found, "Table $table does not contain record at array index $index.");
                 unset($data[$found]);
             }

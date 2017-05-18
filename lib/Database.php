@@ -10,12 +10,11 @@ class Database {
     const FORMAT_DATE    = "Y-m-d";
     const FORMAT_TIME    = "h:i:s";
 
-    protected $data;
     public    $db;
-    private   $driver;
+    protected $dateFormatDefault = "sql";
 
     public function __construct() {
-        $this->driver = $driver = Data::$conf->dbDriver;
+        $driver = Data::$conf->dbDriver;
         $this->db = new $driver(INSTALL);
         $ver = $this->db->schemaVersion();
         if(!INSTALL && $ver < self::SCHEMA_VERSION) {
@@ -23,6 +22,19 @@ class Database {
         }
     }
 
+    protected function caller(): string {
+        return debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3)[2]['function'];
+    }
+
+    function dateFormatDefault(string $set = null): string {
+        if(is_null($set)) return $this->dateFormatDefault;
+        $set = strtolower($set);
+        if(in_array($set, ["sql", "iso8601", "unix", "http"])) {
+            $this->dateFormatDefault = $set;
+        }
+        return $this->dateFormatDefault;
+    }
+    
     static public function listDrivers(): array {
         $sep = \DIRECTORY_SEPARATOR;
         $path = __DIR__.$sep."Db".$sep;
@@ -341,33 +353,17 @@ class Database {
 
     public function folderPropertiesSet(string $user, int $id, array $data): bool {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        // layer the existing folder properties onto the new desired ones; this also has the effect of checking whether the folder is valid
-        $data = array_merge($this->folderPropertiesGet($user, $id), $data);
-        // if the desired folder name is missing or invalid, throw an exception
-        if($data['name']=="") {
-            throw new Db\ExceptionInput("missing", ["action" => __FUNCTION__, "field" => "name"]);
-        } else if(!strlen(trim($data['name']))) {
-            throw new Db\ExceptionInput("whitespace", ["action" => __FUNCTION__, "field" => "name"]);
-        }
-        // normalize folder's parent, if there is one
-        $parent = array_key_exists("parent", $data) ? (int) $data['parent'] : 0;
-        if($parent===0) {
-            // if no parent is specified, do nothing
-            $parent = null;
+        // validate the folder ID and, if specified, the parent to move it to
+        if(array_key_exists("parent", $data)) {
+            $f = $this->folderValidateId($user, $id, $data['parent']);
         } else {
-            // if a parent is specified, make sure it exists and belongs to the user
-            $p = $this->db->prepare(
-                "WITH RECURSIVE folders(id) as (SELECT id from arsse_folders where owner is ? and id is ? union select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id) ".
-                "SELECT id,(id not in (select id from folders)) as valid from arsse_folders where owner is ? and id is ?",
-            "str", "int", "str", "int")->run($user, $id, $user, $parent)->getRow();
-            if(!$p) {
-                throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "parent", 'id' => $parent]);
-            } else {
-                // if using the desired parent would create a circular dependence, throw an exception
-                if(!$p['valid']) throw new Db\ExceptionInput("circularDependence", ["action" => __FUNCTION__, "field" => "parent", 'id' => $parent]);
-            }
+            $f = $this->folderValidateId($user, $id);
         }
-        $data['parent'] = $parent;
+        // if a new name is specified, validate it
+        if(array_key_exists("name", $data)) {
+            $this->folderValidateName($data['name']);
+        }
+        $data = array_merge($f, $data);
         // check to make sure the target folder name/location would not create a duplicate (we must do this check because null is not distinct in SQL)
         $existing = $this->db->prepare("SELECT id from arsse_folders where owner is ? and parent is ? and name is ?", "str", "int", "str")->run($user, $data['parent'], $data['name'])->getValue();
         if(!is_null($existing) && $existing != $id) {
@@ -379,6 +375,47 @@ class Database {
         ];
         list($setClause, $setTypes, $setValues) = $this->generateSet($data, $valid);
         return (bool) $this->db->prepare("UPDATE arsse_folders set $setClause where owner is ? and id is ?", $setTypes, "str", "int")->run($setValues, $user, $id)->changes();
+    }
+
+    protected function folderValidateId(string $user, int $id = null, int $parent = null): array {
+        if(is_null($id)) {
+            // if no ID is specified this is a no-op, unless a parent is specified, which is always a circular dependence
+            if(!is_null($parent)) {
+                throw new Db\ExceptionInput("circularDependence", ["action" => $this->caller(), "field" => "parent", 'id' => $parent]);
+            }
+            return [name => null, parent => null];
+        }
+        // check whether the folder exists and is owned by the user
+        $f = $this->db->prepare("SELECT name,parent from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $id)->getRow();
+        if(!$f) throw new Db\ExceptionInput("idMissing", ["action" => $this->caller(), "field" => "folder", 'id' => $parent]);
+        // if we're moving a folder to a new parent, check that the parent is valid
+        if(!is_null($parent)) {
+            // make sure both that the parent exists, and that the parent is not either the folder itself or one of its children (a circular dependence)
+            $p = $this->db->prepare(
+                "WITH RECURSIVE folders(id) as (SELECT id from arsse_folders where owner is ? and id is ? union select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id) ".
+                "SELECT id,(id not in (select id from folders)) as valid from arsse_folders where owner is ? and id is ?",
+                "str", "int", "str", "int"
+            )->run($user, $id, $user, $parent)->getRow();
+            if(!$p) {
+                // if the parent doesn't exist or doesn't below to the user, throw an exception
+                throw new Db\ExceptionInput("idMissing", ["action" => $this->caller(), "field" => "parent", 'id' => $parent]);
+            } else {
+                // if using the desired parent would create a circular dependence, throw a different exception
+                if(!$p['valid']) throw new Db\ExceptionInput("circularDependence", ["action" => $this->caller(), "field" => "parent", 'id' => $parent]);
+            }
+        }
+        return $f;
+    }
+
+    protected function folderValidateName($name): bool {
+        $name = (string) $name;
+        if($name=="") {
+            throw new Db\ExceptionInput("missing", ["action" => $this->caller(), "field" => "name"]);
+        } else if(!strlen(trim($name))) {
+            throw new Db\ExceptionInput("whitespace", ["action" => $this->caller(), "field" => "name"]);
+        } else {
+            return true;
+        }
     }
 
     public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = ""): int {
@@ -407,23 +444,25 @@ class Database {
         $query = 
             "SELECT 
                 arsse_subscriptions.id,
-                url,favicon,source,folder,added,pinned,err_count,err_msg,order_type,
+                url,favicon,source,folder,pinned,err_count,err_msg,order_type,
+                DATEFORMAT(?, added) as added,
                 CASE WHEN arsse_subscriptions.title is not null THEN arsse_subscriptions.title ELSE arsse_feeds.title END as title,
-                (SELECT count(*) from arsse_articles where feed is arsse_subscriptions.feed) - (SELECT count(*) from (SELECT article,feed from arsse_marks join arsse_articles on article = arsse_articles.id where owner is ? and feed is arsse_feeds.id and read is 1)) as unread
+                (SELECT count(*) from arsse_articles where feed is arsse_subscriptions.feed) - (SELECT count(*) from arsse_marks join arsse_articles on article = arsse_articles.id where owner is ? and feed is arsse_feeds.id and read is 1) as unread
              from arsse_subscriptions join arsse_feeds on feed = arsse_feeds.id where owner is ?";
+        $queryOrder = "order by pinned desc, title";
+        $queryTypes = ["str", "str", "str"];
+        $queryValues = [$this->dateFormatDefault, $user, $user];
         if(!is_null($folder)) {
-            if(!$this->db->prepare("SELECT count(*) from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $folder)->getValue()) {
-                throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $folder]);
-            }
+            $this->folderValidateId($user, $folder);
             return $this->db->prepare(
-                "WITH RECURSIVE folders(folder) as (SELECT ? union select id from arsse_folders join folders on parent is folder) $query and folder in (select folder from folders)", 
-                "int", "str", "str"
-            )->run($folder, $user, $user);
+                "WITH RECURSIVE folders(folder) as (SELECT ? union select id from arsse_folders join folders on parent is folder) $query and folder in (select folder from folders) $queryOrder", 
+                "int", $queryTypes
+            )->run($folder, $queryValues);
         } else if(!is_null($id)) {
             // this condition facilitates the implementation of subscriptionPropertiesGet, which would otherwise have to duplicate the complex query
-            return $this->db->prepare("$query and arsse_subscriptions.id is ?", "str", "str", "int")->run($user, $user, $id);
+            return $this->db->prepare("$query and arsse_subscriptions.id is ? $queryOrder", $queryTypes, "int")->run($queryValues, $id);
         } else {
-            return $this->db->prepare($query, "str", "str")->run($user, $user);
+            return $this->db->prepare("$query $queryOrder", $queryTypes)->run($queryValues);
         }
     }
 
@@ -450,6 +489,17 @@ class Database {
         if(!$this->db->prepare("SELECT count(*) from arsse_subscriptions where owner is ? and id is ?", "str", "int")->run($user, $id)->getValue()) {
             // if the ID doesn't exist or doesn't belong to the user, throw an exception
             throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
+        }
+        if(array_key_exists("folder", $data)) {
+            // ensure the target folder exists and belong to the user
+            $this->folderValidateId($user, $data['folder']);
+        }
+        if(array_key_exists("title", $data)) {
+            // if the title is effectively an empty string, change it to null so that the feed title is used instead
+            $title = (string) $data['title'];
+            $title = trim($title);
+            if($title==="") $title = null;
+            $data['title'] = $title;
         }
         $valid = [
             'title'      => "str",
