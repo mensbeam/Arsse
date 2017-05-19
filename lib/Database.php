@@ -26,7 +26,7 @@ class Database {
         return debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3)[2]['function'];
     }
 
-    function dateFormatDefault(string $set = null): string {
+    public function dateFormatDefault(string $set = null): string {
         if(is_null($set)) return $this->dateFormatDefault;
         $set = strtolower($set);
         if(in_array($set, ["sql", "iso8601", "unix", "http"])) {
@@ -101,6 +101,10 @@ class Database {
         }
     }
 
+    public function begin(): Db\Transaction {
+        return $this->db->begin();
+    }
+    
     public function settingSet(string $key, $in, string $type = null): bool {
         if(!$type) {
             switch(gettype($in)) {
@@ -513,6 +517,43 @@ class Database {
         return $out;
     }
 
+    protected function subscriptionValidateId(string $user, int $id): array {
+        $out = $this->db->prepare("SELECT feed from arsse_subscriptions where id is ? and owner is ?", "int", "str")->run($id, $user)->getRow();
+        if(!$out) throw new Db\ExceptionInput("idMissing", ["action" => $this->caller(), "field" => "subscription", 'id' => $id]);
+        return $out;
+    }
+
+    public function articleStarredCount(string $user, array $context = []): int {
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        return $this->db->prepare("SELECT count(*) from arsse_marks where owner is ? and starred is 1", "str")->run($user)->getValue();
+    }
+
+    public function editionLatest(string $user, array $context = []): int {
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(array_key_exists("subscription", $context)) {
+            $id = $context['subscription'];
+            $sub = $this->subscriptionValidateId($user, $id);
+            return (int) $this->db->prepare(
+                "SELECT max(arsse_editions.id) 
+                    from arsse_editions 
+                    left join arsse_articles on article is arsse_articles.id 
+                    left join arsse_feeds on arsse_articles.feed is arsse_feeds.id
+                 where arsse_feeds.id is ?",
+                "int"
+            )->run($sub['feed'])->getValue();
+        }
+        return (int) $this->db->prepare("SELECT max(id) from arsse_editions")->run()->getValue();
+    }
+
+    public function feedListStale(): array {
+        $feeds = $this->db->prepare("SELECT distinct feed from arsse_subscriptions left join arsse_feeds on arsse_feeds.id = feed where next_fetch <= CURRENT_TIMESTAMP")->run();
+        $out = [];
+        foreach($feeds as $feed) {
+            $out[] = $feed['feed'];
+        }
+        return $out;
+    }
+    
     public function feedUpdate(int $feedID, bool $throwError = false): bool {
         $tr = $this->db->begin();
         // check to make sure the feed exists

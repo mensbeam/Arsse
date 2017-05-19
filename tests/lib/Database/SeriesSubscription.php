@@ -12,16 +12,17 @@ trait SeriesSubscription {
         $data = [
             'arsse_feeds' => [
                 'columns' => [
-                    'id'        => "int",
-                    'url'       => "str",
-                    'title'     => "str",
-                    'username'  => "str",
-                    'password'  => "str",
+                    'id'         => "int",
+                    'url'        => "str",
+                    'title'      => "str",
+                    'username'   => "str",
+                    'password'   => "str",
+                    'next_fetch' => "datetime",
                 ],
                 'rows' => [
-                    [1,"http://example.com/feed1", "Ook", "", ""],
-                    [2,"http://example.com/feed2", "Eek", "", ""],
-                    [3,"http://example.com/feed3", "Ack", "", ""],
+                    [1,"http://example.com/feed1", "Ook", "", "",strtotime("now")],
+                    [2,"http://example.com/feed2", "Eek", "", "",strtotime("now - 1 hour")],
+                    [3,"http://example.com/feed3", "Ack", "", "",strtotime("now + 1 hour")],
                 ]
             ],
             'arsse_subscriptions' => [

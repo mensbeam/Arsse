@@ -7,9 +7,13 @@ return [
     'HTTP.Status.200'                                                => 'OK',
     'HTTP.Status.204'                                                => 'No Content',
     'HTTP.Status.401'                                                => 'Unauthorized',
+    'HTTP.Status.403'                                                => 'Forbidden',
     'HTTP.Status.404'                                                => 'Not Found',
     'HTTP.Status.405'                                                => 'Method Not Allowed',
+    'HTTP.Status.409'                                                => 'Conflict',
     'HTTP.Status.415'                                                => 'Unsupported Media Type',
+    'HTTP.Status.422'                                                => 'Unprocessable Entity',
+    'HTTP.Status.501'                                                => 'Not Implemented',
 
     // this should only be encountered in testing (because tests should cover all exceptions!)
     'Exception.JKingWeb/Arsse/Exception.uncoded'                     => 'The specified exception symbol {0} has no code specified in AbstractException.php',

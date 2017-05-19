@@ -11,7 +11,6 @@ class TestDbStatementSQLite3 extends \PHPUnit\Framework\TestCase {
     static protected $imp = Db\SQLite3\Statement::class;
 
     function setUp() {
-        date_default_timezone_set("UTC");
         $c = new \SQLite3(":memory:");
         $c->enableExceptions(true);
         $this->c = $c;

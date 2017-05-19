@@ -20,11 +20,10 @@ Data::$user->authorizationEnabled(false);
 Data::$user->rightsSet($user, User\Driver::RIGHTS_GLOBAL_ADMIN);
 Data::$user->authorizationEnabled(true);
 Data::$db->folderAdd($user, ['name' => 'ook']);
-Data::$db->subscriptionAdd($user, "https://jkingweb.ca/test.atom");
+/*Data::$db->subscriptionAdd($user, "http://linuxfr.org/news.atom");
 Data::$db->subscriptionPropertiesSet($user, 1, [
     'title'      => "OOOOOOOOK!",
-    'folder'     => null,
-    'order_type' => null,
-    'pinned'     => null,
-]);
-var_export(Data::$db->subscriptionList($user)->getAll());
+]);*/
+(new REST())->dispatch(new REST\Request(
+    "POST", "/index.php/apps/news/api/v1-2/feeds/", json_encode(['url'=> "http://linuxfr.org/news.atom"])
+));

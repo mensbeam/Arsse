@@ -3,6 +3,12 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 class User {
+    const RIGHTS_NONE           = 0;    // normal user
+    const RIGHTS_DOMAIN_MANAGER = 25;   // able to act for any normal users on same domain; cannot elevate other users
+    const RIGHTS_DOMAIN_ADMIN   = 50;   // able to act for any users on same domain not above themselves; may elevate users on same domain to domain manager or domain admin
+    const RIGHTS_GLOBAL_MANAGER = 75;   // able to act for any normal users on any domain; cannot elevate other users
+    const RIGHTS_GLOBAL_ADMIN   = 100;  // is completely unrestricted
+
     public  $id = null;
 
     protected $u;

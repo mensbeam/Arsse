@@ -79,11 +79,7 @@ abstract class AbstractStatement implements Statement {
     }
 
     protected function formatDate($date, int $part = self::TS_BOTH) {
-        // Force UTC.
-        $timezone = date_default_timezone_get();
-        date_default_timezone_set('UTC');
         // convert input to a Unix timestamp
-        // FIXME: there are more kinds of date representations
         if($date instanceof \DateTimeInterface) {
             $time = $date->getTimestamp();
         } else if(is_numeric($date)) {
@@ -99,8 +95,6 @@ abstract class AbstractStatement implements Statement {
             $time = (int) $date;
         }
         // ISO 8601 with space in the middle instead of T.
-        $date = date($this->dateFormat($part), $time);
-        date_default_timezone_set($timezone);
-        return $date;
+        return date($this->dateFormat($part), $time);
     }
 }

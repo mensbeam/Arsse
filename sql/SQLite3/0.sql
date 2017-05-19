@@ -98,7 +98,8 @@ create table arsse_marks(
 -- IDs for specific editions of articles (required for at least NextCloud News)
 create table arsse_editions(
     id integer primary key,
-    article integer not null references arsse_articles(id) on delete cascade
+    article integer not null references arsse_articles(id) on delete cascade,
+    modified datetime not null default CURRENT_TIMESTAMP
 );
 
 -- user labels associated with newsfeed entries
