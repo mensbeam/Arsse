@@ -61,15 +61,15 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'items' => [],
             'folders' => [
                 ''       => ['GET' => "folderList",   'POST'   => "folderAdd"],
-                '#'      => ['PUT' => "folderRename", 'DELETE' => "folderRemove"],
-                '#/read' => ['PUT' => "folderMarkRead"],
+                '0'      => ['PUT' => "folderRename", 'DELETE' => "folderRemove"],
+                '0/read' => ['PUT' => "folderMarkRead"],
             ],
             'feeds' => [
                 ''         => ['GET' => "subscriptionList", 'POST' => "subscriptionAdd"],
-                '#'        => ['DELETE' => "subscriptionRemove"],
-                '#/move'   => ['PUT' => "subscriptionMove"],
-                '#/rename' => ['PUT' => "subscriptionRename"],
-                '#/read'   => ['PUT' => "subscriptionMarkRead"],
+                '0'        => ['DELETE' => "subscriptionRemove"],
+                '0/move'   => ['PUT' => "subscriptionMove"],
+                '0/rename' => ['PUT' => "subscriptionRename"],
+                '0/read'   => ['PUT' => "subscriptionMarkRead"],
                 'all'      => ['GET' => "feedListStale"],
                 'update'   => ['GET' => "feedUpdate"],
             ],
@@ -82,9 +82,9 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         ];
         // the first path element is the overall scope of the request
         $scope = $url[0];
-        // any URL components which are only digits should be replaced with "#", for easier comparison
+        // any URL components which are only digits should be replaced with "#", for easier comparison (integer segments are IDs, and we don't care about the specific ID)
         for($a = 0; $a < sizeof($url); $a++) {
-            if($this->validateId($url[$a])) $url[$a] = "#";
+            if($this->validateId($url[$a])) $url[$a] = "0";
         }
         // normalize the HTTP method to uppercase
         $method = strtoupper($method);
@@ -94,6 +94,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // the URL is evaluated as an array so as to avoid decoded escapes turning invalid URLs into valid ones
         foreach($choices[$scope] as $path => $funcs) {
             // add the scope to the path to match against and split it
+            $path = (string) $path;
             $path = (strlen($path)) ? "$scope/$path" : $scope;
             $path = explode("/", $path);
             if($path===$url) {

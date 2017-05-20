@@ -62,7 +62,7 @@ class Request {
         // if the path is an empty string or just / nothing needs be done
         if(!in_array($out['path'],["/",""])) {
             $paths = explode("/", $out['path']);
-            // remove the first and last empty elements, if present (others should remain)
+            // remove the first and last empty elements, if present (they are artefacts of the splitting; others should remain)
             if(!strlen($paths[0])) array_shift($paths);
             if(!strlen($paths[sizeof($paths)-1])) array_pop($paths);
             // %-decode each path element
