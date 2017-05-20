@@ -6,6 +6,7 @@ class Request {
     public $method = "GET";
     public $url = "";
     public $path ="";
+    public $paths = [];
     public $query = "";
     public $type ="";
     public $body = "";
@@ -31,13 +32,14 @@ class Request {
     public function refreshURL() {
         $url = $this->parseURL($this->url);
         $this->path = $url['path'];
+        $this->paths = $url['paths'];
         $this->query = $url['query'];
     }
 
     protected function parseURL(string $url): array {
         // split the query string from the path
         $parts = explode("?", $url);
-        $out = ['path' => $parts[0], 'query' => []];
+        $out = ['path' => $parts[0], 'paths' => [''], 'query' => []];
         // if there is a query string, parse it
         if(isset($parts[1])) {
             // split along & to get key-value pairs
@@ -55,6 +57,17 @@ class Request {
                 // add the pair to the query output, overwriting earlier values for the same key, is present
                 $out['query'][$key] = $value;
             }
+        }
+        // also include the path as a set of decoded elements
+        // if the path is an empty string or just / nothing needs be done
+        if(!in_array($out['path'],["/",""])) {
+            $paths = explode("/", $out['path']);
+            // remove the first and last empty elements, if present (others should remain)
+            if(!strlen($paths[0])) array_shift($paths);
+            if(!strlen($paths[sizeof($paths)-1])) array_pop($paths);
+            // %-decode each path element
+            $paths = array_map(function($v){return rawurldecode($v);}, $paths);
+            $out['paths'] = $paths;
         }
         return $out;
     }

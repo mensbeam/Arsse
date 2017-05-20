@@ -35,7 +35,7 @@ class TestNCNVersionDiscovery extends \PHPUnit\Framework\TestCase {
     }
 
     function testUseIncorrectPath() {
-        $exp = new Response(404);
+        $exp = new Response(501);
         $h = new Rest\NextCloudNews\Versions();
         $req = new Request("GET", "/ook");
         $res = $h->dispatch($req);

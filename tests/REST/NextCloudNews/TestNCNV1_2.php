@@ -29,7 +29,7 @@ class TestNCNV1_2 extends \PHPUnit\Framework\TestCase {
 
     function testRespondToInvalidPaths() {
         $errs = [
-            404 => [
+            501 => [
                 ['GET',    "/"],
                 ['PUT',    "/"],
                 ['POST',   "/"],
@@ -59,10 +59,10 @@ class TestNCNV1_2 extends \PHPUnit\Framework\TestCase {
                 ],
             ],
         ];
-        foreach($errs[404] as $req) {
-            $exp = new Response(404);
+        foreach($errs[501] as $req) {
+            $exp = new Response(501);
             list($method, $path) = $req;
-            $this->assertEquals($exp, $this->h->dispatch(new Request($method, $path)), "$method call to $path did not return 404.");
+            $this->assertEquals($exp, $this->h->dispatch(new Request($method, $path)), "$method call to $path did not return 501.");
         }
         foreach($errs[405] as $allow => $cases) {
             $exp = new Response(405, "", "", ['Allow: '.$allow]);
@@ -130,9 +130,6 @@ class TestNCNV1_2 extends \PHPUnit\Framework\TestCase {
         $exp = new Response(404);
         $this->assertEquals($exp, $this->h->dispatch(new Request("DELETE", "/folders/1")));
         Phake::verify(Data::$db, Phake::times(2))->folderRemove(Data::$user->id, 1);
-        // use a non-integer folder ID
-        $exp = new Response(404);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("DELETE", "/folders/invalid")));
     }
 
     function testRenameAFolder() {

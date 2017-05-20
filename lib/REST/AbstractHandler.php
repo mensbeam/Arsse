@@ -23,7 +23,7 @@ abstract class AbstractHandler implements Handler {
         return $data;
     }
 
-    protected function validateId($id):bool {
+    protected function validateId($id): bool {
         try {
             $ch1 = strval(intval($id));
             $ch2 = strval($id);
