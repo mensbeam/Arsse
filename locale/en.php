@@ -66,6 +66,7 @@ return [
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.whitespace'          => 'Required field "{field}" of action "{action}" may not contain only whitespace',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.tooLong'             => 'Required field "{field}" of action "{action}" has a maximum length of {max}',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.tooShort'            => 'Required field "{field}" of action "{action}" has a minimum length of {min}',
+    'Exception.JKingWeb/Arsse/Db/ExceptionInput.subjectMissing'      => 'Referenced ID ({id}) in field "{field}" does not exist',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.idMissing'           => 'Referenced ID ({id}) in field "{field}" does not exist',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.circularDependence'  => 'Referenced ID ({id}) in field "{field}" creates a circular dependence',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.constraintViolation' => '{0}',

@@ -167,13 +167,13 @@ trait SeriesSubscription {
     }
 
     function testRemoveAMissingSubscription() {
-        $this->assertException("idMissing", "Db", "ExceptionInput");
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Data::$db->subscriptionRemove($this->user, 2112);
     }
 
     function testRemoveASubscriptionForTheWrongOwner() {
         $this->user = "jane.doe@example.com";
-        $this->assertException("idMissing", "Db", "ExceptionInput");
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Data::$db->subscriptionRemove($this->user, 1);
     }
 
@@ -257,31 +257,44 @@ trait SeriesSubscription {
         $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com",2,"Ook Ook",3,0,0];
         $this->compareExpectations($state);
         Data::$db->subscriptionPropertiesSet($this->user, 1,[
-            'title' => "          ",
+            'title' => null,
         ]);
         $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com",2,null,3,0,0];
         $this->compareExpectations($state);
     }
 
-    function testMoveSubscriptionToAMissingFolder() {
+    function testMoveASubscriptionToAMissingFolder() {
         $this->assertException("idMissing", "Db", "ExceptionInput");
-        Data::$db->subscriptionPropertiesSet($this->user, 1,[
-            'folder' => 4,
-        ]);
+        Data::$db->subscriptionPropertiesSet($this->user, 1, ['folder' => 4]);
+    }
+
+    function testRenameASubscriptionToABlankTitle() {
+        $this->assertException("missing", "Db", "ExceptionInput");
+        Data::$db->subscriptionPropertiesSet($this->user, 1, ['title' => ""]);
+    }
+
+    function testRenameASubscriptionToAWhitespaceTitle() {
+        $this->assertException("whitespace", "Db", "ExceptionInput");
+        Data::$db->subscriptionPropertiesSet($this->user, 1, ['title' => "    "]);
+    }
+
+    function testRenameASubscriptionToFalse() {
+        $this->assertException("missing", "Db", "ExceptionInput");
+        Data::$db->subscriptionPropertiesSet($this->user, 1, ['title' => false]);
+    }
+
+    function testRenameASubscriptionToZero() {
+        $this->assertTrue(Data::$db->subscriptionPropertiesSet($this->user, 1, ['title' => 0]));
     }
 
     function testSetThePropertiesOfAMissingSubscription() {
-        $this->assertException("idMissing", "Db", "ExceptionInput");
-        Data::$db->subscriptionPropertiesSet($this->user, 2112,[
-            'folder' => null,
-        ]);
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        Data::$db->subscriptionPropertiesSet($this->user, 2112, ['folder' => null]);
     }
 
     function testSetThePropertiesOfASubscriptionWithoutAuthority() {
         Phake::when(Data::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Data::$db->subscriptionPropertiesSet($this->user, 1,[
-            'folder' => null,
-        ]);
+        Data::$db->subscriptionPropertiesSet($this->user, 1, ['folder' => null]);
     }
 }

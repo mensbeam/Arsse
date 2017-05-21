@@ -159,7 +159,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch(ExceptionInput $e) {
             switch($e->getCode()) {
                 // folder does not exist
-                case 10235: return new Response(404);
+                case 10239: return new Response(404);
                 // folder already exists
                 case 10236: return new Response(409);
                 // folder name not acceptable
@@ -206,13 +206,12 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         $out = ['feeds' => $out];
         $out['starredCount'] = Data::$db->articleStarredCount(Data::$user->id);
-        $newest = Data::$db->editionLatest(Data::$user->id, ['subscription' => $id]);
+        $newest = Data::$db->editionLatest(Data::$user->id);
         if($newest) $out['newestItemId'] = $newest;
         return new Response(200, $out);
     }
     
     // return list of feeds which should be refreshed
-    // refresh a feed
     protected function feedListStale(array $url, array $data): Response {
         // function requires admin rights per spec
         if(Data::$user->rightsGet(Data::$user->id)==User::RIGHTS_NONE) return new Response(403);
@@ -305,7 +304,15 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             Data::$db->subscriptionPropertiesSet(Data::$user->id, (int) $url[1], $in);
         } catch(ExceptionInput $e) {
-            return new Response(404);
+            switch($e->getCode()) {
+                // subscription does not exist
+                case 10239: return new Response(404);
+                // name is invalid
+                case 10231:
+                case 10232: return new Response(422);
+                // other errors related to input
+                default: return new Response(400);
+            }
         }
         return new Response(204);
     }
@@ -326,7 +333,14 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             Data::$db->subscriptionPropertiesSet(Data::$user->id, (int) $url[1], $in);
         } catch(ExceptionInput $e) {
-            return new Response(404);
+            switch($e->getCode()) {
+                // subscription does not exist
+                case 10239: return new Response(404);
+                // folder does not exist
+                case 10235: return new Response(422);
+                // other errors related to input
+                default: return new Response(400);
+            }
         }
         return new Response(204);
     }

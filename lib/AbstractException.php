@@ -43,6 +43,7 @@ abstract class AbstractException extends \Exception {
         "Db/ExceptionInput.constraintViolation" => 10236,
         "Db/ExceptionInput.typeViolation"       => 10237,
         "Db/ExceptionInput.circularDependence"  => 10238,
+        "Db/ExceptionInput.subjectMissing"      => 10239,
         "Db/ExceptionTimeout.general"           => 10241,
         "Conf/Exception.fileMissing"            => 10301,
         "Conf/Exception.fileUnusable"           => 10302,

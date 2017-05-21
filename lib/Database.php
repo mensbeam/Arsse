@@ -344,25 +344,23 @@ class Database {
     public function folderRemove(string $user, int $id): bool {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         $changes = $this->db->prepare("DELETE FROM arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $id)->changes();
-        if(!$changes) throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id]);
+        if(!$changes) throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id]);
         return true;
     }
 
     public function folderPropertiesGet(string $user, int $id): array {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         $props = $this->db->prepare("SELECT id,name,parent from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $id)->getRow();
-        if(!$props) throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id]);
+        if(!$props) throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id]);
         return $props;
     }
 
     public function folderPropertiesSet(string $user, int $id, array $data): bool {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         // validate the folder ID and, if specified, the parent to move it to
-        if(array_key_exists("parent", $data)) {
-            $f = $this->folderValidateId($user, $id, $data['parent']);
-        } else {
-            $f = $this->folderValidateId($user, $id);
-        }
+        $parent = null;
+        if(array_key_exists("parent", $data)) $parent = $data['parent'];
+        $f = $this->folderValidateId($user, $id, $parent, true);
         // if a new name is specified, validate it
         if(array_key_exists("name", $data)) {
             $this->folderValidateName($data['name']);
@@ -381,7 +379,7 @@ class Database {
         return (bool) $this->db->prepare("UPDATE arsse_folders set $setClause where owner is ? and id is ?", $setTypes, "str", "int")->run($setValues, $user, $id)->changes();
     }
 
-    protected function folderValidateId(string $user, int $id = null, int $parent = null): array {
+    protected function folderValidateId(string $user, int $id = null, int $parent = null, bool $subject = false): array {
         if(is_null($id)) {
             // if no ID is specified this is a no-op, unless a parent is specified, which is always a circular dependence
             if(!is_null($parent)) {
@@ -391,7 +389,7 @@ class Database {
         }
         // check whether the folder exists and is owned by the user
         $f = $this->db->prepare("SELECT name,parent from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $id)->getRow();
-        if(!$f) throw new Db\ExceptionInput("idMissing", ["action" => $this->caller(), "field" => "folder", 'id' => $parent]);
+        if(!$f) throw new Db\ExceptionInput($subject ? "subjectMissing" : "idMissing", ["action" => $this->caller(), "field" => "folder", 'id' => $parent]);
         // if we're moving a folder to a new parent, check that the parent is valid
         if(!is_null($parent)) {
             // make sure both that the parent exists, and that the parent is not either the folder itself or one of its children (a circular dependence)
@@ -413,7 +411,7 @@ class Database {
 
     protected function folderValidateName($name): bool {
         $name = (string) $name;
-        if($name=="") {
+        if(!strlen($name)) {
             throw new Db\ExceptionInput("missing", ["action" => $this->caller(), "field" => "name"]);
         } else if(!strlen(trim($name))) {
             throw new Db\ExceptionInput("whitespace", ["action" => $this->caller(), "field" => "name"]);
@@ -473,7 +471,7 @@ class Database {
     public function subscriptionRemove(string $user, int $id): bool {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         $changes = $this->db->prepare("DELETE from arsse_subscriptions where owner is ? and id is ?", "str", "int")->run($user, $id)->changes();
-        if(!$changes) throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id]);
+        if(!$changes) throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id]);
         return true;
     }
 
@@ -483,7 +481,7 @@ class Database {
         Data::$user->authorizationEnabled(false);
         $sub = $this->subscriptionList($user, null, $id)->getRow();
         Data::$user->authorizationEnabled(true);
-        if(!$sub) throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
+        if(!$sub) throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
         return $sub;
     }
 
@@ -492,18 +490,20 @@ class Database {
         $tr = $this->db->begin();
         if(!$this->db->prepare("SELECT count(*) from arsse_subscriptions where owner is ? and id is ?", "str", "int")->run($user, $id)->getValue()) {
             // if the ID doesn't exist or doesn't belong to the user, throw an exception
-            throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
         }
         if(array_key_exists("folder", $data)) {
             // ensure the target folder exists and belong to the user
             $this->folderValidateId($user, $data['folder']);
         }
         if(array_key_exists("title", $data)) {
-            // if the title is effectively an empty string, change it to null so that the feed title is used instead
-            $title = (string) $data['title'];
-            $title = trim($title);
-            if($title==="") $title = null;
-            $data['title'] = $title;
+            // if the title is null, this signals intended use of the default title; otherwise make sure it's not effectively an empty string
+            if(!is_null($data['title'])) {
+                $title = (string) $data['title'];
+                if(!strlen($title)) throw new Db\ExceptionInput("missing", ["action" => __FUNCTION__, "field" => "title"]);
+                if(!strlen(trim($title))) throw new Db\ExceptionInput("whitespace", ["action" => __FUNCTION__, "field" => "title"]);
+                $data['title'] = $title;
+            }
         }
         $valid = [
             'title'      => "str",
@@ -558,7 +558,7 @@ class Database {
         $tr = $this->db->begin();
         // check to make sure the feed exists
         $f = $this->db->prepare('SELECT url, username, password, DATEFORMAT("http", modified) AS lastmodified, etag, err_count FROM arsse_feeds where id is ?', "int")->run($feedID)->getRow();
-        if(!$f) throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID]);
+        if(!$f) throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID]);
         // the Feed object throws an exception when there are problems, but that isn't ideal
         // here. When an exception is thrown it should update the database with the
         // error instead of failing; if other exceptions are thrown, we should simply roll back

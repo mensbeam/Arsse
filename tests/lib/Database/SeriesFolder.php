@@ -139,12 +139,12 @@ trait SeriesFolder {
     }
 
     function testRemoveAMissingFolder() {
-        $this->assertException("idMissing", "Db", "ExceptionInput");
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Data::$db->folderRemove("john.doe@example.com", 2112);
     }
 
     function testRemoveAFolderOfTheWrongOwner() {
-        $this->assertException("idMissing", "Db", "ExceptionInput");
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Data::$db->folderRemove("john.doe@example.com", 4); // folder ID 4 belongs to Jane
     }
 
@@ -165,12 +165,12 @@ trait SeriesFolder {
     }
 
     function testGetThePropertiesOfAMissingFolder() {
-        $this->assertException("idMissing", "Db", "ExceptionInput");
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Data::$db->folderPropertiesGet("john.doe@example.com", 2112);
     }
 
     function testGetThePropertiesOfAFolderOfTheWrongOwner() {
-        $this->assertException("idMissing", "Db", "ExceptionInput");
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Data::$db->folderPropertiesGet("john.doe@example.com", 4); // folder ID 4 belongs to Jane
     }
 
@@ -217,12 +217,12 @@ trait SeriesFolder {
     }
 
     function testSetThePropertiesOfAMissingFolder() {
-        $this->assertException("idMissing", "Db", "ExceptionInput");
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Data::$db->folderPropertiesSet("john.doe@example.com", 2112, ['parent' => null]);
     }
 
-    function testSetThePropertiesOfAFolderOfTheWrongOwner() {
-        $this->assertException("idMissing", "Db", "ExceptionInput");
+    function testSetThePropertiesOfAFolderForTheWrongOwner() {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Data::$db->folderPropertiesSet("john.doe@example.com", 4, ['parent' => null]); // folder ID 4 belongs to Jane
     }
 
