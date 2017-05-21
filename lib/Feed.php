@@ -298,7 +298,7 @@ class Feed {
             $offset = "30 minutes";
         } else if($diff < (3 * 60 * 60)) { // less than three hours
             $offset = "1 hour";
-        } else if($diff > (36 * 60 * 60)) { // more than 36 hours
+        } else if($diff >= (36 * 60 * 60)) { // more than 36 hours
             $offset = "1 day";
         } else {
             $offset = "3 hours";

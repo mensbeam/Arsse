@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
-use JKingWeb\Arsse\Rest\Request;
-use JKingWeb\Arsse\Rest\Response;
+use JKingWeb\Arsse\REST\Request;
+use JKingWeb\Arsse\REST\Response;
 
 
 class TestNCNVersionDiscovery extends \PHPUnit\Framework\TestCase {
@@ -14,7 +14,7 @@ class TestNCNVersionDiscovery extends \PHPUnit\Framework\TestCase {
 
     function testFetchVersionList() {
         $exp = new Response(200, ['apiLevels' => ['v1-2']]);
-        $h = new Rest\NextCloudNews\Versions();
+        $h = new REST\NextCloudNews\Versions();
         $req = new Request("GET", "/");
         $res = $h->dispatch($req);
         $this->assertEquals($exp, $res);
@@ -28,7 +28,7 @@ class TestNCNVersionDiscovery extends \PHPUnit\Framework\TestCase {
 
     function testUseIncorrectMethod() {
         $exp = new Response(405);
-        $h = new Rest\NextCloudNews\Versions();
+        $h = new REST\NextCloudNews\Versions();
         $req = new Request("POST", "/");
         $res = $h->dispatch($req);
         $this->assertEquals($exp, $res);
@@ -36,7 +36,7 @@ class TestNCNVersionDiscovery extends \PHPUnit\Framework\TestCase {
 
     function testUseIncorrectPath() {
         $exp = new Response(501);
-        $h = new Rest\NextCloudNews\Versions();
+        $h = new REST\NextCloudNews\Versions();
         $req = new Request("GET", "/ook");
         $res = $h->dispatch($req);
         $this->assertEquals($exp, $res);

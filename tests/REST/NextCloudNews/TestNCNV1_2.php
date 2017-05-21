@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
-use JKingWeb\Arsse\Rest\Request;
-use JKingWeb\Arsse\Rest\Response;
+use JKingWeb\Arsse\REST\Request;
+use JKingWeb\Arsse\REST\Response;
 use JKingWeb\Arsse\Test\Result;
 use Phake;
 

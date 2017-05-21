@@ -18,6 +18,18 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
         Data::$conf = new Conf();
     }
 
+    function testComputeNextFetchOnError() {
+        for($a = 0; $a < 100; $a++) {
+            if($a < 3) {
+                $this->assertTime("now + 5 minutes", Feed::nextFetchOnError($a));
+            } else if($a < 15) {
+                $this->assertTime("now + 3 hours", Feed::nextFetchOnError($a));
+            } else {
+                $this->assertTime("now + 1 day", Feed::nextFetchOnError($a));
+            }
+        }
+    }
+    
     function testComputeNextFetchFrom304() {
         // if less than half an hour, check in 15 minutes
         $exp = strtotime("now + 15 minutes");
@@ -53,7 +65,7 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
         $this->assertTime($exp, $f->nextFetch);
         // otherwise check in three hours
         $exp = strtotime("now + 3 hours");
-        $t = strtotime("now - 6 hours");
+        $t = strtotime("now - 3 hours");
         $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", $this->dateTransform($t, "http"));
         $this->assertTime($exp, $f->nextFetch);
         $t = strtotime("now - 35 hours");
