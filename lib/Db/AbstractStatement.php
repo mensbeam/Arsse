@@ -95,6 +95,6 @@ abstract class AbstractStatement implements Statement {
             $time = (int) $date;
         }
         // ISO 8601 with space in the middle instead of T.
-        return date($this->dateFormat($part), $time);
+        return gmdate($this->dateFormat($part), $time);
     }
 }

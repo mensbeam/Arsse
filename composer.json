@@ -29,7 +29,8 @@
     },
     "require-dev": {
         "mikey179/vfsStream": "^1.6.4",
-        "phake/phake": "^2.3.2"
+        "phake/phake": "^2.3.2",
+        "phpunit/phpunit": "^6.0.5"
     },
     "autoload": {
         "psr-4": {
