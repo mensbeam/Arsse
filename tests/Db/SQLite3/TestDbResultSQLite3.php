@@ -9,6 +9,9 @@ class TestDbResultSQLite3 extends \PHPUnit\Framework\TestCase {
     protected $c;
 
     function setUp() {
+        if(!extension_loaded("sqlite3")) {
+            $this->markTestSkipped("SQLite extension not loaded");
+        }
         $c = new \SQLite3(":memory:");
         $c->enableExceptions(true);
         $this->c = $c;

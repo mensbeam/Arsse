@@ -16,6 +16,9 @@ class TestDbUpdateSQLite3 extends \PHPUnit\Framework\TestCase {
     const MINIMAL2 = "pragma user_version=2";
 
     function setUp() {
+        if(!extension_loaded("sqlite3")) {
+            $this->markTestSkipped("SQLite extension not loaded");
+        }
         $this->clearData();
         $this->vfs = vfsStream::setup("schemata", null, ['SQLite3' => []]);
         $conf = new Conf();

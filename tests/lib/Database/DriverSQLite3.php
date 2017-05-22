@@ -6,6 +6,9 @@ use JKingWeb\Arsse\Db\SQLite3\Driver;
 
 trait DriverSQLite3 {
     function setUpDriver() {
+        if(!extension_loaded("sqlite3")) {
+            $this->markTestSkipped("SQLite extension not loaded");
+        }
         Data::$conf->dbSQLite3File = ":memory:";
         $this->drv = new Driver(true);
     }

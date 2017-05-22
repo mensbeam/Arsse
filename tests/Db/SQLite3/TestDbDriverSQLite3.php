@@ -11,6 +11,9 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
     protected $ch;
 
     function setUp() {
+        if(!extension_loaded("sqlite3")) {
+            $this->markTestSkipped("SQLite extension not loaded");
+        }
         $this->clearData();
         $conf = new Conf();
         $conf->dbDriver = Db\SQLite3\Driver::class;

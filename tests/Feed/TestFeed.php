@@ -8,19 +8,10 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
     use Test\Tools;
 
     protected static $host = "http://localhost:8000/";
-    protected static $serverUp = true;
     protected $base = "";
-    
-    function time(string $t): string {
-        return gmdate("D, d M Y H:i:s \G\M\T", strtotime($t));
-    }
-
-    static function setUpBeforeClass() {
-        if(!@file_get_contents(self::$host."IsUp")) self::$serverUp = false;
-    }
 
     function setUp() {
-        if(!self::$serverUp) {
+        if(!@file_get_contents(self::$host."IsUp")) {
             $this->markTestSkipped("Test Web server is not accepting requests");
         }
         $this->base = self::$host."Feed/";
@@ -28,6 +19,23 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
         Data::$conf = new Conf();
     }
 
+    function testHandleCacheHeaders() {
+        $t = time();
+        $e = "78567a";
+        $f = new Feed(null, $this->base."Caching/304Random", $this->dateTransform($t, "http"), $e);
+        $this->assertTime($t, $f->lastModified);
+        $this->assertSame($e, $f->resource->getETag());
+        $f = new Feed(null, $this->base."Caching/304ETagOnly", $this->dateTransform($t, "http"), $e);
+        $this->assertTime($t, $f->lastModified);
+        $this->assertSame($e, $f->resource->getETag());
+        $f = new Feed(null, $this->base."Caching/304LastModOnly", $this->dateTransform($t, "http"), $e);
+        $this->assertTime($t, $f->lastModified);
+        $this->assertSame($e, $f->resource->getETag());
+        $f = new Feed(null, $this->base."Caching/304None", $this->dateTransform($t, "http"), $e);
+        $this->assertTime($t, $f->lastModified);
+        $this->assertSame($e, $f->resource->getETag());
+    }
+    
     function testComputeNextFetchOnError() {
         for($a = 0; $a < 100; $a++) {
             if($a < 3) {

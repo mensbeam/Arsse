@@ -1,7 +1,7 @@
 #! /bin/sh
 base=`dirname "$0"`
 php -n -S localhost:8000 "$base/server.php"  >/dev/null &
-php "$base/../vendor/phpunit/phpunit/phpunit" -c "$base/phpunit.xml"
+php "$base/../vendor/phpunit/phpunit/phpunit" -c "$base/phpunit.xml" $*
 sleep 1s
 pid=`lsof -n -i:8000 | grep -Eo "php\s+[0-9]+" | grep -Eo "[0-9]+"`
 kill $pid

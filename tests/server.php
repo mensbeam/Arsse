@@ -54,7 +54,7 @@ http_response_code((int) $response['code']);
 // if the response has a body, set the content type and (possibly) the ETag.
 if(strlen($response['content'])) {
     header("Content-Type: ".$response['mime']);
-    if($response['cache']) header("ETag: ".md5($response['content']));
+    if($response['cache']) header('ETag: "'.md5($response['content']).'"');
 }
 // if caching is enabled, set the last-modified date
 if($response['cache']) header("Last-Modified: ".gmdate("D, d M Y H:i:s \G\M\T", $response['lastMod']));
