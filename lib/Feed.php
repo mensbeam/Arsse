@@ -69,7 +69,7 @@ class Feed {
             // used instead of the feed's url.
             $this->favicon = (new Favicon)->find($feed->siteUrl);
         } catch (PicoFeedException $e) {
-            throw new Feed\Exception($url, $e);
+            throw new Feed\Exception($this->resource->getUrl(), $e);
         }
 
         // PicoFeed does not provide valid ids when there is no id element. Its solution
