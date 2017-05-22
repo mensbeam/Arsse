@@ -53,12 +53,17 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
         $this->assertNotEmpty($f->resource->getETag());
         // these tests have no HTTP headers and rely on article dates
         $t = strtotime("2002-05-19T15:21:36Z");
-        $f = new Feed(null, $this->base."Caching/200RSS2PubDateOnly");
+        $f = new Feed(null, $this->base."Caching/200PubDateOnly");
         $this->assertTime($t, $f->lastModified);
-        $f = new Feed(null, $this->base."Caching/200RSS2UpdateDate");
+        $f = new Feed(null, $this->base."Caching/200UpdateDate");
         $this->assertTime($t, $f->lastModified);
-        $f = new Feed(null, $this->base."Caching/200RSS2Multiple");
+        $f = new Feed(null, $this->base."Caching/200Multiple");
         $this->assertTime($t, $f->lastModified);
+        // this test has no dates at all and should report the current time
+        $t = time();
+        $f = new Feed(null, $this->base."Caching/200None");
+        $this->assertTime($t, $f->lastModified);
+
     }
     
     function testComputeNextFetchOnError() {

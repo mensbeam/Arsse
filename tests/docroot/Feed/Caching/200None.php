@@ -1,6 +1,7 @@
 <?php return [
     'code'    => 200,
     'cache'   => false,
+    'mime'    => "application/rss+xml",
     'content' => <<<MESSAGE_BODY
 <rss version="2.0">
 <channel>
@@ -9,8 +10,13 @@
     <description>A basic feed for testing</description>
 
     <item>
-        <description>Sample article</description>
-        <pubDate>Sun, 19 May 2002 15:21:36 GMT</pubDate>
+        <description>Sample article 1</description>
+    </item>
+    <item>
+        <description>Sample article 2</description>
+    </item>
+    <item>
+        <description>Sample article 3</description>
     </item>
 </channel>
 </rss>

@@ -1,6 +1,7 @@
 <?php return [
     'code'    => 200,
     'lastMod' => time() - 2000,
+    'mime'    => "application/rss+xml",
     'content' => <<<MESSAGE_BODY
 <rss version="2.0">
 <channel>
