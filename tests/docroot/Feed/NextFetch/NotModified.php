@@ -7,6 +7,6 @@ if(array_key_exists("t", $_GET)) {
 } else {
     return [
         'code'    => 304,
-        'cache'   => fasel,
+        'cache'   => false,
     ];
 }
