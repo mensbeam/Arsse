@@ -19,7 +19,8 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
         Data::$conf = new Conf();
     }
 
-    function testHandleCacheHeaders() {
+    function testHandleCacheHeadersOn304() {
+        // upon 304, the client should re-use the caching header values it supplied the server
         $t = time();
         $e = "78567a";
         $f = new Feed(null, $this->base."Caching/304Random", $this->dateTransform($t, "http"), $e);
@@ -34,6 +35,30 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
         $f = new Feed(null, $this->base."Caching/304None", $this->dateTransform($t, "http"), $e);
         $this->assertTime($t, $f->lastModified);
         $this->assertSame($e, $f->resource->getETag());
+    }
+
+    function testHandleCacheHeadersOn200() {
+        // these tests should trust the server-returned time, even in cases of obviously incorrect results
+        $t = time() - 2000;
+        $f = new Feed(null, $this->base."Caching/200Past");
+        $this->assertTime($t, $f->lastModified);
+        $this->assertNotEmpty($f->resource->getETag());
+        $t = time() - 2000;
+        $f = new Feed(null, $this->base."Caching/200Past", $this->dateTransform(time(), "http"));
+        $this->assertTime($t, $f->lastModified);
+        $this->assertNotEmpty($f->resource->getETag());
+        $t = time() + 2000;
+        $f = new Feed(null, $this->base."Caching/200Future");
+        $this->assertTime($t, $f->lastModified);
+        $this->assertNotEmpty($f->resource->getETag());
+        // these tests have no HTTP headers and rely on article dates
+        $t = strtotime("2002-05-19T15:21:36Z");
+        $f = new Feed(null, $this->base."Caching/200RSS2PubDateOnly");
+        $this->assertTime($t, $f->lastModified);
+        $f = new Feed(null, $this->base."Caching/200RSS2UpdateDate");
+        $this->assertTime($t, $f->lastModified);
+        $f = new Feed(null, $this->base."Caching/200RSS2Multiple");
+        $this->assertTime($t, $f->lastModified);
     }
     
     function testComputeNextFetchOnError() {

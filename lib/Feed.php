@@ -153,9 +153,14 @@ class Feed {
         return $out;
     }
 
-    public function matchToDatabase(int $feedID): bool {
+    public function matchToDatabase(int $feedID = null): bool {
         // first perform deduplication on items
         $items = $this->deduplicateItems($this->data->items);
+        // if we haven't been given a database feed ID to check against, all items are new
+        if(is_null($feedID)) {
+            $this->newItems = $items;
+            return true;
+        }
         // get as many of the latest articles in the database as there are in the feed
         $articles = Data::$db->articleMatchLatest($feedID, sizeof($items));
         // arrays holding new, edited, and tentatively new items; items may be tentatively new because we perform two passes

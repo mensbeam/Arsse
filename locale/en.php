@@ -96,5 +96,5 @@ return [
     'Exception.JKingWeb/Arsse/Feed/Exception.malformed'              => 'Could not parse feed "{url}" because it is malformed',
     'Exception.JKingWeb/Arsse/Feed/Exception.xmlEntity'              => 'Refused to parse feed "{url}" because it contains an XXE attack',
     'Exception.JKingWeb/Arsse/Feed/Exception.subscriptionNotFound'   => 'Unable to find a feed at location "{url}"',
-    'Exception.JKingWeb/Arsse/Feed/Exception.unsupportedFormat'      => 'Feed "{url}" is of an unsupported format'
+    'Exception.JKingWeb/Arsse/Feed/Exception.unsupportedFeedFormat'  => 'Feed "{url}" is of an unsupported format'
 ];

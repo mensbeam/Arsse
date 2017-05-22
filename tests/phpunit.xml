@@ -19,7 +19,7 @@
         <file>Lang/TestLangComplex.php</file>
         <file>Lang/TestLangErrors.php</file>
     </testsuite>
-    <testsuite name="Configuration loading and saving">
+    <testsuite name="Configuration">
         <file>Conf/TestConf.php</file>
     </testsuite>
     <testsuite name="User management">
@@ -28,13 +28,13 @@
         <file>User/TestUserInternalDriver.php</file>
         <file>User/TestAuthorization.php</file>
     </testsuite>
-    <testsuite name="SQLite3 database driver">
+    <testsuite name="SQLite3 driver">
         <file>Db/SQLite3/TestDbResultSQLite3.php</file>
         <file>Db/SQLite3/TestDbStatementSQLite3.php</file>
         <file>Db/SQLite3/TestDbDriverSQLite3.php</file>
         <file>Db/SQLite3/TestDbUpdateSQLite3.php</file>
     </testsuite>
-    <testsuite name="SQLite3 database functions">
+    <testsuite name="SQLite3 functions">
         <file>Db/SQLite3/Database/TestDatabaseUserSQLite3.php</file>
         <file>Db/SQLite3/Database/TestDatabaseFolderSQLite3.php</file>
         <file>Db/SQLite3/Database/TestDatabaseSubscriptionSQLite3.php</file>
