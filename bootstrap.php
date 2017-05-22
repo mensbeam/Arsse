@@ -10,4 +10,3 @@ if(!defined(NS_BASE."INSTALL")) define(NS_BASE."INSTALL", false);
 
 require_once BASE."vendor".DIRECTORY_SEPARATOR."autoload.php";
 ignore_user_abort(true);
-iconv_set_encoding("internal_encoding", "UTF-8");
