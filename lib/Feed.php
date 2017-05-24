@@ -82,9 +82,25 @@ class Feed {
         foreach ($feed->items as $f) {
             // Hashes used for comparison to check for updates and also to identify when an
             // id doesn't exist.
-            $f->urlTitleHash = hash('sha256', $f->url.$f->title);
-            $f->urlContentHash = hash('sha256', $f->url.$f->content.$f->enclosureUrl.$f->enclosureType);
-            $f->titleContentHash = hash('sha256', $f->title.$f->content.$f->enclosureUrl.$f->enclosureType);
+            $content = $f->content.$f->enclosureUrl.$f->enclosureType;
+            // if the item link URL and item title are both equal to the feed link URL, then the item has neither a link URL nor a title
+            if($f->url==$feed->siteUrl && $f->title==$feed->siteUrl) {
+                $f->urlTitleHash = "";
+            } else {
+                $f->urlTitleHash = hash('sha256', $f->url.$f->title);
+            }
+            // if the item link URL is equal to the feed link URL, it has no link URL; if there is additionally no content, these should not be hashed
+            if(!strlen($content) && $f->url==$feed->siteUrl) {
+               $f->urlContentHash = ""; 
+            } else {
+                $f->urlContentHash = hash('sha256', $f->url.$content);
+            }
+            // if the item's title is the same as its link URL, it has no title; if there is additionally no content, these should not be hashed
+            if(!strlen($content) && $f->title==$f->url) {
+                $f->titleContentHash = "";
+            } else {
+                $f->titleContentHash = hash('sha256', $f->title.$content);
+            }
 
             // If there is an id element then continue. The id is used already.
             $id = (string)$f->xml->id;
@@ -126,9 +142,9 @@ class Feed {
                 // if the two items have the same ID or any one hash matches, they are two versions of the same item
                 if(
                     ($item->id && $check->id && $item->id == $check->id) ||
-                    $item->urlTitleHash     == $check->urlTitleHash      ||
-                    $item->urlContentHash   == $check->urlContentHash    ||
-                    $item->titleContentHash == $check->titleContentHash
+                    ($item->urlTitleHash     && $item->urlTitleHash     == $check->urlTitleHash)      ||
+                    ($item->urlContentHash   && $item->urlContentHash   == $check->urlContentHash)    ||
+                    ($item->titleContentHash && $item->titleContentHash == $check->titleContentHash)
                 ) {
                     if(// because newsfeeds are usually order newest-first, the later item should only be used if...
                         // the later item has an update date and the existing item does not
@@ -173,9 +189,9 @@ class Feed {
                     // the item matches if the GUID matches...
                     ($i->id && $i->id === $a['guid']) ||
                     // ... or if any one of the hashes match
-                    $i->urlTitleHash     === $a['url_title_hash']     ||
-                    $i->urlContentHash   === $a['url_content_hash']   ||
-                    $i->titleContentHash === $a['title_content_hash']
+                    ($i->urlTitleHash     && $i->urlTitleHash     === $a['url_title_hash'])     ||
+                    ($i->urlContentHash   && $i->urlContentHash   === $a['url_content_hash'])   ||
+                    ($i->titleContentHash && $i->titleContentHash === $a['title_content_hash'])
                 ) {
                     if($i->updatedDate && $i->updatedDate->getTimestamp() !== $match['edited_date']) {
                         // if the item has an edit timestamp and it doesn't match that of the article in the database, the the article has been edited
@@ -202,10 +218,10 @@ class Feed {
             $ids = $hashesUT = $hashesUC = $hashesTC = [];
             foreach($tentative as $index) {
                 $i = $items[$index];
-                if($i->id) $ids[] = $i->id;
-                $hashesUT[] = $i->urlTitleHash;
-                $hashesUC[] = $i->urlContentHash;
-                $hashesTC[] = $i->titleContentHash;
+                if($i->id)               $ids[]      = $i->id;
+                if($i->urlTitleHash)     $hashesUT[] = $i->urlTitleHash;
+                if($i->urlContentHash)   $hashesUC[] = $i->urlContentHash;
+                if($i->titleContentHash) $hashesTC[] = $i->titleContentHash;
             }
             $articles = Data::$db->articleMatchIds($feedID, $ids, $hashesUT, $hashesUC, $hashesTC);
             foreach($tentative as $index) {
@@ -216,9 +232,9 @@ class Feed {
                         // the item matches if the GUID matches...
                         ($i->id && $i->id === $a['guid']) ||
                         // ... or if any one of the hashes match
-                        $i->urlTitleHash     === $a['url_title_hash']     ||
-                        $i->urlContentHash   === $a['url_content_hash']   ||
-                        $i->titleContentHash === $a['title_content_hash']
+                        ($i->urlTitleHash     && $i->urlTitleHash     === $a['url_title_hash'])     ||
+                        ($i->urlContentHash   && $i->urlContentHash   === $a['url_content_hash'])   ||
+                        ($i->titleContentHash && $i->titleContentHash === $a['title_content_hash'])
                     ) {
                         if($i->updatedDate && $i->updatedDate->getTimestamp() !== $match['edited_date']) {
                             // if the item has an edit timestamp and it doesn't match that of the article in the database, the the article has been edited

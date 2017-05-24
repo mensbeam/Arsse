@@ -19,6 +19,16 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
         Data::$conf = new Conf();
     }
 
+    function testDeduplicateFeedItems() {
+        $t = strtotime("2002-05-19T15:21:36Z");
+        $f = new Feed(null, $this->base."Deduplication/Permalink-Dates");
+        $this->assertCount(2, $f->newItems);
+        $this->assertTime($t, $f->newItems[0]->updatedDate);
+        $f = new Feed(null, $this->base."Deduplication/ID-Dates");
+        $this->assertCount(2, $f->newItems);
+        $this->assertTime($t, $f->newItems[0]->updatedDate);
+    }
+
     function testHandleCacheHeadersOn304() {
         // upon 304, the client should re-use the caching header values it supplied the server
         $t = time();
@@ -63,7 +73,6 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
         $t = time();
         $f = new Feed(null, $this->base."Caching/200None");
         $this->assertTime($t, $f->lastModified);
-
     }
     
     function testComputeNextFetchOnError() {
