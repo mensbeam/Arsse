@@ -27,6 +27,9 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
         $f = new Feed(null, $this->base."Deduplication/ID-Dates");
         $this->assertCount(2, $f->newItems);
         $this->assertTime($t, $f->newItems[0]->updatedDate);
+        $f = new Feed(null, $this->base."Deduplication/IdenticalHashes");
+        $this->assertCount(2, $f->newItems);
+        $this->assertTime($t, $f->newItems[0]->updatedDate);
     }
 
     function testHandleCacheHeadersOn304() {

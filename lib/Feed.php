@@ -139,6 +139,8 @@ class Feed {
         $out = [];
         foreach($items as $item) {
             foreach($out as $index => $check) {
+                // if the two items both have IDs and they differ, they do not match, regardless of hashes
+                if($item->id && $check->id && $item->id != $check->id) continue;
                 // if the two items have the same ID or any one hash matches, they are two versions of the same item
                 if(
                     ($item->id && $check->id && $item->id == $check->id) ||
@@ -185,6 +187,8 @@ class Feed {
         foreach($items as $index => $i) {
             $found = false;
             foreach($articles as $a) {
+                // if the item has an ID and it doesn't match the article ID, the two don't match, regardless of hashes
+                if($i->id && $i->id !== $a['guid']) continue;
                 if(
                     // the item matches if the GUID matches...
                     ($i->id && $i->id === $a['guid']) ||
@@ -228,6 +232,8 @@ class Feed {
                 $i = $items[$index];
                 $found = false;
                 foreach($articles as $a) {
+                    // if the item has an ID and it doesn't match the article ID, the two don't match, regardless of hashes
+                    if($i->id && $i->id !== $a['guid']) continue;
                     if(
                         // the item matches if the GUID matches...
                         ($i->id && $i->id === $a['guid']) ||
@@ -252,9 +258,6 @@ class Feed {
                             $found = true;
                             break;
                         }
-                    } else {
-                        // if we don't have a match, add the item to the definite new list
-                        $new[] = $index;
                     }
                 }
                 if(!$found) $new[] = $index;
