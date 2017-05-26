@@ -3,6 +3,27 @@ Arsse: Advanced RSS Environment
 
 TODO: Fill in stuff
 
+Requirements
+------------
+
+Arsse has the following requirements:
+
+- A Web server; example configuration currently exists for:
+    - nginx
+    - Apache 2
+- PHP 7.0 or newer
+- One of the following supported databases, and the PHP extension to use it:
+    - SQLite 3.8.3 or newer
+    - PostgreSQL 8.4 or newer
+    - MySQL 8.0.1 or newer
+    - MariaDB 10.2.2 or newer
+- The ability to run background services on the server; service files currently exist for:
+    - systemd
+    - launchd
+    - sysvinit
+
+**FIXME:** The requirements listed are prospective and not representative of the actual requirements as of this writing. Currently only SQLite is supported, no Web server configuration has yet been written, and no background process yet exists, never mind service files to run it.
+
 License
 -------
 
