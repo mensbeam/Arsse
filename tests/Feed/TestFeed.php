@@ -20,6 +20,7 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
     }
 
     function testDeduplicateFeedItems() {
+        // duplicates with dates lead to the newest match being kept
         $t = strtotime("2002-05-19T15:21:36Z");
         $f = new Feed(null, $this->base."Deduplication/Permalink-Dates");
         $this->assertCount(2, $f->newItems);
@@ -30,6 +31,19 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
         $f = new Feed(null, $this->base."Deduplication/IdenticalHashes");
         $this->assertCount(2, $f->newItems);
         $this->assertTime($t, $f->newItems[0]->updatedDate);
+        $f = new Feed(null, $this->base."Deduplication/Hashes-Dates1"); // content differs
+        $this->assertCount(2, $f->newItems);
+        $this->assertTime($t, $f->newItems[0]->updatedDate);
+        $f = new Feed(null, $this->base."Deduplication/Hashes-Dates2"); // title differs
+        $this->assertCount(2, $f->newItems);
+        $this->assertTime($t, $f->newItems[0]->updatedDate);
+        $f = new Feed(null, $this->base."Deduplication/Hashes-Dates3"); // URL differs
+        $this->assertCount(2, $f->newItems);
+        $this->assertTime($t, $f->newItems[0]->updatedDate);
+        // duplicates without dates lead to the topmost entry being kept
+        $f = new Feed(null, $this->base."Deduplication/Hashes");
+        $this->assertCount(2, $f->newItems);
+        $this->assertSame("http://example.com/1", $f->newItems[0]->url);
     }
 
     function testHandleCacheHeadersOn304() {
