@@ -266,7 +266,7 @@ class Feed {
             // if there are no tentatively new articles and/or the number of stored articles is less than the size of the feed, don't do a second pass; assume any tentatively new items are in fact new
             $new = $tentative;
         }
-        // FIXME: fetch full content when appropriate
+        // TODO: fetch full content when appropriate
         foreach($new as $index) {
             $this->newItems[] = $items[$index];
         }

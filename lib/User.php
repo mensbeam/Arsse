@@ -87,20 +87,6 @@ class User {
     }
 
     public function credentials(): array {
-        if(Data::$conf->userAuthPreferHTTP) {
-            return $this->credentialsHTTP();
-        } else {
-            return $this->credentialsForm();
-        }
-    }
-
-    public function credentialsForm(): array {
-        // FIXME: stub
-        $this->id = "john.doe@example.com";
-        return ["user" => "john.doe@example.com", "password" => "secret"];
-    }
-
-    public function credentialsHTTP(): array {
         if($_SERVER['PHP_AUTH_USER']) {
             $out = ["user" => $_SERVER['PHP_AUTH_USER'], "password" => $_SERVER['PHP_AUTH_PW']];
         } else if($_SERVER['REMOTE_USER']) {
@@ -117,8 +103,7 @@ class User {
 
     public function auth(string $user = null, string $password = null): bool {
         if($user===null) {
-            if(Data::$conf->userAuthPreferHTTP) return $this->authHTTP();
-            return $this->authForm();
+            return $this->authHTTP();
         } else {
             $this->id = $user;
             $this->actor = [];
@@ -135,17 +120,10 @@ class User {
         }
     }
 
-    public function authForm(): bool {
-        $cred = $this->credentialsForm();
-        if(!$cred["user"]) return $this->challengeForm();
-        if(!$this->auth($cred["user"], $cred["password"])) return $this->challengeForm();
-        return true;
-    }
-
     public function authHTTP(): bool {
-        $cred = $this->credentialsHTTP();
-        if(!$cred["user"]) return $this->challengeHTTP();
-        if(!$this->auth($cred["user"], $cred["password"])) return $this->challengeHTTP();
+        $cred = $this->credentials();
+        if(!$cred["user"]) return false;
+        if(!$this->auth($cred["user"], $cred["password"])) return false;
         return true;
     }
 
@@ -357,11 +335,6 @@ class User {
                 throw new User\ExceptionNotImplemented("notImplemented", ["action" => $func, "user" => $user]);
         }
     }
-
-    // FIXME: stubs
-    public function challenge(): bool     {throw new User\Exception("authFailed");}
-    public function challengeForm(): bool {throw new User\Exception("authFailed");}
-    public function challengeHTTP(): bool {throw new User\Exception("authFailed");}
 
     protected function composeName(string $user): string {
         if(preg_match("/.+?@[^@]+$/",$user)) {

@@ -10,7 +10,6 @@ $_SERVER['PHP_AUTH_USER'] = $user;
 $_SERVER['PHP_AUTH_PW'] = $pass;
 $conf = new Conf();
 $conf->dbSQLite3File = ":memory:";
-$conf->userAuthPreferHTTP = true;
 Data::load($conf);
 Data::$db->schemaUpdate();
 

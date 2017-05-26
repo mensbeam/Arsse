@@ -50,7 +50,6 @@ class TestAuthorization extends \PHPUnit\Framework\TestCase {
         $this->clearData();
         $conf = new Conf();
         $conf->userDriver = $drv;
-        $conf->userAuthPreferHTTP = true;
         $conf->userComposeNames = true;
         Data::$conf = $conf;
         if($db !== null) {

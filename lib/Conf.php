@@ -25,7 +25,6 @@ class Conf {
     public $dbMySQLAutoUpd          = false;
 
     public $userDriver              = User\Internal\Driver::class;
-    public $userAuthPreferHTTP      = false;
     public $userComposeNames        = true;
     public $userTempPasswordLength  = 20;
 
