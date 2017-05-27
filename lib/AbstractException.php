@@ -64,7 +64,7 @@ abstract class AbstractException extends \Exception {
         "Feed/Exception.timeout"                => 10505,
         "Feed/Exception.forbidden"              => 10506,
         "Feed/Exception.unauthorized"           => 10507,
-        "Feed/Exception.malformed"              => 10511,
+        "Feed/Exception.malformedXml"           => 10511,
         "Feed/Exception.xmlEntity"              => 10512,
         "Feed/Exception.subscriptionNotFound"   => 10521,
         "Feed/Exception.unsupportedFeedFormat"  => 10522,

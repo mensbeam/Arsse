@@ -93,8 +93,8 @@ return [
     'Exception.JKingWeb/Arsse/Feed/Exception.timeout'                => 'Could not download feed "{url}" because its server timed out',
     'Exception.JKingWeb/Arsse/Feed/Exception.forbidden'              => 'Could not download feed "{url}" because you do not have permission to access it',
     'Exception.JKingWeb/Arsse/Feed/Exception.unauthorized'           => 'Could not download feed "{url}" because you provided insufficient or invalid credentials',
-    'Exception.JKingWeb/Arsse/Feed/Exception.malformed'              => 'Could not parse feed "{url}" because it is malformed',
+    'Exception.JKingWeb/Arsse/Feed/Exception.malformedXml'           => 'Could not parse feed "{url}" because it is malformed',
     'Exception.JKingWeb/Arsse/Feed/Exception.xmlEntity'              => 'Refused to parse feed "{url}" because it contains an XXE attack',
     'Exception.JKingWeb/Arsse/Feed/Exception.subscriptionNotFound'   => 'Unable to find a feed at location "{url}"',
-    'Exception.JKingWeb/Arsse/Feed/Exception.unsupportedFeedFormat'  => 'Feed "{url}" is of an unsupported format'
+    'Exception.JKingWeb/Arsse/Feed/Exception.unsupportedFeedFormat'  => 'Feed "{url}" is of an unsupported format',
 ];

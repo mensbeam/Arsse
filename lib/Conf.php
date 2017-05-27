@@ -28,10 +28,12 @@ class Conf {
     public $userComposeNames        = true;
     public $userTempPasswordLength  = 20;
 
-    public $userAgentString;
+    public $fetchTimeout            = 10;
+    public $fetchSizeLimit          = 2 * 1024 * 1024;
+    public $fetchUserAgentString;
 
     public function __construct(string $import_file = "") {
-        $this->userAgentString = sprintf('Arsse/%s (%s %s; %s; https://code.jkingweb.ca/jking/arsse) PicoFeed (https://github.com/fguillot/picoFeed)',
+        $this->fetchUserAgentString = sprintf('Arsse/%s (%s %s; %s; https://code.jkingweb.ca/jking/arsse) PicoFeed (https://github.com/fguillot/picoFeed)',
             VERSION, // Arsse version
             php_uname('s'), // OS
             php_uname('r'), // OS version

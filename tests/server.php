@@ -25,6 +25,7 @@ which include the following data:
 */
 
 
+ignore_user_abort(false);
 $defaults = [ // default values for response
     'code'    => 200,
     'content' => "",

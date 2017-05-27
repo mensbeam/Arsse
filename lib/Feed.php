@@ -44,8 +44,11 @@ class Feed {
     public function download(string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = ''): bool {
         try {
             $config = new Config;
-            $config->setClientUserAgent(Data::$conf->userAgentString);
-            $config->setGrabberUserAgent(Data::$conf->userAgentString);
+            $config->setMaxBodySize(Data::$conf->fetchSizeLimit);
+            $config->setClientTimeout(Data::$conf->fetchTimeout);
+            $config->setGrabberTimeout(Data::$conf->fetchTimeout);
+            $config->setClientUserAgent(Data::$conf->fetchUserAgentString);
+            $config->setGrabberUserAgent(Data::$conf->fetchUserAgentString);
 
             $this->reader = new Reader($config);
             $this->resource = $this->reader->download($url, $lastModified, $etag, $username, $password);
@@ -102,9 +105,10 @@ class Feed {
                 $f->titleContentHash = hash('sha256', $f->title.$content);
             }
 
-            // If there is an id element then continue. The id is used already.
-            $id = (string)$f->xml->id;
+            // If there is an Atom id element use it as the id.
+            $id = (string)$f->xml->children('http://www.w3.org/2005/Atom')->id;
             if ($id !== '') {
+                $f->id = hash('sha256', $id);
                 continue;
             }
 

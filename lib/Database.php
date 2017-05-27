@@ -196,7 +196,7 @@ class Database {
                 $value = $in;
                 break;
         }
-        return (bool) $this->db->prepare("REPLACE INTO arsse_settings(key,value,type) values(?,?,?)", "str", "str", "str")->run($key, $value, $type)->changes();
+        return (bool) $this->db->prepare("REPLACE INTO arsse_settings(key,value,type) values(?,?,?)", "str", "str", "str")->run($key, $value, $type)->changes(); // FIXME: this will not work on PostgreSQL
     }
 
     public function settingRemove(string $key): bool {
