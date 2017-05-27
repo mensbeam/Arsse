@@ -11,7 +11,10 @@ Arsse has the following requirements:
 - A Web server; example configuration currently exists for:
     - nginx
     - Apache 2
-- PHP 7.0 or newer
+- PHP 7.0 or newer with the following extensions:
+    - [intl](http://php.net/manual/en/book.intl.php)
+    - [json](http://php.net/manual/en/book.json.php)
+    - [hash](http://php.net/manual/en/book.hash.php)
 - One of the following supported databases, and the PHP extension to use it:
     - SQLite 3.8.3 or newer
     - PostgreSQL 8.4 or newer
