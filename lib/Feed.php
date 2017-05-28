@@ -287,11 +287,15 @@ class Feed {
             $offset = $this->normalizeDateDiff($diff);
             $now->modify("+".$offset);
         } else {
+            // the algorithm for updated feeds (returning 200 rather than 304) uses the same parameters as for 304,
+            // save that the last three intervals between item dates are computed, and if any two fall within
+            // the same interval range, that interval is used (e.g. if the intervals are 23m, 12m, and 4h, the used
+            // interval is "less than 30m"). If there is no commonality, the feed is checked in 1 hour.
             $offsets = [];
             $dates = $this->gatherDates();
             if(sizeof($dates) > 3) {
                 for($a = 0; $a < 3; $a++) {
-                    $diff = $dates[$a+1] - $dates[$a];
+                    $diff = $dates[$a] - $dates[$a+1];
                     $offsets[] = $this->normalizeDateDiff($diff);
                 }
                 if($offsets[0]==$offsets[1] || $offsets[0]==$offsets[2]) {

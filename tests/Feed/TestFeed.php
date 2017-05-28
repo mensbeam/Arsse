@@ -251,4 +251,31 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
         $exp = strtotime("now + 3 hours");
         $this->assertTime($exp, $f->nextFetch);
     }
+    
+    function testComputeNextFetchFrom200() {
+        // if less than half an hour, check in 15 minutes
+        $f = new Feed(null, $this->base."NextFetch/30m");
+        $exp = strtotime("now + 15 minutes");
+        $this->assertTime($exp, $f->nextFetch);
+        // if less than an hour, check in 30 minutes
+        $f = new Feed(null, $this->base."NextFetch/1h");
+        $exp = strtotime("now + 30 minutes");
+        $this->assertTime($exp, $f->nextFetch);
+        // if less than three hours, check in an hour
+        $f = new Feed(null, $this->base."NextFetch/3h");
+        $exp = strtotime("now + 1 hour");
+        $this->assertTime($exp, $f->nextFetch);
+        // if more than 36 hours, check in 24 hours
+        $f = new Feed(null, $this->base."NextFetch/36h");
+        $exp = strtotime("now + 24 hours");
+        $this->assertTime($exp, $f->nextFetch);
+        // otherwise check in three hours
+        $f = new Feed(null, $this->base."NextFetch/3-36h");
+        $exp = strtotime("now + 3 hours");
+        $this->assertTime($exp, $f->nextFetch);
+        // and if there is no common interval, check in an hour
+        $f = new Feed(null, $this->base."NextFetch/Fallback");
+        $exp = strtotime("now + 1 hour");
+        $this->assertTime($exp, $f->nextFetch);
+    }
 }
