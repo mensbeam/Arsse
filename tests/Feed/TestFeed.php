@@ -163,9 +163,9 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
         $this->assertNotEquals("", $f->data->items[5]->urlContentHash);
         $this->assertNotEquals("", $f->data->items[5]->titleContentHash);
         // check null IDs
-        $this->assertSame("", $f->data->items[3]->id);
-        $this->assertSame("", $f->data->items[4]->id);
-        $this->assertSame("", $f->data->items[5]->id);
+        $this->assertSame(null, $f->data->items[3]->id);
+        $this->assertSame(null, $f->data->items[4]->id);
+        $this->assertSame(null, $f->data->items[5]->id);
     }
 
     function testParseEntityExpansionAttack() {
