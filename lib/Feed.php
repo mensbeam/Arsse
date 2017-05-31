@@ -127,7 +127,7 @@ class Feed {
             }
 
             // If there aren't any of those there is no id.
-            $f->id = '';
+            $f->id = null;
         }
         $this->data = $feed;
         return true;
@@ -184,11 +184,30 @@ class Feed {
             return true;
         }
         // get as many of the latest articles in the database as there are in the feed
-        $articles = Data::$db->articleMatchLatest($feedID, sizeof($items));
-        // arrays holding new, edited, and tentatively new items; items may be tentatively new because we perform two passes
-        $new = $tentative = $edited = [];
+        $articles = Data::$db->feedMatchLatest($feedID, sizeof($items))->getAll();
+        // perform a first pass matching the latest articles against items in the feed
+        list($this->newItems, $this->changedItems) = $this->matchItems($items, $articles);
+        if(sizeof($this->newItems) && sizeof($items) <= sizeof($articles)) {
+            // if we need to, perform a second pass on the database looking specifically for IDs and hashes of the new items
+            $ids = $hashesUT = $hashesUC = $hashesTC = [];
+            foreach($this->newItems as $i) {
+                if($i->id)               $ids[]      = $i->id;
+                if($i->urlTitleHash)     $hashesUT[] = $i->urlTitleHash;
+                if($i->urlContentHash)   $hashesUC[] = $i->urlContentHash;
+                if($i->titleContentHash) $hashesTC[] = $i->titleContentHash;
+            }
+            $articles = Data::$db->feedMatchIds($feedID, $ids, $hashesUT, $hashesUC, $hashesTC)->getAll();
+            list($this->newItems, $changed) = $this->matchItems($this->newItems, $articles);
+            $this->changedItems = array_merge($this->changedItems, $changed);
+        }
+        // TODO: fetch full content when appropriate
+        return true;
+    }
+
+    public function matchItems(array $items, array $articles): array {
+        $new =  $edited = [];
         // iterate through the articles and for each determine whether it is existing, edited, or entirely new
-        foreach($items as $index => $i) {
+        foreach($items as $i) {
             $found = false;
             foreach($articles as $a) {
                 // if the item has an ID and it doesn't match the article ID, the two don't match, regardless of hashes
@@ -201,16 +220,16 @@ class Feed {
                     ($i->urlContentHash   && $i->urlContentHash   === $a['url_content_hash'])   ||
                     ($i->titleContentHash && $i->titleContentHash === $a['title_content_hash'])
                 ) {
-                    if($i->updatedDate && $i->updatedDate->getTimestamp() !== $match['edited_date']) {
+                    if($i->updatedDate && $i->updatedDate->getTimestamp() !== $a['edited_date']) {
                         // if the item has an edit timestamp and it doesn't match that of the article in the database, the the article has been edited
                         // we store the item index and database record ID as a key/value pair
                         $found = true;
-                        $edited[$index] = $a['id'];
+                        $edited[$a['id']] = $i;
                         break;
                     } else if($i->urlTitleHash !== $a['url_title_hash'] || $i->urlContentHash !== $a['url_content_hash'] || $i->titleContentHash !== $a['title_content_hash']) {
                         // if any of the hashes do not match, then the article has been edited
                         $found = true;
-                        $edited[$index] = $a['id'];
+                        $edited[$a['id']] = $i;
                         break;
                     } else {
                         // otherwise the item is unchanged and we can ignore it
@@ -219,65 +238,9 @@ class Feed {
                     }
                 }
             }
-            if(!$found) $tentative[] = $index;
+            if(!$found) $new[] = $i;
         }
-        if(sizeof($tentative) && sizeof($items)==sizeof($articles)) {
-            // if we need to, perform a second pass on the database looking specifically for IDs and hashes of the new items
-            $ids = $hashesUT = $hashesUC = $hashesTC = [];
-            foreach($tentative as $index) {
-                $i = $items[$index];
-                if($i->id)               $ids[]      = $i->id;
-                if($i->urlTitleHash)     $hashesUT[] = $i->urlTitleHash;
-                if($i->urlContentHash)   $hashesUC[] = $i->urlContentHash;
-                if($i->titleContentHash) $hashesTC[] = $i->titleContentHash;
-            }
-            $articles = Data::$db->articleMatchIds($feedID, $ids, $hashesUT, $hashesUC, $hashesTC);
-            foreach($tentative as $index) {
-                $i = $items[$index];
-                $found = false;
-                foreach($articles as $a) {
-                    // if the item has an ID and it doesn't match the article ID, the two don't match, regardless of hashes
-                    if($i->id && $i->id !== $a['guid']) continue;
-                    if(
-                        // the item matches if the GUID matches...
-                        ($i->id && $i->id === $a['guid']) ||
-                        // ... or if any one of the hashes match
-                        ($i->urlTitleHash     && $i->urlTitleHash     === $a['url_title_hash'])     ||
-                        ($i->urlContentHash   && $i->urlContentHash   === $a['url_content_hash'])   ||
-                        ($i->titleContentHash && $i->titleContentHash === $a['title_content_hash'])
-                    ) {
-                        if($i->updatedDate && $i->updatedDate->getTimestamp() !== $match['edited_date']) {
-                            // if the item has an edit timestamp and it doesn't match that of the article in the database, the the article has been edited
-                            // we store the item index and database record ID as a key/value pair
-                            $found = true;
-                            $edited[$index] = $a['id'];
-                            break;
-                        } else if($i->urlTitleHash !== $a['url_title_hash'] || $i->urlContentHash !== $a['url_content_hash'] || $i->titleContentHash !== $a['title_content_hash']) {
-                            // if any of the hashes do not match, then the article has been edited
-                            $found = true;
-                            $edited[$index] = $a['id'];
-                            break;
-                        } else {
-                            // otherwise the item is unchanged and we can ignore it
-                            $found = true;
-                            break;
-                        }
-                    }
-                }
-                if(!$found) $new[] = $index;
-            }
-        } else {
-            // if there are no tentatively new articles and/or the number of stored articles is less than the size of the feed, don't do a second pass; assume any tentatively new items are in fact new
-            $new = $tentative;
-        }
-        // TODO: fetch full content when appropriate
-        foreach($new as $index) {
-            $this->newItems[] = $items[$index];
-        }
-        foreach($edited as $index => $id) {
-            $this->changedItems[$id] = $items[$index];
-        }
-        return true;
+        return [$new, $edited];
     }
 
     public function computeNextFetch(): \DateTime {

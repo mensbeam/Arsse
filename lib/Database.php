@@ -658,14 +658,14 @@ class Database {
         return true;
     }
 
-    public function articleMatchLatest(int $feedID, int $count): Db\Result {
+    public function feedMatchLatest(int $feedID, int $count): Db\Result {
         return $this->db->prepare(
             'SELECT id, DATEFORMAT("unix", edited) AS edited_date, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? ORDER BY edited desc limit ?', 
             'int', 'int'
         )->run($feedID, $count);
     }
 
-    public function articleMatchIds(int $feedID, array $ids = [], array $hashesUT = [], array $hashesUC = [], array $hashesTC = []): Db\Result {
+    public function feedMatchIds(int $feedID, array $ids = [], array $hashesUT = [], array $hashesUC = [], array $hashesTC = []): Db\Result {
         // compile SQL IN() clauses and necessary type bindings for the four identifier lists
         list($cId,     $tId)     = $this->generateIn($ids, "str");
         list($cHashUT, $tHashUT) = $this->generateIn($hashesUT, "str");
