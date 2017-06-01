@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
-use Webmozart\Glob\Glob;
 
 class Lang {
     const DEFAULT = "en"; // fallback locale
@@ -110,13 +109,16 @@ class Lang {
         return true;
     }
 
+    protected function globFiles(string $path): array {
+        // we wrap PHP's glob function in this method so that unit tests may override it
+        return glob($path."*.php");
+    }
+
     protected function listFiles(): array {
-        $out = glob($this->path."*.php");
-        // built-in glob doesn't work with vfsStream (and this other glob doesn't seem to work with Windows paths), so we try both
-        if(empty($out)) $out = Glob::glob($this->path."*.php"); // FIXME: we should just mock glob() in tests instead and make this a dev dependency
+        $out = $this->globFiles($this->path."*.php");
         // trim the returned file paths to return just the language tag
         $out = array_map(function($file) {
-            $file = str_replace(DIRECTORY_SEPARATOR, "/", $file);
+            $file = str_replace(DIRECTORY_SEPARATOR, "/", $file); // we replace the directory separator because we don't use native paths in testing
             $file = substr($file, strrpos($file, "/")+1);
             return strtolower(substr($file,0,strrpos($file,".")));
         },$out);

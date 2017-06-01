@@ -34,7 +34,7 @@ trait Setup {
         // set up a file without read access
         chmod($this->path."ru.php", 0000);
         // make the test Lang class use the vfs files
-        $this->l = new Lang($this->path);
+        $this->l = new TestLang($this->path);
         // create a mock Lang object so as not to create a dependency loop
         $this->clearData(false);
         Data::$l = Phake::mock(Lang::class);
