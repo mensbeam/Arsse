@@ -356,30 +356,42 @@ class Database {
 
     public function subscriptionList(string $user, int $folder = null, int $id = null): Db\Result {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        // check to make sure the folder exists, if one is specified
+        // lay out the base query parts
+        $queryCTE = ["topmost(f_id,top) as (select id,id from arsse_folders where owner is ? and parent is null union select id,top from arsse_folders join topmost on parent=f_id)"];
+        $queryWhere = ["owner is ?"];
+        $queryTypes = ["str", "str", "str", "str"];
+        $queryValues = [$user, $this->dateFormatDefault, $user, $user];
+        if(!is_null($folder)) {
+            // if a folder is specified, make sure it exists
+            $this->folderValidateId($user, $folder);
+            // if it does exist, add a common table expression to list it and its children so that we select from the entire subtree
+            array_unshift($queryCTE, "folders(folder) as (SELECT ? union select id from arsse_folders join folders on parent is folder)");
+            // add a suitable WHERE condition and bindings
+            $queryWhere[] = "folder in (select folder from folders)";
+            array_unshift($queryTypes, "int");
+            array_unshift($queryValues, $folder);
+        }
+        if(!is_null($id)) {
+            // this condition facilitates the implementation of subscriptionPropertiesGet, which would otherwise have to duplicate the complex query
+            // if an ID is specified, add a suitable WHERE condition and bindings
+            $queryWhere[] = "arsse_subscriptions.id is ?";
+            $queryTypes[] = "int";
+            $queryValues[] = $id;
+        }
+        // stitch the query together
+        $queryCTE = "WITH RECURSIVE ".implode(", ", $queryCTE)." ";
+        $queryWhere = implode(" AND ", $queryWhere);
         $query = 
-            "SELECT 
+            $queryCTE."SELECT 
                 arsse_subscriptions.id,
                 url,favicon,source,folder,pinned,err_count,err_msg,order_type,
                 DATEFORMAT(?, added) as added,
+                topmost.top as top_folder,
                 CASE WHEN arsse_subscriptions.title is not null THEN arsse_subscriptions.title ELSE arsse_feeds.title END as title,
                 (SELECT count(*) from arsse_articles where feed is arsse_subscriptions.feed) - (SELECT count(*) from arsse_marks join arsse_articles on article = arsse_articles.id where owner is ? and feed is arsse_feeds.id and read is 1) as unread
-             from arsse_subscriptions join arsse_feeds on feed = arsse_feeds.id where owner is ?";
-        $queryOrder = "order by pinned desc, title";
-        $queryTypes = ["str", "str", "str"];
-        $queryValues = [$this->dateFormatDefault, $user, $user];
-        if(!is_null($folder)) {
-            $this->folderValidateId($user, $folder);
-            return $this->db->prepare(
-                "WITH RECURSIVE folders(folder) as (SELECT ? union select id from arsse_folders join folders on parent is folder) $query and folder in (select folder from folders) $queryOrder", 
-                "int", $queryTypes
-            )->run($folder, $queryValues);
-        } else if(!is_null($id)) {
-            // this condition facilitates the implementation of subscriptionPropertiesGet, which would otherwise have to duplicate the complex query
-            return $this->db->prepare("$query and arsse_subscriptions.id is ? $queryOrder", $queryTypes, "int")->run($queryValues, $id);
-        } else {
-            return $this->db->prepare("$query $queryOrder", $queryTypes)->run($queryValues);
-        }
+             from arsse_subscriptions join arsse_feeds on feed = arsse_feeds.id left join topmost on folder=f_id where $queryWhere order by pinned desc, title";
+        // execute the query
+        return $this->db->prepare($query, $queryTypes)->run($queryValues);
     }
 
     public function subscriptionRemove(string $user, int $id): bool {

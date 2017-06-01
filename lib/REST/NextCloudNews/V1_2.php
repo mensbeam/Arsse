@@ -180,19 +180,21 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function feedTranslate(array $feed, bool $overwrite = false): array {
         // cast values
         $feed = $this->mapFieldTypes($feed, [
-            'folder' => "int",
-            'pinned' => "bool",
+            'top_folder' => "int",
+            'pinned'     => "bool",
         ]);
         // map fields to proper names
         $feed = $this->mapFieldNames($feed, [
             'source'     => "link",
             'favicon'    => "faviconLink",
-            'folder'     => "folderId",
+            'top_folder' => "folderId",
             'unread'     => "unreadCount",
             'order_type' => "ordering",
             'err_count'  => "updateErrorCount",
             'err_msg'    => "lastUpdateError",
         ], $overwrite);
+        // remove the true folder since the protocol does not support nesting
+        unset($feed['folder']);
         return $feed;
     }
     
