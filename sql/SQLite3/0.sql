@@ -1,10 +1,7 @@
 -- settings
 create table arsse_settings(
     key varchar(255) primary key not null,                                                                  -- setting key
-    value varchar(255),                                                                                     -- setting value, serialized as a string
-    type varchar(255) not null check(
-        type in('int','numeric','text','timestamp','date','time','bool','null','json')
-    ) default 'text'                                                                                        -- the deserialized type of the value
+    value varchar(255)                                                                                      -- setting value, serialized as a string
 ) without rowid;
 
 -- users
@@ -117,4 +114,4 @@ create table arsse_categories(
 
 -- set version marker
 pragma user_version = 1;
-insert into arsse_settings values('schema_version',1,'int');
+insert into arsse_settings(key,value) values('schema_version','1');

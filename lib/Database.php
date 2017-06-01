@@ -105,98 +105,12 @@ class Database {
         return $this->db->begin();
     }
     
-    public function settingSet(string $key, $in, string $type = null): bool {
-        if(!$type) {
-            switch(gettype($in)) {
-                case "boolean":         $type = "bool"; break;
-                case "integer":         $type = "int"; break;
-                case "double":          $type = "numeric"; break;
-                case "string":
-                case "array":           $type = "json"; break;
-                case "resource":
-                case "unknown type":
-                case "NULL":            $type = "null"; break;
-                case "object":
-                    if($in instanceof DateTimeInterface) {
-                        $type = "timestamp";
-                    } else {
-                        $type = "text";
-                    }
-                    break;
-                default:                $type = 'null'; break;
-            }
+    public function settingSet(string $key, string $value): bool {
+        $out = !$this->db->prepare("UPDATE arsse_settings set value = ? where key is ?", "str", "str")->run($value, $key)->changes();
+        if(!$out) {
+            $out = $this->db->prepare("INSERT INTO arsse_settings(key,value)", "str", "str")->run($key, $value)->changes();
         }
-        $type = strtolower($type);
-        switch($type) {
-            case "integer":
-                $type = "int";
-            case "int":
-                $value = $in;
-                break;
-            case "float":
-            case "double":
-            case "real":
-                $type = "numeric";
-            case "numeric":
-                $value = $in;
-                break;
-            case "str":
-            case "string":
-                $type = "text";
-            case "text":
-                $value = $in;
-                break;
-            case "json":
-                if(is_array($in) || is_object($in)) {
-                    $value = json_encode($in);
-                } else {
-                    $value = $in;
-                }
-                break;
-            case "datetime":
-                $type = "timestamp";
-            case "timestamp":
-                if($in instanceof DateTimeInterface) {
-                    $value = gmdate(self::FORMAT_TS, $in->format("U"));
-                } else if(is_numeric($in)) {
-                    $value = gmdate(self::FORMAT_TS, $in);
-                } else {
-                    $value = gmdate(self::FORMAT_TS, gmstrftime($in));
-                }
-                break;
-            case "date":
-                if($in instanceof DateTimeInterface) {
-                    $value = gmdate(self::FORMAT_DATE, $in->format("U"));
-                } else if(is_numeric($in)) {
-                    $value = gmdate(self::FORMAT_DATE, $in);
-                } else {
-                    $value = gmdate(self::FORMAT_DATE, gmstrftime($in));
-                }
-                break;
-            case "time":
-                if($in instanceof DateTimeInterface) {
-                    $value = gmdate(self::FORMAT_TIME, $in->format("U"));
-                } else if(is_numeric($in)) {
-                    $value = gmdate(self::FORMAT_TIME, $in);
-                } else {
-                    $value = gmdate(self::FORMAT_TIME, gmstrftime($in));
-                }
-                break;
-            case "boolean":
-            case "bit":
-                $type = "bool";
-            case "bool":
-                $value = (int) $in;
-                break;
-            case "null":
-                $value = null;
-                break;
-            default:
-                $type = "text";
-                $value = $in;
-                break;
-        }
-        return (bool) $this->db->prepare("REPLACE INTO arsse_settings(key,value,type) values(?,?,?)", "str", "str", "str")->run($key, $value, $type)->changes(); // FIXME: this will not work on PostgreSQL
+        return (bool) $out;
     }
 
     public function settingRemove(string $key): bool {
