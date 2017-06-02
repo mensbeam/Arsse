@@ -98,13 +98,11 @@ trait Setup {
             $cols = implode(",", array_keys($info['columns']));
             $data = $this->drv->prepare("SELECT $cols from $table")->run()->getAll();
             $cols = array_keys($info['columns']);
-            foreach($info['rows'] as $index => $values) {
-                $row = [];
-                foreach($values as $key => $value) {
-                    $row[$cols[$key]] = $value;
-                }
+            foreach($info['rows'] as $index => $row) {
+                $this->assertCount(sizeof($cols), $row, "The number of values for array index $index does not match the number of fields");
+                $row = array_combine($cols, $row);
+                $this->assertContains($row, $data, "Table $table does not contain record at array index $index.");
                 $found = array_search($row, $data, true);
-                $this->assertNotSame(false, $found, "Table $table does not contain record at array index $index.");
                 unset($data[$found]);
             }
             $this->assertSame([], $data);
@@ -115,58 +113,52 @@ trait Setup {
     function primeExpectations(array $source, array $tableSpecs = null): array {
         $out = [];
         foreach($tableSpecs as $table => $columns) {
-            if(!isset($source[$table])) {
-                $this->assertTrue(false, "Source for expectations does not contain requested table $table.");
-                return [];
-            }
+            // make sure the source has the table we want
+            $this->assertArrayHasKey($table, $source, "Source for expectations does not contain requested table $table.");
             $out[$table] = [
                 'columns' => [],
-                'rows'    => [],
+                'rows'    => array_fill(0,sizeof($source[$table]['rows']), []),
             ];
-            $transformations = [];
-            foreach($columns as $target => $col) {
-                if(!isset($source[$table]['columns'][$col])) {
-                    $this->assertTrue(false, "Source for expectations does not contain requested column $col of table $table.");
-                    return [];
+            // make sure the source has all the columns we want for the table
+            $cols = array_flip($columns);
+            $cols = array_intersect_key($cols, $source[$table]['columns']);
+            $this->assertSame(array_keys($cols), $columns, "Source for table $table does not contain all requested columns");
+            // get a map of source value offsets and keys
+            $targets = array_flip(array_keys($source[$table]['columns']));
+            foreach($cols as $key => $order) {
+                // fill the column-spec
+                $out[$table]['columns'][$key] = $source[$table]['columns'][$key];
+                foreach($source[$table]['rows'] as $index => $row) {
+                    // fill each row column-wise with re-ordered values
+                    $out[$table]['rows'][$index][$order] = $row[$targets[$key]];
                 }
-                $found = array_search($col, array_keys($source[$table]['columns']));
-                $transformations[$found] = $target;
-                $out[$table]['columns'][$col] = $source[$table]['columns'][$col];
-            }
-            foreach($source[$table]['rows'] as $sourceRow) {
-                $newRow = [];
-                foreach($transformations as $from => $to) {
-                    $newRow[$to] = $sourceRow[$from];
-                }
-                $out[$table]['rows'][] = $newRow;
             }
         }
         return $out;
     }
 
-    function assertResult(array $expected, Result $res) {
-        $exp = $expected;
-        $res = $res->getAll();
-        $this->assertSame(sizeof($exp), sizeof($res), "Number of result rows (".sizeof($res).") differs from number of expected rows (".sizeof($exp).")");
-        foreach($res as $r) {
-            $found = false;
-            foreach($exp as $index => $x) {
-                foreach($x as $field => $value) {
-                    $valid = true;
-                    if(!array_key_exists($field, $r) || $r[$field] !== $value) {
-                        $valid = false;
-                        break;
-                    }
+    function assertResult(array $expected, Result $data) {
+        $data = $data->getAll();
+        $this->assertCount(sizeof($expected), $data, "Number of result rows (".sizeof($data).") differs from number of expected rows (".sizeof($expected).")");
+        if(sizeof($expected)) {
+            // make sure the expectations are consistent
+            foreach($expected as $exp) {
+                if(!isset($keys)) {
+                    $keys = $exp;
+                    continue;
                 }
-                if($valid) {
-                    $found = true;
-                    $this->assertArraySubset($x, $r);
-                    unset($exp[$index]);
-                    break;
-                }
+                $this->assertSame(array_keys($keys), array_keys($exp), "Result set expectations are irregular");
             }
-            if(!$found) {
-                $this->assertArraySubset($r, $expected);
+            // filter the result set to contain just the desired keys (we don't care if the result has extra keys)
+            $rows = [];
+            foreach($data as $row) {
+                $rows[] = array_intersect_key($row, $keys);
+            }
+            // compare the result set to the expectations
+            foreach($expected as $index => $exp) {
+                $this->assertContains($exp, $rows, "Result set does not contain record at array index $index.");
+                $found = array_search($exp, $rows, true);
+                unset($rows[$found]);
             }
         }
     }
