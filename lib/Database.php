@@ -472,12 +472,8 @@ class Database {
     }
 
     public function feedListStale(): array {
-        $feeds = $this->db->prepare("SELECT distinct feed from arsse_subscriptions left join arsse_feeds on arsse_feeds.id = feed where next_fetch <= CURRENT_TIMESTAMP")->run();
-        $out = [];
-        foreach($feeds as $feed) {
-            $out[] = $feed['feed'];
-        }
-        return $out;
+        $feeds = $this->db->prepare("SELECT id from arsse_feeds where next_fetch <= CURRENT_TIMESTAMP")->run()->getAll();
+        return array_column($feeds,'id');
     }
     
     public function feedUpdate(int $feedID, bool $throwError = false): bool {
@@ -519,7 +515,7 @@ class Database {
         }
         if(sizeof($feed->changedItems)) {
             $qDeleteCategories = $this->db->prepare('DELETE FROM arsse_categories WHERE article is ?', 'int');
-            $qClearReadMarks = $this->db->prepare('UPDATE arsse_marks SET read = 0, modified = CURRENT_TIMESTAMP WHERE article is ?', 'int');
+            $qClearReadMarks = $this->db->prepare('UPDATE arsse_marks SET read = 0, modified = CURRENT_TIMESTAMP WHERE article is ? and read is 1', 'int');
             $qUpdateArticle = $this->db->prepare(
                 'UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id is ?', 
                 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int'
@@ -540,6 +536,7 @@ class Database {
                 $article->titleContentHash,
                 $feedID
             )->lastId();
+            // FIXME: Need to insert enclosures
             foreach($article->getTag('category') as $c) {
                 $qInsertCategory->run($articleID, $c);
             }
@@ -559,6 +556,7 @@ class Database {
                 $article->titleContentHash,
                 $articleID
             );
+            // FIXME: Need to refresh enclosures
             $qDeleteCategories->run($articleID);
             foreach($article->getTag('category') as $c) {
                 $qInsertCategory->run($articleID, $c);

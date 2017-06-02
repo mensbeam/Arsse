@@ -28,23 +28,24 @@
         <file>User/TestUserInternalDriver.php</file>
         <file>User/TestAuthorization.php</file>
     </testsuite>
-    <testsuite name="SQLite3 driver">
+    <testsuite name="Feed parser">
+        <file>Feed/TestFeed.php</file>
+    </testsuite>
+    <testsuite name="Database drivers">
         <file>Db/SQLite3/TestDbResultSQLite3.php</file>
         <file>Db/SQLite3/TestDbStatementSQLite3.php</file>
         <file>Db/SQLite3/TestDbDriverSQLite3.php</file>
         <file>Db/SQLite3/TestDbUpdateSQLite3.php</file>
     </testsuite>
-    <testsuite name="SQLite3 functions">
+    <testsuite name="Database functions">
         <file>Db/SQLite3/Database/TestDatabaseUserSQLite3.php</file>
         <file>Db/SQLite3/Database/TestDatabaseFolderSQLite3.php</file>
+        <file>Db/SQLite3/Database/TestDatabaseFeedSQLite3.php</file>
         <file>Db/SQLite3/Database/TestDatabaseSubscriptionSQLite3.php</file>
     </testsuite>
     <testsuite name="NextCloud News API">
         <file>REST/NextCloudNews/TestNCNVersionDiscovery.php</file>
         <file>REST/NextCloudNews/TestNCNV1_2.php</file>
-    </testsuite>
-    <testsuite name="Feed parser">
-        <file>Feed/TestFeed.php</file>
     </testsuite>
 </testsuites>
 </phpunit>

@@ -67,8 +67,8 @@ create table arsse_articles(
     published datetime,                                                                                     -- time of original publication
     edited datetime,                                                                                        -- time of last edit
     modified datetime not null default CURRENT_TIMESTAMP,                                                   -- date when article properties were last modified
-    guid TEXT,                                                                                              -- GUID
     content TEXT,                                                                                           -- content, as (X)HTML
+    guid TEXT,                                                                                              -- GUID
     url_title_hash TEXT not null,                                                                           -- hash of URL + title; used when checking for updates and for identification if there is no guid.
     url_content_hash TEXT not null,                                                                         -- hash of URL + content, enclosure URL, & content type; used when checking for updates and for identification if there is no guid.
     title_content_hash TEXT not null                                                                        -- hash of title + content, enclosure URL, & content type; used when checking for updates and for identification if there is no guid.
