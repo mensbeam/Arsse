@@ -11,12 +11,14 @@ use JKingWeb\Arsse\REST\Exception501;
 use JKingWeb\Arsse\REST\Exception405;
 
 class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
+    const REALM = "NextCloud News API v1-2";
+    
     function __construct() {
     }
 
     function dispatch(\JKingWeb\Arsse\REST\Request $req): Response {
         // try to authenticate
-        if(!Data::$user->authHTTP()) return new Response(401, "", "", ['WWW-Authenticate: Basic realm="NextCloud News API v1-2"']);
+        if(!Data::$user->authHTTP()) return new Response(401, "", "", ['WWW-Authenticate: Basic realm="'.self::REALM.'"']);
         // only accept GET, POST, PUT, or DELETE
         if(!in_array($req->method, ["GET", "POST", "PUT", "DELETE"])) return new Response(405, "", "", ['Allow: GET, POST, PUT, DELETE']);
         // normalize the input
@@ -229,6 +231,8 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     
     // refresh a feed
     protected function feedUpdate(array $url, array $data): Response {
+        // function requires admin rights per spec
+        if(Data::$user->rightsGet(Data::$user->id)==User::RIGHTS_NONE) return new Response(403);
         // perform an update of a single feed
         if(!array_key_exists("feedId", $data)) return new Response(422);
         if(!$this->validateId($data['feedId'])) return new Response(404);
@@ -237,7 +241,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch(ExceptionInput $e) {
             return new Response(404);
         }
-        return new Response(200);
+        return new Response(204);
     }
 
     // add a new feed

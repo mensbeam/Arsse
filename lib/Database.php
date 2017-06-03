@@ -479,7 +479,7 @@ class Database {
     public function feedUpdate(int $feedID, bool $throwError = false): bool {
         $tr = $this->db->begin();
         // check to make sure the feed exists
-        $f = $this->db->prepare('SELECT url, username, password, DATEFORMAT("http", modified) AS lastmodified, etag, err_count FROM arsse_feeds where id is ?', "int")->run($feedID)->getRow();
+        $f = $this->db->prepare("SELECT url, username, password, DATEFORMAT('http', modified) AS lastmodified, etag, err_count FROM arsse_feeds where id is ?", "int")->run($feedID)->getRow();
         if(!$f) throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID]);
         // the Feed object throws an exception when there are problems, but that isn't ideal
         // here. When an exception is thrown it should update the database with the
@@ -488,7 +488,7 @@ class Database {
             $feed = new Feed($feedID, $f['url'], (string)$f['lastmodified'], $f['etag'], $f['username'], $f['password']);
             if(!$feed->modified) {
                 // if the feed hasn't changed, just compute the next fetch time and record it
-                $this->db->prepare('UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id is ?', 'datetime', 'int')->run($feed->nextFetch, $feedID);
+                $this->db->prepare("UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id is ?", 'datetime', 'int')->run($feed->nextFetch, $feedID);
                 $tr->commit();
                 return false;
             }
@@ -510,16 +510,16 @@ class Database {
         }
         if(sizeof($feed->newItems)) {
             $qInsertArticle = $this->db->prepare(
-                'INSERT INTO arsse_articles(url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash,feed) values(?,?,?,?,?,?,?,?,?,?,?)',
+                "INSERT INTO arsse_articles(url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash,feed) values(?,?,?,?,?,?,?,?,?,?,?)",
                 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int'
             );
         }
         if(sizeof($feed->changedItems)) {
-            $qDeleteEnclosures = $this->db->prepare('DELETE FROM arsse_enclosures WHERE article is ?', 'int');
-            $qDeleteCategories = $this->db->prepare('DELETE FROM arsse_categories WHERE article is ?', 'int');
-            $qClearReadMarks = $this->db->prepare('UPDATE arsse_marks SET read = 0, modified = CURRENT_TIMESTAMP WHERE article is ? and read is 1', 'int');
+            $qDeleteEnclosures = $this->db->prepare("DELETE FROM arsse_enclosures WHERE article is ?", 'int');
+            $qDeleteCategories = $this->db->prepare("DELETE FROM arsse_categories WHERE article is ?", 'int');
+            $qClearReadMarks = $this->db->prepare("UPDATE arsse_marks SET read = 0, modified = CURRENT_TIMESTAMP WHERE article is ? and read is 1", 'int');
             $qUpdateArticle = $this->db->prepare(
-                'UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id is ?', 
+                "UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id is ?", 
                 'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int'
             );
         }
@@ -573,7 +573,7 @@ class Database {
         }
         // lastly update the feed database itself with updated information.
         $this->db->prepare(
-            'UPDATE arsse_feeds SET url = ?, title = ?, favicon = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = "", next_fetch = ? WHERE id is ?', 
+            "UPDATE arsse_feeds SET url = ?, title = ?, favicon = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = '', next_fetch = ? WHERE id is ?", 
             'str', 'str', 'str', 'str', 'datetime', 'str', 'datetime', 'int'
         )->run(
             $feed->data->feedUrl,
@@ -591,21 +591,20 @@ class Database {
 
     public function feedMatchLatest(int $feedID, int $count): Db\Result {
         return $this->db->prepare(
-            'SELECT id, DATEFORMAT("unix", edited) AS edited_date, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? ORDER BY modified desc, id desc limit ?', 
+            "SELECT id, DATEFORMAT('unix', edited) AS edited_date, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? ORDER BY modified desc, id desc limit ?", 
             'int', 'int'
         )->run($feedID, $count);
     }
 
     public function feedMatchIds(int $feedID, array $ids = [], array $hashesUT = [], array $hashesUC = [], array $hashesTC = []): Db\Result {
         // compile SQL IN() clauses and necessary type bindings for the four identifier lists
-        list($cId,     $tId)     = $this->generateIn($ids, "str");
+        list($cId,     $tId)     = $this->generateIn($ids,      "str");
         list($cHashUT, $tHashUT) = $this->generateIn($hashesUT, "str");
         list($cHashUC, $tHashUC) = $this->generateIn($hashesUC, "str");
         list($cHashTC, $tHashTC) = $this->generateIn($hashesTC, "str");
         // perform the query
         return $articles = $this->db->prepare(
-            'SELECT id, DATEFORMAT("unix", edited) AS edited_date, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles '.
-            'WHERE feed is ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC))', 
+            "SELECT id, DATEFORMAT('unix', edited) AS edited_date, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC))", 
             'int', $tId, $tHashUT, $tHashUC, $tHashTC
         )->run($feedID, $ids, $hashesUT, $hashesUC, $hashesTC);
     }

@@ -81,6 +81,7 @@ class TestNCNV1_2 extends \PHPUnit\Framework\TestCase {
         // create a mock user manager
         Data::$user = Phake::mock(User::class);
         Phake::when(Data::$user)->authHTTP->thenReturn(true);
+        Phake::when(Data::$user)->rightsGet->thenReturn(100);
         Data::$user->id = "john.doe@example.com";
         // create a mock database interface
         Data::$db = Phake::mock(Database::Class);
@@ -135,6 +136,12 @@ class TestNCNV1_2 extends \PHPUnit\Framework\TestCase {
                 $this->assertEquals($exp, $this->h->dispatch(new Request($method, $path)), "$method call to $path did not return 405.");
             }
         }
+    }
+
+    function testReceiveAuthenticationChallenge() {
+        Phake::when(Data::$user)->authHTTP->thenReturn(false);
+        $exp = new Response(401, "", "", ['WWW-Authenticate: Basic realm="'.REST\NextCloudNews\V1_2::REALM.'"']);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/")));
     }
 
     function testListFolders() {
@@ -347,5 +354,48 @@ class TestNCNV1_2 extends \PHPUnit\Framework\TestCase {
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/rename", json_encode($in[3]), 'application/json')));
         $exp = new Response(404);
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/42/rename", json_encode($in[4]), 'application/json')));
+    }
+
+    function testListStaleFeeds() {
+        $out = [
+            [
+                'id' => 42,
+                'userId' => "",
+            ],
+            [
+                'id' => 2112,
+                'userId' => "",
+            ],
+        ];
+        Phake::when(Data::$db)->feedListStale->thenReturn(array_column($out,"id"));
+        $exp = new Response(200, ['feeds' => $out]);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/all")));
+        // retrieving the list when not an admin fails
+        Phake::when(Data::$user)->rightsGet->thenReturn(0);
+        $exp = new Response(403);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/all")));
+    }
+
+    function testUpdateAFeed() {
+        $in = [
+            ['feedId' =>    42], // valid
+            ['feedId' =>  2112], // feed does not exist
+            ['feedId' => "ook"], // invalid ID
+            ['feed'   =>    42], // invalid input
+        ];
+        Phake::when(Data::$db)->feedUpdate(  42)->thenReturn(true);
+        Phake::when(Data::$db)->feedUpdate(2112)->thenThrow(new \JKingWeb\Arsse\Db\ExceptionInput("subjectMissing"));
+        $exp = new Response(204);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[0]), 'application/json')));
+        $exp = new Response(404);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[1]), 'application/json')));
+        $exp = new Response(404);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[2]), 'application/json')));
+        $exp = new Response(422);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[3]), 'application/json')));
+        // retrieving the list when not an admin fails
+        Phake::when(Data::$user)->rightsGet->thenReturn(0);
+        $exp = new Response(403);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[0]), 'application/json')));
     }
 }
