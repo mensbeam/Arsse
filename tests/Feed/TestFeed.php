@@ -124,6 +124,10 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
             "Bodybuilders",
             "Men",
         ];
+        $this->assertSame([], $f->data->items[0]->categories);
+        $this->assertSame([], $f->data->items[1]->categories);
+        $this->assertSame([], $f->data->items[3]->categories);
+        $this->assertSame([], $f->data->items[4]->categories);
         $this->assertSame($categories, $f->data->items[5]->categories);
     }
 

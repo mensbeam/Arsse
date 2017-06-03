@@ -104,26 +104,15 @@ class Feed {
             } else {
                 $f->titleContentHash = hash('sha256', $f->title.$content);
             }
-            // If there is an Atom id element use it as the id.
-            $id = (string)$f->xml->children('http://www.w3.org/2005/Atom')->id;
-            if ($id !== '') {
-                $f->id = hash('sha256', $id);
-                continue;
-            }
-            // If there is a guid element use it as the id.
-            $id = (string)$f->xml->guid;
-            if ($id !== '') {
-                $f->id = hash('sha256', $id);
-                continue;
-            }
-            // If there is a Dublin Core identifier use it.
-            $id = (string)$f->xml->children('http://purl.org/dc/elements/1.1/')->identifier;
-            if ($id !== '') {
-                $f->id = hash('sha256', $id);
-                continue;
-            }
-            // If there aren't any of those there is no id.
             $f->id = null;
+            // prefer an Atom ID as the item's ID
+            $id = (string) $f->xml->children('http://www.w3.org/2005/Atom')->id;
+            // otherwise use the RSS2 guid element
+            if(!strlen($id)) $id = (string) $f->xml->guid;
+            // otherwise use the Dublin Core identifier element
+            if(!strlen($id)) $id = (string) $f->xml->children('http://purl.org/dc/elements/1.1/')->identifier;
+            // otherwise there is no ID; if there is one, hash it
+            if(strlen($id)) $f->id = hash('sha256', $id);
 
             // PicoFeed also doesn't gather up categories, so we do this as well
             $f->categories = [];
