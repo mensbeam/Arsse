@@ -495,7 +495,7 @@ class Database {
         } catch (Feed\Exception $e) {
             // update the database with the resultant error and the next fetch time, incrementing the error count
             $this->db->prepare(
-                'UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ?, err_count = err_count + 1, err_msg = ? WHERE id is ?', 
+                "UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ?, err_count = err_count + 1, err_msg = ? WHERE id is ?", 
                 'datetime', 'str', 'int'
             )->run(Feed::nextFetchOnError($f['err_count']), $e->getMessage(),$feedID);
             $tr->commit();
@@ -504,8 +504,9 @@ class Database {
         }
         //prepare the necessary statements to perform the update
         if(sizeof($feed->newItems) || sizeof($feed->changedItems)) {
-            $qInsertCategory = $this->db->prepare('INSERT INTO arsse_categories(article,name) values(?,?)', 'int', 'str');
-            $qInsertEdition = $this->db->prepare('INSERT INTO arsse_editions(article) values(?)', 'int');
+            $qInsertEnclosure = $this->db->prepare("INSERT INTO arsse_enclosures(article,url,type) values(?,?,?)", 'int', 'str', 'str');
+            $qInsertCategory = $this->db->prepare("INSERT INTO arsse_categories(article,name) values(?,?)", 'int', 'str');
+            $qInsertEdition = $this->db->prepare("INSERT INTO arsse_editions(article) values(?)", 'int');
         }
         if(sizeof($feed->newItems)) {
             $qInsertArticle = $this->db->prepare(
@@ -514,6 +515,7 @@ class Database {
             );
         }
         if(sizeof($feed->changedItems)) {
+            $qDeleteEnclosures = $this->db->prepare('DELETE FROM arsse_enclosures WHERE article is ?', 'int');
             $qDeleteCategories = $this->db->prepare('DELETE FROM arsse_categories WHERE article is ?', 'int');
             $qClearReadMarks = $this->db->prepare('UPDATE arsse_marks SET read = 0, modified = CURRENT_TIMESTAMP WHERE article is ? and read is 1', 'int');
             $qUpdateArticle = $this->db->prepare(
@@ -536,8 +538,10 @@ class Database {
                 $article->titleContentHash,
                 $feedID
             )->lastId();
-            // FIXME: Need to insert enclosures
-            foreach($article->getTag('category') as $c) {
+            if($article->enclosureUrl) {
+                $qInsertEnclosure->run($articleID,$article->enclosureUrl,$article->enclosureType);
+            }
+            foreach($article->categories as $c) {
                 $qInsertCategory->run($articleID, $c);
             }
             $qInsertEdition->run($articleID);
@@ -556,9 +560,12 @@ class Database {
                 $article->titleContentHash,
                 $articleID
             );
-            // FIXME: Need to refresh enclosures
+            $qDeleteEnclosures->run($articleID);
             $qDeleteCategories->run($articleID);
-            foreach($article->getTag('category') as $c) {
+            if($article->enclosureUrl) {
+                $qInsertEnclosure->run($articleID,$article->enclosureUrl,$article->enclosureType);
+            }
+            foreach($article->categories as $c) {
                 $qInsertCategory->run($articleID, $c);
             }
             $qInsertEdition->run($articleID);
@@ -584,7 +591,7 @@ class Database {
 
     public function feedMatchLatest(int $feedID, int $count): Db\Result {
         return $this->db->prepare(
-            'SELECT id, DATEFORMAT("unix", edited) AS edited_date, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? ORDER BY edited desc limit ?', 
+            'SELECT id, DATEFORMAT("unix", edited) AS edited_date, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? ORDER BY modified desc, id desc limit ?', 
             'int', 'int'
         )->run($feedID, $count);
     }
