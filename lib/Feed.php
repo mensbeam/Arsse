@@ -104,30 +104,50 @@ class Feed {
             } else {
                 $f->titleContentHash = hash('sha256', $f->title.$content);
             }
-
             // If there is an Atom id element use it as the id.
             $id = (string)$f->xml->children('http://www.w3.org/2005/Atom')->id;
             if ($id !== '') {
                 $f->id = hash('sha256', $id);
                 continue;
             }
-
             // If there is a guid element use it as the id.
             $id = (string)$f->xml->guid;
             if ($id !== '') {
                 $f->id = hash('sha256', $id);
                 continue;
             }
-
             // If there is a Dublin Core identifier use it.
             $id = (string)$f->xml->children('http://purl.org/dc/elements/1.1/')->identifier;
             if ($id !== '') {
                 $f->id = hash('sha256', $id);
                 continue;
             }
-
             // If there aren't any of those there is no id.
             $f->id = null;
+
+            // PicoFeed also doesn't gather up categories, so we do this as well
+            $f->categories = [];
+            // first add Atom categories
+            foreach($f->xml->children('http://www.w3.org/2005/Atom')->category as $c) {
+                // if the category has a label, use that
+                $name = (string) $c->attributes()->label;
+                // otherwise use the term
+                if(!strlen($name)) $name = (string) $c->attributes()->term;
+                // ... assuming it has that much
+                if(strlen($name)) $f->categories[] = $name;
+            }
+            // next add RSS2 categories
+            foreach($f->xml->children()->category as $c) {
+                $name = (string) $c;
+                if(strlen($name)) $f->categories[] = $name;
+            }
+            // and finally try Dublin Core subjects
+            foreach($f->xml->children('http://purl.org/dc/elements/1.1/')->subject as $c) {
+                $name = (string) $c;
+                if(strlen($name)) $f->categories[] = $name;
+            }
+            //sort the results
+            sort($f->categories);
         }
         $this->data = $feed;
         return true;

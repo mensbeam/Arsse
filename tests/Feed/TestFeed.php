@@ -117,6 +117,14 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
         $this->assertSame(null, $f->data->items[3]->id);
         $this->assertSame(null, $f->data->items[4]->id);
         $this->assertSame(null, $f->data->items[5]->id);
+        // check categories
+        $categories = [
+            "Aniki!",
+            "Beams",
+            "Bodybuilders",
+            "Men",
+        ];
+        $this->assertSame($categories, $f->data->items[5]->categories);
     }
 
     function testParseEntityExpansionAttack() {

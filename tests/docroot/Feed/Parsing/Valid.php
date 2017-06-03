@@ -28,6 +28,10 @@
     <item>
         <description>Example content</description>
         <enclosure url="http://example.com/text" type="text/plain"/>
+        <category>Men</category>
+        <atom:category term="Beams"/>
+        <atom:category term="Hoo! Haa!" label="Aniki!"/>
+        <dc:subject>Bodybuilders</dc:subject>
     </item>
 </channel>
 </rss>
