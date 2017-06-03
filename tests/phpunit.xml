@@ -29,6 +29,7 @@
         <file>User/TestAuthorization.php</file>
     </testsuite>
     <testsuite name="Feed parser">
+        <file>Feed/TestFeedFetching.php</file>
         <file>Feed/TestFeed.php</file>
     </testsuite>
     <testsuite name="Database drivers">
