@@ -7,6 +7,8 @@ abstract class AbstractDriver implements Driver {
     protected $transDepth = 0;
     protected $transStatus = [];
 
+    public abstract function prepareArray($query, array $paramTypes): Statement;
+
     public function schemaVersion(): int {
         try {
             return (int) $this->query("SELECT value from arsse_settings where key is schema_version")->getValue();
@@ -128,7 +130,7 @@ abstract class AbstractDriver implements Driver {
         return ($this->query("SELECT count(*) from arsse_settings where key is 'lock'")->getValue() > 0);
     }
 
-    public function prepare(string $query, ...$paramType): Statement {
+    public function prepare($query, ...$paramType): Statement {
         return $this->prepareArray($query, $paramType);
     }
 }

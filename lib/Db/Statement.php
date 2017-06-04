@@ -33,7 +33,7 @@ interface Statement {
     static function dateFormat(int $part = self::TS_BOTH): string;
 
     function run(...$values): Result;
-    function runArray(array $values): Result;
+    function runArray(array $values = []): Result;
     function rebind(...$bindings): bool;
     function rebindArray(array $bindings): bool;
 }

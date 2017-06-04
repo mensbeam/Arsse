@@ -5,8 +5,9 @@ namespace JKingWeb\Arsse\Db;
 abstract class AbstractStatement implements Statement {
     protected $types = [];
     protected $isNullable = [];
+    protected $values = ['pre' => [], 'post' => []];
 
-    abstract function runArray(array $values): Result;
+    abstract function runArray(array $values = []): Result;
     abstract static function dateFormat(int $part = self::TS_BOTH): string;
 
     public function run(...$values): Result {

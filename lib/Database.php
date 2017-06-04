@@ -2,6 +2,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
 use PasswordGenerator\Generator as PassGen;
+use JKingWeb\Arsse\Database\Query;
 
 class Database {
 
@@ -356,42 +357,36 @@ class Database {
 
     public function subscriptionList(string $user, int $folder = null, int $id = null): Db\Result {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        // lay out the base query parts
-        $queryCTE = ["topmost(f_id,top) as (select id,id from arsse_folders where owner is ? and parent is null union select id,top from arsse_folders join topmost on parent=f_id)"];
-        $queryWhere = ["owner is ?"];
-        $queryTypes = ["str", "str", "str", "str"];
-        $queryValues = [$user, $this->dateFormatDefault, $user, $user];
-        if(!is_null($folder)) {
-            // if a folder is specified, make sure it exists
-            $this->folderValidateId($user, $folder);
-            // if it does exist, add a common table expression to list it and its children so that we select from the entire subtree
-            array_unshift($queryCTE, "folders(folder) as (SELECT ? union select id from arsse_folders join folders on parent is folder)");
-            // add a suitable WHERE condition and bindings
-            $queryWhere[] = "folder in (select folder from folders)";
-            array_unshift($queryTypes, "int");
-            array_unshift($queryValues, $folder);
-        }
-        if(!is_null($id)) {
-            // this condition facilitates the implementation of subscriptionPropertiesGet, which would otherwise have to duplicate the complex query
-            // if an ID is specified, add a suitable WHERE condition and bindings
-            $queryWhere[] = "arsse_subscriptions.id is ?";
-            $queryTypes[] = "int";
-            $queryValues[] = $id;
-        }
-        // stitch the query together
-        $queryCTE = "WITH RECURSIVE ".implode(", ", $queryCTE)." ";
-        $queryWhere = implode(" AND ", $queryWhere);
-        $query = 
-            $queryCTE."SELECT 
+        // create a complex query
+        $q = new Query(
+            "SELECT 
                 arsse_subscriptions.id,
                 url,favicon,source,folder,pinned,err_count,err_msg,order_type,
                 DATEFORMAT(?, added) as added,
                 topmost.top as top_folder,
                 CASE WHEN arsse_subscriptions.title is not null THEN arsse_subscriptions.title ELSE arsse_feeds.title END as title,
-                (SELECT count(*) from arsse_articles where feed is arsse_subscriptions.feed) - (SELECT count(*) from arsse_marks join arsse_articles on article = arsse_articles.id where owner is ? and feed is arsse_feeds.id and read is 1) as unread
-             from arsse_subscriptions join arsse_feeds on feed = arsse_feeds.id left join topmost on folder=f_id where $queryWhere order by pinned desc, title";
-        // execute the query
-        return $this->db->prepare($query, $queryTypes)->run($queryValues);
+                (SELECT count(*) from arsse_articles where feed is arsse_subscriptions.feed) - (SELECT count(*) from arsse_marks join user on user is owner join arsse_articles on article = arsse_articles.id where feed is arsse_feeds.id and read is 1) as unread
+             from arsse_subscriptions join user on user is owner join arsse_feeds on feed = arsse_feeds.id left join topmost on folder=f_id",
+             "", // where terms
+             "pinned desc, title" // order by terms
+        );
+        // define common table expressions
+        $q->setCTE("user(user) as (SELECT ?)", "str", $user);  // the subject user; this way we only have to pass it to prepare() once
+        // topmost folders belonging to the user
+        $q->setCTE("topmost(f_id,top) as (select id,id from arsse_folders join user on owner is user where parent is null union select id,top from arsse_folders join topmost on parent=f_id)");
+        if(!is_null($id)) {
+            // this condition facilitates the implementation of subscriptionPropertiesGet, which would otherwise have to duplicate the complex query; it takes precedence over a specified folder
+            // if an ID is specified, add a suitable WHERE condition and bindings
+            $q->setWhere("arsse_subscriptions.id is ?", "int", $id);
+        } else if(!is_null($folder)) {
+            // if a folder is specified, make sure it exists
+            $this->folderValidateId($user, $folder);
+            // if it does exist, add a common table expression to list it and its children so that we select from the entire subtree
+            $q->setCTE("folders(folder) as (SELECT ? union select id from arsse_folders join folders on parent is folder)", "int", $folder);
+            // add a suitable WHERE condition
+            $q->setWhere("folder in (select folder from folders)");
+        }
+        return $this->db->prepare($q, "str")->run($this->dateFormatDefault);
     }
 
     public function subscriptionRemove(string $user, int $id): bool {
@@ -608,4 +603,32 @@ class Database {
         }
         return (int) $this->db->prepare("SELECT max(id) from arsse_editions")->run()->getValue();
     }
+
+    public function articleList(string $user): Db\Result {
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        return $this->db->prepare(
+            "WITH
+                user(user) as (SELECT ?), 
+                subscribed_feeds(id) as (SELECT feed from arsse_subscriptions join user on user is owner) 
+            ".
+            "SELECT 
+                arsse_articles.id,
+                arsse_articles.url,
+                title,author,content,feed,guid,
+                DATEFORMAT(?, edited) as edited,
+                DATEFORMAT(?, modified) as modified,
+                CASE (SELECT count(*) from arsse_marks join user on user is owner where article is arsse_articles.id and read is 1) when 1 then 0 else 1 end as unread,
+                (SELECT count(*) from arsse_marks join user on user is owner where article is arsse_articles.id and starred is 1) as starred,
+                (SELECT max(id) from arsse_editions where article is arsse_articles.id) as latestEdition,
+                url_title_hash||':'||url_content_hash||':'||title_content_hash as fingerprint,
+                arsse_enclosures.url as media_url,
+                arsse_enclosures.type as media_type
+            FROM arsse_articles 
+                join subscribed_feeds on arsse_articles.feed is subscribed_feeds.id
+                left join arsse_enclosures on arsse_enclosures.article is arsse_articles.id
+            ",
+            "str","str","str"
+        )-run($user, $this->dateFormatDefault, $this->dateFormatDefault);
+    }
 }
+
