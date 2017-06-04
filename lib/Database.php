@@ -449,28 +449,6 @@ class Database {
         return $out;
     }
 
-    public function articleStarredCount(string $user, array $context = []): int {
-        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        return $this->db->prepare("SELECT count(*) from arsse_marks where owner is ? and starred is 1", "str")->run($user)->getValue();
-    }
-
-    public function editionLatest(string $user, array $context = []): int {
-        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if(array_key_exists("subscription", $context)) {
-            $id = $context['subscription'];
-            $sub = $this->subscriptionValidateId($user, $id);
-            return (int) $this->db->prepare(
-                "SELECT max(arsse_editions.id) 
-                    from arsse_editions 
-                    left join arsse_articles on article is arsse_articles.id 
-                    left join arsse_feeds on arsse_articles.feed is arsse_feeds.id
-                 where arsse_feeds.id is ?",
-                "int"
-            )->run($sub['feed'])->getValue();
-        }
-        return (int) $this->db->prepare("SELECT max(id) from arsse_editions")->run()->getValue();
-    }
-
     public function feedListStale(): array {
         $feeds = $this->db->prepare("SELECT id from arsse_feeds where next_fetch <= CURRENT_TIMESTAMP")->run()->getAll();
         return array_column($feeds,'id');
@@ -607,5 +585,27 @@ class Database {
             "SELECT id, DATEFORMAT('unix', edited) AS edited_date, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC))", 
             'int', $tId, $tHashUT, $tHashUC, $tHashTC
         )->run($feedID, $ids, $hashesUT, $hashesUC, $hashesTC);
+    }
+
+    public function articleStarredCount(string $user, array $context = []): int {
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        return $this->db->prepare("SELECT count(*) from arsse_marks where owner is ? and starred is 1", "str")->run($user)->getValue();
+    }
+
+    public function editionLatest(string $user, array $context = []): int {
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(array_key_exists("subscription", $context)) {
+            $id = $context['subscription'];
+            $sub = $this->subscriptionValidateId($user, $id);
+            return (int) $this->db->prepare(
+                "SELECT max(arsse_editions.id) 
+                    from arsse_editions 
+                    left join arsse_articles on article is arsse_articles.id 
+                    left join arsse_feeds on arsse_articles.feed is arsse_feeds.id
+                 where arsse_feeds.id is ?",
+                "int"
+            )->run($sub['feed'])->getValue();
+        }
+        return (int) $this->db->prepare("SELECT max(id) from arsse_editions")->run()->getValue();
     }
 }

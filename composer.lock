@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "716302e991c06ae6308829749b16a078",
+    "content-hash": "16548deb9ff155dc6c48bbfe664bf4a0",
     "packages": [
         {
             "name": "fguillot/picofeed",
@@ -1787,7 +1787,9 @@
     "prefer-lowest": false,
     "platform": {
         "php": "^7.0",
-        "ext-intl": "*"
+        "ext-intl": "*",
+        "ext-json": "*",
+        "ext-hash": "*"
     },
     "platform-dev": []
 }

@@ -393,7 +393,7 @@ class TestNCNV1_2 extends \PHPUnit\Framework\TestCase {
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[2]), 'application/json')));
         $exp = new Response(422);
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[3]), 'application/json')));
-        // retrieving the list when not an admin fails
+        // updating a feed when not an admin fails
         Phake::when(Data::$user)->rightsGet->thenReturn(0);
         $exp = new Response(403);
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[0]), 'application/json')));
