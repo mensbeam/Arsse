@@ -364,9 +364,12 @@ class Database {
                 url,favicon,source,folder,pinned,err_count,err_msg,order_type,
                 DATEFORMAT(?, added) as added,
                 topmost.top as top_folder,
-                CASE WHEN arsse_subscriptions.title is not null THEN arsse_subscriptions.title ELSE arsse_feeds.title END as title,
+                coalesce(arsse_subscriptions.title, arsse_feeds.title) as title,
                 (SELECT count(*) from arsse_articles where feed is arsse_subscriptions.feed) - (SELECT count(*) from arsse_marks join user on user is owner join arsse_articles on article = arsse_articles.id where feed is arsse_feeds.id and read is 1) as unread
-             from arsse_subscriptions join user on user is owner join arsse_feeds on feed = arsse_feeds.id left join topmost on folder=f_id",
+             from arsse_subscriptions 
+                join user on user is owner 
+                join arsse_feeds on feed = arsse_feeds.id 
+                left join topmost on folder=f_id",
              "", // where terms
              "pinned desc, title" // order by terms
         );
@@ -601,7 +604,7 @@ class Database {
                 "int"
             )->run($sub['feed'])->getValue();
         }
-        return (int) $this->db->prepare("SELECT max(id) from arsse_editions")->run()->getValue();
+        return (int) $this->db->prepare("SELECT max(id) from arsse_editions")->run()->getValue(); // FIXME: this is incorrect; it's not restricted to the user's subscriptions
     }
 
     public function articleList(string $user): Db\Result {
@@ -615,9 +618,13 @@ class Database {
                 arsse_articles.id,
                 arsse_articles.url,
                 title,author,content,feed,guid,
+                DATEFORMAT(?, published) as published,
                 DATEFORMAT(?, edited) as edited,
-                DATEFORMAT(?, modified) as modified,
-                CASE (SELECT count(*) from arsse_marks join user on user is owner where article is arsse_articles.id and read is 1) when 1 then 0 else 1 end as unread,
+                DATEFORMAT(?, max(
+                    modified, 
+                    coalesce((SELECT modified from arsse_marks join user on user is owner where article is arsse_articles.id),'')
+                )) as modified,
+                NOT (SELECT count(*) from arsse_marks join user on user is owner where article is arsse_articles.id and read is 1) as unread,
                 (SELECT count(*) from arsse_marks join user on user is owner where article is arsse_articles.id and starred is 1) as starred,
                 (SELECT max(id) from arsse_editions where article is arsse_articles.id) as latestEdition,
                 url_title_hash||':'||url_content_hash||':'||title_content_hash as fingerprint,
@@ -628,7 +635,6 @@ class Database {
                 left join arsse_enclosures on arsse_enclosures.article is arsse_articles.id
             ",
             "str","str","str"
-        )-run($user, $this->dateFormatDefault, $this->dateFormatDefault);
+        )-run($user, $this->dateFormatDefault, $this->dateFormatDefault, $this->dateFormatDefault);
     }
 }
-

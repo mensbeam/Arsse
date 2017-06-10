@@ -1,8 +1,6 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Database;
-use JKingWeb\Arsse\Db\Driver;
-use JKingWeb\Arsse\Db\Statement;
 
 class Query {
     protected $body = "";
@@ -56,10 +54,6 @@ class Query {
         }
         return true;
     }
-
-    function prepare(Driver $drv, ...$userTypes): Statement {
-        return new QueryStatement($drv->prepare($this->getQuery(), $this->getCTETypes(), $userTypes, $this->getWhereTypes()), $this->getCTEValues(), $this->getWhereValues());
-    } 
 
     function getQuery(bool $pretty = false): string {
         $cte = sizeof($this->qCTE);
