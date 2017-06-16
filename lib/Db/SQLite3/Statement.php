@@ -26,7 +26,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     protected $db;
     protected $st;
 
-    public function __construct(\SQLite3 $db, \SQLite3Stmt $st, array $bindings = [], array $preValues, array $postValues) {
+    public function __construct(\SQLite3 $db, \SQLite3Stmt $st, array $bindings = [], array $preValues = [], array $postValues = []) {
         $this->db = $db;
         $this->st = $st;
         $this->rebindArray($bindings);
