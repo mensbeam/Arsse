@@ -9,7 +9,36 @@ use Phake;
 
 trait SeriesSubscription {
     function setUpSeries() {
-        $data = [
+        $this->data = [
+            'arsse_users' => [
+                'columns' => [
+                    'id'       => 'str',
+                    'password' => 'str',
+                    'name'     => 'str',
+                    'rights'   => 'int',
+                ],
+                'rows' => [
+                    ["admin@example.net", '$2y$10$PbcG2ZR3Z8TuPzM7aHTF8.v61dtCjzjK78gdZJcp4UePE8T9jEgBW', "Hard Lip Herbert", UserDriver::RIGHTS_GLOBAL_ADMIN], // password is hash of "secret"
+                    ["jane.doe@example.com", "", "Jane Doe", UserDriver::RIGHTS_NONE],
+                    ["john.doe@example.com", "", "John Doe", UserDriver::RIGHTS_NONE],
+                ],
+            ],
+            'arsse_folders' => [
+                'columns' => [
+                    'id'     => "int",
+                    'owner'  => "str",
+                    'parent' => "int",
+                    'name'   => "str",
+                ],
+                'rows' => [
+                    [1, "john.doe@example.com", null, "Technology"],
+                    [2, "john.doe@example.com",    1, "Software"],
+                    [3, "john.doe@example.com",    1, "Rocketry"],
+                    [4, "jane.doe@example.com", null, "Politics"],        
+                    [5, "john.doe@example.com", null, "Politics"],
+                    [6, "john.doe@example.com",    2, "Politics"],
+                ]
+            ],
             'arsse_feeds' => [
                 'columns' => [
                     'id'         => "int",
@@ -83,8 +112,6 @@ trait SeriesSubscription {
                 ]
             ],
         ];
-        // merge tables
-        $this->data = array_merge($this->data, $data);
         $this->primeDatabase($this->data);
         // initialize a partial mock of the Database object to later manipulate the feedUpdate method
         Data::$db = Phake::PartialMock(Database::class, $this->drv);

@@ -29,10 +29,23 @@ trait SeriesFeed {
     ];
     
     function setUpSeries() {
+        // set up the test data
         $past  = gmdate("Y-m-d H:i:s",strtotime("now - 1 minute"));
         $future = gmdate("Y-m-d H:i:s",strtotime("now + 1 minute"));
         $now = gmdate("Y-m-d H:i:s",strtotime("now"));
-        $data = [
+        $this->data = [
+            'arsse_users' => [
+                'columns' => [
+                    'id'       => 'str',
+                    'password' => 'str',
+                    'name'     => 'str',
+                    'rights'   => 'int',
+                ],
+                'rows' => [
+                    ["jane.doe@example.com", "", "Jane Doe", UserDriver::RIGHTS_NONE],
+                    ["john.doe@example.com", "", "John Doe", UserDriver::RIGHTS_NONE],
+                ],
+            ],
             'arsse_feeds' => [
                 'columns' => [
                     'id'         => "int",
@@ -126,10 +139,7 @@ trait SeriesFeed {
                 ]
             ],
         ];
-        // merge tables
-        $this->data = array_merge($this->data, $data);
         $this->primeDatabase($this->data);
-        $this->user = "john.doe@example.com";
     }
 
     function testListLatestItems() {

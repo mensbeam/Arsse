@@ -7,6 +7,21 @@ use Phake;
 
 trait SeriesUser {
     function setUpSeries() {
+        $this->data = [
+            'arsse_users' => [
+                'columns' => [
+                    'id'       => 'str',
+                    'password' => 'str',
+                    'name'     => 'str',
+                    'rights'   => 'int',
+                ],
+                'rows' => [
+                    ["admin@example.net", '$2y$10$PbcG2ZR3Z8TuPzM7aHTF8.v61dtCjzjK78gdZJcp4UePE8T9jEgBW', "Hard Lip Herbert", UserDriver::RIGHTS_GLOBAL_ADMIN], // password is hash of "secret"
+                    ["jane.doe@example.com", "", "Jane Doe", UserDriver::RIGHTS_NONE],
+                    ["john.doe@example.com", "", "John Doe", UserDriver::RIGHTS_NONE],
+                ],
+            ],
+        ];
         $this->primeDatabase($this->data);
     }
 
