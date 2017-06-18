@@ -11,7 +11,6 @@ use Phake;
 
 trait Setup {
     protected $drv;
-    protected $data = [];
 
     function setUp() {
         // establish a clean baseline
@@ -28,6 +27,8 @@ trait Setup {
         Phake::when(Data::$user)->authorize->thenReturn(true);
         // call the additional setup method if it exists
         if(method_exists($this, "setUpSeries")) $this->setUpSeries();
+        // prime the database with series data
+        if(isset($this->data)) $this->primeDatabase($this->data);
     }
 
     function tearDown() {

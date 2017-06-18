@@ -139,7 +139,6 @@ trait SeriesFeed {
                 ]
             ],
         ];
-        $this->primeDatabase($this->data);
     }
 
     function testListLatestItems() {
