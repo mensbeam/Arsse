@@ -3,6 +3,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\REST\NextCloudNews;
 use JKingWeb\Arsse\Data;
 use JKingWeb\Arsse\User;
+use JKingWeb\Arsse\Misc\Context;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
@@ -281,7 +282,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $feed = Data::$db->subscriptionPropertiesGet(Data::$user->id, $id);
         $feed = $this->feedTranslate($feed);
         $out = ['feeds' => [$feed]];
-        $newest = Data::$db->editionLatest(Data::$user->id, ['subscription' => $id]);
+        $newest = Data::$db->editionLatest(Data::$user->id, (new Context)->subscription($id));
         if($newest) $out['newestItemId'] = $newest;
         return new Response(200, $out);
     }

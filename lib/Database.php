@@ -2,7 +2,8 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
 use PasswordGenerator\Generator as PassGen;
-use JKingWeb\Arsse\Database\Query;
+use JKingWeb\Arsse\Misc\Query;
+use JKingWeb\Arsse\Misc\Context;
 
 class Database {
 
@@ -86,20 +87,7 @@ class Database {
     }
 
     public function settingGet(string $key) {
-        $row = $this->db->prepare("SELECT value, type from arsse_settings where key = ?", "str")->run($key)->getRow();
-        if(!$row) return null;
-        switch($row['type']) {
-            case "int":       return (int) $row['value'];
-            case "numeric":   return (float) $row['value'];
-            case "text":      return $row['value'];
-            case "json":      return json_decode($row['value']);
-            case "timestamp": return date_create_from_format("!".self::FORMAT_TS, $row['value'], new DateTimeZone("UTC"));
-            case "date":      return date_create_from_format("!".self::FORMAT_DATE, $row['value'], new DateTimeZone("UTC"));
-            case "time":      return date_create_from_format("!".self::FORMAT_TIME, $row['value'], new DateTimeZone("UTC"));
-            case "bool":      return (bool) $row['value'];
-            case "null":      return null;
-            default:          return $row['value'];
-        }
+        return $this->db->prepare("SELECT value from arsse_settings where key is ?", "str")->run($key)->getValue();
     }
 
     public function begin(): Db\Transaction {
@@ -590,30 +578,46 @@ class Database {
         return $this->db->prepare("SELECT count(*) from arsse_marks where owner is ? and starred is 1", "str")->run($user)->getValue();
     }
 
-    public function editionLatest(string $user, array $context = []): int {
+    public function editionLatest(string $user, Context $context = null): int {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if(array_key_exists("subscription", $context)) {
-            $id = $context['subscription'];
-            $sub = $this->subscriptionValidateId($user, $id);
-            return (int) $this->db->prepare(
-                "SELECT max(arsse_editions.id) 
-                    from arsse_editions 
-                    left join arsse_articles on article is arsse_articles.id 
-                    left join arsse_feeds on arsse_articles.feed is arsse_feeds.id
-                 where arsse_feeds.id is ?",
-                "int"
-            )->run($sub['feed'])->getValue();
+        if(!$context) $context = new Context;
+        $q = new Query("SELECT max(arsse_editions.id) from arsse_editions left join arsse_articles on article is arsse_articles.id left join arsse_feeds on arsse_articles.feed is arsse_feeds.id");
+        if($context->subscription()) {
+            // if a subscription is specified, make sure it exists
+            $id = $this->subscriptionValidateId($user, $context->subscription)['feed'];
+            // a simple WHERE clause is required here
+            $q->setWhere("arsse_feeds.id is ?", "int", $id);
+        } else {
+            $q->setCTE("user(user) as (SELECT ?)", "str", $user);
+            if($context->folder()) {
+                // if a folder is specified, make sure it exists
+                $this->folderValidateId($user, $context->folder);
+                // if it does exist, add a common table expression to list it and its children so that we select from the entire subtree
+                $q->setCTE("folders(folder) as (SELECT ? union select id from arsse_folders join folders on parent is folder)", "int", $context->folder);
+                // add another CTE for the subscriptions within the folder
+                $q->setCTE(
+                    "feeds(feed) as (SELECT feed from arsse_subscriptions join user on user is owner join folders on arsse_subscription.folder is folders.folder)", 
+                    [], // binding types 
+                    [], // binding values
+                    "join feeds on arsse_articles.feed is feeds.feed" // join expression
+                );
+            } else {
+                // if no folder is specified, a single CTE is added
+                $q->setCTE(
+                    "feeds(feed) as (SELECT feed from arsse_subscriptions join user on user is owner)", 
+                    [], // binding types 
+                    [], // binding values
+                    "join feeds on arsse_articles.feed is feeds.feed" // join expression
+                );
+            }
         }
-        return (int) $this->db->prepare("SELECT max(id) from arsse_editions")->run()->getValue(); // FIXME: this is incorrect; it's not restricted to the user's subscriptions
+        return (int) $this->db->prepare($q)->run()->getValue();
     }
 
-    public function articleList(string $user): Db\Result {
+    public function articleList(string $user, Context $context = null): Db\Result {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        return $this->db->prepare(
-            "WITH
-                user(user) as (SELECT ?), 
-                subscribed_feeds(id) as (SELECT feed from arsse_subscriptions join user on user is owner) 
-            ".
+        if(!$context) $context = new Context;
+        $q = new Query(
             "SELECT 
                 arsse_articles.id,
                 arsse_articles.url,
@@ -634,7 +638,124 @@ class Database {
                 join subscribed_feeds on arsse_articles.feed is subscribed_feeds.id
                 left join arsse_enclosures on arsse_enclosures.article is arsse_articles.id
             ",
-            "str","str","str"
-        )-run($user, $this->dateFormatDefault, $this->dateFormatDefault, $this->dateFormatDefault);
+            "", // WHERE clause
+            "latestEdition".(!$context->reverse ? " desc" : ""), // ORDER BY clause
+            $context->limit,
+            $context->offset
+        );
+        $q->setCTE("user(user) as (SELECT ?)", "str", $user);
+        if($context->subscription()) {
+            // if a subscription is specified, make sure it exists
+            $id = $this->subscriptionValidateId($user, $context->subscription)['feed'];
+            // add a basic CTE that will join in only the requested subscription
+            $q->setCTE("subscribed_feeds(id) as (SELECT ?)", "int", $id);
+        } else if($context->folder()) {
+            // if a folder is specified, make sure it exists
+            $this->folderValidateId($user, $context->folder);
+            // if it does exist, add a common table expression to list it and its children so that we select from the entire subtree
+            $q->setCTE("folders(folder) as (SELECT ? union select id from arsse_folders join folders on parent is folder)", "int", $context->folder);
+            // add another CTE for the subscriptions within the folder
+            $q->setCTE("subscribed_feeds(id) as (SELECT feed from arsse_subscriptions join user on user is owner join folders on arsse_subscription.folder is folders.folder)");
+        } else {
+            // otherwise add a CTE for all the user's subscriptions
+            $q->setCTE("subscribed_feeds(id) as (SELECT feed from arsse_subscriptions join user on user is owner)");
+        }
+        // filter based on edition offset
+        if($context->oldestEdition()) {
+            $q->setWhere("latestEdition >= ?", "int", $context->oldestEdition);
+        } else if($context->latestEdition()) {
+            $q->setWhere("latestEdition <= ?", "int", $context->oldestEdition);
+        }
+        // filter based on lastmod time
+        if($context->modifiedSince()) $q->setWhere("modified >= ?", "datetime", $context->modifiedSince);
+        // filter for un/read and un/starred status if specified
+        if($context->unread()) $q->setWhere("unread is ?", "bool", $context->unread);
+        if($context->starred()) $q->setWhere("starred is ?", "bool", $context->starred);
+        // perform the query and return results
+        return $this->db->prepare($q, "str", "str", "str")-run($this->dateFormatDefault, $this->dateFormatDefault, $this->dateFormatDefault);
+    }
+
+    public function articlePropertiesSet(string $user, array $data, Context $context = null): bool {
+        if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!$context) $context = new Context;
+        // sanitize input
+        $valid = [
+            'read'    => "strict bool",
+            'starred' => "strict bool",
+        ];
+        list($setClause, $setTypes, $setValues) = $this->generateSet($data, $valid);
+        $insValues = [
+            isset($data['read']) ? $data['read'] : false,
+            isset($data['starred']) ? $data['starred'] : false,
+        ];
+        // the two queries we want to execute to make the requested changes
+        $queries = [
+            [
+                'body'   => "UPDATE arsse_marks set $setClause, modified = CURRENT_TIMESTAMP",
+                'where'  => "owner is ? and article in (select id from target_articles and exists is 1)",
+                'types'  => [$setTypes, "str"],
+                'values' => [$setValues, $user]
+            ],
+            [
+                'body'   => "INSERT INTO arsse_marks(article,owner,read,starred) SELECT id, ?, ?, ? from target_articles",
+                'where'  => "exists is 0",
+                'types'  => ["str", "strict bool", "strict bool"],
+                'values' => [$user, $insValues]
+            ]
+        ];
+        $out = 0;
+        // wrap this UPDATE and INSERT together into a transaction
+        $tr = $this->begin();
+        // execute each query in sequence
+        foreach($queries as $query) {
+            // first build the query which will select the target articles; we will later turn this into a CTE for the actual query that manipulates the articles
+            $q = new Query(
+                "SELECT 
+                    arsse_articles.id as id,
+                    max(arsse_editions.id) as latestEdition 
+                    (select count(*) from arsse_marks join user on user is owner where article is arsse_articles.id) as exists 
+                FROM arsse_articles 
+                    join subscribed_feeds on feed is subscribed_feeds.id
+                    join arsse_editions on arsse_articles.id is arsse_editions.article
+                "
+            );
+            $q->setCTE("user(user) as (SELECT ?)", "str", $user);
+            if($context->subscription()) {
+                // if a subscription is specified, make sure it exists
+                $id = $this->subscriptionValidateId($user, $context->subscription)['feed'];
+                // add a basic CTE that will join in only the requested subscription
+                $q->setCTE("subscribed_feeds(id) as (SELECT ?)", "int", $id);
+            } else if($context->folder()) {
+                // if a folder is specified, make sure it exists
+                $this->folderValidateId($user, $context->folder);
+                // if it does exist, add a common table expression to list it and its children so that we select from the entire subtree
+                $q->setCTE("folders(folder) as (SELECT ? union select id from arsse_folders join folders on parent is folder)", "int", $context->folder);
+                // add another CTE for the subscriptions within the folder
+                $q->setCTE("subscribed_feeds(id) as (SELECT feed from arsse_subscriptions join user on user is owner join folders on arsse_subscription.folder is folders.folder)");
+            } else {
+                // otherwise add a CTE for all the user's subscriptions
+                $q->setCTE("subscribed_feeds(id) as (SELECT feed from arsse_subscriptions join user on user is owner)");
+            }
+            // filter for specific article or edition
+            if($context->article()) $q->setWhere("arsse_article.id is ?", "int", $context->article);
+            if($context->edition()) $q->setWhere("arsse_article.id is (SELECT article from arsse_editions where id is ?)", "int", $context->edition);
+            // filter for un/read and un/starred status if specified
+            if($context->unread()) $q->setWhere("unread is ?", "bool", $context->unread);
+            if($context->starred()) $q->setWhere("starred is ?", "bool", $context->starred);
+            // filter based on lastmod time
+            if($context->modifiedSince()) $q->setWhere("modified >= ?", "datetime", $context->modifiedSince);
+            // push the current query onto the CTE stack and execute the query we're actually interested in
+            $q->pushCTE(
+                "target_articles(id, exists)", // CTE table specification
+                [], // CTE types
+                [], // CTE values
+                $query['body'], // new query body
+                $query['where'] // new query WHERE clause
+            );
+            $out += $this->db->prepare($q, $query['types'])->run($query['values'])->changes();
+        }
+        // commit the transaction
+        $tr->commit();
+        return (bool) $out;
     }
 }

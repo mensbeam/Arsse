@@ -126,7 +126,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     }
 
     public function prepareArray($query, array $paramTypes): \JKingWeb\Arsse\Db\Statement {
-        if($query instanceof \JKingWeb\Arsse\Database\Query) {
+        if($query instanceof \JKingWeb\Arsse\Misc\Query) {
             $preValues = $query->getCTEValues();
             $postValues = $query->getWhereValues();
             $paramTypes = [$query->getCTETypes(), $paramTypes, $query->getWhereTypes()];

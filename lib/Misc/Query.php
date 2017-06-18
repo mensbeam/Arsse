@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\Arsse\Database;
+namespace JKingWeb\Arsse\Misc;
 
 class Query {
     protected $body = "";
@@ -55,16 +55,60 @@ class Query {
         return true;
     }
 
-    function getQuery(bool $pretty = false): string {
-        $cte = sizeof($this->qCTE);
+    function getQuery(): string {
         $out = "";
-        if($cte) {
+        if(sizeof($this->qCTE)) {
             // start with common table expressions
             $out .= "WITH RECURSIVE ".implode(", ", $this->qCTE)." ";
         }
         // add the body
+        $out .= $this->buildQueryBody();
+        return $out;
+    }
+
+    function pushCTE(string $tableSpec, $types, $values, string $body, string $where = "", string $order = "", int $limit = 0, int $offset = 0): bool {
+        // this function takes the query body and converts it to a common table expression, putting it at the bottom of the existing CTE stack
+        // all WHERE and ORDER BY parts belong to the new CTE and are removed from the main query
+        $b = $this->buildQueryBody();
+        array_push($types, $this->getWhereTypes());
+        array_push($values, $this->getWhereValues());
+        if($this->limit) {
+            array_push($types, "strict int");
+            array_push($values, $this->limit);
+        }
+        if($this->offset) {
+            array_push($types, "strict int");
+            array_push($values, $this->offset);
+        }
+        $this->setCTE($tableSpec." as (".$this->buildQueryBody().")", $types, $value);
+        $this->tWhere = [];
+        $this->vWhere = [];
+        $this->order = [];
+        $this->__construct($body, $where, $order, $limit, $offset);
+        return true;
+    }
+
+    function getWhereTypes(): array {
+        return $this->tWhere;
+    }
+
+    function getWhereValues(): array {
+        return $this->vWhere;
+    }
+
+    function getCTETypes(): array {
+        return $this->tCTE;
+    }
+
+    function getCTEValues(): array {
+        return $this->vCTE;
+    }
+
+    protected function buildQueryBody(): string {
+        $out = "";
+        // add the body
         $out .= $this->body;
-        if($cte) {
+        if(sizeof($this->qCTE)) {
             // add any joins against CTEs
             $out .= " ".implode(" ", $this->jCTE);
         }
@@ -84,21 +128,5 @@ class Query {
             }
         }
         return $out;
-    }
-
-    function getWhereTypes(): array {
-        return $this->tWhere;
-    }
-
-    function getWhereValues(): array {
-        return $this->vWhere;
-    }
-
-    function getCTETypes(): array {
-        return $this->tCTE;
-    }
-
-    function getCTEValues(): array {
-        return $this->vCTE;
     }
 }

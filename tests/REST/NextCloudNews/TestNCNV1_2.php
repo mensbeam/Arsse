@@ -4,6 +4,7 @@ namespace JKingWeb\Arsse;
 use JKingWeb\Arsse\REST\Request;
 use JKingWeb\Arsse\REST\Response;
 use JKingWeb\Arsse\Test\Result;
+use JKingWeb\Arsse\Misc\Context;
 use Phake;
 
 
@@ -275,8 +276,8 @@ class TestNCNV1_2 extends \PHPUnit\Framework\TestCase {
         Phake::when(Data::$db)->subscriptionAdd(Data::$user->id, "http://example.org/news.atom")->thenReturn( 42 )->thenThrow(new \JKingWeb\Arsse\Db\ExceptionInput("constraintViolation")); // error on the second call
         Phake::when(Data::$db)->subscriptionPropertiesGet(Data::$user->id, 2112)->thenReturn($this->feeds['db'][0]);
         Phake::when(Data::$db)->subscriptionPropertiesGet(Data::$user->id,   42)->thenReturn($this->feeds['db'][1]);
-        Phake::when(Data::$db)->editionLatest(Data::$user->id, ['subscription' => 2112])->thenReturn(0);
-        Phake::when(Data::$db)->editionLatest(Data::$user->id, ['subscription' =>   42])->thenReturn(4758915);
+        Phake::when(Data::$db)->editionLatest(Data::$user->id, (new Context)->subscription(2112))->thenReturn(0);
+        Phake::when(Data::$db)->editionLatest(Data::$user->id, (new Context)->subscription(  42))->thenReturn(4758915);
         Phake::when(Data::$db)->subscriptionPropertiesSet(Data::$user->id, 2112, ['folder' => 3])->thenThrow(new \JKingWeb\Arsse\Db\ExceptionInput("idMissing")); // folder ID 3 does not exist
         Phake::when(Data::$db)->subscriptionPropertiesSet(Data::$user->id,   42, ['folder' => 8])->thenReturn(true);
         // set up a mock for a bad feed
