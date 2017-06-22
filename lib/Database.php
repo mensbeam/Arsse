@@ -619,9 +619,9 @@ class Database {
         if(!$context) $context = new Context;
         $q = new Query(
             "SELECT 
-                arsse_articles.id,
-                arsse_articles.url,
-                title,author,content,feed,guid,
+                arsse_articles.id as id,
+                arsse_articles.url as url,
+                title,author,content,guid,
                 DATEFORMAT(?, published) as published,
                 DATEFORMAT(?, edited) as edited,
                 DATEFORMAT(?, max(
@@ -630,7 +630,8 @@ class Database {
                 )) as modified,
                 NOT (SELECT count(*) from arsse_marks join user on user is owner where article is arsse_articles.id and read is 1) as unread,
                 (SELECT count(*) from arsse_marks join user on user is owner where article is arsse_articles.id and starred is 1) as starred,
-                (SELECT max(id) from arsse_editions where article is arsse_articles.id) as latestEdition,
+                (SELECT max(id) from arsse_editions where article is arsse_articles.id) as edition,
+                subscribed_feeds.sub as subscription,
                 url_title_hash||':'||url_content_hash||':'||title_content_hash as fingerprint,
                 arsse_enclosures.url as media_url,
                 arsse_enclosures.type as media_type
@@ -639,7 +640,7 @@ class Database {
                 left join arsse_enclosures on arsse_enclosures.article is arsse_articles.id
             ",
             "", // WHERE clause
-            "latestEdition".(!$context->reverse ? " desc" : ""), // ORDER BY clause
+            "edition".(!$context->reverse ? " desc" : ""), // ORDER BY clause
             $context->limit,
             $context->offset
         );
@@ -648,31 +649,29 @@ class Database {
             // if a subscription is specified, make sure it exists
             $id = $this->subscriptionValidateId($user, $context->subscription)['feed'];
             // add a basic CTE that will join in only the requested subscription
-            $q->setCTE("subscribed_feeds(id) as (SELECT ?)", "int", $id);
+            $q->setCTE("subscribed_feeds(id,sub) as (SELECT ?,?)", ["int","int"], [$id,$context->subscription]);
         } else if($context->folder()) {
             // if a folder is specified, make sure it exists
             $this->folderValidateId($user, $context->folder);
             // if it does exist, add a common table expression to list it and its children so that we select from the entire subtree
             $q->setCTE("folders(folder) as (SELECT ? union select id from arsse_folders join folders on parent is folder)", "int", $context->folder);
             // add another CTE for the subscriptions within the folder
-            $q->setCTE("subscribed_feeds(id) as (SELECT feed from arsse_subscriptions join user on user is owner join folders on arsse_subscription.folder is folders.folder)");
+            $q->setCTE("subscribed_feeds(id,sub) as (SELECT feed,id from arsse_subscriptions join user on user is owner join folders on arsse_subscriptions.folder is folders.folder)");
         } else {
             // otherwise add a CTE for all the user's subscriptions
-            $q->setCTE("subscribed_feeds(id) as (SELECT feed from arsse_subscriptions join user on user is owner)");
+            $q->setCTE("subscribed_feeds(id,sub) as (SELECT feed,id from arsse_subscriptions join user on user is owner)");
         }
         // filter based on edition offset
-        if($context->oldestEdition()) {
-            $q->setWhere("latestEdition >= ?", "int", $context->oldestEdition);
-        } else if($context->latestEdition()) {
-            $q->setWhere("latestEdition <= ?", "int", $context->oldestEdition);
-        }
+        if($context->oldestEdition()) $q->setWhere("edition >= ?", "int", $context->oldestEdition);
+        if($context->latestEdition()) $q->setWhere("edition <= ?", "int", $context->latestEdition);
         // filter based on lastmod time
         if($context->modifiedSince()) $q->setWhere("modified >= ?", "datetime", $context->modifiedSince);
+        if($context->notModifiedSince()) $q->setWhere("modified <= ?", "datetime", $context->notModifiedSince);
         // filter for un/read and un/starred status if specified
         if($context->unread()) $q->setWhere("unread is ?", "bool", $context->unread);
         if($context->starred()) $q->setWhere("starred is ?", "bool", $context->starred);
         // perform the query and return results
-        return $this->db->prepare($q, "str", "str", "str")-run($this->dateFormatDefault, $this->dateFormatDefault, $this->dateFormatDefault);
+        return $this->db->prepare($q, "str", "str", "str")->run($this->dateFormatDefault, $this->dateFormatDefault, $this->dateFormatDefault);
     }
 
     public function articlePropertiesSet(string $user, array $data, Context $context = null): bool {
@@ -712,8 +711,11 @@ class Database {
             $q = new Query(
                 "SELECT 
                     arsse_articles.id as id,
-                    max(arsse_editions.id) as latestEdition 
-                    (select count(*) from arsse_marks join user on user is owner where article is arsse_articles.id) as exists 
+                    max(arsse_editions.id) as edition 
+                    (select count(*) from arsse_marks join user on user is owner where article is arsse_articles.id) as exists,
+                    max(modified, 
+                        coalesce((SELECT modified from arsse_marks join user on user is owner where article is arsse_articles.id),'')
+                    ) as modified, 
                 FROM arsse_articles 
                     join subscribed_feeds on feed is subscribed_feeds.id
                     join arsse_editions on arsse_articles.id is arsse_editions.article
@@ -724,26 +726,27 @@ class Database {
                 // if a subscription is specified, make sure it exists
                 $id = $this->subscriptionValidateId($user, $context->subscription)['feed'];
                 // add a basic CTE that will join in only the requested subscription
-                $q->setCTE("subscribed_feeds(id) as (SELECT ?)", "int", $id);
+                $q->setCTE("subscribed_feeds(id,sub) as (SELECT ?,?)", ["int","int"], [$id,$context->subscription]);
             } else if($context->folder()) {
                 // if a folder is specified, make sure it exists
                 $this->folderValidateId($user, $context->folder);
                 // if it does exist, add a common table expression to list it and its children so that we select from the entire subtree
                 $q->setCTE("folders(folder) as (SELECT ? union select id from arsse_folders join folders on parent is folder)", "int", $context->folder);
                 // add another CTE for the subscriptions within the folder
-                $q->setCTE("subscribed_feeds(id) as (SELECT feed from arsse_subscriptions join user on user is owner join folders on arsse_subscription.folder is folders.folder)");
+                $q->setCTE("subscribed_feeds(id,sub) as (SELECT feed,id from arsse_subscriptions join user on user is owner join folders on arsse_subscriptions.folder is folders.folder)");
             } else {
                 // otherwise add a CTE for all the user's subscriptions
-                $q->setCTE("subscribed_feeds(id) as (SELECT feed from arsse_subscriptions join user on user is owner)");
+                $q->setCTE("subscribed_feeds(id,sub) as (SELECT feed,id from arsse_subscriptions join user on user is owner)");
             }
             // filter for specific article or edition
             if($context->article()) $q->setWhere("arsse_article.id is ?", "int", $context->article);
             if($context->edition()) $q->setWhere("arsse_article.id is (SELECT article from arsse_editions where id is ?)", "int", $context->edition);
-            // filter for un/read and un/starred status if specified
-            if($context->unread()) $q->setWhere("unread is ?", "bool", $context->unread);
-            if($context->starred()) $q->setWhere("starred is ?", "bool", $context->starred);
+            // filter based on edition offset
+            if($context->oldestEdition()) $q->setWhere("edition >= ?", "int", $context->oldestEdition);
+            if($context->latestEdition()) $q->setWhere("edition <= ?", "int", $context->latestEdition);
             // filter based on lastmod time
             if($context->modifiedSince()) $q->setWhere("modified >= ?", "datetime", $context->modifiedSince);
+            if($context->notModifiedSince()) $q->setWhere("modified <= ?", "datetime", $context->notModifiedSince);
             // push the current query onto the CTE stack and execute the query we're actually interested in
             $q->pushCTE(
                 "target_articles(id, exists)", // CTE table specification
