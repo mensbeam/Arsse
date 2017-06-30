@@ -18,7 +18,7 @@ class Query {
 
     function __construct(string $body, string $where = "", string $order = "", int $limit = 0, int $offset = 0) {
         if(strlen($body)) $this->body = $body;
-        if(strlen($where)) $this->where[] = $where;
+        if(strlen($where)) $this->qWhere[] = $where;
         if(strlen($order)) $this->order[] = $order;
         $this->limit = $limit;
         $this->offset = $offset;
@@ -80,7 +80,8 @@ class Query {
             array_push($types, "strict int");
             array_push($values, $this->offset);
         }
-        $this->setCTE($tableSpec." as (".$this->buildQueryBody().")", $types, $value);
+        $this->setCTE($tableSpec." as (".$this->buildQueryBody().")", $types, $values);
+        $this->qWhere = [];
         $this->tWhere = [];
         $this->vWhere = [];
         $this->order = [];

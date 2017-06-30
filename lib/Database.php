@@ -626,11 +626,11 @@ class Database {
                 DATEFORMAT(?, edited) as edited,
                 DATEFORMAT(?, max(
                     modified, 
-                    coalesce((SELECT modified from arsse_marks join user on user is owner where article is arsse_articles.id),'')
+                    coalesce((select modified from arsse_marks join user on user is owner where article is arsse_articles.id),'')
                 )) as modified,
-                NOT (SELECT count(*) from arsse_marks join user on user is owner where article is arsse_articles.id and read is 1) as unread,
-                (SELECT count(*) from arsse_marks join user on user is owner where article is arsse_articles.id and starred is 1) as starred,
-                (SELECT max(id) from arsse_editions where article is arsse_articles.id) as edition,
+                NOT (select count(*) from arsse_marks join user on user is owner where article is arsse_articles.id and read is 1) as unread,
+                (select count(*) from arsse_marks join user on user is owner where article is arsse_articles.id and starred is 1) as starred,
+                (select max(id) from arsse_editions where article is arsse_articles.id) as edition,
                 subscribed_feeds.sub as subscription,
                 url_title_hash||':'||url_content_hash||':'||title_content_hash as fingerprint,
                 arsse_enclosures.url as media_url,
@@ -640,7 +640,7 @@ class Database {
                 left join arsse_enclosures on arsse_enclosures.article is arsse_articles.id
             ",
             "", // WHERE clause
-            "edition".(!$context->reverse ? " desc" : ""), // ORDER BY clause
+            "edition".($context->reverse ? " desc" : ""), // ORDER BY clause
             $context->limit,
             $context->offset
         );
@@ -674,33 +674,31 @@ class Database {
         return $this->db->prepare($q, "str", "str", "str")->run($this->dateFormatDefault, $this->dateFormatDefault, $this->dateFormatDefault);
     }
 
-    public function articlePropertiesSet(string $user, array $data, Context $context = null): bool {
+    public function articleMark(string $user, array $data, Context $context = null): bool {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         if(!$context) $context = new Context;
         // sanitize input
-        $valid = [
-            'read'    => "strict bool",
-            'starred' => "strict bool",
-        ];
-        list($setClause, $setTypes, $setValues) = $this->generateSet($data, $valid);
-        $insValues = [
-            isset($data['read']) ? $data['read'] : false,
-            isset($data['starred']) ? $data['starred'] : false,
+        $values = [
+            isset($data['read']) ? $data['read'] : null,
+            isset($data['starred']) ? $data['starred'] : null,
         ];
         // the two queries we want to execute to make the requested changes
         $queries = [
-            [
-                'body'   => "UPDATE arsse_marks set $setClause, modified = CURRENT_TIMESTAMP",
-                'where'  => "owner is ? and article in (select id from target_articles and exists is 1)",
-                'types'  => [$setTypes, "str"],
-                'values' => [$setValues, $user]
-            ],
-            [
-                'body'   => "INSERT INTO arsse_marks(article,owner,read,starred) SELECT id, ?, ?, ? from target_articles",
-                'where'  => "exists is 0",
-                'types'  => ["str", "strict bool", "strict bool"],
-                'values' => [$user, $insValues]
-            ]
+            "UPDATE arsse_marks 
+                set 
+                    read = coalesce((select read from target_values),read),
+                    starred = coalesce((select starred from target_values),starred),
+                    modified = CURRENT_TIMESTAMP  
+                WHERE 
+                    owner is (select user from user) 
+                    and article in (select id from target_articles where to_update is 1)",
+            "INSERT INTO arsse_marks(owner,article,read,starred)
+                select 
+                    (select user from user),
+                    id,
+                    coalesce((select read from target_values),0),
+                    coalesce((select starred from target_values),0)
+                from target_articles where to_insert is 1"
         ];
         $out = 0;
         // wrap this UPDATE and INSERT together into a transaction
@@ -711,17 +709,32 @@ class Database {
             $q = new Query(
                 "SELECT 
                     arsse_articles.id as id,
-                    max(arsse_editions.id) as edition 
-                    (select count(*) from arsse_marks join user on user is owner where article is arsse_articles.id) as exists,
-                    max(modified, 
-                        coalesce((SELECT modified from arsse_marks join user on user is owner where article is arsse_articles.id),'')
-                    ) as modified, 
+                    (select max(id) from arsse_editions where article is arsse_articles.id) as edition,
+                    max(arsse_articles.modified, 
+                        coalesce((select modified from arsse_marks join user on user is owner where article is arsse_articles.id),'')
+                    ) as modified,
+                    (
+                        not exists(select id from arsse_marks join user on user is owner where article is arsse_articles.id) 
+                        and exists(select * from target_values where read is 1 or starred is 1)
+                    ) as to_insert,
+                    exists(
+                        select id from arsse_marks 
+                            join user on user is owner 
+                        where 
+                            article is arsse_articles.id 
+                            and (
+                                read is not coalesce((select read from target_values),read)
+                                or starred is not coalesce((select starred from target_values),starred)
+                            )
+                    ) as to_update
                 FROM arsse_articles 
                     join subscribed_feeds on feed is subscribed_feeds.id
-                    join arsse_editions on arsse_articles.id is arsse_editions.article
                 "
             );
+            // common table expression for the affected user
             $q->setCTE("user(user) as (SELECT ?)", "str", $user);
+            // common table expression with the values to set
+            $q->setCTE("target_values(read,starred) as (select ?,?)", ["bool","bool"], $values);
             if($context->subscription()) {
                 // if a subscription is specified, make sure it exists
                 $id = $this->subscriptionValidateId($user, $context->subscription)['feed'];
@@ -749,13 +762,12 @@ class Database {
             if($context->notModifiedSince()) $q->setWhere("modified <= ?", "datetime", $context->notModifiedSince);
             // push the current query onto the CTE stack and execute the query we're actually interested in
             $q->pushCTE(
-                "target_articles(id, exists)", // CTE table specification
+                "target_articles(id,edition,modified,to_insert,to_update)", // CTE table specification
                 [], // CTE types
                 [], // CTE values
-                $query['body'], // new query body
-                $query['where'] // new query WHERE clause
+                $query // new query body
             );
-            $out += $this->db->prepare($q, $query['types'])->run($query['values'])->changes();
+            $out += $this->db->prepare($q)->run()->changes();
         }
         // commit the transaction
         $tr->commit();
