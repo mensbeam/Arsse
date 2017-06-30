@@ -83,7 +83,7 @@ trait SeriesArticle {
                 [8,"john.doe@example.org",11,null],
                 [9,"john.doe@example.org",12,null],
                 [10,"john.doe@example.org",13,null],
-                [11,"john.doe@example.net",1,null],
+                [11,"john.doe@example.net",10,null],
                 [12,"john.doe@example.net",2,9],
                 [13,"john.doe@example.net",3,8],
                 [14,"john.doe@example.net",4,7],
@@ -163,11 +163,10 @@ trait SeriesArticle {
                 ["john.doe@example.org",103,0,1,'2000-01-03 03:00:00'],
                 ["john.doe@example.org",104,1,1,'2000-01-04 04:00:00'],
                 ["john.doe@example.org",105,0,0,'2000-01-05 05:00:00'],
-                ["john.doe@example.net",  1,0,0,'2017-01-01 00:00:00'],
-                ["john.doe@example.net",  2,1,0,'2017-01-01 00:00:00'],
+                ["john.doe@example.net", 19,0,0,'2017-01-01 00:00:00'],
+                ["john.doe@example.net", 20,1,0,'2017-01-01 00:00:00'],
                 ["john.doe@example.net",  3,0,1,'2017-01-01 00:00:00'],
                 ["john.doe@example.net",  4,1,1,'2017-01-01 00:00:00'],
-
             ]
         ],
     ];
@@ -420,6 +419,131 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][] = [$this->user,7,1,1,$now];
         $state['arsse_marks']['rows'][] = [$this->user,8,1,1,$now];
         $this->compareExpectations($state);
+    }
+
+    function testMarkAllArticlesUnreadAndStarred() {
+        Data::$db->articleMark($this->user, ['read'=>false,'starred'=>true]);
+        $now = $this->dateTransform(time(), "sql");
+        $state = $this->primeExpectations($this->data, [
+            'arsse_marks' => ["owner","article","read","starred","modified"],
+        ]);
+        $state['arsse_marks']['rows'][8][3] = 1;
+        $state['arsse_marks']['rows'][8][4] = $now;
+        $state['arsse_marks']['rows'][9][2] = 0;
+        $state['arsse_marks']['rows'][9][3] = 1;
+        $state['arsse_marks']['rows'][9][4] = $now;
+        $state['arsse_marks']['rows'][11][2] = 0;
+        $state['arsse_marks']['rows'][11][4] = $now;
+        $state['arsse_marks']['rows'][] = [$this->user,5,0,1,$now];
+        $state['arsse_marks']['rows'][] = [$this->user,6,0,1,$now];
+        $state['arsse_marks']['rows'][] = [$this->user,7,0,1,$now];
+        $state['arsse_marks']['rows'][] = [$this->user,8,0,1,$now];
+        $this->compareExpectations($state);
+    }
+
+    function testMarkAllArticlesReadAndUnstarred() {
+        Data::$db->articleMark($this->user, ['read'=>true,'starred'=>false]);
+        $now = $this->dateTransform(time(), "sql");
+        $state = $this->primeExpectations($this->data, [
+            'arsse_marks' => ["owner","article","read","starred","modified"],
+        ]);
+        $state['arsse_marks']['rows'][8][2] = 1;
+        $state['arsse_marks']['rows'][8][4] = $now;
+        $state['arsse_marks']['rows'][10][2] = 1;
+        $state['arsse_marks']['rows'][10][3] = 0;
+        $state['arsse_marks']['rows'][10][4] = $now;
+        $state['arsse_marks']['rows'][11][3] = 0;
+        $state['arsse_marks']['rows'][11][4] = $now;
+        $state['arsse_marks']['rows'][] = [$this->user,5,1,0,$now];
+        $state['arsse_marks']['rows'][] = [$this->user,6,1,0,$now];
+        $state['arsse_marks']['rows'][] = [$this->user,7,1,0,$now];
+        $state['arsse_marks']['rows'][] = [$this->user,8,1,0,$now];
+        $this->compareExpectations($state);
+    }
+
+    function testMarkATreeFolder() {
+        Data::$db->articleMark($this->user, ['read'=>true], (new Context)->folder(7));
+        $now = $this->dateTransform(time(), "sql");
+        $state = $this->primeExpectations($this->data, [
+            'arsse_marks' => ["owner","article","read","starred","modified"],
+        ]);
+        $state['arsse_marks']['rows'][] = [$this->user,5,1,0,$now];
+        $state['arsse_marks']['rows'][] = [$this->user,6,1,0,$now];
+        $state['arsse_marks']['rows'][] = [$this->user,7,1,0,$now];
+        $state['arsse_marks']['rows'][] = [$this->user,8,1,0,$now];
+        $this->compareExpectations($state);
+    }
+
+    function testMarkALeafFolder() {
+        Data::$db->articleMark($this->user, ['read'=>true], (new Context)->folder(8));
+        $now = $this->dateTransform(time(), "sql");
+        $state = $this->primeExpectations($this->data, [
+            'arsse_marks' => ["owner","article","read","starred","modified"],
+        ]);
+        $state['arsse_marks']['rows'][] = [$this->user,5,1,0,$now];
+        $state['arsse_marks']['rows'][] = [$this->user,6,1,0,$now];
+        $this->compareExpectations($state);
+    }
+
+    function testMarkAMissingFolder() {
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Data::$db->articleMark($this->user, ['read'=>true], (new Context)->folder(42));
+    }
+
+    function testMarkASubscription() {
+        Data::$db->articleMark($this->user, ['read'=>true], (new Context)->subscription(13));
+        $now = $this->dateTransform(time(), "sql");
+        $state = $this->primeExpectations($this->data, [
+            'arsse_marks' => ["owner","article","read","starred","modified"],
+        ]);
+        $state['arsse_marks']['rows'][] = [$this->user,5,1,0,$now];
+        $state['arsse_marks']['rows'][] = [$this->user,6,1,0,$now];
+        $this->compareExpectations($state);
+    }
+
+    function testMarkAMissingSubscription() {
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Data::$db->articleMark($this->user, ['read'=>true], (new Context)->folder(2112));
+    }
+
+    function testMarkAnArticle() {
+        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->article(20));
+        $now = $this->dateTransform(time(), "sql");
+        $state = $this->primeExpectations($this->data, [
+            'arsse_marks' => ["owner","article","read","starred","modified"],
+        ]);
+        $state['arsse_marks']['rows'][9][3] = 1;
+        $state['arsse_marks']['rows'][9][4] = $now;
+        $this->compareExpectations($state);
+    }
+
+    function testMarkAMissingArticle() {
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->article(1));
+    }
+
+    function testMarkAnEdition() {
+        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->edition(1001));
+        $now = $this->dateTransform(time(), "sql");
+        $state = $this->primeExpectations($this->data, [
+            'arsse_marks' => ["owner","article","read","starred","modified"],
+        ]);
+        $state['arsse_marks']['rows'][9][3] = 1;
+        $state['arsse_marks']['rows'][9][4] = $now;
+        $this->compareExpectations($state);
+    }
+
+    function testMarkAStaleEdition() {
+        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->edition(20)); // no changes occur
+        $state = $this->primeExpectations($this->data, [
+            'arsse_marks' => ["owner","article","read","starred","modified"],
+        ]);
+        $this->compareExpectations($state);
+    }
+
+    function testMarkAMissingEdition() {
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->edition(2));
     }
 
     protected function compareIds(array $exp, Context $c) {

@@ -81,6 +81,7 @@ class Query {
             array_push($values, $this->offset);
         }
         $this->setCTE($tableSpec." as (".$this->buildQueryBody().")", $types, $values);
+        $this->jCTE = [];
         $this->qWhere = [];
         $this->tWhere = [];
         $this->vWhere = [];

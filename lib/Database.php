@@ -703,6 +703,16 @@ class Database {
         $out = 0;
         // wrap this UPDATE and INSERT together into a transaction
         $tr = $this->begin();
+        // if an edition context is specified, make sure it's valid
+        if($context->edition()) {
+            // make sure the edition exists
+            $edition = $this->articleValidateEdition($user, $context->edition);
+            // if the edition is not the latest, make no marks and return
+            if(!$edition['current']) return false;
+        } else if($context->article()) {
+            // otherwise if an article context is specified, make sure it's valid
+            $this->articleValidateId($user, $context->article);
+        }
         // execute each query in sequence
         foreach($queries as $query) {
             // first build the query which will select the target articles; we will later turn this into a CTE for the actual query that manipulates the articles
@@ -727,33 +737,32 @@ class Database {
                                 or starred is not coalesce((select starred from target_values),starred)
                             )
                     ) as to_update
-                FROM arsse_articles 
-                    join subscribed_feeds on feed is subscribed_feeds.id
-                "
+                FROM arsse_articles"
             );
             // common table expression for the affected user
             $q->setCTE("user(user) as (SELECT ?)", "str", $user);
             // common table expression with the values to set
             $q->setCTE("target_values(read,starred) as (select ?,?)", ["bool","bool"], $values);
-            if($context->subscription()) {
+            if($context->edition()) {
+                $q->setWhere("arsse_articles.id is ?", "int", $edition['article']);
+            } else if($context->article()) {
+                $q->setWhere("arsse_articles.id is ?", "int", $context->article);
+            } else if($context->subscription()) {
                 // if a subscription is specified, make sure it exists
                 $id = $this->subscriptionValidateId($user, $context->subscription)['feed'];
                 // add a basic CTE that will join in only the requested subscription
-                $q->setCTE("subscribed_feeds(id,sub) as (SELECT ?,?)", ["int","int"], [$id,$context->subscription]);
+                $q->setCTE("subscribed_feeds(id,sub) as (SELECT ?,?)", ["int","int"], [$id,$context->subscription], "join subscribed_feeds on feed is subscribed_feeds.id");
             } else if($context->folder()) {
                 // if a folder is specified, make sure it exists
                 $this->folderValidateId($user, $context->folder);
                 // if it does exist, add a common table expression to list it and its children so that we select from the entire subtree
                 $q->setCTE("folders(folder) as (SELECT ? union select id from arsse_folders join folders on parent is folder)", "int", $context->folder);
                 // add another CTE for the subscriptions within the folder
-                $q->setCTE("subscribed_feeds(id,sub) as (SELECT feed,id from arsse_subscriptions join user on user is owner join folders on arsse_subscriptions.folder is folders.folder)");
+                $q->setCTE("subscribed_feeds(id,sub) as (SELECT feed,id from arsse_subscriptions join user on user is owner join folders on arsse_subscriptions.folder is folders.folder)", [], [], "join subscribed_feeds on feed is subscribed_feeds.id");
             } else {
                 // otherwise add a CTE for all the user's subscriptions
-                $q->setCTE("subscribed_feeds(id,sub) as (SELECT feed,id from arsse_subscriptions join user on user is owner)");
+                $q->setCTE("subscribed_feeds(id,sub) as (SELECT feed,id from arsse_subscriptions join user on user is owner)", [], [], "join subscribed_feeds on feed is subscribed_feeds.id");
             }
-            // filter for specific article or edition
-            if($context->article()) $q->setWhere("arsse_article.id is ?", "int", $context->article);
-            if($context->edition()) $q->setWhere("arsse_article.id is (SELECT article from arsse_editions where id is ?)", "int", $context->edition);
             // filter based on edition offset
             if($context->oldestEdition()) $q->setWhere("edition >= ?", "int", $context->oldestEdition);
             if($context->latestEdition()) $q->setWhere("edition <= ?", "int", $context->latestEdition);
@@ -772,5 +781,39 @@ class Database {
         // commit the transaction
         $tr->commit();
         return (bool) $out;
+    }
+
+    public function articleValidateId(string $user, int $id): array {
+        $out = $this->db->prepare(
+            "SELECT 
+                arsse_articles.id as article, 
+                (select max(id) from arsse_editions where article is arsse_articles.id) as edition
+            FROM arsse_articles
+                join arsse_feeds on arsse_feeds.id is arsse_articles.feed
+                join arsse_subscriptions on arsse_subscriptions.feed is arsse_feeds.id
+            WHERE 
+                arsse_articles.id is ? and arsse_subscriptions.owner is ?",
+            "int", "str"
+        )->run($id, $user)->getRow();
+        if(!$out) throw new Db\ExceptionInput("idMissing", ["action" => $this->caller(), "field" => "article", 'id' => $id]);
+        return $out;
+    }
+
+    public function articleValidateEdition(string $user, int $id): array {
+        $out = $this->db->prepare(
+            "SELECT 
+                arsse_editions.id as edition, 
+                arsse_editions.article as article,
+                (arsse_editions.id is (select max(id) from arsse_editions where article is arsse_editions.article)) as current
+            FROM arsse_editions
+                join arsse_articles on arsse_editions.article is arsse_articles.id
+                join arsse_feeds on arsse_feeds.id is arsse_articles.feed
+                join arsse_subscriptions on arsse_subscriptions.feed is arsse_feeds.id
+            WHERE 
+                edition is ? and arsse_subscriptions.owner is ?",
+            "int", "str"
+        )->run($id, $user)->getRow();
+        if(!$out) throw new Db\ExceptionInput("idMissing", ["action" => $this->caller(), "field" => "edition", 'id' => $id]);
+        return $out;
     }
 }
