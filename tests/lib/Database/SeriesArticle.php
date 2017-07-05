@@ -167,6 +167,7 @@ trait SeriesArticle {
                 ["john.doe@example.net", 20,1,0,'2017-01-01 00:00:00'],
                 ["john.doe@example.net",  3,0,1,'2017-01-01 00:00:00'],
                 ["john.doe@example.net",  4,1,1,'2017-01-01 00:00:00'],
+                ["john.doe@example.net", 12,0,1,'2017-01-01 00:00:00'], // user is no longer subscribed to this article's feed; the star should not be counted in articleStarredCount
             ]
         ],
     ];
@@ -327,10 +328,26 @@ trait SeriesArticle {
         $this->compareIds([7,6], (new Context)->reverse(true)->limit(2)->latestEdition(8-1));
     }
 
+    function testListArticlesOfAMissingFolder() {
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Data::$db->articleList($this->user, (new Context)->folder(1));
+    }
+
+    function testListArticlesOfAMissingSubscription() {
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Data::$db->articleList($this->user, (new Context)->subscription(1));
+    }
+
     function testListArticlesCheckingProperties() {
         $this->user = "john.doe@example.org";
         Data::$db->dateFormatDefault("unix");
         $this->assertResult($this->matches, Data::$db->articleList($this->user));
+    }
+
+    function testListArticlesWithoutAuthority() {
+        Phake::when(Data::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Data::$db->articleList($this->user);
     }
 
     function testMarkAllArticlesUnread() {
@@ -502,7 +519,7 @@ trait SeriesArticle {
     }
 
     function testMarkAMissingArticle() {
-        $this->assertException("idMissing", "Db", "ExceptionInput");
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->article(1));
     }
 
@@ -546,7 +563,7 @@ trait SeriesArticle {
     }
 
     function testMarkAMissingEdition() {
-        $this->assertException("idMissing", "Db", "ExceptionInput");
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->edition(2));
     }
 
@@ -592,5 +609,40 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][] = [$this->user,5,0,1,$now];
         $state['arsse_marks']['rows'][] = [$this->user,7,0,1,$now];
         $this->compareExpectations($state);
+    }
+
+    function testMarkArticlesWithoutAuthority() {
+        Phake::when(Data::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Data::$db->articleMark($this->user, ['read'=>false]);
+    }
+
+    function testCountStarredArticles() {
+        $this->assertSame(2, Data::$db->articleStarredCount("john.doe@example.com"));
+        $this->assertSame(2, Data::$db->articleStarredCount("john.doe@example.org"));
+        $this->assertSame(2, Data::$db->articleStarredCount("john.doe@example.net"));
+        $this->assertSame(0, Data::$db->articleStarredCount("jane.doe@example.com"));
+    }
+
+    function testCountStarredArticlesWithoutAuthority() {
+        Phake::when(Data::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Data::$db->articleStarredCount($this->user);
+    }
+
+    function testFetchLatestEdition() {
+        $this->assertSame(1001, Data::$db->editionLatest($this->user));
+        $this->assertSame(4, Data::$db->editionLatest($this->user, (new Context)->subscription(12)));
+    }
+
+    function testFetchLatestEditionOfMissingSubscription() {
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Data::$db->editionLatest($this->user, (new Context)->subscription(1));
+    }
+
+    function testFetchLatestEditionWithoutAuthority() {
+        Phake::when(Data::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Data::$db->editionLatest($this->user);
     }
 }

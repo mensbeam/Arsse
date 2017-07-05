@@ -86,12 +86,12 @@ class Database {
         return $out;
     }
 
-    public function settingGet(string $key) {
-        return $this->db->prepare("SELECT value from arsse_settings where key is ?", "str")->run($key)->getValue();
-    }
-
     public function begin(): Db\Transaction {
         return $this->db->begin();
+    }
+
+    public function settingGet(string $key) {
+        return $this->db->prepare("SELECT value from arsse_settings where key is ?", "str")->run($key)->getValue();
     }
     
     public function settingSet(string $key, string $value): bool {
@@ -575,7 +575,17 @@ class Database {
 
     public function articleStarredCount(string $user, array $context = []): int {
         if(!Data::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        return $this->db->prepare("SELECT count(*) from arsse_marks where owner is ? and starred is 1", "str")->run($user)->getValue();
+        return $this->db->prepare(
+            "WITH RECURSIVE
+                user(user) as (SELECT ?),
+                subscribed_feeds(id,sub) as (SELECT feed,id from arsse_subscriptions join user on user is owner) ".
+            "SELECT count(*) from arsse_marks 
+                join user on user is owner 
+                join arsse_articles on arsse_marks.article is arsse_articles.id
+                join subscribed_feeds on arsse_articles.feed is subscribed_feeds.id
+            where starred is 1", 
+            "str"
+        )->run($user)->getValue();
     }
 
     public function editionLatest(string $user, Context $context = null): int {
@@ -589,27 +599,12 @@ class Database {
             $q->setWhere("arsse_feeds.id is ?", "int", $id);
         } else {
             $q->setCTE("user(user) as (SELECT ?)", "str", $user);
-            if($context->folder()) {
-                // if a folder is specified, make sure it exists
-                $this->folderValidateId($user, $context->folder);
-                // if it does exist, add a common table expression to list it and its children so that we select from the entire subtree
-                $q->setCTE("folders(folder) as (SELECT ? union select id from arsse_folders join folders on parent is folder)", "int", $context->folder);
-                // add another CTE for the subscriptions within the folder
-                $q->setCTE(
-                    "feeds(feed) as (SELECT feed from arsse_subscriptions join user on user is owner join folders on arsse_subscription.folder is folders.folder)", 
-                    [], // binding types 
-                    [], // binding values
-                    "join feeds on arsse_articles.feed is feeds.feed" // join expression
-                );
-            } else {
-                // if no folder is specified, a single CTE is added
-                $q->setCTE(
-                    "feeds(feed) as (SELECT feed from arsse_subscriptions join user on user is owner)", 
-                    [], // binding types 
-                    [], // binding values
-                    "join feeds on arsse_articles.feed is feeds.feed" // join expression
-                );
-            }
+            $q->setCTE(
+                "feeds(feed) as (SELECT feed from arsse_subscriptions join user on user is owner)", 
+                [], // binding types 
+                [], // binding values
+                "join feeds on arsse_articles.feed is feeds.feed" // join expression
+            );
         }
         return (int) $this->db->prepare($q)->run()->getValue();
     }
@@ -797,7 +792,7 @@ class Database {
                 arsse_articles.id is ? and arsse_subscriptions.owner is ?",
             "int", "str"
         )->run($id, $user)->getRow();
-        if(!$out) throw new Db\ExceptionInput("idMissing", ["action" => $this->caller(), "field" => "article", 'id' => $id]);
+        if(!$out) throw new Db\ExceptionInput("subjectMissing", ["action" => $this->caller(), "field" => "article", 'id' => $id]);
         return $out;
     }
 
@@ -815,7 +810,7 @@ class Database {
                 edition is ? and arsse_subscriptions.owner is ?",
             "int", "str"
         )->run($id, $user)->getRow();
-        if(!$out) throw new Db\ExceptionInput("idMissing", ["action" => $this->caller(), "field" => "edition", 'id' => $id]);
+        if(!$out) throw new Db\ExceptionInput("subjectMissing", ["action" => $this->caller(), "field" => "edition", 'id' => $id]);
         return $out;
     }
 }
