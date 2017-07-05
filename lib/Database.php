@@ -622,12 +622,12 @@ class Database {
                 arsse_articles.id as id,
                 arsse_articles.url as url,
                 title,author,content,guid,
-                DATEFORMAT(?, published) as published,
-                DATEFORMAT(?, edited) as edited,
+                DATEFORMAT(?, published) as published_date,
+                DATEFORMAT(?, edited) as edited_date,
                 DATEFORMAT(?, max(
                     modified, 
                     coalesce((select modified from arsse_marks join user on user is owner where article is arsse_articles.id),'')
-                )) as modified,
+                )) as modified_date,
                 NOT (select count(*) from arsse_marks join user on user is owner where article is arsse_articles.id and read is 1) as unread,
                 (select count(*) from arsse_marks join user on user is owner where article is arsse_articles.id and starred is 1) as starred,
                 (select max(id) from arsse_editions where article is arsse_articles.id) as edition,
@@ -665,8 +665,8 @@ class Database {
         if($context->oldestEdition()) $q->setWhere("edition >= ?", "int", $context->oldestEdition);
         if($context->latestEdition()) $q->setWhere("edition <= ?", "int", $context->latestEdition);
         // filter based on lastmod time
-        if($context->modifiedSince()) $q->setWhere("modified >= ?", "datetime", $context->modifiedSince);
-        if($context->notModifiedSince()) $q->setWhere("modified <= ?", "datetime", $context->notModifiedSince);
+        if($context->modifiedSince()) $q->setWhere("modified_date >= ?", "datetime", $context->modifiedSince);
+        if($context->notModifiedSince()) $q->setWhere("modified_date <= ?", "datetime", $context->notModifiedSince);
         // filter for un/read and un/starred status if specified
         if($context->unread()) $q->setWhere("unread is ?", "bool", $context->unread);
         if($context->starred()) $q->setWhere("starred is ?", "bool", $context->starred);
@@ -707,8 +707,8 @@ class Database {
         if($context->edition()) {
             // make sure the edition exists
             $edition = $this->articleValidateEdition($user, $context->edition);
-            // if the edition is not the latest, make no marks and return
-            if(!$edition['current']) return false;
+            // if the edition is not the latest, do not mark the read flag
+            if(!$edition['current']) $values[0] = null;
         } else if($context->article()) {
             // otherwise if an article context is specified, make sure it's valid
             $this->articleValidateId($user, $context->article);
@@ -722,7 +722,7 @@ class Database {
                     (select max(id) from arsse_editions where article is arsse_articles.id) as edition,
                     max(arsse_articles.modified, 
                         coalesce((select modified from arsse_marks join user on user is owner where article is arsse_articles.id),'')
-                    ) as modified,
+                    ) as modified_date,
                     (
                         not exists(select id from arsse_marks join user on user is owner where article is arsse_articles.id) 
                         and exists(select * from target_values where read is 1 or starred is 1)
@@ -744,8 +744,10 @@ class Database {
             // common table expression with the values to set
             $q->setCTE("target_values(read,starred) as (select ?,?)", ["bool","bool"], $values);
             if($context->edition()) {
+                // if an edition is specified, filter for its previously identified article
                 $q->setWhere("arsse_articles.id is ?", "int", $edition['article']);
             } else if($context->article()) {
+                // if an article is specified, filter for it (it has already been validated above)
                 $q->setWhere("arsse_articles.id is ?", "int", $context->article);
             } else if($context->subscription()) {
                 // if a subscription is specified, make sure it exists
@@ -767,8 +769,8 @@ class Database {
             if($context->oldestEdition()) $q->setWhere("edition >= ?", "int", $context->oldestEdition);
             if($context->latestEdition()) $q->setWhere("edition <= ?", "int", $context->latestEdition);
             // filter based on lastmod time
-            if($context->modifiedSince()) $q->setWhere("modified >= ?", "datetime", $context->modifiedSince);
-            if($context->notModifiedSince()) $q->setWhere("modified <= ?", "datetime", $context->notModifiedSince);
+            if($context->modifiedSince()) $q->setWhere("modified_date >= ?", "datetime", $context->modifiedSince);
+            if($context->notModifiedSince()) $q->setWhere("modified_date <= ?", "datetime", $context->notModifiedSince);
             // push the current query onto the CTE stack and execute the query we're actually interested in
             $q->pushCTE(
                 "target_articles(id,edition,modified,to_insert,to_update)", // CTE table specification
@@ -799,7 +801,7 @@ class Database {
         return $out;
     }
 
-    public function articleValidateEdition(string $user, int $id): array {
+    protected function articleValidateEdition(string $user, int $id): array {
         $out = $this->db->prepare(
             "SELECT 
                 arsse_editions.id as edition, 

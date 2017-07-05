@@ -32,8 +32,11 @@ trait DateFormatter {
         } else if($date===null) {
             return null;
         } else if(is_string($date)) {
-            $time = strtotime($date);
-            if($time===false) return null;
+            try {
+                $time = (new \DateTime($date, new \DateTimeZone("UTC")))->getTimestamp();
+            } catch(\Throwable $e) {
+                return null;
+            }
         } else if (is_bool($date)) {
             return null;
         } else {

@@ -178,9 +178,9 @@ trait SeriesArticle {
             'author' => '',
             'content' => '<p>Article content 1</p>',
             'guid' => 'e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda',
-            'published' => 946684800,
-            'edited' => 946684801,
-            'modified' => 946688400,
+            'published_date' => 946684800,
+            'edited_date' => 946684801,
+            'modified_date' => 946688400,
             'unread' => 1,
             'starred' => 0,
             'edition' => 101,
@@ -196,9 +196,9 @@ trait SeriesArticle {
             'author' => '',
             'content' => '<p>Article content 2</p>',
             'guid' => '5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7',
-            'published' => 946771200,
-            'edited' => 946771202,
-            'modified' => 946778400,
+            'published_date' => 946771200,
+            'edited_date' => 946771202,
+            'modified_date' => 946778400,
             'unread' => 0,
             'starred' => 0,
             'edition' => 202,
@@ -214,9 +214,9 @@ trait SeriesArticle {
             'author' => '',
             'content' => '<p>Article content 3</p>',
             'guid' => '31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92',
-            'published' => 946857600,
-            'edited' => 946857603,
-            'modified' => 946868400,
+            'published_date' => 946857600,
+            'edited_date' => 946857603,
+            'modified_date' => 946868400,
             'unread' => 1,
             'starred' => 1,
             'edition' => 203,
@@ -232,9 +232,9 @@ trait SeriesArticle {
             'author' => '',
             'content' => '<p>Article content 4</p>',
             'guid' => '804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180',
-            'published' => 946944000,
-            'edited' => 946944004,
-            'modified' => 946958400,
+            'published_date' => 946944000,
+            'edited_date' => 946944004,
+            'modified_date' => 946958400,
             'unread' => 0,
             'starred' => 1,
             'edition' => 204,
@@ -250,9 +250,9 @@ trait SeriesArticle {
             'author' => '',
             'content' => '<p>Article content 5</p>',
             'guid' => 'db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41',
-            'published' => 947030400,
-            'edited' => 947030405,
-            'modified' => 947048400,
+            'published_date' => 947030400,
+            'edited_date' => 947030405,
+            'modified_date' => 947048400,
             'unread' => 1,
             'starred' => 0,
             'edition' => 305,
@@ -271,7 +271,15 @@ trait SeriesArticle {
             $this->data['arsse_articles']['rows'][] = [++$a,$b,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z"];
             $this->data['arsse_editions']['rows'][] = [$a,$a];
         }
+        $this->checkTables = ['arsse_marks' => ["owner","article","read","starred","modified"],];
         $this->user = "john.doe@example.net";
+    }
+
+    protected function compareIds(array $exp, Context $c) {
+        $ids = array_column($ids = Data::$db->articleList($this->user, $c)->getAll(), "id");
+        sort($ids);
+        sort($exp);
+        $this->assertEquals($exp, $ids);
     }
 
     function testListArticlesCheckingContext() {
@@ -328,9 +336,7 @@ trait SeriesArticle {
     function testMarkAllArticlesUnread() {
         Data::$db->articleMark($this->user, ['read'=>false]);
         $now = $this->dateTransform(time(), "sql");
-        $state = $this->primeExpectations($this->data, [
-            'arsse_marks' => ["owner","article","read","starred","modified"],
-        ]);
+        $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][2] = 0;
         $state['arsse_marks']['rows'][9][4] = $now;
         $state['arsse_marks']['rows'][11][2] = 0;
@@ -341,9 +347,7 @@ trait SeriesArticle {
     function testMarkAllArticlesRead() {
         Data::$db->articleMark($this->user, ['read'=>true]);
         $now = $this->dateTransform(time(), "sql");
-        $state = $this->primeExpectations($this->data, [
-            'arsse_marks' => ["owner","article","read","starred","modified"],
-        ]);
+        $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][8][2] = 1;
         $state['arsse_marks']['rows'][8][4] = $now;
         $state['arsse_marks']['rows'][10][2] = 1;
@@ -358,9 +362,7 @@ trait SeriesArticle {
     function testMarkAllArticlesUnstarred() {
         Data::$db->articleMark($this->user, ['starred'=>false]);
         $now = $this->dateTransform(time(), "sql");
-        $state = $this->primeExpectations($this->data, [
-            'arsse_marks' => ["owner","article","read","starred","modified"],
-        ]);
+        $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][10][3] = 0;
         $state['arsse_marks']['rows'][10][4] = $now;
         $state['arsse_marks']['rows'][11][3] = 0;
@@ -371,9 +373,7 @@ trait SeriesArticle {
     function testMarkAllArticlesStarred() {
         Data::$db->articleMark($this->user, ['starred'=>true]);
         $now = $this->dateTransform(time(), "sql");
-        $state = $this->primeExpectations($this->data, [
-            'arsse_marks' => ["owner","article","read","starred","modified"],
-        ]);
+        $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][8][3] = 1;
         $state['arsse_marks']['rows'][8][4] = $now;
         $state['arsse_marks']['rows'][9][3] = 1;
@@ -388,9 +388,7 @@ trait SeriesArticle {
     function testMarkAllArticlesUnreadAndUnstarred() {
         Data::$db->articleMark($this->user, ['read'=>false,'starred'=>false]);
         $now = $this->dateTransform(time(), "sql");
-        $state = $this->primeExpectations($this->data, [
-            'arsse_marks' => ["owner","article","read","starred","modified"],
-        ]);
+        $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][2] = 0;
         $state['arsse_marks']['rows'][9][4] = $now;
         $state['arsse_marks']['rows'][10][3] = 0;
@@ -404,9 +402,7 @@ trait SeriesArticle {
     function testMarkAllArticlesReadAndStarred() {
         Data::$db->articleMark($this->user, ['read'=>true,'starred'=>true]);
         $now = $this->dateTransform(time(), "sql");
-        $state = $this->primeExpectations($this->data, [
-            'arsse_marks' => ["owner","article","read","starred","modified"],
-        ]);
+        $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][8][2] = 1;
         $state['arsse_marks']['rows'][8][3] = 1;
         $state['arsse_marks']['rows'][8][4] = $now;
@@ -424,9 +420,7 @@ trait SeriesArticle {
     function testMarkAllArticlesUnreadAndStarred() {
         Data::$db->articleMark($this->user, ['read'=>false,'starred'=>true]);
         $now = $this->dateTransform(time(), "sql");
-        $state = $this->primeExpectations($this->data, [
-            'arsse_marks' => ["owner","article","read","starred","modified"],
-        ]);
+        $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][8][3] = 1;
         $state['arsse_marks']['rows'][8][4] = $now;
         $state['arsse_marks']['rows'][9][2] = 0;
@@ -444,9 +438,7 @@ trait SeriesArticle {
     function testMarkAllArticlesReadAndUnstarred() {
         Data::$db->articleMark($this->user, ['read'=>true,'starred'=>false]);
         $now = $this->dateTransform(time(), "sql");
-        $state = $this->primeExpectations($this->data, [
-            'arsse_marks' => ["owner","article","read","starred","modified"],
-        ]);
+        $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][8][2] = 1;
         $state['arsse_marks']['rows'][8][4] = $now;
         $state['arsse_marks']['rows'][10][2] = 1;
@@ -464,9 +456,7 @@ trait SeriesArticle {
     function testMarkATreeFolder() {
         Data::$db->articleMark($this->user, ['read'=>true], (new Context)->folder(7));
         $now = $this->dateTransform(time(), "sql");
-        $state = $this->primeExpectations($this->data, [
-            'arsse_marks' => ["owner","article","read","starred","modified"],
-        ]);
+        $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][] = [$this->user,5,1,0,$now];
         $state['arsse_marks']['rows'][] = [$this->user,6,1,0,$now];
         $state['arsse_marks']['rows'][] = [$this->user,7,1,0,$now];
@@ -477,9 +467,7 @@ trait SeriesArticle {
     function testMarkALeafFolder() {
         Data::$db->articleMark($this->user, ['read'=>true], (new Context)->folder(8));
         $now = $this->dateTransform(time(), "sql");
-        $state = $this->primeExpectations($this->data, [
-            'arsse_marks' => ["owner","article","read","starred","modified"],
-        ]);
+        $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][] = [$this->user,5,1,0,$now];
         $state['arsse_marks']['rows'][] = [$this->user,6,1,0,$now];
         $this->compareExpectations($state);
@@ -493,9 +481,7 @@ trait SeriesArticle {
     function testMarkASubscription() {
         Data::$db->articleMark($this->user, ['read'=>true], (new Context)->subscription(13));
         $now = $this->dateTransform(time(), "sql");
-        $state = $this->primeExpectations($this->data, [
-            'arsse_marks' => ["owner","article","read","starred","modified"],
-        ]);
+        $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][] = [$this->user,5,1,0,$now];
         $state['arsse_marks']['rows'][] = [$this->user,6,1,0,$now];
         $this->compareExpectations($state);
@@ -509,9 +495,7 @@ trait SeriesArticle {
     function testMarkAnArticle() {
         Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->article(20));
         $now = $this->dateTransform(time(), "sql");
-        $state = $this->primeExpectations($this->data, [
-            'arsse_marks' => ["owner","article","read","starred","modified"],
-        ]);
+        $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
         $this->compareExpectations($state);
@@ -525,19 +509,39 @@ trait SeriesArticle {
     function testMarkAnEdition() {
         Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->edition(1001));
         $now = $this->dateTransform(time(), "sql");
-        $state = $this->primeExpectations($this->data, [
-            'arsse_marks' => ["owner","article","read","starred","modified"],
-        ]);
+        $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
         $this->compareExpectations($state);
     }
 
-    function testMarkAStaleEdition() {
-        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->edition(20)); // no changes occur
-        $state = $this->primeExpectations($this->data, [
-            'arsse_marks' => ["owner","article","read","starred","modified"],
-        ]);
+    function testMarkAStaleEditionUnread() {
+        Data::$db->articleMark($this->user, ['read'=>false], (new Context)->edition(20)); // no changes occur
+        $state = $this->primeExpectations($this->data, $this->checkTables);
+        $this->compareExpectations($state);
+    }
+
+    function testMarkAStaleEditionStarred() {
+        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->edition(20));
+        $now = $this->dateTransform(time(), "sql");
+        $state = $this->primeExpectations($this->data, $this->checkTables);
+        $state['arsse_marks']['rows'][9][3] = 1;
+        $state['arsse_marks']['rows'][9][4] = $now;
+        $this->compareExpectations($state);
+    }
+
+    function testMarkAStaleEditionUnreadAndStarred() {
+        Data::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->edition(20)); // only starred is changed
+        $now = $this->dateTransform(time(), "sql");
+        $state = $this->primeExpectations($this->data, $this->checkTables);
+        $state['arsse_marks']['rows'][9][3] = 1;
+        $state['arsse_marks']['rows'][9][4] = $now;
+        $this->compareExpectations($state);
+    }
+
+    function testMarkAStaleEditionUnreadAndUnstarred() {
+        Data::$db->articleMark($this->user, ['read'=>false,'starred'=>false], (new Context)->edition(20)); // no changes occur
+        $state = $this->primeExpectations($this->data, $this->checkTables);
         $this->compareExpectations($state);
     }
 
@@ -546,10 +550,47 @@ trait SeriesArticle {
         Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->edition(2));
     }
 
-    protected function compareIds(array $exp, Context $c) {
-        $ids = array_column($ids = Data::$db->articleList($this->user, $c)->getAll(), "id");
-        sort($ids);
-        sort($exp);
-        $this->assertEquals($exp, $ids);
+    function testMarkByOldestEdition() {
+        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->oldestEdition(19));
+        $now = $this->dateTransform(time(), "sql");
+        $state = $this->primeExpectations($this->data, $this->checkTables);
+        $state['arsse_marks']['rows'][8][3] = 1;
+        $state['arsse_marks']['rows'][8][4] = $now;
+        $state['arsse_marks']['rows'][9][3] = 1;
+        $state['arsse_marks']['rows'][9][4] = $now;
+        $this->compareExpectations($state);
+    }
+
+    function testMarkByLatestEdition() {
+        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->latestEdition(20));
+        $now = $this->dateTransform(time(), "sql");
+        $state = $this->primeExpectations($this->data, $this->checkTables);
+        $state['arsse_marks']['rows'][8][3] = 1;
+        $state['arsse_marks']['rows'][8][4] = $now;
+        $state['arsse_marks']['rows'][] = [$this->user,5,0,1,$now];
+        $state['arsse_marks']['rows'][] = [$this->user,6,0,1,$now];
+        $state['arsse_marks']['rows'][] = [$this->user,7,0,1,$now];
+        $state['arsse_marks']['rows'][] = [$this->user,8,0,1,$now];
+        $this->compareExpectations($state);
+    }
+
+    function testMarkByLastModified() {
+        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->modifiedSince('2017-01-01T00:00:00Z'));
+        $now = $this->dateTransform(time(), "sql");
+        $state = $this->primeExpectations($this->data, $this->checkTables);
+        $state['arsse_marks']['rows'][8][3] = 1;
+        $state['arsse_marks']['rows'][8][4] = $now;
+        $state['arsse_marks']['rows'][9][3] = 1;
+        $state['arsse_marks']['rows'][9][4] = $now;
+        $this->compareExpectations($state);
+    }
+
+    function testMarkByNotLastModified() {
+        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->notModifiedSince('2000-01-01T00:00:00Z'));
+        $now = $this->dateTransform(time(), "sql");
+        $state = $this->primeExpectations($this->data, $this->checkTables);
+        $state['arsse_marks']['rows'][] = [$this->user,5,0,1,$now];
+        $state['arsse_marks']['rows'][] = [$this->user,7,0,1,$now];
+        $this->compareExpectations($state);
     }
 }
