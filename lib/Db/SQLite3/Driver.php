@@ -125,22 +125,13 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         return new Result($r, [$changes, $lastId]);
     }
 
-    public function prepareArray($query, array $paramTypes): \JKingWeb\Arsse\Db\Statement {
-        if($query instanceof \JKingWeb\Arsse\Misc\Query) {
-            $preValues = $query->getCTEValues();
-            $postValues = $query->getWhereValues();
-            $paramTypes = [$query->getCTETypes(), $paramTypes, $query->getWhereTypes()];
-            $query = $query->getQuery();
-        } else {
-            $preValues = [];
-            $postValues = [];
-        }
+    public function prepareArray(string $query, array $paramTypes): \JKingWeb\Arsse\Db\Statement {
         try {
             $s = $this->db->prepare($query);
         } catch(\Exception $e) {
             list($excClass, $excMsg, $excData) = $this->exceptionBuild();
             throw new $excClass($excMsg, $excData);
         }
-        return new Statement($this->db, $s, $paramTypes, $preValues, $postValues);
+        return new Statement($this->db, $s, $paramTypes);
     }
 }

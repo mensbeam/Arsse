@@ -303,7 +303,7 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
         $this->assertFalse($this->drv->isLocked());
         $this->assertTrue($this->drv->lock());
         $this->assertFalse($this->drv->isLocked());
-        $this->drv->exec("CREATE TABLE arsse_settings(key primary key, value, type) without rowid; PRAGMA user_version=1");
+        $this->drv->exec("CREATE TABLE arsse_meta(key text primary key, value text); PRAGMA user_version=1");
         $this->assertTrue($this->drv->lock());
         $this->assertTrue($this->drv->isLocked());
         $this->assertFalse($this->drv->lock());

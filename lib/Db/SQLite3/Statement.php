@@ -26,12 +26,10 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     protected $db;
     protected $st;
 
-    public function __construct(\SQLite3 $db, \SQLite3Stmt $st, array $bindings = [], array $preValues = [], array $postValues = []) {
+    public function __construct(\SQLite3 $db, \SQLite3Stmt $st, array $bindings = []) {
         $this->db = $db;
         $this->st = $st;
         $this->rebindArray($bindings);
-        $this->values['pre'] = $preValues;
-        $this->values['post'] = $postValues;
     }
 
     public function __destruct() {
@@ -49,7 +47,6 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
 
     public function runArray(array $values = []): \JKingWeb\Arsse\Db\Result {
         $this->st->clear();
-        $values = [$this->values['pre'], $values, $this->values['post']];
         $this->bindValues($values);
         try {
             $r = $this->st->execute();

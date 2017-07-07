@@ -91,19 +91,19 @@ class Database {
     }
 
     public function settingGet(string $key) {
-        return $this->db->prepare("SELECT value from arsse_settings where key is ?", "str")->run($key)->getValue();
+        return $this->db->prepare("SELECT value from arsse_meta where key is ?", "str")->run($key)->getValue();
     }
     
     public function settingSet(string $key, string $value): bool {
-        $out = !$this->db->prepare("UPDATE arsse_settings set value = ? where key is ?", "str", "str")->run($value, $key)->changes();
+        $out = !$this->db->prepare("UPDATE arsse_meta set value = ? where key is ?", "str", "str")->run($value, $key)->changes();
         if(!$out) {
-            $out = $this->db->prepare("INSERT INTO arsse_settings(key,value)", "str", "str")->run($key, $value)->changes();
+            $out = $this->db->prepare("INSERT INTO arsse_meta(key,value)", "str", "str")->run($key, $value)->changes();
         }
         return (bool) $out;
     }
 
     public function settingRemove(string $key): bool {
-        $this->db->prepare("DELETE from arsse_settings where key is ?", "str")->run($key);
+        $this->db->prepare("DELETE from arsse_meta where key is ?", "str")->run($key);
         return true;
     }
 
@@ -358,13 +358,14 @@ class Database {
                 join user on user is owner 
                 join arsse_feeds on feed = arsse_feeds.id 
                 left join topmost on folder=f_id",
-             "", // where terms
-             "pinned desc, title" // order by terms
+             "str", // where terms
+             $this->dateFormatDefault
         );
+        $q->setOrder("pinned desc, title");
         // define common table expressions
-        $q->setCTE("user(user) as (SELECT ?)", "str", $user);  // the subject user; this way we only have to pass it to prepare() once
+        $q->setCTE("user(user)", "SELECT ?", "str", $user);  // the subject user; this way we only have to pass it to prepare() once
         // topmost folders belonging to the user
-        $q->setCTE("topmost(f_id,top) as (select id,id from arsse_folders join user on owner is user where parent is null union select id,top from arsse_folders join topmost on parent=f_id)");
+        $q->setCTE("topmost(f_id,top)", "SELECT id,id from arsse_folders join user on owner is user where parent is null union select id,top from arsse_folders join topmost on parent=f_id");
         if(!is_null($id)) {
             // this condition facilitates the implementation of subscriptionPropertiesGet, which would otherwise have to duplicate the complex query; it takes precedence over a specified folder
             // if an ID is specified, add a suitable WHERE condition and bindings
@@ -373,11 +374,11 @@ class Database {
             // if a folder is specified, make sure it exists
             $this->folderValidateId($user, $folder);
             // if it does exist, add a common table expression to list it and its children so that we select from the entire subtree
-            $q->setCTE("folders(folder) as (SELECT ? union select id from arsse_folders join folders on parent is folder)", "int", $folder);
+            $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on parent is folder", "int", $folder);
             // add a suitable WHERE condition
             $q->setWhere("folder in (select folder from folders)");
         }
-        return $this->db->prepare($q, "str")->run($this->dateFormatDefault);
+        return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
     }
 
     public function subscriptionRemove(string $user, int $id): bool {
@@ -598,15 +599,10 @@ class Database {
             // a simple WHERE clause is required here
             $q->setWhere("arsse_feeds.id is ?", "int", $id);
         } else {
-            $q->setCTE("user(user) as (SELECT ?)", "str", $user);
-            $q->setCTE(
-                "feeds(feed) as (SELECT feed from arsse_subscriptions join user on user is owner)", 
-                [], // binding types 
-                [], // binding values
-                "join feeds on arsse_articles.feed is feeds.feed" // join expression
-            );
+            $q->setCTE("user(user)", "SELECT ?", "str", $user);
+            $q->setCTE("feeds(feed)", "SELECT feed from arsse_subscriptions join user on user is owner", [], [], "join feeds on arsse_articles.feed is feeds.feed");
         }
-        return (int) $this->db->prepare($q)->run()->getValue();
+        return (int) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
     }
 
     public function articleList(string $user, Context $context = null): Db\Result {
@@ -634,27 +630,27 @@ class Database {
                 join subscribed_feeds on arsse_articles.feed is subscribed_feeds.id
                 left join arsse_enclosures on arsse_enclosures.article is arsse_articles.id
             ",
-            "", // WHERE clause
-            "edition".($context->reverse ? " desc" : ""), // ORDER BY clause
-            $context->limit,
-            $context->offset
+            ["str", "str", "str"],
+            [$this->dateFormatDefault, $this->dateFormatDefault, $this->dateFormatDefault]
         );
-        $q->setCTE("user(user) as (SELECT ?)", "str", $user);
+        $q->setOrder("edition".($context->reverse ? " desc" : ""));
+        $q->setLimit($context->limit, $context->offset);
+        $q->setCTE("user(user)", "SELECT ?", "str", $user);
         if($context->subscription()) {
             // if a subscription is specified, make sure it exists
             $id = $this->subscriptionValidateId($user, $context->subscription)['feed'];
             // add a basic CTE that will join in only the requested subscription
-            $q->setCTE("subscribed_feeds(id,sub) as (SELECT ?,?)", ["int","int"], [$id,$context->subscription]);
+            $q->setCTE("subscribed_feeds(id,sub)", "SELECT ?,?", ["int","int"], [$id,$context->subscription]);
         } else if($context->folder()) {
             // if a folder is specified, make sure it exists
             $this->folderValidateId($user, $context->folder);
             // if it does exist, add a common table expression to list it and its children so that we select from the entire subtree
-            $q->setCTE("folders(folder) as (SELECT ? union select id from arsse_folders join folders on parent is folder)", "int", $context->folder);
+            $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on parent is folder", "int", $context->folder);
             // add another CTE for the subscriptions within the folder
-            $q->setCTE("subscribed_feeds(id,sub) as (SELECT feed,id from arsse_subscriptions join user on user is owner join folders on arsse_subscriptions.folder is folders.folder)");
+            $q->setCTE("subscribed_feeds(id,sub)", "SELECT feed,id from arsse_subscriptions join user on user is owner join folders on arsse_subscriptions.folder is folders.folder");
         } else {
             // otherwise add a CTE for all the user's subscriptions
-            $q->setCTE("subscribed_feeds(id,sub) as (SELECT feed,id from arsse_subscriptions join user on user is owner)");
+            $q->setCTE("subscribed_feeds(id,sub)", "SELECT feed,id from arsse_subscriptions join user on user is owner");
         }
         // filter based on edition offset
         if($context->oldestEdition()) $q->setWhere("edition >= ?", "int", $context->oldestEdition);
@@ -666,7 +662,7 @@ class Database {
         if($context->unread()) $q->setWhere("unread is ?", "bool", $context->unread);
         if($context->starred()) $q->setWhere("starred is ?", "bool", $context->starred);
         // perform the query and return results
-        return $this->db->prepare($q, "str", "str", "str")->run($this->dateFormatDefault, $this->dateFormatDefault, $this->dateFormatDefault);
+        return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
     }
 
     public function articleMark(string $user, array $data, Context $context = null): bool {
@@ -724,9 +720,9 @@ class Database {
                 FROM arsse_articles"
             );
             // common table expression for the affected user
-            $q->setCTE("user(user) as (SELECT ?)", "str", $user);
+            $q->setCTE("user(user)", "SELECT ?", "str", $user);
             // common table expression with the values to set
-            $q->setCTE("target_values(read,starred) as (select ?,?)", ["bool","bool"], $values);
+            $q->setCTE("target_values(read,starred)", "SELECT ?,?", ["bool","bool"], $values);
             if($context->edition()) {
                 // if an edition is specified, filter for its previously identified article
                 $q->setWhere("arsse_articles.id is ?", "int", $edition['article']);
@@ -737,25 +733,25 @@ class Database {
                 // if a subscription is specified, make sure it exists
                 $id = $this->subscriptionValidateId($user, $context->subscription)['feed'];
                 // add a basic CTE that will join in only the requested subscription
-                $q->setCTE("subscribed_feeds(id,sub) as (SELECT ?,?)", ["int","int"], [$id,$context->subscription], "join subscribed_feeds on feed is subscribed_feeds.id");
+                $q->setCTE("subscribed_feeds(id,sub)", "SELECT ?,?", ["int","int"], [$id,$context->subscription], "join subscribed_feeds on feed is subscribed_feeds.id");
             } else if($context->folder()) {
                 // if a folder is specified, make sure it exists
                 $this->folderValidateId($user, $context->folder);
                 // if it does exist, add a common table expression to list it and its children so that we select from the entire subtree
-                $q->setCTE("folders(folder) as (SELECT ? union select id from arsse_folders join folders on parent is folder)", "int", $context->folder);
+                $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on parent is folder", "int", $context->folder);
                 // add another CTE for the subscriptions within the folder
-                $q->setCTE("subscribed_feeds(id,sub) as (SELECT feed,id from arsse_subscriptions join user on user is owner join folders on arsse_subscriptions.folder is folders.folder)", [], [], "join subscribed_feeds on feed is subscribed_feeds.id");
+                $q->setCTE("subscribed_feeds(id,sub)", "SELECT feed,id from arsse_subscriptions join user on user is owner join folders on arsse_subscriptions.folder is folders.folder", [], [], "join subscribed_feeds on feed is subscribed_feeds.id");
             } else {
                 // otherwise add a CTE for all the user's subscriptions
-                $q->setCTE("subscribed_feeds(id,sub) as (SELECT feed,id from arsse_subscriptions join user on user is owner)", [], [], "join subscribed_feeds on feed is subscribed_feeds.id");
+                $q->setCTE("subscribed_feeds(id,sub)", "SELECT feed,id from arsse_subscriptions join user on user is owner", [], [], "join subscribed_feeds on feed is subscribed_feeds.id");
             }
             if($context->editions()) {
                 // if multiple specific editions have been requested, prepare a CTE to list them and their articles
                 if(!$context->editions) throw new Db\ExceptionInput("tooShort", ['field' => "editions", 'action' => __FUNCTION__, 'min' => 1]); // must have at least one array element
                 if(sizeof($context->editions) > 50) throw new Db\ExceptionInput("tooLong", ['field' => "editions", 'action' => __FUNCTION__, 'max' => 50]); // must not have more than 50 array elements
                 list($inParams, $inTypes) = $this->generateIn($context->editions, "int");
-                $q->setCTE(
-                    "requested_articles(id,edition) as (select article,id as edition from arsse_editions where edition in ($inParams))",
+                $q->setCTE("requested_articles(id,edition)",
+                    "SELECT article,id as edition from arsse_editions where edition in ($inParams)",
                     $inTypes,
                     $context->editions
                 );
@@ -765,15 +761,15 @@ class Database {
                 if(!$context->articles) throw new Db\ExceptionInput("tooShort", ['field' => "articles", 'action' => __FUNCTION__, 'min' => 1]); // must have at least one array element
                 if(sizeof($context->articles) > 50) throw new Db\ExceptionInput("tooLong", ['field' => "articles", 'action' => __FUNCTION__, 'max' => 50]); // must not have more than 50 array elements
                 list($inParams, $inTypes) = $this->generateIn($context->articles, "int");
-                $q->setCTE(
-                    "requested_articles(id,edition) as (select id,(select max(id) from arsse_editions where article is arsse_articles.id) as edition from arsse_articles where arsse_articles.id in ($inParams))",
+                $q->setCTE("requested_articles(id,edition)", 
+                    "SELECT id,(select max(id) from arsse_editions where article is arsse_articles.id) as edition from arsse_articles where arsse_articles.id in ($inParams)",
                     $inTypes,
                     $context->articles
                 );
                 $q->setWhere("arsse_articles.id in (select id from requested_articles)");
             } else {
                 // if neither list is specified, mock an empty table
-                $q->setCTE("requested_articles(id,edition) as (select 'empty','table' where 1 is 0)");
+                $q->setCTE("requested_articles(id,edition)", "SELECT 'empty','table' where 1 is 0");
             }
             // filter based on edition offset
             if($context->oldestEdition()) $q->setWhere("edition >= ?", "int", $context->oldestEdition);
@@ -782,13 +778,9 @@ class Database {
             if($context->modifiedSince()) $q->setWhere("modified_date >= ?", "datetime", $context->modifiedSince);
             if($context->notModifiedSince()) $q->setWhere("modified_date <= ?", "datetime", $context->notModifiedSince);
             // push the current query onto the CTE stack and execute the query we're actually interested in
-            $q->pushCTE(
-                "target_articles(id,edition,modified_date,to_insert,honour_read,honour_star)", // CTE table specification
-                [], // CTE types
-                [], // CTE values
-                $query // new query body
-            );
-            $out += $this->db->prepare($q)->run()->changes();
+            $q->pushCTE("target_articles(id,edition,modified_date,to_insert,honour_read,honour_star)");
+            $q->setBody($query);
+            $out += $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
         }
         // commit the transaction
         $tr->commit();
