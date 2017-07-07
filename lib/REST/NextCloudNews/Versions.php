@@ -3,11 +3,11 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\REST\NextCloudNews;
 use JKingWeb\Arsse\REST\Response;
 
-class Versions extends \JKingWeb\Arsse\REST\AbstractHandler {
+class Versions implements \JKingWeb\Arsse\REST\Handler {
     function __construct() {
     }
 
-    function dispatch(\JKingWeb\Arsse\REST\Request $req): \JKingWeb\Arsse\REST\Response {
+    function dispatch(\JKingWeb\Arsse\REST\Request $req): Response {
         // if a method other than GET was used, this is an error
         if($req->method != "GET") {
             return new Response(405);

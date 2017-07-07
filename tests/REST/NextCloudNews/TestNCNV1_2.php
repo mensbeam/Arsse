@@ -390,7 +390,7 @@ class TestNCNV1_2 extends \PHPUnit\Framework\TestCase {
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[0]), 'application/json')));
         $exp = new Response(404);
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[1]), 'application/json')));
-        $exp = new Response(404);
+        $exp = new Response(422);
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[2]), 'application/json')));
         $exp = new Response(422);
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[3]), 'application/json')));

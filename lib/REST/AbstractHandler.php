@@ -6,24 +6,24 @@ abstract class AbstractHandler implements Handler {
     abstract function __construct();
     abstract function dispatch(Request $req): Response;
 
-    protected function mapFieldNames(array $data, array $map, bool $overwrite = false): array {
-        foreach($map as $from => $to) {
+    protected function fieldMapNames(array $data, array $map): array {
+        $out = [];
+        foreach($map as $to => $from) {
             if(array_key_exists($from, $data)) {
-                if($overwrite || !array_key_exists($to, $data)) $data[$to] = $data[$from];
-                unset($data[$from]);
+                $out[$to] = $data[$from];
             }
         }
-        return $data;
+        return $out;
     }    
     
-    protected function mapFieldTypes(array $data, array $map): array {
+    protected function fieldMapTypes(array $data, array $map): array {
         foreach($map as $key => $type) {
             if(array_key_exists($key, $data)) settype($data[$key], $type);
         }
         return $data;
     }
 
-    protected function validateId($id): bool {
+    protected function validateInt($id): bool {
         try {
             $ch1 = strval(intval($id));
             $ch2 = strval($id);
@@ -33,4 +33,47 @@ abstract class AbstractHandler implements Handler {
         return ($ch1 === $ch2);
     }
 
+    protected function NormalizeInput(array $data, array $types, string $dateFormat = "Y-m-d\TH:i:sP"): array {
+        $out = [];
+        foreach($data as $key => $value) {
+            if(!isset($types[$key])) {
+                $out[$key] = $value;
+                continue;
+            }
+            if(is_null($value)) {
+                $out[$key] = null;
+                continue;
+            }
+            switch($types[$key]) {
+                case "int":
+                    if($this->validateInt($value)) $out[$key] = (int) $value;
+                    break;
+                case "string":
+                    $out[$key] = (string) $value;
+                    break;
+                case "bool":
+                    if(is_bool($value)) {
+                        $out[$key] = $value;
+                    } else if($this->validateInt($value)) {
+                        $value = (int) $value;
+                        if($value > -1 && $value < 2) $out[$key] = $value;
+                    } else if(is_string($value)) {
+                        $value = trim(strtolower($value));
+                        if($value=="false") $out[$key] = false;
+                        if($value=="true") $out[$key] = true;
+                    }
+                    break;
+                case "float":
+                    if(is_numeric($value)) $out[$key] = (float) $value;
+                    break;
+                case "datetime":
+                    $t = \DateTime::createFromFormat($dateFormat, (string) $value);
+                    if($t) $out[$key] = $t;
+                    break;
+                default:
+                    throw new Exception("typeUnknown", $types[$key]);
+            }
+        }
+        return $out;
+    }
 }

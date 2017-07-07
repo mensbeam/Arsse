@@ -13,6 +13,24 @@ use JKingWeb\Arsse\REST\Exception405;
 
 class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     const REALM = "NextCloud News API v1-2";
+
+    protected $validInput = [
+        'name'         => "string",
+        'url'          => "string",
+        'folderId'     => "int",
+        'feedTitle'    => "string",
+        'userId'       => "string",
+        'feedId'       => "int",
+        'newestItemId' => "int",
+        'batchSize'    => "int",
+        'offset'       => "int",
+        'type'         => "int",
+        'id'           => "int",
+        'getRead'      => "bool",
+        'oldestFirst'  => "bool",
+        'lastModified' => "datetime",
+     // 'items'        => "array int", // just pass these through
+    ];
     
     function __construct() {
     }
@@ -36,7 +54,10 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $data = [];
         }
         // FIXME: Do query parameters take precedence in NextCloud? Is there a conflict error when values differ?
-        $data = array_merge($data, $req->query);
+        $data = $this->normalizeInput($data, $this->validInput, "U");
+        $query = $this->normalizeInput($req->query, $this->validInput, "U");
+        $data = array_merge($data, $query);
+        unset($query);
         // check to make sure the requested function is implemented
         try {
             $func = $this->chooseCall($req->paths, $req->method);
@@ -76,6 +97,19 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'all'      => ['GET' => "feedListStale"],
                 'update'   => ['GET' => "feedUpdate"],
             ],
+            'items' => [
+                ''                => ['GET' => "articleList"],
+                'updated'         => ['GET' => "articleList"],
+                'read'            => ['PUT' => "articleMarkReadAll"],
+                '0/read'          => ['PUT' => "articleMarkRead"],
+                '0/unread'        => ['PUT' => "articleMarkRead"],
+                'read/multiple'   => ['PUT' => "articleMarkReadMulti"],
+                'unread/multiple' => ['PUT' => "articleMarkReadMulti"],
+                '0/0/star'        => ['PUT' => "articleMarkStarred"],
+                '0/0/unstar'      => ['PUT' => "articleMarkStarred"],
+                'star/multiple'   => ['PUT' => "articleMarkStarredMulti"],
+                'unstar/multiple' => ['PUT' => "articleMarkStarredMulti"],
+            ],
             'cleanup' => [],
             'version' => [
                 '' => ['GET' => "versionReport"],
@@ -87,7 +121,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $scope = $url[0];
         // any URL components which are only digits should be replaced with "#", for easier comparison (integer segments are IDs, and we don't care about the specific ID)
         for($a = 0; $a < sizeof($url); $a++) {
-            if($this->validateId($url[$a])) $url[$a] = "0";
+            if($this->validateInt($url[$a])) $url[$a] = "0";
         }
         // normalize the HTTP method to uppercase
         $method = strtoupper($method);
@@ -113,6 +147,57 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // if the path was not found, return 501
         throw new Exception501();
+    }
+
+    protected function feedTranslate(array $feed): array {
+        // map fields to proper names
+        $feed = $this->fieldMapNames($feed, [
+            'id'               => "id",
+            'url'              => "url",
+            'title'            => "title",
+            'added'            => "added",
+            'pinned'           => "pinned",
+            'link'             => "source",
+            'faviconLink'      => "favicon",
+            'folderId'         => "top_folder",
+            'unreadCount'      => "unread",
+            'ordering'         => "order_type",
+            'updateErrorCount' => "err_count",
+            'lastUpdateError'  => "err_msg",
+        ]);
+        // cast values
+        $feed = $this->fieldMapTypes($feed, [
+            'folderId' => "int",
+            'pinned'   => "bool",
+        ]);
+        return $feed;
+    }
+
+    protected function articleTranslate(array $article) :array {
+        // map fields to proper names
+        $article = $this->fieldMapNames($article, [
+            'id'            => "edition",
+            'guid'          => "guid",
+            'guidHash'      => "id",
+            'url'           => "url",
+            'title'         => "title",
+            'author'        => "author",
+            'pubDate'       => "edited_date",
+            'body'          => "content",
+            'enclsoureMime' => "media_type",
+            'enclosureLink' => "media_url",
+            'feedId'        => "feed",
+            'unread'        => "unread",
+            'starred'       => "starred",
+            'lastModified'  => "modified_date",
+            'fingerprint'   => "fingerprint",
+        ]);
+        // cast values
+        $article = $this->fieldMapTypes($article, [
+            'unread'  => "bool",
+            'starred' => "bool",
+        ]);
+        return $article;
     }
     
     // list folders
@@ -175,45 +260,30 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new Response(204);
     }
 
+    protected function folderMarkRead(array $url, array $data): Response {
+        $c = new Context;
+        if(isset($data['newestItemId'])) {
+            // if the item ID is valid (i.e. an integer), add it to the context
+            $c->latestEdition($data['newestItemId']);
+        } else {
+            // otherwise return an error
+            return new Response(422);
+        }
+        // add the folder ID to the context
+        $c->folder((int) $url[1]);
+        // perform the operation
+        try {
+            Data::$db->articleMark(Data::$user->id, ['read' => true], $c);
+        } catch(ExceptionInput $e) {
+            // folder does not exist
+            return new Response(404);
+        }
+        return new Response(204);
+    }
+
     // return the server version
     protected function versionReport(array $url, array $data): Response {
         return new Response(200, ['version' => \JKingWeb\Arsse\VERSION]);
-    }
-
-    protected function feedTranslate(array $feed, bool $overwrite = false): array {
-        // cast values
-        $feed = $this->mapFieldTypes($feed, [
-            'top_folder' => "int",
-            'pinned'     => "bool",
-        ]);
-        // map fields to proper names
-        $feed = $this->mapFieldNames($feed, [
-            'source'     => "link",
-            'favicon'    => "faviconLink",
-            'top_folder' => "folderId",
-            'unread'     => "unreadCount",
-            'order_type' => "ordering",
-            'err_count'  => "updateErrorCount",
-            'err_msg'    => "lastUpdateError",
-        ], $overwrite);
-        // remove the true folder since the protocol does not support nesting
-        unset($feed['folder']);
-        return $feed;
-    }
-    
-    // return list of feeds for the logged-in user
-    protected function subscriptionList(array $url, array $data): Response {
-        $subs = Data::$db->subscriptionList(Data::$user->id);
-        $out = [];
-        foreach($subs as $sub) {
-            $sub = $this->feedTranslate($sub);
-            $out[] = $sub;
-        }
-        $out = ['feeds' => $out];
-        $out['starredCount'] = Data::$db->articleStarredCount(Data::$user->id);
-        $newest = Data::$db->editionLatest(Data::$user->id);
-        if($newest) $out['newestItemId'] = $newest;
-        return new Response(200, $out);
     }
     
     // return list of feeds which should be refreshed
@@ -235,10 +305,9 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // function requires admin rights per spec
         if(Data::$user->rightsGet(Data::$user->id)==User::RIGHTS_NONE) return new Response(403);
         // perform an update of a single feed
-        if(!array_key_exists("feedId", $data)) return new Response(422);
-        if(!$this->validateId($data['feedId'])) return new Response(404);
+        if(!isset($data['feedId'])) return new Response(422);
         try {
-            Data::$db->feedUpdate((int) $data['feedId']);
+            Data::$db->feedUpdate($data['feedId']);
         } catch(ExceptionInput $e) {
             return new Response(404);
         }
@@ -248,22 +317,13 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     // add a new feed
     protected function subscriptionAdd(array $url, array $data): Response {
         // normalize the feed URL
-        if(!array_key_exists("url", $data)) {
-            $url = "";
-        } else {
-            $url = $data['url'];
-        }
-        // normalize the folder ID, if specified
-        if(!array_key_exists("folderId", $data)) {
-            $folder = null;
-        } else {
-            $folder = $data['folderId'];
-            $folder = $folder ? $folder : null;
-        }
+        if(!isset($data['url'])) return new Response(422);
+        // normalize the folder ID, if specified; zero should be transformed to null
+        $folder = (isset($data['folderId']) && $data['folderId']) ? $data['folderId'] : null;
         // try to add the feed
         $tr = Data::$db->begin();
         try {
-            $id = Data::$db->subscriptionAdd(Data::$user->id, $url);
+            $id = Data::$db->subscriptionAdd(Data::$user->id, $data['url']);
         } catch(ExceptionInput $e) {
             // feed already exists
             return new Response(409);
@@ -286,6 +346,20 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if($newest) $out['newestItemId'] = $newest;
         return new Response(200, $out);
     }
+    
+    // return list of feeds for the logged-in user
+    protected function subscriptionList(array $url, array $data): Response {
+        $subs = Data::$db->subscriptionList(Data::$user->id);
+        $out = [];
+        foreach($subs as $sub) {
+            $out[] = $this->feedTranslate($sub);
+        }
+        $out = ['feeds' => $out];
+        $out['starredCount'] = Data::$db->articleStarredCount(Data::$user->id);
+        $newest = Data::$db->editionLatest(Data::$user->id);
+        if($newest) $out['newestItemId'] = $newest;
+        return new Response(200, $out);
+    }
 
     // delete a feed
     protected function subscriptionRemove(array $url, array $data): Response {
@@ -302,7 +376,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function subscriptionRename(array $url, array $data): Response {
         // normalize input
         $in = [];
-        if(array_key_exists("feedTitle", $data)) {
+        if(array_key_exists('feedTitle', $data)) { // we use array_key_exists because null is a valid input
             $in['title'] = $data['feedTitle'];
         } else {
             return new Response(422);
@@ -326,13 +400,10 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     // move a feed to a folder
     protected function subscriptionMove(array $url, array $data): Response {
-        // normalize input for move and rename
+        // normalize input
         $in = [];
-        if(array_key_exists("folderId", $data)) {
-            $folder = $data['folderId'];
-            if(!$this->validateId($folder)) return new Response(422);
-            if(!$folder) $folder = null;
-            $in['folder'] = $folder;
+        if(isset($data['folderId'])) {
+            $in['folder'] = $data['folderId'] ? $data['folderId'] : null;
         } else {
             return new Response(422);
         }
@@ -349,6 +420,163 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 default: return new Response(400);
             }
         }
+        return new Response(204);
+    }
+
+    protected function subscriptionMarkRead(array $url, array $data): Response {
+        $c = new Context;
+        if(isset($data['newestItemId'])) {
+            $c->latestEdition($data['newestItemId']);
+        } else {
+            // otherwise return an error
+            return new Response(422);
+        }
+        // add the subscription ID to the context
+        $c->subscription((int) $url[1]);
+        // perform the operation
+        try {
+            Data::$db->articleMark(Data::$user->id, ['read' => true], $c);
+        } catch(ExceptionInput $e) {
+            // subscription does not exist
+            return new Response(404);
+        }
+        return new Response(204);
+    }
+
+    protected function articleList(array $url, array $data): Response {
+        // set the context options supplied by the client
+        $c = new Context;
+        // set the batch size
+        if(isset($data['batchSize']) && $data['batchSize'] > 0) $c->limit($data['batchSize']);
+        // set the order of returned items
+        if(isset($data['oldestFirst']) && $data['oldestFirst']) {
+            $c->reverse(false);
+        } else {
+            $c->reverse(true);
+        }
+        // set the edition mark-off; the database uses an or-equal comparison for internal consistency, but the protocol does not, so we must adjust by one
+        if(isset($data['offset'])) {
+            if($c->reverse) {
+                $c->latestEdition($data['offset'] - 1);
+            } else {
+                $c->oldestEdition($data['offset'] + 1);
+            }
+        }
+        // set whether to only return unread
+        if(isset($data['getRead']) && !$data['getRead']) $c->unread(true);
+        // if no type is specified assume 3 (All)
+        if(!isset($data['type'])) $data['type'] = 3;
+        switch($data['type']) {
+            case 0: // feed
+                if(isset($data['id'])) $c->subscription($data['id']);
+                break;
+            case 1: // folder
+                if(isset($data['id'])) $c->folder($data['id']);
+                break;
+            case 2: // starred
+                $c->starred(true);
+                break;
+            default:
+                // return all items
+        }
+        // whether to return only updated items
+        if(isset($data['lastModified'])) $c->modifiedSince($data['lastModified']);
+        // perform the fetch
+        try {
+            $items = Data::$db->articleList(Data::$user->id, $c);
+        } catch(ExceptionInput $e) {
+            // ID of subscription or folder is not valid
+            return new Response(422);
+        }
+        $out = [];
+        foreach($items as $item) {
+            $out[] = $this->articleTranslate($item);
+        }
+        $out = ['items' => $out];
+        return new Response(200, $out);
+    }
+
+    protected function articleMarkReadAll(array $url, array $data): Response {
+        $c = new Context;
+        if(isset($data['newestItemId'])) {
+            // set the newest item ID as specified
+            $c->latestEdition($data['newestItemId']);
+        } else {
+            // otherwise return an error
+            return new Response(422);
+        }
+        // perform the operation
+        Data::$db->articleMark(Data::$user->id, ['read' => true], $c);
+        return new Response(204);
+    }
+
+    protected function articleMarkRead(array $url, array $data): Response {
+        // initialize the matching context
+        $c = new Context;
+        $c->edition((int) $url[1]);
+        // determine whether to mark read or unread
+        $set = ($url[2]=="read");
+        try {
+            Data::$db->articleMark(Data::$user->id, ['read' => $set], $c);
+        } catch(ExceptionInput $e) {
+            // ID is not valid
+            return new Response(404);
+        }
+        return new Response(204);
+    }
+
+    protected function articleMarkStarred(array $url, array $data): Response {
+        // initialize the matching context
+        $c = new Context;
+        $c->article((int) $url[2]);
+        // determine whether to mark read or unread
+        $set = ($url[3]=="star");
+        try {
+            Data::$db->articleMark(Data::$user->id, ['star' => $set], $c);
+        } catch(ExceptionInput $e) {
+            // ID is not valid
+            return new Response(404);
+        }
+        return new Response(204);
+    }
+
+    protected function articleMarkReadMulti(array $url, array $data): Response {
+        // initialize the matching context
+        $c = new Context;
+        // determine whether to mark read or unread
+        $set = ($url[1]=="read");
+        // if the input data is not at all valid, return an error
+        if(!isset($data['items']) || !is_array($data['items'])) return new Response(422);
+        // start a transaction and loop through the items
+        $t = Data::$db->begin();
+        $in = array_chunk($data['items'], 50);
+        for($a = 0; $a < sizeof($in); $a++) {
+            $c->editions($in[$a]);
+            try {
+                Data::$db->articleMark(Data::$user->id, ['read' => $set], $c);
+            } catch(ExceptionInput $e) {}
+        }
+        $t->commit();
+        return new Response(204);
+    }
+
+    protected function articleMarkStarredMulti(array $url, array $data): Response {
+        // initialize the matching context
+        $c = new Context;
+        // determine whether to mark read or unread
+        $set = ($url[1]=="star");
+        // if the input data is not at all valid, return an error
+        if(!isset($data['items']) || !is_array($data['items'])) return new Response(422);
+        // start a transaction and loop through the items
+        $t = Data::$db->begin();
+        $in = array_chunk(array_column($data['items'], "guidHash"), 50);
+        for($a = 0; $a < sizeof($in); $a++) {
+            $c->articles($in[$a]);
+            try {
+                Data::$db->articleMark(Data::$user->id, ['starred' => $set], $c);
+            } catch(ExceptionInput $e) {}
+        }
+        $t->commit();
         return new Response(204);
     }
 }
