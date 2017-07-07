@@ -32,6 +32,8 @@ class TestContext extends \PHPUnit\Framework\TestCase {
             'starred' => true,
             'modifiedSince' => new \DateTime(),
             'notModifiedSince' => new \DateTime(),
+            'editions' => [1,2],
+            'articles' => [1,2],
         ];
         $times = ['modifiedSince','notModifiedSince'];
         $c = new Context;
@@ -46,6 +48,16 @@ class TestContext extends \PHPUnit\Framework\TestCase {
             } else {
                 $this->assertSame($c->$method, $v[$method]);
             }
+        }
+    }
+
+    function testCleanArrayValues() {
+        $methods = ["articles", "editions"];
+        $in = [1, "2", 3.5, 3.0, "ook", 0, -20, true, false, null, new \DateTime(), -1.0];
+        $out = [1,2, 3];
+        $c = new Context;
+        foreach($methods as $method) {
+            $this->assertSame($out, $c->$method($in)->$method, "Context method $method did not return the expected results");
         }
     }
 }

@@ -18,6 +18,8 @@ class Context {
     public $notModifiedSince;
     public $edition;
     public $article;
+    public $editions;
+    public $articles;
 
     protected $props = [];
 
@@ -29,6 +31,32 @@ class Context {
         } else {
             return isset($this->props[$prop]);
         }
+    }
+
+    protected function cleanArray(array $spec): array {
+        $spec = array_values($spec);
+        for($a = 0; $a < sizeof($spec); $a++) {
+            $id = $spec[$a];
+            if(is_int($id) && $id > -1) continue;
+            if(is_float($id) && !fmod($id, 1) && $id >= 0) {
+                $spec[$a] = (int) $id;
+                continue;
+            }
+            if(is_string($id)) {
+                try {
+                    $ch1 = strval(intval($id));
+                    $ch2 = strval($id);
+                } catch(\Throwable $e) {
+                    $ch1 = true;
+                    $ch2 = false;
+                }
+                if($ch1 !== $ch2 || $id < 1) $id = 0;
+            } else {
+                $id = 0;
+            }
+            $spec[$a] = (int) $id;
+        }
+        return array_values(array_filter($spec));
     }
     
     function reverse(bool $spec = null) {
@@ -82,6 +110,16 @@ class Context {
     }
     
     function article(int $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    function editions(array $spec = null) {
+        if($spec) $spec = $this->cleanArray($spec);
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    function articles(array $spec = null) {
+        if($spec) $spec = $this->cleanArray($spec);
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 }

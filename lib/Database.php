@@ -681,19 +681,19 @@ class Database {
         $queries = [
             "UPDATE arsse_marks 
                 set 
-                    read = coalesce((select read from target_values),read),
+                    read = case when (select honour_read from target_articles where target_articles.id is article) is 1 then (select read from target_values) else read end,
                     starred = coalesce((select starred from target_values),starred),
                     modified = CURRENT_TIMESTAMP  
                 WHERE 
                     owner is (select user from user) 
-                    and article in (select id from target_articles where to_update is 1)",
+                    and article in (select id from target_articles where to_insert is 0 and (honour_read is 1 or honour_star is 1))",
             "INSERT INTO arsse_marks(owner,article,read,starred)
                 select 
                     (select user from user),
                     id,
-                    coalesce((select read from target_values),0),
+                    coalesce((select read from target_values) * honour_read,0),
                     coalesce((select starred from target_values),0)
-                from target_articles where to_insert is 1"
+                from target_articles where to_insert is 1 and (honour_read is 1 or honour_star is 1)"
         ];
         $out = 0;
         // wrap this UPDATE and INSERT together into a transaction
@@ -712,26 +712,15 @@ class Database {
         foreach($queries as $query) {
             // first build the query which will select the target articles; we will later turn this into a CTE for the actual query that manipulates the articles
             $q = new Query(
-                "SELECT 
+                "SELECT
                     arsse_articles.id as id,
                     (select max(id) from arsse_editions where article is arsse_articles.id) as edition,
-                    max(arsse_articles.modified, 
+                    max(arsse_articles.modified,
                         coalesce((select modified from arsse_marks join user on user is owner where article is arsse_articles.id),'')
                     ) as modified_date,
-                    (
-                        not exists(select id from arsse_marks join user on user is owner where article is arsse_articles.id) 
-                        and exists(select * from target_values where read is 1 or starred is 1)
-                    ) as to_insert,
-                    exists(
-                        select id from arsse_marks 
-                            join user on user is owner 
-                        where 
-                            article is arsse_articles.id 
-                            and (
-                                read is not coalesce((select read from target_values),read)
-                                or starred is not coalesce((select starred from target_values),starred)
-                            )
-                    ) as to_update
+                    (not exists(select id from arsse_marks join user on user is owner where article is arsse_articles.id)) as to_insert,
+                    ((select read from target_values) is not null and (select read from target_values) is not (coalesce((select read from arsse_marks join user on user is owner where article is arsse_articles.id),0)) and (not exists(select * from requested_articles) or (select max(id) from arsse_editions where article is arsse_articles.id) in (select edition from requested_articles))) as honour_read,
+                    ((select starred from target_values) is not null and (select starred from target_values) is not (coalesce((select starred from arsse_marks join user on user is owner where article is arsse_articles.id),0))) as honour_star
                 FROM arsse_articles"
             );
             // common table expression for the affected user
@@ -760,6 +749,32 @@ class Database {
                 // otherwise add a CTE for all the user's subscriptions
                 $q->setCTE("subscribed_feeds(id,sub) as (SELECT feed,id from arsse_subscriptions join user on user is owner)", [], [], "join subscribed_feeds on feed is subscribed_feeds.id");
             }
+            if($context->editions()) {
+                // if multiple specific editions have been requested, prepare a CTE to list them and their articles
+                if(!$context->editions) throw new Db\ExceptionInput("tooShort", ['field' => "editions", 'action' => __FUNCTION__, 'min' => 1]); // must have at least one array element
+                if(sizeof($context->editions) > 50) throw new Db\ExceptionInput("tooLong", ['field' => "editions", 'action' => __FUNCTION__, 'max' => 50]); // must not have more than 50 array elements
+                list($inParams, $inTypes) = $this->generateIn($context->editions, "int");
+                $q->setCTE(
+                    "requested_articles(id,edition) as (select article,id as edition from arsse_editions where edition in ($inParams))",
+                    $inTypes,
+                    $context->editions
+                );
+                $q->setWhere("arsse_articles.id in (select id from requested_articles)");
+            } else if($context->articles()) {
+                // if multiple specific articles have been requested, prepare a CTE to list them and their articles
+                if(!$context->articles) throw new Db\ExceptionInput("tooShort", ['field' => "articles", 'action' => __FUNCTION__, 'min' => 1]); // must have at least one array element
+                if(sizeof($context->articles) > 50) throw new Db\ExceptionInput("tooLong", ['field' => "articles", 'action' => __FUNCTION__, 'max' => 50]); // must not have more than 50 array elements
+                list($inParams, $inTypes) = $this->generateIn($context->articles, "int");
+                $q->setCTE(
+                    "requested_articles(id,edition) as (select id,(select max(id) from arsse_editions where article is arsse_articles.id) as edition from arsse_articles where arsse_articles.id in ($inParams))",
+                    $inTypes,
+                    $context->articles
+                );
+                $q->setWhere("arsse_articles.id in (select id from requested_articles)");
+            } else {
+                // if neither list is specified, mock an empty table
+                $q->setCTE("requested_articles(id,edition) as (select 'empty','table' where 1 is 0)");
+            }
             // filter based on edition offset
             if($context->oldestEdition()) $q->setWhere("edition >= ?", "int", $context->oldestEdition);
             if($context->latestEdition()) $q->setWhere("edition <= ?", "int", $context->latestEdition);
@@ -768,7 +783,7 @@ class Database {
             if($context->notModifiedSince()) $q->setWhere("modified_date <= ?", "datetime", $context->notModifiedSince);
             // push the current query onto the CTE stack and execute the query we're actually interested in
             $q->pushCTE(
-                "target_articles(id,edition,modified,to_insert,to_update)", // CTE table specification
+                "target_articles(id,edition,modified_date,to_insert,honour_read,honour_star)", // CTE table specification
                 [], // CTE types
                 [], // CTE values
                 $query // new query body

@@ -518,6 +518,39 @@ trait SeriesArticle {
         $this->compareExpectations($state);
     }
 
+    function testMarkMultipleArticles() {
+        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->articles([2,4,7,20]));
+        $now = $this->dateTransform(time(), "sql");
+        $state = $this->primeExpectations($this->data, $this->checkTables);
+        $state['arsse_marks']['rows'][9][3] = 1;
+        $state['arsse_marks']['rows'][9][4] = $now;
+        $state['arsse_marks']['rows'][] = [$this->user,7,0,1,$now];
+        $this->compareExpectations($state);
+    }
+
+    function testMarkMultipleArticlessUnreadAndStarred() {
+        Data::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->articles([2,4,7,20]));
+        $now = $this->dateTransform(time(), "sql");
+        $state = $this->primeExpectations($this->data, $this->checkTables);
+        $state['arsse_marks']['rows'][9][2] = 0;
+        $state['arsse_marks']['rows'][9][3] = 1;
+        $state['arsse_marks']['rows'][9][4] = $now;
+        $state['arsse_marks']['rows'][11][2] = 0;
+        $state['arsse_marks']['rows'][11][4] = $now;
+        $state['arsse_marks']['rows'][] = [$this->user,7,0,1,$now];
+        $this->compareExpectations($state);
+    }
+
+    function testMarkTooFewMultipleArticles() {
+        $this->assertException("tooShort", "Db", "ExceptionInput");
+        Data::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->articles([]));
+    }
+
+    function testMarkTooManyMultipleArticles() {
+        $this->assertException("tooLong", "Db", "ExceptionInput");
+        Data::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->articles(range(1,51)));
+    }
+
     function testMarkAMissingArticle() {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->article(1));
@@ -530,6 +563,58 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
         $this->compareExpectations($state);
+    }
+
+    function testMarkMultipleEditions() {
+        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->editions([2,4,7,20]));
+        $now = $this->dateTransform(time(), "sql");
+        $state = $this->primeExpectations($this->data, $this->checkTables);
+        $state['arsse_marks']['rows'][9][3] = 1;
+        $state['arsse_marks']['rows'][9][4] = $now;
+        $state['arsse_marks']['rows'][] = [$this->user,7,0,1,$now];
+        $this->compareExpectations($state);
+    }
+
+    function testMarkMultipleEditionsUnread() {
+        Data::$db->articleMark($this->user, ['read'=>false], (new Context)->editions([2,4,7,1001]));
+        $now = $this->dateTransform(time(), "sql");
+        $state = $this->primeExpectations($this->data, $this->checkTables);
+        $state['arsse_marks']['rows'][9][2] = 0;
+        $state['arsse_marks']['rows'][9][4] = $now;
+        $state['arsse_marks']['rows'][11][2] = 0;
+        $state['arsse_marks']['rows'][11][4] = $now;
+        $this->compareExpectations($state);
+    }
+
+    function testMarkMultipleEditionsUnreadWithStale() {
+        Data::$db->articleMark($this->user, ['read'=>false], (new Context)->editions([2,4,7,20]));
+        $now = $this->dateTransform(time(), "sql");
+        $state = $this->primeExpectations($this->data, $this->checkTables);
+        $state['arsse_marks']['rows'][11][2] = 0;
+        $state['arsse_marks']['rows'][11][4] = $now;
+        $this->compareExpectations($state);
+    }
+
+    function testMarkMultipleEditionsUnreadAndStarredWithStale() {
+        Data::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->editions([2,4,7,20]));
+        $now = $this->dateTransform(time(), "sql");
+        $state = $this->primeExpectations($this->data, $this->checkTables);
+        $state['arsse_marks']['rows'][9][3] = 1;
+        $state['arsse_marks']['rows'][9][4] = $now;
+        $state['arsse_marks']['rows'][11][2] = 0;
+        $state['arsse_marks']['rows'][11][4] = $now;
+        $state['arsse_marks']['rows'][] = [$this->user,7,0,1,$now];
+        $this->compareExpectations($state);
+    }
+
+    function testMarkTooFewMultipleEditions() {
+        $this->assertException("tooShort", "Db", "ExceptionInput");
+        Data::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->editions([]));
+    }
+
+    function testMarkTooManyMultipleEditions() {
+        $this->assertException("tooLong", "Db", "ExceptionInput");
+        Data::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->editions(range(1,51)));
     }
 
     function testMarkAStaleEditionUnread() {
