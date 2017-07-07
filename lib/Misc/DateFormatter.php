@@ -4,36 +4,46 @@ namespace JKingWeb\Arsse\Misc;
 
 trait DateFormatter {
     
-    protected function dateTransform($date, string $format = "iso8601", bool $local = false) {
-        $date = $this->dateNormalize($date);
-        $format = strtolower($format);
-        if($format=="unix") return $date;
-        switch ($format) {
+    protected function dateTransform($date, string $outFormat = null, string $inFormat = null, bool $inLocal = false) {
+        $date = $this->dateNormalize($date, $inFormat, $inLocal);
+        if(is_null($date) || is_null($outFormat)) return $date;
+        $outFormat = strtolower($outFormat);
+        if($outFormat=="unix") return $date->getTimestamp();
+        switch ($outFormat) {
             case 'http':    $f = "D, d M Y H:i:s \G\M\T"; break;
-            case 'iso8601': $f = \DateTime::ATOM;         break;
+            case 'iso8601': $f = "Y-m-dTH:i:s";           break;
             case 'sql':     $f = "Y-m-d H:i:s";           break;
             case 'date':    $f = "Y-m-d";                 break;
             case 'time':    $f = "H:i:s";                 break;
-            default:        $f = \DateTime::ATOM;         break;
+            default:        $f = $outFormat;              break;
         }
-        if($local) {
-            return date($f, $date);
-        } else {
-            return gmdate($f, $date);
-        }
+        return $date->format($f);
     }
 
-    protected function dateNormalize($date) {
+    protected function dateNormalize($date, string $inFormat = null, bool $inLocal = false) {
         // convert input to a Unix timestamp
         if($date instanceof \DateTimeInterface) {
-            $time = $date->getTimestamp();
+            return $date;
         } else if(is_numeric($date)) {
             $time = (int) $date;
         } else if($date===null) {
             return null;
         } else if(is_string($date)) {
             try {
-                $time = (new \DateTime($date, new \DateTimeZone("UTC")))->getTimestamp();
+                $tz = (!$inLocal) ? new \DateTimeZone("UTC") : null;
+                if(!is_null($inFormat)) {
+                    switch($inFormat) {
+                        case 'http':    $f = "D, d M Y H:i:s \G\M\T"; break;
+                        case 'iso8601': $f = "Y-m-dTH:i:sP";          break;
+                        case 'sql':     $f = "Y-m-d H:i:s";           break;
+                        case 'date':    $f = "Y-m-d";                 break;
+                        case 'time':    $f = "H:i:s";                 break;
+                        default:        $f = $inFormat;               break;
+                    }
+                    return \DateTime::createFromFormat("!".$f, $date, $tz);
+                } else {
+                    return new \DateTime($date, $tz);
+                }
             } catch(\Throwable $e) {
                 return null;
             }
@@ -42,6 +52,8 @@ trait DateFormatter {
         } else {
             $time = (int) $date;
         }
-        return $time;
+        $d = new \DateTime();
+        $d->setTimestamp($time);
+        return $d;
     }
 }

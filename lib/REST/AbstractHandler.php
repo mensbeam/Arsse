@@ -3,6 +3,8 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\REST;
 
 abstract class AbstractHandler implements Handler {
+    use \JKingWeb\Arsse\Misc\DateFormatter;
+
     abstract function __construct();
     abstract function dispatch(Request $req): Response;
 
@@ -16,9 +18,15 @@ abstract class AbstractHandler implements Handler {
         return $out;
     }    
     
-    protected function fieldMapTypes(array $data, array $map): array {
+    protected function fieldMapTypes(array $data, array $map, string $dateFormat = "sql"): array {
         foreach($map as $key => $type) {
-            if(array_key_exists($key, $data)) settype($data[$key], $type);
+            if(array_key_exists($key, $data)) {
+                if($type=="datetime" && $dateFormat != "sql") {
+                    $data[$key] = $this->dateTransform($data[$key], $dateFormat, "sql");
+                } else {
+                    settype($data[$key], $type);
+                }
+            }
         }
         return $data;
     }
@@ -33,7 +41,7 @@ abstract class AbstractHandler implements Handler {
         return ($ch1 === $ch2);
     }
 
-    protected function NormalizeInput(array $data, array $types, string $dateFormat = "Y-m-d\TH:i:sP"): array {
+    protected function NormalizeInput(array $data, array $types, string $dateFormat = null): array {
         $out = [];
         foreach($data as $key => $value) {
             if(!isset($types[$key])) {
@@ -67,7 +75,7 @@ abstract class AbstractHandler implements Handler {
                     if(is_numeric($value)) $out[$key] = (float) $value;
                     break;
                 case "datetime":
-                    $t = \DateTime::createFromFormat($dateFormat, (string) $value);
+                    $t = $this->dateNormalize($value, $dateFormat);
                     if($t) $out[$key] = $t;
                     break;
                 default:

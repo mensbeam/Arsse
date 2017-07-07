@@ -253,14 +253,6 @@ trait SeriesSubscription {
         $this->assertResult($exp, Data::$db->subscriptionList($this->user, 2));
     }
 
-    function testListSubscriptionsWithDifferentDateFormats() {
-        Data::$db->dateFormatDefault("iso8601");
-        $d1 = Data::$db->subscriptionList($this->user, 2)->getRow()['added'];
-        Data::$db->dateFormatDefault("http");
-        $d2 = Data::$db->subscriptionList($this->user, 2)->getRow()['added'];
-        $this->assertNotEquals($d1, $d2);
-    }
-
     function testListSubscriptionsInAMissingFolder() {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Data::$db->subscriptionList($this->user, 4);

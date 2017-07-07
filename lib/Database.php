@@ -6,6 +6,7 @@ use JKingWeb\Arsse\Misc\Query;
 use JKingWeb\Arsse\Misc\Context;
 
 class Database {
+    use Misc\DateFormatter;
 
     const SCHEMA_VERSION = 1;
     const FORMAT_TS      = "Y-m-d h:i:s";
@@ -13,7 +14,6 @@ class Database {
     const FORMAT_TIME    = "h:i:s";
 
     public    $db;
-    protected $dateFormatDefault = "sql";
 
     public function __construct() {
         $driver = Data::$conf->dbDriver;
@@ -26,15 +26,6 @@ class Database {
 
     protected function caller(): string {
         return debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3)[2]['function'];
-    }
-
-    public function dateFormatDefault(string $set = null): string {
-        if(is_null($set)) return $this->dateFormatDefault;
-        $set = strtolower($set);
-        if(in_array($set, ["sql", "iso8601", "unix", "http"])) {
-            $this->dateFormatDefault = $set;
-        }
-        return $this->dateFormatDefault;
     }
     
     static public function listDrivers(): array {
@@ -349,17 +340,14 @@ class Database {
         $q = new Query(
             "SELECT 
                 arsse_subscriptions.id,
-                url,favicon,source,folder,pinned,err_count,err_msg,order_type,
-                DATEFORMAT(?, added) as added,
+                url,favicon,source,folder,pinned,err_count,err_msg,order_type,added,
                 topmost.top as top_folder,
                 coalesce(arsse_subscriptions.title, arsse_feeds.title) as title,
                 (SELECT count(*) from arsse_articles where feed is arsse_subscriptions.feed) - (SELECT count(*) from arsse_marks join user on user is owner join arsse_articles on article = arsse_articles.id where feed is arsse_feeds.id and read is 1) as unread
              from arsse_subscriptions 
                 join user on user is owner 
                 join arsse_feeds on feed = arsse_feeds.id 
-                left join topmost on folder=f_id",
-             "str", // where terms
-             $this->dateFormatDefault
+                left join topmost on folder=f_id"
         );
         $q->setOrder("pinned desc, title");
         // define common table expressions
@@ -444,13 +432,13 @@ class Database {
     public function feedUpdate(int $feedID, bool $throwError = false): bool {
         $tr = $this->db->begin();
         // check to make sure the feed exists
-        $f = $this->db->prepare("SELECT url, username, password, DATEFORMAT('http', modified) AS lastmodified, etag, err_count FROM arsse_feeds where id is ?", "int")->run($feedID)->getRow();
+        $f = $this->db->prepare("SELECT url, username, password, modified, etag, err_count FROM arsse_feeds where id is ?", "int")->run($feedID)->getRow();
         if(!$f) throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID]);
         // the Feed object throws an exception when there are problems, but that isn't ideal
         // here. When an exception is thrown it should update the database with the
         // error instead of failing; if other exceptions are thrown, we should simply roll back
         try {
-            $feed = new Feed($feedID, $f['url'], (string)$f['lastmodified'], $f['etag'], $f['username'], $f['password']);
+            $feed = new Feed($feedID, $f['url'], $this->dateTransform($f['modified'], "http", "sql"), $f['etag'], $f['username'], $f['password']);
             if(!$feed->modified) {
                 // if the feed hasn't changed, just compute the next fetch time and record it
                 $this->db->prepare("UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id is ?", 'datetime', 'int')->run($feed->nextFetch, $feedID);
@@ -556,7 +544,7 @@ class Database {
 
     public function feedMatchLatest(int $feedID, int $count): Db\Result {
         return $this->db->prepare(
-            "SELECT id, DATEFORMAT('unix', edited) AS edited_date, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? ORDER BY modified desc, id desc limit ?", 
+            "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? ORDER BY modified desc, id desc limit ?", 
             'int', 'int'
         )->run($feedID, $count);
     }
@@ -569,7 +557,7 @@ class Database {
         list($cHashTC, $tHashTC) = $this->generateIn($hashesTC, "str");
         // perform the query
         return $articles = $this->db->prepare(
-            "SELECT id, DATEFORMAT('unix', edited) AS edited_date, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC))", 
+            "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC))", 
             'int', $tId, $tHashUT, $tHashUC, $tHashTC
         )->run($feedID, $ids, $hashesUT, $hashesUC, $hashesTC);
     }
@@ -613,12 +601,12 @@ class Database {
                 arsse_articles.id as id,
                 arsse_articles.url as url,
                 title,author,content,guid,
-                DATEFORMAT(?, published) as published_date,
-                DATEFORMAT(?, edited) as edited_date,
-                DATEFORMAT(?, max(
+                published as published_date,
+                edited as edited_date,
+                max(
                     modified, 
                     coalesce((select modified from arsse_marks join user on user is owner where article is arsse_articles.id),'')
-                )) as modified_date,
+                ) as modified_date,
                 NOT (select count(*) from arsse_marks join user on user is owner where article is arsse_articles.id and read is 1) as unread,
                 (select count(*) from arsse_marks join user on user is owner where article is arsse_articles.id and starred is 1) as starred,
                 (select max(id) from arsse_editions where article is arsse_articles.id) as edition,
@@ -629,9 +617,7 @@ class Database {
             FROM arsse_articles 
                 join subscribed_feeds on arsse_articles.feed is subscribed_feeds.id
                 left join arsse_enclosures on arsse_enclosures.article is arsse_articles.id
-            ",
-            ["str", "str", "str"],
-            [$this->dateFormatDefault, $this->dateFormatDefault, $this->dateFormatDefault]
+            "
         );
         $q->setOrder("edition".($context->reverse ? " desc" : ""));
         $q->setLimit($context->limit, $context->offset);

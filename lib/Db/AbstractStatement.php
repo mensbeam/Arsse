@@ -3,12 +3,13 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Db;
 
 abstract class AbstractStatement implements Statement {
+    use \JKingWeb\Arsse\Misc\DateFormatter;
+    
     protected $types = [];
     protected $isNullable = [];
     protected $values = ['pre' => [], 'post' => []];
 
     abstract function runArray(array $values = []): Result;
-    abstract static function dateFormat(int $part = self::TS_BOTH): string;
 
     public function run(...$values): Result {
         return $this->runArray($values);
@@ -44,13 +45,13 @@ abstract class AbstractStatement implements Statement {
         switch($t) {
             case "date":
                 if(is_null($v) && !$nullable) $v = 0;
-                return $this->formatDate($v, self::TS_DATE);
+                return $this->dateTransform($v, "date");
             case "time":
                 if(is_null($v) && !$nullable) $v = 0;
-                return $this->formatDate($v, self::TS_TIME);
+                return $this->dateTransform($v, "time");
             case "datetime":
                 if(is_null($v) && !$nullable) $v = 0;
-                return $this->formatDate($v, self::TS_BOTH);
+                return $this->dateTransform($v, "sql");
             case "null":
             case "integer":
             case "float":
@@ -65,9 +66,12 @@ abstract class AbstractStatement implements Statement {
                     // handle objects
                     $value = $v;
                     if($value instanceof \DateTimeInterface) {
-                        $value = $value->getTimestamp();
-                        if($t=="string") $value = $this->formatDate($value, self::TS_BOTH);
-                        settype($value, $t);
+                        if($t=="string") {
+                            $value = $this->dateTransform($value, "sql");
+                        } else {
+                            $value = $value->getTimestamp();
+                            settype($value, $t);    
+                        }
                     } else {
                         $value = null;
                         settype($value, $t);
@@ -77,25 +81,5 @@ abstract class AbstractStatement implements Statement {
             default:
                 throw new Exception("paramTypeUnknown", $type);
         }
-    }
-
-    protected function formatDate($date, int $part = self::TS_BOTH) {
-        // convert input to a Unix timestamp
-        if($date instanceof \DateTimeInterface) {
-            $time = $date->getTimestamp();
-        } else if(is_numeric($date)) {
-            $time = (int) $date;
-        } else if($date===null) {
-            return null;
-        } else if(is_string($date)) {
-            $time = strtotime($date);
-            if($time===false) return null;
-        } else if (is_bool($date)) {
-            return null;
-        } else {
-            $time = (int) $date;
-        }
-        // ISO 8601 with space in the middle instead of T.
-        return gmdate($this->dateFormat($part), $time);
     }
 }

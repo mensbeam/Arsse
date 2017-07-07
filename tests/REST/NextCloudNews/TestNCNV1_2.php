@@ -256,8 +256,6 @@ class TestNCNV1_2 extends \PHPUnit\Framework\TestCase {
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds")));
         $exp = new Response(200, $exp2);
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds")));
-        // make sure the correct date format is actually requested
-        Phake::verify(Data::$db, Phake::atLeast(1))->dateFormatDefault("unix");
     }
 
     function testAddASubscription() {
@@ -295,8 +293,6 @@ class TestNCNV1_2 extends \PHPUnit\Framework\TestCase {
         // try to add a bad feed
         $exp = new Response(422);
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[2]), 'application/json')));
-        // make sure the correct date format is actually requested
-        Phake::verify(Data::$db, Phake::atLeast(1))->dateFormatDefault("unix");
     }
 
     function testRemoveASubscription() {

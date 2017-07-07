@@ -12,7 +12,7 @@ trait SeriesFeed {
     protected $matches = [
         [
             'id'                 => 4,
-            'edited_date'        => 946944000, // 2000-01-04T00:00:00Z
+            'edited'             => '2000-01-04 00:00:00',
             'guid'               => '804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180',
             'url_title_hash'     => 'f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8',
             'url_content_hash'   => 'f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3',
@@ -20,7 +20,7 @@ trait SeriesFeed {
         ],
         [
             'id'                 => 5,
-            'edited_date'        => 947030400, // 2000-01-05T00:00:00Z
+            'edited'             => '2000-01-05 00:00:00',
             'guid'               => 'db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41',
             'url_title_hash'     => 'd40da96e39eea6c55948ccbe9b3d275b5f931298288dbe953990c5f496097022',
             'url_content_hash'   => '834240f84501b5341d375414718204ec421561f3825d34c22bf9182203e42900',

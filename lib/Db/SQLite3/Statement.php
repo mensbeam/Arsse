@@ -37,14 +37,6 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         unset($this->st);
     }
 
-    public static function dateFormat(int $part = self::TS_BOTH): string {
-        return ([
-            self::TS_TIME => 'H:i:s',
-            self::TS_DATE => 'Y-m-d',
-            self::TS_BOTH => 'Y-m-d H:i:s',
-        ])[$part];
-    }
-
     public function runArray(array $values = []): \JKingWeb\Arsse\Db\Result {
         $this->st->clear();
         $this->bindValues($values);

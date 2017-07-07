@@ -14,6 +14,8 @@ use JKingWeb\Arsse\REST\Exception405;
 class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     const REALM = "NextCloud News API v1-2";
 
+    protected $dateFormat = "unix";
+
     protected $validInput = [
         'name'         => "string",
         'url'          => "string",
@@ -69,7 +71,6 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if(!method_exists($this, $func)) return new Response(501);
         // dispatch
         try {
-            Data::$db->dateFormatDefault("unix");
             return $this->$func($req->paths, $data);
         } catch(Exception $e) {
             // if there was a REST exception return 400
@@ -169,7 +170,8 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $feed = $this->fieldMapTypes($feed, [
             'folderId' => "int",
             'pinned'   => "bool",
-        ]);
+            'added'    => "datetime",
+        ], $this->dateFormat);
         return $feed;
     }
 
@@ -194,9 +196,11 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         ]);
         // cast values
         $article = $this->fieldMapTypes($article, [
-            'unread'  => "bool",
-            'starred' => "bool",
-        ]);
+            'unread'       => "bool",
+            'starred'      => "bool",
+            'pubDate'      => "datetime",
+            'lastModified' => "datetime",
+        ], $this->dateFormat);
         return $article;
     }
     

@@ -12,7 +12,7 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
     protected $latest = [
         [
             'id' => 1,
-            'edited_date' => 946684800,
+            'edited' => '2000-01-01 00:00:00',
             'guid' => 'e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda',
             'url_title_hash' => 'f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6',
             'url_content_hash' => 'fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4',
@@ -20,7 +20,7 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
         ],
         [
             'id' => 2,
-            'edited_date' => 946771200,
+            'edited' => '2000-01-02 00:00:00',
             'guid' => '5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7',
             'url_title_hash' => '0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153',
             'url_content_hash' => '13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9',
@@ -28,7 +28,7 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
         ],
         [
             'id' => 3,
-            'edited_date' => 946857600,
+            'edited' => '2000-01-03 00:00:00',
             'guid' => '31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92',
             'url_title_hash' => 'f74b06b240bd08abf4d3fdfc20dba6a6f6eb8b4f1a00e9a617efd63a87180a4b',
             'url_content_hash' => 'b278380e984cefe63f0e412b88ffc9cb0befdfa06fdc00bace1da99a8daff406',
@@ -36,7 +36,7 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
         ],
         [
             'id' => 4,
-            'edited_date' => 946944000,
+            'edited' => '2000-01-04 00:00:00',
             'guid' => '804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180',
             'url_title_hash' => 'f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8',
             'url_content_hash' => 'f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3',
@@ -44,7 +44,7 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
         ],
         [
             'id' => 5,
-            'edited_date' => 947030400,
+            'edited' => '2000-01-05 00:00:00',
             'guid' => 'db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41',
             'url_title_hash' => 'd40da96e39eea6c55948ccbe9b3d275b5f931298288dbe953990c5f496097022',
             'url_content_hash' => '834240f84501b5341d375414718204ec421561f3825d34c22bf9182203e42900',
@@ -54,7 +54,7 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
     protected $others = [
         [
             'id' => 6,
-            'edited_date' => 947116800,
+            'edited' => '2000-01-06 00:00:00',
             'guid' => 'b3461ab8e8759eeb1d65a818c65051ec00c1dfbbb32a3c8f6999434e3e3b76ab',
             'url_title_hash' => '91d051a8e6749d014506848acd45e959af50bf876427c4f0e3a1ec0f04777b51',
             'url_content_hash' => '211d78b1a040d40d17e747a363cc283f58767b2e502630d8de9b8f1d5e941d18',
@@ -62,7 +62,7 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
         ],
         [
             'id' => 7,
-            'edited_date' => 947203200,
+            'edited' => '2000-01-07 00:00:00',
             'guid' => 'f4fae999d6531747523f4ff0c74f3f0c7c588b67e4f32d8f7dba5f6f36e8a45d',
             'url_title_hash' => 'b92f805f0d0643dad1d6c0bb5cbaec24729f5f71b37b831cf7ad31f6c9403ac8',
             'url_content_hash' => '4fc8789b787246e9be08ca1bac0d4a1ac4db1984f0db07f7142417598cf7211f',
@@ -70,7 +70,7 @@ class TestFeed extends \PHPUnit\Framework\TestCase {
         ],
         [
             'id' => 8,
-            'edited_date' => 947289600,
+            'edited' => '2000-01-08 00:00:00',
             'guid' => 'b9d2d58e3172096b1d23b42a59961fabc89962836c3cd5de54f3d3a98ff08e6c',
             'url_title_hash' => '53a6cbcfeb66b46d09cbb7b25035df0562da35786933319c83b04be29acfb6f4',
             'url_content_hash' => 'c6f3722b4445b49d19d39c3bf5b11a7cf23dd69873e2a0a458aab662f1cd9438',

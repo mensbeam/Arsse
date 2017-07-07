@@ -7,6 +7,8 @@ use PicoFeed\Reader\Favicon;
 use PicoFeed\Config\Config;
 
 class Feed {
+    use Misc\DateFormatter;
+    
     public $data = null;
     public $favicon;
     public $parser;
@@ -24,7 +26,7 @@ class Feed {
         // format the HTTP Last-Modified date returned
         $lastMod = $this->resource->getLastModified();
         if(strlen($lastMod)) {
-            $this->lastModified = \DateTime::createFromFormat("!D, d M Y H:i:s e", $lastMod);
+            $this->lastModified = $this->dateNormalize($lastMod, "http");
         }
         $this->modified = $this->resource->isModified();
         //parse the feed, if it has been modified
@@ -229,7 +231,7 @@ class Feed {
                     ($i->urlContentHash   && $i->urlContentHash   === $a['url_content_hash'])   ||
                     ($i->titleContentHash && $i->titleContentHash === $a['title_content_hash'])
                 ) {
-                    if($i->updatedDate && $i->updatedDate->getTimestamp() !== $a['edited_date']) {
+                    if($i->updatedDate && $this->dateTransform($i->updatedDate, "sql") !== $a['edited']) {
                         // if the item has an edit timestamp and it doesn't match that of the article in the database, the the article has been edited
                         // we store the item index and database record ID as a key/value pair
                         $found = true;

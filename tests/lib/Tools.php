@@ -20,8 +20,8 @@ trait Tools {
     }
 
     function assertTime($exp, $test) {
-        $exp  = $this->dateTransform($exp);
-        $test = $this->dateTransform($test);
+        $exp  = $this->dateTransform($exp, "unix");
+        $test = $this->dateTransform($test, "unix");
         $this->assertSame($exp, $test);
     }
 
