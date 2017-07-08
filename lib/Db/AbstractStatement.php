@@ -59,25 +59,17 @@ abstract class AbstractStatement implements Statement {
             case "string":
             case "boolean":
                 if($t=="binary") $t = "string";
-                $value = $v;
-                try{
-                    settype($value, $t);
-                } catch(\Throwable $e) {
-                    // handle objects
-                    $value = $v;
-                    if($value instanceof \DateTimeInterface) {
-                        if($t=="string") {
-                            $value = $this->dateTransform($value, "sql");
-                        } else {
-                            $value = $value->getTimestamp();
-                            settype($value, $t);    
-                        }
+                if($v instanceof \DateTimeInterface) {
+                    if($t=="string") {
+                        return $this->dateTransform($v, "sql");
                     } else {
-                        $value = null;
-                        settype($value, $t);
+                        $v = $v->getTimestamp();
+                        settype($v, $t);    
                     }
+                } else {
+                    settype($v, $t);
                 }
-                return $value;
+                return $v;
             default:
                 throw new Exception("paramTypeUnknown", $type);
         }

@@ -32,12 +32,8 @@ abstract class AbstractHandler implements Handler {
     }
 
     protected function validateInt($id): bool {
-        try {
-            $ch1 = strval(intval($id));
-            $ch2 = strval($id);
-        } catch(\Throwable $e) {
-            return false;
-        }
+        $ch1 = strval(@intval($id));
+        $ch2 = strval($id);
         return ($ch1 === $ch2);
     }
 

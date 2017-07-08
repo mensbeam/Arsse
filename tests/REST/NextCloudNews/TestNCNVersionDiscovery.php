@@ -5,9 +5,7 @@ use JKingWeb\Arsse\REST\Request;
 use JKingWeb\Arsse\REST\Response;
 
 
-class TestNCNVersionDiscovery extends \PHPUnit\Framework\TestCase {
-    use Test\Tools;
-
+class TestNCNVersionDiscovery extends Test\AbstractTest {
     function setUp() {
         $this->clearData();
     }

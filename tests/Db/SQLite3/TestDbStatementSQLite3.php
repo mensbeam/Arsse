@@ -4,8 +4,8 @@ namespace JKingWeb\Arsse;
 use JKingWeb\Arsse\Db\Statement;
 
 
-class TestDbStatementSQLite3 extends \PHPUnit\Framework\TestCase {
-    use Test\Tools, Test\Db\BindingTests;
+class TestDbStatementSQLite3 extends Test\AbstractTest {
+    use Test\Db\BindingTests;
 
     protected $c;
     static protected $imp = Db\SQLite3\Statement::class;
@@ -20,7 +20,6 @@ class TestDbStatementSQLite3 extends \PHPUnit\Framework\TestCase {
     }
 
     function tearDown() {
-        try {$this->s->close();} catch(\Exception $e) {}
         $this->c->close();
         unset($this->c);
     }
@@ -32,7 +31,7 @@ class TestDbStatementSQLite3 extends \PHPUnit\Framework\TestCase {
         foreach($types as $type) {
             $s->rebindArray([$strict ? "strict $type" : $type]);
             $val = $s->runArray([$input])->getRow()['value'];
-            $this->assertSame($expectations[$type], $val, "Type $type failed comparison.");
+            $this->assertSame($expectations[$type], $val, "Binding from type $type failed comparison.");
         }
     }
 

@@ -3,8 +3,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 
-class TestDbResultSQLite3 extends \PHPUnit\Framework\TestCase {
-    use Test\Tools;
+class TestDbResultSQLite3 extends Test\AbstractTest {
 
     protected $c;
 

@@ -46,9 +46,8 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if($req->body) {
             // if the entity body is not JSON according to content type, return "415 Unsupported Media Type"
             if(!preg_match("<^application/json\b|^$>", $req->type)) return new Response(415, "", "", ['Accept: application/json']);
-            try {
-                $data = json_decode($req->body, true);
-            } catch(\Throwable $e) {
+            $data = @json_decode($req->body, true);
+            if(json_last_error() != \JSON_ERROR_NONE) {
                 // if the body could not be parsed as JSON, return "400 Bad Request"
                 return new Response(400);
             }

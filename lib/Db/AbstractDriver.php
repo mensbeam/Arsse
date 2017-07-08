@@ -4,10 +4,13 @@ namespace JKingWeb\Arsse\Db;
 use JKingWeb\DrUUID\UUID as UUID;
 
 abstract class AbstractDriver implements Driver {
+    protected $locked = false;
     protected $transDepth = 0;
     protected $transStatus = [];
 
     public abstract function prepareArray(string $query, array $paramTypes): Statement;
+    protected abstract function lock(): bool;
+    protected abstract function unlock(bool $rollback = false) : bool;
 
     public function schemaVersion(): int {
         try {
@@ -17,11 +20,15 @@ abstract class AbstractDriver implements Driver {
         }
     }
 
-    public function begin(): Transaction {
-        return new Transaction($this);
+    public function begin(bool $lock = false): Transaction {
+        return new Transaction($this, $lock);
     }
     
-    public function savepointCreate(): int {
+    public function savepointCreate(bool $lock = false): int {
+        if($lock && !$this->transDepth) {
+            $this->lock();
+            $this->locked = true;
+        }
         $this->exec("SAVEPOINT arsse_".(++$this->transDepth));
         $this->transStatus[$this->transDepth] = self::TR_PEND;
         return $this->transDepth;
@@ -59,6 +66,10 @@ abstract class AbstractDriver implements Driver {
                     array_pop($this->transStatus);
                     $this->transDepth--;
                 }
+            }
+            if(!$this->transDepth && $this->locked) {
+                $this->unlock();
+                $this->locked = false;
             }
             return $out;
         } else {
@@ -100,34 +111,14 @@ abstract class AbstractDriver implements Driver {
                     $this->transDepth--;
                 }
             }
+            if(!$this->transDepth && $this->locked) {
+                $this->unlock(true);
+                $this->locked = false;
+            }
             return $out;
         } else {
             throw new ExceptionSavepoint("invalid", ['action' => "rollback", 'index' => $index]);
         }
-    }
-
-    public function lock(): bool {
-        if($this->schemaVersion() < 1) return true;
-        if($this->isLocked()) return false;
-        $uuid = UUID::mintStr();
-        try {
-            $this->prepare("INSERT INTO arsse_meta(key,value) values(?,?)", "str", "str")->run("lock", $uuid);
-        } catch(ExceptionInput $e) {
-            return false;
-        }
-        sleep(1);
-        return ($this->query("SELECT value from arsse_meta where key is 'lock'")->getValue() == $uuid);
-    }
-
-    public function unlock(): bool {
-        if($this->schemaVersion() < 1) return true;
-        $this->exec("DELETE from arsse_meta where key is 'lock'");
-        return true;
-    }
-
-    public function isLocked(): bool {
-        if($this->schemaVersion() < 1) return false;
-        return ($this->query("SELECT count(*) from arsse_meta where key is 'lock'")->getValue() > 0);
     }
 
     public function prepare(string $query, ...$paramType): Statement {

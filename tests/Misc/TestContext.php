@@ -4,9 +4,7 @@ namespace JKingWeb\Arsse;
 use JKingWeb\Arsse\Misc\Context;
 
 
-class TestContext extends \PHPUnit\Framework\TestCase {
-    use Test\Tools;
-
+class TestContext extends Test\AbstractTest {
     function testVerifyInitialState() {
         $c = new Context;
         foreach((new \ReflectionObject($c))->getMethods(\ReflectionMethod::IS_PUBLIC) as $m) {

@@ -4,9 +4,7 @@ namespace JKingWeb\Arsse;
 Use Phake;
 
 
-class TestException extends \PHPUnit\Framework\TestCase {
-    use Test\Tools;
-
+class TestException extends Test\AbstractTest {
     function setUp() {
         $this->clearData(false);
         // create a mock Lang object so as not to create a dependency loop

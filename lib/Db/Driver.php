@@ -15,17 +15,13 @@ interface Driver {
     // returns the version of the scheme of the opened database; if uninitialized should return 0
     function schemaVersion(): int;
     // return a Transaction object
-    function begin(): Transaction;
+    function begin(bool $lock = false): Transaction;
     // manually begin a real or synthetic transactions, with real or synthetic nesting
     function savepointCreate(): int;
     // manually commit either the latest or all pending nested transactions
     function savepointRelease(int $index = null): bool;
     // manually rollback either the latest or all pending nested transactions
     function savepointUndo(int $index = null): bool;
-    // attempt to advise other processes that they should not attempt to access the database; used during live upgrades
-    function lock(): bool;
-    function unlock(): bool;
-    function isLocked(): bool;
     // attempt to perform an in-place upgrade of the database schema; this may be a no-op which always throws an exception
     function schemaUpdate(int $to): bool;
     // execute one or more unsanitized SQL queries and return an indication of success

@@ -4,9 +4,7 @@ namespace JKingWeb\Arsse;
 use org\bovigo\vfs\vfsStream;
 
 
-class TestDbUpdateSQLite3 extends \PHPUnit\Framework\TestCase {
-    use Test\Tools;
-
+class TestDbUpdateSQLite3 extends Test\AbstractTest {
     protected $data;
     protected $drv;
     protected $vfs;

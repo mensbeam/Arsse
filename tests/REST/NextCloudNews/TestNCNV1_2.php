@@ -8,9 +8,7 @@ use JKingWeb\Arsse\Misc\Context;
 use Phake;
 
 
-class TestNCNV1_2 extends \PHPUnit\Framework\TestCase {
-    use Test\Tools;
-
+class TestNCNV1_2 extends Test\AbstractTest {
     protected $h;
     protected $feeds = [ // expected sample output of a feed list from the database, and the resultant expected transformation by the REST handler
         'db' => [
@@ -25,7 +23,7 @@ class TestNCNV1_2 extends \PHPUnit\Framework\TestCase {
                 'err_count' => 0,
                 'err_msg' => '',
                 'order_type' => 0,
-                'added' => 1495287354,
+                'added' => '2017-05-20 13:35:54',
                 'title' => 'First example feed',
                 'unread' => 50048,
             ],
@@ -40,7 +38,7 @@ class TestNCNV1_2 extends \PHPUnit\Framework\TestCase {
                 'err_count' => 0,
                 'err_msg' => '',
                 'order_type' => 2,
-                'added' => 1495287354,
+                'added' => '2017-05-20 13:35:54',
                 'title' => 'Second example feed',
                 'unread' => 23,
             ],

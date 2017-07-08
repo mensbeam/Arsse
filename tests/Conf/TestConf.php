@@ -4,9 +4,7 @@ namespace JKingWeb\Arsse;
 use org\bovigo\vfs\vfsStream;
 
 
-class TestConf extends \PHPUnit\Framework\TestCase {
-    use Test\Tools;
-
+class TestConf extends Test\AbstractTest {
     static $vfs;
     static $path;
 

@@ -4,9 +4,7 @@ namespace JKingWeb\Arsse;
 use Phake;
 
 
-class TestAuthorization extends \PHPUnit\Framework\TestCase {
-    use Test\Tools;
-
+class TestAuthorization extends Test\AbstractTest {
     const USERS = [
         'user@example.com' => User\Driver::RIGHTS_NONE,
         'user@example.org' => User\Driver::RIGHTS_NONE,

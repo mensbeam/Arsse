@@ -4,8 +4,8 @@ namespace JKingWeb\Arsse;
 use org\bovigo\vfs\vfsStream;
 
 
-class TestLangErrors extends \PHPUnit\Framework\TestCase {
-    use Test\Tools, Test\Lang\Setup;
+class TestLangErrors extends Test\AbstractTest {
+    use Test\Lang\Setup;
 
     public $files;
     public $path;

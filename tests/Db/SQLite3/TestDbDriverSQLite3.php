@@ -3,9 +3,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 
-class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
-    use Test\Tools;
-
+class TestDbDriverSQLite3 extends Test\AbstractTest {
     protected $data;
     protected $drv;
     protected $ch;
@@ -21,6 +19,7 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
         Data::$conf = $conf;
         $this->drv = new Db\SQLite3\Driver(true);
         $this->ch = new \SQLite3(Data::$conf->dbSQLite3File);
+        $this->ch->enableExceptions(true);
     }
 
     function tearDown() {
@@ -68,7 +67,7 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
     }
 
     function testMakeAValidQuery() {
-        $this->assertInstanceOf(Db\SQLite3\Result::class, $this->drv->query("SELECT 1"));
+        $this->assertInstanceOf(Db\Result::class, $this->drv->query("SELECT 1"));
     }
 
     function testMakeAnInvalidQuery() {
@@ -96,7 +95,7 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
 
     function testPrepareAValidQuery() {
         $s = $this->drv->prepare("SELECT ?, ?", "int", "int");
-        $this->assertInstanceOf(Db\SQLite3\Statement::class, $s);
+        $this->assertInstanceOf(Db\Statement::class, $s);
     }
 
     function testPrepareAnInvalidQuery() {
@@ -295,25 +294,17 @@ class TestDbDriverSQLite3 extends \PHPUnit\Framework\TestCase {
         $this->assertSame(1, $this->drv->schemaVersion());
         $this->drv->exec("PRAGMA user_version=2");
         $this->assertSame(2, $this->drv->schemaVersion());
-
     }
 
-    function testManipulateAdvisoryLock() {
-        $this->assertTrue($this->drv->unlock());
-        $this->assertFalse($this->drv->isLocked());
-        $this->assertTrue($this->drv->lock());
-        $this->assertFalse($this->drv->isLocked());
-        $this->drv->exec("CREATE TABLE arsse_meta(key text primary key, value text); PRAGMA user_version=1");
-        $this->assertTrue($this->drv->lock());
-        $this->assertTrue($this->drv->isLocked());
-        $this->assertFalse($this->drv->lock());
-        $this->drv->exec("PRAGMA user_version=0");
-        $this->assertFalse($this->drv->isLocked());
-        $this->assertTrue($this->drv->lock());
-        $this->assertFalse($this->drv->isLocked());
-        $this->drv->exec("PRAGMA user_version=1");
-        $this->assertTrue($this->drv->isLocked());
-        $this->assertTrue($this->drv->unlock());
-        $this->assertFalse($this->drv->isLocked());
+    function testLockTheDatabase() {
+        $this->drv->savepointCreate(true);
+        $this->assertException();
+        $this->ch->exec("CREATE TABLE test(id integer primary key)");
+    }
+
+    function testUnlockTheDatabase() {
+        $this->drv->savepointCreate(true);
+        $this->drv->savepointRelease();
+        $this->assertSame(true, $this->ch->exec("CREATE TABLE test(id integer primary key)"));
     }
 }

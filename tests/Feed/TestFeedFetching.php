@@ -4,9 +4,7 @@ namespace JKingWeb\Arsse;
 Use Phake;
 
 
-class TestFeedFetching extends \PHPUnit\Framework\TestCase {
-    use Test\Tools;
-
+class TestFeedFetching extends Test\AbstractTest {
     protected static $host = "http://localhost:8000/";
     protected $base = "";
 

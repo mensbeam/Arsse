@@ -7,8 +7,8 @@ class Transaction {
     protected $pending = false;
     protected $drv;
 
-    function __construct(Driver $drv) {
-        $this->index = $drv->savepointCreate();
+    function __construct(Driver $drv, bool $lock = false) {
+        $this->index = $drv->savepointCreate($lock);
         $this->drv = $drv;
         $this->pending = true;
     }

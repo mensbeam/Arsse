@@ -22,7 +22,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $file = Data::$conf->dbSQLite3File;
         // if the file exists (or we're initializing the database), try to open it
         try {
-            $this->db = new \SQLite3($file, ($install) ? \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE : \SQLITE3_OPEN_READWRITE, Data::$conf->dbSQLite3Key);
+            $this->db = $this->makeConnection($file, ($install) ? \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE : \SQLITE3_OPEN_READWRITE, Data::$conf->dbSQLite3Key);
         } catch(\Throwable $e) {
             // if opening the database doesn't work, check various pre-conditions to find out what the problem might be
             if(!file_exists($file)) {
@@ -46,6 +46,10 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         }
     }
 
+    protected function makeConnection(string $file, int $opts, string $key): \SQLite3 {
+        return new \SQLite3($file, $opts, $key);
+    }
+
     public function __destruct() {
         try{$this->db->close();} catch(\Exception $e) {}
         unset($this->db);
@@ -66,9 +70,9 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         if($ver >= $to) throw new Exception("updateTooNew", ['difference' => ($ver - $to), 'current' => $ver, 'target' => $to, 'driver_name' => $this->driverName()]);
         $sep = \DIRECTORY_SEPARATOR;
         $path = Data::$conf->dbSchemaBase.$sep."SQLite3".$sep;
-        $this->lock();
-        $tr = $this->savepointCreate();
-        for($a = $ver; $a < $to; $a++) {
+        // lock the database
+        $this->savepointCreate(true);
+        for($a = $this->schemaVersion(); $a < $to; $a++) {
             $this->savepointCreate();
             try {
                 $file = $path.$a.".sql";
@@ -78,7 +82,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
                 if($sql===false) throw new Exception("updateFileUnusable", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]);
                 try {
                     $this->exec($sql);
-                } catch(\Exception $e) {
+                } catch(\Throwable $e) {
                     throw new Exception("updateFileError", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a, 'message' => $this->getError()]);
                 }
                 if($this->schemaVersion() != $a+1) throw new Exception("updateFileIncomplete", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]);
@@ -86,14 +90,12 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
                 // undo any partial changes from the failed update
                 $this->savepointUndo();
                 // commit any successful updates if updating by more than one version
-                $this->unlock();
                 $this->savepointRelease();
                 // throw the error received
                 throw $e;
             }
             $this->savepointRelease();
         }
-        $this->unlock();
         $this->savepointRelease();
         return true;
     }
@@ -131,5 +133,15 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
             throw new $excClass($excMsg, $excData);
         }
         return new Statement($this->db, $s, $paramTypes);
+    }
+
+    protected function lock(): bool {
+        $this->exec("BEGIN EXCLUSIVE TRANSACTION");
+        return true;
+    }
+
+    protected function unlock(bool $rollback = false): bool {
+        $this->exec((!$rollback) ? "COMMIT" : "ROLLBACK");
+        return true;
     }
 }

@@ -43,13 +43,8 @@ class Context {
                 continue;
             }
             if(is_string($id)) {
-                try {
-                    $ch1 = strval(intval($id));
-                    $ch2 = strval($id);
-                } catch(\Throwable $e) {
-                    $ch1 = true;
-                    $ch2 = false;
-                }
+                $ch1 = strval(@intval($id));
+                $ch2 = strval($id);
                 if($ch1 !== $ch2 || $id < 1) $id = 0;
             } else {
                 $id = 0;
