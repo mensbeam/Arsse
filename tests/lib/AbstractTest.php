@@ -25,8 +25,8 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     }
 
     function assertTime($exp, $test) {
-        $exp  = $this->dateTransform($exp, "unix");
-        $test = $this->dateTransform($test, "unix");
+        $exp  = $this->dateTransform($exp, "iso8601");
+        $test = $this->dateTransform($test, "iso8601");
         $this->assertSame($exp, $test);
     }
 

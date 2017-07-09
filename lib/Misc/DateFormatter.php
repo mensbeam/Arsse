@@ -11,7 +11,7 @@ trait DateFormatter {
         if($outFormat=="unix") return $date->getTimestamp();
         switch ($outFormat) {
             case 'http':    $f = "D, d M Y H:i:s \G\M\T"; break;
-            case 'iso8601': $f = "Y-m-dTH:i:s";           break;
+            case 'iso8601': $f = "Y-m-d\TH:i:s";           break;
             case 'sql':     $f = "Y-m-d H:i:s";           break;
             case 'date':    $f = "Y-m-d";                 break;
             case 'time':    $f = "H:i:s";                 break;
@@ -34,7 +34,7 @@ trait DateFormatter {
                 if(!is_null($inFormat)) {
                     switch($inFormat) {
                         case 'http':    $f = "D, d M Y H:i:s \G\M\T"; break;
-                        case 'iso8601': $f = "Y-m-dTH:i:sP";          break;
+                        case 'iso8601': $f = "Y-m-d\TH:i:sP";          break;
                         case 'sql':     $f = "Y-m-d H:i:s";           break;
                         case 'date':    $f = "Y-m-d";                 break;
                         case 'time':    $f = "H:i:s";                 break;
