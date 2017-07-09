@@ -119,7 +119,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         ];
         // the first path element is the overall scope of the request
         $scope = $url[0];
-        // any URL components which are only digits should be replaced with "#", for easier comparison (integer segments are IDs, and we don't care about the specific ID)
+        // any URL components which are only digits should be replaced with "0", for easier comparison (integer segments are IDs, and we don't care about the specific ID)
         for($a = 0; $a < sizeof($url); $a++) {
             if($this->validateInt($url[$a])) $url[$a] = "0";
         }
@@ -185,9 +185,9 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'author'        => "author",
             'pubDate'       => "edited_date",
             'body'          => "content",
-            'enclsoureMime' => "media_type",
+            'enclosureMime' => "media_type",
             'enclosureLink' => "media_url",
-            'feedId'        => "feed",
+            'feedId'        => "subscription",
             'unread'        => "unread",
             'starred'       => "starred",
             'lastModified'  => "modified_date",
@@ -263,6 +263,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new Response(204);
     }
 
+    // mark all articles associated with a folder as read
     protected function folderMarkRead(array $url, array $data): Response {
         $c = new Context;
         if(isset($data['newestItemId'])) {
@@ -426,6 +427,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new Response(204);
     }
 
+    // mark all articles associated with a subscription as read
     protected function subscriptionMarkRead(array $url, array $data): Response {
         $c = new Context;
         if(isset($data['newestItemId'])) {
@@ -446,6 +448,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new Response(204);
     }
 
+    // list articles and their properties
     protected function articleList(array $url, array $data): Response {
         // set the context options supplied by the client
         $c = new Context;
@@ -499,6 +502,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new Response(200, $out);
     }
 
+    // mark all articles as read
     protected function articleMarkReadAll(array $url, array $data): Response {
         $c = new Context;
         if(isset($data['newestItemId'])) {
@@ -513,6 +517,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new Response(204);
     }
 
+    // mark a single article as read
     protected function articleMarkRead(array $url, array $data): Response {
         // initialize the matching context
         $c = new Context;
@@ -528,6 +533,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new Response(204);
     }
 
+    // mark a single article as read
     protected function articleMarkStarred(array $url, array $data): Response {
         // initialize the matching context
         $c = new Context;
@@ -535,7 +541,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // determine whether to mark read or unread
         $set = ($url[3]=="star");
         try {
-            Data::$db->articleMark(Data::$user->id, ['star' => $set], $c);
+            Data::$db->articleMark(Data::$user->id, ['starred' => $set], $c);
         } catch(ExceptionInput $e) {
             // ID is not valid
             return new Response(404);
@@ -543,9 +549,8 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new Response(204);
     }
 
+    // mark an array of articles as read
     protected function articleMarkReadMulti(array $url, array $data): Response {
-        // initialize the matching context
-        $c = new Context;
         // determine whether to mark read or unread
         $set = ($url[1]=="read");
         // if the input data is not at all valid, return an error
@@ -554,6 +559,8 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $t = Data::$db->begin();
         $in = array_chunk($data['items'], 50);
         for($a = 0; $a < sizeof($in); $a++) {
+            // initialize the matching context
+            $c = new Context;
             $c->editions($in[$a]);
             try {
                 Data::$db->articleMark(Data::$user->id, ['read' => $set], $c);
@@ -563,10 +570,9 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new Response(204);
     }
 
+    // mark an array of articles as starred
     protected function articleMarkStarredMulti(array $url, array $data): Response {
-        // initialize the matching context
-        $c = new Context;
-        // determine whether to mark read or unread
+        // determine whether to mark starred or unstarred
         $set = ($url[1]=="star");
         // if the input data is not at all valid, return an error
         if(!isset($data['items']) || !is_array($data['items'])) return new Response(422);
@@ -574,6 +580,8 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $t = Data::$db->begin();
         $in = array_chunk(array_column($data['items'], "guidHash"), 50);
         for($a = 0; $a < sizeof($in); $a++) {
+            // initialize the matching context
+            $c = new Context;
             $c->articles($in[$a]);
             try {
                 Data::$db->articleMark(Data::$user->id, ['starred' => $set], $c);
