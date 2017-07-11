@@ -21,7 +21,6 @@ trait DateFormatter {
     }
 
     protected function dateNormalize($date, string $inFormat = null, bool $inLocal = false) {
-        // convert input to a Unix timestamp
         if($date instanceof \DateTimeInterface) {
             return $date;
         } else if(is_numeric($date)) {

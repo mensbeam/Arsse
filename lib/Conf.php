@@ -16,13 +16,13 @@ class Conf {
     public $dbPostgreSQLPort        = 5432;
     public $dbPostgreSQLDb          = "arsse";
     public $dbPostgreSQLSchema      = "";
-    public $dbPostgreSQLAutoUpd     = false;
+    public $dbPostgreSQLAutoUpd     = true;
     public $dbMySQLHost             = "localhost";
     public $dbMySQLUser             = "arsse";
     public $dbMySQLPass             = "";
     public $dbMySQLPort             = 3306;
     public $dbMySQLDb               = "arsse";
-    public $dbMySQLAutoUpd          = false;
+    public $dbMySQLAutoUpd          = true;
 
     public $userDriver              = User\Internal\Driver::class;
     public $userComposeNames        = true;
@@ -33,14 +33,15 @@ class Conf {
     public $fetchUserAgentString;
 
     public function __construct(string $import_file = "") {
-        $this->fetchUserAgentString = sprintf('Arsse/%s (%s %s; %s; https://code.jkingweb.ca/jking/arsse) PicoFeed (https://github.com/fguillot/picoFeed)',
-            VERSION, // Arsse version
-            php_uname('s'), // OS
-            php_uname('r'), // OS version
-            php_uname('m') // platform architecture
-        );
-
         if($import_file != "") $this->importFile($import_file);
+        if(is_null($this->fetchUserAgentString)) {
+            $this->fetchUserAgentString = sprintf('Arsse/%s (%s %s; %s; https://code.jkingweb.ca/jking/arsse) PicoFeed (https://github.com/fguillot/picoFeed)',
+                VERSION, // Arsse version
+                php_uname('s'), // OS
+                php_uname('r'), // OS version
+                php_uname('m') // platform architecture
+            );
+        }
     }
 
     public function importFile(string $file): self {

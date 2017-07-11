@@ -11,10 +11,19 @@ create table arsse_users(
     name text,                                                                                              -- display name
     avatar_type text,                                                                                       -- internal avatar image's MIME content type
     avatar_data blob,                                                                                       -- internal avatar image's binary data
-    rights integer not null default 0                                                                       -- any administrative rights the user may have
+    admin boolean default 0,                                                                                -- whether the user is a member of the special "admin" group
+    rights integer not null default 0                                                                       -- temporary admin-rights marker FIXME: remove reliance on this
 );
 
--- NextCloud folders
+-- extra user metadata
+create table arsse_users_meta(
+    owner text not null references arsse_users(id) on delete cascade on update cascade,
+    key text not null,
+    value text,
+    primary key(owner,key)
+);
+
+-- NextCloud News folders
 create table arsse_folders(
     id integer primary key,                                                                                 -- sequence number
     owner text not null references arsse_users(id) on delete cascade on update cascade,                     -- owner of folder
