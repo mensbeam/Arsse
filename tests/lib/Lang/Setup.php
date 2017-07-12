@@ -37,16 +37,16 @@ trait Setup {
         $this->l = new TestLang($this->path);
         // create a mock Lang object so as not to create a dependency loop
         $this->clearData(false);
-        Data::$l = Phake::mock(Lang::class);
-        Phake::when(Data::$l)->msg->thenReturn("");
+        Data::$lang = Phake::mock(Lang::class);
+        Phake::when(Data::$lang)->msg->thenReturn("");
         // call the additional setup method if it exists
         if(method_exists($this, "setUpSeries")) $this->setUpSeries();
     }
 
     function tearDown() {
         // verify calls to the mock Lang object
-        Phake::verify(Data::$l, Phake::atLeast(0))->msg($this->isType("string"), $this->anything());
-        Phake::verifyNoOtherInteractions(Data::$l);
+        Phake::verify(Data::$lang, Phake::atLeast(0))->msg($this->isType("string"), $this->anything());
+        Phake::verifyNoOtherInteractions(Data::$lang);
         // clean up
         $this->clearData(true);
         // call the additional teardiwn method if it exists

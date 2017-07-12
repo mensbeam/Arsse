@@ -46,7 +46,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         }
     }
 
-    protected function makeConnection(string $file, int $opts, string $key): \SQLite3 {
+    protected function makeConnection(string $file, int $opts, string $key) {
         return new \SQLite3($file, $opts, $key);
     }
 
@@ -57,7 +57,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
 
 
     static public function driverName(): string {
-        return Data::$l->msg("Driver.Db.SQLite3.Name");
+        return Data::$lang->msg("Driver.Db.SQLite3.Name");
     }
 
     public function schemaVersion(): int {
@@ -66,7 +66,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
 
     public function schemaUpdate(int $to): bool {
         $ver = $this->schemaVersion();
-        if(!Data::$conf->dbSQLite3AutoUpd)  throw new Exception("updateManual", ['version' => $ver, 'driver_name' => $this->driverName()]);
+        if(!Data::$conf->dbAutoUpdate)  throw new Exception("updateManual", ['version' => $ver, 'driver_name' => $this->driverName()]);
         if($ver >= $to) throw new Exception("updateTooNew", ['difference' => ($ver - $to), 'current' => $ver, 'target' => $to, 'driver_name' => $this->driverName()]);
         $sep = \DIRECTORY_SEPARATOR;
         $path = Data::$conf->dbSchemaBase.$sep."SQLite3".$sep;

@@ -37,7 +37,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             Data::$$prop = null;
         }
         if($loadLang) {
-            Data::$l = new \JKingWeb\Arsse\Lang();
+            Data::$lang = new \JKingWeb\Arsse\Lang();
         }
         return true;
     }

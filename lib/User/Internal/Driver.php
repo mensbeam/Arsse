@@ -21,7 +21,7 @@ final class Driver implements Iface {
     ];
 
     static public function driverName(): string {
-        return Data::$l->msg("Driver.User.Internal.Name");
+        return Data::$lang->msg("Driver.User.Internal.Name");
     }
 
     public function driverFunctions(string $function = null) {

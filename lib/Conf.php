@@ -7,27 +7,31 @@ class Conf {
 
     public $dbDriver                = Db\SQLite3\Driver::class;
     public $dbSchemaBase            = BASE.'sql';
+    public $dbAutoUpdate            = true;
     public $dbSQLite3File           = BASE."arsse.db";
     public $dbSQLite3Key            = "";
-    public $dbSQLite3AutoUpd        = true;
     public $dbPostgreSQLHost        = "localhost";
     public $dbPostgreSQLUser        = "arsse";
     public $dbPostgreSQLPass        = "";
     public $dbPostgreSQLPort        = 5432;
     public $dbPostgreSQLDb          = "arsse";
     public $dbPostgreSQLSchema      = "";
-    public $dbPostgreSQLAutoUpd     = true;
     public $dbMySQLHost             = "localhost";
     public $dbMySQLUser             = "arsse";
     public $dbMySQLPass             = "";
     public $dbMySQLPort             = 3306;
     public $dbMySQLDb               = "arsse";
-    public $dbMySQLAutoUpd          = true;
 
     public $userDriver              = User\Internal\Driver::class;
     public $userComposeNames        = true;
     public $userTempPasswordLength  = 20;
 
+    public $serviceDriver           = Service\Curl\Driver::class;
+    public $serviceFrequency        = "PT2M";
+    public $serviceCurlBase         = "http://localhost/";
+    public $serviceCurlUser         = null;
+    public $serviceCurlPassword     = null;
+    
     public $fetchTimeout            = 10;
     public $fetchSizeLimit          = 2 * 1024 * 1024;
     public $fetchUserAgentString;
