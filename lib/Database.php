@@ -13,6 +13,10 @@ class Database {
     const FORMAT_DATE    = "Y-m-d";
     const FORMAT_TIME    = "h:i:s";
 
+    
+    /**
+    * @var Db\Driver
+    */
     public    $db;
 
     public function __construct() {

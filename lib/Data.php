@@ -3,9 +3,21 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 class Data {
+    /**
+    * @var Lang
+    */
     public static $lang;
+    /**
+    * @var Conf
+    */
     public static $conf;
+    /**
+    * @var Database
+    */
     public static $db;
+    /**
+    * @var User
+    */
     public static $user;
 
     static function load(Conf $conf) {

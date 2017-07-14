@@ -11,6 +11,9 @@ class User {
 
     public  $id = null;
 
+    /**
+    * @var User\Driver
+    */
     protected $u;
     protected $authz = 0;
     protected $authzSupported = 0;
@@ -31,7 +34,6 @@ class User {
     public function __construct() {
         $driver = Data::$conf->userDriver;
         $this->u = new $driver();
-        $this->authzSupported = $this->u->driverFunctions("authorize");
     }
 
     public function __toString() {
