@@ -23,6 +23,8 @@ class REST {
         // Tiny Tiny RSS        https://tt-rss.org/gitlab/fox/tt-rss/wikis/ApiReference
         // Fever                https://feedafever.com/api
         // NewsBlur             http://www.newsblur.com/api
+        // Miniflux             https://github.com/miniflux/miniflux/blob/master/docs/json-rpc-api.markdown
+        // CommaFeed            https://www.commafeed.com/api/
     ];
 
     function __construct() {
@@ -36,8 +38,22 @@ class REST {
         $class = $this->apis[$api]['class'];
         $drv = new $class();
         $out = $drv->dispatch($req);
-        echo "Status: ".$out->code."\n";
-        echo json_encode($out->payload,\JSON_PRETTY_PRINT);
+        header("Status: ".$out->code." ".Data::$lang->msg("HTTP.Status.".$out->code));
+        if(!is_null($out->payload)) {
+            header("Content-Type: ".$out->type);
+            switch($out->type) {
+                case REST\Response::T_JSON: 
+                    $body = json_encode($out->payload,\JSON_PRETTY_PRINT);
+                    break;
+                default:
+                    $body = (string) $out->payload;
+                    break;
+            }
+        }
+        foreach($out->fields as $field) {
+            header($field);
+        }
+        echo $body;
         return true;
     }
 
@@ -49,6 +65,6 @@ class REST {
             if(strpos($url, $api['match'])===0) return $id;
         }
         // or throw an exception otherwise
-        throw new REST\ExceptionURL("apiNotSupported", $url);
+        throw new REST\Exception501();
     }
 }

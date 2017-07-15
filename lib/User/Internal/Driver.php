@@ -1,23 +1,22 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\User\Internal;
-use JKingWeb\Arsse\User\Driver as Iface;
 
-final class Driver implements Iface {
+final class Driver implements \JKingWeb\Arsse\User\Driver {
     use InternalFunctions;
 
     protected $db;
     protected $functions = [
-        "auth"                    => Iface::FUNC_INTERNAL,
-        "userList"                => Iface::FUNC_INTERNAL,
-        "userExists"              => Iface::FUNC_INTERNAL,
-        "userAdd"                 => Iface::FUNC_INTERNAL,
-        "userRemove"              => Iface::FUNC_INTERNAL,
-        "userPasswordSet"         => Iface::FUNC_INTERNAL,
-        "userPropertiesGet"       => Iface::FUNC_INTERNAL,
-        "userPropertiesSet"       => Iface::FUNC_INTERNAL,
-        "userRightsGet"           => Iface::FUNC_INTERNAL,
-        "userRightsSet"           => Iface::FUNC_INTERNAL,
+        "auth"                    => self::FUNC_INTERNAL,
+        "userList"                => self::FUNC_INTERNAL,
+        "userExists"              => self::FUNC_INTERNAL,
+        "userAdd"                 => self::FUNC_INTERNAL,
+        "userRemove"              => self::FUNC_INTERNAL,
+        "userPasswordSet"         => self::FUNC_INTERNAL,
+        "userPropertiesGet"       => self::FUNC_INTERNAL,
+        "userPropertiesSet"       => self::FUNC_INTERNAL,
+        "userRightsGet"           => self::FUNC_INTERNAL,
+        "userRightsSet"           => self::FUNC_INTERNAL,
     ];
 
     static public function driverName(): string {
@@ -29,7 +28,7 @@ final class Driver implements Iface {
         if(array_key_exists($function, $this->functions)) {
             return $this->functions[$function];
         } else {
-            return Iface::FUNC_NOT_IMPLEMENTED;
+            return self::FUNC_NOT_IMPLEMENTED;
         }
     }
 

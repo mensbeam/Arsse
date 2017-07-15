@@ -1,8 +1,9 @@
 <?php
 return [
-    'Driver.User.Internal.Name'                                      => 'Internal',
-
     'Driver.Db.SQLite3.Name'                                         => 'SQLite 3',
+    'Driver.Service.Curl.Name'                                       => 'HTTP (curl)',
+    'Driver.Service.Internal.Name'                                   => 'Internal',
+    'Driver.User.Internal.Name'                                      => 'Internal',
 
     'HTTP.Status.200'                                                => 'OK',
     'HTTP.Status.204'                                                => 'No Content',

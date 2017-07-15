@@ -13,6 +13,7 @@ use JKingWeb\Arsse\REST\Exception405;
 
 class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     const REALM = "NextCloud News API v1-2";
+    const VERSION = "11.0.5";
 
     protected $dateFormat = "unix";
 
@@ -110,12 +111,19 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'star/multiple'   => ['PUT' => "articleMarkStarredMulti"],
                 'unstar/multiple' => ['PUT' => "articleMarkStarredMulti"],
             ],
-            'cleanup' => [],
-            'version' => [
-                '' => ['GET' => "versionReport"],
+            'cleanup' => [
+                'before-update' => ['GET' => "cleanupBefore"],
+                'after-update'  => ['GET' => "cleanupAfter"],
             ],
-            'status' => [],
-            'user' => [],
+            'version' => [
+                '' => ['GET' => "serverVersion"],
+            ],
+            'status' => [
+                '' => ['GET' => "serverStatus"],
+            ],
+            'user' => [
+                '' => ['GET' => "userStatus"],
+            ],
         ];
         // the first path element is the overall scope of the request
         $scope = $url[0];
@@ -283,11 +291,6 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new Response(404);
         }
         return new Response(204);
-    }
-
-    // return the server version
-    protected function versionReport(array $url, array $data): Response {
-        return new Response(200, ['version' => \JKingWeb\Arsse\VERSION]);
     }
     
     // return list of feeds which should be refreshed
@@ -461,7 +464,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $c->reverse(true);
         }
         // set the edition mark-off; the database uses an or-equal comparison for internal consistency, but the protocol does not, so we must adjust by one
-        if(isset($data['offset'])) {
+        if(isset($data['offset']) && $data['offset'] > 0) {
             if($c->reverse) {
                 $c->latestEdition($data['offset'] - 1);
             } else {
@@ -589,5 +592,50 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         $t->commit();
         return new Response(204);
+    }
+
+    protected function userStatus(array $url, array $data): Response {
+        // FIXME: stub
+        $data = Data::$db->userPropertiesGet(Data::$user->id);
+        $out = [
+            'userId' => Data::$user->id,
+            'displayName' => $data['name'] ?? Data::$user->id,
+            'lastLoginTimestamp' => time(),
+            'avatar' => null,
+        ];
+        return new Response(200, $out);
+    }
+
+    protected function cleanupBefore(array $url, array $data): Response {
+        // function requires admin rights per spec
+        if(Data::$user->rightsGet(Data::$user->id)==User::RIGHTS_NONE) return new Response(403);
+        // FIXME: stub
+        return new Response(204);
+    }
+
+    protected function cleanupAfter(array $url, array $data): Response {
+        // function requires admin rights per spec
+        if(Data::$user->rightsGet(Data::$user->id)==User::RIGHTS_NONE) return new Response(403);
+        // FIXME: stub
+        return new Response(204);
+    }
+
+    // return the server version
+    protected function serverVersion(array $url, array $data): Response {
+        return new Response(200, [
+            'version' => self::VERSION,
+            'arsse_version' => \JKingWeb\Arsse\VERSION,
+        ]);
+    }
+
+    protected function serverStatus(array $url, array $data): Response {
+        // FIXME: stub
+        return new Response(200, [
+            'version' => self::VERSION,
+            'arsse_version' => \JKingWeb\Arsse\VERSION,
+            'warnings' => [
+                'improperlyConfiguredCron' => false,
+            ]
+        ]);
     }
 }
