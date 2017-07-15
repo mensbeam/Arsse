@@ -442,7 +442,7 @@ class Database {
         // here. When an exception is thrown it should update the database with the
         // error instead of failing; if other exceptions are thrown, we should simply roll back
         try {
-            $feed = new Feed($feedID, $f['url'], $this->dateTransform($f['modified'], "http", "sql"), $f['etag'], $f['username'], $f['password']);
+            $feed = new Feed($feedID, $f['url'], (string) $this->dateTransform($f['modified'], "http", "sql"), $f['etag'], $f['username'], $f['password']);
             if(!$feed->modified) {
                 // if the feed hasn't changed, just compute the next fetch time and record it
                 $this->db->prepare("UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id is ?", 'datetime', 'int')->run($feed->nextFetch, $feedID);

@@ -13,6 +13,7 @@ trait CommonTests {
         $this->clearData();
         $conf = new Conf();
         $conf->userDriver = $this->drv;
+        $conf->userPreAuth = false;
         Data::$conf = $conf;
         Data::$db = new Database();
         Data::$user = Phake::PartialMock(User::class);

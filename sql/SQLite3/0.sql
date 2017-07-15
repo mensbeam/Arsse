@@ -29,7 +29,7 @@ create table arsse_folders(
     owner text not null references arsse_users(id) on delete cascade on update cascade,                     -- owner of folder
     parent integer references arsse_folders(id) on delete cascade,                                          -- parent folder id
     name text not null,                                                                                     -- folder name
-    modified datetime not null default CURRENT_TIMESTAMP,                                                   --
+    modified text not null default CURRENT_TIMESTAMP,                                                       --
     unique(owner,name,parent)                                                                               -- cannot have multiple folders with the same name under the same parent for the same owner
 );
 
@@ -40,9 +40,9 @@ create table arsse_feeds(
     title text,                                                                                             -- default title of feed
     favicon text,                                                                                           -- URL of favicon
     source text,                                                                                            -- URL of site to which the feed belongs
-    updated datetime,                                                                                       -- time at which the feed was last fetched
-    modified datetime,                                                                                      -- time at which the feed last actually changed
-    next_fetch datetime,                                                                                    -- time at which the feed should next be fetched
+    updated text,                                                                                           -- time at which the feed was last fetched
+    modified text,                                                                                          -- time at which the feed last actually changed
+    next_fetch text,                                                                                        -- time at which the feed should next be fetched
     etag text not null default '',                                                                          -- HTTP ETag hash used for cache validation, changes each time the content changes
     err_count integer not null default 0,                                                                   -- count of successive times update resulted in error since last successful update
     err_msg text,                                                                                           -- last error message
@@ -56,8 +56,8 @@ create table arsse_subscriptions(
     id integer primary key,                                                                                 -- sequence number
     owner text not null references arsse_users(id) on delete cascade on update cascade,                     -- owner of subscription
     feed integer not null references arsse_feeds(id) on delete cascade,                                     -- feed for the subscription
-    added datetime not null default CURRENT_TIMESTAMP,                                                      -- time at which feed was added
-    modified datetime not null default CURRENT_TIMESTAMP,                                                   -- date at which subscription properties were last modified
+    added text not null default CURRENT_TIMESTAMP,                                                          -- time at which feed was added
+    modified text not null default CURRENT_TIMESTAMP,                                                       -- date at which subscription properties were last modified
     title text,                                                                                             -- user-supplied title
     order_type int not null default 0,                                                                      -- NextCloud sort order
     pinned boolean not null default 0,                                                                      -- whether feed is pinned (always sorts at top)
@@ -72,9 +72,9 @@ create table arsse_articles(
     url text,                                                                                               -- URL of article
     title text,                                                                                             -- article title
     author text,                                                                                            -- author's name
-    published datetime,                                                                                     -- time of original publication
-    edited datetime,                                                                                        -- time of last edit
-    modified datetime not null default CURRENT_TIMESTAMP,                                                   -- date when article properties were last modified
+    published text,                                                                                         -- time of original publication
+    edited text,                                                                                            -- time of last edit
+    modified text not null default CURRENT_TIMESTAMP,                                                       -- date when article properties were last modified
     content text,                                                                                           -- content, as (X)HTML
     guid text,                                                                                              -- GUID
     url_title_hash text not null,                                                                           -- hash of URL + title; used when checking for updates and for identification if there is no guid.
@@ -96,7 +96,7 @@ create table arsse_marks(
     owner text not null references arsse_users(id) on delete cascade on update cascade,
     read boolean not null default 0,
     starred boolean not null default 0,
-    modified datetime not null default CURRENT_TIMESTAMP,
+    modified text not null default CURRENT_TIMESTAMP,    
     unique(article,owner)
 );
 

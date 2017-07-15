@@ -209,7 +209,8 @@ class Feed {
             }
             $articles = Data::$db->feedMatchIds($feedID, $ids, $hashesUT, $hashesUC, $hashesTC)->getAll();
             list($this->newItems, $changed) = $this->matchItems($this->newItems, $articles);
-            $this->changedItems = array_merge($this->changedItems, $changed);
+            // merge the two change-lists, preserving keys
+            $this->changedItems = array_combine(array_merge(array_keys($this->changedItems), array_keys($changed)), array_merge($this->changedItems, $changed));
         }
         // TODO: fetch full content when appropriate
         return true;
@@ -255,7 +256,7 @@ class Feed {
     }
 
     public function computeNextFetch(): \DateTime {
-        $now = new \DateTime();
+        $now = $this->dateNormalize(time());
         if(!$this->modified) {
             $diff = $now->getTimestamp() - $this->lastModified->getTimestamp();
             $offset = $this->normalizeDateDiff($diff);
@@ -294,7 +295,7 @@ class Feed {
         } else {
             $offset = "1 day";
         }
-        return new \DateTime("now + ".$offset);
+        return self::dateNormalize("now + ".$offset);
     }
 
     protected function normalizeDateDiff(int $diff): string {
@@ -313,15 +314,10 @@ class Feed {
     }
 
     public function computeLastModified() {
-        if(!$this->modified) {
-            return $this->lastModified;
-        } else {
-            $dates = $this->gatherDates();
-        }
+        if(!$this->modified) return $this->lastModified;
+        $dates = $this->gatherDates();
         if(sizeof($dates)) {
-            $now = new \DateTime();
-            $now->setTimestamp($dates[0]);
-            return $now;
+            return $this->dateNormalize($dates[0]);
         } else {
             return null;
         }

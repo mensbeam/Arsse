@@ -48,6 +48,7 @@ class TestAuthorization extends Test\AbstractTest {
         $this->clearData();
         $conf = new Conf();
         $conf->userDriver = $drv;
+        $conf->userPreAuth = false;
         $conf->userComposeNames = true;
         Data::$conf = $conf;
         if($db !== null) {

@@ -111,11 +111,20 @@ class User {
             $this->actor = [];
             switch($this->u->driverFunctions("auth")) {
                 case User\Driver::FUNC_EXTERNAL:
-                    $out = $this->u->auth($user, $password);
+                    if(Data::$conf->userPreAuth) {
+                        $out = true;
+                    } else {
+                        $out = $this->u->auth($user, $password);
+                    }
                     if($out && !Data::$db->userExists($user)) $this->autoProvision($user, $password);
                     return $out;
                 case User\Driver::FUNC_INTERNAL:
-                    return $this->u->auth($user, $password);
+                    if(Data::$conf->userPreAuth) {
+                        if(!Data::$db->userExists($user)) $this->autoProvision($user, $password);
+                        return true;
+                    } else {
+                        return $this->u->auth($user, $password);
+                    }
                 case User\Driver::FUNCT_NOT_IMPLEMENTED:
                     return false;
             }
@@ -125,8 +134,7 @@ class User {
     public function authHTTP(): bool {
         $cred = $this->credentials();
         if(!$cred["user"]) return false;
-        if(!$this->auth($cred["user"], $cred["password"])) return false;
-        return true;
+        return $this->auth($cred["user"], $cred["password"]);
     }
 
     public function driverFunctions(string $function = null) {

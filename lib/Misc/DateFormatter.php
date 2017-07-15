@@ -51,7 +51,8 @@ trait DateFormatter {
         } else {
             $time = (int) $date;
         }
-        $d = new \DateTime();
+        $tz = (!$inLocal) ? new \DateTimeZone("UTC") : null;
+        $d = new \DateTime("now", $tz);
         $d->setTimestamp($time);
         return $d;
     }

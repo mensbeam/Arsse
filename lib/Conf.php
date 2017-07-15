@@ -23,11 +23,13 @@ class Conf {
     public $dbMySQLDb               = "arsse";
 
     public $userDriver              = User\Internal\Driver::class;
+    public $userPreAuth             = true;
     public $userComposeNames        = true;
     public $userTempPasswordLength  = 20;
 
-    public $serviceDriver           = Service\Curl\Driver::class;
+    public $serviceDriver           = Service\Internal\Driver::class;
     public $serviceFrequency        = "PT2M";
+    public $serviceQueueWidth       = 5;
     public $serviceCurlBase         = "http://localhost/";
     public $serviceCurlUser         = null;
     public $serviceCurlPassword     = null;
