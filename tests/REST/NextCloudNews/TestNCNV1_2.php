@@ -417,7 +417,10 @@ class TestNCNV1_2 extends Test\AbstractTest {
     }
 
     function testRetrieveServerVersion() {
-        $exp = new Response(200, ['version' => \JKingWeb\Arsse\VERSION]);
+        $exp = new Response(200, [
+            'arsse_version' => \JKingWeb\Arsse\VERSION,
+            'version' => REST\NextCloudNews\V1_2::VERSION,
+            ]);
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/version")));
     }
 
@@ -591,6 +594,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
             ['getRead' => true],
             ['getRead' => false],
             ['lastModified' => $t->getTimestamp()],
+            ['oldestFirst' => false, 'batchSize' => 5, 'offset' => 0], // offset=0 should not set the latestEdition context
         ];
         Phake::when(Data::$db)->articleList(Data::$user->id, $this->anything())->thenReturn($res);
         Phake::when(Data::$db)->articleList(Data::$user->id, (new Context)->reverse(true)->subscription(42))->thenThrow(new ExceptionInput("idMissing"));
@@ -611,6 +615,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
         $this->h->dispatch(new Request("GET", "/items", json_encode($in[6]), 'application/json')); // fourth instance of base context
         $this->h->dispatch(new Request("GET", "/items", json_encode($in[7]), 'application/json'));
         $this->h->dispatch(new Request("GET", "/items", json_encode($in[8]), 'application/json'));
+        $this->h->dispatch(new Request("GET", "/items", json_encode($in[9]), 'application/json'));
         // perform method verifications
         Phake::verify(Data::$db, Phake::times(4))->articleList(Data::$user->id, (new Context)->reverse(true));
         Phake::verify(Data::$db)->articleList(Data::$user->id, (new Context)->reverse(true)->subscription(42));
@@ -620,6 +625,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
         Phake::verify(Data::$db)->articleList(Data::$user->id, (new Context)->reverse(true)->limit(5)->latestEdition(4));
         Phake::verify(Data::$db)->articleList(Data::$user->id, (new Context)->reverse(true)->unread(true));
         Phake::verify(Data::$db)->articleList(Data::$user->id, (new Context)->reverse(true)->modifiedSince($t));
+        Phake::verify(Data::$db)->articleList(Data::$user->id, (new Context)->reverse(true)->limit(5));
     }
 
     function testMarkAFolderRead() {
