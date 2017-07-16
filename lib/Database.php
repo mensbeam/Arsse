@@ -85,19 +85,19 @@ class Database {
         return $this->db->begin();
     }
 
-    public function settingGet(string $key) {
+    public function metaGet(string $key) {
         return $this->db->prepare("SELECT value from arsse_meta where key is ?", "str")->run($key)->getValue();
     }
     
-    public function settingSet(string $key, string $value): bool {
-        $out = !$this->db->prepare("UPDATE arsse_meta set value = ? where key is ?", "str", "str")->run($value, $key)->changes();
+    public function metaSet(string $key, string $value, string $type = "str"): bool {
+        $out = !$this->db->prepare("UPDATE arsse_meta set value = ? where key is ?", $type, "str")->run($value, $key)->changes();
         if(!$out) {
-            $out = $this->db->prepare("INSERT INTO arsse_meta(key,value)", "str", "str")->run($key, $value)->changes();
+            $out = $this->db->prepare("INSERT INTO arsse_meta(key,value)", "str", $type)->run($key, $value)->changes();
         }
         return (bool) $out;
     }
 
-    public function settingRemove(string $key): bool {
+    public function metaRemove(string $key): bool {
         $this->db->prepare("DELETE from arsse_meta where key is ?", "str")->run($key);
         return true;
     }
