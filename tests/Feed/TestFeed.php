@@ -333,4 +333,15 @@ class TestFeed extends Test\AbstractTest {
         $this->assertCount(0, $f->newItems);
         $this->assertCount(0, $f->changedItems);   
     }
+
+    function testScrapeFullContent() {
+        // first make sure that the absence of scraping works as expected
+        $f = new Feed(null, $this->base."Scraping/Feed");
+        $exp = "<p>Partial content</p>";
+        $this->assertSame($exp, $f->newItems[0]->content);
+        // now try to scrape and get different content
+        $f = new Feed(null, $this->base."Scraping/Feed", "", "", "", "", true);
+        $exp = "<p>Partial content, followed by more content</p>";
+        $this->assertSame($exp, $f->newItems[0]->content);
+    }
 }

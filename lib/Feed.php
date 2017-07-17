@@ -2,10 +2,11 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
 use JKingWeb\Arsse\Misc\Date;
-use PicoFeed\Reader\Reader;
 use PicoFeed\PicoFeedException;
-use PicoFeed\Reader\Favicon;
 use PicoFeed\Config\Config;
+use PicoFeed\Reader\Reader;
+use PicoFeed\Reader\Favicon;
+use PicoFeed\Scraper\Scraper;
 
 class Feed {    
     public $data = null;
@@ -19,7 +20,14 @@ class Feed {
     public $newItems = [];
     public $changedItems = [];
 
-    public function __construct(int $feedID = null, string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = '') {
+    public function __construct(int $feedID = null, string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = '', bool $scrape = false) {
+        // set the configuration
+        $this->config = new Config;
+        $this->config->setMaxBodySize(Arsse::$conf->fetchSizeLimit);
+        $this->config->setClientTimeout(Arsse::$conf->fetchTimeout);
+        $this->config->setGrabberTimeout(Arsse::$conf->fetchTimeout);
+        $this->config->setClientUserAgent(Arsse::$conf->fetchUserAgentString);
+        $this->config->setGrabberUserAgent(Arsse::$conf->fetchUserAgentString);
         // fetch the feed
         $this->download($url, $lastModified, $etag, $username, $password);
         // format the HTTP Last-Modified date returned
@@ -37,6 +45,8 @@ class Feed {
             if(!$this->lastModified) $this->lastModified = $this->computeLastModified();
             // we only really care if articles have been modified; if there are no new articles, act as if the feed is unchanged
             if(!sizeof($this->newItems) && !sizeof($this->changedItems)) $this->modified = false;
+            // if requested, scrape full content for any new and changed items
+            if($scrape) $this->scrape();
         }
         // compute the time at which the feed should next be fetched
         $this->nextFetch = $this->computeNextFetch();
@@ -44,14 +54,7 @@ class Feed {
 
     public function download(string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = ''): bool {
         try {
-            $config = new Config;
-            $config->setMaxBodySize(Arsse::$conf->fetchSizeLimit);
-            $config->setClientTimeout(Arsse::$conf->fetchTimeout);
-            $config->setGrabberTimeout(Arsse::$conf->fetchTimeout);
-            $config->setClientUserAgent(Arsse::$conf->fetchUserAgentString);
-            $config->setGrabberUserAgent(Arsse::$conf->fetchUserAgentString);
-
-            $this->reader = new Reader($config);
+            $this->reader = new Reader($this->config);
             $this->resource = $this->reader->download($url, $lastModified, $etag, $username, $password);
         } catch (PicoFeedException $e) {
             throw new Feed\Exception($url, $e);
@@ -211,7 +214,6 @@ class Feed {
             // merge the two change-lists, preserving keys
             $this->changedItems = array_combine(array_merge(array_keys($this->changedItems), array_keys($changed)), array_merge($this->changedItems, $changed));
         }
-        // TODO: fetch full content when appropriate
         return true;
     }
 
@@ -331,5 +333,17 @@ class Feed {
         $dates = array_unique($dates, \SORT_NUMERIC);
         rsort($dates);
         return $dates;
+    }
+
+    protected function scrape(): bool {
+        $scraper = new Scraper($this->config);
+        foreach(array_merge($this->newItems, $this->changedItems) as $item) {
+            $scraper->setUrl($item->url);
+            $scraper->execute();
+            if($scraper->hasRelevantContent()) {
+                $item->content = $scraper->getFilteredContent();
+            }
+        }
+        return true;
     }
 }

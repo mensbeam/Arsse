@@ -74,6 +74,8 @@ class Conf {
     public $fetchTimeout            = 10;
     /** @var integer Maximum size, in bytes, of data when fetching feeds from foreign servers */
     public $fetchSizeLimit          = 2 * 1024 * 1024;
+    /** @var boolean Whether to allow the possibility of fetching full article contents using an item's URL. Whether fetching will actually happen is also governed by a per-feed setting */
+    public $fetchEnableScraping     = true;
     /** @var string User-Agent string to use when fetching feeds from foreign servers */
     public $fetchUserAgentString;
 
@@ -125,7 +127,7 @@ class Conf {
 
     /** Outputs non-default configuration settings as a string compatible with var_export()
     *
-    * If provided a file name, will produce the text of a PHP script suitable for laterimport
+    * If provided a file name, will produce the text of a PHP script suitable for later import
     * @param string $file Full path and file name for the file to export to */
     public function export(string $file = ""): string {
         // TODO: write export method

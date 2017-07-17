@@ -433,13 +433,15 @@ class Database {
     public function feedUpdate(int $feedID, bool $throwError = false): bool {
         $tr = $this->db->begin();
         // check to make sure the feed exists
-        $f = $this->db->prepare("SELECT url, username, password, modified, etag, err_count FROM arsse_feeds where id is ?", "int")->run($feedID)->getRow();
+        $f = $this->db->prepare("SELECT url, username, password, modified, etag, err_count, scrape FROM arsse_feeds where id is ?", "int")->run($feedID)->getRow();
         if(!$f) throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID]);
+        // determine whether the feed's items should be scraped for full content from the source Web site
+        $scrape = (Arsse::$conf->fetchEnableScraping && $f['scrape']);
         // the Feed object throws an exception when there are problems, but that isn't ideal
         // here. When an exception is thrown it should update the database with the
         // error instead of failing; if other exceptions are thrown, we should simply roll back
         try {
-            $feed = new Feed($feedID, $f['url'], (string) Date::transform($f['modified'], "http", "sql"), $f['etag'], $f['username'], $f['password']);
+            $feed = new Feed($feedID, $f['url'], (string) Date::transform($f['modified'], "http", "sql"), $f['etag'], $f['username'], $f['password'], $scrape);
             if(!$feed->modified) {
                 // if the feed hasn't changed, just compute the next fetch time and record it
                 $this->db->prepare("UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id is ?", 'datetime', 'int')->run($feed->nextFetch, $feedID);

@@ -48,6 +48,8 @@ create table arsse_feeds(
     err_msg text,                                                                                           -- last error message
     username text not null default '',                                                                      -- HTTP authentication username
     password text not null default '',                                                                      -- HTTP authentication password (this is stored in plain text)
+    size integer not null default 0,                                                                        -- number of articles in the feed at last fetch
+    scrape boolean not null default 0,                                                                      -- whether to use picoFeed's content scraper with this feed
     unique(url,username,password)                                                                           -- a URL with particular credentials should only appear once
 );
 
