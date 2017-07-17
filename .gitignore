@@ -1,8 +1,8 @@
 #dependencies
-vendor
+vendor/
 
 #temp files
-cache/*
+documentation/
 arsse.db*
 
 # Windows image file caches

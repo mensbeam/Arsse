@@ -24,14 +24,15 @@
         "ext-hash": "*",
         "fguillot/picofeed": ">=0.1.31",
         "jkingweb/druuid": "^3.0.0",
-        "phpseclib/phpseclib": "^2.0.4",
-        "hosteurope/password-generator": "^1.0.1"
+        "phpseclib/phpseclib": "^2.0",
+        "hosteurope/password-generator": "^1.0"
     },
     "require-dev": {
-        "mikey179/vfsStream": "^1.6.4",
-        "webmozart/glob": "^4.1.0",
-        "phake/phake": "^2.3.2",
-        "phpunit/phpunit": "^6.0.5"
+        "mikey179/vfsStream": "^1.6",
+        "webmozart/glob": "^4.1",
+        "phake/phake": "^3.0",
+        "phpunit/phpunit": "^6.0",
+        "phpdocumentor/phpdocumentor": "2.*"
     },
     "autoload": {
         "psr-4": {
