@@ -38,7 +38,7 @@ class REST {
         $class = $this->apis[$api]['class'];
         $drv = new $class();
         $out = $drv->dispatch($req);
-        header("Status: ".$out->code." ".Data::$lang->msg("HTTP.Status.".$out->code));
+        header("Status: ".$out->code." ".Arsse::$lang->msg("HTTP.Status.".$out->code));
         if(!is_null($out->payload)) {
             header("Content-Type: ".$out->type);
             switch($out->type) {

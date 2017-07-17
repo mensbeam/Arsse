@@ -1,25 +1,21 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
+use JKingWeb\Arsse\Misc\Date;
 
 class Service {
-    use Misc\DateFormatter;
     
-    /**
-    * @var Service\Driver
-    */
+    /** @var Service\Driver */
     protected $drv;
-    /**
-    * @var \DateInterval
-    */
+    /** @var \DateInterval */
     protected $interval;
     
     protected static function interval(): \DateInterval {
-        return new \DateInterval(Data::$conf->serviceFrequency); // FIXME: this needs to fall back in case of incorrect input
+        return new \DateInterval(Arsse::$conf->serviceFrequency); // FIXME: this needs to fall back in case of incorrect input
     }
 
     function __construct() {
-        $driver = Data::$conf->serviceDriver;
+        $driver = Arsse::$conf->serviceDriver;
         $this->drv = new $driver();
         $this->interval = static::interval();
     }
@@ -29,7 +25,7 @@ class Service {
         do {
             $this->checkIn();
             static::cleanupPre();
-            $list = Data::$db->feedListStale();
+            $list = Arsse::$db->feedListStale();
             if($list) {
                 echo date("H:i:s")." Updating feeds ".json_encode($list)."\n";
                 $this->drv->queue(...$list);
@@ -45,15 +41,15 @@ class Service {
     }
 
     function checkIn(): bool {
-        return Data::$db->metaSet("service_last_checkin", time(), "datetime");
+        return Arsse::$db->metaSet("service_last_checkin", time(), "datetime");
     }
 
     static function hasCheckedIn(): bool {
-        $checkin = Data::$db->metaGet("service_last_checkin");
+        $checkin = Arsse::$db->metaGet("service_last_checkin");
         // if the service has never checked in, return false
         if(!$checkin) return false;
         // convert the check-in timestamp to a DateTime instance
-        $checkin = static::dateNormalize($checkin, "sql");
+        $checkin = Date::normalize($checkin, "sql");
         // get the checking interval
         $int = static::interval();
         // subtract twice the checking interval from the current time to the earliest acceptable check-in time

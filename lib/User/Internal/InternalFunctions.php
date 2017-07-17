@@ -1,17 +1,17 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\User\Internal;
-use JKingWeb\Arsse\Data;
+use JKingWeb\Arsse\Arsse;
 
 trait InternalFunctions {
     protected $actor = [];
 
     public function __construct() {
-        $this->db = Data::$db;
+        $this->db = Arsse::$db;
     }
 
     function auth(string $user, string $password): bool {
-        if(!Data::$user->exists($user)) return false;
+        if(!Arsse::$user->exists($user)) return false;
         $hash = $this->db->userPasswordGet($user);
         if($password==="" && $hash==="") return true;
         return password_verify($password, $hash);

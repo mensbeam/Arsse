@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Db;
+use JKingWeb\Arsse\Misc\Date;
 
 abstract class AbstractStatement implements Statement {
-    use \JKingWeb\Arsse\Misc\DateFormatter;
     
     protected $types = [];
     protected $isNullable = [];
@@ -45,13 +45,13 @@ abstract class AbstractStatement implements Statement {
         switch($t) {
             case "date":
                 if(is_null($v) && !$nullable) $v = 0;
-                return $this->dateTransform($v, "date");
+                return Date::transform($v, "date");
             case "time":
                 if(is_null($v) && !$nullable) $v = 0;
-                return $this->dateTransform($v, "time");
+                return Date::transform($v, "time");
             case "datetime":
                 if(is_null($v) && !$nullable) $v = 0;
-                return $this->dateTransform($v, "sql");
+                return Date::transform($v, "sql");
             case "null":
             case "integer":
             case "float":
@@ -61,7 +61,7 @@ abstract class AbstractStatement implements Statement {
                 if($t=="binary") $t = "string";
                 if($v instanceof \DateTimeInterface) {
                     if($t=="string") {
-                        return $this->dateTransform($v, "sql");
+                        return Date::transform($v, "sql");
                     } else {
                         $v = $v->getTimestamp();
                         settype($v, $t);    

@@ -24,7 +24,7 @@ class TestDbUpdateSQLite3 extends Test\AbstractTest {
         $conf->dbSchemaBase = $this->vfs->url();
         $this->base = $this->vfs->url()."/SQLite3/";
         $conf->dbSQLite3File = ":memory:";
-        Data::$conf = $conf;
+        Arsse::$conf = $conf;
         $this->drv = new Db\SQLite3\Driver(true);
     }
 
@@ -85,7 +85,7 @@ class TestDbUpdateSQLite3 extends Test\AbstractTest {
     }
 
     function testPerformActualUpdate() {
-        Data::$conf->dbSchemaBase = (new Conf())->dbSchemaBase;
+        Arsse::$conf->dbSchemaBase = (new Conf())->dbSchemaBase;
         $this->drv->schemaUpdate(Database::SCHEMA_VERSION);
         $this->assertEquals(Database::SCHEMA_VERSION, $this->drv->schemaVersion());
     }

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Service\Curl;
-use JKingWeb\Arsse\Data;
+use JKingWeb\Arsse\Arsse;
 
 class Driver implements \JKingWeb\Arsse\Service\Driver {
     protected $options = [];
@@ -9,7 +9,7 @@ class Driver implements \JKingWeb\Arsse\Service\Driver {
     protected $handles = [];
     
     static function driverName(): string {
-        return Data::$lang->msg("Driver.Service.Curl.Name");
+        return Arsse::$lang->msg("Driver.Service.Curl.Name");
     }
 
     static function requirementsMet(): bool {
@@ -19,7 +19,7 @@ class Driver implements \JKingWeb\Arsse\Service\Driver {
     function __construct() {
         //default curl options for individual requests
         $this->options = [
-            \CURLOPT_URL => Data::$serviceCurlBase."index.php/apps/news/api/v1-2/feeds/update",
+            \CURLOPT_URL => Arsse::$serviceCurlBase."index.php/apps/news/api/v1-2/feeds/update",
             \CURLOPT_CUSTOMREQUEST => "GET",
             \CURLOPT_FAILONERROR => false,
             \CURLOPT_FOLLOWLOCATION => false,
@@ -28,8 +28,8 @@ class Driver implements \JKingWeb\Arsse\Service\Driver {
             \CURLOPT_DNS_CACHE_TIMEOUT => 360, // FIXME: this should probably be twice the update-check interval so that the DNS cache is always in memory
             \CURLOPT_PROTOCOLS => \CURLPROTO_HTTP | \CURLPROTO_HTTPS,
             \CURLOPT_DEFAULT_PROTOCOL => "https",
-            \CURLOPT_USERAGENT => Data::$conf->fetchUserAgentString,
-            \CURLMOPT_MAX_HOST_CONNECTIONS => Data::$conf->serviceQueueWidth,
+            \CURLOPT_USERAGENT => Arsse::$conf->fetchUserAgentString,
+            \CURLMOPT_MAX_HOST_CONNECTIONS => Arsse::$conf->serviceQueueWidth,
             \CURLOPT_HTTPHEADER => [
                 'Accept: application/json',
                 'Content-Type: application/json',
@@ -58,7 +58,7 @@ class Driver implements \JKingWeb\Arsse\Service\Driver {
             curl_multi_exec($this->queue, $active);
             curl_multi_select($this->queue);
         } while ($active > 0);
-        return Data::$conf->serviceQueueWidth - $active;
+        return Arsse::$conf->serviceQueueWidth - $active;
     }
 
     function clean(): bool {

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Db\SQLite3;
-use JKingWeb\Arsse\Data;
+use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Db\Exception;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\ExceptionTimeout;
@@ -19,10 +19,10 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     public function __construct(bool $install = false) {
         // check to make sure required extension is loaded
         if(!class_exists("SQLite3")) throw new Exception("extMissing", self::driverName());
-        $file = Data::$conf->dbSQLite3File;
+        $file = Arsse::$conf->dbSQLite3File;
         // if the file exists (or we're initializing the database), try to open it
         try {
-            $this->db = $this->makeConnection($file, ($install) ? \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE : \SQLITE3_OPEN_READWRITE, Data::$conf->dbSQLite3Key);
+            $this->db = $this->makeConnection($file, ($install) ? \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE : \SQLITE3_OPEN_READWRITE, Arsse::$conf->dbSQLite3Key);
         } catch(\Throwable $e) {
             // if opening the database doesn't work, check various pre-conditions to find out what the problem might be
             if(!file_exists($file)) {
@@ -57,7 +57,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
 
 
     static public function driverName(): string {
-        return Data::$lang->msg("Driver.Db.SQLite3.Name");
+        return Arsse::$lang->msg("Driver.Db.SQLite3.Name");
     }
 
     public function schemaVersion(): int {
@@ -66,10 +66,10 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
 
     public function schemaUpdate(int $to): bool {
         $ver = $this->schemaVersion();
-        if(!Data::$conf->dbAutoUpdate)  throw new Exception("updateManual", ['version' => $ver, 'driver_name' => $this->driverName()]);
+        if(!Arsse::$conf->dbAutoUpdate)  throw new Exception("updateManual", ['version' => $ver, 'driver_name' => $this->driverName()]);
         if($ver >= $to) throw new Exception("updateTooNew", ['difference' => ($ver - $to), 'current' => $ver, 'target' => $to, 'driver_name' => $this->driverName()]);
         $sep = \DIRECTORY_SEPARATOR;
-        $path = Data::$conf->dbSchemaBase.$sep."SQLite3".$sep;
+        $path = Arsse::$conf->dbSchemaBase.$sep."SQLite3".$sep;
         // lock the database
         $this->savepointCreate(true);
         for($a = $this->schemaVersion(); $a < $to; $a++) {

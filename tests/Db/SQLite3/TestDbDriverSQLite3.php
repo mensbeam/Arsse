@@ -16,21 +16,21 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
         $conf = new Conf();
         $conf->dbDriver = Db\SQLite3\Driver::class;
         $conf->dbSQLite3File = tempnam(sys_get_temp_dir(), 'ook');
-        Data::$conf = $conf;
+        Arsse::$conf = $conf;
         $this->drv = new Db\SQLite3\Driver(true);
-        $this->ch = new \SQLite3(Data::$conf->dbSQLite3File);
+        $this->ch = new \SQLite3(Arsse::$conf->dbSQLite3File);
         $this->ch->enableExceptions(true);
     }
 
     function tearDown() {
         unset($this->drv);
         unset($this->ch);
-        unlink(Data::$conf->dbSQLite3File);
+        unlink(Arsse::$conf->dbSQLite3File);
         $this->clearData();
     }
 
     function testFetchDriverName() {
-        $class = Data::$conf->dbDriver;
+        $class = Arsse::$conf->dbDriver;
         $this->assertTrue(strlen($class::driverName()) > 0);
     }
 

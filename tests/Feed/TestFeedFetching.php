@@ -16,7 +16,7 @@ class TestFeedFetching extends Test\AbstractTest {
         }
         $this->base = self::$host."Feed/";
         $this->clearData();
-        Data::$conf = new Conf();
+        Arsse::$conf = new Conf();
     }
 
     function testHandle400() {
@@ -50,13 +50,13 @@ class TestFeedFetching extends Test\AbstractTest {
     }
 
     function testHandleATimeout() {
-        Data::$conf->fetchTimeout = 1;
+        Arsse::$conf->fetchTimeout = 1;
         $this->assertException("timeout", "Feed");
         new Feed(null, $this->base."Fetching/Timeout");
     }
 
     function testHandleAnOverlyLargeFeed() {
-        Data::$conf->fetchSizeLimit = 512;
+        Arsse::$conf->fetchSizeLimit = 512;
         $this->assertException("maxSize", "Feed");
         new Feed(null, $this->base."Fetching/TooLarge");
     }

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\Database;
-use JKingWeb\Arsse\Data;
+use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Test\Database;
 use JKingWeb\Arsse\User\Driver as UserDriver;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
@@ -114,17 +114,17 @@ trait SeriesSubscription {
             [3,"http://example.com/feed3", "Ack", "", "",strtotime("now + 1 hour")],
         ];
         // initialize a partial mock of the Database object to later manipulate the feedUpdate method
-        Data::$db = Phake::PartialMock(Database::class, $this->drv);
+        Arsse::$db = Phake::PartialMock(Database::class, $this->drv);
         $this->user = "john.doe@example.com";
     }
 
     function testAddASubscriptionToAnExistingFeed() {
         $url = "http://example.com/feed1";
         $subID = $this->nextID("arsse_subscriptions");
-        Phake::when(Data::$db)->feedUpdate->thenReturn(true);
-        $this->assertSame($subID,Data::$db->subscriptionAdd($this->user, $url));
-        Phake::verify(Data::$user)->authorize($this->user, "subscriptionAdd");
-        Phake::verify(Data::$db, Phake::times(0))->feedUpdate(1, true);
+        Phake::when(Arsse::$db)->feedUpdate->thenReturn(true);
+        $this->assertSame($subID,Arsse::$db->subscriptionAdd($this->user, $url));
+        Phake::verify(Arsse::$user)->authorize($this->user, "subscriptionAdd");
+        Phake::verify(Arsse::$db, Phake::times(0))->feedUpdate(1, true);
         $state = $this->primeExpectations($this->data, [
             'arsse_feeds'         => ['id','url','username','password'],
             'arsse_subscriptions' => ['id','owner','feed'],
@@ -137,10 +137,10 @@ trait SeriesSubscription {
         $url = "http://example.org/feed1";
         $feedID = $this->nextID("arsse_feeds");
         $subID = $this->nextID("arsse_subscriptions");
-        Phake::when(Data::$db)->feedUpdate->thenReturn(true);
-        $this->assertSame($subID,Data::$db->subscriptionAdd($this->user, $url));
-        Phake::verify(Data::$user)->authorize($this->user, "subscriptionAdd");
-        Phake::verify(Data::$db)->feedUpdate($feedID, true);
+        Phake::when(Arsse::$db)->feedUpdate->thenReturn(true);
+        $this->assertSame($subID,Arsse::$db->subscriptionAdd($this->user, $url));
+        Phake::verify(Arsse::$user)->authorize($this->user, "subscriptionAdd");
+        Phake::verify(Arsse::$db)->feedUpdate($feedID, true);
         $state = $this->primeExpectations($this->data, [
             'arsse_feeds'         => ['id','url','username','password'],
             'arsse_subscriptions' => ['id','owner','feed'],
@@ -153,12 +153,12 @@ trait SeriesSubscription {
     function testAddASubscriptionToAnInvalidFeed() {
         $url = "http://example.org/feed1";
         $feedID = $this->nextID("arsse_feeds");
-        Phake::when(Data::$db)->feedUpdate->thenThrow(new FeedException($url, new \PicoFeed\Client\InvalidUrlException()));
+        Phake::when(Arsse::$db)->feedUpdate->thenThrow(new FeedException($url, new \PicoFeed\Client\InvalidUrlException()));
         try {
-            Data::$db->subscriptionAdd($this->user, $url);
+            Arsse::$db->subscriptionAdd($this->user, $url);
         } catch(FeedException $e) {
-            Phake::verify(Data::$user)->authorize($this->user, "subscriptionAdd");
-            Phake::verify(Data::$db)->feedUpdate($feedID, true);
+            Phake::verify(Arsse::$user)->authorize($this->user, "subscriptionAdd");
+            Phake::verify(Arsse::$db)->feedUpdate($feedID, true);
             $state = $this->primeExpectations($this->data, [
                 'arsse_feeds'         => ['id','url','username','password'],
                 'arsse_subscriptions' => ['id','owner','feed'],
@@ -172,19 +172,19 @@ trait SeriesSubscription {
     function testAddADuplicateSubscription() {
         $url = "http://example.com/feed2";
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
-        Data::$db->subscriptionAdd($this->user, $url);
+        Arsse::$db->subscriptionAdd($this->user, $url);
     }
 
     function testAddASubscriptionWithoutAuthority() {
         $url = "http://example.com/feed1";
-        Phake::when(Data::$user)->authorize->thenReturn(false);
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Data::$db->subscriptionAdd($this->user, $url);
+        Arsse::$db->subscriptionAdd($this->user, $url);
     }
 
     function testRemoveASubscription() {
-        $this->assertTrue(Data::$db->subscriptionRemove($this->user, 1));
-        Phake::verify(Data::$user)->authorize($this->user, "subscriptionRemove");
+        $this->assertTrue(Arsse::$db->subscriptionRemove($this->user, 1));
+        Phake::verify(Arsse::$user)->authorize($this->user, "subscriptionRemove");
         $state = $this->primeExpectations($this->data, [
             'arsse_feeds'         => ['id','url','username','password'],
             'arsse_subscriptions' => ['id','owner','feed'],
@@ -195,19 +195,19 @@ trait SeriesSubscription {
 
     function testRemoveAMissingSubscription() {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
-        Data::$db->subscriptionRemove($this->user, 2112);
+        Arsse::$db->subscriptionRemove($this->user, 2112);
     }
 
     function testRemoveASubscriptionForTheWrongOwner() {
         $this->user = "jane.doe@example.com";
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
-        Data::$db->subscriptionRemove($this->user, 1);
+        Arsse::$db->subscriptionRemove($this->user, 1);
     }
 
     function testRemoveASubscriptionWithoutAuthority() {
-        Phake::when(Data::$user)->authorize->thenReturn(false);
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Data::$db->subscriptionRemove($this->user, 1);
+        Arsse::$db->subscriptionRemove($this->user, 1);
     }
 
     function testListSubscriptions() {
@@ -231,11 +231,11 @@ trait SeriesSubscription {
                 'order_type' => 1,
             ],
         ];
-        $this->assertResult($exp, Data::$db->subscriptionList($this->user));
-        Phake::verify(Data::$user)->authorize($this->user, "subscriptionList");
-        $this->assertArraySubset($exp[0], Data::$db->subscriptionPropertiesGet($this->user, 1));
-        Phake::verify(Data::$user)->authorize($this->user, "subscriptionPropertiesGet");
-        $this->assertArraySubset($exp[1], Data::$db->subscriptionPropertiesGet($this->user, 3));
+        $this->assertResult($exp, Arsse::$db->subscriptionList($this->user));
+        Phake::verify(Arsse::$user)->authorize($this->user, "subscriptionList");
+        $this->assertArraySubset($exp[0], Arsse::$db->subscriptionPropertiesGet($this->user, 1));
+        Phake::verify(Arsse::$user)->authorize($this->user, "subscriptionPropertiesGet");
+        $this->assertArraySubset($exp[1], Arsse::$db->subscriptionPropertiesGet($this->user, 3));
     }
 
     function testListSubscriptionsInAFolder() {
@@ -250,35 +250,35 @@ trait SeriesSubscription {
                 'order_type' => 1,
             ],
         ];
-        $this->assertResult($exp, Data::$db->subscriptionList($this->user, 2));
+        $this->assertResult($exp, Arsse::$db->subscriptionList($this->user, 2));
     }
 
     function testListSubscriptionsInAMissingFolder() {
         $this->assertException("idMissing", "Db", "ExceptionInput");
-        Data::$db->subscriptionList($this->user, 4);
+        Arsse::$db->subscriptionList($this->user, 4);
     }
 
     function testListSubscriptionsWithoutAuthority() {
-        Phake::when(Data::$user)->authorize->thenReturn(false);
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Data::$db->subscriptionList($this->user);
+        Arsse::$db->subscriptionList($this->user);
     }
 
     function testSetThePropertiesOfASubscription() {
-        Data::$db->subscriptionPropertiesSet($this->user, 1,[
+        Arsse::$db->subscriptionPropertiesSet($this->user, 1,[
             'title' => "Ook Ook",
             'folder' => 3,
             'pinned' => false,
             'order_type' => 0,
         ]);
-        Phake::verify(Data::$user)->authorize($this->user, "subscriptionPropertiesSet");
+        Phake::verify(Arsse::$user)->authorize($this->user, "subscriptionPropertiesSet");
         $state = $this->primeExpectations($this->data, [
             'arsse_feeds'         => ['id','url','username','password','title'],
             'arsse_subscriptions' => ['id','owner','feed','title','folder','pinned','order_type'],
         ]);
         $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com",2,"Ook Ook",3,0,0];
         $this->compareExpectations($state);
-        Data::$db->subscriptionPropertiesSet($this->user, 1,[
+        Arsse::$db->subscriptionPropertiesSet($this->user, 1,[
             'title' => null,
         ]);
         $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com",2,null,3,0,0];
@@ -287,36 +287,36 @@ trait SeriesSubscription {
 
     function testMoveASubscriptionToAMissingFolder() {
         $this->assertException("idMissing", "Db", "ExceptionInput");
-        Data::$db->subscriptionPropertiesSet($this->user, 1, ['folder' => 4]);
+        Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['folder' => 4]);
     }
 
     function testRenameASubscriptionToABlankTitle() {
         $this->assertException("missing", "Db", "ExceptionInput");
-        Data::$db->subscriptionPropertiesSet($this->user, 1, ['title' => ""]);
+        Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['title' => ""]);
     }
 
     function testRenameASubscriptionToAWhitespaceTitle() {
         $this->assertException("whitespace", "Db", "ExceptionInput");
-        Data::$db->subscriptionPropertiesSet($this->user, 1, ['title' => "    "]);
+        Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['title' => "    "]);
     }
 
     function testRenameASubscriptionToFalse() {
         $this->assertException("missing", "Db", "ExceptionInput");
-        Data::$db->subscriptionPropertiesSet($this->user, 1, ['title' => false]);
+        Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['title' => false]);
     }
 
     function testRenameASubscriptionToZero() {
-        $this->assertTrue(Data::$db->subscriptionPropertiesSet($this->user, 1, ['title' => 0]));
+        $this->assertTrue(Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['title' => 0]));
     }
 
     function testSetThePropertiesOfAMissingSubscription() {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
-        Data::$db->subscriptionPropertiesSet($this->user, 2112, ['folder' => null]);
+        Arsse::$db->subscriptionPropertiesSet($this->user, 2112, ['folder' => null]);
     }
 
     function testSetThePropertiesOfASubscriptionWithoutAuthority() {
-        Phake::when(Data::$user)->authorize->thenReturn(false);
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Data::$db->subscriptionPropertiesSet($this->user, 1, ['folder' => null]);
+        Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['folder' => null]);
     }
 }

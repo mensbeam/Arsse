@@ -8,14 +8,14 @@ class TestException extends Test\AbstractTest {
     function setUp() {
         $this->clearData(false);
         // create a mock Lang object so as not to create a dependency loop
-        Data::$lang = Phake::mock(Lang::class);
-        Phake::when(Data::$lang)->msg->thenReturn("");
+        Arsse::$lang = Phake::mock(Lang::class);
+        Phake::when(Arsse::$lang)->msg->thenReturn("");
     }
 
     function tearDown() {
         // verify calls to the mock Lang object
-        Phake::verify(Data::$lang, Phake::atLeast(0))->msg($this->isType("string"), $this->anything());
-        Phake::verifyNoOtherInteractions(Data::$lang);
+        Phake::verify(Arsse::$lang, Phake::atLeast(0))->msg($this->isType("string"), $this->anything());
+        Phake::verifyNoOtherInteractions(Arsse::$lang);
         // clean up
         $this->clearData(true);
     }

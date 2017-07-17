@@ -2,10 +2,10 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Misc;
 
-trait DateFormatter {
+class Date {
     
-    protected function dateTransform($date, string $outFormat = null, string $inFormat = null, bool $inLocal = false) {
-        $date = $this->dateNormalize($date, $inFormat, $inLocal);
+    static function transform($date, string $outFormat = null, string $inFormat = null, bool $inLocal = false) {
+        $date = self::normalize($date, $inFormat, $inLocal);
         if(is_null($date) || is_null($outFormat)) return $date;
         $outFormat = strtolower($outFormat);
         if($outFormat=="unix") return $date->getTimestamp();
@@ -20,7 +20,7 @@ trait DateFormatter {
         return $date->format($f);
     }
 
-    protected function dateNormalize($date, string $inFormat = null, bool $inLocal = false) {
+    static function normalize($date, string $inFormat = null, bool $inLocal = false) {
         if($date instanceof \DateTimeInterface) {
             return $date;
         } else if(is_numeric($date)) {

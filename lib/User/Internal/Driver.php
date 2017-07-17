@@ -20,7 +20,7 @@ final class Driver implements \JKingWeb\Arsse\User\Driver {
     ];
 
     static public function driverName(): string {
-        return Data::$lang->msg("Driver.User.Internal.Name");
+        return Arsse::$lang->msg("Driver.User.Internal.Name");
     }
 
     public function driverFunctions(string $function = null) {

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\REST\NextCloudNews;
-use JKingWeb\Arsse\Data;
+use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Misc\Context;
 use JKingWeb\Arsse\AbstractException;
@@ -40,7 +40,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     function dispatch(\JKingWeb\Arsse\REST\Request $req): Response {
         // try to authenticate
-        if(!Data::$user->authHTTP()) return new Response(401, "", "", ['WWW-Authenticate: Basic realm="'.self::REALM.'"']);
+        if(!Arsse::$user->authHTTP()) return new Response(401, "", "", ['WWW-Authenticate: Basic realm="'.self::REALM.'"']);
         // only accept GET, POST, PUT, or DELETE
         if(!in_array($req->method, ["GET", "POST", "PUT", "DELETE"])) return new Response(405, "", "", ['Allow: GET, POST, PUT, DELETE']);
         // normalize the input
@@ -213,14 +213,14 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     
     // list folders
     protected function folderList(array $url, array $data): Response {
-        $folders = Data::$db->folderList(Data::$user->id, null, false)->getAll();
+        $folders = Arsse::$db->folderList(Arsse::$user->id, null, false)->getAll();
         return new Response(200, ['folders' => $folders]);
     }
 
     // create a folder
     protected function folderAdd(array $url, array $data): Response {
         try {
-            $folder = Data::$db->folderAdd(Data::$user->id, $data);
+            $folder = Arsse::$db->folderAdd(Arsse::$user->id, $data);
         } catch(ExceptionInput $e) {
             switch($e->getCode()) {
                 // folder already exists
@@ -232,7 +232,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 default: return new Response(400);
             }
         }
-        $folder = Data::$db->folderPropertiesGet(Data::$user->id, $folder);
+        $folder = Arsse::$db->folderPropertiesGet(Arsse::$user->id, $folder);
         return new Response(200, ['folders' => [$folder]]);
     }
 
@@ -240,7 +240,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function folderRemove(array $url, array $data): Response {
         // perform the deletion
         try {
-            Data::$db->folderRemove(Data::$user->id, (int) $url[1]);
+            Arsse::$db->folderRemove(Arsse::$user->id, (int) $url[1]);
         } catch(ExceptionInput $e) {
             // folder does not exist
             return new Response(404);
@@ -254,7 +254,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if(!sizeof($data)) return new Response(422);
         // perform the edit
         try {
-            Data::$db->folderPropertiesSet(Data::$user->id, (int) $url[1], $data);
+            Arsse::$db->folderPropertiesSet(Arsse::$user->id, (int) $url[1], $data);
         } catch(ExceptionInput $e) {
             switch($e->getCode()) {
                 // folder does not exist
@@ -285,7 +285,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $c->folder((int) $url[1]);
         // perform the operation
         try {
-            Data::$db->articleMark(Data::$user->id, ['read' => true], $c);
+            Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], $c);
         } catch(ExceptionInput $e) {
             // folder does not exist
             return new Response(404);
@@ -296,9 +296,9 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     // return list of feeds which should be refreshed
     protected function feedListStale(array $url, array $data): Response {
         // function requires admin rights per spec
-        if(Data::$user->rightsGet(Data::$user->id)==User::RIGHTS_NONE) return new Response(403);
+        if(Arsse::$user->rightsGet(Arsse::$user->id)==User::RIGHTS_NONE) return new Response(403);
         // list stale feeds which should be checked for updates
-        $feeds = Data::$db->feedListStale();
+        $feeds = Arsse::$db->feedListStale();
         $out = [];
         foreach($feeds as $feed) {
             // since in our implementation feeds don't belong the users, the 'userId' field will always be an empty string
@@ -310,11 +310,11 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     // refresh a feed
     protected function feedUpdate(array $url, array $data): Response {
         // function requires admin rights per spec
-        if(Data::$user->rightsGet(Data::$user->id)==User::RIGHTS_NONE) return new Response(403);
+        if(Arsse::$user->rightsGet(Arsse::$user->id)==User::RIGHTS_NONE) return new Response(403);
         // perform an update of a single feed
         if(!isset($data['feedId'])) return new Response(422);
         try {
-            Data::$db->feedUpdate($data['feedId']);
+            Arsse::$db->feedUpdate($data['feedId']);
         } catch(ExceptionInput $e) {
             return new Response(404);
         }
@@ -328,9 +328,9 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // normalize the folder ID, if specified; zero should be transformed to null
         $folder = (isset($data['folderId']) && $data['folderId']) ? $data['folderId'] : null;
         // try to add the feed
-        $tr = Data::$db->begin();
+        $tr = Arsse::$db->begin();
         try {
-            $id = Data::$db->subscriptionAdd(Data::$user->id, $data['url']);
+            $id = Arsse::$db->subscriptionAdd(Arsse::$user->id, $data['url']);
         } catch(ExceptionInput $e) {
             // feed already exists
             return new Response(409);
@@ -341,29 +341,29 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // if a folder was specified, move the feed to the correct folder; silently ignore errors
         if($folder) {
             try {
-                Data::$db->subscriptionPropertiesSet(Data::$user->id, $id, ['folder' => $folder]);
+                Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, $id, ['folder' => $folder]);
             } catch(ExceptionInput $e) {}
         }
         $tr->commit();
         // fetch the feed's metadata and format it appropriately
-        $feed = Data::$db->subscriptionPropertiesGet(Data::$user->id, $id);
+        $feed = Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, $id);
         $feed = $this->feedTranslate($feed);
         $out = ['feeds' => [$feed]];
-        $newest = Data::$db->editionLatest(Data::$user->id, (new Context)->subscription($id));
+        $newest = Arsse::$db->editionLatest(Arsse::$user->id, (new Context)->subscription($id));
         if($newest) $out['newestItemId'] = $newest;
         return new Response(200, $out);
     }
     
     // return list of feeds for the logged-in user
     protected function subscriptionList(array $url, array $data): Response {
-        $subs = Data::$db->subscriptionList(Data::$user->id);
+        $subs = Arsse::$db->subscriptionList(Arsse::$user->id);
         $out = [];
         foreach($subs as $sub) {
             $out[] = $this->feedTranslate($sub);
         }
         $out = ['feeds' => $out];
-        $out['starredCount'] = Data::$db->articleStarredCount(Data::$user->id);
-        $newest = Data::$db->editionLatest(Data::$user->id);
+        $out['starredCount'] = Arsse::$db->articleStarredCount(Arsse::$user->id);
+        $newest = Arsse::$db->editionLatest(Arsse::$user->id);
         if($newest) $out['newestItemId'] = $newest;
         return new Response(200, $out);
     }
@@ -371,7 +371,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     // delete a feed
     protected function subscriptionRemove(array $url, array $data): Response {
         try {
-            Data::$db->subscriptionRemove(Data::$user->id, (int) $url[1]);
+            Arsse::$db->subscriptionRemove(Arsse::$user->id, (int) $url[1]);
         } catch(ExceptionInput $e) {
             // feed does not exist
             return new Response(404);
@@ -390,7 +390,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // perform the renaming
         try {
-            Data::$db->subscriptionPropertiesSet(Data::$user->id, (int) $url[1], $in);
+            Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, (int) $url[1], $in);
         } catch(ExceptionInput $e) {
             switch($e->getCode()) {
                 // subscription does not exist
@@ -416,7 +416,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // perform the move
         try {
-            Data::$db->subscriptionPropertiesSet(Data::$user->id, (int) $url[1], $in);
+            Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, (int) $url[1], $in);
         } catch(ExceptionInput $e) {
             switch($e->getCode()) {
                 // subscription does not exist
@@ -443,7 +443,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $c->subscription((int) $url[1]);
         // perform the operation
         try {
-            Data::$db->articleMark(Data::$user->id, ['read' => true], $c);
+            Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], $c);
         } catch(ExceptionInput $e) {
             // subscription does not exist
             return new Response(404);
@@ -492,7 +492,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if(isset($data['lastModified'])) $c->modifiedSince($data['lastModified']);
         // perform the fetch
         try {
-            $items = Data::$db->articleList(Data::$user->id, $c);
+            $items = Arsse::$db->articleList(Arsse::$user->id, $c);
         } catch(ExceptionInput $e) {
             // ID of subscription or folder is not valid
             return new Response(422);
@@ -516,7 +516,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new Response(422);
         }
         // perform the operation
-        Data::$db->articleMark(Data::$user->id, ['read' => true], $c);
+        Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], $c);
         return new Response(204);
     }
 
@@ -528,7 +528,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // determine whether to mark read or unread
         $set = ($url[2]=="read");
         try {
-            Data::$db->articleMark(Data::$user->id, ['read' => $set], $c);
+            Arsse::$db->articleMark(Arsse::$user->id, ['read' => $set], $c);
         } catch(ExceptionInput $e) {
             // ID is not valid
             return new Response(404);
@@ -544,7 +544,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // determine whether to mark read or unread
         $set = ($url[3]=="star");
         try {
-            Data::$db->articleMark(Data::$user->id, ['starred' => $set], $c);
+            Arsse::$db->articleMark(Arsse::$user->id, ['starred' => $set], $c);
         } catch(ExceptionInput $e) {
             // ID is not valid
             return new Response(404);
@@ -559,14 +559,14 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // if the input data is not at all valid, return an error
         if(!isset($data['items']) || !is_array($data['items'])) return new Response(422);
         // start a transaction and loop through the items
-        $t = Data::$db->begin();
+        $t = Arsse::$db->begin();
         $in = array_chunk($data['items'], 50);
         for($a = 0; $a < sizeof($in); $a++) {
             // initialize the matching context
             $c = new Context;
             $c->editions($in[$a]);
             try {
-                Data::$db->articleMark(Data::$user->id, ['read' => $set], $c);
+                Arsse::$db->articleMark(Arsse::$user->id, ['read' => $set], $c);
             } catch(ExceptionInput $e) {}
         }
         $t->commit();
@@ -580,14 +580,14 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // if the input data is not at all valid, return an error
         if(!isset($data['items']) || !is_array($data['items'])) return new Response(422);
         // start a transaction and loop through the items
-        $t = Data::$db->begin();
+        $t = Arsse::$db->begin();
         $in = array_chunk(array_column($data['items'], "guidHash"), 50);
         for($a = 0; $a < sizeof($in); $a++) {
             // initialize the matching context
             $c = new Context;
             $c->articles($in[$a]);
             try {
-                Data::$db->articleMark(Data::$user->id, ['starred' => $set], $c);
+                Arsse::$db->articleMark(Arsse::$user->id, ['starred' => $set], $c);
             } catch(ExceptionInput $e) {}
         }
         $t->commit();
@@ -596,10 +596,10 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function userStatus(array $url, array $data): Response {
         // FIXME: stub
-        $data = Data::$db->userPropertiesGet(Data::$user->id);
+        $data = Arsse::$db->userPropertiesGet(Arsse::$user->id);
         $out = [
-            'userId' => Data::$user->id,
-            'displayName' => $data['name'] ?? Data::$user->id,
+            'userId' => Arsse::$user->id,
+            'displayName' => $data['name'] ?? Arsse::$user->id,
             'lastLoginTimestamp' => time(),
             'avatar' => null,
         ];
@@ -608,14 +608,14 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function cleanupBefore(array $url, array $data): Response {
         // function requires admin rights per spec
-        if(Data::$user->rightsGet(Data::$user->id)==User::RIGHTS_NONE) return new Response(403);
+        if(Arsse::$user->rightsGet(Arsse::$user->id)==User::RIGHTS_NONE) return new Response(403);
         // FIXME: stub
         return new Response(204);
     }
 
     protected function cleanupAfter(array $url, array $data): Response {
         // function requires admin rights per spec
-        if(Data::$user->rightsGet(Data::$user->id)==User::RIGHTS_NONE) return new Response(403);
+        if(Arsse::$user->rightsGet(Arsse::$user->id)==User::RIGHTS_NONE) return new Response(403);
         // FIXME: stub
         return new Response(204);
     }

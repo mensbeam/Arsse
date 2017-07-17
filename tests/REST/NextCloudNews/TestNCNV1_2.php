@@ -261,13 +261,13 @@ class TestNCNV1_2 extends Test\AbstractTest {
     function setUp() {
         $this->clearData();
         // create a mock user manager
-        Data::$user = Phake::mock(User::class);
-        Phake::when(Data::$user)->authHTTP->thenReturn(true);
-        Phake::when(Data::$user)->rightsGet->thenReturn(100);
-        Data::$user->id = "john.doe@example.com";
+        Arsse::$user = Phake::mock(User::class);
+        Phake::when(Arsse::$user)->authHTTP->thenReturn(true);
+        Phake::when(Arsse::$user)->rightsGet->thenReturn(100);
+        Arsse::$user->id = "john.doe@example.com";
         // create a mock database interface
-        Data::$db = Phake::mock(Database::Class);
-        Phake::when(Data::$db)->begin->thenReturn(Phake::mock(Transaction::class));
+        Arsse::$db = Phake::mock(Database::Class);
+        Phake::when(Arsse::$db)->begin->thenReturn(Phake::mock(Transaction::class));
         $this->h = new REST\NextCloudNews\V1_2();
     }
 
@@ -322,7 +322,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
     }
 
     function testReceiveAuthenticationChallenge() {
-        Phake::when(Data::$user)->authHTTP->thenReturn(false);
+        Phake::when(Arsse::$user)->authHTTP->thenReturn(false);
         $exp = new Response(401, "", "", ['WWW-Authenticate: Basic realm="'.REST\NextCloudNews\V1_2::REALM.'"']);
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/")));
     }
@@ -332,7 +332,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
             ['id' => 1,  'name' => "Software", 'parent' => null],
             ['id' => 12, 'name' => "Hardware", 'parent' => null],
         ];
-        Phake::when(Data::$db)->folderList(Data::$user->id, null, false)->thenReturn(new Result([]))->thenReturn(new Result($list));
+        Phake::when(Arsse::$db)->folderList(Arsse::$user->id, null, false)->thenReturn(new Result([]))->thenReturn(new Result($list));
         $exp = new Response(200, ['folders' => []]);
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/folders")));
         $exp = new Response(200, ['folders' => $list]);
@@ -349,23 +349,23 @@ class TestNCNV1_2 extends Test\AbstractTest {
             ['id' => 2, 'name' => "Hardware", 'parent' => null],
         ];
         // set of various mocks for testing
-        Phake::when(Data::$db)->folderAdd(Data::$user->id, $in[0])->thenReturn(1)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        Phake::when(Data::$db)->folderAdd(Data::$user->id, $in[1])->thenReturn(2)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        Phake::when(Data::$db)->folderPropertiesGet(Data::$user->id, 1)->thenReturn($out[0]);
-        Phake::when(Data::$db)->folderPropertiesGet(Data::$user->id, 2)->thenReturn($out[1]);
+        Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $in[0])->thenReturn(1)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
+        Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $in[1])->thenReturn(2)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
+        Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 1)->thenReturn($out[0]);
+        Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 2)->thenReturn($out[1]);
         // set up mocks that produce errors
-        Phake::when(Data::$db)->folderAdd(Data::$user->id, [])->thenThrow(new ExceptionInput("missing"));
-        Phake::when(Data::$db)->folderAdd(Data::$user->id, ['name' => ""])->thenThrow(new ExceptionInput("missing"));
-        Phake::when(Data::$db)->folderAdd(Data::$user->id, ['name' => " "])->thenThrow(new ExceptionInput("whitespace"));
+        Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, [])->thenThrow(new ExceptionInput("missing"));
+        Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => ""])->thenThrow(new ExceptionInput("missing"));
+        Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => " "])->thenThrow(new ExceptionInput("whitespace"));
         // correctly add two folders, using different means
         $exp = new Response(200, ['folders' => [$out[0]]]);
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/folders", json_encode($in[0]), 'application/json')));
         $exp = new Response(200, ['folders' => [$out[1]]]);
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/folders?name=Hardware")));
-        Phake::verify(Data::$db)->folderAdd(Data::$user->id, $in[0]);
-        Phake::verify(Data::$db)->folderAdd(Data::$user->id, $in[1]);
-        Phake::verify(Data::$db)->folderPropertiesGet(Data::$user->id, 1);
-        Phake::verify(Data::$db)->folderPropertiesGet(Data::$user->id, 2);
+        Phake::verify(Arsse::$db)->folderAdd(Arsse::$user->id, $in[0]);
+        Phake::verify(Arsse::$db)->folderAdd(Arsse::$user->id, $in[1]);
+        Phake::verify(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 1);
+        Phake::verify(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 2);
         // test bad folder names
         $exp = new Response(422);
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/folders")));
@@ -379,13 +379,13 @@ class TestNCNV1_2 extends Test\AbstractTest {
     }
 
     function testRemoveAFolder() {
-        Phake::when(Data::$db)->folderRemove(Data::$user->id, 1)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
+        Phake::when(Arsse::$db)->folderRemove(Arsse::$user->id, 1)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
         $exp = new Response(204);
         $this->assertEquals($exp, $this->h->dispatch(new Request("DELETE", "/folders/1")));
         // fail on the second invocation because it no longer exists
         $exp = new Response(404);
         $this->assertEquals($exp, $this->h->dispatch(new Request("DELETE", "/folders/1")));
-        Phake::verify(Data::$db, Phake::times(2))->folderRemove(Data::$user->id, 1);
+        Phake::verify(Arsse::$db, Phake::times(2))->folderRemove(Arsse::$user->id, 1);
     }
 
     function testRenameAFolder() {
@@ -396,12 +396,12 @@ class TestNCNV1_2 extends Test\AbstractTest {
             ["name" => " "],
             [],
         ];
-        Phake::when(Data::$db)->folderPropertiesSet(Data::$user->id, 1, $in[0])->thenReturn(true);
-        Phake::when(Data::$db)->folderPropertiesSet(Data::$user->id, 2, $in[1])->thenThrow(new ExceptionInput("constraintViolation"));
-        Phake::when(Data::$db)->folderPropertiesSet(Data::$user->id, 1, $in[2])->thenThrow(new ExceptionInput("missing"));
-        Phake::when(Data::$db)->folderPropertiesSet(Data::$user->id, 1, $in[3])->thenThrow(new ExceptionInput("whitespace"));
-        Phake::when(Data::$db)->folderPropertiesSet(Data::$user->id, 1, $in[4])->thenReturn(true); // this should be stopped by the handler before the request gets to the database
-        Phake::when(Data::$db)->folderPropertiesSet(Data::$user->id, 3, $this->anything())->thenThrow(new ExceptionInput("subjectMissing")); // folder ID 3 does not exist
+        Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[0])->thenReturn(true);
+        Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 2, $in[1])->thenThrow(new ExceptionInput("constraintViolation"));
+        Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[2])->thenThrow(new ExceptionInput("missing"));
+        Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[3])->thenThrow(new ExceptionInput("whitespace"));
+        Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[4])->thenReturn(true); // this should be stopped by the handler before the request gets to the database
+        Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 3, $this->anything())->thenThrow(new ExceptionInput("subjectMissing")); // folder ID 3 does not exist
         $exp = new Response(204);
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/1", json_encode($in[0]), 'application/json')));
         $exp = new Response(409);
@@ -434,9 +434,9 @@ class TestNCNV1_2 extends Test\AbstractTest {
             'starredCount' => 5,
             'newestItemId' => 4758915,
         ];
-        Phake::when(Data::$db)->subscriptionList(Data::$user->id)->thenReturn(new Result([]))->thenReturn(new Result($this->feeds['db']));
-        Phake::when(Data::$db)->articleStarredCount(Data::$user->id)->thenReturn(0)->thenReturn(5);
-        Phake::when(Data::$db)->editionLatest(Data::$user->id)->thenReturn(0)->thenReturn(4758915);
+        Phake::when(Arsse::$db)->subscriptionList(Arsse::$user->id)->thenReturn(new Result([]))->thenReturn(new Result($this->feeds['db']));
+        Phake::when(Arsse::$db)->articleStarredCount(Arsse::$user->id)->thenReturn(0)->thenReturn(5);
+        Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id)->thenReturn(0)->thenReturn(4758915);
         $exp = new Response(200, $exp1);
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds")));
         $exp = new Response(200, $exp2);
@@ -455,16 +455,16 @@ class TestNCNV1_2 extends Test\AbstractTest {
             [],
         ];
         // set up the necessary mocks
-        Phake::when(Data::$db)->subscriptionAdd(Data::$user->id, "http://example.com/news.atom")->thenReturn(2112)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        Phake::when(Data::$db)->subscriptionAdd(Data::$user->id, "http://example.org/news.atom")->thenReturn( 42 )->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        Phake::when(Data::$db)->subscriptionPropertiesGet(Data::$user->id, 2112)->thenReturn($this->feeds['db'][0]);
-        Phake::when(Data::$db)->subscriptionPropertiesGet(Data::$user->id,   42)->thenReturn($this->feeds['db'][1]);
-        Phake::when(Data::$db)->editionLatest(Data::$user->id, (new Context)->subscription(2112))->thenReturn(0);
-        Phake::when(Data::$db)->editionLatest(Data::$user->id, (new Context)->subscription(  42))->thenReturn(4758915);
-        Phake::when(Data::$db)->subscriptionPropertiesSet(Data::$user->id, 2112, ['folder' => 3])->thenThrow(new ExceptionInput("idMissing")); // folder ID 3 does not exist
-        Phake::when(Data::$db)->subscriptionPropertiesSet(Data::$user->id,   42, ['folder' => 8])->thenReturn(true);
+        Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.com/news.atom")->thenReturn(2112)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
+        Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.org/news.atom")->thenReturn( 42 )->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
+        Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 2112)->thenReturn($this->feeds['db'][0]);
+        Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id,   42)->thenReturn($this->feeds['db'][1]);
+        Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription(2112))->thenReturn(0);
+        Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription(  42))->thenReturn(4758915);
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 2112, ['folder' => 3])->thenThrow(new ExceptionInput("idMissing")); // folder ID 3 does not exist
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id,   42, ['folder' => 8])->thenReturn(true);
         // set up a mock for a bad feed
-        Phake::when(Data::$db)->subscriptionAdd(Data::$user->id, "http://example.net/news.atom")->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.net/news.atom", new \PicoFeed\Client\InvalidUrlException()));
+        Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.net/news.atom")->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.net/news.atom", new \PicoFeed\Client\InvalidUrlException()));
         // add the subscriptions
         $exp = new Response(200, $out[0]);
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[0]), 'application/json')));
@@ -481,13 +481,13 @@ class TestNCNV1_2 extends Test\AbstractTest {
     }
 
     function testRemoveASubscription() {
-        Phake::when(Data::$db)->subscriptionRemove(Data::$user->id, 1)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
+        Phake::when(Arsse::$db)->subscriptionRemove(Arsse::$user->id, 1)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
         $exp = new Response(204);
         $this->assertEquals($exp, $this->h->dispatch(new Request("DELETE", "/feeds/1")));
         // fail on the second invocation because it no longer exists
         $exp = new Response(404);
         $this->assertEquals($exp, $this->h->dispatch(new Request("DELETE", "/feeds/1")));
-        Phake::verify(Data::$db, Phake::times(2))->subscriptionRemove(Data::$user->id, 1);
+        Phake::verify(Arsse::$db, Phake::times(2))->subscriptionRemove(Arsse::$user->id, 1);
     }
 
     function testMoveASubscription() {
@@ -497,10 +497,10 @@ class TestNCNV1_2 extends Test\AbstractTest {
             ['folderId' => 2112],
             ['folderId' =>   42],
         ];
-        Phake::when(Data::$db)->subscriptionPropertiesSet(Data::$user->id, 1, ['folder' => 42])->thenReturn(true);
-        Phake::when(Data::$db)->subscriptionPropertiesSet(Data::$user->id, 1, ['folder' => null])->thenReturn(true);
-        Phake::when(Data::$db)->subscriptionPropertiesSet(Data::$user->id, 1, ['folder' => 2112])->thenThrow(new ExceptionInput("idMissing")); // folder does not exist
-        Phake::when(Data::$db)->subscriptionPropertiesSet(Data::$user->id, 42, $this->anything())->thenThrow(new ExceptionInput("subjectMissing")); // subscription does not exist
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, ['folder' => 42])->thenReturn(true);
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, ['folder' => null])->thenReturn(true);
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, ['folder' => 2112])->thenThrow(new ExceptionInput("idMissing")); // folder does not exist
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 42, $this->anything())->thenThrow(new ExceptionInput("subjectMissing")); // subscription does not exist
         $exp = new Response(204);
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/move", json_encode($in[0]), 'application/json')));
         $exp = new Response(204);
@@ -520,12 +520,12 @@ class TestNCNV1_2 extends Test\AbstractTest {
             ['feedTitle' => false],
             ['feedTitle' => "Feed does not exist"],
         ];
-        Phake::when(Data::$db)->subscriptionPropertiesSet(Data::$user->id, 1, $this->identicalTo(['title' =>  null]))->thenReturn(true);
-        Phake::when(Data::$db)->subscriptionPropertiesSet(Data::$user->id, 1, $this->identicalTo(['title' => "Ook"]))->thenReturn(true);
-        Phake::when(Data::$db)->subscriptionPropertiesSet(Data::$user->id, 1, $this->identicalTo(['title' => "   "]))->thenThrow(new ExceptionInput("whitespace"));
-        Phake::when(Data::$db)->subscriptionPropertiesSet(Data::$user->id, 1, $this->identicalTo(['title' =>    ""]))->thenThrow(new ExceptionInput("missing"));
-        Phake::when(Data::$db)->subscriptionPropertiesSet(Data::$user->id, 1, $this->identicalTo(['title' => false]))->thenThrow(new ExceptionInput("missing"));
-        Phake::when(Data::$db)->subscriptionPropertiesSet(Data::$user->id, 42, $this->anything())->thenThrow(new ExceptionInput("subjectMissing"));
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, $this->identicalTo(['title' =>  null]))->thenReturn(true);
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, $this->identicalTo(['title' => "Ook"]))->thenReturn(true);
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, $this->identicalTo(['title' => "   "]))->thenThrow(new ExceptionInput("whitespace"));
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, $this->identicalTo(['title' =>    ""]))->thenThrow(new ExceptionInput("missing"));
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, $this->identicalTo(['title' => false]))->thenThrow(new ExceptionInput("missing"));
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 42, $this->anything())->thenThrow(new ExceptionInput("subjectMissing"));
         $exp = new Response(204);
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/rename", json_encode($in[0]), 'application/json')));
         $exp = new Response(204);
@@ -549,11 +549,11 @@ class TestNCNV1_2 extends Test\AbstractTest {
                 'userId' => "",
             ],
         ];
-        Phake::when(Data::$db)->feedListStale->thenReturn(array_column($out,"id"));
+        Phake::when(Arsse::$db)->feedListStale->thenReturn(array_column($out,"id"));
         $exp = new Response(200, ['feeds' => $out]);
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/all")));
         // retrieving the list when not an admin fails
-        Phake::when(Data::$user)->rightsGet->thenReturn(0);
+        Phake::when(Arsse::$user)->rightsGet->thenReturn(0);
         $exp = new Response(403);
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/all")));
     }
@@ -565,8 +565,8 @@ class TestNCNV1_2 extends Test\AbstractTest {
             ['feedId' => "ook"], // invalid ID
             ['feed'   =>    42], // invalid input
         ];
-        Phake::when(Data::$db)->feedUpdate(  42)->thenReturn(true);
-        Phake::when(Data::$db)->feedUpdate(2112)->thenThrow(new ExceptionInput("subjectMissing"));
+        Phake::when(Arsse::$db)->feedUpdate(  42)->thenReturn(true);
+        Phake::when(Arsse::$db)->feedUpdate(2112)->thenThrow(new ExceptionInput("subjectMissing"));
         $exp = new Response(204);
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[0]), 'application/json')));
         $exp = new Response(404);
@@ -576,7 +576,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
         $exp = new Response(422);
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[3]), 'application/json')));
         // updating a feed when not an admin fails
-        Phake::when(Data::$user)->rightsGet->thenReturn(0);
+        Phake::when(Arsse::$user)->rightsGet->thenReturn(0);
         $exp = new Response(403);
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[0]), 'application/json')));
     }
@@ -596,9 +596,9 @@ class TestNCNV1_2 extends Test\AbstractTest {
             ['lastModified' => $t->getTimestamp()],
             ['oldestFirst' => false, 'batchSize' => 5, 'offset' => 0], // offset=0 should not set the latestEdition context
         ];
-        Phake::when(Data::$db)->articleList(Data::$user->id, $this->anything())->thenReturn($res);
-        Phake::when(Data::$db)->articleList(Data::$user->id, (new Context)->reverse(true)->subscription(42))->thenThrow(new ExceptionInput("idMissing"));
-        Phake::when(Data::$db)->articleList(Data::$user->id, (new Context)->reverse(true)->folder(2112))->thenThrow(new ExceptionInput("idMissing"));
+        Phake::when(Arsse::$db)->articleList(Arsse::$user->id, $this->anything())->thenReturn($res);
+        Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->subscription(42))->thenThrow(new ExceptionInput("idMissing"));
+        Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->folder(2112))->thenThrow(new ExceptionInput("idMissing"));
         $exp = new Response(200, ['items' => $this->articles['rest']]);
         // check the contents of the response
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/items"))); // first instance of base context
@@ -617,22 +617,22 @@ class TestNCNV1_2 extends Test\AbstractTest {
         $this->h->dispatch(new Request("GET", "/items", json_encode($in[8]), 'application/json'));
         $this->h->dispatch(new Request("GET", "/items", json_encode($in[9]), 'application/json'));
         // perform method verifications
-        Phake::verify(Data::$db, Phake::times(4))->articleList(Data::$user->id, (new Context)->reverse(true));
-        Phake::verify(Data::$db)->articleList(Data::$user->id, (new Context)->reverse(true)->subscription(42));
-        Phake::verify(Data::$db)->articleList(Data::$user->id, (new Context)->reverse(true)->folder(2112));
-        Phake::verify(Data::$db)->articleList(Data::$user->id, (new Context)->reverse(true)->starred(true));
-        Phake::verify(Data::$db)->articleList(Data::$user->id, (new Context)->reverse(false)->limit(10)->oldestEdition(6));
-        Phake::verify(Data::$db)->articleList(Data::$user->id, (new Context)->reverse(true)->limit(5)->latestEdition(4));
-        Phake::verify(Data::$db)->articleList(Data::$user->id, (new Context)->reverse(true)->unread(true));
-        Phake::verify(Data::$db)->articleList(Data::$user->id, (new Context)->reverse(true)->modifiedSince($t));
-        Phake::verify(Data::$db)->articleList(Data::$user->id, (new Context)->reverse(true)->limit(5));
+        Phake::verify(Arsse::$db, Phake::times(4))->articleList(Arsse::$user->id, (new Context)->reverse(true));
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->subscription(42));
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->folder(2112));
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->starred(true));
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(false)->limit(10)->oldestEdition(6));
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->limit(5)->latestEdition(4));
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->unread(true));
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->modifiedSince($t));
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->limit(5));
     }
 
     function testMarkAFolderRead() {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
-        Phake::when(Data::$db)->articleMark(Data::$user->id, $read, (new Context)->folder(1)->latestEdition(2112))->thenReturn(true);
-        Phake::when(Data::$db)->articleMark(Data::$user->id, $read, (new Context)->folder(42)->latestEdition(2112))->thenThrow(new ExceptionInput("idMissing")); // folder doesn't exist
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->folder(1)->latestEdition(2112))->thenReturn(true);
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->folder(42)->latestEdition(2112))->thenThrow(new ExceptionInput("idMissing")); // folder doesn't exist
         $exp = new Response(204);
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/1/read", $in, 'application/json')));
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/1/read?newestItemId=2112")));
@@ -646,8 +646,8 @@ class TestNCNV1_2 extends Test\AbstractTest {
     function testMarkASubscriptionRead() {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
-        Phake::when(Data::$db)->articleMark(Data::$user->id, $read, (new Context)->subscription(1)->latestEdition(2112))->thenReturn(true);
-        Phake::when(Data::$db)->articleMark(Data::$user->id, $read, (new Context)->subscription(42)->latestEdition(2112))->thenThrow(new ExceptionInput("idMissing")); // subscription doesn't exist
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->subscription(1)->latestEdition(2112))->thenReturn(true);
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->subscription(42)->latestEdition(2112))->thenThrow(new ExceptionInput("idMissing")); // subscription doesn't exist
         $exp = new Response(204);
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/read", $in, 'application/json')));
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/read?newestItemId=2112")));
@@ -661,7 +661,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
     function testMarkAllItemsRead() {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
-        Phake::when(Data::$db)->articleMark(Data::$user->id, $read, (new Context)->latestEdition(2112))->thenReturn(true);
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->latestEdition(2112))->thenReturn(true);
         $exp = new Response(204);
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/read", $in, 'application/json')));
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/read?newestItemId=2112")));
@@ -675,14 +675,14 @@ class TestNCNV1_2 extends Test\AbstractTest {
         $unread = ['read' => false];
         $star = ['starred' => true];
         $unstar = ['starred' => false];
-        Phake::when(Data::$db)->articleMark(Data::$user->id, $read, (new Context)->edition(1))->thenReturn(true);
-        Phake::when(Data::$db)->articleMark(Data::$user->id, $read, (new Context)->edition(42))->thenThrow(new ExceptionInput("subjectMissing")); // edition doesn't exist doesn't exist
-        Phake::when(Data::$db)->articleMark(Data::$user->id, $unread, (new Context)->edition(2))->thenReturn(true);
-        Phake::when(Data::$db)->articleMark(Data::$user->id, $unread, (new Context)->edition(47))->thenThrow(new ExceptionInput("subjectMissing")); // edition doesn't exist doesn't exist
-        Phake::when(Data::$db)->articleMark(Data::$user->id, $star, (new Context)->article(3))->thenReturn(true);
-        Phake::when(Data::$db)->articleMark(Data::$user->id, $star, (new Context)->article(2112))->thenThrow(new ExceptionInput("subjectMissing")); // article doesn't exist doesn't exist
-        Phake::when(Data::$db)->articleMark(Data::$user->id, $unstar, (new Context)->article(4))->thenReturn(true);
-        Phake::when(Data::$db)->articleMark(Data::$user->id, $unstar, (new Context)->article(1337))->thenThrow(new ExceptionInput("subjectMissing")); // article doesn't exist doesn't exist
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->edition(1))->thenReturn(true);
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->edition(42))->thenThrow(new ExceptionInput("subjectMissing")); // edition doesn't exist doesn't exist
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unread, (new Context)->edition(2))->thenReturn(true);
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unread, (new Context)->edition(47))->thenThrow(new ExceptionInput("subjectMissing")); // edition doesn't exist doesn't exist
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $star, (new Context)->article(3))->thenReturn(true);
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $star, (new Context)->article(2112))->thenThrow(new ExceptionInput("subjectMissing")); // article doesn't exist doesn't exist
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unstar, (new Context)->article(4))->thenReturn(true);
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unstar, (new Context)->article(1337))->thenThrow(new ExceptionInput("subjectMissing")); // article doesn't exist doesn't exist
         $exp = new Response(204);
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/1/read")));
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/2/unread")));
@@ -693,7 +693,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/47/unread")));
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/1/2112/star")));
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/4400/1337/unstar")));
-        Phake::verify(Data::$db, Phake::times(8))->articleMark(Data::$user->id, $this->anything(), $this->anything());
+        Phake::verify(Arsse::$db, Phake::times(8))->articleMark(Arsse::$user->id, $this->anything(), $this->anything());
     }
 
     function testChangeMarksOfMultipleArticles() {
@@ -713,9 +713,9 @@ class TestNCNV1_2 extends Test\AbstractTest {
                 $inStar[$a][$b] = ['feedId' => 2112, 'guidHash' => $inStar[$a][$b]];
             }
         }
-        Phake::when(Data::$db)->articleMark(Data::$user->id, $this->anything(), $this->anything())->thenReturn(true);
-        Phake::when(Data::$db)->articleMark(Data::$user->id, $this->anything(), (new Context)->editions([]))->thenThrow(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
-        Phake::when(Data::$db)->articleMark(Data::$user->id, $this->anything(), (new Context)->editions($in[1]))->thenThrow(new ExceptionInput("tooLong")); // data model function for limited to 50 items for multiples
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), $this->anything())->thenReturn(true);
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->editions([]))->thenThrow(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->editions($in[1]))->thenThrow(new ExceptionInput("tooLong")); // data model function for limited to 50 items for multiples
         $exp = new Response(422);
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/read/multiple")));
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/unread/multiple")));
@@ -740,26 +740,26 @@ class TestNCNV1_2 extends Test\AbstractTest {
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/star/multiple", json_encode(['items' => $inStar[1]]), 'application/json')));
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/unstar/multiple", json_encode(['items' => $inStar[1]]), 'application/json')));
         // ensure the data model was queried appropriately for read/unread
-        Phake::verify(Data::$db)->articleMark(Data::$user->id, $read, (new Context)->editions([]));
-        Phake::verify(Data::$db)->articleMark(Data::$user->id, $read, (new Context)->editions($in[0]));
-        Phake::verify(Data::$db, Phake::times(0))->articleMark(Data::$user->id, $read, (new Context)->editions($in[1]));
-        Phake::verify(Data::$db)->articleMark(Data::$user->id, $read, (new Context)->editions($in[2]));
-        Phake::verify(Data::$db)->articleMark(Data::$user->id, $read, (new Context)->editions($in[3]));
-        Phake::verify(Data::$db)->articleMark(Data::$user->id, $unread, (new Context)->editions([]));
-        Phake::verify(Data::$db)->articleMark(Data::$user->id, $unread, (new Context)->editions($in[0]));
-        Phake::verify(Data::$db, Phake::times(0))->articleMark(Data::$user->id, $unread, (new Context)->editions($in[1]));
-        Phake::verify(Data::$db)->articleMark(Data::$user->id, $unread, (new Context)->editions($in[2]));
-        Phake::verify(Data::$db)->articleMark(Data::$user->id, $unread, (new Context)->editions($in[3]));
+        Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->editions([]));
+        Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->editions($in[0]));
+        Phake::verify(Arsse::$db, Phake::times(0))->articleMark(Arsse::$user->id, $read, (new Context)->editions($in[1]));
+        Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->editions($in[2]));
+        Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->editions($in[3]));
+        Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $unread, (new Context)->editions([]));
+        Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $unread, (new Context)->editions($in[0]));
+        Phake::verify(Arsse::$db, Phake::times(0))->articleMark(Arsse::$user->id, $unread, (new Context)->editions($in[1]));
+        Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $unread, (new Context)->editions($in[2]));
+        Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $unread, (new Context)->editions($in[3]));
         // ensure the data model was queried appropriately for star/unstar
-        Phake::verify(Data::$db)->articleMark(Data::$user->id, $star, (new Context)->articles([]));
-        Phake::verify(Data::$db)->articleMark(Data::$user->id, $star, (new Context)->articles($in[0]));
-        Phake::verify(Data::$db, Phake::times(0))->articleMark(Data::$user->id, $star, (new Context)->articles($in[1]));
-        Phake::verify(Data::$db)->articleMark(Data::$user->id, $star, (new Context)->articles($in[2]));
-        Phake::verify(Data::$db)->articleMark(Data::$user->id, $star, (new Context)->articles($in[3]));
-        Phake::verify(Data::$db)->articleMark(Data::$user->id, $unstar, (new Context)->articles([]));
-        Phake::verify(Data::$db)->articleMark(Data::$user->id, $unstar, (new Context)->articles($in[0]));
-        Phake::verify(Data::$db, Phake::times(0))->articleMark(Data::$user->id, $unstar, (new Context)->articles($in[1]));
-        Phake::verify(Data::$db)->articleMark(Data::$user->id, $unstar, (new Context)->articles($in[2]));
-        Phake::verify(Data::$db)->articleMark(Data::$user->id, $unstar, (new Context)->articles($in[3]));
+        Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $star, (new Context)->articles([]));
+        Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $star, (new Context)->articles($in[0]));
+        Phake::verify(Arsse::$db, Phake::times(0))->articleMark(Arsse::$user->id, $star, (new Context)->articles($in[1]));
+        Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $star, (new Context)->articles($in[2]));
+        Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $star, (new Context)->articles($in[3]));
+        Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $unstar, (new Context)->articles([]));
+        Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $unstar, (new Context)->articles($in[0]));
+        Phake::verify(Arsse::$db, Phake::times(0))->articleMark(Arsse::$user->id, $unstar, (new Context)->articles($in[1]));
+        Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $unstar, (new Context)->articles($in[2]));
+        Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $unstar, (new Context)->articles($in[3]));
     }
 }

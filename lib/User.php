@@ -32,7 +32,7 @@ class User {
     }
 
     public function __construct() {
-        $driver = Data::$conf->userDriver;
+        $driver = Arsse::$conf->userDriver;
         $this->u = new $driver();
     }
 
@@ -48,13 +48,13 @@ class User {
         // if we don't have a logged-in user, fetch credentials
         if($this->id===null) $this->credentials();
         // if the affected user is the actor and the actor is not trying to grant themselves rights, accept the request
-        if($affectedUser==Data::$user->id && $action != "userRightsSet") return true;
+        if($affectedUser==Arsse::$user->id && $action != "userRightsSet") return true;
         // if we're authorizing something other than a user function and the affected user is not the actor, make sure the affected user exists
         $this->authorizationEnabled(false);
-        if(Data::$user->id != $affectedUser && strpos($action, "user")!==0 && !$this->exists($affectedUser)) throw new User\Exception("doesNotExist", ["action" => $action, "user" => $affectedUser]);
+        if(Arsse::$user->id != $affectedUser && strpos($action, "user")!==0 && !$this->exists($affectedUser)) throw new User\Exception("doesNotExist", ["action" => $action, "user" => $affectedUser]);
         $this->authorizationEnabled(true);
         // get properties of actor if not already available
-        if(!sizeof($this->actor)) $this->actor = $this->propertiesGet(Data::$user->id);
+        if(!sizeof($this->actor)) $this->actor = $this->propertiesGet(Arsse::$user->id);
         $rights = $this->actor["rights"];
         // if actor is a global admin, accept the request
         if($rights==User\Driver::RIGHTS_GLOBAL_ADMIN) return true;
@@ -63,7 +63,7 @@ class User {
         // if actor is not some other sort of admin, deny the request
         if(!in_array($rights,[User\Driver::RIGHTS_GLOBAL_MANAGER,User\Driver::RIGHTS_DOMAIN_MANAGER,User\Driver::RIGHTS_DOMAIN_ADMIN],true)) return false;
         // if actor is a domain admin/manager and domains don't match, deny the request
-        if(Data::$conf->userComposeNames && $this->actor["domain"] && $rights != User\Driver::RIGHTS_GLOBAL_MANAGER) {
+        if(Arsse::$conf->userComposeNames && $this->actor["domain"] && $rights != User\Driver::RIGHTS_GLOBAL_MANAGER) {
             $test = "@".$this->actor["domain"];
             if(substr($affectedUser,-1*strlen($test)) != $test) return false;
         }
@@ -96,7 +96,7 @@ class User {
         } else {
             $out = ["user" => "", "password" => ""];
         }
-        if(Data::$conf->userComposeNames && $out["user"] != "") {
+        if(Arsse::$conf->userComposeNames && $out["user"] != "") {
             $out["user"] = $this->composeName($out["user"]);
         }
         $this->id = $out["user"];
@@ -111,16 +111,16 @@ class User {
             $this->actor = [];
             switch($this->u->driverFunctions("auth")) {
                 case User\Driver::FUNC_EXTERNAL:
-                    if(Data::$conf->userPreAuth) {
+                    if(Arsse::$conf->userPreAuth) {
                         $out = true;
                     } else {
                         $out = $this->u->auth($user, $password);
                     }
-                    if($out && !Data::$db->userExists($user)) $this->autoProvision($user, $password);
+                    if($out && !Arsse::$db->userExists($user)) $this->autoProvision($user, $password);
                     return $out;
                 case User\Driver::FUNC_INTERNAL:
-                    if(Data::$conf->userPreAuth) {
-                        if(!Data::$db->userExists($user)) $this->autoProvision($user, $password);
+                    if(Arsse::$conf->userPreAuth) {
+                        if(!Arsse::$db->userExists($user)) $this->autoProvision($user, $password);
                         return true;
                     } else {
                         return $this->u->auth($user, $password);
@@ -173,7 +173,7 @@ class User {
                 // we handle authorization checks for external drivers
                 if(!$this->authorize($user, $func)) throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
                 $out = $this->u->userExists($user);
-                if($out && !Data::$db->userExists($user)) $this->autoProvision($user, "");
+                if($out && !Arsse::$db->userExists($user)) $this->autoProvision($user, "");
                 return $out;
             case User\Driver::FUNC_INTERNAL:
                 // internal functions handle their own authorization
@@ -192,7 +192,7 @@ class User {
                 if(!$this->authorize($user, $func)) throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
                 $newPassword = $this->u->userAdd($user, $password);
                 // if there was no exception and we don't have the user in the internal database, add it
-                if(!Data::$db->userExists($user)) $this->autoProvision($user, $newPassword);
+                if(!Arsse::$db->userExists($user)) $this->autoProvision($user, $newPassword);
                 return $newPassword;
             case User\Driver::FUNC_INTERNAL:
                 // internal functions handle their own authorization
@@ -209,9 +209,9 @@ class User {
                 // we handle authorization checks for external drivers
                 if(!$this->authorize($user, $func)) throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
                 $out = $this->u->userRemove($user);
-                if($out && Data::$db->userExists($user)) {
+                if($out && Arsse::$db->userExists($user)) {
                     // if the user was removed and we have it in our data, remove it there
-                    if(!Data::$db->userExists($user)) Data::$db->userRemove($user);
+                    if(!Arsse::$db->userExists($user)) Arsse::$db->userRemove($user);
                 }
                 return $out;
             case User\Driver::FUNC_INTERNAL:
@@ -229,9 +229,9 @@ class User {
                 // we handle authorization checks for external drivers
                 if(!$this->authorize($user, $func)) throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
                 $out = $this->u->userPasswordSet($user, $newPassword, $oldPassword);
-                if(Data::$db->userExists($user)) {
+                if(Arsse::$db->userExists($user)) {
                     // if the password change was successful and the user exists, set the internal password to the same value
-                    Data::$db->userPasswordSet($user, $out);
+                    Arsse::$db->userPasswordSet($user, $out);
                 } else {
                     // if the user does not exists in the internal database, create it
                     $this->autoProvision($user, $out);
@@ -248,7 +248,7 @@ class User {
     public function propertiesGet(string $user): array {
         // prepare default values
         $domain = null;
-        if(Data::$conf->userComposeNames) $domain = substr($user,strrpos($user,"@")+1);
+        if(Arsse::$conf->userComposeNames) $domain = substr($user,strrpos($user,"@")+1);
         $init = [
             "id"     => $user,
             "name"   => $user,
@@ -264,7 +264,7 @@ class User {
                 // remove password if it is return (not exhaustive, but...)
                 if(array_key_exists('password', $out)) unset($out['password']);
                 // if the user does not exist in the internal database, add it
-                if(!Data::$db->userExists($user)) $this->autoProvision($user, "", $out);
+                if(!Arsse::$db->userExists($user)) $this->autoProvision($user, "", $out);
                 return $out;
             case User\Driver::FUNC_INTERNAL:
                 // internal functions handle their own authorization
@@ -286,9 +286,9 @@ class User {
                 // we handle authorization checks for external drivers
                 if(!$this->authorize($user, $func)) throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
                 $out = $this->u->userPropertiesSet($user, $properties);
-                if(Data::$db->userExists($user)) {
+                if(Arsse::$db->userExists($user)) {
                     // if the property change was successful and the user exists, set the internal properties to the same values
-                    Data::$db->userPropertiesSet($user, $out);
+                    Arsse::$db->userPropertiesSet($user, $out);
                 } else {
                     // if the user does not exists in the internal database, create it
                     $this->autoProvision($user, "", $out);
@@ -310,7 +310,7 @@ class User {
                 if(!$this->authorize($user, $func)) throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
                 $out = $this->u->userRightsGet($user);
                 // if the user does not exist in the internal database, add it
-                if(!Data::$db->userExists($user)) $this->autoProvision($user, "", null, $out);
+                if(!Arsse::$db->userExists($user)) $this->autoProvision($user, "", null, $out);
                 return $out;
             case User\Driver::FUNC_INTERNAL:
                 // internal functions handle their own authorization
@@ -329,10 +329,10 @@ class User {
                 if(!$this->authorize($user, $func)) throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
                 $out = $this->u->userRightsSet($user, $level);
                 // if the user does not exist in the internal database, add it
-                if($out && Data::$db->userExists($user)) {
+                if($out && Arsse::$db->userExists($user)) {
                     $authz = $this->authorizationEnabled();
                     $this->authorizationEnabled(false);
-                    Data::$db->userRightsSet($user, $level);
+                    Arsse::$db->userRightsSet($user, $level);
                     $this->authorizationEnabled($authz);
                 } else if($out) {
                     $this->autoProvision($user, "", null, $level);
@@ -358,18 +358,18 @@ class User {
         // temporarily disable authorization checks, to avoid potential problems
         $this->authorizationEnabled(false);
         // create the user
-        $out = Data::$db->userAdd($user, $password);
+        $out = Arsse::$db->userAdd($user, $password);
         // set the user rights
-        Data::$db->userRightsSet($user, $rights);
+        Arsse::$db->userRightsSet($user, $rights);
         // set the user properties...
         if($properties===null) {
             // if nothing is provided but the driver uses an external function, try to get the current values from the external source
             try {
-                if($this->u->driverFunctions("userPropertiesGet")==User\Driver::FUNC_EXTERNAL) Data::$db->userPropertiesSet($user, $this->u->userPropertiesGet($user));
+                if($this->u->driverFunctions("userPropertiesGet")==User\Driver::FUNC_EXTERNAL) Arsse::$db->userPropertiesSet($user, $this->u->userPropertiesGet($user));
             } catch(\Throwable $e) {}
         } else {
             // otherwise if values are provided, use those
-            Data::$db->userPropertiesSet($user, $properties);
+            Arsse::$db->userPropertiesSet($user, $properties);
         }
         // re-enable authorization and return
         $this->authorizationEnabled(true);

@@ -1,7 +1,8 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
-Use Phake;
+use JKingWeb\Arsse\Misc\Date;
+use Phake;
 
 
 class TestFeed extends Test\AbstractTest {
@@ -82,8 +83,8 @@ class TestFeed extends Test\AbstractTest {
         }
         $this->base = self::$host."Feed/";
         $this->clearData();
-        Data::$conf = new Conf();
-        Data::$db = Phake::mock(Database::class);
+        Arsse::$conf = new Conf();
+        Arsse::$db = Phake::mock(Database::class);
     }
 
     function testParseAFeed() {
@@ -180,16 +181,16 @@ class TestFeed extends Test\AbstractTest {
         // upon 304, the client should re-use the caching header values it supplied the server
         $t = time();
         $e = "78567a";
-        $f = new Feed(null, $this->base."Caching/304Random", $this->dateTransform($t, "http"), $e);
+        $f = new Feed(null, $this->base."Caching/304Random", Date::transform($t, "http"), $e);
         $this->assertTime($t, $f->lastModified);
         $this->assertSame($e, $f->resource->getETag());
-        $f = new Feed(null, $this->base."Caching/304ETagOnly", $this->dateTransform($t, "http"), $e);
+        $f = new Feed(null, $this->base."Caching/304ETagOnly", Date::transform($t, "http"), $e);
         $this->assertTime($t, $f->lastModified);
         $this->assertSame($e, $f->resource->getETag());
-        $f = new Feed(null, $this->base."Caching/304LastModOnly", $this->dateTransform($t, "http"), $e);
+        $f = new Feed(null, $this->base."Caching/304LastModOnly", Date::transform($t, "http"), $e);
         $this->assertTime($t, $f->lastModified);
         $this->assertSame($e, $f->resource->getETag());
-        $f = new Feed(null, $this->base."Caching/304None", $this->dateTransform($t, "http"), $e);
+        $f = new Feed(null, $this->base."Caching/304None", Date::transform($t, "http"), $e);
         $this->assertTime($t, $f->lastModified);
         $this->assertSame($e, $f->resource->getETag());
     }
@@ -201,7 +202,7 @@ class TestFeed extends Test\AbstractTest {
         $this->assertTime($t, $f->lastModified);
         $this->assertNotEmpty($f->resource->getETag());
         $t = time() - 2000;
-        $f = new Feed(null, $this->base."Caching/200Past", $this->dateTransform(time(), "http"));
+        $f = new Feed(null, $this->base."Caching/200Past", Date::transform(time(), "http"));
         $this->assertTime($t, $f->lastModified);
         $this->assertNotEmpty($f->resource->getETag());
         $t = time() + 2000;
@@ -237,47 +238,47 @@ class TestFeed extends Test\AbstractTest {
     function testComputeNextFetchFrom304() {
         // if less than half an hour, check in 15 minutes
         $t = strtotime("now");
-        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", $this->dateTransform($t, "http"));
+        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
         $exp = strtotime("now + 15 minutes");
         $this->assertTime($exp, $f->nextFetch);
         $t = strtotime("now - 29 minutes");
-        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", $this->dateTransform($t, "http"));
+        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
         $exp = strtotime("now + 15 minutes");
         $this->assertTime($exp, $f->nextFetch);
         // if less than an hour, check in 30 minutes
         $t = strtotime("now - 30 minutes");
-        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", $this->dateTransform($t, "http"));
+        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
         $exp = strtotime("now + 30 minutes");
         $this->assertTime($exp, $f->nextFetch);
         $t = strtotime("now - 59 minutes");
-        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", $this->dateTransform($t, "http"));
+        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
         $exp = strtotime("now + 30 minutes");
         $this->assertTime($exp, $f->nextFetch);
         // if less than three hours, check in an hour
         $t = strtotime("now - 1 hour");
-        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", $this->dateTransform($t, "http"));
+        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
         $exp = strtotime("now + 1 hour");
         $this->assertTime($exp, $f->nextFetch);
         $t = strtotime("now - 2 hours 59 minutes");
-        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", $this->dateTransform($t, "http"));
+        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
         $exp = strtotime("now + 1 hour");
         $this->assertTime($exp, $f->nextFetch);
         // if more than 36 hours, check in 24 hours
         $t = strtotime("now - 36 hours");
-        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", $this->dateTransform($t, "http"));
+        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
         $exp = strtotime("now + 1 day");
         $this->assertTime($exp, $f->nextFetch);
         $t = strtotime("now - 2 years");
-        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", $this->dateTransform($t, "http"));
+        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
         $exp = strtotime("now + 1 day");
         $this->assertTime($exp, $f->nextFetch);
         // otherwise check in three hours
         $t = strtotime("now - 3 hours");
-        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", $this->dateTransform($t, "http"));
+        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
         $exp = strtotime("now + 3 hours");
         $this->assertTime($exp, $f->nextFetch);
         $t = strtotime("now - 35 hours");
-        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", $this->dateTransform($t, "http"));
+        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
         $exp = strtotime("now + 3 hours");
         $this->assertTime($exp, $f->nextFetch);
     }
@@ -310,7 +311,7 @@ class TestFeed extends Test\AbstractTest {
     }
 
     function testMatchLatestArticles() {
-        Phake::when(Data::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Test\Result($this->latest));
+        Phake::when(Arsse::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Test\Result($this->latest));
         $f = new Feed(1, $this->base."Matching/1");
         $this->assertCount(0, $f->newItems);
         $this->assertCount(0, $f->changedItems);
@@ -326,8 +327,8 @@ class TestFeed extends Test\AbstractTest {
     }
 
     function testMatchHistoricalArticles() {
-        Phake::when(Data::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Test\Result($this->latest));
-        Phake::when(Data::$db)->feedMatchIds(1, $this->anything(), $this->anything(), $this->anything(), $this->anything())->thenReturn(new Test\Result($this->others));
+        Phake::when(Arsse::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Test\Result($this->latest));
+        Phake::when(Arsse::$db)->feedMatchIds(1, $this->anything(), $this->anything(), $this->anything(), $this->anything())->thenReturn(new Test\Result($this->others));
         $f = new Feed(1, $this->base."Matching/5");
         $this->assertCount(0, $f->newItems);
         $this->assertCount(0, $f->changedItems);   

@@ -1,10 +1,9 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Misc;
+use JKingWeb\Arsse\Misc\Date;
 
-class Context {
-    use DateFormatter;
-    
+class Context {    
     public $reverse = false;
     public $limit = 0;
     public $offset = 0;
@@ -91,12 +90,12 @@ class Context {
     }
     
     function modifiedSince($spec = null) {
-        $spec = $this->dateNormalize($spec);
+        $spec = Date::normalize($spec);
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
     
     function notModifiedSince($spec = null) {
-        $spec = $this->dateNormalize($spec);
+        $spec = Date::normalize($spec);
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
     

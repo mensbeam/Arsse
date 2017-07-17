@@ -2,22 +2,14 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
-class Data {
-    /**
-    * @var Lang
-    */
+class Arsse {
+    /** @var Lang */
     public static $lang;
-    /**
-    * @var Conf
-    */
+    /** @var Conf  */
     public static $conf;
-    /**
-    * @var Database
-    */
+    /** @var Database */
     public static $db;
-    /**
-    * @var User
-    */
+    /** @var User */
     public static $user;
 
     static function load(Conf $conf) {

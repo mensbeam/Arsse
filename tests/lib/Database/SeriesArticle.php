@@ -1,12 +1,13 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\Database;
-use JKingWeb\Arsse\Data;
+use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Feed;
 use JKingWeb\Arsse\Test\Database;
 use JKingWeb\Arsse\User\Driver as UserDriver;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\Misc\Context;
+use JKingWeb\Arsse\Misc\Date;
 use Phake;
 
 trait SeriesArticle {
@@ -277,7 +278,7 @@ trait SeriesArticle {
     }
 
     protected function compareIds(array $exp, Context $c) {
-        $ids = array_column($ids = Data::$db->articleList($this->user, $c)->getAll(), "id");
+        $ids = array_column($ids = Arsse::$db->articleList($this->user, $c)->getAll(), "id");
         sort($ids);
         sort($exp);
         $this->assertEquals($exp, $ids);
@@ -330,28 +331,28 @@ trait SeriesArticle {
 
     function testListArticlesOfAMissingFolder() {
         $this->assertException("idMissing", "Db", "ExceptionInput");
-        Data::$db->articleList($this->user, (new Context)->folder(1));
+        Arsse::$db->articleList($this->user, (new Context)->folder(1));
     }
 
     function testListArticlesOfAMissingSubscription() {
         $this->assertException("idMissing", "Db", "ExceptionInput");
-        Data::$db->articleList($this->user, (new Context)->subscription(1));
+        Arsse::$db->articleList($this->user, (new Context)->subscription(1));
     }
 
     function testListArticlesCheckingProperties() {
         $this->user = "john.doe@example.org";
-        $this->assertResult($this->matches, Data::$db->articleList($this->user));
+        $this->assertResult($this->matches, Arsse::$db->articleList($this->user));
     }
 
     function testListArticlesWithoutAuthority() {
-        Phake::when(Data::$user)->authorize->thenReturn(false);
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Data::$db->articleList($this->user);
+        Arsse::$db->articleList($this->user);
     }
 
     function testMarkAllArticlesUnread() {
-        Data::$db->articleMark($this->user, ['read'=>false]);
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['read'=>false]);
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][2] = 0;
         $state['arsse_marks']['rows'][9][4] = $now;
@@ -361,8 +362,8 @@ trait SeriesArticle {
     }
 
     function testMarkAllArticlesRead() {
-        Data::$db->articleMark($this->user, ['read'=>true]);
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['read'=>true]);
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][8][2] = 1;
         $state['arsse_marks']['rows'][8][4] = $now;
@@ -376,8 +377,8 @@ trait SeriesArticle {
     }
 
     function testMarkAllArticlesUnstarred() {
-        Data::$db->articleMark($this->user, ['starred'=>false]);
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['starred'=>false]);
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][10][3] = 0;
         $state['arsse_marks']['rows'][10][4] = $now;
@@ -387,8 +388,8 @@ trait SeriesArticle {
     }
 
     function testMarkAllArticlesStarred() {
-        Data::$db->articleMark($this->user, ['starred'=>true]);
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['starred'=>true]);
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][8][3] = 1;
         $state['arsse_marks']['rows'][8][4] = $now;
@@ -402,8 +403,8 @@ trait SeriesArticle {
     }
 
     function testMarkAllArticlesUnreadAndUnstarred() {
-        Data::$db->articleMark($this->user, ['read'=>false,'starred'=>false]);
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>false]);
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][2] = 0;
         $state['arsse_marks']['rows'][9][4] = $now;
@@ -416,8 +417,8 @@ trait SeriesArticle {
     }
 
     function testMarkAllArticlesReadAndStarred() {
-        Data::$db->articleMark($this->user, ['read'=>true,'starred'=>true]);
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['read'=>true,'starred'=>true]);
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][8][2] = 1;
         $state['arsse_marks']['rows'][8][3] = 1;
@@ -434,8 +435,8 @@ trait SeriesArticle {
     }
 
     function testMarkAllArticlesUnreadAndStarred() {
-        Data::$db->articleMark($this->user, ['read'=>false,'starred'=>true]);
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true]);
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][8][3] = 1;
         $state['arsse_marks']['rows'][8][4] = $now;
@@ -452,8 +453,8 @@ trait SeriesArticle {
     }
 
     function testMarkAllArticlesReadAndUnstarred() {
-        Data::$db->articleMark($this->user, ['read'=>true,'starred'=>false]);
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['read'=>true,'starred'=>false]);
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][8][2] = 1;
         $state['arsse_marks']['rows'][8][4] = $now;
@@ -470,8 +471,8 @@ trait SeriesArticle {
     }
 
     function testMarkATreeFolder() {
-        Data::$db->articleMark($this->user, ['read'=>true], (new Context)->folder(7));
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['read'=>true], (new Context)->folder(7));
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][] = [$this->user,5,1,0,$now];
         $state['arsse_marks']['rows'][] = [$this->user,6,1,0,$now];
@@ -481,8 +482,8 @@ trait SeriesArticle {
     }
 
     function testMarkALeafFolder() {
-        Data::$db->articleMark($this->user, ['read'=>true], (new Context)->folder(8));
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['read'=>true], (new Context)->folder(8));
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][] = [$this->user,5,1,0,$now];
         $state['arsse_marks']['rows'][] = [$this->user,6,1,0,$now];
@@ -491,12 +492,12 @@ trait SeriesArticle {
 
     function testMarkAMissingFolder() {
         $this->assertException("idMissing", "Db", "ExceptionInput");
-        Data::$db->articleMark($this->user, ['read'=>true], (new Context)->folder(42));
+        Arsse::$db->articleMark($this->user, ['read'=>true], (new Context)->folder(42));
     }
 
     function testMarkASubscription() {
-        Data::$db->articleMark($this->user, ['read'=>true], (new Context)->subscription(13));
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['read'=>true], (new Context)->subscription(13));
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][] = [$this->user,5,1,0,$now];
         $state['arsse_marks']['rows'][] = [$this->user,6,1,0,$now];
@@ -505,12 +506,12 @@ trait SeriesArticle {
 
     function testMarkAMissingSubscription() {
         $this->assertException("idMissing", "Db", "ExceptionInput");
-        Data::$db->articleMark($this->user, ['read'=>true], (new Context)->folder(2112));
+        Arsse::$db->articleMark($this->user, ['read'=>true], (new Context)->folder(2112));
     }
 
     function testMarkAnArticle() {
-        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->article(20));
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['starred'=>true], (new Context)->article(20));
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
@@ -518,8 +519,8 @@ trait SeriesArticle {
     }
 
     function testMarkMultipleArticles() {
-        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->articles([2,4,7,20]));
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['starred'=>true], (new Context)->articles([2,4,7,20]));
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
@@ -528,8 +529,8 @@ trait SeriesArticle {
     }
 
     function testMarkMultipleArticlessUnreadAndStarred() {
-        Data::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->articles([2,4,7,20]));
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->articles([2,4,7,20]));
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][2] = 0;
         $state['arsse_marks']['rows'][9][3] = 1;
@@ -542,22 +543,22 @@ trait SeriesArticle {
 
     function testMarkTooFewMultipleArticles() {
         $this->assertException("tooShort", "Db", "ExceptionInput");
-        Data::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->articles([]));
+        Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->articles([]));
     }
 
     function testMarkTooManyMultipleArticles() {
         $this->assertException("tooLong", "Db", "ExceptionInput");
-        Data::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->articles(range(1,51)));
+        Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->articles(range(1,51)));
     }
 
     function testMarkAMissingArticle() {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
-        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->article(1));
+        Arsse::$db->articleMark($this->user, ['starred'=>true], (new Context)->article(1));
     }
 
     function testMarkAnEdition() {
-        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->edition(1001));
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['starred'=>true], (new Context)->edition(1001));
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
@@ -565,8 +566,8 @@ trait SeriesArticle {
     }
 
     function testMarkMultipleEditions() {
-        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->editions([2,4,7,20]));
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['starred'=>true], (new Context)->editions([2,4,7,20]));
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
@@ -575,8 +576,8 @@ trait SeriesArticle {
     }
 
     function testMarkMultipleEditionsUnread() {
-        Data::$db->articleMark($this->user, ['read'=>false], (new Context)->editions([2,4,7,1001]));
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['read'=>false], (new Context)->editions([2,4,7,1001]));
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][2] = 0;
         $state['arsse_marks']['rows'][9][4] = $now;
@@ -586,8 +587,8 @@ trait SeriesArticle {
     }
 
     function testMarkMultipleEditionsUnreadWithStale() {
-        Data::$db->articleMark($this->user, ['read'=>false], (new Context)->editions([2,4,7,20]));
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['read'=>false], (new Context)->editions([2,4,7,20]));
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][11][2] = 0;
         $state['arsse_marks']['rows'][11][4] = $now;
@@ -595,8 +596,8 @@ trait SeriesArticle {
     }
 
     function testMarkMultipleEditionsUnreadAndStarredWithStale() {
-        Data::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->editions([2,4,7,20]));
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->editions([2,4,7,20]));
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
@@ -608,23 +609,23 @@ trait SeriesArticle {
 
     function testMarkTooFewMultipleEditions() {
         $this->assertException("tooShort", "Db", "ExceptionInput");
-        Data::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->editions([]));
+        Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->editions([]));
     }
 
     function testMarkTooManyMultipleEditions() {
         $this->assertException("tooLong", "Db", "ExceptionInput");
-        Data::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->editions(range(1,51)));
+        Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->editions(range(1,51)));
     }
 
     function testMarkAStaleEditionUnread() {
-        Data::$db->articleMark($this->user, ['read'=>false], (new Context)->edition(20)); // no changes occur
+        Arsse::$db->articleMark($this->user, ['read'=>false], (new Context)->edition(20)); // no changes occur
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $this->compareExpectations($state);
     }
 
     function testMarkAStaleEditionStarred() {
-        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->edition(20));
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['starred'=>true], (new Context)->edition(20));
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
@@ -632,8 +633,8 @@ trait SeriesArticle {
     }
 
     function testMarkAStaleEditionUnreadAndStarred() {
-        Data::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->edition(20)); // only starred is changed
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->edition(20)); // only starred is changed
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
@@ -641,19 +642,19 @@ trait SeriesArticle {
     }
 
     function testMarkAStaleEditionUnreadAndUnstarred() {
-        Data::$db->articleMark($this->user, ['read'=>false,'starred'=>false], (new Context)->edition(20)); // no changes occur
+        Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>false], (new Context)->edition(20)); // no changes occur
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $this->compareExpectations($state);
     }
 
     function testMarkAMissingEdition() {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
-        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->edition(2));
+        Arsse::$db->articleMark($this->user, ['starred'=>true], (new Context)->edition(2));
     }
 
     function testMarkByOldestEdition() {
-        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->oldestEdition(19));
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['starred'=>true], (new Context)->oldestEdition(19));
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][8][3] = 1;
         $state['arsse_marks']['rows'][8][4] = $now;
@@ -663,8 +664,8 @@ trait SeriesArticle {
     }
 
     function testMarkByLatestEdition() {
-        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->latestEdition(20));
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['starred'=>true], (new Context)->latestEdition(20));
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][8][3] = 1;
         $state['arsse_marks']['rows'][8][4] = $now;
@@ -676,8 +677,8 @@ trait SeriesArticle {
     }
 
     function testMarkByLastModified() {
-        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->modifiedSince('2017-01-01T00:00:00Z'));
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['starred'=>true], (new Context)->modifiedSince('2017-01-01T00:00:00Z'));
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][8][3] = 1;
         $state['arsse_marks']['rows'][8][4] = $now;
@@ -687,8 +688,8 @@ trait SeriesArticle {
     }
 
     function testMarkByNotLastModified() {
-        Data::$db->articleMark($this->user, ['starred'=>true], (new Context)->notModifiedSince('2000-01-01T00:00:00Z'));
-        $now = $this->dateTransform(time(), "sql");
+        Arsse::$db->articleMark($this->user, ['starred'=>true], (new Context)->notModifiedSince('2000-01-01T00:00:00Z'));
+        $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][] = [$this->user,5,0,1,$now];
         $state['arsse_marks']['rows'][] = [$this->user,7,0,1,$now];
@@ -696,37 +697,37 @@ trait SeriesArticle {
     }
 
     function testMarkArticlesWithoutAuthority() {
-        Phake::when(Data::$user)->authorize->thenReturn(false);
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Data::$db->articleMark($this->user, ['read'=>false]);
+        Arsse::$db->articleMark($this->user, ['read'=>false]);
     }
 
     function testCountStarredArticles() {
-        $this->assertSame(2, Data::$db->articleStarredCount("john.doe@example.com"));
-        $this->assertSame(2, Data::$db->articleStarredCount("john.doe@example.org"));
-        $this->assertSame(2, Data::$db->articleStarredCount("john.doe@example.net"));
-        $this->assertSame(0, Data::$db->articleStarredCount("jane.doe@example.com"));
+        $this->assertSame(2, Arsse::$db->articleStarredCount("john.doe@example.com"));
+        $this->assertSame(2, Arsse::$db->articleStarredCount("john.doe@example.org"));
+        $this->assertSame(2, Arsse::$db->articleStarredCount("john.doe@example.net"));
+        $this->assertSame(0, Arsse::$db->articleStarredCount("jane.doe@example.com"));
     }
 
     function testCountStarredArticlesWithoutAuthority() {
-        Phake::when(Data::$user)->authorize->thenReturn(false);
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Data::$db->articleStarredCount($this->user);
+        Arsse::$db->articleStarredCount($this->user);
     }
 
     function testFetchLatestEdition() {
-        $this->assertSame(1001, Data::$db->editionLatest($this->user));
-        $this->assertSame(4, Data::$db->editionLatest($this->user, (new Context)->subscription(12)));
+        $this->assertSame(1001, Arsse::$db->editionLatest($this->user));
+        $this->assertSame(4, Arsse::$db->editionLatest($this->user, (new Context)->subscription(12)));
     }
 
     function testFetchLatestEditionOfMissingSubscription() {
         $this->assertException("idMissing", "Db", "ExceptionInput");
-        Data::$db->editionLatest($this->user, (new Context)->subscription(1));
+        Arsse::$db->editionLatest($this->user, (new Context)->subscription(1));
     }
 
     function testFetchLatestEditionWithoutAuthority() {
-        Phake::when(Data::$user)->authorize->thenReturn(false);
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Data::$db->editionLatest($this->user);
+        Arsse::$db->editionLatest($this->user);
     }
 }

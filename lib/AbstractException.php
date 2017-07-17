@@ -83,7 +83,7 @@ abstract class AbstractException extends \Exception {
                 $code = self::CODES[$codeID];
                 $msg = "Exception.".str_replace("\\", "/", $class).".$msgID";
             }
-            $msg = Data::$lang->msg($msg, $vars);
+            $msg = Arsse::$lang->msg($msg, $vars);
         }
         parent::__construct($msg, $code, $e);
     }

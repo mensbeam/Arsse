@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\Database;
-use JKingWeb\Arsse\Data;
+use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Db\SQLite3\Driver;
 
 trait DriverSQLite3 {
@@ -9,7 +9,7 @@ trait DriverSQLite3 {
         if(!extension_loaded("sqlite3")) {
             $this->markTestSkipped("SQLite extension not loaded");
         }
-        Data::$conf->dbSQLite3File = ":memory:";
+        Arsse::$conf->dbSQLite3File = ":memory:";
         $this->drv = new Driver(true);
     }
 

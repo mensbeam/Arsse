@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\REST;
+use JKingWeb\Arsse\Misc\Date;
 
 abstract class AbstractHandler implements Handler {
-    use \JKingWeb\Arsse\Misc\DateFormatter;
 
     abstract function __construct();
     abstract function dispatch(Request $req): Response;
@@ -22,7 +22,7 @@ abstract class AbstractHandler implements Handler {
         foreach($map as $key => $type) {
             if(array_key_exists($key, $data)) {
                 if($type=="datetime" && $dateFormat != "sql") {
-                    $data[$key] = $this->dateTransform($data[$key], $dateFormat, "sql");
+                    $data[$key] = Date::transform($data[$key], $dateFormat, "sql");
                 } else {
                     settype($data[$key], $type);
                 }
@@ -71,7 +71,7 @@ abstract class AbstractHandler implements Handler {
                     if(is_numeric($value)) $out[$key] = (float) $value;
                     break;
                 case "datetime":
-                    $t = $this->dateNormalize($value, $dateFormat);
+                    $t = Date::normalize($value, $dateFormat);
                     if($t) $out[$key] = $t;
                     break;
                 default:

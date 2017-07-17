@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\User;
-use JKingWeb\Arsse\Data;
+use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\User\Driver;
@@ -14,10 +14,10 @@ trait CommonTests {
         $conf = new Conf();
         $conf->userDriver = $this->drv;
         $conf->userPreAuth = false;
-        Data::$conf = $conf;
-        Data::$db = new Database();
-        Data::$user = Phake::PartialMock(User::class);
-        Phake::when(Data::$user)->authorize->thenReturn(true);
+        Arsse::$conf = $conf;
+        Arsse::$db = new Database();
+        Arsse::$user = Phake::PartialMock(User::class);
+        Phake::when(Arsse::$user)->authorize->thenReturn(true);
         $_SERVER['PHP_AUTH_USER'] = self::USER1;
         $_SERVER['PHP_AUTH_PW'] = "secret";
         // call the additional setup method if it exists
@@ -31,76 +31,76 @@ trait CommonTests {
     }
 
     function testListUsers() {
-        $this->assertCount(0,Data::$user->list());
+        $this->assertCount(0,Arsse::$user->list());
     }
 
     function testCheckIfAUserDoesNotExist() {
-        $this->assertFalse(Data::$user->exists(self::USER1));
+        $this->assertFalse(Arsse::$user->exists(self::USER1));
     }
 
     function testAddAUser() {
-        Data::$user->add(self::USER1, "");
-        $this->assertCount(1,Data::$user->list());
+        Arsse::$user->add(self::USER1, "");
+        $this->assertCount(1,Arsse::$user->list());
     }
 
     function testCheckIfAUserDoesExist() {
-        Data::$user->add(self::USER1, "");
-        $this->assertTrue(Data::$user->exists(self::USER1));
+        Arsse::$user->add(self::USER1, "");
+        $this->assertTrue(Arsse::$user->exists(self::USER1));
     }
 
     function testAddADuplicateUser() {
-        Data::$user->add(self::USER1, "");
+        Arsse::$user->add(self::USER1, "");
         $this->assertException("alreadyExists", "User");
-        Data::$user->add(self::USER1, "");
+        Arsse::$user->add(self::USER1, "");
     }
 
     function testAddMultipleUsers() {
-        Data::$user->add(self::USER1, "");
-        Data::$user->add(self::USER2, "");
-        $this->assertCount(2,Data::$user->list());
+        Arsse::$user->add(self::USER1, "");
+        Arsse::$user->add(self::USER2, "");
+        $this->assertCount(2,Arsse::$user->list());
     }
 
     function testRemoveAUser() {
-        Data::$user->add(self::USER1, "");
-        $this->assertCount(1,Data::$user->list());
-        Data::$user->remove(self::USER1);
-        $this->assertCount(0,Data::$user->list());
+        Arsse::$user->add(self::USER1, "");
+        $this->assertCount(1,Arsse::$user->list());
+        Arsse::$user->remove(self::USER1);
+        $this->assertCount(0,Arsse::$user->list());
     }
 
     function testRemoveAMissingUser() {
         $this->assertException("doesNotExist", "User");
-        Data::$user->remove(self::USER1);
+        Arsse::$user->remove(self::USER1);
     }
 
     function testAuthenticateAUser() {
         $_SERVER['PHP_AUTH_USER'] = self::USER1;
         $_SERVER['PHP_AUTH_PW'] = "secret";
-        Data::$user->add(self::USER1, "secret");
-        Data::$user->add(self::USER2, "");
-        $this->assertTrue(Data::$user->auth());
-        $this->assertTrue(Data::$user->auth(self::USER1, "secret"));
-        $this->assertFalse(Data::$user->auth(self::USER1, "superman"));
-        $this->assertTrue(Data::$user->auth(self::USER2, ""));
+        Arsse::$user->add(self::USER1, "secret");
+        Arsse::$user->add(self::USER2, "");
+        $this->assertTrue(Arsse::$user->auth());
+        $this->assertTrue(Arsse::$user->auth(self::USER1, "secret"));
+        $this->assertFalse(Arsse::$user->auth(self::USER1, "superman"));
+        $this->assertTrue(Arsse::$user->auth(self::USER2, ""));
     }
 
     function testChangeAPassword() {
-        Data::$user->add(self::USER1, "secret");
-        $this->assertEquals("superman", Data::$user->passwordSet(self::USER1, "superman"));
-        $this->assertTrue(Data::$user->auth(self::USER1, "superman"));
-        $this->assertFalse(Data::$user->auth(self::USER1, "secret"));
-        $this->assertEquals("", Data::$user->passwordSet(self::USER1, ""));
-        $this->assertTrue(Data::$user->auth(self::USER1, ""));
-        $this->assertEquals(Data::$conf->userTempPasswordLength, strlen(Data::$user->passwordSet(self::USER1)));
+        Arsse::$user->add(self::USER1, "secret");
+        $this->assertEquals("superman", Arsse::$user->passwordSet(self::USER1, "superman"));
+        $this->assertTrue(Arsse::$user->auth(self::USER1, "superman"));
+        $this->assertFalse(Arsse::$user->auth(self::USER1, "secret"));
+        $this->assertEquals("", Arsse::$user->passwordSet(self::USER1, ""));
+        $this->assertTrue(Arsse::$user->auth(self::USER1, ""));
+        $this->assertEquals(Arsse::$conf->userTempPasswordLength, strlen(Arsse::$user->passwordSet(self::USER1)));
     }
 
     function testChangeAPasswordForAMissingUser() {
         $this->assertException("doesNotExist", "User");
-        Data::$user->passwordSet(self::USER1, "superman");
+        Arsse::$user->passwordSet(self::USER1, "superman");
     }
 
     function testGetThePropertiesOfAUser() {
-        Data::$user->add(self::USER1, "secret");
-        $p = Data::$user->propertiesGet(self::USER1);
+        Arsse::$user->add(self::USER1, "secret");
+        $p = Arsse::$user->propertiesGet(self::USER1);
         $this->assertArrayHasKey('id', $p);
         $this->assertArrayHasKey('name', $p);
         $this->assertArrayHasKey('domain', $p);
@@ -123,22 +123,22 @@ trait CommonTests {
             'domain' => 'example.com',
             'rights' => Driver::RIGHTS_NONE,
         ];
-        Data::$user->add(self::USER1, "secret");
-        Data::$user->propertiesSet(self::USER1, $pSet);
-        $p = Data::$user->propertiesGet(self::USER1);
+        Arsse::$user->add(self::USER1, "secret");
+        Arsse::$user->propertiesSet(self::USER1, $pSet);
+        $p = Arsse::$user->propertiesGet(self::USER1);
         $this->assertArraySubset($pGet, $p);
         $this->assertArrayNotHasKey('password', $p);
-        $this->assertFalse(Data::$user->auth(self::USER1, "superman"));
+        $this->assertFalse(Arsse::$user->auth(self::USER1, "superman"));
     }
 
     function testGetTheRightsOfAUser() {
-        Data::$user->add(self::USER1, "");
-        $this->assertEquals(Driver::RIGHTS_NONE, Data::$user->rightsGet(self::USER1));
+        Arsse::$user->add(self::USER1, "");
+        $this->assertEquals(Driver::RIGHTS_NONE, Arsse::$user->rightsGet(self::USER1));
     }
 
     function testSetTheRightsOfAUser() {
-        Data::$user->add(self::USER1, "");
-        Data::$user->rightsSet(self::USER1, Driver::RIGHTS_GLOBAL_ADMIN);
-        $this->assertEquals(Driver::RIGHTS_GLOBAL_ADMIN, Data::$user->rightsGet(self::USER1));
+        Arsse::$user->add(self::USER1, "");
+        Arsse::$user->rightsSet(self::USER1, Driver::RIGHTS_GLOBAL_ADMIN);
+        $this->assertEquals(Driver::RIGHTS_GLOBAL_ADMIN, Arsse::$user->rightsGet(self::USER1));
     }
 }

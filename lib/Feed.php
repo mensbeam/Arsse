@@ -1,14 +1,13 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
+use JKingWeb\Arsse\Misc\Date;
 use PicoFeed\Reader\Reader;
 use PicoFeed\PicoFeedException;
 use PicoFeed\Reader\Favicon;
 use PicoFeed\Config\Config;
 
-class Feed {
-    use Misc\DateFormatter;
-    
+class Feed {    
     public $data = null;
     public $favicon;
     public $parser;
@@ -26,7 +25,7 @@ class Feed {
         // format the HTTP Last-Modified date returned
         $lastMod = $this->resource->getLastModified();
         if(strlen($lastMod)) {
-            $this->lastModified = $this->dateNormalize($lastMod, "http");
+            $this->lastModified = Date::normalize($lastMod, "http");
         }
         $this->modified = $this->resource->isModified();
         //parse the feed, if it has been modified
@@ -46,11 +45,11 @@ class Feed {
     public function download(string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = ''): bool {
         try {
             $config = new Config;
-            $config->setMaxBodySize(Data::$conf->fetchSizeLimit);
-            $config->setClientTimeout(Data::$conf->fetchTimeout);
-            $config->setGrabberTimeout(Data::$conf->fetchTimeout);
-            $config->setClientUserAgent(Data::$conf->fetchUserAgentString);
-            $config->setGrabberUserAgent(Data::$conf->fetchUserAgentString);
+            $config->setMaxBodySize(Arsse::$conf->fetchSizeLimit);
+            $config->setClientTimeout(Arsse::$conf->fetchTimeout);
+            $config->setGrabberTimeout(Arsse::$conf->fetchTimeout);
+            $config->setClientUserAgent(Arsse::$conf->fetchUserAgentString);
+            $config->setGrabberUserAgent(Arsse::$conf->fetchUserAgentString);
 
             $this->reader = new Reader($config);
             $this->resource = $this->reader->download($url, $lastModified, $etag, $username, $password);
@@ -195,7 +194,7 @@ class Feed {
             return true;
         }
         // get as many of the latest articles in the database as there are in the feed
-        $articles = Data::$db->feedMatchLatest($feedID, sizeof($items))->getAll();
+        $articles = Arsse::$db->feedMatchLatest($feedID, sizeof($items))->getAll();
         // perform a first pass matching the latest articles against items in the feed
         list($this->newItems, $this->changedItems) = $this->matchItems($items, $articles);
         if(sizeof($this->newItems) && sizeof($items) <= sizeof($articles)) {
@@ -207,7 +206,7 @@ class Feed {
                 if($i->urlContentHash)   $hashesUC[] = $i->urlContentHash;
                 if($i->titleContentHash) $hashesTC[] = $i->titleContentHash;
             }
-            $articles = Data::$db->feedMatchIds($feedID, $ids, $hashesUT, $hashesUC, $hashesTC)->getAll();
+            $articles = Arsse::$db->feedMatchIds($feedID, $ids, $hashesUT, $hashesUC, $hashesTC)->getAll();
             list($this->newItems, $changed) = $this->matchItems($this->newItems, $articles);
             // merge the two change-lists, preserving keys
             $this->changedItems = array_combine(array_merge(array_keys($this->changedItems), array_keys($changed)), array_merge($this->changedItems, $changed));
@@ -232,7 +231,7 @@ class Feed {
                     ($i->urlContentHash   && $i->urlContentHash   === $a['url_content_hash'])   ||
                     ($i->titleContentHash && $i->titleContentHash === $a['title_content_hash'])
                 ) {
-                    if($i->updatedDate && $this->dateTransform($i->updatedDate, "sql") !== $a['edited']) {
+                    if($i->updatedDate && Date::transform($i->updatedDate, "sql") !== $a['edited']) {
                         // if the item has an edit timestamp and it doesn't match that of the article in the database, the the article has been edited
                         // we store the item index and database record ID as a key/value pair
                         $found = true;
@@ -256,7 +255,7 @@ class Feed {
     }
 
     public function computeNextFetch(): \DateTime {
-        $now = $this->dateNormalize(time());
+        $now = Date::normalize(time());
         if(!$this->modified) {
             $diff = $now->getTimestamp() - $this->lastModified->getTimestamp();
             $offset = $this->normalizeDateDiff($diff);
@@ -295,7 +294,7 @@ class Feed {
         } else {
             $offset = "1 day";
         }
-        return self::dateNormalize("now + ".$offset);
+        return Date::normalize("now + ".$offset);
     }
 
     protected function normalizeDateDiff(int $diff): string {
@@ -317,7 +316,7 @@ class Feed {
         if(!$this->modified) return $this->lastModified;
         $dates = $this->gatherDates();
         if(sizeof($dates)) {
-            return $this->dateNormalize($dates[0]);
+            return Date::normalize($dates[0]);
         } else {
             return null;
         }

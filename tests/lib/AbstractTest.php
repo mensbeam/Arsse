@@ -2,10 +2,10 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test;
 use JKingWeb\Arsse\Exception;
-use JKingWeb\Arsse\Data;
+use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Misc\Date;
 
 abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
-    use \JKingWeb\Arsse\Misc\DateFormatter;
 
     function assertException(string $msg = "", string $prefix = "", string $type = "Exception") {
         if(func_num_args()) {
@@ -25,19 +25,19 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     }
 
     function assertTime($exp, $test) {
-        $exp  = $this->dateTransform($exp, "iso8601");
-        $test = $this->dateTransform($test, "iso8601");
+        $exp  = Date::transform($exp, "iso8601");
+        $test = Date::transform($test, "iso8601");
         $this->assertSame($exp, $test);
     }
 
     function clearData(bool $loadLang = true): bool {
-        $r = new \ReflectionClass(\JKingWeb\Arsse\Data::class);
+        $r = new \ReflectionClass(\JKingWeb\Arsse\Arsse::class);
         $props = array_keys($r->getStaticProperties());
         foreach($props as $prop) {
-            Data::$$prop = null;
+            Arsse::$$prop = null;
         }
         if($loadLang) {
-            Data::$lang = new \JKingWeb\Arsse\Lang();
+            Arsse::$lang = new \JKingWeb\Arsse\Lang();
         }
         return true;
     }

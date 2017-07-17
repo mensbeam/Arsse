@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\Database;
-use JKingWeb\Arsse\Data;
+use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Feed;
 use JKingWeb\Arsse\Test\Database;
 use JKingWeb\Arsse\User\Driver as UserDriver;
@@ -142,23 +142,23 @@ trait SeriesFeed {
     }
 
     function testListLatestItems() {
-        $this->assertResult($this->matches, Data::$db->feedMatchLatest(1,2));
+        $this->assertResult($this->matches, Arsse::$db->feedMatchLatest(1,2));
     }
 
     function testMatchItemsById() {
-        $this->assertResult($this->matches, Data::$db->feedMatchIds(1, ['804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180','db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41']));
+        $this->assertResult($this->matches, Arsse::$db->feedMatchIds(1, ['804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180','db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41']));
         foreach($this->matches as $m) {
             $exp = [$m];
-            $this->assertResult($exp, Data::$db->feedMatchIds(1, [], [$m['url_title_hash']]));
-            $this->assertResult($exp, Data::$db->feedMatchIds(1, [], [], [$m['url_content_hash']]));
-            $this->assertResult($exp, Data::$db->feedMatchIds(1, [], [], [], [$m['title_content_hash']]));
+            $this->assertResult($exp, Arsse::$db->feedMatchIds(1, [], [$m['url_title_hash']]));
+            $this->assertResult($exp, Arsse::$db->feedMatchIds(1, [], [], [$m['url_content_hash']]));
+            $this->assertResult($exp, Arsse::$db->feedMatchIds(1, [], [], [], [$m['title_content_hash']]));
         }
-        $this->assertResult([['id' => 1]], Data::$db->feedMatchIds(1, ['e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda'])); // this ID appears in both feed 1 and feed 2; only one result should be returned
+        $this->assertResult([['id' => 1]], Arsse::$db->feedMatchIds(1, ['e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda'])); // this ID appears in both feed 1 and feed 2; only one result should be returned
     }
 
     function testUpdateAFeed() {
         // update a valid feed with both new and changed items
-        Data::$db->feedUpdate(1);
+        Arsse::$db->feedUpdate(1);
         $now = gmdate("Y-m-d H:i:s");
         $state = $this->primeExpectations($this->data, [
             'arsse_articles' => ["id", "feed","url","title","author","published","edited","content","guid","url_title_hash","url_content_hash","title_content_hash","modified"],
@@ -178,9 +178,9 @@ trait SeriesFeed {
         $state['arsse_marks']['rows'][6] = [10,3,0,0,$now];
         $this->compareExpectations($state);
         // update a valid feed which previously had an error
-        Data::$db->feedUpdate(2);
+        Arsse::$db->feedUpdate(2);
         // update an erroneous feed which previously had no errors
-        Data::$db->feedUpdate(3);
+        Arsse::$db->feedUpdate(3);
         $state = $this->primeExpectations($this->data, [
             'arsse_feeds' => ["id","err_count","err_msg"],
         ]);
@@ -188,19 +188,19 @@ trait SeriesFeed {
         $state['arsse_feeds']['rows'][2] = [3,1,'Feed URL "http://localhost:8000/Feed/Fetching/Error?code=404" is invalid'];
         $this->compareExpectations($state);
         // update the bad feed again, twice
-        Data::$db->feedUpdate(3);
-        Data::$db->feedUpdate(3);
+        Arsse::$db->feedUpdate(3);
+        Arsse::$db->feedUpdate(3);
         $state['arsse_feeds']['rows'][2] = [3,3,'Feed URL "http://localhost:8000/Feed/Fetching/Error?code=404" is invalid'];
         $this->compareExpectations($state);
     }
 
     function testUpdateAFeedThrowingExceptions() {
         $this->assertException("invalidUrl", "Feed");
-        Data::$db->feedUpdate(3, true);
+        Arsse::$db->feedUpdate(3, true);
     }
 
     function testUpdateAFeedWithEnclosuresAndCategories() {
-        Data::$db->feedUpdate(5);
+        Arsse::$db->feedUpdate(5);
         $state = $this->primeExpectations($this->data, [
             'arsse_enclosures' => ["url","type"],
             'arsse_categories' => ["name"],
@@ -216,9 +216,9 @@ trait SeriesFeed {
     }
 
     function testListStaleFeeds() {
-        $this->assertSame([1,3,4], Data::$db->feedListStale());
-        Data::$db->feedUpdate(3);
-        Data::$db->feedUpdate(4);
-        $this->assertSame([1], Data::$db->feedListStale());
+        $this->assertSame([1,3,4], Arsse::$db->feedListStale());
+        Arsse::$db->feedUpdate(3);
+        Arsse::$db->feedUpdate(4);
+        $this->assertSame([1], Arsse::$db->feedListStale());
     }
 }

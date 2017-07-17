@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\User;
-use JKingWeb\Arsse\Data;
+use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User\Driver;
 use JKingWeb\Arsse\User\Exception;
 use PasswordGenerator\Generator as PassGen;
@@ -51,7 +51,7 @@ class DriverExternalMock extends DriverSkeleton implements Driver {
 
     function userAdd(string $user, string $password = null): string {
         if($this->userExists($user)) throw new Exception("alreadyExists", ["action" => __FUNCTION__, "user" => $user]);
-        if($password===null) $password = (new PassGen)->length(Data::$conf->userTempPasswordLength)->get();
+        if($password===null) $password = (new PassGen)->length(Arsse::$conf->userTempPasswordLength)->get();
         return parent::userAdd($user, $password);
     }
 
@@ -70,7 +70,7 @@ class DriverExternalMock extends DriverSkeleton implements Driver {
 
     function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null): string {
         if(!$this->userExists($user)) throw new Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
-        if($newPassword===null) $newPassword = (new PassGen)->length(Data::$conf->userTempPasswordLength)->get();
+        if($newPassword===null) $newPassword = (new PassGen)->length(Arsse::$conf->userTempPasswordLength)->get();
         return parent::userPasswordSet($user, $newPassword);
     }
 

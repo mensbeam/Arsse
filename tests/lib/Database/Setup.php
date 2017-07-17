@@ -2,7 +2,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\Database;
 use JKingWeb\Arsse\User\Driver as UserDriver;
-use JKingWeb\Arsse\Data;
+use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Test\Database;
@@ -16,15 +16,15 @@ trait Setup {
         // establish a clean baseline
         $this->clearData();
         // create a default configuration
-        Data::$conf = new Conf();
+        Arsse::$conf = new Conf();
         // configure and create the relevant database driver
         $this->setUpDriver();
         // create the database interface with the suitable driver
-        Data::$db = new Database($this->drv);
-        Data::$db->schemaUpdate();
+        Arsse::$db = new Database($this->drv);
+        Arsse::$db->schemaUpdate();
         // create a mock user manager
-        Data::$user = Phake::mock(User::class);
-        Phake::when(Data::$user)->authorize->thenReturn(true);
+        Arsse::$user = Phake::mock(User::class);
+        Phake::when(Arsse::$user)->authorize->thenReturn(true);
         // call the additional setup method if it exists
         if(method_exists($this, "setUpSeries")) $this->setUpSeries();
         // prime the database with series data
