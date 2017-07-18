@@ -19,7 +19,7 @@ class User {
     protected $authzSupported = 0;
     protected $actor = [];
 
-    static public function listDrivers(): array {
+    static public function driverList(): array {
         $sep = \DIRECTORY_SEPARATOR;
         $path = __DIR__.$sep."User".$sep;
         $classes = [];

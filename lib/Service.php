@@ -9,6 +9,18 @@ class Service {
     protected $drv;
     /** @var \DateInterval */
     protected $interval;
+
+    static public function driverList(): array {
+        $sep = \DIRECTORY_SEPARATOR;
+        $path = __DIR__.$sep."Service".$sep;
+        $classes = [];
+        foreach(glob($path."*".$sep."Driver.php") as $file) {
+            $name = basename(dirname($file));
+            $class = NS_BASE."User\\$name\\Driver";
+            $classes[$class] = $class::driverName();
+        }
+        return $classes;
+    }
     
     protected static function interval(): \DateInterval {
         return new \DateInterval(Arsse::$conf->serviceFrequency); // FIXME: this needs to fall back in case of incorrect input
@@ -32,6 +44,7 @@ class Service {
                 $this->drv->exec();
                 $this->drv->clean();
                 static::cleanupPost();
+                unset($list);
             }
             $t->add($this->interval);
             do {

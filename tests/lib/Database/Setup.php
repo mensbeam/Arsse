@@ -11,6 +11,7 @@ use Phake;
 
 trait Setup {
     protected $drv;
+    protected $primed = false;
 
     function setUp() {
         // establish a clean baseline
@@ -21,20 +22,21 @@ trait Setup {
         $this->setUpDriver();
         // create the database interface with the suitable driver
         Arsse::$db = new Database($this->drv);
-        Arsse::$db->schemaUpdate();
+        Arsse::$db->driverSchemaUpdate();
         // create a mock user manager
         Arsse::$user = Phake::mock(User::class);
         Phake::when(Arsse::$user)->authorize->thenReturn(true);
         // call the additional setup method if it exists
         if(method_exists($this, "setUpSeries")) $this->setUpSeries();
-        // prime the database with series data
-        if(isset($this->data)) $this->primeDatabase($this->data);
+        // prime the database with series data if it hasn't already been done
+        if(!$this->primed && isset($this->data)) $this->primeDatabase($this->data);
     }
 
     function tearDown() {
         // call the additional teardiwn method if it exists
         if(method_exists($this, "tearDownSeries")) $this->tearDownSeries();
         // clean up
+        $this->primed = false;
         $this->drv = null;
         $this->clearData();
     }
@@ -51,6 +53,7 @@ trait Setup {
             }
         }
         $tr->commit();
+        $this->primed = true;
         return true;
     }
 

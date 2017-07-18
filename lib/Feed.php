@@ -52,7 +52,7 @@ class Feed {
         $this->nextFetch = $this->computeNextFetch();
     }
 
-    public function download(string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = ''): bool {
+    protected function download(string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = ''): bool {
         try {
             $this->reader = new Reader($this->config);
             $this->resource = $this->reader->download($url, $lastModified, $etag, $username, $password);
@@ -62,7 +62,7 @@ class Feed {
         return true;
     }
 
-    public function parse(): bool {
+    protected function parse(): bool {
         try {
             $this->parser = $this->reader->getParser(
                 $this->resource->getUrl(),
@@ -192,7 +192,7 @@ class Feed {
         return $out;
     }
 
-    public function matchToDatabase(int $feedID = null): bool {
+    protected function matchToDatabase(int $feedID = null): bool {
         // first perform deduplication on items
         $items = $this->deduplicateItems($this->data->items);
         // if we haven't been given a database feed ID to check against, all items are new
@@ -221,7 +221,7 @@ class Feed {
         return true;
     }
 
-    public function matchItems(array $items, array $articles): array {
+    protected function matchItems(array $items, array $articles): array {
         $new =  $edited = [];
         // iterate through the articles and for each determine whether it is existing, edited, or entirely new
         foreach($items as $i) {
@@ -260,7 +260,7 @@ class Feed {
         return [$new, $edited];
     }
 
-    public function computeNextFetch(): \DateTime {
+    protected function computeNextFetch(): \DateTime {
         $now = Date::normalize(time());
         if(!$this->modified) {
             $diff = $now->getTimestamp() - $this->lastModified->getTimestamp();
@@ -318,7 +318,7 @@ class Feed {
         return $offset;
     }
 
-    public function computeLastModified() {
+    protected function computeLastModified() {
         if(!$this->modified) return $this->lastModified;
         $dates = $this->gatherDates();
         if(sizeof($dates)) {

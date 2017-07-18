@@ -8,10 +8,6 @@ use JKingWeb\Arsse\Misc\Date;
 
 class Database {
     const SCHEMA_VERSION = 1;
-    const FORMAT_TS      = "Y-m-d h:i:s";
-    const FORMAT_DATE    = "Y-m-d";
-    const FORMAT_TIME    = "h:i:s";
-
     
     /** @var Db\Driver */
     public    $db;
@@ -29,7 +25,7 @@ class Database {
         return debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3)[2]['function'];
     }
     
-    static public function listDrivers(): array {
+    static public function driverList(): array {
         $sep = \DIRECTORY_SEPARATOR;
         $path = __DIR__.$sep."Db".$sep;
         $classes = [];
@@ -41,11 +37,11 @@ class Database {
         return $classes;
     }
 
-    public function schemaVersion(): int {
+    public function driverSchemaVersion(): int {
         return $this->db->schemaVersion();
     }
 
-    public function schemaUpdate(): bool {
+    public function driverSchemaUpdate(): bool {
         if($this->db->schemaVersion() < self::SCHEMA_VERSION) return $this->db->schemaUpdate(self::SCHEMA_VERSION);
         return false;
     }
@@ -86,17 +82,16 @@ class Database {
         return $this->db->prepare("SELECT value from arsse_meta where key is ?", "str")->run($key)->getValue();
     }
     
-    public function metaSet(string $key, string $value, string $type = "str"): bool {
-        $out = !$this->db->prepare("UPDATE arsse_meta set value = ? where key is ?", $type, "str")->run($value, $key)->changes();
+    public function metaSet(string $key, $value, string $type = "str"): bool {
+        $out = $this->db->prepare("UPDATE arsse_meta set value = ? where key is ?", $type, "str")->run($value, $key)->changes();
         if(!$out) {
-            $out = $this->db->prepare("INSERT INTO arsse_meta(key,value)", "str", $type)->run($key, $value)->changes();
+            $out = $this->db->prepare("INSERT INTO arsse_meta(key,value) values(?,?)", "str", $type)->run($key, $value)->changes();
         }
         return (bool) $out;
     }
 
     public function metaRemove(string $key): bool {
-        $this->db->prepare("DELETE from arsse_meta where key is ?", "str")->run($key);
-        return true;
+        return (bool) $this->db->prepare("DELETE from arsse_meta where key is ?", "str")->run($key)->changes();
     }
 
     public function userExists(string $user): bool {
@@ -776,7 +771,7 @@ class Database {
         return (bool) $out;
     }
 
-    public function articleValidateId(string $user, int $id): array {
+    protected function articleValidateId(string $user, int $id): array {
         $out = $this->db->prepare(
             "SELECT 
                 arsse_articles.id as article, 
