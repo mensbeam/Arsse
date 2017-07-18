@@ -70,12 +70,16 @@ class Feed {
                 $this->resource->getEncoding()
             );
             $feed = $this->parser->execute();
-
+            
             // Grab the favicon for the feed; returns an empty string if it cannot find one.
             // Some feeds might use a different domain (eg: feedburner), so the site url is
             // used instead of the feed's url.
             $this->favicon = (new Favicon)->find($feed->siteUrl);
+            // work around a PicoFeed memory leak FIXME: remove this hack (or not) once PicoFeed stops leaking memory
+            libxml_use_internal_errors(false);
         } catch (PicoFeedException $e) {
+            // work around a PicoFeed memory leak FIXME: remove this hack (or not) once PicoFeed stops leaking memory
+            libxml_use_internal_errors(false);
             throw new Feed\Exception($this->resource->getUrl(), $e);
         }
 
