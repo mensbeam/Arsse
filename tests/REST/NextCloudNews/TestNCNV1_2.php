@@ -4,6 +4,7 @@ namespace JKingWeb\Arsse;
 use JKingWeb\Arsse\REST\Request;
 use JKingWeb\Arsse\REST\Response;
 use JKingWeb\Arsse\Test\Result;
+use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\Context;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
@@ -260,6 +261,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
 
     function setUp() {
         $this->clearData();
+        Arsse::$conf = new Conf();
         // create a mock user manager
         Arsse::$user = Phake::mock(User::class);
         Phake::when(Arsse::$user)->authHTTP->thenReturn(true);
@@ -715,7 +717,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
         }
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), $this->anything())->thenReturn(true);
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->editions([]))->thenThrow(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->editions($in[1]))->thenThrow(new ExceptionInput("tooLong")); // data model function for limited to 50 items for multiples
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->editions($in[1]))->thenThrow(new ExceptionInput("tooLong")); // data model function limited to 50 items for multiples
         $exp = new Response(422);
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/read/multiple")));
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/unread/multiple")));
@@ -761,5 +763,22 @@ class TestNCNV1_2 extends Test\AbstractTest {
         Phake::verify(Arsse::$db, Phake::times(0))->articleMark(Arsse::$user->id, $unstar, (new Context)->articles($in[1]));
         Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $unstar, (new Context)->articles($in[2]));
         Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $unstar, (new Context)->articles($in[3]));
+    }
+
+    function testQueryTheServerStatus() {
+        $interval = Service::interval();
+        $valid = (new \DateTimeImmutable("now", new \DateTimezone("UTC")))->sub($interval);
+        $invalid = $valid->sub($interval)->sub($interval);
+        Phake::when(Arsse::$db)->metaGet("service_last_checkin")->thenReturn(Date::transform($valid, "sql"))->thenReturn(Date::transform($invalid, "sql"));
+        $arr1 = $arr2 = [
+            'version' => REST\NextCloudNews\V1_2::VERSION,
+            'arsse_version' => VERSION,
+            'warnings' => [
+                'improperlyConfiguredCron' => false,
+            ]
+        ];
+        $arr2['warnings']['improperlyConfiguredCron'] = true;
+        $exp = new Response(200, $arr1);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/status")));
     }
 }

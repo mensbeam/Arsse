@@ -245,7 +245,7 @@ class User {
         }
     }
 
-    public function propertiesGet(string $user): array {
+    public function propertiesGet(string $user, bool $withAvatar = false): array {
         // prepare default values
         $domain = null;
         if(Arsse::$conf->userComposeNames) $domain = substr($user,strrpos($user,"@")+1);

@@ -595,13 +595,22 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function userStatus(array $url, array $data): Response {
-        // FIXME: stub
-        $data = Arsse::$db->userPropertiesGet(Arsse::$user->id);
+        $data = Arsse::$user::propertiesGet(Arsse::$user->id, true);
+        // construct the avatar structure, if an image is available
+        if(isset($data['avatar'])) {
+            $avatar = [
+                'data' => base64_encode($data['avatar']['data']),
+                'mime' => $data['avatar']['type'],
+            ];
+        } else {
+            $avatar = null;
+        }
+        // construct the rest of the structure
         $out = [
             'userId' => Arsse::$user->id,
             'displayName' => $data['name'] ?? Arsse::$user->id,
             'lastLoginTimestamp' => time(),
-            'avatar' => null,
+            'avatar' => $avatar,
         ];
         return new Response(200, $out);
     }
@@ -629,12 +638,11 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function serverStatus(array $url, array $data): Response {
-        // FIXME: stub
         return new Response(200, [
             'version' => self::VERSION,
             'arsse_version' => \JKingWeb\Arsse\VERSION,
             'warnings' => [
-                'improperlyConfiguredCron' => false,
+                'improperlyConfiguredCron' => !\JKingWeb\Arsse\Service::hasCheckedIn(),
             ]
         ]);
     }

@@ -22,8 +22,12 @@ class Service {
         return $classes;
     }
     
-    protected static function interval(): \DateInterval {
-        return new \DateInterval(Arsse::$conf->serviceFrequency); // FIXME: this needs to fall back in case of incorrect input
+    public static function interval(): \DateInterval {
+        try{
+            return new \DateInterval(Arsse::$conf->serviceFrequency);
+        } catch(\Exception $e) {
+            return new \DateInterval("PT2M");
+        }
     }
 
     function __construct() {
@@ -32,14 +36,13 @@ class Service {
         $this->interval = static::interval();
     }
 
-    function watch(bool $loop = true) {
+    function watch(bool $loop = true): \DateTimeInterface {
         $t = new \DateTime();
         do {
             $this->checkIn();
             static::cleanupPre();
             $list = Arsse::$db->feedListStale();
             if($list) {
-                echo date("H:i:s")." Updating feeds ".json_encode($list)."\n";
                 $this->drv->queue(...$list);
                 $this->drv->exec();
                 $this->drv->clean();
@@ -47,10 +50,13 @@ class Service {
                 unset($list);
             }
             $t->add($this->interval);
-            do {
-                @time_sleep_until($t->getTimestamp());
-            } while($t->getTimestamp() > time());
+            if($loop) {
+                do {
+                    @time_sleep_until($t->getTimestamp());
+                } while($t->getTimestamp() > time());
+            }
         } while($loop);
+        return $t;
     }
 
     function checkIn(): bool {
@@ -69,8 +75,8 @@ class Service {
         $limit = new \DateTime();
         $limit->sub($int);
         $limit->sub($int);
-        // return whether the check-in time is less than the acceptable limit
-        return ($checkin < $limit);
+        // return whether the check-in time is within the acceptable limit
+        return ($checkin >= $limit);
     }
 
     static function cleanupPre(): bool {
