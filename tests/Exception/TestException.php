@@ -4,6 +4,7 @@ namespace JKingWeb\Arsse;
 Use Phake;
 
 
+/** @covers \JKingWeb\Arsse\AbstractException */
 class TestException extends Test\AbstractTest {
     function setUp() {
         $this->clearData(false);

@@ -5,6 +5,7 @@ use JKingWeb\Arsse\Exception;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Misc\Date;
 
+/** @coversNothing */
 abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
 
     function assertException(string $msg = "", string $prefix = "", string $type = "Exception") {

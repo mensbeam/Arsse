@@ -2,7 +2,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
-
+/** @covers \JKingWeb\Arsse\User */
 class TestUserMockInternal extends Test\AbstractTest {
     use Test\User\CommonTests;
 

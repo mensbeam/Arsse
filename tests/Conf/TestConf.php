@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 use org\bovigo\vfs\vfsStream;
 
-
+/** @covers \JKingWeb\Arsse\Conf */
 class TestConf extends Test\AbstractTest {
     static $vfs;
     static $path;
@@ -33,9 +33,7 @@ class TestConf extends Test\AbstractTest {
         $this->assertInstanceOf(Conf::class, new Conf());
     }
 
-    /**
-     * @depends testLoadDefaultValues
-     */
+    /** @depends testLoadDefaultValues */
     function testImportFromArray() {
         $arr = ['lang' => "xx"];
         $conf = new Conf();
@@ -43,9 +41,7 @@ class TestConf extends Test\AbstractTest {
         $this->assertEquals("xx", $conf->lang);
     }
 
-    /**
-     * @depends testImportFromArray
-     */
+    /** @depends testImportFromArray */
     function testImportFromFile() {
         $conf = new Conf();
         $conf->importFile(self::$path."confGood");
@@ -54,50 +50,38 @@ class TestConf extends Test\AbstractTest {
         $this->assertEquals("xx", $conf->lang);
     }
 
-    /**
-     * @depends testImportFromFile
-     */
+    /** @depends testImportFromFile */
     function testImportFromMissingFile() {
         $this->assertException("fileMissing", "Conf");
         $conf = new Conf(self::$path."confMissing");
     }
 
-    /**
-     * @depends testImportFromFile
-     */
+    /** @depends testImportFromFile */
     function testImportFromEmptyFile() {
         $this->assertException("fileCorrupt", "Conf");
         $conf = new Conf(self::$path."confEmpty");
     }
 
-    /**
-     * @depends testImportFromFile
-     */
+    /** @depends testImportFromFile */
     function testImportFromFileWithoutReadPermission() {
         $this->assertException("fileUnreadable", "Conf");
         $conf = new Conf(self::$path."confUnreadable");
     }
 
-    /**
-     * @depends testImportFromFile
-     */
+    /** @depends testImportFromFile */
     function testImportFromFileWhichIsNotAnArray() {
         $this->assertException("fileCorrupt", "Conf");
         $conf = new Conf(self::$path."confNotArray");
     }
 
-    /**
-     * @depends testImportFromFile
-     */
+    /** @depends testImportFromFile */
     function testImportFromFileWhichIsNotPhp() {
         $this->assertException("fileCorrupt", "Conf");
         // this should not print the output of the non-PHP file
         $conf = new Conf(self::$path."confNotPHP");
     }
 
-    /**
-     * @depends testImportFromFile
-     */
+    /** @depends testImportFromFile */
     function testImportFromCorruptFile() {
         $this->assertException("fileCorrupt", "Conf");
         $conf = new Conf(self::$path."confCorrupt");

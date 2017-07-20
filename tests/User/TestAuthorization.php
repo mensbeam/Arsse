@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 use Phake;
 
-
+/** @covers \JKingWeb\Arsse\User */
 class TestAuthorization extends Test\AbstractTest {
     const USERS = [
         'user@example.com' => User\Driver::RIGHTS_NONE,

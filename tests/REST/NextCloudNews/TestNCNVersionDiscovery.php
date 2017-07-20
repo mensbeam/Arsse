@@ -4,7 +4,7 @@ namespace JKingWeb\Arsse;
 use JKingWeb\Arsse\REST\Request;
 use JKingWeb\Arsse\REST\Response;
 
-
+/** @covers \JKingWeb\Arsse\REST\NextCloudNews\Versions */
 class TestNCNVersionDiscovery extends Test\AbstractTest {
     function setUp() {
         $this->clearData();

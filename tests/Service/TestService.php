@@ -4,7 +4,7 @@ namespace JKingWeb\Arsse;
 use JKingWeb\Arsse\Misc\Date;
 use Phake;
 
-
+/** @covers \JKingWeb\Arsse\Service */
 class TestService extends Test\AbstractTest {
     protected $srv;
 

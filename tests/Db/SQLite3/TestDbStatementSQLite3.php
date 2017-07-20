@@ -4,6 +4,9 @@ namespace JKingWeb\Arsse;
 use JKingWeb\Arsse\Db\Statement;
 
 
+/** 
+ * @covers \JKingWeb\Arsse\Db\SQLite3\Statement<extended>
+ * @covers \JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder */
 class TestDbStatementSQLite3 extends Test\AbstractTest {
     use Test\Db\BindingTests;
 
@@ -11,6 +14,7 @@ class TestDbStatementSQLite3 extends Test\AbstractTest {
     static protected $imp = Db\SQLite3\Statement::class;
 
     function setUp() {
+        $this->clearData();
         if(!extension_loaded("sqlite3")) {
             $this->markTestSkipped("SQLite extension not loaded");
         }

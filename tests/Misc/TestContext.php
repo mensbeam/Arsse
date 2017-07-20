@@ -4,6 +4,7 @@ namespace JKingWeb\Arsse;
 use JKingWeb\Arsse\Misc\Context;
 
 
+/** @covers \JKingWeb\Arsse\Misc\Context */
 class TestContext extends Test\AbstractTest {
     function testVerifyInitialState() {
         $c = new Context;

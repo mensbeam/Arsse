@@ -2,7 +2,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
-
+/** @covers \JKingWeb\Arsse\Db\SQLite3\Result<extended> */
 class TestDbResultSQLite3 extends Test\AbstractTest {
 
     protected $c;

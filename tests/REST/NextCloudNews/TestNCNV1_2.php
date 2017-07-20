@@ -10,7 +10,7 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use Phake;
 
-
+/** @covers \JKingWeb\Arsse\REST\NextCloudNews\V1_2 */
 class TestNCNV1_2 extends Test\AbstractTest {
     protected $h;
     protected $feeds = [ // expected sample output of a feed list from the database, and the resultant expected transformation by the REST handler

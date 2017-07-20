@@ -4,6 +4,9 @@ namespace JKingWeb\Arsse;
 use org\bovigo\vfs\vfsStream;
 
 
+/** 
+ * @covers \JKingWeb\Arsse\Db\SQLite3\Driver<extended>
+ * @covers \JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder */
 class TestDbUpdateSQLite3 extends Test\AbstractTest {
     protected $data;
     protected $drv;

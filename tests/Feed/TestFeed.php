@@ -5,6 +5,7 @@ use JKingWeb\Arsse\Misc\Date;
 use Phake;
 
 
+/** @covers \JKingWeb\Arsse\Feed */
 class TestFeed extends Test\AbstractTest {
     protected static $host = "http://localhost:8000/";
     protected $base = "";

@@ -10,6 +10,12 @@
     beStrictAboutTestSize="true"
     stopOnError="true">
 
+<filter>
+  <whitelist processUncoveredFilesFromWhitelist="true">
+    <directory suffix=".php">../lib</directory>
+  </whitelist>
+</filter>
+
 <testsuites>
     <testsuite name="Exceptions">
         <file>Exception/TestException.php</file>

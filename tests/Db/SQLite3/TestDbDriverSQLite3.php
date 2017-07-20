@@ -2,7 +2,9 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
-
+/** 
+ * @covers \JKingWeb\Arsse\Db\SQLite3\Driver<extended>
+ * @covers \JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder */
 class TestDbDriverSQLite3 extends Test\AbstractTest {
     protected $data;
     protected $drv;
