@@ -39,10 +39,10 @@ class TestDbResultSQLite3 extends Test\AbstractTest {
     function testIterateOverResults() {
         $set = $this->c->query("SELECT 1 as col union select 2 as col union select 3 as col");
         $rows = [];
-        foreach(new Db\SQLite3\Result($set) as $row) {
-            $rows[] = $row['col'];
+        foreach(new Db\SQLite3\Result($set) as $index => $row) {
+            $rows[$index] = $row['col'];
         }
-        $this->assertEquals([1,2,3], $rows);
+        $this->assertEquals([0 => 1, 1 => 2, 2 => 3], $rows);
     }
 
     function testIterateOverResultsTwice() {

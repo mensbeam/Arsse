@@ -4,7 +4,8 @@ namespace JKingWeb\Arsse;
 
 /** 
  * @covers \JKingWeb\Arsse\User
- * @covers \JKingWeb\Arsse\User\Internal\Driver */
+ * @covers \JKingWeb\Arsse\User\Internal\Driver
+ * @covers \JKingWeb\Arsse\User\Internal\InternalFunctions */
 class TestUserInternalDriver extends Test\AbstractTest {
     use Test\User\CommonTests;
 

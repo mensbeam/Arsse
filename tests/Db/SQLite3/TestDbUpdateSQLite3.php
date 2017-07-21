@@ -16,18 +16,20 @@ class TestDbUpdateSQLite3 extends Test\AbstractTest {
     const MINIMAL1 = "create table arsse_meta(key text primary key not null, value text); pragma user_version=1";
     const MINIMAL2 = "pragma user_version=2";
 
-    function setUp() {
+    function setUp(Conf $conf = null) {
         if(!extension_loaded("sqlite3")) {
             $this->markTestSkipped("SQLite extension not loaded");
         }
         $this->clearData();
         $this->vfs = vfsStream::setup("schemata", null, ['SQLite3' => []]);
-        $conf = new Conf();
+        if(!$conf) {
+            $conf = new Conf();
+        }
         $conf->dbDriver = Db\SQLite3\Driver::class;
         $conf->dbSchemaBase = $this->vfs->url();
-        $this->base = $this->vfs->url()."/SQLite3/";
         $conf->dbSQLite3File = ":memory:";
         Arsse::$conf = $conf;
+        $this->base = $this->vfs->url()."/SQLite3/";
         $this->drv = new Db\SQLite3\Driver(true);
     }
 
@@ -91,5 +93,19 @@ class TestDbUpdateSQLite3 extends Test\AbstractTest {
         Arsse::$conf->dbSchemaBase = (new Conf())->dbSchemaBase;
         $this->drv->schemaUpdate(Database::SCHEMA_VERSION);
         $this->assertEquals(Database::SCHEMA_VERSION, $this->drv->schemaVersion());
+    }
+
+    function testDeclineManualUpdate() {
+        // turn auto-updating off
+        $conf = new Conf();
+        $conf->dbAutoUpdate = false;
+        $this->setUp($conf);
+        $this->assertException("updateManual", "Db");
+        $this->drv->schemaUpdate(Database::SCHEMA_VERSION);
+    }
+
+    function testDeclineDowngrade() {
+        $this->assertException("updateTooNew", "Db");
+        $this->drv->schemaUpdate(-1);
     }
 }

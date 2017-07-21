@@ -12,7 +12,9 @@ abstract class AbstractDriver implements Driver {
     protected abstract function lock(): bool;
     protected abstract function unlock(bool $rollback = false) : bool;
 
+    /** @codeCoverageIgnore */
     public function schemaVersion(): int {
+        // FIXME: generic schemaVersion() will need to be covered for database engines other than SQLite
         try {
             return (int) $this->query("SELECT value from arsse_meta where key is schema_version")->getValue();
         } catch(Exception $e) {
