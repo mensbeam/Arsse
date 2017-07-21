@@ -87,7 +87,9 @@ class TestAuthorization extends Test\AbstractTest {
 
     function testRegularUserLogic() {
         foreach(self::USERS as $actor => $rights) {
-            if($rights != User\Driver::RIGHTS_NONE) continue;
+            if($rights != User\Driver::RIGHTS_NONE) {
+                continue;
+            }
             Arsse::$user->auth($actor, "");
             foreach(array_keys(self::USERS) as $affected) {
                 // regular users should only be able to act for themselves
@@ -112,7 +114,9 @@ class TestAuthorization extends Test\AbstractTest {
 
     function testDomainManagerLogic() {
         foreach(self::USERS as $actor => $actorRights) {
-            if($actorRights != User\Driver::RIGHTS_DOMAIN_MANAGER) continue;
+            if($actorRights != User\Driver::RIGHTS_DOMAIN_MANAGER) {
+                continue;
+            }
             $actorDomain = substr($actor,strrpos($actor,"@")+1);
             Arsse::$user->auth($actor, "");
             foreach(self::USERS as $affected => $affectedRights) {
@@ -151,7 +155,9 @@ class TestAuthorization extends Test\AbstractTest {
 
     function testDomainAdministratorLogic() {
         foreach(self::USERS as $actor => $actorRights) {
-            if($actorRights != User\Driver::RIGHTS_DOMAIN_ADMIN) continue;
+            if($actorRights != User\Driver::RIGHTS_DOMAIN_ADMIN) {
+                continue;
+            }
             $actorDomain = substr($actor,strrpos($actor,"@")+1);
             Arsse::$user->auth($actor, "");
             $allowed = [User\Driver::RIGHTS_NONE,User\Driver::RIGHTS_DOMAIN_MANAGER,User\Driver::RIGHTS_DOMAIN_ADMIN];
@@ -191,7 +197,9 @@ class TestAuthorization extends Test\AbstractTest {
 
     function testGlobalManagerLogic() {
         foreach(self::USERS as $actor => $actorRights) {
-            if($actorRights != User\Driver::RIGHTS_GLOBAL_MANAGER) continue;
+            if($actorRights != User\Driver::RIGHTS_GLOBAL_MANAGER) {
+                continue;
+            }
             $actorDomain = substr($actor,strrpos($actor,"@")+1);
             Arsse::$user->auth($actor, "");
             foreach(self::USERS as $affected => $affectedRights) {
@@ -222,7 +230,9 @@ class TestAuthorization extends Test\AbstractTest {
 
     function testGlobalAdministratorLogic() {
         foreach(self::USERS as $actor => $actorRights) {
-            if($actorRights != User\Driver::RIGHTS_GLOBAL_ADMIN) continue;
+            if($actorRights != User\Driver::RIGHTS_GLOBAL_ADMIN) {
+                continue;
+            }
             Arsse::$user->auth($actor, "");
             // global admins can do anything
             foreach(self::USERS as $affected => $affectedRights) {
@@ -240,7 +250,9 @@ class TestAuthorization extends Test\AbstractTest {
 
     function testInvalidLevelLogic() {
         foreach(self::USERS as $actor => $rights) {
-            if(in_array($rights, self::LEVELS)) continue;
+            if(in_array($rights, self::LEVELS)) {
+                continue;
+            }
             Arsse::$user->auth($actor, "");
             foreach(array_keys(self::USERS) as $affected) {
                 // users with unknown/invalid rights should be treated just like regular users and only be able to act for themselves
@@ -297,7 +309,9 @@ class TestAuthorization extends Test\AbstractTest {
         $err = [];
         foreach($tests as $func => $args) {
             // list method does not take an affected user, so do not unshift for that one
-            if($func != "list") array_unshift($args, $user);
+            if($func != "list") {
+                array_unshift($args, $user);
+            }
             try {
                 call_user_func_array(array(Arsse::$user, $func), $args);
             } catch(User\ExceptionAuthz $e) {

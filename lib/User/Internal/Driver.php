@@ -24,7 +24,9 @@ final class Driver implements \JKingWeb\Arsse\User\Driver {
     }
 
     public function driverFunctions(string $function = null) {
-        if($function===null) return $this->functions;
+        if($function===null) {
+            return $this->functions;
+        }
         if(array_key_exists($function, $this->functions)) {
             return $this->functions[$function];
         } else {

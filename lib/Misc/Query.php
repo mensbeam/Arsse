@@ -37,7 +37,9 @@ class Query {
             $this->tCTE[] = $types;
             $this->vCTE[] = $values;
         }
-        if(strlen($join)) $this->jCTE[] = $join; // the CTE might only participate in subqueries rather than a join on the main query
+        if(strlen($join)) { // the CTE might only participate in subqueries rather than a join on the main query
+            $this->jCTE[] = $join;
+        }
         return true;
     }
 
@@ -77,7 +79,9 @@ class Query {
         $this->vWhere = [];
         $this->order = [];
         $this->setLimit(0,0);
-        if(strlen($join)) $this->jCTE[] = $join;
+        if(strlen($join)) {
+            $this->jCTE[] = $join;
+        }
         return true;
     }
 

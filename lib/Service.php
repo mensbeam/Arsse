@@ -66,7 +66,9 @@ class Service {
     static function hasCheckedIn(): bool {
         $checkin = Arsse::$db->metaGet("service_last_checkin");
         // if the service has never checked in, return false
-        if(!$checkin) return false;
+        if(!$checkin) {
+            return false;
+        }
         // convert the check-in timestamp to a DateTime instance
         $checkin = Date::normalize($checkin, "sql");
         // get the checking interval

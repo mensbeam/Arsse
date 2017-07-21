@@ -36,15 +36,17 @@ class Context {
         $spec = array_values($spec);
         for($a = 0; $a < sizeof($spec); $a++) {
             $id = $spec[$a];
-            if(is_int($id) && $id > -1) continue;
-            if(is_float($id) && !fmod($id, 1) && $id >= 0) {
+            if(is_int($id) && $id > -1) {
+                continue;
+            } else if(is_float($id) && !fmod($id, 1) && $id >= 0) {
                 $spec[$a] = (int) $id;
                 continue;
-            }
-            if(is_string($id)) {
+            } else if(is_string($id)) {
                 $ch1 = strval(@intval($id));
                 $ch2 = strval($id);
-                if($ch1 !== $ch2 || $id < 1) $id = 0;
+                if($ch1 !== $ch2 || $id < 1) {
+                    $id = 0;
+                }
             } else {
                 $id = 0;
             }
@@ -108,12 +110,16 @@ class Context {
     }
 
     function editions(array $spec = null) {
-        if($spec) $spec = $this->cleanArray($spec);
+        if($spec) {
+            $spec = $this->cleanArray($spec);
+        }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
     function articles(array $spec = null) {
-        if($spec) $spec = $this->cleanArray($spec);
+        if($spec) {
+            $spec = $this->cleanArray($spec);
+        }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 }

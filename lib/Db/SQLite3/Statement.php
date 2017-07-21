@@ -59,7 +59,9 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
                 $a += $this->bindValues($value, $a);
             } else if(array_key_exists($a,$this->types)) {
                 // if the parameter type is something other than the known values, this is an error
-                if(!array_key_exists($this->types[$a], self::BINDINGS)) throw new Exception("paramTypeUnknown", $this->types[$a]);
+                if(!array_key_exists($this->types[$a], self::BINDINGS)) {
+                    throw new Exception("paramTypeUnknown", $this->types[$a]);
+                }
                 // if the parameter type is null or the value is null (and the type is nullable), just bind null
                 if($this->types[$a]=="null" || ($this->isNullable[$a] && is_null($value))) {
                     $this->st->bindValue($a+1, null, \SQLITE3_NULL);
@@ -68,7 +70,9 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
                     $type = self::BINDINGS[$this->types[$a]];
                     $value = $this->cast($value, $this->types[$a], $this->isNullable[$a]);
                     // re-adjust for null casts
-                    if($value===null) $type = \SQLITE3_NULL;
+                    if($value===null) {
+                        $type = \SQLITE3_NULL;
+                    }
                     // perform binding
                     $this->st->bindValue($a+1, $value, $type);
                 }

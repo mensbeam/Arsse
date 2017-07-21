@@ -9,7 +9,9 @@ class TestContext extends Test\AbstractTest {
     function testVerifyInitialState() {
         $c = new Context;
         foreach((new \ReflectionObject($c))->getMethods(\ReflectionMethod::IS_PUBLIC) as $m) {
-            if($m->isConstructor() || $m->isStatic()) continue;
+            if($m->isConstructor() || $m->isStatic()) {
+                continue;
+            }
             $method = $m->name;
             $this->assertFalse($c->$method(), "Context method $method did not initially return false");
             $this->assertEquals(null, $c->$method, "Context property $method is not initially falsy");
@@ -37,7 +39,9 @@ class TestContext extends Test\AbstractTest {
         $times = ['modifiedSince','notModifiedSince'];
         $c = new Context;
         foreach((new \ReflectionObject($c))->getMethods(\ReflectionMethod::IS_PUBLIC) as $m) {
-            if($m->isConstructor() || $m->isStatic()) continue;
+            if($m->isConstructor() || $m->isStatic()) {
+                continue;
+            }
             $method = $m->name;
             $this->assertArrayHasKey($method, $v, "Context method $method not included in test");
             $this->assertInstanceOf(Context::class, $c->$method($v[$method]));

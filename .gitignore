@@ -3,6 +3,7 @@ vendor/
 
 #temp files
 documentation/
+tests/coverage
 arsse.db*
 
 # Windows image file caches

@@ -42,11 +42,17 @@ class Feed {
             // ascertain whether there are any articles not in the database
             $this->matchToDatabase($feedID);
             // if caching header fields are not sent by the server, try to ascertain a last-modified date from the feed contents
-            if(!$this->lastModified) $this->lastModified = $this->computeLastModified();
+            if(!$this->lastModified) {
+                $this->lastModified = $this->computeLastModified();
+            }
             // we only really care if articles have been modified; if there are no new articles, act as if the feed is unchanged
-            if(!sizeof($this->newItems) && !sizeof($this->changedItems)) $this->modified = false;
+            if(!sizeof($this->newItems) && !sizeof($this->changedItems)) {
+                $this->modified = false;
+            }
             // if requested, scrape full content for any new and changed items
-            if($scrape) $this->scrape();
+            if($scrape) {
+                $this->scrape();
+            }
         }
         // compute the time at which the feed should next be fetched
         $this->nextFetch = $this->computeNextFetch();
@@ -116,11 +122,17 @@ class Feed {
             // prefer an Atom ID as the item's ID
             $id = (string) $f->xml->children('http://www.w3.org/2005/Atom')->id;
             // otherwise use the RSS2 guid element
-            if(!strlen($id)) $id = (string) $f->xml->guid;
+            if(!strlen($id)) {
+                $id = (string) $f->xml->guid;
+            }
             // otherwise use the Dublin Core identifier element
-            if(!strlen($id)) $id = (string) $f->xml->children('http://purl.org/dc/elements/1.1/')->identifier;
+            if(!strlen($id)) {
+                $id = (string) $f->xml->children('http://purl.org/dc/elements/1.1/')->identifier;
+            }
             // otherwise there is no ID; if there is one, hash it
-            if(strlen($id)) $f->id = hash('sha256', $id);
+            if(strlen($id)) {
+                $f->id = hash('sha256', $id);
+            }
 
             // PicoFeed also doesn't gather up categories, so we do this as well
             $f->categories = [];
@@ -129,19 +141,27 @@ class Feed {
                 // if the category has a label, use that
                 $name = (string) $c->attributes()->label;
                 // otherwise use the term
-                if(!strlen($name)) $name = (string) $c->attributes()->term;
+                if(!strlen($name)) {
+                    $name = (string) $c->attributes()->term;
+                }
                 // ... assuming it has that much
-                if(strlen($name)) $f->categories[] = $name;
+                if(strlen($name)) {
+                    $f->categories[] = $name;
+                }
             }
             // next add RSS2 categories
             foreach($f->xml->children()->category as $c) {
                 $name = (string) $c;
-                if(strlen($name)) $f->categories[] = $name;
+                if(strlen($name)) {
+                    $f->categories[] = $name;
+                }
             }
             // and finally try Dublin Core subjects
             foreach($f->xml->children('http://purl.org/dc/elements/1.1/')->subject as $c) {
                 $name = (string) $c;
-                if(strlen($name)) $f->categories[] = $name;
+                if(strlen($name)) {
+                    $f->categories[] = $name;
+                }
             }
             //sort the results
             sort($f->categories);
@@ -161,7 +181,9 @@ class Feed {
         foreach($items as $item) {
             foreach($out as $index => $check) {
                 // if the two items both have IDs and they differ, they do not match, regardless of hashes
-                if($item->id && $check->id && $item->id != $check->id) continue;
+                if($item->id && $check->id && $item->id != $check->id) {
+                    continue;
+                }
                 // if the two items have the same ID or any one hash matches, they are two versions of the same item
                 if(
                     ($item->id && $check->id && $item->id == $check->id) ||
@@ -208,10 +230,18 @@ class Feed {
             // if we need to, perform a second pass on the database looking specifically for IDs and hashes of the new items
             $ids = $hashesUT = $hashesUC = $hashesTC = [];
             foreach($this->newItems as $i) {
-                if($i->id)               $ids[]      = $i->id;
-                if($i->urlTitleHash)     $hashesUT[] = $i->urlTitleHash;
-                if($i->urlContentHash)   $hashesUC[] = $i->urlContentHash;
-                if($i->titleContentHash) $hashesTC[] = $i->titleContentHash;
+                if($i->id) {
+                    $ids[] = $i->id;
+                }
+                if($i->urlTitleHash) {
+                    $hashesUT[] = $i->urlTitleHash;
+                }
+                if($i->urlContentHash) {
+                    $hashesUC[] = $i->urlContentHash;
+                }
+                if($i->titleContentHash) {
+                    $hashesTC[] = $i->titleContentHash;
+                }
             }
             $articles = Arsse::$db->feedMatchIds($feedID, $ids, $hashesUT, $hashesUC, $hashesTC)->getAll();
             list($this->newItems, $changed) = $this->matchItems($this->newItems, $articles);
@@ -228,7 +258,9 @@ class Feed {
             $found = false;
             foreach($articles as $a) {
                 // if the item has an ID and it doesn't match the article ID, the two don't match, regardless of hashes
-                if($i->id && $i->id !== $a['guid']) continue;
+                if($i->id && $i->id !== $a['guid']) {
+                    continue;
+                }
                 if(
                     // the item matches if the GUID matches...
                     ($i->id && $i->id === $a['guid']) ||
@@ -255,7 +287,9 @@ class Feed {
                     }
                 }
             }
-            if(!$found) $new[] = $i;
+            if(!$found) {
+                $new[] = $i;
+            }
         }
         return [$new, $edited];
     }
@@ -319,7 +353,9 @@ class Feed {
     }
 
     protected function computeLastModified() {
-        if(!$this->modified) return $this->lastModified;
+        if(!$this->modified) {
+            return $this->lastModified;
+        }
         $dates = $this->gatherDates();
         if(sizeof($dates)) {
             return Date::normalize($dates[0]);
@@ -331,8 +367,12 @@ class Feed {
     protected function gatherDates(): array {
         $dates = [];
         foreach($this->data->items as $item) {
-            if($item->updatedDate) $dates[] = $item->updatedDate->getTimestamp();
-            if($item->publishedDate) $dates[] = $item->publishedDate->getTimestamp();
+            if($item->updatedDate) {
+                $dates[] = $item->updatedDate->getTimestamp();
+            }
+            if($item->publishedDate) {
+                $dates[] = $item->publishedDate->getTimestamp();
+            }
         }
         $dates = array_unique($dates, \SORT_NUMERIC);
         rsort($dates);

@@ -42,7 +42,7 @@ class Driver implements \JKingWeb\Arsse\Service\Driver {
         curl_multi_setopt($this->queue, \CURLMOPT_PIPELINING, 1);
     }
 
-    function qeueue(int ...$feeds): int {
+    function queue(int ...$feeds): int {
         foreach($feeds as $id) {
             $h = curl_init();
             curl_setopt($h, \CURLOPT_POSTFIELDS, json_encode(['userId' => "", 'feedId' => $id]));

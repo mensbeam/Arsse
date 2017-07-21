@@ -12,9 +12,15 @@ class Request {
     public $body = "";
 
     function __construct(string $method = null, string $url = null, string $body = null, string $contentType = null) {
-        if(is_null($method)) $method = $_SERVER['REQUEST_METHOD'];
-        if(is_null($url))    $url    = $_SERVER['REQUEST_URI'];
-        if(is_null($body))   $body   = file_get_contents("php://input");
+        if(is_null($method)) {
+            $method = $_SERVER['REQUEST_METHOD'];
+        }
+        if(is_null($url)) {
+            $url = $_SERVER['REQUEST_URI'];
+        }   
+        if(is_null($body)) {
+            $body = file_get_contents("php://input");
+        }
         if(is_null($contentType)) {
             if(isset($_SERVER['HTTP_CONTENT_TYPE'])) {
                 $contentType = $_SERVER['HTTP_CONTENT_TYPE'];
@@ -63,8 +69,12 @@ class Request {
         if(!in_array($out['path'],["/",""])) {
             $paths = explode("/", $out['path']);
             // remove the first and last empty elements, if present (they are artefacts of the splitting; others should remain)
-            if(!strlen($paths[0])) array_shift($paths);
-            if(!strlen($paths[sizeof($paths)-1])) array_pop($paths);
+            if(!strlen($paths[0])) {
+                array_shift($paths);
+            }
+            if(!strlen($paths[sizeof($paths)-1])) {
+                array_pop($paths);
+            }
             // %-decode each path element
             $paths = array_map(function($v){return rawurldecode($v);}, $paths);
             $out['paths'] = $paths;

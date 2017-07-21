@@ -50,7 +50,9 @@ abstract class AbstractHandler implements Handler {
             }
             switch($types[$key]) {
                 case "int":
-                    if($this->validateInt($value)) $out[$key] = (int) $value;
+                    if($this->validateInt($value)) {
+                        $out[$key] = (int) $value;
+                    }
                     break;
                 case "string":
                     $out[$key] = (string) $value;
@@ -60,19 +62,29 @@ abstract class AbstractHandler implements Handler {
                         $out[$key] = $value;
                     } else if($this->validateInt($value)) {
                         $value = (int) $value;
-                        if($value > -1 && $value < 2) $out[$key] = $value;
+                        if($value > -1 && $value < 2) {
+                            $out[$key] = $value;
+                        }
                     } else if(is_string($value)) {
                         $value = trim(strtolower($value));
-                        if($value=="false") $out[$key] = false;
-                        if($value=="true") $out[$key] = true;
+                        if($value=="false") {
+                            $out[$key] = false;
+                        }
+                        if($value=="true") {
+                            $out[$key] = true;
+                        }
                     }
                     break;
                 case "float":
-                    if(is_numeric($value)) $out[$key] = (float) $value;
+                    if(is_numeric($value)) {
+                        $out[$key] = (float) $value;
+                    }
                     break;
                 case "datetime":
                     $t = Date::normalize($value, $dateFormat);
-                    if($t) $out[$key] = $t;
+                    if($t) {
+                        $out[$key] = $t;
+                    }
                     break;
                 default:
                     throw new Exception("typeUnknown", $types[$key]);

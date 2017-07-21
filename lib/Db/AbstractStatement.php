@@ -20,7 +20,9 @@ abstract class AbstractStatement implements Statement {
     }
 
     public function rebindArray(array $bindings, bool $append = false): bool {
-        if(!$append) $this->types = [];
+        if(!$append) {
+            $this->types = [];
+        }
         foreach($bindings as $binding) {
             if(is_array($binding)) {
                 // recursively flatten any arrays, which may be provided for SET or IN() clauses
@@ -34,7 +36,9 @@ abstract class AbstractStatement implements Statement {
                 } else {
                     $this->isNullable[] = true;
                 }
-                if(!array_key_exists($binding, self::TYPES)) throw new Exception("paramTypeInvalid", $binding);
+                if(!array_key_exists($binding, self::TYPES)) {
+                    throw new Exception("paramTypeInvalid", $binding);
+                }
                 $this->types[] = self::TYPES[$binding];
             }
         }
@@ -44,13 +48,19 @@ abstract class AbstractStatement implements Statement {
     protected function cast($v, string $t, bool $nullable) {
         switch($t) {
             case "date":
-                if(is_null($v) && !$nullable) $v = 0;
+                if(is_null($v) && !$nullable) {
+                    $v = 0;
+                }
                 return Date::transform($v, "date");
             case "time":
-                if(is_null($v) && !$nullable) $v = 0;
+                if(is_null($v) && !$nullable) {
+                    $v = 0;
+                }
                 return Date::transform($v, "time");
             case "datetime":
-                if(is_null($v) && !$nullable) $v = 0;
+                if(is_null($v) && !$nullable) {
+                    $v = 0;
+                }
                 return Date::transform($v, "sql");
             case "null":
             case "integer":
@@ -58,7 +68,9 @@ abstract class AbstractStatement implements Statement {
             case "binary":
             case "string":
             case "boolean":
-                if($t=="binary") $t = "string";
+                if($t=="binary") {
+                    $t = "string";
+                }
                 if($v instanceof \DateTimeInterface) {
                     if($t=="string") {
                         return Date::transform($v, "sql");

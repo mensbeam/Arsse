@@ -6,9 +6,13 @@ class Date {
     
     static function transform($date, string $outFormat = null, string $inFormat = null, bool $inLocal = false) {
         $date = self::normalize($date, $inFormat, $inLocal);
-        if(is_null($date) || is_null($outFormat)) return $date;
+        if(is_null($date) || is_null($outFormat)) {
+            return $date;
+        }
         $outFormat = strtolower($outFormat);
-        if($outFormat=="unix") return $date->getTimestamp();
+        if($outFormat=="unix") {
+            return $date->getTimestamp();
+        }
         switch ($outFormat) {
             case 'http':    $f = "D, d M Y H:i:s \G\M\T"; break;
             case 'iso8601': $f = "Y-m-d\TH:i:s";           break;

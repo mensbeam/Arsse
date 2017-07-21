@@ -31,7 +31,9 @@ class REST {
     }
 
     function dispatch(REST\Request $req = null): bool {
-        if($req===null) $req = new REST\Request();
+        if($req===null) {
+            $req = new REST\Request();
+        }
         $api = $this->apiMatch($req->url, $this->apis);
         $req->url = substr($req->url,strlen($this->apis[$api]['strip']));
         $req->refreshURL();
@@ -62,7 +64,9 @@ class REST {
         uasort($map, function($a, $b) {return (strlen($a['match']) <=> strlen($b['match'])) * -1;});
         // find a match
         foreach($map as $id => $api) {
-            if(strpos($url, $api['match'])===0) return $id;
+            if(strpos($url, $api['match'])===0) {
+                return $id;
+            }
         }
         // or throw an exception otherwise
         throw new REST\Exception501();

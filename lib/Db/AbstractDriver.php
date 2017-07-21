@@ -35,7 +35,9 @@ abstract class AbstractDriver implements Driver {
     }
 
     public function savepointRelease(int $index = null): bool {
-        if(is_null($index)) $index = $this->transDepth;
+        if(is_null($index)) {
+            $index = $this->transDepth;
+        }
         if(array_key_exists($index, $this->transStatus)) {
             switch($this->transStatus[$index]) {
                 case self::TR_PEND:
@@ -43,7 +45,9 @@ abstract class AbstractDriver implements Driver {
                     $this->transStatus[$index] = self::TR_COMMIT;
                     $a = $index;
                     while(++$a && $a <= $this->transDepth) {
-                        if($this->transStatus[$a] <= self::TR_PEND) $this->transStatus[$a] = self::TR_PEND_COMMIT;
+                        if($this->transStatus[$a] <= self::TR_PEND) {
+                            $this->transStatus[$a] = self::TR_PEND_COMMIT;
+                        }
                     }
                     $out = true;
                     break;
@@ -78,7 +82,9 @@ abstract class AbstractDriver implements Driver {
     }
 
     public function savepointUndo(int $index = null): bool {
-        if(is_null($index)) $index = $this->transDepth;
+        if(is_null($index)) {
+            $index = $this->transDepth;
+        }
         if(array_key_exists($index, $this->transStatus)) {
             switch($this->transStatus[$index]) {
                 case self::TR_PEND:
@@ -87,7 +93,9 @@ abstract class AbstractDriver implements Driver {
                     $this->transStatus[$index] = self::TR_ROLLBACK;
                     $a = $index;
                     while(++$a && $a <= $this->transDepth) {
-                        if($this->transStatus[$a] <= self::TR_PEND) $this->transStatus[$a] = self::TR_PEND_ROLLBACK;
+                        if($this->transStatus[$a] <= self::TR_PEND) {
+                            $this->transStatus[$a] = self::TR_PEND_ROLLBACK;
+                        }
                     }
                     $out = true;
                     break;

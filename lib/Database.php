@@ -42,7 +42,9 @@ class Database {
     }
 
     public function driverSchemaUpdate(): bool {
-        if($this->db->schemaVersion() < self::SCHEMA_VERSION) return $this->db->schemaUpdate(self::SCHEMA_VERSION);
+        if($this->db->schemaVersion() < self::SCHEMA_VERSION) {
+            return $this->db->schemaUpdate(self::SCHEMA_VERSION);
+        }
         return false;
     }
 
@@ -53,7 +55,9 @@ class Database {
             [], // binding values
         ];
         foreach($valid as $prop => $type) {
-            if(!array_key_exists($prop, $props)) continue;
+            if(!array_key_exists($prop, $props)) {
+                continue;
+            }
             $out[0][] = "$prop = ?";
             $out[1][] = $type;
             $out[2][] = $props[$prop];
@@ -95,37 +99,54 @@ class Database {
     }
 
     public function userExists(string $user): bool {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
         return (bool) $this->db->prepare("SELECT count(*) from arsse_users where id is ?", "str")->run($user)->getValue();
     }
 
     public function userAdd(string $user, string $password = null): string {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if($this->userExists($user)) throw new User\Exception("alreadyExists", ["action" => __FUNCTION__, "user" => $user]);
-        if($password===null) $password = (new PassGen)->length(Arsse::$conf->userTempPasswordLength)->get();
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        } else if($this->userExists($user)) {
+            throw new User\Exception("alreadyExists", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        if($password===null) {
+            $password = (new PassGen)->length(Arsse::$conf->userTempPasswordLength)->get();
+        }
         $hash = "";
-        if(strlen($password) > 0) $hash = password_hash($password, \PASSWORD_DEFAULT);
+        if(strlen($password) > 0) {
+            $hash = password_hash($password, \PASSWORD_DEFAULT);
+        }
         $this->db->prepare("INSERT INTO arsse_users(id,password) values(?,?)", "str", "str")->runArray([$user,$hash]);
         return $password;
     }
 
     public function userRemove(string $user): bool {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if($this->db->prepare("DELETE from arsse_users where id is ?", "str")->run($user)->changes() < 1) throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        if($this->db->prepare("DELETE from arsse_users where id is ?", "str")->run($user)->changes() < 1) {
+            throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        }
         return true;
     }
 
     public function userList(string $domain = null): array {
         $out = [];
         if($domain !== null) {
-            if(!Arsse::$user->authorize("@".$domain, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $domain]);
+            if(!Arsse::$user->authorize("@".$domain, __FUNCTION__)) {
+                throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $domain]);
+            }
             $domain = str_replace(["\\","%","_"],["\\\\", "\\%", "\\_"], $domain);
             $domain = "%@".$domain;
             foreach($this->db->prepare("SELECT id from arsse_users where id like ?", "str")->run($domain) as $user) {
                 $out[] = $user['id'];
             }
         } else {
-            if(!Arsse::$user->authorize("", __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => "global"]);
+            if(!Arsse::$user->authorize("", __FUNCTION__)) {
+                throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => "global"]);
+            }
             foreach($this->db->prepare("SELECT id from arsse_users")->run() as $user) {
                 $out[] = $user['id'];
             }
@@ -134,31 +155,48 @@ class Database {
     }
 
     public function userPasswordGet(string $user): string {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        } else if(!$this->userExists($user)) {
+            throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        }
         return (string) $this->db->prepare("SELECT password from arsse_users where id is ?", "str")->run($user)->getValue();
     }
 
     public function userPasswordSet(string $user, string $password = null): string {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
-        if($password===null) $password = (new PassGen)->length(Arsse::$conf->userTempPasswordLength)->get();
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        } else if(!$this->userExists($user)) {
+            throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        if($password===null) {
+            $password = (new PassGen)->length(Arsse::$conf->userTempPasswordLength)->get();
+        }
         $hash = "";
-        if(strlen($password) > 0) $hash = password_hash($password, \PASSWORD_DEFAULT);
+        if(strlen($password) > 0) {
+            $hash = password_hash($password, \PASSWORD_DEFAULT);
+        }
         $this->db->prepare("UPDATE arsse_users set password = ? where id is ?", "str", "str")->run($hash, $user);
         return $password;
     }
 
     public function userPropertiesGet(string $user): array {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
         $prop = $this->db->prepare("SELECT name,rights from arsse_users where id is ?", "str")->run($user)->getRow();
-        if(!$prop) throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        if(!$prop) {
+            throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        }
         return $prop;
     }
 
     public function userPropertiesSet(string $user, array $properties): array {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        } else if(!$this->userExists($user)) {
+            throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        }
         $valid = [ // FIXME: add future properties
             "name" => "str",
         ];
@@ -168,13 +206,18 @@ class Database {
     }
 
     public function userRightsGet(string $user): int {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
         return (int) $this->db->prepare("SELECT rights from arsse_users where id is ?", "str")->run($user)->getValue();
     }
 
     public function userRightsSet(string $user, int $rights): bool {
-        if(!Arsse::$user->authorize($user, __FUNCTION__, $rights)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if(!$this->userExists($user)) throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Arsse::$user->authorize($user, __FUNCTION__, $rights)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        } else if(!$this->userExists($user)) {
+            throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        }
         $this->db->prepare("UPDATE arsse_users set rights = ? where id is ?", "int", "str")->run($rights, $user);
         return true;
     }
@@ -198,7 +241,9 @@ class Database {
         } else {
             // if a parent is specified, make sure it exists and belongs to the user; get its root (first-level) folder if it's a nested folder
             $p = $this->db->prepare("SELECT id from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $parent)->getValue();
-            if(!$p) throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "parent", 'id' => $parent]);
+            if(!$p) {
+                throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "parent", 'id' => $parent]);
+            }
         }
         // check if a folder by the same name already exists, because nulls are wonky in SQL
         // FIXME: How should folder name be compared? Should a Unicode normalization be applied before comparison and insertion?
@@ -232,24 +277,36 @@ class Database {
     }
 
     public function folderRemove(string $user, int $id): bool {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
         $changes = $this->db->prepare("DELETE FROM arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $id)->changes();
-        if(!$changes) throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id]);
+        if(!$changes) {
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id]);
+        }
         return true;
     }
 
     public function folderPropertiesGet(string $user, int $id): array {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
         $props = $this->db->prepare("SELECT id,name,parent from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $id)->getRow();
-        if(!$props) throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id]);
+        if(!$props) {
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id]);
+        }
         return $props;
     }
 
     public function folderPropertiesSet(string $user, int $id, array $data): bool {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
         // validate the folder ID and, if specified, the parent to move it to
         $parent = null;
-        if(array_key_exists("parent", $data)) $parent = $data['parent'];
+        if(array_key_exists("parent", $data)) {
+            $parent = $data['parent'];
+        }
         $f = $this->folderValidateId($user, $id, $parent, true);
         // if a new name is specified, validate it
         if(array_key_exists("name", $data)) {
@@ -279,7 +336,9 @@ class Database {
         }
         // check whether the folder exists and is owned by the user
         $f = $this->db->prepare("SELECT name,parent from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $id)->getRow();
-        if(!$f) throw new Db\ExceptionInput($subject ? "subjectMissing" : "idMissing", ["action" => $this->caller(), "field" => "folder", 'id' => $parent]);
+        if(!$f) {
+            throw new Db\ExceptionInput($subject ? "subjectMissing" : "idMissing", ["action" => $this->caller(), "field" => "folder", 'id' => $parent]);
+        }
         // if we're moving a folder to a new parent, check that the parent is valid
         if(!is_null($parent)) {
             // make sure both that the parent exists, and that the parent is not either the folder itself or one of its children (a circular dependence)
@@ -293,7 +352,9 @@ class Database {
                 throw new Db\ExceptionInput("idMissing", ["action" => $this->caller(), "field" => "parent", 'id' => $parent]);
             } else {
                 // if using the desired parent would create a circular dependence, throw a different exception
-                if(!$p['valid']) throw new Db\ExceptionInput("circularDependence", ["action" => $this->caller(), "field" => "parent", 'id' => $parent]);
+                if(!$p['valid']) {
+                    throw new Db\ExceptionInput("circularDependence", ["action" => $this->caller(), "field" => "parent", 'id' => $parent]);
+                }
             }
         }
         return $f;
@@ -311,7 +372,9 @@ class Database {
     }
 
     public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = ""): int {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
         // check to see if the feed exists
         $feedID = $this->db->prepare("SELECT id from arsse_feeds where url is ? and username is ? and password is ?", "str", "str", "str")->run($url, $fetchUser, $fetchPassword)->getValue();
         if(is_null($feedID)) {
@@ -331,7 +394,9 @@ class Database {
     }
 
     public function subscriptionList(string $user, int $folder = null, int $id = null): Db\Result {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
         // create a complex query
         $q = new Query(
             "SELECT 
@@ -366,24 +431,34 @@ class Database {
     }
 
     public function subscriptionRemove(string $user, int $id): bool {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
         $changes = $this->db->prepare("DELETE from arsse_subscriptions where owner is ? and id is ?", "str", "int")->run($user, $id)->changes();
-        if(!$changes) throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id]);
+        if(!$changes) {
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id]);
+        }
         return true;
     }
 
     public function subscriptionPropertiesGet(string $user, int $id): array {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
         // disable authorization checks for the list call
         Arsse::$user->authorizationEnabled(false);
         $sub = $this->subscriptionList($user, null, $id)->getRow();
         Arsse::$user->authorizationEnabled(true);
-        if(!$sub) throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
+        if(!$sub) {
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
+        }
         return $sub;
     }
 
     public function subscriptionPropertiesSet(string $user, int $id, array $data): bool {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
         $tr = $this->db->begin();
         if(!$this->db->prepare("SELECT count(*) from arsse_subscriptions where owner is ? and id is ?", "str", "int")->run($user, $id)->getValue()) {
             // if the ID doesn't exist or doesn't belong to the user, throw an exception
@@ -397,8 +472,11 @@ class Database {
             // if the title is null, this signals intended use of the default title; otherwise make sure it's not effectively an empty string
             if(!is_null($data['title'])) {
                 $title = (string) $data['title'];
-                if(!strlen($title)) throw new Db\ExceptionInput("missing", ["action" => __FUNCTION__, "field" => "title"]);
-                if(!strlen(trim($title))) throw new Db\ExceptionInput("whitespace", ["action" => __FUNCTION__, "field" => "title"]);
+                if(!strlen($title)) {
+                    throw new Db\ExceptionInput("missing", ["action" => __FUNCTION__, "field" => "title"]);
+                } else if(!strlen(trim($title))) {
+                    throw new Db\ExceptionInput("whitespace", ["action" => __FUNCTION__, "field" => "title"]);
+                }
                 $data['title'] = $title;
             }
         }
@@ -416,7 +494,9 @@ class Database {
 
     protected function subscriptionValidateId(string $user, int $id): array {
         $out = $this->db->prepare("SELECT feed from arsse_subscriptions where id is ? and owner is ?", "int", "str")->run($id, $user)->getRow();
-        if(!$out) throw new Db\ExceptionInput("idMissing", ["action" => $this->caller(), "field" => "subscription", 'id' => $id]);
+        if(!$out) {
+            throw new Db\ExceptionInput("idMissing", ["action" => $this->caller(), "field" => "subscription", 'id' => $id]);
+        }
         return $out;
     }
 
@@ -429,7 +509,9 @@ class Database {
         $tr = $this->db->begin();
         // check to make sure the feed exists
         $f = $this->db->prepare("SELECT url, username, password, modified, etag, err_count, scrape FROM arsse_feeds where id is ?", "int")->run($feedID)->getRow();
-        if(!$f) throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID]);
+        if(!$f) {
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID]);
+        }
         // determine whether the feed's items should be scraped for full content from the source Web site
         $scrape = (Arsse::$conf->fetchEnableScraping && $f['scrape']);
         // the Feed object throws an exception when there are problems, but that isn't ideal
@@ -450,7 +532,9 @@ class Database {
                 'datetime', 'str', 'int'
             )->run(Feed::nextFetchOnError($f['err_count']), $e->getMessage(),$feedID);
             $tr->commit();
-            if($throwError) throw $e;
+            if($throwError) {
+                throw $e;
+            }
             return false;
         }
         //prepare the necessary statements to perform the update
@@ -561,7 +645,9 @@ class Database {
     }
 
     public function articleStarredCount(string $user, array $context = []): int {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
         return $this->db->prepare(
             "WITH RECURSIVE
                 user(user) as (SELECT ?),
@@ -576,8 +662,12 @@ class Database {
     }
 
     public function editionLatest(string $user, Context $context = null): int {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if(!$context) $context = new Context;
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        if(!$context) {
+            $context = new Context;
+        }
         $q = new Query("SELECT max(arsse_editions.id) from arsse_editions left join arsse_articles on article is arsse_articles.id left join arsse_feeds on arsse_articles.feed is arsse_feeds.id");
         if($context->subscription()) {
             // if a subscription is specified, make sure it exists
@@ -592,8 +682,12 @@ class Database {
     }
 
     public function articleList(string $user, Context $context = null): Db\Result {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if(!$context) $context = new Context;
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        if(!$context) {
+            $context = new Context;
+        }
         $q = new Query(
             "SELECT 
                 arsse_articles.id as id,
@@ -637,21 +731,37 @@ class Database {
             $q->setCTE("subscribed_feeds(id,sub)", "SELECT feed,id from arsse_subscriptions join user on user is owner");
         }
         // filter based on edition offset
-        if($context->oldestEdition()) $q->setWhere("edition >= ?", "int", $context->oldestEdition);
-        if($context->latestEdition()) $q->setWhere("edition <= ?", "int", $context->latestEdition);
+        if($context->oldestEdition()) {
+            $q->setWhere("edition >= ?", "int", $context->oldestEdition);
+        }
+        if($context->latestEdition()) {
+            $q->setWhere("edition <= ?", "int", $context->latestEdition);
+        }
         // filter based on lastmod time
-        if($context->modifiedSince()) $q->setWhere("modified_date >= ?", "datetime", $context->modifiedSince);
-        if($context->notModifiedSince()) $q->setWhere("modified_date <= ?", "datetime", $context->notModifiedSince);
+        if($context->modifiedSince()) {
+            $q->setWhere("modified_date >= ?", "datetime", $context->modifiedSince);
+        }
+        if($context->notModifiedSince()) {
+            $q->setWhere("modified_date <= ?", "datetime", $context->notModifiedSince);
+        }
         // filter for un/read and un/starred status if specified
-        if($context->unread()) $q->setWhere("unread is ?", "bool", $context->unread);
-        if($context->starred()) $q->setWhere("starred is ?", "bool", $context->starred);
+        if($context->unread()) {
+            $q->setWhere("unread is ?", "bool", $context->unread);
+        }
+        if($context->starred()) {
+            $q->setWhere("starred is ?", "bool", $context->starred);
+        }
         // perform the query and return results
         return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
     }
 
     public function articleMark(string $user, array $data, Context $context = null): bool {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        if(!$context) $context = new Context;
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        if(!$context) {
+            $context = new Context;
+        }
         // sanitize input
         $values = [
             isset($data['read']) ? $data['read'] : null,
@@ -683,7 +793,9 @@ class Database {
             // make sure the edition exists
             $edition = $this->articleValidateEdition($user, $context->edition);
             // if the edition is not the latest, do not mark the read flag
-            if(!$edition['current']) $values[0] = null;
+            if(!$edition['current']) {
+                $values[0] = null;
+            }
         } else if($context->article()) {
             // otherwise if an article context is specified, make sure it's valid
             $this->articleValidateId($user, $context->article);
@@ -731,8 +843,11 @@ class Database {
             }
             if($context->editions()) {
                 // if multiple specific editions have been requested, prepare a CTE to list them and their articles
-                if(!$context->editions) throw new Db\ExceptionInput("tooShort", ['field' => "editions", 'action' => __FUNCTION__, 'min' => 1]); // must have at least one array element
-                if(sizeof($context->editions) > 50) throw new Db\ExceptionInput("tooLong", ['field' => "editions", 'action' => __FUNCTION__, 'max' => 50]); // must not have more than 50 array elements
+                if(!$context->editions) {
+                    throw new Db\ExceptionInput("tooShort", ['field' => "editions", 'action' => __FUNCTION__, 'min' => 1]); // must have at least one array element
+                } else if(sizeof($context->editions) > 50) {
+                    throw new Db\ExceptionInput("tooLong", ['field' => "editions", 'action' => __FUNCTION__, 'max' => 50]); // must not have more than 50 array elements
+                }
                 list($inParams, $inTypes) = $this->generateIn($context->editions, "int");
                 $q->setCTE("requested_articles(id,edition)",
                     "SELECT article,id as edition from arsse_editions where edition in ($inParams)",
@@ -742,8 +857,11 @@ class Database {
                 $q->setWhere("arsse_articles.id in (select id from requested_articles)");
             } else if($context->articles()) {
                 // if multiple specific articles have been requested, prepare a CTE to list them and their articles
-                if(!$context->articles) throw new Db\ExceptionInput("tooShort", ['field' => "articles", 'action' => __FUNCTION__, 'min' => 1]); // must have at least one array element
-                if(sizeof($context->articles) > 50) throw new Db\ExceptionInput("tooLong", ['field' => "articles", 'action' => __FUNCTION__, 'max' => 50]); // must not have more than 50 array elements
+                if(!$context->articles) {
+                    throw new Db\ExceptionInput("tooShort", ['field' => "articles", 'action' => __FUNCTION__, 'min' => 1]); // must have at least one array element
+                } else if(sizeof($context->articles) > 50) {
+                    throw new Db\ExceptionInput("tooLong", ['field' => "articles", 'action' => __FUNCTION__, 'max' => 50]); // must not have more than 50 array elements
+                }
                 list($inParams, $inTypes) = $this->generateIn($context->articles, "int");
                 $q->setCTE("requested_articles(id,edition)", 
                     "SELECT id,(select max(id) from arsse_editions where article is arsse_articles.id) as edition from arsse_articles where arsse_articles.id in ($inParams)",
@@ -756,11 +874,19 @@ class Database {
                 $q->setCTE("requested_articles(id,edition)", "SELECT 'empty','table' where 1 is 0");
             }
             // filter based on edition offset
-            if($context->oldestEdition()) $q->setWhere("edition >= ?", "int", $context->oldestEdition);
-            if($context->latestEdition()) $q->setWhere("edition <= ?", "int", $context->latestEdition);
+            if($context->oldestEdition()) {
+                $q->setWhere("edition >= ?", "int", $context->oldestEdition);
+            }
+            if($context->latestEdition()) {
+                $q->setWhere("edition <= ?", "int", $context->latestEdition);
+            }
             // filter based on lastmod time
-            if($context->modifiedSince()) $q->setWhere("modified_date >= ?", "datetime", $context->modifiedSince);
-            if($context->notModifiedSince()) $q->setWhere("modified_date <= ?", "datetime", $context->notModifiedSince);
+            if($context->modifiedSince()) {
+                $q->setWhere("modified_date >= ?", "datetime", $context->modifiedSince);
+            }
+            if($context->notModifiedSince()) {
+                $q->setWhere("modified_date <= ?", "datetime", $context->notModifiedSince);
+            }
             // push the current query onto the CTE stack and execute the query we're actually interested in
             $q->pushCTE("target_articles(id,edition,modified_date,to_insert,honour_read,honour_star)");
             $q->setBody($query);
@@ -783,7 +909,9 @@ class Database {
                 arsse_articles.id is ? and arsse_subscriptions.owner is ?",
             "int", "str"
         )->run($id, $user)->getRow();
-        if(!$out) throw new Db\ExceptionInput("subjectMissing", ["action" => $this->caller(), "field" => "article", 'id' => $id]);
+        if(!$out) {
+            throw new Db\ExceptionInput("subjectMissing", ["action" => $this->caller(), "field" => "article", 'id' => $id]);
+        }
         return $out;
     }
 
@@ -801,7 +929,9 @@ class Database {
                 edition is ? and arsse_subscriptions.owner is ?",
             "int", "str"
         )->run($id, $user)->getRow();
-        if(!$out) throw new Db\ExceptionInput("subjectMissing", ["action" => $this->caller(), "field" => "edition", 'id' => $id]);
+        if(!$out) {
+            throw new Db\ExceptionInput("subjectMissing", ["action" => $this->caller(), "field" => "edition", 'id' => $id]);
+        }
         return $out;
     }
 }

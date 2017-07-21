@@ -29,24 +29,32 @@ class Lang {
 
     public function set(string $locale, bool $immediate = false): string {
         // make sure the Intl extension is loaded
-        if(!static::$requirementsMet) static::checkRequirements();
+        if(!static::$requirementsMet) {
+            static::checkRequirements();
+        }
         // if requesting the same locale as already wanted, just return (but load first if we've requested an immediate load)
         if($locale==$this->wanted) {
-            if($immediate && !$this->synched) $this->load();
+            if($immediate && !$this->synched) {
+                $this->load();
+            }
             return $locale;
         }
         // if we've requested a locale other than the null locale, fetch the list of available files and find the closest match e.g. en_ca_somedialect -> en_ca
         if($locale != "") {
             $list = $this->listFiles();
             // if the default locale is unavailable, this is (for now) an error
-            if(!in_array(self::DEFAULT, $list)) throw new Lang\Exception("defaultFileMissing", self::DEFAULT);
+            if(!in_array(self::DEFAULT, $list)) {
+                throw new Lang\Exception("defaultFileMissing", self::DEFAULT);
+            }
             $this->wanted = $this->match($locale, $list);
         } else {
             $this->wanted = "";
         }
         $this->synched = false;
         // load right now if asked to, otherwise load later when actually required
-        if($immediate) $this->load();
+        if($immediate) {
+            $this->load();
+        }
         return $this->wanted;
     }
 
@@ -74,7 +82,9 @@ class Lang {
         }
         // if the requested message is not present in any of the currently loaded language files, throw an exception
         // note that this is indicative of a programming error since the default locale should have all strings
-        if(!array_key_exists($msgID, $this->strings)) throw new Lang\Exception("stringMissing", ['msgID' => $msgID, 'fileList' => implode(", ",$this->loaded)]);
+        if(!array_key_exists($msgID, $this->strings)) {
+            throw new Lang\Exception("stringMissing", ['msgID' => $msgID, 'fileList' => implode(", ",$this->loaded)]);
+        }
         $msg = $this->strings[$msgID];
         // variables fed to MessageFormatter must be contained in an array
         if($vars===null) {
@@ -84,7 +94,9 @@ class Lang {
             $vars = [$vars];
         }
         $msg = \MessageFormatter::formatMessage($this->locale, $msg, $vars);
-        if($msg===false) throw new Lang\Exception("stringInvalid", ['msgID' => $msgID, 'fileList' => implode(", ",$this->loaded)]);
+        if($msg===false) {
+            throw new Lang\Exception("stringInvalid", ['msgID' => $msgID, 'fileList' => implode(", ",$this->loaded)]);
+        }
         return $msg;
     }
 
@@ -98,13 +110,17 @@ class Lang {
     }
 
     public function match(string $locale, array $list = null): string {
-        if($list===null) $list = $this->listFiles();
+        if($list===null) {
+            $list = $this->listFiles();
+        }
         $default = ($this->locale=="") ? self::DEFAULT : $this->locale;
         return \Locale::lookup($list,$locale, true, $default);
     }
 
     static protected function checkRequirements(): bool {
-        if(!extension_loaded("intl")) throw new ExceptionFatal("The \"Intl\" extension is required, but not loaded");
+        if(!extension_loaded("intl")) {
+            throw new ExceptionFatal("The \"Intl\" extension is required, but not loaded");
+        }
         static::$requirementsMet = true;
         return true;
     }
@@ -128,7 +144,9 @@ class Lang {
     }
 
     protected function load(): bool {
-        if(!self::$requirementsMet) self::checkRequirements();
+        if(!self::$requirementsMet) {
+            self::checkRequirements();
+        }
         // if we've requested no locale (""), just load the fallback strings and return
         if($this->wanted=="") {
             $this->strings = self::REQUIRED;
@@ -144,13 +162,17 @@ class Lang {
             $tag = array_pop($tags);
         }
         // include the default locale as the base if the most general locale requested is not the default
-        if($tag != self::DEFAULT) $files[] = self::DEFAULT;
+        if($tag != self::DEFAULT) {
+            $files[] = self::DEFAULT;
+        }
         // save the list of files to be loaded for later reference
         $loaded = $files;
         // reduce the list of files to be loaded to the minimum necessary (e.g. if we go from "fr" to "fr_ca", we don't need to load "fr" or "en")
         $files = [];
         foreach($loaded as $file) {
-            if($file==$this->locale) break;
+            if($file==$this->locale) {
+                break;
+            }
             $files[] = $file;
         }
         // if we need to load all files, start with the fallback strings
@@ -164,8 +186,11 @@ class Lang {
         // read files in reverse order
         $files = array_reverse($files);
         foreach($files as $file) {
-            if(!file_exists($this->path."$file.php")) throw new Lang\Exception("fileMissing", $file);
-            if(!is_readable($this->path."$file.php")) throw new Lang\Exception("fileUnreadable", $file);
+            if(!file_exists($this->path."$file.php")) {
+                throw new Lang\Exception("fileMissing", $file);
+            } else if(!is_readable($this->path."$file.php")) {
+                throw new Lang\Exception("fileUnreadable", $file);
+            }
             try {
                 // we use output buffering in case the language file is corrupted
                 ob_start();
@@ -175,7 +200,9 @@ class Lang {
             } finally {
                 ob_end_clean();
             }
-            if(!is_array($arr)) throw new Lang\Exception("fileCorrupt", $file);
+            if(!is_array($arr)) {
+                throw new Lang\Exception("fileCorrupt", $file);
+            }
             $strings[] = $arr;
         }
         // apply the results and return
