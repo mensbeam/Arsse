@@ -56,7 +56,7 @@ class Conf {
     public $userTempPasswordLength  = 20;
 
     /** @var string Class of the background feed update service driver in use (Forking by default) */
-    public $serviceDriver           = Service\Internal\Driver::class;
+    public $serviceDriver           = Service\Forking\Driver::class;
     /** @var string The interval between checks for new feeds, as an ISO 8601 duration
     * @see https://en.wikipedia.org/wiki/ISO_8601#Durations
     */
@@ -84,7 +84,9 @@ class Conf {
     * @see self::importFile() 
     */
     public function __construct(string $import_file = "") {
-        if($import_file != "") $this->importFile($import_file);
+        if($import_file != "") {
+            $this->importFile($import_file);
+        }
         if(is_null($this->fetchUserAgentString)) {
             $this->fetchUserAgentString = sprintf('Arsse/%s (%s %s; %s; https://code.jkingweb.ca/jking/arsse) PicoFeed (https://github.com/fguillot/picoFeed)',
                 VERSION, // Arsse version
@@ -100,8 +102,11 @@ class Conf {
     * The file must be a PHP script which return an array with keys that match the properties of the Conf class. Malformed files will throw an exception; unknown keys are silently ignored. Files may be imported is succession, though this is not currently used.
     * @param string $file Full path and file name for the file to import */
     public function importFile(string $file): self {
-        if(!file_exists($file)) throw new Conf\Exception("fileMissing", $file);
-        if(!is_readable($file)) throw new Conf\Exception("fileUnreadable", $file);
+        if(!file_exists($file)) {
+            throw new Conf\Exception("fileMissing", $file);
+        } else if(!is_readable($file)) {
+            throw new Conf\Exception("fileUnreadable", $file);
+        }
         try {
             ob_start();
             $arr = (@include $file);
@@ -110,7 +115,9 @@ class Conf {
         } finally {
             ob_end_clean();
         }
-        if(!is_array($arr)) throw new Conf\Exception("fileCorrupt", $file);
+        if(!is_array($arr)) {
+            throw new Conf\Exception("fileCorrupt", $file);
+        }
         return $this->import($arr);
     }
 

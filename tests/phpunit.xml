@@ -15,6 +15,9 @@
     <directory suffix=".php">../lib</directory>
   </whitelist>
 </filter>
+<logging>
+  <log type="coverage-html" target="coverage" showUncoveredFiles="true"/>
+</logging>
 
 <testsuites>
     <testsuite name="Exceptions">
@@ -62,6 +65,5 @@
     <testsuite name="Refresh service">
         <file>Service/TestService.php</file>
     </testsuite>
-
 </testsuites>
 </phpunit>

@@ -1,10 +1,19 @@
 <?php
 namespace JKingWeb\Arsse;
+var_export(get_defined_constants());
+exit;
 require_once __DIR__.DIRECTORY_SEPARATOR."bootstrap.php";
-Arsse::load(new Conf());
 
 if(\PHP_SAPI=="cli") {
-    (new Service)->watch();
+    // initialize the CLI; this automatically handles --help and --version
+    $cli = new CLI;
+    // load configuration
+    Arsse::load(new Conf());
+    // handle CLI requests
+    $cli->dispatch();
 } else {
-    (new REST)->dispatch();
+    // load configuration
+    Arsse::load(new Conf());
+    // handle Web requests
+    (new REST)->dispatch()->output();
 }

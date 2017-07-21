@@ -30,7 +30,7 @@ class REST {
     function __construct() {
     }
 
-    function dispatch(REST\Request $req = null): bool {
+    function dispatch(REST\Request $req = null): REST\Response {
         if($req===null) {
             $req = new REST\Request();
         }
@@ -39,24 +39,7 @@ class REST {
         $req->refreshURL();
         $class = $this->apis[$api]['class'];
         $drv = new $class();
-        $out = $drv->dispatch($req);
-        header("Status: ".$out->code." ".Arsse::$lang->msg("HTTP.Status.".$out->code));
-        if(!is_null($out->payload)) {
-            header("Content-Type: ".$out->type);
-            switch($out->type) {
-                case REST\Response::T_JSON: 
-                    $body = json_encode($out->payload,\JSON_PRETTY_PRINT);
-                    break;
-                default:
-                    $body = (string) $out->payload;
-                    break;
-            }
-        }
-        foreach($out->fields as $field) {
-            header($field);
-        }
-        echo $body;
-        return true;
+        return $drv->dispatch($req);
     }
 
     function apiMatch(string $url, array $map): string {

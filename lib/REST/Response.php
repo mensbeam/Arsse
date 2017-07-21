@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\REST;
+use JKingWeb\Arsse\Arsse;
 
 class Response {
     const T_JSON = "application/json";
@@ -18,5 +19,29 @@ class Response {
         $this->payload = $payload;
         $this->type    = $type;
         $this->fields  = $extraFields;
+    }
+
+    function output() {
+        if(!headers_sent()) {
+            header("Status: ".$this->code." ".Arsse::$lang->msg("HTTP.Status.".$this->code));
+            $body = "";
+            if(!is_null($this->payload)) {
+                header("Content-Type: ".$this->type);
+                switch($this->type) {
+                    case self::T_JSON: 
+                        $body = json_encode($this->payload,\JSON_PRETTY_PRINT);
+                        break;
+                    default:
+                        $body = (string) $this->payload;
+                        break;
+                }
+            }
+            foreach($this->fields as $field) {
+                header($field);
+            }
+            echo $body;
+        } else {
+            throw new REST\Exception("headersSent");
+        }
     }
 }
