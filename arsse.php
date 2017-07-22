@@ -1,7 +1,5 @@
 <?php
 namespace JKingWeb\Arsse;
-var_export(get_defined_constants());
-exit;
 require_once __DIR__.DIRECTORY_SEPARATOR."bootstrap.php";
 
 if(\PHP_SAPI=="cli") {
