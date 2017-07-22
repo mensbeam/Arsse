@@ -114,7 +114,7 @@ trait SeriesSubscription {
             [3,"http://example.com/feed3", "Ack", "", "",strtotime("now + 1 hour")],
         ];
         // initialize a partial mock of the Database object to later manipulate the feedUpdate method
-        Arsse::$db = Phake::PartialMock(Database::class, $this->drv);
+        Arsse::$db = Phake::partialMock(Database::class, $this->drv);
         $this->user = "john.doe@example.com";
     }
 

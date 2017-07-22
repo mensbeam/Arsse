@@ -37,7 +37,7 @@ abstract class AbstractStatement implements Statement {
                     $this->isNullable[] = true;
                 }
                 if(!array_key_exists($binding, self::TYPES)) {
-                    throw new Exception("paramTypeInvalid", $binding);
+                    throw new Exception("paramTypeInvalid", $binding); // @codeCoverageIgnore
                 }
                 $this->types[] = self::TYPES[$binding];
             }
@@ -83,7 +83,7 @@ abstract class AbstractStatement implements Statement {
                 }
                 return $v;
             default:
-                throw new Exception("paramTypeUnknown", $type);
+                throw new Exception("paramTypeUnknown", $type); // @codeCoverageIgnore
         }
     }
 }

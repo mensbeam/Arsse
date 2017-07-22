@@ -36,6 +36,9 @@ class TestDbStatementSQLite3 extends Test\AbstractTest {
             $s->rebindArray([$strict ? "strict $type" : $type]);
             $val = $s->runArray([$input])->getRow()['value'];
             $this->assertSame($expectations[$type], $val, "Binding from type $type failed comparison.");
+            $s->rebind(...[$strict ? "strict $type" : $type]);
+            $val = $s->run(...[$input])->getRow()['value'];
+            $this->assertSame($expectations[$type], $val, "Binding from type $type failed comparison.");
         }
     }
 

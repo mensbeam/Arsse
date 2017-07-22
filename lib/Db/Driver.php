@@ -9,7 +9,7 @@ interface Driver {
     const TR_PEND_COMMIT = -1;
     const TR_PEND_ROLLBACK = -2;
     
-    function __construct(bool $install = false);
+    function __construct();
     // returns a human-friendly name for the driver (for display in installer, for example)
     static function driverName(): string;
     // returns the version of the scheme of the opened database; if uninitialized should return 0

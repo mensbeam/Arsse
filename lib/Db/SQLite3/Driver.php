@@ -16,36 +16,39 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
 
     protected $db;
 
-    public function __construct(bool $install = false) {
+    public function __construct() {
         // check to make sure required extension is loaded
         if(!class_exists("SQLite3")) {
-            throw new Exception("extMissing", self::driverName());
+            throw new Exception("extMissing", self::driverName()); // @codeCoverageIgnore
         }
-        $file = Arsse::$conf->dbSQLite3File;
-        // if the file exists (or we're initializing the database), try to open it
+        $dbFile = Arsse::$conf->dbSQLite3File;
+        $mode = \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE;
         try {
-            $this->db = $this->makeConnection($file, \SQLITE3_OPEN_CREATE | \SQLITE3_OPEN_READWRITE, Arsse::$conf->dbSQLite3Key);
+            $this->db = $this->makeConnection($dbFile, $mode, Arsse::$conf->dbSQLite3Key);
             // set initial options
             $this->db->enableExceptions(true);
             $this->exec("PRAGMA journal_mode = wal");
             $this->exec("PRAGMA foreign_keys = yes");
         } catch(\Throwable $e) {
             // if opening the database doesn't work, check various pre-conditions to find out what the problem might be
-            if(!file_exists($file)) {
-                if($install && !is_writable(dirname($file))) {
-                    throw new Exception("fileUncreatable", dirname($file));
+            $files = [
+                $dbFile,        // main database file
+                $dbFile."-wal", // write-ahead log journal
+                $dbFile."-shm", // shared memory index
+            ];
+            foreach($files as $file) {
+                if(!file_exists($file) && !is_writable(dirname($file))) {
+                    throw new Exception("fileUncreatable", $file);
+                } else if(!is_readable($file) && !is_writable($file)) {
+                    throw new Exception("fileUnusable", $file);
+                } else if(!is_readable($file)) {
+                    throw new Exception("fileUnreadable", $file);
+                } else if(!is_writable($file)) {
+                    throw new Exception("fileUnwritable", $file);
                 }
-                throw new Exception("fileMissing", $file);
-            }
-            if(!is_readable($file) && !is_writable($file)) {
-                throw new Exception("fileUnusable", $file);
-            } else if(!is_readable($file)) {
-                throw new Exception("fileUnreadable", $file);
-            } else if(!is_writable($file)) {
-                throw new Exception("fileUnwritable", $file);
             }
             // otherwise the database is probably corrupt
-            throw new Exception("fileCorrupt", $mainfile);
+            throw new Exception("fileCorrupt", $dbFile);
         }
     }
 
@@ -89,7 +92,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
                 }
                 $sql = @file_get_contents($file);
                 if($sql===false) {
-                    throw new Exception("updateFileUnusable", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]);
+                    throw new Exception("updateFileUnusable", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]); // @codeCoverageIgnore
                 }
                 try {
                     $this->exec($sql);

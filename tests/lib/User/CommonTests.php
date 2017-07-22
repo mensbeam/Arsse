@@ -16,7 +16,7 @@ trait CommonTests {
         $conf->userPreAuth = false;
         Arsse::$conf = $conf;
         Arsse::$db = new Database();
-        Arsse::$user = Phake::PartialMock(User::class);
+        Arsse::$user = Phake::partialMock(User::class);
         Phake::when(Arsse::$user)->authorize->thenReturn(true);
         $_SERVER['PHP_AUTH_USER'] = self::USER1;
         $_SERVER['PHP_AUTH_PW'] = "secret";

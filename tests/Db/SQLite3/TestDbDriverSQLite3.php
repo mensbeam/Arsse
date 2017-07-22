@@ -16,9 +16,9 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
         }
         $this->clearData();
         $conf = new Conf();
+        Arsse::$conf = $conf;
         $conf->dbDriver = Db\SQLite3\Driver::class;
         $conf->dbSQLite3File = tempnam(sys_get_temp_dir(), 'ook');
-        Arsse::$conf = $conf;
         $this->drv = new Db\SQLite3\Driver(true);
         $this->ch = new \SQLite3(Arsse::$conf->dbSQLite3File);
         $this->ch->enableExceptions(true);
@@ -27,7 +27,9 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
     function tearDown() {
         unset($this->drv);
         unset($this->ch);
-        unlink(Arsse::$conf->dbSQLite3File);
+        if(isset(Arsse::$conf)) {
+            unlink(Arsse::$conf->dbSQLite3File);
+        }
         $this->clearData();
     }
 
@@ -131,15 +133,26 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
         $this->assertEquals(3, $this->drv->savepointCreate());
         $this->assertEquals(4, $this->drv->savepointCreate());
         $this->assertEquals(5, $this->drv->savepointCreate());
-        $this->assertEquals(true, $this->drv->savepointUndo(3));
-        $this->assertEquals(false, $this->drv->savepointRelease(4));
+        $this->assertTrue($this->drv->savepointUndo(3));
+        $this->assertFalse($this->drv->savepointRelease(4));
         $this->assertEquals(6, $this->drv->savepointCreate());
-        $this->assertEquals(false, $this->drv->savepointRelease(5));
-        $this->assertEquals(true, $this->drv->savepointRelease(6));
+        $this->assertFalse($this->drv->savepointRelease(5));
+        $this->assertTrue($this->drv->savepointRelease(6));
         $this->assertEquals(3, $this->drv->savepointCreate());
-        $this->assertEquals(true, $this->drv->savepointRelease(2));
+        $this->assertTrue($this->drv->savepointRelease(2));
         $this->assertException("stale", "Db", "ExceptionSavepoint");
         $this->drv->savepointRelease(2);
+    }
+
+    function testManipulateSavepointsSomeMore() {
+        $this->assertEquals(1, $this->drv->savepointCreate());
+        $this->assertEquals(2, $this->drv->savepointCreate());
+        $this->assertEquals(3, $this->drv->savepointCreate());
+        $this->assertEquals(4, $this->drv->savepointCreate());
+        $this->assertTrue($this->drv->savepointRelease(2));
+        $this->assertFalse($this->drv->savepointUndo(3));
+        $this->assertException("stale", "Db", "ExceptionSavepoint");
+        $this->drv->savepointUndo(2);
     }
 
     function testBeginATransaction() {
@@ -307,6 +320,8 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
     function testUnlockTheDatabase() {
         $this->drv->savepointCreate(true);
         $this->drv->savepointRelease();
+        $this->drv->savepointCreate(true);
+        $this->drv->savepointUndo();
         $this->assertSame(true, $this->ch->exec("CREATE TABLE test(id integer primary key)"));
     }
 }

@@ -12,11 +12,11 @@ class Database {
     /** @var Db\Driver */
     public    $db;
 
-    public function __construct() {
+    public function __construct($initialize = true) {
         $driver = Arsse::$conf->dbDriver;
-        $this->db = new $driver(INSTALL);
+        $this->db = new $driver();
         $ver = $this->db->schemaVersion();
-        if(!INSTALL && $ver < self::SCHEMA_VERSION) {
+        if($initialize && $ver < self::SCHEMA_VERSION) {
             $this->db->schemaUpdate(self::SCHEMA_VERSION);
         }
     }

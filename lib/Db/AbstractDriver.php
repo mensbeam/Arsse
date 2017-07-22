@@ -62,10 +62,10 @@ abstract class AbstractDriver implements Driver {
                     $out = false;
                     break;
                 case self::TR_COMMIT:
-                case self::TR_ROLLBACK:
+                case self::TR_ROLLBACK: //@codeCoverageIgnore
                     throw new ExceptionSavepoint("stale", ['action' => "commit", 'index' => $index]);
                 default:
-                    throw new Exception("unknownSavepointStatus", $this->transStatus[$index]);
+                    throw new Exception("unknownSavepointStatus", $this->transStatus[$index]); //@codeCoverageIgnore
             }
             if($index==$this->transDepth) {
                 while($this->transDepth > 0 && $this->transStatus[$this->transDepth] > self::TR_PEND) {
@@ -110,10 +110,10 @@ abstract class AbstractDriver implements Driver {
                     $out = true;
                     break;
                 case self::TR_COMMIT:
-                case self::TR_ROLLBACK:
+                case self::TR_ROLLBACK: //@codeCoverageIgnore
                     throw new ExceptionSavepoint("stale", ['action' => "rollback", 'index' => $index]);
                 default:
-                    throw new Exception("unknownSavepointStatus", $this->transStatus[$index]);
+                    throw new Exception("unknownSavepointStatus", $this->transStatus[$index]); //@codeCoverageIgnore
             }
             if($index==$this->transDepth) {
                 while($this->transDepth > 0 && $this->transStatus[$this->transDepth] > self::TR_PEND) {

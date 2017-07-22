@@ -54,7 +54,7 @@ class TestAuthorization extends Test\AbstractTest {
         if($db !== null) {
             Arsse::$db = new $db();
         }
-        Arsse::$user = Phake::PartialMock(User::class);
+        Arsse::$user = Phake::partialMock(User::class);
         Phake::when(Arsse::$user)->authorize->thenReturn(true);
         foreach(self::USERS as $user => $level) {
             Arsse::$user->add($user, "");
