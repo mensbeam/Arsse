@@ -53,6 +53,7 @@
         <file>Db/SQLite3/TestDbUpdateSQLite3.php</file>
     </testsuite>
     <testsuite name="Database functions">
+        <file>Db/SQLite3/Database/TestDatabaseMiscellanySQLite3.php</file>
         <file>Db/SQLite3/Database/TestDatabaseMetaSQLite3.php</file>
         <file>Db/SQLite3/Database/TestDatabaseUserSQLite3.php</file>
         <file>Db/SQLite3/Database/TestDatabaseFolderSQLite3.php</file>

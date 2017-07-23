@@ -43,6 +43,11 @@ trait SeriesUser {
         $this->assertTrue(password_verify("secret", $hash));
     }
 
+    function testGetThePasswordOfAMissingUser() {
+        $this->assertException("doesNotExist", "User");
+        Arsse::$db->userPasswordGet("john.doe@example.org");
+    }
+
     function testGetAPasswordWithoutAuthority() {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
@@ -144,6 +149,12 @@ trait SeriesUser {
         $this->assertNotEquals("", $hash);
         Phake::verify(Arsse::$user)->authorize($user, "userPasswordSet");
         $this->assertTrue(password_verify($pass, $hash), "Failed verifying password of $user '$pass' against hash '$hash'.");
+    }
+    function testSetARandomPassword() {
+        $user = "john.doe@example.com";
+        $this->assertEquals("", Arsse::$db->userPasswordGet($user));
+        $pass = Arsse::$db->userPasswordSet($user);
+        $hash = Arsse::$db->userPasswordGet($user);
     }
 
     function testSetThePasswordOfAMissingUser() {

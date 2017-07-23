@@ -18,6 +18,8 @@
     </item>
     <item>
         <dc:identifier>urn:uuid:43fb1908-42ec-11e7-b61b-2b118faca2f2</dc:identifier> <!-- Correct ID -->
+        <enclosure url="http://example.com/svg" type="image/svg"/>
+        <category>HLN</category>
     </item>
     <item>
         <link>http://example.com/2</link>

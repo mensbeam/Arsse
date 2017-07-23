@@ -225,6 +225,16 @@ trait SeriesFolder {
         $this->compareExpectations($state);
     }
 
+    function testRenameAFolderToTheEmptyString() {
+        $this->assertException("missing", "Db", "ExceptionInput");
+        $this->assertTrue(Arsse::$db->folderPropertiesSet("john.doe@example.com", 6, ['name' => ""]));
+    }
+
+    function testRenameAFolderToWhitespaceOnly() {
+        $this->assertException("whitespace", "Db", "ExceptionInput");
+        $this->assertTrue(Arsse::$db->folderPropertiesSet("john.doe@example.com", 6, ['name' => "   "]));
+    }
+
     function testMoveAFolder() {
         $this->assertTrue(Arsse::$db->folderPropertiesSet("john.doe@example.com", 6, ['parent' => 5]));
         Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderPropertiesSet");

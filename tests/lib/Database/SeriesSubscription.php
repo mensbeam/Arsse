@@ -264,6 +264,17 @@ trait SeriesSubscription {
         Arsse::$db->subscriptionList($this->user);
     }
 
+    function testGetThePropertiesOfAMissingSubscription() {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        Arsse::$db->subscriptionPropertiesGet($this->user, 2112);
+    }
+
+    function testGetThePropertiesOfASubscriptionWithoutAuthority() {
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Arsse::$db->subscriptionPropertiesGet($this->user, 1);
+    }
+
     function testSetThePropertiesOfASubscription() {
         Arsse::$db->subscriptionPropertiesSet($this->user, 1,[
             'title' => "Ook Ook",
@@ -288,6 +299,10 @@ trait SeriesSubscription {
     function testMoveASubscriptionToAMissingFolder() {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['folder' => 4]);
+    }
+
+    function testMoveASubscriptionToTheRootFolder() {
+        $this->assertTrue(Arsse::$db->subscriptionPropertiesSet($this->user, 3, ['folder' => null]));
     }
 
     function testRenameASubscriptionToABlankTitle() {

@@ -328,11 +328,11 @@ class Database {
 
     protected function folderValidateId(string $user, int $id = null, int $parent = null, bool $subject = false): array {
         if(is_null($id)) {
-            // if no ID is specified this is a no-op, unless a parent is specified, which is always a circular dependence
+            // if no ID is specified this is a no-op, unless a parent is specified, which is always a circular dependence (the root cannot be moved)
             if(!is_null($parent)) {
-                throw new Db\ExceptionInput("circularDependence", ["action" => $this->caller(), "field" => "parent", 'id' => $parent]);
+                throw new Db\ExceptionInput("circularDependence", ["action" => $this->caller(), "field" => "parent", 'id' => $parent]); // @codeCoverageIgnore
             }
-            return [name => null, parent => null];
+            return ['name' => null, 'parent' => null];
         }
         // check whether the folder exists and is owned by the user
         $f = $this->db->prepare("SELECT name,parent from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $id)->getRow();
