@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Db;
-use JKingWeb\DrUUID\UUID as UUID;
 
 abstract class AbstractDriver implements Driver {
     protected $locked = false;
