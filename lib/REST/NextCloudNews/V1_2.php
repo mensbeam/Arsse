@@ -237,7 +237,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 case 10231:
                 case 10232: return new Response(422);
                 // other errors related to input
-                default: return new Response(400);
+                default: return new Response(400); // @codeCoverageIgnore
             }
         }
         $folder = Arsse::$db->folderPropertiesGet(Arsse::$user->id, $folder);
@@ -275,7 +275,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 case 10231:
                 case 10232: return new Response(422);
                 // other errors related to input
-                default: return new Response(400);
+                default: return new Response(400); // @codeCoverageIgnore
             }
         }
         return new Response(204);
@@ -421,7 +421,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 case 10231:
                 case 10232: return new Response(422);
                 // other errors related to input
-                default: return new Response(400);
+                default: return new Response(400); // @codeCoverageIgnore
             }
         }
         return new Response(204);
@@ -446,7 +446,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 // folder does not exist
                 case 10235: return new Response(422);
                 // other errors related to input
-                default: return new Response(400);
+                default: return new Response(400); // @codeCoverageIgnore
             }
         }
         return new Response(204);
@@ -517,7 +517,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             case 2: // starred
                 $c->starred(true);
                 break;
-            default:
+            default: // @codeCoverageIgnore
                 // return all items
         }
         // whether to return only updated items

@@ -323,6 +323,13 @@ class TestNCNV1_2 extends Test\AbstractTest {
         }
     }
 
+    function testRespondToInvalidInputTypes() {
+        $exp = new Response(415, "", "", ['Accept: application/json']);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/1", '<data/>', 'application/xml')));
+        $exp = new Response(400);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/1", '<data/>', 'application/json')));
+    }
+
     function testReceiveAuthenticationChallenge() {
         Phake::when(Arsse::$user)->authHTTP->thenReturn(false);
         $exp = new Response(401, "", "", ['WWW-Authenticate: Basic realm="'.REST\NextCloudNews\V1_2::REALM.'"']);
@@ -450,10 +457,12 @@ class TestNCNV1_2 extends Test\AbstractTest {
             ['url' => "http://example.com/news.atom", 'folderId' => 3],
             ['url' => "http://example.org/news.atom", 'folderId' => 8],
             ['url' => "http://example.net/news.atom", 'folderId' => 0],
+            [],
         ];
         $out = [
             ['feeds' => [$this->feeds['rest'][0]]],
             ['feeds' => [$this->feeds['rest'][1]], 'newestItemId' => 4758915],
+            [],
             [],
         ];
         // set up the necessary mocks
@@ -480,6 +489,9 @@ class TestNCNV1_2 extends Test\AbstractTest {
         // try to add a bad feed
         $exp = new Response(422);
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[2]), 'application/json')));
+        // try to add no feed
+        $exp = new Response(422);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[3]), 'application/json')));
     }
 
     function testRemoveASubscription() {
@@ -498,6 +510,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
             ['folderId' =>   42],
             ['folderId' => 2112],
             ['folderId' =>   42],
+            [],
         ];
         Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, ['folder' => 42])->thenReturn(true);
         Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, ['folder' => null])->thenReturn(true);
@@ -511,6 +524,8 @@ class TestNCNV1_2 extends Test\AbstractTest {
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/move", json_encode($in[2]), 'application/json')));
         $exp = new Response(404);
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/42/move", json_encode($in[3]), 'application/json')));
+        $exp = new Response(422);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/move", json_encode($in[4]), 'application/json')));
     }
 
     function testRenameASubscription() {
@@ -521,6 +536,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
             ['feedTitle' => ""],
             ['feedTitle' => false],
             ['feedTitle' => "Feed does not exist"],
+            [],
         ];
         Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, $this->identicalTo(['title' =>  null]))->thenReturn(true);
         Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, $this->identicalTo(['title' => "Ook"]))->thenReturn(true);
@@ -538,6 +554,8 @@ class TestNCNV1_2 extends Test\AbstractTest {
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/rename", json_encode($in[3]), 'application/json')));
         $exp = new Response(404);
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/42/rename", json_encode($in[4]), 'application/json')));
+        $exp = new Response(422);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/rename", json_encode($in[6]), 'application/json')));
     }
 
     function testListStaleFeeds() {
