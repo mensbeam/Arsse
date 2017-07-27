@@ -4,10 +4,9 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 /** Class for loading, saving, and querying configuration
-* 
-* The Conf class serves both as a means of importing and querying configuration information, as well as a source for default parameters when a configuration file does not specify a value.
-* All public properties are configuration parameters that may be set by the server administrator.
-*/
+ * 
+ * The Conf class serves both as a means of importing and querying configuration information, as well as a source for default parameters when a configuration file does not specify a value.
+ * All public properties are configuration parameters that may be set by the server administrator. */
 class Conf {
     /** @var string Default language to use for logging and errors */
     public $lang                    = "en";
@@ -50,7 +49,7 @@ class Conf {
     /** @var boolean Whether users are already authenticated by the Web server before the application is executed */
     public $userPreAuth             = true;
     /** @var boolean Whether to automatically append the hostname to form a user@host combination before performing authentication
-    * @deprecated */
+     * @deprecated */
     public $userComposeNames        = true;
     /** @var integer Desired length of temporary user passwords */
     public $userTempPasswordLength  = 20;
@@ -58,8 +57,7 @@ class Conf {
     /** @var string Class of the background feed update service driver in use (Forking by default) */
     public $serviceDriver           = Service\Forking\Driver::class;
     /** @var string The interval between checks for new feeds, as an ISO 8601 duration
-    * @see https://en.wikipedia.org/wiki/ISO_8601#Durations
-    */
+     * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
     public $serviceFrequency        = "PT2M";
     /** @var integer Number of concurrent feed updates to perform */
     public $serviceQueueWidth       = 5;
@@ -80,27 +78,18 @@ class Conf {
     public $fetchUserAgentString;
 
     /** Creates a new configuration object
-    * @param string $import_file Optional file to read configuration data from
-    * @see self::importFile() 
-    */
+     * @param string $import_file Optional file to read configuration data from
+     * @see self::importFile() */
     public function __construct(string $import_file = "") {
         if($import_file != "") {
             $this->importFile($import_file);
         }
-        if(is_null($this->fetchUserAgentString)) {
-            $this->fetchUserAgentString = sprintf('Arsse/%s (%s %s; %s; https://code.jkingweb.ca/jking/arsse) PicoFeed (https://github.com/fguillot/picoFeed)',
-                VERSION, // Arsse version
-                php_uname('s'), // OS
-                php_uname('r'), // OS version
-                php_uname('m') // platform architecture
-            );
-        }
     }
 
     /** Layers configuration data from a file into an existing object 
-    *
-    * The file must be a PHP script which return an array with keys that match the properties of the Conf class. Malformed files will throw an exception; unknown keys are silently ignored. Files may be imported is succession, though this is not currently used.
-    * @param string $file Full path and file name for the file to import */
+     *
+     * The file must be a PHP script which return an array with keys that match the properties of the Conf class. Malformed files will throw an exception; unknown keys are silently ignored. Files may be imported is succession, though this is not currently used.
+     * @param string $file Full path and file name for the file to import */
     public function importFile(string $file): self {
         if(!file_exists($file)) {
             throw new Conf\Exception("fileMissing", $file);
@@ -122,9 +111,9 @@ class Conf {
     }
 
     /** Layers configuration data from an associative array into an existing object 
-    *
-    * The input array must have keys that match the properties of the Conf class; unknown keys are silently ignored. Arrays may be imported is succession, though this is not currently used.
-    * @param mixed[] $arr Array of configuration parameters to export */
+     *
+     * The input array must have keys that match the properties of the Conf class; unknown keys are silently ignored. Arrays may be imported is succession, though this is not currently used.
+     * @param mixed[] $arr Array of configuration parameters to export */
     public function import(array $arr): self {
         foreach($arr as $key => $value) {
             $this->$key = $value;
@@ -132,17 +121,57 @@ class Conf {
         return $this;
     }
 
-    /** Outputs non-default configuration settings as a string compatible with var_export()
-    *
-    * If provided a file name, will produce the text of a PHP script suitable for later import
-    * @param string $file Full path and file name for the file to export to */
-    public function export(string $file = ""): string {
-        // TODO: write export method
+    /** Outputs configuration settings, either non-default ones or all, as an associative array
+     * @param bool $full Whether to output all configuration options rather than only changed ones */
+    public function export(bool $full = false): array {
+        $ref = new self;
+        $out = [];
+        $conf = new \ReflectionObject($this);
+        foreach($conf->getProperties(\ReflectionProperty::IS_PUBLIC) as $prop) {
+            $name = $prop->name;
+            // add the property to the output if the value is scalar and either:
+            // 1. full output has been requested
+            // 2. the property is not defined in the class
+            // 3. it differs from the default
+            if(is_scalar($this->$name) && ($full || !$prop->isDefault() || $this->$name !== $ref->$name)) {
+                $out[$name] = $this->$name;
+            }
+        }
+        return $out;
     }
 
-    /** Alias of export() method with no parameters
-    * @see self::export() */
-    public function __toString(): string {
-        return $this->export();
+    /** Outputs configuration settings, either non-default ones or all, to a file in a format suitable for later import
+     * @param string $file Full path and file name for the file to import to; the containing directory must already exist
+     * @param bool $full Whether to output all configuration options rather than only changed ones */
+    public function exportFile(string $file, bool $full = false): bool {
+        $arr = $this->export($full);
+        $conf = new \ReflectionObject($this);
+        $out = "<?php return [".PHP_EOL;
+        foreach($arr as $prop => $value) {
+            $match = null;
+            $doc = $comment = "";
+            // retrieve the property's docblock, if it exists
+            try {
+                $doc = (new \ReflectionProperty(self::class, $prop))->getDocComment();
+            } catch(\ReflectionException $e) {}
+            if($doc) {
+                // parse the docblock to extract the property description
+                if(preg_match("<@var\s+\S+\s+(.+?)(?:\s*\*/)?$>m", $doc, $match)) {
+                    $comment = $match[1];
+                }
+            }
+            // append the docblock description if there is one, or an empty comment otherwise
+            $out .= " // ".$comment.PHP_EOL;
+            // append the property and an export of its value to the output
+            $out .= " ".var_export($prop, true)." => ".var_export($value,true).",".PHP_EOL;
+        }
+        $out .= "];".PHP_EOL;
+        // write the configuration representation to the requested file
+        if(!@file_put_contents($file,$out)) {
+            // if it fails throw an exception
+            $err = file_exists($file) ? "fileUnwritable" : "fileUncreatable";
+            throw new Conf\Exception($err, $file);
+        }
+        return true;
     }
 }

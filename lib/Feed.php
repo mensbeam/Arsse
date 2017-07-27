@@ -22,12 +22,18 @@ class Feed {
 
     public function __construct(int $feedID = null, string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = '', bool $scrape = false) {
         // set the configuration
+        $userAgent = Arsse::$conf->fetchUserAgentString ?? sprintf('Arsse/%s (%s %s; %s; https://code.jkingweb.ca/jking/arsse) PicoFeed (https://github.com/fguillot/picoFeed)',
+            VERSION, // Arsse version
+            php_uname('s'), // OS
+            php_uname('r'), // OS version
+            php_uname('m') // platform architecture
+        );
         $this->config = new Config;
         $this->config->setMaxBodySize(Arsse::$conf->fetchSizeLimit);
         $this->config->setClientTimeout(Arsse::$conf->fetchTimeout);
         $this->config->setGrabberTimeout(Arsse::$conf->fetchTimeout);
-        $this->config->setClientUserAgent(Arsse::$conf->fetchUserAgentString);
-        $this->config->setGrabberUserAgent(Arsse::$conf->fetchUserAgentString);
+        $this->config->setClientUserAgent($userAgent);
+        $this->config->setGrabberUserAgent($userAgent);
         // fetch the feed
         $this->download($url, $lastModified, $etag, $username, $password);
         // format the HTTP Last-Modified date returned

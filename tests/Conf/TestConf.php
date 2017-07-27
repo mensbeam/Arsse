@@ -17,10 +17,13 @@ class TestConf extends Test\AbstractTest {
             'confNotPHP'     => 'DEAD BEEF',
             'confEmpty'      => '',
             'confUnreadable' => '',
+            'confForbidden'  => [],
         ]);
         self::$path = self::$vfs->url()."/";
-        // set up a file without read access
+        // set up a file without read or write access
         chmod(self::$path."confUnreadable", 0000);
+        // set up a directory without read or write access
+        chmod(self::$path."confForbidden", 0000);
     }
 
     function tearDown() {
@@ -85,5 +88,50 @@ class TestConf extends Test\AbstractTest {
     function testImportFromCorruptFile() {
         $this->assertException("fileCorrupt", "Conf");
         $conf = new Conf(self::$path."confCorrupt");
+    }
+
+    function testExportToArray() {
+        $conf = new Conf();
+        $conf->lang = ["en", "fr"]; // should not be exported: not scalar
+        $conf->dbSchemaBase = "schema"; // should be exported: value changed
+        $conf->someCustomProperty = "Look at me!"; // should be exported: unknown property
+        $exp = [
+            'dbSchemaBase' => "schema",
+            'someCustomProperty' => "Look at me!",
+        ];
+        $this->assertSame($exp, $conf->export());
+        $res = $conf->export(true); // export all properties
+        $this->assertNotSame($exp, $res);
+        $this->assertArraySubset($exp, $res);
+    }
+
+    /** @depends testExportToArray 
+     * @depends testImportFromFile */
+    function testExportToFile() {
+        $conf = new Conf();
+        $conf->lang = ["en", "fr"]; // should not be exported: not scalar
+        $conf->dbSchemaBase = "schema"; // should be exported: value changed
+        $conf->someCustomProperty = "Look at me!"; // should be exported: unknown property
+        $conf->exportFile(self::$path."confNotArray");
+        $arr = (include self::$path."confNotArray");
+        $exp = [
+            'dbSchemaBase' => "schema",
+            'someCustomProperty' => "Look at me!",
+        ];
+        $this->assertSame($exp, $arr);
+        $conf->exportFile(self::$path."confNotArray", true); // export all properties
+        $arr = (include self::$path."confNotArray");
+        $this->assertNotSame($exp, $arr);
+        $this->assertArraySubset($exp, $arr);
+    }
+
+    function testExportToFileWithoutWritePermission() {
+        $this->assertException("fileUnwritable", "Conf");
+        (new Conf)->exportFile(self::$path."confUnreadable");
+    }
+
+    function testExportToFileWithoutCreatePermission() {
+        $this->assertException("fileUncreatable", "Conf");
+        (new Conf)->exportFile(self::$path."confForbidden/conf");
     }
 }
