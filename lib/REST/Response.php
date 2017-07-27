@@ -23,13 +23,18 @@ class Response {
 
     function output() {
         if(!headers_sent()) {
-            header("Status: ".$this->code." ".Arsse::$lang->msg("HTTP.Status.".$this->code));
+            try {
+                $statusText = Arsse::$lang->msg("HTTP.Status.".$this->code);
+            } catch(\JKingWeb\Arsse\Lang\Exception $e) {
+                $statusText = "";
+            }
+            header("Status: ".$this->code." ".$statusText);
             $body = "";
             if(!is_null($this->payload)) {
                 header("Content-Type: ".$this->type);
                 switch($this->type) {
                     case self::T_JSON: 
-                        $body = json_encode($this->payload,\JSON_PRETTY_PRINT);
+                        $body = (string) json_encode($this->payload,\JSON_PRETTY_PRINT);
                         break;
                     default:
                         $body = (string) $this->payload;
