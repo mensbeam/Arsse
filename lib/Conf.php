@@ -74,8 +74,12 @@ class Conf {
     public $fetchSizeLimit          = 2 * 1024 * 1024;
     /** @var boolean Whether to allow the possibility of fetching full article contents using an item's URL. Whether fetching will actually happen is also governed by a per-feed setting */
     public $fetchEnableScraping     = true;
-    /** @var string User-Agent string to use when fetching feeds from foreign servers */
+    /** @var string|null User-Agent string to use when fetching feeds from foreign servers */
     public $fetchUserAgentString;
+
+    /** @var string Amount of time to keep a feed's articles in the database after all its subscriptions have been deleted, as an ISO 8601 duration (default: 24 hours)
+     * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
+    public $retainFeeds             = "PT24H";
 
     /** Creates a new configuration object
      * @param string $import_file Optional file to read configuration data from

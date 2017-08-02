@@ -147,7 +147,7 @@ class Database {
             if(!Arsse::$user->authorize("", __FUNCTION__)) {
                 throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => "global"]);
             }
-            foreach($this->db->prepare("SELECT id from arsse_users")->run() as $user) {
+            foreach($this->db->query("SELECT id from arsse_users") as $user) {
                 $out[] = $user['id'];
             }
         }
@@ -501,7 +501,7 @@ class Database {
     }
 
     public function feedListStale(): array {
-        $feeds = $this->db->prepare("SELECT id from arsse_feeds where next_fetch <= CURRENT_TIMESTAMP")->run()->getAll();
+        $feeds = $this->db->query("SELECT id from arsse_feeds where next_fetch <= CURRENT_TIMESTAMP")->getAll();
         return array_column($feeds,'id');
     }
     
@@ -624,6 +624,24 @@ class Database {
         return true;
     }
 
+    public function feedCleanup(): bool {
+        $tr = $this->begin();
+        // first unmark any feeds which are no longer orphaned
+        $this->db->query("UPDATE arsse_feeds set orphaned = null where exists(SELECT id from arsse_subscriptions where feed is arsse_feeds.id)");
+        // next mark any newly orphaned feeds with the current date and time
+        $this->db->query("UPDATE arsse_feeds set orphaned = CURRENT_TIMESTAMP where orphaned is null and not exists(SELECT id from arsse_subscriptions where feed is arsse_feeds.id)");
+        // finally delete feeds that have been orphaned longer than the retention period
+        $limit = Date::normalize("now");
+        if(Arsse::$conf->retainFeeds) {
+            // if there is a retention period specified, compute it; otherwise feed are deleted immediatelty
+            $limit->sub(new \DateInterval(Arsse::$conf->retainFeeds));
+        }
+        $out = (bool) $this->db->prepare("DELETE from arsse_feeds where orphaned <= ?", "datetime")->run($limit);
+        // commit changes and return
+        $tr->commit();
+        return $out;
+    }
+
     public function feedMatchLatest(int $feedID, int $count): Db\Result {
         return $this->db->prepare(
             "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? ORDER BY modified desc, id desc limit ?", 
@@ -642,43 +660,6 @@ class Database {
             "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed is ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC))", 
             'int', $tId, $tHashUT, $tHashUC, $tHashTC
         )->run($feedID, $ids, $hashesUT, $hashesUC, $hashesTC);
-    }
-
-    public function articleStarredCount(string $user, array $context = []): int {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
-            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        }
-        return $this->db->prepare(
-            "WITH RECURSIVE
-                user(user) as (SELECT ?),
-                subscribed_feeds(id,sub) as (SELECT feed,id from arsse_subscriptions join user on user is owner) ".
-            "SELECT count(*) from arsse_marks 
-                join user on user is owner 
-                join arsse_articles on arsse_marks.article is arsse_articles.id
-                join subscribed_feeds on arsse_articles.feed is subscribed_feeds.id
-            where starred is 1", 
-            "str"
-        )->run($user)->getValue();
-    }
-
-    public function editionLatest(string $user, Context $context = null): int {
-        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
-            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        }
-        if(!$context) {
-            $context = new Context;
-        }
-        $q = new Query("SELECT max(arsse_editions.id) from arsse_editions left join arsse_articles on article is arsse_articles.id left join arsse_feeds on arsse_articles.feed is arsse_feeds.id");
-        if($context->subscription()) {
-            // if a subscription is specified, make sure it exists
-            $id = $this->subscriptionValidateId($user, $context->subscription)['feed'];
-            // a simple WHERE clause is required here
-            $q->setWhere("arsse_feeds.id is ?", "int", $id);
-        } else {
-            $q->setCTE("user(user)", "SELECT ?", "str", $user);
-            $q->setCTE("feeds(feed)", "SELECT feed from arsse_subscriptions join user on user is owner", [], [], "join feeds on arsse_articles.feed is feeds.feed");
-        }
-        return (int) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
     }
 
     public function articleList(string $user, Context $context = null): Db\Result {
@@ -897,6 +878,23 @@ class Database {
         return (bool) $out;
     }
 
+    public function articleStarredCount(string $user, array $context = []): int {
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        return $this->db->prepare(
+            "WITH RECURSIVE
+                user(user) as (SELECT ?),
+                subscribed_feeds(id,sub) as (SELECT feed,id from arsse_subscriptions join user on user is owner) ".
+            "SELECT count(*) from arsse_marks 
+                join user on user is owner 
+                join arsse_articles on arsse_marks.article is arsse_articles.id
+                join subscribed_feeds on arsse_articles.feed is subscribed_feeds.id
+            where starred is 1", 
+            "str"
+        )->run($user)->getValue();
+    }
+
     protected function articleValidateId(string $user, int $id): array {
         $out = $this->db->prepare(
             "SELECT 
@@ -933,5 +931,25 @@ class Database {
             throw new Db\ExceptionInput("subjectMissing", ["action" => $this->caller(), "field" => "edition", 'id' => $id]);
         }
         return $out;
+    }
+
+    public function editionLatest(string $user, Context $context = null): int {
+        if(!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        if(!$context) {
+            $context = new Context;
+        }
+        $q = new Query("SELECT max(arsse_editions.id) from arsse_editions left join arsse_articles on article is arsse_articles.id left join arsse_feeds on arsse_articles.feed is arsse_feeds.id");
+        if($context->subscription()) {
+            // if a subscription is specified, make sure it exists
+            $id = $this->subscriptionValidateId($user, $context->subscription)['feed'];
+            // a simple WHERE clause is required here
+            $q->setWhere("arsse_feeds.id is ?", "int", $id);
+        } else {
+            $q->setCTE("user(user)", "SELECT ?", "str", $user);
+            $q->setCTE("feeds(feed)", "SELECT feed from arsse_subscriptions join user on user is owner", [], [], "join feeds on arsse_articles.feed is feeds.feed");
+        }
+        return (int) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
     }
 }

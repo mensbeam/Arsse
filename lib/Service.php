@@ -82,8 +82,8 @@ class Service {
     }
 
     static function cleanupPre(): bool {
-        // TODO: stub
-        return true;
+        // mark unsubscribed feeds as orphaned and delete orphaned feeds that are beyond their retention period
+        return Arsse::$db->feedCleanup();
     }
 
     static function cleanupPost():bool {

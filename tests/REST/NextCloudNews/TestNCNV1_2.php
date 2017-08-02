@@ -799,4 +799,15 @@ class TestNCNV1_2 extends Test\AbstractTest {
         $exp = new Response(200, $arr1);
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/status")));
     }
+
+    function testCleanUpBeforeUpdate() {
+        Phake::when(Arsse::$db)->feedCleanup()->thenReturn(true);
+        $exp = new Response(204);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/cleanup/before-update")));
+        Phake::verify(Arsse::$db)->feedCleanup();
+        // performing a cleanup when not an admin fails
+        Phake::when(Arsse::$user)->rightsGet->thenReturn(0);
+        $exp = new Response(403);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/cleanup/before-update")));
+    }
 }

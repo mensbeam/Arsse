@@ -43,6 +43,7 @@ create table arsse_feeds(
     updated text,                                                                                           -- time at which the feed was last fetched
     modified text,                                                                                          -- time at which the feed last actually changed
     next_fetch text,                                                                                        -- time at which the feed should next be fetched
+    orphaned text,                                                                                           -- time at which the feed last had no subscriptions
     etag text not null default '',                                                                          -- HTTP ETag hash used for cache validation, changes each time the content changes
     err_count integer not null default 0,                                                                   -- count of successive times update resulted in error since last successful update
     err_msg text,                                                                                           -- last error message

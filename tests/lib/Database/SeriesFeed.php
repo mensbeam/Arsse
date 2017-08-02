@@ -33,6 +33,8 @@ trait SeriesFeed {
         $past  = gmdate("Y-m-d H:i:s",strtotime("now - 1 minute"));
         $future = gmdate("Y-m-d H:i:s",strtotime("now + 1 minute"));
         $now = gmdate("Y-m-d H:i:s",strtotime("now"));
+        $yesterday = gmdate("Y-m-d H:i:s",strtotime("now - 1 day"));
+        $longago = gmdate("Y-m-d H:i:s",strtotime("now - 2 days"));
         $this->data = [
             'arsse_users' => [
                 'columns' => [
@@ -55,13 +57,36 @@ trait SeriesFeed {
                     'err_msg'    => "str",
                     'modified'   => "datetime",
                     'next_fetch' => "datetime",
+                    'orphaned'   => "datetime",
                 ],
                 'rows' => [
-                    [1,"http://localhost:8000/Feed/Matching/3","Ook",0,"",$past,$past],
-                    [2,"http://localhost:8000/Feed/Matching/1","Eek",5,"There was an error last time",$past,$future], 
-                    [3,"http://localhost:8000/Feed/Fetching/Error?code=404","Ack",0,"",$past,$now],
-                    [4,"http://localhost:8000/Feed/NextFetch/NotModified?t=".time(),"Ooook",0,"",$past,$past],
-                    [5,"http://localhost:8000/Feed/Parsing/Valid","Ooook",0,"",$past,$future],
+                    // feeds for update testing
+                    [1,"http://localhost:8000/Feed/Matching/3","Ook",0,"",$past,$past,null],
+                    [2,"http://localhost:8000/Feed/Matching/1","Eek",5,"There was an error last time",$past,$future,null], 
+                    [3,"http://localhost:8000/Feed/Fetching/Error?code=404","Ack",0,"",$past,$now,null],
+                    [4,"http://localhost:8000/Feed/NextFetch/NotModified?t=".time(),"Ooook",0,"",$past,$past,null],
+                    [5,"http://localhost:8000/Feed/Parsing/Valid","Ooook",0,"",$past,$future,null],
+                    // feeds for cleanup testing
+                    [6,"http://example.com/1","",0,"",$now,$future,$longago],
+                    [7,"http://example.com/2","",0,"",$now,$future,$yesterday],
+                    [8,"http://example.com/3","",0,"",$now,$future,null],
+                    [9,"http://example.com/4","",0,"",$now,$future,$past],
+                ]
+            ],
+            'arsse_subscriptions' => [
+                'columns' => [
+                    'owner' => "str",
+                    'feed' => "int",
+                ],
+                'rows' => [
+                    // the first five feeds need at least one subscription so they are not involved in the cleanup test
+                    ['john.doe@example.com',1],
+                    ['john.doe@example.com',2],
+                    ['john.doe@example.com',3],
+                    ['john.doe@example.com',4],
+                    ['john.doe@example.com',5],
+                    // one feed previously marked for deletion has a subscription again, and so should not be deleted
+                    ['jane.doe@example.com',6],
                 ]
             ],
             'arsse_articles' => [
@@ -234,5 +259,17 @@ trait SeriesFeed {
         Arsse::$db->feedUpdate(3);
         Arsse::$db->feedUpdate(4);
         $this->assertSame([1], Arsse::$db->feedListStale());
+    }
+
+    function testHandleOrphanedFeeds() {
+        Arsse::$db->feedCleanup();
+        $now = gmdate("Y-m-d H:i:s");
+        $state = $this->primeExpectations($this->data, [
+            'arsse_feeds' => ["id","orphaned"]
+        ]);
+        $state['arsse_feeds']['rows'][5][1] = null;
+        unset($state['arsse_feeds']['rows'][6]);
+        $state['arsse_feeds']['rows'][7][1] = $now;
+        $this->compareExpectations($state);
     }
 }

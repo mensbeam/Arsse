@@ -3,6 +3,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\REST\NextCloudNews;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User;
+use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\Misc\Context;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Db\ExceptionInput;
@@ -658,7 +659,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if(Arsse::$user->rightsGet(Arsse::$user->id)==User::RIGHTS_NONE) {
             return new Response(403);
         }
-        // FIXME: stub
+        Service::cleanupPre();
         return new Response(204);
     }
 
@@ -684,7 +685,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'version' => self::VERSION,
             'arsse_version' => \JKingWeb\Arsse\VERSION,
             'warnings' => [
-                'improperlyConfiguredCron' => !\JKingWeb\Arsse\Service::hasCheckedIn(),
+                'improperlyConfiguredCron' => !Service::hasCheckedIn(),
             ]
         ]);
     }
