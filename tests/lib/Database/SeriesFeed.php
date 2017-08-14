@@ -75,18 +75,21 @@ trait SeriesFeed {
             ],
             'arsse_subscriptions' => [
                 'columns' => [
+                    'id'    => "int",
                     'owner' => "str",
-                    'feed' => "int",
+                    'feed'  => "int",
                 ],
                 'rows' => [
                     // the first five feeds need at least one subscription so they are not involved in the cleanup test
-                    ['john.doe@example.com',1],
-                    ['john.doe@example.com',2],
-                    ['john.doe@example.com',3],
-                    ['john.doe@example.com',4],
-                    ['john.doe@example.com',5],
+                    [1,'john.doe@example.com',1],
+                    [2,'john.doe@example.com',2],
+                    [3,'john.doe@example.com',3],
+                    [4,'john.doe@example.com',4],
+                    [5,'john.doe@example.com',5],
+                    // Jane also needs a subscription to the first feed, for marks
+                    [6,'jane.doe@example.com',1],
                     // one feed previously marked for deletion has a subscription again, and so should not be deleted
-                    ['jane.doe@example.com',6],
+                    [7,'jane.doe@example.com',6],
                 ]
             ],
             'arsse_articles' => [
@@ -131,22 +134,23 @@ trait SeriesFeed {
             ],
             'arsse_marks' => [
                 'columns' => [
-                    'id'      => "int",
-                    'article' => "int",
-                    'owner'   => "str",
-                    'read'    => "bool",
-                    'starred' => "bool",
-                    'modified' => "datetime",
+                    'article'      => "int",
+                    'subscription' => "int",
+                    'read'         => "bool",
+                    'starred'      => "bool",
+                    'modified'     => "datetime",
                 ],
                 'rows' => [
-                    [1,1,"jane.doe@example.com",1,0,$past],
-                    [2,2,"jane.doe@example.com",1,0,$past],
-                    [3,3,"jane.doe@example.com",1,1,$past],
-                    [4,4,"jane.doe@example.com",1,0,$past],
-                    [5,5,"jane.doe@example.com",1,1,$past],
-                    [9, 1,"john.doe@example.com",1,0,$past],
-                    [10,3,"john.doe@example.com",1,0,$past],
-                    [11,4,"john.doe@example.com",0,1,$past],
+                    // Jane's marks
+                    [1,6,1,0,$past],
+                    [2,6,1,0,$past],
+                    [3,6,1,1,$past],
+                    [4,6,1,0,$past],
+                    [5,6,1,1,$past],
+                    // John's marks
+                    [1,1,1,0,$past],
+                    [3,1,1,0,$past],
+                    [4,1,0,1,$past],
                 ]
             ],
             'arsse_enclosures' => [
@@ -193,7 +197,7 @@ trait SeriesFeed {
         $state = $this->primeExpectations($this->data, [
             'arsse_articles' => ["id", "feed","url","title","author","published","edited","content","guid","url_title_hash","url_content_hash","title_content_hash","modified"],
             'arsse_editions' => ["id","article","modified"],
-            'arsse_marks'    => ["id","article","read","starred","modified"],
+            'arsse_marks'    => ["subscription","article","read","starred","modified"],
         ]);
         $state['arsse_articles']['rows'][2] = [3,1,'http://example.com/3','Article title 3 (updated)','','2000-01-03 00:00:00','2000-01-03 00:00:00','<p>Article content 3</p>','31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92','6cc99be662ef3486fef35a890123f18d74c29a32d714802d743c5b4ef713315a','b278380e984cefe63f0e412b88ffc9cb0befdfa06fdc00bace1da99a8daff406','d5faccc13bf8267850a1e8e61f95950a0f34167df2c8c58011c0aaa6367026ac',$now];
         $state['arsse_articles']['rows'][3] = [4,1,'http://example.com/4','Article title 4','','2000-01-04 00:00:00','2000-01-04 00:00:01','<p>Article content 4</p>','804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180','f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8','f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3','ab2da63276acce431250b18d3d49b988b226a99c7faadf275c90b751aee05be9',$now];
@@ -203,9 +207,9 @@ trait SeriesFeed {
             [7,3,$now],
             [8,4,$now],
         ]);
-        $state['arsse_marks']['rows'][2] = [3,3,0,1,$now];
-        $state['arsse_marks']['rows'][3] = [4,4,0,0,$now];
-        $state['arsse_marks']['rows'][6] = [10,3,0,0,$now];
+        $state['arsse_marks']['rows'][2] = [6,3,0,1,$now];
+        $state['arsse_marks']['rows'][3] = [6,4,0,0,$now];
+        $state['arsse_marks']['rows'][6] = [1,3,0,0,$now];
         $this->compareExpectations($state);
         // update a valid feed which previously had an error
         Arsse::$db->feedUpdate(2);

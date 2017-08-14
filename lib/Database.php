@@ -271,7 +271,7 @@ class Database {
         } else {
             return $this->db->prepare(
                 "WITH RECURSIVE folders(id) as (SELECT id from arsse_folders where owner is ? and parent is ? union select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id) ".
-                "SELECT id,name,parent from arsse_folders where id in(SELECT id from folders) order by name",
+                "SELECT id,name,parent from arsse_folders where id in (SELECT id from folders) order by name",
             "str", "int")->run($user, $parent);
         }
     }
@@ -404,7 +404,7 @@ class Database {
                 url,favicon,source,folder,pinned,err_count,err_msg,order_type,added,
                 topmost.top as top_folder,
                 coalesce(arsse_subscriptions.title, arsse_feeds.title) as title,
-                (SELECT count(*) from arsse_articles where feed is arsse_subscriptions.feed) - (SELECT count(*) from arsse_marks join user on user is owner join arsse_articles on article = arsse_articles.id where feed is arsse_feeds.id and read is 1) as unread
+                (SELECT count(*) from arsse_articles where feed is arsse_subscriptions.feed) - (SELECT count(*) from arsse_marks where subscription is arsse_subscriptions.id and read is 1) as unread
              from arsse_subscriptions 
                 join user on user is owner 
                 join arsse_feeds on feed = arsse_feeds.id 
@@ -678,10 +678,10 @@ class Database {
                 edited as edited_date,
                 max(
                     modified, 
-                    coalesce((select modified from arsse_marks join user on user is owner where article is arsse_articles.id),'')
+                    coalesce((select modified from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)),'')
                 ) as modified_date,
-                NOT (select count(*) from arsse_marks join user on user is owner where article is arsse_articles.id and read is 1) as unread,
-                (select count(*) from arsse_marks join user on user is owner where article is arsse_articles.id and starred is 1) as starred,
+                NOT (select count(*) from arsse_marks where article is arsse_articles.id and read is 1 and subscription in (select sub from subscribed_feeds)) as unread,
+                (select count(*) from arsse_marks where article is arsse_articles.id and starred is 1 and subscription in (select sub from subscribed_feeds)) as starred,
                 (select max(id) from arsse_editions where article is arsse_articles.id) as edition,
                 subscribed_feeds.sub as subscription,
                 url_title_hash||':'||url_content_hash||':'||title_content_hash as fingerprint,
@@ -756,11 +756,11 @@ class Database {
                     starred = coalesce((select starred from target_values),starred),
                     modified = CURRENT_TIMESTAMP  
                 WHERE 
-                    owner is (select user from user) 
+                    subscription in (select sub from subscribed_feeds)
                     and article in (select id from target_articles where to_insert is 0 and (honour_read is 1 or honour_star is 1))",
-            "INSERT INTO arsse_marks(owner,article,read,starred)
+            "INSERT INTO arsse_marks(subscription,article,read,starred)
                 select 
-                    (select user from user),
+                    (select id from arsse_subscriptions join user on user is owner where arsse_subscriptions.feed is target_articles.feed),
                     id,
                     coalesce((select read from target_values) * honour_read,0),
                     coalesce((select starred from target_values),0)
@@ -787,26 +787,21 @@ class Database {
             $q = new Query(
                 "SELECT
                     arsse_articles.id as id,
+                    feed,
                     (select max(id) from arsse_editions where article is arsse_articles.id) as edition,
                     max(arsse_articles.modified,
-                        coalesce((select modified from arsse_marks join user on user is owner where article is arsse_articles.id),'')
+                        coalesce((select modified from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)),'')
                     ) as modified_date,
-                    (not exists(select id from arsse_marks join user on user is owner where article is arsse_articles.id)) as to_insert,
-                    ((select read from target_values) is not null and (select read from target_values) is not (coalesce((select read from arsse_marks join user on user is owner where article is arsse_articles.id),0)) and (not exists(select * from requested_articles) or (select max(id) from arsse_editions where article is arsse_articles.id) in (select edition from requested_articles))) as honour_read,
-                    ((select starred from target_values) is not null and (select starred from target_values) is not (coalesce((select starred from arsse_marks join user on user is owner where article is arsse_articles.id),0))) as honour_star
+                    (not exists(select article from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds))) as to_insert,
+                    ((select read from target_values) is not null and (select read from target_values) is not (coalesce((select read from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)),0)) and (not exists(select * from requested_articles) or (select max(id) from arsse_editions where article is arsse_articles.id) in (select edition from requested_articles))) as honour_read,
+                    ((select starred from target_values) is not null and (select starred from target_values) is not (coalesce((select starred from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)),0))) as honour_star
                 FROM arsse_articles"
             );
             // common table expression for the affected user
             $q->setCTE("user(user)", "SELECT ?", "str", $user);
             // common table expression with the values to set
             $q->setCTE("target_values(read,starred)", "SELECT ?,?", ["bool","bool"], $values);
-            if($context->edition()) {
-                // if an edition is specified, filter for its previously identified article
-                $q->setWhere("arsse_articles.id is ?", "int", $edition['article']);
-            } else if($context->article()) {
-                // if an article is specified, filter for it (it has already been validated above)
-                $q->setWhere("arsse_articles.id is ?", "int", $context->article);
-            } else if($context->subscription()) {
+            if($context->subscription()) {
                 // if a subscription is specified, make sure it exists
                 $id = $this->subscriptionValidateId($user, $context->subscription)['feed'];
                 // add a basic CTE that will join in only the requested subscription
@@ -821,6 +816,13 @@ class Database {
             } else {
                 // otherwise add a CTE for all the user's subscriptions
                 $q->setCTE("subscribed_feeds(id,sub)", "SELECT feed,id from arsse_subscriptions join user on user is owner", [], [], "join subscribed_feeds on feed is subscribed_feeds.id");
+            }
+            if($context->edition()) {
+                // if an edition is specified, filter for its previously identified article
+                $q->setWhere("arsse_articles.id is ?", "int", $edition['article']);
+            } else if($context->article()) {
+                // if an article is specified, filter for it (it has already been validated above)
+                $q->setWhere("arsse_articles.id is ?", "int", $context->article);
             }
             if($context->editions()) {
                 // if multiple specific editions have been requested, prepare a CTE to list them and their articles
@@ -869,7 +871,7 @@ class Database {
                 $q->setWhere("modified_date <= ?", "datetime", $context->notModifiedSince);
             }
             // push the current query onto the CTE stack and execute the query we're actually interested in
-            $q->pushCTE("target_articles(id,edition,modified_date,to_insert,honour_read,honour_star)");
+            $q->pushCTE("target_articles(id,feed,edition,modified_date,to_insert,honour_read,honour_star)");
             $q->setBody($query);
             $out += $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
         }
@@ -878,21 +880,11 @@ class Database {
         return (bool) $out;
     }
 
-    public function articleStarredCount(string $user, array $context = []): int {
+    public function articleStarredCount(string $user): int {
         if(!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
-        return $this->db->prepare(
-            "WITH RECURSIVE
-                user(user) as (SELECT ?),
-                subscribed_feeds(id,sub) as (SELECT feed,id from arsse_subscriptions join user on user is owner) ".
-            "SELECT count(*) from arsse_marks 
-                join user on user is owner 
-                join arsse_articles on arsse_marks.article is arsse_articles.id
-                join subscribed_feeds on arsse_articles.feed is subscribed_feeds.id
-            where starred is 1", 
-            "str"
-        )->run($user)->getValue();
+        return $this->db->prepare("SELECT count(*) from arsse_marks where starred is 1 and subscription in (select id from arsse_subscriptions where owner is ?)", "str")->run($user)->getValue();
     }
 
     protected function articleValidateId(string $user, int $id): array {

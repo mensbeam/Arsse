@@ -94,13 +94,12 @@ create table arsse_enclosures(
 
 -- users' actions on newsfeed entries
 create table arsse_marks(
-    id integer primary key,
     article integer not null references arsse_articles(id) on delete cascade,
-    owner text not null references arsse_users(id) on delete cascade on update cascade,
+    subscription integer not null references arsse_subscriptions(id) on delete cascade on update cascade,
     read boolean not null default 0,
     starred boolean not null default 0,
     modified text not null default CURRENT_TIMESTAMP,    
-    unique(article,owner)
+    primary key(article,subscription)
 );
 
 -- IDs for specific editions of articles (required for at least NextCloud News)
