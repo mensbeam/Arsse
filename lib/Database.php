@@ -608,8 +608,8 @@ class Database {
         }
         // lastly update the feed database itself with updated information.
         $this->db->prepare(
-            "UPDATE arsse_feeds SET url = ?, title = ?, favicon = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = '', next_fetch = ? WHERE id is ?", 
-            'str', 'str', 'str', 'str', 'datetime', 'str', 'datetime', 'int'
+            "UPDATE arsse_feeds SET url = ?, title = ?, favicon = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = '', next_fetch = ?, size = ? WHERE id is ?", 
+            'str', 'str', 'str', 'str', 'datetime', 'str', 'datetime', 'int', 'int'
         )->run(
             $feed->data->feedUrl,
             $feed->data->title,
@@ -618,6 +618,7 @@ class Database {
             $feed->lastModified,
             $feed->resource->getEtag(),
             $feed->nextFetch,
+            sizeof($feed->data->items),
             $feedID
         );
         $tr->commit();

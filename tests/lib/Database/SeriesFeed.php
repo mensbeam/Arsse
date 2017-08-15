@@ -58,19 +58,20 @@ trait SeriesFeed {
                     'modified'   => "datetime",
                     'next_fetch' => "datetime",
                     'orphaned'   => "datetime",
+                    'size'       => "int",
                 ],
                 'rows' => [
                     // feeds for update testing
-                    [1,"http://localhost:8000/Feed/Matching/3","Ook",0,"",$past,$past,null],
-                    [2,"http://localhost:8000/Feed/Matching/1","Eek",5,"There was an error last time",$past,$future,null], 
-                    [3,"http://localhost:8000/Feed/Fetching/Error?code=404","Ack",0,"",$past,$now,null],
-                    [4,"http://localhost:8000/Feed/NextFetch/NotModified?t=".time(),"Ooook",0,"",$past,$past,null],
-                    [5,"http://localhost:8000/Feed/Parsing/Valid","Ooook",0,"",$past,$future,null],
+                    [1,"http://localhost:8000/Feed/Matching/3","Ook",0,"",$past,$past,null,0],
+                    [2,"http://localhost:8000/Feed/Matching/1","Eek",5,"There was an error last time",$past,$future,null,0], 
+                    [3,"http://localhost:8000/Feed/Fetching/Error?code=404","Ack",0,"",$past,$now,null,0],
+                    [4,"http://localhost:8000/Feed/NextFetch/NotModified?t=".time(),"Ooook",0,"",$past,$past,null,0],
+                    [5,"http://localhost:8000/Feed/Parsing/Valid","Ooook",0,"",$past,$future,null,0],
                     // feeds for cleanup testing
-                    [6,"http://example.com/1","",0,"",$now,$future,$longago],
-                    [7,"http://example.com/2","",0,"",$now,$future,$yesterday],
-                    [8,"http://example.com/3","",0,"",$now,$future,null],
-                    [9,"http://example.com/4","",0,"",$now,$future,$past],
+                    [6,"http://example.com/1","",0,"",$now,$future,$longago,0],
+                    [7,"http://example.com/2","",0,"",$now,$future,$yesterday,0],
+                    [8,"http://example.com/3","",0,"",$now,$future,null,0],
+                    [9,"http://example.com/4","",0,"",$now,$future,$past,0],
                 ]
             ],
             'arsse_subscriptions' => [
@@ -198,6 +199,7 @@ trait SeriesFeed {
             'arsse_articles' => ["id", "feed","url","title","author","published","edited","content","guid","url_title_hash","url_content_hash","title_content_hash","modified"],
             'arsse_editions' => ["id","article","modified"],
             'arsse_marks'    => ["subscription","article","read","starred","modified"],
+            'arsse_feeds'    => ["id","size"],
         ]);
         $state['arsse_articles']['rows'][2] = [3,1,'http://example.com/3','Article title 3 (updated)','','2000-01-03 00:00:00','2000-01-03 00:00:00','<p>Article content 3</p>','31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92','6cc99be662ef3486fef35a890123f18d74c29a32d714802d743c5b4ef713315a','b278380e984cefe63f0e412b88ffc9cb0befdfa06fdc00bace1da99a8daff406','d5faccc13bf8267850a1e8e61f95950a0f34167df2c8c58011c0aaa6367026ac',$now];
         $state['arsse_articles']['rows'][3] = [4,1,'http://example.com/4','Article title 4','','2000-01-04 00:00:00','2000-01-04 00:00:01','<p>Article content 4</p>','804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180','f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8','f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3','ab2da63276acce431250b18d3d49b988b226a99c7faadf275c90b751aee05be9',$now];
@@ -210,6 +212,7 @@ trait SeriesFeed {
         $state['arsse_marks']['rows'][2] = [6,3,0,1,$now];
         $state['arsse_marks']['rows'][3] = [6,4,0,0,$now];
         $state['arsse_marks']['rows'][6] = [1,3,0,0,$now];
+        $state['arsse_feeds']['rows'][0] = [1,6];
         $this->compareExpectations($state);
         // update a valid feed which previously had an error
         Arsse::$db->feedUpdate(2);
