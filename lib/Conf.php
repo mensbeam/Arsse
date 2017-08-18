@@ -21,6 +21,8 @@ class Conf {
     public $dbSQLite3File           = BASE."arsse.db";
     /** @var string Encryption key to use for SQLite database (if using a version of SQLite with SEE) */
     public $dbSQLite3Key            = "";
+    /** @var integer Number of seconds for SQLite to wait before returning a timeout error when writing to the database */
+    public $dbSQLite3Timeout        = 5;
     /** @var string Address of host name for PostgreSQL database server (if using PostgreSQL) */
     public $dbPostgreSQLHost        = "localhost";
     /** @var string Log-in user name for PostgreSQL database server (if using PostgreSQL) */

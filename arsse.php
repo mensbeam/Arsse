@@ -7,11 +7,17 @@ if(\PHP_SAPI=="cli") {
     $cli = new CLI;
     // load configuration
     Arsse::load(new Conf());
+    if(file_exists(BASE."config.php")) {
+        Arsse::$conf->importFile(BASE."config.php");
+    }
     // handle CLI requests
     $cli->dispatch();
 } else {
     // load configuration
     Arsse::load(new Conf());
+    if(file_exists(BASE."config.php")) {
+        Arsse::$conf->importFile(BASE."config.php");
+    }
     // handle Web requests
     (new REST)->dispatch()->output();
 }

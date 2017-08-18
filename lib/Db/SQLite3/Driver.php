@@ -23,6 +23,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         }
         $dbFile = Arsse::$conf->dbSQLite3File;
         $mode = \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE;
+        $timeout = Arsse::$conf->dbSQLite3Timeout * 1000;
         try {
             $this->db = $this->makeConnection($dbFile, $mode, Arsse::$conf->dbSQLite3Key);
             // set initial options
@@ -50,6 +51,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
             // otherwise the database is probably corrupt
             throw new Exception("fileCorrupt", $dbFile);
         }
+        // finally set the timeout; parameters are not allowed for pragmas, but this usage should be safe
+        $this->exec("PRAGMA busy_timeout = $timeout");
     }
 
     protected function makeConnection(string $file, int $opts, string $key) {

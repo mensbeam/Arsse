@@ -48,6 +48,6 @@ USAGE_TEXT;
     }
 
     protected function feedRefresh(int $id): int {
-        return (int) !Arsse::$db->feedUpdate($id);
+        return (int) !Arsse::$db->feedUpdate($id); // FIXME: exception error codes should be returned here
     }
 }
