@@ -888,6 +888,44 @@ class Database {
         return $this->db->prepare("SELECT count(*) from arsse_marks where starred is 1 and subscription in (select id from arsse_subscriptions where owner is ?)", "str")->run($user)->getValue();
     }
 
+    public function articleCleanup(): bool {
+        $query = $this->db->prepare(
+            "WITH target_feed(id,subs) as (".
+                "SELECT 
+                    id, (select count(*) from arsse_subscriptions where feed is arsse_feeds.id) as subs
+                from arsse_feeds where id is ?".
+            "), excepted_articles(id,edition) as (".
+                "SELECT 
+                    arsse_articles.id, (select max(id) from arsse_editions where article is arsse_articles.id) as edition 
+                from arsse_articles
+                    join target_feed on arsse_articles.feed is target_feed.id 
+                order by edition desc limit ?".
+            ") ".
+            "DELETE from arsse_articles where 
+                feed is (select max(id) from target_feed) 
+                and id not in (select id from excepted_articles)
+                and (select count(*) from arsse_marks where article is arsse_articles.id and starred is 1) is 0
+                and (
+                    coalesce((select max(modified) from arsse_marks where article is arsse_articles.id),modified) <= ?
+                    or ((select max(subs) from target_feed) is (select count(*) from arsse_marks where article is arsse_articles.id and read is 1) and coalesce((select max(modified) from arsse_marks where article is arsse_articles.id),modified) <= ?)
+                )
+            ", "int", "int", "datetime", "datetime"
+        );
+        $limitRead = null;
+        $limitUnread = null;
+        if(Arsse::$conf->retainArticlesRead) {
+            $limitRead = Date::sub(Arsse::$conf->retainArticlesRead);
+        }
+        if(Arsse::$conf->retainArticlesUnread) {
+            $limitUnread = Date::sub(Arsse::$conf->retainArticlesUnread);
+        }
+        $feeds = $this->db->query("SELECT id, size from arsse_feeds")->getAll();
+        foreach($feeds as $feed) {
+            $query->run($feed['id'], $feed['size'], $limitUnread, $limitRead);
+        }
+        return true;
+    }
+
     protected function articleValidateId(string $user, int $id): array {
         $out = $this->db->prepare(
             "SELECT 

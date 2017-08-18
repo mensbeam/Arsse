@@ -3,8 +3,6 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\Database;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Feed;
-use JKingWeb\Arsse\Test\Database;
-use JKingWeb\Arsse\User\Driver as UserDriver;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use Phake;
 
@@ -33,19 +31,16 @@ trait SeriesFeed {
         $past  = gmdate("Y-m-d H:i:s",strtotime("now - 1 minute"));
         $future = gmdate("Y-m-d H:i:s",strtotime("now + 1 minute"));
         $now = gmdate("Y-m-d H:i:s",strtotime("now"));
-        $yesterday = gmdate("Y-m-d H:i:s",strtotime("now - 1 day"));
-        $longago = gmdate("Y-m-d H:i:s",strtotime("now - 2 days"));
         $this->data = [
             'arsse_users' => [
                 'columns' => [
                     'id'       => 'str',
                     'password' => 'str',
                     'name'     => 'str',
-                    'rights'   => 'int',
                 ],
                 'rows' => [
-                    ["jane.doe@example.com", "", "Jane Doe", UserDriver::RIGHTS_NONE],
-                    ["john.doe@example.com", "", "John Doe", UserDriver::RIGHTS_NONE],
+                    ["jane.doe@example.com", "", "Jane Doe"],
+                    ["john.doe@example.com", "", "John Doe"],
                 ],
             ],
             'arsse_feeds' => [
@@ -57,21 +52,14 @@ trait SeriesFeed {
                     'err_msg'    => "str",
                     'modified'   => "datetime",
                     'next_fetch' => "datetime",
-                    'orphaned'   => "datetime",
                     'size'       => "int",
                 ],
                 'rows' => [
-                    // feeds for update testing
-                    [1,"http://localhost:8000/Feed/Matching/3","Ook",0,"",$past,$past,null,0],
-                    [2,"http://localhost:8000/Feed/Matching/1","Eek",5,"There was an error last time",$past,$future,null,0], 
-                    [3,"http://localhost:8000/Feed/Fetching/Error?code=404","Ack",0,"",$past,$now,null,0],
-                    [4,"http://localhost:8000/Feed/NextFetch/NotModified?t=".time(),"Ooook",0,"",$past,$past,null,0],
-                    [5,"http://localhost:8000/Feed/Parsing/Valid","Ooook",0,"",$past,$future,null,0],
-                    // feeds for cleanup testing
-                    [6,"http://example.com/1","",0,"",$now,$future,$longago,0],
-                    [7,"http://example.com/2","",0,"",$now,$future,$yesterday,0],
-                    [8,"http://example.com/3","",0,"",$now,$future,null,0],
-                    [9,"http://example.com/4","",0,"",$now,$future,$past,0],
+                    [1,"http://localhost:8000/Feed/Matching/3","Ook",0,"",$past,$past,0],
+                    [2,"http://localhost:8000/Feed/Matching/1","Eek",5,"There was an error last time",$past,$future,0], 
+                    [3,"http://localhost:8000/Feed/Fetching/Error?code=404","Ack",0,"",$past,$now,0],
+                    [4,"http://localhost:8000/Feed/NextFetch/NotModified?t=".time(),"Ooook",0,"",$past,$past,0],
+                    [5,"http://localhost:8000/Feed/Parsing/Valid","Ooook",0,"",$past,$future,0],
                 ]
             ],
             'arsse_subscriptions' => [
@@ -81,16 +69,12 @@ trait SeriesFeed {
                     'feed'  => "int",
                 ],
                 'rows' => [
-                    // the first five feeds need at least one subscription so they are not involved in the cleanup test
                     [1,'john.doe@example.com',1],
                     [2,'john.doe@example.com',2],
                     [3,'john.doe@example.com',3],
                     [4,'john.doe@example.com',4],
                     [5,'john.doe@example.com',5],
-                    // Jane also needs a subscription to the first feed, for marks
                     [6,'jane.doe@example.com',1],
-                    // one feed previously marked for deletion has a subscription again, and so should not be deleted
-                    [7,'jane.doe@example.com',6],
                 ]
             ],
             'arsse_articles' => [
@@ -266,17 +250,5 @@ trait SeriesFeed {
         Arsse::$db->feedUpdate(3);
         Arsse::$db->feedUpdate(4);
         $this->assertSame([1], Arsse::$db->feedListStale());
-    }
-
-    function testHandleOrphanedFeeds() {
-        Arsse::$db->feedCleanup();
-        $now = gmdate("Y-m-d H:i:s");
-        $state = $this->primeExpectations($this->data, [
-            'arsse_feeds' => ["id","orphaned"]
-        ]);
-        $state['arsse_feeds']['rows'][5][1] = null;
-        unset($state['arsse_feeds']['rows'][6]);
-        $state['arsse_feeds']['rows'][7][1] = $now;
-        $this->compareExpectations($state);
     }
 }

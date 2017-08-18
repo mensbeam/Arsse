@@ -3,7 +3,6 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\Database;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Test\Database;
-use JKingWeb\Arsse\User\Driver as UserDriver;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use Phake;
 
@@ -14,11 +13,10 @@ trait SeriesSubscription {
                 'id'       => 'str',
                 'password' => 'str',
                 'name'     => 'str',
-                'rights'   => 'int',
             ],
             'rows' => [
-                ["jane.doe@example.com", "", "Jane Doe", UserDriver::RIGHTS_NONE],
-                ["john.doe@example.com", "", "John Doe", UserDriver::RIGHTS_NONE],
+                ["jane.doe@example.com", "", "Jane Doe"],
+                ["john.doe@example.com", "", "John Doe"],
             ],
         ],
         'arsse_folders' => [

@@ -77,9 +77,15 @@ class Conf {
     /** @var string|null User-Agent string to use when fetching feeds from foreign servers */
     public $fetchUserAgentString;
 
-    /** @var string Amount of time to keep a feed's articles in the database after all its subscriptions have been deleted, as an ISO 8601 duration (default: 24 hours)
+    /** @var string Amount of time to keep a feed's articles in the database after all its subscriptions have been deleted, as an ISO 8601 duration (default: 24 hours; empty string for forever)
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
     public $retainFeeds             = "PT24H";
+    /** @var string Amount of time to keep an unstarred article in the database after it has been marked read by all users, as an ISO 8601 duration (default: 7 days; empty string for forever)
+     * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
+     public $retainArticlesRead     = "P7D";
+    /** @var string Amount of time to keep an unstarred article in the database regardless of its read state, as an ISO 8601 duration (default: 21 days; empty string for forever)
+     * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
+     public $retainArticlesUnread     = "P21D";
 
     /** Creates a new configuration object
      * @param string $import_file Optional file to read configuration data from

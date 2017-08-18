@@ -668,7 +668,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if(Arsse::$user->rightsGet(Arsse::$user->id)==User::RIGHTS_NONE) {
             return new Response(403);
         }
-        // FIXME: stub
+        Service::cleanupPost();
         return new Response(204);
     }
 

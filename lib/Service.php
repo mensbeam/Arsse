@@ -46,9 +46,9 @@ class Service {
                 $this->drv->queue(...$list);
                 $this->drv->exec();
                 $this->drv->clean();
-                static::cleanupPost();
                 unset($list);
             }
+            static::cleanupPost();
             $t->add($this->interval);
             if($loop) {
                 do {
@@ -86,8 +86,8 @@ class Service {
         return Arsse::$db->feedCleanup();
     }
 
-    static function cleanupPost():bool {
-        // TODO: stub
-        return true;
+    static function cleanupPost(): bool {
+        // delete old articles, according to configured threasholds
+        return Arsse::$db->articleCleanup();
     }
 }

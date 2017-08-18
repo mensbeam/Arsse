@@ -60,4 +60,22 @@ class Date {
         $d->setTimestamp($time);
         return $d;
     }
+
+    static function add(string $interval, $date = null): \DateTimeInterface {
+        return self::modify("add", $interval, $date);
+    }
+
+    static function sub(string $interval, $date = null): \DateTimeInterface {
+        return self::modify("sub", $interval, $date);
+    }
+
+    static protected function modify(string $func, string $interval, $date = null): \DateTimeInterface {
+        $date = self::normalize($date ?? time());
+        if($date instanceof \DateTimeImmutable) {
+            return $date->$func(new \DateInterval($interval));
+        } else {
+            $date->$func(new \DateInterval($interval));
+            return $date;
+        }
+    }
 }
