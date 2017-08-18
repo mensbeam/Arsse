@@ -1,0 +1,15 @@
+[Unit]
+Description=The Arsse feed fetching service
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/usr/share/arsse/www
+Type=simple
+StandardOutput=null
+StandardError=syslog
+ExecStart=/usr/bin/env php /usr/share/arsse/www/arsse.php daemon
+
+[Install]
+WantedBy=multi-user.target
