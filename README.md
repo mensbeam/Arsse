@@ -1,31 +1,37 @@
-Arsse: Advanced RSS Environment
+The Advanced RSS Environment
 ===============================
 
-TODO: Fill in stuff
+The Arsse is a news aggregator server which implements [version 1.2](https://github.com/nextcloud/news/blob/master/docs/externalapi/Legacy.md) of [NextCloud News](https://github.com/nextcloud/news)'s client-server synchronization protocol. Unlike most other aggregator servers, the Arsse does not include a Web front-end (though one is planned as a separate project), and it relies on existing protocols to maximize compatibility with existing clients.
+
+At present the software should be considered in an "alpha" state: though its core subsystems are covered by unit tests and should be free of major bugs, not everything has been rigorously tested. Additionally, though the NextCloud News protocol is fully supported, many features one would expect from other similar software have yet to be implemented. Areas of future work include:
+
+- Support for more database engines (PostgreSQL, MySQL, MariaDB)
+- Providing more sync protocols (Tiny Tiny RSS, Fever, others)
+- Tools for managing users (manual insertion into the database is currently required)
+- Better packaging and configuration samples
 
 Requirements
 ------------
 
 Arsse has the following requirements:
 
-- A Web server; example configuration currently exists for:
-    - nginx
-    - Apache 2
+- A Web server
 - PHP 7.0.7 or newer with the following extensions:
-    - [intl](http://php.net/manual/en/book.intl.php)
-    - [json](http://php.net/manual/en/book.json.php)
-    - [hash](http://php.net/manual/en/book.hash.php)
-- One of the following supported databases, and the PHP extension to use it:
-    - SQLite 3.8.3 or newer
-    - PostgreSQL 8.4 or newer
-    - MySQL 8.0.1 or newer
-    - MariaDB 10.2.2 or newer
-- The ability to run background services on the server; service files currently exist for:
-    - systemd
-    - launchd
-    - sysvinit
+    - [intl](http://php.net/manual/en/book.intl.php), [json](http://php.net/manual/en/book.json.php), and [hash](http://php.net/manual/en/book.hash.php)
+    - [dom](http://php.net/manual/en/book.dom.php), [simplexml](http://php.net/manual/en/book.simplexml.php), and [iconv](http://php.net/manual/en/book.iconv.php) (for picoFeed)
+    - [sqlite3](http://php.net/manual/en/book.sqlite3.php)
+- The ability to run daemon processes on the server
 
-**FIXME:** The requirements listed are prospective and not representative of the actual requirements as of this writing. Currently only SQLite is supported, no Web server configuration has yet been written, and no background process yet exists, never mind service files to run it.
+Installation
+------------
+
+TODO: Work out how the system should be installed
+
+If installing from the Git repository rather than a download package, you will need [Composer](https://getcomposer.org/) to fetch required PHP libraries. Once Composer is installed, dependencies may be downloaded with the following command:
+
+``` sh
+php composer.phar install -o --no-dev
+```
 
 License
 -------
@@ -39,7 +45,7 @@ To run the test suite, you must have [Composer](https://getcomposer.org/) instal
 
 ``` sh
 # first install dependencies
-composer install
+php composer.phar install
 # run the tests
 ./tests/test
 ```

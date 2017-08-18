@@ -81,7 +81,7 @@ class User {
             return false;
         }
         // if actor is a domain admin/manager and domains don't match, deny the request
-        if(Arsse::$conf->userComposeNames && $this->actor["domain"] && $rights != User\Driver::RIGHTS_GLOBAL_MANAGER) {
+        if($this->actor["domain"] && $rights != User\Driver::RIGHTS_GLOBAL_MANAGER) {
             $test = "@".$this->actor["domain"];
             if(substr($affectedUser,-1*strlen($test)) != $test) {
                 return false;
@@ -127,9 +127,6 @@ class User {
             $out = ["user" => $_SERVER['REMOTE_USER'], "password" => ""];
         } else {
             $out = ["user" => "", "password" => ""];
-        }
-        if(Arsse::$conf->userComposeNames && $out["user"] != "") {
-            $out["user"] = $this->composeName($out["user"]);
         }
         $this->id = $out["user"];
         return $out;
@@ -308,7 +305,7 @@ class User {
     public function propertiesGet(string $user, bool $withAvatar = false): array {
         // prepare default values
         $domain = null;
-        if(Arsse::$conf->userComposeNames) {
+        if(strrpos($user,"@")!==false) {
             $domain = substr($user,strrpos($user,"@")+1);
         }
         $init = [
@@ -421,14 +418,6 @@ class User {
                 return $this->u->userRightsSet($user, $level);
             case User\Driver::FUNCT_NOT_IMPLEMENTED:
                 throw new User\ExceptionNotImplemented("notImplemented", ["action" => $func, "user" => $user]);
-        }
-    }
-
-    protected function composeName(string $user): string {
-        if(preg_match("/.+?@[^@]+$/",$user)) {
-            return $user;
-        } else {
-            return $user."@".$_SERVER['HTTP_HOST'];
         }
     }
 

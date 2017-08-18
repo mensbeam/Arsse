@@ -49,7 +49,6 @@ class TestAuthorization extends Test\AbstractTest {
         $conf = new Conf();
         $conf->userDriver = $drv;
         $conf->userPreAuth = false;
-        $conf->userComposeNames = true;
         Arsse::$conf = $conf;
         if($db !== null) {
             Arsse::$db = new $db();

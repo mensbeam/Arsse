@@ -49,10 +49,7 @@ class Conf {
     /** @var string Class of the user management driver in use (Internal by default) */
     public $userDriver              = User\Internal\Driver::class;
     /** @var boolean Whether users are already authenticated by the Web server before the application is executed */
-    public $userPreAuth             = true;
-    /** @var boolean Whether to automatically append the hostname to form a user@host combination before performing authentication
-     * @deprecated */
-    public $userComposeNames        = true;
+    public $userPreAuth             = false;
     /** @var integer Desired length of temporary user passwords */
     public $userTempPasswordLength  = 20;
 
