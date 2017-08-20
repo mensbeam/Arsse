@@ -133,7 +133,7 @@ trait SeriesCleanup {
     }
     
     function testCleanUpOldArticlesWithUnlimitedReadRetention() {
-        Arsse::$conf->retainArticlesRead = "";
+        Arsse::$conf->purgeArticlesRead = "";
         Arsse::$db->articleCleanup();
         $state = $this->primeExpectations($this->data, [
             'arsse_articles' => ["id"]
@@ -145,7 +145,7 @@ trait SeriesCleanup {
     }
     
     function testCleanUpOldArticlesWithUnlimitedUnreadRetention() {
-        Arsse::$conf->retainArticlesUnread = "";
+        Arsse::$conf->purgeArticlesUnread = "";
         Arsse::$db->articleCleanup();
         $state = $this->primeExpectations($this->data, [
             'arsse_articles' => ["id"]
@@ -157,8 +157,8 @@ trait SeriesCleanup {
     }
 
     function testCleanUpOldArticlesWithUnlimitedRetention() {
-        Arsse::$conf->retainArticlesRead = "";
-        Arsse::$conf->retainArticlesUnread = "";
+        Arsse::$conf->purgeArticlesRead = "";
+        Arsse::$conf->purgeArticlesUnread = "";
         Arsse::$db->articleCleanup();
         $state = $this->primeExpectations($this->data, [
             'arsse_articles' => ["id"]

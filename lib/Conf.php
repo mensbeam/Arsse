@@ -21,28 +21,6 @@ class Conf {
     public $dbSQLite3Key            = "";
     /** @var integer Number of seconds for SQLite to wait before returning a timeout error when writing to the database */
     public $dbSQLite3Timeout        = 5;
-    /** @var string Address of host name for PostgreSQL database server (if using PostgreSQL) */
-    public $dbPostgreSQLHost        = "localhost";
-    /** @var string Log-in user name for PostgreSQL database server (if using PostgreSQL) */
-    public $dbPostgreSQLUser        = "arsse";
-    /** @var string Log-in password for PostgreSQL database server (if using PostgreSQL) */
-    public $dbPostgreSQLPass        = "";
-    /** @var integer Listening port for PostgreSQL database server (if using PostgreSQL) */
-    public $dbPostgreSQLPort        = 5432;
-    /** @var string Database name on PostgreSQL database server (if using PostgreSQL) */
-    public $dbPostgreSQLDb          = "arsse";
-    /** @var string Schema name on PostgreSQL database server (if using PostgreSQL) */
-    public $dbPostgreSQLSchema      = "";
-    /** @var string Address of host name for MySQL/MariaDB database server (if using MySQL or MariaDB) */
-    public $dbMySQLHost             = "localhost";
-    /** @var string Log-in user name for MySQL/MariaDB database server (if using MySQL or MariaDB) */
-    public $dbMySQLUser             = "arsse";
-    /** @var string Log-in password for MySQL/MariaDB database server (if using MySQL or MariaDB) */
-    public $dbMySQLPass             = "";
-    /** @var integer Listening port for MySQL/MariaDB database server (if using MySQL or MariaDB) */
-    public $dbMySQLPort             = 3306;
-    /** @var string Database name on MySQL/MariaDB database server (if using MySQL or MariaDB) */
-    public $dbMySQLDb               = "arsse";
 
     /** @var string Class of the user management driver in use (Internal by default) */
     public $userDriver              = User\Internal\Driver::class;
@@ -74,15 +52,15 @@ class Conf {
     /** @var string|null User-Agent string to use when fetching feeds from foreign servers */
     public $fetchUserAgentString;
 
-    /** @var string Amount of time to keep a feed's articles in the database after all its subscriptions have been deleted, as an ISO 8601 duration (default: 24 hours; empty string for forever)
+    /** @var string When to delete a feed from the database after all its subscriptions have been deleted, as an ISO 8601 duration (default: 24 hours; empty string for never)
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
-    public $retainFeeds             = "PT24H";
-    /** @var string Amount of time to keep an unstarred article in the database after it has been marked read by all users, as an ISO 8601 duration (default: 7 days; empty string for forever)
+    public $purgeFeeds             = "PT24H";
+    /** @var string When to delete an unstarred article in the database after it has been marked read by all users, as an ISO 8601 duration (default: 7 days; empty string for never)
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
-     public $retainArticlesRead     = "P7D";
-    /** @var string Amount of time to keep an unstarred article in the database regardless of its read state, as an ISO 8601 duration (default: 21 days; empty string for forever)
+     public $purgeArticlesRead     = "P7D";
+    /** @var string When to delete an unstarred article in the database regardless of its read state, as an ISO 8601 duration (default: 21 days; empty string for never)
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
-     public $retainArticlesUnread     = "P21D";
+     public $purgeArticlesUnread     = "P21D";
 
     /** Creates a new configuration object
      * @param string $import_file Optional file to read configuration data from

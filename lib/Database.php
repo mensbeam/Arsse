@@ -633,9 +633,9 @@ class Database {
         $this->db->query("UPDATE arsse_feeds set orphaned = CURRENT_TIMESTAMP where orphaned is null and not exists(SELECT id from arsse_subscriptions where feed is arsse_feeds.id)");
         // finally delete feeds that have been orphaned longer than the retention period
         $limit = Date::normalize("now");
-        if(Arsse::$conf->retainFeeds) {
+        if(Arsse::$conf->purgeFeeds) {
             // if there is a retention period specified, compute it; otherwise feed are deleted immediatelty
-            $limit->sub(new \DateInterval(Arsse::$conf->retainFeeds));
+            $limit->sub(new \DateInterval(Arsse::$conf->purgeFeeds));
         }
         $out = (bool) $this->db->prepare("DELETE from arsse_feeds where orphaned <= ?", "datetime")->run($limit);
         // commit changes and return
@@ -913,11 +913,11 @@ class Database {
         );
         $limitRead = null;
         $limitUnread = null;
-        if(Arsse::$conf->retainArticlesRead) {
-            $limitRead = Date::sub(Arsse::$conf->retainArticlesRead);
+        if(Arsse::$conf->purgeArticlesRead) {
+            $limitRead = Date::sub(Arsse::$conf->purgeArticlesRead);
         }
-        if(Arsse::$conf->retainArticlesUnread) {
-            $limitUnread = Date::sub(Arsse::$conf->retainArticlesUnread);
+        if(Arsse::$conf->purgeArticlesUnread) {
+            $limitUnread = Date::sub(Arsse::$conf->purgeArticlesUnread);
         }
         $feeds = $this->db->query("SELECT id, size from arsse_feeds")->getAll();
         foreach($feeds as $feed) {
