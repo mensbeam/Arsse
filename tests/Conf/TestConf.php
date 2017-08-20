@@ -93,10 +93,10 @@ class TestConf extends Test\AbstractTest {
     function testExportToArray() {
         $conf = new Conf();
         $conf->lang = ["en", "fr"]; // should not be exported: not scalar
-        $conf->dbSchemaBase = "schema"; // should be exported: value changed
+        $conf->dbSQLite3File = "test.db"; // should be exported: value changed
         $conf->someCustomProperty = "Look at me!"; // should be exported: unknown property
         $exp = [
-            'dbSchemaBase' => "schema",
+            'dbSQLite3File' => "test.db",
             'someCustomProperty' => "Look at me!",
         ];
         $this->assertSame($exp, $conf->export());
@@ -110,12 +110,12 @@ class TestConf extends Test\AbstractTest {
     function testExportToFile() {
         $conf = new Conf();
         $conf->lang = ["en", "fr"]; // should not be exported: not scalar
-        $conf->dbSchemaBase = "schema"; // should be exported: value changed
+        $conf->dbSQLite3File = "test.db"; // should be exported: value changed
         $conf->someCustomProperty = "Look at me!"; // should be exported: unknown property
         $conf->exportFile(self::$path."confNotArray");
         $arr = (include self::$path."confNotArray");
         $exp = [
-            'dbSchemaBase' => "schema",
+            'dbSQLite3File' => "test.db",
             'someCustomProperty' => "Look at me!",
         ];
         $this->assertSame($exp, $arr);

@@ -26,10 +26,10 @@ class TestDbUpdateSQLite3 extends Test\AbstractTest {
             $conf = new Conf();
         }
         $conf->dbDriver = Db\SQLite3\Driver::class;
-        $conf->dbSchemaBase = $this->vfs->url();
         $conf->dbSQLite3File = ":memory:";
         Arsse::$conf = $conf;
-        $this->base = $this->vfs->url()."/SQLite3/";
+        $this->base = $this->vfs->url();
+        $this->path = $this->base."/SQLite3/";
         $this->drv = new Db\SQLite3\Driver(true);
     }
 
@@ -42,40 +42,40 @@ class TestDbUpdateSQLite3 extends Test\AbstractTest {
 
     function testLoadMissingFile() {
         $this->assertException("updateFileMissing", "Db");
-        $this->drv->schemaUpdate(1);
+        $this->drv->schemaUpdate(1, $this->base);
     }
 
     function testLoadUnreadableFile() {
-        touch($this->base."0.sql");
-        chmod($this->base."0.sql", 0000);
+        touch($this->path."0.sql");
+        chmod($this->path."0.sql", 0000);
         $this->assertException("updateFileUnreadable", "Db");
-        $this->drv->schemaUpdate(1);
+        $this->drv->schemaUpdate(1, $this->base);
     }
 
     function testLoadCorruptFile() {
-        file_put_contents($this->base."0.sql", "This is a corrupt file");
+        file_put_contents($this->path."0.sql", "This is a corrupt file");
         $this->assertException("updateFileError", "Db");
-        $this->drv->schemaUpdate(1);
+        $this->drv->schemaUpdate(1, $this->base);
     }
 
     function testLoadIncompleteFile() {
-        file_put_contents($this->base."0.sql", "create table arsse_meta(key text primary key not null, value text);");
+        file_put_contents($this->path."0.sql", "create table arsse_meta(key text primary key not null, value text);");
         $this->assertException("updateFileIncomplete", "Db");
-        $this->drv->schemaUpdate(1);
+        $this->drv->schemaUpdate(1, $this->base);
     }
 
     function testLoadCorrectFile() {
-        file_put_contents($this->base."0.sql", self::MINIMAL1);
-        $this->drv->schemaUpdate(1);
+        file_put_contents($this->path."0.sql", self::MINIMAL1);
+        $this->drv->schemaUpdate(1, $this->base);
         $this->assertEquals(1, $this->drv->schemaVersion());
     }
 
     function testPerformPartialUpdate() {
-        file_put_contents($this->base."0.sql", self::MINIMAL1);
-        file_put_contents($this->base."1.sql", "");
+        file_put_contents($this->path."0.sql", self::MINIMAL1);
+        file_put_contents($this->path."1.sql", "");
         $this->assertException("updateFileIncomplete", "Db");
         try {
-            $this->drv->schemaUpdate(2);
+            $this->drv->schemaUpdate(2, $this->base);
         } catch(Exception $e) {
             $this->assertEquals(1, $this->drv->schemaVersion());
             throw $e;
@@ -83,14 +83,13 @@ class TestDbUpdateSQLite3 extends Test\AbstractTest {
     }
 
     function testPerformSequentialUpdate() {
-        file_put_contents($this->base."0.sql", self::MINIMAL1);
-        file_put_contents($this->base."1.sql", self::MINIMAL2);
-        $this->drv->schemaUpdate(2);
+        file_put_contents($this->path."0.sql", self::MINIMAL1);
+        file_put_contents($this->path."1.sql", self::MINIMAL2);
+        $this->drv->schemaUpdate(2, $this->base);
         $this->assertEquals(2, $this->drv->schemaVersion());
     }
 
     function testPerformActualUpdate() {
-        Arsse::$conf->dbSchemaBase = (new Conf())->dbSchemaBase;
         $this->drv->schemaUpdate(Database::SCHEMA_VERSION);
         $this->assertEquals(Database::SCHEMA_VERSION, $this->drv->schemaVersion());
     }
@@ -106,6 +105,6 @@ class TestDbUpdateSQLite3 extends Test\AbstractTest {
 
     function testDeclineDowngrade() {
         $this->assertException("updateTooNew", "Db");
-        $this->drv->schemaUpdate(-1);
+        $this->drv->schemaUpdate(-1, $this->base);
     }
 }

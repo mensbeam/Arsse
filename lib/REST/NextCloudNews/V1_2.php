@@ -634,7 +634,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function userStatus(array $url, array $data): Response {
-        $data = Arsse::$user::propertiesGet(Arsse::$user->id, true);
+        $data = Arsse::$user->propertiesGet(Arsse::$user->id, true);
         // construct the avatar structure, if an image is available
         if(isset($data['avatar'])) {
             $avatar = [

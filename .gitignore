@@ -5,6 +5,7 @@ vendor/
 documentation/
 tests/coverage
 arsse.db*
+config.php
 
 # Windows image file caches
 Thumbs.db

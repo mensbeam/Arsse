@@ -13,8 +13,6 @@ class Conf {
 
     /** @var string Class of the database driver in use (SQLite3 by default) */
     public $dbDriver                = Db\SQLite3\Driver::class;
-    /** @var string Base path to database schema files */
-    public $dbSchemaBase            = BASE.'sql';
     /** @var boolean Whether to attempt to automatically update the database when updated to a new version with schema changes */
     public $dbAutoUpdate            = true;
     /** @var string Full path and file name of SQLite database (if using SQLite) */

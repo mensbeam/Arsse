@@ -73,7 +73,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         return $this->query("PRAGMA user_version")->getValue();
     }
 
-    public function schemaUpdate(int $to): bool {
+    public function schemaUpdate(int $to, string $basePath = null): bool {
         $ver = $this->schemaVersion();
         if(!Arsse::$conf->dbAutoUpdate)  {
             throw new Exception("updateManual", ['version' => $ver, 'driver_name' => $this->driverName()]);
@@ -81,7 +81,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
             throw new Exception("updateTooNew", ['difference' => ($ver - $to), 'current' => $ver, 'target' => $to, 'driver_name' => $this->driverName()]);
         }
         $sep = \DIRECTORY_SEPARATOR;
-        $path = Arsse::$conf->dbSchemaBase.$sep."SQLite3".$sep;
+        $path = ($basePath ?? \JKingWeb\Arsse\BASE."sql").$sep."SQLite3".$sep;
         // lock the database
         $this->savepointCreate(true);
         for($a = $this->schemaVersion(); $a < $to; $a++) {

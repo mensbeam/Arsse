@@ -37,9 +37,7 @@ sudo systemctl start arsse
 
 ### Configuring the Web server
 
-A sample configuration file for Nginx can be found in `arsse/dist/nginx.conf`
-
-FIXME: stub
+Sample configuration parameters for Nginx can be found in `arsse/dist/nginx.conf` and `arsse/dist/nginx-fcgi.conf`.
 
 
 ## Installation from source
