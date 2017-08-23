@@ -1,6 +1,6 @@
 # The Advanced RSS Environment
 
-The Arsse is a news aggregator server which implements [version 1.2](https://github.com/nextcloud/news/blob/master/docs/externalapi/Legacy.md) of [NextCloud News](https://github.com/nextcloud/news)' client-server synchronization protocol. Unlike most other aggregator servers, the Arsse does not include a Web front-end (though one is planned as a separate project), and it relies on existing protocols to maximize compatibility with existing clients.
+The Arsse is a news aggregator server which implements [version 1.2](https://github.com/nextcloud/news/blob/master/docs/externalapi/Legacy.md) of [NextCloud News](https://github.com/nextcloud/news)' client-server synchronization protocol. Unlike most other aggregator servers, The Arsse does not include a Web front-end (though one is planned as a separate project), and it relies on existing protocols to maximize compatibility with existing clients.
 
 At present the software should be considered in an "alpha" state: though its core subsystems are covered by unit tests and should be free of major bugs, not everything has been rigorously tested. Additionally, though the NextCloud News protocol is fully supported, many features one would expect from other similar software have yet to be implemented. Areas of future work include:
 
@@ -11,7 +11,7 @@ At present the software should be considered in an "alpha" state: though its cor
 
 ## Requirements
 
-Arsse has the following requirements:
+The Arsse has the following requirements:
 
 - A Web server
 - PHP 7.0.7 or newer with the following extensions:
@@ -24,7 +24,7 @@ Arsse has the following requirements:
 
 At present, installation of The Arsse is rather manual. We hope to improve this in the future, but for now the steps below should help get you started. The instructions and configuration samples assume you will be using Ubuntu 16.04 (or equivalent Debian) and Nginx; we hope to expand official support for different configurations in the future as well.
 
-### Initial setup 
+### Initial setup
 
 1. Extract the tar archive to `/usr/share`
 2. If desired, create `/usr/share/arsse/config.php` using  `config.defaults.php` as a guide. The file you create only needs to contain non-default settings. The `userPreAuth` setting may be of particular interest

@@ -1,6 +1,6 @@
 {
     "name": "jkingweb/arsse",
-    "type": "library",
+    "type": "project",
     "description": "TODO",
     "keywords": ["rss"],
     "license": "MIT",
