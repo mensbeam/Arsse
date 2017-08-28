@@ -22,6 +22,10 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
             throw new Exception("extMissing", self::driverName()); // @codeCoverageIgnore
         }
         $dbFile = Arsse::$conf->dbSQLite3File;
+        if(is_null($dbFile)) {
+            // if no database file is specified in the configuration, use a suitable default
+            $dbFile = \JKingWeb\Arsse\BASE."arsse.db";
+        }
         $mode = \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE;
         $timeout = Arsse::$conf->dbSQLite3Timeout * 1000;
         try {

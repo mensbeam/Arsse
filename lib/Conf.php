@@ -15,8 +15,8 @@ class Conf {
     public $dbDriver                = Db\SQLite3\Driver::class;
     /** @var boolean Whether to attempt to automatically update the database when updated to a new version with schema changes */
     public $dbAutoUpdate            = true;
-    /** @var string Full path and file name of SQLite database (if using SQLite) */
-    public $dbSQLite3File           = BASE."arsse.db";
+    /** @var string|null Full path and file name of SQLite database (if using SQLite) */
+    public $dbSQLite3File           = null;
     /** @var string Encryption key to use for SQLite database (if using a version of SQLite with SEE) */
     public $dbSQLite3Key            = "";
     /** @var integer Number of seconds for SQLite to wait before returning a timeout error when writing to the database */

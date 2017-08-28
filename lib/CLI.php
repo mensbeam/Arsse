@@ -12,12 +12,13 @@ Usage:
     $prog daemon
     $prog feed refresh <n>
     $prog conf save-defaults <file>
+    $prog user add <username> [<password>]
     $prog --version
     $prog --help | -h
 
 The Arsse command-line interface currently allows you to start the refresh
-daemon, refresh a specific feed by numeric ID, or save default configuration
-to a sample file.
+daemon, refresh a specific feed by numeric ID, add a user, or save default 
+configuration to a sample file.
 USAGE_TEXT;
     }
 
@@ -38,6 +39,8 @@ USAGE_TEXT;
         if(file_exists(BASE."config.php")) {
             Arsse::$conf->importFile(BASE."config.php");
         }
+        // command-line operations will never respect authorization
+        Arsse::$user->authorizationEnabled(false);
         return true;
     }
 
@@ -46,27 +49,47 @@ USAGE_TEXT;
         if(is_null($args)) {
             $args = $this->args;
         }
-        if($args['daemon']) {
+        if($this->command("daemon", $args)) {
             $this->loadConf();
             return $this->daemon();
-        } else if($args['feed'] && $args['refresh']) {
+        } else if($this->command("feed refresh", $args)) {
             $this->loadConf();
             return $this->feedRefresh((int) $args['<n>']);
-        } else if($args['conf'] && $args['save-defaults']) {
+        } else if($this->command("conf save-defaults", $args)) {
             return $this->confSaveDefaults($args['<file>']);
+        } else if($this->command("user add", $args)) {
+            $this->loadConf();
+            return $this->userAdd($args['<username>'], $args['<password>']);
         }
     }
 
-    protected function daemon(bool $loop = true): int {
+    protected function command($cmd, $args): bool {
+        foreach(explode(" ", $cmd) as $part) {
+            if(!$args[$part]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function daemon(bool $loop = true): int {
         (new Service)->watch($loop);
         return 0; // FIXME: should return the exception code of thrown exceptions
     }
 
-    protected function feedRefresh(int $id): int {
+    function feedRefresh(int $id): int {
         return (int) !Arsse::$db->feedUpdate($id); // FIXME: exception error codes should be returned here
     }
 
-    protected function confSaveDefaults($file): int {
+    function confSaveDefaults(string $file): int {
         return (int) !(new Conf)->exportFile($file, true);
+    }
+
+    function userAdd(string $user, string $password = null): int {
+        $passwd = Arsse::$user->add($user, $password);
+        if(is_null($password)) {
+            echo $passwd;
+        }
+        return 0;
     }
 }
