@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Service\Curl;
+
 use JKingWeb\Arsse\Arsse;
 
 class Driver implements \JKingWeb\Arsse\Service\Driver {
@@ -8,15 +9,15 @@ class Driver implements \JKingWeb\Arsse\Service\Driver {
     protected $queue;
     protected $handles = [];
     
-    static function driverName(): string {
+    public static function driverName(): string {
         return Arsse::$lang->msg("Driver.Service.Curl.Name");
     }
 
-    static function requirementsMet(): bool {
+    public static function requirementsMet(): bool {
         return extension_loaded("curl");
     }
 
-    function __construct() {
+    public function __construct() {
         //default curl options for individual requests
         $this->options = [
             \CURLOPT_URL => Arsse::$serviceCurlBase."index.php/apps/news/api/v1-2/feeds/update",
@@ -42,8 +43,8 @@ class Driver implements \JKingWeb\Arsse\Service\Driver {
         curl_multi_setopt($this->queue, \CURLMOPT_PIPELINING, 1);
     }
 
-    function queue(int ...$feeds): int {
-        foreach($feeds as $id) {
+    public function queue(int ...$feeds): int {
+        foreach ($feeds as $id) {
             $h = curl_init();
             curl_setopt($h, \CURLOPT_POSTFIELDS, json_encode(['userId' => "", 'feedId' => $id]));
             $this->handles[] = $h;
@@ -52,7 +53,7 @@ class Driver implements \JKingWeb\Arsse\Service\Driver {
         return sizeof($this->handles);
     }
 
-    function exec(): int {
+    public function exec(): int {
         $active = 0;
         do {
             curl_multi_exec($this->queue, $active);
@@ -61,8 +62,8 @@ class Driver implements \JKingWeb\Arsse\Service\Driver {
         return Arsse::$conf->serviceQueueWidth - $active;
     }
 
-    function clean(): bool {
-        foreach($this->handles as $h) {
+    public function clean(): bool {
+        foreach ($this->handles as $h) {
             curl_multi_remove_handle($this->queue, $h);
             curl_close($h);
         }

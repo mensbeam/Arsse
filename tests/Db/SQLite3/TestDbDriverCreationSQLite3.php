@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
+
 use JKingWeb\Arsse\Arsse;
 use org\bovigo\vfs\vfsStream;
 use Phake;
@@ -13,8 +14,8 @@ class TestDbDriverCreationSQLite3 extends Test\AbstractTest {
     protected $drv;
     protected $ch;
 
-    function setUp() {
-        if(!extension_loaded("sqlite3")) {
+    public function setUp() {
+        if (!extension_loaded("sqlite3")) {
             $this->markTestSkipped("SQLite extension not loaded");
         }
         $this->clearData();
@@ -88,15 +89,15 @@ class TestDbDriverCreationSQLite3 extends Test\AbstractTest {
         $this->path = $path = $vfs->url()."/";
         // set up access blocks
         chmod($path."Cmain", 0555);
-        chmod($path."Cwal",  0555);
-        chmod($path."Cshm",  0555);
-        chmod($path."Rmain/arsse.db",    0333);
+        chmod($path."Cwal", 0555);
+        chmod($path."Cshm", 0555);
+        chmod($path."Rmain/arsse.db", 0333);
         chmod($path."Rwal/arsse.db-wal", 0333);
         chmod($path."Rshm/arsse.db-shm", 0333);
-        chmod($path."Wmain/arsse.db",    0555);
+        chmod($path."Wmain/arsse.db", 0555);
         chmod($path."Wwal/arsse.db-wal", 0555);
         chmod($path."Wshm/arsse.db-shm", 0555);
-        chmod($path."Amain/arsse.db",    0111);
+        chmod($path."Amain/arsse.db", 0111);
         chmod($path."Awal/arsse.db-wal", 0111);
         chmod($path."Ashm/arsse.db-shm", 0111);
         // set up configuration
@@ -105,83 +106,83 @@ class TestDbDriverCreationSQLite3 extends Test\AbstractTest {
         // set up database shim
     }
 
-    function tearDown() {
+    public function tearDown() {
         $this->clearData();
     }
 
-    function testFailToCreateDatabase() {
+    public function testFailToCreateDatabase() {
         Arsse::$conf->dbSQLite3File = $this->path."Cmain/arsse.db";
         $this->assertException("fileUncreatable", "Db");
         new Db\SQLite3\Driver;
     }
 
-    function testFailToCreateJournal() {
+    public function testFailToCreateJournal() {
         Arsse::$conf->dbSQLite3File = $this->path."Cwal/arsse.db";
         $this->assertException("fileUncreatable", "Db");
         new Db\SQLite3\Driver;
     }
 
-    function testFailToCreateSharedMmeory() {
+    public function testFailToCreateSharedMmeory() {
         Arsse::$conf->dbSQLite3File = $this->path."Cshm/arsse.db";
         $this->assertException("fileUncreatable", "Db");
         new Db\SQLite3\Driver;
     }
 
-    function testFailToReadDatabase() {
+    public function testFailToReadDatabase() {
         Arsse::$conf->dbSQLite3File = $this->path."Rmain/arsse.db";
         $this->assertException("fileUnreadable", "Db");
         new Db\SQLite3\Driver;
     }
 
-    function testFailToReadJournal() {
+    public function testFailToReadJournal() {
         Arsse::$conf->dbSQLite3File = $this->path."Rwal/arsse.db";
         $this->assertException("fileUnreadable", "Db");
         new Db\SQLite3\Driver;
     }
 
-    function testFailToReadSharedMmeory() {
+    public function testFailToReadSharedMmeory() {
         Arsse::$conf->dbSQLite3File = $this->path."Rshm/arsse.db";
         $this->assertException("fileUnreadable", "Db");
         new Db\SQLite3\Driver;
     }
 
-    function testFailToWriteToDatabase() {
+    public function testFailToWriteToDatabase() {
         Arsse::$conf->dbSQLite3File = $this->path."Wmain/arsse.db";
         $this->assertException("fileUnwritable", "Db");
         new Db\SQLite3\Driver;
     }
 
-    function testFailToWriteToJournal() {
+    public function testFailToWriteToJournal() {
         Arsse::$conf->dbSQLite3File = $this->path."Wwal/arsse.db";
         $this->assertException("fileUnwritable", "Db");
         new Db\SQLite3\Driver;
     }
 
-    function testFailToWriteToSharedMmeory() {
+    public function testFailToWriteToSharedMmeory() {
         Arsse::$conf->dbSQLite3File = $this->path."Wshm/arsse.db";
         $this->assertException("fileUnwritable", "Db");
         new Db\SQLite3\Driver;
     }
 
-    function testFailToAccessDatabase() {
+    public function testFailToAccessDatabase() {
         Arsse::$conf->dbSQLite3File = $this->path."Amain/arsse.db";
         $this->assertException("fileUnusable", "Db");
         new Db\SQLite3\Driver;
     }
 
-    function testFailToAccessJournal() {
+    public function testFailToAccessJournal() {
         Arsse::$conf->dbSQLite3File = $this->path."Awal/arsse.db";
         $this->assertException("fileUnusable", "Db");
         new Db\SQLite3\Driver;
     }
 
-    function testFailToAccessSharedMmeory() {
+    public function testFailToAccessSharedMmeory() {
         Arsse::$conf->dbSQLite3File = $this->path."Ashm/arsse.db";
         $this->assertException("fileUnusable", "Db");
         new Db\SQLite3\Driver;
     }
 
-    function testAssumeDatabaseCorruption() {
+    public function testAssumeDatabaseCorruption() {
         Arsse::$conf->dbSQLite3File = $this->path."corrupt/arsse.db";
         $this->assertException("fileCorrupt", "Db");
         new Db\SQLite3\Driver;

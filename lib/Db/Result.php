@@ -3,16 +3,16 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Db;
 
 interface Result extends \Iterator {
-    function current();
-    function key();
-    function next();
-    function rewind();
-    function valid();
+    public function current();
+    public function key();
+    public function next();
+    public function rewind();
+    public function valid();
 
-    function getRow();
-    function getAll(): array;
-    function getValue();
+    public function getRow();
+    public function getAll(): array;
+    public function getValue();
 
-    function changes();
-    function lastId();
+    public function changes();
+    public function lastId();
 }

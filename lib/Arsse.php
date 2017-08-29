@@ -12,7 +12,7 @@ class Arsse {
     /** @var User */
     public static $user;
 
-    static function load(Conf $conf) {
+    public static function load(Conf $conf) {
         static::$lang = new Lang();
         static::$conf = $conf;
         static::$lang->set($conf->lang);

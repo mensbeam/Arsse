@@ -1,10 +1,11 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\Db;
+
 use JKingWeb\Arsse\Db\Statement;
 
-trait BindingTests {    
-    function testBindNull() {
+trait BindingTests {
+    public function testBindNull() {
         $input = null;
         $exp = [
             "null"      => null,
@@ -34,7 +35,7 @@ trait BindingTests {
         $this->checkBinding($input, $exp, true);
     }
 
-    function testBindTrue() {
+    public function testBindTrue() {
         $input = true;
         $exp = [
             "null"      => null,
@@ -51,7 +52,7 @@ trait BindingTests {
         $this->checkBinding($input, $exp, true);
     }
 
-    function testBindFalse() {
+    public function testBindFalse() {
         $input = false;
         $exp = [
             "null"      => null,
@@ -68,7 +69,7 @@ trait BindingTests {
         $this->checkBinding($input, $exp, true);
     }
 
-    function testBindInteger() {
+    public function testBindInteger() {
         $input = 2112;
         $exp = [
             "null"      => null,
@@ -85,7 +86,7 @@ trait BindingTests {
         $this->checkBinding($input, $exp, true);
     }
 
-    function testBindIntegerZero() {
+    public function testBindIntegerZero() {
         $input = 0;
         $exp = [
             "null"      => null,
@@ -102,7 +103,7 @@ trait BindingTests {
         $this->checkBinding($input, $exp, true);
     }
 
-    function testBindFloat() {
+    public function testBindFloat() {
         $input = 2112.0;
         $exp = [
             "null"      => null,
@@ -119,7 +120,7 @@ trait BindingTests {
         $this->checkBinding($input, $exp, true);
     }
 
-    function testBindFloatZero() {
+    public function testBindFloatZero() {
         $input = 0.0;
         $exp = [
             "null"      => null,
@@ -136,7 +137,7 @@ trait BindingTests {
         $this->checkBinding($input, $exp, true);
     }
 
-    function testBindAsciiString() {
+    public function testBindAsciiString() {
         $input = "Random string";
         $exp = [
             "null"      => null,
@@ -153,7 +154,7 @@ trait BindingTests {
         $this->checkBinding($input, $exp, true);
     }
 
-    function testBindUtf8String() {
+    public function testBindUtf8String() {
         $input = "é";
         $exp = [
             "null"      => null,
@@ -170,7 +171,7 @@ trait BindingTests {
         $this->checkBinding($input, $exp, true);
     }
 
-    function testBindBinaryString() {
+    public function testBindBinaryString() {
         // FIXME: This test may be unreliable; SQLite happily stores invalid UTF-8 text as bytes untouched, but other engines probably don't do this
         $input = chr(233);
         $exp = [
@@ -188,7 +189,7 @@ trait BindingTests {
         $this->checkBinding($input, $exp, true);
     }
 
-    function testBindIso8601DateString() {
+    public function testBindIso8601DateString() {
         $input = "2017-01-09T13:11:17";
         $time = strtotime($input);
         $exp = [
@@ -206,7 +207,7 @@ trait BindingTests {
         $this->checkBinding($input, $exp, true);
     }
 
-    function testBindArbitraryDateString() {
+    public function testBindArbitraryDateString() {
         $input = "Today";
         $time = strtotime($input);
         $exp = [
@@ -224,7 +225,7 @@ trait BindingTests {
         $this->checkBinding($input, $exp, true);
     }
 
-    function testBindMutableDateObject($class = '\DateTime') {
+    public function testBindMutableDateObject($class = '\DateTime') {
         $input = new $class("Noon Today");
         $time = $input->getTimestamp();
         $exp = [
@@ -242,7 +243,7 @@ trait BindingTests {
         $this->checkBinding($input, $exp, true);
     }
 
-    function testBindImmutableDateObject() {
+    public function testBindImmutableDateObject() {
         $this->testBindMutableDateObject('\DateTimeImmutable');
     }
 }

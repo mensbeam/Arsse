@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
+
 use JKingWeb\Arsse\Misc\Date;
 use Phake;
-
 
 /** 
  * @covers \JKingWeb\Arsse\Feed
@@ -80,8 +80,8 @@ class TestFeed extends Test\AbstractTest {
         ],
     ];
 
-    function setUp() {
-        if(!@file_get_contents(self::$host."IsUp")) {
+    public function setUp() {
+        if (!@file_get_contents(self::$host."IsUp")) {
             $this->markTestSkipped("Test Web server is not accepting requests");
         }
         $this->base = self::$host."Feed/";
@@ -90,7 +90,7 @@ class TestFeed extends Test\AbstractTest {
         Arsse::$db = Phake::mock(Database::class);
     }
 
-    function testParseAFeed() {
+    public function testParseAFeed() {
         // test that various properties are set on the feed and on items
         $f = new Feed(null, $this->base."Parsing/Valid");
         $this->assertTrue(isset($f->lastModified));
@@ -133,27 +133,27 @@ class TestFeed extends Test\AbstractTest {
         $this->assertSame($categories, $f->data->items[5]->categories);
     }
 
-    function testParseEntityExpansionAttack() {
+    public function testParseEntityExpansionAttack() {
         $this->assertException("xmlEntity", "Feed");
         new Feed(null, $this->base."Parsing/XEEAttack");
     }
 
-    function testParseExternalEntityAttack() {
+    public function testParseExternalEntityAttack() {
         $this->assertException("xmlEntity", "Feed");
         new Feed(null, $this->base."Parsing/XXEAttack");
     }
 
-    function testParseAnUnsupportedFeed() {
+    public function testParseAnUnsupportedFeed() {
         $this->assertException("unsupportedFeedFormat", "Feed");
         new Feed(null, $this->base."Parsing/Unsupported");
     }
 
-    function testParseAMalformedFeed() {
+    public function testParseAMalformedFeed() {
         $this->assertException("malformedXml", "Feed");
         new Feed(null, $this->base."Parsing/Malformed");
     }
     
-    function testDeduplicateFeedItems() {
+    public function testDeduplicateFeedItems() {
         // duplicates with dates lead to the newest match being kept
         $t = strtotime("2002-05-19T15:21:36Z");
         $f = new Feed(null, $this->base."Deduplication/Permalink-Dates");
@@ -180,7 +180,7 @@ class TestFeed extends Test\AbstractTest {
         $this->assertSame("http://example.com/1", $f->newItems[0]->url);
     }
 
-    function testHandleCacheHeadersOn304() {
+    public function testHandleCacheHeadersOn304() {
         // upon 304, the client should re-use the caching header values it supplied the server
         $t = time();
         $e = "78567a";
@@ -198,7 +198,7 @@ class TestFeed extends Test\AbstractTest {
         $this->assertSame($e, $f->resource->getETag());
     }
 
-    function testHandleCacheHeadersOn200() {
+    public function testHandleCacheHeadersOn200() {
         // these tests should trust the server-returned time, even in cases of obviously incorrect results
         $t = time() - 2000;
         $f = new Feed(null, $this->base."Caching/200Past");
@@ -226,11 +226,11 @@ class TestFeed extends Test\AbstractTest {
         $this->assertTime($t, $f->lastModified);
     }
     
-    function testComputeNextFetchOnError() {
-        for($a = 0; $a < 100; $a++) {
-            if($a < 3) {
+    public function testComputeNextFetchOnError() {
+        for ($a = 0; $a < 100; $a++) {
+            if ($a < 3) {
                 $this->assertTime("now + 5 minutes", Feed::nextFetchOnError($a));
-            } else if($a < 15) {
+            } elseif ($a < 15) {
                 $this->assertTime("now + 3 hours", Feed::nextFetchOnError($a));
             } else {
                 $this->assertTime("now + 1 day", Feed::nextFetchOnError($a));
@@ -238,7 +238,7 @@ class TestFeed extends Test\AbstractTest {
         }
     }
     
-    function testComputeNextFetchFrom304() {
+    public function testComputeNextFetchFrom304() {
         // if less than half an hour, check in 15 minutes
         $t = strtotime("now");
         $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
@@ -286,7 +286,7 @@ class TestFeed extends Test\AbstractTest {
         $this->assertTime($exp, $f->nextFetch);
     }
     
-    function testComputeNextFetchFrom200() {
+    public function testComputeNextFetchFrom200() {
         // if less than half an hour, check in 15 minutes
         $f = new Feed(null, $this->base."NextFetch/30m");
         $exp = strtotime("now + 15 minutes");
@@ -313,7 +313,7 @@ class TestFeed extends Test\AbstractTest {
         $this->assertTime($exp, $f->nextFetch);
     }
 
-    function testMatchLatestArticles() {
+    public function testMatchLatestArticles() {
         Phake::when(Arsse::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Test\Result($this->latest));
         $f = new Feed(1, $this->base."Matching/1");
         $this->assertCount(0, $f->newItems);
@@ -329,15 +329,15 @@ class TestFeed extends Test\AbstractTest {
         $this->assertCount(2, $f->changedItems);
     }
 
-    function testMatchHistoricalArticles() {
+    public function testMatchHistoricalArticles() {
         Phake::when(Arsse::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Test\Result($this->latest));
         Phake::when(Arsse::$db)->feedMatchIds(1, $this->anything(), $this->anything(), $this->anything(), $this->anything())->thenReturn(new Test\Result($this->others));
         $f = new Feed(1, $this->base."Matching/5");
         $this->assertCount(0, $f->newItems);
-        $this->assertCount(0, $f->changedItems);   
+        $this->assertCount(0, $f->changedItems);
     }
 
-    function testScrapeFullContent() {
+    public function testScrapeFullContent() {
         // first make sure that the absence of scraping works as expected
         $f = new Feed(null, $this->base."Scraping/Feed");
         $exp = "<p>Partial content</p>";

@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Db\SQLite3;
+
 use JKingWeb\Arsse\Db\Exception;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\ExceptionTimeout;
@@ -33,7 +34,10 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     }
 
     public function __destruct() {
-        try {$this->st->close();} catch(\Throwable $e) {}
+        try {
+            $this->st->close();
+        } catch (\Throwable $e) {
+        }
         unset($this->st);
     }
 
@@ -42,7 +46,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         $this->bindValues($values);
         try {
             $r = $this->st->execute();
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             list($excClass, $excMsg, $excData) = $this->exceptionBuild();
             throw new $excClass($excMsg, $excData);
         }
@@ -53,22 +57,22 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
 
     protected function bindValues(array $values, int $offset = 0): int {
         $a = $offset;
-        foreach($values as $value) {
-            if(is_array($value)) {
+        foreach ($values as $value) {
+            if (is_array($value)) {
                 // recursively flatten any arrays, which may be provided for SET or IN() clauses
                 $a += $this->bindValues($value, $a);
-            } else if(array_key_exists($a,$this->types)) {
+            } elseif (array_key_exists($a, $this->types)) {
                 // if the parameter type is something other than the known values, this is an error
                 assert(array_key_exists($this->types[$a], self::BINDINGS), new Exception("paramTypeUnknown", $this->types[$a]));
                 // if the parameter type is null or the value is null (and the type is nullable), just bind null
-                if($this->types[$a]=="null" || ($this->isNullable[$a] && is_null($value))) {
+                if ($this->types[$a]=="null" || ($this->isNullable[$a] && is_null($value))) {
                     $this->st->bindValue($a+1, null, \SQLITE3_NULL);
-                } else  {
+                } else {
                     // otherwise cast the value to the right type and bind the result
                     $type = self::BINDINGS[$this->types[$a]];
                     $value = $this->cast($value, $this->types[$a], $this->isNullable[$a]);
                     // re-adjust for null casts
-                    if($value===null) {
+                    if ($value===null) {
                         $type = \SQLITE3_NULL;
                     }
                     // perform binding

@@ -1,9 +1,10 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Misc;
+
 use JKingWeb\Arsse\Misc\Date;
 
-class Context {    
+class Context {
     public $reverse = false;
     public $limit = 0;
     public $offset = 0;
@@ -23,7 +24,7 @@ class Context {
     protected $props = [];
 
     protected function act(string $prop, int $set, $value) {
-        if($set) {
+        if ($set) {
             $this->props[$prop] = true;
             $this->$prop = $value;
             return $this;
@@ -34,17 +35,17 @@ class Context {
 
     protected function cleanArray(array $spec): array {
         $spec = array_values($spec);
-        for($a = 0; $a < sizeof($spec); $a++) {
+        for ($a = 0; $a < sizeof($spec); $a++) {
             $id = $spec[$a];
-            if(is_int($id) && $id > -1) {
+            if (is_int($id) && $id > -1) {
                 continue;
-            } else if(is_float($id) && !fmod($id, 1) && $id >= 0) {
+            } elseif (is_float($id) && !fmod($id, 1) && $id >= 0) {
                 $spec[$a] = (int) $id;
                 continue;
-            } else if(is_string($id)) {
+            } elseif (is_string($id)) {
                 $ch1 = strval(@intval($id));
                 $ch2 = strval($id);
-                if($ch1 !== $ch2 || $id < 1) {
+                if ($ch1 !== $ch2 || $id < 1) {
                     $id = 0;
                 }
             } else {
@@ -55,69 +56,69 @@ class Context {
         return array_values(array_filter($spec));
     }
     
-    function reverse(bool $spec = null) {
+    public function reverse(bool $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
     
-    function limit(int $spec = null) {
+    public function limit(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
     
-    function offset(int $spec = null) {
+    public function offset(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
     
-    function folder(int $spec = null) {
+    public function folder(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
     
-    function subscription(int $spec = null) {
+    public function subscription(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
     
-    function latestEdition(int $spec = null) {
+    public function latestEdition(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
     
-    function oldestEdition(int $spec = null) {
+    public function oldestEdition(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
     
-    function unread(bool $spec = null) {
+    public function unread(bool $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
     
-    function starred(bool $spec = null) {
+    public function starred(bool $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
     
-    function modifiedSince($spec = null) {
+    public function modifiedSince($spec = null) {
         $spec = Date::normalize($spec);
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
     
-    function notModifiedSince($spec = null) {
+    public function notModifiedSince($spec = null) {
         $spec = Date::normalize($spec);
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
     
-    function edition(int $spec = null) {
+    public function edition(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
     
-    function article(int $spec = null) {
+    public function article(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    function editions(array $spec = null) {
-        if($spec) {
+    public function editions(array $spec = null) {
+        if ($spec) {
             $spec = $this->cleanArray($spec);
         }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    function articles(array $spec = null) {
-        if($spec) {
+    public function articles(array $spec = null) {
+        if ($spec) {
             $spec = $this->cleanArray($spec);
         }
         return $this->act(__FUNCTION__, func_num_args(), $spec);

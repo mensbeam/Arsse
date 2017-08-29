@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
+
 use JKingWeb\Arsse\Misc\Date;
 use PicoFeed\PicoFeedException;
 use PicoFeed\Config\Config;
@@ -8,7 +9,7 @@ use PicoFeed\Reader\Reader;
 use PicoFeed\Reader\Favicon;
 use PicoFeed\Scraper\Scraper;
 
-class Feed {    
+class Feed {
     public $data = null;
     public $favicon;
     public $parser;
@@ -38,25 +39,25 @@ class Feed {
         $this->download($url, $lastModified, $etag, $username, $password);
         // format the HTTP Last-Modified date returned
         $lastMod = $this->resource->getLastModified();
-        if(strlen($lastMod)) {
+        if (strlen($lastMod)) {
             $this->lastModified = Date::normalize($lastMod, "http");
         }
         $this->modified = $this->resource->isModified();
         //parse the feed, if it has been modified
-        if($this->modified) {
+        if ($this->modified) {
             $this->parse();
             // ascertain whether there are any articles not in the database
             $this->matchToDatabase($feedID);
             // if caching header fields are not sent by the server, try to ascertain a last-modified date from the feed contents
-            if(!$this->lastModified) {
+            if (!$this->lastModified) {
                 $this->lastModified = $this->computeLastModified();
             }
             // we only really care if articles have been modified; if there are no new articles, act as if the feed is unchanged
-            if(!sizeof($this->newItems) && !sizeof($this->changedItems)) {
+            if (!sizeof($this->newItems) && !sizeof($this->changedItems)) {
                 $this->modified = false;
             }
             // if requested, scrape full content for any new and changed items
-            if($scrape) {
+            if ($scrape) {
                 $this->scrape();
             }
         }
@@ -107,19 +108,19 @@ class Feed {
             // id doesn't exist.
             $content = $f->content.$f->enclosureUrl.$f->enclosureType;
             // if the item link URL and item title are both equal to the feed link URL, then the item has neither a link URL nor a title
-            if($f->url==$feed->siteUrl && $f->title==$feed->siteUrl) {
+            if ($f->url==$feed->siteUrl && $f->title==$feed->siteUrl) {
                 $f->urlTitleHash = "";
             } else {
                 $f->urlTitleHash = hash('sha256', $f->url.$f->title);
             }
             // if the item link URL is equal to the feed link URL, it has no link URL; if there is additionally no content, these should not be hashed
-            if(!strlen($content) && $f->url==$feed->siteUrl) {
-               $f->urlContentHash = ""; 
+            if (!strlen($content) && $f->url==$feed->siteUrl) {
+                $f->urlContentHash = "";
             } else {
                 $f->urlContentHash = hash('sha256', $f->url.$content);
             }
             // if the item's title is the same as its link URL, it has no title; if there is additionally no content, these should not be hashed
-            if(!strlen($content) && $f->title==$f->url) {
+            if (!strlen($content) && $f->title==$f->url) {
                 $f->titleContentHash = "";
             } else {
                 $f->titleContentHash = hash('sha256', $f->title.$content);
@@ -128,44 +129,44 @@ class Feed {
             // prefer an Atom ID as the item's ID
             $id = (string) $f->xml->children('http://www.w3.org/2005/Atom')->id;
             // otherwise use the RSS2 guid element
-            if(!strlen($id)) {
+            if (!strlen($id)) {
                 $id = (string) $f->xml->guid;
             }
             // otherwise use the Dublin Core identifier element
-            if(!strlen($id)) {
+            if (!strlen($id)) {
                 $id = (string) $f->xml->children('http://purl.org/dc/elements/1.1/')->identifier;
             }
             // otherwise there is no ID; if there is one, hash it
-            if(strlen($id)) {
+            if (strlen($id)) {
                 $f->id = hash('sha256', $id);
             }
 
             // PicoFeed also doesn't gather up categories, so we do this as well
             $f->categories = [];
             // first add Atom categories
-            foreach($f->xml->children('http://www.w3.org/2005/Atom')->category as $c) {
+            foreach ($f->xml->children('http://www.w3.org/2005/Atom')->category as $c) {
                 // if the category has a label, use that
                 $name = (string) $c->attributes()->label;
                 // otherwise use the term
-                if(!strlen($name)) {
+                if (!strlen($name)) {
                     $name = (string) $c->attributes()->term;
                 }
                 // ... assuming it has that much
-                if(strlen($name)) {
+                if (strlen($name)) {
                     $f->categories[] = $name;
                 }
             }
             // next add RSS2 categories
-            foreach($f->xml->children()->category as $c) {
+            foreach ($f->xml->children()->category as $c) {
                 $name = (string) $c;
-                if(strlen($name)) {
+                if (strlen($name)) {
                     $f->categories[] = $name;
                 }
             }
             // and finally try Dublin Core subjects
-            foreach($f->xml->children('http://purl.org/dc/elements/1.1/')->subject as $c) {
+            foreach ($f->xml->children('http://purl.org/dc/elements/1.1/')->subject as $c) {
                 $name = (string) $c;
-                if(strlen($name)) {
+                if (strlen($name)) {
                     $f->categories[] = $name;
                 }
             }
@@ -178,26 +179,26 @@ class Feed {
 
     protected function deduplicateItems(array $items): array {
         /* Rationale:
-            Some newsfeeds (notably Planet) include multiple versions of an 
+            Some newsfeeds (notably Planet) include multiple versions of an
             item if it is updated. As we only care about the latest, we
-            try to remove any "old" versions of an item that might also be 
+            try to remove any "old" versions of an item that might also be
             present within the feed.
         */
         $out = [];
-        foreach($items as $item) {
-            foreach($out as $index => $check) {
+        foreach ($items as $item) {
+            foreach ($out as $index => $check) {
                 // if the two items both have IDs and they differ, they do not match, regardless of hashes
-                if($item->id && $check->id && $item->id != $check->id) {
+                if ($item->id && $check->id && $item->id != $check->id) {
                     continue;
                 }
                 // if the two items have the same ID or any one hash matches, they are two versions of the same item
-                if(
+                if (
                     ($item->id && $check->id && $item->id == $check->id) ||
                     ($item->urlTitleHash     && $item->urlTitleHash     == $check->urlTitleHash)      ||
                     ($item->urlContentHash   && $item->urlContentHash   == $check->urlContentHash)    ||
                     ($item->titleContentHash && $item->titleContentHash == $check->titleContentHash)
                 ) {
-                    if(// because newsfeeds are usually order newest-first, the later item should only be used if...
+                    if (// because newsfeeds are usually order newest-first, the later item should only be used if...
                         // the later item has an update date and the existing item does not
                         ($item->updatedDate && !$check->updatedDate) ||
                         // the later item has an update date newer than the existing item's
@@ -224,7 +225,7 @@ class Feed {
         // first perform deduplication on items
         $items = $this->deduplicateItems($this->data->items);
         // if we haven't been given a database feed ID to check against, all items are new
-        if(is_null($feedID)) {
+        if (is_null($feedID)) {
             $this->newItems = $items;
             return true;
         }
@@ -232,20 +233,20 @@ class Feed {
         $articles = Arsse::$db->feedMatchLatest($feedID, sizeof($items))->getAll();
         // perform a first pass matching the latest articles against items in the feed
         list($this->newItems, $this->changedItems) = $this->matchItems($items, $articles);
-        if(sizeof($this->newItems) && sizeof($items) <= sizeof($articles)) {
+        if (sizeof($this->newItems) && sizeof($items) <= sizeof($articles)) {
             // if we need to, perform a second pass on the database looking specifically for IDs and hashes of the new items
             $ids = $hashesUT = $hashesUC = $hashesTC = [];
-            foreach($this->newItems as $i) {
-                if($i->id) {
+            foreach ($this->newItems as $i) {
+                if ($i->id) {
                     $ids[] = $i->id;
                 }
-                if($i->urlTitleHash) {
+                if ($i->urlTitleHash) {
                     $hashesUT[] = $i->urlTitleHash;
                 }
-                if($i->urlContentHash) {
+                if ($i->urlContentHash) {
                     $hashesUC[] = $i->urlContentHash;
                 }
-                if($i->titleContentHash) {
+                if ($i->titleContentHash) {
                     $hashesTC[] = $i->titleContentHash;
                 }
             }
@@ -260,14 +261,14 @@ class Feed {
     protected function matchItems(array $items, array $articles): array {
         $new =  $edited = [];
         // iterate through the articles and for each determine whether it is existing, edited, or entirely new
-        foreach($items as $i) {
+        foreach ($items as $i) {
             $found = false;
-            foreach($articles as $a) {
+            foreach ($articles as $a) {
                 // if the item has an ID and it doesn't match the article ID, the two don't match, regardless of hashes
-                if($i->id && $i->id !== $a['guid']) {
+                if ($i->id && $i->id !== $a['guid']) {
                     continue;
                 }
-                if(
+                if (
                     // the item matches if the GUID matches...
                     ($i->id && $i->id === $a['guid']) ||
                     // ... or if any one of the hashes match
@@ -275,13 +276,13 @@ class Feed {
                     ($i->urlContentHash   && $i->urlContentHash   === $a['url_content_hash'])   ||
                     ($i->titleContentHash && $i->titleContentHash === $a['title_content_hash'])
                 ) {
-                    if($i->updatedDate && Date::transform($i->updatedDate, "sql") !== $a['edited']) {
+                    if ($i->updatedDate && Date::transform($i->updatedDate, "sql") !== $a['edited']) {
                         // if the item has an edit timestamp and it doesn't match that of the article in the database, the the article has been edited
                         // we store the item index and database record ID as a key/value pair
                         $found = true;
                         $edited[$a['id']] = $i;
                         break;
-                    } else if($i->urlTitleHash !== $a['url_title_hash'] || $i->urlContentHash !== $a['url_content_hash'] || $i->titleContentHash !== $a['title_content_hash']) {
+                    } elseif ($i->urlTitleHash !== $a['url_title_hash'] || $i->urlContentHash !== $a['url_content_hash'] || $i->titleContentHash !== $a['title_content_hash']) {
                         // if any of the hashes do not match, then the article has been edited
                         $found = true;
                         $edited[$a['id']] = $i;
@@ -293,7 +294,7 @@ class Feed {
                     }
                 }
             }
-            if(!$found) {
+            if (!$found) {
                 $new[] = $i;
             }
         }
@@ -302,7 +303,7 @@ class Feed {
 
     protected function computeNextFetch(): \DateTime {
         $now = Date::normalize(time());
-        if(!$this->modified) {
+        if (!$this->modified) {
             $diff = $now->getTimestamp() - $this->lastModified->getTimestamp();
             $offset = $this->normalizeDateDiff($diff);
             $now->modify("+".$offset);
@@ -313,14 +314,14 @@ class Feed {
             // interval is "less than 30m"). If there is no commonality, the feed is checked in 1 hour.
             $offsets = [];
             $dates = $this->gatherDates();
-            if(sizeof($dates) > 3) {
-                for($a = 0; $a < 3; $a++) {
+            if (sizeof($dates) > 3) {
+                for ($a = 0; $a < 3; $a++) {
                     $diff = $dates[$a] - $dates[$a+1];
                     $offsets[] = $this->normalizeDateDiff($diff);
                 }
-                if($offsets[0]==$offsets[1] || $offsets[0]==$offsets[2]) {
+                if ($offsets[0]==$offsets[1] || $offsets[0]==$offsets[2]) {
                     $now->modify("+".$offsets[0]);
-                } else if($offsets[1]==$offsets[2]) {
+                } elseif ($offsets[1]==$offsets[2]) {
                     $now->modify("+".$offsets[1]);
                 } else {
                     $now->modify("+ 1 hour");
@@ -333,9 +334,9 @@ class Feed {
     }
 
     public static function nextFetchOnError($errCount): \DateTime {
-        if($errCount < 3) {
+        if ($errCount < 3) {
             $offset = "5 minutes";
-        } else if($errCount < 15) {
+        } elseif ($errCount < 15) {
             $offset = "3 hours";
         } else {
             $offset = "1 day";
@@ -344,13 +345,13 @@ class Feed {
     }
 
     protected function normalizeDateDiff(int $diff): string {
-        if($diff < (30 * 60)) { // less than 30 minutes
+        if ($diff < (30 * 60)) { // less than 30 minutes
             $offset = "15 minutes";
-        } else if($diff < (60 * 60)) { // less than an hour
+        } elseif ($diff < (60 * 60)) { // less than an hour
             $offset = "30 minutes";
-        } else if($diff < (3 * 60 * 60)) { // less than three hours
+        } elseif ($diff < (3 * 60 * 60)) { // less than three hours
             $offset = "1 hour";
-        } else if($diff >= (36 * 60 * 60)) { // more than 36 hours
+        } elseif ($diff >= (36 * 60 * 60)) { // more than 36 hours
             $offset = "1 day";
         } else {
             $offset = "3 hours";
@@ -359,11 +360,11 @@ class Feed {
     }
 
     protected function computeLastModified() {
-        if(!$this->modified) {
+        if (!$this->modified) {
             return $this->lastModified;
         }
         $dates = $this->gatherDates();
-        if(sizeof($dates)) {
+        if (sizeof($dates)) {
             return Date::normalize($dates[0]);
         } else {
             return null;
@@ -372,11 +373,11 @@ class Feed {
 
     protected function gatherDates(): array {
         $dates = [];
-        foreach($this->data->items as $item) {
-            if($item->updatedDate) {
+        foreach ($this->data->items as $item) {
+            if ($item->updatedDate) {
                 $dates[] = $item->updatedDate->getTimestamp();
             }
-            if($item->publishedDate) {
+            if ($item->publishedDate) {
                 $dates[] = $item->publishedDate->getTimestamp();
             }
         }
@@ -387,10 +388,10 @@ class Feed {
 
     protected function scrape(): bool {
         $scraper = new Scraper($this->config);
-        foreach(array_merge($this->newItems, $this->changedItems) as $item) {
+        foreach (array_merge($this->newItems, $this->changedItems) as $item) {
             $scraper->setUrl($item->url);
             $scraper->execute();
-            if($scraper->hasRelevantContent()) {
+            if ($scraper->hasRelevantContent()) {
                 $item->content = $scraper->getFilteredContent();
             }
         }

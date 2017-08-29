@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\Database;
+
 use JKingWeb\Arsse\Test\Database;
 use JKingWeb\Arsse\Arsse;
 
@@ -18,7 +19,7 @@ trait SeriesMeta {
         ],
     ];
 
-    function setUpSeries() {
+    public function setUpSeries() {
         // the schema_version key is a special case, and to avoid jumping through hoops for every test we deal with it now
         $this->data = $this->dataBare;
         // as far as tests are concerned the schema version is part of the expectations primed into the database
@@ -27,14 +28,14 @@ trait SeriesMeta {
         $this->primeDatabase($this->dataBare);
     }
 
-    function testAddANewValue() {
+    public function testAddANewValue() {
         $this->assertTrue(Arsse::$db->metaSet("favourite", "Cygnus X-1"));
         $state = $this->primeExpectations($this->data, ['arsse_meta' => ['key','value']]);
         $state['arsse_meta']['rows'][] = ["favourite","Cygnus X-1"];
         $this->compareExpectations($state);
     }
 
-    function testAddANewTypedValue() {
+    public function testAddANewTypedValue() {
         $this->assertTrue(Arsse::$db->metaSet("answer", 42, "int"));
         $this->assertTrue(Arsse::$db->metaSet("true", true, "bool"));
         $this->assertTrue(Arsse::$db->metaSet("false", false, "bool"));
@@ -47,14 +48,14 @@ trait SeriesMeta {
         $this->compareExpectations($state);
     }
 
-    function testChangeAnExistingValue() {
+    public function testChangeAnExistingValue() {
         $this->assertTrue(Arsse::$db->metaSet("album", "Hemispheres"));
         $state = $this->primeExpectations($this->data, ['arsse_meta' => ['key','value']]);
         $state['arsse_meta']['rows'][1][1] = "Hemispheres";
         $this->compareExpectations($state);
     }
 
-    function testRemoveAValue() {
+    public function testRemoveAValue() {
         $this->assertTrue(Arsse::$db->metaRemove("album"));
         $this->assertFalse(Arsse::$db->metaRemove("album"));
         $state = $this->primeExpectations($this->data, ['arsse_meta' => ['key','value']]);
@@ -62,7 +63,7 @@ trait SeriesMeta {
         $this->compareExpectations($state);
     }
 
-    function testRetrieveAValue() {
+    public function testRetrieveAValue() {
         $this->assertSame("".Database::SCHEMA_VERSION, Arsse::$db->metaGet("schema_version"));
         $this->assertSame("A Farewell to Kings", Arsse::$db->metaGet("album"));
         $this->assertSame(null, Arsse::$db->metaGet("this_key_does_not_exist"));

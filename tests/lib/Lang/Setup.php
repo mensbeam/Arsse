@@ -1,15 +1,14 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\Lang;
+
 use JKingWeb\Arsse\Lang;
 use JKingWeb\Arsse\Arsse;
 use org\bovigo\vfs\vfsStream;
 use Phake;
 
-
-
 trait Setup {
-    function setUp() {
+    public function setUp() {
         // test files
         $this->files = [
             'en.php'    => '<?php return ["Test.presentText" => "and the Philosopher\'s Stone"];',
@@ -40,16 +39,20 @@ trait Setup {
         Arsse::$lang = Phake::mock(Lang::class);
         Phake::when(Arsse::$lang)->msg->thenReturn("");
         // call the additional setup method if it exists
-        if(method_exists($this, "setUpSeries")) $this->setUpSeries();
+        if (method_exists($this, "setUpSeries")) {
+            $this->setUpSeries();
+        }
     }
 
-    function tearDown() {
+    public function tearDown() {
         // verify calls to the mock Lang object
         Phake::verify(Arsse::$lang, Phake::atLeast(0))->msg($this->isType("string"), $this->anything());
         Phake::verifyNoOtherInteractions(Arsse::$lang);
         // clean up
         $this->clearData(true);
         // call the additional teardiwn method if it exists
-        if(method_exists($this, "tearDownSeries")) $this->tearDownSeries();
+        if (method_exists($this, "tearDownSeries")) {
+            $this->tearDownSeries();
+        }
     }
 }

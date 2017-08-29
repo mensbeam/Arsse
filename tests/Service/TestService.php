@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
+
 use JKingWeb\Arsse\Misc\Date;
 use Phake;
 
@@ -8,14 +9,14 @@ use Phake;
 class TestService extends Test\AbstractTest {
     protected $srv;
 
-    function setUp() {
+    public function setUp() {
         $this->clearData();
         Arsse::$conf = new Conf();
         Arsse::$db = Phake::mock(Database::class);
         $this->srv = new Service();
     }
 
-    function testComputeInterval() {
+    public function testComputeInterval() {
         $in = [
             Arsse::$conf->serviceFrequency,
             "PT2M",
@@ -24,21 +25,25 @@ class TestService extends Test\AbstractTest {
             "5M",
             "interval",
         ];
-        foreach($in as $index => $spec) {
-            try{$exp = new \DateInterval($spec);} catch(\Exception $e) {$exp = new \DateInterval("PT2M");}
+        foreach ($in as $index => $spec) {
+            try {
+                $exp = new \DateInterval($spec);
+            } catch (\Exception $e) {
+                $exp = new \DateInterval("PT2M");
+            }
             Arsse::$conf->serviceFrequency = $spec;
             $this->assertEquals($exp, Service::interval(), "Interval #$index '$spec' was not correctly calculated");
         }
     }
 
-    function testCheckIn() {
+    public function testCheckIn() {
         $now = time();
         $this->srv->checkIn();
         Phake::verify(Arsse::$db)->metaSet("service_last_checkin", Phake::capture($then), "datetime");
         $this->assertTime($now, $then);
     }
 
-    function testReportHavingCheckedIn() {
+    public function testReportHavingCheckedIn() {
         // the mock's metaGet() returns null by default
         $this->assertFalse(Service::hasCheckedIn());
         $interval = Service::interval();

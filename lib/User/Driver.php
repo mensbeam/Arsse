@@ -2,7 +2,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\User;
 
-Interface Driver {
+interface Driver {
     const FUNC_NOT_IMPLEMENTED = 0;
     const FUNC_INTERNAL = 1;
     const FUNC_EXTERNAL = 2;
@@ -14,29 +14,29 @@ Interface Driver {
     const RIGHTS_GLOBAL_ADMIN   = 100;  // is completely unrestricted
 
     // returns an instance of a class implementing this interface.
-    function __construct();
+    public function __construct();
     // returns a human-friendly name for the driver (for display in installer, for example)
-    static function driverName(): string;
+    public static function driverName(): string;
     // returns an array (or single queried member of same) of methods defined by this interface and whether the class implements the internal function or a custom version
-    function driverFunctions(string $function = null);
+    public function driverFunctions(string $function = null);
     // authenticates a user against their name and password
-    function auth(string $user, string $password): bool;
+    public function auth(string $user, string $password): bool;
     // checks whether a user exists
-    function userExists(string $user): bool;
+    public function userExists(string $user): bool;
     // adds a user
-    function userAdd(string $user, string $password = null): string;
+    public function userAdd(string $user, string $password = null): string;
     // removes a user
-    function userRemove(string $user): bool;
+    public function userRemove(string $user): bool;
     // lists all users
-    function userList(string $domain = null): array;
+    public function userList(string $domain = null): array;
     // sets a user's password; if the driver does not require the old password, it may be ignored
-    function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null): string;
+    public function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null): string;
     // gets user metadata (currently not useful)
-    function userPropertiesGet(string $user): array;
+    public function userPropertiesGet(string $user): array;
     // sets user metadata (currently not useful)
-    function userPropertiesSet(string $user, array $properties): array;
+    public function userPropertiesSet(string $user, array $properties): array;
     // returns a user's access level according to RIGHTS_* constants (or some custom semantics, if using custom implementation of authorize())
-    function userRightsGet(string $user): int;
+    public function userRightsGet(string $user): int;
     // sets a user's access level
-    function userRightsSet(string $user, int $level): bool;
+    public function userRightsSet(string $user, int $level): bool;
 }

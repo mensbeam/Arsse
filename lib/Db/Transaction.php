@@ -7,39 +7,39 @@ class Transaction {
     protected $pending = false;
     protected $drv;
 
-    function __construct(Driver $drv, bool $lock = false) {
+    public function __construct(Driver $drv, bool $lock = false) {
         $this->index = $drv->savepointCreate($lock);
         $this->drv = $drv;
         $this->pending = true;
     }
 
-    function __destruct() {
-        if($this->pending) {
+    public function __destruct() {
+        if ($this->pending) {
             try {
                 $this->drv->savepointUndo($this->index);
-            } catch(\Throwable $e) {
+            } catch (\Throwable $e) {
                 // do nothing
             }
         }
     }
 
-    function commit(): bool {
+    public function commit(): bool {
         $out = $this->drv->savepointRelease($this->index);
         $this->pending = false;
         return $out;
     }
 
-    function rollback(): bool {
+    public function rollback(): bool {
         $out = $this->drv->savepointUndo($this->index);
         $this->pending = false;
         return $out;
     }
 
-    function getIndex(): int {
+    public function getIndex(): int {
         return $this->index;
     }
 
-    function isPending(): bool {
+    public function isPending(): bool {
         return $this->pending;
     }
 }

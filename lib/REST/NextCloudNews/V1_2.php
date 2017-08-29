@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\REST\NextCloudNews;
+
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Service;
@@ -36,22 +37,22 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
      // 'items'        => "array int", // just pass these through
     ];
     
-    function __construct() {
+    public function __construct() {
     }
 
-    function dispatch(\JKingWeb\Arsse\REST\Request $req): Response {
+    public function dispatch(\JKingWeb\Arsse\REST\Request $req): Response {
         // try to authenticate
-        if(!Arsse::$user->authHTTP()) {
+        if (!Arsse::$user->authHTTP()) {
             return new Response(401, "", "", ['WWW-Authenticate: Basic realm="'.self::REALM.'"']);
         }
         // normalize the input
-        if($req->body) {
+        if ($req->body) {
             // if the entity body is not JSON according to content type, return "415 Unsupported Media Type"
-            if(!preg_match("<^application/json\b|^$>", $req->type)) {
+            if (!preg_match("<^application/json\b|^$>", $req->type)) {
                 return new Response(415, "", "", ['Accept: application/json']);
             }
             $data = @json_decode($req->body, true);
-            if(json_last_error() != \JSON_ERROR_NONE) {
+            if (json_last_error() != \JSON_ERROR_NONE) {
                 // if the body could not be parsed as JSON, return "400 Bad Request"
                 return new Response(400);
             }
@@ -66,21 +67,21 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // check to make sure the requested function is implemented
         try {
             $func = $this->chooseCall($req->paths, $req->method);
-        } catch(Exception501 $e) {
+        } catch (Exception501 $e) {
             return new Response(501);
-        } catch(Exception405 $e) {
+        } catch (Exception405 $e) {
             return new Response(405, "", "", ["Allow: ".$e->getMessage()]);
         }
-        if(!method_exists($this, $func)) {
+        if (!method_exists($this, $func)) {
             return new Response(501);
         }
         // dispatch
         try {
             return $this->$func($req->paths, $data);
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             // if there was a REST exception return 400
             return new Response(400);
-        } catch(AbstractException $e) {
+        } catch (AbstractException $e) {
             // if there was any other Arsse exception return 500
             return new Response(500);
         }
@@ -133,27 +134,27 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // the first path element is the overall scope of the request
         $scope = $url[0];
         // any URL components which are only digits should be replaced with "0", for easier comparison (integer segments are IDs, and we don't care about the specific ID)
-        for($a = 0; $a < sizeof($url); $a++) {
-            if($this->validateInt($url[$a])) {
+        for ($a = 0; $a < sizeof($url); $a++) {
+            if ($this->validateInt($url[$a])) {
                 $url[$a] = "0";
             }
         }
         // normalize the HTTP method to uppercase
         $method = strtoupper($method);
         // if the scope is not supported, return 501
-        if(!array_key_exists($scope, $choices)) {
+        if (!array_key_exists($scope, $choices)) {
             throw new Exception501();
         }
         // we now evaluate the supplied URL against every supported path for the selected scope
         // the URL is evaluated as an array so as to avoid decoded escapes turning invalid URLs into valid ones
-        foreach($choices[$scope] as $path => $funcs) {
+        foreach ($choices[$scope] as $path => $funcs) {
             // add the scope to the path to match against and split it
             $path = (string) $path;
             $path = (strlen($path)) ? "$scope/$path" : $scope;
             $path = explode("/", $path);
-            if($path===$url) {
+            if ($path===$url) {
                 // if the path matches, make sure the method is allowed
-                if(array_key_exists($method,$funcs)) {
+                if (array_key_exists($method, $funcs)) {
                     // if it is allowed, return the object method to run
                     return $funcs[$method];
                 } else {
@@ -230,8 +231,8 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function folderAdd(array $url, array $data): Response {
         try {
             $folder = Arsse::$db->folderAdd(Arsse::$user->id, $data);
-        } catch(ExceptionInput $e) {
-            switch($e->getCode()) {
+        } catch (ExceptionInput $e) {
+            switch ($e->getCode()) {
                 // folder already exists
                 case 10236: return new Response(409);
                 // folder name not acceptable
@@ -250,7 +251,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // perform the deletion
         try {
             Arsse::$db->folderRemove(Arsse::$user->id, (int) $url[1]);
-        } catch(ExceptionInput $e) {
+        } catch (ExceptionInput $e) {
             // folder does not exist
             return new Response(404);
         }
@@ -260,14 +261,14 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     // rename a folder (also supports moving nesting folders, but this is not a feature of the API)
     protected function folderRename(array $url, array $data): Response {
         // there must be some change to be made
-        if(!sizeof($data)) {
+        if (!sizeof($data)) {
             return new Response(422);
         }
         // perform the edit
         try {
             Arsse::$db->folderPropertiesSet(Arsse::$user->id, (int) $url[1], $data);
-        } catch(ExceptionInput $e) {
-            switch($e->getCode()) {
+        } catch (ExceptionInput $e) {
+            switch ($e->getCode()) {
                 // folder does not exist
                 case 10239: return new Response(404);
                 // folder already exists
@@ -285,7 +286,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     // mark all articles associated with a folder as read
     protected function folderMarkRead(array $url, array $data): Response {
         $c = new Context;
-        if(isset($data['newestItemId'])) {
+        if (isset($data['newestItemId'])) {
             // if the item ID is valid (i.e. an integer), add it to the context
             $c->latestEdition($data['newestItemId']);
         } else {
@@ -297,7 +298,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // perform the operation
         try {
             Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], $c);
-        } catch(ExceptionInput $e) {
+        } catch (ExceptionInput $e) {
             // folder does not exist
             return new Response(404);
         }
@@ -307,13 +308,13 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     // return list of feeds which should be refreshed
     protected function feedListStale(array $url, array $data): Response {
         // function requires admin rights per spec
-        if(Arsse::$user->rightsGet(Arsse::$user->id)==User::RIGHTS_NONE) {
+        if (Arsse::$user->rightsGet(Arsse::$user->id)==User::RIGHTS_NONE) {
             return new Response(403);
         }
         // list stale feeds which should be checked for updates
         $feeds = Arsse::$db->feedListStale();
         $out = [];
-        foreach($feeds as $feed) {
+        foreach ($feeds as $feed) {
             // since in our implementation feeds don't belong the users, the 'userId' field will always be an empty string
             $out[] = ['id' => $feed, 'userId' => ""];
         }
@@ -323,16 +324,16 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     // refresh a feed
     protected function feedUpdate(array $url, array $data): Response {
         // function requires admin rights per spec
-        if(Arsse::$user->rightsGet(Arsse::$user->id)==User::RIGHTS_NONE) {
+        if (Arsse::$user->rightsGet(Arsse::$user->id)==User::RIGHTS_NONE) {
             return new Response(403);
         }
         // perform an update of a single feed
-        if(!isset($data['feedId'])) {
+        if (!isset($data['feedId'])) {
             return new Response(422);
         }
         try {
             Arsse::$db->feedUpdate($data['feedId']);
-        } catch(ExceptionInput $e) {
+        } catch (ExceptionInput $e) {
             return new Response(404);
         }
         return new Response(204);
@@ -341,7 +342,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     // add a new feed
     protected function subscriptionAdd(array $url, array $data): Response {
         // normalize the feed URL
-        if(!isset($data['url'])) {
+        if (!isset($data['url'])) {
             return new Response(422);
         }
         // normalize the folder ID, if specified; zero should be transformed to null
@@ -350,18 +351,19 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $tr = Arsse::$db->begin();
         try {
             $id = Arsse::$db->subscriptionAdd(Arsse::$user->id, $data['url']);
-        } catch(ExceptionInput $e) {
+        } catch (ExceptionInput $e) {
             // feed already exists
             return new Response(409);
-        } catch(FeedException $e) {
+        } catch (FeedException $e) {
             // feed could not be retrieved
             return new Response(422);
         }
         // if a folder was specified, move the feed to the correct folder; silently ignore errors
-        if($folder) {
+        if ($folder) {
             try {
                 Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, $id, ['folder' => $folder]);
-            } catch(ExceptionInput $e) {}
+            } catch (ExceptionInput $e) {
+            }
         }
         $tr->commit();
         // fetch the feed's metadata and format it appropriately
@@ -369,7 +371,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $feed = $this->feedTranslate($feed);
         $out = ['feeds' => [$feed]];
         $newest = Arsse::$db->editionLatest(Arsse::$user->id, (new Context)->subscription($id));
-        if($newest) {
+        if ($newest) {
             $out['newestItemId'] = $newest;
         }
         return new Response(200, $out);
@@ -379,13 +381,13 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function subscriptionList(array $url, array $data): Response {
         $subs = Arsse::$db->subscriptionList(Arsse::$user->id);
         $out = [];
-        foreach($subs as $sub) {
+        foreach ($subs as $sub) {
             $out[] = $this->feedTranslate($sub);
         }
         $out = ['feeds' => $out];
         $out['starredCount'] = Arsse::$db->articleStarredCount(Arsse::$user->id);
         $newest = Arsse::$db->editionLatest(Arsse::$user->id);
-        if($newest) {
+        if ($newest) {
             $out['newestItemId'] = $newest;
         }
         return new Response(200, $out);
@@ -395,7 +397,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function subscriptionRemove(array $url, array $data): Response {
         try {
             Arsse::$db->subscriptionRemove(Arsse::$user->id, (int) $url[1]);
-        } catch(ExceptionInput $e) {
+        } catch (ExceptionInput $e) {
             // feed does not exist
             return new Response(404);
         }
@@ -406,7 +408,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function subscriptionRename(array $url, array $data): Response {
         // normalize input
         $in = [];
-        if(array_key_exists('feedTitle', $data)) { // we use array_key_exists because null is a valid input
+        if (array_key_exists('feedTitle', $data)) { // we use array_key_exists because null is a valid input
             $in['title'] = $data['feedTitle'];
         } else {
             return new Response(422);
@@ -414,8 +416,8 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // perform the renaming
         try {
             Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, (int) $url[1], $in);
-        } catch(ExceptionInput $e) {
-            switch($e->getCode()) {
+        } catch (ExceptionInput $e) {
+            switch ($e->getCode()) {
                 // subscription does not exist
                 case 10239: return new Response(404);
                 // name is invalid
@@ -432,7 +434,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function subscriptionMove(array $url, array $data): Response {
         // normalize input
         $in = [];
-        if(isset($data['folderId'])) {
+        if (isset($data['folderId'])) {
             $in['folder'] = $data['folderId'] ? $data['folderId'] : null;
         } else {
             return new Response(422);
@@ -440,8 +442,8 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // perform the move
         try {
             Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, (int) $url[1], $in);
-        } catch(ExceptionInput $e) {
-            switch($e->getCode()) {
+        } catch (ExceptionInput $e) {
+            switch ($e->getCode()) {
                 // subscription does not exist
                 case 10239: return new Response(404);
                 // folder does not exist
@@ -456,7 +458,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     // mark all articles associated with a subscription as read
     protected function subscriptionMarkRead(array $url, array $data): Response {
         $c = new Context;
-        if(isset($data['newestItemId'])) {
+        if (isset($data['newestItemId'])) {
             $c->latestEdition($data['newestItemId']);
         } else {
             // otherwise return an error
@@ -467,7 +469,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // perform the operation
         try {
             Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], $c);
-        } catch(ExceptionInput $e) {
+        } catch (ExceptionInput $e) {
             // subscription does not exist
             return new Response(404);
         }
@@ -479,39 +481,39 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // set the context options supplied by the client
         $c = new Context;
         // set the batch size
-        if(isset($data['batchSize']) && $data['batchSize'] > 0) {
+        if (isset($data['batchSize']) && $data['batchSize'] > 0) {
             $c->limit($data['batchSize']);
         }
         // set the order of returned items
-        if(isset($data['oldestFirst']) && $data['oldestFirst']) {
+        if (isset($data['oldestFirst']) && $data['oldestFirst']) {
             $c->reverse(false);
         } else {
             $c->reverse(true);
         }
         // set the edition mark-off; the database uses an or-equal comparison for internal consistency, but the protocol does not, so we must adjust by one
-        if(isset($data['offset']) && $data['offset'] > 0) {
-            if($c->reverse) {
+        if (isset($data['offset']) && $data['offset'] > 0) {
+            if ($c->reverse) {
                 $c->latestEdition($data['offset'] - 1);
             } else {
                 $c->oldestEdition($data['offset'] + 1);
             }
         }
         // set whether to only return unread
-        if(isset($data['getRead']) && !$data['getRead']) {
+        if (isset($data['getRead']) && !$data['getRead']) {
             $c->unread(true);
         }
         // if no type is specified assume 3 (All)
-        if(!isset($data['type'])) {
+        if (!isset($data['type'])) {
             $data['type'] = 3;
         }
-        switch($data['type']) {
+        switch ($data['type']) {
             case 0: // feed
-                if(isset($data['id'])) {
+                if (isset($data['id'])) {
                     $c->subscription($data['id']);
                 }
                 break;
             case 1: // folder
-                if(isset($data['id'])) {
+                if (isset($data['id'])) {
                     $c->folder($data['id']);
                 }
                 break;
@@ -522,18 +524,18 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 // return all items
         }
         // whether to return only updated items
-        if(isset($data['lastModified'])) {
+        if (isset($data['lastModified'])) {
             $c->modifiedSince($data['lastModified']);
         }
         // perform the fetch
         try {
             $items = Arsse::$db->articleList(Arsse::$user->id, $c);
-        } catch(ExceptionInput $e) {
+        } catch (ExceptionInput $e) {
             // ID of subscription or folder is not valid
             return new Response(422);
         }
         $out = [];
-        foreach($items as $item) {
+        foreach ($items as $item) {
             $out[] = $this->articleTranslate($item);
         }
         $out = ['items' => $out];
@@ -543,7 +545,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     // mark all articles as read
     protected function articleMarkReadAll(array $url, array $data): Response {
         $c = new Context;
-        if(isset($data['newestItemId'])) {
+        if (isset($data['newestItemId'])) {
             // set the newest item ID as specified
             $c->latestEdition($data['newestItemId']);
         } else {
@@ -564,7 +566,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $set = ($url[2]=="read");
         try {
             Arsse::$db->articleMark(Arsse::$user->id, ['read' => $set], $c);
-        } catch(ExceptionInput $e) {
+        } catch (ExceptionInput $e) {
             // ID is not valid
             return new Response(404);
         }
@@ -580,7 +582,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $set = ($url[3]=="star");
         try {
             Arsse::$db->articleMark(Arsse::$user->id, ['starred' => $set], $c);
-        } catch(ExceptionInput $e) {
+        } catch (ExceptionInput $e) {
             // ID is not valid
             return new Response(404);
         }
@@ -592,19 +594,20 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // determine whether to mark read or unread
         $set = ($url[1]=="read");
         // if the input data is not at all valid, return an error
-        if(!isset($data['items']) || !is_array($data['items'])) {
+        if (!isset($data['items']) || !is_array($data['items'])) {
             return new Response(422);
         }
         // start a transaction and loop through the items
         $t = Arsse::$db->begin();
         $in = array_chunk($data['items'], 50);
-        for($a = 0; $a < sizeof($in); $a++) {
+        for ($a = 0; $a < sizeof($in); $a++) {
             // initialize the matching context
             $c = new Context;
             $c->editions($in[$a]);
             try {
                 Arsse::$db->articleMark(Arsse::$user->id, ['read' => $set], $c);
-            } catch(ExceptionInput $e) {}
+            } catch (ExceptionInput $e) {
+            }
         }
         $t->commit();
         return new Response(204);
@@ -615,19 +618,20 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // determine whether to mark starred or unstarred
         $set = ($url[1]=="star");
         // if the input data is not at all valid, return an error
-        if(!isset($data['items']) || !is_array($data['items'])) {
+        if (!isset($data['items']) || !is_array($data['items'])) {
             return new Response(422);
         }
         // start a transaction and loop through the items
         $t = Arsse::$db->begin();
         $in = array_chunk(array_column($data['items'], "guidHash"), 50);
-        for($a = 0; $a < sizeof($in); $a++) {
+        for ($a = 0; $a < sizeof($in); $a++) {
             // initialize the matching context
             $c = new Context;
             $c->articles($in[$a]);
             try {
                 Arsse::$db->articleMark(Arsse::$user->id, ['starred' => $set], $c);
-            } catch(ExceptionInput $e) {}
+            } catch (ExceptionInput $e) {
+            }
         }
         $t->commit();
         return new Response(204);
@@ -636,7 +640,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function userStatus(array $url, array $data): Response {
         $data = Arsse::$user->propertiesGet(Arsse::$user->id, true);
         // construct the avatar structure, if an image is available
-        if(isset($data['avatar'])) {
+        if (isset($data['avatar'])) {
             $avatar = [
                 'data' => base64_encode($data['avatar']['data']),
                 'mime' => $data['avatar']['type'],
@@ -656,7 +660,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function cleanupBefore(array $url, array $data): Response {
         // function requires admin rights per spec
-        if(Arsse::$user->rightsGet(Arsse::$user->id)==User::RIGHTS_NONE) {
+        if (Arsse::$user->rightsGet(Arsse::$user->id)==User::RIGHTS_NONE) {
             return new Response(403);
         }
         Service::cleanupPre();
@@ -665,7 +669,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function cleanupAfter(array $url, array $data): Response {
         // function requires admin rights per spec
-        if(Arsse::$user->rightsGet(Arsse::$user->id)==User::RIGHTS_NONE) {
+        if (Arsse::$user->rightsGet(Arsse::$user->id)==User::RIGHTS_NONE) {
             return new Response(403);
         }
         Service::cleanupPost();

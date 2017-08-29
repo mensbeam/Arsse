@@ -7,16 +7,16 @@ abstract class AbstractDriver implements Driver {
     protected $transDepth = 0;
     protected $transStatus = [];
 
-    public abstract function prepareArray(string $query, array $paramTypes): Statement;
-    protected abstract function lock(): bool;
-    protected abstract function unlock(bool $rollback = false) : bool;
+    abstract public function prepareArray(string $query, array $paramTypes): Statement;
+    abstract protected function lock(): bool;
+    abstract protected function unlock(bool $rollback = false) : bool;
 
     /** @codeCoverageIgnore */
     public function schemaVersion(): int {
         // FIXME: generic schemaVersion() will need to be covered for database engines other than SQLite
         try {
             return (int) $this->query("SELECT value from arsse_meta where key is schema_version")->getValue();
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             return 0;
         }
     }
@@ -26,7 +26,7 @@ abstract class AbstractDriver implements Driver {
     }
     
     public function savepointCreate(bool $lock = false): int {
-        if($lock && !$this->transDepth) {
+        if ($lock && !$this->transDepth) {
             $this->lock();
             $this->locked = true;
         }
@@ -36,17 +36,17 @@ abstract class AbstractDriver implements Driver {
     }
 
     public function savepointRelease(int $index = null): bool {
-        if(is_null($index)) {
+        if (is_null($index)) {
             $index = $this->transDepth;
         }
-        if(array_key_exists($index, $this->transStatus)) {
-            switch($this->transStatus[$index]) {
+        if (array_key_exists($index, $this->transStatus)) {
+            switch ($this->transStatus[$index]) {
                 case self::TR_PEND:
                     $this->exec("RELEASE SAVEPOINT arsse_".$index);
                     $this->transStatus[$index] = self::TR_COMMIT;
                     $a = $index;
-                    while(++$a && $a <= $this->transDepth) {
-                        if($this->transStatus[$a] <= self::TR_PEND) {
+                    while (++$a && $a <= $this->transDepth) {
+                        if ($this->transStatus[$a] <= self::TR_PEND) {
                             $this->transStatus[$a] = self::TR_PEND_COMMIT;
                         }
                     }
@@ -66,13 +66,13 @@ abstract class AbstractDriver implements Driver {
                 default:
                     throw new Exception("unknownSavepointStatus", $this->transStatus[$index]); //@codeCoverageIgnore
             }
-            if($index==$this->transDepth) {
-                while($this->transDepth > 0 && $this->transStatus[$this->transDepth] > self::TR_PEND) {
+            if ($index==$this->transDepth) {
+                while ($this->transDepth > 0 && $this->transStatus[$this->transDepth] > self::TR_PEND) {
                     array_pop($this->transStatus);
                     $this->transDepth--;
                 }
             }
-            if(!$this->transDepth && $this->locked) {
+            if (!$this->transDepth && $this->locked) {
                 $this->unlock();
                 $this->locked = false;
             }
@@ -83,18 +83,18 @@ abstract class AbstractDriver implements Driver {
     }
 
     public function savepointUndo(int $index = null): bool {
-        if(is_null($index)) {
+        if (is_null($index)) {
             $index = $this->transDepth;
         }
-        if(array_key_exists($index, $this->transStatus)) {
-            switch($this->transStatus[$index]) {
+        if (array_key_exists($index, $this->transStatus)) {
+            switch ($this->transStatus[$index]) {
                 case self::TR_PEND:
                     $this->exec("ROLLBACK TRANSACTION TO SAVEPOINT arsse_".$index);
                     $this->exec("RELEASE SAVEPOINT arsse_".$index);
                     $this->transStatus[$index] = self::TR_ROLLBACK;
                     $a = $index;
-                    while(++$a && $a <= $this->transDepth) {
-                        if($this->transStatus[$a] <= self::TR_PEND) {
+                    while (++$a && $a <= $this->transDepth) {
+                        if ($this->transStatus[$a] <= self::TR_PEND) {
                             $this->transStatus[$a] = self::TR_PEND_ROLLBACK;
                         }
                     }
@@ -114,13 +114,13 @@ abstract class AbstractDriver implements Driver {
                 default:
                     throw new Exception("unknownSavepointStatus", $this->transStatus[$index]); //@codeCoverageIgnore
             }
-            if($index==$this->transDepth) {
-                while($this->transDepth > 0 && $this->transStatus[$this->transDepth] > self::TR_PEND) {
+            if ($index==$this->transDepth) {
+                while ($this->transDepth > 0 && $this->transStatus[$this->transDepth] > self::TR_PEND) {
                     array_pop($this->transStatus);
                     $this->transDepth--;
                 }
             }
-            if(!$this->transDepth && $this->locked) {
+            if (!$this->transDepth && $this->locked) {
                 $this->unlock(true);
                 $this->locked = false;
             }

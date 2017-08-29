@@ -27,27 +27,29 @@ class REST {
         // CommaFeed            https://www.commafeed.com/api/
     ];
 
-    function __construct() {
+    public function __construct() {
     }
 
-    function dispatch(REST\Request $req = null): REST\Response {
-        if($req===null) {
+    public function dispatch(REST\Request $req = null): REST\Response {
+        if ($req===null) {
             $req = new REST\Request();
         }
         $api = $this->apiMatch($req->url, $this->apis);
-        $req->url = substr($req->url,strlen($this->apis[$api]['strip']));
+        $req->url = substr($req->url, strlen($this->apis[$api]['strip']));
         $req->refreshURL();
         $class = $this->apis[$api]['class'];
         $drv = new $class();
         return $drv->dispatch($req);
     }
 
-    function apiMatch(string $url, array $map): string {
+    public function apiMatch(string $url, array $map): string {
         // sort the API list so the longest URL prefixes come first
-        uasort($map, function($a, $b) {return (strlen($a['match']) <=> strlen($b['match'])) * -1;});
+        uasort($map, function ($a, $b) {
+            return (strlen($a['match']) <=> strlen($b['match'])) * -1;
+        });
         // find a match
-        foreach($map as $id => $api) {
-            if(strpos($url, $api['match'])===0) {
+        foreach ($map as $id => $api) {
+            if (strpos($url, $api['match'])===0) {
                 return $id;
             }
         }

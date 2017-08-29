@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
+
 require_once __DIR__."/../bootstrap.php";
 
 /*
@@ -35,10 +36,10 @@ $defaults = [ // default values for response
     'fields'  => [],
 ];
 
-$url = explode("?",$_SERVER['REQUEST_URI'])[0];
+$url = explode("?", $_SERVER['REQUEST_URI'])[0];
 $base = BASE."tests".\DIRECTORY_SEPARATOR."docroot";
-$test = $base.str_replace("/",\DIRECTORY_SEPARATOR,$url).".php";
-if(!file_exists($test)) {
+$test = $base.str_replace("/", \DIRECTORY_SEPARATOR, $url).".php";
+if (!file_exists($test)) {
     $response = [
         'code'    => 499,
         'content' => "Test '$test' missing.",
@@ -53,14 +54,18 @@ if(!file_exists($test)) {
 // set the response code
 http_response_code((int) $response['code']);
 // if the response has a body, set the content type and (possibly) the ETag.
-if(strlen($response['content'])) {
+if (strlen($response['content'])) {
     header("Content-Type: ".$response['mime']);
-    if($response['cache']) header('ETag: "'.md5($response['content']).'"');
+    if ($response['cache']) {
+        header('ETag: "'.md5($response['content']).'"');
+    }
 }
 // if caching is enabled, set the last-modified date
-if($response['cache']) header("Last-Modified: ".gmdate("D, d M Y H:i:s \G\M\T", $response['lastMod']));
+if ($response['cache']) {
+    header("Last-Modified: ".gmdate("D, d M Y H:i:s \G\M\T", $response['lastMod']));
+}
 // set any other specified fields verbatim
-foreach($response['fields'] as $h) {
+foreach ($response['fields'] as $h) {
     header($h);
 }
 // send the content

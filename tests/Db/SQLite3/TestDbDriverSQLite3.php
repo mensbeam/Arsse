@@ -2,7 +2,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
-/** 
+/**
  * @covers \JKingWeb\Arsse\Db\SQLite3\Driver<extended>
  * @covers \JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder */
 class TestDbDriverSQLite3 extends Test\AbstractTest {
@@ -10,8 +10,8 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
     protected $drv;
     protected $ch;
 
-    function setUp() {
-        if(!extension_loaded("sqlite3")) {
+    public function setUp() {
+        if (!extension_loaded("sqlite3")) {
             $this->markTestSkipped("SQLite extension not loaded");
         }
         $this->clearData();
@@ -24,110 +24,110 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
         $this->ch->enableExceptions(true);
     }
 
-    function tearDown() {
+    public function tearDown() {
         unset($this->drv);
         unset($this->ch);
-        if(isset(Arsse::$conf)) {
+        if (isset(Arsse::$conf)) {
             unlink(Arsse::$conf->dbSQLite3File);
         }
         $this->clearData();
     }
 
-    function testFetchDriverName() {
+    public function testFetchDriverName() {
         $class = Arsse::$conf->dbDriver;
         $this->assertTrue(strlen($class::driverName()) > 0);
     }
 
-    function testExecAValidStatement() {
+    public function testExecAValidStatement() {
         $this->assertTrue($this->drv->exec("CREATE TABLE test(id integer primary key)"));
     }
 
-    function testExecAnInvalidStatement() {
+    public function testExecAnInvalidStatement() {
         $this->assertException("engineErrorGeneral", "Db");
         $this->drv->exec("And the meek shall inherit the earth...");
     }
 
-    function testExecMultipleStatements() {
+    public function testExecMultipleStatements() {
         $this->assertTrue($this->drv->exec("CREATE TABLE test(id integer primary key); INSERT INTO test(id) values(2112)"));
         $this->assertEquals(2112, $this->ch->querySingle("SELECT id from test"));
     }
 
-    function testExecTimeout() {
+    public function testExecTimeout() {
         $this->ch->exec("BEGIN EXCLUSIVE TRANSACTION");
         $this->assertException("general", "Db", "ExceptionTimeout");
         $this->drv->exec("CREATE TABLE test(id integer primary key)");
     }
 
-    function testExecConstraintViolation() {
+    public function testExecConstraintViolation() {
         $this->drv->exec("CREATE TABLE test(id integer not null)");
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         $this->drv->exec("INSERT INTO test(id) values(null)");
     }
 
-    function testExecTypeViolation() {
+    public function testExecTypeViolation() {
         $this->drv->exec("CREATE TABLE test(id integer primary key)");
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         $this->drv->exec("INSERT INTO test(id) values('ook')");
     }
 
-    function testMakeAValidQuery() {
+    public function testMakeAValidQuery() {
         $this->assertInstanceOf(Db\Result::class, $this->drv->query("SELECT 1"));
     }
 
-    function testMakeAnInvalidQuery() {
+    public function testMakeAnInvalidQuery() {
         $this->assertException("engineErrorGeneral", "Db");
         $this->drv->query("Apollo was astonished; Dionysus thought me mad");
     }
 
-    function testQueryTimeout() {
+    public function testQueryTimeout() {
         $this->ch->exec("BEGIN EXCLUSIVE TRANSACTION");
         $this->assertException("general", "Db", "ExceptionTimeout");
         $this->drv->query("CREATE TABLE test(id integer primary key)");
     }
 
-    function testQueryConstraintViolation() {
+    public function testQueryConstraintViolation() {
         $this->drv->exec("CREATE TABLE test(id integer not null)");
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         $this->drv->query("INSERT INTO test(id) values(null)");
     }
 
-    function testQueryTypeViolation() {
+    public function testQueryTypeViolation() {
         $this->drv->exec("CREATE TABLE test(id integer primary key)");
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         $this->drv->query("INSERT INTO test(id) values('ook')");
     }
 
-    function testPrepareAValidQuery() {
+    public function testPrepareAValidQuery() {
         $s = $this->drv->prepare("SELECT ?, ?", "int", "int");
         $this->assertInstanceOf(Db\Statement::class, $s);
     }
 
-    function testPrepareAnInvalidQuery() {
+    public function testPrepareAnInvalidQuery() {
         $this->assertException("engineErrorGeneral", "Db");
         $s = $this->drv->prepare("This is an invalid query", "int", "int");
     }
 
-    function testCreateASavepoint() {
+    public function testCreateASavepoint() {
         $this->assertEquals(1, $this->drv->savepointCreate());
         $this->assertEquals(2, $this->drv->savepointCreate());
         $this->assertEquals(3, $this->drv->savepointCreate());
     }
 
-    function testReleaseASavepoint() {
+    public function testReleaseASavepoint() {
         $this->assertEquals(1, $this->drv->savepointCreate());
         $this->assertEquals(true, $this->drv->savepointRelease());
         $this->assertException("invalid", "Db", "ExceptionSavepoint");
         $this->drv->savepointRelease();
     }
 
-    function testUndoASavepoint() {
+    public function testUndoASavepoint() {
         $this->assertEquals(1, $this->drv->savepointCreate());
         $this->assertEquals(true, $this->drv->savepointUndo());
         $this->assertException("invalid", "Db", "ExceptionSavepoint");
         $this->drv->savepointUndo();
     }
 
-    function testManipulateSavepoints() {
+    public function testManipulateSavepoints() {
         $this->assertEquals(1, $this->drv->savepointCreate());
         $this->assertEquals(2, $this->drv->savepointCreate());
         $this->assertEquals(3, $this->drv->savepointCreate());
@@ -144,7 +144,7 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
         $this->drv->savepointRelease(2);
     }
 
-    function testManipulateSavepointsSomeMore() {
+    public function testManipulateSavepointsSomeMore() {
         $this->assertEquals(1, $this->drv->savepointCreate());
         $this->assertEquals(2, $this->drv->savepointCreate());
         $this->assertEquals(3, $this->drv->savepointCreate());
@@ -155,7 +155,7 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
         $this->drv->savepointUndo(2);
     }
 
-    function testBeginATransaction() {
+    public function testBeginATransaction() {
         $select = "SELECT count(*) FROM test";
         $insert = "INSERT INTO test(id) values(null)";
         $this->drv->exec("CREATE TABLE test(id integer primary key)");
@@ -168,7 +168,7 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
         $this->assertEquals(0, $this->ch->querySingle($select));
     }
 
-    function testCommitATransaction() {
+    public function testCommitATransaction() {
         $select = "SELECT count(*) FROM test";
         $insert = "INSERT INTO test(id) values(null)";
         $this->drv->exec("CREATE TABLE test(id integer primary key)");
@@ -181,7 +181,7 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
         $this->assertEquals(1, $this->ch->querySingle($select));
     }
 
-    function testRollbackATransaction() {
+    public function testRollbackATransaction() {
         $select = "SELECT count(*) FROM test";
         $insert = "INSERT INTO test(id) values(null)";
         $this->drv->exec("CREATE TABLE test(id integer primary key)");
@@ -194,7 +194,7 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
         $this->assertEquals(0, $this->ch->querySingle($select));
     }
 
-    function testBeginChainedTransactions() {
+    public function testBeginChainedTransactions() {
         $select = "SELECT count(*) FROM test";
         $insert = "INSERT INTO test(id) values(null)";
         $this->drv->exec("CREATE TABLE test(id integer primary key)");
@@ -208,7 +208,7 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
         $this->assertEquals(0, $this->ch->querySingle($select));
     }
 
-    function testCommitChainedTransactions() {
+    public function testCommitChainedTransactions() {
         $select = "SELECT count(*) FROM test";
         $insert = "INSERT INTO test(id) values(null)";
         $this->drv->exec("CREATE TABLE test(id integer primary key)");
@@ -226,7 +226,7 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
         $this->assertEquals(2, $this->ch->querySingle($select));
     }
 
-    function testCommitChainedTransactionsOutOfOrder() {
+    public function testCommitChainedTransactionsOutOfOrder() {
         $select = "SELECT count(*) FROM test";
         $insert = "INSERT INTO test(id) values(null)";
         $this->drv->exec("CREATE TABLE test(id integer primary key)");
@@ -243,7 +243,7 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
         $tr2->commit();
     }
 
-    function testRollbackChainedTransactions() {
+    public function testRollbackChainedTransactions() {
         $select = "SELECT count(*) FROM test";
         $insert = "INSERT INTO test(id) values(null)";
         $this->drv->exec("CREATE TABLE test(id integer primary key)");
@@ -263,7 +263,7 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
         $this->assertEquals(0, $this->ch->querySingle($select));
     }
 
-    function testRollbackChainedTransactionsOutOfOrder() {
+    public function testRollbackChainedTransactionsOutOfOrder() {
         $select = "SELECT count(*) FROM test";
         $insert = "INSERT INTO test(id) values(null)";
         $this->drv->exec("CREATE TABLE test(id integer primary key)");
@@ -283,7 +283,7 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
         $this->assertEquals(0, $this->ch->querySingle($select));
     }
 
-    function testPartiallyRollbackChainedTransactions() {
+    public function testPartiallyRollbackChainedTransactions() {
         $select = "SELECT count(*) FROM test";
         $insert = "INSERT INTO test(id) values(null)";
         $this->drv->exec("CREATE TABLE test(id integer primary key)");
@@ -303,7 +303,7 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
         $this->assertEquals(1, $this->ch->querySingle($select));
     }
 
-    function testFetchSchemaVersion() {
+    public function testFetchSchemaVersion() {
         $this->assertSame(0, $this->drv->schemaVersion());
         $this->drv->exec("PRAGMA user_version=1");
         $this->assertSame(1, $this->drv->schemaVersion());
@@ -311,13 +311,13 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
         $this->assertSame(2, $this->drv->schemaVersion());
     }
 
-    function testLockTheDatabase() {
+    public function testLockTheDatabase() {
         $this->drv->savepointCreate(true);
         $this->assertException();
         $this->ch->exec("CREATE TABLE test(id integer primary key)");
     }
 
-    function testUnlockTheDatabase() {
+    public function testUnlockTheDatabase() {
         $this->drv->savepointCreate(true);
         $this->drv->savepointRelease();
         $this->drv->savepointCreate(true);

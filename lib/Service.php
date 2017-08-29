@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
+
 use JKingWeb\Arsse\Misc\Date;
 
 class Service {
@@ -10,11 +11,11 @@ class Service {
     /** @var \DateInterval */
     protected $interval;
 
-    static public function driverList(): array {
+    public static function driverList(): array {
         $sep = \DIRECTORY_SEPARATOR;
         $path = __DIR__.$sep."Service".$sep;
         $classes = [];
-        foreach(glob($path."*".$sep."Driver.php") as $file) {
+        foreach (glob($path."*".$sep."Driver.php") as $file) {
             $name = basename(dirname($file));
             $class = NS_BASE."User\\$name\\Driver";
             $classes[$class] = $class::driverName();
@@ -23,26 +24,26 @@ class Service {
     }
     
     public static function interval(): \DateInterval {
-        try{
+        try {
             return new \DateInterval(Arsse::$conf->serviceFrequency);
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             return new \DateInterval("PT2M");
         }
     }
 
-    function __construct() {
+    public function __construct() {
         $driver = Arsse::$conf->serviceDriver;
         $this->drv = new $driver();
         $this->interval = static::interval();
     }
 
-    function watch(bool $loop = true): \DateTimeInterface {
+    public function watch(bool $loop = true): \DateTimeInterface {
         $t = new \DateTime();
         do {
             $this->checkIn();
             static::cleanupPre();
             $list = Arsse::$db->feedListStale();
-            if($list) {
+            if ($list) {
                 $this->drv->queue(...$list);
                 $this->drv->exec();
                 $this->drv->clean();
@@ -50,23 +51,23 @@ class Service {
             }
             static::cleanupPost();
             $t->add($this->interval);
-            if($loop) {
+            if ($loop) {
                 do {
                     @time_sleep_until($t->getTimestamp());
-                } while($t->getTimestamp() > time());
+                } while ($t->getTimestamp() > time());
             }
-        } while($loop);
+        } while ($loop);
         return $t;
     }
 
-    function checkIn(): bool {
+    public function checkIn(): bool {
         return Arsse::$db->metaSet("service_last_checkin", time(), "datetime");
     }
 
-    static function hasCheckedIn(): bool {
+    public static function hasCheckedIn(): bool {
         $checkin = Arsse::$db->metaGet("service_last_checkin");
         // if the service has never checked in, return false
-        if(!$checkin) {
+        if (!$checkin) {
             return false;
         }
         // convert the check-in timestamp to a DateTime instance
@@ -81,12 +82,12 @@ class Service {
         return ($checkin >= $limit);
     }
 
-    static function cleanupPre(): bool {
+    public static function cleanupPre(): bool {
         // mark unsubscribed feeds as orphaned and delete orphaned feeds that are beyond their retention period
         return Arsse::$db->feedCleanup();
     }
 
-    static function cleanupPost(): bool {
+    public static function cleanupPost(): bool {
         // delete old articles, according to configured threasholds
         return Arsse::$db->articleCleanup();
     }

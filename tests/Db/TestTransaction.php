@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
+
 use JKingWeb\Arsse\Db\Transaction;
 use Phake;
 
@@ -9,7 +10,7 @@ use Phake;
 class TestTransaction extends Test\AbstractTest {
     protected $drv;
 
-    function setUp() {
+    public function setUp() {
         $this->clearData();
         $drv = Phake::mock(Db\SQLite3\Driver::class);
         Phake::when($drv)->savepointRelease->thenReturn(true);
@@ -18,7 +19,7 @@ class TestTransaction extends Test\AbstractTest {
         $this->drv = $drv;
     }
 
-    function testManipulateTransactions() {
+    public function testManipulateTransactions() {
         $tr1 = new Transaction($this->drv);
         $tr2 = new Transaction($this->drv);
         Phake::verify($this->drv, Phake::times(2))->savepointCreate;
@@ -30,7 +31,7 @@ class TestTransaction extends Test\AbstractTest {
         Phake::verify($this->drv)->savepointUndo(2);
     }
 
-    function testCloseTransactions() {
+    public function testCloseTransactions() {
         $tr1 = new Transaction($this->drv);
         $tr2 = new Transaction($this->drv);
         $this->assertTrue($tr1->isPending());
@@ -45,7 +46,7 @@ class TestTransaction extends Test\AbstractTest {
         Phake::verify($this->drv)->savepointUndo(2);
     }
 
-    function testIgnoreRollbackErrors() {
+    public function testIgnoreRollbackErrors() {
         Phake::when($this->drv)->savepointUndo->thenThrow(new Db\ExceptionSavepoint("stale"));
         $tr1 = new Transaction($this->drv);
         $tr2 = new Transaction($this->drv);

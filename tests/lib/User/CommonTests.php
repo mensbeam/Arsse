@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\User;
+
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\User;
@@ -8,8 +9,7 @@ use JKingWeb\Arsse\User\Driver;
 use Phake;
 
 trait CommonTests {
-
-    function setUp() {
+    public function setUp() {
         $this->clearData();
         $conf = new Conf();
         $conf->userDriver = $this->drv;
@@ -21,58 +21,62 @@ trait CommonTests {
         $_SERVER['PHP_AUTH_USER'] = self::USER1;
         $_SERVER['PHP_AUTH_PW'] = "secret";
         // call the additional setup method if it exists
-        if(method_exists($this, "setUpSeries")) $this->setUpSeries();
+        if (method_exists($this, "setUpSeries")) {
+            $this->setUpSeries();
+        }
     }
 
-    function tearDown() {
+    public function tearDown() {
         $this->clearData();
         // call the additional teardiwn method if it exists
-        if(method_exists($this, "tearDownSeries")) $this->tearDownSeries();
+        if (method_exists($this, "tearDownSeries")) {
+            $this->tearDownSeries();
+        }
     }
 
-    function testListUsers() {
-        $this->assertCount(0,Arsse::$user->list());
+    public function testListUsers() {
+        $this->assertCount(0, Arsse::$user->list());
     }
 
-    function testCheckIfAUserDoesNotExist() {
+    public function testCheckIfAUserDoesNotExist() {
         $this->assertFalse(Arsse::$user->exists(self::USER1));
     }
 
-    function testAddAUser() {
+    public function testAddAUser() {
         Arsse::$user->add(self::USER1, "");
-        $this->assertCount(1,Arsse::$user->list());
+        $this->assertCount(1, Arsse::$user->list());
     }
 
-    function testCheckIfAUserDoesExist() {
+    public function testCheckIfAUserDoesExist() {
         Arsse::$user->add(self::USER1, "");
         $this->assertTrue(Arsse::$user->exists(self::USER1));
     }
 
-    function testAddADuplicateUser() {
+    public function testAddADuplicateUser() {
         Arsse::$user->add(self::USER1, "");
         $this->assertException("alreadyExists", "User");
         Arsse::$user->add(self::USER1, "");
     }
 
-    function testAddMultipleUsers() {
+    public function testAddMultipleUsers() {
         Arsse::$user->add(self::USER1, "");
         Arsse::$user->add(self::USER2, "");
-        $this->assertCount(2,Arsse::$user->list());
+        $this->assertCount(2, Arsse::$user->list());
     }
 
-    function testRemoveAUser() {
+    public function testRemoveAUser() {
         Arsse::$user->add(self::USER1, "");
-        $this->assertCount(1,Arsse::$user->list());
+        $this->assertCount(1, Arsse::$user->list());
         Arsse::$user->remove(self::USER1);
-        $this->assertCount(0,Arsse::$user->list());
+        $this->assertCount(0, Arsse::$user->list());
     }
 
-    function testRemoveAMissingUser() {
+    public function testRemoveAMissingUser() {
         $this->assertException("doesNotExist", "User");
         Arsse::$user->remove(self::USER1);
     }
 
-    function testAuthenticateAUser() {
+    public function testAuthenticateAUser() {
         $_SERVER['PHP_AUTH_USER'] = self::USER1;
         $_SERVER['PHP_AUTH_PW'] = "secret";
         Arsse::$user->add(self::USER1, "secret");
@@ -83,7 +87,7 @@ trait CommonTests {
         $this->assertTrue(Arsse::$user->auth(self::USER2, ""));
     }
 
-    function testChangeAPassword() {
+    public function testChangeAPassword() {
         Arsse::$user->add(self::USER1, "secret");
         $this->assertEquals("superman", Arsse::$user->passwordSet(self::USER1, "superman"));
         $this->assertTrue(Arsse::$user->auth(self::USER1, "superman"));
@@ -93,12 +97,12 @@ trait CommonTests {
         $this->assertEquals(Arsse::$conf->userTempPasswordLength, strlen(Arsse::$user->passwordSet(self::USER1)));
     }
 
-    function testChangeAPasswordForAMissingUser() {
+    public function testChangeAPasswordForAMissingUser() {
         $this->assertException("doesNotExist", "User");
         Arsse::$user->passwordSet(self::USER1, "superman");
     }
 
-    function testGetThePropertiesOfAUser() {
+    public function testGetThePropertiesOfAUser() {
         Arsse::$user->add(self::USER1, "secret");
         $p = Arsse::$user->propertiesGet(self::USER1);
         $this->assertArrayHasKey('id', $p);
@@ -109,7 +113,7 @@ trait CommonTests {
         $this->assertEquals(self::USER1, $p['name']);
     }
 
-    function testSetThePropertiesOfAUser() {
+    public function testSetThePropertiesOfAUser() {
         $pSet = [
             'name'     => 'John Doe',
             'id'       => 'invalid',
@@ -131,12 +135,12 @@ trait CommonTests {
         $this->assertFalse(Arsse::$user->auth(self::USER1, "superman"));
     }
 
-    function testGetTheRightsOfAUser() {
+    public function testGetTheRightsOfAUser() {
         Arsse::$user->add(self::USER1, "");
         $this->assertEquals(Driver::RIGHTS_NONE, Arsse::$user->rightsGet(self::USER1));
     }
 
-    function testSetTheRightsOfAUser() {
+    public function testSetTheRightsOfAUser() {
         Arsse::$user->add(self::USER1, "");
         Arsse::$user->rightsSet(self::USER1, Driver::RIGHTS_GLOBAL_ADMIN);
         $this->assertEquals(Driver::RIGHTS_GLOBAL_ADMIN, Arsse::$user->rightsGet(self::USER1));

@@ -1,15 +1,15 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Db;
+
 use JKingWeb\Arsse\Misc\Date;
 
 abstract class AbstractStatement implements Statement {
-    
     protected $types = [];
     protected $isNullable = [];
     protected $values = ['pre' => [], 'post' => []];
 
-    abstract function runArray(array $values = []): Result;
+    abstract public function runArray(array $values = []): Result;
 
     public function run(...$values): Result {
         return $this->runArray($values);
@@ -20,23 +20,23 @@ abstract class AbstractStatement implements Statement {
     }
 
     public function rebindArray(array $bindings, bool $append = false): bool {
-        if(!$append) {
+        if (!$append) {
             $this->types = [];
         }
-        foreach($bindings as $binding) {
-            if(is_array($binding)) {
+        foreach ($bindings as $binding) {
+            if (is_array($binding)) {
                 // recursively flatten any arrays, which may be provided for SET or IN() clauses
                 $this->rebindArray($binding, true);
             } else {
                 $binding = trim(strtolower($binding));
-                if(strpos($binding, "strict ")===0) {
+                if (strpos($binding, "strict ")===0) {
                     // "strict" types' values may never be null; null values will later be cast to the type specified
                     $this->isNullable[] = false;
                     $binding = substr($binding, 7);
                 } else {
                     $this->isNullable[] = true;
                 }
-                if(!array_key_exists($binding, self::TYPES)) {
+                if (!array_key_exists($binding, self::TYPES)) {
                     throw new Exception("paramTypeInvalid", $binding); // @codeCoverageIgnore
                 }
                 $this->types[] = self::TYPES[$binding];
@@ -46,19 +46,19 @@ abstract class AbstractStatement implements Statement {
     }
 
     protected function cast($v, string $t, bool $nullable) {
-        switch($t) {
+        switch ($t) {
             case "date":
-                if(is_null($v) && !$nullable) {
+                if (is_null($v) && !$nullable) {
                     $v = 0;
                 }
                 return Date::transform($v, "date");
             case "time":
-                if(is_null($v) && !$nullable) {
+                if (is_null($v) && !$nullable) {
                     $v = 0;
                 }
                 return Date::transform($v, "time");
             case "datetime":
-                if(is_null($v) && !$nullable) {
+                if (is_null($v) && !$nullable) {
                     $v = 0;
                 }
                 return Date::transform($v, "sql");
@@ -68,15 +68,15 @@ abstract class AbstractStatement implements Statement {
             case "binary":
             case "string":
             case "boolean":
-                if($t=="binary") {
+                if ($t=="binary") {
                     $t = "string";
                 }
-                if($v instanceof \DateTimeInterface) {
-                    if($t=="string") {
+                if ($v instanceof \DateTimeInterface) {
+                    if ($t=="string") {
                         return Date::transform($v, "sql");
                     } else {
                         $v = $v->getTimestamp();
-                        settype($v, $t);    
+                        settype($v, $t);
                     }
                 } else {
                     settype($v, $t);

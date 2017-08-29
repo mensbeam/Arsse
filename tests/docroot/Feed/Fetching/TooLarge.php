@@ -2,7 +2,7 @@
 $item = '
     <item>
         <description>'.str_repeat("0", 1024).'</description>
-    </item>'; 
+    </item>';
 return [
     'mime'    => "application/rss+xml",
     'content' => <<<MESSAGE_BODY

@@ -11,7 +11,7 @@ class TestUserMockInternal extends Test\AbstractTest {
 
     public $drv = Test\User\DriverInternalMock::class;
 
-    function setUpSeries() {
+    public function setUpSeries() {
         Arsse::$db = null;
     }
 }

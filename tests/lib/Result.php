@@ -14,7 +14,7 @@ class Result implements \JKingWeb\Arsse\Db\Result {
 
     public function getValue() {
         $arr = $this->next();
-        if($this->valid()) {
+        if ($this->valid()) {
             $keys = array_keys($arr);
             return $arr[array_shift($keys)];
         }

@@ -14,7 +14,7 @@ class Result implements \JKingWeb\Arsse\Db\Result {
 
     public function getValue() {
         $this->next();
-        if($this->valid()) {
+        if ($this->valid()) {
             $keys = array_keys($this->cur);
             return $this->cur[array_shift($keys)];
         }
@@ -28,7 +28,7 @@ class Result implements \JKingWeb\Arsse\Db\Result {
 
     public function getAll(): array {
         $out = [];
-        foreach($this as $row) {
+        foreach ($this as $row) {
             $out [] = $row;
         }
         return $out;
@@ -52,7 +52,10 @@ class Result implements \JKingWeb\Arsse\Db\Result {
     }
 
     public function __destruct() {
-        try{$this->set->finalize();} catch(\Throwable $e) {}
+        try {
+            $this->set->finalize();
+        } catch (\Throwable $e) {
+        }
         unset($this->set);
     }
 

@@ -27,8 +27,8 @@ interface Statement {
         "bit"       => "boolean",
     ];
 
-    function run(...$values): Result;
-    function runArray(array $values = []): Result;
-    function rebind(...$bindings): bool;
-    function rebindArray(array $bindings): bool;
+    public function run(...$values): Result;
+    public function runArray(array $values = []): Result;
+    public function rebind(...$bindings): bool;
+    public function rebindArray(array $bindings): bool;
 }

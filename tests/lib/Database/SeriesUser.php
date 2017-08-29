@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\Database;
+
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User\Driver as UserDriver;
 use Phake;
@@ -22,7 +23,7 @@ trait SeriesUser {
         ],
     ];
 
-    function testCheckThatAUserExists() {
+    public function testCheckThatAUserExists() {
         $this->assertTrue(Arsse::$db->userExists("jane.doe@example.com"));
         $this->assertFalse(Arsse::$db->userExists("jane.doe@example.org"));
         Phake::verify(Arsse::$user)->authorize("jane.doe@example.com", "userExists");
@@ -30,31 +31,31 @@ trait SeriesUser {
         $this->compareExpectations($this->data);
     }
 
-    function testCheckThatAUserExistsWithoutAuthority() {
+    public function testCheckThatAUserExistsWithoutAuthority() {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->userExists("jane.doe@example.com");
     }
 
-    function testGetAPassword() {
+    public function testGetAPassword() {
         $hash = Arsse::$db->userPasswordGet("admin@example.net");
         $this->assertSame('$2y$10$PbcG2ZR3Z8TuPzM7aHTF8.v61dtCjzjK78gdZJcp4UePE8T9jEgBW', $hash);
         Phake::verify(Arsse::$user)->authorize("admin@example.net", "userPasswordGet");
         $this->assertTrue(password_verify("secret", $hash));
     }
 
-    function testGetThePasswordOfAMissingUser() {
+    public function testGetThePasswordOfAMissingUser() {
         $this->assertException("doesNotExist", "User");
         Arsse::$db->userPasswordGet("john.doe@example.org");
     }
 
-    function testGetAPasswordWithoutAuthority() {
+    public function testGetAPasswordWithoutAuthority() {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->userPasswordGet("admin@example.net");
     }
     
-    function testAddANewUser() {
+    public function testAddANewUser() {
         $this->assertSame("", Arsse::$db->userAdd("john.doe@example.org", ""));
         Phake::verify(Arsse::$user)->authorize("john.doe@example.org", "userAdd");
         $state = $this->primeExpectations($this->data, ['arsse_users' => ['id','name','rights']]);
@@ -66,7 +67,7 @@ trait SeriesUser {
      * @depends testGetAPassword
      * @depends testAddANewUser
      */
-    function testAddANewUserWithARandomPassword() {
+    public function testAddANewUserWithARandomPassword() {
         $user1 = "john.doe@example.org";
         $user2 = "john.doe@example.net";
         $pass1 = Arsse::$db->userAdd($user1);
@@ -84,18 +85,18 @@ trait SeriesUser {
         $this->assertTrue(password_verify($pass2, $hash2), "Failed verifying password of $user2 '$pass2' against hash '$hash2'.");
     }
 
-    function testAddAnExistingUser() {
+    public function testAddAnExistingUser() {
         $this->assertException("alreadyExists", "User");
         Arsse::$db->userAdd("john.doe@example.com", "");
     }
 
-    function testAddANewUserWithoutAuthority() {
+    public function testAddANewUserWithoutAuthority() {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->userAdd("john.doe@example.org", "");
     }
     
-    function testRemoveAUser() {
+    public function testRemoveAUser() {
         $this->assertTrue(Arsse::$db->userRemove("admin@example.net"));
         Phake::verify(Arsse::$user)->authorize("admin@example.net", "userRemove");
         $state = $this->primeExpectations($this->data, ['arsse_users' => ['id']]);
@@ -103,36 +104,36 @@ trait SeriesUser {
         $this->compareExpectations($state);
     }
 
-    function testRemoveAMissingUser() {
+    public function testRemoveAMissingUser() {
         $this->assertException("doesNotExist", "User");
         Arsse::$db->userRemove("john.doe@example.org");
     }
     
-    function testRemoveAUserWithoutAuthority() {
+    public function testRemoveAUserWithoutAuthority() {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->userRemove("admin@example.net");
     }
 
-    function testListAllUsers() {
+    public function testListAllUsers() {
         $users = ["admin@example.net", "jane.doe@example.com", "john.doe@example.com"];
         $this->assertSame($users, Arsse::$db->userList());
         Phake::verify(Arsse::$user)->authorize("", "userList");
     }
 
-    function testListUsersOnADomain() {
+    public function testListUsersOnADomain() {
         $users = ["jane.doe@example.com", "john.doe@example.com"];
         $this->assertSame($users, Arsse::$db->userList("example.com"));
         Phake::verify(Arsse::$user)->authorize("@example.com", "userList");
     }
     
-    function testListAllUsersWithoutAuthority() {
+    public function testListAllUsersWithoutAuthority() {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->userList();
     }
     
-    function testListUsersOnADomainWithoutAuthority() {
+    public function testListUsersOnADomainWithoutAuthority() {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->userList("example.com");
@@ -141,7 +142,7 @@ trait SeriesUser {
     /**
      * @depends testGetAPassword
      */
-    function testSetAPassword() {
+    public function testSetAPassword() {
         $user = "john.doe@example.com";
         $this->assertEquals("", Arsse::$db->userPasswordGet($user));
         $pass = Arsse::$db->userPasswordSet($user, "secret");
@@ -150,25 +151,25 @@ trait SeriesUser {
         Phake::verify(Arsse::$user)->authorize($user, "userPasswordSet");
         $this->assertTrue(password_verify($pass, $hash), "Failed verifying password of $user '$pass' against hash '$hash'.");
     }
-    function testSetARandomPassword() {
+    public function testSetARandomPassword() {
         $user = "john.doe@example.com";
         $this->assertEquals("", Arsse::$db->userPasswordGet($user));
         $pass = Arsse::$db->userPasswordSet($user);
         $hash = Arsse::$db->userPasswordGet($user);
     }
 
-    function testSetThePasswordOfAMissingUser() {
+    public function testSetThePasswordOfAMissingUser() {
         $this->assertException("doesNotExist", "User");
         Arsse::$db->userPasswordSet("john.doe@example.org", "secret");
     }
     
-    function testSetAPasswordWithoutAuthority() {
+    public function testSetAPasswordWithoutAuthority() {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->userPasswordSet("john.doe@example.com", "secret");
     }
 
-    function testGetUserProperties() {
+    public function testGetUserProperties() {
         $exp = [
             'name'   => 'Hard Lip Herbert',
             'rights' => UserDriver::RIGHTS_GLOBAL_ADMIN,
@@ -179,18 +180,18 @@ trait SeriesUser {
         $this->assertArrayNotHasKey("password", $props);
     }
 
-    function testGetThePropertiesOfAMissingUser() {
+    public function testGetThePropertiesOfAMissingUser() {
         $this->assertException("doesNotExist", "User");
         Arsse::$db->userPropertiesGet("john.doe@example.org");
     }
     
-    function testGetUserPropertiesWithoutAuthority() {
+    public function testGetUserPropertiesWithoutAuthority() {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->userPropertiesGet("john.doe@example.com");
     }
 
-    function testSetUserProperties() {
+    public function testSetUserProperties() {
         $try = [
             'name'     => 'James Kirk', // only this should actually change
             'password' => '000destruct0',
@@ -210,20 +211,20 @@ trait SeriesUser {
         $this->compareExpectations($state);
     }
 
-    function testSetThePropertiesOfAMissingUser() {
+    public function testSetThePropertiesOfAMissingUser() {
         $try = ['name' => 'John Doe'];
         $this->assertException("doesNotExist", "User");
         Arsse::$db->userPropertiesSet("john.doe@example.org", $try);
     }
     
-    function testSetUserPropertiesWithoutAuthority() {
+    public function testSetUserPropertiesWithoutAuthority() {
         $try = ['name' => 'John Doe'];
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->userPropertiesSet("john.doe@example.com", $try);
     }
 
-    function testGetUserRights() {
+    public function testGetUserRights() {
         $user1 = "john.doe@example.com";
         $user2 = "admin@example.net";
         $this->assertSame(UserDriver::RIGHTS_NONE, Arsse::$db->userRightsGet($user1));
@@ -232,18 +233,18 @@ trait SeriesUser {
         Phake::verify(Arsse::$user)->authorize($user2, "userRightsGet");
     }
 
-    function testGetTheRightsOfAMissingUser() {
+    public function testGetTheRightsOfAMissingUser() {
         $this->assertSame(UserDriver::RIGHTS_NONE, Arsse::$db->userRightsGet("john.doe@example.org"));
         Phake::verify(Arsse::$user)->authorize("john.doe@example.org", "userRightsGet");
     }
     
-    function testGetUserRightsWithoutAuthority() {
+    public function testGetUserRightsWithoutAuthority() {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->userRightsGet("john.doe@example.com");
     }
 
-    function testSetUserRights() {
+    public function testSetUserRights() {
         $user = "john.doe@example.com";
         $rights = UserDriver::RIGHTS_GLOBAL_ADMIN;
         $this->assertTrue(Arsse::$db->userRightsSet($user, $rights));
@@ -253,13 +254,13 @@ trait SeriesUser {
         $this->compareExpectations($state);
     }
 
-    function testSetTheRightsOfAMissingUser() {
+    public function testSetTheRightsOfAMissingUser() {
         $rights = UserDriver::RIGHTS_GLOBAL_ADMIN;
         $this->assertException("doesNotExist", "User");
         Arsse::$db->userRightsSet("john.doe@example.org", $rights);
     }
     
-    function testSetUserRightsWithoutAuthority() {
+    public function testSetUserRightsWithoutAuthority() {
         $rights = UserDriver::RIGHTS_GLOBAL_ADMIN;
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");

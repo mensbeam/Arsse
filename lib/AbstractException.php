@@ -3,7 +3,6 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 abstract class AbstractException extends \Exception {
-
     const CODES = [
         "Exception.uncoded"                     => -1,
         "Exception.unknown"                     => 10000,
@@ -71,13 +70,13 @@ abstract class AbstractException extends \Exception {
     ];
 
     public function __construct(string $msgID = "", $vars = null, \Throwable $e = null) {
-        if($msgID=="") {
+        if ($msgID=="") {
             $msg = "Exception.unknown";
             $code = 10000;
         } else {
             $class = get_called_class();
             $codeID = str_replace("\\", "/", str_replace(NS_BASE, "", $class)).".$msgID";
-            if(!array_key_exists($codeID, self::CODES)) {
+            if (!array_key_exists($codeID, self::CODES)) {
                 throw new Exception("uncoded", $codeID);
             } else {
                 $code = self::CODES[$codeID];

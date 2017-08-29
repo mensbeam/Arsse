@@ -1,0 +1,25 @@
+<?php
+namespace JKingWeb\Arsse;
+
+require_once __DIR__.DIRECTORY_SEPARATOR."bootstrap.php";
+
+$paths = [
+    __FILE__,
+    BASE."arsse.php",
+    BASE."lib",
+    BASE."tests",
+];
+$rules = [
+    '@PSR2' => true,
+    'braces' => ['position_after_functions_and_oop_constructs' => "same"],
+];
+
+$finder = \PhpCsFixer\Finder::create();
+foreach ($paths as $path) {
+    if (is_file($path)) {
+        $finder = $finder->path($path);
+    } else {
+        $finder = $finder->in($path);
+    }
+}
+return \PhpCsFixer\Config::create()->setRules($rules)->setFinder($finder);

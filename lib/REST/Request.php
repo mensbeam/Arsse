@@ -11,18 +11,18 @@ class Request {
     public $type ="";
     public $body = "";
 
-    function __construct(string $method = null, string $url = null, string $body = null, string $contentType = null) {
-        if(is_null($method)) {
+    public function __construct(string $method = null, string $url = null, string $body = null, string $contentType = null) {
+        if (is_null($method)) {
             $method = $_SERVER['REQUEST_METHOD'];
         }
-        if(is_null($url)) {
+        if (is_null($url)) {
             $url = $_SERVER['REQUEST_URI'];
-        }   
-        if(is_null($body)) {
+        }
+        if (is_null($body)) {
             $body = file_get_contents("php://input");
         }
-        if(is_null($contentType)) {
-            if(isset($_SERVER['HTTP_CONTENT_TYPE'])) {
+        if (is_null($contentType)) {
+            if (isset($_SERVER['HTTP_CONTENT_TYPE'])) {
                 $contentType = $_SERVER['HTTP_CONTENT_TYPE'];
             } else {
                 $contentType = "";
@@ -47,17 +47,17 @@ class Request {
         $parts = explode("?", $url);
         $out = ['path' => $parts[0], 'paths' => [''], 'query' => []];
         // if there is a query string, parse it
-        if(isset($parts[1])) {
+        if (isset($parts[1])) {
             // split along & to get key-value pairs
             $query = explode("&", $parts[1]);
-            for($a = 0; $a < sizeof($query); $a++) {
+            for ($a = 0; $a < sizeof($query); $a++) {
                 // split each pair, into no more than two parts
                 $data = explode("=", $query[$a], 2);
                 // decode the key
                 $key = rawurldecode($data[0]);
                 // decode the value if there is one
                 $value = "";
-                if(isset($data[1])) {
+                if (isset($data[1])) {
                     $value = rawurldecode($data[1]);
                 }
                 // add the pair to the query output, overwriting earlier values for the same key, is present
@@ -66,17 +66,19 @@ class Request {
         }
         // also include the path as a set of decoded elements
         // if the path is an empty string or just / nothing needs be done
-        if(!in_array($out['path'],["/",""])) {
+        if (!in_array($out['path'], ["/",""])) {
             $paths = explode("/", $out['path']);
             // remove the first and last empty elements, if present (they are artefacts of the splitting; others should remain)
-            if(!strlen($paths[0])) {
+            if (!strlen($paths[0])) {
                 array_shift($paths);
             }
-            if(!strlen($paths[sizeof($paths)-1])) {
+            if (!strlen($paths[sizeof($paths)-1])) {
                 array_pop($paths);
             }
             // %-decode each path element
-            $paths = array_map(function($v){return rawurldecode($v);}, $paths);
+            $paths = array_map(function ($v) {
+                return rawurldecode($v);
+            }, $paths);
             $out['paths'] = $paths;
         }
         return $out;

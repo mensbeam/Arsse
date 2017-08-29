@@ -19,15 +19,15 @@ final class Driver implements \JKingWeb\Arsse\User\Driver {
         "userRightsSet"           => self::FUNC_INTERNAL,
     ];
 
-    static public function driverName(): string {
+    public static function driverName(): string {
         return Arsse::$lang->msg("Driver.User.Internal.Name");
     }
 
     public function driverFunctions(string $function = null) {
-        if($function===null) {
+        if ($function===null) {
             return $this->functions;
         }
-        if(array_key_exists($function, $this->functions)) {
+        if (array_key_exists($function, $this->functions)) {
             return $this->functions[$function];
         } else {
             return self::FUNC_NOT_IMPLEMENTED;

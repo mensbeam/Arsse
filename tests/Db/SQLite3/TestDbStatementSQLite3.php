@@ -1,21 +1,21 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
+
 use JKingWeb\Arsse\Db\Statement;
 
-
-/** 
+/**
  * @covers \JKingWeb\Arsse\Db\SQLite3\Statement<extended>
  * @covers \JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder */
 class TestDbStatementSQLite3 extends Test\AbstractTest {
     use Test\Db\BindingTests;
 
     protected $c;
-    static protected $imp = Db\SQLite3\Statement::class;
+    protected static $imp = Db\SQLite3\Statement::class;
 
-    function setUp() {
+    public function setUp() {
         $this->clearData();
-        if(!extension_loaded("sqlite3")) {
+        if (!extension_loaded("sqlite3")) {
             $this->markTestSkipped("SQLite extension not loaded");
         }
         $c = new \SQLite3(":memory:");
@@ -23,7 +23,7 @@ class TestDbStatementSQLite3 extends Test\AbstractTest {
         $this->c = $c;
     }
 
-    function tearDown() {
+    public function tearDown() {
         $this->c->close();
         unset($this->c);
     }
@@ -32,7 +32,7 @@ class TestDbStatementSQLite3 extends Test\AbstractTest {
         $nativeStatement = $this->c->prepare("SELECT ? as value");
         $s = new self::$imp($this->c, $nativeStatement);
         $types = array_unique(Statement::TYPES);
-        foreach($types as $type) {
+        foreach ($types as $type) {
             $s->rebindArray([$strict ? "strict $type" : $type]);
             $val = $s->runArray([$input])->getRow()['value'];
             $this->assertSame($expectations[$type], $val, "Binding from type $type failed comparison.");
@@ -42,19 +42,19 @@ class TestDbStatementSQLite3 extends Test\AbstractTest {
         }
     }
 
-    function testConstructStatement() {
+    public function testConstructStatement() {
         $nativeStatement = $this->c->prepare("SELECT ? as value");
         $this->assertInstanceOf(Statement::class, new Db\SQLite3\Statement($this->c, $nativeStatement));
     }
 
-    function testBindMissingValue() {
+    public function testBindMissingValue() {
         $nativeStatement = $this->c->prepare("SELECT ? as value");
         $s = new self::$imp($this->c, $nativeStatement);
         $val = $s->runArray()->getRow()['value'];
         $this->assertSame(null, $val);
     }
 
-    function testBindMultipleValues() {
+    public function testBindMultipleValues() {
         $exp = [
             'one' => 1,
             'two' => 2,
@@ -65,7 +65,7 @@ class TestDbStatementSQLite3 extends Test\AbstractTest {
         $this->assertSame($exp, $val);
     }
 
-    function testBindRecursively() {
+    public function testBindRecursively() {
         $exp = [
             'one'   => 1,
             'two'   => 2,
@@ -78,14 +78,14 @@ class TestDbStatementSQLite3 extends Test\AbstractTest {
         $this->assertSame($exp, $val);
     }
 
-    function testBindWithoutType() {
+    public function testBindWithoutType() {
         $nativeStatement = $this->c->prepare("SELECT ? as value");
         $this->assertException("paramTypeMissing", "Db");
         $s = new self::$imp($this->c, $nativeStatement, []);
         $s->runArray([1]);
     }
 
-    function testViolateConstraint() {
+    public function testViolateConstraint() {
         $this->c->exec("CREATE TABLE test(id integer not null)");
         $nativeStatement = $this->c->prepare("INSERT INTO test(id) values(?)");
         $s = new self::$imp($this->c, $nativeStatement, ["int"]);
@@ -93,7 +93,7 @@ class TestDbStatementSQLite3 extends Test\AbstractTest {
         $s->runArray([null]);
     }
 
-    function testMismatchTypes() {
+    public function testMismatchTypes() {
         $this->c->exec("CREATE TABLE test(id integer primary key)");
         $nativeStatement = $this->c->prepare("INSERT INTO test(id) values(?)");
         $s = new self::$imp($this->c, $nativeStatement, ["str"]);

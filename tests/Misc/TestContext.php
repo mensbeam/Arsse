@@ -1,15 +1,15 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
-use JKingWeb\Arsse\Misc\Context;
 
+use JKingWeb\Arsse\Misc\Context;
 
 /** @covers \JKingWeb\Arsse\Misc\Context */
 class TestContext extends Test\AbstractTest {
-    function testVerifyInitialState() {
+    public function testVerifyInitialState() {
         $c = new Context;
-        foreach((new \ReflectionObject($c))->getMethods(\ReflectionMethod::IS_PUBLIC) as $m) {
-            if($m->isConstructor() || $m->isStatic()) {
+        foreach ((new \ReflectionObject($c))->getMethods(\ReflectionMethod::IS_PUBLIC) as $m) {
+            if ($m->isConstructor() || $m->isStatic()) {
                 continue;
             }
             $method = $m->name;
@@ -18,7 +18,7 @@ class TestContext extends Test\AbstractTest {
         }
     }
 
-    function testSetContextOptions() {
+    public function testSetContextOptions() {
         $v = [
             'reverse' => true,
             'limit' => 10,
@@ -38,15 +38,15 @@ class TestContext extends Test\AbstractTest {
         ];
         $times = ['modifiedSince','notModifiedSince'];
         $c = new Context;
-        foreach((new \ReflectionObject($c))->getMethods(\ReflectionMethod::IS_PUBLIC) as $m) {
-            if($m->isConstructor() || $m->isStatic()) {
+        foreach ((new \ReflectionObject($c))->getMethods(\ReflectionMethod::IS_PUBLIC) as $m) {
+            if ($m->isConstructor() || $m->isStatic()) {
                 continue;
             }
             $method = $m->name;
             $this->assertArrayHasKey($method, $v, "Context method $method not included in test");
             $this->assertInstanceOf(Context::class, $c->$method($v[$method]));
             $this->assertTrue($c->$method());
-            if(in_array($method, $times)) {
+            if (in_array($method, $times)) {
                 $this->assertTime($c->$method, $v[$method]);
             } else {
                 $this->assertSame($c->$method, $v[$method]);
@@ -54,12 +54,12 @@ class TestContext extends Test\AbstractTest {
         }
     }
 
-    function testCleanArrayValues() {
+    public function testCleanArrayValues() {
         $methods = ["articles", "editions"];
         $in = [1, "2", 3.5, 3.0, "ook", 0, -20, true, false, null, new \DateTime(), -1.0];
         $out = [1,2, 3];
         $c = new Context;
-        foreach($methods as $method) {
+        foreach ($methods as $method) {
             $this->assertSame($out, $c->$method($in)->$method, "Context method $method did not return the expected results");
         }
     }

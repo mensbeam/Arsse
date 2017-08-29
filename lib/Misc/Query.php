@@ -18,42 +18,42 @@ class Query {
     protected $offset = 0;
 
 
-    function __construct(string $body = "", $types = null, $values = null) {
+    public function __construct(string $body = "", $types = null, $values = null) {
         $this->setBody($body, $types, $values);
     }
 
-    function setBody(string $body = "", $types = null, $values = null): bool {
+    public function setBody(string $body = "", $types = null, $values = null): bool {
         $this->qBody = $body;
-        if(!is_null($types)) {
+        if (!is_null($types)) {
             $this->tBody[] = $types;
             $this->vBody[] = $values;
         }
         return true;
     }
 
-    function setCTE(string $tableSpec, string $body, $types = null, $values = null, string $join = ''): bool {
+    public function setCTE(string $tableSpec, string $body, $types = null, $values = null, string $join = ''): bool {
         $this->qCTE[] = "$tableSpec as ($body)";
-        if(!is_null($types)) {
+        if (!is_null($types)) {
             $this->tCTE[] = $types;
             $this->vCTE[] = $values;
         }
-        if(strlen($join)) { // the CTE might only participate in subqueries rather than a join on the main query
+        if (strlen($join)) { // the CTE might only participate in subqueries rather than a join on the main query
             $this->jCTE[] = $join;
         }
         return true;
     }
 
-    function setWhere(string $where, $types = null, $values = null): bool {
+    public function setWhere(string $where, $types = null, $values = null): bool {
         $this->qWhere[] = $where;
-        if(!is_null($types)) {
+        if (!is_null($types)) {
             $this->tWhere[] = $types;
             $this->vWhere[] = $values;
         }
         return true;
     }
 
-    function setOrder(string $order, bool $prepend = false): bool {
-        if($prepend) {
+    public function setOrder(string $order, bool $prepend = false): bool {
+        if ($prepend) {
             array_unshift($this->order, $order);
         } else {
             $this->order[] = $order;
@@ -61,13 +61,13 @@ class Query {
         return true;
     }
 
-    function setLimit(int $limit, int $offset = 0): bool {
+    public function setLimit(int $limit, int $offset = 0): bool {
         $this->limit = $limit;
         $this->offset = $offset;
         return true;
     }
 
-    function pushCTE(string $tableSpec, string $join = ''): bool {
+    public function pushCTE(string $tableSpec, string $join = ''): bool {
         // this function takes the query body and converts it to a common table expression, putting it at the bottom of the existing CTE stack
         // all WHERE, ORDER BY, and LIMIT parts belong to the new CTE and are removed from the main query
         $this->setCTE($tableSpec, $this->buildQueryBody(), [$this->tBody, $this->tWhere], [$this->vBody, $this->vWhere]);
@@ -78,16 +78,16 @@ class Query {
         $this->tWhere = [];
         $this->vWhere = [];
         $this->order = [];
-        $this->setLimit(0,0);
-        if(strlen($join)) {
+        $this->setLimit(0, 0);
+        if (strlen($join)) {
             $this->jCTE[] = $join;
         }
         return true;
     }
 
-    function __toString(): string {
+    public function __toString(): string {
         $out = "";
-        if(sizeof($this->qCTE)) {
+        if (sizeof($this->qCTE)) {
             // start with common table expressions
             $out .= "WITH RECURSIVE ".implode(", ", $this->qCTE)." ";
         }
@@ -96,31 +96,31 @@ class Query {
         return $out;
     }
 
-    function getQuery(): string {
+    public function getQuery(): string {
         return $this->__toString();
     }
 
-    function getTypes(): array {
+    public function getTypes(): array {
         return [$this->tCTE, $this->tBody, $this->tWhere];
     }
 
-    function getValues(): array {
+    public function getValues(): array {
         return [$this->vCTE, $this->vBody, $this->vWhere];
     }
 
-    function getWhereTypes(): array {
+    public function getWhereTypes(): array {
         return $this->tWhere;
     }
 
-    function getWhereValues(): array {
+    public function getWhereValues(): array {
         return $this->vWhere;
     }
 
-    function getCTETypes(): array {
+    public function getCTETypes(): array {
         return $this->tCTE;
     }
 
-    function getCTEValues(): array {
+    public function getCTEValues(): array {
         return $this->vCTE;
     }
 
@@ -128,22 +128,22 @@ class Query {
         $out = "";
         // add the body
         $out .= $this->qBody;
-        if(sizeof($this->qCTE)) {
+        if (sizeof($this->qCTE)) {
             // add any joins against CTEs
             $out .= " ".implode(" ", $this->jCTE);
         }
         // add any WHERE terms
-        if(sizeof($this->qWhere)) {
+        if (sizeof($this->qWhere)) {
             $out .= " WHERE ".implode(" AND ", $this->qWhere);
         }
         // add any ORDER BY terms
-        if(sizeof($this->order)) {
+        if (sizeof($this->order)) {
             $out .= " ORDER BY ".implode(", ", $this->order);
         }
         // add LIMIT and OFFSET if the former is specified
-        if($this->limit > 0) {
+        if ($this->limit > 0) {
             $out .= " LIMIT ".$this->limit;
-            if($this->offset > 0) {
+            if ($this->offset > 0) {
                 $out .= " OFFSET ".$this->offset;
             }
         }

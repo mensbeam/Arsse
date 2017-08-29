@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\Database;
+
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Feed;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
@@ -26,11 +27,11 @@ trait SeriesFeed {
         ],
     ];
     
-    function setUpSeries() {
+    public function setUpSeries() {
         // set up the test data
-        $past  = gmdate("Y-m-d H:i:s",strtotime("now - 1 minute"));
-        $future = gmdate("Y-m-d H:i:s",strtotime("now + 1 minute"));
-        $now = gmdate("Y-m-d H:i:s",strtotime("now"));
+        $past  = gmdate("Y-m-d H:i:s", strtotime("now - 1 minute"));
+        $future = gmdate("Y-m-d H:i:s", strtotime("now + 1 minute"));
+        $now = gmdate("Y-m-d H:i:s", strtotime("now"));
         $this->data = [
             'arsse_users' => [
                 'columns' => [
@@ -56,7 +57,7 @@ trait SeriesFeed {
                 ],
                 'rows' => [
                     [1,"http://localhost:8000/Feed/Matching/3","Ook",0,"",$past,$past,0],
-                    [2,"http://localhost:8000/Feed/Matching/1","Eek",5,"There was an error last time",$past,$future,0], 
+                    [2,"http://localhost:8000/Feed/Matching/1","Eek",5,"There was an error last time",$past,$future,0],
                     [3,"http://localhost:8000/Feed/Fetching/Error?code=404","Ack",0,"",$past,$now,0],
                     [4,"http://localhost:8000/Feed/NextFetch/NotModified?t=".time(),"Ooook",0,"",$past,$past,0],
                     [5,"http://localhost:8000/Feed/Parsing/Valid","Ooook",0,"",$past,$future,0],
@@ -160,13 +161,13 @@ trait SeriesFeed {
         ];
     }
 
-    function testListLatestItems() {
-        $this->assertResult($this->matches, Arsse::$db->feedMatchLatest(1,2));
+    public function testListLatestItems() {
+        $this->assertResult($this->matches, Arsse::$db->feedMatchLatest(1, 2));
     }
 
-    function testMatchItemsById() {
+    public function testMatchItemsById() {
         $this->assertResult($this->matches, Arsse::$db->feedMatchIds(1, ['804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180','db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41']));
-        foreach($this->matches as $m) {
+        foreach ($this->matches as $m) {
             $exp = [$m];
             $this->assertResult($exp, Arsse::$db->feedMatchIds(1, [], [$m['url_title_hash']]));
             $this->assertResult($exp, Arsse::$db->feedMatchIds(1, [], [], [$m['url_content_hash']]));
@@ -175,7 +176,7 @@ trait SeriesFeed {
         $this->assertResult([['id' => 1]], Arsse::$db->feedMatchIds(1, ['e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda'])); // this ID appears in both feed 1 and feed 2; only one result should be returned
     }
 
-    function testUpdateAFeed() {
+    public function testUpdateAFeed() {
         // update a valid feed with both new and changed items
         Arsse::$db->feedUpdate(1);
         $now = gmdate("Y-m-d H:i:s");
@@ -215,17 +216,17 @@ trait SeriesFeed {
         $this->compareExpectations($state);
     }
 
-    function testUpdateAMissingFeed() {
+    public function testUpdateAMissingFeed() {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->feedUpdate(2112);
     }
 
-    function testUpdateAFeedThrowingExceptions() {
+    public function testUpdateAFeedThrowingExceptions() {
         $this->assertException("invalidUrl", "Feed");
         Arsse::$db->feedUpdate(3, true);
     }
 
-    function testUpdateAFeedWithEnclosuresAndCategories() {
+    public function testUpdateAFeedWithEnclosuresAndCategories() {
         Arsse::$db->feedUpdate(5);
         $state = $this->primeExpectations($this->data, [
             'arsse_enclosures' => ["url","type"],
@@ -245,7 +246,7 @@ trait SeriesFeed {
         $this->compareExpectations($state);
     }
 
-    function testListStaleFeeds() {
+    public function testListStaleFeeds() {
         $this->assertSame([1,3,4], Arsse::$db->feedListStale());
         Arsse::$db->feedUpdate(3);
         Arsse::$db->feedUpdate(4);

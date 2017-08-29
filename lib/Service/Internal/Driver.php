@@ -1,37 +1,38 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Service\Internal;
+
 use JKingWeb\Arsse\Arsse;
 
 class Driver implements \JKingWeb\Arsse\Service\Driver {
     protected $queue = [];
     
-    static function driverName(): string {
+    public static function driverName(): string {
         return Arsse::$lang->msg("Driver.Service.Internal.Name");
     }
 
-    static function requirementsMet(): bool {
+    public static function requirementsMet(): bool {
         // this driver has no requirements
         return true;
     }
     
-    function __construct() {
+    public function __construct() {
     }
 
-    function queue(int ...$feeds): int {
+    public function queue(int ...$feeds): int {
         $this->queue = array_merge($this->queue, $feeds);
         return sizeof($this->queue);
     }
 
-    function exec(): int {
-        while(sizeof($this->queue)) {
+    public function exec(): int {
+        while (sizeof($this->queue)) {
             $id = array_shift($this->queue);
             Arsse::$db->feedUpdate($id);
         }
         return Arsse::$conf->serviceQueueWidth - sizeof($this->queue);
     }
 
-    function clean(): bool {
+    public function clean(): bool {
         $this->queue = [];
         return true;
     }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 /** Class for loading, saving, and querying configuration
- * 
+ *
  * The Conf class serves both as a means of importing and querying configuration information, as well as a source for default parameters when a configuration file does not specify a value.
  * All public properties are configuration parameters that may be set by the server administrator. */
 class Conf {
@@ -57,50 +57,50 @@ class Conf {
     public $purgeFeeds             = "PT24H";
     /** @var string When to delete an unstarred article in the database after it has been marked read by all users, as an ISO 8601 duration (default: 7 days; empty string for never)
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
-     public $purgeArticlesRead     = "P7D";
+    public $purgeArticlesRead     = "P7D";
     /** @var string When to delete an unstarred article in the database regardless of its read state, as an ISO 8601 duration (default: 21 days; empty string for never)
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
-     public $purgeArticlesUnread     = "P21D";
+    public $purgeArticlesUnread     = "P21D";
 
     /** Creates a new configuration object
      * @param string $import_file Optional file to read configuration data from
      * @see self::importFile() */
     public function __construct(string $import_file = "") {
-        if($import_file != "") {
+        if ($import_file != "") {
             $this->importFile($import_file);
         }
     }
 
-    /** Layers configuration data from a file into an existing object 
+    /** Layers configuration data from a file into an existing object
      *
      * The file must be a PHP script which return an array with keys that match the properties of the Conf class. Malformed files will throw an exception; unknown keys are silently ignored. Files may be imported is succession, though this is not currently used.
      * @param string $file Full path and file name for the file to import */
     public function importFile(string $file): self {
-        if(!file_exists($file)) {
+        if (!file_exists($file)) {
             throw new Conf\Exception("fileMissing", $file);
-        } else if(!is_readable($file)) {
+        } elseif (!is_readable($file)) {
             throw new Conf\Exception("fileUnreadable", $file);
         }
         try {
             ob_start();
             $arr = (@include $file);
-        } catch(\Throwable $e) {
+        } catch (\Throwable $e) {
             $arr = null;
         } finally {
             ob_end_clean();
         }
-        if(!is_array($arr)) {
+        if (!is_array($arr)) {
             throw new Conf\Exception("fileCorrupt", $file);
         }
         return $this->import($arr);
     }
 
-    /** Layers configuration data from an associative array into an existing object 
+    /** Layers configuration data from an associative array into an existing object
      *
      * The input array must have keys that match the properties of the Conf class; unknown keys are silently ignored. Arrays may be imported is succession, though this is not currently used.
      * @param mixed[] $arr Array of configuration parameters to export */
     public function import(array $arr): self {
-        foreach($arr as $key => $value) {
+        foreach ($arr as $key => $value) {
             $this->$key = $value;
         }
         return $this;
@@ -112,13 +112,13 @@ class Conf {
         $ref = new self;
         $out = [];
         $conf = new \ReflectionObject($this);
-        foreach($conf->getProperties(\ReflectionProperty::IS_PUBLIC) as $prop) {
+        foreach ($conf->getProperties(\ReflectionProperty::IS_PUBLIC) as $prop) {
             $name = $prop->name;
             // add the property to the output if the value is scalar and either:
             // 1. full output has been requested
             // 2. the property is not defined in the class
             // 3. it differs from the default
-            if(is_scalar($this->$name) && ($full || !$prop->isDefault() || $this->$name !== $ref->$name)) {
+            if (is_scalar($this->$name) && ($full || !$prop->isDefault() || $this->$name !== $ref->$name)) {
                 $out[$name] = $this->$name;
             }
         }
@@ -132,27 +132,28 @@ class Conf {
         $arr = $this->export($full);
         $conf = new \ReflectionObject($this);
         $out = "<?php return [".PHP_EOL;
-        foreach($arr as $prop => $value) {
+        foreach ($arr as $prop => $value) {
             $match = null;
             $doc = $comment = "";
             // retrieve the property's docblock, if it exists
             try {
                 $doc = (new \ReflectionProperty(self::class, $prop))->getDocComment();
-            } catch(\ReflectionException $e) {}
-            if($doc) {
+            } catch (\ReflectionException $e) {
+            }
+            if ($doc) {
                 // parse the docblock to extract the property description
-                if(preg_match("<@var\s+\S+\s+(.+?)(?:\s*\*/)?$>m", $doc, $match)) {
+                if (preg_match("<@var\s+\S+\s+(.+?)(?:\s*\*/)?$>m", $doc, $match)) {
                     $comment = $match[1];
                 }
             }
             // append the docblock description if there is one, or an empty comment otherwise
             $out .= " // ".$comment.PHP_EOL;
             // append the property and an export of its value to the output
-            $out .= " ".var_export($prop, true)." => ".var_export($value,true).",".PHP_EOL;
+            $out .= " ".var_export($prop, true)." => ".var_export($value, true).",".PHP_EOL;
         }
         $out .= "];".PHP_EOL;
         // write the configuration representation to the requested file
-        if(!@file_put_contents($file,$out)) {
+        if (!@file_put_contents($file, $out)) {
             // if it fails throw an exception
             $err = file_exists($file) ? "fileUnwritable" : "fileUncreatable";
             throw new Conf\Exception($err, $file);

@@ -1,18 +1,18 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\Database;
+
 use JKingWeb\Arsse\Arsse;
 use Phake;
 
 trait SeriesCleanup {
-    
-    function setUpSeries() {
+    public function setUpSeries() {
         // set up the test data
-        $nowish  = gmdate("Y-m-d H:i:s",strtotime("now - 1 minute"));
-        $yesterday = gmdate("Y-m-d H:i:s",strtotime("now - 1 day"));
-        $daybefore = gmdate("Y-m-d H:i:s",strtotime("now - 2 days"));
-        $daysago = gmdate("Y-m-d H:i:s",strtotime("now - 7 days"));
-        $weeksago = gmdate("Y-m-d H:i:s",strtotime("now - 21 days"));
+        $nowish  = gmdate("Y-m-d H:i:s", strtotime("now - 1 minute"));
+        $yesterday = gmdate("Y-m-d H:i:s", strtotime("now - 1 day"));
+        $daybefore = gmdate("Y-m-d H:i:s", strtotime("now - 2 days"));
+        $daysago = gmdate("Y-m-d H:i:s", strtotime("now - 7 days"));
+        $weeksago = gmdate("Y-m-d H:i:s", strtotime("now - 21 days"));
         $this->data = [
             'arsse_users' => [
                 'columns' => [
@@ -109,7 +109,7 @@ trait SeriesCleanup {
         ];
     }
 
-    function testCleanUpOrphanedFeeds() {
+    public function testCleanUpOrphanedFeeds() {
         Arsse::$db->feedCleanup();
         $now = gmdate("Y-m-d H:i:s");
         $state = $this->primeExpectations($this->data, [
@@ -121,42 +121,42 @@ trait SeriesCleanup {
         $this->compareExpectations($state);
     }
 
-    function testCleanUpOldArticlesWithStandardRetention() {
+    public function testCleanUpOldArticlesWithStandardRetention() {
         Arsse::$db->articleCleanup();
         $state = $this->primeExpectations($this->data, [
             'arsse_articles' => ["id"]
         ]);
-        foreach([7,8,9] as $id) {
+        foreach ([7,8,9] as $id) {
             unset($state['arsse_articles']['rows'][$id - 1]);
         }
         $this->compareExpectations($state);
     }
     
-    function testCleanUpOldArticlesWithUnlimitedReadRetention() {
+    public function testCleanUpOldArticlesWithUnlimitedReadRetention() {
         Arsse::$conf->purgeArticlesRead = "";
         Arsse::$db->articleCleanup();
         $state = $this->primeExpectations($this->data, [
             'arsse_articles' => ["id"]
         ]);
-        foreach([7,8] as $id) {
+        foreach ([7,8] as $id) {
             unset($state['arsse_articles']['rows'][$id - 1]);
         }
         $this->compareExpectations($state);
     }
     
-    function testCleanUpOldArticlesWithUnlimitedUnreadRetention() {
+    public function testCleanUpOldArticlesWithUnlimitedUnreadRetention() {
         Arsse::$conf->purgeArticlesUnread = "";
         Arsse::$db->articleCleanup();
         $state = $this->primeExpectations($this->data, [
             'arsse_articles' => ["id"]
         ]);
-        foreach([9] as $id) {
+        foreach ([9] as $id) {
             unset($state['arsse_articles']['rows'][$id - 1]);
         }
         $this->compareExpectations($state);
     }
 
-    function testCleanUpOldArticlesWithUnlimitedRetention() {
+    public function testCleanUpOldArticlesWithUnlimitedRetention() {
         Arsse::$conf->purgeArticlesRead = "";
         Arsse::$conf->purgeArticlesUnread = "";
         Arsse::$db->articleCleanup();
