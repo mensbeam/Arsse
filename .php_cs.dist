@@ -17,7 +17,7 @@ $rules = [
 $finder = \PhpCsFixer\Finder::create();
 foreach ($paths as $path) {
     if (is_file($path)) {
-        $finder = $finder->path($path);
+        $finder = $finder->append([$path]);
     } else {
         $finder = $finder->in($path);
     }

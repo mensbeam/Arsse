@@ -6,7 +6,7 @@ use JKingWeb\Arsse\Arsse;
 use org\bovigo\vfs\vfsStream;
 use Phake;
 
-/** 
+/**
  * @covers \JKingWeb\Arsse\Db\SQLite3\Driver<extended>
  * @covers \JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder */
 class TestDbDriverCreationSQLite3 extends Test\AbstractTest {

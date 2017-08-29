@@ -5,7 +5,7 @@ namespace JKingWeb\Arsse;
 use JKingWeb\Arsse\Db\Transaction;
 use Phake;
 
-/** 
+/**
  * @covers \JKingWeb\Arsse\Db\Transaction */
 class TestTransaction extends Test\AbstractTest {
     protected $drv;

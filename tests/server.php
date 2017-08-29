@@ -9,11 +9,11 @@ require_once __DIR__."/../bootstrap.php";
 This is a so-called router for the the internal PHP Web server:
 <http://php.net/manual/en/features.commandline.webserver.php>
 
-It is used to test feed parsing in a controlled environment, 
+It is used to test feed parsing in a controlled environment,
 answering specific requests used in tests with the data required
-to pass the test. 
+to pass the test.
 
-The parameters of the responses are kept in separate files, 
+The parameters of the responses are kept in separate files,
 which include the following data:
 
 - Response content
