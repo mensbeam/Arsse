@@ -22,6 +22,8 @@
                 <include name="composer.*"/>
             </fileset>
         </delete>
+        <echo>Generating example configuration file</echo>
+        <exec command="php arsse.php conf save-defaults config.defaults.php" dir="./build/arsse"/>
     </target>
 
     <target name="clean">
