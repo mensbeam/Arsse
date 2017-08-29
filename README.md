@@ -61,7 +61,7 @@ php ./arsse.php conf save-defaults "./config.defaults.php"
 
 ## License
 
-Arsse is made available under the permissive MIT license.  See the LICENSE file included with the distribution or source code for exact legal text. Dependencies included in the distribution may be governed by other licenses.
+Arsse is made available under the permissive MIT license.  See the `LICENSE` file included with the distribution or source code for exact legal text. Dependencies included in the distribution may be governed by other licenses.
 
 ## Contributing
 

@@ -31,7 +31,8 @@
         "webmozart/glob": "^4.1",
         "phake/phake": "^3.0",
         "phpunit/phpunit": "^6.0",
-        "phpdocumentor/phpdocumentor": "2.*"
+        "phpdocumentor/phpdocumentor": "2.*",
+        "friendsofphp/php-cs-fixer": "^2.2"
     },
     "autoload": {
         "psr-4": {
