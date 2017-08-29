@@ -1,0 +1,38 @@
+<project default="build">
+
+    <target name="build">
+        <mkdir dir="./build/arsse"/>
+        <copy todir="./build/arsse">
+            <fileset dir=".">
+                <include name="lib/**"/>
+                <include name="sql/**"/>
+                <include name="locale/**"/>
+                <include name="dist/**"/>
+                <include name="composer.*"/>
+                <include name="arsse.php"/>
+                <include name="bootstrap.php"/>
+                <include name="LICENSE"/>
+                <include name="README.md"/>
+            </fileset>
+        </copy>
+        <echo>Installing dependencies via Composer</echo>
+        <exec command="composer install -o --no-dev" dir="./build/arsse"/>
+        <delete>
+            <fileset dir="./build/arsse">
+                <include name="composer.*"/>
+            </fileset>
+        </delete>
+    </target>
+
+    <target name="clean">
+        <delete dir="./build"/>
+    </target>
+
+    <target name="package">
+        <propertyprompt propertyName="arsse.version" defaultValue="head" promptText="Git tag to package"/>
+        <phingcall target="clean"/>
+        <phingcall target="build"/>
+        <tar destfile="./build/arsse-${arsse.version}.tar.gz" basedir="./build" compression="gzip"/>
+    </target>
+
+</project>

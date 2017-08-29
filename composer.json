@@ -32,7 +32,9 @@
         "phake/phake": "^3.0",
         "phpunit/phpunit": "^6.0",
         "phpdocumentor/phpdocumentor": "2.*",
-        "friendsofphp/php-cs-fixer": "^2.2"
+        "friendsofphp/php-cs-fixer": "^2.2",
+        "phing/phing": "^2.16",
+        "pear/archive_tar": "*"
     },
     "autoload": {
         "psr-4": {
