@@ -6,7 +6,7 @@ At present the software should be considered in an "alpha" state: though its cor
 
 - Support for more database engines (PostgreSQL, MySQL, MariaDB)
 - Providing more sync protocols (Tiny Tiny RSS, Fever, others)
-- Tools for managing users (manual insertion into the database is currently required)
+- Complete tools for managing users
 - Better packaging and configuration samples
 
 ## Requirements
@@ -15,7 +15,7 @@ The Arsse has the following requirements:
 
 - A Web server
 - PHP 7.0.7 or newer with the following extensions:
-    - [intl](http://php.net/manual/en/book.intl.php), [json](http://php.net/manual/en/book.json.php), and [hash](http://php.net/manual/en/book.hash.php)
+    - [intl](http://php.net/manual/en/book.intl.php), [json](http://php.net/manual/en/book.json.php), [hash](http://php.net/manual/en/book.hash.php), and [pcre](http://php.net/manual/en/book.pcre.php)
     - [dom](http://php.net/manual/en/book.dom.php), [simplexml](http://php.net/manual/en/book.simplexml.php), and [iconv](http://php.net/manual/en/book.iconv.php) (for picoFeed)
     - [sqlite3](http://php.net/manual/en/book.sqlite3.php)
 - The ability to run daemon processes on the server
@@ -35,10 +35,13 @@ sudo systemctl enable arsse
 sudo systemctl start arsse
 ```
 
-### Configuring the Web server
+### Configuring the Web server and PHP 
 
-Sample configuration parameters for Nginx can be found in `arsse/dist/nginx.conf` and `arsse/dist/nginx-fcgi.conf`.
+Sample configuration parameters for Nginx can be found in `arsse/dist/nginx.conf` and `arsse/dist/nginx-fcgi.conf`; the samples assume [a server group](http://nginx.org/en/docs/http/ngx_http_upstream_module.html#upstream) has already been defined for PHP. How to configure an Nginx service to use PHP and install the required PHP extensions is beyond the scope of this document, however.
 
+### Adding users
+
+The Arsse currently includes a `user add <username> [<password>]` console command to add users to the database; other user management tasks require manual database edits. Alternatively, if the Web server is configured to handle authentication, you may set the configuration option `userPreAuth` to `true` and The Arsse will defer to the server and automatically add any missing users as it encounters them.
 
 ## Installation from source
 
@@ -60,7 +63,11 @@ php ./arsse.php conf save-defaults "./config.defaults.php"
 
 Arsse is made available under the permissive MIT license.  See the LICENSE file included with the distribution or source code for exact legal text. Dependencies included in the distribution may be governed by other licenses.
 
-## Running tests
+## Contributing
+
+Please refer to `CONTRIBUTING.md` for guidelines on contributing code to The Arsse.
+
+### Running tests
 
 To run the test suite, you must have [Composer](https://getcomposer.org/) installed as well as the command-line PHP interpreter (this is normally required to use Composer). Port 8000 must also be available for use by the built-in PHP Web server.
 
