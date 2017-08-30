@@ -95,9 +95,11 @@ class TestConf extends Test\AbstractTest {
         $conf = new Conf();
         $conf->lang = ["en", "fr"]; // should not be exported: not scalar
         $conf->dbSQLite3File = "test.db"; // should be exported: value changed
+        $conf->userDriver = null; // should be exported: changed value, even when null
         $conf->someCustomProperty = "Look at me!"; // should be exported: unknown property
         $exp = [
             'dbSQLite3File' => "test.db",
+            'userDriver' => null,
             'someCustomProperty' => "Look at me!",
         ];
         $this->assertSame($exp, $conf->export());
@@ -112,11 +114,13 @@ class TestConf extends Test\AbstractTest {
         $conf = new Conf();
         $conf->lang = ["en", "fr"]; // should not be exported: not scalar
         $conf->dbSQLite3File = "test.db"; // should be exported: value changed
+        $conf->userDriver = null; // should be exported: changed value, even when null
         $conf->someCustomProperty = "Look at me!"; // should be exported: unknown property
         $conf->exportFile(self::$path."confNotArray");
         $arr = (include self::$path."confNotArray");
         $exp = [
             'dbSQLite3File' => "test.db",
+            'userDriver' => null,
             'someCustomProperty' => "Look at me!",
         ];
         $this->assertSame($exp, $arr);

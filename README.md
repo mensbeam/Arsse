@@ -13,12 +13,12 @@ At present the software should be considered in an "alpha" state: though its cor
 
 The Arsse has the following requirements:
 
-- A Web server
+- A Linux server utilizing systemd and Nginx (tested on Ubuntu 16.04)
 - PHP 7.0.7 or newer with the following extensions:
     - [intl](http://php.net/manual/en/book.intl.php), [json](http://php.net/manual/en/book.json.php), [hash](http://php.net/manual/en/book.hash.php), and [pcre](http://php.net/manual/en/book.pcre.php)
     - [dom](http://php.net/manual/en/book.dom.php), [simplexml](http://php.net/manual/en/book.simplexml.php), and [iconv](http://php.net/manual/en/book.iconv.php) (for picoFeed)
     - [sqlite3](http://php.net/manual/en/book.sqlite3.php)
-- The ability to run daemon processes on the server
+- Privileges to create and run daemon processes on the server
 
 ## Installation
 

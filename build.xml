@@ -31,10 +31,16 @@
     </target>
 
     <target name="package">
-        <propertyprompt propertyName="arsse.version" defaultValue="head" promptText="Git tag to package"/>
-        <phingcall target="clean"/>
+        <propertyprompt propertyName="arsse.version" defaultValue="head" promptText="Git tag to package"/> <!-- This needs to be used to actually check out a tag, etc -->
+        <delete> <!-- Delete code, but keep dependencies, which Composer will prune -->
+            <fileset dir="./build/arsse">
+                <exclude name="vendor/**"/>
+            </fileset>
+        </delete>
         <phingcall target="build"/>
-        <tar destfile="./build/arsse-${arsse.version}.tar.gz" basedir="./build" compression="gzip"/>
+        <tar destfile="./build/arsse-${arsse.version}.tar.gz" basedir="./build" compression="gzip">
+            <fileset dir="./build" includes="arsse"/>
+        </tar>
     </target>
 
 </project>

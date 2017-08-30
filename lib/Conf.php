@@ -114,11 +114,11 @@ class Conf {
         $conf = new \ReflectionObject($this);
         foreach ($conf->getProperties(\ReflectionProperty::IS_PUBLIC) as $prop) {
             $name = $prop->name;
-            // add the property to the output if the value is scalar and either:
+            // add the property to the output if the value is scalar (or null) and either:
             // 1. full output has been requested
             // 2. the property is not defined in the class
             // 3. it differs from the default
-            if (is_scalar($this->$name) && ($full || !$prop->isDefault() || $this->$name !== $ref->$name)) {
+            if ((is_scalar($this->$name) || is_null($this->$name)) && ($full || !$prop->isDefault() || $this->$name !== $ref->$name)) {
                 $out[$name] = $this->$name;
             }
         }
