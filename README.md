@@ -30,6 +30,7 @@ At present, installation of The Arsse is rather manual. We hope to improve this 
 2. If desired, create `/usr/share/arsse/config.php` using  `config.defaults.php` as a guide. The file you create only needs to contain non-default settings. The `userPreAuth` setting may be of particular interest
 3. Copy `/usr/share/arsse/dist/arsse.service` to `/lib/systemd/system`
 4. In a terminal, execute the following to start the feed fetching service:
+
 ``` sh
 sudo systemctl enable arsse
 sudo systemctl start arsse
