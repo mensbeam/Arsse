@@ -20,12 +20,9 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         // check to make sure required extension is loaded
         if (!class_exists("SQLite3")) {
             throw new Exception("extMissing", self::driverName()); // @codeCoverageIgnore
-        }
-        $dbFile = Arsse::$conf->dbSQLite3File;
-        if (is_null($dbFile)) {
-            // if no database file is specified in the configuration, use a suitable default
-            $dbFile = \JKingWeb\Arsse\BASE."arsse.db";
-        }
+         }
+        // if no database file is specified in the configuration, use a suitable default
+        $dbFile = Arsse::$conf->dbSQLite3File ?? \JKingWeb\Arsse\BASE."arsse.db";
         $mode = \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE;
         $timeout = Arsse::$conf->dbSQLite3Timeout * 1000;
         try {
@@ -66,7 +63,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     public function __destruct() {
         try {
             $this->db->close();
-        } catch (\Exception $e) {
+        } catch (\Exception $e) { // @codeCoverageIgnore
         }
         unset($this->db);
     }

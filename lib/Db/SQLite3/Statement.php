@@ -36,7 +36,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     public function __destruct() {
         try {
             $this->st->close();
-        } catch (\Throwable $e) {
+        } catch (\Throwable $e) { // @codeCoverageIgnore
         }
         unset($this->st);
     }

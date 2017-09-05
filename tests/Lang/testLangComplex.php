@@ -47,7 +47,7 @@ class TestLangComplex extends Test\AbstractTest {
     }
 
     public function testFetchAMessage() {
-        $this->l->set("de", true);
+        $this->l->set("de");
         $this->assertEquals('und der Stein der Weisen', $this->l->msg('Test.presentText'));
     }
 

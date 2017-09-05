@@ -16,7 +16,7 @@ class Lang {
     ];
 
     public $path;                               // path to locale files; this is a public property to facilitate unit testing
-    protected static $requirementsMet = false;  // whether the Intl extension is loaded
+    protected $requirementsMet = false;         // whether the Intl extension is loaded
     protected $synched = false;                 // whether the wanted locale is actually loaded (lazy loading is used by default)
     protected $wanted = self::DEFAULT;          // the currently requested locale
     protected $locale = "";                     // the currently loaded locale
@@ -29,8 +29,8 @@ class Lang {
 
     public function set(string $locale, bool $immediate = false): string {
         // make sure the Intl extension is loaded
-        if (!static::$requirementsMet) {
-            static::checkRequirements();
+        if (!$this->requirementsMet) {
+            $this->checkRequirements();
         }
         // if requesting the same locale as already wanted, just return (but load first if we've requested an immediate load)
         if ($locale==$this->wanted) {
@@ -121,14 +121,15 @@ class Lang {
         return \Locale::lookup($list, $locale, true, $default);
     }
 
-    protected static function checkRequirements(): bool {
+    protected function checkRequirements(): bool {
         if (!extension_loaded("intl")) {
             throw new ExceptionFatal("The \"Intl\" extension is required, but not loaded");
         }
-        static::$requirementsMet = true;
+        $this->requirementsMet = true;
         return true;
     }
 
+    /** @codeCoverageIgnore */
     protected function globFiles(string $path): array {
         // we wrap PHP's glob function in this method so that unit tests may override it
         return glob($path."*.php");
@@ -148,8 +149,8 @@ class Lang {
     }
 
     protected function load(): bool {
-        if (!self::$requirementsMet) {
-            self::checkRequirements();
+        if (!$this->requirementsMet) {
+            $this->checkRequirements();
         }
         // if we've requested no locale (""), just load the fallback strings and return
         if ($this->wanted=="") {

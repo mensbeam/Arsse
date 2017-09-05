@@ -36,9 +36,7 @@ abstract class AbstractDriver implements Driver {
     }
 
     public function savepointRelease(int $index = null): bool {
-        if (is_null($index)) {
-            $index = $this->transDepth;
-        }
+        $index = $index ?? $this->transDepth;
         if (array_key_exists($index, $this->transStatus)) {
             switch ($this->transStatus[$index]) {
                 case self::TR_PEND:
@@ -83,9 +81,7 @@ abstract class AbstractDriver implements Driver {
     }
 
     public function savepointUndo(int $index = null): bool {
-        if (is_null($index)) {
-            $index = $this->transDepth;
-        }
+        $index = $index ?? $this->transDepth;
         if (array_key_exists($index, $this->transStatus)) {
             switch ($this->transStatus[$index]) {
                 case self::TR_PEND:

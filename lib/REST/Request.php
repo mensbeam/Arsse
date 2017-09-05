@@ -12,15 +12,9 @@ class Request {
     public $body = "";
 
     public function __construct(string $method = null, string $url = null, string $body = null, string $contentType = null) {
-        if (is_null($method)) {
-            $method = $_SERVER['REQUEST_METHOD'];
-        }
-        if (is_null($url)) {
-            $url = $_SERVER['REQUEST_URI'];
-        }
-        if (is_null($body)) {
-            $body = file_get_contents("php://input");
-        }
+        $method = $method ?? $_SERVER['REQUEST_METHOD'];
+        $url = $url ?? $_SERVER['REQUEST_URI'];
+        $body = $body ?? file_get_contents("php://input");
         if (is_null($contentType)) {
             if (isset($_SERVER['HTTP_CONTENT_TYPE'])) {
                 $contentType = $_SERVER['HTTP_CONTENT_TYPE'];

@@ -737,6 +737,8 @@ class TestNCNV1_2 extends Test\AbstractTest {
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), $this->anything())->thenReturn(true);
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->editions([]))->thenThrow(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->editions($in[1]))->thenThrow(new ExceptionInput("tooLong")); // data model function limited to 50 items for multiples
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->articles([]))->thenThrow(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->articles($in[1]))->thenThrow(new ExceptionInput("tooLong")); // data model function limited to 50 items for multiples
         $exp = new Response(422);
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/read/multiple")));
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/unread/multiple")));

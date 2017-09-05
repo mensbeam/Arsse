@@ -54,7 +54,7 @@ class Result implements \JKingWeb\Arsse\Db\Result {
     public function __destruct() {
         try {
             $this->set->finalize();
-        } catch (\Throwable $e) {
+        } catch (\Throwable $e) { // @codeCoverageIgnore
         }
         unset($this->set);
     }

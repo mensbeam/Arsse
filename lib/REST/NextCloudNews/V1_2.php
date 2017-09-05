@@ -73,11 +73,12 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new Response(405, "", "", ["Allow: ".$e->getMessage()]);
         }
         if (!method_exists($this, $func)) {
-            return new Response(501);
+            return new Response(501); // @codeCoverageIgnore
         }
         // dispatch
         try {
             return $this->$func($req->paths, $data);
+        // @codeCoverageIgnoreStart
         } catch (Exception $e) {
             // if there was a REST exception return 400
             return new Response(400);
@@ -85,6 +86,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             // if there was any other Arsse exception return 500
             return new Response(500);
         }
+        // @codeCoverageIgnoreEnd
     }
 
     protected function chooseCall(array $url, string $method): string {

@@ -23,9 +23,7 @@ USAGE_TEXT;
     }
 
     public function __construct(array $argv = null) {
-        if (is_null($argv)) {
-            $argv = array_slice($_SERVER['argv'], 1);
-        }
+        $argv = $argv ?? array_slice($_SERVER['argv'], 1);
         $this->args = \Docopt::handle($this->usage(), [
             'argv' => $argv,
             'help' => true,
@@ -46,9 +44,7 @@ USAGE_TEXT;
 
     public function dispatch(array $args = null): int {
         // act on command line
-        if (is_null($args)) {
-            $args = $this->args;
-        }
+        $args = $args ?? $this->args;
         if ($this->command("daemon", $args)) {
             $this->loadConf();
             return $this->daemon();
