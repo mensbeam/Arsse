@@ -3,6 +3,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 use PasswordGenerator\Generator as PassGen;
+use JKingWeb\DrUUID\UUID;
 use JKingWeb\Arsse\Misc\Query;
 use JKingWeb\Arsse\Misc\Context;
 use JKingWeb\Arsse\Misc\Date;
@@ -221,6 +222,61 @@ class Database {
         }
         $this->db->prepare("UPDATE arsse_users set rights = ? where id is ?", "int", "str")->run($rights, $user);
         return true;
+    }
+
+    public function sessionCreate(string $user): string {
+        // If the user isn't authorized to perform this action then throw an exception.
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        // generate a new session ID and expiry date
+        $id = UUID::mint()->hex;
+        $expires = Date::add(Arsse::$conf->userSessionTimeout);
+        // save the session to the database
+        $this->db->prepare("INSERT INTO arsse_sessions(id,expires,user) values(?,?,?)", "str", "datetime", "str")->run($id, $expires, $user);
+        // return the ID
+        return $id;
+    }
+
+    public function sessionDestroy(string $user, string $id): bool {
+        // If the user isn't authorized to perform this action then throw an exception.
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        // delete the session and report success.
+        return (bool) $this->db->prepare("DELETE FROM arsse_sessions where id is ? and user is ?", "str", "str")->run($id, $user)->changes();
+    }
+
+    public function sessionResume(string $id): array {
+        $maxage = Date::sub(Arsse::$conf->userSessionLifetime);
+        $out = $this->db->prepare("SELECT * from arsse_sessions where id is ? and expires > CURRENT_TIMESTAMP and created > ?", "str", "datetime")->run($id, $maxage)->getRow();
+        // if the session does not exist or is expired, throw an exception
+        if (!$out) {
+            throw new User\ExceptionSession("invalid", $id);
+        }
+        // otherwise populate the session user when appropriate
+        if (Arsse::$user) {
+            Arsse::$user->id = $out['user'];
+        }
+        // if we're more than half-way from the session expiring, renew it
+        if ($this->sessionExpiringSoon(Date::normalize($out['expires'], "sql"))) {
+            $expires = Date::add(Arsse::$conf->userSessionTimeout);
+            $this->db->prepare("UPDATE arsse_sessions set expires = ? where id is ?", "datetime", "str")->run($expires, $id);
+        }
+        return $out;
+    }
+
+    public function sessionCleanup(): int {
+        return $this->db->query("DELETE FROM arsse_sessions where expires < CURRENT_TIMESTAMP")->changes();
+    }
+
+    protected function sessionExpiringSoon(DateTimeInterface $expiry): bool {
+        // calculate half the session timeout as a number of seconds
+        $now = time();
+        $max = Date::add(Arsse::$conf->userSessionTimeout, $now)->getTimestamp();
+        $diff = intdiv($max - $now, 2);
+        // determine if the expiry time is less than half the session timeout into the future
+        return (($now + $diff) >= $expiry->getTimestamp());
     }
 
     public function folderAdd(string $user, array $data): int {

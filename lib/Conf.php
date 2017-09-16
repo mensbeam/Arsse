@@ -28,10 +28,16 @@ class Conf {
     public $userPreAuth             = false;
     /** @var integer Desired length of temporary user passwords */
     public $userTempPasswordLength  = 20;
+    /** @var string Period of inactivity after which log-in sessions should be considered invalid, as an ISO 8601 duration (default: 1 hour)
+     * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
+    public $userSessionTimeout     = "PT1H";
+    /** @var string Maximum lifetime of log-in sessions regardless of activity, as an ISO 8601 duration (default: 24 hours); 
+     * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
+    public $userSessionLifetime     = "PT24H";
 
     /** @var string Class of the background feed update service driver in use (Forking by default) */
     public $serviceDriver           = Service\Forking\Driver::class;
-    /** @var string The interval between checks for new feeds, as an ISO 8601 duration
+    /** @var string The interval between checks for new articles, as an ISO 8601 duration
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
     public $serviceFrequency        = "PT2M";
     /** @var integer Number of concurrent feed updates to perform */

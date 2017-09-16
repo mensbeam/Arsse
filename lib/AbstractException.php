@@ -56,6 +56,7 @@ abstract class AbstractException extends \Exception {
         "User/Exception.authMissing"            => 10411,
         "User/Exception.authFailed"             => 10412,
         "User/ExceptionAuthz.notAuthorized"     => 10421,
+        "User/ExceptionSession.invalid"         => 10431,
         "Feed/Exception.invalidCertificate"     => 10501,
         "Feed/Exception.invalidUrl"             => 10502,
         "Feed/Exception.maxRedirect"            => 10503,

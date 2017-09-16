@@ -84,7 +84,10 @@ class Service {
 
     public static function cleanupPre(): bool {
         // mark unsubscribed feeds as orphaned and delete orphaned feeds that are beyond their retention period
-        return Arsse::$db->feedCleanup();
+        Arsse::$db->feedCleanup();
+        // delete expired log-in sessions
+        Arsse::$db->sessionCleanup();
+        return true;
     }
 
     public static function cleanupPost(): bool {

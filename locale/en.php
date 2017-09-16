@@ -137,6 +137,7 @@ return [
             }}
             other {Authenticated user is not authorized to perform the action "{action}" on behalf of {user}}
         }',
+    'Exception.JKingWeb/Arsse/User/ExceptionSession.invalid'         => 'Session with ID {0} does not exist',
     'Exception.JKingWeb/Arsse/Feed/Exception.invalidCertificate'     => 'Could not download feed "{url}" because its server is serving an invalid SSL certificate',
     'Exception.JKingWeb/Arsse/Feed/Exception.invalidUrl'             => 'Feed URL "{url}" is invalid',
     'Exception.JKingWeb/Arsse/Feed/Exception.maxRedirect'            => 'Could not download feed "{url}" because its server reached its maximum number of HTTP redirections',
