@@ -13,6 +13,8 @@ trait SeriesCleanup {
         $daybefore = gmdate("Y-m-d H:i:s", strtotime("now - 2 days"));
         $daysago = gmdate("Y-m-d H:i:s", strtotime("now - 7 days"));
         $weeksago = gmdate("Y-m-d H:i:s", strtotime("now - 21 days"));
+        $soon = gmdate("Y-m-d H:i:s", strtotime("now + 1 minute"));
+        $faroff = gmdate("Y-m-d H:i:s", strtotime("now + 1 hour"));
         $this->data = [
             'arsse_users' => [
                 'columns' => [
@@ -23,6 +25,21 @@ trait SeriesCleanup {
                 'rows' => [
                     ["jane.doe@example.com", "", "Jane Doe"],
                     ["john.doe@example.com", "", "John Doe"],
+                ],
+            ],
+            'arsse_sessions' => [
+                'columns' => [
+                    'id'      => "str",
+                    'created' => "datetime",
+                    'expires' => "datetime",
+                    'user'    => "str",
+                ],
+                'rows' => [
+                    ["a", $nowish,  $faroff, "jane.doe@example.com"], // not expired and recently created, thus kept
+                    ["b", $nowish,  $soon,   "jane.doe@example.com"], // not expired and recently created, thus kept
+                    ["c", $daysago, $soon,   "jane.doe@example.com"], // created more than a day ago, thus deleted
+                    ["d", $nowish,  $nowish, "jane.doe@example.com"], // recently created but expired, thus deleted
+                    ["e", $daysago, $nowish, "jane.doe@example.com"], // created more than a day ago and expired, thus deleted
                 ],
             ],
             'arsse_feeds' => [
@@ -164,5 +181,17 @@ trait SeriesCleanup {
             'arsse_articles' => ["id"]
         ]);
         $this->compareExpectations($state);
+    }
+
+    public function testCleanUpExpiredSessions() {
+        Arsse::$db->sessionCleanup();
+        $state = $this->primeExpectations($this->data, [
+            'arsse_sessions' => ["id"]
+        ]);
+        foreach ([3,4,5] as $id) {
+            unset($state['arsse_sessions']['rows'][$id - 1]);
+        }
+        $this->compareExpectations($state);
+
     }
 }

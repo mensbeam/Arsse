@@ -3,7 +3,7 @@ create table arsse_sessions (
     id text primary key,                                                                    -- UUID of session
     created datetime not null default CURRENT_TIMESTAMP,                                    -- Session start timestamp
     expires datetime not null,                                                              -- Time at which session is no longer valid
-    user text not null references arsse_users(id) on delete cascade on update cascade,      -- user associated with the session
+    user text not null references arsse_users(id) on delete cascade on update cascade       -- user associated with the session
 ) without rowid;
 
 -- User-defined article labels for Tiny Tiny RSS
@@ -26,4 +26,4 @@ create table arsse_label_members (
 
 -- set version marker
 pragma user_version = 2;
-insert into arsse_meta(key,value) values('schema_version','2');
+update arsse_meta set value = '2' where key is 'schema_version';

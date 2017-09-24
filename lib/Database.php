@@ -9,7 +9,7 @@ use JKingWeb\Arsse\Misc\Context;
 use JKingWeb\Arsse\Misc\Date;
 
 class Database {
-    const SCHEMA_VERSION = 1;
+    const SCHEMA_VERSION = 2;
     
     /** @var Db\Driver */
     public $db;
@@ -267,7 +267,7 @@ class Database {
         return $this->db->prepare("DELETE FROM arsse_sessions where expires < CURRENT_TIMESTAMP or created < ?", "datetime")->run($maxAge)->changes();
     }
 
-    protected function sessionExpiringSoon(DateTimeInterface $expiry): bool {
+    protected function sessionExpiringSoon(\DateTimeInterface $expiry): bool {
         // calculate half the session timeout as a number of seconds
         $now = time();
         $max = Date::add(Arsse::$conf->userSessionTimeout, $now)->getTimestamp();
