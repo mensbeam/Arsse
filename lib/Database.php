@@ -248,8 +248,8 @@ class Database {
     }
 
     public function sessionResume(string $id): array {
-        $maxage = Date::sub(Arsse::$conf->userSessionLifetime);
-        $out = $this->db->prepare("SELECT * from arsse_sessions where id is ? and expires > CURRENT_TIMESTAMP and created > ?", "str", "datetime")->run($id, $maxage)->getRow();
+        $maxAge = Date::sub(Arsse::$conf->userSessionLifetime);
+        $out = $this->db->prepare("SELECT * from arsse_sessions where id is ? and expires > CURRENT_TIMESTAMP and created > ?", "str", "datetime")->run($id, $maxAge)->getRow();
         // if the session does not exist or is expired, throw an exception
         if (!$out) {
             throw new User\ExceptionSession("invalid", $id);
@@ -267,7 +267,8 @@ class Database {
     }
 
     public function sessionCleanup(): int {
-        return $this->db->query("DELETE FROM arsse_sessions where expires < CURRENT_TIMESTAMP")->changes();
+        $maxAge = Date::sub(Arsse::$conf->userSessionLifetime);
+        return $this->db->prepare("DELETE FROM arsse_sessions where expires < CURRENT_TIMESTAMP or created < ?", "datetime")->run($maxAge)->changes();
     }
 
     protected function sessionExpiringSoon(DateTimeInterface $expiry): bool {
