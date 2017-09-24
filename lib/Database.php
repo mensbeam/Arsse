@@ -249,14 +249,10 @@ class Database {
 
     public function sessionResume(string $id): array {
         $maxAge = Date::sub(Arsse::$conf->userSessionLifetime);
-        $out = $this->db->prepare("SELECT * from arsse_sessions where id is ? and expires > CURRENT_TIMESTAMP and created > ?", "str", "datetime")->run($id, $maxAge)->getRow();
+        $out = $this->db->prepare("SELECT id,created,expires,user from arsse_sessions where id is ? and expires > CURRENT_TIMESTAMP and created > ?", "str", "datetime")->run($id, $maxAge)->getRow();
         // if the session does not exist or is expired, throw an exception
         if (!$out) {
             throw new User\ExceptionSession("invalid", $id);
-        }
-        // otherwise populate the session user when appropriate
-        if (Arsse::$user) {
-            Arsse::$user->id = $out['user'];
         }
         // if we're more than half-way from the session expiring, renew it
         if ($this->sessionExpiringSoon(Date::normalize($out['expires'], "sql"))) {
