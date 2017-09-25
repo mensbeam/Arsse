@@ -63,9 +63,10 @@
         <file>Db/SQLite3/Database/TestDatabaseArticleSQLite3.php</file>
         <file>Db/SQLite3/Database/TestDatabaseCleanupSQLite3.php</file>
     </testsuite>
-    <testsuite name="NextCloud News API">
+    <testsuite name="Controllers">
         <file>REST/NextCloudNews/TestNCNVersionDiscovery.php</file>
         <file>REST/NextCloudNews/TestNCNV1_2.php</file>
+        <file>REST/TinyTinyRSS/TestTinyTinyAPI.php</file>
     </testsuite>
     <testsuite name="Refresh service">
         <file>Service/TestService.php</file>

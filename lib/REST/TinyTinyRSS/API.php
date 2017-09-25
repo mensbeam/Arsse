@@ -19,7 +19,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         'status' => 1,
         'content' => ['error' => "NOT_LOGGED_IN"],
     ];
-    const OVVERIDE = [
+    const OVERRIDE = [
         'auth' => ["login"],
     ];
     
@@ -98,7 +98,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return true;
     }
 
-    public function opGetApiLevel(array $data): aray {
+    public function opGetApiLevel(array $data): array {
         return ['level' => self::LEVEL];
     }
     
@@ -109,7 +109,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         ];
     }
 
-    public function opLogin(array $data): aray {
+    public function opLogin(array $data): array {
         if (isset($data['user']) && isset($data['password']) && Arsse::$user->auth($data['user'], $data['password'])) {
             $id = Arsse::$db->sessionCreate($data['user']);
             return [

@@ -11,7 +11,7 @@ class Exception extends \Exception {
     }
 
     public function getData(): array {
-        $err = ['error' => $this->getMesssage()];
+        $err = ['error' => $this->getMessage()];
         return array_merge($err, $this->data, $err);
     }
 }
