@@ -14,6 +14,11 @@ use JKingWeb\Arsse\REST\Response;
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     const LEVEL = 14;
     const VERSION = "17.4";
+    const FATAL_ERR = [
+        'seq' => null,
+        'status' => 1,
+        'content' => ['error' => "NOT_LOGGED_IN"],
+    ];
     const OVVERIDE = [
         'auth' => ["login"],
     ];
@@ -24,17 +29,17 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function dispatch(\JKingWeb\Arsse\REST\Request $req): Response {
         if ($req->method != "POST") {
             // only POST requests are allowed
-            return new Response(405, "", "", ["Allow: POST"]);
+            return new Response(405, self::FATAL_ERR, "application/json", ["Allow: POST"]);
         }
         if ($req->body) {
             // only JSON entities are allowed
             if (!preg_match("<^application/json\b|^$>", $req->type)) {
-                return new Response(415, "", "", ['Accept: application/json']);
+                return new Response(415, self::FATAL_ERR, "application/json", ['Accept: application/json']);
             }
             $data = @json_decode($req->body, true);
             if (json_last_error() != \JSON_ERROR_NONE || !is_array($data)) {
                 // non-JSON input indicates an error
-                return new Response(400);
+                return new Response(400, self::FATAL_ERR);
             }
             // layer input over defaults
             $data = array_merge([
@@ -76,7 +81,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         } else {
             // absence of a request body indicates an error
-            return new Response(400);
+            return new Response(400, self::FATAL_ERR);
         }
     }
 
