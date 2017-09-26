@@ -3,6 +3,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Misc;
 
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Misc\ValueInfo;
 
 class Context {
     public $reverse = false;
@@ -36,22 +37,11 @@ class Context {
     protected function cleanArray(array $spec): array {
         $spec = array_values($spec);
         for ($a = 0; $a < sizeof($spec); $a++) {
-            $id = $spec[$a];
-            if (is_int($id) && $id > -1) {
-                continue;
-            } elseif (is_float($id) && !fmod($id, 1) && $id >= 0) {
-                $spec[$a] = (int) $id;
-                continue;
-            } elseif (is_string($id)) {
-                $ch1 = strval(@intval($id));
-                $ch2 = strval($id);
-                if ($ch1 !== $ch2 || $id < 1) {
-                    $id = 0;
-                }
+            if(ValueInfo::int($spec[$a])===ValueInfo::VALID) {
+                $spec[$a] = (int) $spec[$a];
             } else {
-                $id = 0;
+                $spec[$a] = 0;
             }
-            $spec[$a] = (int) $id;
         }
         return array_values(array_filter($spec));
     }

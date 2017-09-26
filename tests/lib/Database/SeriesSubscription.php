@@ -319,6 +319,11 @@ trait SeriesSubscription {
         $this->assertTrue(Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['title' => 0]));
     }
 
+    public function testRenameASubscriptionToAnArray() {
+        $this->assertException("typeViolation", "Db", "ExceptionInput");
+        Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['title' => []]);
+    }
+
     public function testSetThePropertiesOfAMissingSubscription() {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesSet($this->user, 2112, ['folder' => null]);
