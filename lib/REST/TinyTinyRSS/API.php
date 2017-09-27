@@ -130,4 +130,33 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         // session validity is already checked by the dispatcher, so we need only return true
         return ['status' => true];
     }
+
+    public function opAddCategory(array $data) {
+        $in = [
+            'name'   => isset($data['caption']) ? $data['caption'] : "",
+            'parent' => isset($data['parent_id']) ? $data['parent_id'] : null,
+        ];
+        if (!$in['parent']) {
+            $in['parent'] = null;
+        }
+        try {
+            return Arsse::$db->folderAdd(Arsse::$user->id, $in);
+        } catch (ExceptionInput $e) {
+            switch ($e->getCode()) {
+                // folder already exists
+                case 10236: 
+                    // retrieve the ID of the existing folder; duplicating a category silently returns the existing one
+                    $folders = Arsse::$db->folderList(Arsse::$user->id, $in['parent'], false);
+                    foreach ($folders as $folder) {
+                        if ($folder['name']==$in['name']) {
+                            return (int) $folder['id'];
+                        }
+                    }
+                // parent folder does not exist; this returns false as an ID
+                case 10235: return false;
+                // other errors related to input
+                default: throw new Exception("INCORRECT_USAGE");
+            }
+        }
+    }
 }

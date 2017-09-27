@@ -143,7 +143,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         ]
     ];
 
-    protected function respGood(array $content, $seq = 0): Response {
+    protected function respGood($content = null, $seq = 0): Response {
         return new Response(200, [
             'seq' => $seq,
             'status' => 0,
@@ -151,7 +151,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         ]);
     }
 
-    protected function respErr(string $msg, array $content = [], $seq = 0): Response {
+    protected function respErr(string $msg, $content = [], $seq = 0): Response {
         $err = ['error' => $msg];
         return new Response(200, [
             'seq' => $seq,
@@ -247,5 +247,50 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         ];
         $exp = $this->respGood(['level' => \JKingWeb\Arsse\REST\TinyTinyRSS\API::LEVEL]);
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($data))));
+    }
+
+    public function testAddACategory() {
+        $in = [
+            ['op' => "addCategory", 'sid' => "PriestsOfSyrinx", 'caption' => "Software"],
+            ['op' => "addCategory", 'sid' => "PriestsOfSyrinx", 'caption' => "Hardware", 'parent_id' => 1],
+            ['op' => "addCategory", 'sid' => "PriestsOfSyrinx"],
+            ['op' => "addCategory", 'sid' => "PriestsOfSyrinx", 'caption' => ""],
+            ['op' => "addCategory", 'sid' => "PriestsOfSyrinx", 'caption' => "   "],
+        ];
+        $db = [
+            ['name' => "Software", 'parent' => null],
+            ['name' => "Hardware", 'parent' => 1],
+        ];
+        $out = [
+            ['id' => 2, 'name' => "Software", 'parent' => null],
+            ['id' => 3, 'name' => "Hardware", 'parent' => 1],
+            ['id' => 1, 'name' => "Politics", 'parent' => null],
+        ];
+        // set of various mocks for testing
+        Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $db[0])->thenReturn(2)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
+        Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $db[1])->thenReturn(3)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
+        Phake::when(Arsse::$db)->folderList(Arsse::$user->id, null, false)->thenReturn(new Result([$out[0], $out[2]]));
+        Phake::when(Arsse::$db)->folderList(Arsse::$user->id,    1, false)->thenReturn(new Result([$out[1]]));
+        // set up mocks that produce errors
+        Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, [])->thenThrow(new ExceptionInput("missing"));
+        Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => "",    'parent' => null])->thenThrow(new ExceptionInput("missing"));
+        Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => "   ", 'parent' => null])->thenThrow(new ExceptionInput("whitespace"));
+        // correctly add two folders
+        $exp = $this->respGood(2);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
+        $exp = $this->respGood(3);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
+        // attempt to add the two folders again
+        $exp = $this->respGood(2);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
+        $exp = $this->respGood(3);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
+        Phake::verify(Arsse::$db)->folderList(Arsse::$user->id, null, false);
+        Phake::verify(Arsse::$db)->folderList(Arsse::$user->id,    1, false);
+        // add some invalid folders
+        $exp = $this->respErr("INCORRECT_USAGE");
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[2]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[3]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[4]))));
     }
 }
