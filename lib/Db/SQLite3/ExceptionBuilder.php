@@ -12,9 +12,9 @@ trait ExceptionBuilder {
             case self::SQLITE_BUSY:
                 return [ExceptionTimeout::class, 'general', $this->db->lastErrorMsg()];
             case self::SQLITE_CONSTRAINT:
-                return [ExceptionInput::class, 'constraintViolation', $this->db->lastErrorMsg()];
+                return [ExceptionInput::class, 'engineConstraintViolation', $this->db->lastErrorMsg()];
             case self::SQLITE_MISMATCH:
-                return [ExceptionInput::class, 'typeViolation', $this->db->lastErrorMsg()];
+                return [ExceptionInput::class, 'engineTypeViolation', $this->db->lastErrorMsg()];
             default:
                 return [Exception::class, 'engineErrorGeneral', $this->db->lastErrorMsg()];
         }

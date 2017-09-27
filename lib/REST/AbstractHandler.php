@@ -3,6 +3,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\REST;
 
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Misc\ValueInfo;
 
 abstract class AbstractHandler implements Handler {
     abstract public function __construct();
@@ -32,9 +33,7 @@ abstract class AbstractHandler implements Handler {
     }
 
     protected function validateInt($id): bool {
-        $ch1 = strval(@intval($id));
-        $ch2 = strval($id);
-        return ($ch1 === $ch2);
+        return (bool) (ValueInfo::int($id) & ValueInfo::VALID);
     }
 
     protected function NormalizeInput(array $data, array $types, string $dateFormat = null): array {

@@ -7,6 +7,7 @@ use JKingWeb\DrUUID\UUID;
 use JKingWeb\Arsse\Misc\Query;
 use JKingWeb\Arsse\Misc\Context;
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Misc\ValueInfo;
 
 class Database {
     const SCHEMA_VERSION = 2;
@@ -281,31 +282,13 @@ class Database {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
-        // if the desired folder name is missing or invalid, throw an exception
-        if (!array_key_exists("name", $data) || $data['name']=="") {
-            throw new Db\ExceptionInput("missing", ["action" => __FUNCTION__, "field" => "name"]);
-        } elseif (!strlen(trim($data['name']))) {
-            throw new Db\ExceptionInput("whitespace", ["action" => __FUNCTION__, "field" => "name"]);
-        }
         // normalize folder's parent, if there is one
-        $parent = array_key_exists("parent", $data) ? (int) $data['parent'] : 0;
-        if ($parent===0) {
-            // if no parent is specified, do nothing
-            $parent = null;
-        } else {
-            // if a parent is specified, make sure it exists and belongs to the user; get its root (first-level) folder if it's a nested folder
-            $p = $this->db->prepare("SELECT id from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $parent)->getValue();
-            if (!$p) {
-                throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "parent", 'id' => $parent]);
-            }
-        }
-        // check if a folder by the same name already exists, because nulls are wonky in SQL
-        // FIXME: How should folder name be compared? Should a Unicode normalization be applied before comparison and insertion?
-        if ($this->db->prepare("SELECT count(*) from arsse_folders where owner is ? and parent is ? and name is ?", "str", "int", "str")->run($user, $parent, $data['name'])->getValue() > 0) {
-            throw new Db\ExceptionInput("constraintViolation"); // FIXME: There needs to be a practical message here
-        }
-        // actually perform the insert (!)
-        return $this->db->prepare("INSERT INTO arsse_folders(owner,parent,name) values(?,?,?)", "str", "int", "str")->run($user, $parent, $data['name'])->lastId();
+        $parent = array_key_exists("parent", $data) ? $this->folderValidateId($user, $data['parent'])['id'] : null;
+        // validate the folder name and parent (if specified); this also checks for duplicates
+        $name = array_key_exists("name", $data) ? $data['name'] : ""; 
+        $this->folderValidateName($name, true, $parent);
+        // actually perform the insert
+        return $this->db->prepare("INSERT INTO arsse_folders(owner,parent,name) values(?,?,?)", "str", "int", "str")->run($user, $parent, $name)->lastId();
     }
 
     public function folderList(string $user, int $parent = null, bool $recursive = true): Db\Result {
@@ -356,70 +339,110 @@ class Database {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
-        // validate the folder ID and, if specified, the parent to move it to
-        $parent = null;
-        if (array_key_exists("parent", $data)) {
-            $parent = $data['parent'];
-        }
-        $f = $this->folderValidateId($user, $id, $parent, true);
-        // if a new name is specified, validate it
-        if (array_key_exists("name", $data)) {
+        // verify the folder belongs to the user
+        $in = $this->folderValidateId($user, $id, true);
+        $name = array_key_exists("name", $data);
+        $parent = array_key_exists("parent", $data);
+        if ($name && $parent) {
+            // if a new name and parent are specified, validate both together
             $this->folderValidateName($data['name']);
-        }
-        $data = array_merge($f, $data);
-        // check to make sure the target folder name/location would not create a duplicate (we must do this check because null is not distinct in SQL)
-        $existing = $this->db->prepare("SELECT id from arsse_folders where owner is ? and parent is ? and name is ?", "str", "int", "str")->run($user, $data['parent'], $data['name'])->getValue();
-        if (!is_null($existing) && $existing != $id) {
-            throw new Db\ExceptionInput("constraintViolation"); // FIXME: There needs to be a practical message here
+            $in['name'] = $data['name'];
+            $in['parent'] = $this->folderValidateMove($user, $id, $data['parent'], $data['name']);
+        } elseif ($name) {
+            // if a new name is specified, validate it
+            $this->folderValidateName($data['name'], true, $in['parent']);
+            $in['name'] = $data['name'];
+        } elseif ($parent) {
+            // if a new parent is specified, validate it
+            $in['parent'] = $this->folderValidateMove($user, $id, $data['parent']);
+        } else {
+            // if neither was specified, do nothing
+            return false;
         }
         $valid = [
             'name' => "str",
             'parent' => "int",
         ];
-        list($setClause, $setTypes, $setValues) = $this->generateSet($data, $valid);
-        return (bool) $this->db->prepare("UPDATE arsse_folders set $setClause where owner is ? and id is ?", $setTypes, "str", "int")->run($setValues, $user, $id)->changes();
+        list($setClause, $setTypes, $setValues) = $this->generateSet($in, $valid);
+        return (bool) $this->db->prepare("UPDATE arsse_folders set $setClause, modified = CURRENT_TIMESTAMP where owner is ? and id is ?", $setTypes, "str", "int")->run($setValues, $user, $id)->changes();
     }
 
-    protected function folderValidateId(string $user, int $id = null, int $parent = null, bool $subject = false): array {
-        if (is_null($id)) {
-            // if no ID is specified this is a no-op, unless a parent is specified, which is always a circular dependence (the root cannot be moved)
-            if (!is_null($parent)) {
-                throw new Db\ExceptionInput("circularDependence", ["action" => $this->caller(), "field" => "parent", 'id' => $parent]); // @codeCoverageIgnore
-            }
-            return ['name' => null, 'parent' => null];
+    protected function folderValidateId(string $user, $id = null, bool $subject = false): array {
+        $idInfo = ValueInfo::int($id);
+        if ($idInfo & (ValueInfo::NULL | ValueInfo::ZERO)) {
+            // if a null or zero ID is specified this is a no-op
+            return ['id' => null, 'name' => null, 'parent' => null];
+        }
+        // if a negative integer or non-integer is specified this will always fail
+        if (!($idInfo & ValueInfo::VALID) || (($idInfo & ValueInfo::NEG))) {
+            throw new Db\ExceptionInput($subject ? "subjectMissing" : "idMissing", ["action" => $this->caller(), "field" => "folder", 'id' => $id]);
         }
         // check whether the folder exists and is owned by the user
-        $f = $this->db->prepare("SELECT name,parent from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $id)->getRow();
+        $f = $this->db->prepare("SELECT id,name,parent from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $id)->getRow();
         if (!$f) {
-            throw new Db\ExceptionInput($subject ? "subjectMissing" : "idMissing", ["action" => $this->caller(), "field" => "folder", 'id' => $parent]);
-        }
-        // if we're moving a folder to a new parent, check that the parent is valid
-        if (!is_null($parent)) {
-            // make sure both that the parent exists, and that the parent is not either the folder itself or one of its children (a circular dependence)
-            $p = $this->db->prepare(
-                "WITH RECURSIVE folders(id) as (SELECT id from arsse_folders where owner is ? and id is ? union select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id) ".
-                "SELECT id,(id not in (select id from folders)) as valid from arsse_folders where owner is ? and id is ?",
-                "str", "int", "str", "int"
-            )->run($user, $id, $user, $parent)->getRow();
-            if (!$p) {
-                // if the parent doesn't exist or doesn't below to the user, throw an exception
-                throw new Db\ExceptionInput("idMissing", ["action" => $this->caller(), "field" => "parent", 'id' => $parent]);
-            } else {
-                // if using the desired parent would create a circular dependence, throw a different exception
-                if (!$p['valid']) {
-                    throw new Db\ExceptionInput("circularDependence", ["action" => $this->caller(), "field" => "parent", 'id' => $parent]);
-                }
-            }
+            throw new Db\ExceptionInput($subject ? "subjectMissing" : "idMissing", ["action" => $this->caller(), "field" => "folder", 'id' => $id]);
         }
         return $f;
     }
 
-    protected function folderValidateName($name): bool {
-        $name = (string) $name;
-        if (!strlen($name)) {
+    protected function folderValidateMove(string $user, int $id = null, $parent = null, string $name = null) {
+        $errData = ["action" => $this->caller(), "field" => "parent", 'id' => $parent];
+        if (!$id) {
+            // the root cannot be moved
+            throw new Db\ExceptionInput("circularDependence", $errData);
+        }
+        $info = ValueInfo::int($parent);
+        // the root is always a valid parent
+        if ($info & (ValueInfo::NULL | ValueInfo::ZERO)) {
+            $parent = null;
+        } else {
+            // if a negative integer or non-integer is specified this will always fail
+            if (!($info & ValueInfo::VALID) || (($info & ValueInfo::NEG))) {
+                throw new Db\ExceptionInput("idMissing", $errData);
+            }
+            $parent = (int) $parent;
+        }
+        // if the target parent is the folder itself, this is a circular dependence
+        if ($id==$parent) {
+            throw new Db\ExceptionInput("circularDependence", $errData);
+        }
+        // make sure both that the prospective parent exists, and that the it is not one of its children (a circular dependence)
+        $p = $this->db->prepare(
+            "WITH RECURSIVE
+                target as (select ? as user, ? as source, ? as dest, ? as rename),
+                folders as (SELECT id from arsse_folders join target on owner is user and parent is source  union select arsse_folders.id as id from arsse_folders join folders on arsse_folders.parent=folders.id)
+            ".
+            "SELECT 
+                ((select dest from target) is null or exists(select id from arsse_folders join target on owner is user and id is dest)) as extant,
+                not exists(select id from folders where id is (select dest from target)) as valid,
+                not exists(select id from arsse_folders join target on parent is dest and name is coalesce((select rename from target),(select name from arsse_folders join target on id is source))) as available
+            ", "str", "int", "int","str"
+        )->run($user, $id, $parent, $name)->getRow();
+        if (!$p['extant']) {
+            // if the parent doesn't exist or doesn't below to the user, throw an exception
+            throw new Db\ExceptionInput("idMissing", $errData);
+        } elseif (!$p['valid']) {
+            // if using the desired parent would create a circular dependence, throw a different exception
+            throw new Db\ExceptionInput("circularDependence", $errData);
+        } elseif (!$p['available']) {
+            throw new Db\ExceptionInput("constraintViolation", ["action" => $this->caller(), "field" => (is_null($name) ? "parent" : "name")]);
+        }
+        return $parent;
+    }
+
+    protected function folderValidateName($name, bool $checkDuplicates = false, int $parent = null): bool {
+        $info = ValueInfo::str($name);
+        if ($info & (ValueInfo::NULL | ValueInfo::EMPTY)) {
             throw new Db\ExceptionInput("missing", ["action" => $this->caller(), "field" => "name"]);
-        } elseif (!strlen(trim($name))) {
+        } elseif ($info & ValueInfo::WHITE) {
             throw new Db\ExceptionInput("whitespace", ["action" => $this->caller(), "field" => "name"]);
+        } elseif (!($info & ValueInfo::VALID)) {
+            throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "name", 'type' => "string"]);
+        } elseif($checkDuplicates) {
+            if ($this->db->prepare("SELECT exists(select id from arsse_folders where parent is ? and name is ?)", "int", "str")->run($parent, $name)->getValue()) {
+                throw new Db\ExceptionInput("constraintViolation", ["action" => $this->caller(), "field" => "name"]);
+            }
+            return true;
         } else {
             return true;
         }
@@ -473,7 +496,7 @@ class Database {
             // this condition facilitates the implementation of subscriptionPropertiesGet, which would otherwise have to duplicate the complex query; it takes precedence over a specified folder
             // if an ID is specified, add a suitable WHERE condition and bindings
             $q->setWhere("arsse_subscriptions.id is ?", "int", $id);
-        } elseif (!is_null($folder)) {
+        } elseif ($folder) {
             // if a folder is specified, make sure it exists
             $this->folderValidateId($user, $folder);
             // if it does exist, add a common table expression to list it and its children so that we select from the entire subtree
@@ -520,18 +543,19 @@ class Database {
         }
         if (array_key_exists("folder", $data)) {
             // ensure the target folder exists and belong to the user
-            $this->folderValidateId($user, $data['folder']);
+            $data['folder'] = $this->folderValidateId($user, $data['folder'])['id'];
         }
         if (array_key_exists("title", $data)) {
             // if the title is null, this signals intended use of the default title; otherwise make sure it's not effectively an empty string
             if (!is_null($data['title'])) {
-                $title = (string) $data['title'];
-                if (!strlen($title)) {
+                $info = ValueInfo::str($data['title']);
+                if ($info & ValueInfo::EMPTY) {
                     throw new Db\ExceptionInput("missing", ["action" => __FUNCTION__, "field" => "title"]);
-                } elseif (!strlen(trim($title))) {
+                } elseif ($info & ValueInfo::WHITE) {
                     throw new Db\ExceptionInput("whitespace", ["action" => __FUNCTION__, "field" => "title"]);
+                } elseif (!($info & ValueInfo::VALID)) {
+                    throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "title", 'type' => "string"]);
                 }
-                $data['title'] = $title;
             }
         }
         $valid = [
