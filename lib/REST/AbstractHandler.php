@@ -32,10 +32,6 @@ abstract class AbstractHandler implements Handler {
         return $data;
     }
 
-    protected function validateInt($id): bool {
-        return (bool) (ValueInfo::int($id) & ValueInfo::VALID);
-    }
-
     protected function NormalizeInput(array $data, array $types, string $dateFormat = null): array {
         $out = [];
         foreach ($data as $key => $value) {
@@ -49,34 +45,29 @@ abstract class AbstractHandler implements Handler {
             }
             switch ($types[$key]) {
                 case "int":
-                    if ($this->validateInt($value)) {
+                    if (valueInfo::int($value) & ValueInfo::VALID) {
                         $out[$key] = (int) $value;
                     }
                     break;
                 case "string":
-                    $out[$key] = (string) $value;
+                    if(is_bool($value)) {
+                        $out[$key] = var_export($value, true);
+                    } elseif (!is_scalar($value)) {
+                        break;
+                    } else {
+                        $out[$key] = (string) $value;
+                    }
                     break;
                 case "bool":
-                    if (is_bool($value)) {
-                        $out[$key] = $value;
-                    } elseif ($this->validateInt($value)) {
-                        $value = (int) $value;
-                        if ($value > -1 && $value < 2) {
-                            $out[$key] = $value;
-                        }
-                    } elseif (is_string($value)) {
-                        $value = trim(strtolower($value));
-                        if ($value=="false") {
-                            $out[$key] = false;
-                        }
-                        if ($value=="true") {
-                            $out[$key] = true;
-                        }
+                    $test = filter_var($value, \FILTER_VALIDATE_BOOLEAN, \FILTER_NULL_ON_FAILURE);
+                    if (!is_null($test)) {
+                        $out[$key] = $test;
                     }
                     break;
                 case "float":
-                    if (is_numeric($value)) {
-                        $out[$key] = (float) $value;
+                    $test = filter_var($value, \FILTER_VALIDATE_FLOAT);
+                    if ($test !== false) {
+                        $out[$key] = $test;
                     }
                     break;
                 case "datetime":

@@ -238,17 +238,13 @@ class Database {
         return $this->db->prepare("INSERT INTO arsse_folders(owner,parent,name) values(?,?,?)", "str", "int", "str")->run($user, $parent, $name)->lastId();
     }
 
-    public function folderList(string $user, int $parent = null, bool $recursive = true): Db\Result {
+    public function folderList(string $user, $parent = null, bool $recursive = true): Db\Result {
         // if the user isn't authorized to perform this action then throw an exception.
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         // check to make sure the parent exists, if one is specified
-        if (!is_null($parent)) {
-            if (!$this->db->prepare("SELECT count(*) from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $parent)->getValue()) {
-                throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "parent", 'id' => $parent]);
-            }
-        }
+        $parent = $this->folderValidateId($user, $parent)['id'];
         // if we're not returning a recursive list we can use a simpler query
         if (!$recursive) {
             return $this->db->prepare("SELECT id,name,parent from arsse_folders where owner is ? and parent is ?", "str", "int")->run($user, $parent);
@@ -260,9 +256,12 @@ class Database {
         }
     }
 
-    public function folderRemove(string $user, int $id): bool {
+    public function folderRemove(string $user, $id): bool {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        if (!ValueInfo::id($id)) {
+            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id, 'type' => "int > 0"]);
         }
         $changes = $this->db->prepare("DELETE FROM arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $id)->changes();
         if (!$changes) {
@@ -271,9 +270,12 @@ class Database {
         return true;
     }
 
-    public function folderPropertiesGet(string $user, int $id): array {
+    public function folderPropertiesGet(string $user, $id): array {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        if (!ValueInfo::id($id)) {
+            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id, 'type' => "int > 0"]);
         }
         $props = $this->db->prepare("SELECT id,name,parent from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $id)->getRow();
         if (!$props) {
@@ -282,7 +284,7 @@ class Database {
         return $props;
     }
 
-    public function folderPropertiesSet(string $user, int $id, array $data): bool {
+    public function folderPropertiesSet(string $user, $id, array $data): bool {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
@@ -294,14 +296,18 @@ class Database {
             // if a new name and parent are specified, validate both together
             $this->folderValidateName($data['name']);
             $in['name'] = $data['name'];
-            $in['parent'] = $this->folderValidateMove($user, $id, $data['parent'], $data['name']);
+            $in['parent'] = $this->folderValidateMove($user, (int) $id, $data['parent'], $data['name']);
         } elseif ($name) {
+            // if we're trying to rename the root folder, this simply fails
+            if (!$id) {
+                return false;
+            }
             // if a new name is specified, validate it
             $this->folderValidateName($data['name'], true, $in['parent']);
             $in['name'] = $data['name'];
         } elseif ($parent) {
             // if a new parent is specified, validate it
-            $in['parent'] = $this->folderValidateMove($user, $id, $data['parent']);
+            $in['parent'] = $this->folderValidateMove($user, (int) $id, $data['parent']);
         } else {
             // if neither was specified, do nothing
             return false;
@@ -315,14 +321,13 @@ class Database {
     }
 
     protected function folderValidateId(string $user, $id = null, bool $subject = false): array {
-        $idInfo = ValueInfo::int($id);
-        if ($idInfo & (ValueInfo::NULL | ValueInfo::ZERO)) {
-            // if a null or zero ID is specified this is a no-op
-            return ['id' => null, 'name' => null, 'parent' => null];
+        // if the specified ID is not a non-negative integer (or null), this will always fail
+        if(!ValueInfo::id($id, true)) {
+            throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "folder", 'type' => "int >= 0"]);
         }
-        // if a negative integer or non-integer is specified this will always fail
-        if (!($idInfo & ValueInfo::VALID) || (($idInfo & ValueInfo::NEG))) {
-            throw new Db\ExceptionInput($subject ? "subjectMissing" : "idMissing", ["action" => $this->caller(), "field" => "folder", 'id' => $id]);
+        // if a null or zero ID is specified this is a no-op
+        if (!$id) {
+            return ['id' => null, 'name' => null, 'parent' => null];
         }
         // check whether the folder exists and is owned by the user
         $f = $this->db->prepare("SELECT id,name,parent from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $id)->getRow();
@@ -417,10 +422,12 @@ class Database {
         return $this->db->prepare('INSERT INTO arsse_subscriptions(owner,feed) values(?,?)', 'str', 'int')->run($user, $feedID)->lastId();
     }
 
-    public function subscriptionList(string $user, int $folder = null, int $id = null): Db\Result {
+    public function subscriptionList(string $user, $folder = null, int $id = null): Db\Result {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
+        // validate inputs
+        $folder = $this->folderValidateId($user, $folder)['id'];
         // create a complex query
         $q = new Query(
             "SELECT 
@@ -439,13 +446,11 @@ class Database {
         $q->setCTE("user(user)", "SELECT ?", "str", $user);  // the subject user; this way we only have to pass it to prepare() once
         // topmost folders belonging to the user
         $q->setCTE("topmost(f_id,top)", "SELECT id,id from arsse_folders join user on owner is user where parent is null union select id,top from arsse_folders join topmost on parent=f_id");
-        if (!is_null($id)) {
+        if ($id) {
             // this condition facilitates the implementation of subscriptionPropertiesGet, which would otherwise have to duplicate the complex query; it takes precedence over a specified folder
             // if an ID is specified, add a suitable WHERE condition and bindings
             $q->setWhere("arsse_subscriptions.id is ?", "int", $id);
         } elseif ($folder) {
-            // if a folder is specified, make sure it exists
-            $this->folderValidateId($user, $folder);
             // if it does exist, add a common table expression to list it and its children so that we select from the entire subtree
             $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on parent is folder", "int", $folder);
             // add a suitable WHERE condition
@@ -454,24 +459,30 @@ class Database {
         return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
     }
 
-    public function subscriptionRemove(string $user, int $id): bool {
+    public function subscriptionRemove(string $user, $id): bool {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
+        if (!ValueInfo::id($id)) {
+            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id, 'type' => "int > 0"]);
+        }
         $changes = $this->db->prepare("DELETE from arsse_subscriptions where owner is ? and id is ?", "str", "int")->run($user, $id)->changes();
         if (!$changes) {
-            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id]);
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
         }
         return true;
     }
 
-    public function subscriptionPropertiesGet(string $user, int $id): array {
+    public function subscriptionPropertiesGet(string $user, $id): array {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
+        if (!ValueInfo::id($id)) {
+            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id, 'type' => "int > 0"]);
+        }
         // disable authorization checks for the list call
         Arsse::$user->authorizationEnabled(false);
-        $sub = $this->subscriptionList($user, null, $id)->getRow();
+        $sub = $this->subscriptionList($user, null, (int) $id)->getRow();
         Arsse::$user->authorizationEnabled(true);
         if (!$sub) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
@@ -479,15 +490,13 @@ class Database {
         return $sub;
     }
 
-    public function subscriptionPropertiesSet(string $user, int $id, array $data): bool {
+    public function subscriptionPropertiesSet(string $user, $id, array $data): bool {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         $tr = $this->db->begin();
-        if (!$this->db->prepare("SELECT count(*) from arsse_subscriptions where owner is ? and id is ?", "str", "int")->run($user, $id)->getValue()) {
-            // if the ID doesn't exist or doesn't belong to the user, throw an exception
-            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
-        }
+        // validate the ID
+        $id = $this->subscriptionValidateId($user, $id, true)['id'];
         if (array_key_exists("folder", $data)) {
             // ensure the target folder exists and belong to the user
             $data['folder'] = $this->folderValidateId($user, $data['folder'])['id'];
@@ -517,10 +526,13 @@ class Database {
         return $out;
     }
 
-    protected function subscriptionValidateId(string $user, int $id): array {
-        $out = $this->db->prepare("SELECT feed from arsse_subscriptions where id is ? and owner is ?", "int", "str")->run($id, $user)->getRow();
+    protected function subscriptionValidateId(string $user, $id, bool $subject = false): array {
+        if (!ValueInfo::id($id)) {
+            throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "feed", 'id' => $id, 'type' => "int > 0"]);
+        }
+        $out = $this->db->prepare("SELECT id,feed from arsse_subscriptions where id is ? and owner is ?", "int", "str")->run($id, $user)->getRow();
         if (!$out) {
-            throw new Db\ExceptionInput("idMissing", ["action" => $this->caller(), "field" => "subscription", 'id' => $id]);
+            throw new Db\ExceptionInput($subject ? "subjectMissing" : "idMissing", ["action" => $this->caller(), "field" => "subscription", 'id' => $id]);
         }
         return $out;
     }
@@ -530,9 +542,12 @@ class Database {
         return array_column($feeds, 'id');
     }
     
-    public function feedUpdate(int $feedID, bool $throwError = false): bool {
+    public function feedUpdate($feedID, bool $throwError = false): bool {
         $tr = $this->db->begin();
         // check to make sure the feed exists
+        if (!ValueInfo::id($feedID)) {
+            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID, 'type' => "int > 0"]);
+        }
         $f = $this->db->prepare("SELECT url, username, password, modified, etag, err_count, scrape FROM arsse_feeds where id is ?", "int")->run($feedID)->getRow();
         if (!$f) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID]);
@@ -543,7 +558,7 @@ class Database {
         // here. When an exception is thrown it should update the database with the
         // error instead of failing; if other exceptions are thrown, we should simply roll back
         try {
-            $feed = new Feed($feedID, $f['url'], (string) Date::transform($f['modified'], "http", "sql"), $f['etag'], $f['username'], $f['password'], $scrape);
+            $feed = new Feed((int) $feedID, $f['url'], (string) Date::transform($f['modified'], "http", "sql"), $f['etag'], $f['username'], $f['password'], $scrape);
             if (!$feed->modified) {
                 // if the feed hasn't changed, just compute the next fetch time and record it
                 $this->db->prepare("UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id is ?", 'datetime', 'int')->run($feed->nextFetch, $feedID);
@@ -951,7 +966,10 @@ class Database {
         return true;
     }
 
-    protected function articleValidateId(string $user, int $id): array {
+    protected function articleValidateId(string $user, $id): array {
+        if (!ValueInfo::id($id)) {
+            throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "article", 'id' => $id, 'type' => "int > 0"]); // @codeCoverageIgnore
+        }
         $out = $this->db->prepare(
             "SELECT 
                 arsse_articles.id as article, 
@@ -970,6 +988,9 @@ class Database {
     }
 
     protected function articleValidateEdition(string $user, int $id): array {
+        if (!ValueInfo::id($id)) {
+            throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "edition", 'id' => $id, 'type' => "int > 0"]); // @codeCoverageIgnore
+        }
         $out = $this->db->prepare(
             "SELECT 
                 arsse_editions.id as edition, 

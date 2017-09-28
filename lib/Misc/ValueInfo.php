@@ -15,31 +15,31 @@ class ValueInfo {
 
     static public function int($value): int {
         $out = 0;
-        // check if the input is null
         if (is_null($value)) {
-            $out += self::NULL;
-        }
-        // normalize the value to an integer or float if possible
-        if (is_string($value)) {
-            if (strval(@intval($value))===$value) {
-                $value = (int) $value;
-            } elseif (strval(@floatval($value))===$value) {
-                $value = (float) $value;
-            }
-            // the empty string is equivalent to null when evaluating an integer
+            // check if the input is null
+            return self::NULL;
+        } elseif (is_string($value)) {
+            // normalize a string an integer or float if possible
             if (!strlen((string) $value)) {
-                $out += self::NULL;
+                // the empty string is equivalent to null when evaluating an integer
+                return self::NULL;
+            } elseif (filter_var($value, \FILTER_VALIDATE_FLOAT) !== false && !fmod((float) $value, 1)) {
+                // an integral float is acceptable
+                $value = (int) $value;
+            } else {
+                return $out;
             }
-        }
-        // if the value is not an integer or integral float, stop
-        if (!is_int($value) && (!is_float($value) || fmod($value, 1))) {
+        } elseif (is_float($value) && !fmod($value, 1)) {
+            // an integral float is acceptable
+            $value = (int) $value;
+        } elseif (!is_int($value)) {
+            // if the value is not an integer or integral float, stop
             return $out;
         }
         // mark validity
-        $value = (int) $value;
         $out += self::VALID;
         // mark zeroness
-        if(!$value) {
+        if($value==0) {
             $out += self::ZERO;
         }
         // mark negativeness
@@ -55,8 +55,8 @@ class ValueInfo {
         if (is_null($value)) {
             $out += self::NULL;
         }
-        // if the value is not scalar, it cannot be valid
-        if (!is_scalar($value)) {
+        // if the value is not scalar, is a boolean, or is infinity or NaN, it cannot be valid
+        if (!is_scalar($value) || is_bool($value) || (is_float($value) && !is_finite($value))) {
             return $out;
         }
         // mark validity
@@ -69,5 +69,20 @@ class ValueInfo {
             $out += self::WHITE;
         }
         return $out;
+    }
+
+    static public function id($value, bool $allowNull = false): bool {
+        $info = self::int($value);
+        if ($allowNull && ($info & self::NULL)) { // null (and allowed)
+            return true;
+        } elseif (!($info & self::VALID)) { // not an integer
+            return false;
+        } elseif ($info & self::NEG) { // negative integer
+            return false;
+        } elseif (!$allowNull && ($info & self::ZERO)) { // zero (and not allowed)
+            return false;
+        } else { // non-negative integer
+            return true;
+        }
     }
 }

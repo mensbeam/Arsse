@@ -77,7 +77,7 @@ trait SeriesFolder {
     }
 
     public function testAddANestedFolderToAnInvalidParent() {
-        $this->assertException("idMissing", "Db", "ExceptionInput");
+        $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->folderAdd("john.doe@example.com", ['name' => "Sociology", 'parent' => "stringFolderId"]);
     }
 
@@ -184,6 +184,11 @@ trait SeriesFolder {
         Arsse::$db->folderRemove("john.doe@example.com", 2112);
     }
 
+    public function testRemoveAnInvalidFolder() {
+        $this->assertException("typeViolation", "Db", "ExceptionInput");
+        Arsse::$db->folderRemove("john.doe@example.com", -1);
+    }
+
     public function testRemoveAFolderOfTheWrongOwner() {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->folderRemove("john.doe@example.com", 4); // folder ID 4 belongs to Jane
@@ -210,6 +215,11 @@ trait SeriesFolder {
         Arsse::$db->folderPropertiesGet("john.doe@example.com", 2112);
     }
 
+    public function testGetThePropertiesOfAnInvalidFolder() {
+        $this->assertException("typeViolation", "Db", "ExceptionInput");
+        Arsse::$db->folderPropertiesGet("john.doe@example.com", -1);
+    }
+
     public function testGetThePropertiesOfAFolderOfTheWrongOwner() {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesGet("john.doe@example.com", 4); // folder ID 4 belongs to Jane
@@ -231,6 +241,10 @@ trait SeriesFolder {
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
         $state['arsse_folders']['rows'][5][3] = "Opinion";
         $this->compareExpectations($state);
+    }
+
+    public function testRenameTheRootFolder() {
+        $this->assertFalse(Arsse::$db->folderPropertiesSet("john.doe@example.com", null, ['name' => "Opinion"]));
     }
 
     public function testRenameAFolderToTheEmptyString() {
@@ -294,6 +308,11 @@ trait SeriesFolder {
     public function testSetThePropertiesOfAMissingFolder() {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", 2112, ['parent' => null]);
+    }
+
+    public function testSetThePropertiesOfAnInvalidFolder() {
+        $this->assertException("typeViolation", "Db", "ExceptionInput");
+        Arsse::$db->folderPropertiesSet("john.doe@example.com", -1, ['parent' => null]);
     }
 
     public function testSetThePropertiesOfAFolderForTheWrongOwner() {

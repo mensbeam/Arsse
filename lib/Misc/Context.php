@@ -37,7 +37,7 @@ class Context {
     protected function cleanArray(array $spec): array {
         $spec = array_values($spec);
         for ($a = 0; $a < sizeof($spec); $a++) {
-            if(ValueInfo::int($spec[$a])===ValueInfo::VALID) {
+            if(ValueInfo::id($spec[$a])) {
                 $spec[$a] = (int) $spec[$a];
             } else {
                 $spec[$a] = 0;

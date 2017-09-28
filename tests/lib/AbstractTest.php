@@ -25,10 +25,10 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         }
     }
 
-    public function assertTime($exp, $test) {
+    public function assertTime($exp, $test, string $msg = null) {
         $exp  = Date::transform($exp, "iso8601");
         $test = Date::transform($test, "iso8601");
-        $this->assertSame($exp, $test);
+        $this->assertSame($exp, $test, $msg);
     }
 
     public function clearData(bool $loadLang = true): bool {

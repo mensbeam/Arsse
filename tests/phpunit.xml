@@ -31,6 +31,10 @@
     <testsuite name="Configuration">
         <file>Conf/TestConf.php</file>
     </testsuite>
+    <testsuite name="Sundry">
+        <file>Misc/TestValueInfo.php</file>
+        <file>Misc/TestContext.php</file>
+    </testsuite>
     <testsuite name="User management">
         <file>User/TestUserMockInternal.php</file>
         <file>User/TestUserMockExternal.php</file>
@@ -40,9 +44,6 @@
     <testsuite name="Feed parser">
         <file>Feed/TestFeedFetching.php</file>
         <file>Feed/TestFeed.php</file>
-    </testsuite>
-    <testsuite name="Sundry">
-        <file>Misc/TestContext.php</file>
     </testsuite>
     <testsuite name="Database drivers">
         <file>Db/TestTransaction.php</file>
