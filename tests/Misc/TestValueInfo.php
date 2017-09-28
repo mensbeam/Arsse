@@ -3,6 +3,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 use JKingWeb\Arsse\Misc\ValueInfo as I;
+use JKingWeb\Arsse\Test\Misc\StrClass;
 
 /** @covers \JKingWeb\Arsse\Misc\ValueInfo */
 class TestValueInfo extends Test\AbstractTest {
@@ -58,6 +59,12 @@ class TestValueInfo extends Test\AbstractTest {
             ["some string", 0],
             ["           ", 0],
             [new \StdClass, 0],
+            [new StrClass(""),    I::NULL],
+            [new StrClass("1"),   I::VALID],
+            [new StrClass("0"),   I::VALID | I::ZERO],
+            [new StrClass("-1"),  I::VALID | I::NEG],
+            [new StrClass("Msg"), 0],
+            [new StrClass("   "), 0],
         ];
         foreach ($tests as $test) {
             list($value, $exp) = $test;
@@ -116,6 +123,12 @@ class TestValueInfo extends Test\AbstractTest {
             ["some string", I::VALID],
             ["           ", I::VALID | I::WHITE],
             [new \StdClass, 0],
+            [new StrClass(""),    I::VALID | I::EMPTY],
+            [new StrClass("1"),   I::VALID],
+            [new StrClass("0"),   I::VALID],
+            [new StrClass("-1"),  I::VALID],
+            [new StrClass("Msg"), I::VALID],
+            [new StrClass("   "), I::VALID | I::WHITE],
         ];
         foreach ($tests as $test) {
             list($value, $exp) = $test;
@@ -175,6 +188,12 @@ class TestValueInfo extends Test\AbstractTest {
             ["some string", false, false],
             ["           ", false, false],
             [new \StdClass, false, false],
+            [new StrClass(""),    false, true],
+            [new StrClass("1"),   true,  true],
+            [new StrClass("0"),   false, true],
+            [new StrClass("-1"),  false, false],
+            [new StrClass("Msg"), false, false],
+            [new StrClass("   "), false, false],
         ];
         foreach ($tests as $test) {
             list($value, $exp, $expNull) = $test;

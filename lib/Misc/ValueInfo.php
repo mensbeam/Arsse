@@ -18,9 +18,10 @@ class ValueInfo {
         if (is_null($value)) {
             // check if the input is null
             return self::NULL;
-        } elseif (is_string($value)) {
+        } elseif (is_string($value) || (is_object($value) && method_exists($value, "__toString"))) {
+            $value = (string) $value;
             // normalize a string an integer or float if possible
-            if (!strlen((string) $value)) {
+            if (!strlen($value)) {
                 // the empty string is equivalent to null when evaluating an integer
                 return self::NULL;
             } elseif (filter_var($value, \FILTER_VALIDATE_FLOAT) !== false && !fmod((float) $value, 1)) {
@@ -55,8 +56,11 @@ class ValueInfo {
         if (is_null($value)) {
             $out += self::NULL;
         }
-        // if the value is not scalar, is a boolean, or is infinity or NaN, it cannot be valid
-        if (!is_scalar($value) || is_bool($value) || (is_float($value) && !is_finite($value))) {
+        if (is_object($value) && method_exists($value, "__toString")) {
+            // if the value is an object which has a __toString method, this is acceptable
+            $value = (string) $value;
+        } elseif (!is_scalar($value) || is_bool($value) || (is_float($value) && !is_finite($value))) {
+            // otherwise if the value is not scalar, is a boolean, or is infinity or NaN, it cannot be valid
             return $out;
         }
         // mark validity
