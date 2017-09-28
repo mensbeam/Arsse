@@ -13,7 +13,7 @@ class ValueInfo {
     const EMPTY = 1 << 2;
     const WHITE = 1 << 3;
 
-    static public function int($value): int {
+    public static function int($value): int {
         $out = 0;
         if (is_null($value)) {
             // check if the input is null
@@ -40,7 +40,7 @@ class ValueInfo {
         // mark validity
         $out += self::VALID;
         // mark zeroness
-        if($value==0) {
+        if ($value==0) {
             $out += self::ZERO;
         }
         // mark negativeness
@@ -50,7 +50,7 @@ class ValueInfo {
         return $out;
     }
 
-    static public function str($value): int {
+    public static function str($value): int {
         $out = 0;
         // check if the input is null
         if (is_null($value)) {
@@ -75,7 +75,7 @@ class ValueInfo {
         return $out;
     }
 
-    static public function id($value, bool $allowNull = false): bool {
+    public static function id($value, bool $allowNull = false): bool {
         $info = self::int($value);
         if ($allowNull && ($info & self::NULL)) { // null (and allowed)
             return true;

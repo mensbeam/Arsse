@@ -197,7 +197,7 @@ class TestValueInfo extends Test\AbstractTest {
         ];
         foreach ($tests as $test) {
             list($value, $exp, $expNull) = $test;
-            $this->assertSame($exp,     I::id($value),       "Non-null test failed for value: ".var_export($value, true));
+            $this->assertSame($exp, I::id($value), "Non-null test failed for value: ".var_export($value, true));
             $this->assertSame($expNull, I::id($value, true), "Null test failed for value: ".var_export($value, true));
         }
     }

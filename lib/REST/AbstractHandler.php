@@ -50,7 +50,7 @@ abstract class AbstractHandler implements Handler {
                     }
                     break;
                 case "string":
-                    if(is_bool($value)) {
+                    if (is_bool($value)) {
                         $out[$key] = var_export($value, true);
                     } elseif (!is_scalar($value)) {
                         break;

@@ -79,7 +79,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // dispatch
         try {
             return $this->$func($req->paths, $data);
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (Exception $e) {
             // if there was a REST exception return 400
             return new Response(400);
@@ -340,7 +340,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             switch ($e->getCode()) {
                 case 10239: // feed does not exist
                     return new Response(404);
-                case 10237: // feed ID invalid 
+                case 10237: // feed ID invalid
                     return new Response(422);
                 default: // other errors related to input
                     return new Response(400); // @codeCoverageIgnore

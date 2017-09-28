@@ -20,7 +20,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         // check to make sure required extension is loaded
         if (!class_exists("SQLite3")) {
             throw new Exception("extMissing", self::driverName()); // @codeCoverageIgnore
-         }
+        }
         // if no database file is specified in the configuration, use a suitable default
         $dbFile = Arsse::$conf->dbSQLite3File ?? \JKingWeb\Arsse\BASE."arsse.db";
         $mode = \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE;

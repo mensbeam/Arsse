@@ -232,7 +232,7 @@ class Database {
         // normalize folder's parent, if there is one
         $parent = array_key_exists("parent", $data) ? $this->folderValidateId($user, $data['parent'])['id'] : null;
         // validate the folder name and parent (if specified); this also checks for duplicates
-        $name = array_key_exists("name", $data) ? $data['name'] : ""; 
+        $name = array_key_exists("name", $data) ? $data['name'] : "";
         $this->folderValidateName($name, true, $parent);
         // actually perform the insert
         return $this->db->prepare("INSERT INTO arsse_folders(owner,parent,name) values(?,?,?)", "str", "int", "str")->run($user, $parent, $name)->lastId();
@@ -322,7 +322,7 @@ class Database {
 
     protected function folderValidateId(string $user, $id = null, bool $subject = false): array {
         // if the specified ID is not a non-negative integer (or null), this will always fail
-        if(!ValueInfo::id($id, true)) {
+        if (!ValueInfo::id($id, true)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "folder", 'type' => "int >= 0"]);
         }
         // if a null or zero ID is specified this is a no-op
@@ -358,7 +358,9 @@ class Database {
         if ($id==$parent) {
             throw new Db\ExceptionInput("circularDependence", $errData);
         }
-        // make sure both that the prospective parent exists, and that the it is not one of its children (a circular dependence)
+        // make sure both that the prospective parent exists, and that the it is not one of its children (a circular dependence);
+        // also make sure that a folder with the same prospective name and parent does not already exist: if the parent is null,
+        // SQL will happily accept duplicates (null is not unique), so we must do this check ourselves
         $p = $this->db->prepare(
             "WITH RECURSIVE
                 target as (select ? as user, ? as source, ? as dest, ? as rename),
@@ -368,7 +370,7 @@ class Database {
                 ((select dest from target) is null or exists(select id from arsse_folders join target on owner is user and id is dest)) as extant,
                 not exists(select id from folders where id is (select dest from target)) as valid,
                 not exists(select id from arsse_folders join target on parent is dest and name is coalesce((select rename from target),(select name from arsse_folders join target on id is source))) as available
-            ", "str", "int", "int","str"
+            ", "str", "int", "int", "str"
         )->run($user, $id, $parent, $name)->getRow();
         if (!$p['extant']) {
             // if the parent doesn't exist or doesn't below to the user, throw an exception
@@ -377,6 +379,7 @@ class Database {
             // if using the desired parent would create a circular dependence, throw a different exception
             throw new Db\ExceptionInput("circularDependence", $errData);
         } elseif (!$p['available']) {
+            // if a folder with the same parent and name already exists, throw another different exception
             throw new Db\ExceptionInput("constraintViolation", ["action" => $this->caller(), "field" => (is_null($name) ? "parent" : "name")]);
         }
         return $parent;
@@ -390,7 +393,10 @@ class Database {
             throw new Db\ExceptionInput("whitespace", ["action" => $this->caller(), "field" => "name"]);
         } elseif (!($info & ValueInfo::VALID)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "name", 'type' => "string"]);
-        } elseif($checkDuplicates) {
+        } elseif ($checkDuplicates) {
+            // make sure that a folder with the same prospective name and parent does not already exist: if the parent is null,
+            // SQL will happily accept duplicates (null is not unique), so we must do this check ourselves
+            $parent = $parent ? $parent : null;
             if ($this->db->prepare("SELECT exists(select id from arsse_folders where parent is ? and name is ?)", "int", "str")->run($parent, $name)->getValue()) {
                 throw new Db\ExceptionInput("constraintViolation", ["action" => $this->caller(), "field" => "name"]);
             }

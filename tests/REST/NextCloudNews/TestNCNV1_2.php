@@ -500,14 +500,14 @@ class TestNCNV1_2 extends Test\AbstractTest {
         Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.com/news.atom")->thenReturn(2112)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
         Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.org/news.atom")->thenReturn(42)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
         Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 2112)->thenReturn($this->feeds['db'][0]);
-        Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id,   42)->thenReturn($this->feeds['db'][1]);
-        Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id,   47)->thenReturn($this->feeds['db'][2]);
+        Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 42)->thenReturn($this->feeds['db'][1]);
+        Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 47)->thenReturn($this->feeds['db'][2]);
         Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription(2112))->thenReturn(0);
         Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription(42))->thenReturn(4758915);
         Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription(47))->thenReturn(2112);
         Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 2112, ['folder' =>  3])->thenThrow(new ExceptionInput("idMissing")); // folder ID 3 does not exist
-        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id,   42, ['folder' =>  8])->thenReturn(true);
-        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id,   47, ['folder' => -1])->thenThrow(new ExceptionInput("typeViolation")); // folder ID -1 is invalid
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 42, ['folder' =>  8])->thenReturn(true);
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 47, ['folder' => -1])->thenThrow(new ExceptionInput("typeViolation")); // folder ID -1 is invalid
         // set up a mock for a bad feed which succeeds the second time
         Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.net/news.atom")->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.net/news.atom", new \PicoFeed\Client\InvalidUrlException()))->thenReturn(47);
         // add the subscriptions
