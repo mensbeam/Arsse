@@ -1,48 +1,45 @@
-#dependencies
-vendor/
 
-#temp files
+# Temporary files and dependencies
+
+vendor/
 documentation/
-tests/coverage
+tests/coverage/
+build/
 arsse.db*
 config.php
 .php_cs.cache
-build
 
-# Windows image file caches
+
+
+
+# Windows files
+
 Thumbs.db
 ehthumbs.db
-
-# Folder config file
 Desktop.ini
-
-# Recycle Bin used on file shares
 $RECYCLE.BIN/
 
-# Windows Installer files
-*.cab
-*.msi
-*.msm
-*.msp
 
-# =========================
-# Operating System Files
-# =========================
-
-# OSX
-# =========================
+# macOS files
 
 .DS_Store
 .AppleDouble
 .LSOverride
-
-# Icon must ends with two \r.
 Icon
-
-
-# Thumbnails
 ._*
-
-# Files that might appear on external disk
 .Spotlight-V100
 .Trashes
+
+# archives
+
+*.zip
+*.7z
+*.tar.gz
+*.tgz
+*.deb
+*.rpm
+*.dmg
+*.cab
+*.msi
+*.msm
+*.msp
