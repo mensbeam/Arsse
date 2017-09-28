@@ -6,6 +6,7 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\Misc\Context;
+use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
@@ -78,7 +79,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // dispatch
         try {
             return $this->$func($req->paths, $data);
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (Exception $e) {
             // if there was a REST exception return 400
             return new Response(400);
@@ -94,15 +95,15 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'items' => [],
             'folders' => [
                 ''       => ['GET' => "folderList",   'POST'   => "folderAdd"],
-                '0'      => ['PUT' => "folderRename", 'DELETE' => "folderRemove"],
-                '0/read' => ['PUT' => "folderMarkRead"],
+                '1'      => ['PUT' => "folderRename", 'DELETE' => "folderRemove"],
+                '1/read' => ['PUT' => "folderMarkRead"],
             ],
             'feeds' => [
                 ''         => ['GET' => "subscriptionList", 'POST' => "subscriptionAdd"],
-                '0'        => ['DELETE' => "subscriptionRemove"],
-                '0/move'   => ['PUT' => "subscriptionMove"],
-                '0/rename' => ['PUT' => "subscriptionRename"],
-                '0/read'   => ['PUT' => "subscriptionMarkRead"],
+                '1'        => ['DELETE' => "subscriptionRemove"],
+                '1/move'   => ['PUT' => "subscriptionMove"],
+                '1/rename' => ['PUT' => "subscriptionRename"],
+                '1/read'   => ['PUT' => "subscriptionMarkRead"],
                 'all'      => ['GET' => "feedListStale"],
                 'update'   => ['GET' => "feedUpdate"],
             ],
@@ -110,12 +111,12 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 ''                => ['GET' => "articleList"],
                 'updated'         => ['GET' => "articleList"],
                 'read'            => ['PUT' => "articleMarkReadAll"],
-                '0/read'          => ['PUT' => "articleMarkRead"],
-                '0/unread'        => ['PUT' => "articleMarkRead"],
+                '1/read'          => ['PUT' => "articleMarkRead"],
+                '1/unread'        => ['PUT' => "articleMarkRead"],
                 'read/multiple'   => ['PUT' => "articleMarkReadMulti"],
                 'unread/multiple' => ['PUT' => "articleMarkReadMulti"],
-                '0/0/star'        => ['PUT' => "articleMarkStarred"],
-                '0/0/unstar'      => ['PUT' => "articleMarkStarred"],
+                '1/1/star'        => ['PUT' => "articleMarkStarred"],
+                '1/1/unstar'      => ['PUT' => "articleMarkStarred"],
                 'star/multiple'   => ['PUT' => "articleMarkStarredMulti"],
                 'unstar/multiple' => ['PUT' => "articleMarkStarredMulti"],
             ],
@@ -135,10 +136,10 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         ];
         // the first path element is the overall scope of the request
         $scope = $url[0];
-        // any URL components which are only digits should be replaced with "0", for easier comparison (integer segments are IDs, and we don't care about the specific ID)
+        // any URL components which are database IDs (integers greater than zero) should be replaced with "1", for easier comparison (we don't care about the specific ID)
         for ($a = 0; $a < sizeof($url); $a++) {
-            if ($this->validateInt($url[$a])) {
-                $url[$a] = "0";
+            if (ValueInfo::id($url[$a])) {
+                $url[$a] = "1";
             }
         }
         // normalize the HTTP method to uppercase
@@ -336,7 +337,14 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             Arsse::$db->feedUpdate($data['feedId']);
         } catch (ExceptionInput $e) {
-            return new Response(404);
+            switch ($e->getCode()) {
+                case 10239: // feed does not exist
+                    return new Response(404);
+                case 10237: // feed ID invalid
+                    return new Response(422);
+                default: // other errors related to input
+                    return new Response(400); // @codeCoverageIgnore
+            }
         }
         return new Response(204);
     }
@@ -347,8 +355,8 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if (!isset($data['url'])) {
             return new Response(422);
         }
-        // normalize the folder ID, if specified; zero should be transformed to null
-        $folder = (isset($data['folderId']) && $data['folderId']) ? $data['folderId'] : null;
+        // normalize the folder ID, if specified
+        $folder = isset($data['folderId']) ? $data['folderId'] : null;
         // try to add the feed
         $tr = Arsse::$db->begin();
         try {
@@ -446,12 +454,13 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, (int) $url[1], $in);
         } catch (ExceptionInput $e) {
             switch ($e->getCode()) {
-                // subscription does not exist
-                case 10239: return new Response(404);
-                // folder does not exist
-                case 10235: return new Response(422);
-                // other errors related to input
-                default: return new Response(400); // @codeCoverageIgnore
+                case 10239: // subscription does not exist
+                    return new Response(404);
+                case 10235: // folder does not exist
+                case 10237: // folder ID is invalid
+                    return new Response(422);
+                default: // other errors related to input
+                    return new Response(400); // @codeCoverageIgnore
             }
         }
         return new Response(204);

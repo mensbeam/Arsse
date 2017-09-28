@@ -221,6 +221,11 @@ trait SeriesFeed {
         Arsse::$db->feedUpdate(2112);
     }
 
+    public function testUpdateAnInvalidFeed() {
+        $this->assertException("typeViolation", "Db", "ExceptionInput");
+        Arsse::$db->feedUpdate(-1);
+    }
+
     public function testUpdateAFeedThrowingExceptions() {
         $this->assertException("invalidUrl", "Feed");
         Arsse::$db->feedUpdate(3, true);

@@ -58,7 +58,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     $method = strtolower($method);
                     $map = get_class_methods($this);
                     $map = array_combine(array_map("strtolower", $map), $map);
-                    if(!array_key_exists($method, $map)) {
+                    if (!array_key_exists($method, $map)) {
                         // if the method really doesn't exist, throw an exception
                         throw new Exception("UNKNWON_METHOD", ['method' => $data['op']]);
                     }
@@ -113,7 +113,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         if (isset($data['user']) && isset($data['password']) && Arsse::$user->auth($data['user'], $data['password'])) {
             $id = Arsse::$db->sessionCreate($data['user']);
             return [
-                'session_id' => $id, 
+                'session_id' => $id,
                 'api_level'  => self::LEVEL
             ];
         } else {
@@ -144,7 +144,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionInput $e) {
             switch ($e->getCode()) {
                 // folder already exists
-                case 10236: 
+                case 10236:
                     // retrieve the ID of the existing folder; duplicating a category silently returns the existing one
                     $folders = Arsse::$db->folderList(Arsse::$user->id, $in['parent'], false);
                     foreach ($folders as $folder) {

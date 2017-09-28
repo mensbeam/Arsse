@@ -7,7 +7,6 @@ use JKingWeb\Arsse\Misc\Date;
 use Phake;
 
 trait SeriesSession {
-    
     public function setUpSeries() {
         // set up the test data
         $past  = gmdate("Y-m-d H:i:s", strtotime("now - 1 minute"));

@@ -270,7 +270,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $db[0])->thenReturn(2)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
         Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $db[1])->thenReturn(3)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
         Phake::when(Arsse::$db)->folderList(Arsse::$user->id, null, false)->thenReturn(new Result([$out[0], $out[2]]));
-        Phake::when(Arsse::$db)->folderList(Arsse::$user->id,    1, false)->thenReturn(new Result([$out[1]]));
+        Phake::when(Arsse::$db)->folderList(Arsse::$user->id, 1, false)->thenReturn(new Result([$out[1]]));
         // set up mocks that produce errors
         Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, [])->thenThrow(new ExceptionInput("missing"));
         Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => "",    'parent' => null])->thenThrow(new ExceptionInput("missing"));
@@ -286,7 +286,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         $exp = $this->respGood(3);
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
         Phake::verify(Arsse::$db)->folderList(Arsse::$user->id, null, false);
-        Phake::verify(Arsse::$db)->folderList(Arsse::$user->id,    1, false);
+        Phake::verify(Arsse::$db)->folderList(Arsse::$user->id, 1, false);
         // add some invalid folders
         $exp = $this->respErr("INCORRECT_USAGE");
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[2]))));

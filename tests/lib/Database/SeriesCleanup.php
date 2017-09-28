@@ -192,6 +192,5 @@ trait SeriesCleanup {
             unset($state['arsse_sessions']['rows'][$id - 1]);
         }
         $this->compareExpectations($state);
-
     }
 }

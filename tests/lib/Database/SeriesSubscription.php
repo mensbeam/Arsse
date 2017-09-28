@@ -193,6 +193,11 @@ trait SeriesSubscription {
         Arsse::$db->subscriptionRemove($this->user, 2112);
     }
 
+    public function testRemoveAnInvalidSubscription() {
+        $this->assertException("typeViolation", "Db", "ExceptionInput");
+        Arsse::$db->subscriptionRemove($this->user, -1);
+    }
+
     public function testRemoveASubscriptionForTheWrongOwner() {
         $this->user = "jane.doe@example.com";
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
@@ -264,6 +269,11 @@ trait SeriesSubscription {
         Arsse::$db->subscriptionPropertiesGet($this->user, 2112);
     }
 
+    public function testGetThePropertiesOfAnInvalidSubscription() {
+        $this->assertException("typeViolation", "Db", "ExceptionInput");
+        Arsse::$db->subscriptionPropertiesGet($this->user, -1);
+    }
+
     public function testGetThePropertiesOfASubscriptionWithoutAuthority() {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
@@ -311,7 +321,7 @@ trait SeriesSubscription {
     }
 
     public function testRenameASubscriptionToFalse() {
-        $this->assertException("missing", "Db", "ExceptionInput");
+        $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['title' => false]);
     }
 
@@ -327,6 +337,11 @@ trait SeriesSubscription {
     public function testSetThePropertiesOfAMissingSubscription() {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesSet($this->user, 2112, ['folder' => null]);
+    }
+
+    public function testSetThePropertiesOfAnInvalidSubscription() {
+        $this->assertException("typeViolation", "Db", "ExceptionInput");
+        Arsse::$db->subscriptionPropertiesSet($this->user, -1, ['folder' => null]);
     }
 
     public function testSetThePropertiesOfASubscriptionWithoutAuthority() {

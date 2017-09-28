@@ -47,9 +47,9 @@ class TestContext extends Test\AbstractTest {
             $this->assertInstanceOf(Context::class, $c->$method($v[$method]));
             $this->assertTrue($c->$method());
             if (in_array($method, $times)) {
-                $this->assertTime($c->$method, $v[$method]);
+                $this->assertTime($c->$method, $v[$method], "Context method $method did not return the expected results");
             } else {
-                $this->assertSame($c->$method, $v[$method]);
+                $this->assertSame($c->$method, $v[$method], "Context method $method did not return the expected results");
             }
         }
     }
