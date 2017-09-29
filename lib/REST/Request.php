@@ -4,6 +4,7 @@ namespace JKingWeb\Arsse\REST;
 
 class Request {
     public $method = "GET";
+    public $head = false;
     public $url = "";
     public $path ="";
     public $paths = [];
@@ -26,6 +27,10 @@ class Request {
         $this->url = $url;
         $this->body = $body;
         $this->type = $contentType;
+        if($this->method=="HEAD") {
+            $this->head = true;
+            $this->method = "GET";
+        }
         $this->refreshURL();
     }
 

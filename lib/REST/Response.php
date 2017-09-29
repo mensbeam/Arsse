@@ -9,6 +9,7 @@ class Response {
     const T_XML  = "application/xml";
     const T_TEXT = "text/plain";
 
+    public $head = false;
     public $code;
     public $payload;
     public $type;
@@ -24,15 +25,11 @@ class Response {
 
     public function output() {
         if (!headers_sent()) {
-            try {
-                $statusText = Arsse::$lang->msg("HTTP.Status.".$this->code);
-            } catch (\JKingWeb\Arsse\Lang\Exception $e) {
-                $statusText = "";
+            foreach ($this->fields as $field) {
+                header($field);
             }
-            header("Status: ".$this->code." ".$statusText);
             $body = "";
             if (!is_null($this->payload)) {
-                header("Content-Type: ".$this->type);
                 switch ($this->type) {
                     case self::T_JSON:
                         $body = (string) json_encode($this->payload, \JSON_PRETTY_PRINT);
@@ -42,10 +39,21 @@ class Response {
                         break;
                 }
             }
-            foreach ($this->fields as $field) {
-                header($field);
+            if (strlen($body)) {
+                header("Content-Type: ".$this->type);
+                header("Content-Length: ".strlen($body));
+            } elseif ($this->code==200) {
+                $this->code = 204;
             }
-            echo $body;
+            try {
+                $statusText = Arsse::$lang->msg("HTTP.Status.".$this->code);
+            } catch (\JKingWeb\Arsse\Lang\Exception $e) {
+                $statusText = "";
+            }
+            header("Status: ".$this->code." ".$statusText);
+            if (!$this->head) {
+                echo $body;
+            }
         } else {
             throw new REST\Exception("headersSent");
         }
