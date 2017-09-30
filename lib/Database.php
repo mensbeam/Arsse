@@ -406,7 +406,7 @@ class Database {
         }
     }
 
-    public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = ""): int {
+    public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = "", bool $discover = true): int {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
@@ -417,7 +417,7 @@ class Database {
             $feedID = $this->db->prepare('INSERT INTO arsse_feeds(url,username,password) values(?,?,?)', 'str', 'str', 'str')->run($url, $fetchUser, $fetchPassword)->lastId();
             try {
                 // perform an initial update on the newly added feed
-                $this->feedUpdate($feedID, true);
+                $this->feedUpdate($feedID, true, $discover);
             } catch (\Throwable $e) {
                 // if the update fails, delete the feed we just added
                 $this->db->prepare('DELETE from arsse_feeds where id is ?', 'int')->run($feedID);
@@ -548,7 +548,7 @@ class Database {
         return array_column($feeds, 'id');
     }
     
-    public function feedUpdate($feedID, bool $throwError = false): bool {
+    public function feedUpdate($feedID, bool $throwError = false, bool $discover = false): bool {
         $tr = $this->db->begin();
         // check to make sure the feed exists
         if (!ValueInfo::id($feedID)) {
@@ -564,7 +564,7 @@ class Database {
         // here. When an exception is thrown it should update the database with the
         // error instead of failing; if other exceptions are thrown, we should simply roll back
         try {
-            $feed = new Feed((int) $feedID, $f['url'], (string) Date::transform($f['modified'], "http", "sql"), $f['etag'], $f['username'], $f['password'], $scrape);
+            $feed = new Feed((int) $feedID, $f['url'], (string) Date::transform($f['modified'], "http", "sql"), $f['etag'], $f['username'], $f['password'], $scrape, $discover);
             if (!$feed->modified) {
                 // if the feed hasn't changed, just compute the next fetch time and record it
                 $this->db->prepare("UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id is ?", 'datetime', 'int')->run($feed->nextFetch, $feedID);

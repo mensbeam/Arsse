@@ -135,7 +135,7 @@ trait SeriesSubscription {
         Phake::when(Arsse::$db)->feedUpdate->thenReturn(true);
         $this->assertSame($subID, Arsse::$db->subscriptionAdd($this->user, $url));
         Phake::verify(Arsse::$user)->authorize($this->user, "subscriptionAdd");
-        Phake::verify(Arsse::$db)->feedUpdate($feedID, true);
+        Phake::verify(Arsse::$db)->feedUpdate($feedID, true, true);
         $state = $this->primeExpectations($this->data, [
             'arsse_feeds'         => ['id','url','username','password'],
             'arsse_subscriptions' => ['id','owner','feed'],
@@ -153,7 +153,7 @@ trait SeriesSubscription {
             Arsse::$db->subscriptionAdd($this->user, $url);
         } catch (FeedException $e) {
             Phake::verify(Arsse::$user)->authorize($this->user, "subscriptionAdd");
-            Phake::verify(Arsse::$db)->feedUpdate($feedID, true);
+            Phake::verify(Arsse::$db)->feedUpdate($feedID, true, true);
             $state = $this->primeExpectations($this->data, [
                 'arsse_feeds'         => ['id','url','username','password'],
                 'arsse_subscriptions' => ['id','owner','feed'],

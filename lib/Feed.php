@@ -21,7 +21,7 @@ class Feed {
     public $newItems = [];
     public $changedItems = [];
 
-    public function __construct(int $feedID = null, string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = '', bool $scrape = false) {
+    public function __construct(int $feedID = null, string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = '', bool $scrape = false, bool $discover = false) {
         // set the configuration
         $userAgent = Arsse::$conf->fetchUserAgentString ?? sprintf('Arsse/%s (%s %s; %s; https://code.jkingweb.ca/jking/arsse) PicoFeed (https://github.com/fguillot/picoFeed)',
             VERSION, // Arsse version
@@ -36,7 +36,7 @@ class Feed {
         $this->config->setClientUserAgent($userAgent);
         $this->config->setGrabberUserAgent($userAgent);
         // fetch the feed
-        $this->download($url, $lastModified, $etag, $username, $password);
+        $this->download($url, $lastModified, $etag, $username, $password, $discover);
         // format the HTTP Last-Modified date returned
         $lastMod = $this->resource->getLastModified();
         if (strlen($lastMod)) {
@@ -65,10 +65,11 @@ class Feed {
         $this->nextFetch = $this->computeNextFetch();
     }
 
-    protected function download(string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = ''): bool {
+    protected function download(string $url, string $lastModified, string $etag, string $username, string $password, bool $discover): bool {
+        $action = $discover ? "discover" : "download";
         try {
             $this->reader = new Reader($this->config);
-            $this->resource = $this->reader->download($url, $lastModified, $etag, $username, $password);
+            $this->resource = $this->reader->$action($url, $lastModified, $etag, $username, $password);
         } catch (PicoFeedException $e) {
             throw new Feed\Exception($url, $e);
         }
@@ -361,13 +362,13 @@ class Feed {
 
     protected function computeLastModified() {
         if (!$this->modified) {
-            return $this->lastModified;
+            return $this->lastModified; // @codeCoverageIgnore
         }
         $dates = $this->gatherDates();
         if (sizeof($dates)) {
             return Date::normalize($dates[0]);
         } else {
-            return null;
+            return null; // @codeCoverageIgnore
         }
     }
 
