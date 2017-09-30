@@ -11,6 +11,7 @@
                 <include name="composer.*"/>
                 <include name="arsse.php"/>
                 <include name="bootstrap.php"/>
+                <include name="CHANGELOG"/>
                 <include name="LICENSE"/>
                 <include name="README.md"/>
             </fileset>

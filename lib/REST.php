@@ -40,9 +40,9 @@ class REST {
         $class = $this->apis[$api]['class'];
         $drv = new $class();
         if ($req->head) {
-           $res =  $drv->dispatch($req);
-           $res->head = true;
-           return $res;
+            $res =  $drv->dispatch($req);
+            $res->head = true;
+            return $res;
         } else {
             return $drv->dispatch($req);
         }

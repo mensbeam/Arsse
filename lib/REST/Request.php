@@ -27,7 +27,7 @@ class Request {
         $this->url = $url;
         $this->body = $body;
         $this->type = $contentType;
-        if($this->method=="HEAD") {
+        if ($this->method=="HEAD") {
             $this->head = true;
             $this->method = "GET";
         }
