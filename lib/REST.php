@@ -43,7 +43,13 @@ class REST {
         $req->refreshURL();
         $class = $this->apis[$api]['class'];
         $drv = new $class();
-        return $drv->dispatch($req);
+        if ($req->head) {
+            $res =  $drv->dispatch($req);
+            $res->head = true;
+            return $res;
+        } else {
+            return $drv->dispatch($req);
+        }
     }
 
     public function apiMatch(string $url, array $map): string {

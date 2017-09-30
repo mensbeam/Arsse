@@ -84,7 +84,7 @@ USAGE_TEXT;
     public function userAdd(string $user, string $password = null): int {
         $passwd = Arsse::$user->add($user, $password);
         if (is_null($password)) {
-            echo $passwd;
+            echo $passwd.\PHP_EOL;
         }
         return 0;
     }

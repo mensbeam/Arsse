@@ -26,7 +26,7 @@ class TestNCNVersionDiscovery extends Test\AbstractTest {
     }
 
     public function testUseIncorrectMethod() {
-        $exp = new Response(405);
+        $exp = new Response(405, "", "", ["Allow: GET"]);
         $h = new REST\NextCloudNews\Versions();
         $req = new Request("POST", "/");
         $res = $h->dispatch($req);

@@ -1,0 +1,12 @@
+Version 0.1.1 (2017-09-30)
+==========================
+
+Bug fixes:
+- Perform feed discovery like NextCloud News does
+- Respond correctly to HEAD requests
+- Various minor fixes
+
+Version 0.1.0 (2017-08-29)
+==========================
+
+Initial release

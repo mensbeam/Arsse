@@ -133,6 +133,15 @@ class TestFeed extends Test\AbstractTest {
         $this->assertSame($categories, $f->data->items[5]->categories);
     }
 
+    public function testDiscoverAFeedSuccessfully() {
+        $this->assertInstanceOf(Feed::class, new Feed(null, $this->base."Discovery/Valid", "", "", "", "", false, true));
+    }
+
+    public function testDiscoverAFeedUnsuccessfully() {
+        $this->assertException("subscriptionNotFound", "Feed");
+        new Feed(null, $this->base."Discovery/Invalid", "", "", "", "", false, true);
+    }
+
     public function testParseEntityExpansionAttack() {
         $this->assertException("xmlEntity", "Feed");
         new Feed(null, $this->base."Parsing/XEEAttack");
