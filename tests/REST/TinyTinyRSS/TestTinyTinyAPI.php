@@ -293,4 +293,212 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[3]))));
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[4]))));
     }
+
+    public function testRemoveACategory() {
+        $in = [
+            ['op' => "removeCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42],
+            ['op' => "removeCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 2112],
+            ['op' => "removeCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => -1],
+        ];
+        Phake::when(Arsse::$db)->folderRemove(Arsse::$user->id, $this->anything())->thenThrow(new ExceptionInput("subjectMissing"));
+        Phake::when(Arsse::$db)->folderRemove(Arsse::$user->id, 42)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
+        // succefully delete a folder
+        $exp = $this->respGood();
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
+        // try deleting it again (this should silently fail)
+        $exp = $this->respGood();
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
+        // delete a folder which does not exist (this should also silently fail)
+        $exp = $this->respGood();
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
+        // delete an invalid folder (causes an error)
+        $exp = $this->respErr("INCORRECT_USAGE");
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[2]))));
+        Phake::verify(Arsse::$db, Phake::times(3))->folderRemove(Arsse::$user->id, $this->anything());
+    }
+
+    public function testMoveACategory() {
+        $in = [
+            ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42, 'parent_id' => 1],
+            ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 2112, 'parent_id' => 2],
+            ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42, 'parent_id' => 0],
+            ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42, 'parent_id' => 47],
+            ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => -1, 'parent_id' => 1],
+            ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42, 'parent_id' => -1],
+            ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42],
+            ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx", 'parent_id' => -1],
+            ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx"],
+        ];
+        $db = [
+            [Arsse::$user->id, 42, ['parent' => 1]],
+            [Arsse::$user->id, 2112, ['parent' => 2]],
+            [Arsse::$user->id, 42, ['parent' => 0]],
+            [Arsse::$user->id, 42, ['parent' => 47]],
+        ];
+        Phake::when(Arsse::$db)->folderPropertiesSet(...$db[0])->thenReturn(true);
+        Phake::when(Arsse::$db)->folderPropertiesSet(...$db[1])->thenThrow(new ExceptionInput("subjectMissing"));
+        Phake::when(Arsse::$db)->folderPropertiesSet(...$db[2])->thenThrow(new ExceptionInput("constraintViolation"));
+        Phake::when(Arsse::$db)->folderPropertiesSet(...$db[3])->thenThrow(new ExceptionInput("idMissing"));
+        // succefully move a folder
+        $exp = $this->respGood();
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
+        // move a folder which does not exist (this should silently fail)
+        $exp = $this->respGood();
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
+        // move a folder causing a duplication (this should also silently fail)
+        $exp = $this->respGood();
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[2]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[3]))));
+        // all the rest should cause errors
+        $exp = $this->respErr("INCORRECT_USAGE");
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[4]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[5]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[6]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[7]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[8]))));
+        Phake::verify(Arsse::$db, Phake::times(4))->folderPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
+    }
+
+    public function testRenameACategory() {
+        $in = [
+            ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42, 'caption' => "Ook"],
+            ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 2112, 'caption' => "Eek"],
+            ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42, 'caption' => "Eek"],
+            ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42, 'caption' => ""],
+            ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42, 'caption' => " "],
+            ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => -1, 'caption' => "Ook"],
+            ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42],
+            ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx", 'caption' => "Ook"],
+            ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx"],
+        ];
+        $db = [
+            [Arsse::$user->id, 42, ['name' => "Ook"]],
+            [Arsse::$user->id, 2112, ['name' => "Eek"]],
+            [Arsse::$user->id, 42, ['name' => "Eek"]],
+        ];
+        Phake::when(Arsse::$db)->folderPropertiesSet(...$db[0])->thenReturn(true);
+        Phake::when(Arsse::$db)->folderPropertiesSet(...$db[1])->thenThrow(new ExceptionInput("subjectMissing"));
+        Phake::when(Arsse::$db)->folderPropertiesSet(...$db[2])->thenThrow(new ExceptionInput("constraintViolation"));
+        // succefully rename a folder
+        $exp = $this->respGood();
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
+        // rename a folder which does not exist (this should silently fail)
+        $exp = $this->respGood();
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
+        // rename a folder causing a duplication (this should also silently fail)
+        $exp = $this->respGood();
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[2]))));
+        // all the rest should cause errors
+        $exp = $this->respErr("INCORRECT_USAGE");
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[3]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[4]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[5]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[6]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[7]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[8]))));
+        Phake::verify(Arsse::$db, Phake::times(3))->folderPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
+    }
+
+    public function testRemoveASubscription() {
+        $in = [
+            ['op' => "unsubscribeFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42],
+            ['op' => "unsubscribeFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2112],
+            ['op' => "unsubscribeFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -1],
+            ['op' => "unsubscribeFeed", 'sid' => "PriestsOfSyrinx"],
+        ];
+        Phake::when(Arsse::$db)->subscriptionRemove(Arsse::$user->id, $this->anything())->thenThrow(new ExceptionInput("subjectMissing"));
+        Phake::when(Arsse::$db)->subscriptionRemove(Arsse::$user->id, 42)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
+        // succefully delete a folder
+        $exp = $this->respGood(['status' => "OK"]);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
+        // try deleting it again (this should noisily fail, as should everything else)
+        $exp = $this->respErr("FEED_NOT_FOUND");
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[2]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[3]))));
+        Phake::verify(Arsse::$db, Phake::times(3))->subscriptionRemove(Arsse::$user->id, $this->anything());
+    }
+
+    public function testMoveASubscription() {
+        $in = [
+            ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'category_id' => 1],
+            ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2112, 'category_id' => 2],
+            ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'category_id' => 0],
+            ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'category_id' => 47],
+            ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -1, 'category_id' => 1],
+            ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'category_id' => -1],
+            ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42],
+            ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx", 'category_id' => -1],
+            ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx"],
+        ];
+        $db = [
+            [Arsse::$user->id, 42, ['folder' => 1]],
+            [Arsse::$user->id, 2112, ['folder' => 2]],
+            [Arsse::$user->id, 42, ['folder' => 0]],
+            [Arsse::$user->id, 42, ['folder' => 47]],
+        ];
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(...$db[0])->thenReturn(true);
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(...$db[1])->thenThrow(new ExceptionInput("subjectMissing"));
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(...$db[2])->thenThrow(new ExceptionInput("constraintViolation"));
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(...$db[3])->thenThrow(new ExceptionInput("constraintViolation"));
+        // succefully move a subscription
+        $exp = $this->respGood();
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
+        // move a subscription which does not exist (this should silently fail)
+        $exp = $this->respGood();
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
+        // move a subscription causing a duplication (this should also silently fail)
+        $exp = $this->respGood();
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[2]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[3]))));
+        // all the rest should cause errors
+        $exp = $this->respErr("INCORRECT_USAGE");
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[4]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[5]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[6]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[7]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[8]))));
+        Phake::verify(Arsse::$db, Phake::times(4))->subscriptionPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
+    }
+
+    public function testRenameASubscription() {
+        $in = [
+            ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'caption' => "Ook"],
+            ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2112, 'caption' => "Eek"],
+            ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'caption' => "Eek"],
+            ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'caption' => ""],
+            ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'caption' => " "],
+            ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -1, 'caption' => "Ook"],
+            ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42],
+            ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx", 'caption' => "Ook"],
+            ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx"],
+        ];
+        $db = [
+            [Arsse::$user->id, 42, ['name' => "Ook"]],
+            [Arsse::$user->id, 2112, ['name' => "Eek"]],
+            [Arsse::$user->id, 42, ['name' => "Eek"]],
+        ];
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(...$db[0])->thenReturn(true);
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(...$db[1])->thenThrow(new ExceptionInput("subjectMissing"));
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(...$db[2])->thenThrow(new ExceptionInput("constraintViolation"));
+        // succefully rename a subscription
+        $exp = $this->respGood();
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
+        // rename a subscription which does not exist (this should silently fail)
+        $exp = $this->respGood();
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
+        // rename a subscription causing a duplication (this should also silently fail)
+        $exp = $this->respGood();
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[2]))));
+        // all the rest should cause errors
+        $exp = $this->respErr("INCORRECT_USAGE");
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[3]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[4]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[5]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[6]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[7]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[8]))));
+        Phake::verify(Arsse::$db, Phake::times(3))->subscriptionPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
+    }
 }

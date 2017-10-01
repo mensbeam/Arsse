@@ -6,10 +6,23 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\Misc\Context;
+use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\REST\Response;
+
+/*
+
+Protocol difference so far:
+    - handling of incorrect Content-Type and/or HTTP method is different
+    - TT-RSS accepts whitespace-only names; we do not
+    - TT-RSS allows two folders to share the same name under the same parent; we do not
+    - Session lifetime is much shorter by default (does TT-RSS even expire sessions?)
+
+*/
+
+
 
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     const LEVEL = 14;
@@ -143,20 +156,126 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             return Arsse::$db->folderAdd(Arsse::$user->id, $in);
         } catch (ExceptionInput $e) {
             switch ($e->getCode()) {
-                // folder already exists
-                case 10236:
-                    // retrieve the ID of the existing folder; duplicating a category silently returns the existing one
+                case 10236: // folder already exists
+                    // retrieve the ID of the existing folder; duplicating a folder silently returns the existing one
                     $folders = Arsse::$db->folderList(Arsse::$user->id, $in['parent'], false);
                     foreach ($folders as $folder) {
                         if ($folder['name']==$in['name']) {
                             return (int) $folder['id'];
                         }
                     }
-                // parent folder does not exist; this returns false as an ID
-                case 10235: return false;
-                // other errors related to input
-                default: throw new Exception("INCORRECT_USAGE");
+                    return false;
+                case 10235: // parent folder does not exist; this returns false as an ID
+                    return false;
+                default: // other errors related to input
+                    throw new Exception("INCORRECT_USAGE");
             }
         }
+    }
+
+    public function opRemoveCategory(array $data) {
+        if (!isset($data['category_id']) || !ValueInfo::id($data['category_id'])) {
+            // if the folder is invalid, throw an error
+            throw new Exception("INCORRECT_USAGE");
+        }
+        try {
+            // attempt to remove the folder
+            Arsse::$db->folderRemove(Arsse::$user->id, (int) $data['category_id']);
+        } catch(ExceptionInput $e) {
+            // ignore all errors
+        }
+        return null;
+    }
+
+    public function opMoveCategory(array $data) {
+        if (!isset($data['category_id']) || !ValueInfo::id($data['category_id']) || !isset($data['parent_id']) || !ValueInfo::id($data['parent_id'], true)) {
+            // if the folder or parent is invalid, throw an error
+            throw new Exception("INCORRECT_USAGE");
+        }
+        $in = [
+            'parent' => (int) $data['parent_id'],
+        ];
+        try {
+            // try to move the folder
+            Arsse::$db->folderPropertiesSet(Arsse::$user->id, (int) $data['category_id'], $in);
+        } catch(ExceptionInput $e) {
+            // ignore all errors
+        }
+        return null;
+    }
+
+    public function opRenameCategory(array $data) {
+        if (!isset($data['category_id']) || !ValueInfo::id($data['category_id']) || !isset($data['caption'])) {
+            // if the folder is invalid, throw an error
+            throw new Exception("INCORRECT_USAGE");
+        }
+        $info = ValueInfo::str($data['caption']);
+        if (!($info & ValueInfo::VALID) || ($info & ValueInfo::EMPTY) || ($info & ValueInfo::WHITE)) {
+            // if the folder name is invalid, throw an error
+            throw new Exception("INCORRECT_USAGE");
+        }
+        $in = [
+            'name' => (string) $data['caption'],
+        ];
+        try {
+            // try to rename the folder
+            Arsse::$db->folderPropertiesSet(Arsse::$user->id, (int) $data['category_id'], $in);
+        } catch(ExceptionInput $e) {
+            // ignore all errors
+        }
+        return null;
+    }
+
+    public function opUnsubscribeFeed(array $data): array {
+        if (!isset($data['feed_id']) || !ValueInfo::id($data['feed_id'])) {
+            // if the feed is invalid, throw an error
+            throw new Exception("FEED_NOT_FOUND");
+        }
+        try {
+            // attempt to remove the feed
+            Arsse::$db->subscriptionRemove(Arsse::$user->id, (int) $data['feed_id']);
+        } catch(ExceptionInput $e) {
+            throw new Exception("FEED_NOT_FOUND");
+        }
+        return ['status' => "OK"];
+    }
+
+    public function opMoveFeed(array $data) {
+        if (!isset($data['feed_id']) || !ValueInfo::id($data['feed_id']) || !isset($data['category_id']) || !ValueInfo::id($data['category_id'], true)) {
+            // if the feed or folder is invalid, throw an error
+            throw new Exception("INCORRECT_USAGE");
+        }
+        $in = [
+            'folder' => (int) $data['category_id'],
+        ];
+        try {
+            // try to move the feed
+            Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, (int) $data['feed_id'], $in);
+        } catch(ExceptionInput $e) {
+            // ignore all errors
+        }
+        return null;
+    }
+
+    public function opRenameFeed(array $data) {
+        if (!isset($data['feed_id']) || !ValueInfo::id($data['feed_id']) || !isset($data['caption'])) {
+            // if the feed is invalid, throw an error
+            throw new Exception("INCORRECT_USAGE");
+        }
+        $info = ValueInfo::str($data['caption']);
+        if (!($info & ValueInfo::VALID) || ($info & ValueInfo::EMPTY) || ($info & ValueInfo::WHITE)) {
+            // if the feed name is invalid, throw an error
+            throw new Exception("INCORRECT_USAGE");
+        }
+        $in = [
+            'name' => (string) $data['caption'],
+        ];
+        try {
+            // try to rename the feed
+            Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, (int) $data['feed_id'], $in);
+        } catch(ExceptionInput $e) {
+            // ignore all errors
+        }
+        return null;
     }
 }
