@@ -3,6 +3,8 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 class Arsse {
+    const VERSION = "0.1.1";
+    
     /** @var Lang */
     public static $lang;
     /** @var Conf  */

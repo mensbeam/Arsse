@@ -20,11 +20,11 @@ class Feed {
     public $nextFetch;
     public $newItems = [];
     public $changedItems = [];
-
+    
     public function __construct(int $feedID = null, string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = '', bool $scrape = false, bool $discover = false) {
         // set the configuration
         $userAgent = Arsse::$conf->fetchUserAgentString ?? sprintf('Arsse/%s (%s %s; %s; https://code.jkingweb.ca/jking/arsse) PicoFeed (https://github.com/fguillot/picoFeed)',
-            VERSION, // Arsse version
+            Arsse::VERSION, // Arsse version
             php_uname('s'), // OS
             php_uname('r'), // OS version
             php_uname('m') // platform architecture

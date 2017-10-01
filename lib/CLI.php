@@ -27,7 +27,7 @@ USAGE_TEXT;
         $this->args = \Docopt::handle($this->usage(), [
             'argv' => $argv,
             'help' => true,
-            'version' => VERSION,
+            'version' => Arsse::VERSION,
         ]);
     }
 
