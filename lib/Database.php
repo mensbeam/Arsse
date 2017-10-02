@@ -411,13 +411,19 @@ class Database {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         // check to see if the feed exists
-        $feedID = $this->db->prepare("SELECT id from arsse_feeds where url is ? and username is ? and password is ?", "str", "str", "str")->run($url, $fetchUser, $fetchPassword)->getValue();
+        $check = $this->db->prepare("SELECT id from arsse_feeds where url is ? and username is ? and password is ?", "str", "str", "str");
+        $feedID = $check->run($url, $fetchUser, $fetchPassword)->getValue();
+        if ($discover && is_null($feedID)) {
+            // if the feed doesn't exist, first perform discovery if requested and check for the existence of that URL
+            $url = Feed::discover($url, $fetchUser, $fetchPassword);
+            $feedID = $check->run($url, $fetchUser, $fetchPassword)->getValue();
+        }
         if (is_null($feedID)) {
-            // if the feed doesn't exist add it to the database; we do this unconditionally so as to lock SQLite databases for as little time as possible
+            // if the feed still doesn't exist in the database, add it to the database; we do this unconditionally so as to lock SQLite databases for as little time as possible
             $feedID = $this->db->prepare('INSERT INTO arsse_feeds(url,username,password) values(?,?,?)', 'str', 'str', 'str')->run($url, $fetchUser, $fetchPassword)->lastId();
             try {
                 // perform an initial update on the newly added feed
-                $this->feedUpdate($feedID, true, $discover);
+                $this->feedUpdate($feedID, true);
             } catch (\Throwable $e) {
                 // if the update fails, delete the feed we just added
                 $this->db->prepare('DELETE from arsse_feeds where id is ?', 'int')->run($feedID);
@@ -548,7 +554,7 @@ class Database {
         return array_column($feeds, 'id');
     }
     
-    public function feedUpdate($feedID, bool $throwError = false, bool $discover = false): bool {
+    public function feedUpdate($feedID, bool $throwError = false): bool {
         $tr = $this->db->begin();
         // check to make sure the feed exists
         if (!ValueInfo::id($feedID)) {
@@ -564,7 +570,7 @@ class Database {
         // here. When an exception is thrown it should update the database with the
         // error instead of failing; if other exceptions are thrown, we should simply roll back
         try {
-            $feed = new Feed((int) $feedID, $f['url'], (string) Date::transform($f['modified'], "http", "sql"), $f['etag'], $f['username'], $f['password'], $scrape, $discover);
+            $feed = new Feed((int) $feedID, $f['url'], (string) Date::transform($f['modified'], "http", "sql"), $f['etag'], $f['username'], $f['password'], $scrape);
             if (!$feed->modified) {
                 // if the feed hasn't changed, just compute the next fetch time and record it
                 $this->db->prepare("UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id is ?", 'datetime', 'int')->run($feed->nextFetch, $feedID);

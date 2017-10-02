@@ -134,12 +134,13 @@ class TestFeed extends Test\AbstractTest {
     }
 
     public function testDiscoverAFeedSuccessfully() {
-        $this->assertInstanceOf(Feed::class, new Feed(null, $this->base."Discovery/Valid", "", "", "", "", false, true));
+        $this->assertSame($this->base."Discovery/Feed", Feed::discover($this->base."Discovery/Valid"));
+        $this->assertSame($this->base."Discovery/Feed", Feed::discover($this->base."Discovery/Feed"));
     }
 
     public function testDiscoverAFeedUnsuccessfully() {
         $this->assertException("subscriptionNotFound", "Feed");
-        new Feed(null, $this->base."Discovery/Invalid", "", "", "", "", false, true);
+        Feed::discover($this->base."Discovery/Invalid");
     }
 
     public function testParseEntityExpansionAttack() {
