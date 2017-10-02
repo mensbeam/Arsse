@@ -235,7 +235,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         ];
         $exp = $this->respGood([
             'version' => \JKingWeb\Arsse\REST\TinyTinyRSS\API::VERSION,
-            'arsse_version' => \JKingWeb\Arsse\VERSION,
+            'arsse_version' => Arsse::VERSION,
         ]);
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($data))));
     }

@@ -691,14 +691,14 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function serverVersion(array $url, array $data): Response {
         return new Response(200, [
             'version' => self::VERSION,
-            'arsse_version' => \JKingWeb\Arsse\VERSION,
+            'arsse_version' => Arsse::VERSION,
         ]);
     }
 
     protected function serverStatus(array $url, array $data): Response {
         return new Response(200, [
             'version' => self::VERSION,
-            'arsse_version' => \JKingWeb\Arsse\VERSION,
+            'arsse_version' => Arsse::VERSION,
             'warnings' => [
                 'improperlyConfiguredCron' => !Service::hasCheckedIn(),
             ]

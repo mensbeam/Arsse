@@ -118,7 +118,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function opGetVersion(array $data): array {
         return [
             'version'       => self::VERSION,
-            'arsse_version' => \JKingWeb\Arsse\VERSION,
+            'arsse_version' => Arsse::VERSION,
         ];
     }
 

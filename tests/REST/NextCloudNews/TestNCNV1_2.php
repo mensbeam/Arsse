@@ -458,7 +458,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
 
     public function testRetrieveServerVersion() {
         $exp = new Response(200, [
-            'arsse_version' => \JKingWeb\Arsse\VERSION,
+            'arsse_version' => Arsse::VERSION,
             'version' => REST\NextCloudNews\V1_2::VERSION,
             ]);
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/version")));
@@ -842,7 +842,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
         Phake::when(Arsse::$db)->metaGet("service_last_checkin")->thenReturn(Date::transform($valid, "sql"))->thenReturn(Date::transform($invalid, "sql"));
         $arr1 = $arr2 = [
             'version' => REST\NextCloudNews\V1_2::VERSION,
-            'arsse_version' => VERSION,
+            'arsse_version' => Arsse::VERSION,
             'warnings' => [
                 'improperlyConfiguredCron' => false,
             ]

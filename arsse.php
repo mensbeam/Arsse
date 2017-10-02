@@ -1,7 +1,12 @@
 <?php
 namespace JKingWeb\Arsse;
 
-require_once __DIR__.DIRECTORY_SEPARATOR."bootstrap.php";
+const BASE = __DIR__.DIRECTORY_SEPARATOR;
+const NS_BASE = __NAMESPACE__."\\";
+
+require_once BASE."vendor".DIRECTORY_SEPARATOR."autoload.php";
+ignore_user_abort(true);
+
 
 if (\PHP_SAPI=="cli") {
     // initialize the CLI; this automatically handles --help and --version

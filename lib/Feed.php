@@ -5,6 +5,7 @@ namespace JKingWeb\Arsse;
 use JKingWeb\Arsse\Misc\Date;
 use PicoFeed\PicoFeedException;
 use PicoFeed\Config\Config;
+use PicoFeed\Client\Client;
 use PicoFeed\Reader\Reader;
 use PicoFeed\Reader\Favicon;
 use PicoFeed\Scraper\Scraper;
@@ -12,8 +13,6 @@ use PicoFeed\Scraper\Scraper;
 class Feed {
     public $data = null;
     public $favicon;
-    public $parser;
-    public $reader;
     public $resource;
     public $modified = false;
     public $lastModified;
@@ -21,22 +20,30 @@ class Feed {
     public $newItems = [];
     public $changedItems = [];
 
-    public function __construct(int $feedID = null, string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = '', bool $scrape = false, bool $discover = false) {
-        // set the configuration
-        $userAgent = Arsse::$conf->fetchUserAgentString ?? sprintf('Arsse/%s (%s %s; %s; https://code.jkingweb.ca/jking/arsse) PicoFeed (https://github.com/fguillot/picoFeed)',
-            VERSION, // Arsse version
-            php_uname('s'), // OS
-            php_uname('r'), // OS version
-            php_uname('m') // platform architecture
-        );
-        $this->config = new Config;
-        $this->config->setMaxBodySize(Arsse::$conf->fetchSizeLimit);
-        $this->config->setClientTimeout(Arsse::$conf->fetchTimeout);
-        $this->config->setGrabberTimeout(Arsse::$conf->fetchTimeout);
-        $this->config->setClientUserAgent($userAgent);
-        $this->config->setGrabberUserAgent($userAgent);
+    public static function discover(string $url, string $username = '', string $password = ''): string {
+        // fetch the candidate feed
+        $f = self::download($url, "", "", $username, $password);
+        if ($f->reader->detectFormat($f->getContent())) {
+            // if the prospective URL is a feed, use it
+            $out = $url;
+        } else {
+            $links = $f->reader->find($f->getUrl(), $f->getContent());
+            if (!$links) {
+                // work around a PicoFeed memory leak FIXME: remove this hack (or not) once PicoFeed stops leaking memory
+                libxml_use_internal_errors(false);
+                throw new Feed\Exception($url, new \PicoFeed\Reader\SubscriptionNotFoundException('Unable to find a subscription'));
+            } else {
+                $out = $links[0];
+            }
+        }
+        // work around a PicoFeed memory leak FIXME: remove this hack (or not) once PicoFeed stops leaking memory
+        libxml_use_internal_errors(false);
+        return $out;
+    }
+    
+    public function __construct(int $feedID = null, string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = '', bool $scrape = false) {
         // fetch the feed
-        $this->download($url, $lastModified, $etag, $username, $password, $discover);
+        $this->resource = self::download($url, $lastModified, $etag, $username, $password);
         // format the HTTP Last-Modified date returned
         $lastMod = $this->resource->getLastModified();
         if (strlen($lastMod)) {
@@ -65,26 +72,40 @@ class Feed {
         $this->nextFetch = $this->computeNextFetch();
     }
 
-    protected function download(string $url, string $lastModified, string $etag, string $username, string $password, bool $discover): bool {
-        $action = $discover ? "discover" : "download";
+    protected static function configure(): Config {
+        $userAgent = Arsse::$conf->fetchUserAgentString ?? sprintf('Arsse/%s (%s %s; %s; https://thearsse.com/) PicoFeed (https://github.com/miniflux/picoFeed)',
+            Arsse::VERSION, // Arsse version
+            php_uname('s'), // OS
+            php_uname('r'), // OS version
+            php_uname('m') // platform architecture
+        );
+        $config = new Config;
+        $config->setMaxBodySize(Arsse::$conf->fetchSizeLimit);
+        $config->setClientTimeout(Arsse::$conf->fetchTimeout);
+        $config->setGrabberTimeout(Arsse::$conf->fetchTimeout);
+        $config->setClientUserAgent($userAgent);
+        $config->setGrabberUserAgent($userAgent);
+        return $config;
+    }
+
+    protected static function download(string $url, string $lastModified, string $etag, string $username, string $password): Client {
         try {
-            $this->reader = new Reader($this->config);
-            $this->resource = $this->reader->$action($url, $lastModified, $etag, $username, $password);
+            $reader = new Reader(self::configure());
+            $client = $reader->download($url, $lastModified, $etag, $username, $password);
+            $client->reader = $reader;
+            return $client;
         } catch (PicoFeedException $e) {
             throw new Feed\Exception($url, $e);
         }
-        return true;
     }
 
     protected function parse(): bool {
         try {
-            $this->parser = $this->reader->getParser(
+            $feed = $this->resource->reader->getParser(
                 $this->resource->getUrl(),
                 $this->resource->getContent(),
                 $this->resource->getEncoding()
-            );
-            $feed = $this->parser->execute();
-            
+            )->execute();
             // Grab the favicon for the feed; returns an empty string if it cannot find one.
             // Some feeds might use a different domain (eg: feedburner), so the site url is
             // used instead of the feed's url.
@@ -388,7 +409,7 @@ class Feed {
     }
 
     protected function scrape(): bool {
-        $scraper = new Scraper($this->config);
+        $scraper = new Scraper(self::configure());
         foreach (array_merge($this->newItems, $this->changedItems) as $item) {
             $scraper->setUrl($item->url);
             $scraper->execute();

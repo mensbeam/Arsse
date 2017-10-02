@@ -133,9 +133,9 @@ trait SeriesSubscription {
         $feedID = $this->nextID("arsse_feeds");
         $subID = $this->nextID("arsse_subscriptions");
         Phake::when(Arsse::$db)->feedUpdate->thenReturn(true);
-        $this->assertSame($subID, Arsse::$db->subscriptionAdd($this->user, $url));
+        $this->assertSame($subID, Arsse::$db->subscriptionAdd($this->user, $url, "", "", false));
         Phake::verify(Arsse::$user)->authorize($this->user, "subscriptionAdd");
-        Phake::verify(Arsse::$db)->feedUpdate($feedID, true, true);
+        Phake::verify(Arsse::$db)->feedUpdate($feedID, true);
         $state = $this->primeExpectations($this->data, [
             'arsse_feeds'         => ['id','url','username','password'],
             'arsse_subscriptions' => ['id','owner','feed'],
@@ -145,15 +145,33 @@ trait SeriesSubscription {
         $this->compareExpectations($state);
     }
 
+    public function testAddASubscriptionToANewFeedViaDiscovery() {
+        $url = "http://localhost:8000/Feed/Discovery/Valid";
+        $discovered = "http://localhost:8000/Feed/Discovery/Feed";
+        $feedID = $this->nextID("arsse_feeds");
+        $subID = $this->nextID("arsse_subscriptions");
+        Phake::when(Arsse::$db)->feedUpdate->thenReturn(true);
+        $this->assertSame($subID, Arsse::$db->subscriptionAdd($this->user, $url, "", "", true));
+        Phake::verify(Arsse::$user)->authorize($this->user, "subscriptionAdd");
+        Phake::verify(Arsse::$db)->feedUpdate($feedID, true);
+        $state = $this->primeExpectations($this->data, [
+            'arsse_feeds'         => ['id','url','username','password'],
+            'arsse_subscriptions' => ['id','owner','feed'],
+        ]);
+        $state['arsse_feeds']['rows'][] = [$feedID,$discovered,"",""];
+        $state['arsse_subscriptions']['rows'][] = [$subID,$this->user,$feedID];
+        $this->compareExpectations($state);
+    }
+
     public function testAddASubscriptionToAnInvalidFeed() {
         $url = "http://example.org/feed1";
         $feedID = $this->nextID("arsse_feeds");
         Phake::when(Arsse::$db)->feedUpdate->thenThrow(new FeedException($url, new \PicoFeed\Client\InvalidUrlException()));
         try {
-            Arsse::$db->subscriptionAdd($this->user, $url);
+            Arsse::$db->subscriptionAdd($this->user, $url, "", "", false);
         } catch (FeedException $e) {
             Phake::verify(Arsse::$user)->authorize($this->user, "subscriptionAdd");
-            Phake::verify(Arsse::$db)->feedUpdate($feedID, true, true);
+            Phake::verify(Arsse::$db)->feedUpdate($feedID, true);
             $state = $this->primeExpectations($this->data, [
                 'arsse_feeds'         => ['id','url','username','password'],
                 'arsse_subscriptions' => ['id','owner','feed'],
