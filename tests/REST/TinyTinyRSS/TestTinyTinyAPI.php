@@ -11,7 +11,8 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use Phake;
 
-/** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\API<extended> */
+/** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\API<extended> 
+ *  @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Exception */
 class TestTinyTinyAPI extends Test\AbstractTest {
     protected $h;
     protected $feeds = [ // expected sample output of a feed list from the database, and the resultant expected transformation by the REST handler
@@ -253,6 +254,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         $in = [
             ['op' => "addCategory", 'sid' => "PriestsOfSyrinx", 'caption' => "Software"],
             ['op' => "addCategory", 'sid' => "PriestsOfSyrinx", 'caption' => "Hardware", 'parent_id' => 1],
+            ['op' => "addCategory", 'sid' => "PriestsOfSyrinx", 'caption' => "Hardware", 'parent_id' => 2112],
             ['op' => "addCategory", 'sid' => "PriestsOfSyrinx"],
             ['op' => "addCategory", 'sid' => "PriestsOfSyrinx", 'caption' => ""],
             ['op' => "addCategory", 'sid' => "PriestsOfSyrinx", 'caption' => "   "],
@@ -260,6 +262,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         $db = [
             ['name' => "Software", 'parent' => null],
             ['name' => "Hardware", 'parent' => 1],
+            ['name' => "Hardware", 'parent' => 2112],
         ];
         $out = [
             ['id' => 2, 'name' => "Software", 'parent' => null],
@@ -272,6 +275,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         Phake::when(Arsse::$db)->folderList(Arsse::$user->id, null, false)->thenReturn(new Result([$out[0], $out[2]]));
         Phake::when(Arsse::$db)->folderList(Arsse::$user->id, 1, false)->thenReturn(new Result([$out[1]]));
         // set up mocks that produce errors
+        Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $db[2])->thenThrow(new ExceptionInput("idMissing")); // parent folder does not exist
         Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, [])->thenThrow(new ExceptionInput("missing"));
         Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => "",    'parent' => null])->thenThrow(new ExceptionInput("missing"));
         Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => "   ", 'parent' => null])->thenThrow(new ExceptionInput("whitespace"));
@@ -287,11 +291,14 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
         Phake::verify(Arsse::$db)->folderList(Arsse::$user->id, null, false);
         Phake::verify(Arsse::$db)->folderList(Arsse::$user->id, 1, false);
+        // add a folder to a missing parent (silently fails)
+        $exp = $this->respGood(false);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[2]))));
         // add some invalid folders
         $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[2]))));
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[3]))));
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[4]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[5]))));
     }
 
     public function testRemoveACategory() {
@@ -397,6 +404,81 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[7]))));
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[8]))));
         Phake::verify(Arsse::$db, Phake::times(3))->folderPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
+    }
+
+    public function testAddASubscription() {
+        $in = [
+            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/0"],
+            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/1", 'category_id' => 42],
+            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/2", 'category_id' => 2112],
+            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/3"],
+            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://localhost:8000/Feed/Discovery/Valid"],
+            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://localhost:8000/Feed/Discovery/Invalid"],
+            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/6"],
+            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/7"],
+            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/8", 'category_id' => 47],
+            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/9", 'category_id' => 1],
+            // these don't even query the database as the input is syntactically invalid
+            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx"],
+            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/", 'login' => []],
+            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/", 'login' => "", 'password' => []],
+            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/", 'category_id' => -1],
+        ];
+        $db = [
+            [Arsse::$user->id, "http://example.com/0", "", ""],
+            [Arsse::$user->id, "http://example.com/1", "", ""],
+            [Arsse::$user->id, "http://example.com/2", "", ""],
+            [Arsse::$user->id, "http://example.com/3", "", ""],
+            [Arsse::$user->id, "http://localhost:8000/Feed/Discovery/Valid", "", ""],
+            [Arsse::$user->id, "http://localhost:8000/Feed/Discovery/Invalid", "", ""],
+            [Arsse::$user->id, "http://example.com/6", "", ""],
+            [Arsse::$user->id, "http://example.com/7", "", ""],
+            [Arsse::$user->id, "http://example.com/8", "", ""],
+            [Arsse::$user->id, "http://example.com/9", "", ""],
+        ];
+        $out = [
+            ['code' => 1, 'feed_id' => 2],
+            ['code' => 5, 'message' => (new \JKingWeb\Arsse\Feed\Exception("http://example.com/1", new \PicoFeed\Client\UnauthorizedException()))->getMessage()],
+            ['code' => 1, 'feed_id' => 0],
+            ['code' => 0, 'feed_id' => 3],
+            ['code' => 0, 'feed_id' => 1],
+            ['code' => 3, 'message' => (new \JKingWeb\Arsse\Feed\Exception("http://localhost:8000/Feed/Discovery/Invalid", new \PicoFeed\Reader\SubscriptionNotFoundException()))->getMessage()],
+            ['code' => 2, 'message' => (new \JKingWeb\Arsse\Feed\Exception("http://example.com/6", new \PicoFeed\Client\InvalidUrlException()))->getMessage()],
+            ['code' => 6, 'message' => (new \JKingWeb\Arsse\Feed\Exception("http://example.com/7", new \PicoFeed\Parser\MalformedXmlException()))->getMessage()],
+            ['code' => 1, 'feed_id' => 4],
+            ['code' => 0, 'feed_id' => 4],
+        ];
+        $list = [
+            ['id' => 1, 'url' => "http://localhost:8000/Feed/Discovery/Feed"],
+            ['id' => 2, 'url' => "http://example.com/0"],
+            ['id' => 3, 'url' => "http://example.com/3"],
+            ['id' => 4, 'url' => "http://example.com/9"],
+        ];
+        Phake::when(Arsse::$db)->subscriptionAdd(...$db[0])->thenReturn(2);
+        Phake::when(Arsse::$db)->subscriptionAdd(...$db[1])->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.com/1", new \PicoFeed\Client\UnauthorizedException()));
+        Phake::when(Arsse::$db)->subscriptionAdd(...$db[2])->thenReturn(2);
+        Phake::when(Arsse::$db)->subscriptionAdd(...$db[3])->thenThrow(new ExceptionInput("constraintViolation"));
+        Phake::when(Arsse::$db)->subscriptionAdd(...$db[4])->thenThrow(new ExceptionInput("constraintViolation"));
+        Phake::when(Arsse::$db)->subscriptionAdd(...$db[5])->thenThrow(new ExceptionInput("constraintViolation"));
+        Phake::when(Arsse::$db)->subscriptionAdd(...$db[6])->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.com/6", new \PicoFeed\Client\InvalidUrlException()));
+        Phake::when(Arsse::$db)->subscriptionAdd(...$db[7])->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.com/7", new \PicoFeed\Parser\MalformedXmlException()));
+        Phake::when(Arsse::$db)->subscriptionAdd(...$db[8])->thenReturn(4);
+        Phake::when(Arsse::$db)->subscriptionAdd(...$db[9])->thenThrow(new ExceptionInput("constraintViolation"));
+        Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 42)->thenReturn(['id' => 42]);
+        Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 47)->thenReturn(['id' => 47]);
+        Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 2112)->thenThrow(new ExceptionInput("subjectMissing"));
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything())->thenReturn(true);
+        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 4, $this->anything())->thenThrow(new ExceptionInput("idMissing"));
+        Phake::when(Arsse::$db)->subscriptionList(Arsse::$user->id)->thenReturn(new Result($list));
+        for ($a = 0; $a < (sizeof($in) - 4); $a++) {
+            $exp = $this->respGood($out[$a]);
+            $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[$a]))), "Failed test $a");
+        }
+        $exp = $this->respErr("INCORRECT_USAGE");
+        for ($a = (sizeof($in) - 4); $a < sizeof($in); $a++) {
+            $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[$a]))), "Failed test $a");
+        }
+        Phake::verify(Arsse::$db, Phake::times(0))->subscriptionPropertiesSet(Arsse::$user->id, 4, ['folder' => 1]);
     }
 
     public function testRemoveASubscription() {
