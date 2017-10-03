@@ -609,4 +609,24 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         $this->assertEquals($this->respGood($exp[0]), $this->h->dispatch(new Request("POST", "", json_encode($in))));
         $this->assertEquals($this->respGood($exp[1]), $this->h->dispatch(new Request("POST", "", json_encode($in))));
     }
+
+    public function testUpdateAFeed() {
+        $in = [
+            ['op' => "updateFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 1],
+            ['op' => "updateFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2],
+            ['op' => "updateFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -1],
+            ['op' => "updateFeed", 'sid' => "PriestsOfSyrinx"],
+        ];
+        Phake::when(Arsse::$db)->feedUpdate(11)->thenReturn(true);
+        Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 1)->thenReturn(['id' => 1, 'feed' => 11]);
+        Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 2)->thenThrow(new ExceptionInput("subjectMissing"));
+        $exp = $this->respGood(['status' => "OK"]);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
+        Phake::verify(Arsse::$db)->feedUpdate(11);
+        $exp = $this->respErr("FEED_NOT_FOUND");
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
+        $exp = $this->respErr("INCORRECT_USAGE");
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[2]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[3]))));
+    }
 }

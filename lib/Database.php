@@ -497,7 +497,7 @@ class Database {
         $q = new Query(
             "SELECT 
                 arsse_subscriptions.id as id,
-                url,favicon,source,folder,pinned,err_count,err_msg,order_type,added,
+                feed,url,favicon,source,folder,pinned,err_count,err_msg,order_type,added,
                 topmost.top as top_folder,
                 coalesce(arsse_subscriptions.title, arsse_feeds.title) as title,
                 (SELECT count(*) from arsse_articles where feed is arsse_subscriptions.feed) - (SELECT count(*) from arsse_marks where subscription is arsse_subscriptions.id and read is 1) as unread

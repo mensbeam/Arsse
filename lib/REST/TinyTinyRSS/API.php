@@ -342,7 +342,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     public function opRenameFeed(array $data) {
         if (!isset($data['feed_id']) || !ValueInfo::id($data['feed_id']) || !isset($data['caption'])) {
-            // if the feed is invalid, throw an error
+            // if the feed is invalid or there is no caption, throw an error
             throw new Exception("INCORRECT_USAGE");
         }
         $info = ValueInfo::str($data['caption']);
@@ -378,5 +378,18 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             'daemon_is_running' => Service::hasCheckedIn(),
             'num_feeds' => Arsse::$db->subscriptionCount(Arsse::$user->id),
         ];
+    }
+
+    public function opUpdateFeed(array $data): array {
+        if (!isset($data['feed_id']) || !ValueInfo::id($data['feed_id'])) {
+            // if the feed is invalid, throw an error
+            throw new Exception("INCORRECT_USAGE");
+        }
+        try {
+            Arsse::$db->feedUpdate(Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, (int) $data['feed_id'])['feed']);
+        } catch(ExceptionInput $e) {
+            throw new Exception("FEED_NOT_FOUND");
+        }
+        return ['status' => "OK"];
     }
 }
