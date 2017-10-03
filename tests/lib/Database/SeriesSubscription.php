@@ -282,6 +282,22 @@ trait SeriesSubscription {
         Arsse::$db->subscriptionList($this->user);
     }
 
+    public function testCountSubscriptions() {
+        $this->assertSame(2, Arsse::$db->subscriptionCount($this->user));
+        $this->assertSame(1, Arsse::$db->subscriptionCount($this->user, 2));
+    }
+
+    public function testCountSubscriptionsInAMissingFolder() {
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Arsse::$db->subscriptionCount($this->user, 4);
+    }
+
+    public function testCountSubscriptionsWithoutAuthority() {
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Arsse::$db->subscriptionCount($this->user);
+    }
+
     public function testGetThePropertiesOfAMissingSubscription() {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesGet($this->user, 2112);

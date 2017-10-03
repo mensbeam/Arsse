@@ -361,4 +361,22 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         return null;
     }
+
+    public function opGetUnread(array $data): array {
+        // simply sum the unread count of each subscription
+        $out = 0;
+        foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $sub) {
+            $out += $sub['unread'];
+        }
+        return ['unread' => $out];
+    }
+
+    public function opGetConfig(array $data): array {
+        return [
+            'icons_dir' => "feed-icons",
+            'icons_url' => "feed-icons",
+            'daemon_is_running' => Service::hasCheckedIn(),
+            'num_feeds' => Arsse::$db->subscriptionCount(Arsse::$user->id),
+        ];
+    }
 }

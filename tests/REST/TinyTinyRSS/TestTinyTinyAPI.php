@@ -583,4 +583,30 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[8]))));
         Phake::verify(Arsse::$db, Phake::times(3))->subscriptionPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
     }
+
+    public function testRetrieveTheGlobalUnreadCount() {
+        $in = ['op' => "getUnread", 'sid' => "PriestsOfSyrinx"];
+        Phake::when(Arsse::$db)->subscriptionList(Arsse::$user->id)->thenReturn(new Result([
+            ['id' => 1, 'unread' => 2112],
+            ['id' => 2, 'unread' => 42],
+            ['id' => 3, 'unread' => 47],
+        ]));
+        $exp = $this->respGood(['unread' => 2112 + 42 + 47]);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in))));
+    }
+
+    public function testRetrieveTheServerConfiguration () {
+        $in = ['op' => "getConfig", 'sid' => "PriestsOfSyrinx"];
+        $interval = Service::interval();
+        $valid = (new \DateTimeImmutable("now", new \DateTimezone("UTC")))->sub($interval);
+        $invalid = $valid->sub($interval)->sub($interval);
+        Phake::when(Arsse::$db)->metaGet("service_last_checkin")->thenReturn(Date::transform($valid, "sql"))->thenReturn(Date::transform($invalid, "sql"));
+        Phake::when(Arsse::$db)->subscriptionCount(Arsse::$user->id)->thenReturn(12)->thenReturn(2);
+        $exp = [
+            ['icons_dir' => "feed-icons", 'icons_url' => "feed-icons", 'daemon_is_running' => true, 'num_feeds' => 12],
+            ['icons_dir' => "feed-icons", 'icons_url' => "feed-icons", 'daemon_is_running' => false, 'num_feeds' => 2],
+        ];
+        $this->assertEquals($this->respGood($exp[0]), $this->h->dispatch(new Request("POST", "", json_encode($in))));
+        $this->assertEquals($this->respGood($exp[1]), $this->h->dispatch(new Request("POST", "", json_encode($in))));
+    }
 }

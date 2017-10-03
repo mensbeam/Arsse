@@ -524,6 +524,24 @@ class Database {
         return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
     }
 
+    public function subscriptionCount(string $user, $folder = null): int {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        // validate inputs
+        $folder = $this->folderValidateId($user, $folder)['id'];
+        // create a complex query
+        $q = new Query("SELECT count(*) from arsse_subscriptions");
+        $q->setWhere("owner is ?", "str", $user);
+        if ($folder) {
+            // if it does exist, add a common table expression to list it and its children so that we select from the entire subtree
+            $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on parent is folder", "int", $folder);
+            // add a suitable WHERE condition
+            $q->setWhere("folder in (select folder from folders)");
+        }
+        return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
+    }
+
     public function subscriptionRemove(string $user, $id): bool {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
