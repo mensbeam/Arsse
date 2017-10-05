@@ -333,6 +333,9 @@ trait SeriesSubscription {
         ]);
         $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com",2,null,3,0,0];
         $this->compareExpectations($state);
+        // making no changes is a valid result
+        Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['unhinged' => true]);
+        $this->compareExpectations($state);
     }
 
     public function testMoveASubscriptionToAMissingFolder() {

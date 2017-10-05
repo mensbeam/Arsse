@@ -20,6 +20,8 @@ Protocol difference so far:
     - TT-RSS accepts whitespace-only names; we do not
     - TT-RSS allows two folders to share the same name under the same parent; we do not
     - Session lifetime is much shorter by default (does TT-RSS even expire sessions?)
+    - Categories and feeds will always be sorted alphabetically (the protocol does not allow for clients to re-order)
+    - Label IDs decrease from -11 instead of from -1025
 
 */
 
@@ -391,5 +393,61 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             throw new Exception("FEED_NOT_FOUND");
         }
         return ['status' => "OK"];
+    }
+
+    protected function labelIn($id): int {
+        if (!(ValueInfo::int($id) & ValueInfo::NEG) || $id > -11) {
+            throw new Exception("INCORRECT_USAGE");
+        }
+        return (abs($id) - 10);
+    }
+
+    protected function labelOut(int $id): int {
+        return ($id * -1 - 10);
+    }
+
+    public function opAddLabel(array $data) {
+        $in = [
+            'name'   => isset($data['caption']) ? $data['caption'] : "",
+        ];
+        try {
+            return $this->labelOut(Arsse::$db->labelAdd(Arsse::$user->id, $in));
+        } catch (ExceptionInput $e) {
+            switch ($e->getCode()) {
+                case 10236: // label already exists
+                    // retrieve the ID of the existing label; duplicating a label silently returns the existing one
+                     return $this->labelOut(Arsse::$db->labelPropertiesGet(Arsse::$user->id, $in['name'], true)['id']);
+                default: // other errors related to input
+                    throw new Exception("INCORRECT_USAGE");
+            }
+        }
+    }
+
+    public function opRemoveLabel(array $data) {
+        // normalize the label ID; missing or invalid IDs are rejected
+        $id = $this->labelIn(isset($data['label_id']) ? $data['label_id'] : 0);
+        try {
+            // attempt to remove the label
+            Arsse::$db->labelRemove(Arsse::$user->id, $id);
+        } catch(ExceptionInput $e) {
+            // ignore all errors
+        }
+        return null;
+    }
+
+    public function opRenameLabel(array $data) {
+        // normalize input; missing or invalid IDs are rejected
+        $id = $this->labelIn(isset($data['label_id']) ? $data['label_id'] : 0);
+        $name = isset($data['caption']) ? $data['caption'] : "";
+        try {
+            // try to rename the folder
+            Arsse::$db->labelPropertiesSet(Arsse::$user->id, $id, ['name' => $name]);
+        } catch(ExceptionInput $e) {
+            if ($e->getCode()==10237) {
+                // if the supplied ID was invalid, report an error; other errors are to be ignored
+                throw new Exception("INCORRECT_USAGE");
+            }
+        }
+        return null;
     }
 }

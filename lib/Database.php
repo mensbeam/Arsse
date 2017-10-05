@@ -204,6 +204,10 @@ class Database {
             "name" => "str",
         ];
         list($setClause, $setTypes, $setValues) = $this->generateSet($properties, $valid);
+        if (!$setClause) {
+            // if no changes would actually be applied, just return
+            return $this->userPropertiesGet($user);
+        }
         $this->db->prepare("UPDATE arsse_users set $setClause where id is ?", $setTypes, "str")->run($setValues, $user);
         return $this->userPropertiesGet($user);
     }
@@ -314,7 +318,7 @@ class Database {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         if (!ValueInfo::id($id)) {
-            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id, 'type' => "int > 0"]);
+            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "folder", 'type' => "int > 0"]);
         }
         $changes = $this->db->prepare("DELETE FROM arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $id)->changes();
         if (!$changes) {
@@ -328,7 +332,7 @@ class Database {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         if (!ValueInfo::id($id)) {
-            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id, 'type' => "int > 0"]);
+            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "folder", 'type' => "int > 0"]);
         }
         $props = $this->db->prepare("SELECT id,name,parent from arsse_folders where owner is ? and id is ?", "str", "int")->run($user, $id)->getRow();
         if (!$props) {
@@ -362,7 +366,7 @@ class Database {
             // if a new parent is specified, validate it
             $in['parent'] = $this->folderValidateMove($user, (int) $id, $data['parent']);
         } else {
-            // if neither was specified, do nothing
+            // if no changes would actually be applied, just return
             return false;
         }
         $valid = [
@@ -547,7 +551,7 @@ class Database {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         if (!ValueInfo::id($id)) {
-            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id, 'type' => "int > 0"]);
+            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'type' => "int > 0"]);
         }
         $changes = $this->db->prepare("DELETE from arsse_subscriptions where owner is ? and id is ?", "str", "int")->run($user, $id)->changes();
         if (!$changes) {
@@ -561,7 +565,7 @@ class Database {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         if (!ValueInfo::id($id)) {
-            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id, 'type' => "int > 0"]);
+            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'type' => "int > 0"]);
         }
         // disable authorization checks for the list call
         Arsse::$user->authorizationEnabled(false);
@@ -604,14 +608,18 @@ class Database {
             'pinned'     => "strict bool",
         ];
         list($setClause, $setTypes, $setValues) = $this->generateSet($data, $valid);
-        $out = (bool) $this->db->prepare("UPDATE arsse_subscriptions set $setClause where owner is ? and id is ?", $setTypes, "str", "int")->run($setValues, $user, $id)->changes();
+        if (!$setClause) {
+            // if no changes would actually be applied, just return
+            return false;
+        }
+        $out = (bool) $this->db->prepare("UPDATE arsse_subscriptions set $setClause, modified = CURRENT_TIMESTAMP where owner is ? and id is ?", $setTypes, "str", "int")->run($setValues, $user, $id)->changes();
         $tr->commit();
         return $out;
     }
 
     protected function subscriptionValidateId(string $user, $id, bool $subject = false): array {
         if (!ValueInfo::id($id)) {
-            throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "feed", 'id' => $id, 'type' => "int > 0"]);
+            throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "feed", 'type' => "int > 0"]);
         }
         $out = $this->db->prepare("SELECT id,feed from arsse_subscriptions where id is ? and owner is ?", "int", "str")->run($id, $user)->getRow();
         if (!$out) {
@@ -1051,7 +1059,7 @@ class Database {
 
     protected function articleValidateId(string $user, $id): array {
         if (!ValueInfo::id($id)) {
-            throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "article", 'id' => $id, 'type' => "int > 0"]); // @codeCoverageIgnore
+            throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "article", 'type' => "int > 0"]); // @codeCoverageIgnore
         }
         $out = $this->db->prepare(
             "SELECT 
@@ -1072,7 +1080,7 @@ class Database {
 
     protected function articleValidateEdition(string $user, int $id): array {
         if (!ValueInfo::id($id)) {
-            throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "edition", 'id' => $id, 'type' => "int > 0"]); // @codeCoverageIgnore
+            throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "edition", 'type' => "int > 0"]); // @codeCoverageIgnore
         }
         $out = $this->db->prepare(
             "SELECT 
@@ -1111,5 +1119,121 @@ class Database {
             $q->setCTE("feeds(feed)", "SELECT feed from arsse_subscriptions join user on user is owner", [], [], "join feeds on arsse_articles.feed is feeds.feed");
         }
         return (int) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
+    }
+
+    public function labelAdd(string $user, array $data): int {
+        // if the user isn't authorized to perform this action then throw an exception.
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        // validate the label name
+        $name = array_key_exists("name", $data) ? $data['name'] : "";
+        $this->labelValidateName($name, true);
+        // perform the insert
+        return $this->db->prepare("INSERT INTO arsse_labels(owner,name) values(?,?)", "str", "str")->run($user, $name)->lastId();
+    }
+
+    public function labelList(string $user, bool $includeEmpty = true): Db\Result {
+        // if the user isn't authorized to perform this action then throw an exception.
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        return $this->db->prepare(
+            "SELECT 
+                id,name,
+                (select count(*) from arsse_label_members where owner is ? and label is arsse_labels.id) as articles
+            FROM arsse_labels where owner is ? and articles >= ?
+            ", "str", "str", "int"
+        )->run($user, $user, !$includeEmpty);
+    }
+
+    public function labelRemove(string $user, $id, bool $byName = false): bool {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        if (!$byName && !ValueInfo::id($id)) {
+            // if we're not referring to a label by name and the ID is invalid, throw an exception
+            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "label", 'type' => "int > 0"]);
+        } elseif ($byName && !(ValueInfo::str($id) & ValueInfo::VALID)) {
+            // otherwise if we are referring to a label by name but the ID is not a string, also throw an exception
+            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "label", 'type' => "string"]);
+        }
+        $field = $byName ? "name" : "id";
+        $type = $byName ? "str" : "int";
+        $changes = $this->db->prepare("DELETE FROM arsse_labels where owner is ? and $field is ?", "str", $type)->run($user, $id)->changes();
+        if (!$changes) {
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "label", 'id' => $id]);
+        }
+        return true;
+    }
+
+    public function labelPropertiesGet(string $user, $id, bool $byName = false): array {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        if (!$byName && !ValueInfo::id($id)) {
+            // if we're not referring to a label by name and the ID is invalid, throw an exception
+            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "label", 'type' => "int > 0"]);
+        } elseif ($byName && !(ValueInfo::str($id) & ValueInfo::VALID)) {
+            // otherwise if we are referring to a label by name but the ID is not a string, also throw an exception
+            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "label", 'type' => "string"]);
+        }
+        $field = $byName ? "name" : "id";
+        $type = $byName ? "str" : "int";
+        $out = $this->db->prepare(
+            "SELECT 
+                id,name,
+                (select count(*) from arsse_label_members where owner is ? and label is arsse_labels.id) as articles
+            FROM arsse_labels where $field is ? and owner is ?
+            ", "str", $type, "str"
+        )->run($user, $id, $user)->getRow();
+        if (!$out) {
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "label", 'id' => $id]);
+        }
+        return $out;
+    }
+
+    public function labelPropertiesSet(string $user, $id, array $data, bool $byName = false): bool {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        if (!$byName && !ValueInfo::id($id)) {
+            // if we're not referring to a label by name and the ID is invalid, throw an exception
+            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "label", 'type' => "int > 0"]);
+        } elseif ($byName && !(ValueInfo::str($id) & ValueInfo::VALID)) {
+            // otherwise if we are referring to a label by name but the ID is not a string, also throw an exception
+            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "label", 'type' => "string"]);
+        }
+        if (isset($data['name'])) {
+            $this->labelValidateName($data['name']);
+        }
+        $field = $byName ? "name" : "id";
+        $type = $byName ? "str" : "int";
+        $valid = [
+            'name'      => "str",
+        ];
+        list($setClause, $setTypes, $setValues) = $this->generateSet($data, $valid);
+        if (!$setClause) {
+            // if no changes would actually be applied, just return
+            return false;
+        }
+        $out = (bool) $this->db->prepare("UPDATE arsse_labels set $setClause, modified = CURRENT_TIMESTAMP where owner is ? and $field is ?", $setTypes, "str", $type)->run($setValues, $user, $id)->changes();
+        if (!$out) {
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "label", 'id' => $id]);
+        }
+        return $out;
+    }
+
+    protected function labelValidateName($name): bool {
+        $info = ValueInfo::str($name);
+        if ($info & (ValueInfo::NULL | ValueInfo::EMPTY)) {
+            throw new Db\ExceptionInput("missing", ["action" => $this->caller(), "field" => "name"]);
+        } elseif ($info & ValueInfo::WHITE) {
+            throw new Db\ExceptionInput("whitespace", ["action" => $this->caller(), "field" => "name"]);
+        } elseif (!($info & ValueInfo::VALID)) {
+            throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "name", 'type' => "string"]);
+        } else {
+            return true;
+        }
     }
 }

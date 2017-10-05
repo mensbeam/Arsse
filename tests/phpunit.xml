@@ -62,6 +62,7 @@
         <file>Db/SQLite3/Database/TestDatabaseFeedSQLite3.php</file>
         <file>Db/SQLite3/Database/TestDatabaseSubscriptionSQLite3.php</file>
         <file>Db/SQLite3/Database/TestDatabaseArticleSQLite3.php</file>
+        <file>Db/SQLite3/Database/TestDatabaseLabelSQLite3.php</file>
         <file>Db/SQLite3/Database/TestDatabaseCleanupSQLite3.php</file>
     </testsuite>
     <testsuite name="Controllers">

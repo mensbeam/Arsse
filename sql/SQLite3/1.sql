@@ -1,8 +1,8 @@
 -- Sessions for Tiny Tiny RSS (and possibly others)
 create table arsse_sessions (
     id text primary key,                                                                    -- UUID of session
-    created datetime not null default CURRENT_TIMESTAMP,                                    -- Session start timestamp
-    expires datetime not null,                                                              -- Time at which session is no longer valid
+    created text not null default CURRENT_TIMESTAMP,                                        -- Session start timestamp
+    expires text not null,                                                                  -- Time at which session is no longer valid
     user text not null references arsse_users(id) on delete cascade on update cascade       -- user associated with the session
 ) without rowid;
 
@@ -11,8 +11,7 @@ create table arsse_labels (
     id integer primary key,                                                                 -- numeric ID
     owner text not null references arsse_users(id) on delete cascade on update cascade,     -- owning user
     name text not null,                                                                     -- label text
-    foreground text,                                                                        -- foreground (text) colour in hexdecimal RGB
-    background text,                                                                        -- background colour in hexadecimal RGB
+    modified text not null default CURRENT_TIMESTAMP,                                       -- time at which the label was last modified
     unique(owner,name)
 );
 

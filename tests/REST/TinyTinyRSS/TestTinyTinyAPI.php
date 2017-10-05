@@ -629,4 +629,123 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[2]))));
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[3]))));
     }
+
+    public function testAddALabel() {
+        $in = [
+            ['op' => "addLabel", 'sid' => "PriestsOfSyrinx", 'caption' => "Software"],
+            ['op' => "addLabel", 'sid' => "PriestsOfSyrinx", 'caption' => "Hardware",],
+            ['op' => "addLabel", 'sid' => "PriestsOfSyrinx"],
+            ['op' => "addLabel", 'sid' => "PriestsOfSyrinx", 'caption' => ""],
+            ['op' => "addLabel", 'sid' => "PriestsOfSyrinx", 'caption' => "   "],
+        ];
+        $db = [
+            ['name' => "Software"],
+            ['name' => "Hardware"],
+        ];
+        $out = [
+            ['id' => 2, 'name' => "Software"],
+            ['id' => 3, 'name' => "Hardware"],
+            ['id' => 1, 'name' => "Politics"],
+        ];
+        // set of various mocks for testing
+        Phake::when(Arsse::$db)->labelAdd(Arsse::$user->id, $db[0])->thenReturn(2)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
+        Phake::when(Arsse::$db)->labelAdd(Arsse::$user->id, $db[1])->thenReturn(3)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
+        Phake::when(Arsse::$db)->labelPropertiesGet(Arsse::$user->id, "Software", true)->thenReturn($out[0]);
+        Phake::when(Arsse::$db)->labelPropertiesGet(Arsse::$user->id, "Hardware", true)->thenReturn($out[1]);
+        // set up mocks that produce errors
+        Phake::when(Arsse::$db)->labelAdd(Arsse::$user->id, [])->thenThrow(new ExceptionInput("missing"));
+        Phake::when(Arsse::$db)->labelAdd(Arsse::$user->id, ['name' => ""])->thenThrow(new ExceptionInput("missing"));
+        Phake::when(Arsse::$db)->labelAdd(Arsse::$user->id, ['name' => "   "])->thenThrow(new ExceptionInput("whitespace"));
+        // correctly add two labels
+        $exp = $this->respGood(-12);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
+        $exp = $this->respGood(-13);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
+        // attempt to add the two labels again
+        $exp = $this->respGood(-12);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
+        $exp = $this->respGood(-13);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
+        Phake::verify(Arsse::$db)->labelPropertiesGet(Arsse::$user->id, "Software", true);
+        Phake::verify(Arsse::$db)->labelPropertiesGet(Arsse::$user->id, "Hardware", true);
+        // add some invalid labels
+        $exp = $this->respErr("INCORRECT_USAGE");
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[2]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[3]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[4]))));
+    }
+
+    public function testRemoveALabel() {
+        $in = [
+            ['op' => "removeLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -42],
+            ['op' => "removeLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -2112],
+            ['op' => "removeLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => 1],
+            ['op' => "removeLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => 0],
+            ['op' => "removeLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -10],
+        ];
+        Phake::when(Arsse::$db)->labelRemove(Arsse::$user->id, $this->anything())->thenThrow(new ExceptionInput("subjectMissing"));
+        Phake::when(Arsse::$db)->labelRemove(Arsse::$user->id, 32)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
+        // succefully delete a label
+        $exp = $this->respGood();
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
+        // try deleting it again (this should silently fail)
+        $exp = $this->respGood();
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
+        // delete a label which does not exist (this should also silently fail)
+        $exp = $this->respGood();
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
+        // delete some invalid labels (causes an error)
+        $exp = $this->respErr("INCORRECT_USAGE");
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[2]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[3]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[4]))));
+        Phake::verify(Arsse::$db, Phake::times(2))->labelRemove(Arsse::$user->id, 32);
+        Phake::verify(Arsse::$db)->labelRemove(Arsse::$user->id, 2102);
+    }
+
+    public function testRenameALabel() {
+        $in = [
+            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -42, 'caption' => "Ook"],
+            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -2112, 'caption' => "Eek"],
+            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -42, 'caption' => "Eek"],
+            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -42, 'caption' => ""],
+            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -42, 'caption' => " "],
+            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -42],
+            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -1, 'caption' => "Ook"],
+            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'caption' => "Ook"],
+            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx"],
+        ];
+        $db = [
+            [Arsse::$user->id, 32, ['name' => "Ook"]],
+            [Arsse::$user->id, 2102, ['name' => "Eek"]],
+            [Arsse::$user->id, 32, ['name' => "Eek"]],
+            [Arsse::$user->id, 32, ['name' => ""]],
+            [Arsse::$user->id, 32, ['name' => " "]],
+            [Arsse::$user->id, 32, ['name' => ""]],
+        ];
+        Phake::when(Arsse::$db)->labelPropertiesSet(...$db[0])->thenReturn(true);
+        Phake::when(Arsse::$db)->labelPropertiesSet(...$db[1])->thenThrow(new ExceptionInput("subjectMissing"));
+        Phake::when(Arsse::$db)->labelPropertiesSet(...$db[2])->thenThrow(new ExceptionInput("constraintViolation"));
+        Phake::when(Arsse::$db)->labelPropertiesSet(...$db[3])->thenThrow(new ExceptionInput("typeViolation"));
+        Phake::when(Arsse::$db)->labelPropertiesSet(...$db[4])->thenThrow(new ExceptionInput("typeViolation"));
+        Phake::when(Arsse::$db)->labelPropertiesSet(...$db[5])->thenThrow(new ExceptionInput("typeViolation"));
+        // succefully rename a label
+        $exp = $this->respGood();
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
+        // rename a label which does not exist (this should silently fail)
+        $exp = $this->respGood();
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
+        // rename a label causing a duplication (this should also silently fail)
+        $exp = $this->respGood();
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[2]))));
+        // all the rest should cause errors
+        $exp = $this->respErr("INCORRECT_USAGE");
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[3]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[4]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[5]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[6]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[7]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[8]))));
+        Phake::verify(Arsse::$db, Phake::times(6))->labelPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
+    }
 }
