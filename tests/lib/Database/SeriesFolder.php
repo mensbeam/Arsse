@@ -109,16 +109,16 @@ trait SeriesFolder {
 
     public function testListRootFolders() {
         $exp = [
-            ['id' => 5, 'name' => "Politics",   'parent' => null],
-            ['id' => 1, 'name' => "Technology", 'parent' => null],
+            ['id' => 5, 'name' => "Politics",   'parent' => null, 'children' => 0],
+            ['id' => 1, 'name' => "Technology", 'parent' => null, 'children' => 2],
         ];
-        $this->assertSame($exp, Arsse::$db->folderList("john.doe@example.com", null, false)->getAll());
+        $this->assertResult($exp, Arsse::$db->folderList("john.doe@example.com", null, false));
         $exp = [
-            ['id' => 4, 'name' => "Politics",   'parent' => null],
+            ['id' => 4, 'name' => "Politics",   'parent' => null, 'children' => 0],
         ];
-        $this->assertSame($exp, Arsse::$db->folderList("jane.doe@example.com", null, false)->getAll());
+        $this->assertResult($exp, Arsse::$db->folderList("jane.doe@example.com", null, false));
         $exp = [];
-        $this->assertSame($exp, Arsse::$db->folderList("admin@example.net", null, false)->getAll());
+        $this->assertResult($exp, Arsse::$db->folderList("admin@example.net", null, false));
         Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderList");
         Phake::verify(Arsse::$user)->authorize("jane.doe@example.com", "folderList");
         Phake::verify(Arsse::$user)->authorize("admin@example.net", "folderList");
@@ -126,21 +126,21 @@ trait SeriesFolder {
 
     public function testListFoldersRecursively() {
         $exp = [
-            ['id' => 5, 'name' => "Politics",   'parent' => null],
-            ['id' => 6, 'name' => "Politics",   'parent' => 2],
-            ['id' => 3, 'name' => "Rocketry",   'parent' => 1],
-            ['id' => 2, 'name' => "Software",   'parent' => 1],
-            ['id' => 1, 'name' => "Technology", 'parent' => null],
+            ['id' => 5, 'name' => "Politics",   'parent' => null, 'children' => 0],
+            ['id' => 6, 'name' => "Politics",   'parent' => 2, 'children' => 0],
+            ['id' => 3, 'name' => "Rocketry",   'parent' => 1, 'children' => 0],
+            ['id' => 2, 'name' => "Software",   'parent' => 1, 'children' => 1],
+            ['id' => 1, 'name' => "Technology", 'parent' => null, 'children' => 2],
         ];
-        $this->assertSame($exp, Arsse::$db->folderList("john.doe@example.com", null, true)->getAll());
+        $this->assertResult($exp, Arsse::$db->folderList("john.doe@example.com", null, true));
         $exp = [
-            ['id' => 6, 'name' => "Politics",   'parent' => 2],
-            ['id' => 3, 'name' => "Rocketry",   'parent' => 1],
-            ['id' => 2, 'name' => "Software",   'parent' => 1],
+            ['id' => 6, 'name' => "Politics",   'parent' => 2, 'children' => 0],
+            ['id' => 3, 'name' => "Rocketry",   'parent' => 1, 'children' => 0],
+            ['id' => 2, 'name' => "Software",   'parent' => 1, 'children' => 1],
         ];
-        $this->assertSame($exp, Arsse::$db->folderList("john.doe@example.com", 1, true)->getAll());
+        $this->assertResult($exp, Arsse::$db->folderList("john.doe@example.com", 1, true));
         $exp = [];
-        $this->assertSame($exp, Arsse::$db->folderList("jane.doe@example.com", 4, true)->getAll());
+        $this->assertResult($exp, Arsse::$db->folderList("jane.doe@example.com", 4, true));
         Phake::verify(Arsse::$user, Phake::times(2))->authorize("john.doe@example.com", "folderList");
         Phake::verify(Arsse::$user)->authorize("jane.doe@example.com", "folderList");
     }

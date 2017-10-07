@@ -1,5 +1,9 @@
 <?php
 return [
+    'API.TTRSS.Category.Uncategorized'                                     => 'Uncategorized',
+    'API.TTRSS.Category.Special'                                           => 'Special', 
+    'API.TTRSS.Category.Labels'                                            => 'Labels', 
+
     'Driver.Db.SQLite3.Name'                                               => 'SQLite 3',
     'Driver.Service.Curl.Name'                                             => 'HTTP (curl)',
     'Driver.Service.Internal.Name'                                         => 'Internal',

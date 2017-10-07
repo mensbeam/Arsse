@@ -6,6 +6,7 @@ use JKingWeb\Arsse\Feed;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Service;
+use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\Context;
 use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\AbstractException;
@@ -145,6 +146,80 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function opIsLoggedIn(array $data): array {
         // session validity is already checked by the dispatcher, so we need only return true
         return ['status' => true];
+    }
+
+    public function opGetCategories(array $data): array {
+        // normalize input
+        $all = isset($data['include_empty']) ? ValueInfo::bool($data['include_empty'], false) : false;
+        $read = !(isset($data['unread_only']) ? ValueInfo::bool($data['unread_only'], false) : false);
+        $deep = !(isset($data['enable_nested']) ? ValueInfo::bool($data['enable_nested'], false) : false);
+        $user = Arsse::$user->id;
+        // for each category, add the ID to a lookup table, set the number of unread and feeds to zero, and assign an increasing order index
+        $cats = Arsse::$db->folderList($user, null, $deep)->getAll();
+        $map = [];
+        for ($a = 0; $a < sizeof($cats); $a++) {
+            $map[$cats[$a]['id']] = $a;
+            $cats[$a]['unread'] = 0;
+            $cats[$a]['feeds'] = 0;
+            $cats[$a]['order'] = $a + 1;
+        }
+        // add the "Uncategorized", "Special", and "Labels" virtual categories to the list
+        $map[0] = sizeof($cats);
+        $cats[] = ['id' => 0, 'name' => Arsse::$lang->msg("API.TTRSS.Category.Uncategorized"), 'children' => 0, 'unread' => 0, 'feeds' => 0];
+        $map[-1] = sizeof($cats);
+        $cats[] = ['id' => -1, 'name' => Arsse::$lang->msg("API.TTRSS.Category.Special"), 'children' => 0, 'unread' => 0, 'feeds' => 6];
+        $map[-2] = sizeof($cats);
+        $cats[] = ['id' => -2, 'name' => Arsse::$lang->msg("API.TTRSS.Category.Labels"), 'children' => 0, 'unread' => 0, 'feeds' => 0];
+        // for each subscription, add the unread count to its category, and increment the category's feed count
+        $subs = Arsse::$db->subscriptionList($user);
+        foreach ($subs as $sub) {
+            // note we use top_folder if we're in "nested" mode
+            $f = $map[(int) ($deep ? $sub['folder'] : $sub['top_folder'])];
+            $cats[$f]['unread'] += $sub['unread'];
+            $cats[$f]['feeds'] += 1;
+        }
+        // for each label, add the unread count to the labels category, and increment the labels category's feed count
+        $labels = Arsse::$db->labelList($user);
+        $f = $map[-2];
+        foreach ($labels as $label) {
+            $cats[$f]['unread'] += $label['articles'] - $label['read'];
+            $cats[$f]['feeds'] += 1;
+        }
+        // get the unread counts for the special feeds
+        // FIXME: this is pretty inefficient
+        $f = $map[-1];
+        $cats[$f]['unread'] += Arsse::$db->articleCount($user, (new Context)->unread(true)->starred(true)); // starred
+        $cats[$f]['unread'] += Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H"))); // fresh
+        if (!$read) {
+            // if we're only including unread entries, remove any categories with zero unread items (this will by definition also exclude empties)
+            $count = sizeof($cats);
+            for ($a = 0; $a < $count; $a++) {
+                if (!$cats[$a]['unread']) {
+                    unset($cats[$a]);
+                }
+            }
+            $cats = array_values($cats);
+        } elseif (!$all) {
+            // otherwise if we're not including empty entries, remove categories with no children and no feeds
+            $count = sizeof($cats);
+            for ($a = 0; $a < $count; $a++) {
+                if (($cats[$a]['children'] + $cats[$a]['feeds']) < 1) {
+                    unset($cats[$a]);
+                }
+            }
+            $cats = array_values($cats);
+        }
+        // transform the result and return
+        $out = [];
+        for ($a = 0; $a < sizeof($cats); $a++) {
+            $out[] = $this->fieldMapNames($cats[$a], [
+                'id'       => "id",
+                'title'    => "name",
+                'unread'   => "unread",
+                'order_id' => "order",
+            ]);
+        }
+        return $out;
     }
 
     public function opAddCategory(array $data) {

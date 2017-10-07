@@ -358,13 +358,13 @@ trait SeriesLabel {
             ['id' => 2, 'name' => "Fascinating", 'articles' => 0],
             ['id' => 1, 'name' => "Interesting", 'articles' => 0],
         ];
-        $this->assertSame($exp, Arsse::$db->labelList("john.doe@example.com")->getAll());
+        $this->assertResult($exp, Arsse::$db->labelList("john.doe@example.com"));
         $exp = [
             ['id' => 3, 'name' => "Boring",   'articles' => 0],
         ];
-        $this->assertSame($exp, Arsse::$db->labelList("jane.doe@example.com")->getAll());
+        $this->assertResult($exp, Arsse::$db->labelList("jane.doe@example.com"));
         $exp = [];
-        $this->assertSame($exp, Arsse::$db->labelList("admin@example.net")->getAll());
+        $this->assertResult($exp, Arsse::$db->labelList("admin@example.net"));
         Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "labelList");
         Phake::verify(Arsse::$user)->authorize("jane.doe@example.com", "labelList");
         Phake::verify(Arsse::$user)->authorize("admin@example.net", "labelList");
