@@ -475,7 +475,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
             'newestItemId' => 4758915,
         ];
         Phake::when(Arsse::$db)->subscriptionList(Arsse::$user->id)->thenReturn(new Result([]))->thenReturn(new Result($this->feeds['db']));
-        Phake::when(Arsse::$db)->articleStarredCount(Arsse::$user->id)->thenReturn(0)->thenReturn(5);
+        Phake::when(Arsse::$db)->articleCount(Arsse::$user->id, (new Context)->starred(true))->thenReturn(0)->thenReturn(5);
         Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id)->thenReturn(0)->thenReturn(4758915);
         $exp = new Response(200, $exp1);
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds")));

@@ -10,6 +10,9 @@ class Query {
     protected $tCTE = []; // Common table expression type bindings
     protected $vCTE = []; // Common table expression binding values
     protected $jCTE = []; // Common Table Expression joins
+    protected $qJoin = []; // JOIN clause components
+    protected $tJoin = []; // JOIN clause type bindings
+    protected $vJoin = []; // JOIN clause binding values
     protected $qWhere = []; // WHERE clause components
     protected $tWhere = []; // WHERE clause type bindings
     protected $vWhere = []; // WHERE clause binding values
@@ -39,6 +42,15 @@ class Query {
         }
         if (strlen($join)) { // the CTE might only participate in subqueries rather than a join on the main query
             $this->jCTE[] = $join;
+        }
+        return true;
+    }
+
+    public function setJoin(string $join, $types = null, $values = null): bool {
+        $this->qJoin[] = $join;
+        if (!is_null($types)) {
+            $this->tJoin[] = $types;
+            $this->vJoin[] = $values;
         }
         return true;
     }
@@ -77,6 +89,9 @@ class Query {
         $this->qWhere = [];
         $this->tWhere = [];
         $this->vWhere = [];
+        $this->qJoin = [];
+        $this->tJoin = [];
+        $this->vJoin = [];
         $this->order = [];
         $this->setLimit(0, 0);
         if (strlen($join)) {
@@ -101,11 +116,19 @@ class Query {
     }
 
     public function getTypes(): array {
-        return [$this->tCTE, $this->tBody, $this->tWhere];
+        return [$this->tCTE, $this->tBody, $this->tJoin, $this->tWhere];
     }
 
     public function getValues(): array {
-        return [$this->vCTE, $this->vBody, $this->vWhere];
+        return [$this->vCTE, $this->vBody, $this->vJoin, $this->vWhere];
+    }
+
+    public function getJoinTypes(): array {
+        return $this->tJoin;
+    }
+
+    public function getJoinValues(): array {
+        return $this->vJoin;
     }
 
     public function getWhereTypes(): array {
@@ -131,6 +154,10 @@ class Query {
         if (sizeof($this->qCTE)) {
             // add any joins against CTEs
             $out .= " ".implode(" ", $this->jCTE);
+        }
+        // add any JOINs
+        if (sizeof($this->qJoin)) {
+            $out .= " ".implode(" ", $this->qJoin);
         }
         // add any WHERE terms
         if (sizeof($this->qWhere)) {

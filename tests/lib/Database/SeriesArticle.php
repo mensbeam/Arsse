@@ -731,16 +731,16 @@ trait SeriesArticle {
     }
 
     public function testCountStarredArticles() {
-        $this->assertSame(2, Arsse::$db->articleStarredCount("john.doe@example.com"));
-        $this->assertSame(2, Arsse::$db->articleStarredCount("john.doe@example.org"));
-        $this->assertSame(2, Arsse::$db->articleStarredCount("john.doe@example.net"));
-        $this->assertSame(0, Arsse::$db->articleStarredCount("jane.doe@example.com"));
+        $this->assertSame(2, Arsse::$db->articleCount("john.doe@example.com", (new Context)->starred(true)));
+        $this->assertSame(2, Arsse::$db->articleCount("john.doe@example.org", (new Context)->starred(true)));
+        $this->assertSame(2, Arsse::$db->articleCount("john.doe@example.net", (new Context)->starred(true)));
+        $this->assertSame(0, Arsse::$db->articleCount("jane.doe@example.com", (new Context)->starred(true)));
     }
 
     public function testCountStarredArticlesWithoutAuthority() {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Arsse::$db->articleStarredCount($this->user);
+        Arsse::$db->articleCount($this->user, (new Context)->starred(true));
     }
 
     public function testFetchLatestEdition() {

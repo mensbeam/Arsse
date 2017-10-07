@@ -301,16 +301,22 @@ class Database {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         // check to make sure the parent exists, if one is specified
-        $parent = $this->folderValidateId($user, $parent)['id'];
-        // if we're not returning a recursive list we can use a simpler query
+        $parent = $this->folderValidateId($user, $parent)['id'];        
+        $q = new Query(
+            "SELECT
+                id,name,parent,
+                (select count(*) from arsse_folders as parents where parents.parent is arsse_folders.id) as children
+            FROM arsse_folders"
+        );
         if (!$recursive) {
-            return $this->db->prepare("SELECT id,name,parent from arsse_folders where owner is ? and parent is ?", "str", "int")->run($user, $parent);
+            $q->setWhere("owner is ?", "str", $user);
+            $q->setWhere("parent is ?", "int", $parent);
         } else {
-            return $this->db->prepare(
-                "WITH RECURSIVE folders(id) as (SELECT id from arsse_folders where owner is ? and parent is ? union select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id) ".
-                "SELECT id,name,parent from arsse_folders where id in (SELECT id from folders) order by name",
-            "str", "int")->run($user, $parent);
+            $q->setCTE("folders", "SELECT id from arsse_folders where owner is ? and parent is ? union select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id", ["str", "int"], [$user, $parent]);
+            $q->setWhere("id in (SELECT id from folders)");
         }
+        $q->setOrder("name");
+        return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
     }
 
     public function folderRemove(string $user, $id): bool {
@@ -794,35 +800,25 @@ class Database {
         )->run($feedID, $ids, $hashesUT, $hashesUC, $hashesTC);
     }
 
-    public function articleList(string $user, Context $context = null): Db\Result {
-        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
-            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        }
-        if (!$context) {
-            $context = new Context;
+    protected function articleQuery(string $user, Context $context, array $extraColumns = []): Query {
+        $extraColumns = implode(",", $extraColumns);
+        if (strlen($extraColumns)) {
+            $extraColumns .= ",";
         }
         $q = new Query(
             "SELECT 
+                $extraColumns
                 arsse_articles.id as id,
-                arsse_articles.url as url,
-                title,author,content,guid,
-                published as published_date,
-                edited as edited_date,
+                arsse_articles.feed as feed,
                 max(
-                    modified, 
+                    arsse_articles.modified, 
                     coalesce((select modified from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)),'')
                 ) as modified_date,
                 NOT (select count(*) from arsse_marks where article is arsse_articles.id and read is 1 and subscription in (select sub from subscribed_feeds)) as unread,
                 (select count(*) from arsse_marks where article is arsse_articles.id and starred is 1 and subscription in (select sub from subscribed_feeds)) as starred,
                 (select max(id) from arsse_editions where article is arsse_articles.id) as edition,
-                subscribed_feeds.sub as subscription,
-                url_title_hash||':'||url_content_hash||':'||title_content_hash as fingerprint,
-                arsse_enclosures.url as media_url,
-                arsse_enclosures.type as media_type
-            FROM arsse_articles 
-                join subscribed_feeds on arsse_articles.feed is subscribed_feeds.id
-                left join arsse_enclosures on arsse_enclosures.article is arsse_articles.id
-            "
+                subscribed_feeds.sub as subscription
+            FROM arsse_articles"
         );
         $q->setOrder("edition".($context->reverse ? " desc" : ""));
         $q->setLimit($context->limit, $context->offset);
@@ -831,17 +827,56 @@ class Database {
             // if a subscription is specified, make sure it exists
             $id = $this->subscriptionValidateId($user, $context->subscription)['feed'];
             // add a basic CTE that will join in only the requested subscription
-            $q->setCTE("subscribed_feeds(id,sub)", "SELECT ?,?", ["int","int"], [$id,$context->subscription]);
+            $q->setCTE("subscribed_feeds(id,sub)", "SELECT ?,?", ["int","int"], [$id,$context->subscription], "join subscribed_feeds on feed is subscribed_feeds.id");
         } elseif ($context->folder()) {
             // if a folder is specified, make sure it exists
             $this->folderValidateId($user, $context->folder);
             // if it does exist, add a common table expression to list it and its children so that we select from the entire subtree
             $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on parent is folder", "int", $context->folder);
             // add another CTE for the subscriptions within the folder
-            $q->setCTE("subscribed_feeds(id,sub)", "SELECT feed,id from arsse_subscriptions join user on user is owner join folders on arsse_subscriptions.folder is folders.folder");
+            $q->setCTE("subscribed_feeds(id,sub)", "SELECT feed,id from arsse_subscriptions join user on user is owner join folders on arsse_subscriptions.folder is folders.folder", [], [], "join subscribed_feeds on feed is subscribed_feeds.id");
         } else {
             // otherwise add a CTE for all the user's subscriptions
-            $q->setCTE("subscribed_feeds(id,sub)", "SELECT feed,id from arsse_subscriptions join user on user is owner");
+            $q->setCTE("subscribed_feeds(id,sub)", "SELECT feed,id from arsse_subscriptions join user on user is owner", [], [], "join subscribed_feeds on feed is subscribed_feeds.id");
+        }
+        if ($context->edition()) {
+            // if an edition is specified, filter for its previously identified article
+            $q->setWhere("arsse_articles.id is (select article from arsse_editions where id is ?)", "int", $context->edition);
+        } elseif ($context->article()) {
+            // if an article is specified, filter for it (it has already been validated above)
+            $q->setWhere("arsse_articles.id is ?", "int", $context->article);
+        }
+        if ($context->editions()) {
+            // if multiple specific editions have been requested, prepare a CTE to list them and their articles
+            if (!$context->editions) {
+                throw new Db\ExceptionInput("tooShort", ['field' => "editions", 'action' => __FUNCTION__, 'min' => 1]); // must have at least one array element
+            } elseif (sizeof($context->editions) > 50) {
+                throw new Db\ExceptionInput("tooLong", ['field' => "editions", 'action' => __FUNCTION__, 'max' => 50]); // must not have more than 50 array elements
+            }
+            list($inParams, $inTypes) = $this->generateIn($context->editions, "int");
+            $q->setCTE("requested_articles(id,edition)",
+                "SELECT article,id as edition from arsse_editions where edition in ($inParams)",
+                $inTypes,
+                $context->editions
+            );
+            $q->setWhere("arsse_articles.id in (select id from requested_articles)");
+        } elseif ($context->articles()) {
+            // if multiple specific articles have been requested, prepare a CTE to list them and their articles
+            if (!$context->articles) {
+                throw new Db\ExceptionInput("tooShort", ['field' => "articles", 'action' => __FUNCTION__, 'min' => 1]); // must have at least one array element
+            } elseif (sizeof($context->articles) > 50) {
+                throw new Db\ExceptionInput("tooLong", ['field' => "articles", 'action' => __FUNCTION__, 'max' => 50]); // must not have more than 50 array elements
+            }
+            list($inParams, $inTypes) = $this->generateIn($context->articles, "int");
+            $q->setCTE("requested_articles(id,edition)",
+                "SELECT id,(select max(id) from arsse_editions where article is arsse_articles.id) as edition from arsse_articles where arsse_articles.id in ($inParams)",
+                $inTypes,
+                $context->articles
+            );
+            $q->setWhere("arsse_articles.id in (select id from requested_articles)");
+        } else {
+            // if neither list is specified, mock an empty table
+            $q->setCTE("requested_articles(id,edition)", "SELECT 'empty','table' where 1 is 0");
         }
         // filter based on edition offset
         if ($context->oldestEdition()) {
@@ -864,6 +899,29 @@ class Database {
         if ($context->starred()) {
             $q->setWhere("starred is ?", "bool", $context->starred);
         }
+        // return the query
+        return $q;
+    }
+
+    public function articleList(string $user, Context $context = null): Db\Result {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        $context = $context ?? new Context;
+        $columns = [
+            "arsse_articles.url as url",
+            "title",
+            "author",
+            "content",
+            "guid",
+            "published as published_date",
+            "edited as edited_date",
+            "url_title_hash||':'||url_content_hash||':'||title_content_hash as fingerprint",
+            "arsse_enclosures.url as media_url",
+            "arsse_enclosures.type as media_type",
+        ];
+        $q = $this->articleQuery($user, $context, $columns);
+        $q->setJoin("left join arsse_enclosures on arsse_enclosures.article is arsse_articles.id");
         // perform the query and return results
         return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
     }
@@ -916,94 +974,15 @@ class Database {
         // execute each query in sequence
         foreach ($queries as $query) {
             // first build the query which will select the target articles; we will later turn this into a CTE for the actual query that manipulates the articles
-            $q = new Query(
-                "SELECT
-                    arsse_articles.id as id,
-                    feed,
-                    (select max(id) from arsse_editions where article is arsse_articles.id) as edition,
-                    max(arsse_articles.modified,
-                        coalesce((select modified from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)),'')
-                    ) as modified_date,
-                    (not exists(select article from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds))) as to_insert,
-                    ((select read from target_values) is not null and (select read from target_values) is not (coalesce((select read from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)),0)) and (not exists(select * from requested_articles) or (select max(id) from arsse_editions where article is arsse_articles.id) in (select edition from requested_articles))) as honour_read,
-                    ((select starred from target_values) is not null and (select starred from target_values) is not (coalesce((select starred from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)),0))) as honour_star
-                FROM arsse_articles"
-            );
-            // common table expression for the affected user
-            $q->setCTE("user(user)", "SELECT ?", "str", $user);
+            $q = $this->articleQuery($user, $context, [
+                "(not exists(select article from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds))) as to_insert",
+                "((select read from target_values) is not null and (select read from target_values) is not (coalesce((select read from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)),0)) and (not exists(select * from requested_articles) or (select max(id) from arsse_editions where article is arsse_articles.id) in (select edition from requested_articles))) as honour_read",
+                "((select starred from target_values) is not null and (select starred from target_values) is not (coalesce((select starred from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)),0))) as honour_star",
+            ]);
             // common table expression with the values to set
             $q->setCTE("target_values(read,starred)", "SELECT ?,?", ["bool","bool"], $values);
-            if ($context->subscription()) {
-                // if a subscription is specified, make sure it exists
-                $id = $this->subscriptionValidateId($user, $context->subscription)['feed'];
-                // add a basic CTE that will join in only the requested subscription
-                $q->setCTE("subscribed_feeds(id,sub)", "SELECT ?,?", ["int","int"], [$id,$context->subscription], "join subscribed_feeds on feed is subscribed_feeds.id");
-            } elseif ($context->folder()) {
-                // if a folder is specified, make sure it exists
-                $this->folderValidateId($user, $context->folder);
-                // if it does exist, add a common table expression to list it and its children so that we select from the entire subtree
-                $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on parent is folder", "int", $context->folder);
-                // add another CTE for the subscriptions within the folder
-                $q->setCTE("subscribed_feeds(id,sub)", "SELECT feed,id from arsse_subscriptions join user on user is owner join folders on arsse_subscriptions.folder is folders.folder", [], [], "join subscribed_feeds on feed is subscribed_feeds.id");
-            } else {
-                // otherwise add a CTE for all the user's subscriptions
-                $q->setCTE("subscribed_feeds(id,sub)", "SELECT feed,id from arsse_subscriptions join user on user is owner", [], [], "join subscribed_feeds on feed is subscribed_feeds.id");
-            }
-            if ($context->edition()) {
-                // if an edition is specified, filter for its previously identified article
-                $q->setWhere("arsse_articles.id is ?", "int", $edition['article']);
-            } elseif ($context->article()) {
-                // if an article is specified, filter for it (it has already been validated above)
-                $q->setWhere("arsse_articles.id is ?", "int", $context->article);
-            }
-            if ($context->editions()) {
-                // if multiple specific editions have been requested, prepare a CTE to list them and their articles
-                if (!$context->editions) {
-                    throw new Db\ExceptionInput("tooShort", ['field' => "editions", 'action' => __FUNCTION__, 'min' => 1]); // must have at least one array element
-                } elseif (sizeof($context->editions) > 50) {
-                    throw new Db\ExceptionInput("tooLong", ['field' => "editions", 'action' => __FUNCTION__, 'max' => 50]); // must not have more than 50 array elements
-                }
-                list($inParams, $inTypes) = $this->generateIn($context->editions, "int");
-                $q->setCTE("requested_articles(id,edition)",
-                    "SELECT article,id as edition from arsse_editions where edition in ($inParams)",
-                    $inTypes,
-                    $context->editions
-                );
-                $q->setWhere("arsse_articles.id in (select id from requested_articles)");
-            } elseif ($context->articles()) {
-                // if multiple specific articles have been requested, prepare a CTE to list them and their articles
-                if (!$context->articles) {
-                    throw new Db\ExceptionInput("tooShort", ['field' => "articles", 'action' => __FUNCTION__, 'min' => 1]); // must have at least one array element
-                } elseif (sizeof($context->articles) > 50) {
-                    throw new Db\ExceptionInput("tooLong", ['field' => "articles", 'action' => __FUNCTION__, 'max' => 50]); // must not have more than 50 array elements
-                }
-                list($inParams, $inTypes) = $this->generateIn($context->articles, "int");
-                $q->setCTE("requested_articles(id,edition)",
-                    "SELECT id,(select max(id) from arsse_editions where article is arsse_articles.id) as edition from arsse_articles where arsse_articles.id in ($inParams)",
-                    $inTypes,
-                    $context->articles
-                );
-                $q->setWhere("arsse_articles.id in (select id from requested_articles)");
-            } else {
-                // if neither list is specified, mock an empty table
-                $q->setCTE("requested_articles(id,edition)", "SELECT 'empty','table' where 1 is 0");
-            }
-            // filter based on edition offset
-            if ($context->oldestEdition()) {
-                $q->setWhere("edition >= ?", "int", $context->oldestEdition);
-            }
-            if ($context->latestEdition()) {
-                $q->setWhere("edition <= ?", "int", $context->latestEdition);
-            }
-            // filter based on lastmod time
-            if ($context->modifiedSince()) {
-                $q->setWhere("modified_date >= ?", "datetime", $context->modifiedSince);
-            }
-            if ($context->notModifiedSince()) {
-                $q->setWhere("modified_date <= ?", "datetime", $context->notModifiedSince);
-            }
             // push the current query onto the CTE stack and execute the query we're actually interested in
-            $q->pushCTE("target_articles(id,feed,edition,modified_date,to_insert,honour_read,honour_star)");
+            $q->pushCTE("target_articles");
             $q->setBody($query);
             $out += $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
         }
@@ -1012,11 +991,15 @@ class Database {
         return (bool) $out;
     }
 
-    public function articleStarredCount(string $user): int {
+    public function articleCount(string $user, Context $context = null): int {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
-        return $this->db->prepare("SELECT count(*) from arsse_marks where starred is 1 and subscription in (select id from arsse_subscriptions where owner is ?)", "str")->run($user)->getValue();
+        $context = $context ?? new Context;
+        $q = $this->articleQuery($user, $context);
+        $q->pushCTE("selected_articles");
+        $q->setBody("SELECT count(*) from selected_articles");
+        return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
     }
 
     public function articleCleanup(): bool {
@@ -1105,9 +1088,7 @@ class Database {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
-        if (!$context) {
-            $context = new Context;
-        }
+        $context = $context ?? new Context;
         $q = new Query("SELECT max(arsse_editions.id) from arsse_editions left join arsse_articles on article is arsse_articles.id left join arsse_feeds on arsse_articles.feed is arsse_feeds.id");
         if ($context->subscription()) {
             // if a subscription is specified, make sure it exists
@@ -1141,10 +1122,15 @@ class Database {
         return $this->db->prepare(
             "SELECT 
                 id,name,
-                (select count(*) from arsse_label_members where owner is ? and label is arsse_labels.id) as articles
+                (select count(*) from arsse_label_members join arsse_subscriptions on arsse_subscriptions.owner is arsse_labels.owner where label is arsse_labels.id) as articles,
+                (select count(*) from arsse_label_members 
+                    join arsse_marks on arsse_label_members.article is arsse_marks.article and arsse_label_members.subscription is arsse_marks.subscription
+                    join arsse_subscriptions on arsse_subscriptions.owner is arsse_labels.owner
+                 where label is arsse_labels.id and read is 1
+                ) as read
             FROM arsse_labels where owner is ? and articles >= ?
-            ", "str", "str", "int"
-        )->run($user, $user, !$includeEmpty);
+            ", "str", "int"
+        )->run($user, !$includeEmpty);
     }
 
     public function labelRemove(string $user, $id, bool $byName = false): bool {
