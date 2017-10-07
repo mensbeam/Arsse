@@ -59,7 +59,7 @@ abstract class AbstractHandler implements Handler {
                     }
                     break;
                 case "bool":
-                    $test = filter_var($value, \FILTER_VALIDATE_BOOLEAN, \FILTER_NULL_ON_FAILURE);
+                    $test = ValueInfo::bool($value);
                     if (!is_null($test)) {
                         $out[$key] = $test;
                     }

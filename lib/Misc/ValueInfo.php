@@ -89,4 +89,16 @@ class ValueInfo {
             return true;
         }
     }
+
+    public static function bool($value, bool $default = null) {
+        if (is_null($value) || ValueInfo::str($value) & ValueInfo::WHITE) {
+            return $default;
+        }
+        $out = filter_var($value, \FILTER_VALIDATE_BOOLEAN, \FILTER_NULL_ON_FAILURE);
+        if (is_null($out) && (ValueInfo::int($value) & ValueInfo::VALID)) {
+            $out = abs((int) filter_var($value, \FILTER_VALIDATE_FLOAT));
+            return ($out < 2) ? (bool) $out : $default;
+        }
+        return !is_null($out) ? $out : $default;
+    }
 }
