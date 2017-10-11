@@ -17,13 +17,13 @@ use JKingWeb\Arsse\REST\Response;
 /*
 
 Protocol difference so far:
-    - handling of incorrect Content-Type and/or HTTP method is different
+    - Handling of incorrect Content-Type and/or HTTP method is different
     - TT-RSS accepts whitespace-only names; we do not
     - TT-RSS allows two folders to share the same name under the same parent; we do not
     - Session lifetime is much shorter by default (does TT-RSS even expire sessions?)
     - Categories and feeds will always be sorted alphabetically (the protocol does not allow for clients to re-order)
-    - Label IDs decrease from -11 instead of from -1025
-
+    - The "Archived" virtual feed is non-functional (the protocol does not allow archiving)
+    - The "Published" virtual feed is non-functional (this will not be implemented in the near term)
 */
 
 
@@ -31,13 +31,11 @@ Protocol difference so far:
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     const LEVEL = 14;
     const VERSION = "17.4";
+    const LABEL_OFFSET = 1024;
     const FATAL_ERR = [
         'seq' => null,
         'status' => 1,
         'content' => ['error' => "NOT_LOGGED_IN"],
-    ];
-    const OVERRIDE = [
-        'auth' => ["login"],
     ];
     
     public function __construct() {
@@ -65,8 +63,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'sid' => null,
             ], $data);
             try {
-                if (!in_array($data['op'], self::OVERRIDE['auth'])) {
-                    // unless otherwise specified, a session identifier is required
+                if (strtolower((string) $data['op']) != "login") {
+                    // unless logging in, a session identifier is required
                     $this->resumeSession($data['sid']);
                 }
                 $method = "op".ucfirst($data['op']);
@@ -148,19 +146,109 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return ['status' => true];
     }
 
+    public function opGetConfig(array $data): array {
+        return [
+            'icons_dir' => "feed-icons",
+            'icons_url' => "feed-icons",
+            'daemon_is_running' => Service::hasCheckedIn(),
+            'num_feeds' => Arsse::$db->subscriptionCount(Arsse::$user->id),
+        ];
+    }
+
+    public function opGetUnread(array $data): array {
+        // simply sum the unread count of each subscription
+        $out = 0;
+        foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $sub) {
+            $out += $sub['unread'];
+        }
+        return ['unread' => $out];
+    }
+
+    public function opGetCounters(array $data): array {
+        $user = Arsse::$user->id;
+        $starred = Arsse::$db->articleStarred($user);
+        $fresh = Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H")));
+        $countAll = 0;
+        $countSubs = 0;
+        $feeds = [];
+        $labels = [];
+        // do a first pass on categories: add the ID to a lookup table and set the unread counter to zero
+        $categories = Arsse::$db->folderList($user)->getAll();
+        $catmap = [];
+        for ($a = 0; $a < sizeof($categories); $a++) {
+            $catmap[(int) $categories[$a]['id']] = $a;
+            $categories[$a]['counter'] = 0;
+        }
+        // add the "Uncategorized" and "Labels" virtual categories to the list
+        $catmap[0] = sizeof($categories);
+        $categories[] = ['id' => 0, 'name' => Arsse::$lang->msg("API.TTRSS.Category.Uncategorized"), 'parent' => 0, 'children' => 0, 'counter' => 0];
+        $catmap[-2] = sizeof($categories);
+        $categories[] = ['id' => -2, 'name' => Arsse::$lang->msg("API.TTRSS.Category.Labels"), 'parent' => 0, 'children' => 0, 'counter' => 0];
+        // prepare data for each subscription; we also add unread counts for their host categories
+        foreach (Arsse::$db->subscriptionList($user) as $f) {
+            if ($f['unread']) {
+                // add the feed to the list of feeds
+                $feeds[] = ['id' => $f['id'], 'updated' => Date::transform($f['updated'], "iso8601", "sql"),'counter' => $f['unread'], 'has_img' => (int) (strlen((string) $f['favicon']) > 0)];
+                // add the feed's unread count to the global unread count
+                $countAll += $f['unread'];
+                // add the feed's unread count to its category unread count
+                $categories[$catmap[(int) $f['folder']]]['counter'] += $f['unread'];
+            }
+            // increment the global feed count
+            $countSubs += 1;
+        }
+        // prepare data for each non-empty label
+        foreach (Arsse::$db->labelList($user, false) as $l) {
+            $unread = $l['articles'] - $l['read'];
+            $labels[] = ['id' => $this->labelOut($l['id']), 'counter' => $unread, 'auxcounter' => $l['articles']];
+            $categories[$catmap[-2]]['counter'] += $unread;
+        }
+        // do a second pass on categories, summing descendant unread counts for ancestors, pruning categories with no unread, and building a final category list
+        $cats = [];
+        while ($categories) {
+            foreach ($categories as $c) {
+                if ($c['children']) {
+                    // only act on leaf nodes
+                    continue;
+                }
+                if ($c['parent']) {
+                    // if the category has a parent, add its counter to the parent's counter, and decrement the parent's child count
+                    $categories[$catmap[$c['parent']]]['counter'] += $c['counter'];
+                    $categories[$catmap[$c['parent']]]['children'] -= 1;
+                }
+                if ($c['counter']) {
+                    // if the category's counter is non-zero, add the category to the output list
+                    $cats[] = ['id' => $c['id'], 'kind' => "cat", 'counter' => $c['counter']];
+                }
+                // remove the category from the input list
+                unset($categories[$catmap[$c['id']]]);
+            }
+        }
+        // prepare data for the virtual feeds and other counters
+        $special = [
+            ['id' => "global-unread",    'counter' => $countAll], //this should not count archived articles, but we do not have an archive
+            ['id' => "subscribed-feeds", 'counter' => $countSubs],
+            ['id' => 0,  'counter' => 0, 'auxcounter' => 0], // Archived articles
+            ['id' => -1, 'counter' => $starred['unread'], 'auxcounter' => $starred['total']], // Starred articles
+            ['id' => -2, 'counter' => 0, 'auxcounter' => 0], // Published articles
+            ['id' => -3, 'counter' => $fresh, 'auxcounter' => 0], // Fresh articles
+            ['id' => -4, 'counter' => $countAll, 'auxcounter' => 0], // All articles
+        ];
+        return array_merge($special, $labels, $feeds, $cats);
+    }
+
     public function opGetCategories(array $data): array {
         // normalize input
         $all = isset($data['include_empty']) ? ValueInfo::bool($data['include_empty'], false) : false;
         $read = !(isset($data['unread_only']) ? ValueInfo::bool($data['unread_only'], false) : false);
         $deep = !(isset($data['enable_nested']) ? ValueInfo::bool($data['enable_nested'], false) : false);
         $user = Arsse::$user->id;
-        // for each category, add the ID to a lookup table, set the number of unread and feeds to zero, and assign an increasing order index
+        // for each category, add the ID to a lookup table, set the number of unread to zero, and assign an increasing order index
         $cats = Arsse::$db->folderList($user, null, $deep)->getAll();
         $map = [];
         for ($a = 0; $a < sizeof($cats); $a++) {
             $map[$cats[$a]['id']] = $a;
             $cats[$a]['unread'] = 0;
-            $cats[$a]['feeds'] = 0;
             $cats[$a]['order'] = $a + 1;
         }
         // add the "Uncategorized", "Special", and "Labels" virtual categories to the list
@@ -176,7 +264,9 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             // note we use top_folder if we're in "nested" mode
             $f = $map[(int) ($deep ? $sub['folder'] : $sub['top_folder'])];
             $cats[$f]['unread'] += $sub['unread'];
-            $cats[$f]['feeds'] += 1;
+            if (!$cats[$f]['id']) {
+                $cats[$f]['feeds'] += 1;
+            }
         }
         // for each label, add the unread count to the labels category, and increment the labels category's feed count
         $labels = Arsse::$db->labelList($user);
@@ -188,7 +278,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         // get the unread counts for the special feeds
         // FIXME: this is pretty inefficient
         $f = $map[-1];
-        $cats[$f]['unread'] += Arsse::$db->articleCount($user, (new Context)->unread(true)->starred(true)); // starred
+        $cats[$f]['unread'] += Arsse::$db->articleStarred($user)['unread']; // starred
         $cats[$f]['unread'] += Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H"))); // fresh
         if (!$read) {
             // if we're only including unread entries, remove any categories with zero unread items (this will by definition also exclude empties)
@@ -439,24 +529,6 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return null;
     }
 
-    public function opGetUnread(array $data): array {
-        // simply sum the unread count of each subscription
-        $out = 0;
-        foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $sub) {
-            $out += $sub['unread'];
-        }
-        return ['unread' => $out];
-    }
-
-    public function opGetConfig(array $data): array {
-        return [
-            'icons_dir' => "feed-icons",
-            'icons_url' => "feed-icons",
-            'daemon_is_running' => Service::hasCheckedIn(),
-            'num_feeds' => Arsse::$db->subscriptionCount(Arsse::$user->id),
-        ];
-    }
-
     public function opUpdateFeed(array $data): array {
         if (!isset($data['feed_id']) || !ValueInfo::id($data['feed_id'])) {
             // if the feed is invalid, throw an error
@@ -471,14 +543,14 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function labelIn($id): int {
-        if (!(ValueInfo::int($id) & ValueInfo::NEG) || $id > -11) {
+        if (!(ValueInfo::int($id) & ValueInfo::NEG) || $id > (-1 - self::LABEL_OFFSET)) {
             throw new Exception("INCORRECT_USAGE");
         }
-        return (abs($id) - 10);
+        return (abs($id) - self::LABEL_OFFSET);
     }
 
     protected function labelOut(int $id): int {
-        return ($id * -1 - 10);
+        return ($id * -1 - self::LABEL_OFFSET);
     }
 
     public function opAddLabel(array $data) {

@@ -730,17 +730,29 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['read'=>false]);
     }
 
-    public function testCountStarredArticles() {
+    public function testCountArticles() {
         $this->assertSame(2, Arsse::$db->articleCount("john.doe@example.com", (new Context)->starred(true)));
-        $this->assertSame(2, Arsse::$db->articleCount("john.doe@example.org", (new Context)->starred(true)));
-        $this->assertSame(2, Arsse::$db->articleCount("john.doe@example.net", (new Context)->starred(true)));
+        $this->assertSame(4, Arsse::$db->articleCount("john.doe@example.com", (new Context)->folder(1)));
         $this->assertSame(0, Arsse::$db->articleCount("jane.doe@example.com", (new Context)->starred(true)));
     }
 
-    public function testCountStarredArticlesWithoutAuthority() {
+    public function testCountArticlesWithoutAuthority() {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Arsse::$db->articleCount($this->user, (new Context)->starred(true));
+        Arsse::$db->articleCount($this->user);
+    }
+
+    public function testFetchStarredCounts() {
+        $exp1 = ['total' => 2, 'unread' => 1, 'read' => 1];
+        $exp2 = ['total' => 0, 'unread' => 0, 'read' => 0];
+        $this->assertSame($exp1, Arsse::$db->articleStarred("john.doe@example.com"));
+        $this->assertSame($exp2, Arsse::$db->articleStarred("jane.doe@example.com"));
+    }
+
+    public function testFetchStarredCountsWithoutAuthority() {
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Arsse::$db->articleStarred($this->user);
     }
 
     public function testFetchLatestEdition() {

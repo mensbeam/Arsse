@@ -395,7 +395,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $out[] = $this->feedTranslate($sub);
         }
         $out = ['feeds' => $out];
-        $out['starredCount'] = Arsse::$db->articleCount(Arsse::$user->id, (new Context)->starred(true));
+        $out['starredCount'] = Arsse::$db->articleStarred(Arsse::$user->id)['total'];
         $newest = Arsse::$db->editionLatest(Arsse::$user->id);
         if ($newest) {
             $out['newestItemId'] = $newest;

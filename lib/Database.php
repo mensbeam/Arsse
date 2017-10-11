@@ -305,7 +305,8 @@ class Database {
         $q = new Query(
             "SELECT
                 id,name,parent,
-                (select count(*) from arsse_folders as parents where parents.parent is arsse_folders.id) as children
+                (select count(*) from arsse_folders as parents where parents.parent is arsse_folders.id) as children,
+                (select count(*) from arsse_subscriptions where folder is arsse_folders.id) as feeds
             FROM arsse_folders"
         );
         if (!$recursive) {
@@ -508,6 +509,7 @@ class Database {
             "SELECT 
                 arsse_subscriptions.id as id,
                 feed,url,favicon,source,folder,pinned,err_count,err_msg,order_type,added,
+                arsse_feeds.updated as updated,
                 topmost.top as top_folder,
                 coalesce(arsse_subscriptions.title, arsse_feeds.title) as title,
                 (SELECT count(*) from arsse_articles where feed is arsse_subscriptions.feed) - (SELECT count(*) from arsse_marks where subscription is arsse_subscriptions.id and read is 1) as unread
@@ -1000,6 +1002,21 @@ class Database {
         $q->pushCTE("selected_articles");
         $q->setBody("SELECT count(*) from selected_articles");
         return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
+    }
+
+    public function articleStarred(string $user): array {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        return $this->db->prepare(
+            "SELECT
+                count(*) as total,
+                coalesce(sum(not read),0) as unread,
+                coalesce(sum(read),0) as read
+            FROM (
+                select read from arsse_marks where starred is 1 and subscription in (select id from arsse_subscriptions where owner is ?)
+            )", "str"
+        )->run($user)->getRow();
     }
 
     public function articleCleanup(): bool {

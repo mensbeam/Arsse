@@ -9,12 +9,43 @@ use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\Context;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
+use JKingWeb\Arsse\REST\TinyTinyRSS\API;
 use Phake;
 
 /** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\API<extended> 
  *  @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Exception */
 class TestTinyTinyAPI extends Test\AbstractTest {
     protected $h;
+    protected $folders = [
+        ['id' => 5, 'parent' => 3,    'children' => 0, 'feeds' => 1, 'name' => "Local"],
+        ['id' => 6, 'parent' => 3,    'children' => 0, 'feeds' => 2, 'name' => "National"],
+        ['id' => 4, 'parent' => null, 'children' => 0, 'feeds' => 0, 'name' => "Photography"],
+        ['id' => 3, 'parent' => null, 'children' => 2, 'feeds' => 0, 'name' => "Politics"],
+        ['id' => 2, 'parent' => 1,    'children' => 0, 'feeds' => 1, 'name' => "Rocketry"],
+        ['id' => 1, 'parent' => null, 'children' => 1, 'feeds' => 1, 'name' => "Science"],
+    ];
+    protected $topFolders = [
+        ['id' => 4, 'parent' => null, 'children' => 0, 'feeds' => 0, 'name' => "Photography"],
+        ['id' => 3, 'parent' => null, 'children' => 2, 'feeds' => 0, 'name' => "Politics"],
+        ['id' => 1, 'parent' => null, 'children' => 1, 'feeds' => 1, 'name' => "Science"],
+    ];
+    protected $subscriptions = [
+        ['id' => 6, 'folder' => null, 'top_folder' => null, 'unread' => 0,  'updated' => "2010-02-12 20:08:47", 'favicon' => 'http://example.com/6.png'],
+        ['id' => 3, 'folder' => 1,    'top_folder' => 1,    'unread' => 2,  'updated' => "2016-05-23 06:40:02", 'favicon' => 'http://example.com/3.png'],
+        ['id' => 1, 'folder' => 2,    'top_folder' => 1,    'unread' => 5,  'updated' => "2017-09-15 22:54:16", 'favicon' => null],
+        ['id' => 2, 'folder' => 5,    'top_folder' => 3,    'unread' => 10, 'updated' => "2011-11-11 11:11:11", 'favicon' => 'http://example.com/2.png'],
+        ['id' => 5, 'folder' => 6,    'top_folder' => 3,    'unread' => 12, 'updated' => "2017-07-07 17:07:17", 'favicon' => ''],
+        ['id' => 4, 'folder' => 6,    'top_folder' => 3,    'unread' => 6,  'updated' => "2017-10-09 15:58:34", 'favicon' => 'http://example.com/4.png'],
+    ];
+    protected $labels = [
+        ['id' => 5, 'articles' => 0,   'read' => 0],
+        ['id' => 3, 'articles' => 100, 'read' => 94],
+        ['id' => 1, 'articles' => 2,   'read' => 0],
+    ];
+    protected $usedLabels = [
+        ['id' => 3, 'articles' => 100, 'read' => 94],
+        ['id' => 1, 'articles' => 2,   'read' => 0],
+    ];
 
     protected function respGood($content = null, $seq = 0): Response {
         return new Response(200, [
@@ -31,6 +62,19 @@ class TestTinyTinyAPI extends Test\AbstractTest {
             'status' => 1,
             'content' => array_merge($err, $content, $err),
         ]);
+    }
+
+    protected function assertResponse(Response $exp, Response $act, string $text = null) {
+        if ($exp->payload['status']) {
+            // if the expectation is an error response, do a straight object comparison
+            $this->assertEquals($exp, $act, $text);
+        } else {
+            // otherwise just compare their content
+            foreach ($act->payload['content'] as $record) {
+                $this->assertContains($record, $exp->payload['content'], $text);
+            }
+            $this->assertCount(sizeof($exp->payload['content']), $act->payload['content'], $text);
+        }
     }
 
     public function setUp() {
@@ -529,14 +573,14 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         Phake::when(Arsse::$db)->labelAdd(Arsse::$user->id, ['name' => ""])->thenThrow(new ExceptionInput("missing"));
         Phake::when(Arsse::$db)->labelAdd(Arsse::$user->id, ['name' => "   "])->thenThrow(new ExceptionInput("whitespace"));
         // correctly add two labels
-        $exp = $this->respGood(-12);
+        $exp = $this->respGood((-1 * API::LABEL_OFFSET) - 2);
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
-        $exp = $this->respGood(-13);
+        $exp = $this->respGood((-1 * API::LABEL_OFFSET) - 3);
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
         // attempt to add the two labels again
-        $exp = $this->respGood(-12);
+        $exp = $this->respGood((-1 * API::LABEL_OFFSET) - 2);
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
-        $exp = $this->respGood(-13);
+        $exp = $this->respGood((-1 * API::LABEL_OFFSET) - 3);
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
         Phake::verify(Arsse::$db)->labelPropertiesGet(Arsse::$user->id, "Software", true);
         Phake::verify(Arsse::$db)->labelPropertiesGet(Arsse::$user->id, "Hardware", true);
@@ -549,14 +593,14 @@ class TestTinyTinyAPI extends Test\AbstractTest {
 
     public function testRemoveALabel() {
         $in = [
-            ['op' => "removeLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -42],
+            ['op' => "removeLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -1042],
             ['op' => "removeLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -2112],
             ['op' => "removeLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => 1],
             ['op' => "removeLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => 0],
             ['op' => "removeLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -10],
         ];
         Phake::when(Arsse::$db)->labelRemove(Arsse::$user->id, $this->anything())->thenThrow(new ExceptionInput("subjectMissing"));
-        Phake::when(Arsse::$db)->labelRemove(Arsse::$user->id, 32)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
+        Phake::when(Arsse::$db)->labelRemove(Arsse::$user->id, 18)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
         // succefully delete a label
         $exp = $this->respGood();
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
@@ -571,29 +615,29 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[2]))));
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[3]))));
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[4]))));
-        Phake::verify(Arsse::$db, Phake::times(2))->labelRemove(Arsse::$user->id, 32);
-        Phake::verify(Arsse::$db)->labelRemove(Arsse::$user->id, 2102);
+        Phake::verify(Arsse::$db, Phake::times(2))->labelRemove(Arsse::$user->id, 18);
+        Phake::verify(Arsse::$db)->labelRemove(Arsse::$user->id, 1088);
     }
 
     public function testRenameALabel() {
         $in = [
-            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -42, 'caption' => "Ook"],
+            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -1042, 'caption' => "Ook"],
             ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -2112, 'caption' => "Eek"],
-            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -42, 'caption' => "Eek"],
-            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -42, 'caption' => ""],
-            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -42, 'caption' => " "],
-            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -42],
+            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -1042, 'caption' => "Eek"],
+            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -1042, 'caption' => ""],
+            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -1042, 'caption' => " "],
+            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -1042],
             ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -1, 'caption' => "Ook"],
             ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'caption' => "Ook"],
             ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx"],
         ];
         $db = [
-            [Arsse::$user->id, 32, ['name' => "Ook"]],
-            [Arsse::$user->id, 2102, ['name' => "Eek"]],
-            [Arsse::$user->id, 32, ['name' => "Eek"]],
-            [Arsse::$user->id, 32, ['name' => ""]],
-            [Arsse::$user->id, 32, ['name' => " "]],
-            [Arsse::$user->id, 32, ['name' => ""]],
+            [Arsse::$user->id, 18, ['name' => "Ook"]],
+            [Arsse::$user->id, 1088, ['name' => "Eek"]],
+            [Arsse::$user->id, 18, ['name' => "Eek"]],
+            [Arsse::$user->id, 18, ['name' => ""]],
+            [Arsse::$user->id, 18, ['name' => " "]],
+            [Arsse::$user->id, 18, ['name' => ""]],
         ];
         Phake::when(Arsse::$db)->labelPropertiesSet(...$db[0])->thenReturn(true);
         Phake::when(Arsse::$db)->labelPropertiesSet(...$db[1])->thenThrow(new ExceptionInput("subjectMissing"));
@@ -622,38 +666,6 @@ class TestTinyTinyAPI extends Test\AbstractTest {
     }
 
     public function testRetrieveCategoryLists() {
-        $folders = [
-            ['id' => 5, 'parent' => 3,    'children' => 0, 'name' => "Local"],
-            ['id' => 6, 'parent' => 3,    'children' => 0, 'name' => "National"],
-            ['id' => 4, 'parent' => null, 'children' => 0, 'name' => "Photography"],
-            ['id' => 3, 'parent' => null, 'children' => 2, 'name' => "Politics"],
-            ['id' => 2, 'parent' => 1,    'children' => 0, 'name' => "Rocketry"],
-            ['id' => 1, 'parent' => null, 'children' => 1, 'name' => "Science"],
-        ];
-        $topFolders = [
-            ['id' => 4, 'parent' => null, 'children' => 0, 'name' => "Photography"],
-            ['id' => 3, 'parent' => null, 'children' => 2, 'name' => "Politics"],
-            ['id' => 1, 'parent' => null, 'children' => 1, 'name' => "Science"],
-        ];
-        $subscriptions = [
-            ['folder' => null, 'top_folder' => null, 'unread' => 0],
-            ['folder' => 1,    'top_folder' => 1,    'unread' => 2],
-            ['folder' => 2,    'top_folder' => 1,    'unread' => 5],
-            ['folder' => 5,    'top_folder' => 3,    'unread' => 10],
-            ['folder' => 6,    'top_folder' => 3,    'unread' => 12],
-            ['folder' => 6,    'top_folder' => 3,    'unread' => 6],
-        ];
-        $labels = [
-            ['articles' => 0,   'read' => 0],
-            ['articles' => 100, 'read' => 94],
-            ['articles' => 2,   'read' => 0],
-        ];
-        Phake::when(Arsse::$db)->folderList($this->anything(), null, true)->thenReturn(new Result($folders));
-        Phake::when(Arsse::$db)->folderList($this->anything(), null, false)->thenReturn(new Result($topFolders));
-        Phake::when(Arsse::$db)->subscriptionList($this->anything())->thenReturn(new Result($subscriptions));
-        Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result($labels));
-        Phake::when(Arsse::$db)->articleCount($this->anything(), $this->anything())->thenReturn(7); // FIXME: this should check an unread+modifiedSince context
-        Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true)->starred(true))->thenReturn(4);
         $in = [
             ['op' => "getCategories", 'sid' => "PriestsOfSyrinx", 'include_empty' => true],
             ['op' => "getCategories", 'sid' => "PriestsOfSyrinx"],
@@ -662,6 +674,12 @@ class TestTinyTinyAPI extends Test\AbstractTest {
             ['op' => "getCategories", 'sid' => "PriestsOfSyrinx", 'enable_nested' => true],
             ['op' => "getCategories", 'sid' => "PriestsOfSyrinx", 'enable_nested' => true, 'unread_only' => true],
         ];
+        Phake::when(Arsse::$db)->folderList($this->anything(), null, true)->thenReturn(new Result($this->folders));
+        Phake::when(Arsse::$db)->folderList($this->anything(), null, false)->thenReturn(new Result($this->topFolders));
+        Phake::when(Arsse::$db)->subscriptionList($this->anything())->thenReturn(new Result($this->subscriptions));
+        Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result($this->labels));
+        Phake::when(Arsse::$db)->articleCount($this->anything(), $this->anything())->thenReturn(7); // FIXME: this should check an unread+modifiedSince context
+        Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn(['total' => 10, 'unread' => 4, 'read' => 6]);
         $exp = [
             [
                 ['id' => 5,  'title' => "Local",         'unread' => 10, 'order_id' => 1],
@@ -717,5 +735,37 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         for ($a = 0; $a < sizeof($in); $a++) {
             $this->assertEquals($this->respGood($exp[$a]), $this->h->dispatch(new Request("POST", "", json_encode($in[$a]))), "Test $a failed");
         }
+    }
+
+    public function testRetrieveCounterList() {
+        $in = ['op' => "getCounters", 'sid' => "PriestsOfSyrinx"];
+        Phake::when(Arsse::$db)->folderList($this->anything())->thenReturn(new Result($this->folders));
+        Phake::when(Arsse::$db)->subscriptionList($this->anything())->thenReturn(new Result($this->subscriptions));
+        Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result($this->usedLabels));
+        Phake::when(Arsse::$db)->articleCount($this->anything(), $this->anything())->thenReturn(7); // FIXME: this should check an unread+modifiedSince context
+        Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn(['total' => 10, 'unread' => 4, 'read' => 6]);
+        $exp = [
+            ['id' => "global-unread", 'counter' => 35],
+            ['id' => "subscribed-feeds", 'counter' => 6],
+            ['id' => 0, 'counter' => 0, 'auxcounter' => 0],
+            ['id' => -1, 'counter' => 4, 'auxcounter' => 10],
+            ['id' => -2, 'counter' => 0, 'auxcounter' => 0],
+            ['id' => -3, 'counter' => 7, 'auxcounter' => 0],
+            ['id' => -4, 'counter' => 35, 'auxcounter' => 0],
+            ['id' => -1027, 'counter' => 6, 'auxcounter' => 100],
+            ['id' => -1025, 'counter' => 2, 'auxcounter' => 2],
+            ['id' => 3, 'has_img' => 1, 'counter' => 2,  'updated' => "2016-05-23T06:40:02"],
+            ['id' => 1, 'has_img' => 0, 'counter' => 5,  'updated' => "2017-09-15T22:54:16"],
+            ['id' => 2, 'has_img' => 1, 'counter' => 10, 'updated' => "2011-11-11T11:11:11"],
+            ['id' => 5, 'has_img' => 0, 'counter' => 12, 'updated' => "2017-07-07T17:07:17"],
+            ['id' => 4, 'has_img' => 1, 'counter' => 6,  'updated' => "2017-10-09T15:58:34"],
+            ['id' => 5, 'kind' => "cat", 'counter' => 10],
+            ['id' => 6, 'kind' => "cat", 'counter' => 18],
+            ['id' => 3, 'kind' => "cat", 'counter' => 28],
+            ['id' => 2, 'kind' => "cat", 'counter' => 5],
+            ['id' => 1, 'kind' => "cat", 'counter' => 7],
+            ['id' => -2, 'kind' => "cat", 'counter' => 8],
+        ];
+        $this->assertResponse($this->respGood($exp), $this->h->dispatch(new Request("POST", "", json_encode($in))));
     }
 }
