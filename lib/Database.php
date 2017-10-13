@@ -937,6 +937,17 @@ class Database {
         return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
     }
 
+    public function articleCount(string $user, Context $context = null): int {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        $context = $context ?? new Context;
+        $q = $this->articleQuery($user, $context);
+        $q->pushCTE("selected_articles");
+        $q->setBody("SELECT count(*) from selected_articles");
+        return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
+    }
+
     public function articleMark(string $user, array $data, Context $context = null): bool {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -1000,17 +1011,6 @@ class Database {
         return (bool) $out;
     }
 
-    public function articleCount(string $user, Context $context = null): int {
-        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
-            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        }
-        $context = $context ?? new Context;
-        $q = $this->articleQuery($user, $context);
-        $q->pushCTE("selected_articles");
-        $q->setBody("SELECT count(*) from selected_articles");
-        return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
-    }
-
     public function articleStarred(string $user): array {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -1024,6 +1024,20 @@ class Database {
                 select read from arsse_marks where starred is 1 and subscription in (select id from arsse_subscriptions where owner is ?)
             )", "str"
         )->run($user)->getRow();
+    }
+
+    public function articleLabelsGet(string $user, $id, bool $byName = false): array {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        $id = $this->articleValidateId($user, $id)['article'];
+        $out = $this->db->prepare("SELECT id,name from arsse_labels where owner is ? and exists(select id from arsse_label_members where article is ? and label is arsse_labels.id and assigned is 1)", "str", "int")->run($user, $id)->getAll();
+        if (!$out) {
+            return $out;
+        } else {
+            // flatten the result to return just the label ID or name
+            return array_column($out, !$byName ? "id" : "name");
+        }
     }
 
     public function articleCleanup(): bool {

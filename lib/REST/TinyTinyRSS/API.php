@@ -553,6 +553,27 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return ($id * -1 - self::LABEL_OFFSET);
     }
 
+    public function opGetLabels(array $data): array {
+        // this function doesn't complain about invalid article IDs
+        $article = (isset($data['article_id']) && ValueInfo::id($data['article_id'])) ? (int) $data['article_id'] : 0;
+        try {
+            $list = $article ? Arsse::$db->articleLabelsGet(Arsse::$user->id, $article) : [];
+        } catch (ExceptionInput $e) {
+            $list = [];
+        }
+        $out = [];
+        foreach (Arsse::$db->labelList(Arsse::$user->id) as $l) {
+            $out[] = [
+                'id'       => $this->labelOut($l['id']),
+                'caption'  => $l['name'],
+                'fg_color' => "",
+                'bg_color' => "",
+                'checked'  => in_array($l['id'], $list),
+            ];
+        } 
+        return $out;
+    }
+
     public function opAddLabel(array $data) {
         $in = [
             'name'   => isset($data['caption']) ? $data['caption'] : "",

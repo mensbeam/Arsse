@@ -805,4 +805,19 @@ trait SeriesArticle {
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->editionLatest($this->user);
     }
+
+    public function testListTheLabelsOfAnArticle() {
+        $this->assertEquals([2,1], Arsse::$db->articleLabelsGet("john.doe@example.com", 1));
+        $this->assertEquals([2], Arsse::$db->articleLabelsGet("john.doe@example.com", 5));
+        $this->assertEquals([], Arsse::$db->articleLabelsGet("john.doe@example.com", 2));
+        $this->assertEquals(["Fascinating","Interesting"], Arsse::$db->articleLabelsGet("john.doe@example.com", 1, true));
+        $this->assertEquals(["Fascinating"], Arsse::$db->articleLabelsGet("john.doe@example.com", 5, true));
+        $this->assertEquals([], Arsse::$db->articleLabelsGet("john.doe@example.com", 2, true));
+    }
+
+    public function testListTheLabelsOfAnArticleWithoutAuthority() {
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Arsse::$db->articleLabelsGet("john.doe@example.com", 1);
+    }
 }

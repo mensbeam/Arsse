@@ -38,13 +38,13 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         ['id' => 4, 'folder' => 6,    'top_folder' => 3,    'unread' => 6,  'updated' => "2017-10-09 15:58:34", 'favicon' => 'http://example.com/4.png'],
     ];
     protected $labels = [
-        ['id' => 5, 'articles' => 0,   'read' => 0],
-        ['id' => 3, 'articles' => 100, 'read' => 94],
-        ['id' => 1, 'articles' => 2,   'read' => 0],
+        ['id' => 5, 'articles' => 0,   'read' => 0,  'name' => "Interesting"],
+        ['id' => 3, 'articles' => 100, 'read' => 94, 'name' => "Fascinating"],
+        ['id' => 1, 'articles' => 2,   'read' => 0,  'name' => "Logical"],
     ];
     protected $usedLabels = [
-        ['id' => 3, 'articles' => 100, 'read' => 94],
-        ['id' => 1, 'articles' => 2,   'read' => 0],
+        ['id' => 3, 'articles' => 100, 'read' => 94, 'name' => "Fascinating"],
+        ['id' => 1, 'articles' => 2,   'read' => 0,  'name' => "Logical"],
     ];
 
     protected function respGood($content = null, $seq = 0): Response {
@@ -767,5 +767,50 @@ class TestTinyTinyAPI extends Test\AbstractTest {
             ['id' => -2, 'kind' => "cat", 'counter' => 8],
         ];
         $this->assertResponse($this->respGood($exp), $this->h->dispatch(new Request("POST", "", json_encode($in))));
+    }
+
+    public function testRetrieveLabelList() {
+        $in = [
+            ['op' => "getLabels", 'sid' => "PriestsOfSyrinx"],
+            ['op' => "getLabels", 'sid' => "PriestsOfSyrinx", 'article_id' => 1],
+            ['op' => "getLabels", 'sid' => "PriestsOfSyrinx", 'article_id' => 2],
+            ['op' => "getLabels", 'sid' => "PriestsOfSyrinx", 'article_id' => 3],
+            ['op' => "getLabels", 'sid' => "PriestsOfSyrinx", 'article_id' => 4],
+        ];
+        Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result($this->labels));
+        Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 1)->thenReturn([1,3]);
+        Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 2)->thenReturn([3]);
+        Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 3)->thenReturn([]);
+        Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 4)->thenThrow(new ExceptionInput("idMissing"));
+        $exp = [
+            [
+                ['id' => -1025, 'caption' => "Logical",     'fg_color' => "", 'bg_color' => "", 'checked' => false],
+                ['id' => -1027, 'caption' => "Fascinating", 'fg_color' => "", 'bg_color' => "", 'checked' => false],
+                ['id' => -1029, 'caption' => "Interesting", 'fg_color' => "", 'bg_color' => "", 'checked' => false],
+            ],
+            [
+                ['id' => -1025, 'caption' => "Logical",     'fg_color' => "", 'bg_color' => "", 'checked' => true],
+                ['id' => -1027, 'caption' => "Fascinating", 'fg_color' => "", 'bg_color' => "", 'checked' => true],
+                ['id' => -1029, 'caption' => "Interesting", 'fg_color' => "", 'bg_color' => "", 'checked' => false],
+            ],
+            [
+                ['id' => -1025, 'caption' => "Logical",     'fg_color' => "", 'bg_color' => "", 'checked' => false],
+                ['id' => -1027, 'caption' => "Fascinating", 'fg_color' => "", 'bg_color' => "", 'checked' => true],
+                ['id' => -1029, 'caption' => "Interesting", 'fg_color' => "", 'bg_color' => "", 'checked' => false],
+            ],
+            [
+                ['id' => -1025, 'caption' => "Logical",     'fg_color' => "", 'bg_color' => "", 'checked' => false],
+                ['id' => -1027, 'caption' => "Fascinating", 'fg_color' => "", 'bg_color' => "", 'checked' => false],
+                ['id' => -1029, 'caption' => "Interesting", 'fg_color' => "", 'bg_color' => "", 'checked' => false],
+            ],
+            [
+                ['id' => -1025, 'caption' => "Logical",     'fg_color' => "", 'bg_color' => "", 'checked' => false],
+                ['id' => -1027, 'caption' => "Fascinating", 'fg_color' => "", 'bg_color' => "", 'checked' => false],
+                ['id' => -1029, 'caption' => "Interesting", 'fg_color' => "", 'bg_color' => "", 'checked' => false],
+            ],
+        ];
+        for ($a = 0; $a < sizeof($in); $a++) {
+            $this->assertResponse($this->respGood($exp[$a]), $this->h->dispatch(new Request("POST", "", json_encode($in[$a]))), "Test $a failed");
+        }
     }
 }
