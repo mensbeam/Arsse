@@ -880,6 +880,15 @@ class Database {
             // if neither list is specified, mock an empty table
             $q->setCTE("requested_articles(id,edition)", "SELECT 'empty','table' where 1 is 0");
         }
+        // filter based on label by ID or name
+        if ($context->label() || $context->labelName()) {
+            if ($context->label()) {
+                $id = $this->labelValidateId($user, $context->label, false)['id'];
+            } else {
+                $id = $this->labelValidateId($user, $context->labelName, true)['id'];
+            }
+            $q->setWhere("exists(select article from arsse_label_members where assigned is 1 and article is arsse_articles.id and label is ?)", "int", $id);
+        }
         // filter based on edition offset
         if ($context->oldestEdition()) {
             $q->setWhere("edition >= ?", "int", $context->oldestEdition);
@@ -932,9 +941,7 @@ class Database {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
-        if (!$context) {
-            $context = new Context;
-        }
+        $context = $context ?? new Context;
         // sanitize input
         $values = [
             isset($data['read']) ? $data['read'] : null,
@@ -1139,11 +1146,10 @@ class Database {
         return $this->db->prepare(
             "SELECT 
                 id,name,
-                (select count(*) from arsse_label_members join arsse_subscriptions on arsse_subscriptions.owner is arsse_labels.owner where label is arsse_labels.id) as articles,
+                (select count(*) from arsse_label_members where label is id and assigned is 1) as articles,
                 (select count(*) from arsse_label_members 
                     join arsse_marks on arsse_label_members.article is arsse_marks.article and arsse_label_members.subscription is arsse_marks.subscription
-                    join arsse_subscriptions on arsse_subscriptions.owner is arsse_labels.owner
-                 where label is arsse_labels.id and read is 1
+                 where label is id and assigned is 1 and read is 1
                 ) as read
             FROM arsse_labels where owner is ? and articles >= ?
             ", "str", "int"
@@ -1154,13 +1160,7 @@ class Database {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
-        if (!$byName && !ValueInfo::id($id)) {
-            // if we're not referring to a label by name and the ID is invalid, throw an exception
-            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "label", 'type' => "int > 0"]);
-        } elseif ($byName && !(ValueInfo::str($id) & ValueInfo::VALID)) {
-            // otherwise if we are referring to a label by name but the ID is not a string, also throw an exception
-            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "label", 'type' => "string"]);
-        }
+        $this->labelValidateId($user, $id, $byName, false);
         $field = $byName ? "name" : "id";
         $type = $byName ? "str" : "int";
         $changes = $this->db->prepare("DELETE FROM arsse_labels where owner is ? and $field is ?", "str", $type)->run($user, $id)->changes();
@@ -1174,22 +1174,20 @@ class Database {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
-        if (!$byName && !ValueInfo::id($id)) {
-            // if we're not referring to a label by name and the ID is invalid, throw an exception
-            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "label", 'type' => "int > 0"]);
-        } elseif ($byName && !(ValueInfo::str($id) & ValueInfo::VALID)) {
-            // otherwise if we are referring to a label by name but the ID is not a string, also throw an exception
-            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "label", 'type' => "string"]);
-        }
+        $this->labelValidateId($user, $id, $byName, false);
         $field = $byName ? "name" : "id";
         $type = $byName ? "str" : "int";
         $out = $this->db->prepare(
             "SELECT 
                 id,name,
-                (select count(*) from arsse_label_members where owner is ? and label is arsse_labels.id) as articles
+                (select count(*) from arsse_label_members where label is id and assigned is 1) as articles,
+                (select count(*) from arsse_label_members 
+                    join arsse_marks on arsse_label_members.article is arsse_marks.article and arsse_label_members.subscription is arsse_marks.subscription
+                 where label is id and assigned is 1 and read is 1
+                ) as read
             FROM arsse_labels where $field is ? and owner is ?
-            ", "str", $type, "str"
-        )->run($user, $id, $user)->getRow();
+            ", $type, "str"
+        )->run($id, $user)->getRow();
         if (!$out) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "label", 'id' => $id]);
         }
@@ -1200,13 +1198,7 @@ class Database {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
-        if (!$byName && !ValueInfo::id($id)) {
-            // if we're not referring to a label by name and the ID is invalid, throw an exception
-            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "label", 'type' => "int > 0"]);
-        } elseif ($byName && !(ValueInfo::str($id) & ValueInfo::VALID)) {
-            // otherwise if we are referring to a label by name but the ID is not a string, also throw an exception
-            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "label", 'type' => "string"]);
-        }
+        $this->labelValidateId($user, $id, $byName, false);
         if (isset($data['name'])) {
             $this->labelValidateName($data['name']);
         }
@@ -1225,6 +1217,90 @@ class Database {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "label", 'id' => $id]);
         }
         return $out;
+    }
+
+    public function labelArticlesGet(string $user, $id, bool $byName = false): array {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        // just do a syntactic check on the label ID
+        $this->labelValidateId($user, $id, $byName, false);
+        $field = !$byName ? "id" : "name";
+        $type = !$byName ? "int" : "str";
+        $out = $this->db->prepare("SELECT article from arsse_label_members join arsse_labels on label is id where assigned is 1 and $field is ? and owner is ?", $type, "str")->run($id, $user)->getAll();
+        if (!$out) {
+            // if no results were returned, do a full validation on the label ID
+            $this->labelValidateId($user, $id, $byName, true, true);
+            // if the validation passes, return the empty result
+            return $out;
+        } else {
+            // flatten the result to return just the article IDs in a simple array
+            return array_column($out, "article");
+        }
+    }
+
+    public function labelArticlesSet(string $user, $id, Context $context = null, bool $remove = false, bool $byName = false): bool {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        // validate the label ID, and get the numeric ID if matching by name
+        $id = $this->labelValidateId($user, $id, $byName, true)['id'];
+        $context = $context ?? new Context;
+        $out = 0;
+        // wrap this UPDATE and INSERT together into a transaction
+        $tr = $this->begin();
+        // first update any existing entries with the removal or re-addition of their association
+        $q = $this->articleQuery($user, $context);
+        $q->setWhere("exists(select article from arsse_label_members where label is ? and article is arsse_articles.id)", "int", $id);
+        $q->pushCTE("target_articles");
+        $q->setBody(
+            "UPDATE arsse_label_members set assigned = ?, modified = CURRENT_TIMESTAMP where label is ? and assigned is not ? and article in (select id from target_articles)", 
+            ["bool","int","bool"], 
+            [!$remove, $id, !$remove]
+        );
+        $out += $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
+        // next, if we're not removing, add any new entries that need to be added
+        if (!$remove) {
+            $q = $this->articleQuery($user, $context);
+            $q->setWhere("not exists(select article from arsse_label_members where label is ? and article is arsse_articles.id)", "int", $id);
+            $q->pushCTE("target_articles");
+            $q->setBody(
+                "INSERT INTO 
+                    arsse_label_members(label,article,subscription) 
+                SELECT 
+                    ?,id,
+                    (select id from arsse_subscriptions join user on user is owner where arsse_subscriptions.feed is target_articles.feed) 
+                FROM target_articles",
+                "int", $id
+            );
+            $out += $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
+        }
+        // commit the transaction
+        $tr->commit();
+        return (bool) $out;
+    }
+
+    protected function labelValidateId(string $user, $id, bool $byName, bool $checkDb = true, bool $subject = false): array {
+        if (!$byName && !ValueInfo::id($id)) {
+            // if we're not referring to a label by name and the ID is invalid, throw an exception
+            throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "label", 'type' => "int > 0"]);
+        } elseif ($byName && !(ValueInfo::str($id) & ValueInfo::VALID)) {
+            // otherwise if we are referring to a label by name but the ID is not a string, also throw an exception
+            throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "label", 'type' => "string"]);
+        } elseif ($checkDb) {
+            $field = !$byName ? "id" : "name";
+            $type = !$byName ? "int" : "str";
+            $l = $this->db->prepare("SELECT id,name from arsse_labels where $field is ? and owner is ?", $type, "str")->run($id, $user)->getRow();
+            if (!$l) {
+                throw new Db\ExceptionInput($subject ? "subjectMissing" : "idMissing", ["action" => $this->caller(), "field" => "label", 'id' => $id]);
+            } else {
+                return $l;
+            }
+        }
+        return [
+            'id'   => !$byName ? $id : null,
+            'name' => $byName ? $id : null,
+        ];
     }
 
     protected function labelValidateName($name): bool {

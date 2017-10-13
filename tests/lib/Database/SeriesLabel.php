@@ -216,104 +216,30 @@ trait SeriesLabel {
                 [1,"john.doe@example.com","Interesting"],
                 [2,"john.doe@example.com","Fascinating"],
                 [3,"jane.doe@example.com","Boring"],
+                [4,"john.doe@example.com","Lonely"],
             ],
-        ]
-    ];
-    protected $matches = [
-        [
-            'id' => 101,
-            'url' => 'http://example.com/1',
-            'title' => 'Article title 1',
-            'author' => '',
-            'content' => '<p>Article content 1</p>',
-            'guid' => 'e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda',
-            'published_date' => '2000-01-01 00:00:00',
-            'edited_date' => '2000-01-01 00:00:01',
-            'modified_date' => '2000-01-01 01:00:00',
-            'unread' => 1,
-            'starred' => 0,
-            'edition' => 101,
-            'subscription' => 8,
-            'fingerprint' => 'f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6:fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4:18fdd4fa93d693128c43b004399e5c9cea6c261ddfa002518d3669f55d8c2207',
-            'media_url' => null,
-            'media_type' => null,
         ],
-        [
-            'id' => 102,
-            'url' => 'http://example.com/2',
-            'title' => 'Article title 2',
-            'author' => '',
-            'content' => '<p>Article content 2</p>',
-            'guid' => '5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7',
-            'published_date' => '2000-01-02 00:00:00',
-            'edited_date' => '2000-01-02 00:00:02',
-            'modified_date' => '2000-01-02 02:00:00',
-            'unread' => 0,
-            'starred' => 0,
-            'edition' => 202,
-            'subscription' => 8,
-            'fingerprint' => '0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153:13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9:2abd0a8cba83b8214a66c8f0293ba63e467d720540e29ff8ddcdab069d4f1c9e',
-            'media_url' => "http://example.com/text",
-            'media_type' => "text/plain",
-        ],
-        [
-            'id' => 103,
-            'url' => 'http://example.com/3',
-            'title' => 'Article title 3',
-            'author' => '',
-            'content' => '<p>Article content 3</p>',
-            'guid' => '31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92',
-            'published_date' => '2000-01-03 00:00:00',
-            'edited_date' => '2000-01-03 00:00:03',
-            'modified_date' => '2000-01-03 03:00:00',
-            'unread' => 1,
-            'starred' => 1,
-            'edition' => 203,
-            'subscription' => 9,
-            'fingerprint' => 'f74b06b240bd08abf4d3fdfc20dba6a6f6eb8b4f1a00e9a617efd63a87180a4b:b278380e984cefe63f0e412b88ffc9cb0befdfa06fdc00bace1da99a8daff406:ad622b31e739cd3a3f3c788991082cf4d2f7a8773773008e75f0572e58cd373b',
-            'media_url' => "http://example.com/video",
-            'media_type' => "video/webm",
-        ],
-        [
-            'id' => 104,
-            'url' => 'http://example.com/4',
-            'title' => 'Article title 4',
-            'author' => '',
-            'content' => '<p>Article content 4</p>',
-            'guid' => '804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180',
-            'published_date' => '2000-01-04 00:00:00',
-            'edited_date' => '2000-01-04 00:00:04',
-            'modified_date' => '2000-01-04 04:00:00',
-            'unread' => 0,
-            'starred' => 1,
-            'edition' => 204,
-            'subscription' => 9,
-            'fingerprint' => 'f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8:f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3:ab2da63276acce431250b18d3d49b988b226a99c7faadf275c90b751aee05be9',
-            'media_url' => "http://example.com/image",
-            'media_type' => "image/svg+xml",
-        ],
-        [
-            'id' => 105,
-            'url' => 'http://example.com/5',
-            'title' => 'Article title 5',
-            'author' => '',
-            'content' => '<p>Article content 5</p>',
-            'guid' => 'db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41',
-            'published_date' => '2000-01-05 00:00:00',
-            'edited_date' => '2000-01-05 00:00:05',
-            'modified_date' => '2000-01-05 05:00:00',
-            'unread' => 1,
-            'starred' => 0,
-            'edition' => 305,
-            'subscription' => 10,
-            'fingerprint' => 'd40da96e39eea6c55948ccbe9b3d275b5f931298288dbe953990c5f496097022:834240f84501b5341d375414718204ec421561f3825d34c22bf9182203e42900:43b970ac6ec5f8a9647b2c7e4eed8b1d7f62e154a95eed748b0294c1256764ba',
-            'media_url' => "http://example.com/audio",
-            'media_type' => "audio/ogg",
+        'arsse_label_members' => [
+            'columns' => [
+                'label' => "int",
+                'article' => "int",
+                'subscription' => "int",
+                'assigned' => "bool",
+            ],
+            'rows' => [
+                [1, 1,1,1],
+                [2, 1,1,1],
+                [1,19,5,1],
+                [2,20,5,1],
+                [1, 5,3,0],
+                [2, 5,3,1],
+            ],
         ],
     ];
 
     public function setUpSeries() {
-        $this->checkTables = ['arsse_labels' => ["id","owner","name"],];
+        $this->checkLabels = ['arsse_labels' => ["id","owner","name"]];
+        $this->checkMembers = ['arsse_label_members' => ["label","article","subscription","assigned"]];
         $this->user = "john.doe@example.com";
     }
 
@@ -322,7 +248,7 @@ trait SeriesLabel {
         $labelID = $this->nextID("arsse_labels");
         $this->assertSame($labelID, Arsse::$db->labelAdd($user, ['name' => "Entertaining"]));
         Phake::verify(Arsse::$user)->authorize($user, "labelAdd");
-        $state = $this->primeExpectations($this->data, $this->checkTables);
+        $state = $this->primeExpectations($this->data, $this->checkLabels);
         $state['arsse_labels']['rows'][] = [$labelID, $user, "Entertaining"];
         $this->compareExpectations($state);
     }
@@ -355,8 +281,9 @@ trait SeriesLabel {
 
     public function testListLabels() {
         $exp = [
-            ['id' => 2, 'name' => "Fascinating", 'articles' => 0],
-            ['id' => 1, 'name' => "Interesting", 'articles' => 0],
+            ['id' => 2, 'name' => "Fascinating", 'articles' => 3, 'read' => 1],
+            ['id' => 1, 'name' => "Interesting", 'articles' => 2, 'read' => 2],
+            ['id' => 4, 'name' => "Lonely",      'articles' => 0, 'read' => 0],
         ];
         $this->assertResult($exp, Arsse::$db->labelList("john.doe@example.com"));
         $exp = [
@@ -364,10 +291,8 @@ trait SeriesLabel {
         ];
         $this->assertResult($exp, Arsse::$db->labelList("jane.doe@example.com"));
         $exp = [];
-        $this->assertResult($exp, Arsse::$db->labelList("admin@example.net"));
+        $this->assertResult($exp, Arsse::$db->labelList("jane.doe@example.com", false));
         Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "labelList");
-        Phake::verify(Arsse::$user)->authorize("jane.doe@example.com", "labelList");
-        Phake::verify(Arsse::$user)->authorize("admin@example.net", "labelList");
     }
 
     public function testListLabelsWithoutAuthority() {
@@ -379,7 +304,7 @@ trait SeriesLabel {
     public function testRemoveALabel() {
         $this->assertTrue(Arsse::$db->labelRemove("john.doe@example.com", 1));
         Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "labelRemove");
-        $state = $this->primeExpectations($this->data, $this->checkTables);
+        $state = $this->primeExpectations($this->data, $this->checkLabels);
         array_shift($state['arsse_labels']['rows']);
         $this->compareExpectations($state);
     }
@@ -387,7 +312,7 @@ trait SeriesLabel {
     public function testRemoveALabelByName() {
         $this->assertTrue(Arsse::$db->labelRemove("john.doe@example.com", "Interesting", true));
         Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "labelRemove");
-        $state = $this->primeExpectations($this->data, $this->checkTables);
+        $state = $this->primeExpectations($this->data, $this->checkLabels);
         array_shift($state['arsse_labels']['rows']);
         $this->compareExpectations($state);
     }
@@ -422,7 +347,8 @@ trait SeriesLabel {
         $exp = [
             'id'       => 2,
             'name'     => "Fascinating",
-            'articles' => 0,
+            'articles' => 3,
+            'read'     => 1,
         ];
         $this->assertArraySubset($exp, Arsse::$db->labelPropertiesGet("john.doe@example.com", 2));
         $this->assertArraySubset($exp, Arsse::$db->labelPropertiesGet("john.doe@example.com", "Fascinating", true));
@@ -462,7 +388,7 @@ trait SeriesLabel {
     public function testRenameALabel() {
         $this->assertTrue(Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, ['name' => "Curious"]));
         Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "labelPropertiesSet");
-        $state = $this->primeExpectations($this->data, $this->checkTables);
+        $state = $this->primeExpectations($this->data, $this->checkLabels);
         $state['arsse_labels']['rows'][0][2] = "Curious";
         $this->compareExpectations($state);
     }
@@ -470,7 +396,7 @@ trait SeriesLabel {
     public function testRenameALabelByName() {
         $this->assertTrue(Arsse::$db->labelPropertiesSet("john.doe@example.com", "Interesting", ['name' => "Curious"], true));
         Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "labelPropertiesSet");
-        $state = $this->primeExpectations($this->data, $this->checkTables);
+        $state = $this->primeExpectations($this->data, $this->checkLabels);
         $state['arsse_labels']['rows'][0][2] = "Curious";
         $this->compareExpectations($state);
     }
@@ -519,5 +445,69 @@ trait SeriesLabel {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, ['name' => "Exciting"]);
+    }
+
+    public function testListLabelledArticles() {
+        $exp = [1,19];
+        $this->assertEquals($exp, Arsse::$db->labelArticlesGet("john.doe@example.com", 1));
+        $this->assertEquals($exp, Arsse::$db->labelArticlesGet("john.doe@example.com", "Interesting", true));
+        $exp = [1,5,20];
+        $this->assertEquals($exp, Arsse::$db->labelArticlesGet("john.doe@example.com", 2));
+        $this->assertEquals($exp, Arsse::$db->labelArticlesGet("john.doe@example.com", "Fascinating", true));
+        $exp = [];
+        $this->assertEquals($exp, Arsse::$db->labelArticlesGet("john.doe@example.com", 4));
+        $this->assertEquals($exp, Arsse::$db->labelArticlesGet("john.doe@example.com", "Lonely", true));
+    }
+
+    public function testListLabelledArticlesForAMissingLabel() {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        Arsse::$db->labelArticlesGet("john.doe@example.com", 3);
+    }
+
+    public function testListLabelledArticlesForAnInvalidLabel() {
+        $this->assertException("typeViolation", "Db", "ExceptionInput");
+        Arsse::$db->labelArticlesGet("john.doe@example.com", -1);
+    }
+
+    public function testListLabelledArticlesWithoutAuthority() {
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Arsse::$db->labelArticlesGet("john.doe@example.com", 1);
+    }
+
+    public function testApplyALabelToArticles() {
+        Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([2,5]));
+        $state = $this->primeExpectations($this->data, $this->checkMembers);
+        $state['arsse_label_members']['rows'][4][3] = 1;
+        $state['arsse_label_members']['rows'][] = [1,2,1,1];
+        $this->compareExpectations($state);
+    }
+
+    public function testClearALabelFromArticles() {
+        Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([1,5]), true);
+        $state = $this->primeExpectations($this->data, $this->checkMembers);
+        $state['arsse_label_members']['rows'][0][3] = 0;
+        $this->compareExpectations($state);
+    }
+
+    public function testApplyALabelToArticlesByName() {
+        Arsse::$db->labelArticlesSet("john.doe@example.com", "Interesting", (new Context)->articles([2,5]), false, true);
+        $state = $this->primeExpectations($this->data, $this->checkMembers);
+        $state['arsse_label_members']['rows'][4][3] = 1;
+        $state['arsse_label_members']['rows'][] = [1,2,1,1];
+        $this->compareExpectations($state);
+    }
+
+    public function testClearALabelFromArticlesByName() {
+        Arsse::$db->labelArticlesSet("john.doe@example.com", "Interesting", (new Context)->articles([1,5]), true, true);
+        $state = $this->primeExpectations($this->data, $this->checkMembers);
+        $state['arsse_label_members']['rows'][0][3] = 0;
+        $this->compareExpectations($state);
+    }
+
+    public function testApplyALabelToArticlesWithoutAuthority() {
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([2,5]));
     }
 }

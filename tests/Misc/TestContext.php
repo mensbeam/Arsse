@@ -35,6 +35,8 @@ class TestContext extends Test\AbstractTest {
             'notModifiedSince' => new \DateTime(),
             'editions' => [1,2],
             'articles' => [1,2],
+            'label' => 2112,
+            'labelName' => "Rush",
         ];
         $times = ['modifiedSince','notModifiedSince'];
         $c = new Context;

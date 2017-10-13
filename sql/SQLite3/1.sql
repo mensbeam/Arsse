@@ -20,6 +20,8 @@ create table arsse_label_members (
     label integer not null references arsse_labels(id) on delete cascade,
     article integer not null references arsse_articles(id) on delete cascade,
     subscription integer not null references arsse_subscriptions(id) on delete cascade,     -- Subscription is included so that records are deleted when a subscription is removed
+    assigned boolean not null default 1,
+    modified text not null default CURRENT_TIMESTAMP,
     primary key(label,article)
 ) without rowid;
 

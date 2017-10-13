@@ -206,6 +206,35 @@ trait SeriesArticle {
                 [12,  4,1,1,'2017-01-01 00:00:00'],
             ]
         ],
+        'arsse_labels' => [
+            'columns' => [
+                'id'       => "int",
+                'owner'    => "str",
+                'name'     => "str",
+            ],
+            'rows' => [
+                [1,"john.doe@example.com","Interesting"],
+                [2,"john.doe@example.com","Fascinating"],
+                [3,"jane.doe@example.com","Boring"],
+                [4,"john.doe@example.com","Lonely"],
+            ],
+        ],
+        'arsse_label_members' => [
+            'columns' => [
+                'label' => "int",
+                'article' => "int",
+                'subscription' => "int",
+                'assigned' => "bool",
+            ],
+            'rows' => [
+                [1, 1,1,1],
+                [2, 1,1,1],
+                [1,19,5,1],
+                [2,20,5,1],
+                [1, 5,3,0],
+                [2, 5,3,1],
+            ],
+        ],
     ];
     protected $matches = [
         [
@@ -355,6 +384,12 @@ trait SeriesArticle {
         $this->compareIds([19], (new Context)->reverse(true)->limit(1)->latestEdition(1001-1));
         $this->compareIds([8], (new Context)->reverse(true)->limit(1)->latestEdition(19-1));
         $this->compareIds([7,6], (new Context)->reverse(true)->limit(2)->latestEdition(8-1));
+        // label by ID
+        $this->compareIds([1,19], (new Context)->label(1));
+        $this->compareIds([1,5,20], (new Context)->label(2));
+        // label by name
+        $this->compareIds([1,19], (new Context)->labelName("Interesting"));
+        $this->compareIds([1,5,20], (new Context)->labelName("Fascinating"));
     }
 
     public function testListArticlesOfAMissingFolder() {

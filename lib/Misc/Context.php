@@ -21,6 +21,8 @@ class Context {
     public $article;
     public $editions;
     public $articles;
+    public $label;
+    public $labelName;
 
     protected $props = [];
 
@@ -111,6 +113,14 @@ class Context {
         if ($spec) {
             $spec = $this->cleanArray($spec);
         }
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function label(int $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function labelName(string $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 }
