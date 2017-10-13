@@ -48,19 +48,30 @@ trait Setup {
         $this->clearData();
     }
 
-    public function primeDatabase(array $data): bool {
-        $tr = $this->drv->begin();
+    public function primeDatabase(array $data, \JKingWeb\Arsse\Db\Driver $drv = null): bool {
+        $drv = $drv ?? $this->drv;
+        $tr = $drv->begin();
         foreach ($data as $table => $info) {
             $cols = implode(",", array_keys($info['columns']));
             $bindings = array_values($info['columns']);
             $params = implode(",", array_fill(0, sizeof($info['columns']), "?"));
-            $s = $this->drv->prepareArray("INSERT INTO $table($cols) values($params)", $bindings);
+            $s = $drv->prepareArray("INSERT INTO $table($cols) values($params)", $bindings);
             foreach ($info['rows'] as $row) {
-                $this->assertEquals(1, $s->runArray($row)->changes());
+                $s->runArray($row);
             }
         }
         $tr->commit();
         $this->primed = true;
+        return true;
+    }
+
+    public function primeFile(string $file, array $data = null): bool {
+        $data = $data ?? $this->data;
+        $primed = $this->primed;
+        $drv = new \JKingWeb\Arsse\Db\SQLite3\Driver($file);
+        $drv->schemaUpdate(\JKingWeb\Arsse\Database::SCHEMA_VERSION);
+        $this->primeDatabase($data, $drv);
+        $this->primed = $primed;
         return true;
     }
 
@@ -126,11 +137,12 @@ trait Setup {
                 $rows[] = array_intersect_key($row, $keys);
             }
             // compare the result set to the expectations
-            foreach ($expected as $index => $exp) {
-                $this->assertContains($exp, $rows, "Result set does not contain record at array index $index.");
-                $found = array_search($exp, $rows, true);
-                unset($rows[$found]);
+            foreach ($rows as $row) {
+                $this->assertContains($row, $expected, "Result set contains unexpected record.");
+                $found = array_search($row, $expected);
+                unset($expected[$found]);
             }
+            $this->assertArraySubset($expected, [], "Expectations not in result set.");
         }
     }
 }
