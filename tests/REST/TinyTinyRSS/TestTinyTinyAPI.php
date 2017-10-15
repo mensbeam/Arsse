@@ -769,7 +769,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         $this->assertResponse($this->respGood($exp), $this->h->dispatch(new Request("POST", "", json_encode($in))));
     }
 
-    public function testRetrieveLabelList() {
+    public function testRetrieveTheLabelList() {
         $in = [
             ['op' => "getLabels", 'sid' => "PriestsOfSyrinx"],
             ['op' => "getLabels", 'sid' => "PriestsOfSyrinx", 'article_id' => 1],

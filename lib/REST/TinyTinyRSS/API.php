@@ -32,9 +32,51 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     const LEVEL = 14;
     const VERSION = "17.4";
     const LABEL_OFFSET = 1024;
+    const VALID_INPUT = [
+        'op'                  => "str",
+        'sid'                 => "str",
+        'user'                => "str",
+        'password'            => "str",
+        'include_empty'       => "bool",
+        'unread_only'         => "bool",
+        'enable_nested'       => "bool",
+        'caption'             => "str",
+        'parent_id'           => "int",
+        'category_id'         => "int",
+        'feed_url'            => "str",
+        'login'               => "str",
+        'feed_id'             => "int",
+        'article_id'          => "int",
+        'label_id'            => "int",
+        'article_ids'         => "str",
+        'assign'              => "bool",
+        'is_cat'              => "bool",
+        'cat_id'              => "int",
+        'limit'               => "int",
+        'offset'              => "int",
+        'include_nested'      => "bool",
+        'skip'                => "int",
+        'filter'              => "str",
+        'show_excerpt'        => "bool",
+        'show_content'        => "bool",
+        'view_mode'           => "str",
+        'include_attachments' => "bool",
+        'since_id'            => "int",
+        'order_by'            => "str",
+        'sanitize'            => "bool",
+        'force_update'        => "bool",
+        'has_sandbox'         => "bool",
+        'include_header'      => "bool",
+        'search'              => "str",
+        'search_mode'         => "str",
+        'match_on'            => "str",
+        'mode'                => "int",
+        'field'               => "int",
+        'data'                => "str",
+    ];
     const FATAL_ERR = [
-        'seq' => null,
-        'status' => 1,
+        'seq'     => null,
+        'status'  => 1,
         'content' => ['error' => "NOT_LOGGED_IN"],
     ];
     
@@ -617,5 +659,15 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         return null;
+    }
+
+    public function opSetArticleLabel(array $data): array {
+        if (!isset($data['article_ids']) || !isset($data['label_id'])) {
+            throw new Exception("INCORRECT_USAGE");
+        }
+        $label = $this->labelIn($data['label_id']);
+        $articles = explode(",", (string) $data['article_ids']);
+        $assign = ValueInfo::bool(isset($data['assign']) ? $data['assign'] : null, false);
+
     }
 }
