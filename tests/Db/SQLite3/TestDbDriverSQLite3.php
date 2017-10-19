@@ -18,8 +18,9 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
         $conf = new Conf();
         Arsse::$conf = $conf;
         $conf->dbDriver = Db\SQLite3\Driver::class;
+        $conf->dbSQLite3Timeout = 0;
         $conf->dbSQLite3File = tempnam(sys_get_temp_dir(), 'ook');
-        $this->drv = new Db\SQLite3\Driver(true);
+        $this->drv = new Db\SQLite3\Driver();
         $this->ch = new \SQLite3(Arsse::$conf->dbSQLite3File);
         $this->ch->enableExceptions(true);
     }

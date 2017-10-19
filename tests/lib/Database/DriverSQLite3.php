@@ -11,7 +11,7 @@ trait DriverSQLite3 {
             $this->markTestSkipped("SQLite extension not loaded");
         }
         Arsse::$conf->dbSQLite3File = ":memory:";
-        $this->drv = new Driver(true);
+        $this->drv = new Driver();
     }
 
     public function nextID(string $table): int {

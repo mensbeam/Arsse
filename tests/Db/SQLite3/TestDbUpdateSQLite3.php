@@ -30,7 +30,7 @@ class TestDbUpdateSQLite3 extends Test\AbstractTest {
         Arsse::$conf = $conf;
         $this->base = $this->vfs->url();
         $this->path = $this->base."/SQLite3/";
-        $this->drv = new Db\SQLite3\Driver(true);
+        $this->drv = new Db\SQLite3\Driver();
     }
 
     public function tearDown() {
