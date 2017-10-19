@@ -70,6 +70,17 @@ return [
     'Exception.JKingWeb/Arsse/Exception.uncoded'                           => 'The specified exception symbol {0} has no code specified in AbstractException.php',
     // this should not usually be encountered
     'Exception.JKingWeb/Arsse/Exception.unknown'                           => 'An unknown error has occurred',
+    'Exception.JKingWeb/Arsse/ExceptionType.strictFailure'                 => 'Supplied value could not be normalized to {0, select,
+        1 {null}
+        2 {boolean}
+        3 {integer}
+        4 {float}
+        5 {datetime}
+        6 {string}
+        7 {array}
+        other {requested type}
+     }',
+    'Exception.JKingWeb/Arsse/ExceptionType.typeUnknown'                   => 'Normalization type {0} is  not implemented',
     'Exception.JKingWeb/Arsse/Lang/Exception.defaultFileMissing'           => 'Default language file "{0}" missing',
     'Exception.JKingWeb/Arsse/Lang/Exception.fileMissing'                  => 'Language file "{0}" is not available',
     'Exception.JKingWeb/Arsse/Lang/Exception.fileUnreadable'               => 'Insufficient permissions to read language file "{0}"',
