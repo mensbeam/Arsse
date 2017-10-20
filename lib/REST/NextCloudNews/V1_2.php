@@ -21,21 +21,21 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected $dateFormat = "unix";
 
     protected $validInput = [
-        'name'         => "string",
-        'url'          => "string",
-        'folderId'     => "int",
-        'feedTitle'    => "string",
-        'userId'       => "string",
-        'feedId'       => "int",
-        'newestItemId' => "int",
-        'batchSize'    => "int",
-        'offset'       => "int",
-        'type'         => "int",
-        'id'           => "int",
-        'getRead'      => "bool",
-        'oldestFirst'  => "bool",
-        'lastModified' => "datetime",
-     // 'items'        => "array int", // just pass these through
+        'name'         => ValueInfo::T_STRING,
+        'url'          => ValueInfo::T_STRING,
+        'folderId'     => ValueInfo::T_INT,
+        'feedTitle'    => ValueInfo::T_STRING,
+        'userId'       => ValueInfo::T_STRING,
+        'feedId'       => ValueInfo::T_INT,
+        'newestItemId' => ValueInfo::T_INT,
+        'batchSize'    => ValueInfo::T_INT,
+        'offset'       => ValueInfo::T_INT,
+        'type'         => ValueInfo::T_INT,
+        'id'           => ValueInfo::T_INT,
+        'getRead'      => ValueInfo::T_BOOL,
+        'oldestFirst'  => ValueInfo::T_BOOL,
+        'lastModified' => ValueInfo::T_DATE,
+        'items'        => ValueInfo::T_MIXED | ValueInfo::M_ARRAY,
     ];
     
     public function __construct() {
@@ -61,10 +61,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $data = [];
         }
         // FIXME: Do query parameters take precedence in NextCloud? Is there a conflict error when values differ?
-        $data = $this->normalizeInput($data, $this->validInput, "U");
-        $query = $this->normalizeInput($req->query, $this->validInput, "U");
-        $data = array_merge($data, $query);
-        unset($query);
+        $data = $this->normalizeInput(array_merge($data, $req->query), $this->validInput, "unix");
         // check to make sure the requested function is implemented
         try {
             $func = $this->chooseCall($req->paths, $req->method);
@@ -233,7 +230,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     // create a folder
     protected function folderAdd(array $url, array $data): Response {
         try {
-            $folder = Arsse::$db->folderAdd(Arsse::$user->id, $data);
+            $folder = Arsse::$db->folderAdd(Arsse::$user->id, ['name' => $data['name']]);
         } catch (ExceptionInput $e) {
             switch ($e->getCode()) {
                 // folder already exists
@@ -263,13 +260,8 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     // rename a folder (also supports moving nesting folders, but this is not a feature of the API)
     protected function folderRename(array $url, array $data): Response {
-        // there must be some change to be made
-        if (!sizeof($data)) {
-            return new Response(422);
-        }
-        // perform the edit
         try {
-            Arsse::$db->folderPropertiesSet(Arsse::$user->id, (int) $url[1], $data);
+            Arsse::$db->folderPropertiesSet(Arsse::$user->id, (int) $url[1], ['name' => $data['name']]);
         } catch (ExceptionInput $e) {
             switch ($e->getCode()) {
                 // folder does not exist
@@ -288,15 +280,13 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     // mark all articles associated with a folder as read
     protected function folderMarkRead(array $url, array $data): Response {
-        $c = new Context;
-        if (isset($data['newestItemId'])) {
-            // if the item ID is valid (i.e. an integer), add it to the context
-            $c->latestEdition($data['newestItemId']);
-        } else {
-            // otherwise return an error
+        if (!ValueInfo::id($data['newestItemId'])) {
+            // if the item ID is invalid (i.e. not a positive integer), this is an error
             return new Response(422);
         }
-        // add the folder ID to the context
+        // build the context
+        $c = new Context;
+        $c->latestEdition((int) $data['newestItemId']);
         $c->folder((int) $url[1]);
         // perform the operation
         try {
@@ -330,10 +320,6 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if (Arsse::$user->rightsGet(Arsse::$user->id)==User::RIGHTS_NONE) {
             return new Response(403);
         }
-        // perform an update of a single feed
-        if (!isset($data['feedId'])) {
-            return new Response(422);
-        }
         try {
             Arsse::$db->feedUpdate($data['feedId']);
         } catch (ExceptionInput $e) {
@@ -351,16 +337,10 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     // add a new feed
     protected function subscriptionAdd(array $url, array $data): Response {
-        // normalize the feed URL
-        if (!isset($data['url'])) {
-            return new Response(422);
-        }
-        // normalize the folder ID, if specified
-        $folder = isset($data['folderId']) ? $data['folderId'] : null;
         // try to add the feed
         $tr = Arsse::$db->begin();
         try {
-            $id = Arsse::$db->subscriptionAdd(Arsse::$user->id, $data['url']);
+            $id = Arsse::$db->subscriptionAdd(Arsse::$user->id, (string) $data['url']);
         } catch (ExceptionInput $e) {
             // feed already exists
             return new Response(409);
@@ -369,9 +349,9 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new Response(422);
         }
         // if a folder was specified, move the feed to the correct folder; silently ignore errors
-        if ($folder) {
+        if ($data['folderId']) {
             try {
-                Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, $id, ['folder' => $folder]);
+                Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, $id, ['folder' => $data['folderId']]);
             } catch (ExceptionInput $e) {
             }
         }
@@ -416,16 +396,8 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     // rename a feed
     protected function subscriptionRename(array $url, array $data): Response {
-        // normalize input
-        $in = [];
-        if (array_key_exists('feedTitle', $data)) { // we use array_key_exists because null is a valid input
-            $in['title'] = $data['feedTitle'];
-        } else {
-            return new Response(422);
-        }
-        // perform the renaming
         try {
-            Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, (int) $url[1], $in);
+            Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, (int) $url[1], ['title' => (string) $data['feedTitle']]);
         } catch (ExceptionInput $e) {
             switch ($e->getCode()) {
                 // subscription does not exist
@@ -442,16 +414,13 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     // move a feed to a folder
     protected function subscriptionMove(array $url, array $data): Response {
-        // normalize input
-        $in = [];
-        if (isset($data['folderId'])) {
-            $in['folder'] = $data['folderId'] ? $data['folderId'] : null;
-        } else {
+        // if no folder is specified this is an error
+        if (!isset($data['folderId'])) {
             return new Response(422);
         }
         // perform the move
         try {
-            Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, (int) $url[1], $in);
+            Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, (int) $url[1], ['folder' => $data['folderId']]);
         } catch (ExceptionInput $e) {
             switch ($e->getCode()) {
                 case 10239: // subscription does not exist
@@ -468,14 +437,13 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     // mark all articles associated with a subscription as read
     protected function subscriptionMarkRead(array $url, array $data): Response {
-        $c = new Context;
-        if (isset($data['newestItemId'])) {
-            $c->latestEdition($data['newestItemId']);
-        } else {
-            // otherwise return an error
+        if (!ValueInfo::id($data['newestItemId'])) {
+            // if the item ID is invalid (i.e. not a positive integer), this is an error
             return new Response(422);
         }
-        // add the subscription ID to the context
+        // build the context
+        $c = new Context;
+        $c->latestEdition((int) $data['newestItemId']);
         $c->subscription((int) $url[1]);
         // perform the operation
         try {
@@ -492,17 +460,17 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // set the context options supplied by the client
         $c = new Context;
         // set the batch size
-        if (isset($data['batchSize']) && $data['batchSize'] > 0) {
+        if ($data['batchSize'] > 0) {
             $c->limit($data['batchSize']);
         }
         // set the order of returned items
-        if (isset($data['oldestFirst']) && $data['oldestFirst']) {
+        if ($data['oldestFirst']) {
             $c->reverse(false);
         } else {
             $c->reverse(true);
         }
         // set the edition mark-off; the database uses an or-equal comparison for internal consistency, but the protocol does not, so we must adjust by one
-        if (isset($data['offset']) && $data['offset'] > 0) {
+        if ($data['offset'] > 0) {
             if ($c->reverse) {
                 $c->latestEdition($data['offset'] - 1);
             } else {
@@ -510,13 +478,11 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         // set whether to only return unread
-        if (isset($data['getRead']) && !$data['getRead']) {
+        if (!ValueInfo::bool($data['getRead'], true)) {
             $c->unread(true);
         }
         // if no type is specified assume 3 (All)
-        if (!isset($data['type'])) {
-            $data['type'] = 3;
-        }
+        $data['type'] = $data['type'] ?? 3;
         switch ($data['type']) {
             case 0: // feed
                 if (isset($data['id'])) {
@@ -535,7 +501,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 // return all items
         }
         // whether to return only updated items
-        if (isset($data['lastModified'])) {
+        if ($data['lastModified']) {
             $c->modifiedSince($data['lastModified']);
         }
         // perform the fetch
@@ -555,14 +521,13 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     // mark all articles as read
     protected function articleMarkReadAll(array $url, array $data): Response {
-        $c = new Context;
-        if (isset($data['newestItemId'])) {
-            // set the newest item ID as specified
-            $c->latestEdition($data['newestItemId']);
-        } else {
-            // otherwise return an error
+        if (!ValueInfo::id($data['newestItemId'])) {
+            // if the item ID is invalid (i.e. not a positive integer), this is an error
             return new Response(422);
         }
+        // build the context
+        $c = new Context;
+        $c->latestEdition((int) $data['newestItemId']);
         // perform the operation
         Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], $c);
         return new Response(204);
@@ -604,13 +569,9 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function articleMarkReadMulti(array $url, array $data): Response {
         // determine whether to mark read or unread
         $set = ($url[1]=="read");
-        // if the input data is not at all valid, return an error
-        if (!isset($data['items']) || !is_array($data['items'])) {
-            return new Response(422);
-        }
         // start a transaction and loop through the items
         $t = Arsse::$db->begin();
-        $in = array_chunk($data['items'], 50);
+        $in = array_chunk($data['items'] ?? [], 50);
         for ($a = 0; $a < sizeof($in); $a++) {
             // initialize the matching context
             $c = new Context;
@@ -628,13 +589,9 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function articleMarkStarredMulti(array $url, array $data): Response {
         // determine whether to mark starred or unstarred
         $set = ($url[1]=="star");
-        // if the input data is not at all valid, return an error
-        if (!isset($data['items']) || !is_array($data['items'])) {
-            return new Response(422);
-        }
         // start a transaction and loop through the items
         $t = Arsse::$db->begin();
-        $in = array_chunk(array_column($data['items'], "guidHash"), 50);
+        $in = array_chunk(array_column($data['items'] ?? [], "guidHash"), 50);
         for ($a = 0; $a < sizeof($in); $a++) {
             // initialize the matching context
             $c = new Context;

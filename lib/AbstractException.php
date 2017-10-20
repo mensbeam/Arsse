@@ -5,6 +5,8 @@ namespace JKingWeb\Arsse;
 abstract class AbstractException extends \Exception {
     const CODES = [        "Exception.uncoded"                           => -1,
         "Exception.unknown"                           => 10000,
+        "ExceptionType.strictFailure"                 => 10011,
+        "ExceptionType.typeUnknown"                   => 10012,
         "Lang/Exception.defaultFileMissing"           => 10101,
         "Lang/Exception.fileMissing"                  => 10102,
         "Lang/Exception.fileUnreadable"               => 10103,
