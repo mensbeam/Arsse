@@ -106,7 +106,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 try {
                     $data['seq'] = isset($data['seq']) ? $data['seq'] : 0;
                     $data = $this->normalizeInput($data, self::VALID_INPUT, "unix");
-                } catch(ExceptionType $e) {
+                } catch (ExceptionType $e) {
                     throw new Exception("INCORRECT_USAGE");
                 }
                 if (strtolower((string) $data['op']) != "login") {
@@ -392,7 +392,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             // attempt to remove the folder
             Arsse::$db->folderRemove(Arsse::$user->id, (int) $data['category_id']);
-        } catch(ExceptionInput $e) {
+        } catch (ExceptionInput $e) {
             // ignore all errors
         }
         return null;
@@ -409,7 +409,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             // try to move the folder
             Arsse::$db->folderPropertiesSet(Arsse::$user->id, (int) $data['category_id'], $in);
-        } catch(ExceptionInput $e) {
+        } catch (ExceptionInput $e) {
             // ignore all errors
         }
         return null;
@@ -427,7 +427,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             // try to rename the folder
             Arsse::$db->folderPropertiesSet(Arsse::$user->id, $data['category_id'], $in);
-        } catch(ExceptionInput $e) {
+        } catch (ExceptionInput $e) {
             // ignore all errors
         }
         return null;
@@ -436,7 +436,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function feedError(FeedException $e): array {
         // N.B.: we don't return code 4 (multiple feeds discovered); we simply pick the first feed discovered
         switch ($e->getCode()) {
-            case 10502: // invalid URL 
+            case 10502: // invalid URL
                 return ['code' => 2, 'message' => $e->getMessage()];
             case 10521: // no feeds discovered
                 return ['code' => 3, 'message' => $e->getMessage()];
@@ -486,7 +486,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     // if we didn't find the ID we perform feed discovery for the next iteration; this is pretty messy: discovery ends up being done twice because it was already done in $db->subscriptionAdd()
                     try {
                         $url = Feed::discover($url, $fetchUser, $fetchPassword);
-                    } catch(FeedException $e) {
+                    } catch (FeedException $e) {
                         // feed errors (handled above)
                         return $this->feedError($e);
                     }
@@ -510,7 +510,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             // attempt to remove the feed
             Arsse::$db->subscriptionRemove(Arsse::$user->id, (int) $data['feed_id']);
-        } catch(ExceptionInput $e) {
+        } catch (ExceptionInput $e) {
             throw new Exception("FEED_NOT_FOUND");
         }
         return ['status' => "OK"];
@@ -527,7 +527,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             // try to move the feed
             Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, $data['feed_id'], $in);
-        } catch(ExceptionInput $e) {
+        } catch (ExceptionInput $e) {
             // ignore all errors
         }
         return null;
@@ -545,7 +545,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             // try to rename the feed
             Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, $data['feed_id'], $in);
-        } catch(ExceptionInput $e) {
+        } catch (ExceptionInput $e) {
             // ignore all errors
         }
         return null;
@@ -558,7 +558,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         try {
             Arsse::$db->feedUpdate(Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, $data['feed_id'])['feed']);
-        } catch(ExceptionInput $e) {
+        } catch (ExceptionInput $e) {
             throw new Exception("FEED_NOT_FOUND");
         }
         return ['status' => "OK"];
@@ -592,7 +592,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'bg_color' => "",
                 'checked'  => in_array($l['id'], $list),
             ];
-        } 
+        }
         return $out;
     }
 
@@ -619,7 +619,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             // attempt to remove the label
             Arsse::$db->labelRemove(Arsse::$user->id, $id);
-        } catch(ExceptionInput $e) {
+        } catch (ExceptionInput $e) {
             // ignore all errors
         }
         return null;
@@ -632,7 +632,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             // try to rename the folder
             Arsse::$db->labelPropertiesSet(Arsse::$user->id, $id, ['name' => $name]);
-        } catch(ExceptionInput $e) {
+        } catch (ExceptionInput $e) {
             if ($e->getCode()==10237) {
                 // if the supplied ID was invalid, report an error; other errors are to be ignored
                 throw new Exception("INCORRECT_USAGE");

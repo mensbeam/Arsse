@@ -1,7 +1,7 @@
 <?php
 namespace JKingWeb\Arsse;
 
-require_once __DIR__.DIRECTORY_SEPARATOR."bootstrap.php";
+const BASE = __DIR__.DIRECTORY_SEPARATOR;
 
 $paths = [
     __FILE__,

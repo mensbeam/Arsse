@@ -301,7 +301,7 @@ class Database {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         // check to make sure the parent exists, if one is specified
-        $parent = $this->folderValidateId($user, $parent)['id'];        
+        $parent = $this->folderValidateId($user, $parent)['id'];
         $q = new Query(
             "SELECT
                 id,name,parent,
@@ -1268,8 +1268,8 @@ class Database {
         $q->setWhere("exists(select article from arsse_label_members where label is ? and article is arsse_articles.id)", "int", $id);
         $q->pushCTE("target_articles");
         $q->setBody(
-            "UPDATE arsse_label_members set assigned = ?, modified = CURRENT_TIMESTAMP where label is ? and assigned is not ? and article in (select id from target_articles)", 
-            ["bool","int","bool"], 
+            "UPDATE arsse_label_members set assigned = ?, modified = CURRENT_TIMESTAMP where label is ? and assigned is not ? and article in (select id from target_articles)",
+            ["bool","int","bool"],
             [!$remove, $id, !$remove]
         );
         $out += $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();

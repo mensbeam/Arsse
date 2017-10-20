@@ -134,7 +134,7 @@ class ValueInfo {
                     return $out->format(Date::FORMAT['iso8601'][1]);
                 } elseif (is_float($value) && is_finite($value)) {
                     $out = (string) $value;
-                    if(!strpos($out, "E")) {
+                    if (!strpos($out, "E")) {
                         return $out;
                     } else {
                         $out = sprintf("%F", $value);
@@ -174,7 +174,7 @@ class ValueInfo {
                             if ($dateFormat=="microtime") {
                                 // PHP is not able to correctly handle the output of microtime() as the input of DateTime::createFromFormat(), so we fudge it to look like a float
                                 if (preg_match("<^0\.\d{6}00 \d+$>", $value)) {
-                                    $value = substr($value,11).".".substr($value,2,6);
+                                    $value = substr($value, 11).".".substr($value, 2, 6);
                                 } else {
                                     throw new \Exception;
                                 }
@@ -251,7 +251,7 @@ class ValueInfo {
                 return self::NULL;
             }
             // interpret the value as a float
-            $float = filter_var($value, \FILTER_VALIDATE_FLOAT); 
+            $float = filter_var($value, \FILTER_VALIDATE_FLOAT);
             if ($float !== false) {
                 if (!fmod($float, 1)) {
                     // an integral float is acceptable

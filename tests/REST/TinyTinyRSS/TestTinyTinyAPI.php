@@ -12,7 +12,7 @@ use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\TinyTinyRSS\API;
 use Phake;
 
-/** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\API<extended> 
+/** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\API<extended>
  *  @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Exception */
 class TestTinyTinyAPI extends Test\AbstractTest {
     protected $h;
@@ -522,7 +522,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in))));
     }
 
-    public function testRetrieveTheServerConfiguration () {
+    public function testRetrieveTheServerConfiguration() {
         $in = ['op' => "getConfig", 'sid' => "PriestsOfSyrinx"];
         $interval = Service::interval();
         $valid = (new \DateTimeImmutable("now", new \DateTimezone("UTC")))->sub($interval);
