@@ -948,7 +948,7 @@ class Database {
         return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
     }
 
-    public function articleMark(string $user, array $data, Context $context = null): bool {
+    public function articleMark(string $user, array $data, Context $context = null): int {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
@@ -1008,7 +1008,7 @@ class Database {
         }
         // commit the transaction
         $tr->commit();
-        return (bool) $out;
+        return $out;
     }
 
     public function articleStarred(string $user): array {
@@ -1253,7 +1253,7 @@ class Database {
         }
     }
 
-    public function labelArticlesSet(string $user, $id, Context $context = null, bool $remove = false, bool $byName = false): bool {
+    public function labelArticlesSet(string $user, $id, Context $context = null, bool $remove = false, bool $byName = false): int {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
@@ -1291,7 +1291,7 @@ class Database {
         }
         // commit the transaction
         $tr->commit();
-        return (bool) $out;
+        return $out;
     }
 
     protected function labelValidateId(string $user, $id, bool $byName, bool $checkDb = true, bool $subject = false): array {

@@ -75,6 +75,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         'mode'                => ValueInfo::T_INT,
         'field'               => ValueInfo::T_INT,
         'data'                => ValueInfo::T_STRING,
+        'pref_name'           => ValueInfo::T_STRING,
     ];
     const FATAL_ERR = [
         'seq'     => null,
@@ -641,11 +642,20 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function opSetArticleLabel(array $data): array {
-        if (!$data['article_ids'] || !$data['label_id']) {
-            throw new Exception("INCORRECT_USAGE");
-        }
         $label = $this->labelIn($data['label_id']);
         $articles = explode(",", $data['article_ids']);
         $assign = $data['assign'] ?? false;
+        $out = 0;
+        $in = array_chunk($data['article_ids'], 50);
+        for ($a = 0; $a < sizeof($in); $a++) {
+            // initialize the matching context
+            $c = new Context;
+            $c->articles($in[$a]);
+            try {
+                $out += Arsse::$db->labelArticlesSet(Arsse::$user->id, $label, $c, !$assign);
+            } catch (ExceptionInput $e) {
+            }
+        }
+        return ['status' => "OK", 'updated' => $out];
     }
 }

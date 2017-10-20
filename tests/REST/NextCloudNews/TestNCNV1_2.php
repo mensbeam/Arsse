@@ -703,7 +703,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
     public function testMarkAFolderRead() {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->folder(1)->latestEdition(2112))->thenReturn(true);
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->folder(1)->latestEdition(2112))->thenReturn(42);
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->folder(42)->latestEdition(2112))->thenThrow(new ExceptionInput("idMissing")); // folder doesn't exist
         $exp = new Response(204);
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/1/read", $in, 'application/json')));
@@ -718,7 +718,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
     public function testMarkASubscriptionRead() {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->subscription(1)->latestEdition(2112))->thenReturn(true);
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->subscription(1)->latestEdition(2112))->thenReturn(42);
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->subscription(42)->latestEdition(2112))->thenThrow(new ExceptionInput("idMissing")); // subscription doesn't exist
         $exp = new Response(204);
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/read", $in, 'application/json')));
@@ -733,7 +733,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
     public function testMarkAllItemsRead() {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->latestEdition(2112))->thenReturn(true);
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->latestEdition(2112))->thenReturn(42);
         $exp = new Response(204);
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/read", $in, 'application/json')));
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/read?newestItemId=2112")));
@@ -747,13 +747,13 @@ class TestNCNV1_2 extends Test\AbstractTest {
         $unread = ['read' => false];
         $star = ['starred' => true];
         $unstar = ['starred' => false];
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->edition(1))->thenReturn(true);
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->edition(1))->thenReturn(42);
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->edition(42))->thenThrow(new ExceptionInput("subjectMissing")); // edition doesn't exist doesn't exist
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unread, (new Context)->edition(2))->thenReturn(true);
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unread, (new Context)->edition(2))->thenReturn(42);
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unread, (new Context)->edition(47))->thenThrow(new ExceptionInput("subjectMissing")); // edition doesn't exist doesn't exist
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $star, (new Context)->article(3))->thenReturn(true);
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $star, (new Context)->article(3))->thenReturn(42);
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $star, (new Context)->article(2112))->thenThrow(new ExceptionInput("subjectMissing")); // article doesn't exist doesn't exist
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unstar, (new Context)->article(4))->thenReturn(true);
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unstar, (new Context)->article(4))->thenReturn(42);
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unstar, (new Context)->article(1337))->thenThrow(new ExceptionInput("subjectMissing")); // article doesn't exist doesn't exist
         $exp = new Response(204);
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/1/read")));
@@ -785,7 +785,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
                 $inStar[$a][$b] = ['feedId' => 2112, 'guidHash' => $inStar[$a][$b]];
             }
         }
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), $this->anything())->thenReturn(true);
+        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), $this->anything())->thenReturn(42);
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->editions([]))->thenThrow(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->editions($in[1]))->thenThrow(new ExceptionInput("tooLong")); // data model function limited to 50 items for multiples
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->articles([]))->thenThrow(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
