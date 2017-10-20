@@ -10,6 +10,7 @@ use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\Context;
 use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\AbstractException;
+use JKingWeb\Arsse\ExceptionType;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\REST\Response;
@@ -33,46 +34,47 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     const VERSION = "17.4";
     const LABEL_OFFSET = 1024;
     const VALID_INPUT = [
-        'op'                  => "str",
-        'sid'                 => "str",
-        'user'                => "str",
-        'password'            => "str",
-        'include_empty'       => "bool",
-        'unread_only'         => "bool",
-        'enable_nested'       => "bool",
-        'caption'             => "str",
-        'parent_id'           => "int",
-        'category_id'         => "int",
-        'feed_url'            => "str",
-        'login'               => "str",
-        'feed_id'             => "int",
-        'article_id'          => "int",
-        'label_id'            => "int",
-        'article_ids'         => "str",
-        'assign'              => "bool",
-        'is_cat'              => "bool",
-        'cat_id'              => "int",
-        'limit'               => "int",
-        'offset'              => "int",
-        'include_nested'      => "bool",
-        'skip'                => "int",
-        'filter'              => "str",
-        'show_excerpt'        => "bool",
-        'show_content'        => "bool",
-        'view_mode'           => "str",
-        'include_attachments' => "bool",
-        'since_id'            => "int",
-        'order_by'            => "str",
-        'sanitize'            => "bool",
-        'force_update'        => "bool",
-        'has_sandbox'         => "bool",
-        'include_header'      => "bool",
-        'search'              => "str",
-        'search_mode'         => "str",
-        'match_on'            => "str",
-        'mode'                => "int",
-        'field'               => "int",
-        'data'                => "str",
+        'op'                  => ValueInfo::T_STRING,
+        'sid'                 => ValueInfo::T_STRING,
+        'seq'                 => ValueInfo::T_INT,
+        'user'                => ValueInfo::T_STRING | ValueInfo::M_STRICT,
+        'password'            => ValueInfo::T_STRING | ValueInfo::M_STRICT,
+        'include_empty'       => ValueInfo::T_BOOL | ValueInfo::M_DROP,
+        'unread_only'         => ValueInfo::T_BOOL | ValueInfo::M_DROP,
+        'enable_nested'       => ValueInfo::T_BOOL | ValueInfo::M_DROP,
+        'caption'             => ValueInfo::T_STRING | ValueInfo::M_STRICT,
+        'parent_id'           => ValueInfo::T_INT,
+        'category_id'         => ValueInfo::T_INT,
+        'feed_url'            => ValueInfo::T_STRING | ValueInfo::M_STRICT,
+        'login'               => ValueInfo::T_STRING | ValueInfo::M_STRICT,
+        'feed_id'             => ValueInfo::T_INT,
+        'article_id'          => ValueInfo::T_INT,
+        'label_id'            => ValueInfo::T_INT,
+        'article_ids'         => ValueInfo::T_STRING,
+        'assign'              => ValueInfo::T_BOOL | ValueInfo::M_DROP,
+        'is_cat'              => ValueInfo::T_BOOL | ValueInfo::M_DROP,
+        'cat_id'              => ValueInfo::T_INT,
+        'limit'               => ValueInfo::T_INT,
+        'offset'              => ValueInfo::T_INT,
+        'include_nested'      => ValueInfo::T_BOOL | ValueInfo::M_DROP,
+        'skip'                => ValueInfo::T_INT,
+        'filter'              => ValueInfo::T_STRING,
+        'show_excerpt'        => ValueInfo::T_BOOL | ValueInfo::M_DROP,
+        'show_content'        => ValueInfo::T_BOOL | ValueInfo::M_DROP,
+        'view_mode'           => ValueInfo::T_STRING,
+        'include_attachments' => ValueInfo::T_BOOL | ValueInfo::M_DROP,
+        'since_id'            => ValueInfo::T_INT,
+        'order_by'            => ValueInfo::T_STRING,
+        'sanitize'            => ValueInfo::T_BOOL | ValueInfo::M_DROP,
+        'force_update'        => ValueInfo::T_BOOL | ValueInfo::M_DROP,
+        'has_sandbox'         => ValueInfo::T_BOOL | ValueInfo::M_DROP,
+        'include_header'      => ValueInfo::T_BOOL | ValueInfo::M_DROP,
+        'search'              => ValueInfo::T_STRING,
+        'search_mode'         => ValueInfo::T_STRING,
+        'match_on'            => ValueInfo::T_STRING,
+        'mode'                => ValueInfo::T_INT,
+        'field'               => ValueInfo::T_INT,
+        'data'                => ValueInfo::T_STRING,
     ];
     const FATAL_ERR = [
         'seq'     => null,
@@ -98,16 +100,17 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 // non-JSON input indicates an error
                 return new Response(400, self::FATAL_ERR);
             }
-            // layer input over defaults
-            $data = array_merge([
-                'seq' => 0,
-                'op'  => "",
-                'sid' => null,
-            ], $data);
             try {
+                // normalize input
+                try {
+                    $data['seq'] = isset($data['seq']) ? $data['seq'] : 0;
+                    $data = $this->normalizeInput($data, self::VALID_INPUT, "unix");
+                } catch(ExceptionType $e) {
+                    throw new Exception("INCORRECT_USAGE");
+                }
                 if (strtolower((string) $data['op']) != "login") {
                     // unless logging in, a session identifier is required
-                    $this->resumeSession($data['sid']);
+                    $this->resumeSession((string) $data['sid']);
                 }
                 $method = "op".ucfirst($data['op']);
                 if (!method_exists($this, $method)) {
@@ -142,10 +145,10 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
     }
 
-    protected function resumeSession($id): bool {
+    protected function resumeSession(string $id): bool {
         try {
             // verify the supplied session is valid
-            $s = Arsse::$db->sessionResume((string) $id);
+            $s = Arsse::$db->sessionResume($id);
         } catch (\JKingWeb\Arsse\User\ExceptionSession $e) {
             // if not throw an exception
             throw new Exception("NOT_LOGGED_IN");
@@ -167,7 +170,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function opLogin(array $data): array {
-        if (isset($data['user']) && isset($data['password']) && Arsse::$user->auth($data['user'], $data['password'])) {
+        if (Arsse::$user->auth((string) $data['user'], (string) $data['password'])) {
             $id = Arsse::$db->sessionCreate($data['user']);
             return [
                 'session_id' => $id,
@@ -281,9 +284,9 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     public function opGetCategories(array $data): array {
         // normalize input
-        $all = isset($data['include_empty']) ? ValueInfo::bool($data['include_empty'], false) : false;
-        $read = !(isset($data['unread_only']) ? ValueInfo::bool($data['unread_only'], false) : false);
-        $deep = !(isset($data['enable_nested']) ? ValueInfo::bool($data['enable_nested'], false) : false);
+        $all = $data['include_empty'] ?? false;
+        $read = !($data['unread_only'] ?? false);
+        $deep = !($data['enable_nested'] ?? false);
         $user = Arsse::$user->id;
         // for each category, add the ID to a lookup table, set the number of unread to zero, and assign an increasing order index
         $cats = Arsse::$db->folderList($user, null, $deep)->getAll();
@@ -356,12 +359,9 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     public function opAddCategory(array $data) {
         $in = [
-            'name'   => isset($data['caption']) ? $data['caption'] : "",
-            'parent' => isset($data['parent_id']) ? $data['parent_id'] : null,
+            'name'   => $data['caption'],
+            'parent' => $data['parent_id'],
         ];
-        if (!$in['parent']) {
-            $in['parent'] = null;
-        }
         try {
             return Arsse::$db->folderAdd(Arsse::$user->id, $in);
         } catch (ExceptionInput $e) {
@@ -384,7 +384,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function opRemoveCategory(array $data) {
-        if (!isset($data['category_id']) || !ValueInfo::id($data['category_id'])) {
+        if (!ValueInfo::id($data['category_id'])) {
             // if the folder is invalid, throw an error
             throw new Exception("INCORRECT_USAGE");
         }
@@ -398,7 +398,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function opMoveCategory(array $data) {
-        if (!isset($data['category_id']) || !ValueInfo::id($data['category_id']) || !isset($data['parent_id']) || !ValueInfo::id($data['parent_id'], true)) {
+        if (!ValueInfo::id($data['category_id']) || !ValueInfo::id($data['parent_id'], true)) {
             // if the folder or parent is invalid, throw an error
             throw new Exception("INCORRECT_USAGE");
         }
@@ -415,21 +415,17 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function opRenameCategory(array $data) {
-        if (!isset($data['category_id']) || !ValueInfo::id($data['category_id']) || !isset($data['caption'])) {
-            // if the folder is invalid, throw an error
-            throw new Exception("INCORRECT_USAGE");
-        }
         $info = ValueInfo::str($data['caption']);
-        if (!($info & ValueInfo::VALID) || ($info & ValueInfo::EMPTY) || ($info & ValueInfo::WHITE)) {
-            // if the folder name is invalid, throw an error
+        if (!ValueInfo::id($data['category_id']) || !($info & ValueInfo::VALID) || ($info & ValueInfo::EMPTY) || ($info & ValueInfo::WHITE)) {
+            // if the folder or its new name are invalid, throw an error
             throw new Exception("INCORRECT_USAGE");
         }
         $in = [
-            'name' => (string) $data['caption'],
+            'name' => $data['caption'],
         ];
         try {
             // try to rename the folder
-            Arsse::$db->folderPropertiesSet(Arsse::$user->id, (int) $data['category_id'], $in);
+            Arsse::$db->folderPropertiesSet(Arsse::$user->id, $data['category_id'], $in);
         } catch(ExceptionInput $e) {
             // ignore all errors
         }
@@ -453,23 +449,14 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function opSubscribeToFeed(array $data): array {
-        if (!isset($data['feed_url']) || !(ValueInfo::str($data['feed_url']) & ValueInfo::VALID)) {
-            // if the feed URL is invalid, throw an error
+        if (!$data['feed_url'] || !ValueInfo::id($data['category_id'], true)) {
+            // if the feed URL or the category ID is invalid, throw an error
             throw new Exception("INCORRECT_USAGE");
         }
-        // normalize input data
-        if (
-            (isset($data['category_id']) && !ValueInfo::id($data['category_id'], true)) || 
-            (isset($data['login']) && !(ValueInfo::str($data['login']) & ValueInfo::VALID)) || 
-            (isset($data['password']) && !(ValueInfo::str($data['password']) & ValueInfo::VALID))
-        ) {
-           // if the category is not a valid ID or the feed username or password are not convertible to strings, also throw an error
-           throw new Exception("INCORRECT_USAGE");
-        }
         $url = (string) $data['feed_url'];
-        $folder = isset($data['category_id']) ? (int) $data['category_id'] : null;
-        $fetchUser = isset($data['login']) ? (string) $data['login'] : "";
-        $fetchPassword = isset($data['password']) ? (string) $data['password'] : "";
+        $folder = (int) $data['category_id'];
+        $fetchUser = (string) $data['login'];
+        $fetchPassword = (string) $data['password'];
         // check to make sure the requested folder exists before doing anything else, if one is specified
         if ($folder) {
             try {
@@ -519,10 +506,6 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function opUnsubscribeFeed(array $data): array {
-        if (!isset($data['feed_id']) || !ValueInfo::id($data['feed_id'])) {
-            // if the feed is invalid, throw an error
-            throw new Exception("FEED_NOT_FOUND");
-        }
         try {
             // attempt to remove the feed
             Arsse::$db->subscriptionRemove(Arsse::$user->id, (int) $data['feed_id']);
@@ -533,16 +516,16 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function opMoveFeed(array $data) {
-        if (!isset($data['feed_id']) || !ValueInfo::id($data['feed_id']) || !isset($data['category_id']) || !ValueInfo::id($data['category_id'], true)) {
+        if (!ValueInfo::id($data['feed_id']) || !isset($data['category_id']) || !ValueInfo::id($data['category_id'], true)) {
             // if the feed or folder is invalid, throw an error
             throw new Exception("INCORRECT_USAGE");
         }
         $in = [
-            'folder' => (int) $data['category_id'],
+            'folder' => $data['category_id'],
         ];
         try {
             // try to move the feed
-            Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, (int) $data['feed_id'], $in);
+            Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, $data['feed_id'], $in);
         } catch(ExceptionInput $e) {
             // ignore all errors
         }
@@ -550,21 +533,17 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function opRenameFeed(array $data) {
-        if (!isset($data['feed_id']) || !ValueInfo::id($data['feed_id']) || !isset($data['caption'])) {
-            // if the feed is invalid or there is no caption, throw an error
-            throw new Exception("INCORRECT_USAGE");
-        }
         $info = ValueInfo::str($data['caption']);
-        if (!($info & ValueInfo::VALID) || ($info & ValueInfo::EMPTY) || ($info & ValueInfo::WHITE)) {
-            // if the feed name is invalid, throw an error
+        if (!ValueInfo::id($data['feed_id']) || !($info & ValueInfo::VALID) || ($info & ValueInfo::EMPTY) || ($info & ValueInfo::WHITE)) {
+            // if the feed ID or name is invalid, throw an error
             throw new Exception("INCORRECT_USAGE");
         }
         $in = [
-            'name' => (string) $data['caption'],
+            'name' => $data['caption'],
         ];
         try {
             // try to rename the feed
-            Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, (int) $data['feed_id'], $in);
+            Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, $data['feed_id'], $in);
         } catch(ExceptionInput $e) {
             // ignore all errors
         }
@@ -577,7 +556,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             throw new Exception("INCORRECT_USAGE");
         }
         try {
-            Arsse::$db->feedUpdate(Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, (int) $data['feed_id'])['feed']);
+            Arsse::$db->feedUpdate(Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, $data['feed_id'])['feed']);
         } catch(ExceptionInput $e) {
             throw new Exception("FEED_NOT_FOUND");
         }
@@ -597,7 +576,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     public function opGetLabels(array $data): array {
         // this function doesn't complain about invalid article IDs
-        $article = (isset($data['article_id']) && ValueInfo::id($data['article_id'])) ? (int) $data['article_id'] : 0;
+        $article = ValueInfo::id($data['article_id']) ? $data['article_id'] : 0;
         try {
             $list = $article ? Arsse::$db->articleLabelsGet(Arsse::$user->id, $article) : [];
         } catch (ExceptionInput $e) {
@@ -618,7 +597,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     public function opAddLabel(array $data) {
         $in = [
-            'name'   => isset($data['caption']) ? $data['caption'] : "",
+            'name'   => (string) $data['caption'],
         ];
         try {
             return $this->labelOut(Arsse::$db->labelAdd(Arsse::$user->id, $in));
@@ -635,7 +614,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     public function opRemoveLabel(array $data) {
         // normalize the label ID; missing or invalid IDs are rejected
-        $id = $this->labelIn(isset($data['label_id']) ? $data['label_id'] : 0);
+        $id = $this->labelIn($data['label_id']);
         try {
             // attempt to remove the label
             Arsse::$db->labelRemove(Arsse::$user->id, $id);
@@ -647,8 +626,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     public function opRenameLabel(array $data) {
         // normalize input; missing or invalid IDs are rejected
-        $id = $this->labelIn(isset($data['label_id']) ? $data['label_id'] : 0);
-        $name = isset($data['caption']) ? $data['caption'] : "";
+        $id = $this->labelIn($data['label_id']);
+        $name = (string) $data['caption'];
         try {
             // try to rename the folder
             Arsse::$db->labelPropertiesSet(Arsse::$user->id, $id, ['name' => $name]);
@@ -662,12 +641,11 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function opSetArticleLabel(array $data): array {
-        if (!isset($data['article_ids']) || !isset($data['label_id'])) {
+        if (!$data['article_ids'] || !$data['label_id']) {
             throw new Exception("INCORRECT_USAGE");
         }
         $label = $this->labelIn($data['label_id']);
-        $articles = explode(",", (string) $data['article_ids']);
-        $assign = ValueInfo::bool(isset($data['assign']) ? $data['assign'] : null, false);
-
+        $articles = explode(",", $data['article_ids']);
+        $assign = $data['assign'] ?? false;
     }
 }
