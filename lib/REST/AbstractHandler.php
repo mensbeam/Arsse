@@ -32,52 +32,13 @@ abstract class AbstractHandler implements Handler {
         return $data;
     }
 
-    protected function NormalizeInput(array $data, array $types, string $dateFormat = null): array {
+    protected function normalizeInput(array $data, array $types, string $dateFormat = null, int $mode = 0): array {
         $out = [];
-        foreach ($data as $key => $value) {
-            if (!isset($types[$key])) {
-                $out[$key] = $value;
-                continue;
-            }
-            if (is_null($value)) {
+        foreach ($types as $key => $type) {
+            if (isset($data[$key])) {
+                $out[$key] = ValueInfo::normalize($data[$key], $type | $mode, $dateFormat);
+            } else {
                 $out[$key] = null;
-                continue;
-            }
-            switch ($types[$key]) {
-                case "int":
-                    if (valueInfo::int($value) & ValueInfo::VALID) {
-                        $out[$key] = (int) $value;
-                    }
-                    break;
-                case "string":
-                    if (is_bool($value)) {
-                        $out[$key] = var_export($value, true);
-                    } elseif (!is_scalar($value)) {
-                        break;
-                    } else {
-                        $out[$key] = (string) $value;
-                    }
-                    break;
-                case "bool":
-                    $test = filter_var($value, \FILTER_VALIDATE_BOOLEAN, \FILTER_NULL_ON_FAILURE);
-                    if (!is_null($test)) {
-                        $out[$key] = $test;
-                    }
-                    break;
-                case "float":
-                    $test = filter_var($value, \FILTER_VALIDATE_FLOAT);
-                    if ($test !== false) {
-                        $out[$key] = $test;
-                    }
-                    break;
-                case "datetime":
-                    $t = Date::normalize($value, $dateFormat);
-                    if ($t) {
-                        $out[$key] = $t;
-                    }
-                    break;
-                default:
-                    throw new Exception("typeUnknown", $types[$key]);
             }
         }
         return $out;
