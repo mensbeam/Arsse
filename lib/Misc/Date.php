@@ -35,41 +35,8 @@ class Date {
         return $date->format($f);
     }
 
-    public static function normalize($date, string $inFormat = null, bool $inLocal = false) {
-        if ($date instanceof \DateTimeInterface) {
-            return $date;
-        } elseif (is_numeric($date)) {
-            $time = (int) $date;
-        } elseif ($date===null) {
-            return null;
-        } elseif (is_string($date)) {
-            try {
-                $tz = (!$inLocal) ? new \DateTimeZone("UTC") : null;
-                if (!is_null($inFormat)) {
-                    switch ($inFormat) {
-                        case 'http':    $f = "D, d M Y H:i:s \G\M\T"; break;
-                        case 'iso8601': $f = "Y-m-d\TH:i:sP";         break;
-                        case 'sql':     $f = "Y-m-d H:i:s";           break;
-                        case 'date':    $f = "Y-m-d";                 break;
-                        case 'time':    $f = "H:i:s";                 break;
-                        default:        $f = $inFormat;               break;
-                    }
-                    return \DateTime::createFromFormat("!".$f, $date, $tz);
-                } else {
-                    return new \DateTime($date, $tz);
-                }
-            } catch (\Throwable $e) {
-                return null;
-            }
-        } elseif (is_bool($date)) {
-            return null;
-        } else {
-            $time = (int) $date;
-        }
-        $tz = (!$inLocal) ? new \DateTimeZone("UTC") : null;
-        $d = new \DateTime("now", $tz);
-        $d->setTimestamp($time);
-        return $d;
+    public static function normalize($date, string $inFormat = null) {
+        return ValueInfo::normalize($date, ValueInfo::T_DATE, $inFormat);
     }
 
     public static function add(string $interval, $date = null): \DateTimeInterface {
