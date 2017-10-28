@@ -824,4 +824,42 @@ class TestTinyTinyAPI extends Test\AbstractTest {
             $this->assertResponse($this->respGood($exp[$a]), $this->h->dispatch(new Request("POST", "", json_encode($in[$a]))), "Test $a failed");
         }
     }
+
+    public function testAssignArticlesToALabel() {
+        $list = [
+            range(1,100),
+            range(1,50),
+            range(51,100),
+        ];
+        $in = [
+            ['op' => "setArticleLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -2112, 'article_ids' => implode(",", $list[0])],
+            ['op' => "setArticleLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -2112, 'article_ids' => implode(",", $list[0]), 'assign' => true],
+            ['op' => "setArticleLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -2112],
+            ['op' => "setArticleLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -42],
+            ['op' => "setArticleLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => 42],
+            ['op' => "setArticleLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => 0],
+            ['op' => "setArticleLabel", 'sid' => "PriestsOfSyrinx"],
+        ];
+        Phake::when(Arsse::$db)->labelArticlesSet(Arsse::$user->id, $this->anything(), (new Context)->articles([]), $this->anything())->thenThrow(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
+        Phake::when(Arsse::$db)->labelArticlesSet(Arsse::$user->id, $this->anything(), (new Context)->articles($list[0]), $this->anything())->thenThrow(new ExceptionInput("tooLong")); // data model function limited to 50 items for multiples
+        Phake::when(Arsse::$db)->labelArticlesSet(Arsse::$user->id, 1088, (new Context)->articles($list[1]), true)->thenReturn(42);
+        Phake::when(Arsse::$db)->labelArticlesSet(Arsse::$user->id, 1088, (new Context)->articles($list[2]), true)->thenReturn(47);
+        Phake::when(Arsse::$db)->labelArticlesSet(Arsse::$user->id, 1088, (new Context)->articles($list[1]), false)->thenReturn(5);
+        Phake::when(Arsse::$db)->labelArticlesSet(Arsse::$user->id, 1088, (new Context)->articles($list[2]), false)->thenReturn(2);
+        $exp = $this->respGood(['status' => "OK", 'updated' => 89]);
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
+        Phake::verify(Arsse::$db)->labelArticlesSet(Arsse::$user->id, 1088, (new Context)->articles($list[1]), true);
+        Phake::verify(Arsse::$db)->labelArticlesSet(Arsse::$user->id, 1088, (new Context)->articles($list[2]), true);
+        $exp = $this->respGood(['status' => "OK", 'updated' => 7]);
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
+        Phake::verify(Arsse::$db)->labelArticlesSet(Arsse::$user->id, 1088, (new Context)->articles($list[1]), false);
+        Phake::verify(Arsse::$db)->labelArticlesSet(Arsse::$user->id, 1088, (new Context)->articles($list[2]), false);
+        $exp = $this->respGood(['status' => "OK", 'updated' => 89]);
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[2]))));
+        $exp = $this->respErr("INCORRECT_USAGE");
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[3]))));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[4]))));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[5]))));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[6]))));
+    }
 }

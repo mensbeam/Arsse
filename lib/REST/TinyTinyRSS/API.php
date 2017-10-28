@@ -643,10 +643,10 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     public function opSetArticleLabel(array $data): array {
         $label = $this->labelIn($data['label_id']);
-        $articles = explode(",", $data['article_ids']);
+        $articles = explode(",", (string) $data['article_ids']);
         $assign = $data['assign'] ?? false;
         $out = 0;
-        $in = array_chunk($data['article_ids'], 50);
+        $in = array_chunk($articles, 50);
         for ($a = 0; $a < sizeof($in); $a++) {
             // initialize the matching context
             $c = new Context;
