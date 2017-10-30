@@ -30,17 +30,17 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         ['id' => 1, 'parent' => null, 'children' => 1, 'feeds' => 1, 'name' => "Science"],
     ];
     protected $subscriptions = [
-        ['id' => 6, 'folder' => null, 'top_folder' => null, 'unread' => 0,  'updated' => "2010-02-12 20:08:47", 'favicon' => 'http://example.com/6.png'],
-        ['id' => 3, 'folder' => 1,    'top_folder' => 1,    'unread' => 2,  'updated' => "2016-05-23 06:40:02", 'favicon' => 'http://example.com/3.png'],
-        ['id' => 1, 'folder' => 2,    'top_folder' => 1,    'unread' => 5,  'updated' => "2017-09-15 22:54:16", 'favicon' => null],
-        ['id' => 2, 'folder' => 5,    'top_folder' => 3,    'unread' => 10, 'updated' => "2011-11-11 11:11:11", 'favicon' => 'http://example.com/2.png'],
-        ['id' => 5, 'folder' => 6,    'top_folder' => 3,    'unread' => 12, 'updated' => "2017-07-07 17:07:17", 'favicon' => ''],
-        ['id' => 4, 'folder' => 6,    'top_folder' => 3,    'unread' => 6,  'updated' => "2017-10-09 15:58:34", 'favicon' => 'http://example.com/4.png'],
+        ['id' => 3, 'folder' => 1,    'top_folder' => 1,    'unread' => 2,  'updated' => "2016-05-23 06:40:02", 'err_msg' => 'argh', 'title' => 'Ars Technica',   'favicon' => 'http://example.com/3.png'],
+        ['id' => 4, 'folder' => 6,    'top_folder' => 3,    'unread' => 6,  'updated' => "2017-10-09 15:58:34", 'err_msg' => '',     'title' => 'CBC News',       'favicon' => 'http://example.com/4.png'],
+        ['id' => 6, 'folder' => null, 'top_folder' => null, 'unread' => 0,  'updated' => "2010-02-12 20:08:47", 'err_msg' => '',     'title' => 'Eurogamer',      'favicon' => 'http://example.com/6.png'],
+        ['id' => 1, 'folder' => 2,    'top_folder' => 1,    'unread' => 5,  'updated' => "2017-09-15 22:54:16", 'err_msg' => '',     'title' => 'NASA JPL',       'favicon' => null],
+        ['id' => 5, 'folder' => 6,    'top_folder' => 3,    'unread' => 12, 'updated' => "2017-07-07 17:07:17", 'err_msg' => '',     'title' => 'Ottawa Citizen', 'favicon' => ''],
+        ['id' => 2, 'folder' => 5,    'top_folder' => 3,    'unread' => 10, 'updated' => "2011-11-11 11:11:11", 'err_msg' => 'oops', 'title' => 'Toronto Star',   'favicon' => 'http://example.com/2.png'],
     ];
     protected $labels = [
-        ['id' => 5, 'articles' => 0,   'read' => 0,  'name' => "Interesting"],
-        ['id' => 3, 'articles' => 100, 'read' => 94, 'name' => "Fascinating"],
-        ['id' => 1, 'articles' => 2,   'read' => 0,  'name' => "Logical"],
+        ['id' => 3, 'articles' => 100, 'read' => 94, 'unread' => 6, 'name' => "Fascinating"],
+        ['id' => 5, 'articles' => 0,   'read' => 0,  'unread' => 0, 'name' => "Interesting"],
+        ['id' => 1, 'articles' => 2,   'read' => 0,  'unread' => 2, 'name' => "Logical"],
     ];
     protected $usedLabels = [
         ['id' => 3, 'articles' => 100, 'read' => 94, 'name' => "Fascinating"],
@@ -766,10 +766,10 @@ class TestTinyTinyAPI extends Test\AbstractTest {
             ['id' => -1027, 'counter' => 6, 'auxcounter' => 100],
             ['id' => -1025, 'counter' => 2, 'auxcounter' => 2],
             ['id' => 3, 'has_img' => 1, 'counter' => 2,  'updated' => "2016-05-23T06:40:02"],
-            ['id' => 1, 'has_img' => 0, 'counter' => 5,  'updated' => "2017-09-15T22:54:16"],
-            ['id' => 2, 'has_img' => 1, 'counter' => 10, 'updated' => "2011-11-11T11:11:11"],
-            ['id' => 5, 'has_img' => 0, 'counter' => 12, 'updated' => "2017-07-07T17:07:17"],
             ['id' => 4, 'has_img' => 1, 'counter' => 6,  'updated' => "2017-10-09T15:58:34"],
+            ['id' => 1, 'has_img' => 0, 'counter' => 5,  'updated' => "2017-09-15T22:54:16"],
+            ['id' => 5, 'has_img' => 0, 'counter' => 12, 'updated' => "2017-07-07T17:07:17"],
+            ['id' => 2, 'has_img' => 1, 'counter' => 10, 'updated' => "2011-11-11T11:11:11"],
             ['id' => 5, 'kind' => "cat", 'counter' => 10],
             ['id' => 6, 'kind' => "cat", 'counter' => 18],
             ['id' => 3, 'kind' => "cat", 'counter' => 28],
@@ -795,29 +795,29 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 4)->thenThrow(new ExceptionInput("idMissing"));
         $exp = [
             [
-                ['id' => -1025, 'caption' => "Logical",     'fg_color' => "", 'bg_color' => "", 'checked' => false],
                 ['id' => -1027, 'caption' => "Fascinating", 'fg_color' => "", 'bg_color' => "", 'checked' => false],
                 ['id' => -1029, 'caption' => "Interesting", 'fg_color' => "", 'bg_color' => "", 'checked' => false],
+                ['id' => -1025, 'caption' => "Logical",     'fg_color' => "", 'bg_color' => "", 'checked' => false],
             ],
             [
+                ['id' => -1027, 'caption' => "Fascinating", 'fg_color' => "", 'bg_color' => "", 'checked' => true],
+                ['id' => -1029, 'caption' => "Interesting", 'fg_color' => "", 'bg_color' => "", 'checked' => false],
                 ['id' => -1025, 'caption' => "Logical",     'fg_color' => "", 'bg_color' => "", 'checked' => true],
+            ],
+            [
                 ['id' => -1027, 'caption' => "Fascinating", 'fg_color' => "", 'bg_color' => "", 'checked' => true],
                 ['id' => -1029, 'caption' => "Interesting", 'fg_color' => "", 'bg_color' => "", 'checked' => false],
+                ['id' => -1025, 'caption' => "Logical",     'fg_color' => "", 'bg_color' => "", 'checked' => false],
             ],
             [
-                ['id' => -1025, 'caption' => "Logical",     'fg_color' => "", 'bg_color' => "", 'checked' => false],
-                ['id' => -1027, 'caption' => "Fascinating", 'fg_color' => "", 'bg_color' => "", 'checked' => true],
-                ['id' => -1029, 'caption' => "Interesting", 'fg_color' => "", 'bg_color' => "", 'checked' => false],
-            ],
-            [
-                ['id' => -1025, 'caption' => "Logical",     'fg_color' => "", 'bg_color' => "", 'checked' => false],
                 ['id' => -1027, 'caption' => "Fascinating", 'fg_color' => "", 'bg_color' => "", 'checked' => false],
                 ['id' => -1029, 'caption' => "Interesting", 'fg_color' => "", 'bg_color' => "", 'checked' => false],
+                ['id' => -1025, 'caption' => "Logical",     'fg_color' => "", 'bg_color' => "", 'checked' => false],
             ],
             [
-                ['id' => -1025, 'caption' => "Logical",     'fg_color' => "", 'bg_color' => "", 'checked' => false],
                 ['id' => -1027, 'caption' => "Fascinating", 'fg_color' => "", 'bg_color' => "", 'checked' => false],
                 ['id' => -1029, 'caption' => "Interesting", 'fg_color' => "", 'bg_color' => "", 'checked' => false],
+                ['id' => -1025, 'caption' => "Logical",     'fg_color' => "", 'bg_color' => "", 'checked' => false],
             ],
         ];
         for ($a = 0; $a < sizeof($in); $a++) {
@@ -861,5 +861,22 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[4]))));
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[5]))));
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[6]))));
+    }
+
+    public function testRetrieveFeedTree() {
+        $in = [
+            ['op' => "getFeedTree", 'sid' => "PriestsOfSyrinx", 'include_empty' => true],
+            ['op' => "getFeedTree", 'sid' => "PriestsOfSyrinx"],
+        ];
+        Phake::when(Arsse::$db)->folderList($this->anything(), null, true)->thenReturn(new Result($this->folders));
+        Phake::when(Arsse::$db)->subscriptionList($this->anything())->thenReturn(new Result($this->subscriptions));
+        Phake::when(Arsse::$db)->labelList($this->anything(), true)->thenReturn(new Result($this->labels));
+        Phake::when(Arsse::$db)->articleCount($this->anything(), $this->anything())->thenReturn(7); // FIXME: this should check an unread+modifiedSince context
+        Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn(['total' => 10, 'unread' => 4, 'read' => 6]);
+        // the expectations are packed tightly since they're very verbose; one can use var_export() (or convert to JSON) to pretty-print them
+        $exp = ['categories'=>['identifier'=>'id','label'=>'name','items'=>[['id'=>'CAT:-1','items'=>[['id'=>'FEED:-4','name'=>'All articles','unread'=>35,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/folder.png','bare_id'=>-4,'auxcounter'=>0,],['id'=>'FEED:-3','name'=>'Fresh articles','unread'=>7,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/fresh.png','bare_id'=>-3,'auxcounter'=>0,],['id'=>'FEED:-1','name'=>'Starred articles','unread'=>4,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/star.png','bare_id'=>-1,'auxcounter'=>0,],['id'=>'FEED:-2','name'=>'Published articles','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/feed.png','bare_id'=>-2,'auxcounter'=>0,],['id'=>'FEED:0','name'=>'Archived articles','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/archive.png','bare_id'=>0,'auxcounter'=>0,],['id'=>'FEED:-6','name'=>'Recently read','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/time.png','bare_id'=>-6,'auxcounter'=>0,],],'name'=>'Special','type'=>'category','unread'=>0,'bare_id'=>-1,],['id'=>'CAT:-2','items'=>[['id'=>'FEED:-1027','name'=>'Fascinating','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1027,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],['id'=>'FEED:-1029','name'=>'Interesting','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1029,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],['id'=>'FEED:-1025','name'=>'Logical','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1025,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],],'name'=>'Labels','type'=>'category','unread'=>8,'bare_id'=>-2,],['id'=>'CAT:4','bare_id'=>4,'auxcounter'=>0,'name'=>'Photography','items'=>[],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(0 feeds)',],['id'=>'CAT:3','bare_id'=>3,'auxcounter'=>0,'name'=>'Politics','items'=>[['id'=>'CAT:5','bare_id'=>5,'name'=>'Local','items'=>[['id'=>'FEED:2','bare_id'=>2,'auxcounter'=>0,'name'=>'Toronto Star','checkbox'=>false,'unread'=>0,'error'=>'oops','icon'=>'feed-icons/2.ico','param'=>'2011-11-11T11:11:11',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>3,'param'=>'(1 feed)',],['id'=>'CAT:6','bare_id'=>6,'name'=>'National','items'=>[['id'=>'FEED:4','bare_id'=>4,'auxcounter'=>0,'name'=>'CBC News','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>'feed-icons/4.ico','param'=>'2017-10-09T15:58:34',],['id'=>'FEED:5','bare_id'=>5,'auxcounter'=>0,'name'=>'Ottawa Citizen','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>false,'param'=>'2017-07-07T17:07:17',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>3,'param'=>'(2 feeds)',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(3 feeds)',],['id'=>'CAT:1','bare_id'=>1,'auxcounter'=>0,'name'=>'Science','items'=>[['id'=>'CAT:2','bare_id'=>2,'name'=>'Rocketry','items'=>[['id'=>'FEED:1','bare_id'=>1,'auxcounter'=>0,'name'=>'NASA JPL','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>false,'param'=>'2017-09-15T22:54:16',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>1,'param'=>'(1 feed)',],['id'=>'FEED:3','bare_id'=>3,'auxcounter'=>0,'name'=>'Ars Technica','checkbox'=>false,'unread'=>0,'error'=>'argh','icon'=>'feed-icons/3.ico','param'=>'2016-05-23T06:40:02',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(2 feeds)',],['id'=>'CAT:0','bare_id'=>0,'auxcounter'=>0,'name'=>'Uncategorized','items'=>[['id'=>'FEED:6','bare_id'=>6,'auxcounter'=>0,'name'=>'Eurogamer','checkbox'=>false,'error'=>'','icon'=>'feed-icons/6.ico','param'=>'2010-02-12T20:08:47','unread'=>0,],],'type'=>'category','checkbox'=>false,'unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(1 feed)',],],],];
+        $this->assertEquals($this->respGood($exp), $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
+        $exp = ['categories'=>['identifier'=>'id','label'=>'name','items'=>[['id'=>'CAT:-1','items'=>[['id'=>'FEED:-4','name'=>'All articles','unread'=>35,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/folder.png','bare_id'=>-4,'auxcounter'=>0,],['id'=>'FEED:-3','name'=>'Fresh articles','unread'=>7,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/fresh.png','bare_id'=>-3,'auxcounter'=>0,],['id'=>'FEED:-1','name'=>'Starred articles','unread'=>4,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/star.png','bare_id'=>-1,'auxcounter'=>0,],['id'=>'FEED:-2','name'=>'Published articles','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/feed.png','bare_id'=>-2,'auxcounter'=>0,],['id'=>'FEED:0','name'=>'Archived articles','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/archive.png','bare_id'=>0,'auxcounter'=>0,],['id'=>'FEED:-6','name'=>'Recently read','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/time.png','bare_id'=>-6,'auxcounter'=>0,],],'name'=>'Special','type'=>'category','unread'=>0,'bare_id'=>-1,],['id'=>'CAT:-2','items'=>[['id'=>'FEED:-1027','name'=>'Fascinating','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1027,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],['id'=>'FEED:-1029','name'=>'Interesting','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1029,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],['id'=>'FEED:-1025','name'=>'Logical','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1025,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],],'name'=>'Labels','type'=>'category','unread'=>8,'bare_id'=>-2,],['id'=>'CAT:3','bare_id'=>3,'auxcounter'=>0,'name'=>'Politics','items'=>[['id'=>'CAT:5','bare_id'=>5,'name'=>'Local','items'=>[['id'=>'FEED:2','bare_id'=>2,'auxcounter'=>0,'name'=>'Toronto Star','checkbox'=>false,'unread'=>0,'error'=>'oops','icon'=>'feed-icons/2.ico','param'=>'2011-11-11T11:11:11',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>3,'param'=>'(1 feed)',],['id'=>'CAT:6','bare_id'=>6,'name'=>'National','items'=>[['id'=>'FEED:4','bare_id'=>4,'auxcounter'=>0,'name'=>'CBC News','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>'feed-icons/4.ico','param'=>'2017-10-09T15:58:34',],['id'=>'FEED:5','bare_id'=>5,'auxcounter'=>0,'name'=>'Ottawa Citizen','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>false,'param'=>'2017-07-07T17:07:17',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>3,'param'=>'(2 feeds)',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(3 feeds)',],['id'=>'CAT:1','bare_id'=>1,'auxcounter'=>0,'name'=>'Science','items'=>[['id'=>'CAT:2','bare_id'=>2,'name'=>'Rocketry','items'=>[['id'=>'FEED:1','bare_id'=>1,'auxcounter'=>0,'name'=>'NASA JPL','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>false,'param'=>'2017-09-15T22:54:16',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>1,'param'=>'(1 feed)',],['id'=>'FEED:3','bare_id'=>3,'auxcounter'=>0,'name'=>'Ars Technica','checkbox'=>false,'unread'=>0,'error'=>'argh','icon'=>'feed-icons/3.ico','param'=>'2016-05-23T06:40:02',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(2 feeds)',],['id'=>'CAT:0','bare_id'=>0,'auxcounter'=>0,'name'=>'Uncategorized','items'=>[['id'=>'FEED:6','bare_id'=>6,'auxcounter'=>0,'name'=>'Eurogamer','checkbox'=>false,'error'=>'','icon'=>'feed-icons/6.ico','param'=>'2010-02-12T20:08:47','unread'=>0,],],'type'=>'category','checkbox'=>false,'unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(1 feed)',],],],];
+        $this->assertEquals($this->respGood($exp), $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
     }
 }

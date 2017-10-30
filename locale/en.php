@@ -2,7 +2,14 @@
 return [
     'API.TTRSS.Category.Uncategorized'                                     => 'Uncategorized',
     'API.TTRSS.Category.Special'                                           => 'Special', 
-    'API.TTRSS.Category.Labels'                                            => 'Labels', 
+    'API.TTRSS.Category.Labels'                                            => 'Labels',
+    'API.TTRSS.Feed.All'                                                   => 'All articles',
+    'API.TTRSS.Feed.Fresh'                                                 => 'Fresh articles',
+    'API.TTRSS.Feed.Starred'                                               => 'Starred articles',
+    'API.TTRSS.Feed.Published'                                             => 'Published articles',
+    'API.TTRSS.Feed.Archived'                                              => 'Archived articles',
+    'API.TTRSS.Feed.Read'                                                  => 'Recently read',
+    'API.TTRSS.FeedCount'                                                  => '{0, select, 1 {(1 feed)} other {({0} feeds)}}',
 
     'Driver.Db.SQLite3.Name'                                               => 'SQLite 3',
     'Driver.Service.Curl.Name'                                             => 'HTTP (curl)',

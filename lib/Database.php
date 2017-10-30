@@ -1165,7 +1165,7 @@ class Database {
                     join arsse_marks on arsse_label_members.article is arsse_marks.article and arsse_label_members.subscription is arsse_marks.subscription
                  where label is id and assigned is 1 and read is 1
                 ) as read
-            FROM arsse_labels where owner is ? and articles >= ?
+            FROM arsse_labels where owner is ? and articles >= ? order by name
             ", "str", "int"
         )->run($user, !$includeEmpty);
     }

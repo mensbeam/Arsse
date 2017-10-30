@@ -21,10 +21,12 @@ Protocol difference so far:
     - Handling of incorrect Content-Type and/or HTTP method is different
     - TT-RSS accepts whitespace-only names; we do not
     - TT-RSS allows two folders to share the same name under the same parent; we do not
-    - Session lifetime is much shorter by default (does TT-RSS even expire sessions?)
+    - Session lifetime is much shorter by default
     - Categories and feeds will always be sorted alphabetically (the protocol does not allow for clients to re-order)
     - The "Archived" virtual feed is non-functional (the protocol does not allow archiving)
     - The "Published" virtual feed is non-functional (this will not be implemented in the near term)
+    - setArticleLabel responds with errors for invalid labels where TT-RSS simply returns a zero result
+    - The result of setArticleLabel counts only records which actually changed rather than all entries attempted
 */
 
 
@@ -281,6 +283,179 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             ['id' => -4, 'counter' => $countAll, 'auxcounter' => 0], // All articles
         ];
         return array_merge($special, $labels, $feeds, $cats);
+    }
+
+    public function opGetFeedTree(array $data) : array {
+        $all = $data['include_empty'] ?? false;
+        $user = Arsse::$user->id;
+        $tSpecial = [
+            'type'       => "feed",
+            'auxcounter' => 0,
+            'error'      => "",
+            'updated'    => "",
+        ];
+        $out = [];
+        // get the lists of categories and feeds
+        $cats = Arsse::$db->folderList($user, null, true)->getAll();
+        $subs = Arsse::$db->subscriptionList($user)->getAll();
+        // start with the special feeds
+        $out[] = [
+            'name' => Arsse::$lang->msg("API.TTRSS.Category.Special"),
+            'id' => "CAT:-1",
+            'bare_id' => -1,
+            'type' => "category",
+            'unread' => 0,
+            'items' => [
+                array_merge([ // All articles
+                    'name' => Arsse::$lang->msg("API.TTRSS.Feed.All"),
+                    'id' => "FEED:-4",
+                    'bare_id' => -4,
+                    'icon' => "images/folder.png",
+                    'unread' => array_reduce($subs, function($sum, $value) {return $sum + $value['unread'];}, 0), // the sum of all feeds' unread is the total unread
+                ], $tSpecial),
+                array_merge([ // Fresh articles
+                    'name' => Arsse::$lang->msg("API.TTRSS.Feed.Fresh"),
+                    'id' => "FEED:-3",
+                    'bare_id' => -3,
+                    'icon' => "images/fresh.png",
+                    'unread' => Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H"))),
+                ], $tSpecial),
+                array_merge([ // Starred articles
+                    'name' => Arsse::$lang->msg("API.TTRSS.Feed.Starred"),
+                    'id' => "FEED:-1",
+                    'bare_id' => -1,
+                    'icon' => "images/star.png",
+                    'unread' => Arsse::$db->articleStarred($user)['unread'],
+                ], $tSpecial),
+                array_merge([ // Published articles
+                    'name' => Arsse::$lang->msg("API.TTRSS.Feed.Published"),
+                    'id' => "FEED:-2",
+                    'bare_id' => -2,
+                    'icon' => "images/feed.png",
+                    'unread' => 0, // TODO: unread count should be populated if the Published feed is ever implemented
+                ], $tSpecial),
+                array_merge([ // Archived articles
+                    'name' => Arsse::$lang->msg("API.TTRSS.Feed.Archived"),
+                    'id' => "FEED:0",
+                    'bare_id' => 0,
+                    'icon' => "images/archive.png",
+                    'unread' => 0, // Article archiving is not exposed by the API, so this is always zero
+                ], $tSpecial),
+                array_merge([ // Recently read
+                    'name' => Arsse::$lang->msg("API.TTRSS.Feed.Read"),
+                    'id' => "FEED:-6",
+                    'bare_id' => -6,
+                    'icon' => "images/time.png",
+                    'unread' => 0, // this is by definition zero; unread articles do not appear in this feed
+                ], $tSpecial),
+            ],
+        ];
+        // next prepare labels
+        $items = [];
+        $unread = 0;
+        // add each label to a holding list (NOTE: the 'include_empty' parameter does not affect whether labels with zero total articles are shown: all labels are always shown)
+        foreach (Arsse::$db->labelList($user, true) as $l) {
+            $items[] = [
+                'name'       => $l['name'],
+                'id'         => "FEED:".$this->labelOut($l['id']),
+                'bare_id'    => $this->labelOut($l['id']),
+                'unread'     => 0,
+                'icon'       => "images/label.png",
+                'type'       => "feed",
+                'auxcounter' => 0,
+                'error'      => "",
+                'updated'    => "",
+                'fg_color'   => "",
+                'bg_color'   => "",
+            ];
+            $unread += ($l['articles'] - $l['read']);
+        }
+        // if there are labels, all the label category, 
+        if ($items) {
+            $out[] = [
+                'name' => Arsse::$lang->msg("API.TTRSS.Category.Labels"),
+                'id' => "CAT:-2",
+                'bare_id' => -2,
+                'type' => "category",
+                'unread' => $unread,
+                'items' => $items,
+            ];
+        }
+        // get the lists of categories and feeds
+        $cats = Arsse::$db->folderList($user, null, true)->getAll();
+        $subs = Arsse::$db->subscriptionList($user)->getAll();
+        // process all the top-level categories; their contents are gathered recursively in another function
+        $items = $this->enumerateCategories($cats, $subs, null, $all);
+        $out = array_merge($out, $items['list']);
+        // process uncategorized feeds; exclude the "Uncategorized" category if there are no orphan feeds and we're not displaying empties
+        $items = $this->enumerateFeeds($subs, null);
+        if ($items || !$all) {
+            $out[] = [
+                'name'         => Arsse::$lang->msg("API.TTRSS.Category.Uncategorized"),
+                'id'           => "CAT:0",
+                'bare_id'      => 0,
+                'type'         => "category",
+                'auxcounter'   => 0,
+                'unread'       => 0,
+                'child_unread' => 0,
+                'checkbox'     => false,
+                'parent_id'    => null,
+                'param'        => Arsse::$lang->msg("API.TTRSS.FeedCount", sizeof($items)),
+                'items'        => $items,
+            ];
+        }
+        // return the result wrapped in some boilerplate
+        return ['categories' => ['identifier' => "id", 'label' => "name", 'items' => $out]];
+    }
+
+    protected function enumerateFeeds(array $subs, int $parent = null): array {
+        $out = [];
+        foreach ($subs as $s) {
+            if ($s['folder'] != $parent) {
+                continue;
+            }
+            $out[] = [
+                'name'       => $s['title'],
+                'id'         => "FEED:".$s['id'],
+                'bare_id'    => $s['id'],
+                'icon'       => $s['favicon'] ? "feed-icons/".$s['id'].".ico" : false,
+                'error'      => (string) $s['err_msg'],
+                'param'      => Date::transform($s['updated'], "iso8601", "sql"),
+                'unread'     => 0,
+                'auxcounter' => 0,
+                'checkbox'   => false,
+            ];
+        }
+        return $out;
+    }
+
+    protected function enumerateCategories(array $cats, array $subs, int $parent = null, bool $all = false): array {
+        $out = [];
+        $feedTotal = 0;
+        foreach ($cats as $c) {
+            if ($c['parent'] != $parent || (!$all && !($c['children'] + $c['feeds']))) {
+                // if the category is the wrong level, or if it's empty and we're not including empties, skip it
+                continue;
+            }
+            $children  = $c['children'] ? $this->enumerateCategories($cats, $subs, $c['id'], $all) : ['list' => [], 'feeds' => 0];
+            $feeds = $c['feeds'] ? $this->enumerateFeeds($subs, $c['id']) : [];
+            $count = sizeof($feeds) + $children['feeds'];
+            $out[] = [
+                'name'         => $c['name'],
+                'id'           => "CAT:".$c['id'],
+                'bare_id'      => $c['id'],
+                'parent_id'    => $c['parent'],
+                'type'         => "category",
+                'auxcounter'   => 0,
+                'unread'       => 0,
+                'child_unread' => 0,
+                'checkbox'     => false,
+                'param'        => Arsse::$lang->msg("API.TTRSS.FeedCount", $count),
+                'items'        => array_merge($children['list'], $feeds),
+            ];
+            $feedTotal += $count;
+        }
+        return ['list' => $out, 'feeds' => $feedTotal];
     }
 
     public function opGetCategories(array $data): array {
