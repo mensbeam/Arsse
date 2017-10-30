@@ -35,6 +35,20 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     const LEVEL = 14;
     const VERSION = "17.4";
     const LABEL_OFFSET = 1024;
+    // special feeds
+    const FEED_ARCHIVED = 0;
+    const FEED_STARRED = -1;
+    const FEED_PUBLISHED = -2;
+    const FEED_FRESH = -3;
+    const FEED_ALL = -4;
+    const FEED_READ = -6;
+    // special categories
+    const CAT_UNCATEGORIZED = 0;
+    const CAT_SPECIAL = -1;
+    const CAT_LABELS = -2;
+    const CAT_NOT_SPECIAL = -3;
+    const CAT_ALL = -4;
+    // valid input
     const VALID_INPUT = [
         'op'                  => ValueInfo::T_STRING,
         'sid'                 => ValueInfo::T_STRING,
@@ -79,6 +93,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         'data'                => ValueInfo::T_STRING,
         'pref_name'           => ValueInfo::T_STRING,
     ];
+    // generic error construct
     const FATAL_ERR = [
         'seq'     => null,
         'status'  => 1,
@@ -228,10 +243,10 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             $categories[$a]['counter'] = 0;
         }
         // add the "Uncategorized" and "Labels" virtual categories to the list
-        $catmap[0] = sizeof($categories);
-        $categories[] = ['id' => 0, 'name' => Arsse::$lang->msg("API.TTRSS.Category.Uncategorized"), 'parent' => 0, 'children' => 0, 'counter' => 0];
-        $catmap[-2] = sizeof($categories);
-        $categories[] = ['id' => -2, 'name' => Arsse::$lang->msg("API.TTRSS.Category.Labels"), 'parent' => 0, 'children' => 0, 'counter' => 0];
+        $catmap[self::CAT_UNCATEGORIZED] = sizeof($categories);
+        $categories[] = ['id' => self::CAT_UNCATEGORIZED, 'name' => Arsse::$lang->msg("API.TTRSS.Category.Uncategorized"), 'parent' => 0, 'children' => 0, 'counter' => 0];
+        $catmap[self::CAT_LABELS] = sizeof($categories);
+        $categories[] = ['id' => self::CAT_LABELS, 'name' => Arsse::$lang->msg("API.TTRSS.Category.Labels"), 'parent' => 0, 'children' => 0, 'counter' => 0];
         // prepare data for each subscription; we also add unread counts for their host categories
         foreach (Arsse::$db->subscriptionList($user) as $f) {
             if ($f['unread']) {
@@ -249,7 +264,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         foreach (Arsse::$db->labelList($user, false) as $l) {
             $unread = $l['articles'] - $l['read'];
             $labels[] = ['id' => $this->labelOut($l['id']), 'counter' => $unread, 'auxcounter' => $l['articles']];
-            $categories[$catmap[-2]]['counter'] += $unread;
+            $categories[$catmap[self::CAT_LABELS]]['counter'] += $unread;
         }
         // do a second pass on categories, summing descendant unread counts for ancestors, pruning categories with no unread, and building a final category list
         $cats = [];
@@ -274,13 +289,13 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // prepare data for the virtual feeds and other counters
         $special = [
-            ['id' => "global-unread",    'counter' => $countAll], //this should not count archived articles, but we do not have an archive
-            ['id' => "subscribed-feeds", 'counter' => $countSubs],
-            ['id' => 0,  'counter' => 0, 'auxcounter' => 0], // Archived articles
-            ['id' => -1, 'counter' => $starred['unread'], 'auxcounter' => $starred['total']], // Starred articles
-            ['id' => -2, 'counter' => 0, 'auxcounter' => 0], // Published articles
-            ['id' => -3, 'counter' => $fresh, 'auxcounter' => 0], // Fresh articles
-            ['id' => -4, 'counter' => $countAll, 'auxcounter' => 0], // All articles
+            ['id' => "global-unread",      'counter' => $countAll], //this should not count archived articles, but we do not have an archive
+            ['id' => "subscribed-feeds",   'counter' => $countSubs],
+            ['id' => self::FEED_ARCHIVED,  'counter' => 0, 'auxcounter' => 0], // Archived articles
+            ['id' => self::FEED_STARRED,   'counter' => $starred['unread'], 'auxcounter' => $starred['total']], // Starred articles
+            ['id' => self::FEED_PUBLISHED, 'counter' => 0, 'auxcounter' => 0], // Published articles
+            ['id' => self::FEED_FRESH,     'counter' => $fresh, 'auxcounter' => 0], // Fresh articles
+            ['id' => self::FEED_ALL,       'counter' => $countAll, 'auxcounter' => 0], // All articles
         ];
         return array_merge($special, $labels, $feeds, $cats);
     }
@@ -301,50 +316,50 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         // start with the special feeds
         $out[] = [
             'name' => Arsse::$lang->msg("API.TTRSS.Category.Special"),
-            'id' => "CAT:-1",
-            'bare_id' => -1,
+            'id' => "CAT:".self::CAT_SPECIAL,
+            'bare_id' => self::CAT_SPECIAL,
             'type' => "category",
             'unread' => 0,
             'items' => [
                 array_merge([ // All articles
                     'name' => Arsse::$lang->msg("API.TTRSS.Feed.All"),
-                    'id' => "FEED:-4",
-                    'bare_id' => -4,
+                    'id' => "FEED:".self::FEED_ALL,
+                    'bare_id' => self::FEED_ALL,
                     'icon' => "images/folder.png",
                     'unread' => array_reduce($subs, function($sum, $value) {return $sum + $value['unread'];}, 0), // the sum of all feeds' unread is the total unread
                 ], $tSpecial),
                 array_merge([ // Fresh articles
                     'name' => Arsse::$lang->msg("API.TTRSS.Feed.Fresh"),
-                    'id' => "FEED:-3",
-                    'bare_id' => -3,
+                    'id' => "FEED:".self::FEED_FRESH,
+                    'bare_id' => self::FEED_FRESH,
                     'icon' => "images/fresh.png",
                     'unread' => Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H"))),
                 ], $tSpecial),
                 array_merge([ // Starred articles
                     'name' => Arsse::$lang->msg("API.TTRSS.Feed.Starred"),
-                    'id' => "FEED:-1",
-                    'bare_id' => -1,
+                    'id' => "FEED:".self::FEED_STARRED,
+                    'bare_id' => self::FEED_STARRED,
                     'icon' => "images/star.png",
                     'unread' => Arsse::$db->articleStarred($user)['unread'],
                 ], $tSpecial),
                 array_merge([ // Published articles
                     'name' => Arsse::$lang->msg("API.TTRSS.Feed.Published"),
-                    'id' => "FEED:-2",
-                    'bare_id' => -2,
+                    'id' => "FEED:".self::FEED_PUBLISHED,
+                    'bare_id' => self::FEED_PUBLISHED,
                     'icon' => "images/feed.png",
                     'unread' => 0, // TODO: unread count should be populated if the Published feed is ever implemented
                 ], $tSpecial),
                 array_merge([ // Archived articles
                     'name' => Arsse::$lang->msg("API.TTRSS.Feed.Archived"),
-                    'id' => "FEED:0",
-                    'bare_id' => 0,
+                    'id' => "FEED:".self::FEED_ARCHIVED,
+                    'bare_id' => self::FEED_ARCHIVED,
                     'icon' => "images/archive.png",
                     'unread' => 0, // Article archiving is not exposed by the API, so this is always zero
                 ], $tSpecial),
                 array_merge([ // Recently read
                     'name' => Arsse::$lang->msg("API.TTRSS.Feed.Read"),
-                    'id' => "FEED:-6",
-                    'bare_id' => -6,
+                    'id' => "FEED:".self::FEED_READ,
+                    'bare_id' => self::FEED_READ,
                     'icon' => "images/time.png",
                     'unread' => 0, // this is by definition zero; unread articles do not appear in this feed
                 ], $tSpecial),
@@ -374,8 +389,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($items) {
             $out[] = [
                 'name' => Arsse::$lang->msg("API.TTRSS.Category.Labels"),
-                'id' => "CAT:-2",
-                'bare_id' => -2,
+                'id' => "CAT:".self::CAT_LABELS,
+                'bare_id' => self::CAT_LABELS,
                 'type' => "category",
                 'unread' => $unread,
                 'items' => $items,
@@ -392,8 +407,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($items || !$all) {
             $out[] = [
                 'name'         => Arsse::$lang->msg("API.TTRSS.Category.Uncategorized"),
-                'id'           => "CAT:0",
-                'bare_id'      => 0,
+                'id'           => "CAT:".self::CAT_UNCATEGORIZED,
+                'bare_id'      => self::CAT_UNCATEGORIZED,
                 'type'         => "category",
                 'auxcounter'   => 0,
                 'unread'       => 0,
@@ -473,12 +488,12 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             $cats[$a]['order'] = $a + 1;
         }
         // add the "Uncategorized", "Special", and "Labels" virtual categories to the list
-        $map[0] = sizeof($cats);
-        $cats[] = ['id' => 0, 'name' => Arsse::$lang->msg("API.TTRSS.Category.Uncategorized"), 'children' => 0, 'unread' => 0, 'feeds' => 0];
-        $map[-1] = sizeof($cats);
-        $cats[] = ['id' => -1, 'name' => Arsse::$lang->msg("API.TTRSS.Category.Special"), 'children' => 0, 'unread' => 0, 'feeds' => 6];
-        $map[-2] = sizeof($cats);
-        $cats[] = ['id' => -2, 'name' => Arsse::$lang->msg("API.TTRSS.Category.Labels"), 'children' => 0, 'unread' => 0, 'feeds' => 0];
+        $map[self::CAT_UNCATEGORIZED] = sizeof($cats);
+        $cats[] = ['id' => self::CAT_UNCATEGORIZED, 'name' => Arsse::$lang->msg("API.TTRSS.Category.Uncategorized"), 'children' => 0, 'unread' => 0, 'feeds' => 0];
+        $map[self::CAT_SPECIAL] = sizeof($cats);
+        $cats[] = ['id' => self::CAT_SPECIAL, 'name' => Arsse::$lang->msg("API.TTRSS.Category.Special"), 'children' => 0, 'unread' => 0, 'feeds' => 6];
+        $map[self::CAT_LABELS] = sizeof($cats);
+        $cats[] = ['id' => self::CAT_LABELS, 'name' => Arsse::$lang->msg("API.TTRSS.Category.Labels"), 'children' => 0, 'unread' => 0, 'feeds' => 0];
         // for each subscription, add the unread count to its category, and increment the category's feed count
         $subs = Arsse::$db->subscriptionList($user);
         foreach ($subs as $sub) {
@@ -491,14 +506,14 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // for each label, add the unread count to the labels category, and increment the labels category's feed count
         $labels = Arsse::$db->labelList($user);
-        $f = $map[-2];
+        $f = $map[self::CAT_LABELS];
         foreach ($labels as $label) {
             $cats[$f]['unread'] += $label['articles'] - $label['read'];
             $cats[$f]['feeds'] += 1;
         }
         // get the unread counts for the special feeds
         // FIXME: this is pretty inefficient
-        $f = $map[-1];
+        $f = $map[self::CAT_SPECIAL];
         $cats[$f]['unread'] += Arsse::$db->articleStarred($user)['unread']; // starred
         $cats[$f]['unread'] += Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H"))); // fresh
         if (!$read) {
