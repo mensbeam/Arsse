@@ -905,7 +905,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
             ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2, 'is_cat' => true],
         ];
         $in4 = [
-            // this one has a tricky time-based context and will be handled last
+            // this one has a tricky time-based context
             ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -3],
         ];
         Phake::when(Arsse::$db)->articleMark->thenThrow(new ExceptionInput("typeViolation"));
@@ -926,7 +926,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->folder(42));
         // reset the database mock
         $this->setUp();
-        Phake::when(Arsse::$db)->articleMark->thenThrow(new ExceptionInput("typeViolation"));
+        Phake::when(Arsse::$db)->articleMark->thenReturn(42);
         Phake::when(Arsse::$db)->subscriptionList($this->anything())->thenReturn(new Result($this->subscriptions));
         Phake::when(Arsse::$db)->labelList->thenReturn(new Result($this->labels));
         Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result($this->usedLabels));

@@ -65,7 +65,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         'feed_url'            => ValueInfo::T_STRING | ValueInfo::M_STRICT,
         'login'               => ValueInfo::T_STRING | ValueInfo::M_STRICT,
         'feed_id'             => ValueInfo::T_INT,
-        'article_id'          => ValueInfo::T_INT,
+        'article_id'          => ValueInfo::T_MIXED, // single integer or comma-separated list in getArticle
         'label_id'            => ValueInfo::T_INT,
         'article_ids'         => ValueInfo::T_STRING,
         'assign'              => ValueInfo::T_BOOL | ValueInfo::M_DROP,
@@ -891,11 +891,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                         $list = array_column(Arsse::$db->labelList(Arsse::$user->id, false)->getAll(), "id");
                         // perform marking for each label
                         foreach ($list as $id) {
-                            try {
-                                Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], (new Context)->label($id));
-                            } catch (ExceptionInput $e) {
-                                // ignore errors
-                            }                            
+                            Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], (new Context)->label($id));
                         }
                         $tr->commit();
                     } catch (ExceptionInput $e) {
