@@ -19,8 +19,9 @@ use JKingWeb\Arsse\REST\Response;
 
 Protocol difference so far:
     - Handling of incorrect Content-Type and/or HTTP method is different
-    - TT-RSS accepts whitespace-only names; we do not
+    - TT-RSS accepts whitespace-only names for categories, labels, and feeds; we do not
     - TT-RSS allows two folders to share the same name under the same parent; we do not
+    - TT-RSS requires the user to choose in the face of multiple found feeds during discovery; we use the first one (picoFeed limitation)
     - Session lifetime is much shorter by default
     - Categories and feeds will always be sorted alphabetically (the protocol does not allow for clients to re-order)
     - The "Archived" virtual feed is non-functional (the protocol does not allow archiving)
@@ -873,14 +874,14 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     try {
                         $tr = Arsse::$db->begin();
                         // filter the subscription list to return only uncategorized, and get their IDs
-                        $list = array_column(array_filter(Arsse::$db->subscriptionList(Arsse::$user->id)->getAll(), function($value) {return is_null($value['folder']);}), "id");
+                        $list = array_column(Arsse::$db->subscriptionList(Arsse::$user->id, null, false)->getAll(), "id");
                         // perform marking for each applicable subscription
                         foreach ($list as $id) {
                             Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], (new Context)->subscription($id));
                         }
                         $tr->commit();
-                    } catch (ExceptionInput $e) {
-                        // ignore errors
+                    } catch (ExceptionInput $e) { // @codeCoverageIgnore
+                        // ignore errors; none should occur
                     }
                     return $out;
                 case self::CAT_LABELS:
@@ -894,8 +895,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                             Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], (new Context)->label($id));
                         }
                         $tr->commit();
-                    } catch (ExceptionInput $e) {
-                        // ignore errors
+                    } catch (ExceptionInput $e) { // @codeCoverageIgnore
+                        // ignore errors; none should occur
                     }
                     return $out;
                 default:
