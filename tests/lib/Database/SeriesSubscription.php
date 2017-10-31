@@ -259,6 +259,21 @@ trait SeriesSubscription {
     public function testListSubscriptionsInAFolder() {
         $exp = [
             [
+                'url'        => "http://example.com/feed2",
+                'title'      => "Eek",
+                'folder'     => null,
+                'top_folder' => null,
+                'unread'     => 4,
+                'pinned'     => 1,
+                'order_type' => 2,
+            ],
+        ];
+        $this->assertResult($exp, Arsse::$db->subscriptionList($this->user, null, false));
+    }
+
+    public function testListSubscriptionsWithoutRecursion() {
+        $exp = [
+            [
                 'url'        => "http://example.com/feed3",
                 'title'      => "Ook",
                 'folder'     => 2,
@@ -269,6 +284,7 @@ trait SeriesSubscription {
             ],
         ];
         $this->assertResult($exp, Arsse::$db->subscriptionList($this->user, 2));
+
     }
 
     public function testListSubscriptionsInAMissingFolder() {

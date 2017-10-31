@@ -498,7 +498,7 @@ class Database {
         return $this->db->prepare('INSERT INTO arsse_subscriptions(owner,feed) values(?,?)', 'str', 'int')->run($user, $feedID)->lastId();
     }
 
-    public function subscriptionList(string $user, $folder = null, int $id = null): Db\Result {
+    public function subscriptionList(string $user, $folder = null, bool $recursive = true, int $id = null): Db\Result {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
@@ -527,11 +527,14 @@ class Database {
             // this condition facilitates the implementation of subscriptionPropertiesGet, which would otherwise have to duplicate the complex query; it takes precedence over a specified folder
             // if an ID is specified, add a suitable WHERE condition and bindings
             $q->setWhere("arsse_subscriptions.id is ?", "int", $id);
-        } elseif ($folder) {
-            // if it does exist, add a common table expression to list it and its children so that we select from the entire subtree
+        } elseif ($folder && $recursive) {
+            // if a folder is specified and we're listing recursively, add a common table expression to list it and its children so that we select from the entire subtree
             $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on parent is folder", "int", $folder);
             // add a suitable WHERE condition
             $q->setWhere("folder in (select folder from folders)");
+        } elseif (!$recursive) {
+            // if we're not listing recursively, match against only the specified folder (even if it is null)
+            $q->setWhere("folder is ?", "int", $folder);
         }
         return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
     }
@@ -577,7 +580,7 @@ class Database {
         }
         // disable authorization checks for the list call
         Arsse::$user->authorizationEnabled(false);
-        $sub = $this->subscriptionList($user, null, (int) $id)->getRow();
+        $sub = $this->subscriptionList($user, null, true, (int) $id)->getRow();
         Arsse::$user->authorizationEnabled(true);
         if (!$sub) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
