@@ -879,4 +879,70 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         $exp = ['categories'=>['identifier'=>'id','label'=>'name','items'=>[['id'=>'CAT:-1','items'=>[['id'=>'FEED:-4','name'=>'All articles','unread'=>35,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/folder.png','bare_id'=>-4,'auxcounter'=>0,],['id'=>'FEED:-3','name'=>'Fresh articles','unread'=>7,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/fresh.png','bare_id'=>-3,'auxcounter'=>0,],['id'=>'FEED:-1','name'=>'Starred articles','unread'=>4,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/star.png','bare_id'=>-1,'auxcounter'=>0,],['id'=>'FEED:-2','name'=>'Published articles','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/feed.png','bare_id'=>-2,'auxcounter'=>0,],['id'=>'FEED:0','name'=>'Archived articles','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/archive.png','bare_id'=>0,'auxcounter'=>0,],['id'=>'FEED:-6','name'=>'Recently read','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/time.png','bare_id'=>-6,'auxcounter'=>0,],],'name'=>'Special','type'=>'category','unread'=>0,'bare_id'=>-1,],['id'=>'CAT:-2','items'=>[['id'=>'FEED:-1027','name'=>'Fascinating','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1027,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],['id'=>'FEED:-1029','name'=>'Interesting','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1029,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],['id'=>'FEED:-1025','name'=>'Logical','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1025,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],],'name'=>'Labels','type'=>'category','unread'=>8,'bare_id'=>-2,],['id'=>'CAT:3','bare_id'=>3,'auxcounter'=>0,'name'=>'Politics','items'=>[['id'=>'CAT:5','bare_id'=>5,'name'=>'Local','items'=>[['id'=>'FEED:2','bare_id'=>2,'auxcounter'=>0,'name'=>'Toronto Star','checkbox'=>false,'unread'=>0,'error'=>'oops','icon'=>'feed-icons/2.ico','param'=>'2011-11-11T11:11:11',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>3,'param'=>'(1 feed)',],['id'=>'CAT:6','bare_id'=>6,'name'=>'National','items'=>[['id'=>'FEED:4','bare_id'=>4,'auxcounter'=>0,'name'=>'CBC News','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>'feed-icons/4.ico','param'=>'2017-10-09T15:58:34',],['id'=>'FEED:5','bare_id'=>5,'auxcounter'=>0,'name'=>'Ottawa Citizen','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>false,'param'=>'2017-07-07T17:07:17',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>3,'param'=>'(2 feeds)',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(3 feeds)',],['id'=>'CAT:1','bare_id'=>1,'auxcounter'=>0,'name'=>'Science','items'=>[['id'=>'CAT:2','bare_id'=>2,'name'=>'Rocketry','items'=>[['id'=>'FEED:1','bare_id'=>1,'auxcounter'=>0,'name'=>'NASA JPL','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>false,'param'=>'2017-09-15T22:54:16',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>1,'param'=>'(1 feed)',],['id'=>'FEED:3','bare_id'=>3,'auxcounter'=>0,'name'=>'Ars Technica','checkbox'=>false,'unread'=>0,'error'=>'argh','icon'=>'feed-icons/3.ico','param'=>'2016-05-23T06:40:02',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(2 feeds)',],['id'=>'CAT:0','bare_id'=>0,'auxcounter'=>0,'name'=>'Uncategorized','items'=>[['id'=>'FEED:6','bare_id'=>6,'auxcounter'=>0,'name'=>'Eurogamer','checkbox'=>false,'error'=>'','icon'=>'feed-icons/6.ico','param'=>'2010-02-12T20:08:47','unread'=>0,],],'type'=>'category','checkbox'=>false,'unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(1 feed)',],],],];
         $this->assertEquals($this->respGood($exp), $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
     }
+
+    public function testMarkFeedsAsRead() {
+        $in1 = [
+            // no-ops
+            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx"],
+            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 0],
+            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2],
+            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -6],
+            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -1, 'is_cat' => true],
+            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -3, 'is_cat' => true],
+            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'is_cat' => true],
+        ];
+        $in2 = [
+            // simple contexts
+            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -1],
+            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4],
+            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2112],
+            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2112],
+            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'is_cat' => true],
+        ];
+        $in3 = [
+            // complex context
+            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 0, 'is_cat' => true],
+            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2, 'is_cat' => true],
+        ];
+        $in4 = [
+            // this one has a tricky time-based context and will be handled last
+            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -3],
+        ];
+        Phake::when(Arsse::$db)->articleMark->thenThrow(new ExceptionInput("typeViolation"));
+        $exp = $this->respGood(['status' => "OK"]);
+        // verify the above are in fact no-ops
+        for ($a = 0; $a < sizeof($in1); $a++) {
+            $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", json_encode($in1[$a]))), "Test $a failed");
+        }
+        Phake::verify(Arsse::$db, Phake::times(0))->articleMark;
+        // verify the simple contexts
+        for ($a = 0; $a < sizeof($in2); $a++) {
+            $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", json_encode($in2[$a]))), "Test $a failed");
+        }
+        Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], new Context);
+        Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->starred(true));
+        Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->label(1088));
+        Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->subscription(2112));
+        Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->folder(42));
+        // reset the database mock
+        $this->setUp();
+        Phake::when(Arsse::$db)->articleMark->thenThrow(new ExceptionInput("typeViolation"));
+        Phake::when(Arsse::$db)->subscriptionList($this->anything())->thenReturn(new Result($this->subscriptions));
+        Phake::when(Arsse::$db)->labelList->thenReturn(new Result($this->labels));
+        Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result($this->usedLabels));
+        // verify the complex contexts
+        for ($a = 0; $a < sizeof($in3); $a++) {
+            $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", json_encode($in3[$a]))), "Test $a failed");
+        }
+        Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->subscription(6));
+        Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->label(3));
+        Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->label(1));
+        Phake::verify(Arsse::$db, Phake::times(3))->articleMark;
+        // verify the time-based mock
+        $t = Date::sub("PT24H");
+        for ($a = 0; $a < sizeof($in4); $a++) {
+            $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", json_encode($in4[$a]))), "Test $a failed");
+        }
+        Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->modifiedSince($t));
+    }
 }

@@ -27,6 +27,7 @@ Protocol difference so far:
     - The "Published" virtual feed is non-functional (this will not be implemented in the near term)
     - setArticleLabel responds with errors for invalid labels where TT-RSS simply returns a zero result
     - The result of setArticleLabel counts only records which actually changed rather than all entries attempted
+    - Top-level categories in getFeedTree have a 'parent_id' property (set to null); in TT-RSS the property is absent
 */
 
 
@@ -439,6 +440,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'unread'     => 0,
                 'auxcounter' => 0,
                 'checkbox'   => false,
+                // NOTE: feeds don't have a type property (even though both labels and special feeds do); don't ask me why
             ];
         }
         return $out;
@@ -459,7 +461,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'name'         => $c['name'],
                 'id'           => "CAT:".$c['id'],
                 'bare_id'      => $c['id'],
-                'parent_id'    => $c['parent'],
+                'parent_id'    => $c['parent'], // top-level categories are not supposed to have this property; we deviated and have the property set to null because it's simpler that way
                 'type'         => "category",
                 'auxcounter'   => 0,
                 'unread'       => 0,
@@ -754,9 +756,13 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return ['status' => "OK"];
     }
 
-    protected function labelIn($id): int {
+    protected function labelIn($id, bool $throw = true): int {
         if (!(ValueInfo::int($id) & ValueInfo::NEG) || $id > (-1 - self::LABEL_OFFSET)) {
-            throw new Exception("INCORRECT_USAGE");
+            if ($throw) {
+                throw new Exception("INCORRECT_USAGE");
+            } else {
+                return 0;
+            }
         }
         return (abs($id) - self::LABEL_OFFSET);
     }
@@ -847,5 +853,97 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         return ['status' => "OK", 'updated' => $out];
+    }
+
+    public function opCatchUpFeed(array $data): array {
+        $id = $data['feed_id'] ?? self::FEED_ARCHIVED;
+        $cat = $data['is_cat'] ?? false;
+        $out = ['status' => "OK"];
+        // first prepare the context; unsupported contexts simply return early, whereas some valid contexts are special cases
+        $c = new Context;
+        if ($cat) { // categories
+            switch ($id) {
+                case self::CAT_SPECIAL:
+                case self::CAT_NOT_SPECIAL:
+                case self::CAT_ALL:
+                    // not valid
+                    return $out;
+                case self::CAT_UNCATEGORIZED:
+                    // this is a special case
+                    try {
+                        $tr = Arsse::$db->begin();
+                        // filter the subscription list to return only uncategorized, and get their IDs
+                        $list = array_column(array_filter(Arsse::$db->subscriptionList(Arsse::$user->id)->getAll(), function($value) {return is_null($value['folder']);}), "id");
+                        // perform marking for each applicable subscription
+                        foreach ($list as $id) {
+                            Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], (new Context)->subscription($id));
+                        }
+                        $tr->commit();
+                    } catch (ExceptionInput $e) {
+                        // ignore errors
+                    }
+                    return $out;
+                case self::CAT_LABELS:
+                    // this is also a special case
+                    try {
+                        $tr = Arsse::$db->begin();
+                        // list all non-empty labels
+                        $list = array_column(Arsse::$db->labelList(Arsse::$user->id, false)->getAll(), "id");
+                        // perform marking for each label
+                        foreach ($list as $id) {
+                            try {
+                                Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], (new Context)->label($id));
+                            } catch (ExceptionInput $e) {
+                                // ignore errors
+                            }                            
+                        }
+                        $tr->commit();
+                    } catch (ExceptionInput $e) {
+                        // ignore errors
+                    }
+                    return $out;
+                default:
+                    // any actual category
+                    $c->folder($id);
+                    break;
+            }
+        } else { // feeds
+            if ($this->labelIn($id, false)) { // labels
+                $c->label($this->labelIn($id));
+            } else {
+                switch ($id) {
+                    case self::FEED_ARCHIVED:
+                        // not implemented (also, evidently, not implemented in TTRSS)
+                        return $out;
+                    case self::FEED_STARRED:
+                        $c->starred(true);
+                        break;
+                    case self::FEED_PUBLISHED:
+                        // not implemented
+                        // TODO: if the Published feed is implemented, the catchup function needs to be modified accordingly
+                        return $out;
+                    case self::FEED_FRESH:
+                        $c->modifiedSince(Date::sub("PT24H"));
+                        break;
+                    case self::FEED_ALL:
+                        // no context needed here
+                        break;
+                    case self::FEED_READ:
+                        // everything in the Recently read feed is, by definition, already read
+                        return $out;
+                    default:
+                        // any actual feed
+                        $c->subscription($id);
+                }
+            }
+        }
+        // perform the marking
+        try {
+            Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], $c);
+        } catch (ExceptionInput $e) {
+            // ignore all errors
+        }
+        // return boilerplate output
+        return $out;
     }
 }
