@@ -626,6 +626,172 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return null;
     }
 
+    public function opGetFeeds(array $data): array {
+        $user = Arsse::$user->id;
+        // normalize input
+        $cat = $data['cat_id'] ?? 0;
+        $unread = $data['unread_only'] ?? false;
+        $limit = $data['limit'] ?? 0;
+        $offset = $data['offset'] ?? 0;
+        $nested = $data['include_nested'] ?? false;
+        // if a special category was selected, nesting does not apply
+        if (!ValueInfo::id($cat)) {
+            $nested = false;
+            // if the All, Special, or Labels category was selected, pagination also does not apply
+            if (in_array($cat, [self::CAT_ALL, self::CAT_SPECIAL, self::CAT_LABELS])) {
+                $limit = 0;
+                $offset = 0;
+            }
+        }
+        // retrieve or build the list of relevant feeds
+        $out = [];
+        $subs = [];
+        $count = 0;
+        // if the category is the special Labels category or the special All category (which includes labels), add labels to the list
+        if ($cat==self::CAT_ALL || $cat==self::CAT_LABELS) {
+            // NOTE: unused labels are not included
+            foreach (Arsse::$db->labelList($user, false) as $l) {
+                if ($unread && !$l['unread']) {
+                    continue;
+                }
+                $out[] = [
+                    'id'     => $this->labelOut($l['id']),
+                    'title'  => $l['name'],
+                    'unread' => $l['unread'],
+                    'cat_id' => self::CAT_LABELS,
+                ];
+            }
+        }
+        // if the category is the special Special (!) category or the special All category (which includes "special" feeds), add those feeds to the list
+        if ($cat==self::CAT_ALL || $cat==self::CAT_SPECIAL) {
+            // gather some statistics
+            $starred = Arsse::$db->articleStarred($user)['unread'];
+            $fresh = Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H")));
+            $global = Arsse::$db->articleCount($user, (new Context)->unread(true));
+            $published = 0; // TODO: if the Published feed is implemented, the getFeeds method needs to be adjusted accordingly
+            $archived = 0; // the archived feed is non-functional in the TT-RSS protocol itself
+            // build the list; exclude anything with zero unread if requested
+            if (!$unread || $starred) {
+                    $out[] = [
+                    'id'     => self::FEED_STARRED,
+                    'title'  => Arsse::$lang->msg("API.TTRSS.Feed.Starred"),
+                    'unread' => $starred,
+                    'cat_id' => self::CAT_SPECIAL,
+                ];
+            }
+            if (!$unread || $published) {
+                $out[] = [
+                    'id'     => self::FEED_PUBLISHED,
+                    'title'  => Arsse::$lang->msg("API.TTRSS.Feed.Published"),
+                    'unread' => $published, 
+                    'cat_id' => self::CAT_SPECIAL,
+                ];
+            }
+            if (!$unread || $fresh) {
+                $out[] = [
+                    'id'     => self::FEED_FRESH,
+                    'title'  => Arsse::$lang->msg("API.TTRSS.Feed.Fresh"),
+                    'unread' => $fresh,
+                    'cat_id' => self::CAT_SPECIAL,
+                ];
+            }
+            if (!$unread || $global) {
+                $out[] = [
+                    'id'     => self::FEED_ALL,
+                    'title'  => Arsse::$lang->msg("API.TTRSS.Feed.All"),
+                    'unread' => $global,
+                    'cat_id' => self::CAT_SPECIAL,
+                ];
+            }
+            if (!$unread) {
+                $out[] = [
+                    'id'     => self::FEED_READ,
+                    'title'  => Arsse::$lang->msg("API.TTRSS.Feed.Read"),
+                    'unread' => 0, // zero by definition
+                    'cat_id' => self::CAT_SPECIAL,
+                ];
+            }
+            if (!$unread || $archived) {
+                $out[] = [
+                    'id'     => self::FEED_ARCHIVED,
+                    'title'  => Arsse::$lang->msg("API.TTRSS.Feed.Archived"),
+                    'unread' => $archived, 
+                    'cat_id' => self::CAT_SPECIAL,
+                ];
+            }
+        }
+        // categories and real feeds have a sequential order index; we don't store this, so we just increment with each entry from here
+        $order = 0;
+        // if a "nested" list was requested, append the category's child categories to the putput
+        if ($nested) {
+            try {
+                // NOTE: the list is a flat one: it includes children, but not other descendents
+                foreach (Arsse::$db->folderList($user, $cat, false) as $c) {
+                    // get the number of unread for the category and its descendents; those with zero unread are excluded in "unread-only" mode
+                    $count = Arsse::$db->articleCount($user, (new Context)->unread(true)->folder($c['id']));
+                    if (!$unread || $count) {
+                        $out[] = [
+                            'id' => $c['id'],
+                            'title' => $c['name'],
+                            'unread' => $count,
+                            'is_cat' => true,
+                            'order_id' => ++$order,
+                        ];
+                    }
+                }
+            } catch (ExceptionInput $e) {
+                // in case of errors (because the category does not exist) return the list so far (which should be empty)
+                return $out;
+            }
+        }
+        try {
+            if ($cat==self::CAT_NOT_SPECIAL || $cat==self::CAT_ALL) {
+                // if the "All" or "Not Special" categories were selected this returns all subscription, to any depth
+                $subs = Arsse::$db->subscriptionList($user, null, true);
+            } elseif ($cat==self::CAT_UNCATEGORIZED) {
+                // the "Uncategorized" special category returns subscriptions in the root, without going deeper
+                $subs = Arsse::$db->subscriptionList($user, null, false);
+            } else {
+                // other categories return their subscriptions, without going deeper
+                $subs = Arsse::$db->subscriptionList($user, $cat, false);
+            }
+        } catch (ExceptionInput $e) {
+            // in case of errors (invalid category), return what we have so far
+            return $out;
+        }
+        // append subscriptions to the output
+        $order = 0;
+        $count = 0;
+        foreach ($subs as $s) {
+            $order++;
+            if ($unread && !$s['unread']) {
+                // ignore any subscriptions with zero unread in "unread-only" mode
+                continue;
+            } elseif ($offset > 0) {
+                // skip as many subscriptions as necessary to remove any requested offset
+                $offset--;
+                continue;
+            } elseif ($limit && $count >= $limit) {
+                // if we've reached the requested limit, stop
+                // NOTE: TT-RSS blindly accepts negative limits and returns an empty array
+                break;
+            }
+            // otherwise, append the subscription
+            $out[] = [
+                'id'           => $s['id'],
+                'title'        => $s['title'],
+                'unread'       => $s['unread'],
+                'cat_id'       => (int) $s['folder'],
+                'feed_url'     => $s['url'],
+                'has_icon'     => (bool) $s['favicon'],
+                'last_updated' => (int) Date::transform($s['updated'], "unix", "sql"),
+                'order_id'     => $order,
+            ];
+            $count++;
+        }
+        return $out;
+    }
+
     protected function feedError(FeedException $e): array {
         // N.B.: we don't return code 4 (multiple feeds discovered); we simply pick the first feed discovered
         switch ($e->getCode()) {

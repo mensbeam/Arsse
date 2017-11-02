@@ -30,22 +30,23 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         ['id' => 1, 'parent' => null, 'children' => 1, 'feeds' => 1, 'name' => "Science"],
     ];
     protected $subscriptions = [
-        ['id' => 3, 'folder' => 1,    'top_folder' => 1,    'unread' => 2,  'updated' => "2016-05-23 06:40:02", 'err_msg' => 'argh', 'title' => 'Ars Technica',   'favicon' => 'http://example.com/3.png'],
-        ['id' => 4, 'folder' => 6,    'top_folder' => 3,    'unread' => 6,  'updated' => "2017-10-09 15:58:34", 'err_msg' => '',     'title' => 'CBC News',       'favicon' => 'http://example.com/4.png'],
-        ['id' => 6, 'folder' => null, 'top_folder' => null, 'unread' => 0,  'updated' => "2010-02-12 20:08:47", 'err_msg' => '',     'title' => 'Eurogamer',      'favicon' => 'http://example.com/6.png'],
-        ['id' => 1, 'folder' => 2,    'top_folder' => 1,    'unread' => 5,  'updated' => "2017-09-15 22:54:16", 'err_msg' => '',     'title' => 'NASA JPL',       'favicon' => null],
-        ['id' => 5, 'folder' => 6,    'top_folder' => 3,    'unread' => 12, 'updated' => "2017-07-07 17:07:17", 'err_msg' => '',     'title' => 'Ottawa Citizen', 'favicon' => ''],
-        ['id' => 2, 'folder' => 5,    'top_folder' => 3,    'unread' => 10, 'updated' => "2011-11-11 11:11:11", 'err_msg' => 'oops', 'title' => 'Toronto Star',   'favicon' => 'http://example.com/2.png'],
+        ['id' => 3, 'folder' => 1,    'top_folder' => 1,    'unread' => 2,  'updated' => "2016-05-23 06:40:02", 'err_msg' => 'argh', 'title' => 'Ars Technica',   'url' => " http://example.com/3", 'favicon' => 'http://example.com/3.png'],
+        ['id' => 4, 'folder' => 6,    'top_folder' => 3,    'unread' => 6,  'updated' => "2017-10-09 15:58:34", 'err_msg' => '',     'title' => 'CBC News',       'url' => " http://example.com/4", 'favicon' => 'http://example.com/4.png'],
+        ['id' => 6, 'folder' => null, 'top_folder' => null, 'unread' => 0,  'updated' => "2010-02-12 20:08:47", 'err_msg' => '',     'title' => 'Eurogamer',      'url' => " http://example.com/6", 'favicon' => 'http://example.com/6.png'],
+        ['id' => 1, 'folder' => 2,    'top_folder' => 1,    'unread' => 5,  'updated' => "2017-09-15 22:54:16", 'err_msg' => '',     'title' => 'NASA JPL',       'url' => " http://example.com/1", 'favicon' => null],
+        ['id' => 5, 'folder' => 6,    'top_folder' => 3,    'unread' => 12, 'updated' => "2017-07-07 17:07:17", 'err_msg' => '',     'title' => 'Ottawa Citizen', 'url' => " http://example.com/5", 'favicon' => ''],
+        ['id' => 2, 'folder' => 5,    'top_folder' => 3,    'unread' => 10, 'updated' => "2011-11-11 11:11:11", 'err_msg' => 'oops', 'title' => 'Toronto Star',   'url' => " http://example.com/2", 'favicon' => 'http://example.com/2.png'],
     ];
     protected $labels = [
         ['id' => 3, 'articles' => 100, 'read' => 94, 'unread' => 6, 'name' => "Fascinating"],
         ['id' => 5, 'articles' => 0,   'read' => 0,  'unread' => 0, 'name' => "Interesting"],
-        ['id' => 1, 'articles' => 2,   'read' => 0,  'unread' => 2, 'name' => "Logical"],
+        ['id' => 1, 'articles' => 2,   'read' => 2,  'unread' => 0, 'name' => "Logical"],
     ];
     protected $usedLabels = [
-        ['id' => 3, 'articles' => 100, 'read' => 94, 'name' => "Fascinating"],
-        ['id' => 1, 'articles' => 2,   'read' => 0,  'name' => "Logical"],
+        ['id' => 3, 'articles' => 100, 'read' => 94, 'unread' => 6, 'name' => "Fascinating"],
+        ['id' => 1, 'articles' => 2,   'read' => 2,  'unread' => 0, 'name' => "Logical"],
     ];
+    protected $starred = ['total' => 10, 'unread' => 4, 'read' => 6];
 
     protected function respGood($content = null, $seq = 0): Response {
         return new Response(200, [
@@ -690,7 +691,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         Phake::when(Arsse::$db)->subscriptionList($this->anything())->thenReturn(new Result($this->subscriptions));
         Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result($this->labels));
         Phake::when(Arsse::$db)->articleCount($this->anything(), $this->anything())->thenReturn(7); // FIXME: this should check an unread+modifiedSince context
-        Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn(['total' => 10, 'unread' => 4, 'read' => 6]);
+        Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn($this->starred);
         $exp = [
             [
                 ['id' => 5,  'title' => "Local",         'unread' => 10, 'order_id' => 1],
@@ -701,7 +702,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
                 ['id' => 1,  'title' => "Science",       'unread' => 2,  'order_id' => 6],
                 ['id' => 0,  'title' => "Uncategorized", 'unread' => 0],
                 ['id' => -1, 'title' => "Special",       'unread' => 11],
-                ['id' => -2, 'title' => "Labels",        'unread' => 8],
+                ['id' => -2, 'title' => "Labels",        'unread' => 6],
             ],
             [
                 ['id' => 5,  'title' => "Local",         'unread' => 10, 'order_id' => 1],
@@ -711,7 +712,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
                 ['id' => 1,  'title' => "Science",       'unread' => 2,  'order_id' => 6],
                 ['id' => 0,  'title' => "Uncategorized", 'unread' => 0],
                 ['id' => -1, 'title' => "Special",       'unread' => 11],
-                ['id' => -2, 'title' => "Labels",        'unread' => 8],
+                ['id' => -2, 'title' => "Labels",        'unread' => 6],
             ],
             [
                 ['id' => 5,  'title' => "Local",         'unread' => 10, 'order_id' => 1],
@@ -719,7 +720,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
                 ['id' => 2,  'title' => "Rocketry",      'unread' => 5,  'order_id' => 5],
                 ['id' => 1,  'title' => "Science",       'unread' => 2,  'order_id' => 6],
                 ['id' => -1, 'title' => "Special",       'unread' => 11],
-                ['id' => -2, 'title' => "Labels",        'unread' => 8],
+                ['id' => -2, 'title' => "Labels",        'unread' => 6],
             ],
             [
                 ['id' => 4,  'title' => "Photography",   'unread' => 0,  'order_id' => 1],
@@ -727,20 +728,20 @@ class TestTinyTinyAPI extends Test\AbstractTest {
                 ['id' => 1,  'title' => "Science",       'unread' => 7,  'order_id' => 3],
                 ['id' => 0,  'title' => "Uncategorized", 'unread' => 0],
                 ['id' => -1, 'title' => "Special",       'unread' => 11],
-                ['id' => -2, 'title' => "Labels",        'unread' => 8],
+                ['id' => -2, 'title' => "Labels",        'unread' => 6],
             ],
             [
                 ['id' => 3,  'title' => "Politics",      'unread' => 28, 'order_id' => 2],
                 ['id' => 1,  'title' => "Science",       'unread' => 7,  'order_id' => 3],
                 ['id' => 0,  'title' => "Uncategorized", 'unread' => 0],
                 ['id' => -1, 'title' => "Special",       'unread' => 11],
-                ['id' => -2, 'title' => "Labels",        'unread' => 8],
+                ['id' => -2, 'title' => "Labels",        'unread' => 6],
             ],
             [
                 ['id' => 3,  'title' => "Politics",      'unread' => 28, 'order_id' => 2],
                 ['id' => 1,  'title' => "Science",       'unread' => 7,  'order_id' => 3],
                 ['id' => -1, 'title' => "Special",       'unread' => 11],
-                ['id' => -2, 'title' => "Labels",        'unread' => 8],
+                ['id' => -2, 'title' => "Labels",        'unread' => 6],
             ],
         ];
         for ($a = 0; $a < sizeof($in); $a++) {
@@ -754,7 +755,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         Phake::when(Arsse::$db)->subscriptionList($this->anything())->thenReturn(new Result($this->subscriptions));
         Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result($this->usedLabels));
         Phake::when(Arsse::$db)->articleCount($this->anything(), $this->anything())->thenReturn(7); // FIXME: this should check an unread+modifiedSince context
-        Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn(['total' => 10, 'unread' => 4, 'read' => 6]);
+        Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn($this->starred);
         $exp = [
             ['id' => "global-unread", 'counter' => 35],
             ['id' => "subscribed-feeds", 'counter' => 6],
@@ -764,7 +765,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
             ['id' => -3, 'counter' => 7, 'auxcounter' => 0],
             ['id' => -4, 'counter' => 35, 'auxcounter' => 0],
             ['id' => -1027, 'counter' => 6, 'auxcounter' => 100],
-            ['id' => -1025, 'counter' => 2, 'auxcounter' => 2],
+            ['id' => -1025, 'counter' => 0, 'auxcounter' => 2],
             ['id' => 3, 'has_img' => 1, 'counter' => 2,  'updated' => "2016-05-23T06:40:02"],
             ['id' => 4, 'has_img' => 1, 'counter' => 6,  'updated' => "2017-10-09T15:58:34"],
             ['id' => 1, 'has_img' => 0, 'counter' => 5,  'updated' => "2017-09-15T22:54:16"],
@@ -775,7 +776,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
             ['id' => 3, 'kind' => "cat", 'counter' => 28],
             ['id' => 2, 'kind' => "cat", 'counter' => 5],
             ['id' => 1, 'kind' => "cat", 'counter' => 7],
-            ['id' => -2, 'kind' => "cat", 'counter' => 8],
+            ['id' => -2, 'kind' => "cat", 'counter' => 6],
         ];
         $this->assertResponse($this->respGood($exp), $this->h->dispatch(new Request("POST", "", json_encode($in))));
     }
@@ -872,11 +873,11 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         Phake::when(Arsse::$db)->subscriptionList($this->anything())->thenReturn(new Result($this->subscriptions));
         Phake::when(Arsse::$db)->labelList($this->anything(), true)->thenReturn(new Result($this->labels));
         Phake::when(Arsse::$db)->articleCount($this->anything(), $this->anything())->thenReturn(7); // FIXME: this should check an unread+modifiedSince context
-        Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn(['total' => 10, 'unread' => 4, 'read' => 6]);
+        Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn($this->starred);
         // the expectations are packed tightly since they're very verbose; one can use var_export() (or convert to JSON) to pretty-print them
-        $exp = ['categories'=>['identifier'=>'id','label'=>'name','items'=>[['id'=>'CAT:-1','items'=>[['id'=>'FEED:-4','name'=>'All articles','unread'=>35,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/folder.png','bare_id'=>-4,'auxcounter'=>0,],['id'=>'FEED:-3','name'=>'Fresh articles','unread'=>7,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/fresh.png','bare_id'=>-3,'auxcounter'=>0,],['id'=>'FEED:-1','name'=>'Starred articles','unread'=>4,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/star.png','bare_id'=>-1,'auxcounter'=>0,],['id'=>'FEED:-2','name'=>'Published articles','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/feed.png','bare_id'=>-2,'auxcounter'=>0,],['id'=>'FEED:0','name'=>'Archived articles','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/archive.png','bare_id'=>0,'auxcounter'=>0,],['id'=>'FEED:-6','name'=>'Recently read','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/time.png','bare_id'=>-6,'auxcounter'=>0,],],'name'=>'Special','type'=>'category','unread'=>0,'bare_id'=>-1,],['id'=>'CAT:-2','items'=>[['id'=>'FEED:-1027','name'=>'Fascinating','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1027,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],['id'=>'FEED:-1029','name'=>'Interesting','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1029,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],['id'=>'FEED:-1025','name'=>'Logical','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1025,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],],'name'=>'Labels','type'=>'category','unread'=>8,'bare_id'=>-2,],['id'=>'CAT:4','bare_id'=>4,'auxcounter'=>0,'name'=>'Photography','items'=>[],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(0 feeds)',],['id'=>'CAT:3','bare_id'=>3,'auxcounter'=>0,'name'=>'Politics','items'=>[['id'=>'CAT:5','bare_id'=>5,'name'=>'Local','items'=>[['id'=>'FEED:2','bare_id'=>2,'auxcounter'=>0,'name'=>'Toronto Star','checkbox'=>false,'unread'=>0,'error'=>'oops','icon'=>'feed-icons/2.ico','param'=>'2011-11-11T11:11:11',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>3,'param'=>'(1 feed)',],['id'=>'CAT:6','bare_id'=>6,'name'=>'National','items'=>[['id'=>'FEED:4','bare_id'=>4,'auxcounter'=>0,'name'=>'CBC News','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>'feed-icons/4.ico','param'=>'2017-10-09T15:58:34',],['id'=>'FEED:5','bare_id'=>5,'auxcounter'=>0,'name'=>'Ottawa Citizen','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>false,'param'=>'2017-07-07T17:07:17',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>3,'param'=>'(2 feeds)',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(3 feeds)',],['id'=>'CAT:1','bare_id'=>1,'auxcounter'=>0,'name'=>'Science','items'=>[['id'=>'CAT:2','bare_id'=>2,'name'=>'Rocketry','items'=>[['id'=>'FEED:1','bare_id'=>1,'auxcounter'=>0,'name'=>'NASA JPL','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>false,'param'=>'2017-09-15T22:54:16',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>1,'param'=>'(1 feed)',],['id'=>'FEED:3','bare_id'=>3,'auxcounter'=>0,'name'=>'Ars Technica','checkbox'=>false,'unread'=>0,'error'=>'argh','icon'=>'feed-icons/3.ico','param'=>'2016-05-23T06:40:02',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(2 feeds)',],['id'=>'CAT:0','bare_id'=>0,'auxcounter'=>0,'name'=>'Uncategorized','items'=>[['id'=>'FEED:6','bare_id'=>6,'auxcounter'=>0,'name'=>'Eurogamer','checkbox'=>false,'error'=>'','icon'=>'feed-icons/6.ico','param'=>'2010-02-12T20:08:47','unread'=>0,],],'type'=>'category','checkbox'=>false,'unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(1 feed)',],],],];
+        $exp = ['categories'=>['identifier'=>'id','label'=>'name','items'=>[['id'=>'CAT:-1','items'=>[['id'=>'FEED:-4','name'=>'All articles','unread'=>35,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/folder.png','bare_id'=>-4,'auxcounter'=>0,],['id'=>'FEED:-3','name'=>'Fresh articles','unread'=>7,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/fresh.png','bare_id'=>-3,'auxcounter'=>0,],['id'=>'FEED:-1','name'=>'Starred articles','unread'=>4,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/star.png','bare_id'=>-1,'auxcounter'=>0,],['id'=>'FEED:-2','name'=>'Published articles','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/feed.png','bare_id'=>-2,'auxcounter'=>0,],['id'=>'FEED:0','name'=>'Archived articles','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/archive.png','bare_id'=>0,'auxcounter'=>0,],['id'=>'FEED:-6','name'=>'Recently read','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/time.png','bare_id'=>-6,'auxcounter'=>0,],],'name'=>'Special','type'=>'category','unread'=>0,'bare_id'=>-1,],['id'=>'CAT:-2','items'=>[['id'=>'FEED:-1027','name'=>'Fascinating','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1027,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],['id'=>'FEED:-1029','name'=>'Interesting','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1029,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],['id'=>'FEED:-1025','name'=>'Logical','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1025,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],],'name'=>'Labels','type'=>'category','unread'=>6,'bare_id'=>-2,],['id'=>'CAT:4','bare_id'=>4,'auxcounter'=>0,'name'=>'Photography','items'=>[],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(0 feeds)',],['id'=>'CAT:3','bare_id'=>3,'auxcounter'=>0,'name'=>'Politics','items'=>[['id'=>'CAT:5','bare_id'=>5,'name'=>'Local','items'=>[['id'=>'FEED:2','bare_id'=>2,'auxcounter'=>0,'name'=>'Toronto Star','checkbox'=>false,'unread'=>0,'error'=>'oops','icon'=>'feed-icons/2.ico','param'=>'2011-11-11T11:11:11',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>3,'param'=>'(1 feed)',],['id'=>'CAT:6','bare_id'=>6,'name'=>'National','items'=>[['id'=>'FEED:4','bare_id'=>4,'auxcounter'=>0,'name'=>'CBC News','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>'feed-icons/4.ico','param'=>'2017-10-09T15:58:34',],['id'=>'FEED:5','bare_id'=>5,'auxcounter'=>0,'name'=>'Ottawa Citizen','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>false,'param'=>'2017-07-07T17:07:17',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>3,'param'=>'(2 feeds)',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(3 feeds)',],['id'=>'CAT:1','bare_id'=>1,'auxcounter'=>0,'name'=>'Science','items'=>[['id'=>'CAT:2','bare_id'=>2,'name'=>'Rocketry','items'=>[['id'=>'FEED:1','bare_id'=>1,'auxcounter'=>0,'name'=>'NASA JPL','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>false,'param'=>'2017-09-15T22:54:16',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>1,'param'=>'(1 feed)',],['id'=>'FEED:3','bare_id'=>3,'auxcounter'=>0,'name'=>'Ars Technica','checkbox'=>false,'unread'=>0,'error'=>'argh','icon'=>'feed-icons/3.ico','param'=>'2016-05-23T06:40:02',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(2 feeds)',],['id'=>'CAT:0','bare_id'=>0,'auxcounter'=>0,'name'=>'Uncategorized','items'=>[['id'=>'FEED:6','bare_id'=>6,'auxcounter'=>0,'name'=>'Eurogamer','checkbox'=>false,'error'=>'','icon'=>'feed-icons/6.ico','param'=>'2010-02-12T20:08:47','unread'=>0,],],'type'=>'category','checkbox'=>false,'unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(1 feed)',],],],];
         $this->assertEquals($this->respGood($exp), $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
-        $exp = ['categories'=>['identifier'=>'id','label'=>'name','items'=>[['id'=>'CAT:-1','items'=>[['id'=>'FEED:-4','name'=>'All articles','unread'=>35,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/folder.png','bare_id'=>-4,'auxcounter'=>0,],['id'=>'FEED:-3','name'=>'Fresh articles','unread'=>7,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/fresh.png','bare_id'=>-3,'auxcounter'=>0,],['id'=>'FEED:-1','name'=>'Starred articles','unread'=>4,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/star.png','bare_id'=>-1,'auxcounter'=>0,],['id'=>'FEED:-2','name'=>'Published articles','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/feed.png','bare_id'=>-2,'auxcounter'=>0,],['id'=>'FEED:0','name'=>'Archived articles','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/archive.png','bare_id'=>0,'auxcounter'=>0,],['id'=>'FEED:-6','name'=>'Recently read','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/time.png','bare_id'=>-6,'auxcounter'=>0,],],'name'=>'Special','type'=>'category','unread'=>0,'bare_id'=>-1,],['id'=>'CAT:-2','items'=>[['id'=>'FEED:-1027','name'=>'Fascinating','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1027,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],['id'=>'FEED:-1029','name'=>'Interesting','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1029,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],['id'=>'FEED:-1025','name'=>'Logical','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1025,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],],'name'=>'Labels','type'=>'category','unread'=>8,'bare_id'=>-2,],['id'=>'CAT:3','bare_id'=>3,'auxcounter'=>0,'name'=>'Politics','items'=>[['id'=>'CAT:5','bare_id'=>5,'name'=>'Local','items'=>[['id'=>'FEED:2','bare_id'=>2,'auxcounter'=>0,'name'=>'Toronto Star','checkbox'=>false,'unread'=>0,'error'=>'oops','icon'=>'feed-icons/2.ico','param'=>'2011-11-11T11:11:11',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>3,'param'=>'(1 feed)',],['id'=>'CAT:6','bare_id'=>6,'name'=>'National','items'=>[['id'=>'FEED:4','bare_id'=>4,'auxcounter'=>0,'name'=>'CBC News','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>'feed-icons/4.ico','param'=>'2017-10-09T15:58:34',],['id'=>'FEED:5','bare_id'=>5,'auxcounter'=>0,'name'=>'Ottawa Citizen','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>false,'param'=>'2017-07-07T17:07:17',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>3,'param'=>'(2 feeds)',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(3 feeds)',],['id'=>'CAT:1','bare_id'=>1,'auxcounter'=>0,'name'=>'Science','items'=>[['id'=>'CAT:2','bare_id'=>2,'name'=>'Rocketry','items'=>[['id'=>'FEED:1','bare_id'=>1,'auxcounter'=>0,'name'=>'NASA JPL','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>false,'param'=>'2017-09-15T22:54:16',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>1,'param'=>'(1 feed)',],['id'=>'FEED:3','bare_id'=>3,'auxcounter'=>0,'name'=>'Ars Technica','checkbox'=>false,'unread'=>0,'error'=>'argh','icon'=>'feed-icons/3.ico','param'=>'2016-05-23T06:40:02',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(2 feeds)',],['id'=>'CAT:0','bare_id'=>0,'auxcounter'=>0,'name'=>'Uncategorized','items'=>[['id'=>'FEED:6','bare_id'=>6,'auxcounter'=>0,'name'=>'Eurogamer','checkbox'=>false,'error'=>'','icon'=>'feed-icons/6.ico','param'=>'2010-02-12T20:08:47','unread'=>0,],],'type'=>'category','checkbox'=>false,'unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(1 feed)',],],],];
+        $exp = ['categories'=>['identifier'=>'id','label'=>'name','items'=>[['id'=>'CAT:-1','items'=>[['id'=>'FEED:-4','name'=>'All articles','unread'=>35,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/folder.png','bare_id'=>-4,'auxcounter'=>0,],['id'=>'FEED:-3','name'=>'Fresh articles','unread'=>7,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/fresh.png','bare_id'=>-3,'auxcounter'=>0,],['id'=>'FEED:-1','name'=>'Starred articles','unread'=>4,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/star.png','bare_id'=>-1,'auxcounter'=>0,],['id'=>'FEED:-2','name'=>'Published articles','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/feed.png','bare_id'=>-2,'auxcounter'=>0,],['id'=>'FEED:0','name'=>'Archived articles','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/archive.png','bare_id'=>0,'auxcounter'=>0,],['id'=>'FEED:-6','name'=>'Recently read','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/time.png','bare_id'=>-6,'auxcounter'=>0,],],'name'=>'Special','type'=>'category','unread'=>0,'bare_id'=>-1,],['id'=>'CAT:-2','items'=>[['id'=>'FEED:-1027','name'=>'Fascinating','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1027,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],['id'=>'FEED:-1029','name'=>'Interesting','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1029,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],['id'=>'FEED:-1025','name'=>'Logical','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1025,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],],'name'=>'Labels','type'=>'category','unread'=>6,'bare_id'=>-2,],['id'=>'CAT:3','bare_id'=>3,'auxcounter'=>0,'name'=>'Politics','items'=>[['id'=>'CAT:5','bare_id'=>5,'name'=>'Local','items'=>[['id'=>'FEED:2','bare_id'=>2,'auxcounter'=>0,'name'=>'Toronto Star','checkbox'=>false,'unread'=>0,'error'=>'oops','icon'=>'feed-icons/2.ico','param'=>'2011-11-11T11:11:11',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>3,'param'=>'(1 feed)',],['id'=>'CAT:6','bare_id'=>6,'name'=>'National','items'=>[['id'=>'FEED:4','bare_id'=>4,'auxcounter'=>0,'name'=>'CBC News','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>'feed-icons/4.ico','param'=>'2017-10-09T15:58:34',],['id'=>'FEED:5','bare_id'=>5,'auxcounter'=>0,'name'=>'Ottawa Citizen','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>false,'param'=>'2017-07-07T17:07:17',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>3,'param'=>'(2 feeds)',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(3 feeds)',],['id'=>'CAT:1','bare_id'=>1,'auxcounter'=>0,'name'=>'Science','items'=>[['id'=>'CAT:2','bare_id'=>2,'name'=>'Rocketry','items'=>[['id'=>'FEED:1','bare_id'=>1,'auxcounter'=>0,'name'=>'NASA JPL','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>false,'param'=>'2017-09-15T22:54:16',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>1,'param'=>'(1 feed)',],['id'=>'FEED:3','bare_id'=>3,'auxcounter'=>0,'name'=>'Ars Technica','checkbox'=>false,'unread'=>0,'error'=>'argh','icon'=>'feed-icons/3.ico','param'=>'2016-05-23T06:40:02',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(2 feeds)',],['id'=>'CAT:0','bare_id'=>0,'auxcounter'=>0,'name'=>'Uncategorized','items'=>[['id'=>'FEED:6','bare_id'=>6,'auxcounter'=>0,'name'=>'Eurogamer','checkbox'=>false,'error'=>'','icon'=>'feed-icons/6.ico','param'=>'2010-02-12T20:08:47','unread'=>0,],],'type'=>'category','checkbox'=>false,'unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(1 feed)',],],],];
         $this->assertEquals($this->respGood($exp), $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
     }
 
@@ -945,5 +946,159 @@ class TestTinyTinyAPI extends Test\AbstractTest {
             $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", json_encode($in4[$a]))), "Test $a failed");
         }
         Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->modifiedSince($t));
+    }
+
+    public function testRetrieveFeedList() {
+        $in1 = [
+            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx"],
+            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => -1],
+            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => -1, 'unread_only' => true],
+            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => -2],
+            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => -2, 'unread_only' => true],
+            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => -3],
+            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => -3, 'unread_only' => true],
+            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => -4],
+            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => -4, 'unread_only' => true],
+            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => 6],
+            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => 6, 'limit' => 1],
+            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => 6, 'limit' => 1, 'offset' => 1],
+            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => 1],
+            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => 1, 'include_nested' => true],
+        ];
+        $in2 = [
+            // these should all return an empty list
+            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => 0, 'unread_only' => true],
+            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => 2112],
+            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => 2112, 'include_nested' => true],
+            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => 6, 'limit' => -42],
+            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => 6, 'offset' => 2],
+        ];
+        // statistical mocks
+        Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn($this->starred);
+        Phake::when(Arsse::$db)->articleCount->thenReturn(7); // FIXME: this should check an unread+modifiedSince context
+        Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true))->thenReturn(35);
+        // label mocks
+        Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result($this->labels));
+        Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result($this->usedLabels));
+        // subscription and folder list and unread count mocks
+        Phake::when(Arsse::$db)->folderList->thenThrow(new ExceptionInput("subjectMissing"));
+        Phake::when(Arsse::$db)->subscriptionList->thenThrow(new ExceptionInput("subjectMissing"));
+        Phake::when(Arsse::$db)->folderList($this->anything())->thenReturn(new Result($this->folders));
+        Phake::when(Arsse::$db)->subscriptionList($this->anything(), null, true)->thenReturn(new Result($this->subscriptions));
+        Phake::when(Arsse::$db)->subscriptionList($this->anything(), null, false)->thenReturn(new Result($this->filterSubs(null)));
+        Phake::when(Arsse::$db)->folderList($this->anything(), null)->thenReturn(new Result($this->folders));
+        Phake::when(Arsse::$db)->folderList($this->anything(), null, false)->thenReturn(new Result($this->filterFolders(null)));
+        foreach ($this->folders as $f) {
+            Phake::when(Arsse::$db)->folderList($this->anything(), $f['id'], false)->thenReturn(new Result($this->filterFolders($f['id'])));
+            Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true)->folder($f['id']))->thenReturn($this->reduceFolders($f['id']));
+            Phake::when(Arsse::$db)->subscriptionList($this->anything(), $f['id'], false)->thenReturn(new Result($this->filterSubs($f['id'])));
+        }
+        $exp = [
+            [
+                ['id' => 6, 'title' => 'Eurogamer', 'unread' => 0, 'cat_id' => 0, 'feed_url' => " http://example.com/6", 'has_icon' => true, 'last_updated' => 1266005327, 'order_id' => 1],
+            ],
+            [
+                ['id' => -1, 'title' => "Starred articles",   'unread' => 4,  'cat_id' => -1],
+                ['id' => -2, 'title' => "Published articles", 'unread' => 0,  'cat_id' => -1],
+                ['id' => -3, 'title' => "Fresh articles",     'unread' => 7,  'cat_id' => -1],
+                ['id' => -4, 'title' => "All articles",       'unread' => 35, 'cat_id' => -1],
+                ['id' => -6, 'title' => "Recently read",      'unread' => 0,  'cat_id' => -1],
+                ['id' =>  0, 'title' => "Archived articles",  'unread' => 0,  'cat_id' => -1],
+            ],
+            [
+                ['id' => -1, 'title' => "Starred articles",   'unread' => 4,  'cat_id' => -1],
+                ['id' => -3, 'title' => "Fresh articles",     'unread' => 7,  'cat_id' => -1],
+                ['id' => -4, 'title' => "All articles",       'unread' => 35, 'cat_id' => -1],
+            ],
+            [
+                ['id' => -1027, 'title' => "Fascinating", 'unread' => 6,  'cat_id' => -2],
+                ['id' => -1025, 'title' => "Logical",     'unread' => 0,  'cat_id' => -2],
+            ],
+            [
+                ['id' => -1027, 'title' => "Fascinating", 'unread' => 6,  'cat_id' => -2],
+            ],
+            [
+                ['id' => 3, 'title' => 'Ars Technica',   'unread' => 2,  'cat_id' => 1, 'feed_url' => " http://example.com/3", 'has_icon' => true,  'last_updated' => 1463985602, 'order_id' => 1],
+                ['id' => 4, 'title' => 'CBC News',       'unread' => 6,  'cat_id' => 6, 'feed_url' => " http://example.com/4", 'has_icon' => true,  'last_updated' => 1507564714, 'order_id' => 2],
+                ['id' => 6, 'title' => 'Eurogamer',      'unread' => 0,  'cat_id' => 0, 'feed_url' => " http://example.com/6", 'has_icon' => true,  'last_updated' => 1266005327, 'order_id' => 3],
+                ['id' => 1, 'title' => 'NASA JPL',       'unread' => 5,  'cat_id' => 2, 'feed_url' => " http://example.com/1", 'has_icon' => false, 'last_updated' => 1505516056, 'order_id' => 4],
+                ['id' => 5, 'title' => 'Ottawa Citizen', 'unread' => 12, 'cat_id' => 6, 'feed_url' => " http://example.com/5", 'has_icon' => false, 'last_updated' => 1499447237, 'order_id' => 5],
+                ['id' => 2, 'title' => 'Toronto Star',   'unread' => 10, 'cat_id' => 5, 'feed_url' => " http://example.com/2", 'has_icon' => true,  'last_updated' => 1321009871, 'order_id' => 6],
+            ],
+            [
+                ['id' => 3, 'title' => 'Ars Technica',   'unread' => 2,  'cat_id' => 1, 'feed_url' => " http://example.com/3", 'has_icon' => true,  'last_updated' => 1463985602, 'order_id' => 1],
+                ['id' => 4, 'title' => 'CBC News',       'unread' => 6,  'cat_id' => 6, 'feed_url' => " http://example.com/4", 'has_icon' => true,  'last_updated' => 1507564714, 'order_id' => 2],
+                ['id' => 1, 'title' => 'NASA JPL',       'unread' => 5,  'cat_id' => 2, 'feed_url' => " http://example.com/1", 'has_icon' => false, 'last_updated' => 1505516056, 'order_id' => 4],
+                ['id' => 5, 'title' => 'Ottawa Citizen', 'unread' => 12, 'cat_id' => 6, 'feed_url' => " http://example.com/5", 'has_icon' => false, 'last_updated' => 1499447237, 'order_id' => 5],
+                ['id' => 2, 'title' => 'Toronto Star',   'unread' => 10, 'cat_id' => 5, 'feed_url' => " http://example.com/2", 'has_icon' => true,  'last_updated' => 1321009871, 'order_id' => 6],
+            ],
+            [
+                ['id' => -1027, 'title' => "Fascinating", 'unread' => 6,  'cat_id' => -2],
+                ['id' => -1025, 'title' => "Logical",     'unread' => 0,  'cat_id' => -2],
+                ['id' => -1, 'title' => "Starred articles",   'unread' => 4,  'cat_id' => -1],
+                ['id' => -2, 'title' => "Published articles", 'unread' => 0,  'cat_id' => -1],
+                ['id' => -3, 'title' => "Fresh articles",     'unread' => 7,  'cat_id' => -1],
+                ['id' => -4, 'title' => "All articles",       'unread' => 35, 'cat_id' => -1],
+                ['id' => -6, 'title' => "Recently read",      'unread' => 0,  'cat_id' => -1],
+                ['id' =>  0, 'title' => "Archived articles",  'unread' => 0,  'cat_id' => -1],
+                ['id' => 3, 'title' => 'Ars Technica',   'unread' => 2,  'cat_id' => 1, 'feed_url' => " http://example.com/3", 'has_icon' => true,  'last_updated' => 1463985602, 'order_id' => 1],
+                ['id' => 4, 'title' => 'CBC News',       'unread' => 6,  'cat_id' => 6, 'feed_url' => " http://example.com/4", 'has_icon' => true,  'last_updated' => 1507564714, 'order_id' => 2],
+                ['id' => 6, 'title' => 'Eurogamer',      'unread' => 0,  'cat_id' => 0, 'feed_url' => " http://example.com/6", 'has_icon' => true,  'last_updated' => 1266005327, 'order_id' => 3],
+                ['id' => 1, 'title' => 'NASA JPL',       'unread' => 5,  'cat_id' => 2, 'feed_url' => " http://example.com/1", 'has_icon' => false, 'last_updated' => 1505516056, 'order_id' => 4],
+                ['id' => 5, 'title' => 'Ottawa Citizen', 'unread' => 12, 'cat_id' => 6, 'feed_url' => " http://example.com/5", 'has_icon' => false, 'last_updated' => 1499447237, 'order_id' => 5],
+                ['id' => 2, 'title' => 'Toronto Star',   'unread' => 10, 'cat_id' => 5, 'feed_url' => " http://example.com/2", 'has_icon' => true,  'last_updated' => 1321009871, 'order_id' => 6],
+            ],
+            [
+                ['id' => -1027, 'title' => "Fascinating", 'unread' => 6,  'cat_id' => -2],
+                ['id' => -1, 'title' => "Starred articles",   'unread' => 4,  'cat_id' => -1],
+                ['id' => -3, 'title' => "Fresh articles",     'unread' => 7,  'cat_id' => -1],
+                ['id' => -4, 'title' => "All articles",       'unread' => 35, 'cat_id' => -1],
+                ['id' => 3, 'title' => 'Ars Technica',   'unread' => 2,  'cat_id' => 1, 'feed_url' => " http://example.com/3", 'has_icon' => true,  'last_updated' => 1463985602, 'order_id' => 1],
+                ['id' => 4, 'title' => 'CBC News',       'unread' => 6,  'cat_id' => 6, 'feed_url' => " http://example.com/4", 'has_icon' => true,  'last_updated' => 1507564714, 'order_id' => 2],
+                ['id' => 1, 'title' => 'NASA JPL',       'unread' => 5,  'cat_id' => 2, 'feed_url' => " http://example.com/1", 'has_icon' => false, 'last_updated' => 1505516056, 'order_id' => 4],
+                ['id' => 5, 'title' => 'Ottawa Citizen', 'unread' => 12, 'cat_id' => 6, 'feed_url' => " http://example.com/5", 'has_icon' => false, 'last_updated' => 1499447237, 'order_id' => 5],
+                ['id' => 2, 'title' => 'Toronto Star',   'unread' => 10, 'cat_id' => 5, 'feed_url' => " http://example.com/2", 'has_icon' => true,  'last_updated' => 1321009871, 'order_id' => 6],
+            ],
+            [
+                ['id' => 4, 'title' => 'CBC News',       'unread' => 6,  'cat_id' => 6, 'feed_url' => " http://example.com/4", 'has_icon' => true,  'last_updated' => 1507564714, 'order_id' => 1],
+                ['id' => 5, 'title' => 'Ottawa Citizen', 'unread' => 12, 'cat_id' => 6, 'feed_url' => " http://example.com/5", 'has_icon' => false, 'last_updated' => 1499447237, 'order_id' => 2],
+            ],
+            [
+                ['id' => 4, 'title' => 'CBC News',       'unread' => 6,  'cat_id' => 6, 'feed_url' => " http://example.com/4", 'has_icon' => true,  'last_updated' => 1507564714, 'order_id' => 1],
+            ],
+            [
+                ['id' => 5, 'title' => 'Ottawa Citizen', 'unread' => 12, 'cat_id' => 6, 'feed_url' => " http://example.com/5", 'has_icon' => false, 'last_updated' => 1499447237, 'order_id' => 2],
+            ],
+            [
+                ['id' => 3, 'title' => 'Ars Technica', 'unread' => 2, 'cat_id' => 1, 'feed_url' => " http://example.com/3", 'has_icon' => true, 'last_updated' => 1463985602, 'order_id' => 1],
+            ],
+            [
+                ['id' => 2, 'title' => "Rocketry", 'unread' => 5, 'is_cat' => true, 'order_id' => 1],
+                ['id' => 3, 'title' => 'Ars Technica', 'unread' => 2, 'cat_id' => 1, 'feed_url' => " http://example.com/3", 'has_icon' => true, 'last_updated' => 1463985602, 'order_id' => 1],
+            ],
+        ];
+        for ($a = 0; $a < sizeof($in1); $a++) {
+            $this->assertResponse($this->respGood($exp[$a]), $this->h->dispatch(new Request("POST", "", json_encode($in1[$a]))), "Test $a failed");
+        }
+        for ($a = 0; $a < sizeof($in2); $a++) {
+            $this->assertResponse($this->respGood([]), $this->h->dispatch(new Request("POST", "", json_encode($in2[$a]))), "Test $a failed");
+        }
+    }
+
+    protected function filterFolders(int $id = null): array {
+        return array_filter($this->folders, function($value) use ($id) {return $value['parent']==$id;});
+    }
+
+    protected function filterSubs(int $folder = null): array {
+        return array_filter($this->subscriptions, function($value) use ($folder) {return $value['folder']==$folder;});
+    }
+
+    protected function reduceFolders(int $id = null) : int {
+        $out = 0;
+        foreach ($this->filterFolders($id) as $f) {
+            $out += $this->reduceFolders($f['id']);
+        }
+        $out += array_reduce(array_filter($this->subscriptions, function($value) use ($id) {return $value['folder']==$id;}), function($sum, $value) {return $sum + $value['unread'];}, 0);
+        return $out;
     }
 }
