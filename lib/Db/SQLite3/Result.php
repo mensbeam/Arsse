@@ -1,9 +1,10 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Db\SQLite3;
+
 use JKingWeb\Arsse\Db\Exception;
 
-class Result implements \JKingWeb\Arsse\Db\Result {
+class Result extends \JKingWeb\Arsse\Db\AbstractResult {
     protected $st;
     protected $set;
     protected $pos = 0;
@@ -12,24 +13,6 @@ class Result implements \JKingWeb\Arsse\Db\Result {
     protected $id = 0;
 
     // actual public methods
-
-    public function getValue() {
-        $this->next();
-        if ($this->valid()) {
-            $keys = array_keys($this->cur);
-            return $this->cur[array_shift($keys)];
-        }
-        return null;
-    }
-
-    public function getRow() {
-        $this->next();
-        return ($this->valid() ? $this->cur : null);
-    }
-
-    public function getAll(): array {
-        return iterator_to_array($this, false);
-    }
 
     public function changes() {
         return $this->rows;
@@ -61,24 +44,5 @@ class Result implements \JKingWeb\Arsse\Db\Result {
     public function valid() {
         $this->cur = $this->set->fetchArray(\SQLITE3_ASSOC);
         return ($this->cur !== false);
-    }
-
-    public function next() {
-        $this->cur = null;
-        $this->pos += 1;
-    }
-
-    public function current() {
-        return $this->cur;
-    }
-
-    public function key() {
-        return $this->pos;
-    }
-
-    public function rewind() {
-        if ($this->pos) {
-            throw new Exception("resultReused");
-        }
     }
 }
