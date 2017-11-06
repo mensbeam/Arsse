@@ -51,10 +51,11 @@ class TestDbResultSQLite3 extends Test\AbstractTest {
         foreach ($test as $row) {
             $rows[] = $row['col'];
         }
+        $this->assertEquals([1,2,3], $rows);
+        $this->assertException("resultReused", "Db");
         foreach ($test as $row) {
             $rows[] = $row['col'];
         }
-        $this->assertEquals([1,2,3,1,2,3], $rows);
     }
 
     public function testGetSingleValues() {
@@ -85,6 +86,15 @@ class TestDbResultSQLite3 extends Test\AbstractTest {
         $this->assertEquals($rows[0], $test->getRow());
         $this->assertEquals($rows[1], $test->getRow());
         $this->assertSame(null, $test->getRow());
+    }
+
+    public function testGetAllRows() {
+        $set = $this->c->query("SELECT '2112' as album, '2112' as track union select 'Clockwork Angels' as album, 'The Wreckers' as track");
+        $rows = [
+            ['album' => '2112',             'track' => '2112'],
+            ['album' => 'Clockwork Angels', 'track' => 'The Wreckers'],
+        ];
+        $test = new Db\SQLite3\Result($set);
         $this->assertEquals($rows, $test->getAll());
     }
 }

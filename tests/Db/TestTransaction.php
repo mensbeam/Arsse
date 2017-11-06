@@ -47,7 +47,7 @@ class TestTransaction extends Test\AbstractTest {
     }
 
     public function testIgnoreRollbackErrors() {
-        Phake::when($this->drv)->savepointUndo->thenThrow(new Db\ExceptionSavepoint("stale"));
+        Phake::when($this->drv)->savepointUndo->thenThrow(new Db\Exception("savepointStale"));
         $tr1 = new Transaction($this->drv);
         $tr2 = new Transaction($this->drv);
         unset($tr1, $tr2); // no exception should bubble up

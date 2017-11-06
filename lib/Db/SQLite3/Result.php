@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Db\SQLite3;
+use JKingWeb\Arsse\Db\Exception;
 
 class Result implements \JKingWeb\Arsse\Db\Result {
     protected $st;
@@ -27,11 +28,7 @@ class Result implements \JKingWeb\Arsse\Db\Result {
     }
 
     public function getAll(): array {
-        $out = [];
-        foreach ($this as $row) {
-            $out [] = $row;
-        }
-        return $out;
+        return iterator_to_array($this, false);
     }
 
     public function changes() {
@@ -80,8 +77,8 @@ class Result implements \JKingWeb\Arsse\Db\Result {
     }
 
     public function rewind() {
-        $this->pos = 0;
-        $this->cur = null;
-        $this->set->reset();
+        if ($this->pos) {
+            throw new Exception("resultReused");
+        }
     }
 }

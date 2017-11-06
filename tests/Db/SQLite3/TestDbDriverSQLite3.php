@@ -117,14 +117,14 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
     public function testReleaseASavepoint() {
         $this->assertEquals(1, $this->drv->savepointCreate());
         $this->assertEquals(true, $this->drv->savepointRelease());
-        $this->assertException("invalid", "Db", "ExceptionSavepoint");
+        $this->assertException("savepointInvalid", "Db");
         $this->drv->savepointRelease();
     }
 
     public function testUndoASavepoint() {
         $this->assertEquals(1, $this->drv->savepointCreate());
         $this->assertEquals(true, $this->drv->savepointUndo());
-        $this->assertException("invalid", "Db", "ExceptionSavepoint");
+        $this->assertException("savepointInvalid", "Db");
         $this->drv->savepointUndo();
     }
 
@@ -141,7 +141,7 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
         $this->assertTrue($this->drv->savepointRelease(6));
         $this->assertEquals(3, $this->drv->savepointCreate());
         $this->assertTrue($this->drv->savepointRelease(2));
-        $this->assertException("stale", "Db", "ExceptionSavepoint");
+        $this->assertException("savepointStale", "Db");
         $this->drv->savepointRelease(2);
     }
 
@@ -152,7 +152,7 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
         $this->assertEquals(4, $this->drv->savepointCreate());
         $this->assertTrue($this->drv->savepointRelease(2));
         $this->assertFalse($this->drv->savepointUndo(3));
-        $this->assertException("stale", "Db", "ExceptionSavepoint");
+        $this->assertException("savepointStale", "Db");
         $this->drv->savepointUndo(2);
     }
 
