@@ -60,9 +60,9 @@ abstract class AbstractDriver implements Driver {
                     break;
                 case self::TR_COMMIT:
                 case self::TR_ROLLBACK: //@codeCoverageIgnore
-                    throw new ExceptionSavepoint("stale", ['action' => "commit", 'index' => $index]);
+                    throw new Exception("savepointStale", ['action' => "commit", 'index' => $index]);
                 default:
-                    throw new Exception("unknownSavepointStatus", $this->transStatus[$index]); //@codeCoverageIgnore
+                    throw new Exception("savepointStatusUnknown", $this->transStatus[$index]); // @codeCoverageIgnore
             }
             if ($index==$this->transDepth) {
                 while ($this->transDepth > 0 && $this->transStatus[$this->transDepth] > self::TR_PEND) {
@@ -76,7 +76,7 @@ abstract class AbstractDriver implements Driver {
             }
             return $out;
         } else {
-            throw new ExceptionSavepoint("invalid", ['action' => "commit", 'index' => $index]);
+            throw new Exception("savepointInvalid", ['action' => "commit", 'index' => $index]);
         }
     }
 
@@ -106,9 +106,9 @@ abstract class AbstractDriver implements Driver {
                     break;
                 case self::TR_COMMIT:
                 case self::TR_ROLLBACK: //@codeCoverageIgnore
-                    throw new ExceptionSavepoint("stale", ['action' => "rollback", 'index' => $index]);
+                    throw new Exception("savepointStale", ['action' => "rollback", 'index' => $index]);
                 default:
-                    throw new Exception("unknownSavepointStatus", $this->transStatus[$index]); //@codeCoverageIgnore
+                    throw new Exception("savepointStatusUnknown", $this->transStatus[$index]); // @codeCoverageIgnore
             }
             if ($index==$this->transDepth) {
                 while ($this->transDepth > 0 && $this->transStatus[$this->transDepth] > self::TR_PEND) {
@@ -122,7 +122,7 @@ abstract class AbstractDriver implements Driver {
             }
             return $out;
         } else {
-            throw new ExceptionSavepoint("invalid", ['action' => "rollback", 'index' => $index]);
+            throw new Exception("savepointInvalid", ['action' => "rollback", 'index' => $index]);
         }
     }
 
