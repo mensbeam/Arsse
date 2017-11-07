@@ -569,19 +569,13 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function articleMarkReadMulti(array $url, array $data): Response {
         // determine whether to mark read or unread
         $set = ($url[1]=="read");
-        // start a transaction and loop through the items
-        $t = Arsse::$db->begin();
-        $in = array_chunk($data['items'] ?? [], 50);
-        for ($a = 0; $a < sizeof($in); $a++) {
-            // initialize the matching context
-            $c = new Context;
-            $c->editions($in[$a]);
-            try {
-                Arsse::$db->articleMark(Arsse::$user->id, ['read' => $set], $c);
-            } catch (ExceptionInput $e) {
-            }
+        // initialize the matching context
+        $c = new Context;
+        $c->editions($data['items'] ?? []);
+        try {
+            Arsse::$db->articleMark(Arsse::$user->id, ['read' => $set], $c);
+        } catch (ExceptionInput $e) {
         }
-        $t->commit();
         return new Response(204);
     }
 
@@ -589,19 +583,13 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function articleMarkStarredMulti(array $url, array $data): Response {
         // determine whether to mark starred or unstarred
         $set = ($url[1]=="star");
-        // start a transaction and loop through the items
-        $t = Arsse::$db->begin();
-        $in = array_chunk(array_column($data['items'] ?? [], "guidHash"), 50);
-        for ($a = 0; $a < sizeof($in); $a++) {
-            // initialize the matching context
-            $c = new Context;
-            $c->articles($in[$a]);
-            try {
-                Arsse::$db->articleMark(Arsse::$user->id, ['starred' => $set], $c);
-            } catch (ExceptionInput $e) {
-            }
+        // initialize the matching context
+        $c = new Context;
+        $c->articles(array_column($data['items'] ?? [], "guidHash"));
+        try {
+            Arsse::$db->articleMark(Arsse::$user->id, ['starred' => $set], $c);
+        } catch (ExceptionInput $e) {
         }
-        $t->commit();
         return new Response(204);
     }
 
