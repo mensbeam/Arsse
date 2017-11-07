@@ -2,6 +2,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\Database;
 
+use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Misc\Context;
 use JKingWeb\Arsse\Misc\Date;
@@ -346,6 +347,7 @@ trait SeriesArticle {
         // get all items for user
         $exp = [1,2,3,4,5,6,7,8,19,20];
         $this->compareIds($exp, new Context);
+        $this->compareIds($exp, (new Context)->articles(range(1, Database::LIMIT_ARTICLES * 3)));
         // get items from a folder tree
         $exp = [5,6,7,8];
         $this->compareIds($exp, (new Context)->folder(1));
@@ -610,8 +612,7 @@ trait SeriesArticle {
     }
 
     public function testMarkTooManyMultipleArticles() {
-        $this->assertException("tooLong", "Db", "ExceptionInput");
-        Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->articles(range(1, 51)));
+        $this->assertSame(7, Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->articles(range(1, Database::LIMIT_ARTICLES * 3))));
     }
 
     public function testMarkAMissingArticle() {
@@ -676,8 +677,7 @@ trait SeriesArticle {
     }
 
     public function testMarkTooManyMultipleEditions() {
-        $this->assertException("tooLong", "Db", "ExceptionInput");
-        Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->editions(range(1, 51)));
+        $this->assertSame(7, Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->editions(range(1, 51))));
     }
 
     public function testMarkAStaleEditionUnread() {
@@ -769,6 +769,7 @@ trait SeriesArticle {
         $this->assertSame(2, Arsse::$db->articleCount("john.doe@example.com", (new Context)->starred(true)));
         $this->assertSame(4, Arsse::$db->articleCount("john.doe@example.com", (new Context)->folder(1)));
         $this->assertSame(0, Arsse::$db->articleCount("jane.doe@example.com", (new Context)->starred(true)));
+        $this->assertSame(10, Arsse::$db->articleCount("john.doe@example.com", (new Context)->articles(range(1, Database::LIMIT_ARTICLES *3))));
     }
 
     public function testCountArticlesWithoutAuthority() {

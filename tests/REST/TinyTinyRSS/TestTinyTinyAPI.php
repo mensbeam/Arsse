@@ -929,7 +929,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         $this->setUp();
         Phake::when(Arsse::$db)->articleMark->thenReturn(42);
         Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->subscriptions));
-        Phake::when(Arsse::$db)->subscriptionList($this->anything(), null, false)->thenReturn(new Result(array_filter($this->subscriptions, function($value) {return is_null($value['folder']);})));
+        Phake::when(Arsse::$db)->subscriptionList($this->anything(), null, false)->thenReturn(new Result($this->filterSubs(null)));
         Phake::when(Arsse::$db)->labelList->thenReturn(new Result($this->labels));
         Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result($this->usedLabels));
         // verify the complex contexts

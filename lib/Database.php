@@ -11,6 +11,7 @@ use JKingWeb\Arsse\Misc\ValueInfo;
 
 class Database {
     const SCHEMA_VERSION = 2;
+    const LIMIT_ARTICLES = 50;
     
     /** @var Db\Driver */
     public $db;
@@ -855,8 +856,8 @@ class Database {
             // if multiple specific editions have been requested, prepare a CTE to list them and their articles
             if (!$context->editions) {
                 throw new Db\ExceptionInput("tooShort", ['field' => "editions", 'action' => __FUNCTION__, 'min' => 1]); // must have at least one array element
-            } elseif (sizeof($context->editions) > 50) {
-                throw new Db\ExceptionInput("tooLong", ['field' => "editions", 'action' => __FUNCTION__, 'max' => 50]); // must not have more than 50 array elements
+            } elseif (sizeof($context->editions) > self::LIMIT_ARTICLES) {
+                throw new Db\ExceptionInput("tooLong", ['field' => "editions", 'action' => __FUNCTION__, 'max' => self::LIMIT_ARTICLES]); // @codeCoverageIgnore
             }
             list($inParams, $inTypes) = $this->generateIn($context->editions, "int");
             $q->setCTE("requested_articles(id,edition)",
@@ -869,8 +870,8 @@ class Database {
             // if multiple specific articles have been requested, prepare a CTE to list them and their articles
             if (!$context->articles) {
                 throw new Db\ExceptionInput("tooShort", ['field' => "articles", 'action' => __FUNCTION__, 'min' => 1]); // must have at least one array element
-            } elseif (sizeof($context->articles) > 50) {
-                throw new Db\ExceptionInput("tooLong", ['field' => "articles", 'action' => __FUNCTION__, 'max' => 50]); // must not have more than 50 array elements
+            } elseif (sizeof($context->articles) > self::LIMIT_ARTICLES) {
+                throw new Db\ExceptionInput("tooLong", ['field' => "articles", 'action' => __FUNCTION__, 'max' => self::LIMIT_ARTICLES]); // @codeCoverageIgnore
             }
             list($inParams, $inTypes) = $this->generateIn($context->articles, "int");
             $q->setCTE("requested_articles(id,edition)",
@@ -917,27 +918,62 @@ class Database {
         return $q;
     }
 
+    protected function articleChunk(Context $context): array {
+        $exception = "";
+        if ($context->editions()) {
+            // editions take precedence over articles
+            if (sizeof($context->editions) > self::LIMIT_ARTICLES) {
+                $exception = "editions";
+            }
+        } elseif ($context->articles()) {
+            if (sizeof($context->articles) > self::LIMIT_ARTICLES) {
+                $exception = "articles";
+            }
+        }
+        if ($exception) {
+            $out = [];
+            $list = array_chunk($context->$exception, self::LIMIT_ARTICLES);
+            foreach ($list as $chunk) {
+                $out[] = (clone $context)->$exception($chunk);
+            }
+            return $out;
+        } else {
+            return [];
+        }
+    }
+
     public function articleList(string $user, Context $context = null): Db\Result {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         $context = $context ?? new Context;
-        $columns = [
-            "arsse_articles.url as url",
-            "title",
-            "author",
-            "content",
-            "guid",
-            "published as published_date",
-            "edited as edited_date",
-            "url_title_hash||':'||url_content_hash||':'||title_content_hash as fingerprint",
-            "arsse_enclosures.url as media_url",
-            "arsse_enclosures.type as media_type",
-        ];
-        $q = $this->articleQuery($user, $context, $columns);
-        $q->setJoin("left join arsse_enclosures on arsse_enclosures.article is arsse_articles.id");
-        // perform the query and return results
-        return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
+        // if the context has more articles or editions than we can process in one query, perform a series of queries and return an aggregate result
+        if ($contexts = $this->articleChunk($context)) {
+            $out = [];
+            $tr = $this->begin();
+            foreach ($contexts as $context) {
+                $out[] = $this->articleList($user, $context);
+            }
+            $tr->commit();
+            return new Db\ResultAggregate(...$out);
+        } else {
+            $columns = [
+                "arsse_articles.url as url",
+                "title",
+                "author",
+                "content",
+                "guid",
+                "published as published_date",
+                "edited as edited_date",
+                "url_title_hash||':'||url_content_hash||':'||title_content_hash as fingerprint",
+                "arsse_enclosures.url as media_url",
+                "arsse_enclosures.type as media_type",
+            ];
+            $q = $this->articleQuery($user, $context, $columns);
+            $q->setJoin("left join arsse_enclosures on arsse_enclosures.article is arsse_articles.id");
+            // perform the query and return results
+            return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
+        }
     }
 
     public function articleCount(string $user, Context $context = null): int {
@@ -945,10 +981,21 @@ class Database {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         $context = $context ?? new Context;
-        $q = $this->articleQuery($user, $context);
-        $q->pushCTE("selected_articles");
-        $q->setBody("SELECT count(*) from selected_articles");
-        return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
+        // if the context has more articles or editions than we can process in one query, perform a series of queries and return an aggregate result
+        if ($contexts = $this->articleChunk($context)) {
+            $out = 0;
+            $tr = $this->begin();
+            foreach ($contexts as $context) {
+                $out += $this->articleCount($user, $context);
+            }
+            $tr->commit();
+            return $out;
+        } else {
+            $q = $this->articleQuery($user, $context);
+            $q->pushCTE("selected_articles");
+            $q->setBody("SELECT count(*) from selected_articles");
+            return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
+        }
     }
 
     public function articleMark(string $user, array $data, Context $context = null): int {
@@ -956,62 +1003,73 @@ class Database {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         $context = $context ?? new Context;
-        // sanitize input
-        $values = [
-            isset($data['read']) ? $data['read'] : null,
-            isset($data['starred']) ? $data['starred'] : null,
-        ];
-        // the two queries we want to execute to make the requested changes
-        $queries = [
-            "UPDATE arsse_marks 
-                set 
-                    read = case when (select honour_read from target_articles where target_articles.id is article) is 1 then (select read from target_values) else read end,
-                    starred = coalesce((select starred from target_values),starred),
-                    modified = CURRENT_TIMESTAMP  
-                WHERE 
-                    subscription in (select sub from subscribed_feeds)
-                    and article in (select id from target_articles where to_insert is 0 and (honour_read is 1 or honour_star is 1))",
-            "INSERT INTO arsse_marks(subscription,article,read,starred)
-                select 
-                    (select id from arsse_subscriptions join user on user is owner where arsse_subscriptions.feed is target_articles.feed),
-                    id,
-                    coalesce((select read from target_values) * honour_read,0),
-                    coalesce((select starred from target_values),0)
-                from target_articles where to_insert is 1 and (honour_read is 1 or honour_star is 1)"
-        ];
-        $out = 0;
-        // wrap this UPDATE and INSERT together into a transaction
-        $tr = $this->begin();
-        // if an edition context is specified, make sure it's valid
-        if ($context->edition()) {
-            // make sure the edition exists
-            $edition = $this->articleValidateEdition($user, $context->edition);
-            // if the edition is not the latest, do not mark the read flag
-            if (!$edition['current']) {
-                $values[0] = null;
+        // if the context has more articles or editions than we can process in one query, perform a series of queries and return an aggregate result
+        if ($contexts = $this->articleChunk($context)) {
+            $out = 0;
+            $tr = $this->begin();
+            foreach ($contexts as $context) {
+                $out += $this->articleMark($user, $data, $context);
             }
-        } elseif ($context->article()) {
-            // otherwise if an article context is specified, make sure it's valid
-            $this->articleValidateId($user, $context->article);
+            $tr->commit();
+            return $out;
+        } else {
+            // sanitize input
+            $values = [
+                isset($data['read']) ? $data['read'] : null,
+                isset($data['starred']) ? $data['starred'] : null,
+            ];
+            // the two queries we want to execute to make the requested changes
+            $queries = [
+                "UPDATE arsse_marks 
+                    set 
+                        read = case when (select honour_read from target_articles where target_articles.id is article) is 1 then (select read from target_values) else read end,
+                        starred = coalesce((select starred from target_values),starred),
+                        modified = CURRENT_TIMESTAMP  
+                    WHERE 
+                        subscription in (select sub from subscribed_feeds)
+                        and article in (select id from target_articles where to_insert is 0 and (honour_read is 1 or honour_star is 1))",
+                "INSERT INTO arsse_marks(subscription,article,read,starred)
+                    select 
+                        (select id from arsse_subscriptions join user on user is owner where arsse_subscriptions.feed is target_articles.feed),
+                        id,
+                        coalesce((select read from target_values) * honour_read,0),
+                        coalesce((select starred from target_values),0)
+                    from target_articles where to_insert is 1 and (honour_read is 1 or honour_star is 1)"
+            ];
+            $out = 0;
+            // wrap this UPDATE and INSERT together into a transaction
+            $tr = $this->begin();
+            // if an edition context is specified, make sure it's valid
+            if ($context->edition()) {
+                // make sure the edition exists
+                $edition = $this->articleValidateEdition($user, $context->edition);
+                // if the edition is not the latest, do not mark the read flag
+                if (!$edition['current']) {
+                    $values[0] = null;
+                }
+            } elseif ($context->article()) {
+                // otherwise if an article context is specified, make sure it's valid
+                $this->articleValidateId($user, $context->article);
+            }
+            // execute each query in sequence
+            foreach ($queries as $query) {
+                // first build the query which will select the target articles; we will later turn this into a CTE for the actual query that manipulates the articles
+                $q = $this->articleQuery($user, $context, [
+                    "(not exists(select article from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds))) as to_insert",
+                    "((select read from target_values) is not null and (select read from target_values) is not (coalesce((select read from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)),0)) and (not exists(select * from requested_articles) or (select max(id) from arsse_editions where article is arsse_articles.id) in (select edition from requested_articles))) as honour_read",
+                    "((select starred from target_values) is not null and (select starred from target_values) is not (coalesce((select starred from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)),0))) as honour_star",
+                ]);
+                // common table expression with the values to set
+                $q->setCTE("target_values(read,starred)", "SELECT ?,?", ["bool","bool"], $values);
+                // push the current query onto the CTE stack and execute the query we're actually interested in
+                $q->pushCTE("target_articles");
+                $q->setBody($query);
+                $out += $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
+            }
+            // commit the transaction
+            $tr->commit();
+            return $out;
         }
-        // execute each query in sequence
-        foreach ($queries as $query) {
-            // first build the query which will select the target articles; we will later turn this into a CTE for the actual query that manipulates the articles
-            $q = $this->articleQuery($user, $context, [
-                "(not exists(select article from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds))) as to_insert",
-                "((select read from target_values) is not null and (select read from target_values) is not (coalesce((select read from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)),0)) and (not exists(select * from requested_articles) or (select max(id) from arsse_editions where article is arsse_articles.id) in (select edition from requested_articles))) as honour_read",
-                "((select starred from target_values) is not null and (select starred from target_values) is not (coalesce((select starred from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)),0))) as honour_star",
-            ]);
-            // common table expression with the values to set
-            $q->setCTE("target_values(read,starred)", "SELECT ?,?", ["bool","bool"], $values);
-            // push the current query onto the CTE stack and execute the query we're actually interested in
-            $q->pushCTE("target_articles");
-            $q->setBody($query);
-            $out += $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
-        }
-        // commit the transaction
-        $tr->commit();
-        return $out;
     }
 
     public function articleStarred(string $user): array {

@@ -9,17 +9,19 @@ abstract class AbstractResult implements Result {
     // actual public methods
 
     public function getValue() {
-        $this->next();
         if ($this->valid()) {
-            $keys = array_keys($this->cur);
-            return $this->cur[array_shift($keys)];
+            $out = array_shift($this->cur);
+            $this->next();
+            return $out;
         }
+        $this->next();
         return null;
     }
 
     public function getRow() {
+        $out = ($this->valid() ? $this->cur : null);
         $this->next();
-        return ($this->valid() ? $this->cur : null);
+        return $out;
     }
 
     public function getAll(): array {
