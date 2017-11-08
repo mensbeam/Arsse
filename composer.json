@@ -17,6 +17,8 @@
         }
 
     ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "require": {
         "php": "^7.0",
         "ext-intl": "*",
@@ -36,7 +38,8 @@
         "phpdocumentor/phpdocumentor": "2.*",
         "friendsofphp/php-cs-fixer": "^2.2",
         "phing/phing": "^2.16",
-        "pear/archive_tar": "*"
+        "pear/archive_tar": "*",
+        "johnkary/phpunit-speedtrap": "^2.0"
     },
     "autoload": {
         "psr-4": {
