@@ -190,21 +190,22 @@ trait SeriesArticle {
                 'article'      => "int",
                 'read'         => "bool",
                 'starred'      => "bool",
-                'modified'     => "datetime"
+                'modified'     => "datetime",
+                'note'         => "str",
             ],
             'rows' => [
-                [1,   1,1,1,'2000-01-01 00:00:00'],
-                [5,  19,1,0,'2000-01-01 00:00:00'],
-                [5,  20,0,1,'2010-01-01 00:00:00'],
-                [7,  20,1,0,'2010-01-01 00:00:00'],
-                [8, 102,1,0,'2000-01-02 02:00:00'],
-                [9, 103,0,1,'2000-01-03 03:00:00'],
-                [9, 104,1,1,'2000-01-04 04:00:00'],
-                [10,105,0,0,'2000-01-05 05:00:00'],
-                [11, 19,0,0,'2017-01-01 00:00:00'],
-                [11, 20,1,0,'2017-01-01 00:00:00'],
-                [12,  3,0,1,'2017-01-01 00:00:00'],
-                [12,  4,1,1,'2017-01-01 00:00:00'],
+                [1,   1,1,1,'2000-01-01 00:00:00',''],
+                [5,  19,1,0,'2000-01-01 00:00:00',''],
+                [5,  20,0,1,'2010-01-01 00:00:00',''],
+                [7,  20,1,0,'2010-01-01 00:00:00',''],
+                [8, 102,1,0,'2000-01-02 02:00:00',''],
+                [9, 103,0,1,'2000-01-03 03:00:00',''],
+                [9, 104,1,1,'2000-01-04 04:00:00',''],
+                [10,105,0,0,'2000-01-05 05:00:00',''],
+                [11, 19,0,0,'2017-01-01 00:00:00','ook'],
+                [11, 20,1,0,'2017-01-01 00:00:00','eek'],
+                [12,  3,0,1,'2017-01-01 00:00:00','ack'],
+                [12,  4,1,1,'2017-01-01 00:00:00','ach'],
             ]
         ],
         'arsse_labels' => [
@@ -331,7 +332,7 @@ trait SeriesArticle {
     ];
 
     public function setUpSeries() {
-        $this->checkTables = ['arsse_marks' => ["subscription","article","read","starred","modified"],];
+        $this->checkTables = ['arsse_marks' => ["subscription","article","read","starred","modified","note"],];
         $this->user = "john.doe@example.net";
     }
 
@@ -434,10 +435,10 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][8][4] = $now;
         $state['arsse_marks']['rows'][10][2] = 1;
         $state['arsse_marks']['rows'][10][4] = $now;
-        $state['arsse_marks']['rows'][] = [13,5,1,0,$now];
-        $state['arsse_marks']['rows'][] = [13,6,1,0,$now];
-        $state['arsse_marks']['rows'][] = [14,7,1,0,$now];
-        $state['arsse_marks']['rows'][] = [14,8,1,0,$now];
+        $state['arsse_marks']['rows'][] = [13,5,1,0,$now,''];
+        $state['arsse_marks']['rows'][] = [13,6,1,0,$now,''];
+        $state['arsse_marks']['rows'][] = [14,7,1,0,$now,''];
+        $state['arsse_marks']['rows'][] = [14,8,1,0,$now,''];
         $this->compareExpectations($state);
     }
 
@@ -460,10 +461,10 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][8][4] = $now;
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
-        $state['arsse_marks']['rows'][] = [13,5,0,1,$now];
-        $state['arsse_marks']['rows'][] = [13,6,0,1,$now];
-        $state['arsse_marks']['rows'][] = [14,7,0,1,$now];
-        $state['arsse_marks']['rows'][] = [14,8,0,1,$now];
+        $state['arsse_marks']['rows'][] = [13,5,0,1,$now,''];
+        $state['arsse_marks']['rows'][] = [13,6,0,1,$now,''];
+        $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
+        $state['arsse_marks']['rows'][] = [14,8,0,1,$now,''];
         $this->compareExpectations($state);
     }
 
@@ -492,10 +493,10 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][9][4] = $now;
         $state['arsse_marks']['rows'][10][2] = 1;
         $state['arsse_marks']['rows'][10][4] = $now;
-        $state['arsse_marks']['rows'][] = [13,5,1,1,$now];
-        $state['arsse_marks']['rows'][] = [13,6,1,1,$now];
-        $state['arsse_marks']['rows'][] = [14,7,1,1,$now];
-        $state['arsse_marks']['rows'][] = [14,8,1,1,$now];
+        $state['arsse_marks']['rows'][] = [13,5,1,1,$now,''];
+        $state['arsse_marks']['rows'][] = [13,6,1,1,$now,''];
+        $state['arsse_marks']['rows'][] = [14,7,1,1,$now,''];
+        $state['arsse_marks']['rows'][] = [14,8,1,1,$now,''];
         $this->compareExpectations($state);
     }
 
@@ -510,10 +511,10 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][9][4] = $now;
         $state['arsse_marks']['rows'][11][2] = 0;
         $state['arsse_marks']['rows'][11][4] = $now;
-        $state['arsse_marks']['rows'][] = [13,5,0,1,$now];
-        $state['arsse_marks']['rows'][] = [13,6,0,1,$now];
-        $state['arsse_marks']['rows'][] = [14,7,0,1,$now];
-        $state['arsse_marks']['rows'][] = [14,8,0,1,$now];
+        $state['arsse_marks']['rows'][] = [13,5,0,1,$now,''];
+        $state['arsse_marks']['rows'][] = [13,6,0,1,$now,''];
+        $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
+        $state['arsse_marks']['rows'][] = [14,8,0,1,$now,''];
         $this->compareExpectations($state);
     }
 
@@ -528,10 +529,29 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][10][4] = $now;
         $state['arsse_marks']['rows'][11][3] = 0;
         $state['arsse_marks']['rows'][11][4] = $now;
-        $state['arsse_marks']['rows'][] = [13,5,1,0,$now];
-        $state['arsse_marks']['rows'][] = [13,6,1,0,$now];
-        $state['arsse_marks']['rows'][] = [14,7,1,0,$now];
-        $state['arsse_marks']['rows'][] = [14,8,1,0,$now];
+        $state['arsse_marks']['rows'][] = [13,5,1,0,$now,''];
+        $state['arsse_marks']['rows'][] = [13,6,1,0,$now,''];
+        $state['arsse_marks']['rows'][] = [14,7,1,0,$now,''];
+        $state['arsse_marks']['rows'][] = [14,8,1,0,$now,''];
+        $this->compareExpectations($state);
+    }
+
+    public function testSetNoteForAllArticles() {
+        Arsse::$db->articleMark($this->user, ['note'=>"New note"]);
+        $now = Date::transform(time(), "sql");
+        $state = $this->primeExpectations($this->data, $this->checkTables);
+        $state['arsse_marks']['rows'][8][5] = "New note";
+        $state['arsse_marks']['rows'][8][4] = $now;
+        $state['arsse_marks']['rows'][9][5] = "New note";
+        $state['arsse_marks']['rows'][9][4] = $now;
+        $state['arsse_marks']['rows'][10][5] = "New note";
+        $state['arsse_marks']['rows'][10][4] = $now;
+        $state['arsse_marks']['rows'][11][5] = "New note";
+        $state['arsse_marks']['rows'][11][4] = $now;
+        $state['arsse_marks']['rows'][] = [13,5,0,0,$now,'New note'];
+        $state['arsse_marks']['rows'][] = [13,6,0,0,$now,'New note'];
+        $state['arsse_marks']['rows'][] = [14,7,0,0,$now,'New note'];
+        $state['arsse_marks']['rows'][] = [14,8,0,0,$now,'New note'];
         $this->compareExpectations($state);
     }
 
@@ -539,10 +559,10 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['read'=>true], (new Context)->folder(7));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][] = [13,5,1,0,$now];
-        $state['arsse_marks']['rows'][] = [13,6,1,0,$now];
-        $state['arsse_marks']['rows'][] = [14,7,1,0,$now];
-        $state['arsse_marks']['rows'][] = [14,8,1,0,$now];
+        $state['arsse_marks']['rows'][] = [13,5,1,0,$now,''];
+        $state['arsse_marks']['rows'][] = [13,6,1,0,$now,''];
+        $state['arsse_marks']['rows'][] = [14,7,1,0,$now,''];
+        $state['arsse_marks']['rows'][] = [14,8,1,0,$now,''];
         $this->compareExpectations($state);
     }
 
@@ -550,8 +570,8 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['read'=>true], (new Context)->folder(8));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][] = [13,5,1,0,$now];
-        $state['arsse_marks']['rows'][] = [13,6,1,0,$now];
+        $state['arsse_marks']['rows'][] = [13,5,1,0,$now,''];
+        $state['arsse_marks']['rows'][] = [13,6,1,0,$now,''];
         $this->compareExpectations($state);
     }
 
@@ -564,8 +584,8 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['read'=>true], (new Context)->subscription(13));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][] = [13,5,1,0,$now];
-        $state['arsse_marks']['rows'][] = [13,6,1,0,$now];
+        $state['arsse_marks']['rows'][] = [13,5,1,0,$now,''];
+        $state['arsse_marks']['rows'][] = [13,6,1,0,$now,''];
         $this->compareExpectations($state);
     }
 
@@ -589,7 +609,7 @@ trait SeriesArticle {
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
-        $state['arsse_marks']['rows'][] = [14,7,0,1,$now];
+        $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
         $this->compareExpectations($state);
     }
 
@@ -602,7 +622,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][9][4] = $now;
         $state['arsse_marks']['rows'][11][2] = 0;
         $state['arsse_marks']['rows'][11][4] = $now;
-        $state['arsse_marks']['rows'][] = [14,7,0,1,$now];
+        $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
         $this->compareExpectations($state);
     }
 
@@ -635,7 +655,7 @@ trait SeriesArticle {
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
-        $state['arsse_marks']['rows'][] = [14,7,0,1,$now];
+        $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
         $this->compareExpectations($state);
     }
 
@@ -667,7 +687,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][9][4] = $now;
         $state['arsse_marks']['rows'][11][2] = 0;
         $state['arsse_marks']['rows'][11][4] = $now;
-        $state['arsse_marks']['rows'][] = [14,7,0,1,$now];
+        $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
         $this->compareExpectations($state);
     }
 
@@ -732,10 +752,10 @@ trait SeriesArticle {
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][8][3] = 1;
         $state['arsse_marks']['rows'][8][4] = $now;
-        $state['arsse_marks']['rows'][] = [13,5,0,1,$now];
-        $state['arsse_marks']['rows'][] = [13,6,0,1,$now];
-        $state['arsse_marks']['rows'][] = [14,7,0,1,$now];
-        $state['arsse_marks']['rows'][] = [14,8,0,1,$now];
+        $state['arsse_marks']['rows'][] = [13,5,0,1,$now,''];
+        $state['arsse_marks']['rows'][] = [13,6,0,1,$now,''];
+        $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
+        $state['arsse_marks']['rows'][] = [14,8,0,1,$now,''];
         $this->compareExpectations($state);
     }
 
@@ -754,8 +774,8 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['starred'=>true], (new Context)->notModifiedSince('2000-01-01T00:00:00Z'));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][] = [13,5,0,1,$now];
-        $state['arsse_marks']['rows'][] = [14,7,0,1,$now];
+        $state['arsse_marks']['rows'][] = [13,5,0,1,$now,''];
+        $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
         $this->compareExpectations($state);
     }
 

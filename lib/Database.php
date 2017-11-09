@@ -1017,6 +1017,7 @@ class Database {
             $values = [
                 isset($data['read']) ? $data['read'] : null,
                 isset($data['starred']) ? $data['starred'] : null,
+                isset($data['note']) ? $data['note'] : null,
             ];
             // the two queries we want to execute to make the requested changes
             $queries = [
@@ -1024,17 +1025,19 @@ class Database {
                     set 
                         read = case when (select honour_read from target_articles where target_articles.id is article) is 1 then (select read from target_values) else read end,
                         starred = coalesce((select starred from target_values),starred),
+                        note = coalesce((select note from target_values),note),
                         modified = CURRENT_TIMESTAMP  
                     WHERE 
                         subscription in (select sub from subscribed_feeds)
-                        and article in (select id from target_articles where to_insert is 0 and (honour_read is 1 or honour_star is 1))",
-                "INSERT INTO arsse_marks(subscription,article,read,starred)
+                        and article in (select id from target_articles where to_insert is 0 and (honour_read is 1 or honour_star is 1 or (select note from target_values) is not null))",
+                "INSERT INTO arsse_marks(subscription,article,read,starred,note)
                     select 
                         (select id from arsse_subscriptions join user on user is owner where arsse_subscriptions.feed is target_articles.feed),
                         id,
                         coalesce((select read from target_values) * honour_read,0),
-                        coalesce((select starred from target_values),0)
-                    from target_articles where to_insert is 1 and (honour_read is 1 or honour_star is 1)"
+                        coalesce((select starred from target_values),0),
+                        coalesce((select note from target_values),'')
+                    from target_articles where to_insert is 1 and (honour_read is 1 or honour_star is 1 or coalesce((select note from target_values),'') <> '')"
             ];
             $out = 0;
             // wrap this UPDATE and INSERT together into a transaction
@@ -1060,7 +1063,7 @@ class Database {
                     "((select starred from target_values) is not null and (select starred from target_values) is not (coalesce((select starred from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)),0))) as honour_star",
                 ]);
                 // common table expression with the values to set
-                $q->setCTE("target_values(read,starred)", "SELECT ?,?", ["bool","bool"], $values);
+                $q->setCTE("target_values(read,starred,note)", "SELECT ?,?,?", ["bool","bool","str"], $values);
                 // push the current query onto the CTE stack and execute the query we're actually interested in
                 $q->pushCTE("target_articles");
                 $q->setBody($query);

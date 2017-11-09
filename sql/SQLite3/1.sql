@@ -25,6 +25,20 @@ create table arsse_label_members (
     primary key(label,article)
 ) without rowid;
 
+-- alter marks table to add Tiny Tiny RSS' notes
+alter table arsse_marks rename to arsse_marks_old;
+create table arsse_marks(
+    article integer not null references arsse_articles(id) on delete cascade,
+    subscription integer not null references arsse_subscriptions(id) on delete cascade on update cascade,
+    read boolean not null default 0,
+    starred boolean not null default 0,
+    modified text not null default CURRENT_TIMESTAMP,
+    note text not null default '',
+    primary key(article,subscription)
+);
+insert into arsse_marks(article,subscription,read,starred,modified) select article,subscription,read,starred,modified from arsse_marks_old;
+drop table arsse_marks_old;
+
 -- set version marker
 pragma user_version = 2;
 update arsse_meta set value = '2' where key is 'schema_version';

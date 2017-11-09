@@ -1101,4 +1101,85 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         $out += array_reduce(array_filter($this->subscriptions, function($value) use ($id) {return $value['folder']==$id;}), function($sum, $value) {return $sum + $value['unread'];}, 0);
         return $out;
     }
+
+    public function testChangeArticles() {
+        $in = [
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx"],
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1"],
+
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 0],
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 0],
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 1],
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 2],
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 3], // invalid mode
+            
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 1], // Published feed' no-op
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 0],
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 1],
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 2],
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 3], // invalid mode
+
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 2],
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 2, 'mode' => 0],
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 2, 'mode' => 1],
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 2, 'mode' => 2],
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 2, 'mode' => 3], // invalid mode
+
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 3],
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 3, 'mode' => 0],
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 3, 'mode' => 1],
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 3, 'mode' => 2],
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 3, 'mode' => 3], // invalid mode
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 3, 'data' => "eh"],
+
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 4], // invalid field
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "0, -1", 'field' => 4], // no valid IDs
+        ];
+        Phake::when(Arsse::$db)->articleMark->thenReturn(1);
+        Phake::when(Arsse::$db)->articleMark($this->anything(), ['starred' => false], (new Context)->articles([42, 2112]))->thenReturn(2);
+        Phake::when(Arsse::$db)->articleMark($this->anything(), ['starred' =>  true], (new Context)->articles([42, 2112]))->thenReturn(4);
+        Phake::when(Arsse::$db)->articleMark($this->anything(), ['starred' => false], (new Context)->articles([42, 2112])->starred(true))->thenReturn(8);
+        Phake::when(Arsse::$db)->articleMark($this->anything(), ['starred' =>  true], (new Context)->articles([42, 2112])->starred(false))->thenReturn(16);
+        Phake::when(Arsse::$db)->articleMark($this->anything(), ['read'    =>  true], (new Context)->articles([42, 2112]))->thenReturn(32); // false is read for TT-RSS
+        Phake::when(Arsse::$db)->articleMark($this->anything(), ['read'    => false], (new Context)->articles([42, 2112]))->thenReturn(64);
+        Phake::when(Arsse::$db)->articleMark($this->anything(), ['read'    =>  true], (new Context)->articles([42, 2112])->unread(true))->thenReturn(128);
+        Phake::when(Arsse::$db)->articleMark($this->anything(), ['read'    => false], (new Context)->articles([42, 2112])->unread(false))->thenReturn(256);
+        Phake::when(Arsse::$db)->articleMark($this->anything(), ['note'    =>    ""], (new Context)->articles([42, 2112]))->thenReturn(512);
+        Phake::when(Arsse::$db)->articleMark($this->anything(), ['note'    =>  "eh"], (new Context)->articles([42, 2112]))->thenReturn(1024);
+        $out = [
+            $this->respErr("INCORRECT_USAGE"),
+            $this->respGood(['status' => "OK", 'updated' => 2]),
+
+            $this->respGood(['status' => "OK", 'updated' => 2]),
+            $this->respGood(['status' => "OK", 'updated' => 2]),
+            $this->respGood(['status' => "OK", 'updated' => 4]),
+            $this->respGood(['status' => "OK", 'updated' => 24]),
+            $this->respErr("INCORRECT_USAGE"),
+
+            $this->respGood(['status' => "OK", 'updated' => 0]),
+            $this->respGood(['status' => "OK", 'updated' => 0]),
+            $this->respGood(['status' => "OK", 'updated' => 0]),
+            $this->respGood(['status' => "OK", 'updated' => 0]),
+            $this->respErr("INCORRECT_USAGE"),
+
+            $this->respGood(['status' => "OK", 'updated' => 32]),
+            $this->respGood(['status' => "OK", 'updated' => 32]),
+            $this->respGood(['status' => "OK", 'updated' => 64]),
+            $this->respGood(['status' => "OK", 'updated' => 384]),
+            $this->respErr("INCORRECT_USAGE"),
+
+            $this->respGood(['status' => "OK", 'updated' => 512]),
+            $this->respGood(['status' => "OK", 'updated' => 512]),
+            $this->respGood(['status' => "OK", 'updated' => 512]),
+            $this->respGood(['status' => "OK", 'updated' => 512]),
+            $this->respGood(['status' => "OK", 'updated' => 512]),
+            $this->respGood(['status' => "OK", 'updated' => 1024]),
+
+            $this->respErr("INCORRECT_USAGE"),
+            $this->respErr("INCORRECT_USAGE"),
+        ];
+        for ($a = 0; $a < sizeof($in); $a++) {
+            $this->assertEquals($out[$a], $this->h->dispatch(new Request("POST", "", json_encode($in[$a]))), "Test $a failed");
+        }
+    }
 }

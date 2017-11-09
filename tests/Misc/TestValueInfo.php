@@ -79,6 +79,7 @@ class TestValueInfo extends Test\AbstractTest {
             [0.5,           I::FLOAT],
             ["2.5",         I::FLOAT],
             ["0.5",         I::FLOAT],
+            [" 1 ",         I::VALID],
         ];
         foreach ($tests as $test) {
             list($value, $exp) = $test;

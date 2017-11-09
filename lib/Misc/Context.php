@@ -13,8 +13,8 @@ class Context {
     public $subscription;
     public $oldestEdition;
     public $latestEdition;
-    public $unread = false;
-    public $starred = false;
+    public $unread = null;
+    public $starred = null;
     public $modifiedSince;
     public $notModifiedSince;
     public $edition;

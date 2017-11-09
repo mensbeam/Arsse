@@ -1109,4 +1109,64 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         // return boilerplate output
         return $out;
     }
+
+    public function opUpdateArticle(array $data): array {
+        // normalize input
+        $articles = array_filter(ValueInfo::normalize(explode(",", (string) $data['article_ids']), ValueInfo::T_INT | ValueInfo::M_ARRAY), [ValueInfo::class, "id"]);
+        if (!$articles) {
+            // if there are no valid articles this is an error
+            throw new Exception("INCORRECT_USAGE");
+        }
+        $out = 0;
+        $tr = Arsse::$db->begin();
+        switch ($data['field']) {
+            case 0: // starred
+                switch ($data['mode']) {
+                    case 0: // set false
+                    case 1: // set true
+                        $out += Arsse::$db->articleMark(Arsse::$user->id, ['starred' => (bool) $data['mode']], (new Context)->articles($articles));
+                        break;
+                    case 2: //toggle
+                        $out += Arsse::$db->articleMark(Arsse::$user->id, ['starred' => true], (new Context)->articles($articles)->starred(false));
+                        $out += Arsse::$db->articleMark(Arsse::$user->id, ['starred' => false], (new Context)->articles($articles)->starred(true));
+                        break;
+                    default:
+                        throw new Exception("INCORRECT_USAGE");
+                }
+                break;
+            case 1: // published
+                switch ($data['mode']) {
+                    case 0: // set false
+                    case 1: // set true
+                    case 2: //toggle
+                        // TODO: the Published feed is not yet implemeted; once it is the updateArticle operation must be amended accordingly
+                        break;
+                    default:
+                        throw new Exception("INCORRECT_USAGE");
+                }
+                break;
+            case 2: // unread
+                // NOTE: we use a "read" flag rather than "unread", so the booleans are swapped
+                switch ($data['mode']) {
+                    case 0: // set false
+                    case 1: // set true
+                        $out += Arsse::$db->articleMark(Arsse::$user->id, ['read' => !$data['mode']], (new Context)->articles($articles));
+                        break;
+                    case 2: //toggle
+                        $out += Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], (new Context)->articles($articles)->unread(true));
+                        $out += Arsse::$db->articleMark(Arsse::$user->id, ['read' => false], (new Context)->articles($articles)->unread(false));
+                        break;
+                    default:
+                        throw new Exception("INCORRECT_USAGE");
+                }
+                break;
+            case 3: // article note
+                $out += Arsse::$db->articleMark(Arsse::$user->id, ['note' => (string) $data['data']], (new Context)->articles($articles));
+                break;
+            default:
+                throw new Exception("INCORRECT_USAGE");
+        }
+        $tr->commit();
+        return ['status' => "OK", 'updated' => $out];    
+    }
 }
