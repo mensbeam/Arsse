@@ -78,6 +78,7 @@
         <file>REST/NextCloudNews/TestNCNVersionDiscovery.php</file>
         <file>REST/NextCloudNews/TestNCNV1_2.php</file>
         <file>REST/TinyTinyRSS/TestTinyTinyAPI.php</file>
+        <file>REST/TinyTinyRSS/TestTinyTinyIcon.php</file>
     </testsuite>
     <testsuite name="Refresh service">
         <file>Service/TestService.php</file>

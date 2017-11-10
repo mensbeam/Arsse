@@ -629,6 +629,10 @@ class Database {
         return $out;
     }
 
+    public function subscriptionFavicon(int $id): string {
+        return (string) $this->db->prepare("SELECT favicon from arsse_feeds join arsse_subscriptions on feed is arsse_feeds.id where arsse_subscriptions.id is ?", "int")->run($id)->getValue();
+    }
+
     protected function subscriptionValidateId(string $user, $id, bool $subject = false): array {
         if (!ValueInfo::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "feed", 'type' => "int > 0"]);

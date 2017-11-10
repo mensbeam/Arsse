@@ -44,6 +44,7 @@ trait SeriesSubscription {
                 'username'   => "str",
                 'password'   => "str",
                 'next_fetch' => "datetime",
+                'favicon'    => "str",
             ],
             'rows' => [] // filled in the series setup
         ],
@@ -104,9 +105,9 @@ trait SeriesSubscription {
 
     public function setUpSeries() {
         $this->data['arsse_feeds']['rows'] = [
-            [1,"http://example.com/feed1", "Ook", "", "",strtotime("now")],
-            [2,"http://example.com/feed2", "Eek", "", "",strtotime("now - 1 hour")],
-            [3,"http://example.com/feed3", "Ack", "", "",strtotime("now + 1 hour")],
+            [1,"http://example.com/feed1", "Ook", "", "",strtotime("now"),''],
+            [2,"http://example.com/feed2", "Eek", "", "",strtotime("now - 1 hour"),'http://example.com/favicon.ico'],
+            [3,"http://example.com/feed3", "Ack", "", "",strtotime("now + 1 hour"),''],
         ];
         // initialize a partial mock of the Database object to later manipulate the feedUpdate method
         Arsse::$db = Phake::partialMock(Database::class, $this->drv);
@@ -401,5 +402,21 @@ trait SeriesSubscription {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['folder' => null]);
+    }
+
+    public function testRetrieveTheFaviconOfASubscription() {
+        $exp = "http://example.com/favicon.ico";
+        $this->assertSame($exp, Arsse::$db->subscriptionFavicon(1));
+        $this->assertSame($exp, Arsse::$db->subscriptionFavicon(2));
+        $this->assertSame('',   Arsse::$db->subscriptionFavicon(3));
+        $this->assertSame('',   Arsse::$db->subscriptionFavicon(4));
+        // authorization shouldn't have any bearing on this function
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        $this->assertSame($exp, Arsse::$db->subscriptionFavicon(1));
+        $this->assertSame($exp, Arsse::$db->subscriptionFavicon(2));
+        $this->assertSame('',   Arsse::$db->subscriptionFavicon(3));
+        $this->assertSame('',   Arsse::$db->subscriptionFavicon(4));
+        // invalid IDs should simply return an empty string
+        $this->assertSame('',   Arsse::$db->subscriptionFavicon(-2112));
     }
 }
