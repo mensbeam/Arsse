@@ -4,12 +4,6 @@ namespace JKingWeb\Arsse;
 
 use JKingWeb\Arsse\REST\Request;
 use JKingWeb\Arsse\REST\Response;
-use JKingWeb\Arsse\Test\Result;
-use JKingWeb\Arsse\Misc\Date;
-use JKingWeb\Arsse\Misc\Context;
-use JKingWeb\Arsse\Db\ExceptionInput;
-use JKingWeb\Arsse\Db\Transaction;
-use JKingWeb\Arsse\REST\TinyTinyRSS\API;
 use Phake;
 
 /** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Icon<extended> */
