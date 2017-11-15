@@ -47,6 +47,48 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         ['id' => 1, 'articles' => 2,   'read' => 2,  'unread' => 0, 'name' => "Logical"],
     ];
     protected $starred = ['total' => 10, 'unread' => 4, 'read' => 6];
+    protected $articles = [
+        [
+            'id' => 101,
+            'url' => 'http://example.com/1',
+            'title' => 'Article title 1',
+            'subscription_title' => "Feed 11",
+            'author' => '',
+            'content' => '<p>Article content 1</p>',
+            'guid' => '',
+            'published_date' => '2000-01-01 00:00:00',
+            'edited_date' => '2000-01-01 00:00:01',
+            'modified_date' => '2000-01-01 01:00:00',
+            'unread' => 1,
+            'starred' => 0,
+            'edition' => 101,
+            'subscription' => 8,
+            'fingerprint' => 'f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6:fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4:18fdd4fa93d693128c43b004399e5c9cea6c261ddfa002518d3669f55d8c2207',
+            'media_url' => null,
+            'media_type' => null,
+            'note' => "",
+        ],
+        [
+            'id' => 102,
+            'url' => 'http://example.com/2',
+            'title' => 'Article title 2',
+            'subscription_title' => "Feed 11",
+            'author' => 'J. King',
+            'content' => '<p>Article content 2</p>',
+            'guid' => '5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7',
+            'published_date' => '2000-01-02 00:00:00',
+            'edited_date' => '2000-01-02 00:00:02',
+            'modified_date' => '2000-01-02 02:00:00',
+            'unread' => 0,
+            'starred' => 0,
+            'edition' => 202,
+            'subscription' => 8,
+            'fingerprint' => '0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153:13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9:2abd0a8cba83b8214a66c8f0293ba63e467d720540e29ff8ddcdab069d4f1c9e',
+            'media_url' => "http://example.com/text",
+            'media_type' => "text/plain",
+            'note' => "Note 2",
+        ],
+    ];
 
     protected function respGood($content = null, $seq = 0): Response {
         return new Response(200, [
@@ -1133,7 +1175,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
             ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 3, 'data' => "eh"],
 
             ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 4], // invalid field
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "0, -1", 'field' => 4], // no valid IDs
+            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "0, -1", 'field' => 3], // no valid IDs
         ];
         Phake::when(Arsse::$db)->articleMark->thenReturn(1);
         Phake::when(Arsse::$db)->articleMark($this->anything(), ['starred' => false], (new Context)->articles([42, 2112]))->thenReturn(2);
@@ -1181,5 +1223,93 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         for ($a = 0; $a < sizeof($in); $a++) {
             $this->assertEquals($out[$a], $this->h->dispatch(new Request("POST", "", json_encode($in[$a]))), "Test $a failed");
         }
+    }
+
+    public function testListArticles() {
+        $in = [
+            // error conditions
+            ['op' => "getArticle", 'sid' => "PriestsOfSyrinx"],
+            ['op' => "getArticle", 'sid' => "PriestsOfSyrinx", 'article_id' => 0],
+            ['op' => "getArticle", 'sid' => "PriestsOfSyrinx", 'article_id' => -1],
+            ['op' => "getArticle", 'sid' => "PriestsOfSyrinx", 'article_id' => "0,-1"],
+            // acceptable input
+            ['op' => "getArticle", 'sid' => "PriestsOfSyrinx", 'article_id' => "101,102"],
+            ['op' => "getArticle", 'sid' => "PriestsOfSyrinx", 'article_id' => "101"],
+            ['op' => "getArticle", 'sid' => "PriestsOfSyrinx", 'article_id' => "102"],
+        ];
+        Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result($this->labels));
+        Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result($this->usedLabels));
+        Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 101)->thenReturn([]);
+        Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 102)->thenReturn([1,3]);
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([101, 102]))->thenReturn(new Result($this->articles));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([101]))->thenReturn(new Result([$this->articles[0]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([102]))->thenReturn(new Result([$this->articles[1]]));
+        $exp = $this->respErr("INCORRECT_USAGE");
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[0]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[1]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[2]))));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", json_encode($in[3]))));
+        $exp = [
+            [
+                'id' => 101,
+                'guid' => null,
+                'title' => 'Article title 1',
+                'link' => 'http://example.com/1',
+                'labels' => [],
+                'unread' => true,
+                'marked' => false,
+                'published' => false,
+                'comments' => "",
+                'author' => '',
+                'updated' => strtotime('2000-01-01 00:00:01'),
+                'feed_id' => 8,
+                'feed_title' => "Feed 11",
+                'attachments' => [],
+                'score' => 0,
+                'note' => null,
+                'lang' => "",
+                'content' => '<p>Article content 1</p>',
+            ],
+            [
+                'id' => 102,
+                'guid' => "SHA256:5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7",
+                'title' => 'Article title 2',
+                'link' => 'http://example.com/2',
+                'labels' => [
+                    [-1025, "Logical", "", ""],
+                    [-1027, "Fascinating", "", ""],
+                ],
+                'unread' => false,
+                'marked' => false,
+                'published' => false,
+                'comments' => "",
+                'author' => "J. King",
+                'updated' => strtotime('2000-01-02 00:00:02'),
+                'feed_id' => 8,
+                'feed_title' => "Feed 11",
+                'attachments' => [
+                    [
+                        'content_url'  => "http://example.com/text",
+                        'content_type' => "text/plain",
+                        'title'        => "",
+                        'duration'     => "",
+                        'width'        => "",
+                        'height'       => "",
+                        'post_id'      => 102,
+                    ],
+                ],
+                'score' => 0,
+                'note' => "Note 2",
+                'lang' => "",
+                'content' => '<p>Article content 2</p>',
+            ],
+        ];
+        $this->assertEquals($this->respGood($exp), $this->h->dispatch(new Request("POST", "", json_encode($in[4]))));
+        $this->assertEquals($this->respGood([$exp[0]]), $this->h->dispatch(new Request("POST", "", json_encode($in[5]))));
+        $this->assertEquals($this->respGood([$exp[1]]), $this->h->dispatch(new Request("POST", "", json_encode($in[6]))));
+        // test the special case when labels are not used
+        Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result([]));
+        Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result([]));
+        $this->assertEquals($this->respGood([$exp[0]]), $this->h->dispatch(new Request("POST", "", json_encode($in[5]))));
     }
 }

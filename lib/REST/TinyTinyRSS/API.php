@@ -29,6 +29,9 @@ Protocol difference so far:
     - setArticleLabel responds with errors for invalid labels where TT-RSS simply returns a zero result
     - The result of setArticleLabel counts only records which actually changed rather than all entries attempted
     - Top-level categories in getFeedTree have a 'parent_id' property (set to null); in TT-RSS the property is absent
+    - Article hashes are SHA-256 rather than SHA-1.
+    - Articles have at most one attachment (enclosure), whereas TTRSS allows for several; there is also significantly less detail. These are limitations of picoFeed which should be addressed
+    - IDs for enclosures are ommitted as we don't give them IDs
 */
 
 
@@ -1168,5 +1171,69 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         $tr->commit();
         return ['status' => "OK", 'updated' => $out];    
+    }
+
+    public function opGetArticle(array $data): array {
+        // normalize input
+        $articles = array_filter(ValueInfo::normalize(explode(",", (string) $data['article_id']), ValueInfo::T_INT | ValueInfo::M_ARRAY), [ValueInfo::class, "id"]);
+        if (!$articles) {
+            // if there are no valid articles this is an error
+            throw new Exception("INCORRECT_USAGE");
+        }
+        $tr = Arsse::$db->begin();
+        // retrieve the list of label names for the user
+        $labels = [];
+        foreach (Arsse::$db->labelList(Arsse::$user->id, false) as $label) {
+            $labels[$label['id']] = $label['name'];
+        }
+        // retrieve the requested articles
+        $out = [];
+        foreach (Arsse::$db->articleList(Arsse::$user->id, (new Context)->articles($articles)) as $article) {
+            $out[] = [
+                'id' => $article['id'],
+                'guid' => $article['guid'] ? "SHA256:".$article['guid'] : null,
+                'title' => $article['title'],
+                'link' => $article['url'],
+                'labels' => $this->articleLabelList($labels, $article['id']),
+                'unread' => (bool) $article['unread'],
+                'marked' => (bool) $article['starred'],
+                'published' => false, // TODO: if the Published feed is implemented, the getArticle operation should be amended accordingly
+                'comments' => "", // FIXME: What is this?
+                'author' => $article['author'],
+                'updated' => Date::transform($article['edited_date'], "unix", "sql"),
+                'feed_id' => $article['subscription'],
+                'feed_title' => $article['subscription_title'],
+                'attachments' => $article['media_url'] ? [[
+                    'content_url' => $article['media_url'],
+                    'content_type' => $article['media_type'],
+                    'title' => "",
+                    'duration' => "",
+                    'width' => "",
+                    'height' => "",
+                    'post_id' => $article['id'],
+                ]] : [], // TODO: We need to support multiple enclosures
+                'score' => 0, // score is not implemented as it is not modifiable from the TTRSS API
+                'note' => strlen($article['note']) ? $article['note'] : null,
+                'lang' => "", // FIXME: picoFeed should be able to retrieve this information
+                'content' => $article['content'],
+            ];
+        }
+        return $out;
+    }
+
+    protected function articleLabelList(array $labels, int $id): array {
+        $out = [];
+        if (!$labels) {
+            return $out;
+        }
+        foreach (Arsse::$db->articleLabelsGet(Arsse::$user->id, $id) as $label) {
+            $out[] = [
+                $this->labelOut($label), // ID
+                $labels[$label],         // name
+                "",                      // foreground colour
+                "",                      // background colour
+            ];
+        }
+        return $out;
     }
 }

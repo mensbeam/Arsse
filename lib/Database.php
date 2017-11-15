@@ -962,8 +962,10 @@ class Database {
             return new Db\ResultAggregate(...$out);
         } else {
             $columns = [
+                // (id, subscription, feed, modified, unread, starred, edition): always included
                 "arsse_articles.url as url",
-                "title",
+                "arsse_articles.title as title",
+                "(select coalesce(arsse_subscriptions.title,arsse_feeds.title) from arsse_feeds join arsse_subscriptions on arsse_subscriptions.feed is arsse_feeds.id where arsse_feeds.id is arsse_articles.feed) as subscription_title",
                 "author",
                 "content",
                 "guid",
@@ -972,6 +974,7 @@ class Database {
                 "url_title_hash||':'||url_content_hash||':'||title_content_hash as fingerprint",
                 "arsse_enclosures.url as media_url",
                 "arsse_enclosures.type as media_type",
+                "(select note from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)) as note"
             ];
             $q = $this->articleQuery($user, $context, $columns);
             $q->setJoin("left join arsse_enclosures on arsse_enclosures.article is arsse_articles.id");
