@@ -845,6 +845,11 @@ class Database {
             $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on parent is folder", "int", $context->folder);
             // add another CTE for the subscriptions within the folder
             $q->setCTE("subscribed_feeds(id,sub)", "SELECT feed,id from arsse_subscriptions join user on user is owner join folders on arsse_subscriptions.folder is folders.folder", [], [], "join subscribed_feeds on feed is subscribed_feeds.id");
+        } elseif ($context->folderShallow()) {
+            // if a shallow folder is specified, make sure it exists
+            $this->folderValidateId($user, $context->folderShallow);
+            // if it does exist, add a CTE with only its subscriptions (and not those of its descendents)
+            $q->setCTE("subscribed_feeds(id,sub)", "SELECT feed,id from arsse_subscriptions join user on user is owner and coalesce(folder,0) is ?", "strict int", $context->folderShallow, "join subscribed_feeds on feed is subscribed_feeds.id");
         } else {
             // otherwise add a CTE for all the user's subscriptions
             $q->setCTE("subscribed_feeds(id,sub)", "SELECT feed,id from arsse_subscriptions join user on user is owner", [], [], "join subscribed_feeds on feed is subscribed_feeds.id");
@@ -889,7 +894,11 @@ class Database {
             $q->setCTE("requested_articles(id,edition)", "SELECT 'empty','table' where 1 is 0");
         }
         // filter based on label by ID or name
-        if ($context->label() || $context->labelName()) {
+        if ($context->labelled()) {
+            // any label (true) or no label (false)
+            $q->setWhere((!$context->labelled ? "not " : "")."exists(select article from arsse_label_members where assigned is 1 and article is arsse_articles.id and subscription in (select sub from subscribed_feeds))");
+        } elseif ($context->label() || $context->labelName()) {
+            // specific label ID or name
             if ($context->label()) {
                 $id = $this->labelValidateId($user, $context->label, false)['id'];
             } else {

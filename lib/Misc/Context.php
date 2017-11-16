@@ -10,6 +10,7 @@ class Context {
     public $limit = 0;
     public $offset = 0;
     public $folder;
+    public $folderShallow;
     public $subscription;
     public $oldestEdition;
     public $latestEdition;
@@ -23,6 +24,7 @@ class Context {
     public $articles;
     public $label;
     public $labelName;
+    public $labelled = null;
 
     protected $props = [];
 
@@ -61,6 +63,10 @@ class Context {
     }
     
     public function folder(int $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+    
+    public function folderShallow(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
     
@@ -121,6 +127,10 @@ class Context {
     }
 
     public function labelName(string $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function labelled(bool $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 }

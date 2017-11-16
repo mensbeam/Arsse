@@ -1039,35 +1039,12 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     // not valid
                     return $out;
                 case self::CAT_UNCATEGORIZED:
-                    // this is a special case
-                    try {
-                        $tr = Arsse::$db->begin();
-                        // filter the subscription list to return only uncategorized, and get their IDs
-                        $list = array_column(Arsse::$db->subscriptionList(Arsse::$user->id, null, false)->getAll(), "id");
-                        // perform marking for each applicable subscription
-                        foreach ($list as $id) {
-                            Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], (new Context)->subscription($id));
-                        }
-                        $tr->commit();
-                    } catch (ExceptionInput $e) { // @codeCoverageIgnore
-                        // ignore errors; none should occur
-                    }
-                    return $out;
+                    // this requires a shallow context since in TTRSS folder zero/null is apart from the tree rather than at the root
+                    $c->folderShallow(0);
+                    break;
                 case self::CAT_LABELS:
-                    // this is also a special case
-                    try {
-                        $tr = Arsse::$db->begin();
-                        // list all non-empty labels
-                        $list = array_column(Arsse::$db->labelList(Arsse::$user->id, false)->getAll(), "id");
-                        // perform marking for each label
-                        foreach ($list as $id) {
-                            Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], (new Context)->label($id));
-                        }
-                        $tr->commit();
-                    } catch (ExceptionInput $e) { // @codeCoverageIgnore
-                        // ignore errors; none should occur
-                    }
-                    return $out;
+                    $c->labelled(true);
+                    break;
                 default:
                     // any actual category
                     $c->folder($id);

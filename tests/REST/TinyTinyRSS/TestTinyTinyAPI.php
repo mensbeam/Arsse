@@ -941,13 +941,10 @@ class TestTinyTinyAPI extends Test\AbstractTest {
             ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2112],
             ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2112],
             ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'is_cat' => true],
-        ];
-        $in3 = [
-            // complex context
             ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 0, 'is_cat' => true],
             ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2, 'is_cat' => true],
         ];
-        $in4 = [
+        $in3 = [
             // this one has a tricky time-based context
             ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -3],
         ];
@@ -967,25 +964,12 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->label(1088));
         Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->subscription(2112));
         Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->folder(42));
-        // reset the database mock
-        $this->setUp();
-        Phake::when(Arsse::$db)->articleMark->thenReturn(42);
-        Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->subscriptions));
-        Phake::when(Arsse::$db)->subscriptionList($this->anything(), null, false)->thenReturn(new Result($this->filterSubs(null)));
-        Phake::when(Arsse::$db)->labelList->thenReturn(new Result($this->labels));
-        Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result($this->usedLabels));
-        // verify the complex contexts
-        for ($a = 0; $a < sizeof($in3); $a++) {
-            $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", json_encode($in3[$a]))), "Test $a failed");
-        }
-        Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->subscription(6));
-        Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->label(3));
-        Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->label(1));
-        Phake::verify(Arsse::$db, Phake::times(3))->articleMark;
+        Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->folderShallow(0));
+        Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->labelled(true));
         // verify the time-based mock
         $t = Date::sub("PT24H");
-        for ($a = 0; $a < sizeof($in4); $a++) {
-            $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", json_encode($in4[$a]))), "Test $a failed");
+        for ($a = 0; $a < sizeof($in3); $a++) {
+            $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", json_encode($in3[$a]))), "Test $a failed");
         }
         Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->modifiedSince($t));
     }

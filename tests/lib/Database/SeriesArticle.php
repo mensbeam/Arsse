@@ -237,6 +237,8 @@ trait SeriesArticle {
                 [2,20,5,1],
                 [1, 5,3,0],
                 [2, 5,3,1],
+                [4, 7,4,0],
+                [4, 8,4,1],
             ],
         ],
     ];
@@ -362,11 +364,12 @@ trait SeriesArticle {
         $this->compareIds($exp, new Context);
         $this->compareIds($exp, (new Context)->articles(range(1, Database::LIMIT_ARTICLES * 3)));
         // get items from a folder tree
-        $exp = [5,6,7,8];
-        $this->compareIds($exp, (new Context)->folder(1));
+        $this->compareIds([5,6,7,8], (new Context)->folder(1));
         // get items from a leaf folder
-        $exp = [7,8];
-        $this->compareIds($exp, (new Context)->folder(6));
+        $this->compareIds([7,8], (new Context)->folder(6));
+        // get items from a non-leaf folder without descending
+        $this->compareIds([1,2,3,4], (new Context)->folderShallow(0));
+        $this->compareIds([5,6], (new Context)->folderShallow(1));
         // get items from a single subscription
         $exp = [19,20];
         $this->compareIds($exp, (new Context)->subscription(5));
@@ -405,6 +408,9 @@ trait SeriesArticle {
         // label by name
         $this->compareIds([1,19], (new Context)->labelName("Interesting"));
         $this->compareIds([1,5,20], (new Context)->labelName("Fascinating"));
+        // any or no label
+        $this->compareIds([1,5,8,19,20], (new Context)->labelled(true));
+        $this->compareIds([2,3,4,6,7], (new Context)->labelled(false));
     }
 
     public function testListArticlesOfAMissingFolder() {
