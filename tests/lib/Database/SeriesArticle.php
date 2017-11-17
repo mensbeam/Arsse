@@ -201,8 +201,8 @@ trait SeriesArticle {
             ],
             'rows' => [
                 [1,   1,1,1,'2000-01-01 00:00:00',''],
-                [5,  19,1,0,'2000-01-01 00:00:00',''],
-                [5,  20,0,1,'2010-01-01 00:00:00',''],
+                [5,  19,1,0,'2016-01-01 00:00:00',''],
+                [5,  20,0,1,'2005-01-01 00:00:00',''],
                 [7,  20,1,0,'2010-01-01 00:00:00',''],
                 [8, 102,1,0,'2000-01-02 02:00:00','Note 2'],
                 [9, 103,0,1,'2000-01-03 03:00:00','Note 3'],
@@ -229,20 +229,21 @@ trait SeriesArticle {
         ],
         'arsse_label_members' => [
             'columns' => [
-                'label' => "int",
-                'article' => "int",
+                'label'        => "int",
+                'article'      => "int",
                 'subscription' => "int",
-                'assigned' => "bool",
+                'assigned'     => "bool",
+                'modified'     => "datetime",
             ],
             'rows' => [
-                [1, 1,1,1],
-                [2, 1,1,1],
-                [1,19,5,1],
-                [2,20,5,1],
-                [1, 5,3,0],
-                [2, 5,3,1],
-                [4, 7,4,0],
-                [4, 8,4,1],
+                [1, 1,1,1,'2000-01-01 00:00:00'],
+                [2, 1,1,1,'2000-01-01 00:00:00'],
+                [1,19,5,1,'2000-01-01 00:00:00'],
+                [2,20,5,1,'2000-01-01 00:00:00'],
+                [1, 5,3,0,'2000-01-01 00:00:00'],
+                [2, 5,3,1,'2000-01-01 00:00:00'],
+                [4, 7,4,0,'2000-01-01 00:00:00'],
+                [4, 8,4,1,'2015-01-01 00:00:00'],
             ],
         ],
     ];
@@ -348,6 +349,26 @@ trait SeriesArticle {
             'note' => "",
         ],
     ];
+    protected $fields = [
+        Database::AL_MINIMAL => [
+            "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", 
+        ],
+        Database::AL_CONSERVATIVE => [
+            "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", 
+            "url", "title", "subscription_title", "author", "guid", "published_date", "edited_date", "fingerprint",
+        ],
+        Database::AL_TYPICAL => [
+            "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", 
+            "url", "title", "subscription_title", "author", "guid", "published_date", "edited_date", "fingerprint",
+            "content", "media_url", "media_type",
+        ],
+        Database::AL_FULL => [
+            "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", 
+            "url", "title", "subscription_title", "author", "guid", "published_date", "edited_date", "fingerprint",
+            "content", "media_url", "media_type",
+            "note",
+        ],
+    ];
 
     public function setUpSeries() {
         $this->checkTables = ['arsse_marks' => ["subscription","article","read","starred","modified","note"],];
@@ -389,13 +410,18 @@ trait SeriesArticle {
         $this->compareIds([19], (new Context)->subscription(5)->latestEdition(19));
         $this->compareIds([20], (new Context)->subscription(5)->oldestEdition(999));
         $this->compareIds([20], (new Context)->subscription(5)->oldestEdition(1001));
-        // get items relative to modification date
+        // get items relative to (feed) modification date
         $exp = [2,4,6,8,20];
         $this->compareIds($exp, (new Context)->modifiedSince("2005-01-01T00:00:00Z"));
         $this->compareIds($exp, (new Context)->modifiedSince("2010-01-01T00:00:00Z"));
         $exp = [1,3,5,7,19];
         $this->compareIds($exp, (new Context)->notModifiedSince("2005-01-01T00:00:00Z"));
         $this->compareIds($exp, (new Context)->notModifiedSince("2000-01-01T00:00:00Z"));
+        // get items relative to (user) modification date (both marks and labels apply)
+        $this->compareIds([8,19], (new Context)->markedSince("2014-01-01T00:00:00Z"));
+        $this->compareIds([2,4,6,8,19,20], (new Context)->markedSince("2010-01-01T00:00:00Z"));
+        $this->compareIds([1,2,3,4,5,6,7,20], (new Context)->notMarkedSince("2014-01-01T00:00:00Z"));
+        $this->compareIds([1,3,5,7], (new Context)->notMarkedSince("2005-01-01T00:00:00Z"));
         // paged results
         $this->compareIds([1], (new Context)->limit(1));
         $this->compareIds([2], (new Context)->limit(1)->oldestEdition(1+1));
@@ -406,15 +432,21 @@ trait SeriesArticle {
         $this->compareIds([19], (new Context)->reverse(true)->limit(1)->latestEdition(1001-1));
         $this->compareIds([8], (new Context)->reverse(true)->limit(1)->latestEdition(19-1));
         $this->compareIds([7,6], (new Context)->reverse(true)->limit(2)->latestEdition(8-1));
-        // label by ID
+        // get articles by label ID
         $this->compareIds([1,19], (new Context)->label(1));
         $this->compareIds([1,5,20], (new Context)->label(2));
-        // label by name
+        // get articles by label name
         $this->compareIds([1,19], (new Context)->labelName("Interesting"));
         $this->compareIds([1,5,20], (new Context)->labelName("Fascinating"));
-        // any or no label
+        // get articles with any or no label
         $this->compareIds([1,5,8,19,20], (new Context)->labelled(true));
         $this->compareIds([2,3,4,6,7], (new Context)->labelled(false));
+        // get a specific article or edition
+        $this->compareIds([20], (new Context)->article(20));
+        $this->compareIds([20], (new Context)->edition(1001));
+        // get multiple specific articles or editions
+        $this->compareIds([1,20], (new Context)->articles([1,20,50]));
+        $this->compareIds([1,20], (new Context)->editions([1,1001,50]));
     }
 
     public function testListArticlesOfAMissingFolder() {
@@ -430,6 +462,16 @@ trait SeriesArticle {
     public function testListArticlesCheckingProperties() {
         $this->user = "john.doe@example.org";
         $this->assertResult($this->matches, Arsse::$db->articleList($this->user));
+        // check that the different fieldset groups return the expected columns
+        foreach ($this->fields as $constant => $columns) {
+            $test = array_keys(Arsse::$db->articleList($this->user, (new Context)->article(101), $constant)->getRow());
+            sort($columns);
+            sort($test);
+            $this->assertEquals($columns, $test, "Fields do not match expectation for verbosity $constant");
+        }
+        // check that an unknown fieldset produces an exception
+        $this->assertException("constantUnknown", "Db", "Exception");
+        Arsse::$db->articleList($this->user, (new Context)->article(101), \PHP_INT_MAX);
     }
 
     public function testListArticlesWithoutAuthority() {
@@ -781,8 +823,8 @@ trait SeriesArticle {
         $this->compareExpectations($state);
     }
 
-    public function testMarkByLastModified() {
-        Arsse::$db->articleMark($this->user, ['starred'=>true], (new Context)->modifiedSince('2017-01-01T00:00:00Z'));
+    public function testMarkByLastMarked() {
+        Arsse::$db->articleMark($this->user, ['starred'=>true], (new Context)->markedSince('2017-01-01T00:00:00Z'));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][8][3] = 1;
@@ -792,8 +834,8 @@ trait SeriesArticle {
         $this->compareExpectations($state);
     }
 
-    public function testMarkByNotLastModified() {
-        Arsse::$db->articleMark($this->user, ['starred'=>true], (new Context)->notModifiedSince('2000-01-01T00:00:00Z'));
+    public function testMarkByNotLastMarked() {
+        Arsse::$db->articleMark($this->user, ['starred'=>true], (new Context)->notMarkedSince('2000-01-01T00:00:00Z'));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][] = [13,5,0,1,$now,''];

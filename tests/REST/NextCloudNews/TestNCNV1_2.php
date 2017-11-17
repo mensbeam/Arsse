@@ -700,7 +700,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
         Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(false)->limit(10)->oldestEdition(6)); // offset is one more than specified
         Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->limit(5)->latestEdition(4));   // offset is one less than specified
         Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->unread(true));
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->modifiedSince($t));
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->markedSince($t));
         Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->limit(5));
     }
 

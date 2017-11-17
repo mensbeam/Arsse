@@ -142,6 +142,7 @@ return [
     'Exception.JKingWeb/Arsse/Db/Exception.savepointInvalid'               => 'Tried to {action} invalid savepoint {index}',
     'Exception.JKingWeb/Arsse/Db/Exception.savepointStale'                 => 'Tried to {action} stale savepoint {index}',
     'Exception.JKingWeb/Arsse/Db/Exception.resultReused'                   => 'Result set already iterated',
+    'Exception.JKingWeb/Arsse/Db/Exception.constantUnknown'                => 'Supplied constant value ({0}) is unknown or invalid in the context in which it was used',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.missing'                   => 'Required field "{field}" missing while performing action "{action}"',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.whitespace'                => 'Field "{field}" of action "{action}" may not contain only whitespace',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.tooLong'                   => 'Field "{field}" of action "{action}" has a maximum length of {max}',

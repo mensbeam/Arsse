@@ -22,6 +22,8 @@ class Context {
     public $starred = null;
     public $modifiedSince;
     public $notModifiedSince;
+    public $markedSince;
+    public $notMarkedSince;
     public $edition;
     public $article;
     public $editions;
@@ -100,6 +102,16 @@ class Context {
     }
     
     public function notModifiedSince($spec = null) {
+        $spec = Date::normalize($spec);
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+    
+    public function markedSince($spec = null) {
+        $spec = Date::normalize($spec);
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+    
+    public function notMarkedSince($spec = null) {
         $spec = Date::normalize($spec);
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }

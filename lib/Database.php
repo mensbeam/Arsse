@@ -16,6 +16,11 @@ use JKingWeb\Arsse\Misc\ValueInfo;
 class Database {
     const SCHEMA_VERSION = 2;
     const LIMIT_ARTICLES = 50;
+    // articleList verbosity levels
+    const AL_MINIMAL      = 0; // only that metadata which is required for context matching
+    const AL_CONSERVATIVE = 1; // base metadata plus anything that is not potentially large text
+    const AL_TYPICAL      = 2; // conservative, with the addition of content
+    const AL_FULL         = 3; // all possible fields
     
     /** @var Db\Driver */
     public $db;
@@ -824,10 +829,12 @@ class Database {
                 $extraColumns
                 arsse_articles.id as id,
                 arsse_articles.feed as feed,
+                arsse_articles.modified as modified_date,
                 max(
                     arsse_articles.modified, 
-                    coalesce((select modified from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)),'')
-                ) as modified_date,
+                    coalesce((select modified from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)),''),
+                    coalesce((select modified from arsse_label_members where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)),'')
+                ) as marked_date,
                 NOT (select count(*) from arsse_marks where article is arsse_articles.id and read is 1 and subscription in (select sub from subscribed_feeds)) as unread,
                 (select count(*) from arsse_marks where article is arsse_articles.id and starred is 1 and subscription in (select sub from subscribed_feeds)) as starred,
                 (select max(id) from arsse_editions where article is arsse_articles.id) as edition,
@@ -917,12 +924,18 @@ class Database {
         if ($context->latestEdition()) {
             $q->setWhere("edition <= ?", "int", $context->latestEdition);
         }
-        // filter based on lastmod time
+        // filter based on time at which an article was changed by feed updates (modified), or by user action (marked)
         if ($context->modifiedSince()) {
             $q->setWhere("modified_date >= ?", "datetime", $context->modifiedSince);
         }
         if ($context->notModifiedSince()) {
             $q->setWhere("modified_date <= ?", "datetime", $context->notModifiedSince);
+        }
+        if ($context->markedSince()) {
+            $q->setWhere("marked_date >= ?", "datetime", $context->markedSince);
+        }
+        if ($context->notMarkedSince()) {
+            $q->setWhere("marked_date <= ?", "datetime", $context->notMarkedSince);
         }
         // filter for un/read and un/starred status if specified
         if ($context->unread()) {
@@ -959,7 +972,7 @@ class Database {
         }
     }
 
-    public function articleList(string $user, Context $context = null): Db\Result {
+    public function articleList(string $user, Context $context = null, int $fields = self::AL_FULL): Db\Result {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
@@ -969,26 +982,41 @@ class Database {
             $out = [];
             $tr = $this->begin();
             foreach ($contexts as $context) {
-                $out[] = $this->articleList($user, $context);
+                $out[] = $this->articleList($user, $context, $fields);
             }
             $tr->commit();
             return new Db\ResultAggregate(...$out);
         } else {
-            $columns = [
-                // (id, subscription, feed, modified, unread, starred, edition): always included
-                "arsse_articles.url as url",
-                "arsse_articles.title as title",
-                "(select coalesce(arsse_subscriptions.title,arsse_feeds.title) from arsse_feeds join arsse_subscriptions on arsse_subscriptions.feed is arsse_feeds.id where arsse_feeds.id is arsse_articles.feed) as subscription_title",
-                "author",
-                "content",
-                "guid",
-                "published as published_date",
-                "edited as edited_date",
-                "url_title_hash||':'||url_content_hash||':'||title_content_hash as fingerprint",
-                "arsse_enclosures.url as media_url",
-                "arsse_enclosures.type as media_type",
-                "(select note from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)) as note"
-            ];
+            $columns = [];
+            switch ($fields) {
+                // NOTE: the cases all cascade into each other: a given verbosity level is always a superset of the previous one
+                case self::AL_FULL: // everything
+                    $columns = array_merge($columns,[
+                        "(select note from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)) as note",
+                    ]);
+                case self::AL_TYPICAL: // conservative, plus content
+                    $columns = array_merge($columns,[
+                        "content",
+                        "arsse_enclosures.url as media_url", // enclosures are potentially large due to data: URLs
+                        "arsse_enclosures.type as media_type", // FIXME: enclosures should eventually have their own fetch method
+                    ]);
+                case self::AL_CONSERVATIVE: // base metadata, plus anything that is not likely to be large text
+                    $columns = array_merge($columns,[
+                        "arsse_articles.url as url",
+                        "arsse_articles.title as title",
+                        "(select coalesce(arsse_subscriptions.title,arsse_feeds.title) from arsse_feeds join arsse_subscriptions on arsse_subscriptions.feed is arsse_feeds.id where arsse_feeds.id is arsse_articles.feed) as subscription_title",
+                        "author",
+                        "guid",
+                        "published as published_date",
+                        "edited as edited_date",
+                        "url_title_hash||':'||url_content_hash||':'||title_content_hash as fingerprint",
+                    ]);
+                case self::AL_MINIMAL: // base metadata (always included: required for context matching)
+                    // id, subscription, feed, modified_date, marked_date, unread, starred, edition
+                    break;
+                default:
+                    throw new Db\Exception("constantUnknown", $fields);
+            }
             $q = $this->articleQuery($user, $context, $columns);
             $q->setJoin("left join arsse_enclosures on arsse_enclosures.article is arsse_articles.id");
             // perform the query and return results
