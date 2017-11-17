@@ -1,3 +1,7 @@
+-- SPDX-License-Identifier: MIT
+-- Copyright 2017 J. King, Dustin Wilson et al.
+-- See LICENSE and AUTHORS files for details
+
 -- Sessions for Tiny Tiny RSS (and possibly others)
 create table arsse_sessions (
     id text primary key,                                                                    -- UUID of session

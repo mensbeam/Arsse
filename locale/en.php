@@ -1,4 +1,8 @@
 <?php
+/** @license MIT
+ * Copyright 2017 J. King, Dustin Wilson et al.
+ * See LICENSE and AUTHORS files for details */
+
 return [
     'API.TTRSS.Category.Uncategorized'                                     => 'Uncategorized',
     'API.TTRSS.Category.Special'                                           => 'Special', 
