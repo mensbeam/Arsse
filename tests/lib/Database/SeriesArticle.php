@@ -350,19 +350,19 @@ trait SeriesArticle {
         ],
     ];
     protected $fields = [
-        Database::AL_MINIMAL => [
+        Database::LIST_MINIMAL => [
             "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", 
         ],
-        Database::AL_CONSERVATIVE => [
+        Database::LIST_CONSERVATIVE => [
             "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", 
             "url", "title", "subscription_title", "author", "guid", "published_date", "edited_date", "fingerprint",
         ],
-        Database::AL_TYPICAL => [
+        Database::LIST_TYPICAL => [
             "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", 
             "url", "title", "subscription_title", "author", "guid", "published_date", "edited_date", "fingerprint",
             "content", "media_url", "media_type",
         ],
-        Database::AL_FULL => [
+        Database::LIST_FULL => [
             "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", 
             "url", "title", "subscription_title", "author", "guid", "published_date", "edited_date", "fingerprint",
             "content", "media_url", "media_type",

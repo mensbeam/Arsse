@@ -17,10 +17,10 @@ class Database {
     const SCHEMA_VERSION = 2;
     const LIMIT_ARTICLES = 50;
     // articleList verbosity levels
-    const AL_MINIMAL      = 0; // only that metadata which is required for context matching
-    const AL_CONSERVATIVE = 1; // base metadata plus anything that is not potentially large text
-    const AL_TYPICAL      = 2; // conservative, with the addition of content
-    const AL_FULL         = 3; // all possible fields
+    const LIST_MINIMAL      = 0; // only that metadata which is required for context matching
+    const LIST_CONSERVATIVE = 1; // base metadata plus anything that is not potentially large text
+    const LIST_TYPICAL      = 2; // conservative, with the addition of content
+    const LIST_FULL         = 3; // all possible fields
     
     /** @var Db\Driver */
     public $db;
@@ -972,7 +972,7 @@ class Database {
         }
     }
 
-    public function articleList(string $user, Context $context = null, int $fields = self::AL_FULL): Db\Result {
+    public function articleList(string $user, Context $context = null, int $fields = self::LIST_FULL): Db\Result {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
@@ -990,17 +990,17 @@ class Database {
             $columns = [];
             switch ($fields) {
                 // NOTE: the cases all cascade into each other: a given verbosity level is always a superset of the previous one
-                case self::AL_FULL: // everything
+                case self::LIST_FULL: // everything
                     $columns = array_merge($columns,[
                         "(select note from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)) as note",
                     ]);
-                case self::AL_TYPICAL: // conservative, plus content
+                case self::LIST_TYPICAL: // conservative, plus content
                     $columns = array_merge($columns,[
                         "content",
                         "arsse_enclosures.url as media_url", // enclosures are potentially large due to data: URLs
                         "arsse_enclosures.type as media_type", // FIXME: enclosures should eventually have their own fetch method
                     ]);
-                case self::AL_CONSERVATIVE: // base metadata, plus anything that is not likely to be large text
+                case self::LIST_CONSERVATIVE: // base metadata, plus anything that is not likely to be large text
                     $columns = array_merge($columns,[
                         "arsse_articles.url as url",
                         "arsse_articles.title as title",
@@ -1011,7 +1011,7 @@ class Database {
                         "edited as edited_date",
                         "url_title_hash||':'||url_content_hash||':'||title_content_hash as fingerprint",
                     ]);
-                case self::AL_MINIMAL: // base metadata (always included: required for context matching)
+                case self::LIST_MINIMAL: // base metadata (always included: required for context matching)
                     // id, subscription, feed, modified_date, marked_date, unread, starred, edition
                     break;
                 default:

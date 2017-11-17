@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\REST\NextCloudNews;
 
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\Misc\Context;
@@ -510,7 +511,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // perform the fetch
         try {
-            $items = Arsse::$db->articleList(Arsse::$user->id, $c);
+            $items = Arsse::$db->articleList(Arsse::$user->id, $c, Database::LIST_TYPICAL);
         } catch (ExceptionInput $e) {
             // ID of subscription or folder is not valid
             return new Response(422);
