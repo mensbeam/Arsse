@@ -1,4 +1,8 @@
 <?php
+/** @license MIT
+ * Copyright 2017 J. King, Dustin Wilson et al.
+ * See LICENSE and AUTHORS files for details */
+
 namespace JKingWeb\Arsse;
 
 const BASE = __DIR__.DIRECTORY_SEPARATOR;

@@ -1,4 +1,8 @@
 <?php
+/** @license MIT
+ * Copyright 2017 J. King, Dustin Wilson et al.
+ * See LICENSE and AUTHORS files for details */
+
 return [
     'Driver.Db.SQLite3.Name'                                               => 'SQLite 3',
     'Driver.Service.Curl.Name'                                             => 'HTTP (curl)',
