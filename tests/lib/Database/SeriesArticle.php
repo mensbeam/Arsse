@@ -212,6 +212,7 @@ trait SeriesArticle {
                 [11, 20,1,0,'2017-01-01 00:00:00','eek'],
                 [12,  3,0,1,'2017-01-01 00:00:00','ack'],
                 [12,  4,1,1,'2017-01-01 00:00:00','ach'],
+                [1,   2,0,0,'2010-01-01 00:00:00','Some Note'],
             ]
         ],
         'arsse_labels' => [
@@ -447,6 +448,9 @@ trait SeriesArticle {
         // get multiple specific articles or editions
         $this->compareIds([1,20], (new Context)->articles([1,20,50]));
         $this->compareIds([1,20], (new Context)->editions([1,1001,50]));
+        // get articles base on whether or not they have notes
+        $this->compareIds([1,3,4,5,6,7,8,19,20], (new Context)->annotated(false));
+        $this->compareIds([2], (new Context)->annotated(true));
     }
 
     public function testListArticlesOfAMissingFolder() {

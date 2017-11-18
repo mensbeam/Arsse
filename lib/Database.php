@@ -944,6 +944,10 @@ class Database {
         if ($context->starred()) {
             $q->setWhere("starred is ?", "bool", $context->starred);
         }
+        // filter based on whether the article has a note
+        if ($context->annotated()) {
+            $q->setWhere((!$context->annotated ? "not " : "")."exists(select modified from arsse_marks where article is arsse_articles.id and note <> '' and subscription in (select sub from subscribed_feeds))");
+        }
         // return the query
         return $q;
     }

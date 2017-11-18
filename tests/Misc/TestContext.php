@@ -45,6 +45,7 @@ class TestContext extends Test\AbstractTest {
             'label' => 2112,
             'labelName' => "Rush",
             'labelled' => true,
+            'annotated' => true,
         ];
         $times = ['modifiedSince','notModifiedSince','markedSince','notMarkedSince'];
         $c = new Context;
