@@ -917,7 +917,13 @@ class Database {
             }
             $q->setWhere("exists(select article from arsse_label_members where assigned is 1 and article is arsse_articles.id and label is ?)", "int", $id);
         }
-        // filter based on edition offset
+        // filter based on article or edition offset
+        if ($context->oldestArticle()) {
+            $q->setWhere("arsse_articles.id >= ?", "int", $context->oldestArticle);
+        }
+        if ($context->latestArticle()) {
+            $q->setWhere("arsse_articles.id <= ?", "int", $context->latestArticle);
+        }
         if ($context->oldestEdition()) {
             $q->setWhere("edition >= ?", "int", $context->oldestEdition);
         }

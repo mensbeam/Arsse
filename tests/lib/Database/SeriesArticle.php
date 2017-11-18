@@ -411,6 +411,9 @@ trait SeriesArticle {
         $this->compareIds([19], (new Context)->subscription(5)->latestEdition(19));
         $this->compareIds([20], (new Context)->subscription(5)->oldestEdition(999));
         $this->compareIds([20], (new Context)->subscription(5)->oldestEdition(1001));
+        // get items relative to article ID
+        $this->compareIds([1,2,3], (new Context)->latestArticle(3));
+        $this->compareIds([19,20], (new Context)->oldestArticle(19));
         // get items relative to (feed) modification date
         $exp = [2,4,6,8,20];
         $this->compareIds($exp, (new Context)->modifiedSince("2005-01-01T00:00:00Z"));

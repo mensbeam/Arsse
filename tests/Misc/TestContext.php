@@ -32,6 +32,8 @@ class TestContext extends Test\AbstractTest {
             'subscription' => 2112,
             'article' => 255,
             'edition' => 65535,
+            'latestArticle' => 47,
+            'oldestArticle' => 1337,
             'latestEdition' => 47,
             'oldestEdition' => 1337,
             'unread' => true,

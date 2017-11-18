@@ -16,6 +16,8 @@ class Context {
     public $folder;
     public $folderShallow;
     public $subscription;
+    public $oldestArticle;
+    public $latestArticle;
     public $oldestEdition;
     public $latestEdition;
     public $unread = null;
@@ -78,6 +80,14 @@ class Context {
     }
     
     public function subscription(int $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+    
+    public function latestArticle(int $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+    
+    public function oldestArticle(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
     
