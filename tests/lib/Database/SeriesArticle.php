@@ -474,7 +474,7 @@ trait SeriesArticle {
             $this->assertEquals($columns, $test, "Fields do not match expectation for verbosity $constant");
         }
         // check that an unknown fieldset produces an exception
-        $this->assertException("constantUnknown", "Db", "Exception");
+        $this->assertException("constantUnknown");
         Arsse::$db->articleList($this->user, (new Context)->article(101), \PHP_INT_MAX);
     }
 

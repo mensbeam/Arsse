@@ -85,6 +85,8 @@ return [
     'Exception.JKingWeb/Arsse/Exception.uncoded'                           => 'The specified exception symbol {0} has no code specified in AbstractException.php',
     // this should not usually be encountered
     'Exception.JKingWeb/Arsse/Exception.unknown'                           => 'An unknown error has occurred',
+    // indicates programming error
+    'Exception.JKingWeb/Arsse/Exception.constantUnknown'                   => 'Supplied constant value ({0}) is unknown or invalid in the context in which it was used',
     'Exception.JKingWeb/Arsse/ExceptionType.strictFailure'                 => 'Supplied value could not be normalized to {0, select,
         1 {null}
         2 {boolean}
@@ -142,7 +144,6 @@ return [
     'Exception.JKingWeb/Arsse/Db/Exception.savepointInvalid'               => 'Tried to {action} invalid savepoint {index}',
     'Exception.JKingWeb/Arsse/Db/Exception.savepointStale'                 => 'Tried to {action} stale savepoint {index}',
     'Exception.JKingWeb/Arsse/Db/Exception.resultReused'                   => 'Result set already iterated',
-    'Exception.JKingWeb/Arsse/Db/Exception.constantUnknown'                => 'Supplied constant value ({0}) is unknown or invalid in the context in which it was used',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.missing'                   => 'Required field "{field}" missing while performing action "{action}"',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.whitespace'                => 'Field "{field}" of action "{action}" may not contain only whitespace',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.tooLong'                   => 'Field "{field}" of action "{action}" has a maximum length of {max}',

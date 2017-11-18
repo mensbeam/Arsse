@@ -1019,7 +1019,7 @@ class Database {
                     // id, subscription, feed, modified_date, marked_date, unread, starred, edition
                     break;
                 default:
-                    throw new Db\Exception("constantUnknown", $fields);
+                    throw new Exception("constantUnknown", $fields);
             }
             $q = $this->articleQuery($user, $context, $columns);
             $q->setJoin("left join arsse_enclosures on arsse_enclosures.article is arsse_articles.id");
