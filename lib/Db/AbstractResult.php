@@ -17,15 +17,19 @@ abstract class AbstractResult implements Result {
             $out = array_shift($this->cur);
             $this->next();
             return $out;
+        } else {
+            return null;
         }
-        $this->next();
-        return null;
     }
 
     public function getRow() {
-        $out = ($this->valid() ? $this->cur : null);
-        $this->next();
-        return $out;
+        if ($this->valid()) {
+            $out = $this->cur;
+            $this->next();
+            return $out;
+        } else {
+            return null;
+        }
     }
 
     public function getAll(): array {

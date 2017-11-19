@@ -56,6 +56,7 @@
     <testsuite name="Database drivers">
         <file>Db/TestTransaction.php</file>
         <file>Db/TestResultAggregate.php</file>
+        <file>Db/TestResultEmpty.php</file>
         <file>Db/SQLite3/TestDbResultSQLite3.php</file>
         <file>Db/SQLite3/TestDbStatementSQLite3.php</file>
         <file>Db/SQLite3/TestDbDriverCreationSQLite3.php</file>
