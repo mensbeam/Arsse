@@ -1300,4 +1300,89 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result([]));
         $this->assertEquals($this->respGood([$exp[0]]), $this->h->dispatch(new Request("POST", "", json_encode($in[5]))));
     }
+
+    public function testGetCompactHeadlines() {
+        $in1 = [
+            // erroneous input
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx"],
+            // empty results
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 0],
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2],
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2, 'is_cat' => true], // is_cat is not used in getCompactHeadlines
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2112],
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'view_mode' => "published"],
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -6, 'view_mode' => "unread"],
+            // non-empty results
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4],
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -1],
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2112],
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'view_mode' => "adaptive"],
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2112, 'view_mode' => "adaptive"],
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2112, 'view_mode' => "unread"],
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'view_mode' => "marked"],
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'view_mode' => "has_note"],
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'limit' => 5],
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'skip' => 2],
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'limit' => 5, 'skip' => 2],
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'since_id' => 47],
+        ];
+        $in2 = [
+            // time-based contexts, handled separately
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -6],
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -6, 'view_mode' => "adaptive"],
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -3],
+            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -3, 'view_mode' => "marked"],
+        ];
+        Phake::when(Arsse::$db)->articleList->thenReturn(new Result([['id' => 0]]));
+        Phake::when(Arsse::$db)->articleCount->thenReturn(0);
+        Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true))->thenReturn(1);
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->subscription(2112), Database::LIST_MINIMAL)->thenThrow(new ExceptionInput("subjectMissing"));
+        Phake::when(Arsse::$db)->articleList($this->anything(), new Context, Database::LIST_MINIMAL)->thenReturn(new Result($this->articles));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->starred(true), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 1]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->label(1088), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 2]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->unread(true), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 3]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->label(1088)->unread(true), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 4]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->subscription(42)->starred(true), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 5]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->subscription(42)->annotated(true), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 6]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->limit(5), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 7]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->offset(2), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 8]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->limit(5)->offset(2), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 9]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->oldestArticle(48), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 10]]));
+        $out1 = [
+            $this->respErr("INCORRECT_USAGE"),
+            $this->respGood([]),
+            $this->respGood([]),
+            $this->respGood([]),
+            $this->respGood([]),
+            $this->respGood([]),
+            $this->respGood([]),
+            $this->respGood([['id' => 101],['id' => 102]]),
+            $this->respGood([['id' => 1]]),
+            $this->respGood([['id' => 2]]),
+            $this->respGood([['id' => 3]]),
+            $this->respGood([['id' => 2]]), // the result is 2 rather than 4 because there are no unread, so the unread context is not used
+            $this->respGood([['id' => 4]]),
+            $this->respGood([['id' => 5]]),
+            $this->respGood([['id' => 6]]),
+            $this->respGood([['id' => 7]]),
+            $this->respGood([['id' => 8]]),
+            $this->respGood([['id' => 9]]),
+            $this->respGood([['id' => 10]]),
+        ];
+        $out2 = [
+            $this->respGood([['id' => 1001]]),
+            $this->respGood([['id' => 1001]]),
+            $this->respGood([['id' => 1002]]),
+            $this->respGood([['id' => 1003]]),
+        ];
+        for ($a = 0; $a < sizeof($in1); $a++) {
+            $this->assertEquals($out1[$a], $this->h->dispatch(new Request("POST", "", json_encode($in1[$a]))), "Test $a failed");
+        }
+        for ($a = 0; $a < sizeof($in2); $a++) {
+            Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->unread(false)->markedSince(Date::sub("PT24H")), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 1001]]));
+            Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->unread(true)->modifiedSince(Date::sub("PT24H")), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 1002]]));
+            Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->unread(true)->modifiedSince(Date::sub("PT24H"))->starred(true), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 1003]]));
+            $this->assertEquals($out2[$a], $this->h->dispatch(new Request("POST", "", json_encode($in2[$a]))), "Test $a failed");
+        }
+    }
 }

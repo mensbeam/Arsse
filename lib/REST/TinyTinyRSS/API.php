@@ -8,6 +8,7 @@ namespace JKingWeb\Arsse\REST\TinyTinyRSS;
 
 use JKingWeb\Arsse\Feed;
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\Misc\Date;
@@ -16,6 +17,7 @@ use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\ExceptionType;
 use JKingWeb\Arsse\Db\ExceptionInput;
+use JKingWeb\Arsse\Db\ResultEmpty;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\REST\Response;
 
@@ -32,10 +34,13 @@ Protocol difference so far:
     - The "Published" virtual feed is non-functional (this will not be implemented in the near term)
     - setArticleLabel responds with errors for invalid labels where TT-RSS simply returns a zero result
     - The result of setArticleLabel counts only records which actually changed rather than all entries attempted
+    - Using both limit/skip and unread_only in getFeeds produces reliable results, unlike in TT-RSS
     - Top-level categories in getFeedTree have a 'parent_id' property (set to null); in TT-RSS the property is absent
     - Article hashes are SHA-256 rather than SHA-1.
     - Articles have at most one attachment (enclosure), whereas TTRSS allows for several; there is also significantly less detail. These are limitations of picoFeed which should be addressed
     - IDs for enclosures are ommitted as we don't give them IDs
+    - Searching in getHeadlines is not yet implemented
+    - Category -3 (all non-special feeds) is handled correctly in getHeadlines; TT-RSS returns results for feed -3 (Fresh)
 */
 
 
@@ -59,35 +64,34 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     const CAT_ALL = -4;
     // valid input
     const VALID_INPUT = [
-        'op'                  => ValueInfo::T_STRING,
-        'sid'                 => ValueInfo::T_STRING,
-        'seq'                 => ValueInfo::T_INT,
-        'user'                => ValueInfo::T_STRING | ValueInfo::M_STRICT,
-        'password'            => ValueInfo::T_STRING | ValueInfo::M_STRICT,
-        'include_empty'       => ValueInfo::T_BOOL | ValueInfo::M_DROP,
-        'unread_only'         => ValueInfo::T_BOOL | ValueInfo::M_DROP,
-        'enable_nested'       => ValueInfo::T_BOOL | ValueInfo::M_DROP,
-        'caption'             => ValueInfo::T_STRING | ValueInfo::M_STRICT,
-        'parent_id'           => ValueInfo::T_INT,
-        'category_id'         => ValueInfo::T_INT,
-        'feed_url'            => ValueInfo::T_STRING | ValueInfo::M_STRICT,
-        'login'               => ValueInfo::T_STRING | ValueInfo::M_STRICT,
-        'feed_id'             => ValueInfo::T_INT,
-        'article_id'          => ValueInfo::T_MIXED, // single integer or comma-separated list in getArticle
-        'label_id'            => ValueInfo::T_INT,
-        'article_ids'         => ValueInfo::T_STRING,
-        'assign'              => ValueInfo::T_BOOL | ValueInfo::M_DROP,
-        'is_cat'              => ValueInfo::T_BOOL | ValueInfo::M_DROP,
-        'cat_id'              => ValueInfo::T_INT,
-        'limit'               => ValueInfo::T_INT,
-        'offset'              => ValueInfo::T_INT,
-        'include_nested'      => ValueInfo::T_BOOL | ValueInfo::M_DROP,
-        'skip'                => ValueInfo::T_INT,
-        'filter'              => ValueInfo::T_STRING,
-        'show_excerpt'        => ValueInfo::T_BOOL | ValueInfo::M_DROP,
-        'show_content'        => ValueInfo::T_BOOL | ValueInfo::M_DROP,
+        'op'                  => ValueInfo::T_STRING,                           // the function ("operation") to perform
+        'sid'                 => ValueInfo::T_STRING,                           // session ID
+        'seq'                 => ValueInfo::T_INT,                              // request number from client
+        'user'                => ValueInfo::T_STRING | ValueInfo::M_STRICT,     // user name for `login`
+        'password'            => ValueInfo::T_STRING | ValueInfo::M_STRICT,     // password for `login` and `subscribeToFeed`
+        'include_empty'       => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to include empty items in `getFeedTree` and `getCategories`
+        'unread_only'         => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to exclude items without unread articles in `getCategories` and `getFeeds`
+        'enable_nested'       => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to NOT show subcategories in `getCategories
+        'include_nested'      => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to include subcategories in `getFeeds` and the articles thereof in `getHeadlines`
+        'caption'             => ValueInfo::T_STRING | ValueInfo::M_STRICT,     // name for categories, feed, and labels
+        'parent_id'           => ValueInfo::T_INT,                              // parent category for `addCategory` and `moveCategory`
+        'category_id'         => ValueInfo::T_INT,                              // parent category for `subscribeToFeed` and `moveFeed`, and subject for category-modification functions
+        'cat_id'              => ValueInfo::T_INT,                              // parent category for `getFeeds`
+        'label_id'            => ValueInfo::T_INT,                              // label ID in label-related functions
+        'feed_url'            => ValueInfo::T_STRING | ValueInfo::M_STRICT,     // URL of feed in `subscribeToFeed`
+        'login'               => ValueInfo::T_STRING | ValueInfo::M_STRICT,     // remote user name in `subscribeToFeed`
+        'feed_id'             => ValueInfo::T_INT,                              // feed, label, or category ID for various functions
+        'is_cat'              => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether 'feed_id' refers to a category
+        'article_id'          => ValueInfo::T_MIXED,                            // single article ID in `getLabels`; one or more (comma-separated) article IDs in `getArticle`
+        'article_ids'         => ValueInfo::T_STRING,                           // one or more (comma-separated) article IDs in `updateArticle` and `setArticleLabel`
+        'assign'              => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to assign or clear (false) a label in `setArticleLabel`
+        'limit'               => ValueInfo::T_INT,                              // maximum number of records returned in `getFeeds`, `getHeadlines`, and `getCompactHeadlines`
+        'offset'              => ValueInfo::T_INT,                              // number of records to skip in `getFeeds`, for pagination
+        'skip'                => ValueInfo::T_INT,                              // number of records to skip in `getHeadlines` and `getCompactHeadlines`, for pagination
+        'show_excerpt'        => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to include article excerpts in `getHeadlines`
+        'show_content'        => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to include article content in `getHeadlines`
+        'include_attachments' => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to include article enclosures in `getHeadlines`
         'view_mode'           => ValueInfo::T_STRING,
-        'include_attachments' => ValueInfo::T_BOOL | ValueInfo::M_DROP,
         'since_id'            => ValueInfo::T_INT,
         'order_by'            => ValueInfo::T_STRING,
         'sanitize'            => ValueInfo::T_BOOL | ValueInfo::M_DROP,
@@ -95,12 +99,10 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         'has_sandbox'         => ValueInfo::T_BOOL | ValueInfo::M_DROP,
         'include_header'      => ValueInfo::T_BOOL | ValueInfo::M_DROP,
         'search'              => ValueInfo::T_STRING,
-        'search_mode'         => ValueInfo::T_STRING,
-        'match_on'            => ValueInfo::T_STRING,
-        'mode'                => ValueInfo::T_INT,
-        'field'               => ValueInfo::T_INT,
-        'data'                => ValueInfo::T_STRING,
-        'pref_name'           => ValueInfo::T_STRING,
+        'field'               => ValueInfo::T_INT,                              // which state to change in `updateArticle`
+        'mode'                => ValueInfo::T_INT,                              // whether to set, clear, or toggle the selected state in `updateArticle`
+        'data'                => ValueInfo::T_STRING,                           // note text in `updateArticle` if setting a note
+        'pref_name'           => ValueInfo::T_STRING,                           // preference identifier in `getPref`
     ];
     // generic error construct
     const FATAL_ERR = [
@@ -1033,7 +1035,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $id = $data['feed_id'] ?? self::FEED_ARCHIVED;
         $cat = $data['is_cat'] ?? false;
         $out = ['status' => "OK"];
-        // first prepare the context; unsupported contexts simply return early, whereas some valid contexts are special cases
+        // first prepare the context; unsupported contexts simply return early
         $c = new Context;
         if ($cat) { // categories
             switch ($id) {
@@ -1043,7 +1045,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     // not valid
                     return $out;
                 case self::CAT_UNCATEGORIZED:
-                    // this requires a shallow context since in TTRSS folder zero/null is apart from the tree rather than at the root
+                    // this requires a shallow context since in TTRSS the zero/null folder ("Uncategorized") is apart from the tree rather than at the root
                     $c->folderShallow(0);
                     break;
                 case self::CAT_LABELS:
@@ -1216,5 +1218,140 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             ];
         }
         return $out;
+    }
+
+    public function opGetCompactHeadlines(array $data): array {
+        // getCompactHeadlines supports fewer features than getHeadlines
+        $data['is_cat'] = false;
+        $data['include_nested'] = false;
+        $data['search'] = null;
+        $data['order_by'] = null;
+        $out = [];
+        foreach ($this->fetchArticles($data, Database::LIST_MINIMAL) as $row) {
+            $out[] = ['id' => $row['id']];
+        }
+        return $out;
+    }
+
+    protected function fetchArticles(array $data, int $fields): \JKingWeb\Arsse\Db\Result {
+        // normalize input
+        if (is_null($data['feed_id'])) {
+            throw new Exception("INCORRECT_USAGE");
+        }
+        $id = $data['feed_id'];
+        $cat = $data['is_cat'] ?? false;
+        $shallow = !($data['include_nested'] ?? false);
+        $viewMode = in_array($data['view_mode'], ["all_articles", "adaptive", "unread", "marked", "has_note", "published"]) ? $data['view_mode'] : "all_articles";
+        // prepare the context; unsupported, invalid, or inherently empty contexts return synthetic empty result sets
+        $c = new Context;
+        $tr = Arsse::$db->begin();
+        // start with the feed or category ID
+        if ($cat) { // categories
+            switch ($id) {
+                case self::CAT_SPECIAL:
+                    // not valid
+                    return new ResultEmpty;
+                case self::CAT_NOT_SPECIAL:
+                case self::CAT_ALL:
+                    // no context needed here
+                    break;
+                case self::CAT_UNCATEGORIZED:
+                    // this requires a shallow context since in TTRSS the zero/null folder ("Uncategorized") is apart from the tree rather than at the root
+                    $c->folderShallow(0);
+                    break;
+                case self::CAT_LABELS:
+                    $c->labelled(true);
+                    break;
+                default:
+                    // any actual category
+                    if ($shallow) {
+                        $c->folderShallow($id);
+                    } else {
+                        $c->folder($id);
+                    }
+                    break;
+            }
+        } else { // feeds
+            if ($this->labelIn($id, false)) { // labels
+                $c->label($this->labelIn($id));
+            } else {
+                switch ($id) {
+                    case self::FEED_ARCHIVED:
+                        // not implemented
+                        return new ResultEmpty;
+                    case self::FEED_STARRED:
+                        $c->starred(true);
+                        break;
+                    case self::FEED_PUBLISHED:
+                        // not implemented
+                        // TODO: if the Published feed is implemented, the headline function needs to be modified accordingly
+                        return new ResultEmpty;
+                    case self::FEED_FRESH:
+                        $c->modifiedSince(Date::sub("PT24H"))->unread(true);
+                        break;
+                    case self::FEED_ALL:
+                        // no context needed here
+                        break;
+                    case self::FEED_READ:
+                        $c->markedSince(Date::sub("PT24H"))->unread(false); // FIXME: this selects any recently touched article which is read, not necessarily a recently read one
+                        break;
+                    default:
+                        // any actual feed
+                        $c->subscription($id);
+                        break;
+                }
+            }
+        }
+        // next handle the view mode
+        switch ($viewMode) {
+            case "all_articles":
+                // no context needed here
+                break;
+            case "adaptive": 
+                // adaptive means "return only unread unless there are none, in which case return all articles"
+                if ($c->unread !== false && Arsse::$db->articleCount(Arsse::$user->id, (clone $c)->unread(true))) {
+                    $c->unread(true);
+                }
+                break;
+            case "unread":
+                if ($c->unread !== false) {
+                    $c->unread(true);
+                } else {
+                    // unread mode in the "Recently Read" feed is a no-op
+                    return new ResultEmpty;
+                }
+                break;
+            case "marked":
+                $c->starred(true);
+                break;
+            case "has_note":
+                $c->annotated(true);
+                break;
+            case "published":
+                // not implemented
+                // TODO: if the Published feed is implemented, the headline function needs to be modified accordingly
+                return new ResultEmpty;
+            default:
+                throw new \JKingWeb\Arsse\Exception("constantUnknown", $viewMode); // @codeCoverageIgnore
+        }
+        // TODO: implement searching
+        // set the limit and offset
+        if ($data['limit'] > 0) {
+            $c->limit($data['limit']);
+        }
+        if ($data['skip'] > 0) {
+            $c->offset($data['skip']);
+        }
+        // set the minimum article ID
+        if ($data['since_id'] > 0) {
+            $c->oldestArticle($data['since_id'] + 1);
+        }
+        // return results
+        try {
+            return Arsse::$db->articleList(Arsse::$user->id, $c, $fields);
+        } catch (ExceptionInput $e) {
+            // if a category/feed does not exist
+            return new ResultEmpty;
+        }
     }
 }
