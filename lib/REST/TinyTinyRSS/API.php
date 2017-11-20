@@ -1222,10 +1222,15 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     public function opGetCompactHeadlines(array $data): array {
         // getCompactHeadlines supports fewer features than getHeadlines
-        $data['is_cat'] = false;
-        $data['include_nested'] = false;
-        $data['search'] = null;
-        $data['order_by'] = null;
+        $data = [
+            'feed_id'   => $data['feed_id'],
+            'view_mode' => $data['view_mode'],
+            'since_id'  => $data['since_id'],
+            'limit'     => $data['limit'],
+            'skip'      => $data['skip'],
+        ];
+        $data = $this->normalizeInput($data, self::VALID_INPUT, "unix");
+        // fetch the list of IDs
         $out = [];
         foreach ($this->fetchArticles($data, Database::LIST_MINIMAL) as $row) {
             $out[] = ['id' => $row['id']];
