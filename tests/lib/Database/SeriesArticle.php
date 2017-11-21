@@ -215,6 +215,18 @@ trait SeriesArticle {
                 [1,   2,0,0,'2010-01-01 00:00:00','Some Note'],
             ]
         ],
+        'arsse_categories' => [ // author-supplied categories
+            'columns' => [
+                'article'  => "int",
+                'name'     => "str",
+            ],
+            'rows' => [
+                [19,"Fascinating"],
+                [19,"Logical"],
+                [20,"Interesting"],
+                [20,"Logical"],
+            ],
+        ],
         'arsse_labels' => [
             'columns' => [
                 'id'       => "int",
@@ -907,9 +919,34 @@ trait SeriesArticle {
         $this->assertEquals([], Arsse::$db->articleLabelsGet("john.doe@example.com", 2, true));
     }
 
+    public function testListTheLabelsOfAMissingArticle() {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        Arsse::$db->articleLabelsGet($this->user, 101);
+    }
+
     public function testListTheLabelsOfAnArticleWithoutAuthority() {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->articleLabelsGet("john.doe@example.com", 1);
+    }
+
+    public function testListTheCategoriesOfAnArticle() {
+        $exp = ["Fascinating", "Logical"];
+        $this->assertSame($exp, Arsse::$db->articleCategoriesGet($this->user, 19));
+        $exp = ["Interesting", "Logical"];
+        $this->assertSame($exp, Arsse::$db->articleCategoriesGet($this->user, 20));
+        $exp = [];
+        $this->assertSame($exp, Arsse::$db->articleCategoriesGet($this->user, 4));
+    }
+
+    public function testListTheCategoriesOfAMissingArticle() {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        Arsse::$db->articleCategoriesGet($this->user, 101);
+    }
+
+    public function testListTheCategoriesOfAnArticleWithoutAuthority() {
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Arsse::$db->articleCategoriesGet($this->user, 19);
     }
 }

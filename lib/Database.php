@@ -1162,6 +1162,20 @@ class Database {
         }
     }
 
+    public function articleCategoriesGet(string $user, $id): array {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        $id = $this->articleValidateId($user, $id)['article'];
+        $out = $this->db->prepare("SELECT name from arsse_categories where article is ? order by name", "int")->run($id)->getAll();
+        if (!$out) {
+            return $out;
+        } else {
+            // flatten the result
+            return array_column($out, "name");
+        }
+    }
+
     public function articleCleanup(): bool {
         $query = $this->db->prepare(
             "WITH target_feed(id,subs) as (".
