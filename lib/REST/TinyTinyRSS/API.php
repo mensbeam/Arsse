@@ -24,7 +24,7 @@ use JKingWeb\Arsse\REST\Response;
 /*
 
 Protocol difference so far:
-    - Handling of incorrect Content-Type and/or HTTP method is different
+    - Malformed JSON data returns a different error code than login failure, for clarity
     - TT-RSS accepts whitespace-only names for categories, labels, and feeds; we do not
     - TT-RSS allows two folders to share the same name under the same parent; we do not
     - TT-RSS requires the user to choose in the face of multiple found feeds during discovery; we use the first one (picoFeed limitation)
