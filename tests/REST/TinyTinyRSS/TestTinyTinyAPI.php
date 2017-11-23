@@ -93,6 +93,29 @@ class TestTinyTinyAPI extends Test\AbstractTest {
             'note' => "Note 2",
         ],
     ];
+    // text from https://corrigeur.fr/lorem-ipsum-traduction-origine.php
+    protected $richContent = <<<LONG_STRING
+<section>
+    <p>
+        <b>Pour</b> vous faire mieux 
+        connaitre d’ou\u{300} vient 
+        l’erreur de ceux qui 
+        bla\u{302}ment la 
+        volupte\u{301}, et qui louent 
+        en quelque sorte la douleur, 
+        je vais entrer dans une 
+        explication plus 
+        e\u{301}tendue, et vous faire 
+        voir tout ce qui a 
+        e\u{301}te\u{301} dit 
+        la\u{300}-dessus par 
+        l’inventeur de la 
+        ve\u{301}rite\u{301}, et, pour 
+        ainsi dire, par l’architecte 
+        de la vie heureuse.
+    </p>
+</section>
+LONG_STRING;
 
     protected function respGood($content = null, $seq = 0): Response {
         return new Response(200, [
@@ -1301,7 +1324,7 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         $this->assertEquals($this->respGood([$exp[0]]), $this->h->dispatch(new Request("POST", "", json_encode($in[5]))));
     }
 
-    public function testGetCompactHeadlines() {
+    public function testRetrieveCompactHeadlines() {
         $in1 = [
             // erroneous input
             ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx"],
@@ -1336,18 +1359,19 @@ class TestTinyTinyAPI extends Test\AbstractTest {
         Phake::when(Arsse::$db)->articleList->thenReturn(new Result([['id' => 0]]));
         Phake::when(Arsse::$db)->articleCount->thenReturn(0);
         Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true))->thenReturn(1);
-        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->subscription(2112), Database::LIST_MINIMAL)->thenThrow(new ExceptionInput("subjectMissing"));
-        Phake::when(Arsse::$db)->articleList($this->anything(), new Context, Database::LIST_MINIMAL)->thenReturn(new Result($this->articles));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->starred(true), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 1]]));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->label(1088), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 2]]));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->unread(true), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 3]]));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->label(1088)->unread(true), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 4]]));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->subscription(42)->starred(true), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 5]]));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->subscription(42)->annotated(true), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 6]]));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->limit(5), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 7]]));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->offset(2), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 8]]));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->limit(5)->offset(2), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 9]]));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->oldestArticle(48), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 10]]));
+        $c = (new Context)->reverse(true);
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(2112), Database::LIST_MINIMAL)->thenThrow(new ExceptionInput("subjectMissing"));
+        Phake::when(Arsse::$db)->articleList($this->anything(), $c, Database::LIST_MINIMAL)->thenReturn(new Result($this->articles));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->starred(true), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 1]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->label(1088), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 2]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(true), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 3]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->label(1088)->unread(true), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 4]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(42)->starred(true), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 5]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(42)->annotated(true), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 6]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->limit(5), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 7]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->offset(2), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 8]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->limit(5)->offset(2), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 9]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->oldestArticle(48), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 10]]));
         $out1 = [
             $this->respErr("INCORRECT_USAGE"),
             $this->respGood([]),
@@ -1379,10 +1403,333 @@ class TestTinyTinyAPI extends Test\AbstractTest {
             $this->assertEquals($out1[$a], $this->h->dispatch(new Request("POST", "", json_encode($in1[$a]))), "Test $a failed");
         }
         for ($a = 0; $a < sizeof($in2); $a++) {
-            Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->unread(false)->markedSince(Date::sub("PT24H")), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 1001]]));
-            Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->unread(true)->modifiedSince(Date::sub("PT24H")), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 1002]]));
-            Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->unread(true)->modifiedSince(Date::sub("PT24H"))->starred(true), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 1003]]));
+            Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(false)->markedSince(Date::sub("PT24H")), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 1001]]));
+            Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(true)->modifiedSince(Date::sub("PT24H")), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 1002]]));
+            Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(true)->modifiedSince(Date::sub("PT24H"))->starred(true), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 1003]]));
             $this->assertEquals($out2[$a], $this->h->dispatch(new Request("POST", "", json_encode($in2[$a]))), "Test $a failed");
         }
+    }
+
+    public function testRetrieveFullHeadlines() {
+        $in1 = [
+            // empty results
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 0],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -1, 'is_cat' => true],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'view_mode' => "published"],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -6, 'view_mode' => "unread"],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2112],
+        ];
+        $in2 = [
+            // simple context tests
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx"],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -1],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2112],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'view_mode' => "adaptive"],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2112, 'view_mode' => "adaptive"],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2112, 'view_mode' => "unread"],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'view_mode' => "marked"],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'view_mode' => "has_note"],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'limit' => 5],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'skip' => 2],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'limit' => 5, 'skip' => 2],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'since_id' => 47],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -3, 'is_cat' => true],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'is_cat' => true],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2, 'is_cat' => true],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 0, 'is_cat' => true],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'is_cat' => true],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'is_cat' => true, 'include_nested' => true],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'order_by' => "feed_dates"],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'order_by' => "date_reverse"],
+        ];
+        $in3 = [
+            // time-based context tests
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -6],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -6, 'view_mode' => "adaptive"],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -3],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -3, 'view_mode' => "marked"],
+        ];
+        Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result($this->labels));
+        Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result($this->usedLabels));
+        Phake::when(Arsse::$db)->articleLabelsGet->thenReturn([]);
+        Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 2112)->thenReturn([1,3]);
+        Phake::when(Arsse::$db)->articleCategoriesGet->thenReturn([]);
+        Phake::when(Arsse::$db)->articleCategoriesGet($this->anything(), 2112)->thenReturn(["Boring","Illogical"]);
+        Phake::when(Arsse::$db)->articleList->thenReturn($this->generateHeadlines(0));
+        Phake::when(Arsse::$db)->articleCount->thenReturn(0);
+        Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true))->thenReturn(1);
+        $c = (new Context)->limit(200)->reverse(true);
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(2112), Database::LIST_FULL)->thenThrow(new ExceptionInput("subjectMissing"));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->starred(true), Database::LIST_FULL)->thenReturn($this->generateHeadlines(1));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->label(1088), Database::LIST_FULL)->thenReturn($this->generateHeadlines(2));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(true), Database::LIST_FULL)->thenReturn($this->generateHeadlines(3));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->label(1088)->unread(true), Database::LIST_FULL)->thenReturn($this->generateHeadlines(4));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(42)->starred(true), Database::LIST_FULL)->thenReturn($this->generateHeadlines(5));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(42)->annotated(true), Database::LIST_FULL)->thenReturn($this->generateHeadlines(6));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->limit(5), Database::LIST_FULL)->thenReturn($this->generateHeadlines(7));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->offset(2), Database::LIST_FULL)->thenReturn($this->generateHeadlines(8));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->limit(5)->offset(2), Database::LIST_FULL)->thenReturn($this->generateHeadlines(9));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->oldestArticle(48), Database::LIST_FULL)->thenReturn($this->generateHeadlines(10));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c), Database::LIST_FULL)->thenReturn($this->generateHeadlines(11));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->labelled(true), Database::LIST_FULL)->thenReturn($this->generateHeadlines(12));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->folderShallow(0), Database::LIST_FULL)->thenReturn($this->generateHeadlines(13));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->folderShallow(42), Database::LIST_FULL)->thenReturn($this->generateHeadlines(14));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->folder(42), Database::LIST_FULL)->thenReturn($this->generateHeadlines(15));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->reverse(false), Database::LIST_FULL)->thenReturn($this->generateHeadlines(16));
+        $out2 = [
+            $this->respErr("INCORRECT_USAGE"),
+            $this->outputHeadlines(11),
+            $this->outputHeadlines(1),
+            $this->outputHeadlines(2),
+            $this->outputHeadlines(3),
+            $this->outputHeadlines(2), // the result is 2 rather than 4 because there are no unread, so the unread context is not used
+            $this->outputHeadlines(4),
+            $this->outputHeadlines(5),
+            $this->outputHeadlines(6),
+            $this->outputHeadlines(7),
+            $this->outputHeadlines(8),
+            $this->outputHeadlines(9),
+            $this->outputHeadlines(10),
+            $this->outputHeadlines(11),
+            $this->outputHeadlines(11),
+            $this->outputHeadlines(12),
+            $this->outputHeadlines(13),
+            $this->outputHeadlines(14),
+            $this->outputHeadlines(15),
+            $this->outputHeadlines(11), // defaulting sorting is not fully implemented
+            $this->outputHeadlines(16),
+        ];
+        $out3 = [
+            $this->outputHeadlines(1001),
+            $this->outputHeadlines(1001),
+            $this->outputHeadlines(1002),
+            $this->outputHeadlines(1003),
+        ];
+        for ($a = 0; $a < sizeof($in1); $a++) {
+            $this->assertResponse($this->respGood([]), $this->h->dispatch(new Request("POST", "", json_encode($in1[$a]))), "Test $a failed");
+        }
+        for ($a = 0; $a < sizeof($in2); $a++) {
+            $this->assertEquals($out2[$a], $this->h->dispatch(new Request("POST", "", json_encode($in2[$a]))), "Test $a failed");
+        }
+        for ($a = 0; $a < sizeof($in3); $a++) {
+            Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(false)->markedSince(Date::sub("PT24H")), Database::LIST_FULL)->thenReturn($this->generateHeadlines(1001));
+            Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(true)->modifiedSince(Date::sub("PT24H")), Database::LIST_FULL)->thenReturn($this->generateHeadlines(1002));
+            Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(true)->modifiedSince(Date::sub("PT24H"))->starred(true), Database::LIST_FULL)->thenReturn($this->generateHeadlines(1003));
+            $this->assertEquals($out3[$a], $this->h->dispatch(new Request("POST", "", json_encode($in3[$a]))), "Test $a failed");
+        }
+    }
+
+    public function testRetrieveFullHeadlinesCheckingExtraFields() {
+        $in = [
+            // empty results
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'show_content' => true],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'include_attachments' => true],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'include_header' => true],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -3, 'is_cat' => true, 'include_header' => true],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -1, 'is_cat' => true, 'include_header' => true],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2112, 'include_header' => true],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'include_header' => true, 'order_by' => "date_reverse"],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'skip' => 47, 'include_header' => true],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'skip' => 47, 'include_header' => true, 'order_by' => "date_reverse"],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'show_excerpt' => true],
+        ];
+        Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result($this->labels));
+        Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result($this->usedLabels));
+        Phake::when(Arsse::$db)->articleLabelsGet->thenReturn([]);
+        Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 2112)->thenReturn([1,3]);
+        Phake::when(Arsse::$db)->articleCategoriesGet->thenReturn([]);
+        Phake::when(Arsse::$db)->articleCategoriesGet($this->anything(), 2112)->thenReturn(["Boring","Illogical"]);
+        Phake::when(Arsse::$db)->articleList->thenReturn($this->generateHeadlines(1));
+        Phake::when(Arsse::$db)->articleCount->thenReturn(0);
+        Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true))->thenReturn(1);
+        // sanity check; this makes sure extra fields are not included in default situations
+        $test = $this->h->dispatch(new Request("POST", "", json_encode($in[0])));
+        $this->assertEquals($this->outputHeadlines(1), $test);
+        // test 'show_content'
+        $test = $this->h->dispatch(new Request("POST", "", json_encode($in[1])));
+        $this->assertArrayHasKey("content", $test->payload['content'][0]);
+        $this->assertArrayHasKey("content", $test->payload['content'][1]);
+        foreach ($this->generateHeadlines(1) as $key => $row) {
+            $this->assertSame($row['content'], $test->payload['content'][$key]['content']);
+        }
+        // test 'include_attachments'
+        $test = $this->h->dispatch(new Request("POST", "", json_encode($in[2])));
+        $exp = [
+            [
+                'content_url'  => "http://example.com/text",
+                'content_type' => "text/plain",
+                'title'        => "",
+                'duration'     => "",
+                'width'        => "",
+                'height'       => "",
+                'post_id'      => 2112,
+            ],
+        ];
+        $this->assertArrayHasKey("attachments", $test->payload['content'][0]);
+        $this->assertArrayHasKey("attachments", $test->payload['content'][1]);
+        $this->assertSame([], $test->payload['content'][0]['attachments']);
+        $this->assertSame($exp, $test->payload['content'][1]['attachments']);
+        // test 'include_header'
+        $test = $this->h->dispatch(new Request("POST", "", json_encode($in[3])));
+        $exp = $this->outputHeadlines(1);
+        $exp->payload['content'] = [
+            ['id' => -4, 'is_cat' => false, 'first_id' => 1],
+            $exp->payload['content'],
+        ];
+        $this->assertEquals($exp, $test);
+        // test 'include_header' with a category
+        $test = $this->h->dispatch(new Request("POST", "", json_encode($in[4])));
+        $exp = $this->outputHeadlines(1);
+        $exp->payload['content'] = [
+            ['id' => -3, 'is_cat' => true, 'first_id' => 1],
+            $exp->payload['content'],
+        ];
+        $this->assertEquals($exp, $test);
+        // test 'include_header' with an empty result
+        $test = $this->h->dispatch(new Request("POST", "", json_encode($in[5])));
+        $exp = $this->respGood([
+            ['id' => -1, 'is_cat' => true, 'first_id' => 0],
+            [],
+        ]);
+        $this->assertEquals($exp, $test);
+        // test 'include_header' with an erroneous result
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->limit(200)->reverse(true)->subscription(2112), $this->anything())->thenThrow(new ExceptionInput("subjectMissing"));
+        $test = $this->h->dispatch(new Request("POST", "", json_encode($in[6])));
+        $exp = $this->respGood([
+            ['id' => 2112, 'is_cat' => false, 'first_id' => 0],
+            [],
+        ]);
+        $this->assertEquals($exp, $test);
+        // test 'include_header' with ascending order
+        $test = $this->h->dispatch(new Request("POST", "", json_encode($in[7])));
+        $exp = $this->outputHeadlines(1);
+        $exp->payload['content'] = [
+            ['id' => -4, 'is_cat' => false, 'first_id' => 0],
+            $exp->payload['content'],
+        ];
+        $this->assertEquals($exp, $test);
+        // test 'include_header' with skip
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->reverse(true)->limit(1)->subscription(42), Database::LIST_MINIMAL)->thenReturn($this->generateHeadlines(1867));
+        $test = $this->h->dispatch(new Request("POST", "", json_encode($in[8])));
+        $exp = $this->outputHeadlines(1);
+        $exp->payload['content'] = [
+            ['id' => 42, 'is_cat' => false, 'first_id' => 1867],
+            $exp->payload['content'],
+        ];
+        $this->assertEquals($exp, $test);
+        // test 'include_header' with skip and ascending order
+        $test = $this->h->dispatch(new Request("POST", "", json_encode($in[9])));
+        $exp = $this->outputHeadlines(1);
+        $exp->payload['content'] = [
+            ['id' => 42, 'is_cat' => false, 'first_id' => 0],
+            $exp->payload['content'],
+        ];
+        $this->assertEquals($exp, $test);
+        // test 'show_excerpt'
+        $exp1 = "“This & that, you know‽”";
+        $exp2 = "Pour vous faire mieux connaitre d’ou\u{300} vient l’erreur de ceux qui bla\u{302}ment la volupte\u{301}, et qui louent en…";
+        $test = $this->h->dispatch(new Request("POST", "", json_encode($in[10])));
+        $this->assertArrayHasKey("excerpt", $test->payload['content'][0]);
+        $this->assertArrayHasKey("excerpt", $test->payload['content'][1]);
+        $this->assertSame($exp1, $test->payload['content'][0]['excerpt']);
+        $this->assertSame($exp2, $test->payload['content'][1]['excerpt']);
+    }
+
+    protected function generateHeadlines(int $id): Result {
+        return new Result([
+            [
+                'id' => $id,
+                'url' => 'http://example.com/1',
+                'title' => 'Article title 1',
+                'subscription_title' => "Feed 2112",
+                'author' => '',
+                'content' => '<p>&ldquo;This &amp; that, you know&#8253;&rdquo;</p>',
+                'guid' => '',
+                'published_date' => '2000-01-01 00:00:00',
+                'edited_date' => '2000-01-01 00:00:00',
+                'modified_date' => '2000-01-01 01:00:00',
+                'unread' => 0,
+                'starred' => 0,
+                'edition' => 101,
+                'subscription' => 12,
+                'fingerprint' => 'f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6:fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4:18fdd4fa93d693128c43b004399e5c9cea6c261ddfa002518d3669f55d8c2207',
+                'media_url' => null,
+                'media_type' => null,
+                'note' => "",
+            ],
+            [
+                'id' => 2112,
+                'url' => 'http://example.com/2',
+                'title' => 'Article title 2',
+                'subscription_title' => "Feed 11",
+                'author' => 'J. King',
+                'content' => $this->richContent,
+                'guid' => '5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7',
+                'published_date' => '2000-01-02 00:00:00',
+                'edited_date' => '2000-01-02 00:00:02',
+                'modified_date' => '2000-01-02 02:00:00',
+                'unread' => 1,
+                'starred' => 1,
+                'edition' => 202,
+                'subscription' => 8,
+                'fingerprint' => '0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153:13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9:2abd0a8cba83b8214a66c8f0293ba63e467d720540e29ff8ddcdab069d4f1c9e',
+                'media_url' => "http://example.com/text",
+                'media_type' => "text/plain",
+                'note' => "Note 2",
+            ],
+        ]);
+    }
+
+    protected function outputHeadlines(int $id): Response {
+        return $this->respGood([
+            [
+                'id' => $id,
+                'guid' => null,
+                'title' => 'Article title 1',
+                'link' => 'http://example.com/1',
+                'labels' => [],
+                'unread' => false,
+                'marked' => false,
+                'published' => false,
+                'author' => '',
+                'updated' => strtotime('2000-01-01 00:00:00'),
+                'is_updated' => false,
+                'feed_id' => 12,
+                'feed_title' => "Feed 2112",
+                'score' => 0,
+                'note' => null,
+                'lang' => "",
+                'tags' => [],
+                'comments_count' => 0,
+                'comments_link' => "",
+            ],
+            [
+                'id' => 2112,
+                'guid' => "SHA256:5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7",
+                'title' => 'Article title 2',
+                'link' => 'http://example.com/2',
+                'labels' => [
+                    [-1025, "Logical", "", ""],
+                    [-1027, "Fascinating", "", ""],
+                ],
+                'unread' => true,
+                'marked' => true,
+                'published' => false,
+                'author' => "J. King",
+                'updated' => strtotime('2000-01-02 00:00:02'),
+                'is_updated' => true,
+                'feed_id' => 8,
+                'feed_title' => "Feed 11",
+                'score' => 0,
+                'note' => "Note 2",
+                'lang' => "",
+                'tags' => ["Boring", "Illogical"],
+                'comments_count' => 0,
+                'comments_link' => "",
+            ],
+        ]);
     }
 }

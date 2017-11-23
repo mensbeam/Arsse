@@ -76,10 +76,14 @@
         <file>Db/SQLite3/Database/TestDatabaseCleanupSQLite3.php</file>
     </testsuite>
     <testsuite name="Controllers">
-        <file>REST/NextCloudNews/TestNCNVersionDiscovery.php</file>
-        <file>REST/NextCloudNews/TestNCNV1_2.php</file>
-        <file>REST/TinyTinyRSS/TestTinyTinyAPI.php</file>
-        <file>REST/TinyTinyRSS/TestTinyTinyIcon.php</file>
+        <testsuite name="NCNv1">
+            <file>REST/NextCloudNews/TestNCNVersionDiscovery.php</file>
+            <file>REST/NextCloudNews/TestNCNV1_2.php</file>
+        </testsuite>
+        <testsuite name="TTRSS">
+            <file>REST/TinyTinyRSS/TestTinyTinyAPI.php</file>
+            <file>REST/TinyTinyRSS/TestTinyTinyIcon.php</file>
+        </testsuite>
     </testsuite>
     <testsuite name="Refresh service">
         <file>Service/TestService.php</file>

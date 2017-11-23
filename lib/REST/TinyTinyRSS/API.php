@@ -41,14 +41,19 @@ Protocol difference so far:
     - IDs for enclosures are ommitted as we don't give them IDs
     - Searching in getHeadlines is not yet implemented
     - Category -3 (all non-special feeds) is handled correctly in getHeadlines; TT-RSS returns results for feed -3 (Fresh)
+    - Sorting of headlines does not match TT-RSS: special feeds are not sorted specially like they should be
+    - The 'sanitize', 'force_update', and 'has_sandbox' parameters of getHeadlines are ignored
+    - The 'always_display_attachments' key of articles in getHeadlines is omitted, as the user cannot express a preference
 */
 
 
 
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
-    const LEVEL = 14;
-    const VERSION = "17.4";
-    const LABEL_OFFSET = 1024;
+    const LEVEL = 14;           // emulated API level
+    const VERSION = "17.4";     // emulated TT-RSS version
+    const LABEL_OFFSET = 1024;  // offset below zero at which labels begin, counting down
+    const LIMIT_ARTICLES = 200; // maximum number of articles returned by getHeadlines
+    const LIMIT_EXCERPT = 100;  // maximum length of excerpts in getHeadlines, counted in grapheme units
     // special feeds
     const FEED_ARCHIVED = 0;
     const FEED_STARRED = -1;
@@ -91,18 +96,14 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         'show_excerpt'        => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to include article excerpts in `getHeadlines`
         'show_content'        => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to include article content in `getHeadlines`
         'include_attachments' => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to include article enclosures in `getHeadlines`
-        'view_mode'           => ValueInfo::T_STRING,
-        'since_id'            => ValueInfo::T_INT,
-        'order_by'            => ValueInfo::T_STRING,
-        'sanitize'            => ValueInfo::T_BOOL | ValueInfo::M_DROP,
-        'force_update'        => ValueInfo::T_BOOL | ValueInfo::M_DROP,
-        'has_sandbox'         => ValueInfo::T_BOOL | ValueInfo::M_DROP,
-        'include_header'      => ValueInfo::T_BOOL | ValueInfo::M_DROP,
-        'search'              => ValueInfo::T_STRING,
+        'view_mode'           => ValueInfo::T_STRING,                           // various filters for `getHeadlines`
+        'since_id'            => ValueInfo::T_INT,                              // cut-off article ID for `getHeadlines` and `getCompactHeadlines; returns only higher article IDs when specified
+        'order_by'            => ValueInfo::T_STRING,                           // sort order for `getHeadlines`
+        'include_header'      => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to attach a header to the results of `getHeadlines`
+        'search'              => ValueInfo::T_STRING,                           // search string for `getHeadlines` (not yet implemented)
         'field'               => ValueInfo::T_INT,                              // which state to change in `updateArticle`
         'mode'                => ValueInfo::T_INT,                              // whether to set, clear, or toggle the selected state in `updateArticle`
         'data'                => ValueInfo::T_STRING,                           // note text in `updateArticle` if setting a note
-        'pref_name'           => ValueInfo::T_STRING,                           // preference identifier in `getPref`
     ];
     // generic error construct
     const FATAL_ERR = [
@@ -1232,8 +1233,101 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $data = $this->normalizeInput($data, self::VALID_INPUT, "unix");
         // fetch the list of IDs
         $out = [];
-        foreach ($this->fetchArticles($data, Database::LIST_MINIMAL) as $row) {
-            $out[] = ['id' => $row['id']];
+        try {
+            foreach ($this->fetchArticles($data, Database::LIST_MINIMAL) as $row) {
+                $out[] = ['id' => $row['id']];
+            }
+        } catch (ExceptionInput $e) {
+            // ignore database errors (feeds/categories that don't exist)
+        }
+        return $out;
+    }
+
+    public function opGetHeadlines(array $data): array {
+        // normalize input
+        $data['limit'] = max(min(!$data['limit'] ? 200 : $data['limit'], 200), 0); // at most 200; not specified/zero yields 200; negative values yield no limit
+        $tr = Arsse::$db->begin();
+        // retrieve the list of label names for the user
+        $labels = [];
+        foreach (Arsse::$db->labelList(Arsse::$user->id, false) as $label) {
+            $labels[$label['id']] = $label['name'];
+        }
+        // retrieve the requested articles
+        $out = [];
+        try {
+            foreach ($this->fetchArticles($data, Database::LIST_FULL) as $article) {
+                $row = [
+                    'id' => $article['id'],
+                    'guid' => $article['guid'] ? "SHA256:".$article['guid'] : null,
+                    'title' => $article['title'],
+                    'link' => $article['url'],
+                    'labels' => $this->articleLabelList($labels, $article['id']),
+                    'unread' => (bool) $article['unread'],
+                    'marked' => (bool) $article['starred'],
+                    'published' => false, // TODO: if the Published feed is implemented, the getHeadlines operation should be amended accordingly
+                    'author' => $article['author'],
+                    'updated' => Date::transform($article['edited_date'], "unix", "sql"),
+                    'is_updated' => ($article['published_date'] < $article['edited_date']),
+                    'feed_id' => $article['subscription'],
+                    'feed_title' => $article['subscription_title'],
+                    'score' => 0, // score is not implemented as it is not modifiable from the TTRSS API
+                    'note' => strlen($article['note']) ? $article['note'] : null,
+                    'lang' => "", // FIXME: picoFeed should be able to retrieve this information
+                    'tags' => Arsse::$db->articleCategoriesGet(Arsse::$user->id, $article['id']),
+                    'comments_count' => 0,
+                    'comments_link' => "",
+                ];
+                if ($data['show_content']) {
+                    $row['content'] = $article['content'];
+                }
+                if ($data['show_excerpt']) {
+                    // prepare an excerpt from the content
+                    $text = strip_tags($article['content']); // get rid of all tags; elements with problematic content (e.g. script, style) should already be gone thanks to sanitization
+                    $text = html_entity_decode($text, \ENT_QUOTES | \ENT_HTML5, "UTF-8");
+                    $text = trim($text); // trim whitespace at ends
+                    $text = preg_replace("<\s+>s", " ", $text); // replace runs of whitespace with a single space
+                    $row['excerpt'] = grapheme_substr($text, 0, self::LIMIT_EXCERPT).(grapheme_strlen($text) > self::LIMIT_EXCERPT ? "…" : ""); // add an ellipsis if the string is longer than N characters
+                }
+                if ($data['include_attachments']) {
+                    $row['attachments'] = $article['media_url'] ? [[
+                        'content_url' => $article['media_url'],
+                        'content_type' => $article['media_type'],
+                        'title' => "",
+                        'duration' => "",
+                        'width' => "",
+                        'height' => "",
+                        'post_id' => $article['id'],
+                    ]] : []; // TODO: We need to support multiple enclosures
+                }
+                $out[] = $row;
+            }
+        } catch (ExceptionInput $e) {
+            // ignore database errors (feeds/categories that don't exist)
+            // ensure that if using a header the database is not needlessly queried again
+            $data['skip'] = null;
+        }
+        if ($data['include_header']) {
+            if ($data['skip'] > 0 && $data['order_by'] != "date_reverse") {
+                // when paginating the header returns the latest ("first") item ID in the full list; we get this ID here
+                $data['skip'] = 0;
+                $data['limit'] = 1;
+                $firstID = ($this->fetchArticles($data, Database::LIST_MINIMAL)->getRow() ?? ['id' => 0])['id'];
+            } elseif ($data['order_by']=="date_reverse") {
+                // the "date_reverse" sort order doesn't get a first ID because it's meaningless for ascending-order pagination (pages doesn't go stale)
+                $firstID = 0;
+            } else {
+                // otherwise just use the ID of the first item in the list we've already computed
+                $firstID = ($out) ? $out[0]['id'] : 0;
+            }
+            // wrap the output with (but after) the header
+            $out = [
+                [
+                    'id'       => $data['feed_id'],
+                    'is_cat'   => $data['is_cat'] ?? false,
+                    'first_id' => $firstID,
+                ],
+                $out,
+            ];
         }
         return $out;
     }
@@ -1340,6 +1434,21 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 throw new \JKingWeb\Arsse\Exception("constantUnknown", $viewMode); // @codeCoverageIgnore
         }
         // TODO: implement searching
+        // handle sorting
+        switch ($data['order_by']) {
+            case "date_reverse":
+                // sort oldest first
+                $c->reverse(false);
+                break;
+            case "feed_dates":
+                // sort newest first
+                $c->reverse(true);
+                break;
+            default:
+                // in TT-RSS the default sort order is unusual for some of the special feeds; we do not implement this
+                $c->reverse(true);
+                break;
+        }
         // set the limit and offset
         if ($data['limit'] > 0) {
             $c->limit($data['limit']);
@@ -1352,11 +1461,6 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             $c->oldestArticle($data['since_id'] + 1);
         }
         // return results
-        try {
-            return Arsse::$db->articleList(Arsse::$user->id, $c, $fields);
-        } catch (ExceptionInput $e) {
-            // if a category/feed does not exist
-            return new ResultEmpty;
-        }
+        return Arsse::$db->articleList(Arsse::$user->id, $c, $fields);
     }
 }
