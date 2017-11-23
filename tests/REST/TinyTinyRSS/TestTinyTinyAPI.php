@@ -176,6 +176,20 @@ LONG_STRING;
         $this->clearData();
     }
 
+    public function testHandleOptionsRequest() {
+        $exp = new Response(204, "", "", [
+            "Allow: POST",
+            "Accept: application/json, text/json",
+        ]);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("OPTIONS", "")));
+    }
+
+    public function testHandleInvalidData() {
+        $exp = $this->RESPERR("MALFORMED_INPUT");
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", "This is not valid JSON data")));
+        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", ""))); // lack of data is also an error
+    }
+    
     public function testLogIn() {
         Phake::when(Arsse::$user)->auth(Arsse::$user->id, "superman")->thenReturn(false);
         Phake::when(Arsse::$db)->sessionCreate->thenReturn("PriestsOfSyrinx")->thenReturn("SolarFederation");
@@ -194,6 +208,17 @@ LONG_STRING;
         $this->assertEquals($exp, $this->req($data));
         // logging in should never try to resume a session
         Phake::verify(Arsse::$db, Phake::times(0))->sessionResume($this->anything());
+    }
+
+    public function testHandleGenericError() {
+        Phake::when(Arsse::$user)->auth(Arsse::$user->id, $this->anything())->thenThrow(new \JKingWeb\Arsse\Db\ExceptionTimeout("general"));
+        $data = [
+            'op'       => "login",
+            'user'     => Arsse::$user->id,
+            'password' => "secret",
+        ];
+        $exp = new Response(500);
+        $this->assertEquals($exp, $this->req($data));
     }
 
     public function testLogOut() {
@@ -216,6 +241,30 @@ LONG_STRING;
         $this->assertEquals($exp, $this->req($data));
         $data['sid'] = "SolarFederation";
         $exp = $this->respErr("NOT_LOGGED_IN");
+        $this->assertEquals($exp, $this->req($data));
+    }
+
+    public function testHandleUnknownMethods() {
+        $exp = $this->respErr("UNKNOWN_METHOD", ['method' => "thisMethodDoesNotExist"]);
+        $data = [
+            'op'       => "thisMethodDoesNotExist",
+            'sid'      => "PriestsOfSyrinx",
+        ];
+        $this->assertEquals($exp, $this->req($data));
+    }
+
+    public function testHandleMixedCaseMethods() {
+        $data = [
+            'op'       => "isLoggedIn",
+            'sid'      => "PriestsOfSyrinx",
+        ];
+        $exp = $this->respGood(['status' => true]);
+        $this->assertEquals($exp, $this->req($data));
+        $data['op'] = "isloggedin";
+        $this->assertEquals($exp, $this->req($data));
+        $data['op'] = "ISLOGGEDIN";
+        $this->assertEquals($exp, $this->req($data));
+        $data['op'] = "iSlOgGeDiN";
         $this->assertEquals($exp, $this->req($data));
     }
 

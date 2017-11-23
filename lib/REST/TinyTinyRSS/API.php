@@ -109,26 +109,25 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     const FATAL_ERR = [
         'seq'     => null,
         'status'  => 1,
-        'content' => ['error' => "NOT_LOGGED_IN"],
+        'content' => ['error' => "MALFORMED_INPUT"],
     ];
     
     public function __construct() {
     }
 
     public function dispatch(\JKingWeb\Arsse\REST\Request $req): Response {
-        if ($req->method != "POST") {
-            // only POST requests are allowed
-            return new Response(405, self::FATAL_ERR, "application/json", ["Allow: POST"]);
+        if ($req->method=="OPTIONS") {
+            // respond to OPTIONS rquests; the response is a fib, as we technically accept any type or method
+            return new Response(204, "", "", [
+                "Allow: POST",
+                "Accept: application/json, text/json",
+            ]);
         }
         if ($req->body) {
-            // only JSON entities are allowed
-            if (!preg_match("<^application/json\b|^$>", $req->type)) {
-                return new Response(415, self::FATAL_ERR, "application/json", ['Accept: application/json']);
-            }
+            // only JSON entities are allowed, but Content-Type is ignored, as is request method
             $data = @json_decode($req->body, true);
             if (json_last_error() != \JSON_ERROR_NONE || !is_array($data)) {
-                // non-JSON input indicates an error
-                return new Response(400, self::FATAL_ERR);
+                return new Response(200, self::FATAL_ERR);
             }
             try {
                 // normalize input
@@ -144,16 +143,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 }
                 $method = "op".ucfirst($data['op']);
                 if (!method_exists($this, $method)) {
-                    // because method names are supposed to be case insensitive, we need to try a bit harder to match
-                    $method = strtolower($method);
-                    $map = get_class_methods($this);
-                    $map = array_combine(array_map("strtolower", $map), $map);
-                    if (!array_key_exists($method, $map)) {
-                        // if the method really doesn't exist, throw an exception
-                        throw new Exception("UNKNWON_METHOD", ['method' => $data['op']]);
-                    }
-                    // otherwise retrieve the correct camelCase and continue
-                    $method = $map[$method];
+                    // TT-RSS operations are case-insensitive by dint of PHP method names being case-insensitive; this will only trigger if the method really doesn't exist
+                    throw new Exception("UNKNOWN_METHOD", ['method' => $data['op']]);
                 }
                 return new Response(200, [
                     'seq' => $data['seq'],
@@ -171,7 +162,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         } else {
             // absence of a request body indicates an error
-            return new Response(400, self::FATAL_ERR);
+            return new Response(200, self::FATAL_ERR);
         }
     }
 
@@ -1245,7 +1236,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     public function opGetHeadlines(array $data): array {
         // normalize input
-        $data['limit'] = max(min(!$data['limit'] ? 200 : $data['limit'], 200), 0); // at most 200; not specified/zero yields 200; negative values yield no limit
+        $data['limit'] = max(min(!$data['limit'] ? self::LIMIT_ARTICLES : $data['limit'], self::LIMIT_ARTICLES), 0); // at most 200; not specified/zero yields 200; negative values yield no limit
         $tr = Arsse::$db->begin();
         // retrieve the list of label names for the user
         $labels = [];
