@@ -1188,7 +1188,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     'post_id' => $article['id'],
                 ]] : [], // TODO: We need to support multiple enclosures
                 'score' => 0, // score is not implemented as it is not modifiable from the TTRSS API
-                'note' => strlen($article['note']) ? $article['note'] : null,
+                'note' => strlen((string) $article['note']) ? $article['note'] : null,
                 'lang' => "", // FIXME: picoFeed should be able to retrieve this information
                 'content' => $article['content'],
             ];
@@ -1262,7 +1262,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     'feed_id' => $article['subscription'],
                     'feed_title' => $article['subscription_title'],
                     'score' => 0, // score is not implemented as it is not modifiable from the TTRSS API
-                    'note' => strlen($article['note']) ? $article['note'] : null,
+                    'note' => strlen((string) $article['note']) ? $article['note'] : null,
                     'lang' => "", // FIXME: picoFeed should be able to retrieve this information
                     'tags' => Arsse::$db->articleCategoriesGet(Arsse::$user->id, $article['id']),
                     'comments_count' => 0,
