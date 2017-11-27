@@ -841,7 +841,6 @@ class Database {
                 subscribed_feeds.sub as subscription
             FROM arsse_articles"
         );
-        $q->setOrder("edition".($context->reverse ? " desc" : ""));
         $q->setLimit($context->limit, $context->offset);
         $q->setCTE("user(user)", "SELECT ?", "str", $user);
         if ($context->subscription()) {
@@ -1028,6 +1027,7 @@ class Database {
                     throw new Exception("constantUnknown", $fields);
             }
             $q = $this->articleQuery($user, $context, $columns);
+            $q->setOrder("edited_date".($context->reverse ? " desc" : ""));
             $q->setJoin("left join arsse_enclosures on arsse_enclosures.article is arsse_articles.id");
             // perform the query and return results
             return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
