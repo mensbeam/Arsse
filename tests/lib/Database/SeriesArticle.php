@@ -364,20 +364,20 @@ trait SeriesArticle {
     ];
     protected $fields = [
         Database::LIST_MINIMAL => [
-            "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", 
+            "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", "edited_date",
         ],
         Database::LIST_CONSERVATIVE => [
-            "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", 
-            "url", "title", "subscription_title", "author", "guid", "published_date", "edited_date", "fingerprint",
+            "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", "edited_date",
+            "url", "title", "subscription_title", "author", "guid", "published_date", "fingerprint",
         ],
         Database::LIST_TYPICAL => [
-            "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", 
-            "url", "title", "subscription_title", "author", "guid", "published_date", "edited_date", "fingerprint",
+            "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", "edited_date",
+            "url", "title", "subscription_title", "author", "guid", "published_date", "fingerprint",
             "content", "media_url", "media_type",
         ],
         Database::LIST_FULL => [
-            "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", 
-            "url", "title", "subscription_title", "author", "guid", "published_date", "edited_date", "fingerprint",
+            "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", "edited_date",
+            "url", "title", "subscription_title", "author", "guid", "published_date", "fingerprint",
             "content", "media_url", "media_type",
             "note",
         ],

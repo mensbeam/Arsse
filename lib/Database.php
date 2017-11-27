@@ -1021,13 +1021,17 @@ class Database {
                         "url_title_hash||':'||url_content_hash||':'||title_content_hash as fingerprint",
                     ]);
                 case self::LIST_MINIMAL: // base metadata (always included: required for context matching)
-                    // id, subscription, feed, modified_date, marked_date, unread, starred, edition
+                    $columns = array_merge($columns,[
+                        // id, subscription, feed, modified_date, marked_date, unread, starred, edition
+                        "edited as edited_date",
+                    ]);
                     break;
                 default:
                     throw new Exception("constantUnknown", $fields);
             }
             $q = $this->articleQuery($user, $context, $columns);
             $q->setOrder("edited_date".($context->reverse ? " desc" : ""));
+            $q->setOrder("edition".($context->reverse ? " desc" : ""));
             $q->setJoin("left join arsse_enclosures on arsse_enclosures.article is arsse_articles.id");
             // perform the query and return results
             return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
