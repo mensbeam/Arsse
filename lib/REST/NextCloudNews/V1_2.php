@@ -41,6 +41,34 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'lastModified' => ValueInfo::T_DATE,
         'items'        => ValueInfo::T_MIXED | ValueInfo::M_ARRAY,
     ];
+    protected $paths = [
+        'folders'               => ['GET' => "folderList",       'POST'   => "folderAdd"],
+        'folders/1'             => ['PUT' => "folderRename",     'DELETE' => "folderRemove"],
+        'folders/1/read'        => ['PUT' => "folderMarkRead"],
+        'feeds'                 => ['GET' => "subscriptionList", 'POST' => "subscriptionAdd"],
+        'feeds/1'               => ['DELETE' => "subscriptionRemove"],
+        'feeds/1/move'          => ['PUT' => "subscriptionMove"],
+        'feeds/1/rename'        => ['PUT' => "subscriptionRename"],
+        'feeds/1/read'          => ['PUT' => "subscriptionMarkRead"],
+        'feeds/all'             => ['GET' => "feedListStale"],
+        'feeds/update'          => ['GET' => "feedUpdate"],
+        'items'                 => ['GET' => "articleList"],
+        'items/updated'         => ['GET' => "articleList"],
+        'items/read'            => ['PUT' => "articleMarkReadAll"],
+        'items/1/read'          => ['PUT' => "articleMarkRead"],
+        'items/1/unread'        => ['PUT' => "articleMarkRead"],
+        'items/read/multiple'   => ['PUT' => "articleMarkReadMulti"],
+        'items/unread/multiple' => ['PUT' => "articleMarkReadMulti"],
+        'items/1/1/star'        => ['PUT' => "articleMarkStarred"],
+        'items/1/1/unstar'      => ['PUT' => "articleMarkStarred"],
+        'items/star/multiple'   => ['PUT' => "articleMarkStarredMulti"],
+        'items/unstar/multiple' => ['PUT' => "articleMarkStarredMulti"],
+        'cleanup/before-update' => ['GET' => "cleanupBefore"],
+        'cleanup/after-update'  => ['GET' => "cleanupAfter"],
+        'version'               => ['GET' => "serverVersion"],
+        'status'                => ['GET' => "serverStatus"],
+        'user'                  => ['GET' => "userStatus"],
+    ];
     
     public function __construct() {
     }
@@ -91,71 +119,24 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // @codeCoverageIgnoreEnd
     }
 
-    protected function chooseCall(array $url, string $method): string {
-        $choices = [
-            'items' => [],
-            'folders' => [
-                ''       => ['GET' => "folderList",   'POST'   => "folderAdd"],
-                '1'      => ['PUT' => "folderRename", 'DELETE' => "folderRemove"],
-                '1/read' => ['PUT' => "folderMarkRead"],
-            ],
-            'feeds' => [
-                ''         => ['GET' => "subscriptionList", 'POST' => "subscriptionAdd"],
-                '1'        => ['DELETE' => "subscriptionRemove"],
-                '1/move'   => ['PUT' => "subscriptionMove"],
-                '1/rename' => ['PUT' => "subscriptionRename"],
-                '1/read'   => ['PUT' => "subscriptionMarkRead"],
-                'all'      => ['GET' => "feedListStale"],
-                'update'   => ['GET' => "feedUpdate"],
-            ],
-            'items' => [
-                ''                => ['GET' => "articleList"],
-                'updated'         => ['GET' => "articleList"],
-                'read'            => ['PUT' => "articleMarkReadAll"],
-                '1/read'          => ['PUT' => "articleMarkRead"],
-                '1/unread'        => ['PUT' => "articleMarkRead"],
-                'read/multiple'   => ['PUT' => "articleMarkReadMulti"],
-                'unread/multiple' => ['PUT' => "articleMarkReadMulti"],
-                '1/1/star'        => ['PUT' => "articleMarkStarred"],
-                '1/1/unstar'      => ['PUT' => "articleMarkStarred"],
-                'star/multiple'   => ['PUT' => "articleMarkStarredMulti"],
-                'unstar/multiple' => ['PUT' => "articleMarkStarredMulti"],
-            ],
-            'cleanup' => [
-                'before-update' => ['GET' => "cleanupBefore"],
-                'after-update'  => ['GET' => "cleanupAfter"],
-            ],
-            'version' => [
-                '' => ['GET' => "serverVersion"],
-            ],
-            'status' => [
-                '' => ['GET' => "serverStatus"],
-            ],
-            'user' => [
-                '' => ['GET' => "userStatus"],
-            ],
-        ];
-        // the first path element is the overall scope of the request
-        $scope = $url[0];
+    protected function normalizePath(array $url): string {
         // any URL components which are database IDs (integers greater than zero) should be replaced with "1", for easier comparison (we don't care about the specific ID)
         for ($a = 0; $a < sizeof($url); $a++) {
             if (ValueInfo::id($url[$a])) {
                 $url[$a] = "1";
             }
         }
+        return implode("/", $url);
+    }
+    
+    protected function chooseCall(array $url, string $method): string {
+        // normalize the URL path
+        $url = $this->normalizePath($url);
         // normalize the HTTP method to uppercase
         $method = strtoupper($method);
-        // if the scope is not supported, return 501
-        if (!array_key_exists($scope, $choices)) {
-            throw new Exception501();
-        }
         // we now evaluate the supplied URL against every supported path for the selected scope
         // the URL is evaluated as an array so as to avoid decoded escapes turning invalid URLs into valid ones
-        foreach ($choices[$scope] as $path => $funcs) {
-            // add the scope to the path to match against and split it
-            $path = (string) $path;
-            $path = (strlen($path)) ? "$scope/$path" : $scope;
-            $path = explode("/", $path);
+        foreach ($this->paths as $path => $funcs) {
             if ($path===$url) {
                 // if the path matches, make sure the method is allowed
                 if (array_key_exists($method, $funcs)) {
