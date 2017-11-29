@@ -227,7 +227,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $sub) {
             $out += $sub['unread'];
         }
-        return ['unread' => $out];
+        return ['unread' => (string) $out]; // string cast to be consistent with TTRSS
     }
 
     public function opGetCounters(array $data): array {
@@ -254,7 +254,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         foreach (Arsse::$db->subscriptionList($user) as $f) {
             if ($f['unread']) {
                 // add the feed to the list of feeds
-                $feeds[] = ['id' => $f['id'], 'updated' => Date::transform($f['updated'], "iso8601", "sql"),'counter' => $f['unread'], 'has_img' => (int) (strlen((string) $f['favicon']) > 0)];
+                $feeds[] = ['id' => (string) $f['id'], 'updated' => Date::transform($f['updated'], "iso8601", "sql"),'counter' => $f['unread'], 'has_img' => (int) (strlen((string) $f['favicon']) > 0)]; // ID is cast to string for consistency with TTRSS
                 // add the feed's unread count to the global unread count
                 $countAll += $f['unread'];
                 // add the feed's unread count to its category unread count
@@ -492,6 +492,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $cats = Arsse::$db->folderList($user, null, $deep)->getAll();
         $map = [];
         for ($a = 0; $a < sizeof($cats); $a++) {
+            $cats[$a]['id'] = (string) $cats[$a]['id']; // real categories have IDs as strings in TTRSS
             $map[$cats[$a]['id']] = $a;
             $cats[$a]['unread'] = 0;
             $cats[$a]['order'] = $a + 1;
@@ -547,6 +548,10 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         // transform the result and return
         $out = [];
         for ($a = 0; $a < sizeof($cats); $a++) {
+            if ($cats[$a]['id']==-2) {
+                // the Labels category has its unread count as a string in TTRSS (don't ask me why)
+                settype($cats[$a]['unread'], "string");
+            }
             $out[] = $this->fieldMapNames($cats[$a], [
                 'id'       => "id",
                 'title'    => "name",
@@ -563,7 +568,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             'parent' => $data['parent_id'],
         ];
         try {
-            return Arsse::$db->folderAdd(Arsse::$user->id, $in);
+            return (string) Arsse::$db->folderAdd(Arsse::$user->id, $in); // output is a string in TTRSS
         } catch (ExceptionInput $e) {
             switch ($e->getCode()) {
                 case 10236: // folder already exists
@@ -571,7 +576,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     $folders = Arsse::$db->folderList(Arsse::$user->id, $in['parent'], false);
                     foreach ($folders as $folder) {
                         if ($folder['name']==$in['name']) {
-                            return (int) $folder['id'];
+                            return (string) ((int) $folder['id']); // output is a string in TTRSS
                         }
                     }
                     return false; // @codeCoverageIgnore
@@ -663,7 +668,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 $out[] = [
                     'id'     => $this->labelOut($l['id']),
                     'title'  => $l['name'],
-                    'unread' => $l['unread'],
+                    'unread' => (string) $l['unread'], // the unread count of labels is output as a string in TTRSS
                     'cat_id' => self::CAT_LABELS,
                 ];
             }
@@ -681,7 +686,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     $out[] = [
                     'id'     => self::FEED_STARRED,
                     'title'  => Arsse::$lang->msg("API.TTRSS.Feed.Starred"),
-                    'unread' => $starred,
+                    'unread' => (string) $starred, // output is a string in TTRSS
                     'cat_id' => self::CAT_SPECIAL,
                 ];
             }
@@ -689,7 +694,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 $out[] = [
                     'id'     => self::FEED_PUBLISHED,
                     'title'  => Arsse::$lang->msg("API.TTRSS.Feed.Published"),
-                    'unread' => $published, 
+                    'unread' => (string) $published, // output is a string in TTRSS
                     'cat_id' => self::CAT_SPECIAL,
                 ];
             }
@@ -697,7 +702,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 $out[] = [
                     'id'     => self::FEED_FRESH,
                     'title'  => Arsse::$lang->msg("API.TTRSS.Feed.Fresh"),
-                    'unread' => $fresh,
+                    'unread' => (string) $fresh, // output is a string in TTRSS
                     'cat_id' => self::CAT_SPECIAL,
                 ];
             }
@@ -705,7 +710,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 $out[] = [
                     'id'     => self::FEED_ALL,
                     'title'  => Arsse::$lang->msg("API.TTRSS.Feed.All"),
-                    'unread' => $global,
+                    'unread' => (string) $global, // output is a string in TTRSS
                     'cat_id' => self::CAT_SPECIAL,
                 ];
             }
@@ -713,7 +718,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 $out[] = [
                     'id'     => self::FEED_READ,
                     'title'  => Arsse::$lang->msg("API.TTRSS.Feed.Read"),
-                    'unread' => 0, // zero by definition
+                    'unread' => 0, // zero by definition; this one is -NOT- a string in TTRSS
                     'cat_id' => self::CAT_SPECIAL,
                 ];
             }
@@ -721,7 +726,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 $out[] = [
                     'id'     => self::FEED_ARCHIVED,
                     'title'  => Arsse::$lang->msg("API.TTRSS.Feed.Archived"),
-                    'unread' => $archived, 
+                    'unread' => (string) $archived, // output is a string in TTRSS
                     'cat_id' => self::CAT_SPECIAL,
                 ];
             }
@@ -1170,7 +1175,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $out = [];
         foreach (Arsse::$db->articleList(Arsse::$user->id, (new Context)->articles($articles)) as $article) {
             $out[] = [
-                'id' => $article['id'],
+                'id' => (string) $article['id'], // string cast to be consistent with TTRSS
                 'guid' => $article['guid'] ? "SHA256:".$article['guid'] : null,
                 'title' => $article['title'],
                 'link' => $article['url'],
@@ -1181,16 +1186,17 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'comments' => "", // FIXME: What is this?
                 'author' => $article['author'],
                 'updated' => Date::transform($article['edited_date'], "unix", "sql"),
-                'feed_id' => $article['subscription'],
+                'feed_id' => (string) $article['subscription'], // string cast to be consistent with TTRSS
                 'feed_title' => $article['subscription_title'],
                 'attachments' => $article['media_url'] ? [[
+                    'id' => (string) 0, // string cast to be consistent with TTRSS; nonsense ID because we don't use them for enclosures
                     'content_url' => $article['media_url'],
                     'content_type' => $article['media_type'],
                     'title' => "",
                     'duration' => "",
                     'width' => "",
                     'height' => "",
-                    'post_id' => $article['id'],
+                    'post_id' => (string) $article['id'], // string cast to be consistent with TTRSS
                 ]] : [], // TODO: We need to support multiple enclosures
                 'score' => 0, // score is not implemented as it is not modifiable from the TTRSS API
                 'note' => strlen((string) $article['note']) ? $article['note'] : null,
@@ -1264,7 +1270,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     'author' => $article['author'],
                     'updated' => Date::transform($article['edited_date'], "unix", "sql"),
                     'is_updated' => ($article['published_date'] < $article['edited_date']),
-                    'feed_id' => $article['subscription'],
+                    'feed_id' => (string) $article['subscription'], // string cast to be consistent with TTRSS
                     'feed_title' => $article['subscription_title'],
                     'score' => 0, // score is not implemented as it is not modifiable from the TTRSS API
                     'note' => strlen((string) $article['note']) ? $article['note'] : null,
@@ -1286,13 +1292,14 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 }
                 if ($data['include_attachments']) {
                     $row['attachments'] = $article['media_url'] ? [[
+                        'id' => (string) 0, // string cast to be consistent with TTRSS; nonsense ID because we don't use them for enclosures
                         'content_url' => $article['media_url'],
                         'content_type' => $article['media_type'],
                         'title' => "",
                         'duration' => "",
                         'width' => "",
                         'height' => "",
-                        'post_id' => $article['id'],
+                        'post_id' => (string) $article['id'], // string cast to be consistent with TTRSS
                     ]] : []; // TODO: We need to support multiple enclosures
                 }
                 $out[] = $row;

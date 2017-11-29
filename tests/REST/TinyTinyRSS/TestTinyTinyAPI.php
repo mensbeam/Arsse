@@ -311,14 +311,14 @@ LONG_STRING;
         Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => "",    'parent' => null])->thenThrow(new ExceptionInput("missing"));
         Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => "   ", 'parent' => null])->thenThrow(new ExceptionInput("whitespace"));
         // correctly add two folders
-        $exp = $this->respGood(2);
+        $exp = $this->respGood("2");
         $this->assertResponse($exp, $this->req($in[0]));
-        $exp = $this->respGood(3);
+        $exp = $this->respGood("3");
         $this->assertResponse($exp, $this->req($in[1]));
         // attempt to add the two folders again
-        $exp = $this->respGood(2);
+        $exp = $this->respGood("2");
         $this->assertResponse($exp, $this->req($in[0]));
-        $exp = $this->respGood(3);
+        $exp = $this->respGood("3");
         $this->assertResponse($exp, $this->req($in[1]));
         Phake::verify(Arsse::$db)->folderList(Arsse::$user->id, null, false);
         Phake::verify(Arsse::$db)->folderList(Arsse::$user->id, 1, false);
@@ -633,7 +633,7 @@ LONG_STRING;
             ['id' => 2, 'unread' => 42],
             ['id' => 3, 'unread' => 47],
         ]));
-        $exp = $this->respGood(['unread' => (2112 + 42 + 47)]);
+        $exp = $this->respGood(['unread' => (string) (2112 + 42 + 47)]);
         $this->assertResponse($exp, $this->req($in));
     }
 
@@ -808,54 +808,54 @@ LONG_STRING;
         Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn($this->starred);
         $exp = [
             [
-                ['id' => 5,  'title' => "Local",         'unread' => 10, 'order_id' => 1],
-                ['id' => 6,  'title' => "National",      'unread' => 18, 'order_id' => 2],
-                ['id' => 4,  'title' => "Photography",   'unread' => 0,  'order_id' => 3],
-                ['id' => 3,  'title' => "Politics",      'unread' => 0,  'order_id' => 4],
-                ['id' => 2,  'title' => "Rocketry",      'unread' => 5,  'order_id' => 5],
-                ['id' => 1,  'title' => "Science",       'unread' => 2,  'order_id' => 6],
-                ['id' => 0,  'title' => "Uncategorized", 'unread' => 0],
-                ['id' => -1, 'title' => "Special",       'unread' => 11],
-                ['id' => -2, 'title' => "Labels",        'unread' => 6],
+                ['id' => "5", 'title' => "Local",         'unread' => 10, 'order_id' => 1],
+                ['id' => "6", 'title' => "National",      'unread' => 18, 'order_id' => 2],
+                ['id' => "4", 'title' => "Photography",   'unread' => 0,  'order_id' => 3],
+                ['id' => "3", 'title' => "Politics",      'unread' => 0,  'order_id' => 4],
+                ['id' => "2", 'title' => "Rocketry",      'unread' => 5,  'order_id' => 5],
+                ['id' => "1", 'title' => "Science",       'unread' => 2,  'order_id' => 6],
+                ['id' => 0,   'title' => "Uncategorized", 'unread' => 0],
+                ['id' => -1,  'title' => "Special",       'unread' => 11],
+                ['id' => -2,  'title' => "Labels",        'unread' => "6"],
             ],
             [
-                ['id' => 5,  'title' => "Local",         'unread' => 10, 'order_id' => 1],
-                ['id' => 6,  'title' => "National",      'unread' => 18, 'order_id' => 2],
-                ['id' => 3,  'title' => "Politics",      'unread' => 0,  'order_id' => 4],
-                ['id' => 2,  'title' => "Rocketry",      'unread' => 5,  'order_id' => 5],
-                ['id' => 1,  'title' => "Science",       'unread' => 2,  'order_id' => 6],
-                ['id' => 0,  'title' => "Uncategorized", 'unread' => 0],
-                ['id' => -1, 'title' => "Special",       'unread' => 11],
-                ['id' => -2, 'title' => "Labels",        'unread' => 6],
+                ['id' => "5", 'title' => "Local",         'unread' => 10, 'order_id' => 1],
+                ['id' => "6", 'title' => "National",      'unread' => 18, 'order_id' => 2],
+                ['id' => "3", 'title' => "Politics",      'unread' => 0,  'order_id' => 4],
+                ['id' => "2", 'title' => "Rocketry",      'unread' => 5,  'order_id' => 5],
+                ['id' => "1", 'title' => "Science",       'unread' => 2,  'order_id' => 6],
+                ['id' => 0,   'title' => "Uncategorized", 'unread' => 0],
+                ['id' => -1,  'title' => "Special",       'unread' => 11],
+                ['id' => -2,  'title' => "Labels",        'unread' => "6"],
             ],
             [
-                ['id' => 5,  'title' => "Local",         'unread' => 10, 'order_id' => 1],
-                ['id' => 6,  'title' => "National",      'unread' => 18, 'order_id' => 2],
-                ['id' => 2,  'title' => "Rocketry",      'unread' => 5,  'order_id' => 5],
-                ['id' => 1,  'title' => "Science",       'unread' => 2,  'order_id' => 6],
-                ['id' => -1, 'title' => "Special",       'unread' => 11],
-                ['id' => -2, 'title' => "Labels",        'unread' => 6],
+                ['id' => "5", 'title' => "Local",         'unread' => 10, 'order_id' => 1],
+                ['id' => "6", 'title' => "National",      'unread' => 18, 'order_id' => 2],
+                ['id' => "2", 'title' => "Rocketry",      'unread' => 5,  'order_id' => 5],
+                ['id' => "1", 'title' => "Science",       'unread' => 2,  'order_id' => 6],
+                ['id' => -1,  'title' => "Special",       'unread' => 11],
+                ['id' => -2,  'title' => "Labels",        'unread' => "6"],
             ],
             [
-                ['id' => 4,  'title' => "Photography",   'unread' => 0,  'order_id' => 1],
-                ['id' => 3,  'title' => "Politics",      'unread' => 28, 'order_id' => 2],
-                ['id' => 1,  'title' => "Science",       'unread' => 7,  'order_id' => 3],
-                ['id' => 0,  'title' => "Uncategorized", 'unread' => 0],
-                ['id' => -1, 'title' => "Special",       'unread' => 11],
-                ['id' => -2, 'title' => "Labels",        'unread' => 6],
+                ['id' => "4", 'title' => "Photography",   'unread' => 0,  'order_id' => 1],
+                ['id' => "3", 'title' => "Politics",      'unread' => 28, 'order_id' => 2],
+                ['id' => "1", 'title' => "Science",       'unread' => 7,  'order_id' => 3],
+                ['id' => 0,   'title' => "Uncategorized", 'unread' => 0],
+                ['id' => -1,  'title' => "Special",       'unread' => 11],
+                ['id' => -2,  'title' => "Labels",        'unread' => "6"],
             ],
             [
-                ['id' => 3,  'title' => "Politics",      'unread' => 28, 'order_id' => 2],
-                ['id' => 1,  'title' => "Science",       'unread' => 7,  'order_id' => 3],
-                ['id' => 0,  'title' => "Uncategorized", 'unread' => 0],
-                ['id' => -1, 'title' => "Special",       'unread' => 11],
-                ['id' => -2, 'title' => "Labels",        'unread' => 6],
+                ['id' => "3", 'title' => "Politics",      'unread' => 28, 'order_id' => 2],
+                ['id' => "1", 'title' => "Science",       'unread' => 7,  'order_id' => 3],
+                ['id' => 0,   'title' => "Uncategorized", 'unread' => 0],
+                ['id' => -1,  'title' => "Special",       'unread' => 11],
+                ['id' => -2,  'title' => "Labels",        'unread' => "6"],
             ],
             [
-                ['id' => 3,  'title' => "Politics",      'unread' => 28, 'order_id' => 2],
-                ['id' => 1,  'title' => "Science",       'unread' => 7,  'order_id' => 3],
-                ['id' => -1, 'title' => "Special",       'unread' => 11],
-                ['id' => -2, 'title' => "Labels",        'unread' => 6],
+                ['id' => "3", 'title' => "Politics",      'unread' => 28, 'order_id' => 2],
+                ['id' => "1", 'title' => "Science",       'unread' => 7,  'order_id' => 3],
+                ['id' => -1,  'title' => "Special",       'unread' => 11],
+                ['id' => -2,  'title' => "Labels",        'unread' => "6"],
             ],
         ];
         for ($a = 0; $a < sizeof($in); $a++) {
@@ -880,11 +880,11 @@ LONG_STRING;
             ['id' => -4, 'counter' => 35, 'auxcounter' => 0],
             ['id' => -1027, 'counter' => 6, 'auxcounter' => 100],
             ['id' => -1025, 'counter' => 0, 'auxcounter' => 2],
-            ['id' => 3, 'updated' => "2016-05-23T06:40:02", 'counter' => 2,  'has_img' => 1],
-            ['id' => 4, 'updated' => "2017-10-09T15:58:34", 'counter' => 6,  'has_img' => 1],
-            ['id' => 1, 'updated' => "2017-09-15T22:54:16", 'counter' => 5,  'has_img' => 0],
-            ['id' => 5, 'updated' => "2017-07-07T17:07:17", 'counter' => 12, 'has_img' => 0],
-            ['id' => 2, 'updated' => "2011-11-11T11:11:11", 'counter' => 10, 'has_img' => 1],
+            ['id' => "3", 'updated' => "2016-05-23T06:40:02", 'counter' => 2,  'has_img' => 1],
+            ['id' => "4", 'updated' => "2017-10-09T15:58:34", 'counter' => 6,  'has_img' => 1],
+            ['id' => "1", 'updated' => "2017-09-15T22:54:16", 'counter' => 5,  'has_img' => 0],
+            ['id' => "5", 'updated' => "2017-07-07T17:07:17", 'counter' => 12, 'has_img' => 0],
+            ['id' => "2", 'updated' => "2011-11-11T11:11:11", 'counter' => 10, 'has_img' => 1],
             ['id' => 5, 'kind' => "cat", 'counter' => 10],
             ['id' => 6, 'kind' => "cat", 'counter' => 18],
             ['id' => 3, 'kind' => "cat", 'counter' => 28],
@@ -1096,24 +1096,24 @@ LONG_STRING;
                 ['id' => 6, 'title' => 'Eurogamer', 'unread' => 0, 'cat_id' => 0, 'feed_url' => " http://example.com/6", 'has_icon' => true, 'last_updated' => 1266005327, 'order_id' => 1],
             ],
             [
-                ['id' => -1, 'title' => "Starred articles",   'unread' => 4,  'cat_id' => -1],
-                ['id' => -2, 'title' => "Published articles", 'unread' => 0,  'cat_id' => -1],
-                ['id' => -3, 'title' => "Fresh articles",     'unread' => 7,  'cat_id' => -1],
-                ['id' => -4, 'title' => "All articles",       'unread' => 35, 'cat_id' => -1],
-                ['id' => -6, 'title' => "Recently read",      'unread' => 0,  'cat_id' => -1],
-                ['id' =>  0, 'title' => "Archived articles",  'unread' => 0,  'cat_id' => -1],
+                ['id' => -1, 'title' => "Starred articles",   'unread' => "4",  'cat_id' => -1],
+                ['id' => -2, 'title' => "Published articles", 'unread' => "0",  'cat_id' => -1],
+                ['id' => -3, 'title' => "Fresh articles",     'unread' => "7",  'cat_id' => -1],
+                ['id' => -4, 'title' => "All articles",       'unread' => "35", 'cat_id' => -1],
+                ['id' => -6, 'title' => "Recently read",      'unread' => 0,    'cat_id' => -1],
+                ['id' =>  0, 'title' => "Archived articles",  'unread' => "0",  'cat_id' => -1],
             ],
             [
-                ['id' => -1, 'title' => "Starred articles",   'unread' => 4,  'cat_id' => -1],
-                ['id' => -3, 'title' => "Fresh articles",     'unread' => 7,  'cat_id' => -1],
-                ['id' => -4, 'title' => "All articles",       'unread' => 35, 'cat_id' => -1],
+                ['id' => -1, 'title' => "Starred articles",   'unread' => "4",  'cat_id' => -1],
+                ['id' => -3, 'title' => "Fresh articles",     'unread' => "7",  'cat_id' => -1],
+                ['id' => -4, 'title' => "All articles",       'unread' => "35", 'cat_id' => -1],
             ],
             [
-                ['id' => -1027, 'title' => "Fascinating", 'unread' => 6,  'cat_id' => -2],
-                ['id' => -1025, 'title' => "Logical",     'unread' => 0,  'cat_id' => -2],
+                ['id' => -1027, 'title' => "Fascinating", 'unread' => "6",  'cat_id' => -2],
+                ['id' => -1025, 'title' => "Logical",     'unread' => "0",  'cat_id' => -2],
             ],
             [
-                ['id' => -1027, 'title' => "Fascinating", 'unread' => 6,  'cat_id' => -2],
+                ['id' => -1027, 'title' => "Fascinating", 'unread' => "6",  'cat_id' => -2],
             ],
             [
                 ['id' => 3, 'title' => 'Ars Technica',   'unread' => 2,  'cat_id' => 1, 'feed_url' => " http://example.com/3", 'has_icon' => true,  'last_updated' => 1463985602, 'order_id' => 1],
@@ -1131,14 +1131,14 @@ LONG_STRING;
                 ['id' => 2, 'title' => 'Toronto Star',   'unread' => 10, 'cat_id' => 5, 'feed_url' => " http://example.com/2", 'has_icon' => true,  'last_updated' => 1321009871, 'order_id' => 6],
             ],
             [
-                ['id' => -1027, 'title' => "Fascinating", 'unread' => 6,  'cat_id' => -2],
-                ['id' => -1025, 'title' => "Logical",     'unread' => 0,  'cat_id' => -2],
-                ['id' => -1, 'title' => "Starred articles",   'unread' => 4,  'cat_id' => -1],
-                ['id' => -2, 'title' => "Published articles", 'unread' => 0,  'cat_id' => -1],
-                ['id' => -3, 'title' => "Fresh articles",     'unread' => 7,  'cat_id' => -1],
-                ['id' => -4, 'title' => "All articles",       'unread' => 35, 'cat_id' => -1],
-                ['id' => -6, 'title' => "Recently read",      'unread' => 0,  'cat_id' => -1],
-                ['id' =>  0, 'title' => "Archived articles",  'unread' => 0,  'cat_id' => -1],
+                ['id' => -1027, 'title' => "Fascinating", 'unread' => "6",  'cat_id' => -2],
+                ['id' => -1025, 'title' => "Logical",     'unread' => "0",  'cat_id' => -2],
+                ['id' => -1, 'title' => "Starred articles",   'unread' => "4",  'cat_id' => -1],
+                ['id' => -2, 'title' => "Published articles", 'unread' => "0",  'cat_id' => -1],
+                ['id' => -3, 'title' => "Fresh articles",     'unread' => "7",  'cat_id' => -1],
+                ['id' => -4, 'title' => "All articles",       'unread' => "35", 'cat_id' => -1],
+                ['id' => -6, 'title' => "Recently read",      'unread' => 0,    'cat_id' => -1],
+                ['id' =>  0, 'title' => "Archived articles",  'unread' => "0",  'cat_id' => -1],
                 ['id' => 3, 'title' => 'Ars Technica',   'unread' => 2,  'cat_id' => 1, 'feed_url' => " http://example.com/3", 'has_icon' => true,  'last_updated' => 1463985602, 'order_id' => 1],
                 ['id' => 4, 'title' => 'CBC News',       'unread' => 6,  'cat_id' => 6, 'feed_url' => " http://example.com/4", 'has_icon' => true,  'last_updated' => 1507564714, 'order_id' => 2],
                 ['id' => 6, 'title' => 'Eurogamer',      'unread' => 0,  'cat_id' => 0, 'feed_url' => " http://example.com/6", 'has_icon' => true,  'last_updated' => 1266005327, 'order_id' => 3],
@@ -1147,10 +1147,10 @@ LONG_STRING;
                 ['id' => 2, 'title' => 'Toronto Star',   'unread' => 10, 'cat_id' => 5, 'feed_url' => " http://example.com/2", 'has_icon' => true,  'last_updated' => 1321009871, 'order_id' => 6],
             ],
             [
-                ['id' => -1027, 'title' => "Fascinating", 'unread' => 6,  'cat_id' => -2],
-                ['id' => -1, 'title' => "Starred articles",   'unread' => 4,  'cat_id' => -1],
-                ['id' => -3, 'title' => "Fresh articles",     'unread' => 7,  'cat_id' => -1],
-                ['id' => -4, 'title' => "All articles",       'unread' => 35, 'cat_id' => -1],
+                ['id' => -1027, 'title' => "Fascinating", 'unread' => "6",  'cat_id' => -2],
+                ['id' => -1, 'title' => "Starred articles",   'unread' => "4",  'cat_id' => -1],
+                ['id' => -3, 'title' => "Fresh articles",     'unread' => "7",  'cat_id' => -1],
+                ['id' => -4, 'title' => "All articles",       'unread' => "35", 'cat_id' => -1],
                 ['id' => 3, 'title' => 'Ars Technica',   'unread' => 2,  'cat_id' => 1, 'feed_url' => " http://example.com/3", 'has_icon' => true,  'last_updated' => 1463985602, 'order_id' => 1],
                 ['id' => 4, 'title' => 'CBC News',       'unread' => 6,  'cat_id' => 6, 'feed_url' => " http://example.com/4", 'has_icon' => true,  'last_updated' => 1507564714, 'order_id' => 2],
                 ['id' => 1, 'title' => 'NASA JPL',       'unread' => 5,  'cat_id' => 2, 'feed_url' => " http://example.com/1", 'has_icon' => false, 'last_updated' => 1505516056, 'order_id' => 4],
@@ -1307,7 +1307,7 @@ LONG_STRING;
         $this->assertResponse($exp, $this->req($in[3]));
         $exp = [
             [
-                'id' => 101,
+                'id' => "101",
                 'guid' => null,
                 'title' => 'Article title 1',
                 'link' => 'http://example.com/1',
@@ -1318,7 +1318,7 @@ LONG_STRING;
                 'comments' => "",
                 'author' => '',
                 'updated' => strtotime('2000-01-01 00:00:01'),
-                'feed_id' => 8,
+                'feed_id' => "8",
                 'feed_title' => "Feed 11",
                 'attachments' => [],
                 'score' => 0,
@@ -1327,7 +1327,7 @@ LONG_STRING;
                 'content' => '<p>Article content 1</p>',
             ],
             [
-                'id' => 102,
+                'id' => "102",
                 'guid' => "SHA256:5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7",
                 'title' => 'Article title 2',
                 'link' => 'http://example.com/2',
@@ -1341,17 +1341,18 @@ LONG_STRING;
                 'comments' => "",
                 'author' => "J. King",
                 'updated' => strtotime('2000-01-02 00:00:02'),
-                'feed_id' => 8,
+                'feed_id' => "8",
                 'feed_title' => "Feed 11",
                 'attachments' => [
                     [
+                        'id'           => "0",
                         'content_url'  => "http://example.com/text",
                         'content_type' => "text/plain",
                         'title'        => "",
                         'duration'     => "",
                         'width'        => "",
                         'height'       => "",
-                        'post_id'      => 102,
+                        'post_id'      => "102",
                     ],
                 ],
                 'score' => 0,
@@ -1604,13 +1605,14 @@ LONG_STRING;
         $test = $this->req($in[2]);
         $exp = [
             [
+                'id'           => "0",
                 'content_url'  => "http://example.com/text",
                 'content_type' => "text/plain",
                 'title'        => "",
                 'duration'     => "",
                 'width'        => "",
                 'height'       => "",
-                'post_id'      => 2112,
+                'post_id'      => "2112",
             ],
         ];
         $this->assertArrayHasKey("attachments", $test->payload['content'][0]);
@@ -1742,7 +1744,7 @@ LONG_STRING;
                 'author' => '',
                 'updated' => strtotime('2000-01-01 00:00:00'),
                 'is_updated' => false,
-                'feed_id' => 12,
+                'feed_id' => "12",
                 'feed_title' => "Feed 2112",
                 'score' => 0,
                 'note' => null,
@@ -1766,7 +1768,7 @@ LONG_STRING;
                 'author' => "J. King",
                 'updated' => strtotime('2000-01-02 00:00:02'),
                 'is_updated' => true,
-                'feed_id' => 8,
+                'feed_id' => "8",
                 'feed_title' => "Feed 11",
                 'score' => 0,
                 'note' => "Note 2",
