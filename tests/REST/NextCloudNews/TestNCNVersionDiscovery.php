@@ -29,8 +29,16 @@ class TestNCNVersionDiscovery extends Test\AbstractTest {
         $this->assertEquals($exp, $res);
     }
 
+    public function testRespondToOptionsRequest() {
+        $exp = new Response(204, "", "", ["Allow: HEAD,GET"]);
+        $h = new REST\NextCloudNews\Versions();
+        $req = new Request("OPTIONS", "/");
+        $res = $h->dispatch($req);
+        $this->assertEquals($exp, $res);
+    }
+
     public function testUseIncorrectMethod() {
-        $exp = new Response(405, "", "", ["Allow: GET"]);
+        $exp = new Response(405, "", "", ["Allow: HEAD,GET"]);
         $h = new REST\NextCloudNews\Versions();
         $req = new Request("POST", "/");
         $res = $h->dispatch($req);
@@ -41,6 +49,9 @@ class TestNCNVersionDiscovery extends Test\AbstractTest {
         $exp = new Response(404);
         $h = new REST\NextCloudNews\Versions();
         $req = new Request("GET", "/ook");
+        $res = $h->dispatch($req);
+        $this->assertEquals($exp, $res);
+        $req = new Request("OPTIONS", "/ook");
         $res = $h->dispatch($req);
         $this->assertEquals($exp, $res);
     }

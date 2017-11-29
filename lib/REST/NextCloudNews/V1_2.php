@@ -76,6 +76,10 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if (!Arsse::$user->authHTTP()) {
             return new Response(401, "", "", ['WWW-Authenticate: Basic realm="'.self::REALM.'"']);
         }
+        // handle HTTP OPTIONS requests
+        if ($req->method=="OPTIONS") {
+            return $this->handleHTTPOptions($req->paths);
+        }
         // normalize the input
         if ($req->body) {
             // if the entity body is not JSON according to content type, return "415 Unsupported Media Type"
@@ -144,7 +148,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 throw new Exception405(implode(", ", array_keys($this->paths[$url])));
             } 
         } else {
-            // if the path is not supported, return 501
+            // if the path is not supported, return 404
             throw new Exception404();  
         }
     }
@@ -201,6 +205,26 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'lastModified' => "datetime",
         ], $this->dateFormat);
         return $article;
+    }
+
+    protected function handleHTTPOptions(array $url): Response {
+        // normalize the URL path
+        $url = $this->normalizePath($url);
+        if (isset($this->paths[$url])) {
+            // if the path is supported, respond with the allowed methods and other metadata
+            $allowed = array_keys($this->paths[$url]);
+            // if GET is allowed, so is HEAD
+            if (in_array("GET", $allowed)) {
+                array_unshift($allowed, "HEAD");
+            }
+            return new Response(204, "", "", [
+                "Allow: ".implode(",", $allowed),
+                "Accept: application/json",
+            ]);
+        } else {
+            // if the path is not supported, return 404
+            return new Response(404);  
+        }
     }
     
     // list folders

@@ -311,6 +311,12 @@ class TestNCNV1_2 extends Test\AbstractTest {
         $this->clearData();
     }
 
+    public function testSendAuthenticationChallenge() {
+        Phake::when(Arsse::$user)->authHTTP->thenReturn(false);
+        $exp = new Response(401, "", "", ['WWW-Authenticate: Basic realm="'.REST\NextCloudNews\V1_2::REALM.'"']);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/")));
+    }
+
     public function testRespondToInvalidPaths() {
         $errs = [
             404 => [
@@ -364,10 +370,24 @@ class TestNCNV1_2 extends Test\AbstractTest {
         $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/1", '<data/>', 'application/json')));
     }
 
-    public function testSendAuthenticationChallenge() {
-        Phake::when(Arsse::$user)->authHTTP->thenReturn(false);
-        $exp = new Response(401, "", "", ['WWW-Authenticate: Basic realm="'.REST\NextCloudNews\V1_2::REALM.'"']);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/")));
+    public function testRespondToOptionsRequests() {
+        $exp = new Response(204, "", "", [
+            "Allow: HEAD,GET,POST",
+            "Accept: application/json",
+        ]);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("OPTIONS", "/feeds")));
+        $exp = new Response(204, "", "", [
+            "Allow: DELETE",
+            "Accept: application/json",
+        ]);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("OPTIONS", "/feeds/2112")));
+        $exp = new Response(204, "", "", [
+            "Allow: HEAD,GET",
+            "Accept: application/json",
+        ]);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("OPTIONS", "/user")));
+        $exp = new Response(404);
+        $this->assertEquals($exp, $this->h->dispatch(new Request("OPTIONS", "/invalid/path")));
     }
 
     public function testListFolders() {
