@@ -1752,6 +1752,7 @@ LONG_STRING;
                 'tags' => [],
                 'comments_count' => 0,
                 'comments_link' => "",
+                'always_display_attachments' => false,
             ],
             [
                 'id' => 2112,
@@ -1776,6 +1777,7 @@ LONG_STRING;
                 'tags' => ["Boring", "Illogical"],
                 'comments_count' => 0,
                 'comments_link' => "",
+                'always_display_attachments' => false,
             ],
         ]);
     }

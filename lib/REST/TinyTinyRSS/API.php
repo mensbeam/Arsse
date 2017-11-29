@@ -38,12 +38,11 @@ Protocol difference so far:
     - Top-level categories in getFeedTree have a 'parent_id' property (set to null); in TT-RSS the property is absent
     - Article hashes are SHA-256 rather than SHA-1.
     - Articles have at most one attachment (enclosure), whereas TTRSS allows for several; there is also significantly less detail. These are limitations of picoFeed which should be addressed
-    - IDs for enclosures are ommitted as we don't give them IDs
+    - IDs for enclosures are always 0 as we don't give them IDs
     - Searching in getHeadlines is not yet implemented
     - Category -3 (all non-special feeds) is handled correctly in getHeadlines; TT-RSS returns results for feed -3 (Fresh)
     - Sorting of headlines does not match TT-RSS: special feeds are not sorted specially like they should be
     - The 'sanitize', 'force_update', and 'has_sandbox' parameters of getHeadlines are ignored
-    - The 'always_display_attachments' key of articles in getHeadlines is omitted, as the user cannot express a preference
 */
 
 
@@ -1278,6 +1277,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     'tags' => Arsse::$db->articleCategoriesGet(Arsse::$user->id, $article['id']),
                     'comments_count' => 0,
                     'comments_link' => "",
+                    'always_display_attachments' => false,
                 ];
                 if ($data['show_content']) {
                     $row['content'] = $article['content'];
