@@ -35,4 +35,6 @@ interface Driver {
     // ready a prepared statement for later execution
     public function prepare(string $query, ...$paramType): Statement;
     public function prepareArray(string $query, array $paramTypes): Statement;
+    // report whether the database character set is correct/acceptable
+    public function charsetAcceptable(): bool;
 }

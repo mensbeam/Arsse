@@ -204,6 +204,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'starred'      => "bool",
             'pubDate'      => "datetime",
             'lastModified' => "datetime",
+            'guidHash'     => "string"
         ], $this->dateFormat);
         return $article;
     }
@@ -653,6 +654,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'arsse_version' => Arsse::VERSION,
             'warnings' => [
                 'improperlyConfiguredCron' => !Service::hasCheckedIn(),
+                'incorrectDbCharset' => !Arsse::$db->driverCharsetAcceptable(),
             ]
         ]);
     }

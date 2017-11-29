@@ -43,6 +43,10 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
         $this->assertTrue(strlen($class::driverName()) > 0);
     }
 
+    public function testCheckCharacterSetAcceptability() {
+        $this->assertTrue($this->drv->charsetAcceptable());
+    }
+
     public function testExecAValidStatement() {
         $this->assertTrue($this->drv->exec("CREATE TABLE test(id integer primary key)"));
     }

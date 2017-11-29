@@ -852,14 +852,17 @@ class TestNCNV1_2 extends Test\AbstractTest {
         $valid = (new \DateTimeImmutable("now", new \DateTimezone("UTC")))->sub($interval);
         $invalid = $valid->sub($interval)->sub($interval);
         Phake::when(Arsse::$db)->metaGet("service_last_checkin")->thenReturn(Date::transform($valid, "sql"))->thenReturn(Date::transform($invalid, "sql"));
+        Phake::when(Arsse::$db)->driverCharsetAcceptable->thenReturn(true)->thenReturn(false);
         $arr1 = $arr2 = [
             'version' => REST\NextCloudNews\V1_2::VERSION,
             'arsse_version' => Arsse::VERSION,
             'warnings' => [
                 'improperlyConfiguredCron' => false,
+                'incorrectDbCharset' => false,
             ]
         ];
         $arr2['warnings']['improperlyConfiguredCron'] = true;
+        $arr2['warnings']['incorrectDbCharset'] = true;
         $exp = new Response(200, $arr1);
         $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/status")));
     }

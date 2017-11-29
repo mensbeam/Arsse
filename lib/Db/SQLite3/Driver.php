@@ -127,6 +127,11 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         return true;
     }
 
+    public function charsetAcceptable(): bool {
+        // SQLite 3 databases are UTF-8 internally, thus always acceptable
+        return true;
+    }
+
     protected function getError(): string {
         return $this->db->lastErrorMsg();
     }

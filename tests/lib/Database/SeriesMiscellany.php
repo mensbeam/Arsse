@@ -29,4 +29,9 @@ trait SeriesMiscellany {
         $this->assertSame(Database::SCHEMA_VERSION, $d->driverSchemaVersion());
         $this->assertFalse($d->driverSchemaUpdate());
     }
+
+    public function testCheckCharacterSetAcceptability() {
+        $d = new Database();
+        $this->assertInternalType("bool", $d->driverCharsetAcceptable());
+    }
 }

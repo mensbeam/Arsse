@@ -61,6 +61,10 @@ class Database {
         return false;
     }
 
+    public function driverCharsetAcceptable(): bool {
+        return $this->db->charsetAcceptable();
+    }
+
     protected function generateSet(array $props, array $valid): array {
         $out = [
             [], // query clause
