@@ -17,6 +17,8 @@
         }
 
     ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "require": {
         "php": "^7.0",
         "ext-intl": "*",
@@ -24,7 +26,9 @@
         "ext-hash": "*",
         "fguillot/picofeed": ">=0.1.31",
         "hosteurope/password-generator": "^1.0",
-        "docopt/docopt": "^1.0"
+        "docopt/docopt": "^1.0",
+        "jkingweb/druuid": "^3.0",
+        "phpseclib/phpseclib": "^2.0"
     },
     "require-dev": {
         "mikey179/vfsStream": "^1.6",
@@ -34,7 +38,8 @@
         "phpdocumentor/phpdocumentor": "2.*",
         "friendsofphp/php-cs-fixer": "^2.2",
         "phing/phing": "^2.16",
-        "pear/archive_tar": "*"
+        "pear/archive_tar": "*",
+        "johnkary/phpunit-speedtrap": "^2.0"
     },
     "autoload": {
         "psr-4": {

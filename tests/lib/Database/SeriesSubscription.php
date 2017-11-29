@@ -48,6 +48,7 @@ trait SeriesSubscription {
                 'username'   => "str",
                 'password'   => "str",
                 'next_fetch' => "datetime",
+                'favicon'    => "str",
             ],
             'rows' => [] // filled in the series setup
         ],
@@ -108,9 +109,9 @@ trait SeriesSubscription {
 
     public function setUpSeries() {
         $this->data['arsse_feeds']['rows'] = [
-            [1,"http://example.com/feed1", "Ook", "", "",strtotime("now")],
-            [2,"http://example.com/feed2", "Eek", "", "",strtotime("now - 1 hour")],
-            [3,"http://example.com/feed3", "Ack", "", "",strtotime("now + 1 hour")],
+            [1,"http://example.com/feed1", "Ook", "", "",strtotime("now"),''],
+            [2,"http://example.com/feed2", "Eek", "", "",strtotime("now - 1 hour"),'http://example.com/favicon.ico'],
+            [3,"http://example.com/feed3", "Ack", "", "",strtotime("now + 1 hour"),''],
         ];
         // initialize a partial mock of the Database object to later manipulate the feedUpdate method
         Arsse::$db = Phake::partialMock(Database::class, $this->drv);
@@ -263,6 +264,21 @@ trait SeriesSubscription {
     public function testListSubscriptionsInAFolder() {
         $exp = [
             [
+                'url'        => "http://example.com/feed2",
+                'title'      => "Eek",
+                'folder'     => null,
+                'top_folder' => null,
+                'unread'     => 4,
+                'pinned'     => 1,
+                'order_type' => 2,
+            ],
+        ];
+        $this->assertResult($exp, Arsse::$db->subscriptionList($this->user, null, false));
+    }
+
+    public function testListSubscriptionsWithoutRecursion() {
+        $exp = [
+            [
                 'url'        => "http://example.com/feed3",
                 'title'      => "Ook",
                 'folder'     => 2,
@@ -273,6 +289,7 @@ trait SeriesSubscription {
             ],
         ];
         $this->assertResult($exp, Arsse::$db->subscriptionList($this->user, 2));
+
     }
 
     public function testListSubscriptionsInAMissingFolder() {
@@ -284,6 +301,22 @@ trait SeriesSubscription {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->subscriptionList($this->user);
+    }
+
+    public function testCountSubscriptions() {
+        $this->assertSame(2, Arsse::$db->subscriptionCount($this->user));
+        $this->assertSame(1, Arsse::$db->subscriptionCount($this->user, 2));
+    }
+
+    public function testCountSubscriptionsInAMissingFolder() {
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Arsse::$db->subscriptionCount($this->user, 4);
+    }
+
+    public function testCountSubscriptionsWithoutAuthority() {
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Arsse::$db->subscriptionCount($this->user);
     }
 
     public function testGetThePropertiesOfAMissingSubscription() {
@@ -320,6 +353,9 @@ trait SeriesSubscription {
             'title' => null,
         ]);
         $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com",2,null,3,0,0];
+        $this->compareExpectations($state);
+        // making no changes is a valid result
+        Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['unhinged' => true]);
         $this->compareExpectations($state);
     }
 
@@ -370,5 +406,21 @@ trait SeriesSubscription {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['folder' => null]);
+    }
+
+    public function testRetrieveTheFaviconOfASubscription() {
+        $exp = "http://example.com/favicon.ico";
+        $this->assertSame($exp, Arsse::$db->subscriptionFavicon(1));
+        $this->assertSame($exp, Arsse::$db->subscriptionFavicon(2));
+        $this->assertSame('',   Arsse::$db->subscriptionFavicon(3));
+        $this->assertSame('',   Arsse::$db->subscriptionFavicon(4));
+        // authorization shouldn't have any bearing on this function
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        $this->assertSame($exp, Arsse::$db->subscriptionFavicon(1));
+        $this->assertSame($exp, Arsse::$db->subscriptionFavicon(2));
+        $this->assertSame('',   Arsse::$db->subscriptionFavicon(3));
+        $this->assertSame('',   Arsse::$db->subscriptionFavicon(4));
+        // invalid IDs should simply return an empty string
+        $this->assertSame('',   Arsse::$db->subscriptionFavicon(-2112));
     }
 }

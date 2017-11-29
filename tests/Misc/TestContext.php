@@ -28,19 +28,28 @@ class TestContext extends Test\AbstractTest {
             'limit' => 10,
             'offset' => 5,
             'folder' => 42,
+            'folderShallow' => 42,
             'subscription' => 2112,
             'article' => 255,
             'edition' => 65535,
+            'latestArticle' => 47,
+            'oldestArticle' => 1337,
             'latestEdition' => 47,
             'oldestEdition' => 1337,
             'unread' => true,
             'starred' => true,
             'modifiedSince' => new \DateTime(),
             'notModifiedSince' => new \DateTime(),
+            'markedSince' => new \DateTime(),
+            'notMarkedSince' => new \DateTime(),
             'editions' => [1,2],
             'articles' => [1,2],
+            'label' => 2112,
+            'labelName' => "Rush",
+            'labelled' => true,
+            'annotated' => true,
         ];
-        $times = ['modifiedSince','notModifiedSince'];
+        $times = ['modifiedSince','notModifiedSince','markedSince','notMarkedSince'];
         $c = new Context;
         foreach ((new \ReflectionObject($c))->getMethods(\ReflectionMethod::IS_PUBLIC) as $m) {
             if ($m->isConstructor() || $m->isStatic()) {

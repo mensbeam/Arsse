@@ -14,17 +14,26 @@ class Context {
     public $limit = 0;
     public $offset = 0;
     public $folder;
+    public $folderShallow;
     public $subscription;
+    public $oldestArticle;
+    public $latestArticle;
     public $oldestEdition;
     public $latestEdition;
-    public $unread = false;
-    public $starred = false;
+    public $unread = null;
+    public $starred = null;
     public $modifiedSince;
     public $notModifiedSince;
+    public $markedSince;
+    public $notMarkedSince;
     public $edition;
     public $article;
     public $editions;
     public $articles;
+    public $label;
+    public $labelName;
+    public $labelled = null;
+    public $annotated = null;
 
     protected $props = [];
 
@@ -66,7 +75,19 @@ class Context {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
     
+    public function folderShallow(int $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+    
     public function subscription(int $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+    
+    public function latestArticle(int $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+    
+    public function oldestArticle(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
     
@@ -96,6 +117,16 @@ class Context {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
     
+    public function markedSince($spec = null) {
+        $spec = Date::normalize($spec);
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+    
+    public function notMarkedSince($spec = null) {
+        $spec = Date::normalize($spec);
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+    
     public function edition(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
@@ -115,6 +146,22 @@ class Context {
         if ($spec) {
             $spec = $this->cleanArray($spec);
         }
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function label(int $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function labelName(string $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function labelled(bool $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function annotated(bool $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 }

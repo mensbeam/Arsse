@@ -17,21 +17,24 @@ class Result implements \JKingWeb\Arsse\Db\Result {
     // actual public methods
 
     public function getValue() {
-        $arr = $this->next();
         if ($this->valid()) {
-            $keys = array_keys($arr);
-            return $arr[array_shift($keys)];
+            $keys = array_keys($this->current());
+            $out = $this->current()[array_shift($keys)];
+            $this->next();
+            return $out;
         }
+        $this->next();
         return null;
     }
 
     public function getRow() {
-        $arr = $this->next();
-        return ($this->valid() ? $arr : null);
+        $out = ($this->valid() ? $this->current() : null);
+        $this->next();
+        return $out;
     }
 
     public function getAll(): array {
-        return $this->set;
+        return iterator_to_array($this, false);
     }
 
     public function changes() {
@@ -56,22 +59,22 @@ class Result implements \JKingWeb\Arsse\Db\Result {
     // PHP iterator methods
 
     public function valid() {
-        return !is_null(key($this->set));
+        return $this->pos < sizeof($this->set);
     }
 
     public function next() {
-        return next($this->set);
+        $this->pos++;
     }
 
     public function current() {
-        return current($this->set);
+        return $this->set[$this->key()];
     }
 
     public function key() {
-        return key($this->set);
+        return array_keys($this->set)[$this->pos];
     }
 
     public function rewind() {
-        reset($this->set);
+        $this->pos = 0;
     }
 }

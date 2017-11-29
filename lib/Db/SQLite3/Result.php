@@ -11,7 +11,6 @@ use JKingWeb\Arsse\Db\Exception;
 class Result extends \JKingWeb\Arsse\Db\AbstractResult {
     protected $st;
     protected $set;
-    protected $pos = 0;
     protected $cur = null;
     protected $rows = 0;
     protected $id = 0;

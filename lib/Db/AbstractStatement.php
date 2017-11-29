@@ -11,7 +11,6 @@ use JKingWeb\Arsse\Misc\Date;
 abstract class AbstractStatement implements Statement {
     protected $types = [];
     protected $isNullable = [];
-    protected $values = ['pre' => [], 'post' => []];
 
     abstract public function runArray(array $values = []): Result;
 

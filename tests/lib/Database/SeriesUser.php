@@ -213,6 +213,9 @@ trait SeriesUser {
         $state = $this->primeExpectations($this->data, ['arsse_users' => ['id','password','name','rights']]);
         $state['arsse_users']['rows'][0][2] = "James Kirk";
         $this->compareExpectations($state);
+        // making now changes should make no changes :)
+        Arsse::$db->userPropertiesSet("admin@example.net", ['lifeform' => "tribble"]);
+        $this->compareExpectations($state);
     }
 
     public function testSetThePropertiesOfAMissingUser() {

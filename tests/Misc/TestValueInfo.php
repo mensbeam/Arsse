@@ -83,6 +83,7 @@ class TestValueInfo extends Test\AbstractTest {
             [0.5,           I::FLOAT],
             ["2.5",         I::FLOAT],
             ["0.5",         I::FLOAT],
+            [" 1 ",         I::VALID],
         ];
         foreach ($tests as $test) {
             list($value, $exp) = $test;
@@ -322,7 +323,7 @@ class TestValueInfo extends Test\AbstractTest {
                For each of these types, there is an expected output value, as well as a boolean indicating whether
                the value should pass or fail a strict normalization. Conversion to DateTime is covered below by a different data set
             */
-            /* Input value                        null         bool           int                      float                        string                          array                                         */
+            /* Input value                          null         bool           int                      float                        string                          array                                         */
             [null,                                  [null,true], [false,false], [0,              false], [0.0,                false], ["",                    false], [[],                                     false]],
             ["",                                    [null,true], [false,true],  [0,              false], [0.0,                false], ["",                    true],  [[""],                                   false]],
             [1,                                     [null,true], [true, true],  [1,              true],  [1.0,                true],  ["1",                   true],  [[1],                                    false]],
@@ -434,7 +435,7 @@ class TestValueInfo extends Test\AbstractTest {
         }
         // DateTimeInterface tests
         $tests = [
-            /* Input value                        microtime                    iso8601                      iso8601m                     http                         sql                          date                         time                         unix                         float                        '!M j, Y (D)'                *strtotime* (null)                  */
+            /* Input value                          microtime                    iso8601                      iso8601m                     http                         sql                          date                         time                         unix                         float                        '!M j, Y (D)'                *strtotime* (null)                  */
             [null,                                  null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                               ],
             [$this->d("2010-01-01T00:00:00", 0, 0), $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),               ],
             [$this->d("2010-01-01T00:00:00", 0, 1), $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),               ],

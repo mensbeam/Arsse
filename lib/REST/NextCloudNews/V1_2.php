@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\REST\NextCloudNews;
 
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\Misc\Context;
@@ -381,7 +382,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $out[] = $this->feedTranslate($sub);
         }
         $out = ['feeds' => $out];
-        $out['starredCount'] = Arsse::$db->articleStarredCount(Arsse::$user->id);
+        $out['starredCount'] = Arsse::$db->articleStarred(Arsse::$user->id)['total'];
         $newest = Arsse::$db->editionLatest(Arsse::$user->id);
         if ($newest) {
             $out['newestItemId'] = $newest;
@@ -508,11 +509,11 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // whether to return only updated items
         if ($data['lastModified']) {
-            $c->modifiedSince($data['lastModified']);
+            $c->markedSince($data['lastModified']);
         }
         // perform the fetch
         try {
-            $items = Arsse::$db->articleList(Arsse::$user->id, $c);
+            $items = Arsse::$db->articleList(Arsse::$user->id, $c, Database::LIST_TYPICAL);
         } catch (ExceptionInput $e) {
             // ID of subscription or folder is not valid
             return new Response(422);
@@ -575,19 +576,13 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function articleMarkReadMulti(array $url, array $data): Response {
         // determine whether to mark read or unread
         $set = ($url[1]=="read");
-        // start a transaction and loop through the items
-        $t = Arsse::$db->begin();
-        $in = array_chunk($data['items'] ?? [], 50);
-        for ($a = 0; $a < sizeof($in); $a++) {
-            // initialize the matching context
-            $c = new Context;
-            $c->editions($in[$a]);
-            try {
-                Arsse::$db->articleMark(Arsse::$user->id, ['read' => $set], $c);
-            } catch (ExceptionInput $e) {
-            }
+        // initialize the matching context
+        $c = new Context;
+        $c->editions($data['items'] ?? []);
+        try {
+            Arsse::$db->articleMark(Arsse::$user->id, ['read' => $set], $c);
+        } catch (ExceptionInput $e) {
         }
-        $t->commit();
         return new Response(204);
     }
 
@@ -595,19 +590,13 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function articleMarkStarredMulti(array $url, array $data): Response {
         // determine whether to mark starred or unstarred
         $set = ($url[1]=="star");
-        // start a transaction and loop through the items
-        $t = Arsse::$db->begin();
-        $in = array_chunk(array_column($data['items'] ?? [], "guidHash"), 50);
-        for ($a = 0; $a < sizeof($in); $a++) {
-            // initialize the matching context
-            $c = new Context;
-            $c->articles($in[$a]);
-            try {
-                Arsse::$db->articleMark(Arsse::$user->id, ['starred' => $set], $c);
-            } catch (ExceptionInput $e) {
-            }
+        // initialize the matching context
+        $c = new Context;
+        $c->articles(array_column($data['items'] ?? [], "guidHash"));
+        try {
+            Arsse::$db->articleMark(Arsse::$user->id, ['starred' => $set], $c);
+        } catch (ExceptionInput $e) {
         }
-        $t->commit();
         return new Response(204);
     }
 

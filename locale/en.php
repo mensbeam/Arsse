@@ -4,6 +4,17 @@
  * See LICENSE and AUTHORS files for details */
 
 return [
+    'API.TTRSS.Category.Uncategorized'                                     => 'Uncategorized',
+    'API.TTRSS.Category.Special'                                           => 'Special', 
+    'API.TTRSS.Category.Labels'                                            => 'Labels',
+    'API.TTRSS.Feed.All'                                                   => 'All articles',
+    'API.TTRSS.Feed.Fresh'                                                 => 'Fresh articles',
+    'API.TTRSS.Feed.Starred'                                               => 'Starred articles',
+    'API.TTRSS.Feed.Published'                                             => 'Published articles',
+    'API.TTRSS.Feed.Archived'                                              => 'Archived articles',
+    'API.TTRSS.Feed.Read'                                                  => 'Recently read',
+    'API.TTRSS.FeedCount'                                                  => '{0, select, 1 {(1 feed)} other {({0} feeds)}}',
+
     'Driver.Db.SQLite3.Name'                                               => 'SQLite 3',
     'Driver.Service.Curl.Name'                                             => 'HTTP (curl)',
     'Driver.Service.Internal.Name'                                         => 'Internal',
@@ -74,6 +85,8 @@ return [
     'Exception.JKingWeb/Arsse/Exception.uncoded'                           => 'The specified exception symbol {0} has no code specified in AbstractException.php',
     // this should not usually be encountered
     'Exception.JKingWeb/Arsse/Exception.unknown'                           => 'An unknown error has occurred',
+    // indicates programming error
+    'Exception.JKingWeb/Arsse/Exception.constantUnknown'                   => 'Supplied constant value ({0}) is unknown or invalid in the context in which it was used',
     'Exception.JKingWeb/Arsse/ExceptionType.strictFailure'                 => 'Supplied value could not be normalized to {0, select,
         1 {null}
         2 {boolean}
@@ -155,6 +168,7 @@ return [
             }}
             other {Authenticated user is not authorized to perform the action "{action}" on behalf of {user}}
         }',
+    'Exception.JKingWeb/Arsse/User/ExceptionSession.invalid'               => 'Session with ID {0} does not exist',
     'Exception.JKingWeb/Arsse/Feed/Exception.invalidCertificate'           => 'Could not download feed "{url}" because its server is serving an invalid SSL certificate',
     'Exception.JKingWeb/Arsse/Feed/Exception.invalidUrl'                   => 'Feed URL "{url}" is invalid',
     'Exception.JKingWeb/Arsse/Feed/Exception.maxRedirect'                  => 'Could not download feed "{url}" because its server reached its maximum number of HTTP redirections',

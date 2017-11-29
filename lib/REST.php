@@ -20,15 +20,29 @@ class REST {
             'strip' => '/index.php/apps/news/api/v1-2',
             'class' => REST\NextCloudNews\V1_2::class,
         ],
+        'ttrss_api' => [ // Tiny Tiny RSS  https://git.tt-rss.org/git/tt-rss/wiki/ApiReference
+            'match' => '/tt-rss/api/',
+            'strip' => '/tt-rss/api/',
+            'class' => REST\TinyTinyRSS\API::class,
+        ],
+        'ttrss_icon' => [ // Tiny Tiny RSS feed icons
+            'match' => '/tt-rss/feed-icons/',
+            'strip' => '/tt-rss/feed-icons/',
+            'class' => REST\TinyTinyRSS\Icon::class,
+        ],
         // Other candidates:
-        // NextCloud News v2    https://github.com/nextcloud/news/blob/master/docs/externalapi/External-Api.md
-        // Feedbin v1           https://github.com/feedbin/feedbin-api/commit/86da10aac5f1a57531a6e17b08744e5f9e7db8a9
-        // Feedbin v2           https://github.com/feedbin/feedbin-api
-        // Tiny Tiny RSS        https://tt-rss.org/gitlab/fox/tt-rss/wikis/ApiReference
+        // Google Reader        http://feedhq.readthedocs.io/en/latest/api/index.html
         // Fever                https://feedafever.com/api
-        // NewsBlur             http://www.newsblur.com/api
+        // Feedbin v2           https://github.com/feedbin/feedbin-api
+        // Feedbin v1           https://github.com/feedbin/feedbin-api/commit/86da10aac5f1a57531a6e17b08744e5f9e7db8a9
         // Miniflux             https://github.com/miniflux/miniflux/blob/master/docs/json-rpc-api.markdown
         // CommaFeed            https://www.commafeed.com/api/
+        // NextCloud News v2    https://github.com/nextcloud/news/blob/master/docs/externalapi/External-Api.md
+        // Selfoss              https://github.com/SSilence/selfoss/wiki/Restful-API-for-Apps-or-any-other-external-access
+        // BirdReader           https://github.com/glynnbird/birdreader/blob/master/API.md
+        // Proprietary (centralized) entities:
+        // NewsBlur             http://www.newsblur.com/api
+        // Feedly               https://developer.feedly.com/
     ];
 
     public function __construct() {

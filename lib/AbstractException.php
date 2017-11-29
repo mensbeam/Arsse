@@ -7,9 +7,10 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 abstract class AbstractException extends \Exception {
-    const CODES = [
+    const CODES = [        
         "Exception.uncoded"                           => -1,
         "Exception.unknown"                           => 10000,
+        "Exception.constantUnknown"                   => 10001,
         "ExceptionType.strictFailure"                 => 10011,
         "ExceptionType.typeUnknown"                   => 10012,
         "Lang/Exception.defaultFileMissing"           => 10101,
@@ -40,7 +41,7 @@ abstract class AbstractException extends \Exception {
         "Db/Exception.savepointStatusUnknown"         => 10225,
         "Db/Exception.savepointInvalid"               => 10226,
         "Db/Exception.savepointStale"                 => 10227,
-        "Db/Exception.resultReused"                   => 10227,
+        "Db/Exception.resultReused"                   => 10228,
         "Db/ExceptionInput.missing"                   => 10231,
         "Db/ExceptionInput.whitespace"                => 10232,
         "Db/ExceptionInput.tooLong"                   => 10233,
@@ -65,6 +66,7 @@ abstract class AbstractException extends \Exception {
         "User/Exception.authMissing"                  => 10411,
         "User/Exception.authFailed"                   => 10412,
         "User/ExceptionAuthz.notAuthorized"           => 10421,
+        "User/ExceptionSession.invalid"               => 10431,
         "Feed/Exception.invalidCertificate"           => 10501,
         "Feed/Exception.invalidUrl"                   => 10502,
         "Feed/Exception.maxRedirect"                  => 10503,

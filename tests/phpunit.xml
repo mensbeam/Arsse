@@ -18,6 +18,14 @@
 <logging>
   <log type="coverage-html" target="coverage" showUncoveredFiles="true"/>
 </logging>
+<listeners>
+    <listener class="JohnKary\PHPUnit\Listener\SpeedTrapListener">
+        <arguments><array>
+            <element key="slowThreshold"><integer>1500</integer></element>
+            <element key="reportLength"><integer>1000</integer></element>
+        </array></arguments>
+    </listener>
+</listeners>
 
 <testsuites>
     <testsuite name="Exceptions">
@@ -47,6 +55,8 @@
     </testsuite>
     <testsuite name="Database drivers">
         <file>Db/TestTransaction.php</file>
+        <file>Db/TestResultAggregate.php</file>
+        <file>Db/TestResultEmpty.php</file>
         <file>Db/SQLite3/TestDbResultSQLite3.php</file>
         <file>Db/SQLite3/TestDbStatementSQLite3.php</file>
         <file>Db/SQLite3/TestDbDriverCreationSQLite3.php</file>
@@ -57,15 +67,23 @@
         <file>Db/SQLite3/Database/TestDatabaseMiscellanySQLite3.php</file>
         <file>Db/SQLite3/Database/TestDatabaseMetaSQLite3.php</file>
         <file>Db/SQLite3/Database/TestDatabaseUserSQLite3.php</file>
+        <file>Db/SQLite3/Database/TestDatabaseSessionSQLite3.php</file>
         <file>Db/SQLite3/Database/TestDatabaseFolderSQLite3.php</file>
         <file>Db/SQLite3/Database/TestDatabaseFeedSQLite3.php</file>
         <file>Db/SQLite3/Database/TestDatabaseSubscriptionSQLite3.php</file>
         <file>Db/SQLite3/Database/TestDatabaseArticleSQLite3.php</file>
+        <file>Db/SQLite3/Database/TestDatabaseLabelSQLite3.php</file>
         <file>Db/SQLite3/Database/TestDatabaseCleanupSQLite3.php</file>
     </testsuite>
-    <testsuite name="NextCloud News API">
-        <file>REST/NextCloudNews/TestNCNVersionDiscovery.php</file>
-        <file>REST/NextCloudNews/TestNCNV1_2.php</file>
+    <testsuite name="Controllers">
+        <testsuite name="NCNv1">
+            <file>REST/NextCloudNews/TestNCNVersionDiscovery.php</file>
+            <file>REST/NextCloudNews/TestNCNV1_2.php</file>
+        </testsuite>
+        <testsuite name="TTRSS">
+            <file>REST/TinyTinyRSS/TestTinyTinyAPI.php</file>
+            <file>REST/TinyTinyRSS/TestTinyTinyIcon.php</file>
+        </testsuite>
     </testsuite>
     <testsuite name="Refresh service">
         <file>Service/TestService.php</file>
