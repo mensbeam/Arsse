@@ -139,16 +139,8 @@ LONG_STRING;
     }
 
     protected function assertResponse(Response $exp, Response $act, string $text = null) {
-        if ($exp->payload['status']) {
-            // if the expectation is an error response, do a straight object comparison
-            $this->assertEquals($exp, $act, $text);
-        } else {
-            // otherwise just compare their content
-            foreach ($act->payload['content'] as $record) {
-                $this->assertContains($record, $exp->payload['content'], $text);
-            }
-            $this->assertCount(sizeof($exp->payload['content']), $act->payload['content'], $text);
-        }
+        $this->assertEquals($exp, $act, $text);
+        $this->assertSame($exp->payload, $act->payload, $text);
     }
 
     public function setUp() {
@@ -181,13 +173,13 @@ LONG_STRING;
             "Allow: POST",
             "Accept: application/json, text/json",
         ]);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("OPTIONS", "")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("OPTIONS", "")));
     }
 
     public function testHandleInvalidData() {
-        $exp = $this->RESPERR("MALFORMED_INPUT");
-        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", "This is not valid JSON data")));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "", ""))); // lack of data is also an error
+        $exp = $this->respErr("MALFORMED_INPUT", [], null);
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", "This is not valid JSON data")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", ""))); // lack of data is also an error
     }
     
     public function testLogIn() {
@@ -199,13 +191,13 @@ LONG_STRING;
             'password' => "secret",
         ];
         $exp = $this->respGood(['session_id' => "PriestsOfSyrinx", 'api_level' => \JKingWeb\Arsse\REST\TinyTinyRSS\API::LEVEL]);
-        $this->assertEquals($exp, $this->req($data));
+        $this->assertResponse($exp, $this->req($data));
         $exp = $this->respGood(['session_id' => "SolarFederation", 'api_level' => \JKingWeb\Arsse\REST\TinyTinyRSS\API::LEVEL]);
-        $this->assertEquals($exp, $this->req($data));
+        $this->assertResponse($exp, $this->req($data));
         // test a failed log-in
         $data['password'] = "superman";
         $exp = $this->respErr("LOGIN_ERROR");
-        $this->assertEquals($exp, $this->req($data));
+        $this->assertResponse($exp, $this->req($data));
         // logging in should never try to resume a session
         Phake::verify(Arsse::$db, Phake::times(0))->sessionResume($this->anything());
     }
@@ -218,7 +210,7 @@ LONG_STRING;
             'password' => "secret",
         ];
         $exp = new Response(500);
-        $this->assertEquals($exp, $this->req($data));
+        $this->assertResponse($exp, $this->req($data));
     }
 
     public function testLogOut() {
@@ -228,7 +220,7 @@ LONG_STRING;
             'sid'      => "PriestsOfSyrinx",
         ];
         $exp = $this->respGood(['status' => "OK"]);
-        $this->assertEquals($exp, $this->req($data));
+        $this->assertResponse($exp, $this->req($data));
         Phake::verify(Arsse::$db)->sessionDestroy(Arsse::$user->id, "PriestsOfSyrinx");
     }
 
@@ -238,10 +230,10 @@ LONG_STRING;
             'sid'      => "PriestsOfSyrinx",
         ];
         $exp = $this->respGood(['status' => true]);
-        $this->assertEquals($exp, $this->req($data));
+        $this->assertResponse($exp, $this->req($data));
         $data['sid'] = "SolarFederation";
         $exp = $this->respErr("NOT_LOGGED_IN");
-        $this->assertEquals($exp, $this->req($data));
+        $this->assertResponse($exp, $this->req($data));
     }
 
     public function testHandleUnknownMethods() {
@@ -250,7 +242,7 @@ LONG_STRING;
             'op'       => "thisMethodDoesNotExist",
             'sid'      => "PriestsOfSyrinx",
         ];
-        $this->assertEquals($exp, $this->req($data));
+        $this->assertResponse($exp, $this->req($data));
     }
 
     public function testHandleMixedCaseMethods() {
@@ -259,13 +251,13 @@ LONG_STRING;
             'sid'      => "PriestsOfSyrinx",
         ];
         $exp = $this->respGood(['status' => true]);
-        $this->assertEquals($exp, $this->req($data));
+        $this->assertResponse($exp, $this->req($data));
         $data['op'] = "isloggedin";
-        $this->assertEquals($exp, $this->req($data));
+        $this->assertResponse($exp, $this->req($data));
         $data['op'] = "ISLOGGEDIN";
-        $this->assertEquals($exp, $this->req($data));
+        $this->assertResponse($exp, $this->req($data));
         $data['op'] = "iSlOgGeDiN";
-        $this->assertEquals($exp, $this->req($data));
+        $this->assertResponse($exp, $this->req($data));
     }
 
     public function testRetrieveServerVersion() {
@@ -277,7 +269,7 @@ LONG_STRING;
             'version' => \JKingWeb\Arsse\REST\TinyTinyRSS\API::VERSION,
             'arsse_version' => Arsse::VERSION,
         ]);
-        $this->assertEquals($exp, $this->req($data));
+        $this->assertResponse($exp, $this->req($data));
     }
 
     public function testRetrieveProtocolLevel() {
@@ -286,7 +278,7 @@ LONG_STRING;
             'sid'      => "PriestsOfSyrinx",
         ];
         $exp = $this->respGood(['level' => \JKingWeb\Arsse\REST\TinyTinyRSS\API::LEVEL]);
-        $this->assertEquals($exp, $this->req($data));
+        $this->assertResponse($exp, $this->req($data));
     }
 
     public function testAddACategory() {
@@ -320,24 +312,24 @@ LONG_STRING;
         Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => "   ", 'parent' => null])->thenThrow(new ExceptionInput("whitespace"));
         // correctly add two folders
         $exp = $this->respGood(2);
-        $this->assertEquals($exp, $this->req($in[0]));
+        $this->assertResponse($exp, $this->req($in[0]));
         $exp = $this->respGood(3);
-        $this->assertEquals($exp, $this->req($in[1]));
+        $this->assertResponse($exp, $this->req($in[1]));
         // attempt to add the two folders again
         $exp = $this->respGood(2);
-        $this->assertEquals($exp, $this->req($in[0]));
+        $this->assertResponse($exp, $this->req($in[0]));
         $exp = $this->respGood(3);
-        $this->assertEquals($exp, $this->req($in[1]));
+        $this->assertResponse($exp, $this->req($in[1]));
         Phake::verify(Arsse::$db)->folderList(Arsse::$user->id, null, false);
         Phake::verify(Arsse::$db)->folderList(Arsse::$user->id, 1, false);
         // add a folder to a missing parent (silently fails)
         $exp = $this->respGood(false);
-        $this->assertEquals($exp, $this->req($in[2]));
+        $this->assertResponse($exp, $this->req($in[2]));
         // add some invalid folders
         $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertEquals($exp, $this->req($in[3]));
-        $this->assertEquals($exp, $this->req($in[4]));
-        $this->assertEquals($exp, $this->req($in[5]));
+        $this->assertResponse($exp, $this->req($in[3]));
+        $this->assertResponse($exp, $this->req($in[4]));
+        $this->assertResponse($exp, $this->req($in[5]));
     }
 
     public function testRemoveACategory() {
@@ -350,16 +342,16 @@ LONG_STRING;
         Phake::when(Arsse::$db)->folderRemove(Arsse::$user->id, 42)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
         // succefully delete a folder
         $exp = $this->respGood();
-        $this->assertEquals($exp, $this->req($in[0]));
+        $this->assertResponse($exp, $this->req($in[0]));
         // try deleting it again (this should silently fail)
         $exp = $this->respGood();
-        $this->assertEquals($exp, $this->req($in[0]));
+        $this->assertResponse($exp, $this->req($in[0]));
         // delete a folder which does not exist (this should also silently fail)
         $exp = $this->respGood();
-        $this->assertEquals($exp, $this->req($in[1]));
+        $this->assertResponse($exp, $this->req($in[1]));
         // delete an invalid folder (causes an error)
         $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertEquals($exp, $this->req($in[2]));
+        $this->assertResponse($exp, $this->req($in[2]));
         Phake::verify(Arsse::$db, Phake::times(3))->folderRemove(Arsse::$user->id, $this->anything());
     }
 
@@ -397,21 +389,21 @@ LONG_STRING;
         Phake::when(Arsse::$db)->folderPropertiesSet(...$db[8])->thenThrow(new ExceptionInput("typeViolation"));
         // succefully move a folder
         $exp = $this->respGood();
-        $this->assertEquals($exp, $this->req($in[0]));
+        $this->assertResponse($exp, $this->req($in[0]));
         // move a folder which does not exist (this should silently fail)
         $exp = $this->respGood();
-        $this->assertEquals($exp, $this->req($in[1]));
+        $this->assertResponse($exp, $this->req($in[1]));
         // move a folder causing a duplication (this should also silently fail)
         $exp = $this->respGood();
-        $this->assertEquals($exp, $this->req($in[2]));
-        $this->assertEquals($exp, $this->req($in[3]));
-        $this->assertEquals($exp, $this->req($in[6]));
+        $this->assertResponse($exp, $this->req($in[2]));
+        $this->assertResponse($exp, $this->req($in[3]));
+        $this->assertResponse($exp, $this->req($in[6]));
         // all the rest should cause errors
         $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertEquals($exp, $this->req($in[4]));
-        $this->assertEquals($exp, $this->req($in[5]));
-        $this->assertEquals($exp, $this->req($in[7]));
-        $this->assertEquals($exp, $this->req($in[8]));
+        $this->assertResponse($exp, $this->req($in[4]));
+        $this->assertResponse($exp, $this->req($in[5]));
+        $this->assertResponse($exp, $this->req($in[7]));
+        $this->assertResponse($exp, $this->req($in[8]));
         Phake::verify(Arsse::$db, Phake::times(5))->folderPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
     }
 
@@ -437,21 +429,21 @@ LONG_STRING;
         Phake::when(Arsse::$db)->folderPropertiesSet(...$db[2])->thenThrow(new ExceptionInput("constraintViolation"));
         // succefully rename a folder
         $exp = $this->respGood();
-        $this->assertEquals($exp, $this->req($in[0]));
+        $this->assertResponse($exp, $this->req($in[0]));
         // rename a folder which does not exist (this should silently fail)
         $exp = $this->respGood();
-        $this->assertEquals($exp, $this->req($in[1]));
+        $this->assertResponse($exp, $this->req($in[1]));
         // rename a folder causing a duplication (this should also silently fail)
         $exp = $this->respGood();
-        $this->assertEquals($exp, $this->req($in[2]));
+        $this->assertResponse($exp, $this->req($in[2]));
         // all the rest should cause errors
         $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertEquals($exp, $this->req($in[3]));
-        $this->assertEquals($exp, $this->req($in[4]));
-        $this->assertEquals($exp, $this->req($in[5]));
-        $this->assertEquals($exp, $this->req($in[6]));
-        $this->assertEquals($exp, $this->req($in[7]));
-        $this->assertEquals($exp, $this->req($in[8]));
+        $this->assertResponse($exp, $this->req($in[3]));
+        $this->assertResponse($exp, $this->req($in[4]));
+        $this->assertResponse($exp, $this->req($in[5]));
+        $this->assertResponse($exp, $this->req($in[6]));
+        $this->assertResponse($exp, $this->req($in[7]));
+        $this->assertResponse($exp, $this->req($in[8]));
         Phake::verify(Arsse::$db, Phake::times(3))->folderPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
     }
 
@@ -521,11 +513,11 @@ LONG_STRING;
         Phake::when(Arsse::$db)->subscriptionList(Arsse::$user->id)->thenReturn(new Result($list));
         for ($a = 0; $a < (sizeof($in) - 4); $a++) {
             $exp = $this->respGood($out[$a]);
-            $this->assertEquals($exp, $this->req($in[$a]), "Failed test $a");
+            $this->assertResponse($exp, $this->req($in[$a]), "Failed test $a");
         }
         $exp = $this->respErr("INCORRECT_USAGE");
         for ($a = (sizeof($in) - 4); $a < sizeof($in); $a++) {
-            $this->assertEquals($exp, $this->req($in[$a]), "Failed test $a");
+            $this->assertResponse($exp, $this->req($in[$a]), "Failed test $a");
         }
         Phake::verify(Arsse::$db, Phake::times(0))->subscriptionPropertiesSet(Arsse::$user->id, 4, ['folder' => 1]);
     }
@@ -542,13 +534,13 @@ LONG_STRING;
         Phake::when(Arsse::$db)->subscriptionRemove(Arsse::$user->id, 42)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
         // succefully delete a folder
         $exp = $this->respGood(['status' => "OK"]);
-        $this->assertEquals($exp, $this->req($in[0]));
+        $this->assertResponse($exp, $this->req($in[0]));
         // try deleting it again (this should noisily fail, as should everything else)
         $exp = $this->respErr("FEED_NOT_FOUND");
-        $this->assertEquals($exp, $this->req($in[0]));
-        $this->assertEquals($exp, $this->req($in[1]));
-        $this->assertEquals($exp, $this->req($in[2]));
-        $this->assertEquals($exp, $this->req($in[3]));
+        $this->assertResponse($exp, $this->req($in[0]));
+        $this->assertResponse($exp, $this->req($in[1]));
+        $this->assertResponse($exp, $this->req($in[2]));
+        $this->assertResponse($exp, $this->req($in[3]));
         Phake::verify(Arsse::$db, Phake::times(5))->subscriptionRemove(Arsse::$user->id, $this->anything());
     }
 
@@ -576,21 +568,21 @@ LONG_STRING;
         Phake::when(Arsse::$db)->subscriptionPropertiesSet(...$db[3])->thenThrow(new ExceptionInput("constraintViolation"));
         // succefully move a subscription
         $exp = $this->respGood();
-        $this->assertEquals($exp, $this->req($in[0]));
+        $this->assertResponse($exp, $this->req($in[0]));
         // move a subscription which does not exist (this should silently fail)
         $exp = $this->respGood();
-        $this->assertEquals($exp, $this->req($in[1]));
+        $this->assertResponse($exp, $this->req($in[1]));
         // move a subscription causing a duplication (this should also silently fail)
         $exp = $this->respGood();
-        $this->assertEquals($exp, $this->req($in[2]));
-        $this->assertEquals($exp, $this->req($in[3]));
+        $this->assertResponse($exp, $this->req($in[2]));
+        $this->assertResponse($exp, $this->req($in[3]));
         // all the rest should cause errors
         $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertEquals($exp, $this->req($in[4]));
-        $this->assertEquals($exp, $this->req($in[5]));
-        $this->assertEquals($exp, $this->req($in[6]));
-        $this->assertEquals($exp, $this->req($in[7]));
-        $this->assertEquals($exp, $this->req($in[8]));
+        $this->assertResponse($exp, $this->req($in[4]));
+        $this->assertResponse($exp, $this->req($in[5]));
+        $this->assertResponse($exp, $this->req($in[6]));
+        $this->assertResponse($exp, $this->req($in[7]));
+        $this->assertResponse($exp, $this->req($in[8]));
         Phake::verify(Arsse::$db, Phake::times(4))->subscriptionPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
     }
 
@@ -616,21 +608,21 @@ LONG_STRING;
         Phake::when(Arsse::$db)->subscriptionPropertiesSet(...$db[2])->thenThrow(new ExceptionInput("constraintViolation"));
         // succefully rename a subscription
         $exp = $this->respGood();
-        $this->assertEquals($exp, $this->req($in[0]));
+        $this->assertResponse($exp, $this->req($in[0]));
         // rename a subscription which does not exist (this should silently fail)
         $exp = $this->respGood();
-        $this->assertEquals($exp, $this->req($in[1]));
+        $this->assertResponse($exp, $this->req($in[1]));
         // rename a subscription causing a duplication (this should also silently fail)
         $exp = $this->respGood();
-        $this->assertEquals($exp, $this->req($in[2]));
+        $this->assertResponse($exp, $this->req($in[2]));
         // all the rest should cause errors
         $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertEquals($exp, $this->req($in[3]));
-        $this->assertEquals($exp, $this->req($in[4]));
-        $this->assertEquals($exp, $this->req($in[5]));
-        $this->assertEquals($exp, $this->req($in[6]));
-        $this->assertEquals($exp, $this->req($in[7]));
-        $this->assertEquals($exp, $this->req($in[8]));
+        $this->assertResponse($exp, $this->req($in[3]));
+        $this->assertResponse($exp, $this->req($in[4]));
+        $this->assertResponse($exp, $this->req($in[5]));
+        $this->assertResponse($exp, $this->req($in[6]));
+        $this->assertResponse($exp, $this->req($in[7]));
+        $this->assertResponse($exp, $this->req($in[8]));
         Phake::verify(Arsse::$db, Phake::times(3))->subscriptionPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
     }
 
@@ -641,8 +633,8 @@ LONG_STRING;
             ['id' => 2, 'unread' => 42],
             ['id' => 3, 'unread' => 47],
         ]));
-        $exp = $this->respGood(['unread' => 2112 + 42 + 47]);
-        $this->assertEquals($exp, $this->req($in));
+        $exp = $this->respGood(['unread' => (2112 + 42 + 47)]);
+        $this->assertResponse($exp, $this->req($in));
     }
 
     public function testRetrieveTheServerConfiguration() {
@@ -656,8 +648,8 @@ LONG_STRING;
             ['icons_dir' => "feed-icons", 'icons_url' => "feed-icons", 'daemon_is_running' => true, 'num_feeds' => 12],
             ['icons_dir' => "feed-icons", 'icons_url' => "feed-icons", 'daemon_is_running' => false, 'num_feeds' => 2],
         ];
-        $this->assertEquals($this->respGood($exp[0]), $this->req($in));
-        $this->assertEquals($this->respGood($exp[1]), $this->req($in));
+        $this->assertResponse($this->respGood($exp[0]), $this->req($in));
+        $this->assertResponse($this->respGood($exp[1]), $this->req($in));
     }
 
     public function testUpdateAFeed() {
@@ -671,13 +663,13 @@ LONG_STRING;
         Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 1)->thenReturn(['id' => 1, 'feed' => 11]);
         Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 2)->thenThrow(new ExceptionInput("subjectMissing"));
         $exp = $this->respGood(['status' => "OK"]);
-        $this->assertEquals($exp, $this->req($in[0]));
+        $this->assertResponse($exp, $this->req($in[0]));
         Phake::verify(Arsse::$db)->feedUpdate(11);
         $exp = $this->respErr("FEED_NOT_FOUND");
-        $this->assertEquals($exp, $this->req($in[1]));
+        $this->assertResponse($exp, $this->req($in[1]));
         $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertEquals($exp, $this->req($in[2]));
-        $this->assertEquals($exp, $this->req($in[3]));
+        $this->assertResponse($exp, $this->req($in[2]));
+        $this->assertResponse($exp, $this->req($in[3]));
     }
 
     public function testAddALabel() {
@@ -708,21 +700,21 @@ LONG_STRING;
         Phake::when(Arsse::$db)->labelAdd(Arsse::$user->id, ['name' => "   "])->thenThrow(new ExceptionInput("whitespace"));
         // correctly add two labels
         $exp = $this->respGood((-1 * API::LABEL_OFFSET) - 2);
-        $this->assertEquals($exp, $this->req($in[0]));
+        $this->assertResponse($exp, $this->req($in[0]));
         $exp = $this->respGood((-1 * API::LABEL_OFFSET) - 3);
-        $this->assertEquals($exp, $this->req($in[1]));
+        $this->assertResponse($exp, $this->req($in[1]));
         // attempt to add the two labels again
         $exp = $this->respGood((-1 * API::LABEL_OFFSET) - 2);
-        $this->assertEquals($exp, $this->req($in[0]));
+        $this->assertResponse($exp, $this->req($in[0]));
         $exp = $this->respGood((-1 * API::LABEL_OFFSET) - 3);
-        $this->assertEquals($exp, $this->req($in[1]));
+        $this->assertResponse($exp, $this->req($in[1]));
         Phake::verify(Arsse::$db)->labelPropertiesGet(Arsse::$user->id, "Software", true);
         Phake::verify(Arsse::$db)->labelPropertiesGet(Arsse::$user->id, "Hardware", true);
         // add some invalid labels
         $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertEquals($exp, $this->req($in[2]));
-        $this->assertEquals($exp, $this->req($in[3]));
-        $this->assertEquals($exp, $this->req($in[4]));
+        $this->assertResponse($exp, $this->req($in[2]));
+        $this->assertResponse($exp, $this->req($in[3]));
+        $this->assertResponse($exp, $this->req($in[4]));
     }
 
     public function testRemoveALabel() {
@@ -737,18 +729,18 @@ LONG_STRING;
         Phake::when(Arsse::$db)->labelRemove(Arsse::$user->id, 18)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
         // succefully delete a label
         $exp = $this->respGood();
-        $this->assertEquals($exp, $this->req($in[0]));
+        $this->assertResponse($exp, $this->req($in[0]));
         // try deleting it again (this should silently fail)
         $exp = $this->respGood();
-        $this->assertEquals($exp, $this->req($in[0]));
+        $this->assertResponse($exp, $this->req($in[0]));
         // delete a label which does not exist (this should also silently fail)
         $exp = $this->respGood();
-        $this->assertEquals($exp, $this->req($in[1]));
+        $this->assertResponse($exp, $this->req($in[1]));
         // delete some invalid labels (causes an error)
         $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertEquals($exp, $this->req($in[2]));
-        $this->assertEquals($exp, $this->req($in[3]));
-        $this->assertEquals($exp, $this->req($in[4]));
+        $this->assertResponse($exp, $this->req($in[2]));
+        $this->assertResponse($exp, $this->req($in[3]));
+        $this->assertResponse($exp, $this->req($in[4]));
         Phake::verify(Arsse::$db, Phake::times(2))->labelRemove(Arsse::$user->id, 18);
         Phake::verify(Arsse::$db)->labelRemove(Arsse::$user->id, 1088);
     }
@@ -781,21 +773,21 @@ LONG_STRING;
         Phake::when(Arsse::$db)->labelPropertiesSet(...$db[5])->thenThrow(new ExceptionInput("typeViolation"));
         // succefully rename a label
         $exp = $this->respGood();
-        $this->assertEquals($exp, $this->req($in[0]));
+        $this->assertResponse($exp, $this->req($in[0]));
         // rename a label which does not exist (this should silently fail)
         $exp = $this->respGood();
-        $this->assertEquals($exp, $this->req($in[1]));
+        $this->assertResponse($exp, $this->req($in[1]));
         // rename a label causing a duplication (this should also silently fail)
         $exp = $this->respGood();
-        $this->assertEquals($exp, $this->req($in[2]));
+        $this->assertResponse($exp, $this->req($in[2]));
         // all the rest should cause errors
         $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertEquals($exp, $this->req($in[3]));
-        $this->assertEquals($exp, $this->req($in[4]));
-        $this->assertEquals($exp, $this->req($in[5]));
-        $this->assertEquals($exp, $this->req($in[6]));
-        $this->assertEquals($exp, $this->req($in[7]));
-        $this->assertEquals($exp, $this->req($in[8]));
+        $this->assertResponse($exp, $this->req($in[3]));
+        $this->assertResponse($exp, $this->req($in[4]));
+        $this->assertResponse($exp, $this->req($in[5]));
+        $this->assertResponse($exp, $this->req($in[6]));
+        $this->assertResponse($exp, $this->req($in[7]));
+        $this->assertResponse($exp, $this->req($in[8]));
         Phake::verify(Arsse::$db, Phake::times(6))->labelPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
     }
 
@@ -867,7 +859,7 @@ LONG_STRING;
             ],
         ];
         for ($a = 0; $a < sizeof($in); $a++) {
-            $this->assertEquals($this->respGood($exp[$a]), $this->req($in[$a]), "Test $a failed");
+            $this->assertResponse($this->respGood($exp[$a]), $this->req($in[$a]), "Test $a failed");
         }
     }
 
@@ -888,11 +880,11 @@ LONG_STRING;
             ['id' => -4, 'counter' => 35, 'auxcounter' => 0],
             ['id' => -1027, 'counter' => 6, 'auxcounter' => 100],
             ['id' => -1025, 'counter' => 0, 'auxcounter' => 2],
-            ['id' => 3, 'has_img' => 1, 'counter' => 2,  'updated' => "2016-05-23T06:40:02"],
-            ['id' => 4, 'has_img' => 1, 'counter' => 6,  'updated' => "2017-10-09T15:58:34"],
-            ['id' => 1, 'has_img' => 0, 'counter' => 5,  'updated' => "2017-09-15T22:54:16"],
-            ['id' => 5, 'has_img' => 0, 'counter' => 12, 'updated' => "2017-07-07T17:07:17"],
-            ['id' => 2, 'has_img' => 1, 'counter' => 10, 'updated' => "2011-11-11T11:11:11"],
+            ['id' => 3, 'updated' => "2016-05-23T06:40:02", 'counter' => 2,  'has_img' => 1],
+            ['id' => 4, 'updated' => "2017-10-09T15:58:34", 'counter' => 6,  'has_img' => 1],
+            ['id' => 1, 'updated' => "2017-09-15T22:54:16", 'counter' => 5,  'has_img' => 0],
+            ['id' => 5, 'updated' => "2017-07-07T17:07:17", 'counter' => 12, 'has_img' => 0],
+            ['id' => 2, 'updated' => "2011-11-11T11:11:11", 'counter' => 10, 'has_img' => 1],
             ['id' => 5, 'kind' => "cat", 'counter' => 10],
             ['id' => 6, 'kind' => "cat", 'counter' => 18],
             ['id' => 3, 'kind' => "cat", 'counter' => 28],
@@ -977,7 +969,7 @@ LONG_STRING;
         $this->assertResponse($exp, $this->req($in[1]));
         Phake::verify(Arsse::$db)->labelArticlesSet(Arsse::$user->id, 1088, (new Context)->articles($list[1]), false);
         Phake::verify(Arsse::$db)->labelArticlesSet(Arsse::$user->id, 1088, (new Context)->articles($list[2]), false);
-        $exp = $this->respGood(['status' => "OK", 'updated' => 89]);
+        $exp = $this->respGood(['status' => "OK", 'updated' => 0]);
         $this->assertResponse($exp, $this->req($in[2]));
         $exp = $this->respErr("INCORRECT_USAGE");
         $this->assertResponse($exp, $this->req($in[3]));
@@ -997,10 +989,10 @@ LONG_STRING;
         Phake::when(Arsse::$db)->articleCount($this->anything(), $this->anything())->thenReturn(7); // FIXME: this should check an unread+modifiedSince context
         Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn($this->starred);
         // the expectations are packed tightly since they're very verbose; one can use var_export() (or convert to JSON) to pretty-print them
-        $exp = ['categories'=>['identifier'=>'id','label'=>'name','items'=>[['id'=>'CAT:-1','items'=>[['id'=>'FEED:-4','name'=>'All articles','unread'=>35,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/folder.png','bare_id'=>-4,'auxcounter'=>0,],['id'=>'FEED:-3','name'=>'Fresh articles','unread'=>7,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/fresh.png','bare_id'=>-3,'auxcounter'=>0,],['id'=>'FEED:-1','name'=>'Starred articles','unread'=>4,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/star.png','bare_id'=>-1,'auxcounter'=>0,],['id'=>'FEED:-2','name'=>'Published articles','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/feed.png','bare_id'=>-2,'auxcounter'=>0,],['id'=>'FEED:0','name'=>'Archived articles','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/archive.png','bare_id'=>0,'auxcounter'=>0,],['id'=>'FEED:-6','name'=>'Recently read','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/time.png','bare_id'=>-6,'auxcounter'=>0,],],'name'=>'Special','type'=>'category','unread'=>0,'bare_id'=>-1,],['id'=>'CAT:-2','items'=>[['id'=>'FEED:-1027','name'=>'Fascinating','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1027,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],['id'=>'FEED:-1029','name'=>'Interesting','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1029,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],['id'=>'FEED:-1025','name'=>'Logical','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1025,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],],'name'=>'Labels','type'=>'category','unread'=>6,'bare_id'=>-2,],['id'=>'CAT:4','bare_id'=>4,'auxcounter'=>0,'name'=>'Photography','items'=>[],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(0 feeds)',],['id'=>'CAT:3','bare_id'=>3,'auxcounter'=>0,'name'=>'Politics','items'=>[['id'=>'CAT:5','bare_id'=>5,'name'=>'Local','items'=>[['id'=>'FEED:2','bare_id'=>2,'auxcounter'=>0,'name'=>'Toronto Star','checkbox'=>false,'unread'=>0,'error'=>'oops','icon'=>'feed-icons/2.ico','param'=>'2011-11-11T11:11:11',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>3,'param'=>'(1 feed)',],['id'=>'CAT:6','bare_id'=>6,'name'=>'National','items'=>[['id'=>'FEED:4','bare_id'=>4,'auxcounter'=>0,'name'=>'CBC News','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>'feed-icons/4.ico','param'=>'2017-10-09T15:58:34',],['id'=>'FEED:5','bare_id'=>5,'auxcounter'=>0,'name'=>'Ottawa Citizen','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>false,'param'=>'2017-07-07T17:07:17',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>3,'param'=>'(2 feeds)',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(3 feeds)',],['id'=>'CAT:1','bare_id'=>1,'auxcounter'=>0,'name'=>'Science','items'=>[['id'=>'CAT:2','bare_id'=>2,'name'=>'Rocketry','items'=>[['id'=>'FEED:1','bare_id'=>1,'auxcounter'=>0,'name'=>'NASA JPL','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>false,'param'=>'2017-09-15T22:54:16',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>1,'param'=>'(1 feed)',],['id'=>'FEED:3','bare_id'=>3,'auxcounter'=>0,'name'=>'Ars Technica','checkbox'=>false,'unread'=>0,'error'=>'argh','icon'=>'feed-icons/3.ico','param'=>'2016-05-23T06:40:02',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(2 feeds)',],['id'=>'CAT:0','bare_id'=>0,'auxcounter'=>0,'name'=>'Uncategorized','items'=>[['id'=>'FEED:6','bare_id'=>6,'auxcounter'=>0,'name'=>'Eurogamer','checkbox'=>false,'error'=>'','icon'=>'feed-icons/6.ico','param'=>'2010-02-12T20:08:47','unread'=>0,],],'type'=>'category','checkbox'=>false,'unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(1 feed)',],],],];
-        $this->assertEquals($this->respGood($exp), $this->req($in[0]));
-        $exp = ['categories'=>['identifier'=>'id','label'=>'name','items'=>[['id'=>'CAT:-1','items'=>[['id'=>'FEED:-4','name'=>'All articles','unread'=>35,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/folder.png','bare_id'=>-4,'auxcounter'=>0,],['id'=>'FEED:-3','name'=>'Fresh articles','unread'=>7,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/fresh.png','bare_id'=>-3,'auxcounter'=>0,],['id'=>'FEED:-1','name'=>'Starred articles','unread'=>4,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/star.png','bare_id'=>-1,'auxcounter'=>0,],['id'=>'FEED:-2','name'=>'Published articles','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/feed.png','bare_id'=>-2,'auxcounter'=>0,],['id'=>'FEED:0','name'=>'Archived articles','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/archive.png','bare_id'=>0,'auxcounter'=>0,],['id'=>'FEED:-6','name'=>'Recently read','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/time.png','bare_id'=>-6,'auxcounter'=>0,],],'name'=>'Special','type'=>'category','unread'=>0,'bare_id'=>-1,],['id'=>'CAT:-2','items'=>[['id'=>'FEED:-1027','name'=>'Fascinating','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1027,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],['id'=>'FEED:-1029','name'=>'Interesting','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1029,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],['id'=>'FEED:-1025','name'=>'Logical','unread'=>0,'type'=>'feed','error'=>'','updated'=>'','icon'=>'images/label.png','bare_id'=>-1025,'auxcounter'=>0,'fg_color'=>'','bg_color'=>'',],],'name'=>'Labels','type'=>'category','unread'=>6,'bare_id'=>-2,],['id'=>'CAT:3','bare_id'=>3,'auxcounter'=>0,'name'=>'Politics','items'=>[['id'=>'CAT:5','bare_id'=>5,'name'=>'Local','items'=>[['id'=>'FEED:2','bare_id'=>2,'auxcounter'=>0,'name'=>'Toronto Star','checkbox'=>false,'unread'=>0,'error'=>'oops','icon'=>'feed-icons/2.ico','param'=>'2011-11-11T11:11:11',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>3,'param'=>'(1 feed)',],['id'=>'CAT:6','bare_id'=>6,'name'=>'National','items'=>[['id'=>'FEED:4','bare_id'=>4,'auxcounter'=>0,'name'=>'CBC News','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>'feed-icons/4.ico','param'=>'2017-10-09T15:58:34',],['id'=>'FEED:5','bare_id'=>5,'auxcounter'=>0,'name'=>'Ottawa Citizen','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>false,'param'=>'2017-07-07T17:07:17',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>3,'param'=>'(2 feeds)',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(3 feeds)',],['id'=>'CAT:1','bare_id'=>1,'auxcounter'=>0,'name'=>'Science','items'=>[['id'=>'CAT:2','bare_id'=>2,'name'=>'Rocketry','items'=>[['id'=>'FEED:1','bare_id'=>1,'auxcounter'=>0,'name'=>'NASA JPL','checkbox'=>false,'unread'=>0,'error'=>'','icon'=>false,'param'=>'2017-09-15T22:54:16',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'auxcounter'=>0,'parent_id'=>1,'param'=>'(1 feed)',],['id'=>'FEED:3','bare_id'=>3,'auxcounter'=>0,'name'=>'Ars Technica','checkbox'=>false,'unread'=>0,'error'=>'argh','icon'=>'feed-icons/3.ico','param'=>'2016-05-23T06:40:02',],],'checkbox'=>false,'type'=>'category','unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(2 feeds)',],['id'=>'CAT:0','bare_id'=>0,'auxcounter'=>0,'name'=>'Uncategorized','items'=>[['id'=>'FEED:6','bare_id'=>6,'auxcounter'=>0,'name'=>'Eurogamer','checkbox'=>false,'error'=>'','icon'=>'feed-icons/6.ico','param'=>'2010-02-12T20:08:47','unread'=>0,],],'type'=>'category','checkbox'=>false,'unread'=>0,'child_unread'=>0,'parent_id'=>null,'param'=>'(1 feed)',],],],];
-        $this->assertEquals($this->respGood($exp), $this->req($in[1]));
+        $exp = ['categories'=>['identifier'=>'id','label'=>'name','items'=>[['name'=>'Special','id'=>'CAT:-1','bare_id'=>-1,'type'=>'category','unread'=>0,'items'=>[['name'=>'All articles','id'=>'FEED:-4','bare_id'=>-4,'icon'=>'images/folder.png','unread'=>35,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Fresh articles','id'=>'FEED:-3','bare_id'=>-3,'icon'=>'images/fresh.png','unread'=>7,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Starred articles','id'=>'FEED:-1','bare_id'=>-1,'icon'=>'images/star.png','unread'=>4,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Published articles','id'=>'FEED:-2','bare_id'=>-2,'icon'=>'images/feed.png','unread'=>0,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Archived articles','id'=>'FEED:0','bare_id'=>0,'icon'=>'images/archive.png','unread'=>0,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Recently read','id'=>'FEED:-6','bare_id'=>-6,'icon'=>'images/time.png','unread'=>0,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],],],['name'=>'Labels','id'=>'CAT:-2','bare_id'=>-2,'type'=>'category','unread'=>6,'items'=>[['name'=>'Fascinating','id'=>'FEED:-1027','bare_id'=>-1027,'unread'=>0,'icon'=>'images/label.png','type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'','fg_color'=>'','bg_color'=>'',],['name'=>'Interesting','id'=>'FEED:-1029','bare_id'=>-1029,'unread'=>0,'icon'=>'images/label.png','type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'','fg_color'=>'','bg_color'=>'',],['name'=>'Logical','id'=>'FEED:-1025','bare_id'=>-1025,'unread'=>0,'icon'=>'images/label.png','type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'','fg_color'=>'','bg_color'=>'',],],],['name'=>'Photography','id'=>'CAT:4','bare_id'=>4,'parent_id'=>null,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(0 feeds)','items'=>[],],['name'=>'Politics','id'=>'CAT:3','bare_id'=>3,'parent_id'=>null,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(3 feeds)','items'=>[['name'=>'Local','id'=>'CAT:5','bare_id'=>5,'parent_id'=>3,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(1 feed)','items'=>[['name'=>'Toronto Star','id'=>'FEED:2','bare_id'=>2,'icon'=>'feed-icons/2.ico','error'=>'oops','param'=>'2011-11-11T11:11:11','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],['name'=>'National','id'=>'CAT:6','bare_id'=>6,'parent_id'=>3,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(2 feeds)','items'=>[['name'=>'CBC News','id'=>'FEED:4','bare_id'=>4,'icon'=>'feed-icons/4.ico','error'=>'','param'=>'2017-10-09T15:58:34','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],['name'=>'Ottawa Citizen','id'=>'FEED:5','bare_id'=>5,'icon'=>false,'error'=>'','param'=>'2017-07-07T17:07:17','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],],],['name'=>'Science','id'=>'CAT:1','bare_id'=>1,'parent_id'=>null,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(2 feeds)','items'=>[['name'=>'Rocketry','id'=>'CAT:2','bare_id'=>2,'parent_id'=>1,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(1 feed)','items'=>[['name'=>'NASA JPL','id'=>'FEED:1','bare_id'=>1,'icon'=>false,'error'=>'','param'=>'2017-09-15T22:54:16','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],['name'=>'Ars Technica','id'=>'FEED:3','bare_id'=>3,'icon'=>'feed-icons/3.ico','error'=>'argh','param'=>'2016-05-23T06:40:02','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],['name'=>'Uncategorized','id'=>'CAT:0','bare_id'=>0,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'parent_id'=>null,'param'=>'(1 feed)','items'=>[['name'=>'Eurogamer','id'=>'FEED:6','bare_id'=>6,'icon'=>'feed-icons/6.ico','error'=>'','param'=>'2010-02-12T20:08:47','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],],],];
+        $this->assertResponse($this->respGood($exp), $this->req($in[0]));
+        $exp = ['categories'=>['identifier'=>'id','label'=>'name','items'=>[['name'=>'Special','id'=>'CAT:-1','bare_id'=>-1,'type'=>'category','unread'=>0,'items'=>[['name'=>'All articles','id'=>'FEED:-4','bare_id'=>-4,'icon'=>'images/folder.png','unread'=>35,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Fresh articles','id'=>'FEED:-3','bare_id'=>-3,'icon'=>'images/fresh.png','unread'=>7,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Starred articles','id'=>'FEED:-1','bare_id'=>-1,'icon'=>'images/star.png','unread'=>4,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Published articles','id'=>'FEED:-2','bare_id'=>-2,'icon'=>'images/feed.png','unread'=>0,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Archived articles','id'=>'FEED:0','bare_id'=>0,'icon'=>'images/archive.png','unread'=>0,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Recently read','id'=>'FEED:-6','bare_id'=>-6,'icon'=>'images/time.png','unread'=>0,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],],],['name'=>'Labels','id'=>'CAT:-2','bare_id'=>-2,'type'=>'category','unread'=>6,'items'=>[['name'=>'Fascinating','id'=>'FEED:-1027','bare_id'=>-1027,'unread'=>0,'icon'=>'images/label.png','type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'','fg_color'=>'','bg_color'=>'',],['name'=>'Interesting','id'=>'FEED:-1029','bare_id'=>-1029,'unread'=>0,'icon'=>'images/label.png','type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'','fg_color'=>'','bg_color'=>'',],['name'=>'Logical','id'=>'FEED:-1025','bare_id'=>-1025,'unread'=>0,'icon'=>'images/label.png','type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'','fg_color'=>'','bg_color'=>'',],],],['name'=>'Politics','id'=>'CAT:3','bare_id'=>3,'parent_id'=>null,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(3 feeds)','items'=>[['name'=>'Local','id'=>'CAT:5','bare_id'=>5,'parent_id'=>3,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(1 feed)','items'=>[['name'=>'Toronto Star','id'=>'FEED:2','bare_id'=>2,'icon'=>'feed-icons/2.ico','error'=>'oops','param'=>'2011-11-11T11:11:11','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],['name'=>'National','id'=>'CAT:6','bare_id'=>6,'parent_id'=>3,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(2 feeds)','items'=>[['name'=>'CBC News','id'=>'FEED:4','bare_id'=>4,'icon'=>'feed-icons/4.ico','error'=>'','param'=>'2017-10-09T15:58:34','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],['name'=>'Ottawa Citizen','id'=>'FEED:5','bare_id'=>5,'icon'=>false,'error'=>'','param'=>'2017-07-07T17:07:17','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],],],['name'=>'Science','id'=>'CAT:1','bare_id'=>1,'parent_id'=>null,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(2 feeds)','items'=>[['name'=>'Rocketry','id'=>'CAT:2','bare_id'=>2,'parent_id'=>1,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(1 feed)','items'=>[['name'=>'NASA JPL','id'=>'FEED:1','bare_id'=>1,'icon'=>false,'error'=>'','param'=>'2017-09-15T22:54:16','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],['name'=>'Ars Technica','id'=>'FEED:3','bare_id'=>3,'icon'=>'feed-icons/3.ico','error'=>'argh','param'=>'2016-05-23T06:40:02','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],['name'=>'Uncategorized','id'=>'CAT:0','bare_id'=>0,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'parent_id'=>null,'param'=>'(1 feed)','items'=>[['name'=>'Eurogamer','id'=>'FEED:6','bare_id'=>6,'icon'=>'feed-icons/6.ico','error'=>'','param'=>'2010-02-12T20:08:47','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],],],];
+        $this->assertResponse($this->respGood($exp), $this->req($in[1]));
     }
 
     public function testMarkFeedsAsRead() {
@@ -1285,7 +1277,7 @@ LONG_STRING;
             $this->respErr("INCORRECT_USAGE"),
         ];
         for ($a = 0; $a < sizeof($in); $a++) {
-            $this->assertEquals($out[$a], $this->req($in[$a]), "Test $a failed");
+            $this->assertResponse($out[$a], $this->req($in[$a]), "Test $a failed");
         }
     }
 
@@ -1309,10 +1301,10 @@ LONG_STRING;
         Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([101]))->thenReturn(new Result([$this->articles[0]]));
         Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([102]))->thenReturn(new Result([$this->articles[1]]));
         $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertEquals($exp, $this->req($in[0]));
-        $this->assertEquals($exp, $this->req($in[1]));
-        $this->assertEquals($exp, $this->req($in[2]));
-        $this->assertEquals($exp, $this->req($in[3]));
+        $this->assertResponse($exp, $this->req($in[0]));
+        $this->assertResponse($exp, $this->req($in[1]));
+        $this->assertResponse($exp, $this->req($in[2]));
+        $this->assertResponse($exp, $this->req($in[3]));
         $exp = [
             [
                 'id' => 101,
@@ -1368,13 +1360,13 @@ LONG_STRING;
                 'content' => '<p>Article content 2</p>',
             ],
         ];
-        $this->assertEquals($this->respGood($exp), $this->req($in[4]));
-        $this->assertEquals($this->respGood([$exp[0]]), $this->req($in[5]));
-        $this->assertEquals($this->respGood([$exp[1]]), $this->req($in[6]));
+        $this->assertResponse($this->respGood($exp), $this->req($in[4]));
+        $this->assertResponse($this->respGood([$exp[0]]), $this->req($in[5]));
+        $this->assertResponse($this->respGood([$exp[1]]), $this->req($in[6]));
         // test the special case when labels are not used
         Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result([]));
         Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result([]));
-        $this->assertEquals($this->respGood([$exp[0]]), $this->req($in[5]));
+        $this->assertResponse($this->respGood([$exp[0]]), $this->req($in[5]));
     }
 
     public function testRetrieveCompactHeadlines() {
@@ -1453,13 +1445,13 @@ LONG_STRING;
             $this->respGood([['id' => 1003]]),
         ];
         for ($a = 0; $a < sizeof($in1); $a++) {
-            $this->assertEquals($out1[$a], $this->req($in1[$a]), "Test $a failed");
+            $this->assertResponse($out1[$a], $this->req($in1[$a]), "Test $a failed");
         }
         for ($a = 0; $a < sizeof($in2); $a++) {
             Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(false)->markedSince(Date::sub("PT24H")), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 1001]]));
             Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(true)->modifiedSince(Date::sub("PT24H")), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 1002]]));
             Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(true)->modifiedSince(Date::sub("PT24H"))->starred(true), Database::LIST_MINIMAL)->thenReturn(new Result([['id' => 1003]]));
-            $this->assertEquals($out2[$a], $this->req($in2[$a]), "Test $a failed");
+            $this->assertResponse($out2[$a], $this->req($in2[$a]), "Test $a failed");
         }
     }
 
@@ -1564,13 +1556,13 @@ LONG_STRING;
             $this->assertResponse($this->respGood([]), $this->req($in1[$a]), "Test $a failed");
         }
         for ($a = 0; $a < sizeof($in2); $a++) {
-            $this->assertEquals($out2[$a], $this->req($in2[$a]), "Test $a failed");
+            $this->assertResponse($out2[$a], $this->req($in2[$a]), "Test $a failed");
         }
         for ($a = 0; $a < sizeof($in3); $a++) {
             Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(false)->markedSince(Date::sub("PT24H")), Database::LIST_FULL)->thenReturn($this->generateHeadlines(1001));
             Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(true)->modifiedSince(Date::sub("PT24H")), Database::LIST_FULL)->thenReturn($this->generateHeadlines(1002));
             Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(true)->modifiedSince(Date::sub("PT24H"))->starred(true), Database::LIST_FULL)->thenReturn($this->generateHeadlines(1003));
-            $this->assertEquals($out3[$a], $this->req($in3[$a]), "Test $a failed");
+            $this->assertResponse($out3[$a], $this->req($in3[$a]), "Test $a failed");
         }
     }
 
@@ -1600,7 +1592,7 @@ LONG_STRING;
         Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true))->thenReturn(1);
         // sanity check; this makes sure extra fields are not included in default situations
         $test = $this->req($in[0]);
-        $this->assertEquals($this->outputHeadlines(1), $test);
+        $this->assertResponse($this->outputHeadlines(1), $test);
         // test 'show_content'
         $test = $this->req($in[1]);
         $this->assertArrayHasKey("content", $test->payload['content'][0]);
@@ -1632,7 +1624,7 @@ LONG_STRING;
             ['id' => -4, 'is_cat' => false, 'first_id' => 1],
             $exp->payload['content'],
         ];
-        $this->assertEquals($exp, $test);
+        $this->assertResponse($exp, $test);
         // test 'include_header' with a category
         $test = $this->req($in[4]);
         $exp = $this->outputHeadlines(1);
@@ -1640,14 +1632,14 @@ LONG_STRING;
             ['id' => -3, 'is_cat' => true, 'first_id' => 1],
             $exp->payload['content'],
         ];
-        $this->assertEquals($exp, $test);
+        $this->assertResponse($exp, $test);
         // test 'include_header' with an empty result
         $test = $this->req($in[5]);
         $exp = $this->respGood([
             ['id' => -1, 'is_cat' => true, 'first_id' => 0],
             [],
         ]);
-        $this->assertEquals($exp, $test);
+        $this->assertResponse($exp, $test);
         // test 'include_header' with an erroneous result
         Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->limit(200)->reverse(true)->subscription(2112), $this->anything())->thenThrow(new ExceptionInput("subjectMissing"));
         $test = $this->req($in[6]);
@@ -1655,7 +1647,7 @@ LONG_STRING;
             ['id' => 2112, 'is_cat' => false, 'first_id' => 0],
             [],
         ]);
-        $this->assertEquals($exp, $test);
+        $this->assertResponse($exp, $test);
         // test 'include_header' with ascending order
         $test = $this->req($in[7]);
         $exp = $this->outputHeadlines(1);
@@ -1663,7 +1655,7 @@ LONG_STRING;
             ['id' => -4, 'is_cat' => false, 'first_id' => 0],
             $exp->payload['content'],
         ];
-        $this->assertEquals($exp, $test);
+        $this->assertResponse($exp, $test);
         // test 'include_header' with skip
         Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->reverse(true)->limit(1)->subscription(42), Database::LIST_MINIMAL)->thenReturn($this->generateHeadlines(1867));
         $test = $this->req($in[8]);
@@ -1672,7 +1664,7 @@ LONG_STRING;
             ['id' => 42, 'is_cat' => false, 'first_id' => 1867],
             $exp->payload['content'],
         ];
-        $this->assertEquals($exp, $test);
+        $this->assertResponse($exp, $test);
         // test 'include_header' with skip and ascending order
         $test = $this->req($in[9]);
         $exp = $this->outputHeadlines(1);
@@ -1680,7 +1672,7 @@ LONG_STRING;
             ['id' => 42, 'is_cat' => false, 'first_id' => 0],
             $exp->payload['content'],
         ];
-        $this->assertEquals($exp, $test);
+        $this->assertResponse($exp, $test);
         // test 'show_excerpt'
         $exp1 = "“This & that, you know‽”";
         $exp2 = "Pour vous faire mieux connaitre d’ou\u{300} vient l’erreur de ceux qui bla\u{302}ment la volupte\u{301}, et qui louent en…";

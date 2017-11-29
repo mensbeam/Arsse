@@ -269,25 +269,30 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             $labels[] = ['id' => $this->labelOut($l['id']), 'counter' => $unread, 'auxcounter' => $l['articles']];
             $categories[$catmap[self::CAT_LABELS]]['counter'] += $unread;
         }
-        // do a second pass on categories, summing descendant unread counts for ancestors, pruning categories with no unread, and building a final category list
-        $cats = [];
-        while ($categories) {
-            foreach ($categories as $c) {
+        // do a second pass on categories, summing descendant unread counts for ancestors
+        $cats = $categories;
+        $catCounts = [];
+        while ($cats) {
+            foreach ($cats as $c) {
                 if ($c['children']) {
                     // only act on leaf nodes
                     continue;
                 }
                 if ($c['parent']) {
                     // if the category has a parent, add its counter to the parent's counter, and decrement the parent's child count
-                    $categories[$catmap[$c['parent']]]['counter'] += $c['counter'];
-                    $categories[$catmap[$c['parent']]]['children'] -= 1;
+                    $cats[$catmap[$c['parent']]]['counter'] += $c['counter'];
+                    $cats[$catmap[$c['parent']]]['children'] -= 1;
                 }
-                if ($c['counter']) {
-                    // if the category's counter is non-zero, add the category to the output list
-                    $cats[] = ['id' => $c['id'], 'kind' => "cat", 'counter' => $c['counter']];
-                }
+                $catCounts[$c['id']] = $c['counter'];
                 // remove the category from the input list
-                unset($categories[$catmap[$c['id']]]);
+                unset($cats[$catmap[$c['id']]]);
+            }
+        }
+        // do a third pass on categories, building a final category list 
+        foreach ($categories as $c) {
+            // only include categories with unread articles
+            if ($catCounts[$c['id']]) {
+                $cats[] = ['id' => $c['id'], 'kind' => "cat", 'counter' => $catCounts[$c['id']]];
             }
         }
         // prepare data for the virtual feeds and other counters
