@@ -27,7 +27,7 @@ class Versions implements \JKingWeb\Arsse\REST\Handler {
             return new Response(200, $out);
         } else {
             // if the URL path was anything else, the client is probably trying a version we don't support
-            return new Response(501);
+            return new Response(404);
         }
     }
 }

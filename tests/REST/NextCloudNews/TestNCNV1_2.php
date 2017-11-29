@@ -313,7 +313,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
 
     public function testRespondToInvalidPaths() {
         $errs = [
-            501 => [
+            404 => [
                 ['GET',    "/"],
                 ['PUT',    "/"],
                 ['POST',   "/"],
@@ -343,10 +343,10 @@ class TestNCNV1_2 extends Test\AbstractTest {
                 ],
             ],
         ];
-        foreach ($errs[501] as $req) {
-            $exp = new Response(501);
+        foreach ($errs[404] as $req) {
+            $exp = new Response(404);
             list($method, $path) = $req;
-            $this->assertEquals($exp, $this->h->dispatch(new Request($method, $path)), "$method call to $path did not return 501.");
+            $this->assertEquals($exp, $this->h->dispatch(new Request($method, $path)), "$method call to $path did not return 404.");
         }
         foreach ($errs[405] as $allow => $cases) {
             $exp = new Response(405, "", "", ['Allow: '.$allow]);

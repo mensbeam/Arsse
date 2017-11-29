@@ -15,8 +15,6 @@ use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\REST\Response;
-use JKingWeb\Arsse\REST\Exception501;
-use JKingWeb\Arsse\REST\Exception405;
 
 class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     const REALM = "NextCloud News API v1-2";
@@ -97,8 +95,8 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // check to make sure the requested function is implemented
         try {
             $func = $this->chooseCall($req->paths, $req->method);
-        } catch (Exception501 $e) {
-            return new Response(501);
+        } catch (Exception404 $e) {
+            return new Response(404);
         } catch (Exception405 $e) {
             return new Response(405, "", "", ["Allow: ".$e->getMessage()]);
         }
@@ -136,20 +134,19 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $method = strtoupper($method);
         // we now evaluate the supplied URL against every supported path for the selected scope
         // the URL is evaluated as an array so as to avoid decoded escapes turning invalid URLs into valid ones
-        foreach ($this->paths as $path => $funcs) {
-            if ($path===$url) {
-                // if the path matches, make sure the method is allowed
-                if (array_key_exists($method, $funcs)) {
-                    // if it is allowed, return the object method to run
-                    return $funcs[$method];
-                } else {
-                    // otherwise return 405
-                    throw new Exception405(implode(", ", array_keys($funcs)));
-                }
-            }
+        if (isset($this->paths[$url])) {
+            // if the path is supported, make sure the method is allowed
+            if (isset($this->paths[$url][$method])) {
+                // if it is allowed, return the object method to run
+                return $this->paths[$url][$method];
+            } else {
+                // otherwise return 405
+                throw new Exception405(implode(", ", array_keys($this->paths[$url])));
+            } 
+        } else {
+            // if the path is not supported, return 501
+            throw new Exception404();  
         }
-        // if the path was not found, return 501
-        throw new Exception501();
     }
 
     protected function feedTranslate(array $feed): array {

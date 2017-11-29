@@ -38,7 +38,7 @@ class TestNCNVersionDiscovery extends Test\AbstractTest {
     }
 
     public function testUseIncorrectPath() {
-        $exp = new Response(501);
+        $exp = new Response(404);
         $h = new REST\NextCloudNews\Versions();
         $req = new Request("GET", "/ook");
         $res = $h->dispatch($req);

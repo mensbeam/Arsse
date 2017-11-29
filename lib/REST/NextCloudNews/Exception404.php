@@ -4,7 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse\REST;
+namespace JKingWeb\Arsse\REST\NextCloudNews;
 
-class Exception501 extends \Exception {
+class Exception404 extends \Exception {
 }
