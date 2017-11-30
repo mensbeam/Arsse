@@ -115,6 +115,10 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function dispatch(\JKingWeb\Arsse\REST\Request $req): Response {
+        if (!preg_match("<^(?:/(?:index\.php)?)?$>", $req->path)) {
+            // reject paths other than the index
+            return new Response(404);
+        }
         if ($req->method=="OPTIONS") {
             // respond to OPTIONS rquests; the response is a fib, as we technically accept any type or method
             return new Response(204, "", "", [

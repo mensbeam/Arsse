@@ -168,6 +168,15 @@ LONG_STRING;
         $this->clearData();
     }
 
+    public function testHandleInvalidPaths() {
+        $exp = $this->respErr("MALFORMED_INPUT", [], null);
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", "")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/", "")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/index.php", "")));
+        $exp = new Response(404);
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/bad/path", "")));
+    }
+
     public function testHandleOptionsRequest() {
         $exp = new Response(204, "", "", [
             "Allow: POST",
