@@ -599,9 +599,9 @@ LONG_STRING;
             ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx"],
         ];
         $db = [
-            [Arsse::$user->id, 42, ['name' => "Ook"]],
-            [Arsse::$user->id, 2112, ['name' => "Eek"]],
-            [Arsse::$user->id, 42, ['name' => "Eek"]],
+            [Arsse::$user->id, 42, ['title' => "Ook"]],
+            [Arsse::$user->id, 2112, ['title' => "Eek"]],
+            [Arsse::$user->id, 42, ['title' => "Eek"]],
         ];
         Phake::when(Arsse::$db)->subscriptionPropertiesSet(...$db[0])->thenReturn(true);
         Phake::when(Arsse::$db)->subscriptionPropertiesSet(...$db[1])->thenThrow(new ExceptionInput("subjectMissing"));
@@ -623,7 +623,9 @@ LONG_STRING;
         $this->assertResponse($exp, $this->req($in[6]));
         $this->assertResponse($exp, $this->req($in[7]));
         $this->assertResponse($exp, $this->req($in[8]));
-        Phake::verify(Arsse::$db, Phake::times(3))->subscriptionPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
+        Phake::verify(Arsse::$db)->subscriptionPropertiesSet(...$db[0]);
+        Phake::verify(Arsse::$db)->subscriptionPropertiesSet(...$db[1]);
+        Phake::verify(Arsse::$db)->subscriptionPropertiesSet(...$db[2]);
     }
 
     public function testRetrieveTheGlobalUnreadCount() {

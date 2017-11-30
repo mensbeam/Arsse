@@ -911,7 +911,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             throw new Exception("INCORRECT_USAGE");
         }
         $in = [
-            'name' => $data['caption'],
+            'title' => $data['caption'],
         ];
         try {
             // try to rename the feed
