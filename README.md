@@ -1,6 +1,6 @@
 # The Advanced RSS Environment
 
-The Arsse is a news aggregator server which implements multiple synchronization protocols, including [version 1.2][NCNv1] of [NextCloud News](https://github.com/nextcloud/news)' protocol and the [Tiny Tiny RSS][TTRSS] protocol ([details](#proto)). Unlike most other aggregator servers, The Arsse does not include a Web front-end (though one is planned as a separate project), and it relies on existing protocols to maximize compatibility with existing clients.
+The Arsse is a news aggregator server which implements multiple synchronization protocols, including [version 1.2][NCNv1] of [NextCloud News](https://github.com/nextcloud/news)' protocol and the [Tiny Tiny RSS][TTRSS] protocol (details below). Unlike most other aggregator servers, The Arsse does not include a Web front-end (though one is planned as a separate project), and it relies on existing protocols to maximize compatibility with existing clients.
 
 At present the software should be considered in an "alpha" state: though its core subsystems are covered by unit tests and should be free of major bugs, not everything has been rigorously tested. Additionally, many features one would expect from other similar software have yet to be implemented. Areas of future work include:
 
@@ -68,9 +68,9 @@ The Arsse is made available under the permissive MIT license.  See the `LICENSE`
 
 Please refer to `CONTRIBUTING.md` for guidelines on contributing code to The Arsse.
 
-## <a name="proto"></a> Protocol compatibility notes
+## Protocol compatibility notes
 
-### <a name="proto-general"></a> General
+###  General
 
 #### Type casting
 
@@ -82,9 +82,9 @@ The Arsse does, however, guarantee _output_ to be of the same type. If it is not
 
 The Arsse makes use of the [picoFeed](https://github.com/miniflux/picoFeed/) newsfeed parsing library to sanitize article content. The exact sanitization parameters may differ from those of reference implementations for protocols The Arsse supports.
 
-### <a name="proto-ncnv1"></a> NextCloud News v1.2
+### NextCloud News v1.2
 
-As a general rule, The Arsse should yield the same output as the reference implementation for all valid inputs (otherwise you've found [a bug][newIssue]), but there are exception, either because the NextCloud News (hereafter "NCN") [protocol description][NCNv1] is at times ambiguous or incomplete, or because implementation details necessitate it differ; this section along with the [General section](#proto-general) above detail these differences.
+As a general rule, The Arsse should yield the same output as the reference implementation for all valid inputs (otherwise you've found [a bug][newIssue]), but there are exception, either because the NextCloud News (hereafter "NCN") [protocol description][NCNv1] is at times ambiguous or incomplete, or because implementation details necessitate it differ; this section along with the General section above detail these differences.
 
 #### Missing features
 
@@ -110,9 +110,9 @@ As a general rule, The Arsse should yield the same output as the reference imple
 - NCN does not specify what should be done when moving a feed to a folder which does not exist; The Arsse return `422`
 - NCN does not specify what should be done when renaming a feed to an invalid title, nor what constitutes an invalid title; The Arsse uses the same rules as it does for folders, and returns `422` in cases of rejection
 
-### <a name="proto-ttrss"></a> Tiny Tiny RSS
+### Tiny Tiny RSS
 
-As a general rule, The Arsse should yield the same output as the reference implementation for all valid inputs (otherwise you've found [a bug][newIssue]), but there are exception, either because the Tiny Tiny RSS (hereafter "TTRSS") [protocol description][TTRSS] is incomplete, erroneous, or out of date, or because TTRSS itself is buggy, or because implementation details necessitate The Arsse differ; this section along with the [General section](#proto-general) above detail these differences.
+As a general rule, The Arsse should yield the same output as the reference implementation for all valid inputs (otherwise you've found [a bug][newIssue]), but there are exception, either because the Tiny Tiny RSS (hereafter "TTRSS") [protocol description][TTRSS] is incomplete, erroneous, or out of date, or because TTRSS itself is buggy, or because implementation details necessitate The Arsse differ; this section along with the General section above detail these differences.
 
 #### Extended functionality
 
@@ -143,13 +143,15 @@ We are not aware of any other extensions to the TTRSS protocol. If you know of a
 
 #### Errors and ambiguities
 
-- TTRSS returns an incorrect count when for the `setArticleLabel`; The Arsse returns a correct count
-- TTRSS returns incorrect results when providing the `getHeadlines` operation with category ID `-3`; The Arsse retuns the correct results
-- The protocol doucmentation advises not to use `limit` or `skip` together with `unread_only` for the `getFeeds` operation as it produces unpredictable results; The Arsse's results are, by contrast, predictable
-- The protocol documentation on values for the `view_mode` parameter of the `getHeadlines` operation is out of date; The Arsse matches the actual implementation
+- TTRSS sometimes returns an incorrect count from the `setArticleLabel` operation; The Arsse returns a correct count in all cases
+- TTRSS sometimes returns out-of-date cached information; The Arsse does not use caches as TTRSS does, so information is always current
+- TTRSS returns results for _feed_ ID `-3` when providing the `getHeadlines` operation with _category_ ID `-3`; The Arsse retuns the correct results
+- The protocol doucmentation advises not to use `limit` or `skip` together with `unread_only` for the `getFeeds` operation as it produces unpredictable results; The Arsse produces predictable results
+- The protocol documentation on values for the `view_mode` parameter of the `getHeadlines` operation is out of date; The Arsse matches the actual implementation and supports the undocumented `published` and `has_note` values
 - The protocol documentation makes mention of a `search_mode` parameter for the `getHeadlines` operation, but this seems to be ignored; The Arsse does not implement it
 - The protocol documentation makes mention of an `output_mode` parameter for the `getCounters` operation, but this seems to be ignored; The Arsse does not implement it
-- The documentation for the `getCompactHeadlines` operation states the default value for `limit` is 20, but the default is actually unlimited; The Arsse also defaults to unlimited
+- The documentation for the `getCompactHeadlines` operation states the default value for `limit` is 20, but the reference implementation defaults to unlimited; The Arsse also defaults to unlimited
+- It is assumed TTRSS exposes undocumented behaviour; unless otherwise noted The Arsse only implements documented behaviour
 
 
 [newIssue]: https://code.mensbeam.com/MensBeam/arsse/issues/new
