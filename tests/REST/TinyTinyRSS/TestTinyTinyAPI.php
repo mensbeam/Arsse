@@ -1704,7 +1704,7 @@ LONG_STRING;
                 'subscription_title' => "Feed 2112",
                 'author' => '',
                 'content' => '<p>&ldquo;This &amp; that, you know&#8253;&rdquo;</p>',
-                'guid' => '',
+                'guid' => null,
                 'published_date' => '2000-01-01 00:00:00',
                 'edited_date' => '2000-01-01 00:00:00',
                 'modified_date' => '2000-01-01 01:00:00',
@@ -1744,7 +1744,7 @@ LONG_STRING;
         return $this->respGood([
             [
                 'id' => $id,
-                'guid' => null,
+                'guid' => '',
                 'title' => 'Article title 1',
                 'link' => 'http://example.com/1',
                 'labels' => [],

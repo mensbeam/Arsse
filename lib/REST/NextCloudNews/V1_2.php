@@ -154,6 +154,20 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
     }
 
+    protected function folderTranslate(array $folder): array {
+        // map fields to proper names
+        $folder = $this->fieldMapNames($folder, [
+            'id'   => "id",
+            'name' => "name",
+        ]);
+        // cast values
+        $folder = $this->fieldMapTypes($folder, [
+            'id'   => "int",
+            'name' => "string",
+        ], $this->dateFormat);
+        return $folder;
+    }
+
     protected function feedTranslate(array $feed): array {
         // map fields to proper names
         $feed = $this->fieldMapNames($feed, [
@@ -172,9 +186,18 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         ]);
         // cast values
         $feed = $this->fieldMapTypes($feed, [
-            'folderId' => "int",
-            'pinned'   => "bool",
-            'added'    => "datetime",
+            'id'               => "int",
+            'url'              => "string",
+            'title'            => "string",
+            'added'            => "datetime",
+            'pinned'           => "bool",
+            'link'             => "string",
+            'faviconLink'      => "string",
+            'folderId'         => "int",
+            'unreadCount'      => "int",
+            'ordering'         => "int",
+            'updateErrorCount' => "int",
+            'lastUpdateError'  => "string",
         ], $this->dateFormat);
         return $feed;
     }
@@ -200,11 +223,21 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         ]);
         // cast values
         $article = $this->fieldMapTypes($article, [
-            'unread'       => "bool",
-            'starred'      => "bool",
-            'pubDate'      => "datetime",
-            'lastModified' => "datetime",
-            'guidHash'     => "string"
+            'id'            => "int",
+            'guid'          => "string",
+            'guidHash'      => "string",
+            'url'           => "string",
+            'title'         => "string",
+            'author'        => "string",
+            'pubDate'       => "datetime",
+            'body'          => "string",
+            'enclosureMime' => "string",
+            'enclosureLink' => "string",
+            'feedId'        => "int",
+            'unread'        => "bool",
+            'starred'       => "bool",
+            'lastModified'  => "datetime",
+            'fingerprint'   => "string",
         ], $this->dateFormat);
         return $article;
     }
@@ -231,7 +264,10 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     
     // list folders
     protected function folderList(array $url, array $data): Response {
-        $folders = Arsse::$db->folderList(Arsse::$user->id, null, false)->getAll();
+        $folders = [];
+        foreach (Arsse::$db->folderList(Arsse::$user->id, null, false) as $folder) {
+            $folders[] = $this->folderTranslate($folder);
+        }
         return new Response(200, ['folders' => $folders]);
     }
 
@@ -250,7 +286,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 default: return new Response(400); // @codeCoverageIgnore
             }
         }
-        $folder = Arsse::$db->folderPropertiesGet(Arsse::$user->id, $folder);
+        $folder = $this->folderTranslate(Arsse::$db->folderPropertiesGet(Arsse::$user->id, $folder));
         return new Response(200, ['folders' => [$folder]]);
     }
 
@@ -607,15 +643,15 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if (isset($data['avatar'])) {
             $avatar = [
                 'data' => base64_encode($data['avatar']['data']),
-                'mime' => $data['avatar']['type'],
+                'mime' => (string) $data['avatar']['type'],
             ];
         } else {
             $avatar = null;
         }
         // construct the rest of the structure
         $out = [
-            'userId' => Arsse::$user->id,
-            'displayName' => $data['name'] ?? Arsse::$user->id,
+            'userId' => (string) Arsse::$user->id,
+            'displayName' => (string) ($data['name'] ?? Arsse::$user->id),
             'lastLoginTimestamp' => time(),
             'avatar' => $avatar,
         ];

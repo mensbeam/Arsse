@@ -59,7 +59,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
                 'top_folder' => null,
                 'pinned' => 0,
                 'err_count' => 0,
-                'err_msg' => '',
+                'err_msg' => null,
                 'order_type' => 1,
                 'added' => '2017-05-20 13:35:54',
                 'title' => 'Third example feed',
@@ -70,44 +70,44 @@ class TestNCNV1_2 extends Test\AbstractTest {
             [
                 'id' => 2112,
                 'url' => 'http://example.com/news.atom',
-                'faviconLink' => 'http://example.com/favicon.png',
-                'link' => 'http://example.com/',
-                'folderId' => 0,
+                'title' => 'First example feed',
+                'added' => 1495287354,
                 'pinned' => false,
+                'link' => 'http://example.com/',
+                'faviconLink' => 'http://example.com/favicon.png',
+                'folderId' => 0,
+                'unreadCount' => 50048,
+                'ordering' => 0,
                 'updateErrorCount' => 0,
                 'lastUpdateError' => '',
-                'ordering' => 0,
-                'added' => 1495287354,
-                'title' => 'First example feed',
-                'unreadCount' => 50048,
             ],
             [
                 'id' => 42,
                 'url' => 'http://example.org/news.atom',
-                'faviconLink' => 'http://example.org/favicon.png',
-                'link' => 'http://example.org/',
-                'folderId' => 8,
+                'title' => 'Second example feed',
+                'added' => 1495287354,
                 'pinned' => true,
+                'link' => 'http://example.org/',
+                'faviconLink' => 'http://example.org/favicon.png',
+                'folderId' => 8,
+                'unreadCount' => 23,
+                'ordering' => 2,
                 'updateErrorCount' => 0,
                 'lastUpdateError' => '',
-                'ordering' => 2,
-                'added' => 1495287354,
-                'title' => 'Second example feed',
-                'unreadCount' => 23,
             ],
             [
                 'id' => 47,
                 'url' => 'http://example.net/news.atom',
-                'faviconLink' => 'http://example.net/favicon.png',
-                'link' => 'http://example.net/',
-                'folderId' => 0,
+                'title' => 'Third example feed',
+                'added' => 1495287354,
                 'pinned' => false,
+                'link' => 'http://example.net/',
+                'faviconLink' => 'http://example.net/favicon.png',
+                'folderId' => 0,
+                'unreadCount' => 0,
+                'ordering' => 1,
                 'updateErrorCount' => 0,
                 'lastUpdateError' => '',
-                'ordering' => 1,
-                'added' => 1495287354,
-                'title' => 'Third example feed',
-                'unreadCount' => 0,
             ],
         ],
     ];
@@ -206,89 +206,89 @@ class TestNCNV1_2 extends Test\AbstractTest {
         ],
         'rest' => [
             [
-                'guidHash' => 101,
+                'id' => 101,
+                'guid' => 'e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda',
+                'guidHash' => "101",
                 'url' => 'http://example.com/1',
                 'title' => 'Article title 1',
                 'author' => '',
-                'body' => '<p>Article content 1</p>',
-                'guid' => 'e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda',
                 'pubDate' => 946684801,
-                'lastModified' => 946688400,
+                'body' => '<p>Article content 1</p>',
+                'enclosureMime' => "",
+                'enclosureLink' => "",
+                'feedId' => 8,
                 'unread' => true,
                 'starred' => false,
-                'id' => 101,
-                'feedId' => 8,
+                'lastModified' => 946688400,
                 'fingerprint' => 'f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6:fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4:18fdd4fa93d693128c43b004399e5c9cea6c261ddfa002518d3669f55d8c2207',
-                'enclosureLink' => null,
-                'enclosureMime' => null,
             ],
             [
-                'guidHash' => 102,
+                'id' => 202,
+                'guid' => '5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7',
+                'guidHash' => "102",
                 'url' => 'http://example.com/2',
                 'title' => 'Article title 2',
                 'author' => '',
-                'body' => '<p>Article content 2</p>',
-                'guid' => '5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7',
                 'pubDate' => 946771202,
-                'lastModified' => 946778400,
+                'body' => '<p>Article content 2</p>',
+                'enclosureMime' => "text/plain",
+                'enclosureLink' => "http://example.com/text",
+                'feedId' => 8,
                 'unread' => false,
                 'starred' => false,
-                'id' => 202,
-                'feedId' => 8,
+                'lastModified' => 946778400,
                 'fingerprint' => '0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153:13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9:2abd0a8cba83b8214a66c8f0293ba63e467d720540e29ff8ddcdab069d4f1c9e',
-                'enclosureLink' => "http://example.com/text",
-                'enclosureMime' => "text/plain",
             ],
             [
-                'guidHash' => 103,
+                'id' => 203,
+                'guid' => '31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92',
+                'guidHash' => "103",
                 'url' => 'http://example.com/3',
                 'title' => 'Article title 3',
                 'author' => '',
-                'body' => '<p>Article content 3</p>',
-                'guid' => '31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92',
                 'pubDate' => 946857603,
-                'lastModified' => 946868400,
+                'body' => '<p>Article content 3</p>',
+                'enclosureMime' => "video/webm",
+                'enclosureLink' => "http://example.com/video",
+                'feedId' => 9,
                 'unread' => true,
                 'starred' => true,
-                'id' => 203,
-                'feedId' => 9,
+                'lastModified' => 946868400,
                 'fingerprint' => 'f74b06b240bd08abf4d3fdfc20dba6a6f6eb8b4f1a00e9a617efd63a87180a4b:b278380e984cefe63f0e412b88ffc9cb0befdfa06fdc00bace1da99a8daff406:ad622b31e739cd3a3f3c788991082cf4d2f7a8773773008e75f0572e58cd373b',
-                'enclosureLink' => "http://example.com/video",
-                'enclosureMime' => "video/webm",
             ],
             [
-                'guidHash' => 104,
+                'id' => 204,
+                'guid' => '804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180',
+                'guidHash' => "104",
                 'url' => 'http://example.com/4',
                 'title' => 'Article title 4',
                 'author' => '',
-                'body' => '<p>Article content 4</p>',
-                'guid' => '804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180',
                 'pubDate' => 946944004,
-                'lastModified' => 946958400,
+                'body' => '<p>Article content 4</p>',
+                'enclosureMime' => "image/svg+xml",
+                'enclosureLink' => "http://example.com/image",
+                'feedId' => 9,
                 'unread' => false,
                 'starred' => true,
-                'id' => 204,
-                'feedId' => 9,
+                'lastModified' => 946958400,
                 'fingerprint' => 'f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8:f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3:ab2da63276acce431250b18d3d49b988b226a99c7faadf275c90b751aee05be9',
-                'enclosureLink' => "http://example.com/image",
-                'enclosureMime' => "image/svg+xml",
             ],
             [
-                'guidHash' => 105,
+                'id' => 305,
+                'guid' => 'db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41',
+                'guidHash' => "105",
                 'url' => 'http://example.com/5',
                 'title' => 'Article title 5',
                 'author' => '',
-                'body' => '<p>Article content 5</p>',
-                'guid' => 'db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41',
                 'pubDate' => 947030405,
-                'lastModified' => 947048400,
+                'body' => '<p>Article content 5</p>',
+                'enclosureMime' => "audio/ogg",
+                'enclosureLink' => "http://example.com/audio",
+                'feedId' => 10,
                 'unread' => true,
                 'starred' => false,
-                'id' => 305,
-                'feedId' => 10,
+                'lastModified' => 947048400,
                 'fingerprint' => 'd40da96e39eea6c55948ccbe9b3d275b5f931298288dbe953990c5f496097022:834240f84501b5341d375414718204ec421561f3825d34c22bf9182203e42900:43b970ac6ec5f8a9647b2c7e4eed8b1d7f62e154a95eed748b0294c1256764ba',
-                'enclosureLink' => "http://example.com/audio",
-                'enclosureMime' => "audio/ogg",
             ],
         ],
     ];
@@ -311,10 +311,15 @@ class TestNCNV1_2 extends Test\AbstractTest {
         $this->clearData();
     }
 
+    protected function assertResponse(Response $exp, Response $act, string $text = null) {
+        $this->assertEquals($exp, $act, $text);
+        $this->assertSame($exp->payload, $act->payload, $text);
+    }
+
     public function testSendAuthenticationChallenge() {
         Phake::when(Arsse::$user)->authHTTP->thenReturn(false);
         $exp = new Response(401, "", "", ['WWW-Authenticate: Basic realm="'.REST\NextCloudNews\V1_2::REALM.'"']);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/")));
     }
 
     public function testRespondToInvalidPaths() {
@@ -352,22 +357,22 @@ class TestNCNV1_2 extends Test\AbstractTest {
         foreach ($errs[404] as $req) {
             $exp = new Response(404);
             list($method, $path) = $req;
-            $this->assertEquals($exp, $this->h->dispatch(new Request($method, $path)), "$method call to $path did not return 404.");
+            $this->assertResponse($exp, $this->h->dispatch(new Request($method, $path)), "$method call to $path did not return 404.");
         }
         foreach ($errs[405] as $allow => $cases) {
             $exp = new Response(405, "", "", ['Allow: '.$allow]);
             foreach ($cases as $req) {
                 list($method, $path) = $req;
-                $this->assertEquals($exp, $this->h->dispatch(new Request($method, $path)), "$method call to $path did not return 405.");
+                $this->assertResponse($exp, $this->h->dispatch(new Request($method, $path)), "$method call to $path did not return 405.");
             }
         }
     }
 
     public function testRespondToInvalidInputTypes() {
         $exp = new Response(415, "", "", ['Accept: application/json']);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/1", '<data/>', 'application/xml')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/1", '<data/>', 'application/xml')));
         $exp = new Response(400);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/1", '<data/>', 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/1", '<data/>', 'application/json')));
     }
 
     public function testRespondToOptionsRequests() {
@@ -375,31 +380,35 @@ class TestNCNV1_2 extends Test\AbstractTest {
             "Allow: HEAD,GET,POST",
             "Accept: application/json",
         ]);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("OPTIONS", "/feeds")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("OPTIONS", "/feeds")));
         $exp = new Response(204, "", "", [
             "Allow: DELETE",
             "Accept: application/json",
         ]);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("OPTIONS", "/feeds/2112")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("OPTIONS", "/feeds/2112")));
         $exp = new Response(204, "", "", [
             "Allow: HEAD,GET",
             "Accept: application/json",
         ]);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("OPTIONS", "/user")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("OPTIONS", "/user")));
         $exp = new Response(404);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("OPTIONS", "/invalid/path")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("OPTIONS", "/invalid/path")));
     }
 
     public function testListFolders() {
         $list = [
             ['id' => 1,  'name' => "Software", 'parent' => null],
-            ['id' => 12, 'name' => "Hardware", 'parent' => null],
+            ['id' => "12", 'name' => "Hardware", 'parent' => null],
+        ];
+        $out = [
+            ['id' => 1,  'name' => "Software"],
+            ['id' => 12, 'name' => "Hardware"],
         ];
         Phake::when(Arsse::$db)->folderList(Arsse::$user->id, null, false)->thenReturn(new Result([]))->thenReturn(new Result($list));
         $exp = new Response(200, ['folders' => []]);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/folders")));
-        $exp = new Response(200, ['folders' => $list]);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/folders")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/folders")));
+        $exp = new Response(200, ['folders' => $out]);
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/folders")));
     }
 
     public function testAddAFolder() {
@@ -407,49 +416,53 @@ class TestNCNV1_2 extends Test\AbstractTest {
             ["name" => "Software"],
             ["name" => "Hardware"],
         ];
+        $db = [
+            ['id' => 1,   'name' => "Software", 'parent' => null],
+            ['id' => "2", 'name' => "Hardware", 'parent' => null],
+        ];
         $out = [
-            ['id' => 1, 'name' => "Software", 'parent' => null],
-            ['id' => 2, 'name' => "Hardware", 'parent' => null],
+            ['id' => 1, 'name' => "Software"],
+            ['id' => 2, 'name' => "Hardware"],
         ];
         // set of various mocks for testing
         Phake::when(Arsse::$db)->folderAdd($this->anything(), $this->anything())->thenThrow(new \Exception);
         Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $in[0])->thenReturn(1)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
         Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $in[1])->thenReturn(2)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 1)->thenReturn($out[0]);
-        Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 2)->thenReturn($out[1]);
+        Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 1)->thenReturn($db[0]);
+        Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 2)->thenReturn($db[1]);
         // set up mocks that produce errors
         Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, [])->thenThrow(new ExceptionInput("missing"));
         Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => ""])->thenThrow(new ExceptionInput("missing"));
         Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => " "])->thenThrow(new ExceptionInput("whitespace"));
         // correctly add two folders, using different means
         $exp = new Response(200, ['folders' => [$out[0]]]);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/folders", json_encode($in[0]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/folders", json_encode($in[0]), 'application/json')));
         $exp = new Response(200, ['folders' => [$out[1]]]);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/folders?name=Hardware")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/folders?name=Hardware")));
         Phake::verify(Arsse::$db)->folderAdd(Arsse::$user->id, $in[0]);
         Phake::verify(Arsse::$db)->folderAdd(Arsse::$user->id, $in[1]);
         Phake::verify(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 1);
         Phake::verify(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 2);
         // test bad folder names
         $exp = new Response(422);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/folders")));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/folders", '{"name":""}', 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/folders", '{"name":" "}', 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/folders", '{"name":{}}', 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/folders")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/folders", '{"name":""}', 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/folders", '{"name":" "}', 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/folders", '{"name":{}}', 'application/json')));
         // try adding the same two folders again
         $exp = new Response(409);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/folders?name=Software")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/folders?name=Software")));
         $exp = new Response(409);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/folders", json_encode($in[1]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/folders", json_encode($in[1]), 'application/json')));
     }
 
     public function testRemoveAFolder() {
         Phake::when(Arsse::$db)->folderRemove(Arsse::$user->id, 1)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
         $exp = new Response(204);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("DELETE", "/folders/1")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("DELETE", "/folders/1")));
         // fail on the second invocation because it no longer exists
         $exp = new Response(404);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("DELETE", "/folders/1")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("DELETE", "/folders/1")));
         Phake::verify(Arsse::$db, Phake::times(2))->folderRemove(Arsse::$user->id, 1);
     }
 
@@ -468,25 +481,25 @@ class TestNCNV1_2 extends Test\AbstractTest {
         Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[4])->thenReturn(true); // this should be stopped by the handler before the request gets to the database
         Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 3, $this->anything())->thenThrow(new ExceptionInput("subjectMissing")); // folder ID 3 does not exist
         $exp = new Response(204);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/1", json_encode($in[0]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/1", json_encode($in[0]), 'application/json')));
         $exp = new Response(409);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/2", json_encode($in[1]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/2", json_encode($in[1]), 'application/json')));
         $exp = new Response(422);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/1", json_encode($in[2]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/1", json_encode($in[2]), 'application/json')));
         $exp = new Response(422);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/1", json_encode($in[3]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/1", json_encode($in[3]), 'application/json')));
         $exp = new Response(422);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/1", json_encode($in[4]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/1", json_encode($in[4]), 'application/json')));
         $exp = new Response(404);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/3", json_encode($in[0]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/3", json_encode($in[0]), 'application/json')));
     }
 
     public function testRetrieveServerVersion() {
         $exp = new Response(200, [
-            'arsse_version' => Arsse::VERSION,
             'version' => REST\NextCloudNews\V1_2::VERSION,
+            'arsse_version' => Arsse::VERSION,
             ]);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/version")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/version")));
     }
 
     public function testListSubscriptions() {
@@ -503,9 +516,9 @@ class TestNCNV1_2 extends Test\AbstractTest {
         Phake::when(Arsse::$db)->articleStarred(Arsse::$user->id)->thenReturn(['total' => 0])->thenReturn(['total' => 5]);
         Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id)->thenReturn(0)->thenReturn(4758915);
         $exp = new Response(200, $exp1);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds")));
         $exp = new Response(200, $exp2);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds")));
     }
 
     public function testAddASubscription() {
@@ -538,31 +551,31 @@ class TestNCNV1_2 extends Test\AbstractTest {
         Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.net/news.atom")->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.net/news.atom", new \PicoFeed\Client\InvalidUrlException()))->thenReturn(47);
         // add the subscriptions
         $exp = new Response(200, $out[0]);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[0]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[0]), 'application/json')));
         $exp = new Response(200, $out[1]);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[1]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[1]), 'application/json')));
         // try to add them a second time
         $exp = new Response(409);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[0]), 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[1]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[0]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[1]), 'application/json')));
         // try to add a bad feed
         $exp = new Response(422);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[2]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[2]), 'application/json')));
         // try again (this will succeed), with an invalid folder ID
         $exp = new Response(200, $out[2]);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[3]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[3]), 'application/json')));
         // try to add no feed
         $exp = new Response(422);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[4]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[4]), 'application/json')));
     }
 
     public function testRemoveASubscription() {
         Phake::when(Arsse::$db)->subscriptionRemove(Arsse::$user->id, 1)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
         $exp = new Response(204);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("DELETE", "/feeds/1")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("DELETE", "/feeds/1")));
         // fail on the second invocation because it no longer exists
         $exp = new Response(404);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("DELETE", "/feeds/1")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("DELETE", "/feeds/1")));
         Phake::verify(Arsse::$db, Phake::times(2))->subscriptionRemove(Arsse::$user->id, 1);
     }
 
@@ -581,17 +594,17 @@ class TestNCNV1_2 extends Test\AbstractTest {
         Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, ['folder' =>   -1])->thenThrow(new ExceptionInput("typeViolation")); // folder is invalid
         Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 42, $this->anything())->thenThrow(new ExceptionInput("subjectMissing")); // subscription does not exist
         $exp = new Response(204);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/move", json_encode($in[0]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/move", json_encode($in[0]), 'application/json')));
         $exp = new Response(204);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/move", json_encode($in[1]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/move", json_encode($in[1]), 'application/json')));
         $exp = new Response(422);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/move", json_encode($in[2]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/move", json_encode($in[2]), 'application/json')));
         $exp = new Response(404);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/42/move", json_encode($in[3]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/42/move", json_encode($in[3]), 'application/json')));
         $exp = new Response(422);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/move", json_encode($in[4]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/move", json_encode($in[4]), 'application/json')));
         $exp = new Response(422);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/move", json_encode($in[5]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/move", json_encode($in[5]), 'application/json')));
     }
 
     public function testRenameASubscription() {
@@ -611,17 +624,17 @@ class TestNCNV1_2 extends Test\AbstractTest {
         Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, $this->identicalTo(['title' => false]))->thenThrow(new ExceptionInput("missing"));
         Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 42, $this->anything())->thenThrow(new ExceptionInput("subjectMissing"));
         $exp = new Response(422);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/rename", json_encode($in[0]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/rename", json_encode($in[0]), 'application/json')));
         $exp = new Response(204);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/rename", json_encode($in[1]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/rename", json_encode($in[1]), 'application/json')));
         $exp = new Response(422);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/rename", json_encode($in[2]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/rename", json_encode($in[2]), 'application/json')));
         $exp = new Response(422);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/rename", json_encode($in[3]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/rename", json_encode($in[3]), 'application/json')));
         $exp = new Response(404);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/42/rename", json_encode($in[4]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/42/rename", json_encode($in[4]), 'application/json')));
         $exp = new Response(422);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/rename", json_encode($in[6]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/rename", json_encode($in[6]), 'application/json')));
     }
 
     public function testListStaleFeeds() {
@@ -637,11 +650,11 @@ class TestNCNV1_2 extends Test\AbstractTest {
         ];
         Phake::when(Arsse::$db)->feedListStale->thenReturn(array_column($out, "id"));
         $exp = new Response(200, ['feeds' => $out]);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/all")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds/all")));
         // retrieving the list when not an admin fails
         Phake::when(Arsse::$user)->rightsGet->thenReturn(0);
         $exp = new Response(403);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/all")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds/all")));
     }
 
     public function testUpdateAFeed() {
@@ -656,17 +669,17 @@ class TestNCNV1_2 extends Test\AbstractTest {
         Phake::when(Arsse::$db)->feedUpdate(2112)->thenThrow(new ExceptionInput("subjectMissing"));
         Phake::when(Arsse::$db)->feedUpdate($this->lessThan(1))->thenThrow(new ExceptionInput("typeViolation"));
         $exp = new Response(204);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[0]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[0]), 'application/json')));
         $exp = new Response(404);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[1]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[1]), 'application/json')));
         $exp = new Response(422);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[2]), 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[3]), 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[4]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[2]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[3]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[4]), 'application/json')));
         // updating a feed when not an admin fails
         Phake::when(Arsse::$user)->rightsGet->thenReturn(0);
         $exp = new Response(403);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[0]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[0]), 'application/json')));
     }
 
     public function testListArticles() {
@@ -693,14 +706,14 @@ class TestNCNV1_2 extends Test\AbstractTest {
         Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->folder(-1), Database::LIST_TYPICAL)->thenThrow(new ExceptionInput("typeViolation"));
         $exp = new Response(200, ['items' => $this->articles['rest']]);
         // check the contents of the response
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/items"))); // first instance of base context
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/items/updated"))); // second instance of base context
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/items"))); // first instance of base context
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/items/updated"))); // second instance of base context
         // check error conditions
         $exp = new Response(422);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/items", json_encode($in[0]), 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/items", json_encode($in[1]), 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/items", json_encode($in[2]), 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/items", json_encode($in[3]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/items", json_encode($in[0]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/items", json_encode($in[1]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/items", json_encode($in[2]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/items", json_encode($in[3]), 'application/json')));
         // simply run through the remainder of the input for later method verification
         $this->h->dispatch(new Request("GET", "/items", json_encode($in[4]), 'application/json'));
         $this->h->dispatch(new Request("GET", "/items", json_encode($in[5]), 'application/json')); // third instance of base context
@@ -730,13 +743,13 @@ class TestNCNV1_2 extends Test\AbstractTest {
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->folder(1)->latestEdition(2112))->thenReturn(42);
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->folder(42)->latestEdition(2112))->thenThrow(new ExceptionInput("idMissing")); // folder doesn't exist
         $exp = new Response(204);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/1/read", $in, 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/1/read?newestItemId=2112")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/1/read", $in, 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/1/read?newestItemId=2112")));
         $exp = new Response(422);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/1/read")));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/1/read?newestItemId=ook")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/1/read")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/1/read?newestItemId=ook")));
         $exp = new Response(404);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/folders/42/read", $in, 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/42/read", $in, 'application/json')));
     }
 
     public function testMarkASubscriptionRead() {
@@ -745,13 +758,13 @@ class TestNCNV1_2 extends Test\AbstractTest {
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->subscription(1)->latestEdition(2112))->thenReturn(42);
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->subscription(42)->latestEdition(2112))->thenThrow(new ExceptionInput("idMissing")); // subscription doesn't exist
         $exp = new Response(204);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/read", $in, 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/read?newestItemId=2112")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/read", $in, 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/read?newestItemId=2112")));
         $exp = new Response(422);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/read")));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/read?newestItemId=ook")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/read")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/read?newestItemId=ook")));
         $exp = new Response(404);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/feeds/42/read", $in, 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/42/read", $in, 'application/json')));
     }
 
     public function testMarkAllItemsRead() {
@@ -759,11 +772,11 @@ class TestNCNV1_2 extends Test\AbstractTest {
         $in = json_encode(['newestItemId' => 2112]);
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->latestEdition(2112))->thenReturn(42);
         $exp = new Response(204);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/read", $in, 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/read?newestItemId=2112")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/read", $in, 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/read?newestItemId=2112")));
         $exp = new Response(422);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/read")));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/read?newestItemId=ook")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/read")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/read?newestItemId=ook")));
     }
 
     public function testChangeMarksOfASingleArticle() {
@@ -780,15 +793,15 @@ class TestNCNV1_2 extends Test\AbstractTest {
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unstar, (new Context)->article(4))->thenReturn(42);
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unstar, (new Context)->article(1337))->thenThrow(new ExceptionInput("subjectMissing")); // article doesn't exist doesn't exist
         $exp = new Response(204);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/1/read")));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/2/unread")));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/1/3/star")));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/4400/4/unstar")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/1/read")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/2/unread")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/1/3/star")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/4400/4/unstar")));
         $exp = new Response(404);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/42/read")));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/47/unread")));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/1/2112/star")));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/4400/1337/unstar")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/42/read")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/47/unread")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/1/2112/star")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/4400/1337/unstar")));
         Phake::verify(Arsse::$db, Phake::times(8))->articleMark(Arsse::$user->id, $this->anything(), $this->anything());
     }
 
@@ -811,26 +824,26 @@ class TestNCNV1_2 extends Test\AbstractTest {
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->editions([]))->thenThrow(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->articles([]))->thenThrow(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
         $exp = new Response(204);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/read/multiple")));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/unread/multiple")));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/star/multiple")));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/unstar/multiple")));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/read/multiple", json_encode(['items' => "ook"]), 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/unread/multiple", json_encode(['items' => "ook"]), 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/star/multiple", json_encode(['items' => "ook"]), 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/unstar/multiple", json_encode(['items' => "ook"]), 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/read/multiple", json_encode(['items' => []]), 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/unread/multiple", json_encode(['items' => []]), 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/read/multiple", json_encode(['items' => $in[0]]), 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/unread/multiple", json_encode(['items' => $in[0]]), 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/read/multiple", json_encode(['items' => $in[1]]), 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/unread/multiple", json_encode(['items' => $in[1]]), 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/star/multiple", json_encode(['items' => []]), 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/unstar/multiple", json_encode(['items' => []]), 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/star/multiple", json_encode(['items' => $inStar[0]]), 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/unstar/multiple", json_encode(['items' => $inStar[0]]), 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/star/multiple", json_encode(['items' => $inStar[1]]), 'application/json')));
-        $this->assertEquals($exp, $this->h->dispatch(new Request("PUT", "/items/unstar/multiple", json_encode(['items' => $inStar[1]]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/read/multiple")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/unread/multiple")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/star/multiple")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/unstar/multiple")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/read/multiple", json_encode(['items' => "ook"]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/unread/multiple", json_encode(['items' => "ook"]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/star/multiple", json_encode(['items' => "ook"]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/unstar/multiple", json_encode(['items' => "ook"]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/read/multiple", json_encode(['items' => []]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/unread/multiple", json_encode(['items' => []]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/read/multiple", json_encode(['items' => $in[0]]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/unread/multiple", json_encode(['items' => $in[0]]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/read/multiple", json_encode(['items' => $in[1]]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/unread/multiple", json_encode(['items' => $in[1]]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/star/multiple", json_encode(['items' => []]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/unstar/multiple", json_encode(['items' => []]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/star/multiple", json_encode(['items' => $inStar[0]]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/unstar/multiple", json_encode(['items' => $inStar[0]]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/star/multiple", json_encode(['items' => $inStar[1]]), 'application/json')));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/unstar/multiple", json_encode(['items' => $inStar[1]]), 'application/json')));
         // ensure the data model was queried appropriately for read/unread
         Phake::verify(Arsse::$db, Phake::atLeast(1))->articleMark(Arsse::$user->id, $read, (new Context)->editions([]));
         Phake::verify(Arsse::$db, Phake::atLeast(1))->articleMark(Arsse::$user->id, $read, (new Context)->editions($in[0]));
@@ -864,28 +877,28 @@ class TestNCNV1_2 extends Test\AbstractTest {
         $arr2['warnings']['improperlyConfiguredCron'] = true;
         $arr2['warnings']['incorrectDbCharset'] = true;
         $exp = new Response(200, $arr1);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/status")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/status")));
     }
 
     public function testCleanUpBeforeUpdate() {
         Phake::when(Arsse::$db)->feedCleanup()->thenReturn(true);
         $exp = new Response(204);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/cleanup/before-update")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/cleanup/before-update")));
         Phake::verify(Arsse::$db)->feedCleanup();
         // performing a cleanup when not an admin fails
         Phake::when(Arsse::$user)->rightsGet->thenReturn(0);
         $exp = new Response(403);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/cleanup/before-update")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/cleanup/before-update")));
     }
     
     public function testCleanUpAfterUpdate() {
         Phake::when(Arsse::$db)->articleCleanup()->thenReturn(true);
         $exp = new Response(204);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/cleanup/after-update")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/cleanup/after-update")));
         Phake::verify(Arsse::$db)->articleCleanup();
         // performing a cleanup when not an admin fails
         Phake::when(Arsse::$user)->rightsGet->thenReturn(0);
         $exp = new Response(403);
-        $this->assertEquals($exp, $this->h->dispatch(new Request("GET", "/cleanup/after-update")));
+        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/cleanup/after-update")));
     }
 }

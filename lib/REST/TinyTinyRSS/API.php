@@ -1261,7 +1261,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             foreach ($this->fetchArticles($data, Database::LIST_FULL) as $article) {
                 $row = [
                     'id' => $article['id'],
-                    'guid' => $article['guid'] ? "SHA256:".$article['guid'] : null,
+                    'guid' => $article['guid'] ? "SHA256:".$article['guid'] : "",
                     'title' => $article['title'],
                     'link' => $article['url'],
                     'labels' => $this->articleLabelList($labels, $article['id']),
