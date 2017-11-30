@@ -4,7 +4,6 @@ namespace JKingWeb\Arsse;
 
 /** @covers \JKingWeb\Arsse\Db\ResultEmpty<extended> */
 class TestResultEmpty extends Test\AbstractTest {
-
     public function testGetChangeCountAndLastInsertId() {
         $r = new Db\ResultEmpty;
         $this->assertEquals(0, $r->changes());

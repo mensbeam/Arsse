@@ -2,7 +2,7 @@
 
 The Arsse is a news aggregator server which implements multiple synchronization protocols, including [version 1.2][NCNv1] of [NextCloud News](https://github.com/nextcloud/news)' protocol and the [Tiny Tiny RSS][TTRSS] protocol ([details](#proto)). Unlike most other aggregator servers, The Arsse does not include a Web front-end (though one is planned as a separate project), and it relies on existing protocols to maximize compatibility with existing clients.
 
-At present the software should be considered in an "alpha" state: though its core subsystems are covered by unit tests and should be free of major bugs, not everything has been rigorously tested. Additionally, though the NextCloud News protocol is fully supported, many features one would expect from other similar software have yet to be implemented. Areas of future work include:
+At present the software should be considered in an "alpha" state: though its core subsystems are covered by unit tests and should be free of major bugs, not everything has been rigorously tested. Additionally, many features one would expect from other similar software have yet to be implemented. Areas of future work include:
 
 - Support for more database engines (PostgreSQL, MySQL, MariaDB)
 - Providing more sync protocols (Google Reader, Fever, others)
@@ -14,7 +14,7 @@ At present the software should be considered in an "alpha" state: though its cor
 The Arsse has the following requirements:
 
 - A Linux server utilizing systemd and Nginx (tested on Ubuntu 16.04)
-- PHP 7.0.7 or newer with the following extensions:
+- PHP 7.0.7 or later with the following extensions:
     - [intl](http://php.net/manual/en/book.intl.php), [json](http://php.net/manual/en/book.json.php), [hash](http://php.net/manual/en/book.hash.php), and [pcre](http://php.net/manual/en/book.pcre.php)
     - [dom](http://php.net/manual/en/book.dom.php), [simplexml](http://php.net/manual/en/book.simplexml.php), and [iconv](http://php.net/manual/en/book.iconv.php) (for picoFeed)
     - [sqlite3](http://php.net/manual/en/book.sqlite3.php)
@@ -62,7 +62,7 @@ php ./arsse.php conf save-defaults "./config.defaults.php"
 
 ## License
 
-The Arsse is made available under the permissive MIT license.  See the `LICENSE` file included with the distribution or source code for exact legal text. Dependencies included in the distribution may be governed by other licenses.
+The Arsse is made available under the permissive MIT license.  See the `LICENSE` and `AUTHORS` files included with the distribution or source code for exact legal text and copyright holders. Dependencies included in the distribution may be governed by other licenses.
 
 ## Contributing
 
@@ -76,11 +76,11 @@ Please refer to `CONTRIBUTING.md` for guidelines on contributing code to The Ars
 
 The Arsse does not guarantee it will handle type casting of input in the same way as reference implementations for its supported protocols. As a general rule, clients should endeavour to send only correct input.
 
-The Arsse _does_, however, guarantee output to be of the same type. If it is not, this is [a bug][newIssue] and should be reported.
+The Arsse does, however, guarantee _output_ to be of the same type. If it is not, this is [a bug][newIssue] and should be reported.
 
 #### Content sanitization
 
-The Arsse makes use of the [picoFeed](https://github.com/miniflux/picoFeed/) newsfeed parsing library to sanitize article content. The exact sanitization rules may differ from those of reference implementations for protocols The Arsse supports.
+The Arsse makes use of the [picoFeed](https://github.com/miniflux/picoFeed/) newsfeed parsing library to sanitize article content. The exact sanitization parameters may differ from those of reference implementations for protocols The Arsse supports.
 
 ### <a name="proto-ncnv1"></a> NextCloud News v1.2
 
@@ -97,18 +97,18 @@ As a general rule, The Arsse should yield the same output as the reference imple
 - When marking articles as starred the feed ID is ignored, as they are not needed to establish uniqueness
 - The feed updater ignores the `userId` parameter: feeds in The Arsse are deduplicated, and have no owner
 - The `/feeds/all` route lists only feeds which should be checked for updates, and it also returns all `userId` attributes as empty strings: feeds in The Arsse are deduplicated, and have no owner
-- The updater console commands mentioned in the protocol specification are not implemented
+- The updater console commands mentioned in the protocol specification are not implemented, as The Arsse does not implement the required NextCloud subsystems
 - The `lastLoginTimestamp` attribute of the user metadata is always the current time: The Arsse's implementation of the protocol is fully stateless
 
 #### Ambiguities
 
-- [The protocol][NCNv1] does not specify an output character encoding, but the reference server uses UTF-8; The Arsse also uses UTF-8
-- The protocol specifies that GET parameters are treated "the same" as request body parameters; it does not specify what to do in cases where they conflict. The Arsse chooses to give GET parameters precedence
-- The protocol does not define validity of folder and names other than to say that the empty string is invalid. The Arsse further considers any string composed only of whitesapce to be invalid
-- The protocol does not specify a return code for bulk-marking operations without a `newestItemId` provided; The Arsse returns `422`
-- The protocol does not specify what should be done when creating a feed in a folder which does not exist; the Arsse adds the feed to the root folder
-- The protocol does not specify what should be done when moving a feed to a folder which does not exist; The Arsse return `422`
-- The protocol does not specify what should be done when renaming a feed to an invalid title, nor what constitutes an invalid title; The Arsse uses the same rules as it does for folders, and returns `422` in cases of rejection
+- NCN does not specify an output character encoding, but the reference server uses UTF-8; The Arsse also uses UTF-8
+- NCN specifies that GET parameters are treated "the same" as request body parameters; it does not specify what to do in cases where they conflict. The Arsse chooses to give GET parameters precedence
+- NCN does not define validity of folder and names other than to say that the empty string is invalid. The Arsse further considers any string composed only of whitesapce to be invalid
+- NCN does not specify a return code for bulk-marking operations without a `newestItemId` provided; The Arsse returns `422`
+- NCN does not specify what should be done when creating a feed in a folder which does not exist; the Arsse adds the feed to the root folder
+- NCN does not specify what should be done when moving a feed to a folder which does not exist; The Arsse return `422`
+- NCN does not specify what should be done when renaming a feed to an invalid title, nor what constitutes an invalid title; The Arsse uses the same rules as it does for folders, and returns `422` in cases of rejection
 
 ### <a name="proto-ttrss"></a> Tiny Tiny RSS
 

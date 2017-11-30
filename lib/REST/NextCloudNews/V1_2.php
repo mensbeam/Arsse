@@ -147,10 +147,10 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             } else {
                 // otherwise return 405
                 throw new Exception405(implode(", ", array_keys($this->paths[$url])));
-            } 
+            }
         } else {
             // if the path is not supported, return 404
-            throw new Exception404();  
+            throw new Exception404();
         }
     }
 
@@ -225,7 +225,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             ]);
         } else {
             // if the path is not supported, return 404
-            return new Response(404);  
+            return new Response(404);
         }
     }
     

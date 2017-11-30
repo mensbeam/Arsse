@@ -287,7 +287,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 unset($cats[$catmap[$c['id']]]);
             }
         }
-        // do a third pass on categories, building a final category list 
+        // do a third pass on categories, building a final category list
         foreach ($categories as $c) {
             // only include categories with unread articles
             if ($catCounts[$c['id']]) {
@@ -333,7 +333,9 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     'id' => "FEED:".self::FEED_ALL,
                     'bare_id' => self::FEED_ALL,
                     'icon' => "images/folder.png",
-                    'unread' => array_reduce($subs, function($sum, $value) {return $sum + $value['unread'];}, 0), // the sum of all feeds' unread is the total unread
+                    'unread' => array_reduce($subs, function ($sum, $value) {
+                        return $sum + $value['unread'];
+                    }, 0), // the sum of all feeds' unread is the total unread
                 ], $tSpecial),
                 array_merge([ // Fresh articles
                     'name' => Arsse::$lang->msg("API.TTRSS.Feed.Fresh"),
@@ -392,7 +394,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             ];
             $unread += ($l['articles'] - $l['read']);
         }
-        // if there are labels, all the label category, 
+        // if there are labels, all the label category,
         if ($items) {
             $out[] = [
                 'name' => Arsse::$lang->msg("API.TTRSS.Category.Labels"),
@@ -682,7 +684,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             $archived = 0; // the archived feed is non-functional in the TT-RSS protocol itself
             // build the list; exclude anything with zero unread if requested
             if (!$unread || $starred) {
-                    $out[] = [
+                $out[] = [
                     'id'     => self::FEED_STARRED,
                     'title'  => Arsse::$lang->msg("API.TTRSS.Feed.Starred"),
                     'unread' => (string) $starred, // output is a string in TTRSS
@@ -1154,7 +1156,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 throw new Exception("INCORRECT_USAGE");
         }
         $tr->commit();
-        return ['status' => "OK", 'updated' => $out];    
+        return ['status' => "OK", 'updated' => $out];
     }
 
     public function opGetArticle(array $data): array {
@@ -1409,7 +1411,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             case "all_articles":
                 // no context needed here
                 break;
-            case "adaptive": 
+            case "adaptive":
                 // adaptive means "return only unread unless there are none, in which case return all articles"
                 if ($c->unread !== false && Arsse::$db->articleCount(Arsse::$user->id, (clone $c)->unread(true))) {
                     $c->unread(true);

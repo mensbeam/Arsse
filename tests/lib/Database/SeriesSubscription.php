@@ -289,7 +289,6 @@ trait SeriesSubscription {
             ],
         ];
         $this->assertResult($exp, Arsse::$db->subscriptionList($this->user, 2));
-
     }
 
     public function testListSubscriptionsInAMissingFolder() {
@@ -412,15 +411,15 @@ trait SeriesSubscription {
         $exp = "http://example.com/favicon.ico";
         $this->assertSame($exp, Arsse::$db->subscriptionFavicon(1));
         $this->assertSame($exp, Arsse::$db->subscriptionFavicon(2));
-        $this->assertSame('',   Arsse::$db->subscriptionFavicon(3));
-        $this->assertSame('',   Arsse::$db->subscriptionFavicon(4));
+        $this->assertSame('', Arsse::$db->subscriptionFavicon(3));
+        $this->assertSame('', Arsse::$db->subscriptionFavicon(4));
         // authorization shouldn't have any bearing on this function
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertSame($exp, Arsse::$db->subscriptionFavicon(1));
         $this->assertSame($exp, Arsse::$db->subscriptionFavicon(2));
-        $this->assertSame('',   Arsse::$db->subscriptionFavicon(3));
-        $this->assertSame('',   Arsse::$db->subscriptionFavicon(4));
+        $this->assertSame('', Arsse::$db->subscriptionFavicon(3));
+        $this->assertSame('', Arsse::$db->subscriptionFavicon(4));
         // invalid IDs should simply return an empty string
-        $this->assertSame('',   Arsse::$db->subscriptionFavicon(-2112));
+        $this->assertSame('', Arsse::$db->subscriptionFavicon(-2112));
     }
 }

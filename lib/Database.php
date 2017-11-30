@@ -1004,17 +1004,17 @@ class Database {
             switch ($fields) {
                 // NOTE: the cases all cascade into each other: a given verbosity level is always a superset of the previous one
                 case self::LIST_FULL: // everything
-                    $columns = array_merge($columns,[
+                    $columns = array_merge($columns, [
                         "(select note from arsse_marks where article is arsse_articles.id and subscription in (select sub from subscribed_feeds)) as note",
                     ]);
                 case self::LIST_TYPICAL: // conservative, plus content
-                    $columns = array_merge($columns,[
+                    $columns = array_merge($columns, [
                         "content",
                         "arsse_enclosures.url as media_url", // enclosures are potentially large due to data: URLs
                         "arsse_enclosures.type as media_type", // FIXME: enclosures should eventually have their own fetch method
                     ]);
                 case self::LIST_CONSERVATIVE: // base metadata, plus anything that is not likely to be large text
-                    $columns = array_merge($columns,[
+                    $columns = array_merge($columns, [
                         "arsse_articles.url as url",
                         "arsse_articles.title as title",
                         "(select coalesce(arsse_subscriptions.title,arsse_feeds.title) from arsse_feeds join arsse_subscriptions on arsse_subscriptions.feed is arsse_feeds.id where arsse_feeds.id is arsse_articles.feed) as subscription_title",
@@ -1025,7 +1025,7 @@ class Database {
                         "url_title_hash||':'||url_content_hash||':'||title_content_hash as fingerprint",
                     ]);
                 case self::LIST_MINIMAL: // base metadata (always included: required for context matching)
-                    $columns = array_merge($columns,[
+                    $columns = array_merge($columns, [
                         // id, subscription, feed, modified_date, marked_date, unread, starred, edition
                         "edited as edited_date",
                     ]);

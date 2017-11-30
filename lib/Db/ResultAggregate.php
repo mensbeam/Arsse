@@ -16,7 +16,9 @@ class ResultAggregate extends AbstractResult {
     // actual public methods
 
     public function changes() {
-        return array_reduce($this->data, function($sum, $value) {return $sum + $value->changes();}, 0);
+        return array_reduce($this->data, function ($sum, $value) {
+            return $sum + $value->changes();
+        }, 0);
     }
 
     public function lastId() {

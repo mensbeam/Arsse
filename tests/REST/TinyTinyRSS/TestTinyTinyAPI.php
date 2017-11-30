@@ -942,9 +942,9 @@ LONG_STRING;
 
     public function testAssignArticlesToALabel() {
         $list = [
-            range(1,100),
-            range(1,50),
-            range(51,100),
+            range(1, 100),
+            range(1, 50),
+            range(51, 100),
         ];
         $in = [
             ['op' => "setArticleLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -2112, 'article_ids' => implode(",", $list[0])],
@@ -1184,11 +1184,15 @@ LONG_STRING;
     }
 
     protected function filterFolders(int $id = null): array {
-        return array_filter($this->folders, function($value) use ($id) {return $value['parent']==$id;});
+        return array_filter($this->folders, function ($value) use ($id) {
+            return $value['parent']==$id;
+        });
     }
 
     protected function filterSubs(int $folder = null): array {
-        return array_filter($this->subscriptions, function($value) use ($folder) {return $value['folder']==$folder;});
+        return array_filter($this->subscriptions, function ($value) use ($folder) {
+            return $value['folder']==$folder;
+        });
     }
 
     protected function reduceFolders(int $id = null) : int {
@@ -1196,7 +1200,11 @@ LONG_STRING;
         foreach ($this->filterFolders($id) as $f) {
             $out += $this->reduceFolders($f['id']);
         }
-        $out += array_reduce(array_filter($this->subscriptions, function($value) use ($id) {return $value['folder']==$id;}), function($sum, $value) {return $sum + $value['unread'];}, 0);
+        $out += array_reduce(array_filter($this->subscriptions, function ($value) use ($id) {
+            return $value['folder']==$id;
+        }), function ($sum, $value) {
+            return $sum + $value['unread'];
+        }, 0);
         return $out;
     }
 

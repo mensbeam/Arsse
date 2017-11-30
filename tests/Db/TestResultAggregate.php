@@ -6,7 +6,6 @@ use JKingWeb\Arsse\Test\Result;
 
 /** @covers \JKingWeb\Arsse\Db\ResultAggregate<extended> */
 class TestResultAggregate extends Test\AbstractTest {
-
     public function testGetChangeCountAndLastInsertId() {
         $in = [
             new Result([], 3, 4),

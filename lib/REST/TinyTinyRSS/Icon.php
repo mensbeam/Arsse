@@ -10,8 +10,6 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\REST\Response;
 
 class Icon extends \JKingWeb\Arsse\REST\AbstractHandler {
-
-    
     public function __construct() {
     }
 
@@ -25,7 +23,7 @@ class Icon extends \JKingWeb\Arsse\REST\AbstractHandler {
         $url = Arsse::$db->subscriptionFavicon((int) $match[1]);
         if ($url) {
             // strip out anything after literal line-end characters; this is to mitigate a potential header (e.g. cookie) injection from the URL
-            if (($pos = strpos($url, "\r")) !== FALSE || ($pos = strpos($url, "\n")) !== FALSE) {
+            if (($pos = strpos($url, "\r")) !== false || ($pos = strpos($url, "\n")) !== false) {
                 $url = substr($url, 0, $pos);
             }
             return new Response(301, "", "", ["Location: $url"]);
