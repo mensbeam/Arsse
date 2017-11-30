@@ -10,6 +10,9 @@ Bug fixes:
 - Expose the incorrectDbCharset boolean in the NextCloud News server status
 - Give NextCloud News articles' guidHash attribute the correct type (string)
 
+Changes:
+- Overhaul input type normalization to minimize bug opportunities
+
 Version 0.1.1 (2017-09-30)
 ==========================
 

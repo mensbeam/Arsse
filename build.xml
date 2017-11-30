@@ -13,6 +13,8 @@
                 <include name="arsse.php"/>
                 <include name="CHANGELOG"/>
                 <include name="LICENSE"/>
+                <include name="AUTHORS"/>
+                <include name="UPGRADING"/>
                 <include name="README.md"/>
             </fileset>
         </copy>

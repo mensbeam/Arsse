@@ -1,0 +1,20 @@
+General upgrade notes
+=====================
+
+When upgrading between any two versions of The Arsse, the following are usually prudent:
+
+- Back up your database
+- Check for any changes to sample Web server configuration
+- Check for any changes to sample systemd unit or other init files
+- If installing from source, update dependencies with `composer install -o --no-dev`
+
+Upgrading from 0.1.x to 0.2.0
+=============================
+
+- The database schema has changed from rev1 to rev2; if upgrading the database manually, apply the 1.sql file
+- Web server configuration has changed to accommodate Tiny Tiny RSS; the following URL paths are affected:
+ - /tt-rss/api/
+ - /tt-rss/feed-icons/
+ - /tt-rss/images/
+- The following Composer dependencies have been added:
+ - jkingweb/druuid
