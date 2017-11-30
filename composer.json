@@ -27,8 +27,7 @@
         "fguillot/picofeed": ">=0.1.31",
         "hosteurope/password-generator": "^1.0",
         "docopt/docopt": "^1.0",
-        "jkingweb/druuid": "^3.0",
-        "phpseclib/phpseclib": "^2.0"
+        "jkingweb/druuid": "^3.0"
     },
     "require-dev": {
         "mikey179/vfsStream": "^1.6",
