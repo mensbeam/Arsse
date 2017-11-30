@@ -1,6 +1,8 @@
 [a]: https://code.mensbeam.com/MensBeam/Policy/src/master/CODE-OF-CONDUCT.md
 [b]: https://code.mensbeam.com/MensBeam/arsse/issues
 [c]: http://www.php-fig.org/psr/psr-2/
+[d]: https://getcomposer.org/
+[e]: https://phpunit.de/manual/current/en/textui.html#textui.clioptions
 
 # Contributing to The Arsse
 
@@ -40,3 +42,20 @@ Before you submit your pull request search for an existing open or closed pull r
 We would like to ensure consistency in our source code, so we follow the [PSR-2 guidelines][c] with one notable exception (utilizing the notation used and outlined in the original document):
 
 **Opening braces for classes and methods MUST go on the same line, and closing braces MUST go on the next line after the body.**
+
+## Running tests
+
+To run the test suite, you must have [Composer][d] installed as well as the command-line PHP interpreter (this is normally required to use Composer). Port 8000 must also be available for use by the built-in PHP Web server.
+
+``` sh
+# first install dependencies
+php composer.phar install
+# run the tests
+./tests/test
+```
+
+The example uses Unix syntax, but the test suite also runs in Windows. By default all tests are run; you can pass the same arguments to the test runner [as you would to PHPUnit][e]
+
+``` sh
+./tests/test --testsuite "Configuration"
+```

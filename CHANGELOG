@@ -1,3 +1,15 @@
+Version 0.2.0 (2017-11-30)
+==========================
+
+New features:
+- Support for the Tiny Tiny RSS protocol (see README.md for details)
+- Support for HTTP OPTIONS requests in all protocols
+
+Bug fixes:
+- Perform feed discovery *correctly*
+- Expose the incorrectDbCharset boolean in the NextCloud News server status
+- Give NextCloud News articles' guidHash attribute the correct type (string)
+
 Version 0.1.1 (2017-09-30)
 ==========================
 
