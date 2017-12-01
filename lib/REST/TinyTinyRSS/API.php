@@ -21,32 +21,6 @@ use JKingWeb\Arsse\Db\ResultEmpty;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\REST\Response;
 
-/*
-
-Protocol difference so far:
-    - Malformed JSON data returns a different error code than login failure, for clarity
-    - TT-RSS accepts whitespace-only names for categories, labels, and feeds; we do not
-    - TT-RSS allows two folders to share the same name under the same parent; we do not
-    - TT-RSS requires the user to choose in the face of multiple found feeds during discovery; we use the first one (picoFeed limitation)
-    - Session lifetime is much shorter by default
-    - Categories and feeds will always be sorted alphabetically (the protocol does not allow for clients to re-order)
-    - The "Archived" virtual feed is non-functional (the protocol does not allow archiving)
-    - The "Published" virtual feed is non-functional (this will not be implemented in the near term)
-    - setArticleLabel responds with errors for invalid labels where TT-RSS simply returns a zero result
-    - The result of setArticleLabel counts only records which actually changed rather than all entries attempted
-    - Using both limit/skip and unread_only in getFeeds produces reliable results, unlike in TT-RSS
-    - Top-level categories in getFeedTree have a 'parent_id' property (set to null); in TT-RSS the property is absent
-    - Article hashes are SHA-256 rather than SHA-1.
-    - Articles have at most one attachment (enclosure), whereas TTRSS allows for several; there is also significantly less detail. These are limitations of picoFeed which should be addressed
-    - IDs for enclosures are always 0 as we don't give them IDs
-    - Searching in getHeadlines is not yet implemented
-    - Category -3 (all non-special feeds) is handled correctly in getHeadlines; TT-RSS returns results for feed -3 (Fresh)
-    - Sorting of headlines does not match TT-RSS: special feeds are not sorted specially like they should be
-    - The 'sanitize', 'force_update', and 'has_sandbox' parameters of getHeadlines are ignored
-*/
-
-
-
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     const LEVEL = 14;           // emulated API level
     const VERSION = "17.4";     // emulated TT-RSS version
@@ -194,7 +168,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function opLogin(array $data): array {
-        if (Arsse::$user->auth((string) $data['user'], (string) $data['password'])) {
+        // both cleartext and base64 passwords are accepted
+        if (Arsse::$user->auth($data['user'], $data['password']) || Arsse::$user->auth($data['user'], base64_decode($data['password']))) {
             $id = Arsse::$db->sessionCreate($data['user']);
             return [
                 'session_id' => $id,

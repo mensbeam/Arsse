@@ -143,6 +143,7 @@ We are not aware of any other extensions to the TTRSS protocol. If you know of a
 
 #### Errors and ambiguities
 
+- TTRSS accepts base64-encoded passwords, though this is undocumented; The Arsse accepts base64-encoded passwords as well
 - TTRSS sometimes returns an incorrect count from the `setArticleLabel` operation; The Arsse returns a correct count in all cases
 - TTRSS sometimes returns out-of-date cached information; The Arsse does not use caches as TTRSS does, so information is always current
 - TTRSS returns results for _feed_ ID `-3` when providing the `getHeadlines` operation with _category_ ID `-3`; The Arsse retuns the correct results

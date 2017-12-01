@@ -192,7 +192,8 @@ LONG_STRING;
     }
     
     public function testLogIn() {
-        Phake::when(Arsse::$user)->auth(Arsse::$user->id, "superman")->thenReturn(false);
+        Phake::when(Arsse::$user)->auth(Arsse::$user->id, $this->anything())->thenReturn(false);
+        Phake::when(Arsse::$user)->auth(Arsse::$user->id, "secret")->thenReturn(true);
         Phake::when(Arsse::$db)->sessionCreate->thenReturn("PriestsOfSyrinx")->thenReturn("SolarFederation");
         $data = [
             'op'       => "login",
@@ -201,6 +202,8 @@ LONG_STRING;
         ];
         $exp = $this->respGood(['session_id' => "PriestsOfSyrinx", 'api_level' => \JKingWeb\Arsse\REST\TinyTinyRSS\API::LEVEL]);
         $this->assertResponse($exp, $this->req($data));
+        // base64 passwords are also accepted
+        $data['password'] = base64_encode($data['password']);
         $exp = $this->respGood(['session_id' => "SolarFederation", 'api_level' => \JKingWeb\Arsse\REST\TinyTinyRSS\API::LEVEL]);
         $this->assertResponse($exp, $this->req($data));
         // test a failed log-in
