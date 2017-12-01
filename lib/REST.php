@@ -22,7 +22,7 @@ class REST {
         ],
         'ttrss_api' => [ // Tiny Tiny RSS  https://git.tt-rss.org/git/tt-rss/wiki/ApiReference
             'match' => '/tt-rss/api/',
-            'strip' => '/tt-rss/api/',
+            'strip' => '/tt-rss/api',
             'class' => REST\TinyTinyRSS\API::class,
         ],
         'ttrss_icon' => [ // Tiny Tiny RSS feed icons
