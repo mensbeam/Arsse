@@ -31,9 +31,11 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $timeout = Arsse::$conf->dbSQLite3Timeout * 1000;
         try {
             $this->db = $this->makeConnection($dbFile, $mode, Arsse::$conf->dbSQLite3Key);
-            // set initial options
+            // enable exceptions
             $this->db->enableExceptions(true);
-            $this->exec("PRAGMA journal_mode = wal");
+            // set the timeout; parameters are not allowed for pragmas, but this usage should be safe
+            $this->exec("PRAGMA busy_timeout = $timeout");
+            // set other initial options
             $this->exec("PRAGMA foreign_keys = yes");
         } catch (\Throwable $e) {
             // if opening the database doesn't work, check various pre-conditions to find out what the problem might be
@@ -56,8 +58,6 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
             // otherwise the database is probably corrupt
             throw new Exception("fileCorrupt", $dbFile);
         }
-        // finally set the timeout; parameters are not allowed for pragmas, but this usage should be safe
-        $this->exec("PRAGMA busy_timeout = $timeout");
     }
 
     protected function makeConnection(string $file, int $opts, string $key) {

@@ -663,7 +663,6 @@ class Database {
     }
     
     public function feedUpdate($feedID, bool $throwError = false): bool {
-        $tr = $this->db->begin();
         // check to make sure the feed exists
         if (!ValueInfo::id($feedID)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID, 'type' => "int > 0"]);
@@ -682,7 +681,6 @@ class Database {
             if (!$feed->modified) {
                 // if the feed hasn't changed, just compute the next fetch time and record it
                 $this->db->prepare("UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id is ?", 'datetime', 'int')->run($feed->nextFetch, $feedID);
-                $tr->commit();
                 return false;
             }
         } catch (Feed\Exception $e) {
@@ -691,7 +689,6 @@ class Database {
                 "UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ?, err_count = err_count + 1, err_msg = ? WHERE id is ?",
                 'datetime', 'str', 'int'
             )->run(Feed::nextFetchOnError($f['err_count']), $e->getMessage(), $feedID);
-            $tr->commit();
             if ($throwError) {
                 throw $e;
             }
@@ -719,6 +716,7 @@ class Database {
             );
         }
         // actually perform updates
+        $tr = $this->db->begin();
         foreach ($feed->newItems as $article) {
             $articleID = $qInsertArticle->run(
                 $article->url,
