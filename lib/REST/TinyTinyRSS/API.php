@@ -1095,8 +1095,14 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                         $out += Arsse::$db->articleMark(Arsse::$user->id, ['starred' => (bool) $data['mode']], (new Context)->articles($articles));
                         break;
                     case 2: //toggle
-                        $out += Arsse::$db->articleMark(Arsse::$user->id, ['starred' => true], (new Context)->articles($articles)->starred(false));
-                        $out += Arsse::$db->articleMark(Arsse::$user->id, ['starred' => false], (new Context)->articles($articles)->starred(true));
+                        $on = array_column(Arsse::$db->articleList(Arsse::$user->id, (new Context)->articles($articles)->starred(true), Database::LIST_MINIMAL)->getAll(), "id");
+                        $off = array_column(Arsse::$db->articleList(Arsse::$user->id, (new Context)->articles($articles)->starred(false), Database::LIST_MINIMAL)->getAll(), "id");
+                        if ($off) {
+                            $out += Arsse::$db->articleMark(Arsse::$user->id, ['starred' => true], (new Context)->articles($off));
+                        }
+                        if ($on) {
+                            $out += Arsse::$db->articleMark(Arsse::$user->id, ['starred' => false], (new Context)->articles($on));
+                        }
                         break;
                     default:
                         throw new Exception("INCORRECT_USAGE");
@@ -1121,8 +1127,14 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                         $out += Arsse::$db->articleMark(Arsse::$user->id, ['read' => !$data['mode']], (new Context)->articles($articles));
                         break;
                     case 2: //toggle
-                        $out += Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], (new Context)->articles($articles)->unread(true));
-                        $out += Arsse::$db->articleMark(Arsse::$user->id, ['read' => false], (new Context)->articles($articles)->unread(false));
+                        $on = array_column(Arsse::$db->articleList(Arsse::$user->id, (new Context)->articles($articles)->unread(true), Database::LIST_MINIMAL)->getAll(), "id");
+                        $off = array_column(Arsse::$db->articleList(Arsse::$user->id, (new Context)->articles($articles)->unread(false), Database::LIST_MINIMAL)->getAll(), "id");
+                        if ($off) {
+                            $out += Arsse::$db->articleMark(Arsse::$user->id, ['read' => false], (new Context)->articles($off));
+                        }
+                        if ($on) {
+                            $out += Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], (new Context)->articles($on));
+                        }
                         break;
                     default:
                         throw new Exception("INCORRECT_USAGE");

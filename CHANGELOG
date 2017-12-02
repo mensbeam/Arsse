@@ -2,8 +2,10 @@ Version 0.2.1 (2017-12-??)
 ==========================
 
 Bug fixes:
+- Make SQLite timeouts much less likely
 - Accept base64-encoded passwords from TTRSS clients
 - Rename feeds correctly via TTRSS protocol
+- Toggle marks correctly via TTRSS protocol
 - Be even stricter about output data types in NextCloud News
 
 Version 0.2.0 (2017-11-30)

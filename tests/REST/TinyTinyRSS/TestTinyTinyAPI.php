@@ -1255,15 +1255,19 @@ LONG_STRING;
             ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 4], // invalid field
             ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "0, -1", 'field' => 3], // no valid IDs
         ];
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([42, 2112])->starred(true), $this->anything())->thenReturn(new Result([['id' => 42]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([42, 2112])->starred(false), $this->anything())->thenReturn(new Result([['id' => 2112]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([42, 2112])->unread(true), $this->anything())->thenReturn(new Result([['id' => 42]]));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([42, 2112])->unread(false), $this->anything())->thenReturn(new Result([['id' => 2112]]));
         Phake::when(Arsse::$db)->articleMark->thenReturn(1);
         Phake::when(Arsse::$db)->articleMark($this->anything(), ['starred' => false], (new Context)->articles([42, 2112]))->thenReturn(2);
         Phake::when(Arsse::$db)->articleMark($this->anything(), ['starred' =>  true], (new Context)->articles([42, 2112]))->thenReturn(4);
-        Phake::when(Arsse::$db)->articleMark($this->anything(), ['starred' => false], (new Context)->articles([42, 2112])->starred(true))->thenReturn(8);
-        Phake::when(Arsse::$db)->articleMark($this->anything(), ['starred' =>  true], (new Context)->articles([42, 2112])->starred(false))->thenReturn(16);
+        Phake::when(Arsse::$db)->articleMark($this->anything(), ['starred' => false], (new Context)->articles([42]))->thenReturn(8);
+        Phake::when(Arsse::$db)->articleMark($this->anything(), ['starred' =>  true], (new Context)->articles([2112]))->thenReturn(16);
         Phake::when(Arsse::$db)->articleMark($this->anything(), ['read'    =>  true], (new Context)->articles([42, 2112]))->thenReturn(32); // false is read for TT-RSS
         Phake::when(Arsse::$db)->articleMark($this->anything(), ['read'    => false], (new Context)->articles([42, 2112]))->thenReturn(64);
-        Phake::when(Arsse::$db)->articleMark($this->anything(), ['read'    =>  true], (new Context)->articles([42, 2112])->unread(true))->thenReturn(128);
-        Phake::when(Arsse::$db)->articleMark($this->anything(), ['read'    => false], (new Context)->articles([42, 2112])->unread(false))->thenReturn(256);
+        Phake::when(Arsse::$db)->articleMark($this->anything(), ['read'    =>  true], (new Context)->articles([42]))->thenReturn(128);
+        Phake::when(Arsse::$db)->articleMark($this->anything(), ['read'    => false], (new Context)->articles([2112]))->thenReturn(256);
         Phake::when(Arsse::$db)->articleMark($this->anything(), ['note'    =>    ""], (new Context)->articles([42, 2112]))->thenReturn(512);
         Phake::when(Arsse::$db)->articleMark($this->anything(), ['note'    =>  "eh"], (new Context)->articles([42, 2112]))->thenReturn(1024);
         $out = [

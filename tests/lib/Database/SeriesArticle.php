@@ -416,6 +416,7 @@ trait SeriesArticle {
         $this->compareIds([19], (new Context)->subscription(5)->unread(false));
         // get starred articles
         $this->compareIds([1,20], (new Context)->starred(true));
+        $this->compareIds([2,3,4,5,6,7,8,19], (new Context)->starred(false));
         $this->compareIds([1], (new Context)->starred(true)->unread(false));
         $this->compareIds([], (new Context)->starred(true)->unread(false)->subscription(5));
         // get items relative to edition
@@ -466,6 +467,9 @@ trait SeriesArticle {
         // get articles base on whether or not they have notes
         $this->compareIds([1,3,4,5,6,7,8,19,20], (new Context)->annotated(false));
         $this->compareIds([2], (new Context)->annotated(true));
+        // get specific starred articles
+        $this->compareIds([1], (new Context)->articles([1,2,3])->starred(true));
+        $this->compareIds([2,3], (new Context)->articles([1,2,3])->starred(false));
     }
 
     public function testListArticlesOfAMissingFolder() {
