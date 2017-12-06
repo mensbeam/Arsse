@@ -140,6 +140,7 @@ We are not aware of any other extensions to the TTRSS protocol. If you know of a
 - Article hashes are normally SHA1; The Arsse uses SHA256 hashes
 - Article attachments normally have unique IDs; The Arsse always gives attachments an ID of `"0"`
 - The default sort order of the `getHeadlines` operation normally uses custom sorting for "special" feeds; The Arsse's default sort order is equivalent to `feed_dates` for all feeds
+- The `getCounters` operation normally omits members with zero unread; The Arsse includes everything to appease some clients
 
 #### Errors and ambiguities
 

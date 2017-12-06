@@ -230,14 +230,12 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $categories[] = ['id' => self::CAT_LABELS, 'name' => Arsse::$lang->msg("API.TTRSS.Category.Labels"), 'parent' => 0, 'children' => 0, 'counter' => 0];
         // prepare data for each subscription; we also add unread counts for their host categories
         foreach (Arsse::$db->subscriptionList($user) as $f) {
-            if ($f['unread']) {
-                // add the feed to the list of feeds
-                $feeds[] = ['id' => (string) $f['id'], 'updated' => Date::transform($f['updated'], "iso8601", "sql"),'counter' => $f['unread'], 'has_img' => (int) (strlen((string) $f['favicon']) > 0)]; // ID is cast to string for consistency with TTRSS
-                // add the feed's unread count to the global unread count
-                $countAll += $f['unread'];
-                // add the feed's unread count to its category unread count
-                $categories[$catmap[(int) $f['folder']]]['counter'] += $f['unread'];
-            }
+            // add the feed to the list of feeds
+            $feeds[] = ['id' => (string) $f['id'], 'updated' => Date::transform($f['updated'], "iso8601", "sql"),'counter' => $f['unread'], 'has_img' => (int) (strlen((string) $f['favicon']) > 0)]; // ID is cast to string for consistency with TTRSS
+            // add the feed's unread count to the global unread count
+            $countAll += $f['unread'];
+            // add the feed's unread count to its category unread count
+            $categories[$catmap[(int) $f['folder']]]['counter'] += $f['unread'];
             // increment the global feed count
             $countSubs += 1;
         }
@@ -247,9 +245,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             $labels[] = ['id' => $this->labelOut($l['id']), 'counter' => $unread, 'auxcounter' => $l['articles']];
             $categories[$catmap[self::CAT_LABELS]]['counter'] += $unread;
         }
-        // do a second pass on categories, summing descendant unread counts for ancestors
+        // do a second pass on categories, summing descendant unread counts for ancestors and building a final list
         $cats = $categories;
-        $catCounts = [];
         while ($cats) {
             foreach ($cats as $c) {
                 if ($c['children']) {
@@ -261,16 +258,10 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     $cats[$catmap[$c['parent']]]['counter'] += $c['counter'];
                     $cats[$catmap[$c['parent']]]['children'] -= 1;
                 }
-                $catCounts[$c['id']] = $c['counter'];
+                // output the category
+                $cats[] = ['id' => $c['id'], 'kind' => "cat", 'counter' => $c['counter']];
                 // remove the category from the input list
                 unset($cats[$catmap[$c['id']]]);
-            }
-        }
-        // do a third pass on categories, building a final category list
-        foreach ($categories as $c) {
-            // only include categories with unread articles
-            if ($catCounts[$c['id']]) {
-                $cats[] = ['id' => $c['id'], 'kind' => "cat", 'counter' => $catCounts[$c['id']]];
             }
         }
         // prepare data for the virtual feeds and other counters
