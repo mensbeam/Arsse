@@ -896,14 +896,17 @@ LONG_STRING;
             ['id' => -1025, 'counter' => 0, 'auxcounter' => 2],
             ['id' => "3", 'updated' => "2016-05-23T06:40:02", 'counter' => 2,  'has_img' => 1],
             ['id' => "4", 'updated' => "2017-10-09T15:58:34", 'counter' => 6,  'has_img' => 1],
+            ['id' => "6", 'updated' => "2010-02-12T20:08:47", 'counter' => 0,  'has_img' => 1],
             ['id' => "1", 'updated' => "2017-09-15T22:54:16", 'counter' => 5,  'has_img' => 0],
             ['id' => "5", 'updated' => "2017-07-07T17:07:17", 'counter' => 12, 'has_img' => 0],
             ['id' => "2", 'updated' => "2011-11-11T11:11:11", 'counter' => 10, 'has_img' => 1],
             ['id' => 5, 'kind' => "cat", 'counter' => 10],
             ['id' => 6, 'kind' => "cat", 'counter' => 18],
+            ['id' => 4, 'kind' => "cat", 'counter' => 0],
             ['id' => 3, 'kind' => "cat", 'counter' => 28],
             ['id' => 2, 'kind' => "cat", 'counter' => 5],
             ['id' => 1, 'kind' => "cat", 'counter' => 7],
+            ['id' => 0, 'kind' => "cat", 'counter' => 0],
             ['id' => -2, 'kind' => "cat", 'counter' => 6],
         ];
         $this->assertResponse($this->respGood($exp), $this->req($in));
