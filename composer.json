@@ -1,7 +1,7 @@
 {
     "name": "jkingweb/arsse",
     "type": "project",
-    "description": "TODO",
+    "description": "The clean and modern RSS server that doesn't give you any crap",
     "keywords": ["rss"],
     "license": "MIT",
     "authors": [
@@ -17,8 +17,6 @@
         }
 
     ],
-    "minimum-stability": "dev",
-    "prefer-stable": true,
     "require": {
         "php": "^7.0",
         "ext-intl": "*",
