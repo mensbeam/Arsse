@@ -19,7 +19,7 @@
             </fileset>
         </copy>
         <echo>Installing dependencies via Composer</echo>
-        <exec command="composer install -o --no-dev" dir="./build/arsse"/>
+        <exec command="composer install -o --no-dev --no-scripts" dir="./build/arsse"/>
         <delete>
             <fileset dir="./build/arsse">
                 <include name="composer.*"/>

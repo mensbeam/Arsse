@@ -51,7 +51,7 @@ If installing from the Git repository rather than a download package, you will n
 First, you must install [Composer](https://getcomposer.org/) to fetch required PHP libraries. Once Composer is installed, dependencies may be downloaded with the following command:
 
 ``` sh
-php composer.phar install -o --no-dev
+php composer.phar install -o --no-dev --no-scripts
 ```
 
 Second, you may wish to create an example configuration file using the following command:
