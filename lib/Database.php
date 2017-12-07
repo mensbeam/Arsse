@@ -448,7 +448,11 @@ class Database {
                 ((select dest from target) is null or exists(select id from arsse_folders join target on owner = user and coalesce(id,0) = coalesce(dest,0))) as extant,
                 not exists(select id from folders where id = coalesce((select dest from target),0)) as valid,
                 not exists(select id from arsse_folders join target on coalesce(parent,0) = coalesce(dest,0) and name = coalesce((select rename from target),(select name from arsse_folders join target on id = source))) as available
-            ", "str", "strict int", "int", "str"
+            ",
+            "str",
+            "strict int",
+            "int",
+            "str"
         )->run($user, $id, $parent, $name)->getRow();
         if (!$p['extant']) {
             // if the parent doesn't exist or doesn't below to the user, throw an exception
@@ -687,7 +691,9 @@ class Database {
             // update the database with the resultant error and the next fetch time, incrementing the error count
             $this->db->prepare(
                 "UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ?, err_count = err_count + 1, err_msg = ? WHERE id = ?",
-                'datetime', 'str', 'int'
+                'datetime',
+                'str',
+                'int'
             )->run(Feed::nextFetchOnError($f['err_count']), $e->getMessage(), $feedID);
             if ($throwError) {
                 throw $e;
@@ -703,7 +709,17 @@ class Database {
         if (sizeof($feed->newItems)) {
             $qInsertArticle = $this->db->prepare(
                 "INSERT INTO arsse_articles(url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash,feed) values(?,?,?,?,?,?,?,?,?,?,?)",
-                'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int'
+                'str',
+                'str',
+                'str',
+                'datetime',
+                'datetime',
+                'str',
+                'str',
+                'str',
+                'str',
+                'str',
+                'int'
             );
         }
         if (sizeof($feed->changedItems)) {
@@ -712,7 +728,17 @@ class Database {
             $qClearReadMarks = $this->db->prepare("UPDATE arsse_marks SET read = 0, modified = CURRENT_TIMESTAMP WHERE article = ? and read = 1", 'int');
             $qUpdateArticle = $this->db->prepare(
                 "UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id = ?",
-                'str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int'
+                'str',
+                'str',
+                'str',
+                'datetime',
+                'datetime',
+                'str',
+                'str',
+                'str',
+                'str',
+                'str',
+                'int'
             );
         }
         // actually perform updates
@@ -767,7 +793,15 @@ class Database {
         // lastly update the feed database itself with updated information.
         $this->db->prepare(
             "UPDATE arsse_feeds SET url = ?, title = ?, favicon = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = '', next_fetch = ?, size = ? WHERE id = ?",
-            'str', 'str', 'str', 'str', 'datetime', 'str', 'datetime', 'int', 'int'
+            'str',
+            'str',
+            'str',
+            'str',
+            'datetime',
+            'str',
+            'datetime',
+            'int',
+            'int'
         )->run(
             $feed->data->feedUrl,
             $feed->data->title,
@@ -804,7 +838,8 @@ class Database {
     public function feedMatchLatest(int $feedID, int $count): Db\Result {
         return $this->db->prepare(
             "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed = ? ORDER BY modified desc, id desc limit ?",
-            'int', 'int'
+            'int',
+            'int'
         )->run($feedID, $count);
     }
 
@@ -817,7 +852,11 @@ class Database {
         // perform the query
         return $articles = $this->db->prepare(
             "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed = ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC))",
-            'int', $tId, $tHashUT, $tHashUC, $tHashTC
+            'int',
+            $tId,
+            $tHashUT,
+            $tHashUC,
+            $tHashTC
         )->run($feedID, $ids, $hashesUT, $hashesUC, $hashesTC);
     }
 
@@ -881,7 +920,8 @@ class Database {
                 throw new Db\ExceptionInput("tooLong", ['field' => "editions", 'action' => __FUNCTION__, 'max' => self::LIMIT_ARTICLES]); // @codeCoverageIgnore
             }
             list($inParams, $inTypes) = $this->generateIn($context->editions, "int");
-            $q->setCTE("requested_articles(id,edition)",
+            $q->setCTE(
+                "requested_articles(id,edition)",
                 "SELECT article,id as edition from arsse_editions where edition in ($inParams)",
                 $inTypes,
                 $context->editions
@@ -895,7 +935,8 @@ class Database {
                 throw new Db\ExceptionInput("tooLong", ['field' => "articles", 'action' => __FUNCTION__, 'max' => self::LIMIT_ARTICLES]); // @codeCoverageIgnore
             }
             list($inParams, $inTypes) = $this->generateIn($context->articles, "int");
-            $q->setCTE("requested_articles(id,edition)",
+            $q->setCTE(
+                "requested_articles(id,edition)",
                 "SELECT id,(select max(id) from arsse_editions where article = arsse_articles.id) as edition from arsse_articles where arsse_articles.id in ($inParams)",
                 $inTypes,
                 $context->articles
@@ -1005,12 +1046,14 @@ class Database {
                     $columns = array_merge($columns, [
                         "(select note from arsse_marks where article = arsse_articles.id and subscription in (select sub from subscribed_feeds)) as note",
                     ]);
+                    // no break
                 case self::LIST_TYPICAL: // conservative, plus content
                     $columns = array_merge($columns, [
                         "content",
                         "arsse_enclosures.url as media_url", // enclosures are potentially large due to data: URLs
                         "arsse_enclosures.type as media_type", // FIXME: enclosures should eventually have their own fetch method
                     ]);
+                    // no break
                 case self::LIST_CONSERVATIVE: // base metadata, plus anything that is not likely to be large text
                     $columns = array_merge($columns, [
                         "arsse_articles.url as url",
@@ -1022,6 +1065,7 @@ class Database {
                         "edited as edited_date",
                         "url_title_hash||':'||url_content_hash||':'||title_content_hash as fingerprint",
                     ]);
+                    // no break
                 case self::LIST_MINIMAL: // base metadata (always included: required for context matching)
                     $columns = array_merge($columns, [
                         // id, subscription, feed, modified_date, marked_date, unread, starred, edition
@@ -1150,7 +1194,8 @@ class Database {
                 coalesce(sum(read),0) as read
             FROM (
                 select read from arsse_marks where starred = 1 and subscription in (select id from arsse_subscriptions where owner = ?)
-            )", "str"
+            )",
+            "str"
         )->run($user)->getRow();
     }
 
@@ -1203,7 +1248,11 @@ class Database {
                     coalesce((select max(modified) from arsse_marks where article = arsse_articles.id),modified) <= ?
                     or ((select max(subs) from target_feed) = (select count(*) from arsse_marks where article = arsse_articles.id and read = 1) and coalesce((select max(modified) from arsse_marks where article = arsse_articles.id),modified) <= ?)
                 )
-            ", "int", "int", "datetime", "datetime"
+            ",
+            "int",
+            "int",
+            "datetime",
+            "datetime"
         );
         $limitRead = null;
         $limitUnread = null;
@@ -1233,7 +1282,8 @@ class Database {
                 join arsse_subscriptions on arsse_subscriptions.feed = arsse_feeds.id
             WHERE 
                 arsse_articles.id = ? and arsse_subscriptions.owner = ?",
-            "int", "str"
+            "int",
+            "str"
         )->run($id, $user)->getRow();
         if (!$out) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => $this->caller(), "field" => "article", 'id' => $id]);
@@ -1256,7 +1306,8 @@ class Database {
                 join arsse_subscriptions on arsse_subscriptions.feed = arsse_feeds.id
             WHERE 
                 edition = ? and arsse_subscriptions.owner = ?",
-            "int", "str"
+            "int",
+            "str"
         )->run($id, $user)->getRow();
         if (!$out) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => $this->caller(), "field" => "edition", 'id' => $id]);
@@ -1308,7 +1359,9 @@ class Database {
                  where label = id and assigned = 1 and read = 1
                 ) as read
             FROM arsse_labels where owner = ? and articles >= ? order by name
-            ", "str", "int"
+            ",
+            "str",
+            "int"
         )->run($user, !$includeEmpty);
     }
 
@@ -1342,7 +1395,9 @@ class Database {
                  where label = id and assigned = 1 and read = 1
                 ) as read
             FROM arsse_labels where $field = ? and owner = ?
-            ", $type, "str"
+            ",
+            $type,
+            "str"
         )->run($id, $user)->getRow();
         if (!$out) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "label", 'id' => $id]);
@@ -1427,7 +1482,8 @@ class Database {
                     ?,id,
                     (select id from arsse_subscriptions join user on user = owner where arsse_subscriptions.feed = target_articles.feed) 
                 FROM target_articles",
-                "int", $id
+                "int",
+                $id
             );
             $out += $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
         }

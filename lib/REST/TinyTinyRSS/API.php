@@ -266,7 +266,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // do a third pass on categories, building a final category list; this is done so that the original sort order is retained
         foreach ($categories as $c) {
-                $cats[] = ['id' => $c['id'], 'kind' => "cat", 'counter' => $catCounts[$c['id']]];
+            $cats[] = ['id' => $c['id'], 'kind' => "cat", 'counter' => $catCounts[$c['id']]];
         }
         // prepare data for the virtual feeds and other counters
         $special = [

@@ -162,6 +162,7 @@ class User {
                     } else {
                         return $this->u->auth($user, $password);
                     }
+                    break;
                 case User\Driver::FUNCT_NOT_IMPLEMENTED:
                     return false;
             }
@@ -194,6 +195,7 @@ class User {
                         throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => "all users"]);
                     }
                 }
+                // no break
             case User\Driver::FUNC_INTERNAL:
                 // internal functions handle their own authorization
                 return $this->u->userList($domain);

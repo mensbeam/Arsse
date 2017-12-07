@@ -77,7 +77,8 @@ class Feed {
     }
 
     protected static function configure(): Config {
-        $userAgent = Arsse::$conf->fetchUserAgentString ?? sprintf('Arsse/%s (%s %s; %s; https://thearsse.com/) PicoFeed (https://github.com/miniflux/picoFeed)',
+        $userAgent = Arsse::$conf->fetchUserAgentString ?? sprintf(
+            'Arsse/%s (%s %s; %s; https://thearsse.com/) PicoFeed (https://github.com/miniflux/picoFeed)',
             Arsse::VERSION, // Arsse version
             php_uname('s'), // OS
             php_uname('r'), // OS version
