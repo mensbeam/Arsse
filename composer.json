@@ -30,15 +30,11 @@
         "jkingweb/druuid": "^3.0"
     },
     "require-dev": {
-        "mikey179/vfsStream": "^1.6",
-        "webmozart/glob": "^4.1",
-        "phake/phake": "^3.0",
-        "phpunit/phpunit": "^6.0",
-        "phpdocumentor/phpdocumentor": "2.*",
-        "friendsofphp/php-cs-fixer": "^2.2",
-        "phing/phing": "^2.16",
-        "pear/archive_tar": "*",
-        "johnkary/phpunit-speedtrap": "^2.0"
+        "bamarni/composer-bin-plugin": "*"
+    },
+    "scripts": {
+        "post-install-cmd": ["@composer bin all install"],
+        "post-update-cmd": ["@composer bin all update"]
     },
     "autoload": {
         "psr-4": {
