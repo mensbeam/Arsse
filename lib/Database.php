@@ -536,7 +536,7 @@ class Database {
                 join arsse_feeds on feed = arsse_feeds.id 
                 left join topmost on folder=f_id"
         );
-        $q->setOrder("pinned desc, title");
+        $q->setOrder("pinned desc, title collate nocase");
         // define common table expressions
         $q->setCTE("user(user)", "SELECT ?", "str", $user);  // the subject user; this way we only have to pass it to prepare() once
         // topmost folders belonging to the user

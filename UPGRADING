@@ -8,6 +8,13 @@ When upgrading between any two versions of The Arsse, the following are usually 
 - Check for any changes to sample systemd unit or other init files
 - If installing from source, update dependencies with `composer install -o --no-dev`
 
+
+Upgrading from 0.2.0 to 0.2.1
+=============================
+
+- The database schema has changed from rev2 to rev3; if upgrading the database manually, apply the 2.sql file
+
+
 Upgrading from 0.1.x to 0.2.0
 =============================
 
