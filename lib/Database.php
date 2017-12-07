@@ -14,7 +14,7 @@ use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 
 class Database {
-    const SCHEMA_VERSION = 2;
+    const SCHEMA_VERSION = 3;
     const LIMIT_ARTICLES = 50;
     // articleList verbosity levels
     const LIST_MINIMAL      = 0; // only that metadata which is required for context matching

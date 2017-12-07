@@ -110,7 +110,7 @@ trait SeriesSubscription {
     public function setUpSeries() {
         $this->data['arsse_feeds']['rows'] = [
             [1,"http://example.com/feed1", "Ook", "", "",strtotime("now"),''],
-            [2,"http://example.com/feed2", "Eek", "", "",strtotime("now - 1 hour"),'http://example.com/favicon.ico'],
+            [2,"http://example.com/feed2", "eek", "", "",strtotime("now - 1 hour"),'http://example.com/favicon.ico'],
             [3,"http://example.com/feed3", "Ack", "", "",strtotime("now + 1 hour"),''],
         ];
         // initialize a partial mock of the Database object to later manipulate the feedUpdate method
@@ -237,7 +237,7 @@ trait SeriesSubscription {
         $exp = [
             [
                 'url'        => "http://example.com/feed2",
-                'title'      => "Eek",
+                'title'      => "eek",
                 'folder'     => null,
                 'top_folder' => null,
                 'unread'     => 4,
@@ -254,7 +254,7 @@ trait SeriesSubscription {
                 'order_type' => 1,
             ],
         ];
-        $this->assertResult($exp, Arsse::$db->subscriptionList($this->user));
+        $this->assertSame($exp, Arsse::$db->subscriptionList($this->user)->getAll());
         Phake::verify(Arsse::$user)->authorize($this->user, "subscriptionList");
         $this->assertArraySubset($exp[0], Arsse::$db->subscriptionPropertiesGet($this->user, 1));
         Phake::verify(Arsse::$user)->authorize($this->user, "subscriptionPropertiesGet");
@@ -265,7 +265,7 @@ trait SeriesSubscription {
         $exp = [
             [
                 'url'        => "http://example.com/feed2",
-                'title'      => "Eek",
+                'title'      => "eek",
                 'folder'     => null,
                 'top_folder' => null,
                 'unread'     => 4,

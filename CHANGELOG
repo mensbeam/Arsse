@@ -6,7 +6,11 @@ Bug fixes:
 - Accept base64-encoded passwords from TTRSS clients
 - Rename feeds correctly via TTRSS protocol
 - Toggle marks correctly via TTRSS protocol
+- Sort everything case-insensitively
 - Be even stricter about output data types in NextCloud News
+
+Changes:
+- Do not omit read feeds from TTRSS' getCounters, to fix some clients
 
 Version 0.2.0 (2017-11-30)
 ==========================

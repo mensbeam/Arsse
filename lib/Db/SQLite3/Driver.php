@@ -90,6 +90,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         }
         $sep = \DIRECTORY_SEPARATOR;
         $path = ($basePath ?? \JKingWeb\Arsse\BASE."sql").$sep."SQLite3".$sep;
+        // turn off foreign keys
+        $this->exec("PRAGMA foreign_keys = no");
         // lock the database
         $this->savepointCreate(true);
         for ($a = $this->schemaVersion(); $a < $to; $a++) {
@@ -124,6 +126,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
             $this->savepointRelease();
         }
         $this->savepointRelease();
+        // turn foreign keys back on
+        $this->exec("PRAGMA foreign_keys = yes");
         return true;
     }
 
