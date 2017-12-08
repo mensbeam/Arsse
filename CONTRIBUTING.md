@@ -51,11 +51,13 @@ To run the test suite, you must have [Composer][d] installed as well as the comm
 # first install dependencies
 php composer.phar install
 # run the tests
-./tests/test
+./robo test
+# run the tests and produce a code coverage report in ./tests/coverage
+./robo coverage
 ```
 
 The example uses Unix syntax, but the test suite also runs in Windows. By default all tests are run; you can pass the same arguments to the test runner [as you would to PHPUnit][e]
 
 ``` sh
-./tests/test --testsuite "Configuration"
+./robo test --testsuite "Configuration"
 ```
