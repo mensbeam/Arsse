@@ -49,6 +49,8 @@ class RoboFile extends \Robo\Tasks {
             $dir."CONTRIBUTING.md",
             $dir."tests",
             $dir."vendor-bin",
+            $dir."robo",
+            $dir."robo.bat",
         ]);
         // generate a sample configuration file
         $t->taskExec("php arsse.php conf save-defaults config.defaults.php")->dir($dir);
