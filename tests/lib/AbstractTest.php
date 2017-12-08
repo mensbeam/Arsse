@@ -29,7 +29,22 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         }
     }
 
+    public function approximateTime($exp, $act) {
+        if (is_null($act)) {
+            return null;
+        }
+        $target = Date::normalize($exp)->getTimeStamp();
+        $value = Date::normalize($act)->getTimeStamp();
+        if ($value >= ($target - 1) && $value <= ($target + 1)) {
+            // if the actual time is off by no more than one second, it's acceptable
+            return $exp;
+        } else {
+            return $act;
+        }
+    }
+
     public function assertTime($exp, $test, string $msg = null) {
+        $test = $this->approximateTime($exp, $test);
         $exp  = Date::transform($exp, "iso8601");
         $test = Date::transform($test, "iso8601");
         $this->assertSame($exp, $test, $msg);

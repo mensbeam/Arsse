@@ -82,11 +82,23 @@ trait Setup {
     public function compareExpectations(array $expected): bool {
         foreach ($expected as $table => $info) {
             $cols = implode(",", array_keys($info['columns']));
+            $types = $info['columns'];
             $data = $this->drv->prepare("SELECT $cols from $table")->run()->getAll();
             $cols = array_keys($info['columns']);
             foreach ($info['rows'] as $index => $row) {
                 $this->assertCount(sizeof($cols), $row, "The number of values for array index $index does not match the number of fields");
                 $row = array_combine($cols, $row);
+                foreach($data as $index => $test) {
+                    foreach ($test as $col => $value) {
+                        if ($types[$col]=="datetime") {
+                            $test[$col] = $this->approximateTime($row[$col], $value);
+                        }
+                    }
+                    if($row===$test) {
+                        $data[$index] = $test;
+                        break;
+                    }
+                }
                 $this->assertContains($row, $data, "Table $table does not contain record at array index $index.");
                 $found = array_search($row, $data, true);
                 unset($data[$found]);
