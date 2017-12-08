@@ -3,11 +3,5 @@
 *.html     diff=html
 *.php      diff=php
 *.bat      eol=crlf
+*.cmd      eol=crlf
 .gitignore -eol
-
-
-tests/         export-ignore
-.*             export-ignore
-build.xml      export-ignore
-composer.*     export-ignore
-phpdoc.*       export-ignore

@@ -15,9 +15,6 @@
     <directory suffix=".php">../lib</directory>
   </whitelist>
 </filter>
-<logging>
-  <log type="coverage-html" target="coverage" showUncoveredFiles="true"/>
-</logging>
 <listeners>
     <listener class="JohnKary\PHPUnit\Listener\SpeedTrapListener">
         <arguments><array>
