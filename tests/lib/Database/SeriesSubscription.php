@@ -254,7 +254,7 @@ trait SeriesSubscription {
                 'order_type' => 1,
             ],
         ];
-        $this->assertSame($exp, Arsse::$db->subscriptionList($this->user)->getAll());
+        $this->assertResult($exp, Arsse::$db->subscriptionList($this->user));
         Phake::verify(Arsse::$user)->authorize($this->user, "subscriptionList");
         $this->assertArraySubset($exp[0], Arsse::$db->subscriptionPropertiesGet($this->user, 1));
         Phake::verify(Arsse::$user)->authorize($this->user, "subscriptionPropertiesGet");
