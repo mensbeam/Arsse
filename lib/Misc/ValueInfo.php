@@ -34,7 +34,7 @@ class ValueInfo {
     const M_STRICT   = 1 << 30; // throw an exception if the type doesn't match
     const M_ARRAY    = 1 << 31; // the value should be a flat array of values of the specified type; indexed and associative are both acceptable
 
-    public function normalize($value, int $type, string $dateFormat = null) {
+    public static function normalize($value, int $type, string $dateFormat = null) {
         $allowNull = ($type & self::M_NULL);
         $strict    = ($type & (self::M_STRICT | self::M_DROP));
         $drop      = ($type & self::M_DROP);
