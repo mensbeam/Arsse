@@ -54,12 +54,6 @@ class TestFeedFetching extends Test\AbstractTest {
         new Feed(null, $this->base."Fetching/EndlessLoop?i=0");
     }
 
-    public function testHandleATimeout() {
-        Arsse::$conf->fetchTimeout = 1;
-        $this->assertException("timeout", "Feed");
-        new Feed(null, $this->base."Fetching/Timeout");
-    }
-
     public function testHandleAnOverlyLargeFeed() {
         Arsse::$conf->fetchSizeLimit = 512;
         $this->assertException("maxSize", "Feed");
@@ -69,5 +63,11 @@ class TestFeedFetching extends Test\AbstractTest {
     public function testHandleACertificateError() {
         $this->assertException("invalidCertificate", "Feed");
         new Feed(null, "https://localhost:8000/");
+    }
+
+    public function testHandleATimeout() {
+        Arsse::$conf->fetchTimeout = 1;
+        $this->assertException("timeout", "Feed");
+        new Feed(null, $this->base."Fetching/Timeout");
     }
 }
