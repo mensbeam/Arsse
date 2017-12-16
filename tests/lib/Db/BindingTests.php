@@ -195,7 +195,7 @@ trait BindingTests {
 
     public function testBindIso8601DateString() {
         $input = "2017-01-09T13:11:17";
-        $time = strtotime($input);
+        $time = strtotime($input." UTC");
         $exp = [
             "null"      => null,
             "integer"   => 2017,
@@ -213,7 +213,7 @@ trait BindingTests {
 
     public function testBindArbitraryDateString() {
         $input = "Today";
-        $time = strtotime($input);
+        $time = strtotime($input." UTC");
         $exp = [
             "null"      => null,
             "integer"   => 0,

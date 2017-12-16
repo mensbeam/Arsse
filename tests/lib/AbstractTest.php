@@ -51,6 +51,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     }
 
     public function clearData(bool $loadLang = true): bool {
+        date_default_timezone_set("America/Toronto");
         $r = new \ReflectionClass(\JKingWeb\Arsse\Arsse::class);
         $props = array_keys($r->getStaticProperties());
         foreach ($props as $prop) {
