@@ -20,7 +20,7 @@ class RoboFile extends \Robo\Tasks {
 
     public function coverage(array $args): Result {
         // run the test suite with code coverage reporting enabled
-        return $this->test(["--coverage-html",self::BASE_TEST."coverage"]);
+        return $this->test(array_merge(["--coverage-html",self::BASE_TEST."coverage"], $args));
     }
 
     public function package(array $args): Result {
