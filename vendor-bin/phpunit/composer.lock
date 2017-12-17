@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "518be4a4ebed104f739a80d5a8eef27b",
+    "content-hash": "2feb94beae7c769e2df081af57c89fed",
     "packages": [
         {
             "name": "doctrine/instantiator",
@@ -59,54 +59,6 @@
                 "instantiate"
             ],
             "time": "2015-06-14T21:17:01+00:00"
-        },
-        {
-            "name": "johnkary/phpunit-speedtrap",
-            "version": "v2.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/johnkary/phpunit-speedtrap.git",
-                "reference": "a1e39e0e3d07e0faee4ef3f342229d68fab07b5f"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/johnkary/phpunit-speedtrap/zipball/a1e39e0e3d07e0faee4ef3f342229d68fab07b5f",
-                "reference": "a1e39e0e3d07e0faee4ef3f342229d68fab07b5f",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=7.0",
-                "phpunit/phpunit": "^6.0"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.0-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "JohnKary\\PHPUnit\\Listener\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "John Kary",
-                    "email": "john@johnkary.net"
-                }
-            ],
-            "description": "Find slow tests in your PHPUnit test suite",
-            "homepage": "https://github.com/johnkary/phpunit-speedtrap",
-            "keywords": [
-                "phpunit",
-                "profile",
-                "slow"
-            ],
-            "time": "2017-12-06T15:14:00+00:00"
         },
         {
             "name": "mikey179/vfsStream",

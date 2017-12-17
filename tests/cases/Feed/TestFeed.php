@@ -11,7 +11,8 @@ use Phake;
 
 /**
  * @covers \JKingWeb\Arsse\Feed
- * @covers \JKingWeb\Arsse\Feed\Exception */
+ * @covers \JKingWeb\Arsse\Feed\Exception
+ * @group slow */
 class TestFeed extends Test\AbstractTest {
     protected static $host = "http://localhost:8000/";
     protected $base = "";

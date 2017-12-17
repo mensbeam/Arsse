@@ -8,7 +8,9 @@ namespace JKingWeb\Arsse;
 
 use Phake;
 
-/** @covers \JKingWeb\Arsse\Feed */
+/** 
+ * @covers \JKingWeb\Arsse\Feed 
+ * @group slow */
 class TestFeedFetching extends Test\AbstractTest {
     protected static $host = "http://localhost:8000/";
     protected $base = "";

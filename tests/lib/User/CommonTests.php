@@ -80,6 +80,7 @@ trait CommonTests {
         Arsse::$user->remove(self::USER1);
     }
 
+    /** @group slow */
     public function testAuthenticateAUser() {
         $_SERVER['PHP_AUTH_USER'] = self::USER1;
         $_SERVER['PHP_AUTH_PW'] = "secret";
@@ -91,6 +92,7 @@ trait CommonTests {
         $this->assertTrue(Arsse::$user->auth(self::USER2, ""));
     }
 
+    /** @group slow */
     public function testChangeAPassword() {
         Arsse::$user->add(self::USER1, "secret");
         $this->assertEquals("superman", Arsse::$user->passwordSet(self::USER1, "superman"));
