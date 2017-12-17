@@ -103,7 +103,7 @@ class ValueInfo {
                 } else {
                     return 0;
                 }
-                break;
+                break; // @codeCoverageIgnore
             case self::T_FLOAT:
                 if (is_float($value)) {
                     return $value;
@@ -161,7 +161,7 @@ class ValueInfo {
                 } else {
                     return (string) $value;
                 }
-                break;
+                break; // @codeCoverageIgnore
             case self::T_DATE:
                 if ($value instanceof \DateTimeImmutable) {
                     return $value->setTimezone(new \DateTimeZone("UTC"));
@@ -239,7 +239,7 @@ class ValueInfo {
                         return [$value];
                     }
                 }
-                break;
+                break; // @codeCoverageIgnore
             default:
                 throw new ExceptionType("typeUnknown", $type); // @codeCoverageIgnore
         }

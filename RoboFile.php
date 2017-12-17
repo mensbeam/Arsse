@@ -11,16 +11,42 @@ class RoboFile extends \Robo\Tasks {
     const BASE = __DIR__.\DIRECTORY_SEPARATOR;
     const BASE_TEST = self::BASE."tests".\DIRECTORY_SEPARATOR;
 
+    /** Runs the full test suite */
     public function test(array $args): Result {
         // start the built-in PHP server, which is required for some of the tests
         $this->taskServer(8000)->host("localhost")->dir(self::BASE_TEST."docroot")->rawArg("-n")->arg(self::BASE_TEST."server.php")->background()->run();
         // run tests
-        return $this->taskPHPUnit()->configFile(self::BASE_TEST."phpunit.xml")->args($args)->run();
+        $execpath = realpath(self::BASE."vendor-bin/phpunit/vendor/phpunit/phpunit/phpunit");
+        $confpath = realpath(self::BASE_TEST."phpunit.xml");
+        return $this->taskExec("php")->arg($execpath)->option("-c", $confpath)->args($args)->run();
+    }
+
+    /** Runs a quick subset of the test suite */
+    public function testQuick(array $args): Result {
+        return $this->test(array_merge(["--exclude-group","slow"], $args));
     }
 
     public function coverage(array $args): Result {
+        // start the built-in PHP server, which is required for some of the tests
+        $this->taskServer(8000)->host("localhost")->dir(self::BASE_TEST."docroot")->rawArg("-n")->arg(self::BASE_TEST."server.php")->background()->run();
+        // run tests with code coverage reporting enabled
+        $exec = $this->findCoverageEngine();
+        $execpath = realpath(self::BASE."vendor-bin/phpunit/vendor/phpunit/phpunit/phpunit");
+        $confpath = realpath(self::BASE_TEST."phpunit.xml");
+        return $this->taskExec($exec)->arg($execpath)->option("-c", $confpath)->option("--coverage-html", self::BASE_TEST."coverage")->args($args)->run();
         // run the test suite with code coverage reporting enabled
         return $this->test(array_merge(["--coverage-html",self::BASE_TEST."coverage"], $args));
+    }
+
+    protected function findCoverageEngine(): string {
+        $null = null;
+        $code = 0;
+        exec("phpdbg --version", $null, $code);
+        if (!$code) {
+            return "phpdbg -qrr";
+        } else {
+            return "php";
+        }
     }
 
     public function package(array $args): Result {
