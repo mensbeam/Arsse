@@ -213,7 +213,7 @@ trait BindingTests {
 
     public function testBindArbitraryDateString() {
         $input = "Today";
-        $time = strtotime($input." UTC");
+        $time = date_create($input, new \DateTimezone("UTC"))->getTimestamp();
         $exp = [
             "null"      => null,
             "integer"   => 0,
