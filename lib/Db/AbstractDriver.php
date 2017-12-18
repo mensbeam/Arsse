@@ -6,14 +6,12 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Db;
 
+use JKingWeb\Arsse\Arsse;
+
 abstract class AbstractDriver implements Driver {
     protected $locked = false;
     protected $transDepth = 0;
     protected $transStatus = [];
-
-    abstract public function prepareArray(string $query, array $paramTypes): Statement;
-    abstract protected function lock(): bool;
-    abstract protected function unlock(bool $rollback = false) : bool;
 
     /** @codeCoverageIgnore */
     public function schemaVersion(): int {
@@ -23,6 +21,52 @@ abstract class AbstractDriver implements Driver {
         } catch (Exception $e) {
             return 0;
         }
+    }
+
+    public function schemaUpdate(int $to, string $basePath = null): bool {
+        $ver = $this->schemaVersion();
+        if (!Arsse::$conf->dbAutoUpdate) {
+            throw new Exception("updateManual", ['version' => $ver, 'driver_name' => $this->driverName()]);
+        } elseif ($ver >= $to) {
+            throw new Exception("updateTooNew", ['difference' => ($ver - $to), 'current' => $ver, 'target' => $to, 'driver_name' => $this->driverName()]);
+        }
+        $sep = \DIRECTORY_SEPARATOR;
+        $path = ($basePath ?? \JKingWeb\Arsse\BASE."sql").$sep.static::schemaID().$sep;
+        // lock the database
+        $this->savepointCreate(true);
+        for ($a = $this->schemaVersion(); $a < $to; $a++) {
+            $this->savepointCreate();
+            try {
+                $file = $path.$a.".sql";
+                if (!file_exists($file)) {
+                    throw new Exception("updateFileMissing", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]);
+                } elseif (!is_readable($file)) {
+                    throw new Exception("updateFileUnreadable", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]);
+                }
+                $sql = @file_get_contents($file);
+                if ($sql===false) {
+                    throw new Exception("updateFileUnusable", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]); // @codeCoverageIgnore
+                }
+                try {
+                    $this->exec($sql);
+                } catch (\Throwable $e) {
+                    throw new Exception("updateFileError", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a, 'message' => $this->getError()]);
+                }
+                if ($this->schemaVersion() != $a+1) {
+                    throw new Exception("updateFileIncomplete", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]);
+                }
+            } catch (\Throwable $e) {
+                // undo any partial changes from the failed update
+                $this->savepointUndo();
+                // commit any successful updates if updating by more than one version
+                $this->savepointRelease();
+                // throw the error received
+                throw $e;
+            }
+            $this->savepointRelease();
+        }
+        $this->savepointRelease();
+        return true;
     }
 
     public function begin(bool $lock = false): Transaction {

@@ -27,7 +27,7 @@ class Database {
 
     public function __construct($initialize = true) {
         $driver = Arsse::$conf->dbDriver;
-        $this->db = new $driver();
+        $this->db = $driver::create();
         $ver = $this->db->schemaVersion();
         if ($initialize && $ver < self::SCHEMA_VERSION) {
             $this->db->schemaUpdate(self::SCHEMA_VERSION);
