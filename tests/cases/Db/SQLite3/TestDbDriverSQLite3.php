@@ -15,7 +15,7 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
     protected $ch;
 
     public function setUp() {
-        if (!extension_loaded("sqlite3")) {
+        if (!Db\SQLite3\Driver::requirementsMet()) {
             $this->markTestSkipped("SQLite extension not loaded");
         }
         $this->clearData();

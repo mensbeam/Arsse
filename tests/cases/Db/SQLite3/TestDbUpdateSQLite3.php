@@ -68,6 +68,12 @@ class TestDbUpdateSQLite3 extends Test\AbstractTest {
         $this->drv->schemaUpdate(1, $this->base);
     }
 
+    public function testLoadEmptyFile() {
+        file_put_contents($this->path."0.sql", "");
+        $this->assertException("updateFileIncomplete", "Db");
+        $this->drv->schemaUpdate(1, $this->base);
+    }
+
     public function testLoadCorrectFile() {
         file_put_contents($this->path."0.sql", self::MINIMAL1);
         $this->drv->schemaUpdate(1, $this->base);
@@ -76,7 +82,7 @@ class TestDbUpdateSQLite3 extends Test\AbstractTest {
 
     public function testPerformPartialUpdate() {
         file_put_contents($this->path."0.sql", self::MINIMAL1);
-        file_put_contents($this->path."1.sql", "");
+        file_put_contents($this->path."1.sql", " ");
         $this->assertException("updateFileIncomplete", "Db");
         try {
             $this->drv->schemaUpdate(2, $this->base);

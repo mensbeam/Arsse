@@ -13,6 +13,8 @@ abstract class AbstractDriver implements Driver {
     protected $transDepth = 0;
     protected $transStatus = [];
 
+    protected abstract function getError(): string;
+
     /** @codeCoverageIgnore */
     public function schemaVersion(): int {
         // FIXME: generic schemaVersion() will need to be covered for database engines other than SQLite
@@ -46,6 +48,8 @@ abstract class AbstractDriver implements Driver {
                 $sql = @file_get_contents($file);
                 if ($sql===false) {
                     throw new Exception("updateFileUnusable", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]); // @codeCoverageIgnore
+                } elseif ($sql==="") {
+                    throw new Exception("updateFileIncomplete", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]);
                 }
                 try {
                     $this->exec($sql);

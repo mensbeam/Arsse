@@ -27,10 +27,9 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         }
         // if no database file is specified in the configuration, use a suitable default
         $dbFile = $dbFile ?? Arsse::$conf->dbSQLite3File ?? \JKingWeb\Arsse\BASE."arsse.db";
-        $mode = \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE;
         $timeout = Arsse::$conf->dbSQLite3Timeout * 1000;
         try {
-            $this->makeConnection($dbFile, $mode, Arsse::$conf->dbSQLite3Key);
+            $this->makeConnection($dbFile, Arsse::$conf->dbSQLite3Key);
             // set the timeout; parameters are not allowed for pragmas, but this usage should be safe
             $this->exec("PRAGMA busy_timeout = $timeout");
             // set other initial options
@@ -62,8 +61,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         return class_exists("SQLite3");
     }
 
-    protected function makeConnection(string $file, int $opts, string $key) {
-        $this->db = new \SQLite3($file, $opts, $key);
+    protected function makeConnection(string $file, string $key) {
+        $this->db = new \SQLite3($file, \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE, $key);
         // enable exceptions
         $this->db->enableExceptions(true);
     }
@@ -76,6 +75,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         unset($this->db);
     }
 
+    /** @codeCoverageIgnore */
     public static function create(): \JKingWeb\Arsse\Db\Driver {
         if (self::requirementsMet()) {
             return new self;
@@ -96,7 +96,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     }
 
     public function schemaVersion(): int {
-        return $this->query("PRAGMA user_version")->getValue();
+        return (int) $this->query("PRAGMA user_version")->getValue();
     }
 
     public function schemaUpdate(int $to, string $basePath = null): bool {

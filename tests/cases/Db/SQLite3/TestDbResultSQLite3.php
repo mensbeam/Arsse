@@ -11,7 +11,8 @@ class TestDbResultSQLite3 extends Test\AbstractTest {
     protected $c;
 
     public function setUp() {
-        if (!extension_loaded("sqlite3")) {
+        $this->clearData();
+        if (!Db\SQLite3\Driver::requirementsMet()) {
             $this->markTestSkipped("SQLite extension not loaded");
         }
         $c = new \SQLite3(":memory:");
@@ -22,6 +23,7 @@ class TestDbResultSQLite3 extends Test\AbstractTest {
     public function tearDown() {
         $this->c->close();
         unset($this->c);
+        $this->clearData();
     }
 
     public function testConstructResult() {
