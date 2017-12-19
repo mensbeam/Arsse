@@ -51,8 +51,14 @@
         <file>cases/Db/SQLite3/TestDbDriverCreationSQLite3.php</file>
         <file>cases/Db/SQLite3/TestDbDriverSQLite3.php</file>
         <file>cases/Db/SQLite3/TestDbUpdateSQLite3.php</file>
+
+        <file>cases/Db/SQLite3PDO/TestDbResultSQLite3PDO.php</file>
+        <file>cases/Db/SQLite3PDO/TestDbStatementSQLite3PDO.php</file>
+        <file>cases/Db/SQLite3PDO/TestDbDriverCreationSQLite3PDO.php</file>
+        <file>cases/Db/SQLite3PDO/TestDbDriverSQLite3PDO.php</file>
+        <file>cases/Db/SQLite3PDO/TestDbUpdateSQLite3PDO.php</file>
     </testsuite>
-    <testsuite name="Database functions">
+    <testsuite name="Database functions">        
         <file>cases/Db/SQLite3/Database/TestDatabaseMiscellanySQLite3.php</file>
         <file>cases/Db/SQLite3/Database/TestDatabaseMetaSQLite3.php</file>
         <file>cases/Db/SQLite3/Database/TestDatabaseUserSQLite3.php</file>

@@ -16,6 +16,7 @@ return [
     'API.TTRSS.FeedCount'                                                  => '{0, select, 1 {(1 feed)} other {({0} feeds)}}',
 
     'Driver.Db.SQLite3.Name'                                               => 'SQLite 3',
+    'Driver.Db.SQLite3PDO.Name'                                            => 'SQLite 3 (PDO)',
     'Driver.Service.Curl.Name'                                             => 'HTTP (curl)',
     'Driver.Service.Internal.Name'                                         => 'Internal',
     'Driver.User.Internal.Name'                                            => 'Internal',
