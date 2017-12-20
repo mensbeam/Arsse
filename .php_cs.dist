@@ -10,6 +10,7 @@ const BASE = __DIR__.DIRECTORY_SEPARATOR;
 $paths = [
     __FILE__,
     BASE."arsse.php",
+    BASE."RoboFile.php",
     BASE."lib",
     BASE."tests",
 ];
