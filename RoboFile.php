@@ -128,4 +128,13 @@ class RoboFile extends \Robo\Tasks {
         $this->_exec("git worktree prune");
         return $out;
     }
+
+    public function clean($opts = ['demo|d' => false]): Result {
+        $t = $this->taskExec(realpath(self::BASE."vendor/bin/php-cs-fixer"));
+        $t->arg("fix");
+        if ($opts['demo']) {
+            $t->args("--dry-run", "--diff")->option("--diff-format", "udiff");
+        }
+        return $t->run();
+    }
 }
