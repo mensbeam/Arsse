@@ -10,6 +10,7 @@ use JKingWeb\Arsse\User\Driver as UserDriver;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\User;
+use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\Test\Database;
 use JKingWeb\Arsse\Db\Result;
 use Phake;
@@ -90,8 +91,19 @@ trait Setup {
                 $row = array_combine($cols, $row);
                 foreach($data as $index => $test) {
                     foreach ($test as $col => $value) {
-                        if ($types[$col]=="datetime") {
-                            $test[$col] = $this->approximateTime($row[$col], $value);
+                        switch ($types[$col]) {
+                            case "datetime":
+                                $test[$col] = $this->approximateTime($row[$col], $value);
+                                break;
+                            case "int":
+                                $test[$col] = ValueInfo::normalize($value, ValueInfo::T_INT | ValueInfo::M_DROP | valueInfo::M_NULL);
+                                break;
+                            case "float":
+                                $test[$col] = ValueInfo::normalize($value, ValueInfo::T_FLOAT | ValueInfo::M_DROP | valueInfo::M_NULL);
+                                break;
+                            case "bool":
+                                $test[$col] = (int) ValueInfo::normalize($value, ValueInfo::T_BOOL | ValueInfo::M_DROP | valueInfo::M_NULL);
+                                break;                            
                         }
                     }
                     if($row===$test) {

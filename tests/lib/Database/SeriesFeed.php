@@ -256,9 +256,9 @@ trait SeriesFeed {
     }
 
     public function testListStaleFeeds() {
-        $this->assertSame([1,3,4], Arsse::$db->feedListStale());
+        $this->assertEquals([1,3,4], Arsse::$db->feedListStale());
         Arsse::$db->feedUpdate(3);
         Arsse::$db->feedUpdate(4);
-        $this->assertSame([1], Arsse::$db->feedListStale());
+        $this->assertEquals([1], Arsse::$db->feedListStale());
     }
 }

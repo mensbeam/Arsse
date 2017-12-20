@@ -32,6 +32,8 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     public function approximateTime($exp, $act) {
         if (is_null($act)) {
             return null;
+        } elseif (is_null($exp)) {
+            return $act;
         }
         $target = Date::normalize($exp)->getTimeStamp();
         $value = Date::normalize($act)->getTimeStamp();

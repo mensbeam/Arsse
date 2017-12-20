@@ -58,7 +58,7 @@
         <file>cases/Db/SQLite3PDO/TestDbDriverSQLite3PDO.php</file>
         <file>cases/Db/SQLite3PDO/TestDbUpdateSQLite3PDO.php</file>
     </testsuite>
-    <testsuite name="Database functions">        
+    <testsuite name="Database functions">
         <file>cases/Db/SQLite3/Database/TestDatabaseMiscellanySQLite3.php</file>
         <file>cases/Db/SQLite3/Database/TestDatabaseMetaSQLite3.php</file>
         <file>cases/Db/SQLite3/Database/TestDatabaseUserSQLite3.php</file>
@@ -69,6 +69,16 @@
         <file>cases/Db/SQLite3/Database/TestDatabaseArticleSQLite3.php</file>
         <file>cases/Db/SQLite3/Database/TestDatabaseLabelSQLite3.php</file>
         <file>cases/Db/SQLite3/Database/TestDatabaseCleanupSQLite3.php</file>
+
+        <file>cases/Db/SQLite3PDO/Database/TestDatabaseMiscellanySQLite3PDO.php</file>
+        <file>cases/Db/SQLite3PDO/Database/TestDatabaseUserSQLite3PDO.php</file>
+        <file>cases/Db/SQLite3PDO/Database/TestDatabaseSessionSQLite3PDO.php</file>
+        <file>cases/Db/SQLite3PDO/Database/TestDatabaseFolderSQLite3PDO.php</file>
+        <file>cases/Db/SQLite3PDO/Database/TestDatabaseFeedSQLite3PDO.php</file>
+        <file>cases/Db/SQLite3PDO/Database/TestDatabaseSubscriptionSQLite3PDO.php</file>
+        <file>cases/Db/SQLite3PDO/Database/TestDatabaseArticleSQLite3PDO.php</file>
+        <file>cases/Db/SQLite3PDO/Database/TestDatabaseLabelSQLite3PDO.php</file>
+        <file>cases/Db/SQLite3PDO/Database/TestDatabaseCleanupSQLite3PDO.php</file>
     </testsuite>
     <testsuite name="Controllers">
         <testsuite name="NCNv1">

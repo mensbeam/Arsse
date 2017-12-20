@@ -888,8 +888,8 @@ trait SeriesArticle {
     public function testFetchStarredCounts() {
         $exp1 = ['total' => 2, 'unread' => 1, 'read' => 1];
         $exp2 = ['total' => 0, 'unread' => 0, 'read' => 0];
-        $this->assertSame($exp1, Arsse::$db->articleStarred("john.doe@example.com"));
-        $this->assertSame($exp2, Arsse::$db->articleStarred("jane.doe@example.com"));
+        $this->assertEquals($exp1, Arsse::$db->articleStarred("john.doe@example.com"));
+        $this->assertEquals($exp2, Arsse::$db->articleStarred("jane.doe@example.com"));
     }
 
     public function testFetchStarredCountsWithoutAuthority() {
