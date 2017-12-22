@@ -82,7 +82,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         } elseif (PDODriver::requirementsMet()) {
             return new PDODriver;
         } else {
-           throw new Exception("extMissing", self::driverName());
+            throw new Exception("extMissing", self::driverName());
         }
     }
 

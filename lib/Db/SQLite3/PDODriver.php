@@ -35,7 +35,7 @@ class PDODriver extends Driver {
         } elseif (Driver::requirementsMet()) {
             return new Driver;
         } else {
-           throw new Exception("extMissing", self::driverName());
+            throw new Exception("extMissing", self::driverName());
         }
     }
 

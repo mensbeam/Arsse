@@ -13,7 +13,7 @@ abstract class AbstractDriver implements Driver {
     protected $transDepth = 0;
     protected $transStatus = [];
 
-    protected abstract function getError(): string;
+    abstract protected function getError(): string;
 
     /** @codeCoverageIgnore */
     public function schemaVersion(): int {

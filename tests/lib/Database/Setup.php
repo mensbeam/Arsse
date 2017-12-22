@@ -103,7 +103,7 @@ trait Setup {
                                 break;
                             case "bool":
                                 $test[$col] = (int) ValueInfo::normalize($value, ValueInfo::T_BOOL | ValueInfo::M_DROP | valueInfo::M_NULL);
-                                break;                            
+                                break;
                         }
                     }
                     if ($row===$test) {

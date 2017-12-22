@@ -28,9 +28,11 @@ trait PDOError {
                             default:
                                 return [Exception::class, "engineErrorGeneral", $err[1]." - ".$err[2]];
                         }
+                        // no break
                     default:
                         return [Exception::class, "engineErrorGeneral", $err[2]]; // @codeCoverageIgnore
                 }
+                // no break
             default:
                 return [Exception::class, "engineErrorGeneral", $err[0].": ".$err[2]]; // @codeCoverageIgnore
         }

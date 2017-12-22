@@ -9,7 +9,6 @@ namespace JKingWeb\Arsse\TestCase\Lang;
 use JKingWeb\Arsse\Lang as TestClass;
 use org\bovigo\vfs\vfsStream;
 
-
 /** @covers \JKingWeb\Arsse\Lang */
 class TestBasic extends \JKingWeb\Arsse\Test\AbstractTest {
     use \JKingWeb\Arsse\Test\Lang\Setup;

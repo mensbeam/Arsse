@@ -14,7 +14,6 @@ use JKingWeb\Arsse\Db\SQLite3\PDODriver;
  * @covers \JKingWeb\Arsse\Db\PDOStatement<extended>
  * @covers \JKingWeb\Arsse\Db\PDOError */
 class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
-
     protected $c;
     protected static $imp = \JKingWeb\Arsse\Db\PDOStatement::class;
 
