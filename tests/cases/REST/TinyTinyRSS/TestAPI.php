@@ -4,8 +4,13 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse;
+namespace JKingWeb\Arsse\TestCase\REST\TinyTinyRSS;
 
+use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Conf;
+use JKingWeb\Arsse\User;
+use JKingWeb\Arsse\Database;
+use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\REST\Request;
 use JKingWeb\Arsse\REST\Response;
 use JKingWeb\Arsse\Test\Result;
@@ -18,7 +23,7 @@ use Phake;
 
 /** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\API<extended>
  *  @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Exception */
-class TestTinyTinyAPI extends Test\AbstractTest {
+class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $h;
     protected $folders = [
         ['id' => 5, 'parent' => 3,    'children' => 0, 'feeds' => 1, 'name' => "Local"],
@@ -161,7 +166,7 @@ LONG_STRING;
             'expires' => "2112-12-21 21:12:00",
             'user'    => Arsse::$user->id,
         ]);
-        $this->h = new REST\TinyTinyRSS\API();
+        $this->h = new API();
     }
 
     public function tearDown() {

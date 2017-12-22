@@ -4,12 +4,12 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse;
+namespace JKingWeb\Arsse\TestCase\Misc;
 
 use JKingWeb\Arsse\Misc\Context;
 
 /** @covers \JKingWeb\Arsse\Misc\Context */
-class TestContext extends Test\AbstractTest {
+class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testVerifyInitialState() {
         $c = new Context;
         foreach ((new \ReflectionObject($c))->getMethods(\ReflectionMethod::IS_PUBLIC) as $m) {

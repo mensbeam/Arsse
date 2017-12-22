@@ -4,13 +4,15 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse;
+namespace JKingWeb\Arsse\TestCase\Misc;
 
+use JKingWeb\Arsse\ExceptionType;
 use JKingWeb\Arsse\Misc\ValueInfo as I;
 use JKingWeb\Arsse\Test\Misc\StrClass;
+use JKingWeb\Arsse\Test\Result;
 
 /** @covers \JKingWeb\Arsse\Misc\ValueInfo */
-class TestValueInfo extends Test\AbstractTest {
+class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp() {
         $this->clearData();
     }
@@ -398,7 +400,7 @@ class TestValueInfo extends Test\AbstractTest {
             [1e-6,                                  [null,true], [true, false], [0,              false], [1e-6,               true],  ["0.000001",            true],  [[1e-6],                                 false]],
             [[1,2,3],                               [null,true], [true, false], [0,              false], [0.0,                false], ["",                    false], [[1,2,3],                                true] ],
             [['a'=>1,'b'=>2],                       [null,true], [true, false], [0,              false], [0.0,                false], ["",                    false], [['a'=>1,'b'=>2],                        true] ],
-            [new Test\Result([['a'=>1,'b'=>2]]),    [null,true], [true, false], [0,              false], [0.0,                false], ["",                    false], [[['a'=>1,'b'=>2]],                      true] ],
+            [new Result([['a'=>1,'b'=>2]]),         [null,true], [true, false], [0,              false], [0.0,                false], ["",                    false], [[['a'=>1,'b'=>2]],                      true] ],
         ];
         $params = [
             [I::T_MIXED,  "Mixed"         ],
@@ -496,8 +498,8 @@ class TestValueInfo extends Test\AbstractTest {
         }
         // Array-mode tests
         $tests = [
-            [I::T_INT    | I::M_DROP,   new Test\Result([1, 2, 2.2, 3]), [1,2,null,3]   ],
-            [I::T_INT,                  new Test\Result([1, 2, 2.2, 3]), [1,2,2,3]      ],
+            [I::T_INT    | I::M_DROP,   new Result([1, 2, 2.2, 3]), [1,2,null,3]   ],
+            [I::T_INT,                  new Result([1, 2, 2.2, 3]), [1,2,2,3]      ],
             [I::T_STRING | I::M_STRICT, "Bare string",                   ["Bare string"]],
         ];
         foreach ($tests as $index => $test) {

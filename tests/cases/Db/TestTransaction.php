@@ -4,19 +4,20 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse;
+namespace JKingWeb\Arsse\TestCase\Db;
 
 use JKingWeb\Arsse\Db\Transaction;
+use JKingWeb\Arsse\Db\Exception;
 use Phake;
 
 /**
  * @covers \JKingWeb\Arsse\Db\Transaction */
-class TestTransaction extends Test\AbstractTest {
+class TestTransaction extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $drv;
 
     public function setUp() {
         $this->clearData();
-        $drv = Phake::mock(Db\SQLite3\Driver::class);
+        $drv = Phake::mock(\JKingWeb\Arsse\Db\SQLite3\Driver::class);
         Phake::when($drv)->savepointRelease->thenReturn(true);
         Phake::when($drv)->savepointUndo->thenReturn(true);
         Phake::when($drv)->savepointCreate->thenReturn(1)->thenReturn(2);
@@ -51,7 +52,7 @@ class TestTransaction extends Test\AbstractTest {
     }
 
     public function testIgnoreRollbackErrors() {
-        Phake::when($this->drv)->savepointUndo->thenThrow(new Db\Exception("savepointStale"));
+        Phake::when($this->drv)->savepointUndo->thenThrow(new Exception("savepointStale"));
         $tr1 = new Transaction($this->drv);
         $tr2 = new Transaction($this->drv);
         unset($tr1, $tr2); // no exception should bubble up

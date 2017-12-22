@@ -4,13 +4,15 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse;
+namespace JKingWeb\Arsse\TestCase\Lang;
 
+use JKingWeb\Arsse\Lang as TestClass;
 use org\bovigo\vfs\vfsStream;
 
+
 /** @covers \JKingWeb\Arsse\Lang */
-class TestLang extends Test\AbstractTest {
-    use Test\Lang\Setup;
+class TestBasic extends \JKingWeb\Arsse\Test\AbstractTest {
+    use \JKingWeb\Arsse\Test\Lang\Setup;
 
     public $files;
     public $path;
@@ -38,14 +40,14 @@ class TestLang extends Test\AbstractTest {
      */
     public function testLoadInternalStrings() {
         $this->assertEquals("", $this->l->set("", true));
-        $this->assertCount(sizeof(Lang::REQUIRED), $this->l->dump());
+        $this->assertCount(sizeof(TestClass::REQUIRED), $this->l->dump());
     }
 
     /**
      * @depends testLoadInternalStrings
      */
     public function testLoadDefaultLanguage() {
-        $this->assertEquals(Lang::DEFAULT, $this->l->set(Lang::DEFAULT, true));
+        $this->assertEquals(TestClass::DEFAULT, $this->l->set(TestClass::DEFAULT, true));
         $str = $this->l->dump();
         $this->assertArrayHasKey('Exception.JKingWeb/Arsse/Exception.uncoded', $str);
         $this->assertArrayHasKey('Test.presentText', $str);
@@ -55,7 +57,7 @@ class TestLang extends Test\AbstractTest {
      * @depends testLoadDefaultLanguage
      */
     public function testLoadSupplementaryLanguage() {
-        $this->l->set(Lang::DEFAULT, true);
+        $this->l->set(TestClass::DEFAULT, true);
         $this->assertEquals("ja", $this->l->set("ja", true));
         $str = $this->l->dump();
         $this->assertArrayHasKey('Exception.JKingWeb/Arsse/Exception.uncoded', $str);

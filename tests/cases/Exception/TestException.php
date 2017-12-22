@@ -4,12 +4,16 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse;
+namespace JKingWeb\Arsse\TestCase\Exception;
 
+use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Lang;
+use JKingWeb\Arsse\Exception;
+use JKingWeb\Arsse\Lang\Exception as LangException;
 use Phake;
 
 /** @covers \JKingWeb\Arsse\AbstractException */
-class TestException extends Test\AbstractTest {
+class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp() {
         $this->clearData(false);
         // create a mock Lang object so as not to create a dependency loop
@@ -43,7 +47,7 @@ class TestException extends Test\AbstractTest {
      */
     public function testDerivedClass() {
         $this->assertException("fileMissing", "Lang");
-        throw new Lang\Exception("fileMissing");
+        throw new LangException("fileMissing");
     }
 
     /**
@@ -51,7 +55,7 @@ class TestException extends Test\AbstractTest {
      */
     public function testDerivedClassWithMessageParameters() {
         $this->assertException("fileMissing", "Lang");
-        throw new Lang\Exception("fileMissing", "en");
+        throw new LangException("fileMissing", "en");
     }
 
     /**
@@ -67,6 +71,6 @@ class TestException extends Test\AbstractTest {
      */
     public function testDerivedClassWithMissingMessage() {
         $this->assertException("uncoded");
-        throw new Lang\Exception("testThisExceptionMessageDoesNotExist");
+        throw new LangException("testThisExceptionMessageDoesNotExist");
     }
 }

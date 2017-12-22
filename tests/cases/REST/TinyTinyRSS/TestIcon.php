@@ -4,14 +4,19 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse;
+namespace JKingWeb\Arsse\TestCase\REST\TinyTinyRSS;
 
+use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Conf;
+use JKingWeb\Arsse\User;
+use JKingWeb\Arsse\Database;
+use JKingWeb\Arsse\REST\TinyTinyRSS\Icon;
 use JKingWeb\Arsse\REST\Request;
 use JKingWeb\Arsse\REST\Response;
 use Phake;
 
 /** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Icon<extended> */
-class TestTinyTinyIcon extends Test\AbstractTest {
+class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $h;
 
     public function setUp() {
@@ -20,7 +25,7 @@ class TestTinyTinyIcon extends Test\AbstractTest {
         // create a mock user manager
         // create a mock database interface
         Arsse::$db = Phake::mock(Database::class);
-        $this->h = new REST\TinyTinyRSS\Icon();
+        $this->h = new Icon();
     }
 
     public function tearDown() {
