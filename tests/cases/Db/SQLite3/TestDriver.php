@@ -10,8 +10,8 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\SQLite3\Driver;
-use JKingWeb\Arsse\Db\SQLite3\Result;
-use JKingWeb\Arsse\Db\SQLite3\Statement;
+use JKingWeb\Arsse\Db\Result;
+use JKingWeb\Arsse\Db\Statement;
 
 /**
  * @covers \JKingWeb\Arsse\Db\SQLite3\Driver<extended>
@@ -22,7 +22,7 @@ class TestDriver extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $ch;
 
     public function setUp() {
-        if (!Db\SQLite3\Driver::requirementsMet()) {
+        if (!Driver::requirementsMet()) {
             $this->markTestSkipped("SQLite extension not loaded");
         }
         $this->clearData();

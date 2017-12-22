@@ -13,10 +13,10 @@ class TestResult extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $c;
 
     public function setUp() {
-        $this->clearData();
-        if (!Db\SQLite3\Driver::requirementsMet()) {
+        if (!\JKingWeb\Arsse\Db\SQLite3\Driver::requirementsMet()) {
             $this->markTestSkipped("SQLite extension not loaded");
         }
+        $this->clearData();
         $c = new \SQLite3(":memory:");
         $c->enableExceptions(true);
         $this->c = $c;

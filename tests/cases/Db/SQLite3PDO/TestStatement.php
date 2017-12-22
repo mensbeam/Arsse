@@ -4,23 +4,25 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse;
+namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
 
 use JKingWeb\Arsse\Db\Statement;
+use JKingWeb\Arsse\Db\PDOStatement;
+use JKingWeb\Arsse\Db\SQLite3\PDODriver;
 
 /**
  * @covers \JKingWeb\Arsse\Db\PDOStatement<extended>
  * @covers \JKingWeb\Arsse\Db\PDOError */
-class TestDbStatementSQLite3PDO extends Test\AbstractTest {
+class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
 
     protected $c;
-    protected static $imp = Db\PDOStatement::class;
+    protected static $imp = \JKingWeb\Arsse\Db\PDOStatement::class;
 
     public function setUp() {
-        $this->clearData();
-        if (!Db\SQLite3\PDODriver::requirementsMet()) {
+        if (!PDODriver::requirementsMet()) {
             $this->markTestSkipped("PDO-SQLite extension not loaded");
         }
+        $this->clearData();
         $c = new \PDO("sqlite::memory:", "", "", [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
         $this->c = $c;
     }
@@ -46,7 +48,7 @@ class TestDbStatementSQLite3PDO extends Test\AbstractTest {
 
     public function testConstructStatement() {
         $nativeStatement = $this->c->prepare("SELECT ? as value");
-        $this->assertInstanceOf(Statement::class, new Db\PDOStatement($this->c, $nativeStatement));
+        $this->assertInstanceOf(Statement::class, new PDOStatement($this->c, $nativeStatement));
     }
 
     public function testBindMissingValue() {

@@ -26,7 +26,7 @@ class TestUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
     const MINIMAL2 = "pragma user_version=2";
 
     public function setUp(Conf $conf = null) {
-        if (!extension_loaded("sqlite3")) {
+        if (!Driver::requirementsMet()) {
             $this->markTestSkipped("SQLite extension not loaded");
         }
         $this->clearData();

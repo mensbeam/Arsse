@@ -52,11 +52,11 @@
         <file>cases/Db/SQLite3/TestDriver.php</file>
         <file>cases/Db/SQLite3/TestUpdate.php</file>
 
-        <file>cases/Db/SQLite3PDO/TestDbResultSQLite3PDO.php</file>
-        <file>cases/Db/SQLite3PDO/TestDbStatementSQLite3PDO.php</file>
-        <file>cases/Db/SQLite3PDO/TestDbDriverCreationSQLite3PDO.php</file>
-        <file>cases/Db/SQLite3PDO/TestDbDriverSQLite3PDO.php</file>
-        <file>cases/Db/SQLite3PDO/TestDbUpdateSQLite3PDO.php</file>
+        <file>cases/Db/SQLite3PDO/TestResult.php</file>
+        <file>cases/Db/SQLite3PDO/TestStatement.php</file>
+        <file>cases/Db/SQLite3PDO/TestCreation.php</file>
+        <file>cases/Db/SQLite3PDO/TestDriver.php</file>
+        <file>cases/Db/SQLite3PDO/TestUpdate.php</file>
     </testsuite>
     <testsuite name="Database functions">
         <file>cases/Db/SQLite3/Database/TestMiscellany.php</file>
@@ -70,15 +70,16 @@
         <file>cases/Db/SQLite3/Database/TestLabel.php</file>
         <file>cases/Db/SQLite3/Database/TestCleanup.php</file>
 
-        <file>cases/Db/SQLite3PDO/Database/TestDatabaseMiscellanySQLite3PDO.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestDatabaseUserSQLite3PDO.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestDatabaseSessionSQLite3PDO.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestDatabaseFolderSQLite3PDO.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestDatabaseFeedSQLite3PDO.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestDatabaseSubscriptionSQLite3PDO.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestDatabaseArticleSQLite3PDO.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestDatabaseLabelSQLite3PDO.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestDatabaseCleanupSQLite3PDO.php</file>
+        <file>cases/Db/SQLite3PDO/Database/TestMiscellany.php</file>
+        <file>cases/Db/SQLite3PDO/Database/TestMeta.php</file>
+        <file>cases/Db/SQLite3PDO/Database/TestUser.php</file>
+        <file>cases/Db/SQLite3PDO/Database/TestSession.php</file>
+        <file>cases/Db/SQLite3PDO/Database/TestFolder.php</file>
+        <file>cases/Db/SQLite3PDO/Database/TestFeed.php</file>
+        <file>cases/Db/SQLite3PDO/Database/TestSubscription.php</file>
+        <file>cases/Db/SQLite3PDO/Database/TestArticle.php</file>
+        <file>cases/Db/SQLite3PDO/Database/TestLabel.php</file>
+        <file>cases/Db/SQLite3PDO/Database/TestCleanup.php</file>
     </testsuite>
     <testsuite name="Controllers">
         <testsuite name="NCNv1">

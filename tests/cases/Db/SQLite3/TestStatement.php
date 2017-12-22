@@ -18,10 +18,10 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     protected static $imp = \JKingWeb\Arsse\Db\SQLite3\Statement::class;
 
     public function setUp() {
-        $this->clearData();
-        if (!extension_loaded("sqlite3")) {
+        if (!\JKingWeb\Arsse\Db\SQLite3\Driver::requirementsMet()) {
             $this->markTestSkipped("SQLite extension not loaded");
         }
+        $this->clearData();
         $c = new \SQLite3(":memory:");
         $c->enableExceptions(true);
         $this->c = $c;
