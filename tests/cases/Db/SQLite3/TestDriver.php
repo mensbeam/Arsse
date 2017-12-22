@@ -4,12 +4,19 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse;
+namespace JKingWeb\Arsse\TestCase\Db\SQLite3;
+
+use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Conf;
+use JKingWeb\Arsse\Database;
+use JKingWeb\Arsse\Db\SQLite3\Driver;
+use JKingWeb\Arsse\Db\SQLite3\Result;
+use JKingWeb\Arsse\Db\SQLite3\Statement;
 
 /**
  * @covers \JKingWeb\Arsse\Db\SQLite3\Driver<extended>
  * @covers \JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder */
-class TestDbDriverSQLite3 extends Test\AbstractTest {
+class TestDriver extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $data;
     protected $drv;
     protected $ch;
@@ -21,10 +28,10 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
         $this->clearData();
         $conf = new Conf();
         Arsse::$conf = $conf;
-        $conf->dbDriver = Db\SQLite3\Driver::class;
+        $conf->dbDriver = Driver::class;
         $conf->dbSQLite3Timeout = 0;
         $conf->dbSQLite3File = tempnam(sys_get_temp_dir(), 'ook');
-        $this->drv = new Db\SQLite3\Driver();
+        $this->drv = new Driver();
         $this->ch = new \SQLite3(Arsse::$conf->dbSQLite3File);
         $this->ch->enableExceptions(true);
     }
@@ -80,7 +87,7 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
     }
 
     public function testMakeAValidQuery() {
-        $this->assertInstanceOf(Db\Result::class, $this->drv->query("SELECT 1"));
+        $this->assertInstanceOf(Result::class, $this->drv->query("SELECT 1"));
     }
 
     public function testMakeAnInvalidQuery() {
@@ -108,7 +115,7 @@ class TestDbDriverSQLite3 extends Test\AbstractTest {
 
     public function testPrepareAValidQuery() {
         $s = $this->drv->prepare("SELECT ?, ?", "int", "int");
-        $this->assertInstanceOf(Db\Statement::class, $s);
+        $this->assertInstanceOf(Statement::class, $s);
     }
 
     public function testPrepareAnInvalidQuery() {

@@ -4,8 +4,13 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse;
+namespace JKingWeb\Arsse\TestCase\REST\NextCloudNews;
 
+use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Conf;
+use JKingWeb\Arsse\User;
+use JKingWeb\Arsse\Database;
+use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\REST\Request;
 use JKingWeb\Arsse\REST\Response;
 use JKingWeb\Arsse\Test\Result;
@@ -13,10 +18,11 @@ use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\Context;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
+use JKingWeb\Arsse\REST\NextCloudNews\V1_2;
 use Phake;
 
 /** @covers \JKingWeb\Arsse\REST\NextCloudNews\V1_2<extended> */
-class TestNCNV1_2 extends Test\AbstractTest {
+class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $h;
     protected $feeds = [ // expected sample output of a feed list from the database, and the resultant expected transformation by the REST handler
         'db' => [
@@ -304,7 +310,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
         // create a mock database interface
         Arsse::$db = Phake::mock(Database::class);
         Phake::when(Arsse::$db)->begin->thenReturn(Phake::mock(Transaction::class));
-        $this->h = new REST\NextCloudNews\V1_2();
+        $this->h = new V1_2();
     }
 
     public function tearDown() {
@@ -318,7 +324,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
 
     public function testSendAuthenticationChallenge() {
         Phake::when(Arsse::$user)->authHTTP->thenReturn(false);
-        $exp = new Response(401, "", "", ['WWW-Authenticate: Basic realm="'.REST\NextCloudNews\V1_2::REALM.'"']);
+        $exp = new Response(401, "", "", ['WWW-Authenticate: Basic realm="'.V1_2::REALM.'"']);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/")));
     }
 
@@ -496,7 +502,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
 
     public function testRetrieveServerVersion() {
         $exp = new Response(200, [
-            'version' => REST\NextCloudNews\V1_2::VERSION,
+            'version' => V1_2::VERSION,
             'arsse_version' => Arsse::VERSION,
             ]);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/version")));
@@ -867,7 +873,7 @@ class TestNCNV1_2 extends Test\AbstractTest {
         Phake::when(Arsse::$db)->metaGet("service_last_checkin")->thenReturn(Date::transform($valid, "sql"))->thenReturn(Date::transform($invalid, "sql"));
         Phake::when(Arsse::$db)->driverCharsetAcceptable->thenReturn(true)->thenReturn(false);
         $arr1 = $arr2 = [
-            'version' => REST\NextCloudNews\V1_2::VERSION,
+            'version' => V1_2::VERSION,
             'arsse_version' => Arsse::VERSION,
             'warnings' => [
                 'improperlyConfiguredCron' => false,

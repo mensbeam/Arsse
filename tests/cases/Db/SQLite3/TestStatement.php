@@ -4,18 +4,18 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse;
+namespace JKingWeb\Arsse\TestCase\Db\SQLite3;
 
 use JKingWeb\Arsse\Db\Statement;
 
 /**
  * @covers \JKingWeb\Arsse\Db\SQLite3\Statement<extended>
  * @covers \JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder */
-class TestDbStatementSQLite3 extends Test\AbstractTest {
-    use Test\Db\BindingTests;
+class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
+    use \JKingWeb\Arsse\Test\Db\BindingTests;
 
     protected $c;
-    protected static $imp = Db\SQLite3\Statement::class;
+    protected static $imp = \JKingWeb\Arsse\Db\SQLite3\Statement::class;
 
     public function setUp() {
         $this->clearData();
@@ -48,7 +48,7 @@ class TestDbStatementSQLite3 extends Test\AbstractTest {
 
     public function testConstructStatement() {
         $nativeStatement = $this->c->prepare("SELECT ? as value");
-        $this->assertInstanceOf(Statement::class, new Db\SQLite3\Statement($this->c, $nativeStatement));
+        $this->assertInstanceOf(Statement::class, new \JKingWeb\Arsse\Db\SQLite3\Statement($this->c, $nativeStatement));
     }
 
     public function testBindMissingValue() {

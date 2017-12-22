@@ -4,14 +4,17 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse;
+namespace JKingWeb\Arsse\TestCase\Feed;
 
+use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Conf;
+use JKingWeb\Arsse\Feed;
 use Phake;
 
-/** 
- * @covers \JKingWeb\Arsse\Feed 
+/**
+ * @covers \JKingWeb\Arsse\Feed
  * @group slow */
-class TestFeedFetching extends Test\AbstractTest {
+class TestFetching extends \JKingWeb\Arsse\Test\AbstractTest {
     protected static $host = "http://localhost:8000/";
     protected $base = "";
 

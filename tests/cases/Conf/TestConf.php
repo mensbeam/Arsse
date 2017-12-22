@@ -4,12 +4,13 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse;
+namespace JKingWeb\Arsse\TestCase\Conf;
 
+use JKingWeb\Arsse\Conf;
 use org\bovigo\vfs\vfsStream;
 
 /** @covers \JKingWeb\Arsse\Conf */
-class TestConf extends Test\AbstractTest {
+class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
     public static $vfs;
     public static $path;
 

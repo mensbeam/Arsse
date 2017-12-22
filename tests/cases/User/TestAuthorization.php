@@ -4,42 +4,47 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse;
+namespace JKingWeb\Arsse\TestCase\User;
 
+
+use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Conf;
+use JKingWeb\Arsse\User;
+use JKingWeb\Arsse\User\Driver;
 use Phake;
 
 /** @covers \JKingWeb\Arsse\User */
-class TestAuthorization extends Test\AbstractTest {
+class TestAuthorization extends \JKingWeb\Arsse\Test\AbstractTest {
     const USERS = [
-        'user@example.com' => User\Driver::RIGHTS_NONE,
-        'user@example.org' => User\Driver::RIGHTS_NONE,
-        'dman@example.com' => User\Driver::RIGHTS_DOMAIN_MANAGER,
-        'dman@example.org' => User\Driver::RIGHTS_DOMAIN_MANAGER,
-        'dadm@example.com' => User\Driver::RIGHTS_DOMAIN_ADMIN,
-        'dadm@example.org' => User\Driver::RIGHTS_DOMAIN_ADMIN,
-        'gman@example.com' => User\Driver::RIGHTS_GLOBAL_MANAGER,
-        'gman@example.org' => User\Driver::RIGHTS_GLOBAL_MANAGER,
-        'gadm@example.com' => User\Driver::RIGHTS_GLOBAL_ADMIN,
-        'gadm@example.org' => User\Driver::RIGHTS_GLOBAL_ADMIN,
+        'user@example.com' => Driver::RIGHTS_NONE,
+        'user@example.org' => Driver::RIGHTS_NONE,
+        'dman@example.com' => Driver::RIGHTS_DOMAIN_MANAGER,
+        'dman@example.org' => Driver::RIGHTS_DOMAIN_MANAGER,
+        'dadm@example.com' => Driver::RIGHTS_DOMAIN_ADMIN,
+        'dadm@example.org' => Driver::RIGHTS_DOMAIN_ADMIN,
+        'gman@example.com' => Driver::RIGHTS_GLOBAL_MANAGER,
+        'gman@example.org' => Driver::RIGHTS_GLOBAL_MANAGER,
+        'gadm@example.com' => Driver::RIGHTS_GLOBAL_ADMIN,
+        'gadm@example.org' => Driver::RIGHTS_GLOBAL_ADMIN,
         // invalid rights levels
-        'bad1@example.com' => User\Driver::RIGHTS_NONE+1,
-        'bad1@example.org' => User\Driver::RIGHTS_NONE+1,
-        'bad2@example.com' => User\Driver::RIGHTS_DOMAIN_MANAGER+1,
-        'bad2@example.org' => User\Driver::RIGHTS_DOMAIN_MANAGER+1,
-        'bad3@example.com' => User\Driver::RIGHTS_DOMAIN_ADMIN+1,
-        'bad3@example.org' => User\Driver::RIGHTS_DOMAIN_ADMIN+1,
-        'bad4@example.com' => User\Driver::RIGHTS_GLOBAL_MANAGER+1,
-        'bad4@example.org' => User\Driver::RIGHTS_GLOBAL_MANAGER+1,
-        'bad5@example.com' => User\Driver::RIGHTS_GLOBAL_ADMIN+1,
-        'bad5@example.org' => User\Driver::RIGHTS_GLOBAL_ADMIN+1,
+        'bad1@example.com' => Driver::RIGHTS_NONE+1,
+        'bad1@example.org' => Driver::RIGHTS_NONE+1,
+        'bad2@example.com' => Driver::RIGHTS_DOMAIN_MANAGER+1,
+        'bad2@example.org' => Driver::RIGHTS_DOMAIN_MANAGER+1,
+        'bad3@example.com' => Driver::RIGHTS_DOMAIN_ADMIN+1,
+        'bad3@example.org' => Driver::RIGHTS_DOMAIN_ADMIN+1,
+        'bad4@example.com' => Driver::RIGHTS_GLOBAL_MANAGER+1,
+        'bad4@example.org' => Driver::RIGHTS_GLOBAL_MANAGER+1,
+        'bad5@example.com' => Driver::RIGHTS_GLOBAL_ADMIN+1,
+        'bad5@example.org' => Driver::RIGHTS_GLOBAL_ADMIN+1,
 
     ];
     const LEVELS = [
-        User\Driver::RIGHTS_NONE,
-        User\Driver::RIGHTS_DOMAIN_MANAGER,
-        User\Driver::RIGHTS_DOMAIN_ADMIN,
-        User\Driver::RIGHTS_GLOBAL_MANAGER,
-        User\Driver::RIGHTS_GLOBAL_ADMIN,
+        Driver::RIGHTS_NONE,
+        Driver::RIGHTS_DOMAIN_MANAGER,
+        Driver::RIGHTS_DOMAIN_ADMIN,
+        Driver::RIGHTS_GLOBAL_MANAGER,
+        Driver::RIGHTS_GLOBAL_ADMIN,
     ];
     const DOMAINS = [
         '@example.com',
@@ -49,7 +54,7 @@ class TestAuthorization extends Test\AbstractTest {
 
     protected $data;
 
-    public function setUp(string $drv = Test\User\DriverInternalMock::class, string $db = null) {
+    public function setUp(string $drv = \JkingWeb\Arsse\Test\User\DriverInternalMock::class, string $db = null) {
         $this->clearData();
         $conf = new Conf();
         $conf->userDriver = $drv;
@@ -91,7 +96,7 @@ class TestAuthorization extends Test\AbstractTest {
 
     public function testRegularUserLogic() {
         foreach (self::USERS as $actor => $rights) {
-            if ($rights != User\Driver::RIGHTS_NONE) {
+            if ($rights != Driver::RIGHTS_NONE) {
                 continue;
             }
             Arsse::$user->auth($actor, "");
@@ -118,7 +123,7 @@ class TestAuthorization extends Test\AbstractTest {
 
     public function testDomainManagerLogic() {
         foreach (self::USERS as $actor => $actorRights) {
-            if ($actorRights != User\Driver::RIGHTS_DOMAIN_MANAGER) {
+            if ($actorRights != Driver::RIGHTS_DOMAIN_MANAGER) {
                 continue;
             }
             $actorDomain = substr($actor, strrpos($actor, "@")+1);
@@ -139,7 +144,7 @@ class TestAuthorization extends Test\AbstractTest {
                 }
                 // and they should only be able to set their own rights to regular user
                 foreach (self::LEVELS as $level) {
-                    if ($actor==$affected && in_array($level, [User\Driver::RIGHTS_NONE, User\Driver::RIGHTS_DOMAIN_MANAGER])) {
+                    if ($actor==$affected && in_array($level, [User\Driver::RIGHTS_NONE, Driver::RIGHTS_DOMAIN_MANAGER])) {
                         $this->assertTrue(Arsse::$user->authorize($affected, "userRightsSet", $level), "User $actor acted properly for $affected settings rights level $level, but the action was denied.");
                     } else {
                         $this->assertFalse(Arsse::$user->authorize($affected, "userRightsSet", $level), "User $actor acted improperly for $affected settings rights level $level, but the action was allowed.");
@@ -159,7 +164,7 @@ class TestAuthorization extends Test\AbstractTest {
 
     public function testDomainAdministratorLogic() {
         foreach (self::USERS as $actor => $actorRights) {
-            if ($actorRights != User\Driver::RIGHTS_DOMAIN_ADMIN) {
+            if ($actorRights != Driver::RIGHTS_DOMAIN_ADMIN) {
                 continue;
             }
             $actorDomain = substr($actor, strrpos($actor, "@")+1);
@@ -201,7 +206,7 @@ class TestAuthorization extends Test\AbstractTest {
 
     public function testGlobalManagerLogic() {
         foreach (self::USERS as $actor => $actorRights) {
-            if ($actorRights != User\Driver::RIGHTS_GLOBAL_MANAGER) {
+            if ($actorRights != Driver::RIGHTS_GLOBAL_MANAGER) {
                 continue;
             }
             $actorDomain = substr($actor, strrpos($actor, "@")+1);
@@ -218,7 +223,7 @@ class TestAuthorization extends Test\AbstractTest {
                 }
                 // and they should only be able to set their own rights to regular user
                 foreach (self::LEVELS as $level) {
-                    if ($actor==$affected && in_array($level, [User\Driver::RIGHTS_NONE, User\Driver::RIGHTS_GLOBAL_MANAGER])) {
+                    if ($actor==$affected && in_array($level, [User\Driver::RIGHTS_NONE, Driver::RIGHTS_GLOBAL_MANAGER])) {
                         $this->assertTrue(Arsse::$user->authorize($affected, "userRightsSet", $level), "User $actor acted properly for $affected settings rights level $level, but the action was denied.");
                     } else {
                         $this->assertFalse(Arsse::$user->authorize($affected, "userRightsSet", $level), "User $actor acted improperly for $affected settings rights level $level, but the action was allowed.");
@@ -234,7 +239,7 @@ class TestAuthorization extends Test\AbstractTest {
 
     public function testGlobalAdministratorLogic() {
         foreach (self::USERS as $actor => $actorRights) {
-            if ($actorRights != User\Driver::RIGHTS_GLOBAL_ADMIN) {
+            if ($actorRights != Driver::RIGHTS_GLOBAL_ADMIN) {
                 continue;
             }
             Arsse::$user->auth($actor, "");
@@ -302,7 +307,7 @@ class TestAuthorization extends Test\AbstractTest {
 
     public function testExternalExceptionLogic() {
         // set up the test for an external driver
-        $this->setUp(Test\User\DriverExternalMock::class, Test\User\Database::class);
+        $this->setUp(\JKingWeb\Arsse\Test\User\DriverExternalMock::class, \JKingWeb\Arsse\Test\User\Database::class);
         // run the previous test with the external driver set up
         $this->testInternalExceptionLogic();
     }
@@ -318,7 +323,7 @@ class TestAuthorization extends Test\AbstractTest {
             }
             try {
                 call_user_func_array(array(Arsse::$user, $func), $args);
-            } catch (User\ExceptionAuthz $e) {
+            } catch (\JKingWeb\Arsse\User\ExceptionAuthz $e) {
                 $err[] = $func;
             }
         }

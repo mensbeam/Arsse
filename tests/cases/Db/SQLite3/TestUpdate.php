@@ -4,14 +4,19 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse;
+namespace JKingWeb\Arsse\TestCase\Db\SQLite3;
 
+use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Conf;
+use JKingWeb\Arsse\Database;
+use JKingWeb\Arsse\Db\Exception;
+use JKingWeb\Arsse\Db\SQLite3\Driver;
 use org\bovigo\vfs\vfsStream;
 
 /**
  * @covers \JKingWeb\Arsse\Db\SQLite3\Driver<extended>
  * @covers \JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder */
-class TestDbUpdateSQLite3 extends Test\AbstractTest {
+class TestUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $data;
     protected $drv;
     protected $vfs;
@@ -29,12 +34,12 @@ class TestDbUpdateSQLite3 extends Test\AbstractTest {
         if (!$conf) {
             $conf = new Conf();
         }
-        $conf->dbDriver = Db\SQLite3\Driver::class;
+        $conf->dbDriver = Driver::class;
         $conf->dbSQLite3File = ":memory:";
         Arsse::$conf = $conf;
         $this->base = $this->vfs->url();
         $this->path = $this->base."/SQLite3/";
-        $this->drv = new Db\SQLite3\Driver();
+        $this->drv = new Driver();
     }
 
     public function tearDown() {

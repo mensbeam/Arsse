@@ -21,9 +21,9 @@
         <file>cases/Exception/TestException.php</file>
     </testsuite>
     <testsuite name="Localization">
-        <file>cases/Lang/TestLang.php</file>
-        <file>cases/Lang/TestLangComplex.php</file>
-        <file>cases/Lang/TestLangErrors.php</file>
+        <file>cases/Lang/TestBasic.php</file>
+        <file>cases/Lang/TestComplex.php</file>
+        <file>cases/Lang/TestErrors.php</file>
     </testsuite>
     <testsuite name="Configuration">
         <file>cases/Conf/TestConf.php</file>
@@ -33,24 +33,24 @@
         <file>cases/Misc/TestContext.php</file>
     </testsuite>
     <testsuite name="User management">
-        <file>cases/User/TestUserMockInternal.php</file>
-        <file>cases/User/TestUserMockExternal.php</file>
-        <file>cases/User/TestUserInternalDriver.php</file>
+        <file>cases/User/TestMockInternal.php</file>
+        <file>cases/User/TestMockExternal.php</file>
+        <file>cases/User/TestInternal.php</file>
         <file>cases/User/TestAuthorization.php</file>
     </testsuite>
     <testsuite name="Feed parser">
-        <file>cases/Feed/TestFeedFetching.php</file>
+        <file>cases/Feed/TestFetching.php</file>
         <file>cases/Feed/TestFeed.php</file>
     </testsuite>
     <testsuite name="Database drivers">
         <file>cases/Db/TestTransaction.php</file>
         <file>cases/Db/TestResultAggregate.php</file>
         <file>cases/Db/TestResultEmpty.php</file>
-        <file>cases/Db/SQLite3/TestDbResultSQLite3.php</file>
-        <file>cases/Db/SQLite3/TestDbStatementSQLite3.php</file>
-        <file>cases/Db/SQLite3/TestDbDriverCreationSQLite3.php</file>
-        <file>cases/Db/SQLite3/TestDbDriverSQLite3.php</file>
-        <file>cases/Db/SQLite3/TestDbUpdateSQLite3.php</file>
+        <file>cases/Db/SQLite3/TestResult.php</file>
+        <file>cases/Db/SQLite3/TestStatement.php</file>
+        <file>cases/Db/SQLite3/TestCreation.php</file>
+        <file>cases/Db/SQLite3/TestDriver.php</file>
+        <file>cases/Db/SQLite3/TestUpdate.php</file>
 
         <file>cases/Db/SQLite3PDO/TestDbResultSQLite3PDO.php</file>
         <file>cases/Db/SQLite3PDO/TestDbStatementSQLite3PDO.php</file>
@@ -59,16 +59,16 @@
         <file>cases/Db/SQLite3PDO/TestDbUpdateSQLite3PDO.php</file>
     </testsuite>
     <testsuite name="Database functions">
-        <file>cases/Db/SQLite3/Database/TestDatabaseMiscellanySQLite3.php</file>
-        <file>cases/Db/SQLite3/Database/TestDatabaseMetaSQLite3.php</file>
-        <file>cases/Db/SQLite3/Database/TestDatabaseUserSQLite3.php</file>
-        <file>cases/Db/SQLite3/Database/TestDatabaseSessionSQLite3.php</file>
-        <file>cases/Db/SQLite3/Database/TestDatabaseFolderSQLite3.php</file>
-        <file>cases/Db/SQLite3/Database/TestDatabaseFeedSQLite3.php</file>
-        <file>cases/Db/SQLite3/Database/TestDatabaseSubscriptionSQLite3.php</file>
-        <file>cases/Db/SQLite3/Database/TestDatabaseArticleSQLite3.php</file>
-        <file>cases/Db/SQLite3/Database/TestDatabaseLabelSQLite3.php</file>
-        <file>cases/Db/SQLite3/Database/TestDatabaseCleanupSQLite3.php</file>
+        <file>cases/Db/SQLite3/Database/TestMiscellany.php</file>
+        <file>cases/Db/SQLite3/Database/TestMeta.php</file>
+        <file>cases/Db/SQLite3/Database/TestUser.php</file>
+        <file>cases/Db/SQLite3/Database/TestSession.php</file>
+        <file>cases/Db/SQLite3/Database/TestFolder.php</file>
+        <file>cases/Db/SQLite3/Database/TestFeed.php</file>
+        <file>cases/Db/SQLite3/Database/TestSubscription.php</file>
+        <file>cases/Db/SQLite3/Database/TestArticle.php</file>
+        <file>cases/Db/SQLite3/Database/TestLabel.php</file>
+        <file>cases/Db/SQLite3/Database/TestCleanup.php</file>
 
         <file>cases/Db/SQLite3PDO/Database/TestDatabaseMiscellanySQLite3PDO.php</file>
         <file>cases/Db/SQLite3PDO/Database/TestDatabaseUserSQLite3PDO.php</file>
@@ -82,12 +82,12 @@
     </testsuite>
     <testsuite name="Controllers">
         <testsuite name="NCNv1">
-            <file>cases/REST/NextCloudNews/TestNCNVersionDiscovery.php</file>
-            <file>cases/REST/NextCloudNews/TestNCNV1_2.php</file>
+            <file>cases/REST/NextCloudNews/TestVersions.php</file>
+            <file>cases/REST/NextCloudNews/TestV1_2.php</file>
         </testsuite>
         <testsuite name="TTRSS">
-            <file>cases/REST/TinyTinyRSS/TestTinyTinyAPI.php</file>
-            <file>cases/REST/TinyTinyRSS/TestTinyTinyIcon.php</file>
+            <file>cases/REST/TinyTinyRSS/TestAPI.php</file>
+            <file>cases/REST/TinyTinyRSS/TestIcon.php</file>
         </testsuite>
     </testsuite>
     <testsuite name="Refresh service">

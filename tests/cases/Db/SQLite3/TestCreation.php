@@ -4,9 +4,10 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse;
+namespace JKingWeb\Arsse\TestCase\Db\SQLite3;
 
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\Db\SQLite3\Driver;
 use org\bovigo\vfs\vfsStream;
 use Phake;
@@ -14,7 +15,7 @@ use Phake;
 /**
  * @covers \JKingWeb\Arsse\Db\SQLite3\Driver<extended>
  * @covers \JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder */
-class TestDbDriverCreationSQLite3 extends Test\AbstractTest {
+class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $data;
     protected $drv;
     protected $ch;

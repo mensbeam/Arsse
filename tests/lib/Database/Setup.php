@@ -89,7 +89,7 @@ trait Setup {
             foreach ($info['rows'] as $index => $row) {
                 $this->assertCount(sizeof($cols), $row, "The number of values for array index $index does not match the number of fields");
                 $row = array_combine($cols, $row);
-                foreach($data as $index => $test) {
+                foreach ($data as $index => $test) {
                     foreach ($test as $col => $value) {
                         switch ($types[$col]) {
                             case "datetime":
@@ -106,7 +106,7 @@ trait Setup {
                                 break;                            
                         }
                     }
-                    if($row===$test) {
+                    if ($row===$test) {
                         $data[$index] = $test;
                         break;
                     }

@@ -4,13 +4,14 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse;
+namespace JKingWeb\Arsse\TestCase\Lang;
 
+use JKingWeb\Arsse\Lang as TestClass;
 use org\bovigo\vfs\vfsStream;
 
 /** @covers \JKingWeb\Arsse\Lang */
-class TestLangErrors extends Test\AbstractTest {
-    use Test\Lang\Setup;
+class TestErrors extends \JKingWeb\Arsse\Test\AbstractTest {
+    use \JKingWeb\Arsse\Test\Lang\Setup;
 
     public $files;
     public $path;
@@ -62,7 +63,7 @@ class TestLangErrors extends Test\AbstractTest {
     }
 
     public function testLoadMissingDefaultLanguage() {
-        unlink($this->path.Lang::DEFAULT.".php");
+        unlink($this->path.TestClass::DEFAULT.".php");
         $this->assertException("defaultFileMissing", "Lang");
         $this->l->set("fr", true);
     }

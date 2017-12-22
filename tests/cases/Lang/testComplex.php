@@ -4,20 +4,21 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse;
+namespace JKingWeb\Arsse\TestCase\Lang;
 
+use JKingWeb\Arsse\Lang as TestClass;
 use org\bovigo\vfs\vfsStream;
 
 /** @covers \JKingWeb\Arsse\Lang */
-class TestLangComplex extends Test\AbstractTest {
-    use Test\Lang\Setup;
+class TestComplex extends \JKingWeb\Arsse\Test\AbstractTest {
+    use \JKingWeb\Arsse\Test\Lang\Setup;
 
     public $files;
     public $path;
     public $l;
 
     public function setUpSeries() {
-        $this->l->set(Lang::DEFAULT, true);
+        $this->l->set(TestClass::DEFAULT, true);
     }
 
     public function testLazyLoad() {
@@ -68,7 +69,7 @@ class TestLangComplex extends Test\AbstractTest {
      */
     public function testFetchAMessageWithSingleNumericParameter() {
         $this->l->set("en_ca", true);
-        $this->assertEquals('Default language file "en" missing', $this->l->msg('Exception.JKingWeb/Arsse/Lang/Exception.defaultFileMissing', Lang::DEFAULT));
+        $this->assertEquals('Default language file "en" missing', $this->l->msg('Exception.JKingWeb/Arsse/Lang/Exception.defaultFileMissing', TestClass::DEFAULT));
     }
 
     /**

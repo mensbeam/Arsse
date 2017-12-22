@@ -3,4 +3,8 @@ base=`dirname "$0"`
 roboCommand="$1"
 
 shift
-"$base/vendor/bin/robo" "$roboCommand" -- $*
+if [ "$1" == "clean" ]; then
+    "$base/vendor/bin/robo" "$roboCommand" $*
+else
+    "$base/vendor/bin/robo" "$roboCommand" -- $*
+fi

@@ -1,18 +1,19 @@
 <?php
 declare(strict_types=1);
-namespace JKingWeb\Arsse;
+namespace JKingWeb\Arsse\TestCase\Db;
 
+use JKingWeb\Arsse\Db\ResultAggregate;
 use JKingWeb\Arsse\Test\Result;
 
 /** @covers \JKingWeb\Arsse\Db\ResultAggregate<extended> */
-class TestResultAggregate extends Test\AbstractTest {
+class TestResultAggregate extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testGetChangeCountAndLastInsertId() {
         $in = [
             new Result([], 3, 4),
             new Result([], 27, 10),
             new Result([], 12, 2112),
         ];
-        $r = new Db\ResultAggregate(...$in);
+        $r = new ResultAggregate(...$in);
         $this->assertEquals(42, $r->changes());
         $this->assertEquals(2112, $r->lastId());
     }
@@ -24,7 +25,7 @@ class TestResultAggregate extends Test\AbstractTest {
             new Result([['col' => 3]]),
         ];
         $rows = [];
-        foreach (new Db\ResultAggregate(...$in) as $index => $row) {
+        foreach (new ResultAggregate(...$in) as $index => $row) {
             $rows[$index] = $row['col'];
         }
         $this->assertEquals([0 => 1, 1 => 2, 2 => 3], $rows);
@@ -37,7 +38,7 @@ class TestResultAggregate extends Test\AbstractTest {
             new Result([['col' => 3]]),
         ];
         $rows = [];
-        $test = new Db\ResultAggregate(...$in);
+        $test = new ResultAggregate(...$in);
         foreach ($test as $row) {
             $rows[] = $row['col'];
         }
@@ -49,7 +50,7 @@ class TestResultAggregate extends Test\AbstractTest {
     }
 
     public function testGetSingleValues() {
-        $test = new Db\ResultAggregate(...[
+        $test = new ResultAggregate(...[
             new Result([['year' => 1867]]),
             new Result([['year' => 1970]]),
             new Result([['year' => 2112]]),
@@ -61,7 +62,7 @@ class TestResultAggregate extends Test\AbstractTest {
     }
 
     public function testGetFirstValuesOnly() {
-        $test = new Db\ResultAggregate(...[
+        $test = new ResultAggregate(...[
             new Result([['year' => 1867, 'century' => 19]]),
             new Result([['year' => 1970, 'century' => 20]]),
             new Result([['year' => 2112, 'century' => 22]]),
@@ -73,7 +74,7 @@ class TestResultAggregate extends Test\AbstractTest {
     }
 
     public function testGetRows() {
-        $test = new Db\ResultAggregate(...[
+        $test = new ResultAggregate(...[
             new Result([['album' => '2112',             'track' => '2112']]),
             new Result([['album' => 'Clockwork Angels', 'track' => 'The Wreckers']]),
         ]);
@@ -87,7 +88,7 @@ class TestResultAggregate extends Test\AbstractTest {
     }
 
     public function testGetAllRows() {
-        $test = new Db\ResultAggregate(...[
+        $test = new ResultAggregate(...[
             new Result([['album' => '2112',             'track' => '2112']]),
             new Result([['album' => 'Clockwork Angels', 'track' => 'The Wreckers']]),
         ]);

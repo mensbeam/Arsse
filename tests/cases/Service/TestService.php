@@ -4,13 +4,17 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse;
+namespace JKingWeb\Arsse\TestCase\Service;
 
+use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Conf;
+use JKingWeb\Arsse\Database;
+use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\Misc\Date;
 use Phake;
 
 /** @covers \JKingWeb\Arsse\Service */
-class TestService extends Test\AbstractTest {
+class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $srv;
 
     public function setUp() {
