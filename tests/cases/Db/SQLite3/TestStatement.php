@@ -35,10 +35,10 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $s = new self::$imp($this->c, $nativeStatement);
         $types = array_unique(Statement::TYPES);
         foreach ($types as $type) {
-            $s->rebindArray([$strict ? "strict $type" : $type]);
+            $s->retypeArray([$strict ? "strict $type" : $type]);
             $val = $s->runArray([$input])->getRow()['value'];
             $this->assertSame($expectations[$type], $val, "Binding from type $type failed comparison.");
-            $s->rebind(...[$strict ? "strict $type" : $type]);
+            $s->retype(...[$strict ? "strict $type" : $type]);
             $val = $s->run(...[$input])->getRow()['value'];
             $this->assertSame($expectations[$type], $val, "Binding from type $type failed comparison.");
         }
@@ -56,7 +56,7 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
             ) as pass"
         );
         $s = new self::$imp($this->c, $nativeStatement);
-        $s->rebindArray([$type, $type]);
+        $s->retypeArray([$type, $type]);
         $act = (bool) $s->run(...[$value, $value])->getRow()['pass'];
         $this->assertTrue($act);
     }

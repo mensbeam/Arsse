@@ -31,7 +31,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     public function __construct(\SQLite3 $db, \SQLite3Stmt $st, array $bindings = []) {
         $this->db = $db;
         $this->st = $st;
-        $this->rebindArray($bindings);
+        $this->retypeArray($bindings);
     }
 
     public function __destruct() {

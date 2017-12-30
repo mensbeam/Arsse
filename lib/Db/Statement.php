@@ -29,6 +29,6 @@ interface Statement {
 
     public function run(...$values): Result;
     public function runArray(array $values = []): Result;
-    public function rebind(...$bindings): bool;
-    public function rebindArray(array $bindings): bool;
+    public function retype(...$bindings): bool;
+    public function retypeArray(array $bindings): bool;
 }

@@ -18,18 +18,18 @@ abstract class AbstractStatement implements Statement {
         return $this->runArray($values);
     }
 
-    public function rebind(...$bindings): bool {
-        return $this->rebindArray($bindings);
+    public function retype(...$bindings): bool {
+        return $this->retypeArray($bindings);
     }
 
-    public function rebindArray(array $bindings, bool $append = false): bool {
+    public function retypeArray(array $bindings, bool $append = false): bool {
         if (!$append) {
             $this->types = [];
         }
         foreach ($bindings as $binding) {
             if (is_array($binding)) {
                 // recursively flatten any arrays, which may be provided for SET or IN() clauses
-                $this->rebindArray($binding, true);
+                $this->retypeArray($binding, true);
             } else {
                 $binding = trim(strtolower($binding));
                 if (strpos($binding, "strict ")===0) {

@@ -24,7 +24,7 @@ class PDOStatement extends AbstractStatement {
     public function __construct(\PDO $db, \PDOStatement $st, array $bindings = []) {
         $this->db = $db;
         $this->st = $st;
-        $this->rebindArray($bindings);
+        $this->retypeArray($bindings);
     }
 
     public function __destruct() {
