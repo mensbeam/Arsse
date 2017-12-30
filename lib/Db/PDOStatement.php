@@ -10,11 +10,8 @@ class PDOStatement extends AbstractStatement {
     use PDOError;
 
     const BINDINGS = [
-        "null"      => \PDO::PARAM_NULL,
         "integer"   => \PDO::PARAM_INT,
         "float"     => \PDO::PARAM_STR,
-        "date"      => \PDO::PARAM_STR,
-        "time"      => \PDO::PARAM_STR,
         "datetime"  => \PDO::PARAM_STR,
         "binary"    => \PDO::PARAM_LOB,
         "string"    => \PDO::PARAM_STR,

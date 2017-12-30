@@ -8,16 +8,12 @@ namespace JKingWeb\Arsse\Db;
 
 interface Statement {
     const TYPES = [
-        "null"      => "null",
-        "nil"       => "null",
         "int"       => "integer",
         "integer"   => "integer",
         "float"     => "float",
         "double"    => "float",
         "real"      => "float",
         "numeric"   => "float",
-        "date"      => "date",
-        "time"      => "time",
         "datetime"  => "datetime",
         "timestamp" => "datetime",
         "blob"      => "binary",

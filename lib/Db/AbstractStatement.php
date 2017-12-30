@@ -50,22 +50,11 @@ abstract class AbstractStatement implements Statement {
 
     protected function cast($v, string $t, bool $nullable) {
         switch ($t) {
-            case "date":
-                if (is_null($v) && !$nullable) {
-                    $v = 0;
-                }
-                return Date::transform($v, "date");
-            case "time":
-                if (is_null($v) && !$nullable) {
-                    $v = 0;
-                }
-                return Date::transform($v, "time");
             case "datetime":
                 if (is_null($v) && !$nullable) {
                     $v = 0;
                 }
                 return Date::transform($v, "sql");
-            case "null":
             case "integer":
             case "float":
             case "binary":
