@@ -9,17 +9,5 @@ namespace JKingWeb\Arsse\TestCase\REST\TinyTinyRSS\PDO;
 /** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\API<extended>
  *  @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Exception */
 class TestAPI extends \JKingWeb\Arsse\TestCase\REST\TinyTinyRSS\TestAPI {
-    protected function v($value) {
-        if (!is_array($value)) {
-            return $value;
-        }
-        foreach($value as $k => $v) {
-            if (is_array($v)) {
-                $value[$k] = $this->v($v);
-            } elseif (is_int($v) || is_float($v)) {
-                $value[$k] = (string) $v;
-            }
-        }
-        return $value;
-    }
+    use \JKingWeb\Arsse\Test\PDOTest;
 }
