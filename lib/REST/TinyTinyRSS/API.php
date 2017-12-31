@@ -231,7 +231,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         // prepare data for each subscription; we also add unread counts for their host categories
         foreach (Arsse::$db->subscriptionList($user) as $f) {
             // add the feed to the list of feeds
-            $feeds[] = ['id' => (string) $f['id'], 'updated' => Date::transform($f['updated'], "iso8601", "sql"),'counter' => $f['unread'], 'has_img' => (int) (strlen((string) $f['favicon']) > 0)]; // ID is cast to string for consistency with TTRSS
+            $feeds[] = ['id' => (string) $f['id'], 'updated' => Date::transform($f['updated'], "iso8601", "sql"),'counter' => (int) $f['unread'], 'has_img' => (int) (strlen((string) $f['favicon']) > 0)]; // ID is cast to string for consistency with TTRSS
             // add the feed's unread count to the global unread count
             $countAll += $f['unread'];
             // add the feed's unread count to its category unread count
@@ -242,7 +242,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         // prepare data for each non-empty label
         foreach (Arsse::$db->labelList($user, false) as $l) {
             $unread = $l['articles'] - $l['read'];
-            $labels[] = ['id' => $this->labelOut($l['id']), 'counter' => $unread, 'auxcounter' => $l['articles']];
+            $labels[] = ['id' => $this->labelOut($l['id']), 'counter' => $unread, 'auxcounter' => (int) $l['articles']];
             $categories[$catmap[self::CAT_LABELS]]['counter'] += $unread;
         }
         // do a second pass on categories, summing descendant unread counts for ancestors
@@ -266,14 +266,14 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // do a third pass on categories, building a final category list; this is done so that the original sort order is retained
         foreach ($categories as $c) {
-            $cats[] = ['id' => $c['id'], 'kind' => "cat", 'counter' => $catCounts[$c['id']]];
+            $cats[] = ['id' => (int) $c['id'], 'kind' => "cat", 'counter' => $catCounts[$c['id']]];
         }
         // prepare data for the virtual feeds and other counters
         $special = [
             ['id' => "global-unread",      'counter' => $countAll], //this should not count archived articles, but we do not have an archive
             ['id' => "subscribed-feeds",   'counter' => $countSubs],
             ['id' => self::FEED_ARCHIVED,  'counter' => 0, 'auxcounter' => 0], // Archived articles
-            ['id' => self::FEED_STARRED,   'counter' => $starred['unread'], 'auxcounter' => $starred['total']], // Starred articles
+            ['id' => self::FEED_STARRED,   'counter' => (int) $starred['unread'], 'auxcounter' => (int) $starred['total']], // Starred articles
             ['id' => self::FEED_PUBLISHED, 'counter' => 0, 'auxcounter' => 0], // Published articles
             ['id' => self::FEED_FRESH,     'counter' => $fresh, 'auxcounter' => 0], // Fresh articles
             ['id' => self::FEED_ALL,       'counter' => $countAll, 'auxcounter' => 0], // All articles
@@ -323,7 +323,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     'id' => "FEED:".self::FEED_STARRED,
                     'bare_id' => self::FEED_STARRED,
                     'icon' => "images/star.png",
-                    'unread' => Arsse::$db->articleStarred($user)['unread'],
+                    'unread' => (int) Arsse::$db->articleStarred($user)['unread'],
                 ], $tSpecial),
                 array_merge([ // Published articles
                     'name' => Arsse::$lang->msg("API.TTRSS.Feed.Published"),
@@ -406,7 +406,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return ['categories' => ['identifier' => "id", 'label' => "name", 'items' => $out]];
     }
 
-    protected function enumerateFeeds(array $subs, int $parent = null): array {
+    protected function enumerateFeeds(array $subs, $parent = null): array {
         $out = [];
         foreach ($subs as $s) {
             if ($s['folder'] != $parent) {
@@ -415,7 +415,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             $out[] = [
                 'name'       => $s['title'],
                 'id'         => "FEED:".$s['id'],
-                'bare_id'    => $s['id'],
+                'bare_id'    => (int) $s['id'],
                 'icon'       => $s['favicon'] ? "feed-icons/".$s['id'].".ico" : false,
                 'error'      => (string) $s['err_msg'],
                 'param'      => Date::transform($s['updated'], "iso8601", "sql"),
@@ -428,7 +428,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return $out;
     }
 
-    protected function enumerateCategories(array $cats, array $subs, int $parent = null, bool $all = false): array {
+    protected function enumerateCategories(array $cats, array $subs, $parent = null, bool $all = false): array {
         $out = [];
         $feedTotal = 0;
         foreach ($cats as $c) {
@@ -442,8 +442,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             $out[] = [
                 'name'         => $c['name'],
                 'id'           => "CAT:".$c['id'],
-                'bare_id'      => $c['id'],
-                'parent_id'    => $c['parent'], // top-level categories are not supposed to have this property; we deviated and have the property set to null because it's simpler that way
+                'bare_id'      => (int) $c['id'],
+                'parent_id'    => (int) $c['parent'] ?: null, // top-level categories are not supposed to have this property; we deviated and have the property set to null because it's simpler that way
                 'type'         => "category",
                 'auxcounter'   => 0,
                 'unread'       => 0,
@@ -714,13 +714,13 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 // NOTE: the list is a flat one: it includes children, but not other descendents
                 foreach (Arsse::$db->folderList($user, $cat, false) as $c) {
                     // get the number of unread for the category and its descendents; those with zero unread are excluded in "unread-only" mode
-                    $count = Arsse::$db->articleCount($user, (new Context)->unread(true)->folder($c['id']));
+                    $count = Arsse::$db->articleCount($user, (new Context)->unread(true)->folder((int) $c['id']));
                     if (!$unread || $count) {
                         $out[] = [
-                            'id' => $c['id'],
-                            'title' => $c['name'],
-                            'unread' => $count,
-                            'is_cat' => true,
+                            'id'       => (int) $c['id'],
+                            'title'    => $c['name'],
+                            'unread'   => (int) $count,
+                            'is_cat'   => true,
                             'order_id' => ++$order,
                         ];
                     }
@@ -764,9 +764,9 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
             // otherwise, append the subscription
             $out[] = [
-                'id'           => $s['id'],
+                'id'           => (int) $s['id'],
                 'title'        => $s['title'],
-                'unread'       => $s['unread'],
+                'unread'       => (int) $s['unread'],
                 'cat_id'       => (int) $s['folder'],
                 'feed_url'     => $s['url'],
                 'has_icon'     => (bool) $s['favicon'],
@@ -920,8 +920,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return (abs($id) - self::LABEL_OFFSET);
     }
 
-    protected function labelOut(int $id): int {
-        return ($id * -1 - self::LABEL_OFFSET);
+    protected function labelOut($id): int {
+        return ((int) $id * -1 - self::LABEL_OFFSET);
     }
 
     public function opGetLabels(array $data): array {
@@ -1194,12 +1194,12 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return $out;
     }
 
-    protected function articleLabelList(array $labels, int $id): array {
+    protected function articleLabelList(array $labels, $id): array {
         $out = [];
         if (!$labels) {
             return $out;
         }
-        foreach (Arsse::$db->articleLabelsGet(Arsse::$user->id, $id) as $label) {
+        foreach (Arsse::$db->articleLabelsGet(Arsse::$user->id, (int) $id) as $label) {
             $out[] = [
                 $this->labelOut($label), // ID
                 $labels[$label],         // name
@@ -1224,7 +1224,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $out = [];
         try {
             foreach ($this->fetchArticles($data, Database::LIST_MINIMAL) as $row) {
-                $out[] = ['id' => $row['id']];
+                $out[] = ['id' => (int) $row['id']];
             }
         } catch (ExceptionInput $e) {
             // ignore database errors (feeds/categories that don't exist)
@@ -1246,7 +1246,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             foreach ($this->fetchArticles($data, Database::LIST_FULL) as $article) {
                 $row = [
-                    'id' => $article['id'],
+                    'id' => (int) $article['id'],
                     'guid' => $article['guid'] ? "SHA256:".$article['guid'] : "",
                     'title' => $article['title'],
                     'link' => $article['url'],
@@ -1313,9 +1313,9 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             // wrap the output with (but after) the header
             $out = [
                 [
-                    'id'       => $data['feed_id'],
+                    'id'       => (int) $data['feed_id'],
                     'is_cat'   => $data['is_cat'] ?? false,
-                    'first_id' => $firstID,
+                    'first_id' => (int) $firstID,
                 ],
                 $out,
             ];

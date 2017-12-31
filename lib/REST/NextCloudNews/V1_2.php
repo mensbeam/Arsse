@@ -353,7 +353,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $out = [];
         foreach ($feeds as $feed) {
             // since in our implementation feeds don't belong the users, the 'userId' field will always be an empty string
-            $out[] = ['id' => $feed, 'userId' => ""];
+            $out[] = ['id' => (int) $feed, 'userId' => ""];
         }
         return new Response(200, ['feeds' => $out]);
     }
@@ -419,7 +419,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $out[] = $this->feedTranslate($sub);
         }
         $out = ['feeds' => $out];
-        $out['starredCount'] = Arsse::$db->articleStarred(Arsse::$user->id)['total'];
+        $out['starredCount'] = (int) Arsse::$db->articleStarred(Arsse::$user->id)['total'];
         $newest = Arsse::$db->editionLatest(Arsse::$user->id);
         if ($newest) {
             $out['newestItemId'] = $newest;
