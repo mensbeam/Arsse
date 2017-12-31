@@ -317,6 +317,10 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->clearData();
     }
 
+    protected function v($value) {
+        return $value;
+    }
+
     protected function assertResponse(Response $exp, Response $act, string $text = null) {
         $this->assertEquals($exp, $act, $text);
         $this->assertSame($exp->payload, $act->payload, $text);
@@ -404,13 +408,13 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testListFolders() {
         $list = [
             ['id' => 1,  'name' => "Software", 'parent' => null],
-            ['id' => "12", 'name' => "Hardware", 'parent' => null],
+            ['id' => 12, 'name' => "Hardware", 'parent' => null],
         ];
         $out = [
             ['id' => 1,  'name' => "Software"],
             ['id' => 12, 'name' => "Hardware"],
         ];
-        Phake::when(Arsse::$db)->folderList(Arsse::$user->id, null, false)->thenReturn(new Result([]))->thenReturn(new Result($list));
+        Phake::when(Arsse::$db)->folderList(Arsse::$user->id, null, false)->thenReturn(new Result([]))->thenReturn(new Result($this->v($list)));
         $exp = new Response(200, ['folders' => []]);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/folders")));
         $exp = new Response(200, ['folders' => $out]);
@@ -434,8 +438,8 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         Phake::when(Arsse::$db)->folderAdd($this->anything(), $this->anything())->thenThrow(new \Exception);
         Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $in[0])->thenReturn(1)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
         Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $in[1])->thenReturn(2)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 1)->thenReturn($db[0]);
-        Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 2)->thenReturn($db[1]);
+        Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 1)->thenReturn($this->v($db[0]));
+        Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 2)->thenReturn($this->v($db[1]));
         // set up mocks that produce errors
         Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, [])->thenThrow(new ExceptionInput("missing"));
         Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => ""])->thenThrow(new ExceptionInput("missing"));
@@ -518,8 +522,8 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             'starredCount' => 5,
             'newestItemId' => 4758915,
         ];
-        Phake::when(Arsse::$db)->subscriptionList(Arsse::$user->id)->thenReturn(new Result([]))->thenReturn(new Result($this->feeds['db']));
-        Phake::when(Arsse::$db)->articleStarred(Arsse::$user->id)->thenReturn(['total' => 0])->thenReturn(['total' => 5]);
+        Phake::when(Arsse::$db)->subscriptionList(Arsse::$user->id)->thenReturn(new Result([]))->thenReturn(new Result($this->v($this->feeds['db'])));
+        Phake::when(Arsse::$db)->articleStarred(Arsse::$user->id)->thenReturn($this->v(['total' => 0]))->thenReturn($this->v(['total' => 5]));
         Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id)->thenReturn(0)->thenReturn(4758915);
         $exp = new Response(200, $exp1);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds")));
@@ -544,9 +548,9 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.com/news.atom")->thenReturn(2112)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
         Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.org/news.atom")->thenReturn(42)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
         Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "")->thenThrow(new \JKingWeb\Arsse\Feed\Exception("", new \PicoFeed\Reader\SubscriptionNotFoundException));
-        Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 2112)->thenReturn($this->feeds['db'][0]);
-        Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 42)->thenReturn($this->feeds['db'][1]);
-        Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 47)->thenReturn($this->feeds['db'][2]);
+        Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 2112)->thenReturn($this->v($this->feeds['db'][0]));
+        Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 42)->thenReturn($this->v($this->feeds['db'][1]));
+        Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 47)->thenReturn($this->v($this->feeds['db'][2]));
         Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription(2112))->thenReturn(0);
         Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription(42))->thenReturn(4758915);
         Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription(47))->thenReturn(2112);
@@ -654,7 +658,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
                 'userId' => "",
             ],
         ];
-        Phake::when(Arsse::$db)->feedListStale->thenReturn(array_column($out, "id"));
+        Phake::when(Arsse::$db)->feedListStale->thenReturn($this->v(array_column($out, "id")));
         $exp = new Response(200, ['feeds' => $out]);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds/all")));
         // retrieving the list when not an admin fails
@@ -689,7 +693,6 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testListArticles() {
-        $res = new Result($this->articles['db']);
         $t = new \DateTime;
         $in = [
             ['type' => 0, 'id' => 42],   // type=0 => subscription/feed
@@ -705,7 +708,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['lastModified' => $t->getTimestamp()],
             ['oldestFirst' => false, 'batchSize' => 5, 'offset' => 0], // offset=0 should not set the latestEdition context
         ];
-        Phake::when(Arsse::$db)->articleList(Arsse::$user->id, $this->anything(), Database::LIST_TYPICAL)->thenReturn($res);
+        Phake::when(Arsse::$db)->articleList(Arsse::$user->id, $this->anything(), Database::LIST_TYPICAL)->thenReturn(new Result($this->v($this->articles['db'])));
         Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->subscription(42), Database::LIST_TYPICAL)->thenThrow(new ExceptionInput("idMissing"));
         Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->folder(2112), Database::LIST_TYPICAL)->thenThrow(new ExceptionInput("idMissing"));
         Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->subscription(-1), Database::LIST_TYPICAL)->thenThrow(new ExceptionInput("typeViolation"));
