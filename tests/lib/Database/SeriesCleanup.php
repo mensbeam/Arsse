@@ -11,6 +11,11 @@ use Phake;
 
 trait SeriesCleanup {
     public function setUpSeries() {
+        // set up the configuration
+        Arsse::$conf->import([
+            'userSessionTimeout'  => "PT1H",
+            'userSessionLifetime' => "PT24H",
+        ]);
         // set up the test data
         $nowish  = gmdate("Y-m-d H:i:s", strtotime("now - 1 minute"));
         $yesterday = gmdate("Y-m-d H:i:s", strtotime("now - 1 day"));

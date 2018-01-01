@@ -135,7 +135,6 @@ We are not aware of any other extensions to the TTRSS protocol. If you know of a
 - Input that cannot be parsed as JSON normally returns a `NOT_LOGGED_IN` error; The Arsse returns a non-standard `MALFORMED_INPUT` error instead
 - Feed, category, and label names are normally unrestricted; The Arsse rejects empty strings, as well as strings composed solely of whitespace
 - Discovering multiple feeds during `subscribeToFeed` processing normally produces an error; The Arsse instead chooses the first feed it finds
-- Log-in session lifetime is intentionally shorter in The Arsse
 - Providing the `setArticleLabel` operation with an invalid label normally silently fails; The Arsse returns an `INVALID_USAGE` error instead
 - Article hashes are normally SHA1; The Arsse uses SHA256 hashes
 - Article attachments normally have unique IDs; The Arsse always gives attachments an ID of `"0"`

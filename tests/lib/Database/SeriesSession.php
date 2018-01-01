@@ -12,6 +12,11 @@ use Phake;
 
 trait SeriesSession {
     public function setUpSeries() {
+        // set up the configuration
+        Arsse::$conf->import([
+            'userSessionTimeout'  => "PT1H",
+            'userSessionLifetime' => "PT24H",
+        ]);
         // set up the test data
         $past  = gmdate("Y-m-d H:i:s", strtotime("now - 1 minute"));
         $future = gmdate("Y-m-d H:i:s", strtotime("now + 1 minute"));
