@@ -1,6 +1,6 @@
 # The Advanced RSS Environment
 
-The Arsse is a news aggregator server which implements multiple synchronization protocols, including [version 1.2][NCNv1] of [NextCloud News](https://github.com/nextcloud/news)' protocol and the [Tiny Tiny RSS][TTRSS] protocol (details below). Unlike most other aggregator servers, The Arsse does not include a Web front-end (though one is planned as a separate project), and it relies on existing protocols to maximize compatibility with existing clients.
+The Arsse is a news aggregator server which implements multiple synchronization protocols, including [version 1.2][NCNv1] of [NextCloud News][NCN]' protocol and the [Tiny Tiny RSS][TTRSS] protocol (details below). Unlike most other aggregator servers, The Arsse does not include a Web front-end (though one is planned as a separate project), and it relies on existing protocols to maximize compatibility with existing clients.
 
 At present the software should be considered in an "alpha" state: though its core subsystems are covered by unit tests and should be free of major bugs, not everything has been rigorously tested. Additionally, many features one would expect from other similar software have yet to be implemented. Areas of future work include:
 
@@ -48,7 +48,7 @@ The Arsse currently includes a `user add <username> [<password>]` console comman
 
 If installing from the Git repository rather than a download package, you will need to follow extra steps before the instructions in the section above.
 
-First, you must install [Composer](https://getcomposer.org/) to fetch required PHP libraries. Once Composer is installed, dependencies may be downloaded with the following command:
+First, you must install [Composer] to fetch required PHP libraries. Once Composer is installed, dependencies may be downloaded with the following command:
 
 ``` sh
 php composer.phar install -o --no-dev --no-scripts
@@ -80,7 +80,7 @@ The Arsse does, however, guarantee _output_ to be of the same type. If it is not
 
 #### Content sanitization
 
-The Arsse makes use of the [picoFeed](https://github.com/miniflux/picoFeed/) newsfeed parsing library to sanitize article content. The exact sanitization parameters may differ from those of reference implementations for protocols The Arsse supports.
+The Arsse makes use of the [picoFeed] newsfeed parsing library to sanitize article content. The exact sanitization parameters may differ from those of reference implementations for protocols The Arsse supports.
 
 ### NextCloud News v1.2
 
@@ -116,7 +116,7 @@ As a general rule, The Arsse should yield the same output as the reference imple
 
 #### Extended functionality
 
-The Arsse supports both [the set of extensions](https://github.com/jangernert/FeedReader/tree/master/data/tt-rss-feedreader-plugin) to the TTRSS protocol defined by [FeedReader](https://jangernert.github.io/FeedReader/), as well as [the `getCompactHeadlines` operation](https://github.com/hrk/tt-rss-newsplus-plugin) defined by [News+](https://github.com/noinnion/newsplus/).
+The Arsse supports both [the set of extensions][ext-feedreader] to the TTRSS protocol defined by [FeedReader], as well as [the `getCompactHeadlines` operation][ext-newsplus] defined by [News+].
 
 We are not aware of any other extensions to the TTRSS protocol. If you know of any more, please [let us know][newIssue].
 
@@ -156,6 +156,13 @@ We are not aware of any other extensions to the TTRSS protocol. If you know of a
 
 
 [newIssue]: https://code.mensbeam.com/MensBeam/arsse/issues/new
+[Composer]: https://getcomposer.org/
+[picoFeed]: https://github.com/miniflux/picoFeed/
+[NCN]: https://github.com/nextcloud/news
 [NCNv1]: https://github.com/nextcloud/news/blob/master/docs/externalapi/Legacy.md
 [CORS]: https://fetch.spec.whatwg.org/#http-cors-protocol
 [TTRSS]: https://git.tt-rss.org/git/tt-rss/wiki/ApiReference
+[FeedReader]: https://jangernert.github.io/FeedReader/
+[News+]: https://github.com/noinnion/newsplus/
+[ext-feedreader]: https://github.com/jangernert/FeedReader/tree/master/data/tt-rss-feedreader-plugin
+[ext-newsplus]: https://github.com/hrk/tt-rss-newsplus-plugin
