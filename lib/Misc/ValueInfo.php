@@ -34,7 +34,7 @@ class ValueInfo {
     const M_STRICT   = 1 << 30; // throw an exception if the type doesn't match
     const M_ARRAY    = 1 << 31; // the value should be a flat array of values of the specified type; indexed and associative are both acceptable
 
-    public static function normalize($value, int $type, string $dateFormat = null) {
+    public static function normalize($value, int $type, string $dateInFormat = null, $dateOutFormat = null) {
         $allowNull = ($type & self::M_NULL);
         $strict    = ($type & (self::M_STRICT | self::M_DROP));
         $drop      = ($type & self::M_DROP);
@@ -48,7 +48,7 @@ class ValueInfo {
         if ($arrayVal) {
             $value = self::normalize($value, self::T_ARRAY);
             foreach ($value as $key => $v) {
-                $value[$key] = self::normalize($v, $type | ($allowNull ? self::M_NULL : 0) | ($strict ? self::M_STRICT : 0) | ($drop ? self::M_DROP : 0), $dateFormat);
+                $value[$key] = self::normalize($v, $type | ($allowNull ? self::M_NULL : 0) | ($strict ? self::M_STRICT : 0) | ($drop ? self::M_DROP : 0), $dateInFormat, $dateOutFormat);
             }
             return $value;
         }
@@ -131,12 +131,14 @@ class ValueInfo {
                 if (is_string($value)) {
                     return $value;
                 }
+                $dateOutFormat = $dateOutFormat ?? "iso8601";
+                $dateOutFormat = isset(Date::FORMAT[$dateOutFormat]) ? Date::FORMAT[$dateOutFormat][1] : $dateOutFormat;
                 if ($value instanceof \DateTimeImmutable) {
-                    return $value->setTimezone(new \DateTimeZone("UTC"))->format(Date::FORMAT['iso8601'][1]);
+                    return $value->setTimezone(new \DateTimeZone("UTC"))->format($dateOutFormat);
                 } elseif ($value instanceof \DateTime) {
                     $out = clone $value;
                     $out->setTimezone(new \DateTimeZone("UTC"));
-                    return $out->format(Date::FORMAT['iso8601'][1]);
+                    return $out->format($dateOutFormat);
                 } elseif (is_float($value) && is_finite($value)) {
                     $out = (string) $value;
                     if (!strpos($out, "E")) {
@@ -175,9 +177,9 @@ class ValueInfo {
                     return \DateTime::createFromFormat("U.u", sprintf("%F", $value), new \DateTimeZone("UTC"));
                 } elseif (is_string($value)) {
                     try {
-                        if (!is_null($dateFormat)) {
+                        if (!is_null($dateInFormat)) {
                             $out = false;
-                            if ($dateFormat=="microtime") {
+                            if ($dateInFormat=="microtime") {
                                 // PHP is not able to correctly handle the output of microtime() as the input of DateTime::createFromFormat(), so we fudge it to look like a float
                                 if (preg_match("<^0\.\d{6}00 \d+$>", $value)) {
                                     $value = substr($value, 11).".".substr($value, 2, 6);
@@ -185,10 +187,10 @@ class ValueInfo {
                                     throw new \Exception;
                                 }
                             }
-                            $f = isset(Date::FORMAT[$dateFormat]) ? Date::FORMAT[$dateFormat][0] : $dateFormat;
-                            if ($dateFormat=="iso8601" || $dateFormat=="iso8601m") {
+                            $f = isset(Date::FORMAT[$dateInFormat]) ? Date::FORMAT[$dateInFormat][0] : $dateInFormat;
+                            if ($dateInFormat=="iso8601" || $dateInFormat=="iso8601m") {
                                 // DateTime::createFromFormat() doesn't provide one catch-all for ISO 8601 timezone specifiers, so we try all of them till one works
-                                if ($dateFormat=="iso8601m") {
+                                if ($dateInFormat=="iso8601m") {
                                     $f2 = Date::FORMAT["iso8601"][0];
                                     $zones = [$f."", $f."\Z", $f."P", $f."O", $f2."", $f2."\Z", $f2."P", $f2."O"];
                                 } else {
