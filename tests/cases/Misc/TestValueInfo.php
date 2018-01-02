@@ -506,6 +506,18 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             list($type, $value, $exp) = $test;
             $this->assertEquals($exp, I::normalize($value, $type | I::M_ARRAY, "iso8601"), "Failed test #$index");
         }
+        // Date-to-string format tests
+        $test = new \DateTimeImmutable("now", new \DateTimezone("UTC"));
+        $exp = $test->format(I::DATE_FORMATS['iso8601'][1]);
+        $this->assertSame($exp, I::normalize($test, I::T_STRING, null), "Failed test for null output date format");
+        foreach (I::DATE_FORMATS as $name => $formats) {
+            $exp = $test->format($formats[1]);
+            $this->assertSame($exp, I::normalize($test, I::T_STRING, null, $name), "Failed test for output date format '$name'");
+        }
+        foreach (["U", "M j, Y (D)", "r", "c"] as $format) {
+            $exp = $test->format($format);
+            $this->assertSame($exp, I::normalize($test, I::T_STRING, null, $format), "Failed test for output date format '$format'");
+        }
     }
 
     protected function d($spec, $local, $immutable): \DateTimeInterface {
@@ -517,7 +529,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    protected function t(float $spec): \DateTime {
-        return \DateTime::createFromFormat("U.u", sprintf("%F", $spec), new \DateTimeZone("UTC"));
+    protected function t(float $spec): \DateTimeImmutable {
+        return \DateTimeImmutable::createFromFormat("U.u", sprintf("%F", $spec), new \DateTimeZone("UTC"));
     }
 }

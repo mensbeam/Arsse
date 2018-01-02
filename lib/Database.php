@@ -827,7 +827,7 @@ class Database {
         $limit = Date::normalize("now");
         if (Arsse::$conf->purgeFeeds) {
             // if there is a retention period specified, compute it; otherwise feed are deleted immediatelty
-            $limit->sub(new \DateInterval(Arsse::$conf->purgeFeeds));
+            $limit = Date::sub(Arsse::$conf->purgeFeeds, $limit);
         }
         $out = (bool) $this->db->prepare("DELETE from arsse_feeds where orphaned <= ?", "datetime")->run($limit);
         // commit changes and return

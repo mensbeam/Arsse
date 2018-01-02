@@ -328,12 +328,12 @@ class Feed {
         return [$new, $edited];
     }
 
-    protected function computeNextFetch(): \DateTime {
+    protected function computeNextFetch(): \DateTimeImmutable {
         $now = Date::normalize(time());
         if (!$this->modified) {
             $diff = $now->getTimestamp() - $this->lastModified->getTimestamp();
             $offset = $this->normalizeDateDiff($diff);
-            $now->modify("+".$offset);
+            return $now->modify("+".$offset);
         } else {
             // the algorithm for updated feeds (returning 200 rather than 304) uses the same parameters as for 304,
             // save that the last three intervals between item dates are computed, and if any two fall within
@@ -347,20 +347,19 @@ class Feed {
                     $offsets[] = $this->normalizeDateDiff($diff);
                 }
                 if ($offsets[0]==$offsets[1] || $offsets[0]==$offsets[2]) {
-                    $now->modify("+".$offsets[0]);
+                    return $now->modify("+".$offsets[0]);
                 } elseif ($offsets[1]==$offsets[2]) {
-                    $now->modify("+".$offsets[1]);
+                    return $now->modify("+".$offsets[1]);
                 } else {
-                    $now->modify("+ 1 hour");
+                    return $now->modify("+ 1 hour");
                 }
             } else {
-                $now->modify("+ 1 hour");
+                return $now->modify("+ 1 hour");
             }
         }
-        return $now;
     }
 
-    public static function nextFetchOnError($errCount): \DateTime {
+    public static function nextFetchOnError($errCount): \DateTimeImmutable {
         if ($errCount < 3) {
             $offset = "5 minutes";
         } elseif ($errCount < 15) {

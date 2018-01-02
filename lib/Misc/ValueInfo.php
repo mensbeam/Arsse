@@ -19,7 +19,7 @@ class ValueInfo {
     // strings
     const EMPTY = 1 << 2;
     const WHITE = 1 << 3;
-    //normalization types
+    // normalization types
     const T_MIXED    = 0; // pass through unchanged
     const T_NULL     = 1; // convert to null
     const T_BOOL     = 2; // convert to boolean
@@ -28,11 +28,23 @@ class ValueInfo {
     const T_DATE     = 5; // convert to DateTimeInterface instance
     const T_STRING   = 6; // convert to string
     const T_ARRAY    = 7; // convert to array
-    //normalization modes
+    // normalization modes
     const M_NULL     = 1 << 28; // pass nulls through regardless of target type
     const M_DROP     = 1 << 29; // drop the value (return null) if the type doesn't match
     const M_STRICT   = 1 << 30; // throw an exception if the type doesn't match
     const M_ARRAY    = 1 << 31; // the value should be a flat array of values of the specified type; indexed and associative are both acceptable
+    // symbolic date and time formats
+    const DATE_FORMATS = [ // in                  out
+        'iso8601'   => ["!Y-m-d\TH:i:s",          "Y-m-d\TH:i:s\Z"       ], // NOTE: ISO 8601 dates require special input processing because of varying formats for timezone offsets
+        'iso8601m'  => ["!Y-m-d\TH:i:s.u",        "Y-m-d\TH:i:s.u\Z"     ], // NOTE: ISO 8601 dates require special input processing because of varying formats for timezone offsets
+        'microtime' => ["U.u",                    "0.u00 U"              ], // NOTE: the actual input format at the user level matches the output format; pre-processing is required for PHP not to fail
+        'http'      => ["!D, d M Y H:i:s \G\M\T", "D, d M Y H:i:s \G\M\T"],
+        'sql'       => ["!Y-m-d H:i:s",           "Y-m-d H:i:s"          ],
+        'date'      => ["!Y-m-d",                 "Y-m-d"                ],
+        'time'      => ["!H:i:s",                 "H:i:s"                ],
+        'unix'      => ["U",                      "U"                    ],
+        'float'     => ["U.u",                    "U.u"                  ],
+    ];
 
     public static function normalize($value, int $type, string $dateInFormat = null, $dateOutFormat = null) {
         $allowNull = ($type & self::M_NULL);
@@ -131,14 +143,14 @@ class ValueInfo {
                 if (is_string($value)) {
                     return $value;
                 }
-                $dateOutFormat = $dateOutFormat ?? "iso8601";
-                $dateOutFormat = isset(Date::FORMAT[$dateOutFormat]) ? Date::FORMAT[$dateOutFormat][1] : $dateOutFormat;
-                if ($value instanceof \DateTimeImmutable) {
-                    return $value->setTimezone(new \DateTimeZone("UTC"))->format($dateOutFormat);
-                } elseif ($value instanceof \DateTime) {
-                    $out = clone $value;
-                    $out->setTimezone(new \DateTimeZone("UTC"));
-                    return $out->format($dateOutFormat);
+                if ($value instanceof \DateTimeInterface) {
+                    $dateOutFormat = $dateOutFormat ?? "iso8601";
+                    $dateOutFormat = isset(self::DATE_FORMATS[$dateOutFormat]) ? self::DATE_FORMATS[$dateOutFormat][1] : $dateOutFormat;
+                    if ($value instanceof \DateTimeImmutable) {
+                        return $value->setTimezone(new \DateTimeZone("UTC"))->format($dateOutFormat);
+                    } elseif ($value instanceof \DateTime) {
+                        return \DateTimeImmutable::createFromMutable($value)->setTimezone(new \DateTimeZone("UTC"))->format($dateOutFormat);
+                    }
                 } elseif (is_float($value) && is_finite($value)) {
                     $out = (string) $value;
                     if (!strpos($out, "E")) {
@@ -168,13 +180,11 @@ class ValueInfo {
                 if ($value instanceof \DateTimeImmutable) {
                     return $value->setTimezone(new \DateTimeZone("UTC"));
                 } elseif ($value instanceof \DateTime) {
-                    $out = clone $value;
-                    $out->setTimezone(new \DateTimeZone("UTC"));
-                    return $out;
+                    return \DateTimeImmutable::createFromMutable($value)->setTimezone(new \DateTimeZone("UTC"));
                 } elseif (is_int($value)) {
-                    return \DateTime::createFromFormat("U", (string) $value, new \DateTimeZone("UTC"));
+                    return \DateTimeImmutable::createFromFormat("U", (string) $value, new \DateTimeZone("UTC"));
                 } elseif (is_float($value)) {
-                    return \DateTime::createFromFormat("U.u", sprintf("%F", $value), new \DateTimeZone("UTC"));
+                    return \DateTimeImmutable::createFromFormat("U.u", sprintf("%F", $value), new \DateTimeZone("UTC"));
                 } elseif (is_string($value)) {
                     try {
                         if (!is_null($dateInFormat)) {
@@ -187,28 +197,28 @@ class ValueInfo {
                                     throw new \Exception;
                                 }
                             }
-                            $f = isset(Date::FORMAT[$dateInFormat]) ? Date::FORMAT[$dateInFormat][0] : $dateInFormat;
+                            $f = isset(self::DATE_FORMATS[$dateInFormat]) ? self::DATE_FORMATS[$dateInFormat][0] : $dateInFormat;
                             if ($dateInFormat=="iso8601" || $dateInFormat=="iso8601m") {
-                                // DateTime::createFromFormat() doesn't provide one catch-all for ISO 8601 timezone specifiers, so we try all of them till one works
+                                // DateTimeImmutable::createFromFormat() doesn't provide one catch-all for ISO 8601 timezone specifiers, so we try all of them till one works
                                 if ($dateInFormat=="iso8601m") {
-                                    $f2 = Date::FORMAT["iso8601"][0];
+                                    $f2 = self::DATE_FORMATS["iso8601"][0];
                                     $zones = [$f."", $f."\Z", $f."P", $f."O", $f2."", $f2."\Z", $f2."P", $f2."O"];
                                 } else {
                                     $zones = [$f."", $f."\Z", $f."P", $f."O"];
                                 }
                                 do {
                                     $ftz = array_shift($zones);
-                                    $out = \DateTime::createFromFormat($ftz, $value, new \DateTimeZone("UTC"));
+                                    $out = \DateTimeImmutable::createFromFormat($ftz, $value, new \DateTimeZone("UTC"));
                                 } while (!$out && $zones);
                             } else {
-                                $out = \DateTime::createFromFormat($f, $value, new \DateTimeZone("UTC"));
+                                $out = \DateTimeImmutable::createFromFormat($f, $value, new \DateTimeZone("UTC"));
                             }
                             if (!$out) {
                                 throw new \Exception;
                             }
                             return $out;
                         } else {
-                            return new \DateTime($value, new \DateTimeZone("UTC"));
+                            return new \DateTimeImmutable($value, new \DateTimeZone("UTC"));
                         }
                     } catch (\Exception $e) {
                         if ($strict && !$drop) {
