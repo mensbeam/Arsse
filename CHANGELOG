@@ -1,3 +1,9 @@
+Version 0.3.0 (2018-??-??)
+==========================
+
+Changes:
+- Make date strings in TTRSS explicitly UTC
+
 Version 0.2.1 (2017-12-07)
 ==========================
 
