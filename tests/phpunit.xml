@@ -65,15 +65,16 @@
         <file>cases/Db/SQLite3/Database/TestLabel.php</file>
         <file>cases/Db/SQLite3/Database/TestCleanup.php</file>
     </testsuite>
-    <testsuite name="Controllers">
-        <testsuite name="NCNv1">
-            <file>cases/REST/NextCloudNews/TestVersions.php</file>
-            <file>cases/REST/NextCloudNews/TestV1_2.php</file>
-        </testsuite>
-        <testsuite name="TTRSS">
-            <file>cases/REST/TinyTinyRSS/TestAPI.php</file>
-            <file>cases/REST/TinyTinyRSS/TestIcon.php</file>
-        </testsuite>
+    <testsuite name="REST">
+        <file>cases/REST/TestTarget.php</file>
+    </testsuite>
+    <testsuite name="NCNv1">
+        <file>cases/REST/NextCloudNews/TestVersions.php</file>
+        <file>cases/REST/NextCloudNews/TestV1_2.php</file>
+    </testsuite>
+    <testsuite name="TTRSS">
+        <file>cases/REST/TinyTinyRSS/TestAPI.php</file>
+        <file>cases/REST/TinyTinyRSS/TestIcon.php</file>
     </testsuite>
     <testsuite name="Refresh service">
         <file>cases/Service/TestService.php</file>
