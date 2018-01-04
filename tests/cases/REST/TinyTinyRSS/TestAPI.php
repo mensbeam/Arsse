@@ -12,13 +12,15 @@ use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\REST\Request;
-use JKingWeb\Arsse\REST\Response;
 use JKingWeb\Arsse\Test\Result;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\Context;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\TinyTinyRSS\API;
+use Psr\Http\Message\ResponseInterface;
+use Zend\Diactoros\Response\JsonResponse as Response;
+use Zend\Diactoros\Response\EmptyResponse;
 use Phake;
 
 /** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\API<extended>
@@ -122,12 +124,12 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
 </section>
 LONG_STRING;
 
-    protected function req($data) : Response {
+    protected function req($data): ResponseInterface {
         return $this->h->dispatch(new Request("POST", "", json_encode($data)));
     }
     
     protected function respGood($content = null, $seq = 0): Response {
-        return new Response(200, [
+        return new Response([
             'seq' => $seq,
             'status' => 0,
             'content' => $content,
@@ -136,16 +138,11 @@ LONG_STRING;
 
     protected function respErr(string $msg, $content = [], $seq = 0): Response {
         $err = ['error' => $msg];
-        return new Response(200, [
+        return new Response([
             'seq' => $seq,
             'status' => 1,
             'content' => array_merge($err, $content, $err),
         ]);
-    }
-
-    protected function assertResponse(Response $exp, Response $act, string $text = null) {
-        $this->assertEquals($exp, $act, $text);
-        $this->assertSame($exp->payload, $act->payload, $text);
     }
 
     public function setUp() {
@@ -178,14 +175,14 @@ LONG_STRING;
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", "")));
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/", "")));
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/index.php", "")));
-        $exp = new Response(404);
+        $exp = new EmptyResponse(404);
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/bad/path", "")));
     }
 
     public function testHandleOptionsRequest() {
-        $exp = new Response(204, "", "", [
-            "Allow: POST",
-            "Accept: application/json, text/json",
+        $exp = new EmptyResponse(204, [
+            'Allow'  => "POST",
+            'Accept' => "application/json, text/json",
         ]);
         $this->assertResponse($exp, $this->h->dispatch(new Request("OPTIONS", "")));
     }
@@ -226,7 +223,7 @@ LONG_STRING;
             'user'     => Arsse::$user->id,
             'password' => "secret",
         ];
-        $exp = new Response(500);
+        $exp = new EmptyResponse(500);
         $this->assertResponse($exp, $this->req($data));
     }
 
@@ -1630,10 +1627,10 @@ LONG_STRING;
         $this->assertResponse($this->outputHeadlines(1), $test);
         // test 'show_content'
         $test = $this->req($in[1]);
-        $this->assertArrayHasKey("content", $test->payload['content'][0]);
-        $this->assertArrayHasKey("content", $test->payload['content'][1]);
+        $this->assertArrayHasKey("content", $test->getPayload()['content'][0]);
+        $this->assertArrayHasKey("content", $test->getPayload()['content'][1]);
         foreach ($this->generateHeadlines(1) as $key => $row) {
-            $this->assertSame($row['content'], $test->payload['content'][$key]['content']);
+            $this->assertSame($row['content'], $test->getPayload()['content'][$key]['content']);
         }
         // test 'include_attachments'
         $test = $this->req($in[2]);
@@ -1649,25 +1646,23 @@ LONG_STRING;
                 'post_id'      => "2112",
             ],
         ];
-        $this->assertArrayHasKey("attachments", $test->payload['content'][0]);
-        $this->assertArrayHasKey("attachments", $test->payload['content'][1]);
-        $this->assertSame([], $test->payload['content'][0]['attachments']);
-        $this->assertSame($exp, $test->payload['content'][1]['attachments']);
+        $this->assertArrayHasKey("attachments", $test->getPayload()['content'][0]);
+        $this->assertArrayHasKey("attachments", $test->getPayload()['content'][1]);
+        $this->assertSame([], $test->getPayload()['content'][0]['attachments']);
+        $this->assertSame($exp, $test->getPayload()['content'][1]['attachments']);
         // test 'include_header'
         $test = $this->req($in[3]);
-        $exp = $this->outputHeadlines(1);
-        $exp->payload['content'] = [
+        $exp = $this->respGood([
             ['id' => -4, 'is_cat' => false, 'first_id' => 1],
-            $exp->payload['content'],
-        ];
+            $this->outputHeadlines(1)->getPayload()['content'],
+        ]);
         $this->assertResponse($exp, $test);
         // test 'include_header' with a category
         $test = $this->req($in[4]);
-        $exp = $this->outputHeadlines(1);
-        $exp->payload['content'] = [
+        $exp = $this->respGood([
             ['id' => -3, 'is_cat' => true, 'first_id' => 1],
-            $exp->payload['content'],
-        ];
+            $this->outputHeadlines(1)->getPayload()['content'],
+        ]);
         $this->assertResponse($exp, $test);
         // test 'include_header' with an empty result
         $test = $this->req($in[5]);
@@ -1686,37 +1681,34 @@ LONG_STRING;
         $this->assertResponse($exp, $test);
         // test 'include_header' with ascending order
         $test = $this->req($in[7]);
-        $exp = $this->outputHeadlines(1);
-        $exp->payload['content'] = [
+        $exp = $this->respGood([
             ['id' => -4, 'is_cat' => false, 'first_id' => 0],
-            $exp->payload['content'],
-        ];
+            $this->outputHeadlines(1)->getPayload()['content'],
+        ]);
         $this->assertResponse($exp, $test);
         // test 'include_header' with skip
         Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->reverse(true)->limit(1)->subscription(42), Database::LIST_MINIMAL)->thenReturn($this->generateHeadlines(1867));
         $test = $this->req($in[8]);
-        $exp = $this->outputHeadlines(1);
-        $exp->payload['content'] = [
+        $exp = $this->respGood([
             ['id' => 42, 'is_cat' => false, 'first_id' => 1867],
-            $exp->payload['content'],
-        ];
+            $this->outputHeadlines(1)->getPayload()['content'],
+        ]);
         $this->assertResponse($exp, $test);
         // test 'include_header' with skip and ascending order
         $test = $this->req($in[9]);
-        $exp = $this->outputHeadlines(1);
-        $exp->payload['content'] = [
+        $exp = $this->respGood([
             ['id' => 42, 'is_cat' => false, 'first_id' => 0],
-            $exp->payload['content'],
-        ];
+            $this->outputHeadlines(1)->getPayload()['content'],
+        ]);
         $this->assertResponse($exp, $test);
         // test 'show_excerpt'
         $exp1 = "“This & that, you know‽”";
         $exp2 = "Pour vous faire mieux connaitre d’ou\u{300} vient l’erreur de ceux qui bla\u{302}ment la volupte\u{301}, et qui louent en…";
         $test = $this->req($in[10]);
-        $this->assertArrayHasKey("excerpt", $test->payload['content'][0]);
-        $this->assertArrayHasKey("excerpt", $test->payload['content'][1]);
-        $this->assertSame($exp1, $test->payload['content'][0]['excerpt']);
-        $this->assertSame($exp2, $test->payload['content'][1]['excerpt']);
+        $this->assertArrayHasKey("excerpt", $test->getPayload()['content'][0]);
+        $this->assertArrayHasKey("excerpt", $test->getPayload()['content'][1]);
+        $this->assertSame($exp1, $test->getPayload()['content'][0]['excerpt']);
+        $this->assertSame($exp2, $test->getPayload()['content'][1]['excerpt']);
     }
 
     protected function generateHeadlines(int $id): Result {

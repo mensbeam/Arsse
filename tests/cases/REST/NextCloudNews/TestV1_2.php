@@ -12,13 +12,14 @@ use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\REST\Request;
-use JKingWeb\Arsse\REST\Response;
 use JKingWeb\Arsse\Test\Result;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\Context;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\NextCloudNews\V1_2;
+use Zend\Diactoros\Response\JsonResponse as Response;
+use Zend\Diactoros\Response\EmptyResponse;
 use Phake;
 
 /** @covers \JKingWeb\Arsse\REST\NextCloudNews\V1_2<extended> */
@@ -317,14 +318,9 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->clearData();
     }
 
-    protected function assertResponse(Response $exp, Response $act, string $text = null) {
-        $this->assertEquals($exp, $act, $text);
-        $this->assertSame($exp->payload, $act->payload, $text);
-    }
-
     public function testSendAuthenticationChallenge() {
         Phake::when(Arsse::$user)->authHTTP->thenReturn(false);
-        $exp = new Response(401, "", "", ['WWW-Authenticate: Basic realm="'.V1_2::REALM.'"']);
+        $exp = new EmptyResponse(401, ['WWW-Authenticate' => 'Basic realm="'.V1_2::REALM.'"']);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/")));
     }
 
@@ -361,12 +357,12 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ],
         ];
         foreach ($errs[404] as $req) {
-            $exp = new Response(404);
+            $exp = new EmptyResponse(404);
             list($method, $path) = $req;
             $this->assertResponse($exp, $this->h->dispatch(new Request($method, $path)), "$method call to $path did not return 404.");
         }
         foreach ($errs[405] as $allow => $cases) {
-            $exp = new Response(405, "", "", ['Allow: '.$allow]);
+            $exp = new EmptyResponse(405, ['Allow' => $allow]);
             foreach ($cases as $req) {
                 list($method, $path) = $req;
                 $this->assertResponse($exp, $this->h->dispatch(new Request($method, $path)), "$method call to $path did not return 405.");
@@ -375,29 +371,29 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testRespondToInvalidInputTypes() {
-        $exp = new Response(415, "", "", ['Accept: application/json']);
+        $exp = new EmptyResponse(415, ['Accept' => "application/json"]);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/1", '<data/>', 'application/xml')));
-        $exp = new Response(400);
+        $exp = new EmptyResponse(400);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/1", '<data/>', 'application/json')));
     }
 
     public function testRespondToOptionsRequests() {
-        $exp = new Response(204, "", "", [
-            "Allow: HEAD,GET,POST",
-            "Accept: application/json",
+        $exp = new EmptyResponse(204, [
+            'Allow'  => "HEAD,GET,POST",
+            'Accept' => "application/json",
         ]);
         $this->assertResponse($exp, $this->h->dispatch(new Request("OPTIONS", "/feeds")));
-        $exp = new Response(204, "", "", [
-            "Allow: DELETE",
-            "Accept: application/json",
+        $exp = new EmptyResponse(204, [
+            'Allow'  => "DELETE",
+            'Accept' => "application/json",
         ]);
         $this->assertResponse($exp, $this->h->dispatch(new Request("OPTIONS", "/feeds/2112")));
-        $exp = new Response(204, "", "", [
-            "Allow: HEAD,GET",
-            "Accept: application/json",
+        $exp = new EmptyResponse(204, [
+            'Allow'  => "HEAD,GET",
+            'Accept' => "application/json",
         ]);
         $this->assertResponse($exp, $this->h->dispatch(new Request("OPTIONS", "/user")));
-        $exp = new Response(404);
+        $exp = new EmptyResponse(404);
         $this->assertResponse($exp, $this->h->dispatch(new Request("OPTIONS", "/invalid/path")));
     }
 
@@ -411,9 +407,9 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 12, 'name' => "Hardware"],
         ];
         Phake::when(Arsse::$db)->folderList(Arsse::$user->id, null, false)->thenReturn(new Result([]))->thenReturn(new Result($list));
-        $exp = new Response(200, ['folders' => []]);
+        $exp = new Response(['folders' => []]);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/folders")));
-        $exp = new Response(200, ['folders' => $out]);
+        $exp = new Response(['folders' => $out]);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/folders")));
     }
 
@@ -441,33 +437,33 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => ""])->thenThrow(new ExceptionInput("missing"));
         Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => " "])->thenThrow(new ExceptionInput("whitespace"));
         // correctly add two folders, using different means
-        $exp = new Response(200, ['folders' => [$out[0]]]);
+        $exp = new Response(['folders' => [$out[0]]]);
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/folders", json_encode($in[0]), 'application/json')));
-        $exp = new Response(200, ['folders' => [$out[1]]]);
+        $exp = new Response(['folders' => [$out[1]]]);
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/folders?name=Hardware")));
         Phake::verify(Arsse::$db)->folderAdd(Arsse::$user->id, $in[0]);
         Phake::verify(Arsse::$db)->folderAdd(Arsse::$user->id, $in[1]);
         Phake::verify(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 1);
         Phake::verify(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 2);
         // test bad folder names
-        $exp = new Response(422);
+        $exp = new EmptyResponse(422);
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/folders")));
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/folders", '{"name":""}', 'application/json')));
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/folders", '{"name":" "}', 'application/json')));
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/folders", '{"name":{}}', 'application/json')));
         // try adding the same two folders again
-        $exp = new Response(409);
+        $exp = new EmptyResponse(409);
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/folders?name=Software")));
-        $exp = new Response(409);
+        $exp = new EmptyResponse(409);
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/folders", json_encode($in[1]), 'application/json')));
     }
 
     public function testRemoveAFolder() {
         Phake::when(Arsse::$db)->folderRemove(Arsse::$user->id, 1)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
-        $exp = new Response(204);
+        $exp = new EmptyResponse(204);
         $this->assertResponse($exp, $this->h->dispatch(new Request("DELETE", "/folders/1")));
         // fail on the second invocation because it no longer exists
-        $exp = new Response(404);
+        $exp = new EmptyResponse(404);
         $this->assertResponse($exp, $this->h->dispatch(new Request("DELETE", "/folders/1")));
         Phake::verify(Arsse::$db, Phake::times(2))->folderRemove(Arsse::$user->id, 1);
     }
@@ -486,22 +482,22 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[3])->thenThrow(new ExceptionInput("whitespace"));
         Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[4])->thenReturn(true); // this should be stopped by the handler before the request gets to the database
         Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 3, $this->anything())->thenThrow(new ExceptionInput("subjectMissing")); // folder ID 3 does not exist
-        $exp = new Response(204);
+        $exp = new EmptyResponse(204);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/1", json_encode($in[0]), 'application/json')));
-        $exp = new Response(409);
+        $exp = new EmptyResponse(409);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/2", json_encode($in[1]), 'application/json')));
-        $exp = new Response(422);
+        $exp = new EmptyResponse(422);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/1", json_encode($in[2]), 'application/json')));
-        $exp = new Response(422);
+        $exp = new EmptyResponse(422);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/1", json_encode($in[3]), 'application/json')));
-        $exp = new Response(422);
+        $exp = new EmptyResponse(422);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/1", json_encode($in[4]), 'application/json')));
-        $exp = new Response(404);
+        $exp = new EmptyResponse(404);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/3", json_encode($in[0]), 'application/json')));
     }
 
     public function testRetrieveServerVersion() {
-        $exp = new Response(200, [
+        $exp = new Response([
             'version' => V1_2::VERSION,
             'arsse_version' => Arsse::VERSION,
             ]);
@@ -521,9 +517,9 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         Phake::when(Arsse::$db)->subscriptionList(Arsse::$user->id)->thenReturn(new Result([]))->thenReturn(new Result($this->feeds['db']));
         Phake::when(Arsse::$db)->articleStarred(Arsse::$user->id)->thenReturn(['total' => 0])->thenReturn(['total' => 5]);
         Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id)->thenReturn(0)->thenReturn(4758915);
-        $exp = new Response(200, $exp1);
+        $exp = new Response($exp1);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds")));
-        $exp = new Response(200, $exp2);
+        $exp = new Response($exp2);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds")));
     }
 
@@ -556,31 +552,31 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         // set up a mock for a bad feed which succeeds the second time
         Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.net/news.atom")->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.net/news.atom", new \PicoFeed\Client\InvalidUrlException()))->thenReturn(47);
         // add the subscriptions
-        $exp = new Response(200, $out[0]);
+        $exp = new Response($out[0]);
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[0]), 'application/json')));
-        $exp = new Response(200, $out[1]);
+        $exp = new Response($out[1]);
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[1]), 'application/json')));
         // try to add them a second time
-        $exp = new Response(409);
+        $exp = new EmptyResponse(409);
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[0]), 'application/json')));
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[1]), 'application/json')));
         // try to add a bad feed
-        $exp = new Response(422);
+        $exp = new EmptyResponse(422);
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[2]), 'application/json')));
         // try again (this will succeed), with an invalid folder ID
-        $exp = new Response(200, $out[2]);
+        $exp = new Response($out[2]);
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[3]), 'application/json')));
         // try to add no feed
-        $exp = new Response(422);
+        $exp = new EmptyResponse(422);
         $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/feeds", json_encode($in[4]), 'application/json')));
     }
 
     public function testRemoveASubscription() {
         Phake::when(Arsse::$db)->subscriptionRemove(Arsse::$user->id, 1)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
-        $exp = new Response(204);
+        $exp = new EmptyResponse(204);
         $this->assertResponse($exp, $this->h->dispatch(new Request("DELETE", "/feeds/1")));
         // fail on the second invocation because it no longer exists
-        $exp = new Response(404);
+        $exp = new EmptyResponse(404);
         $this->assertResponse($exp, $this->h->dispatch(new Request("DELETE", "/feeds/1")));
         Phake::verify(Arsse::$db, Phake::times(2))->subscriptionRemove(Arsse::$user->id, 1);
     }
@@ -599,17 +595,17 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, ['folder' => 2112])->thenThrow(new ExceptionInput("idMissing")); // folder does not exist
         Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, ['folder' =>   -1])->thenThrow(new ExceptionInput("typeViolation")); // folder is invalid
         Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 42, $this->anything())->thenThrow(new ExceptionInput("subjectMissing")); // subscription does not exist
-        $exp = new Response(204);
+        $exp = new EmptyResponse(204);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/move", json_encode($in[0]), 'application/json')));
-        $exp = new Response(204);
+        $exp = new EmptyResponse(204);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/move", json_encode($in[1]), 'application/json')));
-        $exp = new Response(422);
+        $exp = new EmptyResponse(422);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/move", json_encode($in[2]), 'application/json')));
-        $exp = new Response(404);
+        $exp = new EmptyResponse(404);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/42/move", json_encode($in[3]), 'application/json')));
-        $exp = new Response(422);
+        $exp = new EmptyResponse(422);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/move", json_encode($in[4]), 'application/json')));
-        $exp = new Response(422);
+        $exp = new EmptyResponse(422);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/move", json_encode($in[5]), 'application/json')));
     }
 
@@ -629,17 +625,17 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, $this->identicalTo(['title' =>    ""]))->thenThrow(new ExceptionInput("missing"));
         Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, $this->identicalTo(['title' => false]))->thenThrow(new ExceptionInput("missing"));
         Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 42, $this->anything())->thenThrow(new ExceptionInput("subjectMissing"));
-        $exp = new Response(422);
+        $exp = new EmptyResponse(422);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/rename", json_encode($in[0]), 'application/json')));
-        $exp = new Response(204);
+        $exp = new EmptyResponse(204);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/rename", json_encode($in[1]), 'application/json')));
-        $exp = new Response(422);
+        $exp = new EmptyResponse(422);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/rename", json_encode($in[2]), 'application/json')));
-        $exp = new Response(422);
+        $exp = new EmptyResponse(422);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/rename", json_encode($in[3]), 'application/json')));
-        $exp = new Response(404);
+        $exp = new EmptyResponse(404);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/42/rename", json_encode($in[4]), 'application/json')));
-        $exp = new Response(422);
+        $exp = new EmptyResponse(422);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/rename", json_encode($in[6]), 'application/json')));
     }
 
@@ -655,11 +651,11 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ],
         ];
         Phake::when(Arsse::$db)->feedListStale->thenReturn(array_column($out, "id"));
-        $exp = new Response(200, ['feeds' => $out]);
+        $exp = new Response(['feeds' => $out]);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds/all")));
         // retrieving the list when not an admin fails
         Phake::when(Arsse::$user)->rightsGet->thenReturn(0);
-        $exp = new Response(403);
+        $exp = new EmptyResponse(403);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds/all")));
     }
 
@@ -674,17 +670,17 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         Phake::when(Arsse::$db)->feedUpdate(42)->thenReturn(true);
         Phake::when(Arsse::$db)->feedUpdate(2112)->thenThrow(new ExceptionInput("subjectMissing"));
         Phake::when(Arsse::$db)->feedUpdate($this->lessThan(1))->thenThrow(new ExceptionInput("typeViolation"));
-        $exp = new Response(204);
+        $exp = new EmptyResponse(204);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[0]), 'application/json')));
-        $exp = new Response(404);
+        $exp = new EmptyResponse(404);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[1]), 'application/json')));
-        $exp = new Response(422);
+        $exp = new EmptyResponse(422);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[2]), 'application/json')));
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[3]), 'application/json')));
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[4]), 'application/json')));
         // updating a feed when not an admin fails
         Phake::when(Arsse::$user)->rightsGet->thenReturn(0);
-        $exp = new Response(403);
+        $exp = new EmptyResponse(403);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/feeds/update", json_encode($in[0]), 'application/json')));
     }
 
@@ -710,12 +706,12 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->folder(2112), Database::LIST_TYPICAL)->thenThrow(new ExceptionInput("idMissing"));
         Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->subscription(-1), Database::LIST_TYPICAL)->thenThrow(new ExceptionInput("typeViolation"));
         Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->folder(-1), Database::LIST_TYPICAL)->thenThrow(new ExceptionInput("typeViolation"));
-        $exp = new Response(200, ['items' => $this->articles['rest']]);
+        $exp = new Response(['items' => $this->articles['rest']]);
         // check the contents of the response
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/items"))); // first instance of base context
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/items/updated"))); // second instance of base context
         // check error conditions
-        $exp = new Response(422);
+        $exp = new EmptyResponse(422);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/items", json_encode($in[0]), 'application/json')));
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/items", json_encode($in[1]), 'application/json')));
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/items", json_encode($in[2]), 'application/json')));
@@ -748,13 +744,13 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $in = json_encode(['newestItemId' => 2112]);
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->folder(1)->latestEdition(2112))->thenReturn(42);
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->folder(42)->latestEdition(2112))->thenThrow(new ExceptionInput("idMissing")); // folder doesn't exist
-        $exp = new Response(204);
+        $exp = new EmptyResponse(204);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/1/read", $in, 'application/json')));
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/1/read?newestItemId=2112")));
-        $exp = new Response(422);
+        $exp = new EmptyResponse(422);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/1/read")));
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/1/read?newestItemId=ook")));
-        $exp = new Response(404);
+        $exp = new EmptyResponse(404);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/folders/42/read", $in, 'application/json')));
     }
 
@@ -763,13 +759,13 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $in = json_encode(['newestItemId' => 2112]);
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->subscription(1)->latestEdition(2112))->thenReturn(42);
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->subscription(42)->latestEdition(2112))->thenThrow(new ExceptionInput("idMissing")); // subscription doesn't exist
-        $exp = new Response(204);
+        $exp = new EmptyResponse(204);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/read", $in, 'application/json')));
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/read?newestItemId=2112")));
-        $exp = new Response(422);
+        $exp = new EmptyResponse(422);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/read")));
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/1/read?newestItemId=ook")));
-        $exp = new Response(404);
+        $exp = new EmptyResponse(404);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/feeds/42/read", $in, 'application/json')));
     }
 
@@ -777,10 +773,10 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->latestEdition(2112))->thenReturn(42);
-        $exp = new Response(204);
+        $exp = new EmptyResponse(204);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/read", $in, 'application/json')));
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/read?newestItemId=2112")));
-        $exp = new Response(422);
+        $exp = new EmptyResponse(422);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/read")));
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/read?newestItemId=ook")));
     }
@@ -798,12 +794,12 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $star, (new Context)->article(2112))->thenThrow(new ExceptionInput("subjectMissing")); // article doesn't exist doesn't exist
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unstar, (new Context)->article(4))->thenReturn(42);
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unstar, (new Context)->article(1337))->thenThrow(new ExceptionInput("subjectMissing")); // article doesn't exist doesn't exist
-        $exp = new Response(204);
+        $exp = new EmptyResponse(204);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/1/read")));
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/2/unread")));
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/1/3/star")));
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/4400/4/unstar")));
-        $exp = new Response(404);
+        $exp = new EmptyResponse(404);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/42/read")));
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/47/unread")));
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/1/2112/star")));
@@ -829,7 +825,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), $this->anything())->thenReturn(42);
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->editions([]))->thenThrow(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
         Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->articles([]))->thenThrow(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
-        $exp = new Response(204);
+        $exp = new EmptyResponse(204);
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/read/multiple")));
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/unread/multiple")));
         $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "/items/star/multiple")));
@@ -882,29 +878,29 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
         $arr2['warnings']['improperlyConfiguredCron'] = true;
         $arr2['warnings']['incorrectDbCharset'] = true;
-        $exp = new Response(200, $arr1);
+        $exp = new Response($arr1);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/status")));
     }
 
     public function testCleanUpBeforeUpdate() {
         Phake::when(Arsse::$db)->feedCleanup()->thenReturn(true);
-        $exp = new Response(204);
+        $exp = new EmptyResponse(204);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/cleanup/before-update")));
         Phake::verify(Arsse::$db)->feedCleanup();
         // performing a cleanup when not an admin fails
         Phake::when(Arsse::$user)->rightsGet->thenReturn(0);
-        $exp = new Response(403);
+        $exp = new EmptyResponse(403);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/cleanup/before-update")));
     }
     
     public function testCleanUpAfterUpdate() {
         Phake::when(Arsse::$db)->articleCleanup()->thenReturn(true);
-        $exp = new Response(204);
+        $exp = new EmptyResponse(204);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/cleanup/after-update")));
         Phake::verify(Arsse::$db)->articleCleanup();
         // performing a cleanup when not an admin fails
         Phake::when(Arsse::$user)->rightsGet->thenReturn(0);
-        $exp = new Response(403);
+        $exp = new EmptyResponse(403);
         $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "/cleanup/after-update")));
     }
 }

@@ -11,7 +11,7 @@ use JKingWeb\Arsse\Misc\ValueInfo;
 
 abstract class AbstractHandler implements Handler {
     abstract public function __construct();
-    abstract public function dispatch(Request $req): Response;
+    abstract public function dispatch(Request $req): \Psr\Http\Message\ResponseInterface;
 
     protected function fieldMapNames(array $data, array $map): array {
         $out = [];

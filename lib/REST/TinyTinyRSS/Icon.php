@@ -7,16 +7,16 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\REST\TinyTinyRSS;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\REST\Response;
+use Zend\Diactoros\Response\EmptyResponse as Response;
 
 class Icon extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function __construct() {
     }
 
-    public function dispatch(\JKingWeb\Arsse\REST\Request $req): Response {
+    public function dispatch(\JKingWeb\Arsse\REST\Request $req): \Psr\Http\Message\ResponseInterface {
         if ($req->method != "GET") {
             // only GET requests are allowed
-            return new Response(405, "", "", ["Allow: GET"]);
+            return new Response(405, ['Allow' => "GET"]);
         } elseif (!preg_match("<^(\d+)\.ico$>", $req->url, $match) || !((int) $match[1])) {
             return new Response(404);
         }
@@ -26,7 +26,7 @@ class Icon extends \JKingWeb\Arsse\REST\AbstractHandler {
             if (($pos = strpos($url, "\r")) !== false || ($pos = strpos($url, "\n")) !== false) {
                 $url = substr($url, 0, $pos);
             }
-            return new Response(301, "", "", ["Location: $url"]);
+            return new Response(301, ['Location' => $url]);
         } else {
             return new Response(404);
         }

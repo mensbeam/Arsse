@@ -48,7 +48,7 @@ class REST {
     public function __construct() {
     }
 
-    public function dispatch(REST\Request $req = null): REST\Response {
+    public function dispatch(REST\Request $req = null): \Psr\Http\Message\ResponseInterface {
         if ($req===null) {
             $req = new REST\Request();
         }

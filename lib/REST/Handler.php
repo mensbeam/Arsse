@@ -8,5 +8,5 @@ namespace JKingWeb\Arsse\REST;
 
 interface Handler {
     public function __construct();
-    public function dispatch(Request $req): Response;
+    public function dispatch(Request $req): \Psr\Http\Message\ResponseInterface;
 }

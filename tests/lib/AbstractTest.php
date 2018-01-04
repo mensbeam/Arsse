@@ -9,6 +9,9 @@ namespace JKingWeb\Arsse\Test;
 use JKingWeb\Arsse\Exception;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Misc\Date;
+use Psr\Http\Message\ResponseInterface;
+use Zend\Diactoros\Response\JsonResponse;
+use Zend\Diactoros\Response\EmptyResponse;
 
 /** @coversNothing */
 abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
@@ -26,6 +29,16 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         } else {
             // expecting a standard PHP exception
             $this->expectException(\Exception::class);
+        }
+    }
+
+    protected function assertResponse(ResponseInterface $exp, ResponseInterface $act, string $text = null) {
+        $this->assertEquals($exp->getHeaders(), $act->getHeaders(), $text);
+        $this->assertEquals($exp->getStatusCode(), $act->getStatusCode(), $text);
+        $this->assertInstanceOf(get_class($exp), $act);
+        if ($exp instanceof JsonResponse) {
+            $this->assertEquals($exp->getPayload(), $act->getPayload(), $text);
+            $this->assertSame($exp->getPayload(), $act->getPayload(), $text);
         }
     }
 
