@@ -12,6 +12,8 @@ use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\REST\TinyTinyRSS\Icon;
 use JKingWeb\Arsse\REST\Request;
+use Psr\Http\Message\ResponseInterface;
+use Zend\Diactoros\ServerRequest;
 use Zend\Diactoros\Response\EmptyResponse as Response;
 use Phake;
 
@@ -32,6 +34,17 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->clearData();
     }
 
+    protected function req(string $target, $method = "GET"): ResponseInterface {
+        $url = "/tt-rss/feed-icons/".$target;
+        $server = [
+            'REQUEST_METHOD'    => $method,
+            'REQUEST_URI'       => $url,
+        ];
+        $req = new ServerRequest($server, [], $url, $method, "php://memory");
+        $req = $req->withRequestTarget($target);
+        return $this->h->dispatch($req);
+    }
+
     public function testRetrieveFavion() {
         Phake::when(Arsse::$db)->subscriptionFavicon->thenReturn("");
         Phake::when(Arsse::$db)->subscriptionFavicon(42)->thenReturn("http://example.com/favicon.ico");
@@ -39,19 +52,19 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
         Phake::when(Arsse::$db)->subscriptionFavicon(1337)->thenReturn("http://example.org/icon.gif\r\nLocation: http://bad.example.com/");
         // these requests should succeed
         $exp = new Response(301, ['Location' => "http://example.com/favicon.ico"]);
-        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "42.ico")));
+        $this->assertResponse($exp, $this->req("42.ico"));
         $exp = new Response(301, ['Location' => "http://example.net/logo.png"]);
-        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "2112.ico")));
+        $this->assertResponse($exp, $this->req("2112.ico"));
         $exp = new Response(301, ['Location' => "http://example.org/icon.gif"]);
-        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "1337.ico")));
+        $this->assertResponse($exp, $this->req("1337.ico"));
         // these requests should fail
         $exp = new Response(404);
-        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "ook.ico")));
-        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "ook")));
-        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "47.ico")));
-        $this->assertResponse($exp, $this->h->dispatch(new Request("GET", "2112.png")));
+        $this->assertResponse($exp, $this->req("ook.ico"));
+        $this->assertResponse($exp, $this->req("ook"));
+        $this->assertResponse($exp, $this->req("47.ico"));
+        $this->assertResponse($exp, $this->req("2112.png"));
         // only GET is allowed
         $exp = new Response(405, ['Allow' => "GET"]);
-        $this->assertResponse($exp, $this->h->dispatch(new Request("PUT", "2112.ico")));
+        $this->assertResponse($exp, $this->req("2112.ico", "PUT"));
     }
 }

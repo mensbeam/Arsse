@@ -19,6 +19,7 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\TinyTinyRSS\API;
 use Psr\Http\Message\ResponseInterface;
+use Zend\Diactoros\ServerRequest;
 use Zend\Diactoros\Response\JsonResponse as Response;
 use Zend\Diactoros\Response\EmptyResponse;
 use Phake;
@@ -124,8 +125,22 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
 </section>
 LONG_STRING;
 
-    protected function req($data): ResponseInterface {
-        return $this->h->dispatch(new Request("POST", "", json_encode($data)));
+    protected function req($data, string $method = "POST", string $target = "", string $strData = null): ResponseInterface {
+        $url = "/tt-rss/api".$target;
+        $server = [
+            'REQUEST_METHOD'    => $method,
+            'REQUEST_URI'       => $url,
+            'HTTP_CONTENT_TYPE' => "application/x-www-form-urlencoded",
+        ];
+        $req = new ServerRequest($server, [], $url, $method, "php://memory");
+        $body = $req->getBody();
+        if (!is_null($strData)) {
+            $body->write($strData);
+        } else {
+            $body->write(json_encode($data));
+        }
+        $req = $req->withBody($body)->withRequestTarget($target);
+        return $this->h->dispatch($req);
     }
     
     protected function respGood($content = null, $seq = 0): Response {
@@ -172,11 +187,11 @@ LONG_STRING;
 
     public function testHandleInvalidPaths() {
         $exp = $this->respErr("MALFORMED_INPUT", [], null);
-        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", "")));
-        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/", "")));
-        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/index.php", "")));
+        $this->assertResponse($exp, $this->req(null, "POST", "", ""));
+        $this->assertResponse($exp, $this->req(null, "POST", "/", ""));
+        $this->assertResponse($exp, $this->req(null, "POST", "/index.php", ""));
         $exp = new EmptyResponse(404);
-        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "/bad/path", "")));
+        $this->assertResponse($exp, $this->req(null, "POST", "/bad/path", ""));
     }
 
     public function testHandleOptionsRequest() {
@@ -184,13 +199,13 @@ LONG_STRING;
             'Allow'  => "POST",
             'Accept' => "application/json, text/json",
         ]);
-        $this->assertResponse($exp, $this->h->dispatch(new Request("OPTIONS", "")));
+        $this->assertResponse($exp, $this->req(null, "OPTIONS", "", ""));
     }
 
     public function testHandleInvalidData() {
         $exp = $this->respErr("MALFORMED_INPUT", [], null);
-        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", "This is not valid JSON data")));
-        $this->assertResponse($exp, $this->h->dispatch(new Request("POST", "", ""))); // lack of data is also an error
+        $this->assertResponse($exp, $this->req(null, "POST", "", "This is not valid JSON data"));
+        $this->assertResponse($exp, $this->req(null, "POST", "", "")); // lack of data is also an error
     }
     
     public function testLogIn() {

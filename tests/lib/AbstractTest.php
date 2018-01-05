@@ -33,13 +33,13 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     }
 
     protected function assertResponse(ResponseInterface $exp, ResponseInterface $act, string $text = null) {
-        $this->assertEquals($exp->getHeaders(), $act->getHeaders(), $text);
         $this->assertEquals($exp->getStatusCode(), $act->getStatusCode(), $text);
         $this->assertInstanceOf(get_class($exp), $act);
         if ($exp instanceof JsonResponse) {
             $this->assertEquals($exp->getPayload(), $act->getPayload(), $text);
             $this->assertSame($exp->getPayload(), $act->getPayload(), $text);
         }
+        $this->assertEquals($exp->getHeaders(), $act->getHeaders(), $text);
     }
 
     public function approximateTime($exp, $act) {

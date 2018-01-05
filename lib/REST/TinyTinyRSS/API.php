@@ -19,6 +19,8 @@ use JKingWeb\Arsse\ExceptionType;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\ResultEmpty;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\Response\JsonResponse as Response;
 use Zend\Diactoros\Response\EmptyResponse;
 
@@ -89,21 +91,22 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function __construct() {
     }
 
-    public function dispatch(\JKingWeb\Arsse\REST\Request $req): \Psr\Http\Message\ResponseInterface {
-        if (!preg_match("<^(?:/(?:index\.php)?)?$>", $req->path)) {
+    public function dispatch(ServerRequestInterface $req): ResponseInterface {
+        if (!preg_match("<^(?:/(?:index\.php)?)?$>", $req->getRequestTarget())) {
             // reject paths other than the index
             return new EmptyResponse(404);
         }
-        if ($req->method=="OPTIONS") {
+        if ($req->getMethod()=="OPTIONS") {
             // respond to OPTIONS rquests; the response is a fib, as we technically accept any type or method
             return new EmptyResponse(204, [
                 'Allow'  => "POST",
                 'Accept' => "application/json, text/json",
             ]);
         }
-        if ($req->body) {
+        $data = (string) $req->getBody();
+        if ($data) {
             // only JSON entities are allowed, but Content-Type is ignored, as is request method
-            $data = @json_decode($req->body, true);
+            $data = @json_decode($data, true);
             if (json_last_error() != \JSON_ERROR_NONE || !is_array($data)) {
                 return new Response(self::FATAL_ERR);
             }

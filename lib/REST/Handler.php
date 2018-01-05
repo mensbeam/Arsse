@@ -6,7 +6,10 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\REST;
 
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
+
 interface Handler {
     public function __construct();
-    public function dispatch(Request $req): \Psr\Http\Message\ResponseInterface;
+    public function dispatch(ServerRequestInterface $req): ResponseInterface;
 }

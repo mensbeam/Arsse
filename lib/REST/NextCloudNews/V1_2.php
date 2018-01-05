@@ -15,7 +15,9 @@ use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
-use \Psr\Http\Message\ResponseInterface;
+use JKingWeb\Arsse\REST\Target;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\Response\JsonResponse as Response;
 use Zend\Diactoros\Response\EmptyResponse;
 
@@ -43,53 +45,61 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'items'        => ValueInfo::T_MIXED | ValueInfo::M_ARRAY,
     ];
     protected $paths = [
-        'folders'               => ['GET' => "folderList",       'POST'   => "folderAdd"],
-        'folders/1'             => ['PUT' => "folderRename",     'DELETE' => "folderRemove"],
-        'folders/1/read'        => ['PUT' => "folderMarkRead"],
-        'feeds'                 => ['GET' => "subscriptionList", 'POST' => "subscriptionAdd"],
-        'feeds/1'               => ['DELETE' => "subscriptionRemove"],
-        'feeds/1/move'          => ['PUT' => "subscriptionMove"],
-        'feeds/1/rename'        => ['PUT' => "subscriptionRename"],
-        'feeds/1/read'          => ['PUT' => "subscriptionMarkRead"],
-        'feeds/all'             => ['GET' => "feedListStale"],
-        'feeds/update'          => ['GET' => "feedUpdate"],
-        'items'                 => ['GET' => "articleList"],
-        'items/updated'         => ['GET' => "articleList"],
-        'items/read'            => ['PUT' => "articleMarkReadAll"],
-        'items/1/read'          => ['PUT' => "articleMarkRead"],
-        'items/1/unread'        => ['PUT' => "articleMarkRead"],
-        'items/read/multiple'   => ['PUT' => "articleMarkReadMulti"],
-        'items/unread/multiple' => ['PUT' => "articleMarkReadMulti"],
-        'items/1/1/star'        => ['PUT' => "articleMarkStarred"],
-        'items/1/1/unstar'      => ['PUT' => "articleMarkStarred"],
-        'items/star/multiple'   => ['PUT' => "articleMarkStarredMulti"],
-        'items/unstar/multiple' => ['PUT' => "articleMarkStarredMulti"],
-        'cleanup/before-update' => ['GET' => "cleanupBefore"],
-        'cleanup/after-update'  => ['GET' => "cleanupAfter"],
-        'version'               => ['GET' => "serverVersion"],
-        'status'                => ['GET' => "serverStatus"],
-        'user'                  => ['GET' => "userStatus"],
+        '/folders'               => ['GET' => "folderList",       'POST'   => "folderAdd"],
+        '/folders/1'             => ['PUT' => "folderRename",     'DELETE' => "folderRemove"],
+        '/folders/1/read'        => ['PUT' => "folderMarkRead"],
+        '/feeds'                 => ['GET' => "subscriptionList", 'POST' => "subscriptionAdd"],
+        '/feeds/1'               => ['DELETE' => "subscriptionRemove"],
+        '/feeds/1/move'          => ['PUT' => "subscriptionMove"],
+        '/feeds/1/rename'        => ['PUT' => "subscriptionRename"],
+        '/feeds/1/read'          => ['PUT' => "subscriptionMarkRead"],
+        '/feeds/all'             => ['GET' => "feedListStale"],
+        '/feeds/update'          => ['GET' => "feedUpdate"],
+        '/items'                 => ['GET' => "articleList"],
+        '/items/updated'         => ['GET' => "articleList"],
+        '/items/read'            => ['PUT' => "articleMarkReadAll"],
+        '/items/1/read'          => ['PUT' => "articleMarkRead"],
+        '/items/1/unread'        => ['PUT' => "articleMarkRead"],
+        '/items/read/multiple'   => ['PUT' => "articleMarkReadMulti"],
+        '/items/unread/multiple' => ['PUT' => "articleMarkReadMulti"],
+        '/items/1/1/star'        => ['PUT' => "articleMarkStarred"],
+        '/items/1/1/unstar'      => ['PUT' => "articleMarkStarred"],
+        '/items/star/multiple'   => ['PUT' => "articleMarkStarredMulti"],
+        '/items/unstar/multiple' => ['PUT' => "articleMarkStarredMulti"],
+        '/cleanup/before-update' => ['GET' => "cleanupBefore"],
+        '/cleanup/after-update'  => ['GET' => "cleanupAfter"],
+        '/version'               => ['GET' => "serverVersion"],
+        '/status'                => ['GET' => "serverStatus"],
+        '/user'                  => ['GET' => "userStatus"],
     ];
     
     public function __construct() {
     }
 
-    public function dispatch(\JKingWeb\Arsse\REST\Request $req): ResponseInterface {
+    public function dispatch(ServerRequestInterface $req): ResponseInterface {
         // try to authenticate
         if (!Arsse::$user->authHTTP()) {
             return new EmptyResponse(401, ['WWW-Authenticate' => 'Basic realm="'.self::REALM.'"']);
         }
+        // explode and normalize the URL path
+        $target = new Target($req->getRequestTarget());
         // handle HTTP OPTIONS requests
-        if ($req->method=="OPTIONS") {
-            return $this->handleHTTPOptions($req->paths);
+        if ($req->getMethod()=="OPTIONS") {
+            return $this->handleHTTPOptions((string) $target);
         }
         // normalize the input
-        if ($req->body) {
+        $data = (string) $req->getBody();
+        $type = "";
+        if ($req->hasHeader("Content-Type")) {
+            $type = $req->getHeader("Content-Type");
+            $type = array_pop($type);
+        }
+        if ($data) {
             // if the entity body is not JSON according to content type, return "415 Unsupported Media Type"
-            if (!preg_match("<^application/json\b|^$>", $req->type)) {
+            if (!preg_match("<^application/json\b|^$>", $type)) {
                 return new EmptyResponse(415, ['Accept' => "application/json"]);
             }
-            $data = @json_decode($req->body, true);
+            $data = @json_decode($data, true);
             if (json_last_error() != \JSON_ERROR_NONE) {
                 // if the body could not be parsed as JSON, return "400 Bad Request"
                 return new EmptyResponse(400);
@@ -98,10 +108,10 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $data = [];
         }
         // FIXME: Do query parameters take precedence in NextCloud? Is there a conflict error when values differ?
-        $data = $this->normalizeInput(array_merge($data, $req->query), $this->validInput, "unix");
+        $data = $this->normalizeInput(array_merge($data, $req->getQueryParams()), $this->validInput, "unix");
         // check to make sure the requested function is implemented
         try {
-            $func = $this->chooseCall($req->paths, $req->method);
+            $func = $this->chooseCall((string) $target, $req->getMethod());
         } catch (Exception404 $e) {
             return new EmptyResponse(404);
         } catch (Exception405 $e) {
@@ -112,7 +122,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // dispatch
         try {
-            return $this->$func($req->paths, $data);
+            return $this->$func($target->path, $data);
             // @codeCoverageIgnoreStart
         } catch (Exception $e) {
             // if there was a REST exception return 400
@@ -124,19 +134,24 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // @codeCoverageIgnoreEnd
     }
 
-    protected function normalizePath(array $url): string {
-        // any URL components which are database IDs (integers greater than zero) should be replaced with "1", for easier comparison (we don't care about the specific ID)
-        for ($a = 0; $a < sizeof($url); $a++) {
-            if (ValueInfo::id($url[$a])) {
-                $url[$a] = "1";
+    protected function normalizePathIds(string $url): string {
+        // first parse the URL and perform syntactic normalization
+        $target = new Target($url);
+        // any path components which are database IDs (integers greater than zero) should be replaced with "1", for easier comparison (we don't care about the specific ID)
+        for ($a = 0; $a < sizeof($target->path); $a++) {
+            if (ValueInfo::id($target->path[$a])) {
+                $target->path[$a] = "1";
             }
         }
-        return implode("/", $url);
+        // discard any fragment ID (there shouldn't be any) and query string (the query is available in the request itself)
+        $target->fragment = "";
+        $target->query = "";
+        return (string) $target;
     }
     
-    protected function chooseCall(array $url, string $method): string {
-        // normalize the URL path
-        $url = $this->normalizePath($url);
+    protected function chooseCall(string $url, string $method): string {
+        // // normalize the URL path: change any IDs to 1 for easier comparison
+        $url = $this->normalizePathIds($url);
         // normalize the HTTP method to uppercase
         $method = strtoupper($method);
         // we now evaluate the supplied URL against every supported path for the selected scope
@@ -244,9 +259,9 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return $article;
     }
 
-    protected function handleHTTPOptions(array $url): ResponseInterface {
-        // normalize the URL path
-        $url = $this->normalizePath($url);
+    protected function handleHTTPOptions(string $url): ResponseInterface {
+        // normalize the URL path: change any IDs to 1 for easier comparison
+        $url = $this->normalizePathIDs($url);
         if (isset($this->paths[$url])) {
             // if the path is supported, respond with the allowed methods and other metadata
             $allowed = array_keys($this->paths[$url]);

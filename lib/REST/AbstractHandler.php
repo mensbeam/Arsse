@@ -8,10 +8,12 @@ namespace JKingWeb\Arsse\REST;
 
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
 abstract class AbstractHandler implements Handler {
     abstract public function __construct();
-    abstract public function dispatch(Request $req): \Psr\Http\Message\ResponseInterface;
+    abstract public function dispatch(ServerRequestInterface $req): ResponseInterface;
 
     protected function fieldMapNames(array $data, array $map): array {
         $out = [];
