@@ -6,8 +6,14 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use Zend\Diactoros\ServerRequest;
+use Zend\Diactoros\ServerRequestFactory;
+use Zend\Diactoros\Response\EmptyResponse;
+
 class REST {
-    protected $apis = [
+    const API_LIST = [
         // NextCloud News version enumerator
         'ncn' => [
             'match' => '/index.php/apps/news/api',
@@ -21,7 +27,7 @@ class REST {
             'class' => REST\NextCloudNews\V1_2::class,
         ],
         'ttrss_api' => [ // Tiny Tiny RSS  https://git.tt-rss.org/git/tt-rss/wiki/ApiReference
-            'match' => '/tt-rss/api/',
+            'match' => '/tt-rss/api',
             'strip' => '/tt-rss/api',
             'class' => REST\TinyTinyRSS\API::class,
         ],
@@ -44,40 +50,93 @@ class REST {
         // NewsBlur             http://www.newsblur.com/api
         // Feedly               https://developer.feedly.com/
     ];
+    protected $apis = [];
 
-    public function __construct() {
+    public function __construct(array $apis = null) {
+        $this->apis = $apis ?? self::API_LIST;
     }
 
-    public function dispatch(REST\Request $req = null): \Psr\Http\Message\ResponseInterface {
-        if ($req===null) {
-            $req = new REST\Request();
-        }
-        $api = $this->apiMatch($req->url, $this->apis);
-        $req->url = substr($req->url, strlen($this->apis[$api]['strip']));
-        $req->refreshURL();
-        $class = $this->apis[$api]['class'];
-        $drv = new $class();
-        if ($req->head) {
-            $res =  $drv->dispatch($req);
-            $res->head = true;
-            return $res;
+    public function dispatch(ServerRequestInterface $req = null): ResponseInterface {
+        // create a request object if not provided
+        $req = $req ?? ServerRequestFactory::fromGlobals();
+        // find the API to handle 
+        list ($api, $target, $class) = $this->apiMatch($req->getRequestTarget(), $this->apis);
+        // modify the request to have a stripped target
+        $req = $req->withRequestTarget($target);
+        // generate a response
+        $res = $this->handOffRequest($class, $req);
+        // modify the response so that it has all the required metadata
+        $res = $this->normalizeResponse($res, $req);
+    }
+
+    protected function handOffRequest(string $className, ServerRequestInterface $req): ResponseInterface {
+        // instantiate the API handler
+        $drv = new $className();
+        // perform the request and return the response
+        if ($req->getMethod()=="HEAD") {
+            // if the request is a HEAD request, we act exactly as if it were a GET request, and simply remove the response body later
+            return $drv->dispatch($req->withMethod("GET"));
         } else {
             return $drv->dispatch($req);
         }
     }
 
-    public function apiMatch(string $url, array $map): string {
+    public function apiMatch(string $url): array {
+        $map = $this->apis;
         // sort the API list so the longest URL prefixes come first
         uasort($map, function ($a, $b) {
             return (strlen($a['match']) <=> strlen($b['match'])) * -1;
         });
+        // normalize the target URL
+        $url = REST\Target::normalize($url);
         // find a match
         foreach ($map as $id => $api) {
+            // first try a simple substring match
             if (strpos($url, $api['match'])===0) {
-                return $id;
+                // if it matches, perform a more rigorous match and then strip off any defined prefix
+                $pattern = "<^".preg_quote($api['match'])."([/\?#]|$)>";
+                if ($url==$api['match'] || in_array(substr($api['match'], -1, 1), ["/", "?", "#"]) || preg_match($pattern, $url)) {
+                    $target = substr($url, strlen($api['strip']));
+                } else {
+                    // if the match fails we are not able to handle the request
+                    throw new REST\Exception501();
+                }
+                // return the API name, stripped URL, and API class name
+                return [$id, $target, $api['class']];
             }
         }
-        // or throw an exception otherwise
+        // or throw an exception otherwise 
         throw new REST\Exception501();
+    }
+
+    public function normalizeResponse(ResponseInterface $res, RequestInterface $req = null): ResponseInterface {
+        // set or clear the Content-Length header field
+        $body = $res->getBody();
+        $bodySize = $body->getSize();
+        if ($bodySize || $res->getStatusCode()==200) {
+            // if there is a message body or the response is 200, make sure Content-Length is included
+            $res = $res->withHeader("Content-Length", (string) $bodySize);
+        } else {
+            // for empty responses of other statuses, omit it
+            $res = $res->withoutHeader("Content-Length");
+        }
+        // if the response is to a HEAD request, the body should be omitted
+        if ($req->getMethod()=="HEAD") {
+            $res = new EmptyResponse($res->getStatusCode(), $res->getHeaders());
+        }
+        // if an Allow header field is present, normalize it
+        if ($res->hasHeader("Allow")) {
+            $methods = preg_split("<\s+,\s+>", strtoupper($res->getHeaderLine()));
+            // if GET is allowed, HEAD should be allowed as well
+            if (in_array("GET", $methods) && !in_array("HEAD", $methods)) {
+                $methods[] = "HEAD";
+            }
+            // OPTIONS requests are always allowed by our handlers
+            if (!in_array("OPTIONS", $methods)) {
+                $methods[] = "OPTIONS";
+            }
+            $res = $res->withHeader("Allow", implode(", ", $methods));
+        }
+        return $res;
     }
 }

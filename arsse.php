@@ -24,5 +24,7 @@ if (\PHP_SAPI=="cli") {
         Arsse::$conf->importFile(BASE."config.php");
     }
     // handle Web requests
-    (new REST)->dispatch()->output();
+    $emitter = new \Zend\Diactoros\Response\SapiEmitter();
+    $response = (new REST)->dispatch();
+    $emitter->emit($response);
 }

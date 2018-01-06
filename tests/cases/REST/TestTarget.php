@@ -8,7 +8,7 @@ namespace JKingWeb\Arsse\TestCase\REST;
 
 use JKingWeb\Arsse\REST\Target;
 
-/** @covers \JKingWeb\Arsse\REST\Target<extended> */
+/** @covers \JKingWeb\Arsse\REST\Target */
 class TestTarget extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideTargetUrls */

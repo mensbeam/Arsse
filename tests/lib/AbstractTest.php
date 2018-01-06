@@ -15,6 +15,14 @@ use Zend\Diactoros\Response\EmptyResponse;
 
 /** @coversNothing */
 abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
+    public function setUp() {
+        $this->clearData();
+    }
+
+    public function tearDown() {
+        $this->clearData();
+    }
+
     public function assertException(string $msg = "", string $prefix = "", string $type = "Exception") {
         if (func_num_args()) {
             $class = \JKingWeb\Arsse\NS_BASE . ($prefix !== "" ? str_replace("/", "\\", $prefix) . "\\" : "") . $type;
@@ -34,10 +42,11 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
 
     protected function assertResponse(ResponseInterface $exp, ResponseInterface $act, string $text = null) {
         $this->assertEquals($exp->getStatusCode(), $act->getStatusCode(), $text);
-        $this->assertInstanceOf(get_class($exp), $act);
         if ($exp instanceof JsonResponse) {
             $this->assertEquals($exp->getPayload(), $act->getPayload(), $text);
             $this->assertSame($exp->getPayload(), $act->getPayload(), $text);
+        } else {
+            $this->assertEquals((string) $exp->getBody(), (string) $act->getBody(), $text);
         }
         $this->assertEquals($exp->getHeaders(), $act->getHeaders(), $text);
     }

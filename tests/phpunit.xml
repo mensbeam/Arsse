@@ -67,6 +67,7 @@
     </testsuite>
     <testsuite name="REST">
         <file>cases/REST/TestTarget.php</file>
+        <file>cases/REST/TestREST.php</file>
     </testsuite>
     <testsuite name="NCNv1">
         <file>cases/REST/NextCloudNews/TestVersions.php</file>

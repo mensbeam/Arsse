@@ -1,6 +1,11 @@
 Version 0.3.0 (2018-??-??)
 ==========================
 
+Bug fixes:
+- Correctly handle %-encoded request URLs
+- Overhaul protocol detection to fix various subtle bugs
+- Overhaul HTTP response handling for more consistent results
+
 Changes:
 - Make date strings in TTRSS explicitly UTC
 
