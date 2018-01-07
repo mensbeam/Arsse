@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\ServerRequest;
 use Zend\Diactoros\ServerRequestFactory;
@@ -60,25 +61,29 @@ class REST {
         // create a request object if not provided
         $req = $req ?? ServerRequestFactory::fromGlobals();
         // find the API to handle 
-        list ($api, $target, $class) = $this->apiMatch($req->getRequestTarget(), $this->apis);
-        // modify the request to have a stripped target
-        $req = $req->withRequestTarget($target);
-        // generate a response
-        $res = $this->handOffRequest($class, $req);
+        try {
+            list ($api, $target, $class) = $this->apiMatch($req->getRequestTarget(), $this->apis);
+            // modify the request to have a stripped target
+            $req = $req->withRequestTarget($target);
+            // fetch the correct handler
+            $drv = $this->getHandler($class);
+            // generate a response
+            if ($req->getMethod()=="HEAD") {
+                // if the request is a HEAD request, we act exactly as if it were a GET request, and simply remove the response body later
+                $res = $drv->dispatch($req->withMethod("GET"));
+            } else {
+                $res = $drv->dispatch($req);
+            }
+        } catch (REST\Exception501 $e) {
+            $res = new EmptyResponse(501);
+        }
         // modify the response so that it has all the required metadata
-        $res = $this->normalizeResponse($res, $req);
+        return $this->normalizeResponse($res, $req);
     }
 
-    protected function handOffRequest(string $className, ServerRequestInterface $req): ResponseInterface {
+    public function getHandler(string $className): REST\Handler {
         // instantiate the API handler
-        $drv = new $className();
-        // perform the request and return the response
-        if ($req->getMethod()=="HEAD") {
-            // if the request is a HEAD request, we act exactly as if it were a GET request, and simply remove the response body later
-            return $drv->dispatch($req->withMethod("GET"));
-        } else {
-            return $drv->dispatch($req);
-        }
+        return new $className();
     }
 
     public function apiMatch(string $url): array {
@@ -121,12 +126,12 @@ class REST {
             $res = $res->withoutHeader("Content-Length");
         }
         // if the response is to a HEAD request, the body should be omitted
-        if ($req->getMethod()=="HEAD") {
+        if ($req && $req->getMethod()=="HEAD") {
             $res = new EmptyResponse($res->getStatusCode(), $res->getHeaders());
         }
         // if an Allow header field is present, normalize it
         if ($res->hasHeader("Allow")) {
-            $methods = preg_split("<\s+,\s+>", strtoupper($res->getHeaderLine()));
+            $methods = preg_split("<\s*,\s*>", strtoupper($res->getHeaderLine("Allow")));
             // if GET is allowed, HEAD should be allowed as well
             if (in_array("GET", $methods) && !in_array("HEAD", $methods)) {
                 $methods[] = "HEAD";
