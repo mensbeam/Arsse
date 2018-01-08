@@ -120,6 +120,8 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         return [
             [new ServerRequest([], [], "/index.php/apps/news/api/v1-2/feeds", "GET"),  "GET",  true, NCN::Class, "/feeds"],
             [new ServerRequest([], [], "/index.php/apps/news/api/v1-2/feeds", "HEAD"), "GET",  true, NCN::Class, "/feeds"],
+            [new ServerRequest([], [], "/index.php/apps/news/api/v1-2/feeds", "get"),  "GET",  true, NCN::Class, "/feeds"],
+            [new ServerRequest([], [], "/index.php/apps/news/api/v1-2/feeds", "head"), "GET",  true, NCN::Class, "/feeds"],
             [new ServerRequest([], [], "/tt-rss/api/", "POST"),                        "POST", true, TTRSS::Class, "/"],
             [new ServerRequest([], [], "/no/such/api/", "HEAD"),                       "GET",  false],
             [new ServerRequest([], [], "/no/such/api/", "GET"),                        "GET",  false],
