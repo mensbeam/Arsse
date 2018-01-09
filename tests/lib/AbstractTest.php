@@ -8,6 +8,7 @@ namespace JKingWeb\Arsse\Test;
 
 use JKingWeb\Arsse\Exception;
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\Misc\Date;
 use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\Response\JsonResponse;
@@ -21,6 +22,10 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
 
     public function tearDown() {
         $this->clearData();
+    }
+
+    public function setConf(array $conf = []) {
+        Arsse::$conf = (new Conf)->import($conf);
     }
 
     public function assertException(string $msg = "", string $prefix = "", string $type = "Exception") {

@@ -59,9 +59,157 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
+    /** @dataProvider provideUnnormalizedOrigins */
+    public function testNormalizeOrigins(string $origin, string $exp, array $ports = null) {
+        $r = new REST();
+        $act = $r->corsNormalizeOrigin($origin, $ports);
+        $this->assertSame($exp, $act);
+    }
+
+    public function provideUnnormalizedOrigins() {
+        return [
+            ["null", "null"],
+            ["http://example.com",             "http://example.com"],
+            ["http://example.com:80",          "http://example.com"],
+            ["http://example.com:8%30",        "http://example.com"],
+            ["http://example.com:8080",        "http://example.com:8080"],
+            ["http://[2001:0db8:0:0:0:0:2:1]", "http://[2001:db8::2:1]"],
+            ["http://example",                 "http://example"],
+            ["http://ex%41mple",               "http://example"],
+            ["http://ex%41mple.co.uk",         "http://example.co.uk"],
+            ["http://ex%41mple.co%2euk",       "http://example.co%2Euk"],
+            ["http://example/",                ""],
+            ["http://example?",                ""],
+            ["http://example#",                ""],
+            ["http://user@example",            ""],
+            ["http://user:pass@example",       ""],
+            ["http://[example",                ""],
+            ["http://[2bef]",                  ""],
+            ["http://example%2F",              "http://example%2F"],
+            ["HTTP://example",                 "http://example"],
+            ["HTTP://EXAMPLE",                 "http://example"],
+            ["%48%54%54%50://example",         "http://example"],
+            ["http:%2F%2Fexample",             ""],
+            ["https://example",                "https://example"],
+            ["https://example:443",            "https://example"],
+            ["https://example:80",             "https://example:80"],
+            ["ssh://example",                  "ssh://example"],
+            ["ssh://example:22",               "ssh://example:22"],
+            ["ssh://example:22",               "ssh://example",            ['ssh' => 22]],
+            ["SSH://example:22",               "ssh://example",            ['ssh' => 22]],
+            ["ssh://example:22",               "ssh://example",            ['ssh' => "22"]],
+            ["ssh://example:22",               "ssh://example:22",         ['SSH' => "22"]],
+        ];
+    }
+
+    /** @dataProvider provideCorsNegotiations */
+    public function testNegotiateCors($origin, bool $exp, string $allowed = null, string $denied = null) {
+        $this->setConf();
+        $r = Phake::partialMock(REST::class);
+        Phake::when($r)->corsNormalizeOrigin->thenReturnCallback(function ($origin) {
+            return $origin;
+        });
+        $req = new Request("", "GET", "php://memory", ['Origin' => $origin]);
+        $act = $r->corsNegotiate($req, $allowed, $denied);
+        $this->assertSame($exp, $act);
+    }
+
+    public function provideCorsNegotiations() {
+        return [
+            ["http://example",           true                                      ],
+            ["http://example",           true,  "http://example",  "*"             ],
+            ["http://example",           false, "http://example",  "http://example"],
+            ["http://example",           false, "https://example", "*"             ],
+            ["http://example",           false, "*",               "*"             ],
+            ["http://example",           true,  "*",               ""              ],
+            ["http://example",           false, "",                ""              ],
+            ["null",                     false                                     ],
+            ["null",                     true,  "null",            "*"             ],
+            ["null",                     false, "null",            "null"          ],
+            ["null",                     false, "*",               "*"             ],
+            ["null",                     false, "*",               ""              ],
+            ["null",                     false, "",                ""              ],
+            ["",                         false                                     ],
+            ["",                         false, "",                "*"             ],
+            ["",                         false, "",                ""              ],
+            ["",                         false, "*",               "*"             ],
+            ["",                         false, "*",               ""              ],
+            [["null", "http://example"], false, "*",               ""              ],
+            [[],                         false, "*",               ""              ],
+        ];
+    }
+
+    /** @dataProvider provideCorsHeaders */
+    public function testAddCorsHeaders(string $reqMethod, array $reqHeaders, array $resHeaders, array $expHeaders) {
+        $r = new REST();
+        $req = new Request("", $reqMethod, "php://memory", $reqHeaders);
+        $res = new EmptyResponse(204, $resHeaders);
+        $exp = new EmptyResponse(204, $expHeaders);
+        $act = $r->corsApply($res, $req);
+        $this->assertResponse($exp, $act);
+    }
+
+    public function provideCorsHeaders() {
+        return [
+            ["GET", ['Origin' => "null"], [], [
+                'Access-Control-Allow-Origin' => "null",
+                'Access-Control-Allow-Credentials' => "true",
+                'Vary' => "Origin",
+            ]],
+            ["GET", ['Origin' => "http://example"], [], [
+                'Access-Control-Allow-Origin' => "http://example",
+                'Access-Control-Allow-Credentials' => "true",
+                'Vary' => "Origin",
+            ]],
+            ["GET", ['Origin' => "http://example"], ['Content-Type' => "text/plain; charset=utf-8"], [
+                'Access-Control-Allow-Origin' => "http://example",
+                'Access-Control-Allow-Credentials' => "true",
+                'Vary' => "Origin",
+                'Content-Type' => "text/plain; charset=utf-8",
+            ]],
+            ["GET", ['Origin' => "http://example"], ['Vary' => "Content-Type"], [
+                'Access-Control-Allow-Origin' => "http://example",
+                'Access-Control-Allow-Credentials' => "true",
+                'Vary' => ["Content-Type", "Origin"],
+            ]],
+            ["OPTIONS", ['Origin' => "http://example"], [], [
+                'Access-Control-Allow-Origin' => "http://example",
+                'Access-Control-Allow-Credentials' => "true",
+                'Access-Control-Max-Age' => (string) (60 *60 *24),
+                'Vary' => "Origin",
+            ]],
+            ["OPTIONS", ['Origin' => "http://example"], ['Allow' => "GET, PUT, HEAD, OPTIONS"], [
+                'Allow' => "GET, PUT, HEAD, OPTIONS",
+                'Access-Control-Allow-Origin' => "http://example",
+                'Access-Control-Allow-Credentials' => "true",
+                'Access-Control-Allow-Methods' => "GET, PUT, HEAD, OPTIONS",
+                'Access-Control-Max-Age' => (string) (60 *60 *24),
+                'Vary' => "Origin",
+            ]],
+            ["OPTIONS", ['Origin' => "http://example", 'Access-Control-Request-Headers' => "Content-Type, If-None-Match"], [], [
+                'Access-Control-Allow-Origin' => "http://example",
+                'Access-Control-Allow-Credentials' => "true",
+                'Access-Control-Allow-Headers' => "Content-Type, If-None-Match",
+                'Access-Control-Max-Age' => (string) (60 *60 *24),
+                'Vary' => "Origin",
+            ]],
+            ["OPTIONS", ['Origin' => "http://example", 'Access-Control-Request-Headers' => ["Content-Type", "If-None-Match"]], [], [
+                'Access-Control-Allow-Origin' => "http://example",
+                'Access-Control-Allow-Credentials' => "true",
+                'Access-Control-Allow-Headers' => "Content-Type,If-None-Match",
+                'Access-Control-Max-Age' => (string) (60 *60 *24),
+                'Vary' => "Origin",
+            ]],
+        ];
+    }
+
     /** @dataProvider provideUnnormalizedResponses */
     public function testNormalizeHttpResponses(ResponseInterface $res, ResponseInterface $exp, RequestInterface $req = null) {
-        $r = new REST();
+        $r = Phake::partialMock(REST::class);
+        Phake::when($r)->corsNegotiate->thenReturn(true);
+        Phake::when($r)->corsApply->thenReturnCallback(function ($res) {
+            return $res;
+        });
         $act = $r->normalizeResponse($res, $req);
         $this->assertResponse($exp, $act);
     }
@@ -98,6 +246,9 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideMockRequests */
     public function testDispatchRequests(ServerRequest $req, string $method, bool $called, string $class = "", string $target ="") {
         $r = Phake::partialMock(REST::class);
+        Phake::when($r)->normalizeResponse->thenReturnCallback(function ($res) {
+            return $res;
+        });
         if ($called) {
             $h = Phake::mock($class);
             Phake::when($r)->getHandler($class)->thenReturn($h);

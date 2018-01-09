@@ -72,6 +72,11 @@ class Conf {
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
     public $purgeArticlesUnread     = "P21D";
 
+    /** @var string Space-separated list of origins from which to allow cross-origin resource sharing */
+    public $httpOriginsAllowed      = "*";
+    /** @var string Space-separated list of origins from which to deny cross-origin resource sharing */
+    public $httpOriginsDenied      = "";
+
     /** Creates a new configuration object
      * @param string $import_file Optional file to read configuration data from
      * @see self::importFile() */

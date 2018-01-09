@@ -52,6 +52,10 @@ class REST {
         // NewsBlur             http://www.newsblur.com/api
         // Feedly               https://developer.feedly.com/
     ];
+    const DEFAULT_PORTS = [
+        'http'  => 80,
+        'https' => 443,
+    ];
     protected $apis = [];
 
     public function __construct(array $apis = null) {
@@ -143,6 +147,113 @@ class REST {
             }
             $res = $res->withHeader("Allow", implode(", ", $methods));
         }
+        // add CORS header fields if the request origin is specified and allowed
+        if ($req && $this->corsNegotiate($req)) {
+            $res = $this->corsApply($res, $req);
+        }
         return $res;
+    }
+
+    public function corsApply(ResponseInterface $res, RequestInterface $req = null): ResponseInterface {
+        if ($req && $req->getMethod()=="OPTIONS") {
+            if ($res->hasHeader("Allow")) {
+                $res = $res->withHeader("Access-Control-Allow-Methods", $res->getHeaderLine("Allow"));
+            }
+            if ($req->hasHeader("Access-Control-Request-Headers")) {
+                $res = $res->withHeader("Access-Control-Allow-Headers", $req->getHeaderLine("Access-Control-Request-Headers"));
+            }
+            $res = $res->withHeader("Access-Control-Max-Age", (string) (60 *60 *24) ); // one day
+        }
+        $res = $res->withHeader("Access-Control-Allow-Origin", $req->getHeaderLine("Origin"));
+        $res = $res->withHeader("Access-Control-Allow-Credentials", "true");
+        return $res->withAddedHeader("Vary", "Origin");
+    }
+
+    public function corsNegotiate(RequestInterface $req, string $allowed = null, string $denied = null): bool {
+        $allowed = trim($allowed ?? Arsse::$conf->httpOriginsAllowed ?? "");
+        $denied = trim($denied ?? Arsse::$conf->httpOriginsDenied ?? "");
+        // continue if at least one origin is allowed
+        if ($allowed) {
+            // continue if the request has exactly one Origin header
+            $origin = $req->getHeader("Origin");
+            if (sizeof($origin)==1) {
+                // continue if the origin is syntactically valid
+                $origin = $this->corsNormalizeOrigin($origin[0]);
+                if ($origin) {
+                    // the special "null" origin should not be matched by the wildcard origin
+                    $null = ($origin=="null");
+                    // pad all strings for simpler comparison
+                    $allowed = " ".$allowed." ";
+                    $denied = " ".$denied." ";
+                    $origin = " ".$origin." ";
+                    $any = " * ";
+                    if (strpos($denied, $origin) !== false) {
+                        // first check the denied list for the origin
+                        return false;
+                    } elseif (strpos($allowed, $origin) !== false) {
+                        // next check the allowed list for the origin
+                        return true;
+                    } elseif (!$null && strpos($denied, $any) !== false) {
+                        // next check the denied list for the wildcard origin
+                        return false;
+                    } elseif (!$null && strpos($allowed, $any) !== false) {
+                        // finally check the allowed list for the wildcard origin
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public function corsNormalizeOrigin(string $origin, array $ports = null): string {
+        $origin = trim($origin);
+        if ($origin=="null") {
+            // if the origin is the special value "null", use it
+            return "null";
+        }
+        if (preg_match("<^([^:]+)://(\[[^\]]+\]|[^\[\]:/\?#@]+)((?::.*)?)$>i", $origin, $match)) {
+            // if the origin sort-of matches the syntax in a general sense, continue
+            $scheme = $match[1];
+            $host = $match[2];
+            $port = $match[3];
+            // decode and normalize the scheme and port (the port may be blank)
+            $scheme = strtolower(rawurldecode($scheme));
+            $port = rawurldecode($port);
+            if (!preg_match("<^(?::[0-9]+)?$>", $port) || !preg_match("<^[a-z](?:[a-z0-9\+\-\.])*$>", $scheme)) {
+                // if the normalized port contains anything but numbers, or the scheme does not follow the generic URL syntax, the origin is invalid
+                return "";
+            }
+            if ($host[0]=="[") {
+                // if the host appears to be an IPv6 address, validate it
+                $host = rawurldecode(substr($host, 1, strlen($host) - 2));
+                if (!filter_var($host, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV6)) {
+                    return "";
+                } else {
+                    $host = "[".inet_ntop(inet_pton($host))."]";
+                }
+            } else {
+                // if the host is a domain name or IP address, split it along dots and just perform URL decoding
+                $host = explode(".", $host);
+                $host = array_map(function ($segment) {
+                    return str_replace(".", "%2E", rawurlencode(strtolower(rawurldecode($segment))));
+                }, $host);
+                $host = implode(".", $host);
+            }
+            // suppress default ports
+            if (strlen($port)) {
+                $port = (int) substr($port, 1);
+                $list = array_merge($ports ?? [], self::DEFAULT_PORTS);
+                if (isset($list[$scheme]) && $port==$list[$scheme]) {
+                    $port = "";
+                } else {
+                    $port = ":".$port;
+                }
+            }
+            // return the reconstructed result
+            return $scheme."://".$host.$port;
+        } else {
+            return "";
+        }
     }
 }
