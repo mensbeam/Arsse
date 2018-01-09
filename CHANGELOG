@@ -1,6 +1,9 @@
 Version 0.3.0 (2018-??-??)
 ==========================
 
+New features:
+- Support for cross-origin resource sharing in all protocols
+
 Bug fixes:
 - Correctly handle %-encoded request URLs
 - Overhaul protocol detection to fix various subtle bugs
