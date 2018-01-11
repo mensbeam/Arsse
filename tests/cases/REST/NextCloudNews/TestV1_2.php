@@ -314,6 +314,9 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             $server['HTTP_CONTENT_TYPE'] = "application/json";
         }
         $req = new ServerRequest($server, [], $url, $method, "php://memory");
+        if (Arsse::$user->auth()) {
+            $req = $req->withAttribute("authenticated", true)->withAttribute("authenticatedUser", "john.doe@example.com");
+        }
         foreach($headers as $key => $value) {
             if (!is_null($value)) {
                 $req = $req->withHeader($key, $value);
@@ -340,7 +343,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$conf = new Conf();
         // create a mock user manager
         Arsse::$user = Phake::mock(User::class);
-        Phake::when(Arsse::$user)->authHTTP->thenReturn(true);
+        Phake::when(Arsse::$user)->auth->thenReturn(true);
         Phake::when(Arsse::$user)->rightsGet->thenReturn(100);
         Arsse::$user->id = "john.doe@example.com";
         // create a mock database interface
@@ -354,8 +357,8 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testSendAuthenticationChallenge() {
-        Phake::when(Arsse::$user)->authHTTP->thenReturn(false);
-        $exp = new EmptyResponse(401, ['WWW-Authenticate' => 'Basic realm="'.V1_2::REALM.'"']);
+        Phake::when(Arsse::$user)->auth->thenReturn(false);
+        $exp = new EmptyResponse(401);
         $this->assertMessage($exp, $this->req("GET", "/"));
     }
 
