@@ -6,6 +6,8 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\REST;
 
+use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\REST;
 use JKingWeb\Arsse\REST\Handler;
 use JKingWeb\Arsse\REST\Exception501;
@@ -58,7 +60,50 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
             [$fake, "/full/url-not",                       []],
         ];
     }
+    
+    /** @dataProvider provideAuthenticableRequests */
+    public function testAuthenticateRequests(array $serverParams, array $expAttr) {
+        $r = new REST();
+        // create a mock user manager
+        Arsse::$user = Phake::mock(User::class);
+        Phake::when(Arsse::$user)->auth->thenReturn(true);
+        Phake::when(Arsse::$user)->auth($this->anything(), "superman")->thenReturn(false);
+        Phake::when(Arsse::$user)->auth("jane.doe@example.com", $this->anything())->thenReturn(false);
+        // create an input server request
+        $req = new ServerRequest($serverParams);
+        // create the expected output
+        $exp = $req;
+        foreach ($expAttr as $key => $value) {
+            $exp = $exp->withAttribute($key, $value);
+        }
+        $act = $r->authenticateRequest($req);
+        $this->assertMessage($exp, $act);
+    }
 
+    public function provideAuthenticableRequests() {
+        return [
+            [['PHP_AUTH_USER' => "john.doe@example.com", 'PHP_AUTH_PW' => "secret"],                                          ['authenticated' => true, 'authenticatedUser' => "john.doe@example.com"]],
+            [['PHP_AUTH_USER' => "john.doe@example.com", 'PHP_AUTH_PW' => "secret", 'REMOTE_USER' => "jane.doe@example.com"], ['authenticated' => true, 'authenticatedUser' => "john.doe@example.com"]],
+            [['PHP_AUTH_USER' => "jane.doe@example.com", 'PHP_AUTH_PW' => "secret"],                                          []],
+            [['PHP_AUTH_USER' => "john.doe@example.com", 'PHP_AUTH_PW' => "superman"],                                        []],
+            [['REMOTE_USER' => "john.doe@example.com"],                                                                       ['authenticated' => true, 'authenticatedUser' => "john.doe@example.com"]],
+            [['REMOTE_USER' => "someone.else@example.com"],                                                                   ['authenticated' => true, 'authenticatedUser' => "someone.else@example.com"]],
+            [['REMOTE_USER' => "jane.doe@example.com"],                                                                       []],
+        ];
+    }
+
+    public function testSendAuthenticationChallenges() {
+        $this->setConf();
+        $r = new REST();
+        $in = new EmptyResponse(401);
+        $exp = $in->withHeader("WWW-Authenticate", 'Basic realm="OOK"');
+        $act = $r->challenge($in, "OOK");
+        $this->assertMessage($exp, $act);
+        $exp = $in->withHeader("WWW-Authenticate", 'Basic realm="'.Arsse::$conf->httpRealm.'"');
+        $act = $r->challenge($in);
+        $this->assertMessage($exp, $act);
+    }
+    
     /** @dataProvider provideUnnormalizedOrigins */
     public function testNormalizeOrigins(string $origin, string $exp, array $ports = null) {
         $r = new REST();
@@ -207,6 +252,9 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testNormalizeHttpResponses(ResponseInterface $res, ResponseInterface $exp, RequestInterface $req = null) {
         $r = Phake::partialMock(REST::class);
         Phake::when($r)->corsNegotiate->thenReturn(true);
+        Phake::when($r)->challenge->thenReturnCallback(function ($res) {
+            return $res->withHeader("WWW-Authenticate", "Fake Value");
+        });
         Phake::when($r)->corsApply->thenReturnCallback(function ($res) {
             return $res;
         });
@@ -219,6 +267,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         fwrite($stream,"ook");
         return [
             [new EmptyResponse(204),                                          new EmptyResponse(204)],
+            [new EmptyResponse(401),                                          new EmptyResponse(401, ['WWW-Authenticate' => "Fake Value"])],
             [new EmptyResponse(204, ['Allow' => "PUT"]),                      new EmptyResponse(204, ['Allow' => "PUT, OPTIONS"])],
             [new EmptyResponse(204, ['Allow' => "PUT, OPTIONS"]),             new EmptyResponse(204, ['Allow' => "PUT, OPTIONS"])],
             [new EmptyResponse(204, ['Allow' => "PUT,OPTIONS"]),              new EmptyResponse(204, ['Allow' => "PUT, OPTIONS"])],
@@ -249,6 +298,9 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         Phake::when($r)->normalizeResponse->thenReturnCallback(function ($res) {
             return $res;
         });
+        Phake::when($r)->authenticateRequest->thenReturnCallback(function ($req) {
+            return $req;
+        });
         if ($called) {
             $h = Phake::mock($class);
             Phake::when($r)->getHandler($class)->thenReturn($h);
@@ -257,6 +309,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         $out = $r->dispatch($req);
         $this->assertInstanceOf(ResponseInterface::class, $out);
         if ($called) {
+            Phake::verify($r)->authenticateRequest;
             Phake::verify($h)->dispatch(Phake::capture($in));
             $this->assertSame($method, $in->getMethod());
             $this->assertSame($target, $in->getRequestTarget());

@@ -80,8 +80,10 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
         // try to authenticate
-        if (!Arsse::$user->authHTTP()) {
-            return new EmptyResponse(401, ['WWW-Authenticate' => 'Basic realm="'.self::REALM.'"']);
+        if ($req->getAttribute("authenticated", false)) {
+            Arsse::$user->id = $req->getAttribute("authenticatedUser");
+        } else {
+            return new EmptyResponse(401);
         }
         // explode and normalize the URL path
         $target = new Target($req->getRequestTarget());

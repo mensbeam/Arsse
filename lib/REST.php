@@ -6,6 +6,8 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
+
+use JKingWeb\Arsse\Arsse;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -68,6 +70,8 @@ class REST {
         // find the API to handle 
         try {
             list ($api, $target, $class) = $this->apiMatch($req->getRequestTarget(), $this->apis);
+            // authenticate the request pre-emptively
+            $req = $this->authenticateRequest($req);
             // modify the request to have an uppercase method and a stripped target
             $req = $req->withMethod(strtoupper($req->getMethod()))->withRequestTarget($target);
             // fetch the correct handler
@@ -119,7 +123,38 @@ class REST {
         throw new REST\Exception501();
     }
 
+    public function authenticateRequest(ServerRequestInterface $req): ServerRequestInterface {
+        $user = "";
+        $password = "";
+        $env = $req->getServerParams();
+        if (isset($env['PHP_AUTH_USER'])) {
+            $user = $env['PHP_AUTH_USER'];
+            if (isset($env['PHP_AUTH_PW'])) {
+                $password = $env['PHP_AUTH_PW'];
+            }
+        } elseif (isset($env['REMOTE_USER'])) {
+            $user = $env['REMOTE_USER'];
+        }
+        if (strlen($user)) {
+            $valid = Arsse::$user->auth($user, $password);
+        }
+        if ($valid) {
+            $req = $req->withAttribute("authenticated", true);
+            $req = $req->withAttribute("authenticatedUser", $user);
+        }
+        return $req;
+    }
+
+    public function challenge(ResponseInterface $res, string $realm = null): ResponseInterface {
+        $realm = $realm ?? Arsse::$conf->httpRealm ?? "Default";
+        return $res->withAddedHeader("WWW-Authenticate", 'Basic realm="'.$realm.'"');
+    }
+
     public function normalizeResponse(ResponseInterface $res, RequestInterface $req = null): ResponseInterface {
+        // if the response code is 401, issue an HTTP authentication challenge
+        if ($res->getStatusCode()==401) {
+            $res = $this->challenge($res);
+        }
         // set or clear the Content-Length header field
         $body = $res->getBody();
         $bodySize = $body->getSize();

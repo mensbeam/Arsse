@@ -58,7 +58,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                 $this->assertEquals($exp->getAttributes(), $act->getAttributes(), $text);
             }
             $this->assertInstanceOf(RequestInterface::class, $act, $text);
-            $this->assertSame($exp->getRequestMethod(), $act->getRequestMethod(), $text);
+            $this->assertSame($exp->getMethod(), $act->getMethod(), $text);
             $this->assertSame($exp->getRequestTarget(), $act->getRequestTarget(), $text);
         }
         if ($exp instanceof JsonResponse) {
