@@ -10,6 +10,9 @@ use JKingWeb\Arsse\Exception;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\Misc\Date;
+use Psr\Http\Message\MessageInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\Response\JsonResponse;
 use Zend\Diactoros\Response\EmptyResponse;
@@ -45,8 +48,19 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         }
     }
 
-    protected function assertResponse(ResponseInterface $exp, ResponseInterface $act, string $text = null) {
-        $this->assertEquals($exp->getStatusCode(), $act->getStatusCode(), $text);
+    protected function assertMessage(MessageInterface $exp, MessageInterface $act, string $text = null) {
+        if ($exp instanceof ResponseInterface) {
+            $this->assertInstanceOf(ResponseInterface::class, $act, $text);
+            $this->assertEquals($exp->getStatusCode(), $act->getStatusCode(), $text);
+        } elseif ($exp instanceof RequestInterface) {
+            if ($exp instanceof ServerRequestInterface) {
+                $this->assertInstanceOf(ServerRequestInterface::class, $act, $text);
+                $this->assertEquals($exp->getAttributes(), $act->getAttributes(), $text);
+            }
+            $this->assertInstanceOf(RequestInterface::class, $act, $text);
+            $this->assertSame($exp->getRequestMethod(), $act->getRequestMethod(), $text);
+            $this->assertSame($exp->getRequestTarget(), $act->getRequestTarget(), $text);
+        }
         if ($exp instanceof JsonResponse) {
             $this->assertEquals($exp->getPayload(), $act->getPayload(), $text);
             $this->assertSame($exp->getPayload(), $act->getPayload(), $text);

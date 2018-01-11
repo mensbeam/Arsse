@@ -52,19 +52,19 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
         Phake::when(Arsse::$db)->subscriptionFavicon(1337)->thenReturn("http://example.org/icon.gif\r\nLocation: http://bad.example.com/");
         // these requests should succeed
         $exp = new Response(301, ['Location' => "http://example.com/favicon.ico"]);
-        $this->assertResponse($exp, $this->req("42.ico"));
+        $this->assertMessage($exp, $this->req("42.ico"));
         $exp = new Response(301, ['Location' => "http://example.net/logo.png"]);
-        $this->assertResponse($exp, $this->req("2112.ico"));
+        $this->assertMessage($exp, $this->req("2112.ico"));
         $exp = new Response(301, ['Location' => "http://example.org/icon.gif"]);
-        $this->assertResponse($exp, $this->req("1337.ico"));
+        $this->assertMessage($exp, $this->req("1337.ico"));
         // these requests should fail
         $exp = new Response(404);
-        $this->assertResponse($exp, $this->req("ook.ico"));
-        $this->assertResponse($exp, $this->req("ook"));
-        $this->assertResponse($exp, $this->req("47.ico"));
-        $this->assertResponse($exp, $this->req("2112.png"));
+        $this->assertMessage($exp, $this->req("ook.ico"));
+        $this->assertMessage($exp, $this->req("ook"));
+        $this->assertMessage($exp, $this->req("47.ico"));
+        $this->assertMessage($exp, $this->req("2112.png"));
         // only GET is allowed
         $exp = new Response(405, ['Allow' => "GET"]);
-        $this->assertResponse($exp, $this->req("2112.ico", "PUT"));
+        $this->assertMessage($exp, $this->req("2112.ico", "PUT"));
     }
 }

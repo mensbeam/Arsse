@@ -146,7 +146,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         $res = new EmptyResponse(204, $resHeaders);
         $exp = new EmptyResponse(204, $expHeaders);
         $act = $r->corsApply($res, $req);
-        $this->assertResponse($exp, $act);
+        $this->assertMessage($exp, $act);
     }
 
     public function provideCorsHeaders() {
@@ -211,7 +211,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
             return $res;
         });
         $act = $r->normalizeResponse($res, $req);
-        $this->assertResponse($exp, $act);
+        $this->assertMessage($exp, $act);
     }
 
     public function provideUnnormalizedResponses() {

@@ -31,24 +31,24 @@ class TestVersions extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testFetchVersionList() {
         $exp = new Response(['apiLevels' => ['v1-2']]);
-        $this->assertResponse($exp, $this->req("GET", "/"));
-        $this->assertResponse($exp, $this->req("GET", "/"));
-        $this->assertResponse($exp, $this->req("GET", "/"));
+        $this->assertMessage($exp, $this->req("GET", "/"));
+        $this->assertMessage($exp, $this->req("GET", "/"));
+        $this->assertMessage($exp, $this->req("GET", "/"));
     }
 
     public function testRespondToOptionsRequest() {
         $exp = new EmptyResponse(204, ['Allow' => "HEAD,GET"]);
-        $this->assertResponse($exp, $this->req("OPTIONS", "/"));
+        $this->assertMessage($exp, $this->req("OPTIONS", "/"));
     }
 
     public function testUseIncorrectMethod() {
         $exp = new EmptyResponse(405, ['Allow' => "HEAD,GET"]);
-        $this->assertResponse($exp, $this->req("POST", "/"));
+        $this->assertMessage($exp, $this->req("POST", "/"));
     }
 
     public function testUseIncorrectPath() {
         $exp = new EmptyResponse(404);
-        $this->assertResponse($exp, $this->req("GET", "/ook"));
-        $this->assertResponse($exp, $this->req("OPTIONS", "/ook"));
+        $this->assertMessage($exp, $this->req("GET", "/ook"));
+        $this->assertMessage($exp, $this->req("OPTIONS", "/ook"));
     }
 }
