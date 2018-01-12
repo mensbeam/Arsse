@@ -62,7 +62,7 @@ class Target {
 
     protected function parseFragment(string $target): string {
         // store and strip off any fragment identifier and return the target without a fragment
-        $pos = strpos($target,"#");
+        $pos = strpos($target, "#");
         if ($pos !== false) {
             $this->fragment = rawurldecode(substr($target, $pos + 1));
             $target = substr($target, 0, $pos);
@@ -74,7 +74,7 @@ class Target {
         // store and strip off any query string and return the target without a query
         // note that the function assumes any fragment identifier has already been stripped off
         // unlike the other parts the query string is currently neither parsed nor normalized
-        $pos = strpos($target,"?");
+        $pos = strpos($target, "?");
         if ($pos !== false) {
             $this->query = substr($target, $pos + 1);
             $target = substr($target, 0, $pos);
@@ -106,7 +106,7 @@ class Target {
             $target = explode("/", $target);
             $out = [];
             // resolve relative path segments and decode each retained segment
-            foreach($target as $index => $segment) {
+            foreach ($target as $index => $segment) {
                 if ($segment==".") {
                     // self-referential segments can be ignored
                     continue;

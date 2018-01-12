@@ -317,7 +317,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         if (Arsse::$user->auth()) {
             $req = $req->withAttribute("authenticated", true)->withAttribute("authenticatedUser", "john.doe@example.com");
         }
-        foreach($headers as $key => $value) {
+        foreach ($headers as $key => $value) {
             if (!is_null($value)) {
                 $req = $req->withHeader($key, $value);
             } else {

@@ -11,7 +11,7 @@ trait PDOTest {
         if (!is_array($value)) {
             return $value;
         }
-        foreach($value as $k => $v) {
+        foreach ($value as $k => $v) {
             if (is_array($v)) {
                 $value[$k] = $this->v($v);
             } elseif (is_int($v) || is_float($v)) {

@@ -6,7 +6,6 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
-
 use JKingWeb\Arsse\Arsse;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -67,9 +66,9 @@ class REST {
     public function dispatch(ServerRequestInterface $req = null): ResponseInterface {
         // create a request object if not provided
         $req = $req ?? ServerRequestFactory::fromGlobals();
-        // find the API to handle 
+        // find the API to handle
         try {
-            list ($api, $target, $class) = $this->apiMatch($req->getRequestTarget(), $this->apis);
+            list($api, $target, $class) = $this->apiMatch($req->getRequestTarget(), $this->apis);
             // authenticate the request pre-emptively
             $req = $this->authenticateRequest($req);
             // modify the request to have an uppercase method and a stripped target
@@ -119,7 +118,7 @@ class REST {
                 return [$id, $target, $api['class']];
             }
         }
-        // or throw an exception otherwise 
+        // or throw an exception otherwise
         throw new REST\Exception501();
     }
 
@@ -197,7 +196,7 @@ class REST {
             if ($req->hasHeader("Access-Control-Request-Headers")) {
                 $res = $res->withHeader("Access-Control-Allow-Headers", $req->getHeaderLine("Access-Control-Request-Headers"));
             }
-            $res = $res->withHeader("Access-Control-Max-Age", (string) (60 *60 *24) ); // one day
+            $res = $res->withHeader("Access-Control-Max-Age", (string) (60 *60 *24)); // one day
         }
         $res = $res->withHeader("Access-Control-Allow-Origin", $req->getHeaderLine("Origin"));
         $res = $res->withHeader("Access-Control-Allow-Credentials", "true");

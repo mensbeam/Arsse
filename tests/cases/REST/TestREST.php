@@ -264,7 +264,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provideUnnormalizedResponses() {
         $stream = fopen("php://memory", "w+b");
-        fwrite($stream,"ook");
+        fwrite($stream, "ook");
         return [
             [new EmptyResponse(204),                                          new EmptyResponse(204)],
             [new EmptyResponse(401),                                          new EmptyResponse(401, ['WWW-Authenticate' => "Fake Value"])],
@@ -322,11 +322,11 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provideMockRequests() {
         return [
-            [new ServerRequest([], [], "/index.php/apps/news/api/v1-2/feeds", "GET"),  "GET",  true, NCN::Class, "/feeds"],
-            [new ServerRequest([], [], "/index.php/apps/news/api/v1-2/feeds", "HEAD"), "GET",  true, NCN::Class, "/feeds"],
-            [new ServerRequest([], [], "/index.php/apps/news/api/v1-2/feeds", "get"),  "GET",  true, NCN::Class, "/feeds"],
-            [new ServerRequest([], [], "/index.php/apps/news/api/v1-2/feeds", "head"), "GET",  true, NCN::Class, "/feeds"],
-            [new ServerRequest([], [], "/tt-rss/api/", "POST"),                        "POST", true, TTRSS::Class, "/"],
+            [new ServerRequest([], [], "/index.php/apps/news/api/v1-2/feeds", "GET"),  "GET",  true, NCN::class, "/feeds"],
+            [new ServerRequest([], [], "/index.php/apps/news/api/v1-2/feeds", "HEAD"), "GET",  true, NCN::class, "/feeds"],
+            [new ServerRequest([], [], "/index.php/apps/news/api/v1-2/feeds", "get"),  "GET",  true, NCN::class, "/feeds"],
+            [new ServerRequest([], [], "/index.php/apps/news/api/v1-2/feeds", "head"), "GET",  true, NCN::class, "/feeds"],
+            [new ServerRequest([], [], "/tt-rss/api/", "POST"),                        "POST", true, TTRSS::class, "/"],
             [new ServerRequest([], [], "/no/such/api/", "HEAD"),                       "GET",  false],
             [new ServerRequest([], [], "/no/such/api/", "GET"),                        "GET",  false],
         ];
