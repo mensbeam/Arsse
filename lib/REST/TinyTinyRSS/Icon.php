@@ -7,17 +7,19 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\REST\TinyTinyRSS;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\REST\Response;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use Zend\Diactoros\Response\EmptyResponse as Response;
 
 class Icon extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function __construct() {
     }
 
-    public function dispatch(\JKingWeb\Arsse\REST\Request $req): Response {
-        if ($req->method != "GET") {
+    public function dispatch(ServerRequestInterface $req): ResponseInterface {
+        if ($req->getMethod() != "GET") {
             // only GET requests are allowed
-            return new Response(405, "", "", ["Allow: GET"]);
-        } elseif (!preg_match("<^(\d+)\.ico$>", $req->url, $match) || !((int) $match[1])) {
+            return new Response(405, ['Allow' => "GET"]);
+        } elseif (!preg_match("<^(\d+)\.ico$>", $req->getRequestTarget(), $match) || !((int) $match[1])) {
             return new Response(404);
         }
         $url = Arsse::$db->subscriptionFavicon((int) $match[1]);
@@ -26,7 +28,7 @@ class Icon extends \JKingWeb\Arsse\REST\AbstractHandler {
             if (($pos = strpos($url, "\r")) !== false || ($pos = strpos($url, "\n")) !== false) {
                 $url = substr($url, 0, $pos);
             }
-            return new Response(301, "", "", ["Location: $url"]);
+            return new Response(301, ['Location' => $url]);
         } else {
             return new Response(404);
         }

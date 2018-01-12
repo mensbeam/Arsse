@@ -8,10 +8,29 @@ namespace JKingWeb\Arsse\Test;
 
 use JKingWeb\Arsse\Exception;
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\Misc\Date;
+use Psr\Http\Message\MessageInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use Zend\Diactoros\Response\JsonResponse;
+use Zend\Diactoros\Response\EmptyResponse;
 
 /** @coversNothing */
 abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
+    public function setUp() {
+        $this->clearData();
+    }
+
+    public function tearDown() {
+        $this->clearData();
+    }
+
+    public function setConf(array $conf = []) {
+        Arsse::$conf = (new Conf)->import($conf);
+    }
+
     public function assertException(string $msg = "", string $prefix = "", string $type = "Exception") {
         if (func_num_args()) {
             $class = \JKingWeb\Arsse\NS_BASE . ($prefix !== "" ? str_replace("/", "\\", $prefix) . "\\" : "") . $type;
@@ -27,6 +46,28 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             // expecting a standard PHP exception
             $this->expectException(\Exception::class);
         }
+    }
+
+    protected function assertMessage(MessageInterface $exp, MessageInterface $act, string $text = null) {
+        if ($exp instanceof ResponseInterface) {
+            $this->assertInstanceOf(ResponseInterface::class, $act, $text);
+            $this->assertEquals($exp->getStatusCode(), $act->getStatusCode(), $text);
+        } elseif ($exp instanceof RequestInterface) {
+            if ($exp instanceof ServerRequestInterface) {
+                $this->assertInstanceOf(ServerRequestInterface::class, $act, $text);
+                $this->assertEquals($exp->getAttributes(), $act->getAttributes(), $text);
+            }
+            $this->assertInstanceOf(RequestInterface::class, $act, $text);
+            $this->assertSame($exp->getMethod(), $act->getMethod(), $text);
+            $this->assertSame($exp->getRequestTarget(), $act->getRequestTarget(), $text);
+        }
+        if ($exp instanceof JsonResponse) {
+            $this->assertEquals($exp->getPayload(), $act->getPayload(), $text);
+            $this->assertSame($exp->getPayload(), $act->getPayload(), $text);
+        } else {
+            $this->assertEquals((string) $exp->getBody(), (string) $act->getBody(), $text);
+        }
+        $this->assertEquals($exp->getHeaders(), $act->getHeaders(), $text);
     }
 
     public function approximateTime($exp, $act) {

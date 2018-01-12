@@ -6,30 +6,35 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\REST\NextCloudNews;
 
-use JKingWeb\Arsse\REST\Response;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use Zend\Diactoros\Response\JsonResponse as Response;
+use Zend\Diactoros\Response\EmptyResponse;
 
 class Versions implements \JKingWeb\Arsse\REST\Handler {
     public function __construct() {
     }
 
-    public function dispatch(\JKingWeb\Arsse\REST\Request $req): Response {
-        if (!preg_match("<^/?$>", $req->path)) {
-            // if the request path is an empty string or just a slash, the client is probably trying a version we don't support
-            return new Response(404);
-        } elseif ($req->method=="OPTIONS") {
-            // if the request method is OPTIONS, respond accordingly
-            return new Response(204, "", "", ["Allow: HEAD,GET"]);
-        } elseif ($req->method != "GET") {
-            // if a method other than GET was used, this is an error
-            return new Response(405, "", "", ["Allow: HEAD,GET"]);
-        } else {
-            // otherwise return the supported versions
-            $out = [
-                'apiLevels' => [
-                    'v1-2',
-                ]
-            ];
-            return new Response(200, $out);
+    public function dispatch(ServerRequestInterface $req): ResponseInterface {
+        if (!preg_match("<^/?$>", $req->getRequestTarget())) {
+            // if the request path is more than an empty string or a slash, the client is probably trying a version we don't support
+            return new EmptyResponse(404);
+        }
+        switch ($req->getMethod()) {
+            case "OPTIONS":
+                // if the request method is OPTIONS, respond accordingly
+                return new EmptyResponse(204, ['Allow' => "HEAD,GET"]);
+            case "GET":
+                // otherwise return the supported versions
+                $out = [
+                    'apiLevels' => [
+                        'v1-2',
+                    ]
+                ];
+                return new Response($out);
+            default:
+                // if any other method was used, this is an error
+                return new EmptyResponse(405, ['Allow' => "HEAD,GET"]);
         }
     }
 }

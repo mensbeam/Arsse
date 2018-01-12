@@ -86,10 +86,6 @@ The Arsse makes use of the [picoFeed] newsfeed parsing library to sanitize artic
 
 As a general rule, The Arsse should yield the same output as the reference implementation for all valid inputs (otherwise you've found [a bug][newIssue]), but there are exception, either because the NextCloud News (hereafter "NCN") [protocol description][NCNv1] is at times ambiguous or incomplete, or because implementation details necessitate it differ; this section along with the General section above detail these differences.
 
-#### Missing features
-
-- The Arsse does not implement [Cross-Origin Resource Sharing][CORS]
-
 #### Differences
 
 - Article GUID hashes are not hashes like in NCN; they are integers rendered as strings
