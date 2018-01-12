@@ -4,30 +4,31 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse\TestCase\Db\SQLite3;
+namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
 
 use JKingWeb\Arsse\Db\Statement;
+use JKingWeb\Arsse\Db\PDOStatement;
+use JKingWeb\Arsse\Db\SQLite3\PDODriver;
 
 /**
- * @covers \JKingWeb\Arsse\Db\SQLite3\Statement<extended>
- * @covers \JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder */
+ * @covers \JKingWeb\Arsse\Db\PDOStatement<extended>
+ * @covers \JKingWeb\Arsse\Db\PDOError */
 class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $c;
-    protected static $imp = \JKingWeb\Arsse\Db\SQLite3\Statement::class;
+    protected static $imp = \JKingWeb\Arsse\Db\PDOStatement::class;
 
     public function setUp() {
-        if (!\JKingWeb\Arsse\Db\SQLite3\Driver::requirementsMet()) {
-            $this->markTestSkipped("SQLite extension not loaded");
+        if (!PDODriver::requirementsMet()) {
+            $this->markTestSkipped("PDO-SQLite extension not loaded");
         }
         $this->clearData();
-        $c = new \SQLite3(":memory:");
-        $c->enableExceptions(true);
+        $c = new \PDO("sqlite::memory:", "", "", [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
         $this->c = $c;
     }
 
     public function tearDown() {
-        $this->c->close();
         unset($this->c);
+        $this->clearData();
     }
 
     protected function checkBinding($input, array $expectations, bool $strict = false) {
@@ -56,7 +57,7 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
             ) as pass"
         );
         $s = new self::$imp($this->c, $nativeStatement);
-        $s->retypeArray([$type, $type]);
+        $s->retype(...[$type, $type]);
         $act = (bool) $s->run(...[$value, $value])->getRow()['pass'];
         $this->assertTrue($act);
     }
@@ -74,186 +75,186 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
             [null, "datetime",        "null"],
             [null, "boolean",         "null"],
             [null, "strict integer",  "0"],
-            [null, "strict float",    "0.0"],
+            [null, "strict float",    "'0'"],
             [null, "strict string",   "''"],
             [null, "strict binary",   "x''"],
             [null, "strict datetime", "'1970-01-01 00:00:00'"],
             [null, "strict boolean",  "0"],
             // true
             [true, "integer",         "1"],
-            [true, "float",           "1.0"],
+            [true, "float",           "'1'"],
             [true, "string",          "'1'"],
             [true, "binary",          "x'31'"],
             [true, "datetime",        "null"],
             [true, "boolean",         "1"],
             [true, "strict integer",  "1"],
-            [true, "strict float",    "1.0"],
+            [true, "strict float",    "'1'"],
             [true, "strict string",   "'1'"],
             [true, "strict binary",   "x'31'"],
             [true, "strict datetime", "'1970-01-01 00:00:00'"],
             [true, "strict boolean",  "1"],
             // false
             [false, "integer",         "0"],
-            [false, "float",           "0.0"],
+            [false, "float",           "'0'"],
             [false, "string",          "''"],
             [false, "binary",          "x''"],
             [false, "datetime",        "null"],
             [false, "boolean",         "0"],
             [false, "strict integer",  "0"],
-            [false, "strict float",    "0.0"],
+            [false, "strict float",    "'0'"],
             [false, "strict string",   "''"],
             [false, "strict binary",   "x''"],
             [false, "strict datetime", "'1970-01-01 00:00:00'"],
             [false, "strict boolean",  "0"],
             // integer
             [2112, "integer",         "2112"],
-            [2112, "float",           "2112.0"],
+            [2112, "float",           "'2112'"],
             [2112, "string",          "'2112'"],
             [2112, "binary",          "x'32313132'"],
             [2112, "datetime",        "'1970-01-01 00:35:12'"],
             [2112, "boolean",         "1"],
             [2112, "strict integer",  "2112"],
-            [2112, "strict float",    "2112.0"],
+            [2112, "strict float",    "'2112'"],
             [2112, "strict string",   "'2112'"],
             [2112, "strict binary",   "x'32313132'"],
             [2112, "strict datetime", "'1970-01-01 00:35:12'"],
             [2112, "strict boolean",  "1"],
             // integer zero
             [0, "integer",         "0"],
-            [0, "float",           "0.0"],
+            [0, "float",           "'0'"],
             [0, "string",          "'0'"],
             [0, "binary",          "x'30'"],
             [0, "datetime",        "'1970-01-01 00:00:00'"],
             [0, "boolean",         "0"],
             [0, "strict integer",  "0"],
-            [0, "strict float",    "0.0"],
+            [0, "strict float",    "'0'"],
             [0, "strict string",   "'0'"],
             [0, "strict binary",   "x'30'"],
             [0, "strict datetime", "'1970-01-01 00:00:00'"],
             [0, "strict boolean",  "0"],
             // float
-            [2112.99, "integer",         "2112"],
-            [2112.99, "float",           "2112.99"],
-            [2112.99, "string",          "'2112.99'"],
-            [2112.99, "binary",          "x'323131322e3939'"],
-            [2112.99, "datetime",        "'1970-01-01 00:35:12'"],
-            [2112.99, "boolean",         "1"],
-            [2112.99, "strict integer",  "2112"],
-            [2112.99, "strict float",    "2112.99"],
-            [2112.99, "strict string",   "'2112.99'"],
-            [2112.99, "strict binary",   "x'323131322e3939'"],
-            [2112.99, "strict datetime", "'1970-01-01 00:35:12'"],
-            [2112.99, "strict boolean",  "1"],
+            [2112.5, "integer",         "2112"],
+            [2112.5, "float",           "'2112.5'"],
+            [2112.5, "string",          "'2112.5'"],
+            [2112.5, "binary",          "x'323131322e35'"],
+            [2112.5, "datetime",        "'1970-01-01 00:35:12'"],
+            [2112.5, "boolean",         "1"],
+            [2112.5, "strict integer",  "2112"],
+            [2112.5, "strict float",    "'2112.5'"],
+            [2112.5, "strict string",   "'2112.5'"],
+            [2112.5, "strict binary",   "x'323131322e35'"],
+            [2112.5, "strict datetime", "'1970-01-01 00:35:12'"],
+            [2112.5, "strict boolean",  "1"],
             // float zero
             [0.0, "integer",         "0"],
-            [0.0, "float",           "0.0"],
+            [0.0, "float",           "'0'"],
             [0.0, "string",          "'0'"],
             [0.0, "binary",          "x'30'"],
             [0.0, "datetime",        "'1970-01-01 00:00:00'"],
             [0.0, "boolean",         "0"],
             [0.0, "strict integer",  "0"],
-            [0.0, "strict float",    "0.0"],
+            [0.0, "strict float",    "'0'"],
             [0.0, "strict string",   "'0'"],
             [0.0, "strict binary",   "x'30'"],
             [0.0, "strict datetime", "'1970-01-01 00:00:00'"],
             [0.0, "strict boolean",  "0"],
             // ASCII string
             ["Random string", "integer",         "0"],
-            ["Random string", "float",           "0.0"],
+            ["Random string", "float",           "'0'"],
             ["Random string", "string",          "'Random string'"],
             ["Random string", "binary",          "x'52616e646f6d20737472696e67'"],
             ["Random string", "datetime",        "null"],
             ["Random string", "boolean",         "1"],
             ["Random string", "strict integer",  "0"],
-            ["Random string", "strict float",    "0.0"],
+            ["Random string", "strict float",    "'0'"],
             ["Random string", "strict string",   "'Random string'"],
             ["Random string", "strict binary",   "x'52616e646f6d20737472696e67'"],
             ["Random string", "strict datetime", "'1970-01-01 00:00:00'"],
             ["Random string", "strict boolean",  "1"],
             // UTF-8 string
             ["é", "integer",         "0"],
-            ["é", "float",           "0.0"],
+            ["é", "float",           "'0'"],
             ["é", "string",          "char(233)"],
             ["é", "binary",          "x'c3a9'"],
             ["é", "datetime",        "null"],
             ["é", "boolean",         "1"],
             ["é", "strict integer",  "0"],
-            ["é", "strict float",    "0.0"],
+            ["é", "strict float",    "'0'"],
             ["é", "strict string",   "char(233)"],
             ["é", "strict binary",   "x'c3a9'"],
             ["é", "strict datetime", "'1970-01-01 00:00:00'"],
             ["é", "strict boolean",  "1"],
             // binary string
             [chr(233).chr(233), "integer",         "0"],
-            [chr(233).chr(233), "float",           "0.0"],
+            [chr(233).chr(233), "float",           "'0'"],
             [chr(233).chr(233), "string",          "'".chr(233).chr(233)."'"],
             [chr(233).chr(233), "binary",          "x'e9e9'"],
             [chr(233).chr(233), "datetime",        "null"],
             [chr(233).chr(233), "boolean",         "1"],
             [chr(233).chr(233), "strict integer",  "0"],
-            [chr(233).chr(233), "strict float",    "0.0"],
+            [chr(233).chr(233), "strict float",    "'0'"],
             [chr(233).chr(233), "strict string",   "'".chr(233).chr(233)."'"],
             [chr(233).chr(233), "strict binary",   "x'e9e9'"],
             [chr(233).chr(233), "strict datetime", "'1970-01-01 00:00:00'"],
             [chr(233).chr(233), "strict boolean",  "1"],
             // ISO 8601 date string
             ["2017-01-09T13:11:17", "integer",         "0"],
-            ["2017-01-09T13:11:17", "float",           "0.0"],
+            ["2017-01-09T13:11:17", "float",           "'0'"],
             ["2017-01-09T13:11:17", "string",          "'2017-01-09T13:11:17'"],
             ["2017-01-09T13:11:17", "binary",          "x'323031372d30312d30395431333a31313a3137'"],
             ["2017-01-09T13:11:17", "datetime",        "'2017-01-09 13:11:17'"],
             ["2017-01-09T13:11:17", "boolean",         "1"],
             ["2017-01-09T13:11:17", "strict integer",  "0"],
-            ["2017-01-09T13:11:17", "strict float",    "0.0"],
+            ["2017-01-09T13:11:17", "strict float",    "'0'"],
             ["2017-01-09T13:11:17", "strict string",   "'2017-01-09T13:11:17'"],
             ["2017-01-09T13:11:17", "strict binary",   "x'323031372d30312d30395431333a31313a3137'"],
             ["2017-01-09T13:11:17", "strict datetime", "'2017-01-09 13:11:17'"],
             ["2017-01-09T13:11:17", "strict boolean",  "1"],
             // arbitrary date string
             ["Today", "integer",         "0"],
-            ["Today", "float",           "0.0"],
+            ["Today", "float",           "'0'"],
             ["Today", "string",          "'Today'"],
             ["Today", "binary",          "x'546f646179'"],
             ["Today", "datetime",        "'".date_create("Today", new \DateTimezone("UTC"))->format("Y-m-d H:i:s")."'"],
             ["Today", "boolean",         "1"],
             ["Today", "strict integer",  "0"],
-            ["Today", "strict float",    "0.0"],
+            ["Today", "strict float",    "'0'"],
             ["Today", "strict string",   "'Today'"],
             ["Today", "strict binary",   "x'546f646179'"],
             ["Today", "strict datetime", "'".date_create("Today", new \DateTimezone("UTC"))->format("Y-m-d H:i:s")."'"],
             ["Today", "strict boolean",  "1"],
             // mutable date object
             [$dateMutable, "integer",         $dateUTC->getTimestamp()],
-            [$dateMutable, "float",           $dateUTC->getTimestamp().".0"],
+            [$dateMutable, "float",           "'".$dateUTC->getTimestamp()."'"],
             [$dateMutable, "string",          "'".$dateUTC->format("Y-m-d H:i:s")."'"],
             [$dateMutable, "binary",          "x'".bin2hex($dateUTC->format("Y-m-d H:i:s"))."'"],
             [$dateMutable, "datetime",        "'".$dateUTC->format("Y-m-d H:i:s")."'"],
             [$dateMutable, "boolean",         "1"],
             [$dateMutable, "strict integer",  $dateUTC->getTimestamp()],
-            [$dateMutable, "strict float",    $dateUTC->getTimestamp().".0"],
+            [$dateMutable, "strict float",    "'".$dateUTC->getTimestamp()."'"],
             [$dateMutable, "strict string",   "'".$dateUTC->format("Y-m-d H:i:s")."'"],
             [$dateMutable, "strict binary",   "x'".bin2hex($dateUTC->format("Y-m-d H:i:s"))."'"],
             [$dateMutable, "strict datetime", "'".$dateUTC->format("Y-m-d H:i:s")."'"],
             [$dateMutable, "strict boolean",  "1"],
             // immutable date object
             [$dateImmutable, "integer",         $dateUTC->getTimestamp()],
-            [$dateImmutable, "float",           $dateUTC->getTimestamp().".0"],
+            [$dateImmutable, "float",           "'".$dateUTC->getTimestamp()."'"],
             [$dateImmutable, "string",          "'".$dateUTC->format("Y-m-d H:i:s")."'"],
             [$dateImmutable, "binary",          "x'".bin2hex($dateUTC->format("Y-m-d H:i:s"))."'"],
             [$dateImmutable, "datetime",        "'".$dateUTC->format("Y-m-d H:i:s")."'"],
             [$dateImmutable, "boolean",         "1"],
             [$dateImmutable, "strict integer",  $dateUTC->getTimestamp()],
-            [$dateImmutable, "strict float",    $dateUTC->getTimestamp().".0"],
+            [$dateImmutable, "strict float",    "'".$dateUTC->getTimestamp()."'"],
             [$dateImmutable, "strict string",   "'".$dateUTC->format("Y-m-d H:i:s")."'"],
             [$dateImmutable, "strict binary",   "x'".bin2hex($dateUTC->format("Y-m-d H:i:s"))."'"],
             [$dateImmutable, "strict datetime", "'".$dateUTC->format("Y-m-d H:i:s")."'"],
             [$dateImmutable, "strict boolean",  "1"],
         ];
     }
-    
+
     public function testConstructStatement() {
         $nativeStatement = $this->c->prepare("SELECT ? as value");
-        $this->assertInstanceOf(Statement::class, new \JKingWeb\Arsse\Db\SQLite3\Statement($this->c, $nativeStatement));
+        $this->assertInstanceOf(Statement::class, new PDOStatement($this->c, $nativeStatement));
     }
 
     public function testBindMissingValue() {
@@ -265,8 +266,8 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testBindMultipleValues() {
         $exp = [
-            'one' => 1,
-            'two' => 2,
+            'one' => "1",
+            'two' => "2",
         ];
         $nativeStatement = $this->c->prepare("SELECT ? as one, ? as two");
         $s = new self::$imp($this->c, $nativeStatement, ["int", "int"]);
@@ -276,10 +277,10 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testBindRecursively() {
         $exp = [
-            'one'   => 1,
-            'two'   => 2,
-            'three' => 3,
-            'four'  => 4,
+            'one'   => "1",
+            'two'   => "2",
+            'three' => "3",
+            'four'  => "4",
         ];
         $nativeStatement = $this->c->prepare("SELECT ? as one, ? as two, ? as three, ? as four");
         $s = new self::$imp($this->c, $nativeStatement, ["int", ["int", "int"], "int"]);

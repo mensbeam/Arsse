@@ -1,6 +1,9 @@
 Version 0.3.0 (2018-??-??)
 ==========================
 
+New features:
+- Support for SQLite3 via PDO
+
 Changes:
 - Make date strings in TTRSS explicitly UTC
 

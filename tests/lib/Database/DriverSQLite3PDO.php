@@ -7,18 +7,18 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\Database;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Db\SQLite3\Driver;
+use JKingWeb\Arsse\Db\SQLite3\PDODriver;
 
-trait DriverSQLite3 {
+trait DriverSQLite3PDO {
     public function setUpDriver() {
-        if (!Driver::requirementsMet()) {
-            $this->markTestSkipped("SQLite extension not loaded");
+        if (!PDODriver::requirementsMet()) {
+            $this->markTestSkipped("PDO-SQLite extension not loaded");
         }
         Arsse::$conf->dbSQLite3File = ":memory:";
-        $this->drv = new Driver();
+        $this->drv = new PDODriver();
     }
 
     public function nextID(string $table): int {
-        return $this->drv->query("SELECT (case when max(id) then max(id) else 0 end)+1 from $table")->getValue();
+        return (int) $this->drv->query("SELECT (case when max(id) then max(id) else 0 end)+1 from $table")->getValue();
     }
 }

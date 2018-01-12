@@ -27,7 +27,7 @@ class Database {
 
     public function __construct($initialize = true) {
         $driver = Arsse::$conf->dbDriver;
-        $this->db = new $driver();
+        $this->db = $driver::create();
         $ver = $this->db->schemaVersion();
         if ($initialize && $ver < self::SCHEMA_VERSION) {
             $this->db->schemaUpdate(self::SCHEMA_VERSION);
@@ -415,7 +415,7 @@ class Database {
         return $f;
     }
 
-    protected function folderValidateMove(string $user, int $id = null, $parent = null, string $name = null) {
+    protected function folderValidateMove(string $user, $id = null, $parent = null, string $name = null) {
         $errData = ["action" => $this->caller(), "field" => "parent", 'id' => $parent];
         if (!$id) {
             // the root cannot be moved
@@ -467,7 +467,7 @@ class Database {
         return $parent;
     }
 
-    protected function folderValidateName($name, bool $checkDuplicates = false, int $parent = null): bool {
+    protected function folderValidateName($name, bool $checkDuplicates = false, $parent = null): bool {
         $info = ValueInfo::str($name);
         if ($info & (ValueInfo::NULL | ValueInfo::EMPTY)) {
             throw new Db\ExceptionInput("missing", ["action" => $this->caller(), "field" => "name"]);
@@ -572,7 +572,7 @@ class Database {
             // add a suitable WHERE condition
             $q->setWhere("folder in (select folder from folders)");
         }
-        return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
+        return (int) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
     }
 
     public function subscriptionRemove(string $user, $id): bool {
@@ -1102,7 +1102,7 @@ class Database {
             $q = $this->articleQuery($user, $context);
             $q->pushCTE("selected_articles");
             $q->setBody("SELECT count(*) from selected_articles");
-            return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
+            return (int) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
         }
     }
 

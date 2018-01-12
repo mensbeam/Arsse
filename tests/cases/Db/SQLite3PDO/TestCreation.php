@@ -4,17 +4,18 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse\TestCase\Db\SQLite3;
+namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Conf;
-use JKingWeb\Arsse\Db\SQLite3\Driver;
+use JKingWeb\Arsse\Db\SQLite3\PDODriver as Driver;
 use org\bovigo\vfs\vfsStream;
 use Phake;
 
 /**
- * @covers \JKingWeb\Arsse\Db\SQLite3\Driver<extended>
- * @covers \JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder */
+ * @covers \JKingWeb\Arsse\Db\SQLite3\PDODriver<extended>
+ * @covers \JKingWeb\Arsse\Db\PDODriver
+ * @covers \JKingWeb\Arsse\Db\PDOError */
 class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $data;
     protected $drv;
@@ -22,7 +23,7 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function setUp() {
         if (!Driver::requirementsMet()) {
-            $this->markTestSkipped("SQLite extension not loaded");
+            $this->markTestSkipped("PDO-SQLite extension not loaded");
         }
         $this->clearData();
         // test files

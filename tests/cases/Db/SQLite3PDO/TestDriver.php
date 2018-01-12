@@ -4,36 +4,36 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse\TestCase\Db\SQLite3;
+namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\Database;
-use JKingWeb\Arsse\Db\SQLite3\Driver;
+use JKingWeb\Arsse\Db\SQLite3\PDODriver;
 use JKingWeb\Arsse\Db\Result;
 use JKingWeb\Arsse\Db\Statement;
 
 /**
- * @covers \JKingWeb\Arsse\Db\SQLite3\Driver<extended>
- * @covers \JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder */
+ * @covers \JKingWeb\Arsse\Db\SQLite3\PDODriver<extended>
+ * @covers \JKingWeb\Arsse\Db\PDODriver
+ * @covers \JKingWeb\Arsse\Db\PDOError */
 class TestDriver extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $data;
     protected $drv;
     protected $ch;
 
     public function setUp() {
-        if (!Driver::requirementsMet()) {
-            $this->markTestSkipped("SQLite extension not loaded");
+        if (!PDODriver::requirementsMet()) {
+            $this->markTestSkipped("PDO-SQLite extension not loaded");
         }
         $this->clearData();
         $conf = new Conf();
         Arsse::$conf = $conf;
-        $conf->dbDriver = Driver::class;
+        $conf->dbDriver = PDODriver::class;
         $conf->dbSQLite3Timeout = 0;
         $conf->dbSQLite3File = tempnam(sys_get_temp_dir(), 'ook');
-        $this->drv = new Driver();
-        $this->ch = new \SQLite3(Arsse::$conf->dbSQLite3File);
-        $this->ch->enableExceptions(true);
+        $this->drv = new PDODriver();
+        $this->ch = new \PDO("sqlite:".Arsse::$conf->dbSQLite3File, "", "", [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
     }
 
     public function tearDown() {
@@ -65,7 +65,7 @@ class TestDriver extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testExecMultipleStatements() {
         $this->assertTrue($this->drv->exec("CREATE TABLE test(id integer primary key); INSERT INTO test(id) values(2112)"));
-        $this->assertEquals(2112, $this->ch->querySingle("SELECT id from test"));
+        $this->assertEquals(2112, $this->ch->query("SELECT id from test")->fetchColumn());
     }
 
     public function testExecTimeout() {
@@ -178,10 +178,10 @@ class TestDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $tr = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
         $this->drv->query($insert);
         $this->assertEquals(2, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
     }
 
     public function testCommitATransaction() {
@@ -191,10 +191,10 @@ class TestDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $tr = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
         $tr->commit();
         $this->assertEquals(1, $this->drv->query($select)->getValue());
-        $this->assertEquals(1, $this->ch->querySingle($select));
+        $this->assertEquals(1, $this->ch->query($select)->fetchColumn());
     }
 
     public function testRollbackATransaction() {
@@ -204,10 +204,10 @@ class TestDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $tr = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
         $tr->rollback();
         $this->assertEquals(0, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
     }
 
     public function testBeginChainedTransactions() {
@@ -217,11 +217,11 @@ class TestDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $tr1 = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
         $tr2 = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(2, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
     }
 
     public function testCommitChainedTransactions() {
@@ -231,15 +231,15 @@ class TestDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $tr1 = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
         $tr2 = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(2, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
         $tr2->commit();
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
         $tr1->commit();
-        $this->assertEquals(2, $this->ch->querySingle($select));
+        $this->assertEquals(2, $this->ch->query($select)->fetchColumn());
     }
 
     public function testCommitChainedTransactionsOutOfOrder() {
@@ -249,13 +249,13 @@ class TestDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $tr1 = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
         $tr2 = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(2, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
         $tr1->commit();
-        $this->assertEquals(2, $this->ch->querySingle($select));
+        $this->assertEquals(2, $this->ch->query($select)->fetchColumn());
         $tr2->commit();
     }
 
@@ -266,17 +266,17 @@ class TestDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $tr1 = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
         $tr2 = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(2, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
         $tr2->rollback();
         $this->assertEquals(1, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
         $tr1->rollback();
         $this->assertEquals(0, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
     }
 
     public function testRollbackChainedTransactionsOutOfOrder() {
@@ -286,17 +286,17 @@ class TestDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $tr1 = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
         $tr2 = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(2, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
         $tr1->rollback();
         $this->assertEquals(0, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
         $tr2->rollback();
         $this->assertEquals(0, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
     }
 
     public function testPartiallyRollbackChainedTransactions() {
@@ -306,17 +306,17 @@ class TestDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $tr1 = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
         $tr2 = $this->drv->begin();
         $this->drv->query($insert);
         $this->assertEquals(2, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
         $tr2->rollback();
         $this->assertEquals(1, $this->drv->query($select)->getValue());
-        $this->assertEquals(0, $this->ch->querySingle($select));
+        $this->assertEquals(0, $this->ch->query($select)->fetchColumn());
         $tr1->commit();
         $this->assertEquals(1, $this->drv->query($select)->getValue());
-        $this->assertEquals(1, $this->ch->querySingle($select));
+        $this->assertEquals(1, $this->ch->query($select)->fetchColumn());
     }
 
     public function testFetchSchemaVersion() {
@@ -329,6 +329,7 @@ class TestDriver extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testLockTheDatabase() {
         $this->drv->savepointCreate(true);
+        $this->ch->exec("PRAGMA busy_timeout = 0");
         $this->assertException();
         $this->ch->exec("CREATE TABLE test(id integer primary key)");
     }
@@ -338,6 +339,6 @@ class TestDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv->savepointRelease();
         $this->drv->savepointCreate(true);
         $this->drv->savepointUndo();
-        $this->assertSame(true, $this->ch->exec("CREATE TABLE test(id integer primary key)"));
+        $this->assertSame(0, $this->ch->exec("CREATE TABLE test(id integer primary key)"));
     }
 }

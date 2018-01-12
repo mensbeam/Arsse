@@ -7,29 +7,31 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Db;
 
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Misc\ValueInfo;
 
 abstract class AbstractStatement implements Statement {
     protected $types = [];
     protected $isNullable = [];
 
     abstract public function runArray(array $values = []): Result;
+    abstract protected function bindValue($value, string $type, int $position): bool;
 
     public function run(...$values): Result {
         return $this->runArray($values);
     }
 
-    public function rebind(...$bindings): bool {
-        return $this->rebindArray($bindings);
+    public function retype(...$bindings): bool {
+        return $this->retypeArray($bindings);
     }
 
-    public function rebindArray(array $bindings, bool $append = false): bool {
+    public function retypeArray(array $bindings, bool $append = false): bool {
         if (!$append) {
             $this->types = [];
         }
         foreach ($bindings as $binding) {
             if (is_array($binding)) {
                 // recursively flatten any arrays, which may be provided for SET or IN() clauses
-                $this->rebindArray($binding, true);
+                $this->retypeArray($binding, true);
             } else {
                 $binding = trim(strtolower($binding));
                 if (strpos($binding, "strict ")===0) {
@@ -50,43 +52,42 @@ abstract class AbstractStatement implements Statement {
 
     protected function cast($v, string $t, bool $nullable) {
         switch ($t) {
-            case "date":
-                if (is_null($v) && !$nullable) {
-                    $v = 0;
-                }
-                return Date::transform($v, "date");
-            case "time":
-                if (is_null($v) && !$nullable) {
-                    $v = 0;
-                }
-                return Date::transform($v, "time");
             case "datetime":
+                $v = Date::transform($v, "sql");
                 if (is_null($v) && !$nullable) {
                     $v = 0;
-                }
-                return Date::transform($v, "sql");
-            case "null":
-            case "integer":
-            case "float":
-            case "binary":
-            case "string":
-            case "boolean":
-                if ($t=="binary") {
-                    $t = "string";
-                }
-                if ($v instanceof \DateTimeInterface) {
-                    if ($t=="string") {
-                        return Date::transform($v, "sql");
-                    } else {
-                        $v = $v->getTimestamp();
-                        settype($v, $t);
-                    }
-                } else {
-                    settype($v, $t);
+                    $v = Date::transform($v, "sql");
                 }
                 return $v;
+            case "integer":
+                return ValueInfo::normalize($v, ValueInfo::T_INT | ($nullable ? ValueInfo::M_NULL : 0), null, "sql");
+            case "float":
+                return ValueInfo::normalize($v, ValueInfo::T_FLOAT | ($nullable ? ValueInfo::M_NULL : 0), null, "sql");
+            case "binary":
+            case "string":
+                return ValueInfo::normalize($v, ValueInfo::T_STRING | ($nullable ? ValueInfo::M_NULL : 0), null, "sql");
+            case "boolean":
+                $v = ValueInfo::normalize($v, ValueInfo::T_BOOL | ($nullable ? ValueInfo::M_NULL : 0), null, "sql");
+                return is_null($v) ? $v : (int) $v;
             default:
                 throw new Exception("paramTypeUnknown", $type); // @codeCoverageIgnore
         }
+    }
+
+    protected function bindValues(array $values, int $offset = 0): int {
+        $a = $offset;
+        foreach ($values as $value) {
+            if (is_array($value)) {
+                // recursively flatten any arrays, which may be provided for SET or IN() clauses
+                $a += $this->bindValues($value, $a);
+            } elseif (array_key_exists($a, $this->types)) {
+                $value = $this->cast($value, $this->types[$a], $this->isNullable[$a]);
+                $this->bindValue($value, $this->types[$a], $a+1);
+                $a++;
+            } else {
+                throw new Exception("paramTypeMissing", $a+1);
+            }
+        }
+        return $a - $offset;
     }
 }

@@ -108,4 +108,4 @@ drop table arsse_labels_old;
 
 -- set version marker
 pragma user_version = 3;
-update arsse_meta set value = '3' where key is 'schema_version';
+update arsse_meta set value = '3' where key = 'schema_version';

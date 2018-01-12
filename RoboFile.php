@@ -45,7 +45,7 @@ class RoboFile extends \Robo\Tasks {
      * See help for the "test" task for more details.
     */
     public function testQuick(array $args): Result {
-        return $this->test(array_merge(["--exclude-group","slow"], $args));
+        return $this->test(array_merge(["--exclude-group", "slow,optional"], $args));
     }
 
     /** Produces a code coverage report

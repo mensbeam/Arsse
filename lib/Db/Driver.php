@@ -13,11 +13,13 @@ interface Driver {
     const TR_PEND_COMMIT = -1;
     const TR_PEND_ROLLBACK = -2;
     
-    public function __construct();
+    public static function create(): Driver;
     // returns a human-friendly name for the driver (for display in installer, for example)
     public static function driverName(): string;
     // returns the version of the scheme of the opened database; if uninitialized should return 0
     public function schemaVersion(): int;
+    // returns the schema set to be used for database set-up
+    public static function schemaID(): string;
     // return a Transaction object
     public function begin(bool $lock = false): Transaction;
     // manually begin a real or synthetic transactions, with real or synthetic nesting

@@ -22,17 +22,14 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
 
     public function __construct(string $dbFile = null) {
         // check to make sure required extension is loaded
-        if (!class_exists("SQLite3")) {
+        if (!self::requirementsMet()) {
             throw new Exception("extMissing", self::driverName()); // @codeCoverageIgnore
         }
         // if no database file is specified in the configuration, use a suitable default
         $dbFile = $dbFile ?? Arsse::$conf->dbSQLite3File ?? \JKingWeb\Arsse\BASE."arsse.db";
-        $mode = \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE;
         $timeout = Arsse::$conf->dbSQLite3Timeout * 1000;
         try {
-            $this->db = $this->makeConnection($dbFile, $mode, Arsse::$conf->dbSQLite3Key);
-            // enable exceptions
-            $this->db->enableExceptions(true);
+            $this->makeConnection($dbFile, Arsse::$conf->dbSQLite3Key);
             // set the timeout; parameters are not allowed for pragmas, but this usage should be safe
             $this->exec("PRAGMA busy_timeout = $timeout");
             // set other initial options
@@ -60,8 +57,14 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         }
     }
 
-    protected function makeConnection(string $file, int $opts, string $key) {
-        return new \SQLite3($file, $opts, $key);
+    public static function requirementsMet(): bool {
+        return class_exists("SQLite3");
+    }
+
+    protected function makeConnection(string $file, string $key) {
+        $this->db = new \SQLite3($file, \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE, $key);
+        // enable exceptions
+        $this->db->enableExceptions(true);
     }
 
     public function __destruct() {
@@ -72,60 +75,42 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         unset($this->db);
     }
 
+    /** @codeCoverageIgnore */
+    public static function create(): \JKingWeb\Arsse\Db\Driver {
+        if (self::requirementsMet()) {
+            return new self;
+        } elseif (PDODriver::requirementsMet()) {
+            return new PDODriver;
+        } else {
+            throw new Exception("extMissing", self::driverName());
+        }
+    }
+
 
     public static function driverName(): string {
         return Arsse::$lang->msg("Driver.Db.SQLite3.Name");
     }
 
+    public static function schemaID(): string {
+        return "SQLite3";
+    }
+
     public function schemaVersion(): int {
-        return $this->query("PRAGMA user_version")->getValue();
+        return (int) $this->query("PRAGMA user_version")->getValue();
     }
 
     public function schemaUpdate(int $to, string $basePath = null): bool {
-        $ver = $this->schemaVersion();
-        if (!Arsse::$conf->dbAutoUpdate) {
-            throw new Exception("updateManual", ['version' => $ver, 'driver_name' => $this->driverName()]);
-        } elseif ($ver >= $to) {
-            throw new Exception("updateTooNew", ['difference' => ($ver - $to), 'current' => $ver, 'target' => $to, 'driver_name' => $this->driverName()]);
-        }
-        $sep = \DIRECTORY_SEPARATOR;
-        $path = ($basePath ?? \JKingWeb\Arsse\BASE."sql").$sep."SQLite3".$sep;
         // turn off foreign keys
         $this->exec("PRAGMA foreign_keys = no");
-        // lock the database
-        $this->savepointCreate(true);
-        for ($a = $this->schemaVersion(); $a < $to; $a++) {
-            $this->savepointCreate();
-            try {
-                $file = $path.$a.".sql";
-                if (!file_exists($file)) {
-                    throw new Exception("updateFileMissing", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]);
-                } elseif (!is_readable($file)) {
-                    throw new Exception("updateFileUnreadable", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]);
-                }
-                $sql = @file_get_contents($file);
-                if ($sql===false) {
-                    throw new Exception("updateFileUnusable", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]); // @codeCoverageIgnore
-                }
-                try {
-                    $this->exec($sql);
-                } catch (\Throwable $e) {
-                    throw new Exception("updateFileError", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a, 'message' => $this->getError()]);
-                }
-                if ($this->schemaVersion() != $a+1) {
-                    throw new Exception("updateFileIncomplete", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]);
-                }
-            } catch (\Throwable $e) {
-                // undo any partial changes from the failed update
-                $this->savepointUndo();
-                // commit any successful updates if updating by more than one version
-                $this->savepointRelease();
-                // throw the error received
-                throw $e;
-            }
-            $this->savepointRelease();
+        // run the generic updater
+        try {
+            parent::schemaUpdate($to, $basePath);
+        } catch (\Throwable $e) {
+            // turn foreign keys back on
+            $this->exec("PRAGMA foreign_keys = yes");
+            // pass the exception up
+            throw $e;
         }
-        $this->savepointRelease();
         // turn foreign keys back on
         $this->exec("PRAGMA foreign_keys = yes");
         return true;

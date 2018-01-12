@@ -45,4 +45,4 @@ drop table arsse_marks_old;
 
 -- set version marker
 pragma user_version = 2;
-update arsse_meta set value = '2' where key is 'schema_version';
+update arsse_meta set value = '2' where key = 'schema_version';

@@ -4,18 +4,18 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse\TestCase\Db\SQLite3;
+namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\Exception;
-use JKingWeb\Arsse\Db\SQLite3\Driver;
+use JKingWeb\Arsse\Db\SQLite3\PDODriver;
 use org\bovigo\vfs\vfsStream;
 
 /**
- * @covers \JKingWeb\Arsse\Db\SQLite3\Driver<extended>
- * @covers \JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder */
+ * @covers \JKingWeb\Arsse\Db\SQLite3\PDODriver<extended>
+ * @covers \JKingWeb\Arsse\Db\PDOError */
 class TestUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $data;
     protected $drv;
@@ -26,20 +26,20 @@ class TestUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
     const MINIMAL2 = "pragma user_version=2";
 
     public function setUp(Conf $conf = null) {
-        if (!Driver::requirementsMet()) {
-            $this->markTestSkipped("SQLite extension not loaded");
+        if (!PDODriver::requirementsMet()) {
+            $this->markTestSkipped("PDO-SQLite extension not loaded");
         }
         $this->clearData();
         $this->vfs = vfsStream::setup("schemata", null, ['SQLite3' => []]);
         if (!$conf) {
             $conf = new Conf();
         }
-        $conf->dbDriver = Driver::class;
+        $conf->dbDriver = PDODriver::class;
         $conf->dbSQLite3File = ":memory:";
         Arsse::$conf = $conf;
         $this->base = $this->vfs->url();
         $this->path = $this->base."/SQLite3/";
-        $this->drv = new Driver();
+        $this->drv = new PDODriver();
     }
 
     public function tearDown() {
