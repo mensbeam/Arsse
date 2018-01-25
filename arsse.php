@@ -10,6 +10,8 @@ const NS_BASE = __NAMESPACE__."\\";
 
 require_once BASE."vendor".DIRECTORY_SEPARATOR."autoload.php";
 ignore_user_abort(true);
+ini_set("memory_limit", "-1");
+ini_set("max_execution_time", "0");
 
 
 if (\PHP_SAPI=="cli") {
