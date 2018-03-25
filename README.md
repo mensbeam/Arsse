@@ -98,9 +98,8 @@ As a general rule, The Arsse should yield the same output as the reference imple
 
 #### Ambiguities
 
-- NCN does not specify an output character encoding, but the reference server uses UTF-8; The Arsse also uses UTF-8
 - NCN specifies that GET parameters are treated "the same" as request body parameters; it does not specify what to do in cases where they conflict. The Arsse chooses to give GET parameters precedence
-- NCN does not define validity of folder and names other than to say that the empty string is invalid. The Arsse further considers any string composed only of whitesapce to be invalid
+- NCN does not define validity of folder and names other than to specify that the empty string is invalid. The Arsse further considers any string composed only of whitesapce to be invalid
 - NCN does not specify a return code for bulk-marking operations without a `newestItemId` provided; The Arsse returns `422`
 - NCN does not specify what should be done when creating a feed in a folder which does not exist; the Arsse adds the feed to the root folder
 - NCN does not specify what should be done when moving a feed to a folder which does not exist; The Arsse return `422`
@@ -137,14 +136,14 @@ We are not aware of any other extensions to the TTRSS protocol. If you know of a
 - The default sort order of the `getHeadlines` operation normally uses custom sorting for "special" feeds; The Arsse's default sort order is equivalent to `feed_dates` for all feeds
 - The `getCounters` operation normally omits members with zero unread; The Arsse includes everything to appease some clients
 
-#### Errors and ambiguities
+#### Other notes
 
 - TTRSS accepts base64-encoded passwords, though this is undocumented; The Arsse accepts base64-encoded passwords as well
 - TTRSS sometimes returns an incorrect count from the `setArticleLabel` operation; The Arsse returns a correct count in all cases
 - TTRSS sometimes returns out-of-date cached information; The Arsse does not use caches as TTRSS does, so information is always current
 - TTRSS returns results for _feed_ ID `-3` when providing the `getHeadlines` operation with _category_ ID `-3`; The Arsse retuns the correct results
-- The protocol doucmentation advises not to use `limit` or `skip` together with `unread_only` for the `getFeeds` operation as it produces unpredictable results; The Arsse produces predictable results
-- The protocol documentation on values for the `view_mode` parameter of the `getHeadlines` operation is out of date; The Arsse matches the actual implementation and supports the undocumented `published` and `has_note` values
+- The protocol doucmentation advises not to use `limit` or `skip` together with `unread_only` for the `getFeeds` operation as it produces unpredictable results; The Arsse produces predictable results by first retrieving all unread feeds and then applying `skip` and `limit`
+- The protocol documentation on values for the `view_mode` parameter of the `getHeadlines` operation is out of date; The Arsse matches the actual implementation and supports the undocumented `published` and `has_note` values exposed by the Web user interface
 - The protocol documentation makes mention of a `search_mode` parameter for the `getHeadlines` operation, but this seems to be ignored; The Arsse does not implement it
 - The protocol documentation makes mention of an `output_mode` parameter for the `getCounters` operation, but this seems to be ignored; The Arsse does not implement it
 - The documentation for the `getCompactHeadlines` operation states the default value for `limit` is 20, but the reference implementation defaults to unlimited; The Arsse also defaults to unlimited
