@@ -21,10 +21,8 @@ if (\PHP_SAPI=="cli") {
     $cli->dispatch();
 } else {
     // load configuration
-    Arsse::load(new Conf());
-    if (file_exists(BASE."config.php")) {
-        Arsse::$conf->importFile(BASE."config.php");
-    }
+    $conf = file_exists(BASE."config.php") ? new Conf(BASE."config.php") : new Conf;
+    Arsse::load($conf);
     // handle Web requests
     $emitter = new \Zend\Diactoros\Response\SapiEmitter();
     $response = (new REST)->dispatch();

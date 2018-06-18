@@ -36,11 +36,8 @@ USAGE_TEXT;
     }
 
     protected function loadConf(): bool {
-        // FIXME: this should be a method of the Conf class
-        Arsse::load(new Conf());
-        if (file_exists(BASE."config.php")) {
-            Arsse::$conf->importFile(BASE."config.php");
-        }
+        $conf = file_exists(BASE."config.php") ? new Conf(BASE."config.php") : new Conf;
+        Arsse::load($conf);
         // command-line operations will never respect authorization
         Arsse::$user->authorizationEnabled(false);
         return true;
