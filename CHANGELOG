@@ -1,3 +1,13 @@
+Version 0.3.1 (2018-07-22)
+==========================
+
+Bug fixes:
+- Correctly read the configuration file on start-up
+- Minor fixes to code and documentation
+
+Changes:
+- Disable memory and time limits to avoid deadlocks with NextCloud News
+
 Version 0.3.0 (2018-01-12)
 ==========================
 
