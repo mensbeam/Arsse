@@ -1,11 +1,12 @@
 # Temporary files and dependencies
 
-vendor/
-documentation/
-tests/coverage/
-arsse.db*
-config.php
-.php_cs.cache
+/vendor/
+/vendor-bin/*/vendor
+/documentation/
+/tests/coverage/
+/arsse.db*
+/config.php
+/.php_cs.cache
 
 
 # Windows files
