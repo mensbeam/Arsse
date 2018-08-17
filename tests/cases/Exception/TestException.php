@@ -73,4 +73,10 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertException("uncoded");
         throw new LangException("testThisExceptionMessageDoesNotExist");
     }
+
+    /** @covers \JKingWeb\Arsse\ExceptionFatal */
+    public function testFatalException() {
+        $this->expectException('JKingWeb\Arsse\ExceptionFatal');
+        throw new \JKingWeb\Arsse\ExceptionFatal("");
+    }
 }
