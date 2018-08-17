@@ -67,4 +67,18 @@ class TestErrors extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertException("defaultFileMissing", "Lang");
         $this->l->set("fr", true);
     }
+
+    public function testLoadMissingLanguageWhenFetching() {
+        $this->l->set("en_ca");
+        unlink($this->path.TestClass::DEFAULT.".php");
+        $this->assertException("fileMissing", "Lang");
+        $this->l->msg('Test.presentText');
+    }
+
+    public function testLoadMissingDefaultLanguageWhenFetching() {
+        unlink($this->path.TestClass::DEFAULT.".php");
+        $this->l = new TestClass($this->path);
+        $this->assertException("stringMissing", "Lang");
+        $this->l->msg('Test.presentText');
+    }
 }

@@ -7,7 +7,8 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\REST\TinyTinyRSS\PDO;
 
 /** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\API<extended>
- *  @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Exception */
+ *  @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Exception
+ *  @group optional */
 class TestAPI extends \JKingWeb\Arsse\TestCase\REST\TinyTinyRSS\TestAPI {
     use \JKingWeb\Arsse\Test\PDOTest;
 }

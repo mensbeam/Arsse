@@ -118,16 +118,14 @@ class Lang {
     }
 
     public function match(string $locale, array $list = null): string {
-        if ($list===null) {
-            $list = $this->listFiles();
-        }
+        $list = $list ?? $this->listFiles();
         $default = ($this->locale=="") ? self::DEFAULT : $this->locale;
         return \Locale::lookup($list, $locale, true, $default);
     }
 
     protected function checkRequirements(): bool {
         if (!extension_loaded("intl")) {
-            throw new ExceptionFatal("The \"Intl\" extension is required, but not loaded");
+            throw new ExceptionFatal("The \"Intl\" extension is required, but not loaded"); // @codeCoverageIgnore
         }
         $this->requirementsMet = true;
         return true;
