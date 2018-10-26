@@ -140,6 +140,7 @@ class User {
         if ($user===null) {
             return $this->authHTTP();
         } else {
+            $prevUser = $this->id ?? null;
             $this->id = $user;
             $this->actor = [];
             switch ($this->u->driverFunctions("auth")) {
@@ -152,20 +153,25 @@ class User {
                     if ($out && !Arsse::$db->userExists($user)) {
                         $this->autoProvision($user, $password);
                     }
-                    return $out;
+                    break;
                 case User\Driver::FUNC_INTERNAL:
                     if (Arsse::$conf->userPreAuth) {
                         if (!Arsse::$db->userExists($user)) {
                             $this->autoProvision($user, $password);
                         }
-                        return true;
+                        $out = true;
                     } else {
-                        return $this->u->auth($user, $password);
+                        $out = $this->u->auth($user, $password);
                     }
                     break;
                 case User\Driver::FUNCT_NOT_IMPLEMENTED:
-                    return false;
+                    $out = false;
+                    break;
             }
+            if (!$out) {
+                $this->id = $prevUser;
+            }
+            return $out;
         }
     }
 

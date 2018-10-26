@@ -134,9 +134,13 @@ class REST {
         } elseif (isset($env['REMOTE_USER'])) {
             $user = $env['REMOTE_USER'];
         }
-        if (strlen($user) && Arsse::$user->auth($user, $password)) {
-            $req = $req->withAttribute("authenticated", true);
-            $req = $req->withAttribute("authenticatedUser", $user);
+        if (strlen($user)) {
+            if (Arsse::$user->auth($user, $password)) {
+                $req = $req->withAttribute("authenticated", true);
+                $req = $req->withAttribute("authenticatedUser", $user);
+            } else {
+                $req = $req->withAttribute("authenticationFailed", true);
+            }
         }
         return $req;
     }

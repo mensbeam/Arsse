@@ -30,11 +30,15 @@ class Conf {
     public $userDriver              = User\Internal\Driver::class;
     /** @var boolean Whether users are already authenticated by the Web server before the application is executed */
     public $userPreAuth             = false;
+    /** @var boolean Whether to require successful HTTP authentication before processing API-level authentication for protocols which have any. Normally the Tiny Tiny RSS relies on its own session-token authentication scheme, for example */
+    public $userHTTPAuthRequired    = false;
     /** @var integer Desired length of temporary user passwords */
     public $userTempPasswordLength  = 20;
+    /** @var boolean Whether invalid or expired API session tokens should prevent logging in when HTTP authentication is used, for protocol which implement their own authentication */
+    public $userSessionEnforced     = true;
     /** @var string Period of inactivity after which log-in sessions should be considered invalid, as an ISO 8601 duration (default: 24 hours)
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
-    public $userSessionTimeout     = "PT24H";
+    public $userSessionTimeout      = "PT24H";
     /** @var string Maximum lifetime of log-in sessions regardless of activity, as an ISO 8601 duration (default: 7 days);
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
     public $userSessionLifetime     = "P7D";
@@ -64,10 +68,10 @@ class Conf {
 
     /** @var string When to delete a feed from the database after all its subscriptions have been deleted, as an ISO 8601 duration (default: 24 hours; empty string for never)
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
-    public $purgeFeeds             = "PT24H";
+    public $purgeFeeds              = "PT24H";
     /** @var string When to delete an unstarred article in the database after it has been marked read by all users, as an ISO 8601 duration (default: 7 days; empty string for never)
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
-    public $purgeArticlesRead     = "P7D";
+    public $purgeArticlesRead       = "P7D";
     /** @var string When to delete an unstarred article in the database regardless of its read state, as an ISO 8601 duration (default: 21 days; empty string for never)
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
     public $purgeArticlesUnread     = "P21D";

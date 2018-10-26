@@ -646,8 +646,16 @@ class Database {
         return $out;
     }
 
-    public function subscriptionFavicon(int $id): string {
-        return (string) $this->db->prepare("SELECT favicon from arsse_feeds join arsse_subscriptions on feed = arsse_feeds.id where arsse_subscriptions.id = ?", "int")->run($id)->getValue();
+    public function subscriptionFavicon(int $id, string $user = null): string {
+        $q = new Query("SELECT favicon from arsse_feeds join arsse_subscriptions on feed = arsse_feeds.id");
+        $q->setWhere("arsse_subscriptions.id = ?", "int", $id);
+        if (isset($user)) {
+            if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+                throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+            }
+            $q->setWhere("arsse_subscriptions.owner = ?", "str", $user);
+        }
+        return (string) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
     }
 
     protected function subscriptionValidateId(string $user, $id, bool $subject = false): array {

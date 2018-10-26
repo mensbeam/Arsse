@@ -422,4 +422,26 @@ trait SeriesSubscription {
         // invalid IDs should simply return an empty string
         $this->assertSame('', Arsse::$db->subscriptionFavicon(-2112));
     }
+
+    public function testRetrieveTheFaviconOfASubscriptionWithUser() {
+        $exp = "http://example.com/favicon.ico";
+        $user = "john.doe@example.com";
+        $this->assertSame($exp, Arsse::$db->subscriptionFavicon(1, $user));
+        $this->assertSame('', Arsse::$db->subscriptionFavicon(2, $user));
+        $this->assertSame('', Arsse::$db->subscriptionFavicon(3, $user));
+        $this->assertSame('', Arsse::$db->subscriptionFavicon(4, $user));
+        $user = "jane.doe@example.com";
+        $this->assertSame('', Arsse::$db->subscriptionFavicon(1, $user));
+        $this->assertSame($exp, Arsse::$db->subscriptionFavicon(2, $user));
+        $this->assertSame('', Arsse::$db->subscriptionFavicon(3, $user));
+        $this->assertSame('', Arsse::$db->subscriptionFavicon(4, $user));
+    }
+
+    public function testRetrieveTheFaviconOfASubscriptionWithUserWithoutAuthority() {
+        $exp = "http://example.com/favicon.ico";
+        $user = "john.doe@example.com";
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Arsse::$db->subscriptionFavicon(-2112, $user);
+    }
 }

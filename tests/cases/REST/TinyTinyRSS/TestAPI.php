@@ -129,7 +129,7 @@ LONG_STRING;
         return $value;
     }
 
-    protected function req($data, string $method = "POST", string $target = "", string $strData = null): ResponseInterface {
+    protected function req($data, string $method = "POST", string $target = "", string $strData = null, string $user = null): ResponseInterface {
         $url = "/tt-rss/api".$target;
         $server = [
             'REQUEST_METHOD'    => $method,
@@ -144,7 +144,18 @@ LONG_STRING;
             $body->write(json_encode($data));
         }
         $req = $req->withBody($body)->withRequestTarget($target);
+        if (isset($user)) {
+            if (strlen($user)) {
+                $req = $req->withAttribute("authenticated", true)->withAttribute("authenticatedUser", $user);
+            } else {
+                $req = $req->withAttribute("authenticationFailed", true);
+            }
+        }
         return $this->h->dispatch($req);
+    }
+
+    protected function reqAuth($data, $user) {
+        return $this->req($data, "POST", "", null, $user);
     }
     
     protected function respGood($content = null, $seq = 0): Response {
@@ -211,28 +222,324 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req(null, "POST", "", "This is not valid JSON data"));
         $this->assertMessage($exp, $this->req(null, "POST", "", "")); // lack of data is also an error
     }
-    
-    public function testLogIn() {
-        Phake::when(Arsse::$user)->auth(Arsse::$user->id, $this->anything())->thenReturn(false);
-        Phake::when(Arsse::$user)->auth(Arsse::$user->id, "secret")->thenReturn(true);
-        Phake::when(Arsse::$db)->sessionCreate->thenReturn("PriestsOfSyrinx")->thenReturn("SolarFederation");
-        $data = [
-            'op'       => "login",
-            'user'     => Arsse::$user->id,
-            'password' => "secret",
-        ];
-        $exp = $this->respGood(['session_id' => "PriestsOfSyrinx", 'api_level' => \JKingWeb\Arsse\REST\TinyTinyRSS\API::LEVEL]);
-        $this->assertMessage($exp, $this->req($data));
+
+    /** @dataProvider provideLoginRequests */
+    public function testLogIn(array $conf, $httpUser, array $data, $sessions) {
+        Arsse::$user->id = null;
+        Arsse::$conf = (new Conf)->import($conf);
+        Phake::when(Arsse::$user)->auth->thenReturn(false);
+        Phake::when(Arsse::$user)->auth("john.doe@example.com", "secret")->thenReturn(true);
+        Phake::when(Arsse::$user)->auth("jane.doe@example.com", "superman")->thenReturn(true);
+        Phake::when(Arsse::$db)->sessionCreate("john.doe@example.com")->thenReturn("PriestsOfSyrinx")->thenReturn("SolarFederation");
+        Phake::when(Arsse::$db)->sessionCreate("jane.doe@example.com")->thenReturn("ClockworkAngels")->thenReturn("SevenCitiesOfGold");
+        if ($sessions instanceof EmptyResponse) {
+            $exp1 = $sessions;
+            $exp2 = $sessions;
+        } elseif ($sessions) {
+            $exp1 = $this->respGood(['session_id' => $sessions[0], 'api_level' => \JKingWeb\Arsse\REST\TinyTinyRSS\API::LEVEL]);
+            $exp2 = $this->respGood(['session_id' => $sessions[1], 'api_level' => \JKingWeb\Arsse\REST\TinyTinyRSS\API::LEVEL]);
+        } else {
+            $exp1 = $this->respErr("LOGIN_ERROR");
+            $exp2 = $this->respErr("LOGIN_ERROR");
+        }
+        $data['op'] = "login";
+        $this->assertMessage($exp1, $this->reqAuth($data, $httpUser));
         // base64 passwords are also accepted
-        $data['password'] = base64_encode($data['password']);
-        $exp = $this->respGood(['session_id' => "SolarFederation", 'api_level' => \JKingWeb\Arsse\REST\TinyTinyRSS\API::LEVEL]);
-        $this->assertMessage($exp, $this->req($data));
-        // test a failed log-in
-        $data['password'] = "superman";
-        $exp = $this->respErr("LOGIN_ERROR");
-        $this->assertMessage($exp, $this->req($data));
+        if(isset($data['password'])) {
+            $data['password'] = base64_encode($data['password']);
+        }
+        $this->assertMessage($exp2, $this->reqAuth($data, $httpUser));
         // logging in should never try to resume a session
         Phake::verify(Arsse::$db, Phake::times(0))->sessionResume($this->anything());
+    }
+
+    public function provideLoginRequests() {
+        return $this->generateLoginRequests("login");
+    }
+
+    /** @dataProvider provideResumeRequests */
+    public function testValidateASession(array $conf, $httpUser, string $data, $result) {
+        Arsse::$user->id = null;
+        Arsse::$conf = (new Conf)->import($conf);
+        Phake::when(Arsse::$db)->sessionResume("PriestsOfSyrinx")->thenReturn([
+            'id' => "PriestsOfSyrinx",
+            'created' => "2000-01-01 00:00:00",
+            'expires' => "2112-12-21 21:12:00",
+            'user'    => "john.doe@example.com",
+        ]);
+        Phake::when(Arsse::$db)->sessionResume("ClockworkAngels")->thenReturn([
+            'id' => "ClockworkAngels",
+            'created' => "2000-01-01 00:00:00",
+            'expires' => "2112-12-21 21:12:00",
+            'user'    => "jane.doe@example.com",
+        ]);
+        $data = [
+            'op'       => "isLoggedIn",
+            'sid'      => $data,
+        ];
+        if ($result instanceof EmptyResponse) {
+            $exp1 = $result;
+            $exp2 = null;
+        } elseif ($result) {
+            $exp1 = $this->respGood(['status' => true]);
+            $exp2 = $result;
+        } else {
+            $exp1 = $this->respErr("NOT_LOGGED_IN");
+            $exp2 = ($httpUser) ? $httpUser : null;
+        }
+        $this->assertMessage($exp1, $this->reqAuth($data, $httpUser));
+        $this->assertSame($exp2, Arsse::$user->id);
+    }
+
+    public function provideResumeRequests() {
+        return $this->generateLoginRequests("isLoggedIn");
+    }
+
+    public function generateLoginRequests(string $type) {
+        $john = "john.doe@example.com";
+        $johnGood = [
+            'user' => $john,
+            'password' => "secret",
+        ];
+        $johnBad = [
+            'user' => $john,
+            'password' => "superman",
+        ];
+        $johnSess = ["PriestsOfSyrinx", "SolarFederation"];
+        $jane = "jane.doe@example.com";
+        $janeGood = [
+            'user' => $jane,
+            'password' => "superman",
+        ];
+        $janeBad = [
+            'user' => $jane,
+            'password' => "secret",
+        ];
+        $janeSess = ["ClockworkAngels", "SevenCitiesOfGold"];
+        $missingU = [
+            'password' => "secret",
+        ];
+        $missingP = [
+            'user' => $john,
+        ];
+        $sidJohn = "PriestsOfSyrinx";
+        $sidJane = "ClockworkAngels";
+        $sidBad = "TheWatchmaker";
+        $defaults = [
+            'userPreAuth' => false,
+            'userHTTPAuthRequired' => false,
+            'userSessionEnforced' => true,
+        ];
+        $preAuth = [
+            'userPreAuth' => true,
+            'userHTTPAuthRequired' => false, // implied true by pre-auth
+            'userSessionEnforced' => true,
+        ];
+        $httpReq = [
+            'userPreAuth' => false,
+            'userHTTPAuthRequired' => true,
+            'userSessionEnforced' => true,
+        ];
+        $noSess = [
+            'userPreAuth' => false,
+            'userHTTPAuthRequired' => false,
+            'userSessionEnforced' => false,
+        ];
+        $fullHttp = [
+            'userPreAuth' => false,
+            'userHTTPAuthRequired' => true,
+            'userSessionEnforced' => false,
+        ];
+        $http401 = new EmptyResponse(401);
+        if ($type=="login") {
+            return [
+                // conf,    user,  data,      result
+                [$defaults, null,  $johnGood, $johnSess],
+                [$defaults, null,  $johnBad,  false],
+                [$defaults, null,  $janeGood, $janeSess],
+                [$defaults, null,  $janeBad,  false],
+                [$defaults, null,  $missingU, false],
+                [$defaults, null,  $missingP, false],
+                [$defaults, $john, $johnGood, $johnSess],
+                [$defaults, $john, $johnBad,  false],
+                [$defaults, $john, $janeGood, $janeSess],
+                [$defaults, $john, $janeBad,  false],
+                [$defaults, $john, $missingU, false],
+                [$defaults, $john, $missingP, false],
+                [$defaults, $jane, $johnGood, $johnSess],
+                [$defaults, $jane, $johnBad,  false],
+                [$defaults, $jane, $janeGood, $janeSess],
+                [$defaults, $jane, $janeBad,  false],
+                [$defaults, $jane, $missingU, false],
+                [$defaults, $jane, $missingP, false],
+                [$defaults, "",    $johnGood, $http401],
+                [$defaults, "",    $johnBad,  $http401],
+                [$defaults, "",    $janeGood, $http401],
+                [$defaults, "",    $janeBad,  $http401],
+                [$defaults, "",    $missingU, $http401],
+                [$defaults, "",    $missingP, $http401],
+                [$preAuth,  null,  $johnGood, $http401],
+                [$preAuth,  null,  $johnBad,  $http401],
+                [$preAuth,  null,  $janeGood, $http401],
+                [$preAuth,  null,  $janeBad,  $http401],
+                [$preAuth,  null,  $missingU, $http401],
+                [$preAuth,  null,  $missingP, $http401],
+                [$preAuth,  $john, $johnGood, $johnSess],
+                [$preAuth,  $john, $johnBad,  $johnSess],
+                [$preAuth,  $john, $janeGood, false],
+                [$preAuth,  $john, $janeBad,  false],
+                [$preAuth,  $john, $missingU, false],
+                [$preAuth,  $john, $missingP, $johnSess],
+                [$preAuth,  $jane, $johnGood, false],
+                [$preAuth,  $jane, $johnBad,  false],
+                [$preAuth,  $jane, $janeGood, $janeSess],
+                [$preAuth,  $jane, $janeBad,  $janeSess],
+                [$preAuth,  $jane, $missingU, false],
+                [$preAuth,  $jane, $missingP, false],
+                [$preAuth,  "",    $johnGood, $http401],
+                [$preAuth,  "",    $johnBad,  $http401],
+                [$preAuth,  "",    $janeGood, $http401],
+                [$preAuth,  "",    $janeBad,  $http401],
+                [$preAuth,  "",    $missingU, $http401],
+                [$preAuth,  "",    $missingP, $http401],
+                [$httpReq,  null,  $johnGood, $http401],
+                [$httpReq,  null,  $johnBad,  $http401],
+                [$httpReq,  null,  $janeGood, $http401],
+                [$httpReq,  null,  $janeBad,  $http401],
+                [$httpReq,  null,  $missingU, $http401],
+                [$httpReq,  null,  $missingP, $http401],
+                [$httpReq,  $john, $johnGood, $johnSess],
+                [$httpReq,  $john, $johnBad,  false],
+                [$httpReq,  $john, $janeGood, $janeSess],
+                [$httpReq,  $john, $janeBad,  false],
+                [$httpReq,  $john, $missingU, false],
+                [$httpReq,  $john, $missingP, false],
+                [$httpReq,  $jane, $johnGood, $johnSess],
+                [$httpReq,  $jane, $johnBad,  false],
+                [$httpReq,  $jane, $janeGood, $janeSess],
+                [$httpReq,  $jane, $janeBad,  false],
+                [$httpReq,  $jane, $missingU, false],
+                [$httpReq,  $jane, $missingP, false],
+                [$httpReq,  "",    $johnGood, $http401],
+                [$httpReq,  "",    $johnBad,  $http401],
+                [$httpReq,  "",    $janeGood, $http401],
+                [$httpReq,  "",    $janeBad,  $http401],
+                [$httpReq,  "",    $missingU, $http401],
+                [$httpReq,  "",    $missingP, $http401],
+                [$noSess,   null,  $johnGood, $johnSess],
+                [$noSess,   null,  $johnBad,  false],
+                [$noSess,   null,  $janeGood, $janeSess],
+                [$noSess,   null,  $janeBad,  false],
+                [$noSess,   null,  $missingU, false],
+                [$noSess,   null,  $missingP, false],
+                [$noSess,   $john, $johnGood, $johnSess],
+                [$noSess,   $john, $johnBad,  $johnSess],
+                [$noSess,   $john, $janeGood, $johnSess],
+                [$noSess,   $john, $janeBad,  $johnSess],
+                [$noSess,   $john, $missingU, $johnSess],
+                [$noSess,   $john, $missingP, $johnSess],
+                [$noSess,   $jane, $johnGood, $janeSess],
+                [$noSess,   $jane, $johnBad,  $janeSess],
+                [$noSess,   $jane, $janeGood, $janeSess],
+                [$noSess,   $jane, $janeBad,  $janeSess],
+                [$noSess,   $jane, $missingU, $janeSess],
+                [$noSess,   $jane, $missingP, $janeSess],
+                [$noSess,   "",    $johnGood, $http401],
+                [$noSess,   "",    $johnBad,  $http401],
+                [$noSess,   "",    $janeGood, $http401],
+                [$noSess,   "",    $janeBad,  $http401],
+                [$noSess,   "",    $missingU, $http401],
+                [$noSess,   "",    $missingP, $http401],
+                [$fullHttp, null,  $johnGood, $http401],
+                [$fullHttp, null,  $johnBad,  $http401],
+                [$fullHttp, null,  $janeGood, $http401],
+                [$fullHttp, null,  $janeBad,  $http401],
+                [$fullHttp, null,  $missingU, $http401],
+                [$fullHttp, null,  $missingP, $http401],
+                [$fullHttp, $john, $johnGood, $johnSess],
+                [$fullHttp, $john, $johnBad,  $johnSess],
+                [$fullHttp, $john, $janeGood, $johnSess],
+                [$fullHttp, $john, $janeBad,  $johnSess],
+                [$fullHttp, $john, $missingU, $johnSess],
+                [$fullHttp, $john, $missingP, $johnSess],
+                [$fullHttp, $jane, $johnGood, $janeSess],
+                [$fullHttp, $jane, $johnBad,  $janeSess],
+                [$fullHttp, $jane, $janeGood, $janeSess],
+                [$fullHttp, $jane, $janeBad,  $janeSess],
+                [$fullHttp, $jane, $missingU, $janeSess],
+                [$fullHttp, $jane, $missingP, $janeSess],
+                [$fullHttp, "",    $johnGood, $http401],
+                [$fullHttp, "",    $johnBad,  $http401],
+                [$fullHttp, "",    $janeGood, $http401],
+                [$fullHttp, "",    $janeBad,  $http401],
+                [$fullHttp, "",    $missingU, $http401],
+                [$fullHttp, "",    $missingP, $http401],
+            ];
+        } elseif ($type=="isLoggedIn") {
+            return [
+                // conf,    user,  session,  result
+                [$defaults, null,  $sidJohn, $john],
+                [$defaults, null,  $sidJane, $jane],
+                [$defaults, null,  $sidBad,  false],
+                [$defaults, $john, $sidJohn, $john],
+                [$defaults, $john, $sidJane, $jane],
+                [$defaults, $john, $sidBad,  false],
+                [$defaults, $jane, $sidJohn, $john],
+                [$defaults, $jane, $sidJane, $jane],
+                [$defaults, $jane, $sidBad,  false],
+                [$defaults, "",    $sidJohn, $http401],
+                [$defaults, "",    $sidJane, $http401],
+                [$defaults, "",    $sidBad,  $http401],
+                [$preAuth,  null,  $sidJohn, $http401],
+                [$preAuth,  null,  $sidJane, $http401],
+                [$preAuth,  null,  $sidBad,  $http401],
+                [$preAuth,  $john, $sidJohn, $john],
+                [$preAuth,  $john, $sidJane, $jane],
+                [$preAuth,  $john, $sidBad,  false],
+                [$preAuth,  $jane, $sidJohn, $john],
+                [$preAuth,  $jane, $sidJane, $jane],
+                [$preAuth,  $jane, $sidBad,  false],
+                [$preAuth,  "",    $sidJohn, $http401],
+                [$preAuth,  "",    $sidJane, $http401],
+                [$preAuth,  "",    $sidBad,  $http401],
+                [$httpReq,  null,  $sidJohn, $http401],
+                [$httpReq,  null,  $sidJane, $http401],
+                [$httpReq,  null,  $sidBad,  $http401],
+                [$httpReq,  $john, $sidJohn, $john],
+                [$httpReq,  $john, $sidJane, $jane],
+                [$httpReq,  $john, $sidBad,  false],
+                [$httpReq,  $jane, $sidJohn, $john],
+                [$httpReq,  $jane, $sidJane, $jane],
+                [$httpReq,  $jane, $sidBad,  false],
+                [$httpReq,  "",    $sidJohn, $http401],
+                [$httpReq,  "",    $sidJane, $http401],
+                [$httpReq,  "",    $sidBad,  $http401],
+                [$noSess,   null,  $sidJohn, $john],
+                [$noSess,   null,  $sidJane, $jane],
+                [$noSess,   null,  $sidBad,  false],
+                [$noSess,   $john, $sidJohn, $john],
+                [$noSess,   $john, $sidJane, $john],
+                [$noSess,   $john, $sidBad,  $john],
+                [$noSess,   $jane, $sidJohn, $jane],
+                [$noSess,   $jane, $sidJane, $jane],
+                [$noSess,   $jane, $sidBad,  $jane],
+                [$noSess,   "",    $sidJohn, $http401],
+                [$noSess,   "",    $sidJane, $http401],
+                [$noSess,   "",    $sidBad,  $http401],
+                [$fullHttp, null,  $sidJohn, $http401],
+                [$fullHttp, null,  $sidJane, $http401],
+                [$fullHttp, null,  $sidBad,  $http401],
+                [$fullHttp, $john, $sidJohn, $john],
+                [$fullHttp, $john, $sidJane, $john],
+                [$fullHttp, $john, $sidBad,  $john],
+                [$fullHttp, $jane, $sidJohn, $jane],
+                [$fullHttp, $jane, $sidJane, $jane],
+                [$fullHttp, $jane, $sidBad,  $jane],
+                [$fullHttp, "",    $sidJohn, $http401],
+                [$fullHttp, "",    $sidJane, $http401],
+                [$fullHttp, "",    $sidBad,  $http401],
+            ];
+        }
     }
 
     public function testHandleGenericError() {
@@ -255,18 +562,6 @@ LONG_STRING;
         $exp = $this->respGood(['status' => "OK"]);
         $this->assertMessage($exp, $this->req($data));
         Phake::verify(Arsse::$db)->sessionDestroy(Arsse::$user->id, "PriestsOfSyrinx");
-    }
-
-    public function testValidateASession() {
-        $data = [
-            'op'       => "isLoggedIn",
-            'sid'      => "PriestsOfSyrinx",
-        ];
-        $exp = $this->respGood(['status' => true]);
-        $this->assertMessage($exp, $this->req($data));
-        $data['sid'] = "SolarFederation";
-        $exp = $this->respErr("NOT_LOGGED_IN");
-        $this->assertMessage($exp, $this->req($data));
     }
 
     public function testHandleUnknownMethods() {

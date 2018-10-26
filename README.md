@@ -149,6 +149,22 @@ We are not aware of any other extensions to the TTRSS protocol. If you know of a
 - The documentation for the `getCompactHeadlines` operation states the default value for `limit` is 20, but the reference implementation defaults to unlimited; The Arsse also defaults to unlimited
 - It is assumed TTRSS exposes undocumented behaviour; unless otherwise noted The Arsse only implements documented behaviour
 
+#### Interaction with HTTP authentication
+
+Tiny Tiny RSS itself is unaware of HTTP authentication: if HTTP authentication is used in the server configuration, it has no effect on authentication in the API. The Arsse, however, makes use of HTTP authentication for NextCloud News, and can do so for TTRSS as well. In a default configuration The Arsse functions in the same way as TTRSS: HTTP authentication and API authentication are completely separate and independent. Behaviour is modified in the following circumstances:
+
+- If the `userHTTPAuthRequired` setting is `true`:
+    - Clients must pass HTTP authentication; API authentication then proceeds as normal
+- If the `userSessionEnforced` setting is `false`:
+    - Clients may optionally provide HTTP credentials; if they are valid API authentication is skipped: tokens are issued upon login, but ignored for HTTP-authenticated requests
+- If the `userHTTPAuthRequired` setting is `true` and the `userSessionEnforced` setting is `false`:
+    - Clients must pass HTTP authentication; API authentication is skipped: tokens are issued upon login, but thereafter ignored
+- If the `userPreAuth` setting is `true`:
+    - The Web server asserts authentication was successful; API authentication only checks that HTTP and API user names match
+- If the `userPreAuth` setting is `true` and the `userSessionEnforced` setting is `false`:
+    - The Web server asserts authentication was successful; API authentication is skipped: tokens are issued upon login, but thereafter ignored
+
+In all cases, supplying invalid HTTP credentials will result in a 401 response.
 
 [newIssue]: https://code.mensbeam.com/MensBeam/arsse/issues/new
 [Composer]: https://getcomposer.org/

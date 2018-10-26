@@ -118,6 +118,13 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 } catch (ExceptionType $e) {
                     throw new Exception("INCORRECT_USAGE");
                 }
+                if ($req->getAttribute("authenticated", false)) {
+                    // if HTTP authentication was successfully used, set the expected user ID
+                    Arsse::$user->id = $req->getAttribute("authenticatedUser");
+                } elseif (Arsse::$conf->userHTTPAuthRequired || Arsse::$conf->userPreAuth || $req->getAttribute("authenticationFailed", false)) {
+                    // otherwise if HTTP authentication failed or is required, deny access at the HTTP level
+                    return new EmptyResponse(401);
+                }
                 if (strtolower((string) $data['op']) != "login") {
                     // unless logging in, a session identifier is required
                     $this->resumeSession((string) $data['sid']);
@@ -148,6 +155,10 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function resumeSession(string $id): bool {
+        // if HTTP authentication was successful and sessions are not enforced, proceed unconditionally
+        if (isset(Arsse::$user->id) && !Arsse::$conf->userSessionEnforced) {
+            return true;
+        }
         try {
             // verify the supplied session is valid
             $s = Arsse::$db->sessionResume($id);
@@ -172,16 +183,24 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function opLogin(array $data): array {
-        // both cleartext and base64 passwords are accepted
-        if (Arsse::$user->auth($data['user'], $data['password']) || Arsse::$user->auth($data['user'], base64_decode($data['password']))) {
-            $id = Arsse::$db->sessionCreate($data['user']);
-            return [
-                'session_id' => $id,
-                'api_level'  => self::LEVEL
-            ];
+        $user = $data['user'] ?? "";
+        $pass = $data['password'] ?? "";
+        if (!Arsse::$conf->userSessionEnforced && isset(Arsse::$user->id)) {
+            // if HTTP authentication was previously successful and sessions 
+            // are not enforced, create a session for the HTTP user regardless
+            // of which user the API call mentions
+            $id = Arsse::$db->sessionCreate(Arsse::$user->id);
+        } elseif ((!Arsse::$conf->userPreAuth && (Arsse::$user->auth($user, $pass) || Arsse::$user->auth($user, base64_decode($pass)))) || (Arsse::$conf->userPreAuth && Arsse::$user->id===$user)) {
+            // otherwise both cleartext and base64 passwords are accepted
+            // if pre-authentication is in use, just make sure the user names match
+            $id = Arsse::$db->sessionCreate($user);
         } else {
             throw new Exception("LOGIN_ERROR");
         }
+        return [
+            'session_id' => $id,
+            'api_level'  => self::LEVEL
+        ];
     }
 
     public function opLogout(array $data): array {

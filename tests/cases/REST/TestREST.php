@@ -66,9 +66,10 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         $r = new REST();
         // create a mock user manager
         Arsse::$user = Phake::mock(User::class);
-        Phake::when(Arsse::$user)->auth->thenReturn(true);
-        Phake::when(Arsse::$user)->auth($this->anything(), "superman")->thenReturn(false);
-        Phake::when(Arsse::$user)->auth("jane.doe@example.com", $this->anything())->thenReturn(false);
+        Phake::when(Arsse::$user)->auth->thenReturn(false);
+        Phake::when(Arsse::$user)->auth("john.doe@example.com", "secret")->thenReturn(true);
+        Phake::when(Arsse::$user)->auth("john.doe@example.com", "")->thenReturn(true);
+        Phake::when(Arsse::$user)->auth("someone.else@example.com", "")->thenReturn(true);
         // create an input server request
         $req = new ServerRequest($serverParams);
         // create the expected output
@@ -84,11 +85,12 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         return [
             [['PHP_AUTH_USER' => "john.doe@example.com", 'PHP_AUTH_PW' => "secret"],                                          ['authenticated' => true, 'authenticatedUser' => "john.doe@example.com"]],
             [['PHP_AUTH_USER' => "john.doe@example.com", 'PHP_AUTH_PW' => "secret", 'REMOTE_USER' => "jane.doe@example.com"], ['authenticated' => true, 'authenticatedUser' => "john.doe@example.com"]],
-            [['PHP_AUTH_USER' => "jane.doe@example.com", 'PHP_AUTH_PW' => "secret"],                                          []],
-            [['PHP_AUTH_USER' => "john.doe@example.com", 'PHP_AUTH_PW' => "superman"],                                        []],
+            [['PHP_AUTH_USER' => "jane.doe@example.com", 'PHP_AUTH_PW' => "secret"],                                          ['authenticationFailed' => true]],
+            [['PHP_AUTH_USER' => "john.doe@example.com", 'PHP_AUTH_PW' => "superman"],                                        ['authenticationFailed' => true]],
             [['REMOTE_USER' => "john.doe@example.com"],                                                                       ['authenticated' => true, 'authenticatedUser' => "john.doe@example.com"]],
             [['REMOTE_USER' => "someone.else@example.com"],                                                                   ['authenticated' => true, 'authenticatedUser' => "someone.else@example.com"]],
-            [['REMOTE_USER' => "jane.doe@example.com"],                                                                       []],
+            [['REMOTE_USER' => "jane.doe@example.com"],                                                                       ['authenticationFailed' => true]],
+            [[],                                                                                                              []],
         ];
     }
 
