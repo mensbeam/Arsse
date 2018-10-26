@@ -2,7 +2,7 @@ Version 0.4.0 (2018-10-26)
 ==========================
 
 New features:
-- Support for HTTP authentication in Tiny Tiny RSS (see README.md for detais)
+- Support for HTTP authentication in Tiny Tiny RSS (see README.md for details)
 - New userHTTPAuthRequired and userSessionEnforced settings
 
 Version 0.3.1 (2018-07-22)

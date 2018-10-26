@@ -36,7 +36,7 @@ sudo systemctl enable arsse
 sudo systemctl start arsse
 ```
 
-### Configuring the Web server and PHP 
+### Configuring the Web server and PHP
 
 Sample configuration parameters for Nginx can be found in `arsse/dist/nginx.conf` and `arsse/dist/nginx-fcgi.conf`; the samples assume [a server group](http://nginx.org/en/docs/http/ngx_http_upstream_module.html#upstream) has already been defined for PHP. How to configure an Nginx service to use PHP and install the required PHP extensions is beyond the scope of this document, however.
 
@@ -151,18 +151,26 @@ We are not aware of any other extensions to the TTRSS protocol. If you know of a
 
 #### Interaction with HTTP authentication
 
-Tiny Tiny RSS itself is unaware of HTTP authentication: if HTTP authentication is used in the server configuration, it has no effect on authentication in the API. The Arsse, however, makes use of HTTP authentication for NextCloud News, and can do so for TTRSS as well. In a default configuration The Arsse functions in the same way as TTRSS: HTTP authentication and API authentication are completely separate and independent. Behaviour is modified in the following circumstances:
+Tiny Tiny RSS itself is unaware of HTTP authentication: if HTTP authentication is used in the server configuration, it has no effect on authentication in the API. The Arsse, however, makes use of HTTP authentication for NextCloud News, and can do so for TTRSS as well. In a default configuration The Arsse functions in the same way as TTRSS: HTTP authentication and API authentication are completely separate and independent. Behaviour is summarized below:
 
+- With default settings:
+    - Clients may optionally provide HTTP credentials; API authentication then proceeds as normal
+    - All feed icons are visible to unauthenticated clients
 - If the `userHTTPAuthRequired` setting is `true`:
     - Clients must pass HTTP authentication; API authentication then proceeds as normal
+    - Feed icons are visible only to their owners
 - If the `userSessionEnforced` setting is `false`:
     - Clients may optionally provide HTTP credentials; if they are valid API authentication is skipped: tokens are issued upon login, but ignored for HTTP-authenticated requests
+    - All feed icons are visible to unauthenticated clients
 - If the `userHTTPAuthRequired` setting is `true` and the `userSessionEnforced` setting is `false`:
     - Clients must pass HTTP authentication; API authentication is skipped: tokens are issued upon login, but thereafter ignored
+    - Feed icons are visible only to their owners
 - If the `userPreAuth` setting is `true`:
     - The Web server asserts authentication was successful; API authentication only checks that HTTP and API user names match
+    - Feed icons are visible only to their owners
 - If the `userPreAuth` setting is `true` and the `userSessionEnforced` setting is `false`:
     - The Web server asserts authentication was successful; API authentication is skipped: tokens are issued upon login, but thereafter ignored
+    - Feed icons are visible only to their owners
 
 In all cases, supplying invalid HTTP credentials will result in a 401 response.
 
