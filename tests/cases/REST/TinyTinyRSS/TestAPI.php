@@ -105,21 +105,21 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $richContent = <<<LONG_STRING
 <section>
     <p>
-        <b>Pour</b> vous faire mieux 
-        connaitre d’ou\u{300} vient 
-        l’erreur de ceux qui 
-        bla\u{302}ment la 
-        volupte\u{301}, et qui louent 
-        en quelque sorte la douleur, 
-        je vais entrer dans une 
-        explication plus 
-        e\u{301}tendue, et vous faire 
-        voir tout ce qui a 
-        e\u{301}te\u{301} dit 
-        la\u{300}-dessus par 
-        l’inventeur de la 
-        ve\u{301}rite\u{301}, et, pour 
-        ainsi dire, par l’architecte 
+        <b>Pour</b> vous faire mieux
+        connaitre d’ou\u{300} vient
+        l’erreur de ceux qui
+        bla\u{302}ment la
+        volupte\u{301}, et qui louent
+        en quelque sorte la douleur,
+        je vais entrer dans une
+        explication plus
+        e\u{301}tendue, et vous faire
+        voir tout ce qui a
+        e\u{301}te\u{301} dit
+        la\u{300}-dessus par
+        l’inventeur de la
+        ve\u{301}rite\u{301}, et, pour
+        ainsi dire, par l’architecte
         de la vie heureuse.
     </p>
 </section>
@@ -157,7 +157,7 @@ LONG_STRING;
     protected function reqAuth($data, $user) {
         return $this->req($data, "POST", "", null, $user);
     }
-    
+
     protected function respGood($content = null, $seq = 0): Response {
         return new Response([
             'seq' => $seq,
@@ -1551,7 +1551,7 @@ LONG_STRING;
             ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 1],
             ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 2],
             ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 3], // invalid mode
-            
+
             ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 1], // Published feed' no-op
             ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 0],
             ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 1],

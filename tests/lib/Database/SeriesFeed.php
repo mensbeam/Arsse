@@ -30,7 +30,7 @@ trait SeriesFeed {
             'title_content_hash' => '43b970ac6ec5f8a9647b2c7e4eed8b1d7f62e154a95eed748b0294c1256764ba',
         ],
     ];
-    
+
     public function setUpSeries() {
         // set up the test data
         $past  = gmdate("Y-m-d H:i:s", strtotime("now - 1 minute"));

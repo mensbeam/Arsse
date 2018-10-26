@@ -172,7 +172,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertException("malformedXml", "Feed");
         new Feed(null, $this->base."Parsing/Malformed");
     }
-    
+
     public function testDeduplicateFeedItems() {
         // duplicates with dates lead to the newest match being kept
         $t = strtotime("2002-05-19T15:21:36Z");
@@ -245,7 +245,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $f = new Feed(null, $this->base."Caching/200None");
         $this->assertTime($t, $f->lastModified);
     }
-    
+
     public function testComputeNextFetchOnError() {
         for ($a = 0; $a < 100; $a++) {
             if ($a < 3) {
@@ -257,7 +257,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
             }
         }
     }
-    
+
     public function testComputeNextFetchFrom304() {
         // if less than half an hour, check in 15 minutes
         $t = strtotime("now");
@@ -305,7 +305,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $exp = strtotime("now + 3 hours");
         $this->assertTime($exp, $f->nextFetch);
     }
-    
+
     public function testComputeNextFetchFrom200() {
         // if less than half an hour, check in 15 minutes
         $f = new Feed(null, $this->base."NextFetch/30m");

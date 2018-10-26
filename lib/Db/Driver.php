@@ -12,7 +12,7 @@ interface Driver {
     const TR_ROLLBACK = 2;
     const TR_PEND_COMMIT = -1;
     const TR_PEND_ROLLBACK = -2;
-    
+
     public static function create(): Driver;
     // returns a human-friendly name for the driver (for display in installer, for example)
     public static function driverName(): string;

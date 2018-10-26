@@ -16,7 +16,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp() {
         $this->clearData();
     }
-    
+
     public function testGetIntegerInfo() {
         $tests = [
             [null,          I::NULL],

@@ -10,7 +10,7 @@ use JKingWeb\Arsse\Arsse;
 
 class Driver implements \JKingWeb\Arsse\Service\Driver {
     protected $queue = [];
-    
+
     public static function driverName(): string {
         return Arsse::$lang->msg("Driver.Service.Internal.Name");
     }
@@ -19,7 +19,7 @@ class Driver implements \JKingWeb\Arsse\Service\Driver {
         // this driver has no requirements
         return true;
     }
-    
+
     public function __construct() {
     }
 

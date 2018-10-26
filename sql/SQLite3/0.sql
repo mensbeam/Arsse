@@ -105,7 +105,7 @@ create table arsse_marks(
     subscription integer not null references arsse_subscriptions(id) on delete cascade on update cascade,
     read boolean not null default 0,
     starred boolean not null default 0,
-    modified text not null default CURRENT_TIMESTAMP,    
+    modified text not null default CURRENT_TIMESTAMP,
     primary key(article,subscription)
 );
 

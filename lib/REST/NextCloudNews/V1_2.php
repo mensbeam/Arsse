@@ -74,7 +74,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         '/status'                => ['GET' => "serverStatus"],
         '/user'                  => ['GET' => "userStatus"],
     ];
-    
+
     public function __construct() {
     }
 
@@ -152,7 +152,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $target->query = "";
         return (string) $target;
     }
-    
+
     protected function chooseCall(string $url, string $method): string {
         // // normalize the URL path: change any IDs to 1 for easier comparison
         $url = $this->normalizePathIds($url);
@@ -282,7 +282,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new EmptyResponse(404);
         }
     }
-    
+
     // list folders
     protected function folderList(array $url, array $data): ResponseInterface {
         $folders = [];
@@ -362,7 +362,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         return new EmptyResponse(204);
     }
-    
+
     // return list of feeds which should be refreshed
     protected function feedListStale(array $url, array $data): ResponseInterface {
         // function requires admin rights per spec
@@ -378,7 +378,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         return new Response(['feeds' => $out]);
     }
-    
+
     // refresh a feed
     protected function feedUpdate(array $url, array $data): ResponseInterface {
         // function requires admin rights per spec
@@ -431,7 +431,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         return new Response($out);
     }
-    
+
     // return list of feeds for the logged-in user
     protected function subscriptionList(array $url, array $data): ResponseInterface {
         $subs = Arsse::$db->subscriptionList(Arsse::$user->id);

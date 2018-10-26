@@ -58,79 +58,79 @@ class Context {
         }
         return array_values(array_filter($spec));
     }
-    
+
     public function reverse(bool $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
-    
+
     public function limit(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
-    
+
     public function offset(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
-    
+
     public function folder(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
-    
+
     public function folderShallow(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
-    
+
     public function subscription(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
-    
+
     public function latestArticle(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
-    
+
     public function oldestArticle(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
-    
+
     public function latestEdition(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
-    
+
     public function oldestEdition(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
-    
+
     public function unread(bool $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
-    
+
     public function starred(bool $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
-    
+
     public function modifiedSince($spec = null) {
         $spec = Date::normalize($spec);
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
-    
+
     public function notModifiedSince($spec = null) {
         $spec = Date::normalize($spec);
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
-    
+
     public function markedSince($spec = null) {
         $spec = Date::normalize($spec);
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
-    
+
     public function notMarkedSince($spec = null) {
         $spec = Date::normalize($spec);
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
-    
+
     public function edition(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
-    
+
     public function article(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }

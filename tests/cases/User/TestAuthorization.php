@@ -83,7 +83,7 @@ class TestAuthorization extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertFalse(Arsse::$user->authorizationEnabled(true));
         $this->assertTrue(Arsse::$user->authorizationEnabled(true));
     }
-    
+
     public function testSelfActionLogic() {
         foreach (array_keys(self::USERS) as $user) {
             Arsse::$user->auth($user, "");

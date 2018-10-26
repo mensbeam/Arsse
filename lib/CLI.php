@@ -8,7 +8,7 @@ namespace JKingWeb\Arsse;
 
 class CLI {
     protected $args = [];
-    
+
     protected function usage(): string {
         $prog = basename($_SERVER['argv'][0]);
         return <<<USAGE_TEXT
@@ -21,7 +21,7 @@ Usage:
     $prog --help | -h
 
 The Arsse command-line interface currently allows you to start the refresh
-daemon, refresh a specific feed by numeric ID, add a user, or save default 
+daemon, refresh a specific feed by numeric ID, add a user, or save default
 configuration to a sample file.
 USAGE_TEXT;
     }

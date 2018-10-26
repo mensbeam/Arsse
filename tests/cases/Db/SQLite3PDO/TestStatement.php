@@ -50,7 +50,7 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $typeStr = "'".str_replace("'", "''", $type)."'";
         $nativeStatement = $this->c->prepare(
             "SELECT (
-                    (CASE WHEN substr($typeStr, 0, 7) <> 'strict ' then null else 1 end) is null 
+                    (CASE WHEN substr($typeStr, 0, 7) <> 'strict ' then null else 1 end) is null
                     and ? is null
             ) or (
                     $exp = ?

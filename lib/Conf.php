@@ -56,7 +56,7 @@ class Conf {
     public $serviceCurlUser         = null;
     /** @var string The password to use when performing feed updates using cURL */
     public $serviceCurlPassword     = null;
-    
+
     /** @var integer Number of seconds to wait for data when fetching feeds from foreign servers */
     public $fetchTimeout            = 10;
     /** @var integer Maximum size, in bytes, of data when fetching feeds from foreign servers */

@@ -934,7 +934,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $exp = new EmptyResponse(403);
         $this->assertMessage($exp, $this->req("GET", "/cleanup/before-update"));
     }
-    
+
     public function testCleanUpAfterUpdate() {
         Phake::when(Arsse::$db)->articleCleanup()->thenReturn(true);
         $exp = new EmptyResponse(204);

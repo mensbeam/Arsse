@@ -5,7 +5,7 @@
 
 return [
     'API.TTRSS.Category.Uncategorized'                                     => 'Uncategorized',
-    'API.TTRSS.Category.Special'                                           => 'Special', 
+    'API.TTRSS.Category.Special'                                           => 'Special',
     'API.TTRSS.Category.Labels'                                            => 'Labels',
     'API.TTRSS.Feed.All'                                                   => 'All articles',
     'API.TTRSS.Feed.Fresh'                                                 => 'Fresh articles',

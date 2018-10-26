@@ -9,7 +9,7 @@ namespace JKingWeb\Arsse;
 use JKingWeb\Arsse\Misc\Date;
 
 class Service {
-    
+
     /** @var Service\Driver */
     protected $drv;
     /** @var \DateInterval */
@@ -26,7 +26,7 @@ class Service {
         }
         return $classes;
     }
-    
+
     public static function interval(): \DateInterval {
         try {
             return new \DateInterval(Arsse::$conf->serviceFrequency);

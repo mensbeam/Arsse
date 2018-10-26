@@ -87,7 +87,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         'status'  => 1,
         'content' => ['error' => "MALFORMED_INPUT"],
     ];
-    
+
     public function __construct() {
     }
 
@@ -174,7 +174,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function opGetApiLevel(array $data): array {
         return ['level' => self::LEVEL];
     }
-    
+
     public function opGetVersion(array $data): array {
         return [
             'version'       => self::VERSION,
@@ -186,7 +186,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $user = $data['user'] ?? "";
         $pass = $data['password'] ?? "";
         if (!Arsse::$conf->userSessionEnforced && isset(Arsse::$user->id)) {
-            // if HTTP authentication was previously successful and sessions 
+            // if HTTP authentication was previously successful and sessions
             // are not enforced, create a session for the HTTP user regardless
             // of which user the API call mentions
             $id = Arsse::$db->sessionCreate(Arsse::$user->id);

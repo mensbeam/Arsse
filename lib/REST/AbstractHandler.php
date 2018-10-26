@@ -24,7 +24,7 @@ abstract class AbstractHandler implements Handler {
         }
         return $out;
     }
-    
+
     protected function fieldMapTypes(array $data, array $map, string $dateFormat = "sql"): array {
         foreach ($map as $key => $type) {
             if (array_key_exists($key, $data)) {

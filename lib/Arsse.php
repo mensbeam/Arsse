@@ -8,7 +8,7 @@ namespace JKingWeb\Arsse;
 
 class Arsse {
     const VERSION = "0.4.0";
-    
+
     /** @var Lang */
     public static $lang;
     /** @var Conf  */

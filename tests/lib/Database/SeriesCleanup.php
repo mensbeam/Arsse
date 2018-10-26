@@ -157,7 +157,7 @@ trait SeriesCleanup {
         }
         $this->compareExpectations($state);
     }
-    
+
     public function testCleanUpOldArticlesWithUnlimitedReadRetention() {
         Arsse::$conf->purgeArticlesRead = "";
         Arsse::$db->articleCleanup();
@@ -169,7 +169,7 @@ trait SeriesCleanup {
         }
         $this->compareExpectations($state);
     }
-    
+
     public function testCleanUpOldArticlesWithUnlimitedUnreadRetention() {
         Arsse::$conf->purgeArticlesUnread = "";
         Arsse::$db->articleCleanup();

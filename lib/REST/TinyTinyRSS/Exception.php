@@ -8,7 +8,7 @@ namespace JKingWeb\Arsse\REST\TinyTinyRSS;
 
 class Exception extends \Exception {
     protected $data = [];
-    
+
     public function __construct($msg = "UNSPECIFIED_ERROR", $data = [], $e = null) {
         $this->data = $data;
         parent::__construct($msg, 0, $e);

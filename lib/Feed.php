@@ -44,7 +44,7 @@ class Feed {
         libxml_use_internal_errors(false);
         return $out;
     }
-    
+
     public function __construct(int $feedID = null, string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = '', bool $scrape = false) {
         // fetch the feed
         $this->resource = self::download($url, $lastModified, $etag, $username, $password);

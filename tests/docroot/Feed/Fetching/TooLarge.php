@@ -1,4 +1,4 @@
-<?php 
+<?php
 $item = '
     <item>
         <description>'.str_repeat("0", 1024).'</description>

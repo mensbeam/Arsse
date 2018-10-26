@@ -12,7 +12,7 @@ class Driver implements \JKingWeb\Arsse\Service\Driver {
     protected $options = [];
     protected $queue;
     protected $handles = [];
-    
+
     public static function driverName(): string {
         return Arsse::$lang->msg("Driver.Service.Curl.Name");
     }

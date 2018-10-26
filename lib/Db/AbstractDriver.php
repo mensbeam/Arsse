@@ -76,7 +76,7 @@ abstract class AbstractDriver implements Driver {
     public function begin(bool $lock = false): Transaction {
         return new Transaction($this, $lock);
     }
-    
+
     public function savepointCreate(bool $lock = false): int {
         if ($lock && !$this->transDepth) {
             $this->lock();

@@ -14,7 +14,7 @@ class Target {
     public $path = [];
     public $query = "";
     public $fragment = "";
-    
+
     public function __construct(string $target) {
         $target = $this->parseFragment($target);
         $target = $this->parseQuery($target);

@@ -60,7 +60,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
             [$fake, "/full/url-not",                       []],
         ];
     }
-    
+
     /** @dataProvider provideAuthenticableRequests */
     public function testAuthenticateRequests(array $serverParams, array $expAttr) {
         $r = new REST();
@@ -105,7 +105,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         $act = $r->challenge($in);
         $this->assertMessage($exp, $act);
     }
-    
+
     /** @dataProvider provideUnnormalizedOrigins */
     public function testNormalizeOrigins(string $origin, string $exp, array $ports = null) {
         $r = new REST();

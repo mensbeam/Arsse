@@ -10,7 +10,7 @@ use JKingWeb\Arsse\Arsse;
 
 class Driver implements \JKingWeb\Arsse\Service\Driver {
     protected $queue = [];
-    
+
     public static function driverName(): string {
         return Arsse::$lang->msg("Driver.Service.Forking.Name");
     }
@@ -18,7 +18,7 @@ class Driver implements \JKingWeb\Arsse\Service\Driver {
     public static function requirementsMet(): bool {
         return function_exists("popen");
     }
-    
+
     public function __construct() {
     }
 
