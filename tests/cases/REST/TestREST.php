@@ -156,7 +156,8 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         Phake::when($r)->corsNormalizeOrigin->thenReturnCallback(function ($origin) {
             return $origin;
         });
-        $req = new Request("", "GET", "php://memory", ['Origin' => $origin]);
+        $headers = isset($origin) ? ['Origin' => $origin] : [];
+        $req = new Request("", "GET", "php://memory", $headers);
         $act = $r->corsNegotiate($req, $allowed, $denied);
         $this->assertSame($exp, $act);
     }
@@ -182,7 +183,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
             ["",                         false, "*",               "*"             ],
             ["",                         false, "*",               ""              ],
             [["null", "http://example"], false, "*",               ""              ],
-            [[],                         false, "*",               ""              ],
+            [null,                       false, "*",               ""              ],
         ];
     }
 
