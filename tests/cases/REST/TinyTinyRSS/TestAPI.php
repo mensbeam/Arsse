@@ -245,7 +245,7 @@ LONG_STRING;
         $data['op'] = "login";
         $this->assertMessage($exp1, $this->reqAuth($data, $httpUser));
         // base64 passwords are also accepted
-        if(isset($data['password'])) {
+        if (isset($data['password'])) {
             $data['password'] = base64_encode($data['password']);
         }
         $this->assertMessage($exp2, $this->reqAuth($data, $httpUser));
