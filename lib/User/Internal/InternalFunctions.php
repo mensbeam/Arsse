@@ -39,27 +39,11 @@ trait InternalFunctions {
         return Arsse::$db->userRemove($user);
     }
 
-    public function userList(string $domain = null): array {
-        return Arsse::$db->userList($domain);
+    public function userList(): array {
+        return Arsse::$db->userList();
     }
 
     public function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null): string {
         return Arsse::$db->userPasswordSet($user, $newPassword);
-    }
-
-    public function userPropertiesGet(string $user): array {
-        return Arsse::$db->userPropertiesGet($user);
-    }
-
-    public function userPropertiesSet(string $user, array $properties): array {
-        return Arsse::$db->userPropertiesSet($user, $properties);
-    }
-
-    public function userRightsGet(string $user): int {
-        return Arsse::$db->userRightsGet($user);
-    }
-
-    public function userRightsSet(string $user, int $level): bool {
-        return Arsse::$db->userRightsSet($user, $level);
     }
 }

@@ -17,10 +17,6 @@ final class Driver implements \JKingWeb\Arsse\User\Driver {
         "userAdd"                 => self::FUNC_INTERNAL,
         "userRemove"              => self::FUNC_INTERNAL,
         "userPasswordSet"         => self::FUNC_INTERNAL,
-        "userPropertiesGet"       => self::FUNC_INTERNAL,
-        "userPropertiesSet"       => self::FUNC_INTERNAL,
-        "userRightsGet"           => self::FUNC_INTERNAL,
-        "userRightsSet"           => self::FUNC_INTERNAL,
     ];
 
     public static function driverName(): string {

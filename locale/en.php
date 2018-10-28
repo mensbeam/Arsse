@@ -163,10 +163,7 @@ return [
     'Exception.JKingWeb/Arsse/User/Exception.authFailed'                   => 'Authentication failed',
     'Exception.JKingWeb/Arsse/User/ExceptionAuthz.notAuthorized'           =>
         '{action, select,
-            userList {{user, select,
-                global {Authenticated user is not authorized to view the global user list}
-                other {Authenticated user is not authorized to view the user list for domain {user}}
-            }}
+            userList {Authenticated user is not authorized to view the user list}
             other {Authenticated user is not authorized to perform the action "{action}" on behalf of {user}}
         }',
     'Exception.JKingWeb/Arsse/User/ExceptionSession.invalid'               => 'Session with ID {0} does not exist',
