@@ -7,32 +7,42 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\User\Internal;
 
 final class Driver implements \JKingWeb\Arsse\User\Driver {
-    use InternalFunctions;
-
-    protected $db;
-    protected $functions = [
-        "auth"                    => self::FUNC_INTERNAL,
-        "userList"                => self::FUNC_INTERNAL,
-        "userExists"              => self::FUNC_INTERNAL,
-        "userAdd"                 => self::FUNC_INTERNAL,
-        "userRemove"              => self::FUNC_INTERNAL,
-        "userPasswordSet"         => self::FUNC_INTERNAL,
-    ];
+    public function __construct() {
+    }
 
     public static function driverName(): string {
         return Arsse::$lang->msg("Driver.User.Internal.Name");
     }
 
-    public function driverFunctions(string $function = null) {
-        if ($function===null) {
-            return $this->functions;
+    public function auth(string $user, string $password): bool {
+        try {
+            $hash = Arsse::$db->userPasswordGet($user);
+        } catch (Exception $e) {
+            return false;
         }
-        if (array_key_exists($function, $this->functions)) {
-            return $this->functions[$function];
-        } else {
-            return self::FUNC_NOT_IMPLEMENTED;
+        if ($password==="" && $hash==="") {
+            return true;
         }
+        return password_verify($password, $hash);
     }
 
-    // see InternalFunctions.php for bulk of methods
+    public function userExists(string $user): bool {
+        return Arsse::$db->userExists($user);
+    }
+
+    public function userAdd(string $user, string $password = null): string {
+        return Arsse::$db->userAdd($user, $password);
+    }
+
+    public function userRemove(string $user): bool {
+        return Arsse::$db->userRemove($user);
+    }
+
+    public function userList(): array {
+        return Arsse::$db->userList();
+    }
+
+    public function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null): string {
+        return Arsse::$db->userPasswordSet($user, $newPassword);
+    }
 }

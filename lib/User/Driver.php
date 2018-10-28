@@ -15,8 +15,6 @@ interface Driver {
     public function __construct();
     // returns a human-friendly name for the driver (for display in installer, for example)
     public static function driverName(): string;
-    // returns an array (or single queried member of same) of methods defined by this interface and whether the class implements the internal function or a custom version
-    public function driverFunctions(string $function = null);
     // authenticates a user against their name and password
     public function auth(string $user, string $password): bool;
     // checks whether a user exists

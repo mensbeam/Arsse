@@ -6,6 +6,8 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
+use JKingWeb\Arsse\User\Internal\Driver as InternalDriver;
+
 class User {
 
     public $id = null;
@@ -44,30 +46,13 @@ class User {
     public function auth(string $user, string $password): bool {
         $prevUser = $this->id ?? null;
         $this->id = $user;
-        switch ($this->u->driverFunctions("auth")) {
-            case User\Driver::FUNC_EXTERNAL:
-                if (Arsse::$conf->userPreAuth) {
-                    $out = true;
-                } else {
-                    $out = $this->u->auth($user, $password);
-                }
-                if ($out && !Arsse::$db->userExists($user)) {
-                    $this->autoProvision($user, $password);
-                }
-                break;
-            case User\Driver::FUNC_INTERNAL:
-                if (Arsse::$conf->userPreAuth) {
-                    if (!Arsse::$db->userExists($user)) {
-                        $this->autoProvision($user, $password);
-                    }
-                    $out = true;
-                } else {
-                    $out = $this->u->auth($user, $password);
-                }
-                break;
-            case User\Driver::FUNCT_NOT_IMPLEMENTED:
-                $out = false;
-                break;
+        if (Arsse::$conf->userPreAuth) {
+            $out = true;
+        } else {
+            $out = $this->u->auth($user, $password);
+        }
+        if ($out && !Arsse::$db->userExists($user)) {
+            $this->autoProvision($user, $password);
         }
         if (!$out) {
             $this->id = $prevUser;
@@ -75,118 +60,71 @@ class User {
         return $out;
     }
 
-    public function driverFunctions(string $function = null) {
-        return $this->u->driverFunctions($function);
-    }
-
     public function list(): array {
         $func = "userList";
-        switch ($this->u->driverFunctions($func)) {
-            case User\Driver::FUNC_EXTERNAL:
-                // we handle authorization checks for external drivers
-                if (!$this->authorize("", $func)) {
-                    throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => ""]);
-                }
-                // no break
-            case User\Driver::FUNC_INTERNAL:
-                // internal functions handle their own authorization
-                return $this->u->userList($domain);
-            case User\Driver::FUNCT_NOT_IMPLEMENTED:
-                throw new User\ExceptionNotImplemented("notImplemented", ["action" => $func, "user" => $domain]);
+        if (!$this->authorize("", $func)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => ""]);
         }
+        return $this->u->userList($domain);
     }
 
     public function exists(string $user): bool {
         $func = "userExists";
-        switch ($this->u->driverFunctions($func)) {
-            case User\Driver::FUNC_EXTERNAL:
-                // we handle authorization checks for external drivers
-                if (!$this->authorize($user, $func)) {
-                    throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
-                }
-                $out = $this->u->userExists($user);
-                if ($out && !Arsse::$db->userExists($user)) {
-                    $this->autoProvision($user, "");
-                }
-                return $out;
-            case User\Driver::FUNC_INTERNAL:
-                // internal functions handle their own authorization
-                return $this->u->userExists($user);
-            case User\Driver::FUNCT_NOT_IMPLEMENTED:
-                // throwing an exception here would break all kinds of stuff; we just report that the user exists
-                return true;
+        if (!$this->authorize($user, $func)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
         }
+        $out = $this->u->userExists($user);
+        if (!$this->u instanceof InternalDriver) {
+            // if an alternative driver doesn't match the internal database, add or remove the user as appropriate
+            if (!$out && Arsse::$db->userExists($user)) {
+                Arsse::$db->userRemove($user);
+            } elseif ($out && !Arsse::$db->userExists($user)) {
+                $this->autoProvision($user, "");
+            }
+        }
+        return $out;
     }
 
     public function add($user, $password = null): string {
         $func = "userAdd";
-        switch ($this->u->driverFunctions($func)) {
-            case User\Driver::FUNC_EXTERNAL:
-                // we handle authorization checks for external drivers
-                if (!$this->authorize($user, $func)) {
-                    throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
-                }
-                $newPassword = $this->u->userAdd($user, $password);
-                // if there was no exception and we don't have the user in the internal database, add it
-                if (!Arsse::$db->userExists($user)) {
-                    $this->autoProvision($user, $newPassword);
-                }
-                return $newPassword;
-            case User\Driver::FUNC_INTERNAL:
-                // internal functions handle their own authorization
-                return $this->u->userAdd($user, $password);
-            case User\Driver::FUNCT_NOT_IMPLEMENTED:
-                throw new User\ExceptionNotImplemented("notImplemented", ["action" => $func, "user" => $user]);
+        if (!$this->authorize($user, $func)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
         }
+        $newPassword = $this->u->userAdd($user, $password);
+        // if there was no exception and we don't have the user in the internal database, add it
+        if (!$this->u instanceof InternalDriver && !Arsse::$db->userExists($user)) {
+            $this->autoProvision($user, $newPassword);
+        }
+        return $newPassword;
     }
 
     public function remove(string $user): bool {
         $func = "userRemove";
-        switch ($this->u->driverFunctions($func)) {
-            case User\Driver::FUNC_EXTERNAL:
-                // we handle authorization checks for external drivers
-                if (!$this->authorize($user, $func)) {
-                    throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
-                }
-                $out = $this->u->userRemove($user);
-                if ($out && Arsse::$db->userExists($user)) {
-                    // if the user was removed and we have it in our data, remove it there
-                    if (!Arsse::$db->userExists($user)) {
-                        Arsse::$db->userRemove($user);
-                    }
-                }
-                return $out;
-            case User\Driver::FUNC_INTERNAL:
-                // internal functions handle their own authorization
-                return $this->u->userRemove($user);
-            case User\Driver::FUNCT_NOT_IMPLEMENTED:
-                throw new User\ExceptionNotImplemented("notImplemented", ["action" => $func, "user" => $user]);
+        if (!$this->authorize($user, $func)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
         }
+        $out = $this->u->userRemove($user);
+        if ($out && !$this->u instanceof InternalDriver && Arsse::$db->userExists($user)) {
+            // if the user was removed and we have it in our data, remove it there
+            Arsse::$db->userRemove($user);
+        }
+        return $out;
     }
 
     public function passwordSet(string $user, string $newPassword = null, $oldPassword = null): string {
         $func = "userPasswordSet";
-        switch ($this->u->driverFunctions($func)) {
-            case User\Driver::FUNC_EXTERNAL:
-                // we handle authorization checks for external drivers
-                if (!$this->authorize($user, $func)) {
-                    throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
-                }
-                $out = $this->u->userPasswordSet($user, $newPassword, $oldPassword);
-                if (Arsse::$db->userExists($user)) {
-                    // if the password change was successful and the user exists, set the internal password to the same value
-                    Arsse::$db->userPasswordSet($user, $out);
-                } else {
-                    // if the user does not exists in the internal database, create it
-                    $this->autoProvision($user, $out);
-                }
-                return $out;
-            case User\Driver::FUNC_INTERNAL:
-                // internal functions handle their own authorization
-                return $this->u->userPasswordSet($user, $newPassword);
-            case User\Driver::FUNCT_NOT_IMPLEMENTED:
-                throw new User\ExceptionNotImplemented("notImplemented", ["action" => $func, "user" => $user]);
+        if (!$this->authorize($user, $func)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
         }
+        $out = $this->u->userPasswordSet($user, $newPassword, $oldPassword);
+        if (!$this->u instanceof InternalDriver && Arsse::$db->userExists($user)) {
+            // if the password change was successful and the user exists, set the internal password to the same value
+            Arsse::$db->userPasswordSet($user, $out);
+        } elseif (!$this->u instanceof InternalDriver){
+            // if the user does not exists in the internal database, create it
+            $this->autoProvision($user, $out);
+        }
+        return $out;
     }
 
     protected function autoProvision(string $user, string $password = null): string {
