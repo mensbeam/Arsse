@@ -651,24 +651,12 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function userStatus(array $url, array $data): ResponseInterface {
-        $data = Arsse::$user->propertiesGet(Arsse::$user->id, true);
-        // construct the avatar structure, if an image is available
-        if (isset($data['avatar'])) {
-            $avatar = [
-                'data' => base64_encode($data['avatar']['data']),
-                'mime' => (string) $data['avatar']['type'],
-            ];
-        } else {
-            $avatar = null;
-        }
-        // construct the rest of the structure
-        $out = [
+        return new Response([
             'userId' => (string) Arsse::$user->id,
-            'displayName' => (string) ($data['name'] ?? Arsse::$user->id),
+            'displayName' => (string) Arsse::$user->id,
             'lastLoginTimestamp' => time(),
-            'avatar' => $avatar,
-        ];
-        return new Response($out);
+            'avatar' => null,
+        ]);
     }
 
     protected function cleanupBefore(array $url, array $data): ResponseInterface {
