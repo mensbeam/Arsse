@@ -6,7 +6,6 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
-use PasswordGenerator\Generator as PassGen;
 use JKingWeb\DrUUID\UUID;
 use JKingWeb\Arsse\Misc\Query;
 use JKingWeb\Arsse\Misc\Context;
@@ -83,7 +82,7 @@ class Database {
         return $out;
     }
 
-    protected function generateIn(array $values, string $type) {
+    protected function generateIn(array $values, string $type): array {
         $out = [
             [], // query clause
             [], // binding types
@@ -122,21 +121,15 @@ class Database {
         return (bool) $this->db->prepare("SELECT count(*) from arsse_users where id = ?", "str")->run($user)->getValue();
     }
 
-    public function userAdd(string $user, string $password = null): string {
+    public function userAdd(string $user, string $password): bool {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         } elseif ($this->userExists($user)) {
             throw new User\Exception("alreadyExists", ["action" => __FUNCTION__, "user" => $user]);
         }
-        if ($password===null) {
-            $password = (new PassGen)->length(Arsse::$conf->userTempPasswordLength)->get();
-        }
-        $hash = "";
-        if (strlen($password) > 0) {
-            $hash = password_hash($password, \PASSWORD_DEFAULT);
-        }
+        $hash = (strlen($password) > 0) ? password_hash($password, \PASSWORD_DEFAULT) : "";
         $this->db->prepare("INSERT INTO arsse_users(id,password) values(?,?)", "str", "str")->runArray([$user,$hash]);
-        return $password;
+        return true;
     }
 
     public function userRemove(string $user): bool {
@@ -169,21 +162,15 @@ class Database {
         return (string) $this->db->prepare("SELECT password from arsse_users where id = ?", "str")->run($user)->getValue();
     }
 
-    public function userPasswordSet(string $user, string $password = null): string {
+    public function userPasswordSet(string $user, string $password): bool {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         } elseif (!$this->userExists($user)) {
             throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
-        if ($password===null) {
-            $password = (new PassGen)->length(Arsse::$conf->userTempPasswordLength)->get();
-        }
-        $hash = "";
-        if (strlen($password) > 0) {
-            $hash = password_hash($password, \PASSWORD_DEFAULT);
-        }
+        $hash = (strlen($password) > 0) ? password_hash($password, \PASSWORD_DEFAULT) : "";
         $this->db->prepare("UPDATE arsse_users set password = ? where id = ?", "str", "str")->run($hash, $user);
-        return $password;
+        return true;
     }
 
     public function sessionCreate(string $user): string {

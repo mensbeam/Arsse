@@ -60,33 +60,11 @@ trait SeriesUser {
     }
 
     public function testAddANewUser() {
-        $this->assertSame("", Arsse::$db->userAdd("john.doe@example.org", ""));
+        $this->assertTrue(Arsse::$db->userAdd("john.doe@example.org", ""));
         Phake::verify(Arsse::$user)->authorize("john.doe@example.org", "userAdd");
         $state = $this->primeExpectations($this->data, ['arsse_users' => ['id','name','rights']]);
         $state['arsse_users']['rows'][] = ["john.doe@example.org", null, 0];
         $this->compareExpectations($state);
-    }
-
-    /**
-     * @depends testGetAPassword
-     * @depends testAddANewUser
-     */
-    public function testAddANewUserWithARandomPassword() {
-        $user1 = "john.doe@example.org";
-        $user2 = "john.doe@example.net";
-        $pass1 = Arsse::$db->userAdd($user1);
-        $pass2 = Arsse::$db->userAdd($user2);
-        $this->assertSame(Arsse::$conf->userTempPasswordLength, strlen($pass1));
-        $this->assertSame(Arsse::$conf->userTempPasswordLength, strlen($pass2));
-        $this->assertNotEquals($pass1, $pass2);
-        $hash1 = Arsse::$db->userPasswordGet($user1);
-        $hash2 = Arsse::$db->userPasswordGet($user2);
-        Phake::verify(Arsse::$user)->authorize($user1, "userAdd");
-        Phake::verify(Arsse::$user)->authorize($user2, "userAdd");
-        Phake::verify(Arsse::$user)->authorize($user1, "userPasswordGet");
-        Phake::verify(Arsse::$user)->authorize($user2, "userPasswordGet");
-        $this->assertTrue(password_verify($pass1, $hash1), "Failed verifying password of $user1 '$pass1' against hash '$hash1'.");
-        $this->assertTrue(password_verify($pass2, $hash2), "Failed verifying password of $user2 '$pass2' against hash '$hash2'.");
     }
 
     public function testAddAnExistingUser() {
@@ -136,18 +114,13 @@ trait SeriesUser {
      */
     public function testSetAPassword() {
         $user = "john.doe@example.com";
+        $pass = "secret";
         $this->assertEquals("", Arsse::$db->userPasswordGet($user));
-        $pass = Arsse::$db->userPasswordSet($user, "secret");
+        $this->assertTrue(Arsse::$db->userPasswordSet($user, $pass));
         $hash = Arsse::$db->userPasswordGet($user);
         $this->assertNotEquals("", $hash);
         Phake::verify(Arsse::$user)->authorize($user, "userPasswordSet");
         $this->assertTrue(password_verify($pass, $hash), "Failed verifying password of $user '$pass' against hash '$hash'.");
-    }
-    public function testSetARandomPassword() {
-        $user = "john.doe@example.com";
-        $this->assertEquals("", Arsse::$db->userPasswordGet($user));
-        $pass = Arsse::$db->userPasswordSet($user);
-        $hash = Arsse::$db->userPasswordGet($user);
     }
 
     public function testSetThePasswordOfAMissingUser() {

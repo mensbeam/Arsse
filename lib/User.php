@@ -6,7 +6,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
-use JKingWeb\Arsse\User\Internal\Driver as InternalDriver;
+use PasswordGenerator\Generator as PassGen;
 
 class User {
 
@@ -80,7 +80,7 @@ class User {
         if (!$this->authorize($user, $func)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
         }
-        return $this->u->userAdd($user, $password);
+        return $this->u->userAdd($user, $password) ?? $this->u->userAdd($user, $this->generatePassword());
     }
 
     public function remove(string $user): bool {
@@ -103,11 +103,15 @@ class User {
         if (!$this->authorize($user, $func)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
         }
-        $out = $this->u->userPasswordSet($user, $newPassword, $oldPassword);
-        if (!$this->u instanceof InternalDriver && Arsse::$db->userExists($user)) {
+        $out = $this->u->userPasswordSet($user, $newPassword, $oldPassword) ?? $this->u->userPasswordSet($user, $this->generatePassword(), $oldPassword);
+        if (Arsse::$db->userExists($user)) {
             // if the password change was successful and the user exists, set the internal password to the same value
             Arsse::$db->userPasswordSet($user, $out);
         }
         return $out;
+    }
+
+    protected function generatePassword(): string {
+        return (new PassGen)->length(Arsse::$conf->userTempPasswordLength)->get();
     }
 }

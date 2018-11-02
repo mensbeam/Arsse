@@ -22,11 +22,11 @@ interface Driver {
     // checks whether a user exists
     public function userExists(string $user): bool;
     // adds a user
-    public function userAdd(string $user, string $password = null): string;
+    public function userAdd(string $user, string $password = null);
     // removes a user
     public function userRemove(string $user): bool;
     // lists all users
     public function userList(): array;
     // sets a user's password; if the driver does not require the old password, it may be ignored
-    public function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null): string;
+    public function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null);
 }
