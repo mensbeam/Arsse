@@ -36,9 +36,9 @@ abstract class AbstractResult implements Result {
         return iterator_to_array($this, false);
     }
 
-    abstract public function changes();
+    abstract public function changes(): int;
 
-    abstract public function lastId();
+    abstract public function lastId(): int;
 
     // PHP iterator methods
 
