@@ -17,11 +17,11 @@ class Result extends \JKingWeb\Arsse\Db\AbstractResult {
 
     // actual public methods
 
-    public function changes() {
+    public function changes(): int {
         return $this->rows;
     }
 
-    public function lastId() {
+    public function lastId(): int {
         return $this->id;
     }
 

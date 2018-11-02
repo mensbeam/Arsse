@@ -11,7 +11,7 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\ExceptionTimeout;
 
 trait ExceptionBuilder {
-    public function exceptionBuild() {
+    public function exceptionBuild(): array {
         switch ($this->db->lastErrorCode()) {
             case self::SQLITE_BUSY:
                 return [ExceptionTimeout::class, 'general', $this->db->lastErrorMsg()];

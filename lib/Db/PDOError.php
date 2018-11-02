@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Db;
 
 trait PDOError {
-    public function exceptionBuild() {
+    public function exceptionBuild(): array {
         if ($this instanceof Statement) {
             $err = $this->st->errorInfo();
         } else {

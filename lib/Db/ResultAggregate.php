@@ -15,13 +15,13 @@ class ResultAggregate extends AbstractResult {
 
     // actual public methods
 
-    public function changes() {
+    public function changes(): int {
         return array_reduce($this->data, function ($sum, $value) {
             return $sum + $value->changes();
         }, 0);
     }
 
-    public function lastId() {
+    public function lastId(): int {
         return $this->data[sizeof($this->data) - 1]->lastId();
     }
 
