@@ -29,34 +29,33 @@ class User {
         return $classes;
     }
 
-    public function __construct() {
-        $driver = Arsse::$conf->userDriver;
-        $this->u = new $driver();
+    public function __construct(\JKingWeb\Arsse\User\Driver $driver = null) {
+        $this->u = $driver ?? new Arsse::$conf->userDriver;
     }
 
     public function __toString() {
         return (string) $this->id;
     }
 
-    // at one time there was a complicated authorization system; it exists vestigially to support a later revival if desired
     public function authorize(string $affectedUser, string $action): bool {
-        return true;
+        // at one time there was a complicated authorization system; it exists vestigially to support a later revival if desired
+        return $this->u->authorize($affectedUser, $action);
     }
 
     public function auth(string $user, string $password): bool {
-        $prevUser = $this->id ?? null;
+        $prevUser = $this->id;
         $this->id = $user;
         if (Arsse::$conf->userPreAuth) {
             $out = true;
         } else {
             $out = $this->u->auth($user, $password);
         }
+        // if authentication was successful and we don't have the user in the internal database, add it
+        // users must be in the internal database to preserve referential integrity
         if ($out && !Arsse::$db->userExists($user)) {
-            $this->autoProvision($user, $password);
+            Arsse::$db->userAdd($user, $password);
         }
-        if (!$out) {
-            $this->id = $prevUser;
-        }
+        $this->id = $prevUser;
         return $out;
     }
 
@@ -65,7 +64,7 @@ class User {
         if (!$this->authorize("", $func)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => ""]);
         }
-        return $this->u->userList($domain);
+        return $this->u->userList();
     }
 
     public function exists(string $user): bool {
@@ -73,16 +72,7 @@ class User {
         if (!$this->authorize($user, $func)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
         }
-        $out = $this->u->userExists($user);
-        if (!$this->u instanceof InternalDriver) {
-            // if an alternative driver doesn't match the internal database, add or remove the user as appropriate
-            if (!$out && Arsse::$db->userExists($user)) {
-                Arsse::$db->userRemove($user);
-            } elseif ($out && !Arsse::$db->userExists($user)) {
-                $this->autoProvision($user, "");
-            }
-        }
-        return $out;
+        return $this->u->userExists($user);
     }
 
     public function add($user, $password = null): string {
@@ -90,12 +80,7 @@ class User {
         if (!$this->authorize($user, $func)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
         }
-        $newPassword = $this->u->userAdd($user, $password);
-        // if there was no exception and we don't have the user in the internal database, add it
-        if (!$this->u instanceof InternalDriver && !Arsse::$db->userExists($user)) {
-            $this->autoProvision($user, $newPassword);
-        }
-        return $newPassword;
+        return $this->u->userAdd($user, $password);
     }
 
     public function remove(string $user): bool {
@@ -103,12 +88,14 @@ class User {
         if (!$this->authorize($user, $func)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
         }
-        $out = $this->u->userRemove($user);
-        if ($out && !$this->u instanceof InternalDriver && Arsse::$db->userExists($user)) {
-            // if the user was removed and we have it in our data, remove it there
-            Arsse::$db->userRemove($user);
+        try {
+            return $this->u->userRemove($user);
+        } finally {
+            if (Arsse::$db->userExists($user)) {
+                // if the user was removed and we (still) have it in the internal database, remove it there
+                Arsse::$db->userRemove($user);
+            }
         }
-        return $out;
     }
 
     public function passwordSet(string $user, string $newPassword = null, $oldPassword = null): string {
@@ -120,15 +107,7 @@ class User {
         if (!$this->u instanceof InternalDriver && Arsse::$db->userExists($user)) {
             // if the password change was successful and the user exists, set the internal password to the same value
             Arsse::$db->userPasswordSet($user, $out);
-        } elseif (!$this->u instanceof InternalDriver){
-            // if the user does not exists in the internal database, create it
-            $this->autoProvision($user, $out);
         }
-        return $out;
-    }
-
-    protected function autoProvision(string $user, string $password = null): string {
-        $out = Arsse::$db->userAdd($user, $password);
         return $out;
     }
 }

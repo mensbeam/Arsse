@@ -6,7 +6,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\User\Internal;
 
-final class Driver implements \JKingWeb\Arsse\User\Driver {
+class Driver implements \JKingWeb\Arsse\User\Driver {
     public function __construct() {
     }
 
@@ -24,6 +24,10 @@ final class Driver implements \JKingWeb\Arsse\User\Driver {
             return true;
         }
         return password_verify($password, $hash);
+    }
+
+    public function authorize(string $affectedUser, string $action): bool {
+        return true;
     }
 
     public function userExists(string $user): bool {
