@@ -9,11 +9,11 @@ namespace JKingWeb\Arsse\Db;
 use JKingWeb\Arsse\Db\Exception;
 
 class ResultEmpty extends AbstractResult {
-    public function changes() {
+    public function changes(): int {
         return 0;
     }
 
-    public function lastId() {
+    public function lastId(): int {
         return 0;
     }
 

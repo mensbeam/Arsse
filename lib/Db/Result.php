@@ -17,6 +17,6 @@ interface Result extends \Iterator {
     public function getAll(): array;
     public function getValue();
 
-    public function changes();
-    public function lastId();
+    public function changes(): int;
+    public function lastId(): int;
 }
