@@ -90,7 +90,7 @@ class User {
         }
         try {
             return $this->u->userRemove($user);
-        } finally {
+        } finally { // @codeCoverageIgnore
             if (Arsse::$db->userExists($user)) {
                 // if the user was removed and we (still) have it in the internal database, remove it there
                 Arsse::$db->userRemove($user);
