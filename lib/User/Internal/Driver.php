@@ -6,6 +6,8 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\User\Internal;
 
+use JKingWeb\Arsse\Arsse;
+
 class Driver implements \JKingWeb\Arsse\User\Driver {
     public function __construct() {
     }
