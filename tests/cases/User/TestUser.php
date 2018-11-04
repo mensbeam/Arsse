@@ -20,13 +20,14 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function setUp() {
         $this->clearData();
-        Arsse::$conf = new Conf;
+        $this->setConf();
         // create a mock database interface
         Arsse::$db = Phake::mock(Database::class);
         Phake::when(Arsse::$db)->begin->thenReturn(Phake::mock(\JKingWeb\Arsse\Db\Transaction::class));
         // create a mock user driver
         $this->drv = Phake::mock(Driver::class);
     }
+
     public function testListDrivers() {
         $exp = [
             'JKingWeb\\Arsse\\User\\Internal\\Driver' => Arsse::$lang->msg("Driver.User.Internal.Name"),

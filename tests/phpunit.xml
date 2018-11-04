@@ -34,8 +34,8 @@
         <file>cases/Misc/TestContext.php</file>
     </testsuite>
     <testsuite name="User management">
-        <file>cases/User/TestUser.php</file>
         <file>cases/User/TestInternal.php</file>
+        <file>cases/User/TestUser.php</file>
     </testsuite>
     <testsuite name="Feed parser">
         <file>cases/Feed/TestFetching.php</file>

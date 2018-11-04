@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\User\Internal;
 
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\User\Exception;
 
 class Driver implements \JKingWeb\Arsse\User\Driver {
     public function __construct() {
@@ -18,7 +19,7 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
 
     public function auth(string $user, string $password): bool {
         try {
-            $hash = Arsse::$db->userPasswordGet($user);
+            $hash = $this->userPasswordGet($user);
         } catch (Exception $e) {
             return false;
         }
@@ -55,5 +56,9 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
     public function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null) {
         // do nothing: the internal database is updated regardless of what the driver does (assuming it does not throw an exception)
         return $newPassword;
+    }
+
+    protected function userPasswordGet(string $user): string {
+        return Arsse::$db->userPasswordGet($user);
     }
 }
