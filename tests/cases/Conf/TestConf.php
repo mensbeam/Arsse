@@ -39,20 +39,20 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testLoadDefaultValues() {
-        $this->assertInstanceOf(Conf::class, new Conf());
+        $this->assertInstanceOf(Conf::class, new Conf);
     }
 
     /** @depends testLoadDefaultValues */
     public function testImportFromArray() {
         $arr = ['lang' => "xx"];
-        $conf = new Conf();
+        $conf = new Conf;
         $conf->import($arr);
         $this->assertEquals("xx", $conf->lang);
     }
 
     /** @depends testImportFromArray */
     public function testImportFromFile() {
-        $conf = new Conf();
+        $conf = new Conf;
         $conf->importFile(self::$path."confGood");
         $this->assertEquals("xx", $conf->lang);
         $conf = new Conf(self::$path."confGood");
@@ -97,7 +97,7 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testExportToArray() {
-        $conf = new Conf();
+        $conf = new Conf;
         $conf->lang = ["en", "fr"]; // should not be exported: not scalar
         $conf->dbSQLite3File = "test.db"; // should be exported: value changed
         $conf->userDriver = null; // should be exported: changed value, even when null
@@ -116,7 +116,7 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @depends testExportToArray
      * @depends testImportFromFile */
     public function testExportToFile() {
-        $conf = new Conf();
+        $conf = new Conf;
         $conf->lang = ["en", "fr"]; // should not be exported: not scalar
         $conf->dbSQLite3File = "test.db"; // should be exported: value changed
         $conf->userDriver = null; // should be exported: changed value, even when null

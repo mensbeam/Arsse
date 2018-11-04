@@ -27,11 +27,11 @@ class TestDriver extends \JKingWeb\Arsse\Test\AbstractTest {
             $this->markTestSkipped("PDO-SQLite extension not loaded");
         }
         $this->clearData();
-        $conf = new Conf();
-        Arsse::$conf = $conf;
-        $conf->dbDriver = PDODriver::class;
-        $conf->dbSQLite3Timeout = 0;
-        $conf->dbSQLite3File = tempnam(sys_get_temp_dir(), 'ook');
+        $this->setConf([
+            'dbDriver' => PDODriver::class,
+            'dbSQLite3Timeout' => 0,
+            'dbSQLite3File' => tempnam(sys_get_temp_dir(), 'ook'),
+        ]);
         $this->drv = new PDODriver();
         $this->ch = new \PDO("sqlite:".Arsse::$conf->dbSQLite3File, "", "", [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
     }

@@ -108,8 +108,7 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
         chmod($path."Awal/arsse.db-wal", 0111);
         chmod($path."Ashm/arsse.db-shm", 0111);
         // set up configuration
-        Arsse::$conf = new Conf();
-        Arsse::$conf->dbSQLite3File = ":memory:";
+        $this->setConf(['dbSQLite3File' => ":memory:"]);
     }
 
     public function tearDown() {

@@ -26,11 +26,11 @@ class TestDriver extends \JKingWeb\Arsse\Test\AbstractTest {
             $this->markTestSkipped("SQLite extension not loaded");
         }
         $this->clearData();
-        $conf = new Conf();
-        Arsse::$conf = $conf;
-        $conf->dbDriver = Driver::class;
-        $conf->dbSQLite3Timeout = 0;
-        $conf->dbSQLite3File = tempnam(sys_get_temp_dir(), 'ook');
+        $this->setConf([
+            'dbDriver' => Driver::class,
+            'dbSQLite3Timeout' => 0,
+            'dbSQLite3File' => tempnam(sys_get_temp_dir(), 'ook'),
+        ]);
         $this->drv = new Driver();
         $this->ch = new \SQLite3(Arsse::$conf->dbSQLite3File);
         $this->ch->enableExceptions(true);

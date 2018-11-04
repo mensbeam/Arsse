@@ -31,9 +31,7 @@ class TestUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         }
         $this->clearData();
         $this->vfs = vfsStream::setup("schemata", null, ['SQLite3' => []]);
-        if (!$conf) {
-            $conf = new Conf();
-        }
+        $conf = $conf ?? new Conf;
         $conf->dbDriver = Driver::class;
         $conf->dbSQLite3File = ":memory:";
         Arsse::$conf = $conf;
@@ -111,7 +109,7 @@ class TestUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testDeclineManualUpdate() {
         // turn auto-updating off
-        $conf = new Conf();
+        $conf = new Conf;
         $conf->dbAutoUpdate = false;
         $this->setUp($conf);
         $this->assertException("updateManual", "Db");

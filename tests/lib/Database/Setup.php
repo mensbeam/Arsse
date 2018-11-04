@@ -22,8 +22,7 @@ trait Setup {
     public function setUp() {
         // establish a clean baseline
         $this->clearData();
-        // create a default configuration
-        Arsse::$conf = new Conf();
+        $this->setConf();
         // configure and create the relevant database driver
         $this->setUpDriver();
         // create the database interface with the suitable driver
