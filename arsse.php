@@ -18,7 +18,8 @@ if (\PHP_SAPI=="cli") {
     // initialize the CLI; this automatically handles --help and --version
     $cli = new CLI;
     // handle other CLI requests; some do not require configuration
-    $cli->dispatch();
+    $exitStatus = $cli->dispatch();
+    exit($exitStatus);
 } else {
     // load configuration
     $conf = file_exists(BASE."config.php") ? new Conf(BASE."config.php") : new Conf;
