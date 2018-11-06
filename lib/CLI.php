@@ -6,33 +6,42 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
-class CLI {
-    protected $args = [];
+use Docopt\Response as Opts;
 
-    protected function usage(): string {
-        $prog = basename($_SERVER['argv'][0]);
-        return <<<USAGE_TEXT
+class CLI {
+    const USAGE = <<<USAGE_TEXT
 Usage:
-    $prog daemon
-    $prog feed refresh <n>
-    $prog conf save-defaults <file>
-    $prog user add <username> [<password>]
-    $prog --version
-    $prog --help | -h
+    arsse.php daemon
+    arsse.php feed refresh <n>
+    arsse.php conf save-defaults [<file>]
+    arsse.php user [list]
+    arsse.php user add <username> [<password>]
+    arsse.php user remove <username>
+    arsse.php user set-pass [--oldpass=<pass>] <username> [<password>]
+    arsse.php user auth <username> <password>
+    arsse.php --version
+    arsse.php --help | -h
 
 The Arsse command-line interface currently allows you to start the refresh
-daemon, refresh a specific feed by numeric ID, add a user, or save default
+daemon, refresh a specific feed by numeric ID, manage users, or save default
 configuration to a sample file.
 USAGE_TEXT;
+
+    protected function usage($prog): string {
+        $prog = basename($prog);
+        return str_replace("arsse.php", $prog, self::USAGE);
     }
 
-    public function __construct(array $argv = null) {
-        $argv = $argv ?? array_slice($_SERVER['argv'], 1);
-        $this->args = \Docopt::handle($this->usage(), [
-            'argv' => $argv,
-            'help' => true,
-            'version' => Arsse::VERSION,
-        ]);
+    protected function command(array $options, $args): string {
+        foreach ($options as $cmd) {
+            foreach (explode(" ", $cmd) as $part) {
+                if (!$args[$part]) {
+                    continue 2;
+                }
+            }
+            return $cmd;
+        }
+        return "";
     }
 
     protected function loadConf(): bool {
@@ -43,50 +52,91 @@ USAGE_TEXT;
         return true;
     }
 
-    public function dispatch(array $args = null): int {
-        // act on command line
-        $args = $args ?? $this->args;
-        if ($this->command("daemon", $args)) {
-            $this->loadConf();
-            return $this->daemon();
-        } elseif ($this->command("feed refresh", $args)) {
-            $this->loadConf();
-            return $this->feedRefresh((int) $args['<n>']);
-        } elseif ($this->command("conf save-defaults", $args)) {
-            return $this->confSaveDefaults($args['<file>']);
-        } elseif ($this->command("user add", $args)) {
-            $this->loadConf();
-            return $this->userAdd($args['<username>'], $args['<password>']);
-        }
-    }
-
-    protected function command($cmd, $args): bool {
-        foreach (explode(" ", $cmd) as $part) {
-            if (!$args[$part]) {
-                return false;
+    public function dispatch(array $argv = null) {
+        $argv = $argv ?? $_SERVER['argv'];
+        $argv0 = array_shift($argv);
+        $args = \Docopt::handle($this->usage($argv0), [
+            'argv' => $argv,
+            'help' => false,
+        ]);
+        try {
+            switch ($this->command(["--help", "--version", "daemon", "feed refresh", "conf save-defaults", "user"], $args)) {
+                case "--help":
+                    echo $this->usage($argv0).\PHP_EOL;
+                    return 0;
+                case "--version":
+                    echo Arsse::VERSION.\PHP_EOL;
+                    return 0;
+                case "daemon":
+                    $this->loadConf();
+                    $this->getService()->watch(true);
+                    return 0;
+                case "feed refresh":
+                    $this->loadConf();
+                    return (int) !Arsse::$db->feedUpdate((int) $args['<n>'], true);
+                case "conf save-defaults":
+                    $file = $args['<file>'];
+                    $file = ($file=="-" ? null : $file) ?? "php://output";
+                    return (int) !($this->getConf())->exportFile($file, true);
+                case "user":
+                    $this->loadConf();
+                    return $this->userManage($args);
             }
+        } catch (AbstractException $e) {
+            fwrite(STDERR, $e->getMessage().\PHP_EOL);
+            return $e->getCode();
         }
-        return true;
     }
 
-    public function daemon(bool $loop = true): int {
-        (new Service)->watch($loop);
-        return 0; // FIXME: should return the exception code of thrown exceptions
+    /** @codeCoverageIgnore */
+    protected function getService(): Service {
+        return new Service;
     }
 
-    public function feedRefresh(int $id): int {
-        return (int) !Arsse::$db->feedUpdate($id); // FIXME: exception error codes should be returned here
+    /** @codeCoverageIgnore */
+    protected function getConf(): Conf {
+        return new Conf;
     }
 
-    public function confSaveDefaults(string $file): int {
-        return (int) !(new Conf)->exportFile($file, true);
+    protected function userManage($args): int {
+        switch ($this->command(["add", "remove", "set-pass", "list", "auth"], $args)) {
+            case "add":
+                return $this->userAddOrSetPassword("add", $args["<username>"], $args["<password>"]);
+            case "set-pass":
+                return $this->userAddOrSetPassword("passwordSet", $args["<username>"], $args["<password>"], $args["--oldpass"]);
+            case "remove":
+                return (int) !Arsse::$user->remove($args["<username>"]);
+            case "auth":
+                return $this->userAuthenticate($args["<username>"], $args["<password>"]);
+            case "list":
+            case "":
+                return $this->userList();
+        }
     }
 
-    public function userAdd(string $user, string $password = null): int {
-        $passwd = Arsse::$user->add($user, $password);
+    protected function userAddOrSetPassword(string $method, string $user, string $password = null, string $oldpass = null): int {
+        $passwd = Arsse::$user->$method(...array_slice(func_get_args(), 1));
         if (is_null($password)) {
             echo $passwd.\PHP_EOL;
         }
         return 0;
+    }
+
+    protected function userList(): int {
+        $list = Arsse::$user->list();
+        if ($list) {
+            echo implode(\PHP_EOL, $list).\PHP_EOL;
+        }
+        return 0;
+    }
+
+    protected function userAuthenticate(string $user, string $password): int {
+        if (Arsse::$user->auth($user, $password)) {
+            echo Arsse::$lang->msg("CLI.Auth.Success").\PHP_EOL;
+            return 0;
+        } else {
+            echo Arsse::$lang->msg("CLI.Auth.Failure").\PHP_EOL;
+            return 1;
+        }
     }
 }

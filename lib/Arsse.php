@@ -19,10 +19,10 @@ class Arsse {
     public static $user;
 
     public static function load(Conf $conf) {
-        static::$lang = new Lang();
+        static::$lang = static::$lang ?? new Lang;
         static::$conf = $conf;
         static::$lang->set($conf->lang);
-        static::$db = new Database();
-        static::$user = new User();
+        static::$db = static::$db ?? new Database;
+        static::$user = static::$user ?? new User;
     }
 }

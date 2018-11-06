@@ -4,6 +4,9 @@
  * See LICENSE and AUTHORS files for details */
 
 return [
+    'CLI.Auth.Success'                                                     => 'Authentication successful',
+    'CLI.Auth.Failure'                                                     => 'Authentication failed',
+
     'API.TTRSS.Category.Uncategorized'                                     => 'Uncategorized',
     'API.TTRSS.Category.Special'                                           => 'Special',
     'API.TTRSS.Category.Labels'                                            => 'Labels',
