@@ -4,8 +4,58 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "2feb94beae7c769e2df081af57c89fed",
+    "content-hash": "4252b3d7817c9a4a5f60ac81f28202e2",
     "packages": [
+        {
+            "name": "clue/arguments",
+            "version": "v2.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/clue/php-arguments.git",
+                "reference": "eb8356918bc51ac7e595e4ad92a2bc1c1d2754c2"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/clue/php-arguments/zipball/eb8356918bc51ac7e595e4ad92a2bc1c1d2754c2",
+                "reference": "eb8356918bc51ac7e595e4ad92a2bc1c1d2754c2",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/functions.php"
+                ],
+                "psr-4": {
+                    "Clue\\Arguments\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Christian Lück",
+                    "email": "christian@lueck.tv"
+                }
+            ],
+            "description": "The simple way to split your command line string into an array of command arguments in PHP.",
+            "homepage": "https://github.com/clue/php-arguments",
+            "keywords": [
+                "args",
+                "arguments",
+                "argv",
+                "command",
+                "command line",
+                "explode",
+                "parse",
+                "split"
+            ],
+            "time": "2016-12-18T14:37:39+00:00"
+        },
         {
             "name": "doctrine/instantiator",
             "version": "1.0.5",

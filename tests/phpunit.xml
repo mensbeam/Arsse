@@ -96,8 +96,9 @@
         <file>cases/REST/TinyTinyRSS/TestIcon.php</file>
         <file>cases/REST/TinyTinyRSS/PDO/TestAPI.php</file>
     </testsuite>
-    <testsuite name="Refresh service">
+    <testsuite name="Admin tools">
         <file>cases/Service/TestService.php</file>
+        <file>cases/CLI/TestCLI.php</file>
     </testsuite>
 </testsuites>
 </phpunit>

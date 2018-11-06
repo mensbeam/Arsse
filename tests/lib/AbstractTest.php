@@ -9,6 +9,7 @@ namespace JKingWeb\Arsse\Test;
 use JKingWeb\Arsse\Exception;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Conf;
+use JKingWeb\Arsse\CLI;
 use JKingWeb\Arsse\Misc\Date;
 use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\RequestInterface;
@@ -25,6 +26,18 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
 
     public function tearDown() {
         $this->clearData();
+    }
+
+    public function clearData(bool $loadLang = true) {
+        date_default_timezone_set("America/Toronto");
+        $r = new \ReflectionClass(\JKingWeb\Arsse\Arsse::class);
+        $props = array_keys($r->getStaticProperties());
+        foreach ($props as $prop) {
+            Arsse::$$prop = null;
+        }
+        if ($loadLang) {
+            Arsse::$lang = new \JKingWeb\Arsse\Lang();
+        }
     }
 
     public function setConf(array $conf = []) {
@@ -70,6 +83,13 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         $this->assertEquals($exp->getHeaders(), $act->getHeaders(), $text);
     }
 
+    public function assertTime($exp, $test, string $msg = null) {
+        $test = $this->approximateTime($exp, $test);
+        $exp  = Date::transform($exp, "iso8601");
+        $test = Date::transform($test, "iso8601");
+        $this->assertSame($exp, $test, $msg);
+    }
+
     public function approximateTime($exp, $act) {
         if (is_null($act)) {
             return null;
@@ -84,25 +104,5 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         } else {
             return $act;
         }
-    }
-
-    public function assertTime($exp, $test, string $msg = null) {
-        $test = $this->approximateTime($exp, $test);
-        $exp  = Date::transform($exp, "iso8601");
-        $test = Date::transform($test, "iso8601");
-        $this->assertSame($exp, $test, $msg);
-    }
-
-    public function clearData(bool $loadLang = true): bool {
-        date_default_timezone_set("America/Toronto");
-        $r = new \ReflectionClass(\JKingWeb\Arsse\Arsse::class);
-        $props = array_keys($r->getStaticProperties());
-        foreach ($props as $prop) {
-            Arsse::$$prop = null;
-        }
-        if ($loadLang) {
-            Arsse::$lang = new \JKingWeb\Arsse\Lang();
-        }
-        return true;
     }
 }

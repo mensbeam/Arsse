@@ -2,6 +2,7 @@
     "require": {
         "phpunit/phpunit": "^6.5",
         "phake/phake": "^3.0",
+        "clue/arguments": "^2.0",
         "mikey179/vfsStream": "^1.6",
         "webmozart/glob": "^4.1"
     }

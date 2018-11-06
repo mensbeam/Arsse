@@ -135,6 +135,14 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertArraySubset($exp, $arr);
     }
 
+    /** @depends testExportToFile */
+    public function testExportToStdout() {
+        $conf = new Conf(self::$path."confGood");
+        $conf->exportFile(self::$path."confGood");
+        $this->expectOutputString(file_get_contents(self::$path."confGood"));
+        $conf->exportFile("php://output");
+    }
+
     public function testExportToFileWithoutWritePermission() {
         $this->assertException("fileUnwritable", "Conf");
         (new Conf)->exportFile(self::$path."confUnreadable");
