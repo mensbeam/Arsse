@@ -928,4 +928,15 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/cleanup/after-update"));
         Phake::verify(Arsse::$db)->articleCleanup();
     }
+
+    public function testQueryTheUserStatus() {
+        $act = $this->req("GET", "/user");
+        $exp = new Response([
+            'userId' => Arsse::$user->id,
+            'displayName' => Arsse::$user->id,
+            'lastLoginTimestamp' => $this->approximateTime($act->getPayload()['lastLoginTimestamp'], new \DateTimeImmutable),
+            'avatar' => null,
+        ]);
+        $this->assertMessage($exp, $act);
+    }
 }
