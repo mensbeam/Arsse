@@ -103,7 +103,7 @@ USAGE_TEXT;
             case "add":
                 return $this->userAddOrSetPassword("add", $args["<username>"], $args["<password>"]);
             case "set-pass":
-                return $this->userAddOrSetPassword("passwordSet", $args["<username>"], $args["<password>"], $args["<oldpass>"]);
+                return $this->userAddOrSetPassword("passwordSet", $args["<username>"], $args["<password>"], $args["--oldpass"]);
             case "remove":
                 return (int) !Arsse::$user->remove($args["<username>"]);
             case "auth":

@@ -115,15 +115,13 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideUserList */
     public function testListUsers(string $cmd, array $list, int $exitStatus, string $output) {
-        Arsse::$user = Phake::mock(User::class);
-        Phake::when(Arsse::$user)->list()->thenReturn($list);
+        // Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
+        Arsse::$user = $this->createMock(User::class);
+        Arsse::$user->method("list")->willReturn($list);
         $this->assertConsole(new CLI, $cmd, $exitStatus, $output);
-        $this->assertLoaded(true);
-        Phake::verify(Arsse::$user)->list;
     }
 
     public function provideUserList() {
-        return [];
         $list = ["john.doe@example.com", "jane.doe@example.com"];
         $str = implode(PHP_EOL, $list);
         return [
@@ -131,6 +129,95 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             ["arsse.php user",      $list, 0, $str],
             ["arsse.php user list", [],    0, ""],
             ["arsse.php user",      [],    0, ""],
+        ];
+    }
+
+    /** @dataProvider provideUserAdditions */
+    public function testAddAUser(string $cmd, int $exitStatus, string $output) {
+        // Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
+        Arsse::$user = $this->createMock(User::class);
+        Arsse::$user->method("add")->will($this->returnCallback(function($user, $pass = null) {
+            switch ($user) {
+                case "john.doe@example.com":
+                    throw new \JKingWeb\Arsse\User\Exception("alreadyExists");
+                case "jane.doe@example.com":
+                    return is_null($pass) ? "random password" : $pass;
+            }
+        }));
+        $this->assertConsole(new CLI, $cmd, $exitStatus, $output);
+    }
+
+    public function provideUserAdditions() {
+        return [
+            ["arsse.php user add john.doe@example.com",          10403, ""],
+            ["arsse.php user add jane.doe@example.com",          0,     "random password"],
+            ["arsse.php user add jane.doe@example.com superman", 0,     ""],
+        ];
+    }
+
+    /** @dataProvider provideUserAuthentication */
+    public function testAuthenticateAUser(string $cmd, int $exitStatus, string $output) {
+        // Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
+        Arsse::$user = $this->createMock(User::class);
+        Arsse::$user->method("auth")->will($this->returnCallback(function($user, $pass) {
+            return (
+                ($user == "john.doe@example.com" && $pass == "secret") ||
+                ($user == "jane.doe@example.com" && $pass == "superman")
+            );
+        }));
+        $this->assertConsole(new CLI, $cmd, $exitStatus, $output);
+    }
+
+    public function provideUserAuthentication() {
+        $l = new \JKingWeb\Arsse\Lang;
+        return [
+            ["arsse.php user auth john.doe@example.com secret",     0, $l("CLI.Auth.Success")],
+            ["arsse.php user auth john.doe@example.com superman",   1, $l("CLI.Auth.Failure")],
+            ["arsse.php user auth jane.doe@example.com secret",     1, $l("CLI.Auth.Failure")],
+            ["arsse.php user auth jane.doe@example.com superman",   0, $l("CLI.Auth.Success")],
+        ];
+    }
+
+    /** @dataProvider provideUserRemovals */
+    public function testRemoveAUser(string $cmd, int $exitStatus, string $output) {
+        // Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
+        Arsse::$user = $this->createMock(User::class);
+        Arsse::$user->method("remove")->will($this->returnCallback(function($user) {
+            if ($user == "john.doe@example.com") {
+                return true;
+            }
+            throw new \JKingWeb\Arsse\User\Exception("doesNotExist");
+        }));
+        $this->assertConsole(new CLI, $cmd, $exitStatus, $output);
+    }
+
+    public function provideUserRemovals() {
+        return [
+            ["arsse.php user remove john.doe@example.com", 0,     ""],
+            ["arsse.php user remove jane.doe@example.com", 10402, ""],
+        ];
+    }
+
+    /** @dataProvider provideUserPasswordChanges */
+    public function testChangeAUserPassword(string $cmd, int $exitStatus, string $output) {
+        // Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
+        Arsse::$user = $this->createMock(User::class);
+        Arsse::$user->method("passwordSet")->will($this->returnCallback(function($user, $pass = null) {
+            switch ($user) {
+                case "jane.doe@example.com":
+                    throw new \JKingWeb\Arsse\User\Exception("doesNotExist");
+                case "john.doe@example.com":
+                    return is_null($pass) ? "random password" : $pass;
+            }
+        }));
+        $this->assertConsole(new CLI, $cmd, $exitStatus, $output);
+    }
+
+    public function provideUserPasswordChanges() {
+        return [
+            ["arsse.php user set-pass john.doe@example.com",          0,     "random password"],
+            ["arsse.php user set-pass john.doe@example.com superman", 0,     ""],
+            ["arsse.php user set-pass jane.doe@example.com",          10402, ""],
         ];
     }
 }
