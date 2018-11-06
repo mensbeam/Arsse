@@ -47,8 +47,6 @@ USAGE_TEXT;
     protected function loadConf(): bool {
         $conf = file_exists(BASE."config.php") ? new Conf(BASE."config.php") : new Conf;
         Arsse::load($conf);
-        // command-line operations will never respect authorization
-        Arsse::$user->authorizationEnabled(false);
         return true;
     }
 

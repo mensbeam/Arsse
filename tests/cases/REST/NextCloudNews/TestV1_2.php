@@ -314,7 +314,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             $server['HTTP_CONTENT_TYPE'] = "application/json";
         }
         $req = new ServerRequest($server, [], $url, $method, "php://memory");
-        if (Arsse::$user->auth()) {
+        if (Arsse::$user->auth("john.doe@example.com", "secret")) {
             $req = $req->withAttribute("authenticated", true)->withAttribute("authenticatedUser", "john.doe@example.com");
         }
         foreach ($headers as $key => $value) {
@@ -344,7 +344,6 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         // create a mock user manager
         Arsse::$user = Phake::mock(User::class);
         Phake::when(Arsse::$user)->auth->thenReturn(true);
-        Phake::when(Arsse::$user)->rightsGet->thenReturn(100);
         Arsse::$user->id = "john.doe@example.com";
         // create a mock database interface
         Arsse::$db = Phake::mock(Database::class);
@@ -696,10 +695,6 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         Phake::when(Arsse::$db)->feedListStale->thenReturn($this->v(array_column($out, "id")));
         $exp = new Response(['feeds' => $out]);
         $this->assertMessage($exp, $this->req("GET", "/feeds/all"));
-        // retrieving the list when not an admin fails
-        Phake::when(Arsse::$user)->rightsGet->thenReturn(0);
-        $exp = new EmptyResponse(403);
-        $this->assertMessage($exp, $this->req("GET", "/feeds/all"));
     }
 
     public function testUpdateAFeed() {
@@ -721,10 +716,6 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[2])));
         $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[3])));
         $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[4])));
-        // updating a feed when not an admin fails
-        Phake::when(Arsse::$user)->rightsGet->thenReturn(0);
-        $exp = new EmptyResponse(403);
-        $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[0])));
     }
 
     public function testListArticles() {
@@ -929,10 +920,6 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("GET", "/cleanup/before-update"));
         Phake::verify(Arsse::$db)->feedCleanup();
-        // performing a cleanup when not an admin fails
-        Phake::when(Arsse::$user)->rightsGet->thenReturn(0);
-        $exp = new EmptyResponse(403);
-        $this->assertMessage($exp, $this->req("GET", "/cleanup/before-update"));
     }
 
     public function testCleanUpAfterUpdate() {
@@ -940,9 +927,16 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("GET", "/cleanup/after-update"));
         Phake::verify(Arsse::$db)->articleCleanup();
-        // performing a cleanup when not an admin fails
-        Phake::when(Arsse::$user)->rightsGet->thenReturn(0);
-        $exp = new EmptyResponse(403);
-        $this->assertMessage($exp, $this->req("GET", "/cleanup/after-update"));
+    }
+
+    public function testQueryTheUserStatus() {
+        $act = $this->req("GET", "/user");
+        $exp = new Response([
+            'userId' => Arsse::$user->id,
+            'displayName' => Arsse::$user->id,
+            'lastLoginTimestamp' => $this->approximateTime($act->getPayload()['lastLoginTimestamp'], new \DateTimeImmutable),
+            'avatar' => null,
+        ]);
+        $this->assertMessage($exp, $act);
     }
 }

@@ -6,7 +6,6 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
-use PasswordGenerator\Generator as PassGen;
 use JKingWeb\DrUUID\UUID;
 use JKingWeb\Arsse\Misc\Query;
 use JKingWeb\Arsse\Misc\Context;
@@ -83,7 +82,7 @@ class Database {
         return $out;
     }
 
-    protected function generateIn(array $values, string $type) {
+    protected function generateIn(array $values, string $type): array {
         $out = [
             [], // query clause
             [], // binding types
@@ -122,21 +121,15 @@ class Database {
         return (bool) $this->db->prepare("SELECT count(*) from arsse_users where id = ?", "str")->run($user)->getValue();
     }
 
-    public function userAdd(string $user, string $password = null): string {
+    public function userAdd(string $user, string $password): bool {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         } elseif ($this->userExists($user)) {
             throw new User\Exception("alreadyExists", ["action" => __FUNCTION__, "user" => $user]);
         }
-        if ($password===null) {
-            $password = (new PassGen)->length(Arsse::$conf->userTempPasswordLength)->get();
-        }
-        $hash = "";
-        if (strlen($password) > 0) {
-            $hash = password_hash($password, \PASSWORD_DEFAULT);
-        }
+        $hash = (strlen($password) > 0) ? password_hash($password, \PASSWORD_DEFAULT) : "";
         $this->db->prepare("INSERT INTO arsse_users(id,password) values(?,?)", "str", "str")->runArray([$user,$hash]);
-        return $password;
+        return true;
     }
 
     public function userRemove(string $user): bool {
@@ -149,24 +142,13 @@ class Database {
         return true;
     }
 
-    public function userList(string $domain = null): array {
+    public function userList(): array {
         $out = [];
-        if ($domain !== null) {
-            if (!Arsse::$user->authorize("@".$domain, __FUNCTION__)) {
-                throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $domain]);
-            }
-            $domain = str_replace(["\\","%","_"], ["\\\\", "\\%", "\\_"], $domain);
-            $domain = "%@".$domain;
-            foreach ($this->db->prepare("SELECT id from arsse_users where id like ?", "str")->run($domain) as $user) {
-                $out[] = $user['id'];
-            }
-        } else {
-            if (!Arsse::$user->authorize("", __FUNCTION__)) {
-                throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => "global"]);
-            }
-            foreach ($this->db->query("SELECT id from arsse_users") as $user) {
-                $out[] = $user['id'];
-            }
+        if (!Arsse::$user->authorize("", __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => ""]);
+        }
+        foreach ($this->db->query("SELECT id from arsse_users") as $user) {
+            $out[] = $user['id'];
         }
         return $out;
     }
@@ -180,66 +162,14 @@ class Database {
         return (string) $this->db->prepare("SELECT password from arsse_users where id = ?", "str")->run($user)->getValue();
     }
 
-    public function userPasswordSet(string $user, string $password = null): string {
+    public function userPasswordSet(string $user, string $password): bool {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         } elseif (!$this->userExists($user)) {
             throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
-        if ($password===null) {
-            $password = (new PassGen)->length(Arsse::$conf->userTempPasswordLength)->get();
-        }
-        $hash = "";
-        if (strlen($password) > 0) {
-            $hash = password_hash($password, \PASSWORD_DEFAULT);
-        }
+        $hash = (strlen($password) > 0) ? password_hash($password, \PASSWORD_DEFAULT) : "";
         $this->db->prepare("UPDATE arsse_users set password = ? where id = ?", "str", "str")->run($hash, $user);
-        return $password;
-    }
-
-    public function userPropertiesGet(string $user): array {
-        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
-            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        }
-        $prop = $this->db->prepare("SELECT name,rights from arsse_users where id = ?", "str")->run($user)->getRow();
-        if (!$prop) {
-            throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
-        }
-        return $prop;
-    }
-
-    public function userPropertiesSet(string $user, array $properties): array {
-        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
-            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        } elseif (!$this->userExists($user)) {
-            throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
-        }
-        $valid = [ // FIXME: add future properties
-            "name" => "str",
-        ];
-        list($setClause, $setTypes, $setValues) = $this->generateSet($properties, $valid);
-        if (!$setClause) {
-            // if no changes would actually be applied, just return
-            return $this->userPropertiesGet($user);
-        }
-        $this->db->prepare("UPDATE arsse_users set $setClause where id = ?", $setTypes, "str")->run($setValues, $user);
-        return $this->userPropertiesGet($user);
-    }
-
-    public function userRightsGet(string $user): int {
-        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
-            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        }
-        return (int) $this->db->prepare("SELECT rights from arsse_users where id = ?", "str")->run($user)->getValue();
-    }
-
-    public function userRightsSet(string $user, int $rights): bool {
-        if (!Arsse::$user->authorize($user, __FUNCTION__, $rights)) {
-            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        } elseif (!$this->userExists($user)) {
-            throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
-        }
-        $this->db->prepare("UPDATE arsse_users set rights = ? where id = ?", "int", "str")->run($rights, $user);
         return true;
     }
 
@@ -596,10 +526,7 @@ class Database {
         if (!ValueInfo::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'type' => "int > 0"]);
         }
-        // disable authorization checks for the list call
-        Arsse::$user->authorizationEnabled(false);
         $sub = $this->subscriptionList($user, null, true, (int) $id)->getRow();
-        Arsse::$user->authorizationEnabled(true);
         if (!$sub) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
         }

@@ -6,37 +6,59 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\User\Internal;
 
-final class Driver implements \JKingWeb\Arsse\User\Driver {
-    use InternalFunctions;
+use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\User\Exception;
 
-    protected $db;
-    protected $functions = [
-        "auth"                    => self::FUNC_INTERNAL,
-        "userList"                => self::FUNC_INTERNAL,
-        "userExists"              => self::FUNC_INTERNAL,
-        "userAdd"                 => self::FUNC_INTERNAL,
-        "userRemove"              => self::FUNC_INTERNAL,
-        "userPasswordSet"         => self::FUNC_INTERNAL,
-        "userPropertiesGet"       => self::FUNC_INTERNAL,
-        "userPropertiesSet"       => self::FUNC_INTERNAL,
-        "userRightsGet"           => self::FUNC_INTERNAL,
-        "userRightsSet"           => self::FUNC_INTERNAL,
-    ];
+class Driver implements \JKingWeb\Arsse\User\Driver {
+    public function __construct() {
+    }
 
     public static function driverName(): string {
         return Arsse::$lang->msg("Driver.User.Internal.Name");
     }
 
-    public function driverFunctions(string $function = null) {
-        if ($function===null) {
-            return $this->functions;
+    public function auth(string $user, string $password): bool {
+        try {
+            $hash = $this->userPasswordGet($user);
+        } catch (Exception $e) {
+            return false;
         }
-        if (array_key_exists($function, $this->functions)) {
-            return $this->functions[$function];
-        } else {
-            return self::FUNC_NOT_IMPLEMENTED;
+        if ($password==="" && $hash==="") {
+            return true;
         }
+        return password_verify($password, $hash);
     }
 
-    // see InternalFunctions.php for bulk of methods
+    public function authorize(string $affectedUser, string $action): bool {
+        return true;
+    }
+
+    public function userExists(string $user): bool {
+        return Arsse::$db->userExists($user);
+    }
+
+    public function userAdd(string $user, string $password = null) {
+        if (isset($password)) {
+            // only add the user if the password is not null; the user manager will retry with a generated password if null is returned
+            Arsse::$db->userAdd($user, $password);
+        }
+        return $password;
+    }
+
+    public function userRemove(string $user): bool {
+        return Arsse::$db->userRemove($user);
+    }
+
+    public function userList(): array {
+        return Arsse::$db->userList();
+    }
+
+    public function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null) {
+        // do nothing: the internal database is updated regardless of what the driver does (assuming it does not throw an exception)
+        return $newPassword;
+    }
+
+    protected function userPasswordGet(string $user): string {
+        return Arsse::$db->userPasswordGet($user);
+    }
 }

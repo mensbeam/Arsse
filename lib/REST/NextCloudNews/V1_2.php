@@ -365,10 +365,6 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     // return list of feeds which should be refreshed
     protected function feedListStale(array $url, array $data): ResponseInterface {
-        // function requires admin rights per spec
-        if (Arsse::$user->rightsGet(Arsse::$user->id)==User::RIGHTS_NONE) {
-            return new EmptyResponse(403);
-        }
         // list stale feeds which should be checked for updates
         $feeds = Arsse::$db->feedListStale();
         $out = [];
@@ -381,10 +377,6 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     // refresh a feed
     protected function feedUpdate(array $url, array $data): ResponseInterface {
-        // function requires admin rights per spec
-        if (Arsse::$user->rightsGet(Arsse::$user->id)==User::RIGHTS_NONE) {
-            return new EmptyResponse(403);
-        }
         try {
             Arsse::$db->feedUpdate($data['feedId']);
         } catch (ExceptionInput $e) {
@@ -659,40 +651,20 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function userStatus(array $url, array $data): ResponseInterface {
-        $data = Arsse::$user->propertiesGet(Arsse::$user->id, true);
-        // construct the avatar structure, if an image is available
-        if (isset($data['avatar'])) {
-            $avatar = [
-                'data' => base64_encode($data['avatar']['data']),
-                'mime' => (string) $data['avatar']['type'],
-            ];
-        } else {
-            $avatar = null;
-        }
-        // construct the rest of the structure
-        $out = [
+        return new Response([
             'userId' => (string) Arsse::$user->id,
-            'displayName' => (string) ($data['name'] ?? Arsse::$user->id),
+            'displayName' => (string) Arsse::$user->id,
             'lastLoginTimestamp' => time(),
-            'avatar' => $avatar,
-        ];
-        return new Response($out);
+            'avatar' => null,
+        ]);
     }
 
     protected function cleanupBefore(array $url, array $data): ResponseInterface {
-        // function requires admin rights per spec
-        if (Arsse::$user->rightsGet(Arsse::$user->id)==User::RIGHTS_NONE) {
-            return new EmptyResponse(403);
-        }
         Service::cleanupPre();
         return new EmptyResponse(204);
     }
 
     protected function cleanupAfter(array $url, array $data): ResponseInterface {
-        // function requires admin rights per spec
-        if (Arsse::$user->rightsGet(Arsse::$user->id)==User::RIGHTS_NONE) {
-            return new EmptyResponse(403);
-        }
         Service::cleanupPost();
         return new EmptyResponse(204);
     }

@@ -34,10 +34,8 @@
         <file>cases/Misc/TestContext.php</file>
     </testsuite>
     <testsuite name="User management">
-        <file>cases/User/TestMockInternal.php</file>
-        <file>cases/User/TestMockExternal.php</file>
         <file>cases/User/TestInternal.php</file>
-        <file>cases/User/TestAuthorization.php</file>
+        <file>cases/User/TestUser.php</file>
     </testsuite>
     <testsuite name="Feed parser">
         <file>cases/Feed/TestFetching.php</file>

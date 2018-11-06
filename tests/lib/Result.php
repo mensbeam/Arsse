@@ -37,11 +37,11 @@ class Result implements \JKingWeb\Arsse\Db\Result {
         return iterator_to_array($this, false);
     }
 
-    public function changes() {
+    public function changes(): int {
         return $this->rows;
     }
 
-    public function lastId() {
+    public function lastId(): int {
         return $this->id;
     }
 

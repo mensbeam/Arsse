@@ -181,7 +181,6 @@ LONG_STRING;
         // create a mock user manager
         Arsse::$user = Phake::mock(User::class);
         Phake::when(Arsse::$user)->auth->thenReturn(true);
-        Phake::when(Arsse::$user)->rightsGet->thenReturn(100);
         Arsse::$user->id = "john.doe@example.com";
         // create a mock database interface
         Arsse::$db = Phake::mock(Database::class);
