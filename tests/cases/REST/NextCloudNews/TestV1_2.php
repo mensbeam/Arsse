@@ -939,4 +939,25 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         ]);
         $this->assertMessage($exp, $act);
     }
+    
+    public function testPreferJsonOverQueryParameters() {
+        $in = ['name' => "Software"];
+        $url = "/folders?name=Hardware";
+        $out1 = ['id' => 1, 'name' => "Software"];
+        $out2 = ['id' => 2, 'name' => "Hardware"];
+        Phake::when(Arsse::$db)->folderAdd($this->anything(), $this->anything())->thenReturn(2);
+        Phake::when(Arsse::$db)->folderAdd($this->anything(), $in)->thenReturn(1);
+        Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 1)->thenReturn($this->v($out1));
+        Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 2)->thenReturn($this->v($out2));
+        $exp = new Response(['folders' => [$out1]]);
+        $this->assertMessage($exp, $this->req("POST", "/folders?name=Hardware", json_encode($in)));
+    }
+    
+    public function testMeldJsonAndQueryParameters() {
+        $in = ['oldestFirst' => true];
+        $url = "/items?type=2";
+        Phake::when(Arsse::$db)->articleList->thenReturn(new Result([]));
+        $this->req("GET", $url, json_encode($in));
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(false)->starred(true), Database::LIST_TYPICAL);
+    }
 }

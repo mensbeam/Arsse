@@ -97,15 +97,12 @@ As a general rule, The Arsse should yield the same output as the reference imple
 - The API's "updater" routes do not require administrator priviledges as The Arsse has no concept of user classes
 - The "updater" console commands mentioned in the protocol specification are not implemented, as The Arsse does not implement the required NextCloud subsystems
 - The `lastLoginTimestamp` attribute of the user metadata is always the current time: The Arsse's implementation of the protocol is fully stateless
-
-#### Ambiguities
-
-- NCN specifies that GET parameters are treated "the same" as request body parameters; it does not specify what to do in cases where they conflict. The Arsse chooses to give GET parameters precedence
-- NCN does not define validity of folder and names other than to specify that the empty string is invalid. The Arsse further considers any string composed only of whitesapce to be invalid
-- NCN does not specify a return code for bulk-marking operations without a `newestItemId` provided; The Arsse returns `422`
-- NCN does not specify what should be done when creating a feed in a folder which does not exist; the Arsse adds the feed to the root folder
-- NCN does not specify what should be done when moving a feed to a folder which does not exist; The Arsse return `422`
-- NCN does not specify what should be done when renaming a feed to an invalid title, nor what constitutes an invalid title; The Arsse uses the same rules as it does for folders, and returns `422` in cases of rejection
+- Syntactically invalid JSON input will yield a `400 Bad Request` response instead of falling back to GET parameters
+- Folder names consisting only of whitespace are rejected along with the empty string
+- Feed titles consisting only of whitespace or the empty string are rejected with a `422 Unprocessable Entity` reponse instead of being accepted
+- Bulk-marking operations without a `newestItemId` argument result in a `422 Unprocessable Entity` reponse instead of silently failing
+- Creating a feed in a folder which does not exist places the feed in the root folder rather than suppressing the feed
+- Moving a feed to a folder which does not exist results in a `422 Unprocessable Entity` reponse rather than suppressing the feed
 
 ### Tiny Tiny RSS
 

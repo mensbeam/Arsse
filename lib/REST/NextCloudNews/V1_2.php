@@ -111,8 +111,8 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } else {
             $data = [];
         }
-        // FIXME: Do query parameters take precedence in NextCloud? Is there a conflict error when values differ?
-        $data = $this->normalizeInput(array_merge($data, $req->getQueryParams()), $this->validInput, "unix");
+        // merge GET and POST data, and normalize it. POST parameters are preferred over GET parameters
+        $data = $this->normalizeInput(array_merge($req->getQueryParams(), $data), $this->validInput, "unix");
         // check to make sure the requested function is implemented
         try {
             $func = $this->chooseCall((string) $target, $req->getMethod());
