@@ -1,4 +1,4 @@
-Version 0.5.0 (2018-11-??)
+Version 0.5.0 (2018-11-07)
 ==========================
 
 New features:
@@ -9,9 +9,11 @@ Bug fixes:
 - Print command-line error messages more sensibly
 - Allow exporting default configuration to standard output
 - Fail correctly on authentication failure
+- Prefer JSON data over GET parameters in NextCloud News
 
 Changes:
 - Simplify user management backend to minimize opportunity for bugs
+- Document previously unknown NextCloud News behaviour
 
 Version 0.4.0 (2018-10-26)
 ==========================
