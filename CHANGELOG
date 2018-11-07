@@ -1,3 +1,18 @@
+Version 0.5.0 (2018-11-??)
+==========================
+
+New features:
+- Command line functionality for listing, removing, and changing the password
+  of users as well as testing authentication
+
+Bug fixes:
+- Print command-line error messages more sensibly
+- Allow exporting default configuration to standard output
+- Fail correctly on authentication failure
+
+Changes:
+- Simplify user management backend to minimize opportunity for bugs
+
 Version 0.4.0 (2018-10-26)
 ==========================
 

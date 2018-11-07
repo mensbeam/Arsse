@@ -6,7 +6,6 @@ At present the software should be considered in an "alpha" state: though its cor
 
 - Support for more database engines (PostgreSQL, MySQL, MariaDB)
 - Providing more sync protocols (Google Reader, Fever, others)
-- Complete tools for managing users
 - Better packaging and configuration samples
 
 ## Requirements
@@ -42,7 +41,9 @@ Sample configuration parameters for Nginx can be found in `arsse/dist/nginx.conf
 
 ### Adding users
 
-The Arsse currently includes a `user add <username> [<password>]` console command to add users to the database; other user management tasks require manual database edits. Alternatively, if the Web server is configured to handle authentication, you may set the configuration option `userPreAuth` to `true` and The Arsse will defer to the server and automatically add any missing users as it encounters them.
+The Arsse includes a `user add <username> [<password>]` console command to add users to the database; for example running `php arsse.php user add admin password` will add the user `admin` with the password `pasword` to the database. Other commands for managing users are also available.
+
+Alternatively, if the Web server is configured to handle authentication, you may set the configuration option `userPreAuth` to `true` and The Arsse will defer to the Web server and automatically add any missing users as it encounters them.
 
 ## Installation from source
 
@@ -148,29 +149,35 @@ We are not aware of any other extensions to the TTRSS protocol. If you know of a
 - The protocol documentation makes mention of a `search_mode` parameter for the `getHeadlines` operation, but this seems to be ignored; The Arsse does not implement it
 - The protocol documentation makes mention of an `output_mode` parameter for the `getCounters` operation, but this seems to be ignored; The Arsse does not implement it
 - The documentation for the `getCompactHeadlines` operation states the default value for `limit` is 20, but the reference implementation defaults to unlimited; The Arsse also defaults to unlimited
-- It is assumed TTRSS exposes undocumented behaviour; unless otherwise noted The Arsse only implements documented behaviour
+- It is assumed TTRSS exposes other undocumented behaviour; unless otherwise noted The Arsse only implements documented behaviour
 
 #### Interaction with HTTP authentication
 
-Tiny Tiny RSS itself is unaware of HTTP authentication: if HTTP authentication is used in the server configuration, it has no effect on authentication in the API. The Arsse, however, makes use of HTTP authentication for NextCloud News, and can do so for TTRSS as well. In a default configuration The Arsse functions in the same way as TTRSS: HTTP authentication and API authentication are completely separate and independent. Behaviour is summarized below:
+Tiny Tiny RSS itself is unaware of HTTP authentication: if HTTP authentication is used in the server configuration, it has no effect on authentication in the API. The Arsse, however, makes use of HTTP authentication for NextCloud News, and can do so for TTRSS as well. In a default configuration The Arsse functions in the same way as TTRSS: HTTP authentication and API authentication are completely separate and independent. Alternative behaviour is summarized below:
 
 - With default settings:
-    - Clients may optionally provide HTTP credentials; API authentication then proceeds as normal
+    - Clients may optionally provide HTTP credentials
+    - API authentication proceeds as normal
     - All feed icons are visible to unauthenticated clients
 - If the `userHTTPAuthRequired` setting is `true`:
-    - Clients must pass HTTP authentication; API authentication then proceeds as normal
+    - Clients must pass HTTP authentication
+    - API authentication proceeds as normal
     - Feed icons are visible only to their owners
 - If the `userSessionEnforced` setting is `false`:
-    - Clients may optionally provide HTTP credentials; if they are valid API authentication is skipped: tokens are issued upon login, but ignored for HTTP-authenticated requests
+    - Clients may optionally provide HTTP credentials
+    - If HTTP authentication succeeded API authentication is skipped: tokens are issued upon login, but ignored for HTTP-authenticated requests
     - All feed icons are visible to unauthenticated clients
 - If the `userHTTPAuthRequired` setting is `true` and the `userSessionEnforced` setting is `false`:
-    - Clients must pass HTTP authentication; API authentication is skipped: tokens are issued upon login, but thereafter ignored
+    - Clients must pass HTTP authentication
+    - API authentication is skipped: tokens are issued upon login, but thereafter ignored
     - Feed icons are visible only to their owners
 - If the `userPreAuth` setting is `true`:
-    - The Web server asserts authentication was successful; API authentication only checks that HTTP and API user names match
+    - The Web server asserts HTTP authentication was successful
+    - API authentication only checks that HTTP and API user names match
     - Feed icons are visible only to their owners
 - If the `userPreAuth` setting is `true` and the `userSessionEnforced` setting is `false`:
-    - The Web server asserts authentication was successful; API authentication is skipped: tokens are issued upon login, but thereafter ignored
+    - The Web server asserts HTTP authentication was successful
+    - API authentication is skipped: tokens are issued upon login, but thereafter ignored
     - Feed icons are visible only to their owners
 
 In all cases, supplying invalid HTTP credentials will result in a 401 response.
