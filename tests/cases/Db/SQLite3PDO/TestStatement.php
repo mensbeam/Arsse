@@ -31,20 +31,6 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->clearData();
     }
 
-    protected function checkBinding($input, array $expectations, bool $strict = false) {
-        $nativeStatement = $this->c->prepare("SELECT ? as value");
-        $s = new self::$imp($this->c, $nativeStatement);
-        $types = array_unique(Statement::TYPES);
-        foreach ($types as $type) {
-            $s->retypeArray([$strict ? "strict $type" : $type]);
-            $val = $s->runArray([$input])->getRow()['value'];
-            $this->assertSame($expectations[$type], $val, "Binding from type $type failed comparison.");
-            $s->retype(...[$strict ? "strict $type" : $type]);
-            $val = $s->run(...[$input])->getRow()['value'];
-            $this->assertSame($expectations[$type], $val, "Binding from type $type failed comparison.");
-        }
-    }
-
     /** @dataProvider provideBindings */
     public function testBindATypedValue($value, $type, $exp) {
         $typeStr = "'".str_replace("'", "''", $type)."'";
