@@ -105,4 +105,18 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             return $act;
         }
     }
+
+    public function stringify($value) {
+        if (!is_array($value)) {
+            return $value;
+        }
+        foreach ($value as $k => $v) {
+            if (is_array($v)) {
+                $value[$k] = $this->v($v);
+            } elseif (is_int($v) || is_float($v)) {
+                $value[$k] = (string) $v;
+            }
+        }
+        return $value;
+    }
 }

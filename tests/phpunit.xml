@@ -45,13 +45,13 @@
         <file>cases/Db/TestTransaction.php</file>
         <file>cases/Db/TestResultAggregate.php</file>
         <file>cases/Db/TestResultEmpty.php</file>
-        <file>cases/Db/SQLite3/TestResult.php</file>
+        <file>cases/Db/TestResult.php</file>
+
         <file>cases/Db/SQLite3/TestStatement.php</file>
         <file>cases/Db/SQLite3/TestCreation.php</file>
         <file>cases/Db/SQLite3/TestDriver.php</file>
         <file>cases/Db/SQLite3/TestUpdate.php</file>
 
-        <file>cases/Db/SQLite3PDO/TestResult.php</file>
         <file>cases/Db/SQLite3PDO/TestStatement.php</file>
         <file>cases/Db/SQLite3PDO/TestCreation.php</file>
         <file>cases/Db/SQLite3PDO/TestDriver.php</file>
