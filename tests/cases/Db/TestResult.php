@@ -45,15 +45,18 @@ class TestResult extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideDrivers */
-    public function testConstructResult($driver, bool $stringCoersion, string $class, \Closure $func) {
-        if (is_null($driver)) {
+    public function testConstructResult(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
+        if (!$driverTestable) {
             $this->markTestSkipped();
         }
         $this->assertInstanceOf(Result::class, new $class(...$func("SELECT 1")));
     }
 
     /** @dataProvider provideDrivers */
-    public function testGetChangeCountAndLastInsertId($driver, bool $stringCoersion, string $class, \Closure $func) {
+    public function testGetChangeCountAndLastInsertId(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
+        if (!$driverTestable) {
+            $this->markTestSkipped();
+        }
         $func("CREATE TABLE if not exists arsse_meta(key varchar(255) primary key not null, value text)");
         $out = $func("INSERT INTO arsse_meta(key,value) values('test', 1)");
         $rows = $out[1][0];
@@ -64,7 +67,10 @@ class TestResult extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideDrivers */
-    public function testIterateOverResults($driver, bool $stringCoersion, string $class, \Closure $func) {
+    public function testIterateOverResults(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
+        if (!$driverTestable) {
+            $this->markTestSkipped();
+        }
         $exp = [0 => 1, 1 => 2, 2 => 3];
         $exp = $stringCoersion ? $this->stringify($exp) : $exp;
         foreach (new $class(...$func("SELECT 1 as col union select 2 as col union select 3 as col")) as $index => $row) {
@@ -74,7 +80,10 @@ class TestResult extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideDrivers */
-    public function testIterateOverResultsTwice($driver, bool $stringCoersion, string $class, \Closure $func) {
+    public function testIterateOverResultsTwice(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
+        if (!$driverTestable) {
+            $this->markTestSkipped();
+        }
         $exp = [0 => 1, 1 => 2, 2 => 3];
         $exp = $stringCoersion ? $this->stringify($exp) : $exp;
         $result = new $class(...$func("SELECT 1 as col union select 2 as col union select 3 as col"));
@@ -89,7 +98,10 @@ class TestResult extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideDrivers */
-    public function testGetSingleValues($driver, bool $stringCoersion, string $class, \Closure $func) {
+    public function testGetSingleValues(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
+        if (!$driverTestable) {
+            $this->markTestSkipped();
+        }
         $exp = [1867, 1970, 2112];
         $exp = $stringCoersion ? $this->stringify($exp) : $exp;
         $test = new $class(...$func("SELECT 1867 as year union select 1970 as year union select 2112 as year"));
@@ -100,7 +112,10 @@ class TestResult extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideDrivers */
-    public function testGetFirstValuesOnly($driver, bool $stringCoersion, string $class, \Closure $func) {
+    public function testGetFirstValuesOnly(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
+        if (!$driverTestable) {
+            $this->markTestSkipped();
+        }
         $exp = [1867, 1970, 2112];
         $exp = $stringCoersion ? $this->stringify($exp) : $exp;
         $test = new $class(...$func("SELECT 1867 as year, 19 as century union select 1970 as year, 20 as century union select 2112 as year, 22 as century"));
@@ -111,7 +126,10 @@ class TestResult extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideDrivers */
-    public function testGetRows($driver, bool $stringCoersion, string $class, \Closure $func) {
+    public function testGetRows(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
+        if (!$driverTestable) {
+            $this->markTestSkipped();
+        }
         $exp = [
             ['album' => '2112',             'track' => '2112'],
             ['album' => 'Clockwork Angels', 'track' => 'The Wreckers'],
@@ -123,7 +141,10 @@ class TestResult extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideDrivers */
-    public function testGetAllRows($driver, bool $stringCoersion, string $class, \Closure $func) {
+    public function testGetAllRows(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
+        if (!$driverTestable) {
+            $this->markTestSkipped();
+        }
         $exp = [
             ['album' => '2112',             'track' => '2112'],
             ['album' => 'Clockwork Angels', 'track' => 'The Wreckers'],
