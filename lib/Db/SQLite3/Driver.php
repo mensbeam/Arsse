@@ -20,16 +20,17 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
 
     protected $db;
 
-    public function __construct(string $dbFile = null) {
+    public function __construct(string $dbFile = null, string $dbKey = null) {
         // check to make sure required extension is loaded
-        if (!self::requirementsMet()) {
-            throw new Exception("extMissing", self::driverName()); // @codeCoverageIgnore
+        if (!static::requirementsMet()) {
+            throw new Exception("extMissing", static::driverName()); // @codeCoverageIgnore
         }
         // if no database file is specified in the configuration, use a suitable default
         $dbFile = $dbFile ?? Arsse::$conf->dbSQLite3File ?? \JKingWeb\Arsse\BASE."arsse.db";
+        $dbKey = $dbKey ?? Arsse::$conf->dbSQLite3Key;
         $timeout = Arsse::$conf->dbSQLite3Timeout * 1000;
         try {
-            $this->makeConnection($dbFile, Arsse::$conf->dbSQLite3Key);
+            $this->makeConnection($dbFile, $dbKey);
             // set the timeout; parameters are not allowed for pragmas, but this usage should be safe
             $this->exec("PRAGMA busy_timeout = $timeout");
             // set other initial options
