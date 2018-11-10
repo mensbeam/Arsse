@@ -25,6 +25,18 @@ class Conf {
     public $dbSQLite3Key            = "";
     /** @var integer Number of seconds for SQLite to wait before returning a timeout error when writing to the database */
     public $dbSQLite3Timeout        = 60;
+    /** @var string Host name, address, or socket path of PostgreSQL database server (if using PostgreSQL) */
+    public $dbPostgreSQLHost        = "";
+    /** @var string Log-in user name for PostgreSQL database server (if using PostgreSQL) */
+    public $dbPostgreSQLUser        = "arsse";
+    /** @var string Log-in password for PostgreSQL database server (if using PostgreSQL) */
+    public $dbPostgreSQLPass        = "";
+    /** @var integer Listening port for PostgreSQL database server (if using PostgreSQL over TCP) */
+    public $dbPostgreSQLPort        = 5432;
+    /** @var string Database name on PostgreSQL database server (if using PostgreSQL) */
+    public $dbPostgreSQLDb          = "arsse";
+    /** @var string Schema name on PostgreSQL database server (if using PostgreSQL) */
+    public $dbPostgreSQLSchema      = "";
 
     /** @var string Class of the user management driver in use (Internal by default) */
     public $userDriver              = User\Internal\Driver::class;
