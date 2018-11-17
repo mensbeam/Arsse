@@ -34,7 +34,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         return false;
     }
 
-    protected function makeConnection(string $user, string $pass, string $db, string $host, int $port) {
+    protected function makeConnection(string $user, string $pass, string $db, string $host, int $port, string $service) {
         // stub: native interface is not yet supported
         throw new \Exception;
     }
