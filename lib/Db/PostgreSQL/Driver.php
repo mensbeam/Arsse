@@ -14,7 +14,7 @@ use JKingWeb\Arsse\Db\ExceptionTimeout;
 
 class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
 
-    public function __construct(string $user = null, string $pass = null, string $db = null, string $host = null, int $port = null, string $schema = null) {
+    public function __construct(string $user = null, string $pass = null, string $db = null, string $host = null, int $port = null, string $schema = null, string $service = null) {
         // check to make sure required extension is loaded
         if (!static::requirementsMet()) {
             throw new Exception("extMissing", self::driverName()); // @codeCoverageIgnore
@@ -25,7 +25,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $host = $host ?? Arsse::$conf->dbPostgreSQLHost;
         $port = $port ?? Arsse::$conf->dbPostgreSQLPort;
         $schema = $schema ?? Arsse::$conf->dbPostgreSQLSchema;
-        $this->makeConnection($user, $pass, $db, $host, $port);
+        $service = $service ?? Arsse::$conf->dbPostgreSQLService;
+        $this->makeConnection($user, $pass, $db, $host, $port, $service);
     }
 
     public static function requirementsMet(): bool {
@@ -38,20 +39,38 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         throw new \Exception;
     }
 
-    protected function makeConnectionString(bool $pdo, string $user, string $pass, string $db, string $host, int $port): string {
-        $out = ['dbname' => $db];
-        if ($host != "") {
-            $out['host'] = $host;
-            $out['port'] = (string) $port;
+    public static function makeConnectionString(bool $pdo, string $user, string $pass, string $db, string $host, int $port, string $service): string {
+        $base = [
+            'client_encoding' => "UTF8",
+            'application_name' => "arsse",
+        ];
+        $out = [];
+        if ($service != "") {
+            $out['service'] = $service;
+        } else {
+            if ($host != "") {
+                $out['host'] = $host;
+            }
+            if ($port != 5432 && !($host != "" && $host[0] == "/")) {
+                $out['port'] = (string) $port;
+            }
+            if ($db != "") {
+                $out['dbname'] = $db;
+            }
+            if (!$pdo) {
+                $out['user'] = $user;
+                if ($pass != "") {
+                    $out['password'] = $pass;
+                }
+            }
         }
-        if (!$pdo) {
-            $out['user'] = $user;
-            $out['password'] = $pass;
-        }
+        ksort($out);
+        ksort($base);
+        $out = array_merge($out, $base);
         $out = array_map(function($v, $k) {
             return "$k='".str_replace("'", "\\'", str_replace("\\", "\\\\", $v))."'";
         }, $out, array_keys($out));
-        return implode(($pdo ? ";" : " "), $out);
+        return implode(" ", $out);
     }
 
     public function __destruct() {

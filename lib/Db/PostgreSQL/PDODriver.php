@@ -20,8 +20,8 @@ class PDODriver extends Driver {
         return class_exists("PDO") && in_array("pgsql", \PDO::getAvailableDrivers());
     }
 
-    protected function makeConnection(string $user, string $pass, string $db, string $host, int $port) {
-        $dsn = $this->makeconnectionString(true, $user, $pass, $db, $host, $port);
+    protected function makeConnection(string $user, string $pass, string $db, string $host, int $port, string $service) {
+        $dsn = $this->makeconnectionString(true, $user, $pass, $db, $host, $port, $service);
         $this->db = new \PDO("pgsql:$dsn", $user, $pass);
     }
 

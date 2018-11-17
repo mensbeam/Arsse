@@ -35,8 +35,10 @@ class Conf {
     public $dbPostgreSQLPort        = 5432;
     /** @var string Database name on PostgreSQL database server (if using PostgreSQL) */
     public $dbPostgreSQLDb          = "arsse";
-    /** @var string Schema name on PostgreSQL database server (if using PostgreSQL) */
+    /** @var string Schema name in PostgreSQL database (if using PostgreSQL) */
     public $dbPostgreSQLSchema      = "";
+    /** @var string Service file entry to use (if using PostgreSQL); if using a service entry all above parameters except schema are ignored */
+    public $dbPostgreSQLService     = "";
 
     /** @var string Class of the user management driver in use (Internal by default) */
     public $userDriver              = User\Internal\Driver::class;

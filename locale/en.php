@@ -20,6 +20,8 @@ return [
 
     'Driver.Db.SQLite3.Name'                                               => 'SQLite 3',
     'Driver.Db.SQLite3PDO.Name'                                            => 'SQLite 3 (PDO)',
+    'Driver.Db.PostgreSQL.Name'                                            => 'PostgreSQL',
+    'Driver.Db.PostgreSQLPDO.Name'                                         => 'PostgreSQL (PDO)',
     'Driver.Service.Curl.Name'                                             => 'HTTP (curl)',
     'Driver.Service.Internal.Name'                                         => 'Internal',
     'Driver.User.Internal.Name'                                            => 'Internal',
