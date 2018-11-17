@@ -41,7 +41,13 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     }
 
     public function setConf(array $conf = []) {
-        Arsse::$conf = (new Conf)->import($conf);
+        $defaults = [
+            'dbSQLite3File' => ":memory:",
+            'dbPostgreSQLUser' => "arsse_test",
+            'dbPostgreSQLPass' => "arsse_test",
+            'dbPostgreSQLDb' => "arsse_test",
+        ];
+        Arsse::$conf = (new Conf)->import($defaults)->import($conf);
     }
 
     public function assertException(string $msg = "", string $prefix = "", string $type = "Exception") {

@@ -6,6 +6,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Db;
 
+use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Db\Result;
 use JKingWeb\Arsse\Db\PDOResult;
 use JKingWeb\Arsse\Db\SQLite3\PDODriver;
@@ -16,16 +17,17 @@ use JKingWeb\Arsse\Db\SQLite3\PDODriver;
  */
 class TestResult extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideDrivers() {
+        $this->setConf();
         $drvSqlite3 = (function() {
             if (\JKingWeb\Arsse\Db\SQLite3\Driver::requirementsMet()) {
-                $d = new \SQLite3(":memory:");
+                $d = new \SQLite3(Arsse::$conf->dbSQLite3File);
                 $d->enableExceptions(true);
                 return $d;
             }
         })();
         $drvPdo = (function() {
             if (\JKingWeb\Arsse\Db\SQLite3\PDODriver::requirementsMet()) {
-                return new \PDO("sqlite::memory:", "", "", [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
+                return new \PDO("sqlite:".Arsse::$conf->dbSQLite3File, "", "", [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
             }
         })();
         return [

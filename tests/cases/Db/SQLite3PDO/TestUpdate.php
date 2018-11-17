@@ -25,18 +25,14 @@ class TestUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
     const MINIMAL1 = "create table arsse_meta(key text primary key not null, value text); pragma user_version=1";
     const MINIMAL2 = "pragma user_version=2";
 
-    public function setUp(Conf $conf = null) {
+    public function setUp(array $conf = []) {
         if (!PDODriver::requirementsMet()) {
             $this->markTestSkipped("PDO-SQLite extension not loaded");
         }
         $this->clearData();
         $this->vfs = vfsStream::setup("schemata", null, ['SQLite3' => []]);
-        if (!$conf) {
-            $conf = new Conf();
-        }
-        $conf->dbDriver = PDODriver::class;
-        $conf->dbSQLite3File = ":memory:";
-        Arsse::$conf = $conf;
+        $conf['dbDriver'] = PDODriver::class;
+        $this->setConf($conf);
         $this->base = $this->vfs->url();
         $this->path = $this->base."/SQLite3/";
         $this->drv = new PDODriver();
@@ -111,9 +107,7 @@ class TestUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testDeclineManualUpdate() {
         // turn auto-updating off
-        $conf = new Conf();
-        $conf->dbAutoUpdate = false;
-        $this->setUp($conf);
+        $this->setUp(['dbAutoUpdate' => false]);
         $this->assertException("updateManual", "Db");
         $this->drv->schemaUpdate(Database::SCHEMA_VERSION);
     }
