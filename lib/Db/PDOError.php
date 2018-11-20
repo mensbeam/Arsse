@@ -14,7 +14,10 @@ trait PDOError {
             $err = $this->db->errorInfo();
         }
         switch ($err[0]) {
+            case "22P02":
+                return [ExceptionInput::class, 'engineTypeViolation', $err[2]];
             case "23000":
+            case "23502":
                 return [ExceptionInput::class, "constraintViolation", $err[2]];
             case "HY000":
                 // engine-specific errors
