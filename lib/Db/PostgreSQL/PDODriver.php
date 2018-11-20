@@ -22,7 +22,7 @@ class PDODriver extends Driver {
 
     protected function makeConnection(string $user, string $pass, string $db, string $host, int $port, string $service) {
         $dsn = $this->makeconnectionString(true, $user, $pass, $db, $host, $port, $service);
-        $this->db = new \PDO("pgsql:$dsn", $user, $pass);
+        $this->db = new \PDO("pgsql:$dsn", $user, $pass, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
     }
 
     public function __destruct() {

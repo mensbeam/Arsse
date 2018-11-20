@@ -15,7 +15,7 @@ class PDOStatement extends AbstractStatement {
         "datetime"  => \PDO::PARAM_STR,
         "binary"    => \PDO::PARAM_LOB,
         "string"    => \PDO::PARAM_STR,
-        "boolean"   => \PDO::PARAM_BOOL,
+        "boolean"   => \PDO::PARAM_INT, // FIXME: using \PDO::PARAM_BOOL leads to incompatibilities with versions of SQLite bundled prior to PHP 7.3
     ];
 
     protected $st;
