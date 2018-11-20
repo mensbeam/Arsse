@@ -74,18 +74,24 @@ abstract class AbstractStatement implements Statement {
         }
     }
 
-    protected function bindValues(array $values, int $offset = 0): int {
-        $a = $offset;
+    protected function bindValues(array $values, int $offset = null): int {
+        $a = (int) $offset;
         foreach ($values as $value) {
             if (is_array($value)) {
                 // recursively flatten any arrays, which may be provided for SET or IN() clauses
                 $a += $this->bindValues($value, $a);
             } elseif (array_key_exists($a, $this->types)) {
                 $value = $this->cast($value, $this->types[$a], $this->isNullable[$a]);
-                $this->bindValue($value, $this->types[$a], $a+1);
-                $a++;
+                $this->bindValue($value, $this->types[$a], ++$a);
             } else {
                 throw new Exception("paramTypeMissing", $a+1);
+            }
+        }
+        // once the last value is bound, check that all parameters have been supplied values and bind null for any missing ones
+        // SQLite will happily substitute null for a missing value, but other engines (viz. PostgreSQL) produce an error
+        if (is_null($offset)) {
+            while ($a < sizeof($this->types)) {
+                $this->bindValue(null, $this->types[$a], ++$a);
             }
         }
         return $a - $offset;
