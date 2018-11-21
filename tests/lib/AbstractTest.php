@@ -125,4 +125,59 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         }
         return $value;
     }
+
+    public function provideDbInterfaces(array $conf = []): array {
+        $this->setConf($conf);
+        return [
+            'SQLite 3' => [
+                'interface' => (function() {
+                    if (\JKingWeb\Arsse\Db\SQLite3\Driver::requirementsMet()) {
+                        try {
+                            $d = new \SQLite3(Arsse::$conf->dbSQLite3File);
+                        } catch (\Exception $e) {
+                            return;
+                        }
+                        $d->enableExceptions(true);
+                        return $d;
+                    }
+                })(),
+                'statement' => \JKingWeb\Arsse\Db\SQLite3\Statement::class,
+                'result' => \JKingWeb\Arsse\Db\SQLite3\Result::class,
+                'stringOutput' => false,
+            ],
+            'PDO SQLite 3' => [
+                'interface' => (function() {
+                    if (\JKingWeb\Arsse\Db\SQLite3\PDODriver::requirementsMet()) {
+                        try {
+                            return new \PDO("sqlite:".Arsse::$conf->dbSQLite3File, "", "", [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
+                        } catch (\PDOException $e) {
+                            return;
+                        }
+                    }
+                })(),
+                'statement' => \JKingWeb\Arsse\Db\PDOStatement::class,
+                'result' => \JKingWeb\Arsse\Db\PDOResult::class,
+                'stringOutput' => true,
+            ],
+            'PDO PostgreSQL' => [
+                'interface' => (function() {
+                    if (\JKingWeb\Arsse\Db\PostgreSQL\PDODriver::requirementsMet()) {
+                        $connString = \JKingWeb\Arsse\Db\PostgreSQL\Driver::makeConnectionString(true, Arsse::$conf->dbPostgreSQLUser, Arsse::$conf->dbPostgreSQLPass, Arsse::$conf->dbPostgreSQLDb, Arsse::$conf->dbPostgreSQLHost, Arsse::$conf->dbPostgreSQLPort, "");
+                        try {
+                            $c = new \PDO("pgsql:".$connString, Arsse::$conf->dbPostgreSQLUser, Arsse::$conf->dbPostgreSQLPass, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
+                        } catch (\PDOException $e) {
+                            return;
+                        }
+                        foreach (\JKingWeb\Arsse\Db\PostgreSQL\PDODriver::makeSetupQueries(Arsse::$conf->dbPostgreSQLSchema) as $q) {
+                            $c->exec($q);
+                        }
+                        return $c;
+                    }
+                })(),
+                'statement' => \JKingWeb\Arsse\Db\PDOStatement::class,
+                'result' => \JKingWeb\Arsse\Db\PDOResult::class,
+                'stringOutput' => true,
+            ],
+        ];
+    }
 }

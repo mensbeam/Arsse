@@ -16,37 +16,35 @@ use JKingWeb\Arsse\Db\SQLite3\PDODriver;
  * @covers \JKingWeb\Arsse\Db\SQLite3\Result<extended>
  */
 class TestResult extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function provideDrivers() {
+    public function provideResults() {
         $this->setConf();
-        $drvSqlite3 = (function() {
-            if (\JKingWeb\Arsse\Db\SQLite3\Driver::requirementsMet()) {
-                $d = new \SQLite3(Arsse::$conf->dbSQLite3File);
-                $d->enableExceptions(true);
-                return $d;
-            }
-        })();
-        $drvPdo = (function() {
-            if (\JKingWeb\Arsse\Db\SQLite3\PDODriver::requirementsMet()) {
-                return new \PDO("sqlite:".Arsse::$conf->dbSQLite3File, "", "", [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
-            }
-        })();
-        return [
-            'SQLite 3' => [isset($drvSqlite3), false, \JKingWeb\Arsse\Db\SQLite3\Result::class, function(string $query) use($drvSqlite3) {
-                $set = $drvSqlite3->query($query);
-                $rows = $drvSqlite3->changes();
-                $id = $drvSqlite3->lastInsertRowID();
+        $interfaces = $this->provideDbInterfaces();
+        $constructors = [
+            'SQLite 3' => function(string $query) use($interfaces) {
+                $drv = $interfaces['SQLite 3']['interface'];
+                $set = $drv->query($query);
+                $rows = $drv->changes();
+                $id = $drv->lastInsertRowID();
                 return [$set, [$rows, $id]];
-            }],
-            'PDO' => [isset($drvPdo), true, \JKingWeb\Arsse\Db\PDOResult::class, function(string $query) use($drvPdo) {
-                $set = $drvPdo->query($query);
-                $rows = $set->rowCount();
-                $id = $drvPdo->lastInsertID();
-                return [$set, [$rows, $id]];
-            }],
+            },
         ];
+        foreach ($constructors as $drv => $func) {
+            yield $drv => [isset($interfaces[$drv]['interface']), $interfaces[$drv]['stringOutput'], $interfaces[$drv]['result'], $func];
+        }
+        // there is only one PDO result implementation, so we test the first implementation we find
+        $pdo = array_reduce($interfaces, function ($carry, $item) {
+            return $carry ?? ($item['interface'] instanceof \PDO ? $item : null);
+        }) ?? $interfaces['PDO SQLite 3'];
+        yield "PDO" => [isset($pdo['interface']), $pdo['stringOutput'], $pdo['result'], function(string $query) use($pdo) {
+            $drv = $pdo['interface'];
+            $set = $drv->query($query);
+            $rows = $set->rowCount();
+            $id = $drv->lastInsertID();
+            return [$set, [$rows, $id]];
+        }]; 
     }
 
-    /** @dataProvider provideDrivers */
+    /** @dataProvider provideResults */
     public function testConstructResult(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
         if (!$driverTestable) {
             $this->markTestSkipped();
@@ -54,7 +52,7 @@ class TestResult extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertInstanceOf(Result::class, new $class(...$func("SELECT 1")));
     }
 
-    /** @dataProvider provideDrivers */
+    /** @dataProvider provideResults */
     public function testGetChangeCountAndLastInsertId(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
         if (!$driverTestable) {
             $this->markTestSkipped();
@@ -68,7 +66,7 @@ class TestResult extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame((int) $id, $r->lastId());
     }
 
-    /** @dataProvider provideDrivers */
+    /** @dataProvider provideResults */
     public function testIterateOverResults(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
         if (!$driverTestable) {
             $this->markTestSkipped();
@@ -81,7 +79,7 @@ class TestResult extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, $rows);
     }
 
-    /** @dataProvider provideDrivers */
+    /** @dataProvider provideResults */
     public function testIterateOverResultsTwice(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
         if (!$driverTestable) {
             $this->markTestSkipped();
@@ -99,7 +97,7 @@ class TestResult extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    /** @dataProvider provideDrivers */
+    /** @dataProvider provideResults */
     public function testGetSingleValues(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
         if (!$driverTestable) {
             $this->markTestSkipped();
@@ -113,7 +111,7 @@ class TestResult extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame(null, $test->getValue());
     }
 
-    /** @dataProvider provideDrivers */
+    /** @dataProvider provideResults */
     public function testGetFirstValuesOnly(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
         if (!$driverTestable) {
             $this->markTestSkipped();
@@ -127,7 +125,7 @@ class TestResult extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame(null, $test->getValue());
     }
 
-    /** @dataProvider provideDrivers */
+    /** @dataProvider provideResults */
     public function testGetRows(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
         if (!$driverTestable) {
             $this->markTestSkipped();
@@ -142,7 +140,7 @@ class TestResult extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame(null, $test->getRow());
     }
 
-    /** @dataProvider provideDrivers */
+    /** @dataProvider provideResults */
     public function testGetAllRows(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
         if (!$driverTestable) {
             $this->markTestSkipped();

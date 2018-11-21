@@ -16,47 +16,28 @@ use JKingWeb\Arsse\Db\PDOStatement;
  * @covers \JKingWeb\Arsse\Db\PDOStatement<extended>
  * @covers \JKingWeb\Arsse\Db\PDOError */
 class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function provideDrivers() {
-        $this->setConf();
-        $drvSqlite3 = (function() {
-            if (\JKingWeb\Arsse\Db\SQLite3\Driver::requirementsMet()) {
-                $d = new \SQLite3(Arsse::$conf->dbSQLite3File);
-                $d->enableExceptions(true);
-                return $d;
-            }
-        })();
-        $drvPgsql = (function() {
-            if (\JKingWeb\Arsse\Db\PostgreSQL\PDODriver::requirementsMet()) {
-                $connString = \JKingWeb\Arsse\Db\PostgreSQL\Driver::makeConnectionString(true, Arsse::$conf->dbPostgreSQLUser, Arsse::$conf->dbPostgreSQLPass, Arsse::$conf->dbPostgreSQLDb, Arsse::$conf->dbPostgreSQLHost, Arsse::$conf->dbPostgreSQLPort, "");
-                $c = new \PDO("pgsql:".$connString, Arsse::$conf->dbPostgreSQLUser, Arsse::$conf->dbPostgreSQLPass, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
-                foreach (\JKingWeb\Arsse\Db\PostgreSQL\PDODriver::makeSetupQueries(Arsse::$conf->dbPostgreSQLSchema) as $q) {
-                    $c->exec($q);
-                }
-                return $c;
-            }
-        })();
-        $drvPdo = (function() {
-            if (\JKingWeb\Arsse\Db\SQLite3\PDODriver::requirementsMet()) {
-                return new \PDO("sqlite:".Arsse::$conf->dbSQLite3File, "", "", [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
-            }
-        })();
-        return [
-            'SQLite 3' => [isset($drvSqlite3), false, \JKingWeb\Arsse\Db\SQLite3\Statement::class, function(string $query, array $types = []) use($drvSqlite3) {
-                $s = $drvSqlite3->prepare($query);
-                return [$drvSqlite3, $s, $types];
-            }],
-            'PDO SQLite 3' => [isset($drvPdo), true, \JKingWeb\Arsse\Db\PDOStatement::class, function(string $query, array $types = []) use($drvPdo) {
-                $s = $drvPdo->prepare($query);
-                return [$drvPdo, $s, $types];
-            }],
-            'PDO PostgreSQL' => [isset($drvPgsql), true, \JKingWeb\Arsse\Db\PDOStatement::class, function(string $query, array $types = []) use($drvPgsql) {
-                $s = $drvPgsql->prepare($query);
-                return [$drvPgsql, $s, $types];
-            }],
+    public function provideStatements() {
+        $interfaces = $this->provideDbInterfaces();
+        $constructors = [
+            'SQLite 3' => function(string $query, array $types = []) use($interfaces) {
+                $s = $interfaces['SQLite 3']['interface']->prepare($query);
+                return [$interfaces['SQLite 3']['interface'], $s, $types];
+            },
+            'PDO SQLite 3' => function(string $query, array $types = []) use($interfaces) {
+                $s = $interfaces['PDO SQLite 3']['interface']->prepare($query);
+                return [$interfaces['PDO SQLite 3']['interface'], $s, $types];
+            },
+            'PDO PostgreSQL' => function(string $query, array $types = []) use($interfaces) {
+                $s = $interfaces['PDO PostgreSQL']['interface']->prepare($query);
+                return [$interfaces['PDO PostgreSQL']['interface'], $s, $types];
+            },
         ];
+        foreach ($constructors as $drv => $func) {
+            yield $drv => [isset($interfaces[$drv]['interface']), $interfaces[$drv]['stringOutput'], $interfaces[$drv]['statement'], $func];
+        }
     }
 
-    /** @dataProvider provideDrivers */
+    /** @dataProvider provideStatements */
     public function testConstructStatement(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
         if (!$driverTestable) {
             $this->markTestSkipped();
@@ -98,7 +79,7 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertTrue((bool) $act);
     }
 
-    /** @dataProvider provideDrivers */
+    /** @dataProvider provideStatements */
     public function testBindMissingValue(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
         if (!$driverTestable) {
             $this->markTestSkipped();
@@ -108,7 +89,7 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame(null, $val);
     }
 
-    /** @dataProvider provideDrivers */
+    /** @dataProvider provideStatements */
     public function testBindMultipleValues(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
         if (!$driverTestable) {
             $this->markTestSkipped();
@@ -123,7 +104,7 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, $val);
     }
 
-    /** @dataProvider provideDrivers */
+    /** @dataProvider provideStatements */
     public function testBindRecursively(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
         if (!$driverTestable) {
             $this->markTestSkipped();
@@ -140,7 +121,7 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, $val);
     }
 
-    /** @dataProvider provideDrivers */
+    /** @dataProvider provideStatements */
     public function testBindWithoutType(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
         if (!$driverTestable) {
             $this->markTestSkipped();
@@ -150,7 +131,7 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $s->runArray([1]);
     }
 
-    /** @dataProvider provideDrivers */
+    /** @dataProvider provideStatements */
     public function testViolateConstraint(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
         if (!$driverTestable) {
             $this->markTestSkipped();
@@ -161,7 +142,7 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $s->runArray([null]);
     }
 
-    /** @dataProvider provideDrivers */
+    /** @dataProvider provideStatements */
     public function testMismatchTypes(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
         if (!$driverTestable) {
             $this->markTestSkipped();
@@ -309,7 +290,7 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
             'DateTimeImmutable as strict boolean' => [$dateImmutable, "strict boolean", "1"],
         ];
         $decorators = $this->provideSyntaxDecorators();
-        foreach ($this->provideDrivers() as $drvName => list($drv, $stringCoersion, $class, $func)) {
+        foreach ($this->provideStatements() as $drvName => list($drv, $stringCoersion, $class, $func)) {
             $conv = $decorators[$drvName] ?? $conv = $decorators[''];
             foreach ($tests as $index => list($value, $type, $exp)) {
                 $t = preg_replace("<^strict >", "", $type);
@@ -364,7 +345,7 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
             'DateTimeImmutable as strict binary' => [$dateImmutable, "strict binary", "x'".bin2hex($dateUTC->format("Y-m-d H:i:s"))."'"],
         ];
         $decorators = $this->provideSyntaxDecorators();
-        foreach ($this->provideDrivers() as $drvName => list($drv, $stringCoersion, $class, $func)) {
+        foreach ($this->provideStatements() as $drvName => list($drv, $stringCoersion, $class, $func)) {
             $conv = $decorators[$drvName] ?? $conv = $decorators[''];
             if ($drvName=="PDO PostgreSQL") {
                 // skip PostgreSQL for these tests
