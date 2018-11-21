@@ -13,11 +13,10 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\ExceptionTimeout;
 
 class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
-
     public function __construct(string $user = null, string $pass = null, string $db = null, string $host = null, int $port = null, string $schema = null, string $service = null) {
         // check to make sure required extension is loaded
         if (!static::requirementsMet()) {
-            throw new Exception("extMissing", self::driverName()); // @codeCoverageIgnore
+            throw new Exception("extMissing", static::driverName()); // @codeCoverageIgnore
         }
         $user = $user ?? Arsse::$conf->dbPostgreSQLUser;
         $pass = $pass ?? Arsse::$conf->dbPostgreSQLPass;
@@ -27,16 +26,9 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $schema = $schema ?? Arsse::$conf->dbPostgreSQLSchema;
         $service = $service ?? Arsse::$conf->dbPostgreSQLService;
         $this->makeConnection($user, $pass, $db, $host, $port, $service);
-    }
-
-    public static function requirementsMet(): bool {
-        // stub: native interface is not yet supported
-        return false;
-    }
-
-    protected function makeConnection(string $user, string $pass, string $db, string $host, int $port, string $service) {
-        // stub: native interface is not yet supported
-        throw new \Exception;
+        foreach (static::makeSetupQueries($schema) as $q) {
+            $this->exec($q);
+        }
     }
 
     public static function makeConnectionString(bool $pdo, string $user, string $pass, string $db, string $host, int $port, string $service): string {
@@ -73,7 +65,15 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         return implode(" ", $out);
     }
 
-    public function __destruct() {
+    public static function makeSetupQueries(string $schema = ""): array {
+        $out = [
+            "SET TIME ZONE UTC",
+            "SET DateStyle = 'ISO, MDY'"
+        ];
+        if (strlen($schema) > 0) {
+            $out[] = 'SET search_path = \'"'.str_replace('"', '""', $schema).'", "$user", public\'';
+        }
+        return $out;
     }
 
     /** @codeCoverageIgnore */
@@ -96,48 +96,57 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         return "PostgreSQL";
     }
 
-    public function schemaVersion(): int {
-        // stub
-        return 0;
-    }
-
-    public function schemaUpdate(int $to, string $basePath = null): bool {
-        // stub
-        return false;
-    }
-
     public function charsetAcceptable(): bool {
-        // stub
-        return true;
-    }
-
-    protected function getError(): string {
-        // stub
-        return "";
-    }
-
-    public function exec(string $query): bool {
-        // stub
-        return true;
-    }
-
-    public function query(string $query): \JKingWeb\Arsse\Db\Result {
-        // stub
-        return new ResultEmpty;
-    }
-
-    public function prepareArray(string $query, array $paramTypes): \JKingWeb\Arsse\Db\Statement {
-        // stub
-        return new Statement($this->db, $s, $paramTypes);
+        return $this->query("SELECT pg_encoding_to_char(encoding) from pg_database where datname = current_database()")->getValue() == "UTF8";
     }
 
     protected function lock(): bool {
-        // stub
+        $this->exec("BEGIN TRANSACTION");
+        if ($this->schemaVersion()) {
+            $this->exec("LOCK TABLE arsse_meta IN EXCLUSIVE MODE NOWAIT");
+        }
         return true;
     }
 
     protected function unlock(bool $rollback = false): bool {
-        // stub
+        $this->exec((!$rollback) ? "COMMIT" : "ROLLBACK");
         return true;
+    }
+
+    public function __destruct() {
+    }
+
+    public static function requirementsMet(): bool {
+        // stub: native interface is not yet supported
+        return false;
+    }
+
+    protected function makeConnection(string $user, string $pass, string $db, string $host, int $port, string $service) {
+        // stub: native interface is not yet supported
+        throw new \Exception;
+    }
+
+    /** @codeCoverageIgnore */
+    protected function getError(): string {
+        // stub: native interface is not yet supported
+        return "";
+    }
+
+    /** @codeCoverageIgnore */
+    public function exec(string $query): bool {
+        // stub: native interface is not yet supported
+        return true;
+    }
+
+    /** @codeCoverageIgnore */
+    public function query(string $query): \JKingWeb\Arsse\Db\Result {
+        // stub: native interface is not yet supported
+        return new ResultEmpty;
+    }
+
+    /** @codeCoverageIgnore */
+    public function prepareArray(string $query, array $paramTypes): \JKingWeb\Arsse\Db\Statement {
+        // stub: native interface is not yet supported
+        return new Statement($this->db, $s, $paramTypes);
     }
 }

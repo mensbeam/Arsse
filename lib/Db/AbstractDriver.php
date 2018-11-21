@@ -13,13 +13,13 @@ abstract class AbstractDriver implements Driver {
     protected $transDepth = 0;
     protected $transStatus = [];
 
+    abstract protected function lock(): bool;
+    abstract protected function unlock(bool $rollback = false): bool;
     abstract protected function getError(): string;
 
-    /** @codeCoverageIgnore */
     public function schemaVersion(): int {
-        // FIXME: generic schemaVersion() will need to be covered for database engines other than SQLite
         try {
-            return (int) $this->query("SELECT value from arsse_meta where key is schema_version")->getValue();
+            return (int) $this->query("SELECT value from arsse_meta where key = 'schema_version'")->getValue();
         } catch (Exception $e) {
             return 0;
         }

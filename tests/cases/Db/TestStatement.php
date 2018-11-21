@@ -28,7 +28,11 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $drvPgsql = (function() {
             if (\JKingWeb\Arsse\Db\PostgreSQL\PDODriver::requirementsMet()) {
                 $connString = \JKingWeb\Arsse\Db\PostgreSQL\Driver::makeConnectionString(true, Arsse::$conf->dbPostgreSQLUser, Arsse::$conf->dbPostgreSQLPass, Arsse::$conf->dbPostgreSQLDb, Arsse::$conf->dbPostgreSQLHost, Arsse::$conf->dbPostgreSQLPort, "");
-                return new \PDO("pgsql:".$connString, Arsse::$conf->dbPostgreSQLUser, Arsse::$conf->dbPostgreSQLPass, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
+                $c = new \PDO("pgsql:".$connString, Arsse::$conf->dbPostgreSQLUser, Arsse::$conf->dbPostgreSQLPass, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
+                foreach (\JKingWeb\Arsse\Db\PostgreSQL\PDODriver::makeSetupQueries(Arsse::$conf->dbPostgreSQLSchema) as $q) {
+                    $c->exec($q);
+                }
+                return $c;
             }
         })();
         $drvPdo = (function() {
@@ -173,7 +177,6 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $dateImmutable = new \DateTimeImmutable("Noon Today", new \DateTimezone("America/Toronto"));
         $dateUTC = new \DateTime("@".$dateMutable->getTimestamp(), new \DateTimezone("UTC"));
         $tests = [
-        /* input,  type,              expected binding as SQL fragment */
             'Null as integer' => [null, "integer", "null"],
             'Null as float' => [null, "float", "null"],
             'Null as string' => [null, "string", "null"],
@@ -321,7 +324,6 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $dateImmutable = new \DateTimeImmutable("Noon Today", new \DateTimezone("America/Toronto"));
         $dateUTC = new \DateTime("@".$dateMutable->getTimestamp(), new \DateTimezone("UTC"));
         $tests = [
-        /* input,  type,              expected binding as SQL fragment */
             'Null as binary' => [null, "binary", "null"],
             'Null as strict binary' => [null, "strict binary", "x''"],
             'True as binary' => [true, "binary", "x'31'"],
