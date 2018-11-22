@@ -19,12 +19,16 @@ class Conf {
     public $dbDriver                = Db\SQLite3\Driver::class;
     /** @var boolean Whether to attempt to automatically update the database when updated to a new version with schema changes */
     public $dbAutoUpdate            = true;
+    /** @var float Number of seconds to wait before returning a timeout error when connecting to a database (zero waits forever; not applicable to SQLite) */
+    public $dbTimeoutConnect        = 5.0;
+    /** @var float Number of seconds to wait before returning a timeout error when executing a database operation (zero waits forever; not applicable to SQLite) */
+    public $dbTimeoutExec           = 0.0;
     /** @var string|null Full path and file name of SQLite database (if using SQLite) */
     public $dbSQLite3File           = null;
     /** @var string Encryption key to use for SQLite database (if using a version of SQLite with SEE) */
     public $dbSQLite3Key            = "";
-    /** @var integer Number of seconds for SQLite to wait before returning a timeout error when writing to the database */
-    public $dbSQLite3Timeout        = 60;
+    /** @var float Number of seconds for SQLite to wait before returning a timeout error when trying to acquire a write lock on the database (zero does not wait) */
+    public $dbSQLite3Timeout        = 60.0;
     /** @var string Host name, address, or socket path of PostgreSQL database server (if using PostgreSQL) */
     public $dbPostgreSQLHost        = "";
     /** @var string Log-in user name for PostgreSQL database server (if using PostgreSQL) */

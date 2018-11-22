@@ -19,6 +19,9 @@ trait PDOError {
             case "23000":
             case "23502":
                 return [ExceptionInput::class, "constraintViolation", $err[2]];
+            case "55P03":
+            case "57014":
+                return [ExceptionTimeout::class, 'general', $err[2]];
             case "HY000":
                 // engine-specific errors
                 switch ($this->db->getAttribute(\PDO::ATTR_DRIVER_NAME)) {

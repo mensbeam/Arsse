@@ -35,6 +35,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $base = [
             'client_encoding' => "UTF8",
             'application_name' => "arsse",
+            'connect_timeout' => (string) ceil(Arsse::$conf->dbTimeoutConnect ?? 0),
         ];
         $out = [];
         if ($service != "") {
@@ -66,9 +67,11 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     }
 
     public static function makeSetupQueries(string $schema = ""): array {
+        $timeout = ceil(Arsse::$conf->dbTimeoutExec * 1000);
         $out = [
             "SET TIME ZONE UTC",
-            "SET DateStyle = 'ISO, MDY'"
+            "SET DateStyle = 'ISO, MDY'",
+            "SET statement_timeout = '$timeout'",
         ];
         if (strlen($schema) > 0) {
             $out[] = 'SET search_path = \'"'.str_replace('"', '""', $schema).'", "$user", public\'';
@@ -100,8 +103,30 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         return $this->query("SELECT pg_encoding_to_char(encoding) from pg_database where datname = current_database()")->getValue() == "UTF8";
     }
 
+    public function savepointCreate(bool $lock = false): int {
+        if (!$this->transDepth) {
+            $this->exec("BEGIN TRANSACTION");
+        }
+        return parent::savepointCreate($lock);
+    }
+
+    public function savepointRelease(int $index = null): bool {
+        $out = parent::savepointUndo($index);
+        if ($out && !$this->transDepth) {
+            $this->exec("COMMIT TRANSACTION");
+        }
+        return $out;
+    }
+
+    public function savepointUndo(int $index = null): bool {
+        $out = parent::savepointUndo($index);
+        if ($out && !$this->transDepth) {
+            $this->exec("ROLLBACK TRANSACTION");
+        }
+        return $out;
+    }
+
     protected function lock(): bool {
-        $this->exec("BEGIN TRANSACTION");
         if ($this->schemaVersion()) {
             $this->exec("LOCK TABLE arsse_meta IN EXCLUSIVE MODE NOWAIT");
         }

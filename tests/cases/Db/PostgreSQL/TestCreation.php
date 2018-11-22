@@ -6,14 +6,17 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Db\PostgreSQL;
 
+use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Db\PostgreSQL\Driver;
 
 /**
  * @covers \JKingWeb\Arsse\Db\PostgreSQL\Driver<extended> */
-class TestDriver extends \JKingWeb\Arsse\Test\AbstractTest {
+class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideConnectionStrings */
     public function testGenerateConnectionString(bool $pdo, string $user, string $pass, string $db, string $host, int $port, string $service, string $exp) {
-        $postfix = "application_name='arsse' client_encoding='UTF8'";
+        $this->setConf();
+        $timeout = (string) ceil(Arsse::$conf->dbTimeoutConnect ?? 0);
+        $postfix = "application_name='arsse' client_encoding='UTF8' connect_timeout='$timeout'";
         $act = Driver::makeConnectionString($pdo, $user, $pass, $db, $host, $port, $service);
         if ($act==$postfix) {
             $this->assertSame($exp, "");

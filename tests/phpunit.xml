@@ -56,7 +56,7 @@
         <file>cases/Db/SQLite3PDO/TestDriver.php</file>
         <file>cases/Db/SQLite3PDO/TestUpdate.php</file>
 
-        <file>cases/Db/PostgreSQL/TestDriver.php</file>
+        <file>cases/Db/PostgreSQL/TestCreation.php</file>
     </testsuite>
     <testsuite name="Database functions">
         <file>cases/Db/SQLite3/Database/TestMiscellany.php</file>

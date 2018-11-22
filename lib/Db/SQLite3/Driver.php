@@ -27,13 +27,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         }
         // if no database file is specified in the configuration, use a suitable default
         $dbFile = $dbFile ?? Arsse::$conf->dbSQLite3File ?? \JKingWeb\Arsse\BASE."arsse.db";
-        $timeout = Arsse::$conf->dbSQLite3Timeout * 1000;
         try {
             $this->makeConnection($dbFile, Arsse::$conf->dbSQLite3Key);
-            // set the timeout; parameters are not allowed for pragmas, but this usage should be safe
-            $this->exec("PRAGMA busy_timeout = $timeout");
-            // set other initial options
-            $this->exec("PRAGMA foreign_keys = yes");
         } catch (\Throwable $e) {
             // if opening the database doesn't work, check various pre-conditions to find out what the problem might be
             $files = [
@@ -55,6 +50,11 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
             // otherwise the database is probably corrupt
             throw new Exception("fileCorrupt", $dbFile);
         }
+        // set the timeout
+        $timeout = (int) ceil((Arsse::$conf->dbSQLite3Timeout ?? 0) * 1000);
+        $this->setTimeout($timeout);
+        // set other initial options
+        $this->exec("PRAGMA foreign_keys = yes");
     }
 
     public static function requirementsMet(): bool {
@@ -65,6 +65,10 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $this->db = new \SQLite3($file, \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE, $key);
         // enable exceptions
         $this->db->enableExceptions(true);
+    }
+
+    protected function setTimeout(int $msec) {
+        $this->exec("PRAGMA busy_timeout = $msec");
     }
 
     public function __destruct() {
@@ -157,7 +161,13 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     }
 
     protected function lock(): bool {
-        $this->exec("BEGIN EXCLUSIVE TRANSACTION");
+        $timeout = (int) $this->query("PRAGMA busy_timeout")->getValue();
+        $this->setTimeout(0);
+        try {
+            $this->exec("BEGIN EXCLUSIVE TRANSACTION");
+        } finally {
+            $this->setTimeout($timeout);
+        }
         return true;
     }
 
