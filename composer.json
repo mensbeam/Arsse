@@ -42,7 +42,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "JKingWeb\\Arsse\\Test\\": "tests/lib/"
+            "JKingWeb\\Arsse\\Test\\": "tests/lib/",
+            "JKingWeb\\Arsse\\TestCase\\": "tests/cases/"
         }
     }
 }

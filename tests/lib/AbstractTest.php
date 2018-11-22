@@ -43,11 +43,12 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     public function setConf(array $conf = []) {
         $defaults = [
             'dbSQLite3File' => ":memory:",
+            'dbSQLite3Timeout' => 0,
             'dbPostgreSQLUser' => "arsse_test",
             'dbPostgreSQLPass' => "arsse_test",
             'dbPostgreSQLDb' => "arsse_test",
         ];
-        Arsse::$conf = (new Conf)->import($defaults)->import($conf);
+        Arsse::$conf = Arsse::$conf ?? (new Conf)->import($defaults)->import($conf);
     }
 
     public function assertException(string $msg = "", string $prefix = "", string $type = "Exception") {
@@ -126,6 +127,33 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         return $value;
     }
 
+    public function provideDbDrivers(array $conf = []): array {
+        $this->setConf($conf);
+        return [
+            'SQLite 3' => (function() {
+                try {
+                    return new \JKingWeb\Arsse\Db\SQLite3\Driver;
+                } catch (\Exception $e) {
+                    return;
+                }
+            })(),
+            'PDO SQLite 3' => (function() {
+                try {
+                    return new \JKingWeb\Arsse\Db\SQLite3\PDODriver;
+                } catch (\Exception $e) {
+                    return;
+                }
+            })(),
+            'PDO PostgreSQL' => (function() {
+                try {
+                    return new \JKingWeb\Arsse\Db\PostgreSQL\PDODriver;
+                } catch (\Exception $e) {
+                    return;
+                }
+            })(),
+        ];
+    }
+
     public function provideDbInterfaces(array $conf = []): array {
         $this->setConf($conf);
         return [
@@ -179,5 +207,84 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                 'stringOutput' => true,
             ],
         ];
+    }
+
+    public function getDbDriver(string $name, array $conf = []) {
+        $this->setConf($conf);
+        switch ($name) {
+            case 'SQLite 3':
+                return (function() {
+                    try {
+                        return new \JKingWeb\Arsse\Db\SQLite3\Driver;
+                    } catch (\Exception $e) {
+                        return;
+                    }
+                })();
+            case 'PDO SQLite 3':
+                return (function() {
+                    try {
+                        return new \JKingWeb\Arsse\Db\SQLite3\PDODriver;
+                    } catch (\Exception $e) {
+                        return;
+                    }
+                })();
+            case 'PDO PostgreSQL':
+                return (function() {
+                    try {
+                        return new \JKingWeb\Arsse\Db\PostgreSQL\PDODriver;
+                    } catch (\Exception $e) {
+                        return;
+                    }
+                })();
+            default:
+                throw new \Exception("Invalid database driver name");
+        }
+    }
+
+    public function getDbInterface(string $name, array $conf = []) {
+        $this->setConf($conf);
+        switch ($name) {
+            case 'SQLite 3':
+                return (function() {
+                    if (\JKingWeb\Arsse\Db\SQLite3\Driver::requirementsMet()) {
+                        try {
+                            $d = new \SQLite3(Arsse::$conf->dbSQLite3File);
+                        } catch (\Exception $e) {
+                            return;
+                        }
+                        $d->enableExceptions(true);
+                        return $d;
+                    }
+                })();
+            case 'PDO SQLite 3':
+                return (function() {
+                    if (\JKingWeb\Arsse\Db\SQLite3\PDODriver::requirementsMet()) {
+                        try {
+                            $d = new \PDO("sqlite:".Arsse::$conf->dbSQLite3File, "", "", [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
+                            $d->exec("PRAGMA busy_timeout=0");
+                            return $d;
+                        } catch (\PDOException $e) {
+                            return;
+                        }
+                    }
+                })();
+            case 'PDO PostgreSQL':
+                return (function() {
+                    if (\JKingWeb\Arsse\Db\PostgreSQL\PDODriver::requirementsMet()) {
+                        $connString = \JKingWeb\Arsse\Db\PostgreSQL\Driver::makeConnectionString(true, Arsse::$conf->dbPostgreSQLUser, Arsse::$conf->dbPostgreSQLPass, Arsse::$conf->dbPostgreSQLDb, Arsse::$conf->dbPostgreSQLHost, Arsse::$conf->dbPostgreSQLPort, "");
+                        try {
+                            $c = new \PDO("pgsql:".$connString, Arsse::$conf->dbPostgreSQLUser, Arsse::$conf->dbPostgreSQLPass, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
+                        } catch (\PDOException $e) {
+                            return;
+                        }
+                        foreach (\JKingWeb\Arsse\Db\PostgreSQL\PDODriver::makeSetupQueries(Arsse::$conf->dbPostgreSQLSchema) as $q) {
+                            $c->exec($q);
+                        }
+                        return $c;
+                    }
+                })();
+            default:
+                throw new \Exception("Invalid database driver name");
+        }
     }
 }
