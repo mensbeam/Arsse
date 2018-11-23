@@ -64,27 +64,9 @@
     <!--<file>cases/Db/PostgreSQL/TestUpdate.php</file>-->
     </testsuite>
     <testsuite name="Database functions">
-        <file>cases/Db/SQLite3/Database/TestMiscellany.php</file>
-        <file>cases/Db/SQLite3/Database/TestMeta.php</file>
-        <file>cases/Db/SQLite3/Database/TestUser.php</file>
-        <file>cases/Db/SQLite3/Database/TestSession.php</file>
-        <file>cases/Db/SQLite3/Database/TestFolder.php</file>
-        <file>cases/Db/SQLite3/Database/TestFeed.php</file>
-        <file>cases/Db/SQLite3/Database/TestSubscription.php</file>
-        <file>cases/Db/SQLite3/Database/TestArticle.php</file>
-        <file>cases/Db/SQLite3/Database/TestLabel.php</file>
-        <file>cases/Db/SQLite3/Database/TestCleanup.php</file>
-
-        <file>cases/Db/SQLite3PDO/Database/TestMiscellany.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestMeta.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestUser.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestSession.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestFolder.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestFeed.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestSubscription.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestArticle.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestLabel.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestCleanup.php</file>
+        <file>cases/Db/SQLite3/TestDatabase.php</file>
+        <file>cases/Db/SQLite3PDO/TestDatabase.php</file>
+    <!--<file>cases/Db/PostgreSQL/TestDatabase.php</file>-->
     </testsuite>
     <testsuite name="REST">
         <file>cases/REST/TestTarget.php</file>
