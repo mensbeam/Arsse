@@ -18,7 +18,7 @@ use Phake;
 class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function setUp() {
-        $this->clearData(false);
+        self::clearData(false);
     }
 
     public function assertConsole(CLI $cli, string $command, int $exitStatus, string $output = "", bool $pattern = false) {

@@ -15,7 +15,7 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
     public static $path;
 
     public function setUp() {
-        $this->clearData();
+        self::clearData();
         self::$vfs = vfsStream::setup("root", null, [
             'confGood'       => '<?php return Array("lang" => "xx");',
             'confNotArray'   => '<?php return 0;',
@@ -35,7 +35,7 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
     public function tearDown() {
         self::$path = null;
         self::$vfs = null;
-        $this->clearData();
+        self::clearData();
     }
 
     public function testLoadDefaultValues() {

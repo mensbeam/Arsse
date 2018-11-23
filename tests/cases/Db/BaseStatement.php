@@ -19,7 +19,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     abstract protected function decorateTypeSyntax(string $value, string $type): string;
 
     public function setUp() {
-        $this->clearData();
+        self::clearData();
         self::setConf();
         $info = new DatabaseInformation($this->implementation);
         $this->interface = ($info->interfaceConstructor)();
@@ -33,7 +33,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function tearDown() {
         $this->exec("DROP TABLE IF EXISTS arsse_meta");
-        $this->clearData();
+        self::clearData();
     }
 
     public function testConstructStatement() {

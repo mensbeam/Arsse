@@ -21,14 +21,14 @@ use Zend\Diactoros\Response\EmptyResponse;
 /** @coversNothing */
 abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     public function setUp() {
-        $this->clearData();
+        self::clearData();
     }
 
     public function tearDown() {
-        $this->clearData();
+        self::clearData();
     }
 
-    public function clearData(bool $loadLang = true) {
+    public static function clearData(bool $loadLang = true) {
         date_default_timezone_set("America/Toronto");
         $r = new \ReflectionClass(\JKingWeb\Arsse\Arsse::class);
         $props = array_keys($r->getStaticProperties());

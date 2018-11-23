@@ -48,7 +48,7 @@ class TestDriver extends \JKingWeb\Arsse\TestCase\Db\BaseDriver {
     }
 
     public function provideDrivers() {
-        $this->clearData();
+        self::clearData();
         self::setConf([
             'dbTimeoutExec' => 0.5,
             'dbSQLite3Timeout' => 0,

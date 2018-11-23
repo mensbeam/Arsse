@@ -11,7 +11,7 @@ use JKingWeb\Arsse\Misc\Date;
 /** @covers \JKingWeb\Arsse\Misc\Date */
 class TestDate extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp() {
-        $this->clearData();
+        self::clearData();
     }
 
     public function testNormalizeADate() {

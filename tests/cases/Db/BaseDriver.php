@@ -22,7 +22,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
     ];
     
     public function setUp() {
-        $this->clearData();
+        self::clearData();
         self::setConf($this->conf);
         $info = new DatabaseInformation($this->implementation);
         $this->interface = ($info->interfaceConstructor)();
@@ -37,7 +37,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function tearDown() {
-        $this->clearData();
+        self::clearData();
         unset($this->drv);
         try {
             $this->exec("ROLLBACK");

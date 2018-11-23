@@ -19,7 +19,7 @@ use Phake;
 class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function setUp() {
-        $this->clearData();
+        self::clearData();
         self::setConf();
         // create a mock database interface
         Arsse::$db = Phake::mock(Database::class);

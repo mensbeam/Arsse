@@ -95,7 +95,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
             $this->markTestSkipped("Test Web server is not accepting requests");
         }
         $this->base = self::$host."Feed/";
-        $this->clearData();
+        self::clearData();
         self::setConf();
         Arsse::$db = Phake::mock(Database::class);
     }

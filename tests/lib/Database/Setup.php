@@ -21,7 +21,7 @@ trait Setup {
 
     public function setUp() {
         // establish a clean baseline
-        $this->clearData();
+        self::clearData();
         self::setConf();
         // configure and create the relevant database driver
         $this->setUpDriver();
@@ -49,7 +49,7 @@ trait Setup {
         // clean up
         $this->primed = false;
         $this->drv = null;
-        $this->clearData();
+        self::clearData();
     }
 
     public function primeDatabase(array $data, \JKingWeb\Arsse\Db\Driver $drv = null): bool {

@@ -23,7 +23,7 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $user = "john.doe@example.com";
 
     public function setUp() {
-        $this->clearData();
+        self::clearData();
         self::setConf();
         // create a mock user manager
         Arsse::$user = Phake::mock(User::class);
@@ -33,7 +33,7 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function tearDown() {
-        $this->clearData();
+        self::clearData();
     }
 
     protected function req(string $target, string $method = "GET", string $user = null): ResponseInterface {

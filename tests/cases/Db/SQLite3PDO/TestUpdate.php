@@ -29,7 +29,7 @@ class TestUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         if (!PDODriver::requirementsMet()) {
             $this->markTestSkipped("PDO-SQLite extension not loaded");
         }
-        $this->clearData();
+        self::clearData();
         $this->vfs = vfsStream::setup("schemata", null, ['SQLite3' => []]);
         $conf['dbDriver'] = PDODriver::class;
         self::setConf($conf);
@@ -42,7 +42,7 @@ class TestUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         unset($this->drv);
         unset($this->data);
         unset($this->vfs);
-        $this->clearData();
+        self::clearData();
     }
 
     public function testLoadMissingFile() {

@@ -339,7 +339,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function setUp() {
-        $this->clearData();
+        self::clearData();
         self::setConf();
         // create a mock user manager
         Arsse::$user = Phake::mock(User::class);
@@ -352,7 +352,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function tearDown() {
-        $this->clearData();
+        self::clearData();
     }
 
     protected function v($value) {

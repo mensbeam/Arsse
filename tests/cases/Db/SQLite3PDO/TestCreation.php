@@ -25,7 +25,7 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
         if (!Driver::requirementsMet()) {
             $this->markTestSkipped("PDO-SQLite extension not loaded");
         }
-        $this->clearData();
+        self::clearData();
         // test files
         $this->files = [
             // cannot create files
@@ -112,7 +112,7 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function tearDown() {
-        $this->clearData();
+        self::clearData();
     }
 
     public function testFailToCreateDatabase() {

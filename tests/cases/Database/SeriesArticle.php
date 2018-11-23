@@ -4,7 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse\Test\Database;
+namespace JKingWeb\Arsse\TestCase\Database;
 
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Arsse;

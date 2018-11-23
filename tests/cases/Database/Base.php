@@ -11,7 +11,7 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Misc\ValueInfo;
-use JKingWeb\Arsse\Test\Database;
+use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\Result;
 use Phake;
 
@@ -23,12 +23,12 @@ abstract class Base {
 
     public function setUp() {
         // establish a clean baseline
-        $this->clearData();
+        self::clearData();
         self::setConf();
         // configure and create the relevant database driver
         $this->setUpDriver();
         // create the database interface with the suitable driver
-        Arsse::$db = new Database($this->drv);
+        Arsse::$db = new Database;
         Arsse::$db->driverSchemaUpdate();
         // create a mock user manager
         Arsse::$user = Phake::mock(User::class);
@@ -51,7 +51,7 @@ abstract class Base {
         // clean up
         $this->primed = false;
         $this->drv = null;
-        $this->clearData();
+        self::clearData();
     }
 
     public function primeDatabase(array $data, \JKingWeb\Arsse\Db\Driver $drv = null): bool {

@@ -176,7 +176,7 @@ LONG_STRING;
     }
 
     public function setUp() {
-        $this->clearData();
+        self::clearData();
         self::setConf();
         // create a mock user manager
         Arsse::$user = Phake::mock(User::class);
@@ -196,7 +196,7 @@ LONG_STRING;
     }
 
     public function tearDown() {
-        $this->clearData();
+        self::clearData();
     }
 
     public function testHandleInvalidPaths() {

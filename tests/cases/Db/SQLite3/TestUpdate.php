@@ -29,7 +29,7 @@ class TestUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         if (!Driver::requirementsMet()) {
             $this->markTestSkipped("SQLite extension not loaded");
         }
-        $this->clearData();
+        self::clearData();
         $this->vfs = vfsStream::setup("schemata", null, ['SQLite3' => []]);
         self::setConf($conf);
         $this->base = $this->vfs->url();
@@ -41,7 +41,7 @@ class TestUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         unset($this->drv);
         unset($this->data);
         unset($this->vfs);
-        $this->clearData();
+        self::clearData();
     }
 
     public function testLoadMissingFile() {
