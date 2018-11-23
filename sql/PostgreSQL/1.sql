@@ -2,7 +2,12 @@
 -- Copyright 2017 J. King, Dustin Wilson et al.
 -- See LICENSE and AUTHORS files for details
 
--- Sessions for Tiny Tiny RSS (and possibly others)
+-- Please consult the SQLite 3 schemata for commented version
+
+drop table if exists arsse_sessions cascade;
+drop table if exists arsse_labels cascade;
+drop table if exists arsse_label_members cascade;
+
 create table arsse_sessions (
     id text primary key,
     created timestamp(0) with time zone not null default CURRENT_TIMESTAMP,
@@ -10,7 +15,6 @@ create table arsse_sessions (
     user text not null references arsse_users(id) on delete cascade on update cascade
 );
 
--- User-defined article labels for Tiny Tiny RSS
 create table arsse_labels (
     id bigserial primary key,
     owner text not null references arsse_users(id) on delete cascade on update cascade,
@@ -19,7 +23,6 @@ create table arsse_labels (
     unique(owner,name)
 );
 
--- Labels assignments for articles
 create table arsse_label_members (
     label bigint not null references arsse_labels(id) on delete cascade,
     article bigint not null references arsse_articles(id) on delete cascade,
@@ -29,8 +32,6 @@ create table arsse_label_members (
     primary key(label,article)
 );
 
--- alter marks table to add Tiny Tiny RSS' notes
 alter table arsse_marks add column note text not null default '';
 
--- set version marker
 update arsse_meta set value = '2' where key = 'schema_version';

@@ -2,13 +2,25 @@
 -- Copyright 2017 J. King, Dustin Wilson et al.
 -- See LICENSE and AUTHORS files for details
 
--- metadata
+-- Please consult the SQLite 3 schemata for commented version
+
+drop table if exists arsse_meta cascade;
+drop table if exists arsse_users cascade;
+drop table if exists arsse_users_meta cascade;
+drop table if exists arsse_folders cascade;
+drop table if exists arsse_feeds cascade;
+drop table if exists arsse_subscriptions cascade;
+drop table if exists arsse_articles cascade;
+drop table if exists arsse_enclosures cascade;
+drop table if exists arsse_marks cascade;
+drop table if exists arsse_editions cascade;
+drop table if exists arsse_categories cascade;
+
 create table arsse_meta(
     key text primary key,
     value text
 );
 
--- users
 create table arsse_users(
     id text primary key,
     password text,
@@ -19,7 +31,6 @@ create table arsse_users(
     rights bigint not null default 0
 );
 
--- extra user metadata
 create table arsse_users_meta(
     owner text not null references arsse_users(id) on delete cascade on update cascade,
     key text not null,
@@ -27,7 +38,6 @@ create table arsse_users_meta(
     primary key(owner,key)
 );
 
--- NextCloud News folders and TT-RSS categories
 create table arsse_folders(
     id bigserial primary key,
     owner text not null references arsse_users(id) on delete cascade on update cascade,
@@ -37,7 +47,6 @@ create table arsse_folders(
     unique(owner,name,parent)
 );
 
--- newsfeeds, deduplicated
 create table arsse_feeds(
     id bigserial primary key,
     url text not null,
@@ -58,7 +67,6 @@ create table arsse_feeds(
     unique(url,username,password)
 );
 
--- users' subscriptions to newsfeeds, with settings
 create table arsse_subscriptions(
     id bigserial primary key,
     owner text not null references arsse_users(id) on delete cascade on update cascade,
@@ -72,7 +80,6 @@ create table arsse_subscriptions(
     unique(owner,feed)
 );
 
--- entries in newsfeeds
 create table arsse_articles(
     id bigserial primary key,
     feed bigint not null references arsse_feeds(id) on delete cascade,
@@ -89,14 +96,12 @@ create table arsse_articles(
     title_content_hash text not null
 );
 
--- enclosures associated with articles
 create table arsse_enclosures(
     article bigint not null references arsse_articles(id) on delete cascade,
     url text,
     type text
 );
 
--- users' actions on newsfeed entries
 create table arsse_marks(
     article bigint not null references arsse_articles(id) on delete cascade,
     subscription bigint not null references arsse_subscriptions(id) on delete cascade on update cascade,
@@ -106,18 +111,15 @@ create table arsse_marks(
     primary key(article,subscription)
 );
 
--- IDs for specific editions of articles (required for at least NextCloud News)
 create table arsse_editions(
     id bigserial primary key,
     article bigint not null references arsse_articles(id) on delete cascade,
     modified timestamp(0) with time zone not null default CURRENT_TIMESTAMP
 );
 
--- author categories associated with newsfeed entries
 create table arsse_categories(
     article bigint not null references arsse_articles(id) on delete cascade,
     name text
 );
 
--- set version marker
 insert into arsse_meta(key,value) values('schema_version','1');
