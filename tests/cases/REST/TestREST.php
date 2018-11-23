@@ -95,7 +95,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testSendAuthenticationChallenges() {
-        $this->setConf();
+        self::setConf();
         $r = new REST();
         $in = new EmptyResponse(401);
         $exp = $in->withHeader("WWW-Authenticate", 'Basic realm="OOK"');
@@ -151,7 +151,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideCorsNegotiations */
     public function testNegotiateCors($origin, bool $exp, string $allowed = null, string $denied = null) {
-        $this->setConf();
+        self::setConf();
         $r = Phake::partialMock(REST::class);
         Phake::when($r)->corsNormalizeOrigin->thenReturnCallback(function ($origin) {
             return $origin;

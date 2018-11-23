@@ -26,7 +26,7 @@ class TestFetching extends \JKingWeb\Arsse\Test\AbstractTest {
         }
         $this->base = self::$host."Feed/";
         $this->clearData();
-        $this->setConf();
+        self::setConf();
     }
 
     public function testHandle400() {

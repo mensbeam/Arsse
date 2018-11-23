@@ -340,7 +340,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function setUp() {
         $this->clearData();
-        $this->setConf();
+        self::setConf();
         // create a mock user manager
         Arsse::$user = Phake::mock(User::class);
         Phake::when(Arsse::$user)->auth->thenReturn(true);

@@ -32,7 +32,7 @@ class TestUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->clearData();
         $this->vfs = vfsStream::setup("schemata", null, ['SQLite3' => []]);
         $conf['dbDriver'] = PDODriver::class;
-        $this->setConf($conf);
+        self::setConf($conf);
         $this->base = $this->vfs->url();
         $this->path = $this->base."/SQLite3/";
         $this->drv = new PDODriver();

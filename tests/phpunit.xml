@@ -45,19 +45,23 @@
         <file>cases/Db/TestTransaction.php</file>
         <file>cases/Db/TestResultAggregate.php</file>
         <file>cases/Db/TestResultEmpty.php</file>
-        <file>cases/Db/TestResult.php</file>
-        <file>cases/Db/TestStatement.php</file>
+        <file>cases/Db/TestResultPDO.php</file>
 
+        <file>cases/Db/SQLite3/TestResult.php</file>
+        <file>cases/Db/SQLite3/TestStatement.php</file>
         <file>cases/Db/SQLite3/TestCreation.php</file>
         <file>cases/Db/SQLite3/TestDriver.php</file>
         <file>cases/Db/SQLite3/TestUpdate.php</file>
 
+        <file>cases/Db/SQLite3PDO/TestStatement.php</file>
         <file>cases/Db/SQLite3PDO/TestCreation.php</file>
         <file>cases/Db/SQLite3PDO/TestDriver.php</file>
         <file>cases/Db/SQLite3PDO/TestUpdate.php</file>
 
+        <file>cases/Db/PostgreSQL/TestStatement.php</file>
         <file>cases/Db/PostgreSQL/TestCreation.php</file>
-        <file>cases/Db/PostgreSQL/TestDriver.php</file>
+    <!--<file>cases/Db/PostgreSQL/TestDriver.php</file>-->
+    <!--<file>cases/Db/PostgreSQL/TestUpdate.php</file>-->
     </testsuite>
     <testsuite name="Database functions">
         <file>cases/Db/SQLite3/Database/TestMiscellany.php</file>

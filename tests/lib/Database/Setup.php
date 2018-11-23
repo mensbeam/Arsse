@@ -22,7 +22,7 @@ trait Setup {
     public function setUp() {
         // establish a clean baseline
         $this->clearData();
-        $this->setConf();
+        self::setConf();
         // configure and create the relevant database driver
         $this->setUpDriver();
         // create the database interface with the suitable driver

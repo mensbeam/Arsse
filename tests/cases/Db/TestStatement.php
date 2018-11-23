@@ -38,18 +38,14 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideStatements */
-    public function testConstructStatement(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
-        if (!$driverTestable) {
-            $this->markTestSkipped();
-        }
+    public function testConstructStatement() {
+        $class = $this->statementClass;
         $this->assertInstanceOf(Statement::class, new $class(...$func("SELECT ? as value")));
     }
 
     /** @dataProvider provideBindings */
     public function testBindATypedValue(bool $driverTestable, string $class, \Closure $func, $value, string $type, string $exp) {
-        if (!$driverTestable) {
-            $this->markTestSkipped();
-        }
+        $class = $this->statementClass;
         if ($exp=="null") {
             $query = "SELECT (cast(? as text) is null) as pass";
         } else {
@@ -63,10 +59,8 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideBinaryBindings */
-    public function testHandleBinaryData(bool $driverTestable, string $class, \Closure $func, $value, string $type, string $exp) {
-        if (!$driverTestable) {
-            $this->markTestSkipped();
-        }
+    public function testHandleBinaryData($value, string $type, string $exp) {
+        $class = $this->statementClass;
         if ($exp=="null") {
             $query = "SELECT (cast(? as text) is null) as pass";
         } else {
@@ -80,20 +74,16 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideStatements */
-    public function testBindMissingValue(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
-        if (!$driverTestable) {
-            $this->markTestSkipped();
-        }
+    public function testBindMissingValue() {
+        $class = $this->statementClass;
         $s = new $class(...$func("SELECT ? as value", ["int"]));
         $val = $s->runArray()->getRow()['value'];
         $this->assertSame(null, $val);
     }
 
     /** @dataProvider provideStatements */
-    public function testBindMultipleValues(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
-        if (!$driverTestable) {
-            $this->markTestSkipped();
-        }
+    public function testBindMultipleValues() {
+        $class = $this->statementClass;
         $exp = [
             'one' => 1,
             'two' => 2,
@@ -105,10 +95,8 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideStatements */
-    public function testBindRecursively(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
-        if (!$driverTestable) {
-            $this->markTestSkipped();
-        }
+    public function testBindRecursively() {
+        $class = $this->statementClass;
         $exp = [
             'one'   => 1,
             'two'   => 2,
@@ -122,20 +110,16 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideStatements */
-    public function testBindWithoutType(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
-        if (!$driverTestable) {
-            $this->markTestSkipped();
-        }
+    public function testBindWithoutType() {
+        $class = $this->statementClass;
         $this->assertException("paramTypeMissing", "Db");
         $s = new $class(...$func("SELECT ? as value", []));
         $s->runArray([1]);
     }
 
     /** @dataProvider provideStatements */
-    public function testViolateConstraint(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
-        if (!$driverTestable) {
-            $this->markTestSkipped();
-        }
+    public function testViolateConstraint() {
+        $class = $this->statementClass;
         (new $class(...$func("CREATE TABLE if not exists arsse_meta(key varchar(255) primary key not null, value text)")))->run();
         $s = new $class(...$func("INSERT INTO arsse_meta(key) values(?)", ["str"]));
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
@@ -143,10 +127,8 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideStatements */
-    public function testMismatchTypes(bool $driverTestable, bool $stringCoersion, string $class, \Closure $func) {
-        if (!$driverTestable) {
-            $this->markTestSkipped();
-        }
+    public function testMismatchTypes() {
+        $class = $this->statementClass;
         (new $class(...$func("CREATE TABLE if not exists arsse_feeds(id integer primary key not null, url text not null)")))->run();
         $s = new $class(...$func("INSERT INTO arsse_feeds(id,url) values(?,?)", ["str", "str"]));
         $this->assertException("typeViolation", "Db", "ExceptionInput");

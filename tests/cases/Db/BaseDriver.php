@@ -8,7 +8,7 @@ namespace JKingWeb\Arsse\TestCase\Db;
 
 use JKingWeb\Arsse\Db\Statement;
 use JKingWeb\Arsse\Db\Result;
-
+use JKingWeb\Arsse\Test\DatabaseInformation;
 
 abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $drv;
@@ -22,12 +22,13 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
     ];
     
     public function setUp() {
-        $this->setConf($this->conf);
-        $this->interface = $this->getDbInterface($this->implementation);
+        self::setConf($this->conf);
+        $info = new DatabaseInformation($this->implementation);
+        $this->interface = ($info->interfaceConstructor)();
         if (!$this->interface) {
             $this->markTestSkipped("$this->implementation database driver not available");
         }
-        $this->drv = $this->getDbDriver($this->implementation);
+        $this->drv = new $info->driverClass;
         $this->exec("DROP TABLE IF EXISTS arsse_test");
         $this->exec("DROP TABLE IF EXISTS arsse_meta");
         $this->exec("CREATE TABLE arsse_meta(key varchar(255) primary key not null, value text)");

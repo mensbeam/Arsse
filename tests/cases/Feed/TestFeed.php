@@ -96,7 +96,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         }
         $this->base = self::$host."Feed/";
         $this->clearData();
-        $this->setConf();
+        self::setConf();
         Arsse::$db = Phake::mock(Database::class);
     }
 

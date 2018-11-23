@@ -177,7 +177,7 @@ LONG_STRING;
 
     public function setUp() {
         $this->clearData();
-        $this->setConf();
+        self::setConf();
         // create a mock user manager
         Arsse::$user = Phake::mock(User::class);
         Phake::when(Arsse::$user)->auth->thenReturn(true);
@@ -225,7 +225,7 @@ LONG_STRING;
     /** @dataProvider provideLoginRequests */
     public function testLogIn(array $conf, $httpUser, array $data, $sessions) {
         Arsse::$user->id = null;
-        $this->setConf($conf);
+        self::setConf($conf);
         Phake::when(Arsse::$user)->auth->thenReturn(false);
         Phake::when(Arsse::$user)->auth("john.doe@example.com", "secret")->thenReturn(true);
         Phake::when(Arsse::$user)->auth("jane.doe@example.com", "superman")->thenReturn(true);
@@ -259,7 +259,7 @@ LONG_STRING;
     /** @dataProvider provideResumeRequests */
     public function testValidateASession(array $conf, $httpUser, string $data, $result) {
         Arsse::$user->id = null;
-        $this->setConf($conf);
+        self::setConf($conf);
         Phake::when(Arsse::$db)->sessionResume("PriestsOfSyrinx")->thenReturn([
             'id' => "PriestsOfSyrinx",
             'created' => "2000-01-01 00:00:00",

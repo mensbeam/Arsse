@@ -14,7 +14,7 @@ use JKingWeb\Arsse\Db\PostgreSQL\Driver;
 class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideConnectionStrings */
     public function testGenerateConnectionString(bool $pdo, string $user, string $pass, string $db, string $host, int $port, string $service, string $exp) {
-        $this->setConf();
+        self::setConf();
         $timeout = (string) ceil(Arsse::$conf->dbTimeoutConnect ?? 0);
         $postfix = "application_name='arsse' client_encoding='UTF8' connect_timeout='$timeout'";
         $act = Driver::makeConnectionString($pdo, $user, $pass, $db, $host, $port, $service);
