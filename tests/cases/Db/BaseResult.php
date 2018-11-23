@@ -18,6 +18,7 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
     abstract protected function makeResult(string $q): array;
 
     public function setUp() {
+        $this->clearData();
         self::setConf();
         $info = new DatabaseInformation($this->implementation);
         $this->interface = ($info->interfaceConstructor)();
@@ -30,6 +31,7 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function tearDown() {
+        $this->clearData();
         $this->exec("DROP TABLE IF EXISTS arsse_meta");
     }
 

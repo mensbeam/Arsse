@@ -6,53 +6,49 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Db;
 
-use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Db\Statement;
-use JKingWeb\Arsse\Db\PDOStatement;
+use JKingWeb\Arsse\Test\DatabaseInformation;
 
-/**
- * @covers \JKingWeb\Arsse\Db\SQLite3\Statement<extended>
- * @covers \JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder
- * @covers \JKingWeb\Arsse\Db\PDOStatement<extended>
- * @covers \JKingWeb\Arsse\Db\PDOError */
-class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function provideStatements() {
-        $interfaces = $this->provideDbInterfaces();
-        $constructors = [
-            'SQLite 3' => function(string $query, array $types = []) use($interfaces) {
-                $s = $interfaces['SQLite 3']['interface']->prepare($query);
-                return [$interfaces['SQLite 3']['interface'], $s, $types];
-            },
-            'PDO SQLite 3' => function(string $query, array $types = []) use($interfaces) {
-                $s = $interfaces['PDO SQLite 3']['interface']->prepare($query);
-                return [$interfaces['PDO SQLite 3']['interface'], $s, $types];
-            },
-            'PDO PostgreSQL' => function(string $query, array $types = []) use($interfaces) {
-                $s = $interfaces['PDO PostgreSQL']['interface']->prepare($query);
-                return [$interfaces['PDO PostgreSQL']['interface'], $s, $types];
-            },
-        ];
-        foreach ($constructors as $drv => $func) {
-            yield $drv => [isset($interfaces[$drv]['interface']), $interfaces[$drv]['stringOutput'], $interfaces[$drv]['statement'], $func];
+abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
+    protected $statementClass;
+    protected $stringOutput;
+    protected $interface;
+
+    abstract protected function exec(string $q);
+    abstract protected function makeStatement(string $q, array $types = []): array;
+    abstract protected function decorateTypeSyntax(string $value, string $type): string;
+
+    public function setUp() {
+        $this->clearData();
+        self::setConf();
+        $info = new DatabaseInformation($this->implementation);
+        $this->interface = ($info->interfaceConstructor)();
+        if (!$this->interface) {
+            $this->markTestSkipped("$this->implementation database driver not available");
         }
+        $this->statementClass = $info->statementClass;
+        $this->stringOutput = $info->stringOutput;
+        $this->exec("DROP TABLE IF EXISTS arsse_meta");
     }
 
-    /** @dataProvider provideStatements */
+    public function tearDown() {
+        $this->exec("DROP TABLE IF EXISTS arsse_meta");
+        $this->clearData();
+    }
+
     public function testConstructStatement() {
-        $class = $this->statementClass;
-        $this->assertInstanceOf(Statement::class, new $class(...$func("SELECT ? as value")));
+        $this->assertInstanceOf(Statement::class, new $this->statementClass(...$this->makeStatement("SELECT ? as value")));
     }
 
     /** @dataProvider provideBindings */
-    public function testBindATypedValue(bool $driverTestable, string $class, \Closure $func, $value, string $type, string $exp) {
-        $class = $this->statementClass;
+    public function testBindATypedValue($value, string $type, string $exp) {
         if ($exp=="null") {
             $query = "SELECT (cast(? as text) is null) as pass";
         } else {
             $query = "SELECT ($exp = ?) as pass";
         }
         $typeStr = "'".str_replace("'", "''", $type)."'";
-        $s = new $class(...$func($query));
+        $s = new $this->statementClass(...$this->makeStatement($query));
         $s->retype(...[$type]);
         $act = $s->run(...[$value])->getValue();
         $this->assertTrue((bool) $act);
@@ -60,77 +56,67 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideBinaryBindings */
     public function testHandleBinaryData($value, string $type, string $exp) {
-        $class = $this->statementClass;
+        if (in_array($this->implementation, ["PostgreSQL", "PDO PostgreSQL"])) {
+            $this->markTestSkipped("Correct handling of binary data with PostgreSQL is currently unknown");
+        }
         if ($exp=="null") {
             $query = "SELECT (cast(? as text) is null) as pass";
         } else {
             $query = "SELECT ($exp = ?) as pass";
         }
         $typeStr = "'".str_replace("'", "''", $type)."'";
-        $s = new $class(...$func($query));
+        $s = new $this->statementClass(...$this->makeStatement($query));
         $s->retype(...[$type]);
         $act = $s->run(...[$value])->getValue();
         $this->assertTrue((bool) $act);
     }
 
-    /** @dataProvider provideStatements */
     public function testBindMissingValue() {
-        $class = $this->statementClass;
-        $s = new $class(...$func("SELECT ? as value", ["int"]));
+        $s = new $this->statementClass(...$this->makeStatement("SELECT ? as value", ["int"]));
         $val = $s->runArray()->getRow()['value'];
         $this->assertSame(null, $val);
     }
 
-    /** @dataProvider provideStatements */
     public function testBindMultipleValues() {
-        $class = $this->statementClass;
         $exp = [
             'one' => 1,
             'two' => 2,
         ];
-        $exp = $stringCoersion ? $this->stringify($exp) : $exp;
-        $s = new $class(...$func("SELECT ? as one, ? as two", ["int", "int"]));
+        $exp = $this->stringOutput ? $this->stringify($exp) : $exp;
+        $s = new $this->statementClass(...$this->makeStatement("SELECT ? as one, ? as two", ["int", "int"]));
         $val = $s->runArray([1,2])->getRow();
         $this->assertSame($exp, $val);
     }
 
-    /** @dataProvider provideStatements */
     public function testBindRecursively() {
-        $class = $this->statementClass;
         $exp = [
             'one'   => 1,
             'two'   => 2,
             'three' => 3,
             'four'  => 4,
         ];
-        $exp = $stringCoersion ? $this->stringify($exp) : $exp;
-        $s = new $class(...$func("SELECT ? as one, ? as two, ? as three, ? as four", ["int", ["int", "int"], "int"]));
+        $exp = $this->stringOutput ? $this->stringify($exp) : $exp;
+        $s = new $this->statementClass(...$this->makeStatement("SELECT ? as one, ? as two, ? as three, ? as four", ["int", ["int", "int"], "int"]));
         $val = $s->runArray([1, [2, 3], 4])->getRow();
         $this->assertSame($exp, $val);
     }
 
-    /** @dataProvider provideStatements */
     public function testBindWithoutType() {
-        $class = $this->statementClass;
         $this->assertException("paramTypeMissing", "Db");
-        $s = new $class(...$func("SELECT ? as value", []));
+        $s = new $this->statementClass(...$this->makeStatement("SELECT ? as value", []));
         $s->runArray([1]);
     }
 
-    /** @dataProvider provideStatements */
     public function testViolateConstraint() {
-        $class = $this->statementClass;
-        (new $class(...$func("CREATE TABLE if not exists arsse_meta(key varchar(255) primary key not null, value text)")))->run();
-        $s = new $class(...$func("INSERT INTO arsse_meta(key) values(?)", ["str"]));
+        (new $this->statementClass(...$this->makeStatement("CREATE TABLE if not exists arsse_meta(key varchar(255) primary key not null, value text)")))->run();
+        $s = new $this->statementClass(...$this->makeStatement("INSERT INTO arsse_meta(key) values(?)", ["str"]));
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         $s->runArray([null]);
     }
 
-    /** @dataProvider provideStatements */
     public function testMismatchTypes() {
-        $class = $this->statementClass;
-        (new $class(...$func("CREATE TABLE if not exists arsse_feeds(id integer primary key not null, url text not null)")))->run();
-        $s = new $class(...$func("INSERT INTO arsse_feeds(id,url) values(?,?)", ["str", "str"]));
+        (new $this->statementClass(...$this->makeStatement("CREATE TABLE if not exists arsse_feeds(id integer primary key not null, url text not null)")))->run();
+        $s = new $this->statementClass(...$this->makeStatement("INSERT INTO arsse_feeds(id,url) values(?,?)", ["str", "str"]));
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         $s->runArray(['ook', 'eek']);
     }
@@ -250,35 +236,32 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
             'Arbitrary date string as strict string' => ["Today", "strict string", "'Today'"],
             'Arbitrary date string as strict datetime' => ["Today", "strict datetime", "'".date_create("Today", new \DateTimezone("UTC"))->format("Y-m-d H:i:s")."'"],
             'Arbitrary date string as strict boolean' => ["Today", "strict boolean", "1"],
-            'DateTime as integer' => [$dateMutable, "integer", $dateUTC->getTimestamp()],
+            'DateTime as integer' => [$dateMutable, "integer", (string) $dateUTC->getTimestamp()],
             'DateTime as float' => [$dateMutable, "float", $dateUTC->getTimestamp().".0"],
             'DateTime as string' => [$dateMutable, "string", "'".$dateUTC->format("Y-m-d H:i:s")."'"],
             'DateTime as datetime' => [$dateMutable, "datetime", "'".$dateUTC->format("Y-m-d H:i:s")."'"],
             'DateTime as boolean' => [$dateMutable, "boolean", "1"],
-            'DateTime as strict integer' => [$dateMutable, "strict integer", $dateUTC->getTimestamp()],
+            'DateTime as strict integer' => [$dateMutable, "strict integer", (string) $dateUTC->getTimestamp()],
             'DateTime as strict float' => [$dateMutable, "strict float", $dateUTC->getTimestamp().".0"],
             'DateTime as strict string' => [$dateMutable, "strict string", "'".$dateUTC->format("Y-m-d H:i:s")."'"],
             'DateTime as strict datetime' => [$dateMutable, "strict datetime", "'".$dateUTC->format("Y-m-d H:i:s")."'"],
             'DateTime as strict boolean' => [$dateMutable, "strict boolean", "1"],
-            'DateTimeImmutable as integer' => [$dateImmutable, "integer", $dateUTC->getTimestamp()],
+            'DateTimeImmutable as integer' => [$dateImmutable, "integer", (string) $dateUTC->getTimestamp()],
             'DateTimeImmutable as float' => [$dateImmutable, "float", $dateUTC->getTimestamp().".0"],
             'DateTimeImmutable as string' => [$dateImmutable, "string", "'".$dateUTC->format("Y-m-d H:i:s")."'"],
             'DateTimeImmutable as datetime' => [$dateImmutable, "datetime", "'".$dateUTC->format("Y-m-d H:i:s")."'"],
             'DateTimeImmutable as boolean' => [$dateImmutable, "boolean", "1"],
-            'DateTimeImmutable as strict integer' => [$dateImmutable, "strict integer", $dateUTC->getTimestamp()],
+            'DateTimeImmutable as strict integer' => [$dateImmutable, "strict integer", (string) $dateUTC->getTimestamp()],
             'DateTimeImmutable as strict float' => [$dateImmutable, "strict float", $dateUTC->getTimestamp().".0"],
             'DateTimeImmutable as strict string' => [$dateImmutable, "strict string", "'".$dateUTC->format("Y-m-d H:i:s")."'"],
             'DateTimeImmutable as strict datetime' => [$dateImmutable, "strict datetime", "'".$dateUTC->format("Y-m-d H:i:s")."'"],
             'DateTimeImmutable as strict boolean' => [$dateImmutable, "strict boolean", "1"],
         ];
-        $decorators = $this->provideSyntaxDecorators();
-        foreach ($this->provideStatements() as $drvName => list($drv, $stringCoersion, $class, $func)) {
-            $conv = $decorators[$drvName] ?? $conv = $decorators[''];
-            foreach ($tests as $index => list($value, $type, $exp)) {
-                $t = preg_replace("<^strict >", "", $type);
-                $exp = ($exp=="null") ? $exp : $conv($exp, $t);
-                yield "$index ($drvName)" => [$drv, $class, $func, $value, $type, $exp];
-            }
+        foreach ($tests as $index => list($value, $type, $exp)) {
+            $t = preg_replace("<^strict >", "", $type);
+            if (gettype($exp) != "string") var_export($index);
+            $exp = ($exp=="null") ? $exp : $this->decorateTypeSyntax($exp, $t);
+            yield $index => [$value, $type, $exp];
         }
     }
 
@@ -326,50 +309,11 @@ class TestStatement extends \JKingWeb\Arsse\Test\AbstractTest {
             'DateTimeImmutable as binary' => [$dateImmutable, "binary", "x'".bin2hex($dateUTC->format("Y-m-d H:i:s"))."'"],
             'DateTimeImmutable as strict binary' => [$dateImmutable, "strict binary", "x'".bin2hex($dateUTC->format("Y-m-d H:i:s"))."'"],
         ];
-        $decorators = $this->provideSyntaxDecorators();
-        foreach ($this->provideStatements() as $drvName => list($drv, $stringCoersion, $class, $func)) {
-            $conv = $decorators[$drvName] ?? $conv = $decorators[''];
-            if ($drvName=="PDO PostgreSQL") {
-                // skip PostgreSQL for these tests
-                $drv = false;
-            }
-            foreach ($tests as $index => list($value, $type, $exp)) {
-                $t = preg_replace("<^strict >", "", $type);
-                $exp = ($exp=="null") ? $exp : $conv($exp, $t);
-                yield "$index ($drvName)" => [$drv, $class, $func, $value, $type, $exp];
-            }
+        foreach ($tests as $index => list($value, $type, $exp)) {
+            $t = preg_replace("<^strict >", "", $type);
+            if (gettype($exp) != "string") var_export($index);
+            $exp = ($exp=="null") ? $exp : $this->decorateTypeSyntax($exp, $t);
+            yield $index => [$value, $type, $exp];
         }
-    }
-
-    function provideSyntaxDecorators() {
-        return [
-            'PDO PostgreSQL' => (function($v, $t) {
-                switch ($t) {
-                    case "float":
-                        return (substr($v, -2)==".0") ? "'".substr($v, 0, strlen($v) - 2)."'" : "'$v'";
-                    case "string":
-                        if (preg_match("<^char\((\d+)\)$>", $v, $match)) {
-                            return "U&'\\+".str_pad(dechex((int) $match[1]), 6, "0", \STR_PAD_LEFT)."'";
-                        } else {
-                            return $v;
-                        }
-                    default:
-                        return $v;
-                }
-            }),
-            'PDO SQLite 3' => (function($v, $t) {
-                if ($t=="float") {
-                    return (substr($v, -2)==".0") ? "'".substr($v, 0, strlen($v) - 2)."'" : "'$v'";
-                } else {
-                    return $v;
-                }
-            }),
-            'SQLite 3' => (function($v, $t) {
-                return $v;
-            }),
-            '' => (function($v, $t) {
-                return $v;
-            }),
-        ];
     }
 }

@@ -40,7 +40,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         }
     }
 
-    public static function setConf(array $conf = []) {
+    public static function setConf(array $conf = [], bool $force = true) {
         $defaults = [
             'dbSQLite3File' => ":memory:",
             'dbSQLite3Timeout' => 0,
@@ -48,7 +48,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             'dbPostgreSQLPass' => "arsse_test",
             'dbPostgreSQLDb' => "arsse_test",
         ];
-        Arsse::$conf = Arsse::$conf ?? (new Conf)->import($defaults)->import($conf);
+        Arsse::$conf = ($force ? null : Arsse::$conf) ?? (new Conf)->import($defaults)->import($conf);
     }
 
     public function assertException(string $msg = "", string $prefix = "", string $type = "Exception") {
