@@ -11,21 +11,27 @@ use JKingWeb\Arsse\User\Driver as UserDriver;
 use Phake;
 
 trait SeriesUser {
-    protected $data = [
-        'arsse_users' => [
-            'columns' => [
-                'id'       => 'str',
-                'password' => 'str',
-                'name'     => 'str',
-                'rights'   => 'int',
+    protected function setUpSeriesUser() {
+        $this->data = [
+            'arsse_users' => [
+                'columns' => [
+                    'id'       => 'str',
+                    'password' => 'str',
+                    'name'     => 'str',
+                    'rights'   => 'int',
+                ],
+                'rows' => [
+                    ["admin@example.net", '$2y$10$PbcG2ZR3Z8TuPzM7aHTF8.v61dtCjzjK78gdZJcp4UePE8T9jEgBW', "Hard Lip Herbert", 100], // password is hash of "secret"
+                    ["jane.doe@example.com", "", "Jane Doe", 0],
+                    ["john.doe@example.com", "", "John Doe", 0],
+                ],
             ],
-            'rows' => [
-                ["admin@example.net", '$2y$10$PbcG2ZR3Z8TuPzM7aHTF8.v61dtCjzjK78gdZJcp4UePE8T9jEgBW', "Hard Lip Herbert", 100], // password is hash of "secret"
-                ["jane.doe@example.com", "", "Jane Doe", 0],
-                ["john.doe@example.com", "", "John Doe", 0],
-            ],
-        ],
-    ];
+        ];
+    }
+
+    protected function tearDownSeriesUser() {
+        unset($this->data);
+    }
 
     public function testCheckThatAUserExists() {
         $this->assertTrue(Arsse::$db->userExists("jane.doe@example.com"));

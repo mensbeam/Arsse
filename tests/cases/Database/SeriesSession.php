@@ -11,9 +11,9 @@ use JKingWeb\Arsse\Misc\Date;
 use Phake;
 
 trait SeriesSession {
-    public function setUpSeries() {
+    protected function setUpSeriesSession() {
         // set up the configuration
-        Arsse::$conf->import([
+        static::setConf([
             'userSessionTimeout'  => "PT1H",
             'userSessionLifetime' => "PT24H",
         ]);
@@ -49,6 +49,10 @@ trait SeriesSession {
                 ],
             ],
         ];
+    }
+
+    protected function tearDownSeriesSession() {
+        unset($this->data);
     }
 
     public function testResumeAValidSession() {

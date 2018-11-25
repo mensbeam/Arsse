@@ -16,7 +16,16 @@ use JKingWeb\Arsse\Test\DatabaseInformation;
 use Phake;
 
 abstract class Base extends \JKingWeb\Arsse\Test\AbstractTest{
+    use SeriesMiscellany;
+    use SeriesMeta;
+    use SeriesUser;
+    use SeriesSession;
+    use SeriesFolder;
+    use SeriesFeed;
+    use SeriesSubscription;
     use SeriesArticle;
+    use SeriesLabel;
+    use SeriesCleanup;
 
     /** @var \JKingWeb\Arsse\Test\DatabaseInformation */
     protected static $dbInfo;
@@ -62,6 +71,7 @@ abstract class Base extends \JKingWeb\Arsse\Test\AbstractTest{
         // get the name of the test's test series
         $this->series = $this->findTraitofTest($this->getName());
         static::clearData();
+        static::setConf();
         if (strlen(static::$failureReason)) {
             $this->markTestSkipped(static::$failureReason);
         }

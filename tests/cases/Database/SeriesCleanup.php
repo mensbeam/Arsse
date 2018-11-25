@@ -10,7 +10,7 @@ use JKingWeb\Arsse\Arsse;
 use Phake;
 
 trait SeriesCleanup {
-    public function setUpSeries() {
+    protected function setUpSeriesCleanup() {
         // set up the configuration
         Arsse::$conf->import([
             'userSessionTimeout'  => "PT1H",
@@ -133,6 +133,10 @@ trait SeriesCleanup {
                 ]
             ],
         ];
+    }
+
+    protected function tearDownSeriesCleanup() {
+        unset($this->data);
     }
 
     public function testCleanUpOrphanedFeeds() {

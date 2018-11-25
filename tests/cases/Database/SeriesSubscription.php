@@ -12,110 +12,114 @@ use JKingWeb\Arsse\Feed\Exception as FeedException;
 use Phake;
 
 trait SeriesSubscription {
-    protected $data = [
-        'arsse_users' => [
-            'columns' => [
-                'id'       => 'str',
-                'password' => 'str',
-                'name'     => 'str',
-            ],
-            'rows' => [
-                ["jane.doe@example.com", "", "Jane Doe"],
-                ["john.doe@example.com", "", "John Doe"],
-            ],
-        ],
-        'arsse_folders' => [
-            'columns' => [
-                'id'     => "int",
-                'owner'  => "str",
-                'parent' => "int",
-                'name'   => "str",
-            ],
-            'rows' => [
-                [1, "john.doe@example.com", null, "Technology"],
-                [2, "john.doe@example.com",    1, "Software"],
-                [3, "john.doe@example.com",    1, "Rocketry"],
-                [4, "jane.doe@example.com", null, "Politics"],
-                [5, "john.doe@example.com", null, "Politics"],
-                [6, "john.doe@example.com",    2, "Politics"],
-            ]
-        ],
-        'arsse_feeds' => [
-            'columns' => [
-                'id'         => "int",
-                'url'        => "str",
-                'title'      => "str",
-                'username'   => "str",
-                'password'   => "str",
-                'next_fetch' => "datetime",
-                'favicon'    => "str",
-            ],
-            'rows' => [] // filled in the series setup
-        ],
-        'arsse_subscriptions' => [
-            'columns' => [
-                'id'         => "int",
-                'owner'      => "str",
-                'feed'       => "int",
-                'title'      => "str",
-                'folder'     => "int",
-                'pinned'     => "bool",
-                'order_type' => "int",
-            ],
-            'rows' => [
-                [1,"john.doe@example.com",2,null,null,1,2],
-                [2,"jane.doe@example.com",2,null,null,0,0],
-                [3,"john.doe@example.com",3,"Ook",2,0,1],
-            ]
-        ],
-        'arsse_articles' => [
-            'columns' => [
-                'id'                 => "int",
-                'feed'               => "int",
-                'url_title_hash'     => "str",
-                'url_content_hash'   => "str",
-                'title_content_hash' => "str",
-            ],
-            'rows' => [
-                [1,2,"","",""],
-                [2,2,"","",""],
-                [3,2,"","",""],
-                [4,2,"","",""],
-                [5,2,"","",""],
-                [6,3,"","",""],
-                [7,3,"","",""],
-                [8,3,"","",""],
-            ]
-        ],
-        'arsse_marks' => [
-            'columns' => [
-                'article'      => "int",
-                'subscription' => "int",
-                'read'         => "bool",
-                'starred'      => "bool",
-            ],
-            'rows' => [
-                [1,2,1,0],
-                [2,2,1,0],
-                [3,2,1,0],
-                [4,2,1,0],
-                [5,2,1,0],
-                [1,1,1,0],
-                [7,3,1,0],
-                [8,3,0,0],
-            ]
-        ],
-    ];
 
-    public function setUpSeries() {
+    public function setUpSeriesSubscription() {
+        $this->data = [
+            'arsse_users' => [
+                'columns' => [
+                    'id'       => 'str',
+                    'password' => 'str',
+                    'name'     => 'str',
+                ],
+                'rows' => [
+                    ["jane.doe@example.com", "", "Jane Doe"],
+                    ["john.doe@example.com", "", "John Doe"],
+                ],
+            ],
+            'arsse_folders' => [
+                'columns' => [
+                    'id'     => "int",
+                    'owner'  => "str",
+                    'parent' => "int",
+                    'name'   => "str",
+                ],
+                'rows' => [
+                    [1, "john.doe@example.com", null, "Technology"],
+                    [2, "john.doe@example.com",    1, "Software"],
+                    [3, "john.doe@example.com",    1, "Rocketry"],
+                    [4, "jane.doe@example.com", null, "Politics"],
+                    [5, "john.doe@example.com", null, "Politics"],
+                    [6, "john.doe@example.com",    2, "Politics"],
+                ]
+            ],
+            'arsse_feeds' => [
+                'columns' => [
+                    'id'         => "int",
+                    'url'        => "str",
+                    'title'      => "str",
+                    'username'   => "str",
+                    'password'   => "str",
+                    'next_fetch' => "datetime",
+                    'favicon'    => "str",
+                ],
+                'rows' => [] // filled in the series setup
+            ],
+            'arsse_subscriptions' => [
+                'columns' => [
+                    'id'         => "int",
+                    'owner'      => "str",
+                    'feed'       => "int",
+                    'title'      => "str",
+                    'folder'     => "int",
+                    'pinned'     => "bool",
+                    'order_type' => "int",
+                ],
+                'rows' => [
+                    [1,"john.doe@example.com",2,null,null,1,2],
+                    [2,"jane.doe@example.com",2,null,null,0,0],
+                    [3,"john.doe@example.com",3,"Ook",2,0,1],
+                ]
+            ],
+            'arsse_articles' => [
+                'columns' => [
+                    'id'                 => "int",
+                    'feed'               => "int",
+                    'url_title_hash'     => "str",
+                    'url_content_hash'   => "str",
+                    'title_content_hash' => "str",
+                ],
+                'rows' => [
+                    [1,2,"","",""],
+                    [2,2,"","",""],
+                    [3,2,"","",""],
+                    [4,2,"","",""],
+                    [5,2,"","",""],
+                    [6,3,"","",""],
+                    [7,3,"","",""],
+                    [8,3,"","",""],
+                ]
+            ],
+            'arsse_marks' => [
+                'columns' => [
+                    'article'      => "int",
+                    'subscription' => "int",
+                    'read'         => "bool",
+                    'starred'      => "bool",
+                ],
+                'rows' => [
+                    [1,2,1,0],
+                    [2,2,1,0],
+                    [3,2,1,0],
+                    [4,2,1,0],
+                    [5,2,1,0],
+                    [1,1,1,0],
+                    [7,3,1,0],
+                    [8,3,0,0],
+                ]
+            ],
+        ];
         $this->data['arsse_feeds']['rows'] = [
             [1,"http://example.com/feed1", "Ook", "", "",strtotime("now"),''],
             [2,"http://example.com/feed2", "eek", "", "",strtotime("now - 1 hour"),'http://example.com/favicon.ico'],
             [3,"http://example.com/feed3", "Ack", "", "",strtotime("now + 1 hour"),''],
         ];
         // initialize a partial mock of the Database object to later manipulate the feedUpdate method
-        Arsse::$db = Phake::partialMock(Database::class, $this->drv);
+        Arsse::$db = Phake::partialMock(Database::class, static::$drv);
         $this->user = "john.doe@example.com";
+    }
+
+    protected function tearDownSeriesSubscription() {
+        unset($this->data, $this->user);
     }
 
     public function testAddASubscriptionToAnExistingFeed() {

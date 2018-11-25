@@ -12,26 +12,7 @@ use JKingWeb\Arsse\Feed\Exception as FeedException;
 use Phake;
 
 trait SeriesFeed {
-    protected $matches = [
-        [
-            'id'                 => 4,
-            'edited'             => '2000-01-04 00:00:00',
-            'guid'               => '804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180',
-            'url_title_hash'     => 'f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8',
-            'url_content_hash'   => 'f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3',
-            'title_content_hash' => 'ab2da63276acce431250b18d3d49b988b226a99c7faadf275c90b751aee05be9',
-        ],
-        [
-            'id'                 => 5,
-            'edited'             => '2000-01-05 00:00:00',
-            'guid'               => 'db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41',
-            'url_title_hash'     => 'd40da96e39eea6c55948ccbe9b3d275b5f931298288dbe953990c5f496097022',
-            'url_content_hash'   => '834240f84501b5341d375414718204ec421561f3825d34c22bf9182203e42900',
-            'title_content_hash' => '43b970ac6ec5f8a9647b2c7e4eed8b1d7f62e154a95eed748b0294c1256764ba',
-        ],
-    ];
-
-    public function setUpSeries() {
+    protected function setUpSeriesFeed() {
         // set up the test data
         $past  = gmdate("Y-m-d H:i:s", strtotime("now - 1 minute"));
         $future = gmdate("Y-m-d H:i:s", strtotime("now + 1 minute"));
@@ -163,6 +144,28 @@ trait SeriesFeed {
                 ]
             ],
         ];
+        $this->matches = [
+            [
+                'id'                 => 4,
+                'edited'             => '2000-01-04 00:00:00',
+                'guid'               => '804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180',
+                'url_title_hash'     => 'f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8',
+                'url_content_hash'   => 'f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3',
+                'title_content_hash' => 'ab2da63276acce431250b18d3d49b988b226a99c7faadf275c90b751aee05be9',
+            ],
+            [
+                'id'                 => 5,
+                'edited'             => '2000-01-05 00:00:00',
+                'guid'               => 'db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41',
+                'url_title_hash'     => 'd40da96e39eea6c55948ccbe9b3d275b5f931298288dbe953990c5f496097022',
+                'url_content_hash'   => '834240f84501b5341d375414718204ec421561f3825d34c22bf9182203e42900',
+                'title_content_hash' => '43b970ac6ec5f8a9647b2c7e4eed8b1d7f62e154a95eed748b0294c1256764ba',
+            ],
+        ];
+    }
+
+    protected function tearDownSeriesFeed() {
+        unset($this->data, $this->matches);
     }
 
     public function testListLatestItems() {

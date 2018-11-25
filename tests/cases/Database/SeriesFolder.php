@@ -10,45 +10,51 @@ use JKingWeb\Arsse\Arsse;
 use Phake;
 
 trait SeriesFolder {
-    protected $data = [
-        'arsse_users' => [
-            'columns' => [
-                'id'       => 'str',
-                'password' => 'str',
-                'name'     => 'str',
+    protected function setUpSeriesFolder() {
+        $this->data = [
+            'arsse_users' => [
+                'columns' => [
+                    'id'       => 'str',
+                    'password' => 'str',
+                    'name'     => 'str',
+                ],
+                'rows' => [
+                    ["jane.doe@example.com", "", "Jane Doe"],
+                    ["john.doe@example.com", "", "John Doe"],
+                ],
             ],
-            'rows' => [
-                ["jane.doe@example.com", "", "Jane Doe"],
-                ["john.doe@example.com", "", "John Doe"],
+            'arsse_folders' => [
+                'columns' => [
+                    'id'     => "int",
+                    'owner'  => "str",
+                    'parent' => "int",
+                    'name'   => "str",
+                ],
+                /* Layout translates to:
+                Jane
+                    Politics
+                John
+                    Technology
+                        Software
+                            Politics
+                        Rocketry
+                    Politics
+                */
+                'rows' => [
+                    [1, "john.doe@example.com", null, "Technology"],
+                    [2, "john.doe@example.com",    1, "Software"],
+                    [3, "john.doe@example.com",    1, "Rocketry"],
+                    [4, "jane.doe@example.com", null, "Politics"],
+                    [5, "john.doe@example.com", null, "Politics"],
+                    [6, "john.doe@example.com",    2, "Politics"],
+                ]
             ],
-        ],
-        'arsse_folders' => [
-            'columns' => [
-                'id'     => "int",
-                'owner'  => "str",
-                'parent' => "int",
-                'name'   => "str",
-            ],
-            /* Layout translates to:
-            Jane
-                Politics
-            John
-                Technology
-                    Software
-                        Politics
-                    Rocketry
-                Politics
-            */
-            'rows' => [
-                [1, "john.doe@example.com", null, "Technology"],
-                [2, "john.doe@example.com",    1, "Software"],
-                [3, "john.doe@example.com",    1, "Rocketry"],
-                [4, "jane.doe@example.com", null, "Politics"],
-                [5, "john.doe@example.com", null, "Politics"],
-                [6, "john.doe@example.com",    2, "Politics"],
-            ]
-        ],
-    ];
+        ];
+    }
+
+    protected function tearDownSeriesFolder() {
+        unset($this->data);
+    }
 
     public function testAddARootFolder() {
         $user = "john.doe@example.com";

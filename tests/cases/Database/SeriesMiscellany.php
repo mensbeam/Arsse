@@ -10,6 +10,15 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
 
 trait SeriesMiscellany {
+    protected function setUpSeriesMiscellany() {
+        static::setConf([
+            'dbDriver' => static::$dbInfo->driverClass,
+        ]);
+    }
+
+    protected function tearDownSeriesMiscellany() {
+    }
+
     public function testListDrivers() {
         $exp = [
             'JKingWeb\\Arsse\\Db\\SQLite3\\Driver' => Arsse::$lang->msg("Driver.Db.SQLite3.Name"),

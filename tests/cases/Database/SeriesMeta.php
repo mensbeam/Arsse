@@ -10,26 +10,29 @@ use JKingWeb\Arsse\Test\Database;
 use JKingWeb\Arsse\Arsse;
 
 trait SeriesMeta {
-    protected $dataBare = [
-        'arsse_meta' => [
-            'columns' => [
-                'key'   => 'str',
-                'value' => 'str',
+    protected function setUpSeriesMeta() {
+        $dataBare = [
+            'arsse_meta' => [
+                'columns' => [
+                    'key'   => 'str',
+                    'value' => 'str',
+                ],
+                'rows' => [
+                //['schema_version', "".\JKingWeb\Arsse\Database::SCHEMA_VERSION],
+                ['album',"A Farewell to Kings"],
+                ],
             ],
-            'rows' => [
-              //['schema_version', "".\JKingWeb\Arsse\Database::SCHEMA_VERSION],
-              ['album',"A Farewell to Kings"],
-            ],
-        ],
-    ];
-
-    public function setUpSeries() {
+        ];
         // the schema_version key is a special case, and to avoid jumping through hoops for every test we deal with it now
-        $this->data = $this->dataBare;
+        $this->data = $dataBare;
         // as far as tests are concerned the schema version is part of the expectations primed into the database
         array_unshift($this->data['arsse_meta']['rows'], ['schema_version', "".Database::SCHEMA_VERSION]);
         // but it's already been inserted by the driver, so we prime without it
-        $this->primeDatabase($this->dataBare);
+        $this->primeDatabase($dataBare);
+    }
+
+    protected function tearDownSeriesMeta() {
+        unset($this->data);
     }
 
     public function testAddANewValue() {
