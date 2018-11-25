@@ -4,18 +4,6 @@
 
 -- Please consult the SQLite 3 schemata for commented version
 
-drop table if exists arsse_meta cascade;
-drop table if exists arsse_users cascade;
-drop table if exists arsse_users_meta cascade;
-drop table if exists arsse_folders cascade;
-drop table if exists arsse_feeds cascade;
-drop table if exists arsse_subscriptions cascade;
-drop table if exists arsse_articles cascade;
-drop table if exists arsse_enclosures cascade;
-drop table if exists arsse_marks cascade;
-drop table if exists arsse_editions cascade;
-drop table if exists arsse_categories cascade;
-
 create table arsse_meta(
     key text primary key,
     value text

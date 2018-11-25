@@ -7,7 +7,6 @@
 -- create a case-insensitive generic collation sequence
 -- this collation is Unicode-aware, whereas SQLite's built-in nocase 
 -- collation is ASCII-only
-drop collation if exists nocase cascade;
 create collation nocase(
     provider = icu,
     locale = '@kf=false'

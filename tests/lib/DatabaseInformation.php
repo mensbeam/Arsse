@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Test;
 
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Db\Driver;
 
 class DatabaseInformation {
     public $name;
@@ -17,6 +18,8 @@ class DatabaseInformation {
     public $driverClass;
     public $stringOutput;
     public $interfaceConstructor;
+    public $truncateFunction;
+    public $razeFunction;
 
     protected static $data;
 
@@ -50,6 +53,57 @@ class DatabaseInformation {
     }
 
     protected static function getData() {
+        $sqlite3TableList = function($db): array {
+            $listTables = "SELECT name from sqlite_master where type = 'table' and name like 'arsse_%'";
+            if ($db instanceof Driver) {
+                $tables = $db->query($listTables)->getAll();
+                $tables = sizeof($tables) ? array_column($tables, "name") : [];
+            } elseif ($db instanceof \PDO) {
+                $tables = $db->query($listTables)->fetchAll(\PDO::FETCH_ASSOC);
+                $tables = sizeof($tables) ? array_column($tables, "name") : [];
+            } else {
+                $tables = [];
+                $result = $db->query($listTables);
+                while ($r = $result->fetchArray(\SQLITE3_ASSOC)) {
+                    $tables[] = $r['name'];
+                }
+                $result->finalize();
+            }
+            return $tables;
+        };
+        $sqlite3TruncateFunction = function($db, array $afterStatements = []) use ($sqlite3TableList) {
+            foreach ($sqlite3TableList($db) as $table) {
+                if ($table == "arsse_meta") {
+                    $db->exec("DELETE FROM $table where key <> 'schema_version'");
+                } else {
+                    $db->exec("DELETE FROM $table");
+                }
+            }
+            foreach ($afterStatements as $st) {
+                $db->exec($st);
+            }
+        };
+        $sqlite3RazeFunction = function($db, array $afterStatements = []) use ($sqlite3TableList) {
+            $db->exec("PRAGMA foreign_keys=0");
+            foreach ($sqlite3TableList($db) as $table) {
+                $db->exec("DROP TABLE IF EXISTS $table");
+            }
+            $db->exec("PRAGMA user_version=0");
+            $db->exec("PRAGMA foreign_keys=1");
+            foreach ($afterStatements as $st) {
+                $db->exec($st);
+            }
+        };
+        $pgObjectList = function($db): array {
+            $listObjects = "SELECT table_name as name, 'TABLE' as type from information_schema.tables where table_schema = current_schema() and table_name like 'arsse_%' union SELECT collation_name as name, 'COLLATION' as type from information_schema.collations where collation_schema = current_schema()";
+            if ($db instanceof Driver) {
+                return $db->query($listObjects)->getAll();
+            } elseif ($db instanceof \PDO) {
+                return $db->query($listObjects)->fetchAll(\PDO::FETCH_ASSOC);
+            } else {
+                throw \Exception("Native PostgreSQL interface not implemented");
+            }
+        };
         return [
             'SQLite 3' => [
                 'pdo' => false,
@@ -67,7 +121,8 @@ class DatabaseInformation {
                     $d->enableExceptions(true);
                     return $d;
                 },
-
+                'truncateFunction' => $sqlite3TruncateFunction,
+                'razeFunction' => $sqlite3RazeFunction,
             ],
             'PDO SQLite 3' => [
                 'pdo' => true,
@@ -85,6 +140,8 @@ class DatabaseInformation {
                         return;
                     }
                 },
+                'truncateFunction' => $sqlite3TruncateFunction,
+                'razeFunction' => $sqlite3RazeFunction,
             ],
             'PDO PostgreSQL' => [
                 'pdo' => true,
@@ -104,6 +161,29 @@ class DatabaseInformation {
                         $d->exec($q);
                     }
                     return $d;
+                },
+                'truncateFunction' => function($db, array $afterStatements = []) use ($pgObjectList) {
+                    foreach ($objectList($db) as $obj) {
+                        if ($obj['type'] != "TABLE") {
+                            continue;
+                        } elseif ($obj['name'] == "arsse_meta") {
+                            $db->exec("DELETE FROM {$obj['name']} where key <> 'schema_version'");
+                        } else {
+                            $db->exec("TRUNCATE TABLE {$obj['name']} restart identity cascade");
+                        }
+                    }
+                    foreach ($afterStatements as $st) {
+                        $db->exec($st);
+                    }
+                },
+                'razeFunction' => function($db, array $afterStatements = []) use ($pgObjectList) {
+                    foreach ($objectList($db) as $obj) {
+                        $db->exec("DROP {$obj['type']} {$obj['name']} IF EXISTS cascade");
+                        
+                    }
+                    foreach ($afterStatements as $st) {
+                        $db->exec($st);
+                    }
                 },
             ],
         ];

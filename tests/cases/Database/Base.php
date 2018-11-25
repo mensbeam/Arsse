@@ -6,37 +6,72 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Database;
 
-use JKingWeb\Arsse\User\Driver as UserDriver;
+use JKingWeb\Arsse\Test\Database;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Misc\ValueInfo;
-use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\Result;
+use JKingWeb\Arsse\Test\DatabaseInformation;
 use Phake;
 
-abstract class Base {
-    protected $drv;
+abstract class Base extends \JKingWeb\Arsse\Test\AbstractTest{
+    use SeriesArticle;
+
+    /** @var \JKingWeb\Arsse\Test\DatabaseInformation */
+    protected static $dbInfo;
+    /** @var \JKingWeb\Arsse\Db\Driver */
+    protected static $drv;
+    protected static $failureReason = "";
     protected $primed = false;
 
     protected abstract function nextID(string $table): int;
 
-    public function setUp() {
+    protected function findTraitOfTest(string $test): string {
+        $class = new \ReflectionClass(self::class);
+        foreach ($class->getTraits() as $trait) {
+            if ($trait->hasMethod($test)) {
+                return $trait->getShortName();
+            }
+        }
+        return $class->getShortName();
+    }
+
+    public static function setUpBeforeClass() {
         // establish a clean baseline
-        self::clearData();
-        self::setConf();
-        // configure and create the relevant database driver
-        $this->setUpDriver();
-        // create the database interface with the suitable driver
-        Arsse::$db = new Database;
+        static::clearData();
+        // perform an initial connection to the database to reset its version to zero
+        // in the case of SQLite this will always be the case (we use a memory database), 
+        // but other engines should clean up from potentially interrupted prior tests
+        static::$dbInfo = new DatabaseInformation(static::$implementation);
+        static::setConf();
+        try {
+            static::$drv = new static::$dbInfo->driverClass;
+        } catch (\JKingWeb\Arsse\Db\Exception $e) {
+            static::$failureReason = $e->getMessage();
+            return;
+        }
+        // wipe the database absolutely clean
+        (static::$dbInfo->razeFunction)(static::$drv);
+        // create the database interface with the suitable driver and apply the latest schema
+        Arsse::$db = new Database(static::$drv);
         Arsse::$db->driverSchemaUpdate();
+    }
+
+    public function setUp() {
+        // get the name of the test's test series
+        $this->series = $this->findTraitofTest($this->getName());
+        static::clearData();
+        if (strlen(static::$failureReason)) {
+            $this->markTestSkipped(static::$failureReason);
+        }
+        Arsse::$db = new Database(static::$drv);
         // create a mock user manager
         Arsse::$user = Phake::mock(User::class);
         Phake::when(Arsse::$user)->authorize->thenReturn(true);
-        // call the additional setup method if it exists
-        if (method_exists($this, "setUpSeries")) {
-            $this->setUpSeries();
-        }
+        // call the series-specific setup method
+        $setUp = "setUp".$this->series;
+        $this->$setUp();
         // prime the database with series data if it hasn't already been done
         if (!$this->primed && isset($this->data)) {
             $this->primeDatabase($this->data);
@@ -44,18 +79,30 @@ abstract class Base {
     }
 
     public function tearDown() {
-        // call the additional teardiwn method if it exists
-        if (method_exists($this, "tearDownSeries")) {
-            $this->tearDownSeries();
-        }
+        // call the series-specific teardown method
+        $this->series = $this->findTraitofTest($this->getName());
+        $tearDown = "tearDown".$this->series;
+        $this->$tearDown();
         // clean up
         $this->primed = false;
-        $this->drv = null;
-        self::clearData();
+        // call the database-specific table cleanup function
+        (static::$dbInfo->truncateFunction)(static::$drv);
+        // clear state
+        static::clearData();
     }
 
-    public function primeDatabase(array $data, \JKingWeb\Arsse\Db\Driver $drv = null): bool {
-        $drv = $drv ?? $this->drv;
+    public static function tearDownAfterClass() {
+        // wipe the database absolutely clean
+        (static::$dbInfo->razeFunction)(static::$drv);
+        // clean up
+        static::$drv = null;
+        static::$dbInfo = null;
+        static::$failureReason = "";
+        static::clearData();
+    }
+
+    public function primeDatabase(array $data): bool {
+        $drv = static::$drv;
         $tr = $drv->begin();
         foreach ($data as $table => $info) {
             $cols = implode(",", array_keys($info['columns']));
@@ -75,7 +122,7 @@ abstract class Base {
         foreach ($expected as $table => $info) {
             $cols = implode(",", array_keys($info['columns']));
             $types = $info['columns'];
-            $data = $this->drv->prepare("SELECT $cols from $table")->run()->getAll();
+            $data = static::$drv->prepare("SELECT $cols from $table")->run()->getAll();
             $cols = array_keys($info['columns']);
             foreach ($info['rows'] as $index => $row) {
                 $this->assertCount(sizeof($cols), $row, "The number of values for array index $index does not match the number of fields");

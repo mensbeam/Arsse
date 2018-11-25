@@ -4,10 +4,6 @@
 
 -- Please consult the SQLite 3 schemata for commented version
 
-drop table if exists arsse_sessions cascade;
-drop table if exists arsse_labels cascade;
-drop table if exists arsse_label_members cascade;
-
 create table arsse_sessions (
     id text primary key,
     created timestamp(0) with time zone not null default CURRENT_TIMESTAMP,

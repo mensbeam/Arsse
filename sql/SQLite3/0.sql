@@ -5,19 +5,6 @@
 -- Make the database WAL-journalled; this is persitent
 PRAGMA journal_mode = wal;
 
--- drop any existing tables, just in case
-drop table if exists arsse_meta;
-drop table if exists arsse_users;
-drop table if exists arsse_users_meta;
-drop table if exists arsse_folders;
-drop table if exists arsse_feeds;
-drop table if exists arsse_subscriptions;
-drop table if exists arsse_articles;
-drop table if exists arsse_enclosures;
-drop table if exists arsse_marks;
-drop table if exists arsse_editions;
-drop table if exists arsse_categories;
-
 create table arsse_meta(
 -- application metadata
     key text primary key not null,                                                                          -- metadata key

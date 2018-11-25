@@ -2,11 +2,6 @@
 -- Copyright 2017 J. King, Dustin Wilson et al.
 -- See LICENSE and AUTHORS files for details
 
--- drop any existing tables, just in case
-drop table if exists arsse_sessions;
-drop table if exists arsse_labels;
-drop table if exists arsse_label_members;
-
 create table arsse_sessions (
 -- sessions for Tiny Tiny RSS (and possibly others)
     id text primary key,                                                                    -- UUID of session
