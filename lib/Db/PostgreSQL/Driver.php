@@ -76,7 +76,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
             "SET statement_timeout = '$timeout'",
         ];
         if (strlen($schema) > 0) {
-            $out[] = 'SET search_path = \'"'.str_replace('"', '""', $schema).'", "$user", public\'';
+            $schema = '"'.str_replace('"', '""', $schema).'"';
+            $out[] = "SET search_path = $schema, public";
         }
         return $out;
     }
@@ -90,11 +91,6 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         } else {
             throw new Exception("extMissing", self::driverName());
         }
-    }
-
-
-    public static function driverName(): string {
-        return Arsse::$lang->msg("Driver.Db.PostgreSQL.Name");
     }
 
     public static function schemaID(): string {
@@ -150,11 +146,18 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     public function __destruct() {
     }
 
+    /** @codeCoverageIgnore */
+    public static function driverName(): string {
+        return Arsse::$lang->msg("Driver.Db.PostgreSQL.Name");
+    }
+
+    /** @codeCoverageIgnore */
     public static function requirementsMet(): bool {
         // stub: native interface is not yet supported
         return false;
     }
 
+    /** @codeCoverageIgnore */
     protected function makeConnection(string $user, string $pass, string $db, string $host, int $port, string $service) {
         // stub: native interface is not yet supported
         throw new \Exception;
