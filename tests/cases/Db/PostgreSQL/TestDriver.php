@@ -13,6 +13,14 @@ namespace JKingWeb\Arsse\TestCase\Db\PostgreSQL;
 class TestDriver extends \JKingWeb\Arsse\TestCase\Db\BaseDriver {
     protected static $implementation = "PDO PostgreSQL";
     protected $create = "CREATE TABLE arsse_test(id bigserial primary key)";
-    protected $lock = ["BEGIN", "LOCK TABLE arsse_test IN EXCLUSIVE MODE NOWAIT"];
+    protected $lock = ["BEGIN", "LOCK TABLE arsse_meta IN EXCLUSIVE MODE NOWAIT"];
     protected $setVersion = "UPDATE arsse_meta set value = '#' where key = 'schema_version'";
+
+    public function tearDown() {
+        try {
+            $this->drv->exec("ROLLBACK");
+        } catch (\Throwable $e) {
+        }
+        parent::tearDown();
+    }
 }

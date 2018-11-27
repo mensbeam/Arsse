@@ -13,6 +13,8 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\ExceptionTimeout;
 
 class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
+    protected $transStart = 0;
+
     public function __construct(string $user = null, string $pass = null, string $db = null, string $host = null, int $port = null, string $schema = null, string $service = null) {
         // check to make sure required extension is loaded
         if (!static::requirementsMet()) {
@@ -104,37 +106,44 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     }
 
     public function savepointCreate(bool $lock = false): int {
-        if (!$this->transDepth) {
+        if (!$this->transStart) {
             $this->exec("BEGIN TRANSACTION");
+            $this->transStart = parent::savepointCreate($lock);
+            return $this->transStart;
+        } else {
+            return parent::savepointCreate($lock);
         }
-        return parent::savepointCreate($lock);
     }
 
     public function savepointRelease(int $index = null): bool {
-        $out = parent::savepointUndo($index);
-        if ($out && !$this->transDepth) {
-            $this->exec("COMMIT TRANSACTION");
+        $index = $index ?? $this->transDepth;
+        $out = parent::savepointRelease($index);
+        if ($index == $this->transStart) {
+            $this->exec("COMMIT");
+            $this->transStart = 0;
         }
         return $out;
     }
 
     public function savepointUndo(int $index = null): bool {
+        $index = $index ?? $this->transDepth;
         $out = parent::savepointUndo($index);
-        if ($out && !$this->transDepth) {
-            $this->exec("ROLLBACK TRANSACTION");
+        if ($index == $this->transStart) {
+            $this->exec("ROLLBACK");
+            $this->transStart = 0;
         }
         return $out;
     }
 
     protected function lock(): bool {
-        if ($this->schemaVersion()) {
+        if ($this->query("SELECT count(*) from information_schema.tables where table_schema = current_schema() and table_name = 'arsse_meta'")->getValue()) {
             $this->exec("LOCK TABLE arsse_meta IN EXCLUSIVE MODE NOWAIT");
         }
         return true;
     }
 
     protected function unlock(bool $rollback = false): bool {
-        $this->exec((!$rollback) ? "COMMIT" : "ROLLBACK");
+        // do nothing; transaction is committed or rolled back later
         return true;
     }
 

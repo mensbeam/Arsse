@@ -60,7 +60,7 @@
 
         <file>cases/Db/PostgreSQL/TestStatement.php</file>
         <file>cases/Db/PostgreSQL/TestCreation.php</file>
-    <!--<file>cases/Db/PostgreSQL/TestDriver.php</file>-->
+        <file>cases/Db/PostgreSQL/TestDriver.php</file>
     <!--<file>cases/Db/PostgreSQL/TestUpdate.php</file>-->
     </testsuite>
     <testsuite name="Database functions">

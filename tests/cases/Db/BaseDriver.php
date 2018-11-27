@@ -375,7 +375,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         // so the effect is usually the same
         $this->drv->savepointCreate(true);
         $this->assertException();
-        $this->exec(str_replace("#", "3", $this->setVersion));
+        $this->exec($this->lock);
     }
 
     public function testUnlockTheDatabase() {

@@ -197,9 +197,13 @@ class DatabaseInformation {
                     }
                 },
                 'razeFunction' => function($db, array $afterStatements = []) use ($pgObjectList) {
+                    // rollback any pending transaction
+                    try {
+                        $db->exec("ROLLBACK");
+                    } catch(\Throwable $e) {
+                    }
                     foreach ($pgObjectList($db) as $obj) {
                         $db->exec("DROP {$obj['type']} IF EXISTS {$obj['name']} cascade");
-                        
                     }
                     foreach ($afterStatements as $st) {
                         $db->exec($st);
