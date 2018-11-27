@@ -8,7 +8,7 @@ create table arsse_sessions (
     id text primary key,
     created timestamp(0) with time zone not null default CURRENT_TIMESTAMP,
     expires timestamp(0) with time zone not null,
-    user text not null references arsse_users(id) on delete cascade on update cascade
+    "user" text not null references arsse_users(id) on delete cascade on update cascade
 );
 
 create table arsse_labels (
