@@ -59,7 +59,12 @@ class DatabaseInformation {
                 $tables = $db->query($listTables)->getAll();
                 $tables = sizeof($tables) ? array_column($tables, "name") : [];
             } elseif ($db instanceof \PDO) {
-                $tables = $db->query($listTables)->fetchAll(\PDO::FETCH_ASSOC);
+                retry:
+                try {
+                    $tables = $db->query($listTables)->fetchAll(\PDO::FETCH_ASSOC);
+                } catch (\PDOException $e) {
+                    goto retry;
+                }
                 $tables = sizeof($tables) ? array_column($tables, "name") : [];
             } else {
                 $tables = [];
@@ -72,6 +77,11 @@ class DatabaseInformation {
             return $tables;
         };
         $sqlite3TruncateFunction = function($db, array $afterStatements = []) use ($sqlite3TableList) {
+            // rollback any pending transaction
+            try {
+                $db->exec("ROLLBACK");
+            } catch(\Throwable $e) {
+            }
             foreach ($sqlite3TableList($db) as $table) {
                 if ($table == "arsse_meta") {
                     $db->exec("DELETE FROM $table where key <> 'schema_version'");
@@ -84,6 +94,11 @@ class DatabaseInformation {
             }
         };
         $sqlite3RazeFunction = function($db, array $afterStatements = []) use ($sqlite3TableList) {
+            // rollback any pending transaction
+            try {
+                $db->exec("ROLLBACK");
+            } catch(\Throwable $e) {
+            }
             $db->exec("PRAGMA foreign_keys=0");
             foreach ($sqlite3TableList($db) as $table) {
                 $db->exec("DROP TABLE IF EXISTS $table");
@@ -163,7 +178,12 @@ class DatabaseInformation {
                     return $d;
                 },
                 'truncateFunction' => function($db, array $afterStatements = []) use ($pgObjectList) {
-                    foreach ($objectList($db) as $obj) {
+                    // rollback any pending transaction
+                    try {
+                        $db->exec("ROLLBACK");
+                    } catch(\Throwable $e) {
+                    }
+                    foreach ($pgObjectList($db) as $obj) {
                         if ($obj['type'] != "TABLE") {
                             continue;
                         } elseif ($obj['name'] == "arsse_meta") {
@@ -177,8 +197,8 @@ class DatabaseInformation {
                     }
                 },
                 'razeFunction' => function($db, array $afterStatements = []) use ($pgObjectList) {
-                    foreach ($objectList($db) as $obj) {
-                        $db->exec("DROP {$obj['type']} {$obj['name']} IF EXISTS cascade");
+                    foreach ($pgObjectList($db) as $obj) {
+                        $db->exec("DROP {$obj['type']} IF EXISTS {$obj['name']} cascade");
                         
                     }
                     foreach ($afterStatements as $st) {

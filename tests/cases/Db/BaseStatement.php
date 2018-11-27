@@ -10,29 +10,45 @@ use JKingWeb\Arsse\Db\Statement;
 use JKingWeb\Arsse\Test\DatabaseInformation;
 
 abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
+    protected static $dbInfo;
+    protected static $interface;
     protected $statementClass;
     protected $stringOutput;
-    protected $interface;
 
-    abstract protected function exec(string $q);
     abstract protected function makeStatement(string $q, array $types = []): array;
     abstract protected function decorateTypeSyntax(string $value, string $type): string;
 
+    public static function setUpBeforeClass() {
+        // establish a clean baseline
+        static::clearData();
+        static::$dbInfo = new DatabaseInformation(static::$implementation);
+        static::setConf();
+        static::$interface = (static::$dbInfo->interfaceConstructor)();
+    }
+    
     public function setUp() {
         self::clearData();
         self::setConf();
-        $info = new DatabaseInformation($this->implementation);
-        $this->interface = ($info->interfaceConstructor)();
-        if (!$this->interface) {
-            $this->markTestSkipped("$this->implementation database driver not available");
+        if (!static::$interface) {
+            $this->markTestSkipped(static::$implementation." database driver not available");
         }
-        $this->statementClass = $info->statementClass;
-        $this->stringOutput = $info->stringOutput;
-        $this->exec("DROP TABLE IF EXISTS arsse_meta");
+        // completely clear the database
+        (static::$dbInfo->razeFunction)(static::$interface);
+        $this->statementClass = static::$dbInfo->statementClass;
+        $this->stringOutput = static::$dbInfo->stringOutput;
     }
 
     public function tearDown() {
-        $this->exec("DROP TABLE IF EXISTS arsse_meta");
+        if (static::$interface) {
+            // completely clear the database
+            (static::$dbInfo->razeFunction)(static::$interface);
+        }
+        self::clearData();
+    }
+
+    public static function tearDownAfterClass() {
+        static::$implementation = null;
+        static::$dbInfo = null;
         self::clearData();
     }
 
@@ -56,7 +72,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideBinaryBindings */
     public function testHandleBinaryData($value, string $type, string $exp) {
-        if (in_array($this->implementation, ["PostgreSQL", "PDO PostgreSQL"])) {
+        if (in_array(static::$implementation, ["PostgreSQL", "PDO PostgreSQL"])) {
             $this->markTestSkipped("Correct handling of binary data with PostgreSQL is currently unknown");
         }
         if ($exp=="null") {

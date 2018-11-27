@@ -10,29 +10,45 @@ use JKingWeb\Arsse\Db\Result;
 use JKingWeb\Arsse\Test\DatabaseInformation;
 
 abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
+    protected static $dbInfo;
+    protected static $interface;
     protected $resultClass;
     protected $stringOutput;
-    protected $interface;
 
-    abstract protected function exec(string $q);
     abstract protected function makeResult(string $q): array;
 
+    public static function setUpBeforeClass() {
+        // establish a clean baseline
+        static::clearData();
+        static::$dbInfo = new DatabaseInformation(static::$implementation);
+        static::setConf();
+        static::$interface = (static::$dbInfo->interfaceConstructor)();
+    }
+    
     public function setUp() {
         self::clearData();
         self::setConf();
-        $info = new DatabaseInformation($this->implementation);
-        $this->interface = ($info->interfaceConstructor)();
-        if (!$this->interface) {
-            $this->markTestSkipped("$this->implementation database driver not available");
+        if (!static::$interface) {
+            $this->markTestSkipped(static::$implementation." database driver not available");
         }
-        $this->resultClass = $info->resultClass;
-        $this->stringOutput = $info->stringOutput;
-        $this->exec("DROP TABLE IF EXISTS arsse_meta");
+        // completely clear the database
+        (static::$dbInfo->razeFunction)(static::$interface);
+        $this->resultClass = static::$dbInfo->resultClass;
+        $this->stringOutput = static::$dbInfo->stringOutput;
     }
 
     public function tearDown() {
+        if (static::$interface) {
+            // completely clear the database
+            (static::$dbInfo->razeFunction)(static::$interface);
+        }
         self::clearData();
-        $this->exec("DROP TABLE IF EXISTS arsse_meta");
+    }
+
+    public static function tearDownAfterClass() {
+        static::$implementation = null;
+        static::$dbInfo = null;
+        self::clearData();
     }
 
     public function testConstructResult() {

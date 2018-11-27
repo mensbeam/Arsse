@@ -11,51 +11,69 @@ use JKingWeb\Arsse\Db\Result;
 use JKingWeb\Arsse\Test\DatabaseInformation;
 
 abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
+    protected static $dbInfo;
+    protected static $interface;
     protected $drv;
-    protected $interface;
     protected $create;
     protected $lock;
     protected $setVersion;
-    protected $conf = [
+    protected static $conf = [
         'dbTimeoutExec' => 0.5,
         'dbSQLite3Timeout' => 0,
+      //'dbSQLite3File' => "(temporary file)",
     ];
+
+    public static function setUpBeforeClass() {
+        // establish a clean baseline
+        static::clearData();
+        static::$dbInfo = new DatabaseInformation(static::$implementation);
+        static::setConf(static::$conf);
+        static::$interface = (static::$dbInfo->interfaceConstructor)();
+    }
     
     public function setUp() {
         self::clearData();
-        self::setConf($this->conf);
-        $info = new DatabaseInformation($this->implementation);
-        $this->interface = ($info->interfaceConstructor)();
-        if (!$this->interface) {
-            $this->markTestSkipped("$this->implementation database driver not available");
+        self::setConf(static::$conf);
+        if (!static::$interface) {
+            $this->markTestSkipped(static::$implementation." database driver not available");
         }
-        $this->drv = new $info->driverClass;
-        $this->exec("DROP TABLE IF EXISTS arsse_test");
-        $this->exec("DROP TABLE IF EXISTS arsse_meta");
-        $this->exec("CREATE TABLE arsse_meta(key varchar(255) primary key not null, value text)");
-        $this->exec("INSERT INTO arsse_meta(key,value) values('schema_version','0')");
+        // completely clear the database and ensure the schema version can easily be altered
+        (static::$dbInfo->razeFunction)(static::$interface, [
+            "CREATE TABLE arsse_meta(key varchar(255) primary key not null, value text)",
+            "INSERT INTO arsse_meta(key,value) values('schema_version','0')",
+        ]);
+        // construct a fresh driver for each test
+        $this->drv = new static::$dbInfo->driverClass;
     }
 
     public function tearDown() {
-        self::clearData();
+        // deconstruct the driver
         unset($this->drv);
-        try {
-            $this->exec("ROLLBACK");
-        } catch(\Throwable $e) {
+        if (static::$interface) {
+            // completely clear the database
+            (static::$dbInfo->razeFunction)(static::$interface);
         }
-        $this->exec("DROP TABLE IF EXISTS arsse_meta");
-        $this->exec("DROP TABLE IF EXISTS arsse_test");
+        self::clearData();
     }
 
-    protected function exec(string $q): bool {
+    public static function tearDownAfterClass() {
+        static::$implementation = null;
+        static::$dbInfo = null;
+        self::clearData();
+    }
+
+    protected function exec($q): bool {
         // PDO implementation
-        $this->interface->exec($q);
+        $q = (!is_array($q)) ? [$q] : $q;
+        foreach ($q as $query) {
+            static::$interface->exec((string) $query);
+        }
         return true;
     }
 
     protected function query(string $q) {
         // PDO implementation
-        return $this->interface->query($q)->fetchColumn();
+        return static::$interface->query($q)->fetchColumn();
     }
 
     # TESTS 
@@ -87,7 +105,8 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->exec($this->create);
         $this->exec($this->lock);
         $this->assertException("general", "Db", "ExceptionTimeout");
-        $this->drv->exec($this->lock);
+        $lock = is_array($this->lock) ? implode("; ",$this->lock) : $this->lock;
+        $this->drv->exec($lock);
     }
 
     public function testExecConstraintViolation() {
@@ -115,7 +134,8 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->exec($this->create);
         $this->exec($this->lock);
         $this->assertException("general", "Db", "ExceptionTimeout");
-        $this->drv->exec($this->lock);
+        $lock = is_array($this->lock) ? implode("; ",$this->lock) : $this->lock;
+        $this->drv->exec($lock);
     }
 
     public function testQueryConstraintViolation() {
@@ -342,12 +362,20 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame(1, $this->drv->schemaVersion());
         $this->drv->exec(str_replace("#", "2", $this->setVersion));
         $this->assertSame(2, $this->drv->schemaVersion());
+        // SQLite is unaffected by the removal of the metadata table; other backends are
+        // in neither case should a query for the schema version produce an error, however
+        $this->exec("DROP TABLE IF EXISTS arsse_meta");
+        $exp = (static::$dbInfo->backend == "SQLite 3") ? 2 : 0;
+        $this->assertSame($exp, $this->drv->schemaVersion());
     }
 
     public function testLockTheDatabase() {
+        // PostgreSQL doesn't actually lock the whole database, only the metadata table
+        // normally the application will first query this table to ensure the schema version is correct,
+        // so the effect is usually the same
         $this->drv->savepointCreate(true);
         $this->assertException();
-        $this->exec($this->create);
+        $this->exec(str_replace("#", "3", $this->setVersion));
     }
 
     public function testUnlockTheDatabase() {
@@ -355,6 +383,6 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv->savepointRelease();
         $this->drv->savepointCreate(true);
         $this->drv->savepointUndo();
-        $this->assertTrue($this->exec($this->create));
+        $this->assertTrue($this->exec(str_replace("#", "3", $this->setVersion)));
     }
 }

@@ -10,19 +10,10 @@ namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
  * @covers \JKingWeb\Arsse\Db\PDOStatement<extended>
  * @covers \JKingWeb\Arsse\Db\PDOError */
 class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
-    protected $implementation = "PDO SQLite 3";
-
-    public function tearDown() {
-        parent::tearDown();
-        unset($this->interface);
-    }
-
-    protected function exec(string $q) {
-        $this->interface->exec($q);
-    }
+    protected static $implementation = "PDO SQLite 3";
 
     protected function makeStatement(string $q, array $types = []): array {
-        return [$this->interface, $this->interface->prepare($q), $types];
+        return [static::$interface, static::$interface->prepare($q), $types];
     }
 
     protected function decorateTypeSyntax(string $value, string $type): string {

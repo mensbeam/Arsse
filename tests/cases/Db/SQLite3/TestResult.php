@@ -12,22 +12,19 @@ use JKingWeb\Arsse\Test\DatabaseInformation;
  * @covers \JKingWeb\Arsse\Db\SQLite3\Result<extended> 
  */
 class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
-    protected $implementation = "SQLite 3";
+    protected static $implementation = "SQLite 3";
 
-    public function tearDown() {
-        parent::tearDown();
-        $this->interface->close();
-        unset($this->interface);
-    }
-
-    protected function exec(string $q) {
-        $this->interface->exec($q);
+    public static function tearDownAfterClass() {
+        if (static::$interface) {
+            static::$interface->close();
+        }
+        parent::tearDownAfterClass();
     }
 
     protected function makeResult(string $q): array {
-        $set = $this->interface->query($q);
-        $rows = $this->interface->changes();
-        $id = $this->interface->lastInsertRowID();
+        $set = static::$interface->query($q);
+        $rows = static::$interface->changes();
+        $id = static::$interface->lastInsertRowID();
         return [$set, [$rows, $id]];
     }
 }
