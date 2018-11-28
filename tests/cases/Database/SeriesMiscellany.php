@@ -27,11 +27,11 @@ trait SeriesMiscellany {
     }
 
     public function testInitializeDatabase() {
-        $d = new Database();
-        $this->assertSame(Database::SCHEMA_VERSION, $d->driverSchemaVersion());
+        $this->assertSame(Database::SCHEMA_VERSION, Arsse::$db->driverSchemaVersion());
     }
 
     public function testManuallyInitializeDatabase() {
+        (static::$dbInfo->razeFunction)(static::$drv);
         $d = new Database(false);
         $this->assertSame(0, $d->driverSchemaVersion());
         $this->assertTrue($d->driverSchemaUpdate());
@@ -40,7 +40,6 @@ trait SeriesMiscellany {
     }
 
     public function testCheckCharacterSetAcceptability() {
-        $d = new Database();
-        $this->assertInternalType("bool", $d->driverCharsetAcceptable());
+        $this->assertInternalType("bool", Arsse::$db->driverCharsetAcceptable());
     }
 }

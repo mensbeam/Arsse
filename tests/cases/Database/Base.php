@@ -76,6 +76,7 @@ abstract class Base extends \JKingWeb\Arsse\Test\AbstractTest{
             $this->markTestSkipped(static::$failureReason);
         }
         Arsse::$db = new Database(static::$drv);
+        Arsse::$db->driverSchemaUpdate();
         // create a mock user manager
         Arsse::$user = Phake::mock(User::class);
         Phake::when(Arsse::$user)->authorize->thenReturn(true);
@@ -115,7 +116,10 @@ abstract class Base extends \JKingWeb\Arsse\Test\AbstractTest{
         $drv = static::$drv;
         $tr = $drv->begin();
         foreach ($data as $table => $info) {
-            $cols = implode(",", array_keys($info['columns']));
+            $cols = array_map(function($v) {
+                return '"'.str_replace('"', '""', $v).'"';
+            }, array_keys($info['columns']));
+            $cols = implode(",", $cols);
             $bindings = array_values($info['columns']);
             $params = implode(",", array_fill(0, sizeof($info['columns']), "?"));
             $s = $drv->prepareArray("INSERT INTO $table($cols) values($params)", $bindings);
