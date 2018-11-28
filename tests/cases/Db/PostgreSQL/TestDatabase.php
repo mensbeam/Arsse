@@ -14,6 +14,6 @@ class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\Base {
     protected static $implementation = "PDO PostgreSQL";
 
     protected function nextID(string $table): int {
-        return static::$drv->query("SELECT select cast(last_value as bigint) + 1 from pg_sequences where sequencename = '{$table}_id_seq'")->getValue();
+        return (int) static::$drv->query("SELECT cast(last_value as bigint) + 1 from pg_sequences where sequencename = '{$table}_id_seq'")->getValue();
     }
 }

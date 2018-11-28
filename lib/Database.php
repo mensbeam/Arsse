@@ -182,7 +182,7 @@ class Database {
         $id = UUID::mint()->hex;
         $expires = Date::add(Arsse::$conf->userSessionTimeout);
         // save the session to the database
-        $this->db->prepare("INSERT INTO arsse_sessions(id,expires,user) values(?,?,?)", "str", "datetime", "str")->run($id, $expires, $user);
+        $this->db->prepare("INSERT INTO arsse_sessions(id,expires,\"user\") values(?,?,?)", "str", "datetime", "str")->run($id, $expires, $user);
         // return the ID
         return $id;
     }
@@ -193,12 +193,12 @@ class Database {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         // delete the session and report success.
-        return (bool) $this->db->prepare("DELETE FROM arsse_sessions where id = ? and user = ?", "str", "str")->run($id, $user)->changes();
+        return (bool) $this->db->prepare("DELETE FROM arsse_sessions where id = ? and \"user\" = ?", "str", "str")->run($id, $user)->changes();
     }
 
     public function sessionResume(string $id): array {
         $maxAge = Date::sub(Arsse::$conf->userSessionLifetime);
-        $out = $this->db->prepare("SELECT id,created,expires,user from arsse_sessions where id = ? and expires > CURRENT_TIMESTAMP and created > ?", "str", "datetime")->run($id, $maxAge)->getRow();
+        $out = $this->db->prepare("SELECT id,created,expires,\"user\" from arsse_sessions where id = ? and expires > CURRENT_TIMESTAMP and created > ?", "str", "datetime")->run($id, $maxAge)->getRow();
         // if the session does not exist or is expired, throw an exception
         if (!$out) {
             throw new User\ExceptionSession("invalid", $id);
@@ -371,11 +371,11 @@ class Database {
         // SQL will happily accept duplicates (null is not unique), so we must do this check ourselves
         $p = $this->db->prepare(
             "WITH RECURSIVE
-                target as (select ? as user, ? as source, ? as dest, ? as rename),
-                folders as (SELECT id from arsse_folders join target on owner = user and coalesce(parent,0) = source union select arsse_folders.id as id from arsse_folders join folders on arsse_folders.parent=folders.id)
+                target as (select ? as userid, ? as source, ? as dest, ? as rename),
+                folders as (SELECT id from arsse_folders join target on owner = userid and coalesce(parent,0) = source union select arsse_folders.id as id from arsse_folders join folders on arsse_folders.parent=folders.id)
             ".
             "SELECT
-                ((select dest from target) is null or exists(select id from arsse_folders join target on owner = user and coalesce(id,0) = coalesce(dest,0))) as extant,
+                ((select dest from target) is null or exists(select id from arsse_folders join target on owner = userid and coalesce(id,0) = coalesce(dest,0))) as extant,
                 not exists(select id from folders where id = coalesce((select dest from target),0)) as valid,
                 not exists(select id from arsse_folders join target on coalesce(parent,0) = coalesce(dest,0) and name = coalesce((select rename from target),(select name from arsse_folders join target on id = source))) as available
             ",
@@ -462,15 +462,15 @@ class Database {
                 coalesce(arsse_subscriptions.title, arsse_feeds.title) as title,
                 (SELECT count(*) from arsse_articles where feed = arsse_subscriptions.feed) - (SELECT count(*) from arsse_marks where subscription = arsse_subscriptions.id and read = 1) as unread
              from arsse_subscriptions
-                join user on user = owner
+                join userdata on userid = owner
                 join arsse_feeds on feed = arsse_feeds.id
                 left join topmost on folder=f_id"
         );
         $q->setOrder("pinned desc, title collate nocase");
         // define common table expressions
-        $q->setCTE("user(user)", "SELECT ?", "str", $user);  // the subject user; this way we only have to pass it to prepare() once
+        $q->setCTE("userdata(userid)", "SELECT ?", "str", $user);  // the subject user; this way we only have to pass it to prepare() once
         // topmost folders belonging to the user
-        $q->setCTE("topmost(f_id,top)", "SELECT id,id from arsse_folders join user on owner = user where parent is null union select id,top from arsse_folders join topmost on parent=f_id");
+        $q->setCTE("topmost(f_id,top)", "SELECT id,id from arsse_folders join userdata on owner = userid where parent is null union select id,top from arsse_folders join topmost on parent=f_id");
         if ($id) {
             // this condition facilitates the implementation of subscriptionPropertiesGet, which would otherwise have to duplicate the complex query; it takes precedence over a specified folder
             // if an ID is specified, add a suitable WHERE condition and bindings
@@ -818,7 +818,7 @@ class Database {
             FROM arsse_articles"
         );
         $q->setLimit($context->limit, $context->offset);
-        $q->setCTE("user(user)", "SELECT ?", "str", $user);
+        $q->setCTE("userdata(userid)", "SELECT ?", "str", $user);
         if ($context->subscription()) {
             // if a subscription is specified, make sure it exists
             $id = $this->subscriptionValidateId($user, $context->subscription)['feed'];
@@ -830,15 +830,15 @@ class Database {
             // if it does exist, add a common table expression to list it and its children so that we select from the entire subtree
             $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on parent = folder", "int", $context->folder);
             // add another CTE for the subscriptions within the folder
-            $q->setCTE("subscribed_feeds(id,sub)", "SELECT feed,id from arsse_subscriptions join user on user = owner join folders on arsse_subscriptions.folder = folders.folder", [], [], "join subscribed_feeds on feed = subscribed_feeds.id");
+            $q->setCTE("subscribed_feeds(id,sub)", "SELECT feed,id from arsse_subscriptions join userdata on userid = owner join folders on arsse_subscriptions.folder = folders.folder", [], [], "join subscribed_feeds on feed = subscribed_feeds.id");
         } elseif ($context->folderShallow()) {
             // if a shallow folder is specified, make sure it exists
             $this->folderValidateId($user, $context->folderShallow);
             // if it does exist, add a CTE with only its subscriptions (and not those of its descendents)
-            $q->setCTE("subscribed_feeds(id,sub)", "SELECT feed,id from arsse_subscriptions join user on user = owner and coalesce(folder,0) = ?", "strict int", $context->folderShallow, "join subscribed_feeds on feed = subscribed_feeds.id");
+            $q->setCTE("subscribed_feeds(id,sub)", "SELECT feed,id from arsse_subscriptions join userdata on userid = owner and coalesce(folder,0) = ?", "strict int", $context->folderShallow, "join subscribed_feeds on feed = subscribed_feeds.id");
         } else {
             // otherwise add a CTE for all the user's subscriptions
-            $q->setCTE("subscribed_feeds(id,sub)", "SELECT feed,id from arsse_subscriptions join user on user = owner", [], [], "join subscribed_feeds on feed = subscribed_feeds.id");
+            $q->setCTE("subscribed_feeds(id,sub)", "SELECT feed,id from arsse_subscriptions join userdata on userid = owner", [], [], "join subscribed_feeds on feed = subscribed_feeds.id");
         }
         if ($context->edition()) {
             // if an edition is specified, filter for its previously identified article
@@ -1075,7 +1075,7 @@ class Database {
                         and article in (select id from target_articles where to_insert = 0 and (honour_read = 1 or honour_star = 1 or (select note from target_values) is not null))",
                 "INSERT INTO arsse_marks(subscription,article,read,starred,note)
                     select
-                        (select id from arsse_subscriptions join user on user = owner where arsse_subscriptions.feed = target_articles.feed),
+                        (select id from arsse_subscriptions join userdata on userid = owner where arsse_subscriptions.feed = target_articles.feed),
                         id,
                         coalesce((select read from target_values) * honour_read,0),
                         coalesce((select starred from target_values),0),
@@ -1262,8 +1262,8 @@ class Database {
             // a simple WHERE clause is required here
             $q->setWhere("arsse_feeds.id = ?", "int", $id);
         } else {
-            $q->setCTE("user(user)", "SELECT ?", "str", $user);
-            $q->setCTE("feeds(feed)", "SELECT feed from arsse_subscriptions join user on user = owner", [], [], "join feeds on arsse_articles.feed = feeds.feed");
+            $q->setCTE("userdata(userid)", "SELECT ?", "str", $user);
+            $q->setCTE("feeds(feed)", "SELECT feed from arsse_subscriptions join userdata on userid = owner", [], [], "join feeds on arsse_articles.feed = feeds.feed");
         }
         return (int) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
     }
@@ -1415,7 +1415,7 @@ class Database {
                     arsse_label_members(label,article,subscription)
                 SELECT
                     ?,id,
-                    (select id from arsse_subscriptions join user on user = owner where arsse_subscriptions.feed = target_articles.feed)
+                    (select id from arsse_subscriptions join userdata on userid = owner where arsse_subscriptions.feed = target_articles.feed)
                 FROM target_articles",
                 "int",
                 $id
