@@ -24,8 +24,9 @@ class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\Base {
                 replace(substring(column_default, 10), right(column_default, 12), '') as seq, 
                 table_name as table, 
                 column_name as col 
-            from information_schema.columns 
-                where table_name like 'arsse_%' 
+            from information_schema.columns
+                where table_schema = current_schema()
+                and table_name like 'arsse_%' 
                 and column_default like 'nextval(%'
             ";
         foreach(static::$drv->query($seqList) as $r) {
