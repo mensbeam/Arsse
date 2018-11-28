@@ -82,6 +82,11 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $class = get_class($this->drv);
         $this->assertTrue(strlen($class::driverName()) > 0);
     }
+    
+    public function testFetchSchemaId() {
+        $class = get_class($this->drv);
+        $this->assertTrue(strlen($class::schemaID()) > 0);
+    }
 
     public function testCheckCharacterSetAcceptability() {
         $this->assertTrue($this->drv->charsetAcceptable());

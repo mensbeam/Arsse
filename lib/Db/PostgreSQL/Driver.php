@@ -101,6 +101,14 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         return $this->query("SELECT pg_encoding_to_char(encoding) from pg_database where datname = current_database()")->getValue() == "UTF8";
     }
 
+    public function schemaVersion(): int {
+        if ($this->query("SELECT count(*) from information_schema.tables where table_name = 'arsse_meta' and table_schema = current_schema()")->getValue()) {
+            return (int) $this->query("SELECT value from arsse_meta where key = 'schema_version'")->getValue();
+        } else {
+            return 0;
+        }
+    }
+
     public function savepointCreate(bool $lock = false): int {
         if (!$this->transStart) {
             $this->exec("BEGIN TRANSACTION");

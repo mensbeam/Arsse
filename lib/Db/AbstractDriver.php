@@ -17,14 +17,6 @@ abstract class AbstractDriver implements Driver {
     abstract protected function unlock(bool $rollback = false): bool;
     abstract protected function getError(): string;
 
-    public function schemaVersion(): int {
-        try {
-            return (int) $this->query("SELECT value from arsse_meta where key = 'schema_version'")->getValue();
-        } catch (Exception $e) {
-            return 0;
-        }
-    }
-
     public function schemaUpdate(int $to, string $basePath = null): bool {
         $ver = $this->schemaVersion();
         if (!Arsse::$conf->dbAutoUpdate) {
