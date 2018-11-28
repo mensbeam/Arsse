@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 use JKingWeb\DrUUID\UUID;
+use JKingWeb\Arsse\Db\Statement;
 use JKingWeb\Arsse\Misc\Query;
 use JKingWeb\Arsse\Misc\Context;
 use JKingWeb\Arsse\Misc\Date;
@@ -84,13 +85,26 @@ class Database {
 
     protected function generateIn(array $values, string $type): array {
         $out = [
-            [], // query clause
+            "", // query clause
             [], // binding types
         ];
-        // the query clause is just a series of question marks separated by commas
-        $out[0] = implode(",", array_fill(0, sizeof($values), "?"));
-        // the binding types are just a repetition of the supplied type
-        $out[1] = array_fill(0, sizeof($values), $type);
+        if (sizeof($values)) {
+            // the query clause is just a series of question marks separated by commas
+            $out[0] = implode(",", array_fill(0, sizeof($values), "?"));
+            // the binding types are just a repetition of the supplied type
+            $out[1] = array_fill(0, sizeof($values), $type);
+        } else {
+            // if the set is empty, some databases require a query which returns an empty set
+            $standin = [
+                'string' => "''",
+                'binary' => "''",
+                'datetime' => "''",
+                'integer' => "1",
+                'boolean' => "1",
+                'float' => "1.0",
+            ][Statement::TYPES[$type] ?? "string"];
+            $out[0] = "select $standin where 1 = 0";
+        }
         return $out;
     }
 
@@ -371,7 +385,7 @@ class Database {
         // SQL will happily accept duplicates (null is not unique), so we must do this check ourselves
         $p = $this->db->prepare(
             "WITH RECURSIVE
-                target as (select ? as userid, ? as source, ? as dest, ? as rename),
+                target as (select ? as userid, cast(? as bigint) as source, cast(? as bigint) as dest, ? as rename),
                 folders as (SELECT id from arsse_folders join target on owner = userid and coalesce(parent,0) = source union select arsse_folders.id as id from arsse_folders join folders on arsse_folders.parent=folders.id)
             ".
             "SELECT
