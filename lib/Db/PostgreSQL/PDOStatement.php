@@ -42,12 +42,13 @@ class PDOStatement extends \JKingWeb\Arsse\Db\AbstractStatement {
             parent::retypeArray($bindings, $append);
             $this->qMunged = self::mungeQuery($this->qOriginal, $this->types, false);
             try {
+                // statement creation with PostgreSQL should never fail (it is not evaluated at creation time)
                 $s = $this->db->prepare($this->qMunged);
-                $this->st = new \JKingWeb\Arsse\Db\PDOStatement($this->db, $s, $this->bindings);
-            } catch (\PDOException $e) {
-                list($excClass, $excMsg, $excData) = $this->exceptionBuild(true);
-                throw new $excClass($excMsg, $excData);
+            } catch (\PDOException $e) { // @codeCoverageIgnore
+                list($excClass, $excMsg, $excData) = $this->exceptionBuild(true); // @codeCoverageIgnore
+                throw new $excClass($excMsg, $excData); // @codeCoverageIgnore
             }
+            $this->st = new \JKingWeb\Arsse\Db\PDOStatement($this->db, $s, $this->bindings);
         }
         return true;
     }

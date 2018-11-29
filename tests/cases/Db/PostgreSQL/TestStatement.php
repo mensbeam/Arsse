@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Db\PostgreSQL;
 
 /**
- * @covers \JKingWeb\Arsse\Db\PDOStatement<extended>
+ * @covers \JKingWeb\Arsse\Db\PostgreSQL\PDOStatement<extended>
  * @covers \JKingWeb\Arsse\Db\PDOError */
 class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
     protected static $implementation = "PDO PostgreSQL";

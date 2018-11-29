@@ -42,9 +42,9 @@ class PDOStatement extends AbstractStatement {
         }
         $changes = $this->st->rowCount();
         try {
+            $lastId = 0;
             $lastId = ($changes) ? $this->db->lastInsertId() : 0;
         } catch (\PDOException $e) { // @codeCoverageIgnore
-            $lastId = 0;
         }
         return new PDOResult($this->st, [$changes, $lastId]);
     }
