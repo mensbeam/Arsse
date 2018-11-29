@@ -820,10 +820,14 @@ class Database {
                 arsse_articles.id as id,
                 arsse_articles.feed as feed,
                 arsse_articles.modified as modified_date,
-                max(
-                    arsse_articles.modified,
-                    coalesce((select modified from arsse_marks where article = arsse_articles.id and subscription in (select sub from subscribed_feeds)),''),
-                    coalesce((select modified from arsse_label_members where article = arsse_articles.id and subscription in (select sub from subscribed_feeds)),'')
+                (
+                    select
+                        arsse_articles.modified as term 
+                    union select 
+                        coalesce((select modified from arsse_marks where article = arsse_articles.id and subscription in (select sub from subscribed_feeds)),'0001-01-01 00:00:00') as term
+                    union select
+                        coalesce((select modified from arsse_label_members where article = arsse_articles.id and subscription in (select sub from subscribed_feeds)),'0001-01-01 00:00:00') as term
+                    order by term desc limit 1
                 ) as marked_date,
                 NOT (select count(*) from arsse_marks where article = arsse_articles.id and read = 1 and subscription in (select sub from subscribed_feeds)) as unread,
                 (select count(*) from arsse_marks where article = arsse_articles.id and starred = 1 and subscription in (select sub from subscribed_feeds)) as starred,
