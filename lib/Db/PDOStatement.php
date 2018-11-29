@@ -28,10 +28,10 @@ class PDOStatement extends AbstractStatement {
     }
 
     public function __destruct() {
-        unset($this->st);
+        unset($this->st, $this->db);
     }
 
-    public function runArray(array $values = []): \JKingWeb\Arsse\Db\Result {
+    public function runArray(array $values = []): Result {
         $this->st->closeCursor();
         $this->bindValues($values);
         try {
@@ -42,9 +42,9 @@ class PDOStatement extends AbstractStatement {
         }
         $changes = $this->st->rowCount();
         try {
-            $lastId = 0;
-            $lastId = $this->db->lastInsertId();
+            $lastId = ($changes) ? $this->db->lastInsertId() : 0;
         } catch (\PDOException $e) { // @codeCoverageIgnore
+            $lastId = 0;
         }
         return new PDOResult($this->st, [$changes, $lastId]);
     }

@@ -13,7 +13,7 @@ class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
     protected static $implementation = "PDO PostgreSQL";
 
     protected function makeStatement(string $q, array $types = []): array {
-        return [static::$interface, static::$interface->prepare($q), $types];
+        return [static::$interface, $q, $types];
     }
 
     protected function decorateTypeSyntax(string $value, string $type): string {

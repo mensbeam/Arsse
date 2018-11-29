@@ -385,7 +385,7 @@ class Database {
         // SQL will happily accept duplicates (null is not unique), so we must do this check ourselves
         $p = $this->db->prepare(
             "WITH RECURSIVE
-                target as (select ? as userid, cast(? as bigint) as source, cast(? as bigint) as dest, ? as rename),
+                target as (select ? as userid, ? as source, ? as dest, ? as rename),
                 folders as (SELECT id from arsse_folders join target on owner = userid and coalesce(parent,0) = source union select arsse_folders.id as id from arsse_folders join folders on arsse_folders.parent=folders.id)
             ".
             "SELECT
@@ -480,7 +480,7 @@ class Database {
                 join arsse_feeds on feed = arsse_feeds.id
                 left join topmost on folder=f_id"
         );
-        $q->setOrder("pinned desc, title collate nocase");
+        $q->setOrder("pinned desc, coalesce(arsse_subscriptions.title, arsse_feeds.title) collate nocase");
         // define common table expressions
         $q->setCTE("userdata(userid)", "SELECT ?", "str", $user);  // the subject user; this way we only have to pass it to prepare() once
         // topmost folders belonging to the user

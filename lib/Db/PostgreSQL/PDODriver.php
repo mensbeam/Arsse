@@ -44,4 +44,8 @@ class PDODriver extends Driver {
     public static function driverName(): string {
         return Arsse::$lang->msg("Driver.Db.PostgreSQLPDO.Name");
     }
+
+    public function prepareArray(string $query, array $paramTypes): \JKingWeb\Arsse\Db\Statement {
+        return new PDOStatement($this->db, $query, $paramTypes);
+    }
 }

@@ -161,10 +161,10 @@ class DatabaseInformation {
             'PDO PostgreSQL' => [
                 'pdo' => true,
                 'backend' => "PostgreSQL",
-                'statementClass' => \JKingWeb\Arsse\Db\PDOStatement::class,
+                'statementClass' => \JKingWeb\Arsse\Db\PostgreSQL\PDOStatement::class,
                 'resultClass' => \JKingWeb\Arsse\Db\PDOResult::class,
                 'driverClass' => \JKingWeb\Arsse\Db\PostgreSQL\PDODriver::class,
-                'stringOutput' => true,
+                'stringOutput' => false,
                 'interfaceConstructor' => function() {
                     $connString = \JKingWeb\Arsse\Db\PostgreSQL\Driver::makeConnectionString(true, Arsse::$conf->dbPostgreSQLUser, Arsse::$conf->dbPostgreSQLPass, Arsse::$conf->dbPostgreSQLDb, Arsse::$conf->dbPostgreSQLHost, Arsse::$conf->dbPostgreSQLPort, "");
                     try {

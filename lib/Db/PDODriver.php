@@ -28,9 +28,9 @@ trait PDODriver {
         }
         $changes = $r->rowCount();
         try {
-            $lastId = 0;
-            $lastId = $this->db->lastInsertId();
+            $lastId = ($changes) ? $this->db->lastInsertId() : 0;
         } catch (\PDOException $e) { // @codeCoverageIgnore
+            $lastId = 0;
         }
         return new PDOResult($r, [$changes, $lastId]);
     }

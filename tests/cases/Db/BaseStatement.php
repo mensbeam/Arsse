@@ -59,7 +59,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideBindings */
     public function testBindATypedValue($value, string $type, string $exp) {
         if ($exp=="null") {
-            $query = "SELECT (cast(? as text) is null) as pass";
+            $query = "SELECT (? is null) as pass";
         } else {
             $query = "SELECT ($exp = ?) as pass";
         }
@@ -76,7 +76,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
             $this->markTestSkipped("Correct handling of binary data with PostgreSQL is currently unknown");
         }
         if ($exp=="null") {
-            $query = "SELECT (cast(? as text) is null) as pass";
+            $query = "SELECT (? is null) as pass";
         } else {
             $query = "SELECT ($exp = ?) as pass";
         }
