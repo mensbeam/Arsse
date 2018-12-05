@@ -772,6 +772,12 @@ trait SeriesArticle {
         $this->compareExpectations($state);
     }
 
+    public function testMarkMultipleMissingEditions() {
+        $this->assertSame(0, Arsse::$db->articleMark($this->user, ['starred'=>true], (new Context)->editions([500,501])));
+        $state = $this->primeExpectations($this->data, $this->checkTables);
+        $this->compareExpectations($state);
+    }
+
     public function testMarkMultipleEditionsUnread() {
         Arsse::$db->articleMark($this->user, ['read'=>false], (new Context)->editions([2,4,7,1001]));
         $now = Date::transform(time(), "sql");
