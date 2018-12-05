@@ -27,7 +27,9 @@ trait SeriesMiscellany {
     }
 
     public function testInitializeDatabase() {
-        $this->assertSame(Database::SCHEMA_VERSION, Arsse::$db->driverSchemaVersion());
+        (static::$dbInfo->razeFunction)(static::$drv);
+        $d = new Database(true);
+        $this->assertSame(Database::SCHEMA_VERSION, $d->driverSchemaVersion());
     }
 
     public function testManuallyInitializeDatabase() {
