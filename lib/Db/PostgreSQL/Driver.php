@@ -109,6 +109,10 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         }
     }
 
+    public function sqlToken(string $token): string {
+        return $token;
+    }
+
     public function savepointCreate(bool $lock = false): int {
         if (!$this->transStart) {
             $this->exec("BEGIN TRANSACTION");

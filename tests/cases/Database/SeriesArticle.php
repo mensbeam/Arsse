@@ -391,6 +391,43 @@ trait SeriesArticle {
         unset($this->data, $this->matches, $this->fields, $this->checkTables, $this->user);
     }
 
+    public function testRetrieveArticleIdsForEditions() {
+        $exp = [
+            1 => 1,
+            2 => 2,
+            3 => 3,
+            4 => 4,
+            5 => 5,
+            6 => 6,
+            7 => 7,
+            8 => 8,
+            9 => 9,
+            10 => 10,
+            11 => 11,
+            12 => 12,
+            13 => 13,
+            14 => 14,
+            15 => 15,
+            16 => 16,
+            17 => 17,
+            18 => 18,
+            19 => 19,
+            20 => 20,
+            101 => 101,
+            102 => 102,
+            103 => 103,
+            104 => 104,
+            105 => 105,
+            202 => 102,
+            203 => 103,
+            204 => 104,
+            205 => 105,
+            305 => 105,
+            1001 => 20,
+        ];
+        $this->assertEquals($exp, Arsse::$db->editionArticle(...range(1,1001)));
+    }
+
     public function testListArticlesCheckingContext() {
         $compareIds = function(array $exp, Context $c) {
             $ids = array_column($ids = Arsse::$db->articleList("john.doe@example.com", $c)->getAll(), "id");
@@ -502,6 +539,10 @@ trait SeriesArticle {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->articleList($this->user);
+    }
+
+    public function testMarkNothing() {
+        $this->assertSame(0, Arsse::$db->articleMark($this->user, []));
     }
 
     public function testMarkAllArticlesUnread() {

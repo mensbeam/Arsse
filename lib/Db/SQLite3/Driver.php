@@ -103,6 +103,15 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         return (int) $this->query("PRAGMA user_version")->getValue();
     }
 
+    public function sqlToken(string $token): string {
+        switch(strtolower($token)) {
+            case "greatest":
+                return "max";
+            default:
+                return $token;
+        }
+    }
+
     public function schemaUpdate(int $to, string $basePath = null): bool {
         // turn off foreign keys
         $this->exec("PRAGMA foreign_keys = no");

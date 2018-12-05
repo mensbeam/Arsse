@@ -92,6 +92,11 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertTrue($this->drv->charsetAcceptable());
     }
 
+    public function testTranslateAToken() {
+        $this->assertRegExp("/^[a-z][a-z0-9]*$/i", $this->drv->sqlToken("greatest"));
+        $this->assertSame("distinct", $this->drv->sqlToken("distinct"));
+    }
+
     public function testExecAValidStatement() {
         $this->assertTrue($this->drv->exec($this->create));
     }

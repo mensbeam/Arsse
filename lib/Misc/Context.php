@@ -39,8 +39,13 @@ class Context {
 
     protected function act(string $prop, int $set, $value) {
         if ($set) {
-            $this->props[$prop] = true;
-            $this->$prop = $value;
+            if (is_null($value)) {
+                unset($this->props[$prop]);
+                $this->$prop = (new \ReflectionClass($this))->getDefaultProperties()[$prop];
+            } else {
+                $this->props[$prop] = true;
+                $this->$prop = $value;
+            }
             return $this;
         } else {
             return isset($this->props[$prop]);
@@ -136,14 +141,14 @@ class Context {
     }
 
     public function editions(array $spec = null) {
-        if ($spec) {
+        if (isset($spec)) {
             $spec = $this->cleanArray($spec);
         }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
     public function articles(array $spec = null) {
-        if ($spec) {
+        if (isset($spec)) {
             $spec = $this->cleanArray($spec);
         }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
