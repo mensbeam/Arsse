@@ -1219,11 +1219,15 @@ class Database {
                 "SELECT
                     id, (select count(*) from arsse_subscriptions where feed = arsse_feeds.id) as subs
                 from arsse_feeds where id = ?".
+            "), latest_editions(article,edition) as (".
+                "SELECT article,max(id) from arsse_editions group by article".
             "), excepted_articles(id,edition) as (".
                 "SELECT
-                    arsse_articles.id, (select max(id) from arsse_editions where article = arsse_articles.id) as edition
+                    arsse_articles.id as id,
+                    latest_editions.edition as edition
                 from arsse_articles
                     join target_feed on arsse_articles.feed = target_feed.id
+                    join latest_editions on arsse_articles.id = latest_editions.article
                 order by edition desc limit ?".
             ") ".
             "DELETE from arsse_articles where

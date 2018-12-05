@@ -12,7 +12,7 @@ class PDOStatement extends \JKingWeb\Arsse\Db\AbstractStatement {
     const BINDINGS = [
         "integer"   => "bigint",
         "float"     => "decimal",
-        "datetime"  => "timestamp",
+        "datetime"  => "timestamp(0) without time zone",
         "binary"    => "bytea",
         "string"    => "text",
         "boolean"   => "smallint", // FIXME: using boolean leads to incompatibilities with versions of SQLite bundled prior to PHP 7.3
