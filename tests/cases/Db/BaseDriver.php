@@ -76,7 +76,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         return static::$interface->query($q)->fetchColumn();
     }
 
-    # TESTS 
+    # TESTS
     
     public function testFetchDriverName() {
         $class = get_class($this->drv);
@@ -115,7 +115,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->exec($this->create);
         $this->exec($this->lock);
         $this->assertException("general", "Db", "ExceptionTimeout");
-        $lock = is_array($this->lock) ? implode("; ",$this->lock) : $this->lock;
+        $lock = is_array($this->lock) ? implode("; ", $this->lock) : $this->lock;
         $this->drv->exec($lock);
     }
 
@@ -144,7 +144,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->exec($this->create);
         $this->exec($this->lock);
         $this->assertException("general", "Db", "ExceptionTimeout");
-        $lock = is_array($this->lock) ? implode("; ",$this->lock) : $this->lock;
+        $lock = is_array($this->lock) ? implode("; ", $this->lock) : $this->lock;
         $this->drv->exec($lock);
     }
 

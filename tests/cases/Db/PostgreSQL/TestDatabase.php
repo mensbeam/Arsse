@@ -6,7 +6,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Db\PosgreSQL;
 
-/** 
+/**
  * @group excludeFromCoverage
  * @covers \JKingWeb\Arsse\Database<extended>
  * @covers \JKingWeb\Arsse\Misc\Query<extended>
@@ -20,7 +20,7 @@ class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\Base {
 
     public function setUp() {
         parent::setUp();
-        $seqList = 
+        $seqList =
             "select 
                 replace(substring(column_default, 10), right(column_default, 12), '') as seq, 
                 table_name as table, 
@@ -30,7 +30,7 @@ class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\Base {
                 and table_name like 'arsse_%' 
                 and column_default like 'nextval(%'
             ";
-        foreach(static::$drv->query($seqList) as $r) {
+        foreach (static::$drv->query($seqList) as $r) {
             $num = (int) static::$drv->query("SELECT max({$r['col']}) from {$r['table']}")->getValue();
             if (!$num) {
                 continue;

@@ -275,7 +275,6 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
         foreach ($tests as $index => list($value, $type, $exp)) {
             $t = preg_replace("<^strict >", "", $type);
-            if (gettype($exp) != "string") var_export($index);
             $exp = ($exp=="null") ? $exp : $this->decorateTypeSyntax($exp, $t);
             yield $index => [$value, $type, $exp];
         }
@@ -327,7 +326,6 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
         foreach ($tests as $index => list($value, $type, $exp)) {
             $t = preg_replace("<^strict >", "", $type);
-            if (gettype($exp) != "string") var_export($index);
             $exp = ($exp=="null") ? $exp : $this->decorateTypeSyntax($exp, $t);
             yield $index => [$value, $type, $exp];
         }

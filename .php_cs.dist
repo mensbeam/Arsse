@@ -17,6 +17,7 @@ $paths = [
 $rules = [
     '@PSR2' => true,
     'braces' => ['position_after_functions_and_oop_constructs' => "same"],
+    'function_declaration' => ['closure_function_spacing' => "none"],
 ];
 
 $finder = \PhpCsFixer\Finder::create();

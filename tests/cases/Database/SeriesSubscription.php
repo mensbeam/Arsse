@@ -12,7 +12,6 @@ use JKingWeb\Arsse\Feed\Exception as FeedException;
 use Phake;
 
 trait SeriesSubscription {
-
     public function setUpSeriesSubscription() {
         $this->data = [
             'arsse_users' => [

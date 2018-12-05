@@ -80,7 +80,7 @@ class DatabaseInformation {
             // rollback any pending transaction
             try {
                 $db->exec("ROLLBACK");
-            } catch(\Throwable $e) {
+            } catch (\Throwable $e) {
             }
             foreach ($sqlite3TableList($db) as $table) {
                 if ($table == "arsse_meta") {
@@ -97,7 +97,7 @@ class DatabaseInformation {
             // rollback any pending transaction
             try {
                 $db->exec("ROLLBACK");
-            } catch(\Throwable $e) {
+            } catch (\Throwable $e) {
             }
             $db->exec("PRAGMA foreign_keys=0");
             foreach ($sqlite3TableList($db) as $table) {
@@ -181,7 +181,7 @@ class DatabaseInformation {
                     // rollback any pending transaction
                     try {
                         $db->exec("ROLLBACK");
-                    } catch(\Throwable $e) {
+                    } catch (\Throwable $e) {
                     }
                     foreach ($pgObjectList($db) as $obj) {
                         if ($obj['type'] != "TABLE") {
@@ -200,7 +200,7 @@ class DatabaseInformation {
                     // rollback any pending transaction
                     try {
                         $db->exec("ROLLBACK");
-                    } catch(\Throwable $e) {
+                    } catch (\Throwable $e) {
                     }
                     foreach ($pgObjectList($db) as $obj) {
                         $db->exec("DROP {$obj['type']} IF EXISTS {$obj['name']} cascade");

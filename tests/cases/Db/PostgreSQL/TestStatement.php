@@ -23,9 +23,8 @@ class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
             case "string":
                 if (preg_match("<^char\((\d+)\)$>", $value, $match)) {
                     return "U&'\\+".str_pad(dechex((int) $match[1]), 6, "0", \STR_PAD_LEFT)."'";
-                } else {
-                    return $value;
                 }
+                return $value;
             default:
                 return $value;
         }

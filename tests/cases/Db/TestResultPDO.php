@@ -8,8 +8,8 @@ namespace JKingWeb\Arsse\TestCase\Db;
 
 use JKingWeb\Arsse\Test\DatabaseInformation;
 
-/** 
- * @covers \JKingWeb\Arsse\Db\PDOResult<extended> 
+/**
+ * @covers \JKingWeb\Arsse\Db\PDOResult<extended>
  */
 class TestResultPDO extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
     protected static $implementation;

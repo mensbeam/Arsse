@@ -21,7 +21,7 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
         if ($act==$postfix) {
             $this->assertSame($exp, "");
         } else {
-            $test = substr($act, 0, strlen($act) - (strlen($postfix) + 1) );
+            $test = substr($act, 0, strlen($act) - (strlen($postfix) + 1));
             $check = substr($act, strlen($test) + 1);
             $this->assertSame($postfix, $check);
             $this->assertSame($exp, $test);

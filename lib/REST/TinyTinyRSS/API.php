@@ -330,7 +330,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     'id' => "FEED:".self::FEED_ALL,
                     'bare_id' => self::FEED_ALL,
                     'icon' => "images/folder.png",
-                    'unread' => array_reduce($subs, function ($sum, $value) {
+                    'unread' => array_reduce($subs, function($sum, $value) {
                         return $sum + $value['unread'];
                     }, 0), // the sum of all feeds' unread is the total unread
                 ], $tSpecial),

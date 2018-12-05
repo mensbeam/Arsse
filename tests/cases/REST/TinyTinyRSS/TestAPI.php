@@ -1516,13 +1516,13 @@ LONG_STRING;
     }
 
     protected function filterFolders(int $id = null): array {
-        return array_filter($this->folders, function ($value) use ($id) {
+        return array_filter($this->folders, function($value) use ($id) {
             return $value['parent']==$id;
         });
     }
 
     protected function filterSubs(int $folder = null): array {
-        return array_filter($this->subscriptions, function ($value) use ($folder) {
+        return array_filter($this->subscriptions, function($value) use ($folder) {
             return $value['folder']==$folder;
         });
     }
@@ -1532,9 +1532,9 @@ LONG_STRING;
         foreach ($this->filterFolders($id) as $f) {
             $out += $this->reduceFolders($f['id']);
         }
-        $out += array_reduce(array_filter($this->subscriptions, function ($value) use ($id) {
+        $out += array_reduce(array_filter($this->subscriptions, function($value) use ($id) {
             return $value['folder']==$id;
-        }), function ($sum, $value) {
+        }), function($sum, $value) {
             return $sum + $value['unread'];
         }, 0);
         return $out;

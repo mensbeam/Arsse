@@ -61,7 +61,7 @@ class RoboFile extends \Robo\Tasks {
      * coverage may be skipped, while working alternatives are normally
      * suppressed for reasons of time. This coverage report will try to
      * run all tests which may cover code.
-     * 
+     *
      * See also help for the "coverage" task for more details.
     */
     public function coverageFull(array $args): Result {

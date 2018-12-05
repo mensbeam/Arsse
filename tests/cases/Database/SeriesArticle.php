@@ -411,7 +411,7 @@ trait SeriesArticle {
             305 => 105,
             1001 => 20,
         ];
-        $this->assertEquals($exp, Arsse::$db->editionArticle(...range(1,1001)));
+        $this->assertEquals($exp, Arsse::$db->editionArticle(...range(1, 1001)));
     }
 
     public function testListArticlesCheckingContext() {

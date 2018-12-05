@@ -17,7 +17,6 @@ use Phake;
 
 /** @covers \JKingWeb\Arsse\User */
 class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
-
     public function setUp() {
         self::clearData();
         self::setConf();
@@ -236,7 +235,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
                 $this->assertException("doesNotExist", "User");
             }
             $calls = 0;
-        } else{
+        } else {
             $calls = 1;
         }
         try {

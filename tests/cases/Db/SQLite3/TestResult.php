@@ -8,8 +8,8 @@ namespace JKingWeb\Arsse\TestCase\Db\SQLite3;
 
 use JKingWeb\Arsse\Test\DatabaseInformation;
 
-/** 
- * @covers \JKingWeb\Arsse\Db\SQLite3\Result<extended> 
+/**
+ * @covers \JKingWeb\Arsse\Db\SQLite3\Result<extended>
  */
 class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
     protected static $implementation = "SQLite 3";

@@ -17,7 +17,6 @@ use Phake;
 
 /** @covers \JKingWeb\Arsse\User\Internal\Driver */
 class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
-
     public function setUp() {
         self::clearData();
         self::setConf();
@@ -34,8 +33,8 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertTrue(strlen(Driver::driverName()) > 0);
     }
 
-    /** 
-     * @dataProvider provideAuthentication 
+    /**
+     * @dataProvider provideAuthentication
      * @group slow
     */
     public function testAuthenticateAUser(bool $authorized, string $user, string $password, bool $exp) {

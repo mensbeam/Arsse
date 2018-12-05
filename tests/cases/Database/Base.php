@@ -15,7 +15,7 @@ use JKingWeb\Arsse\Db\Result;
 use JKingWeb\Arsse\Test\DatabaseInformation;
 use Phake;
 
-abstract class Base extends \JKingWeb\Arsse\Test\AbstractTest{
+abstract class Base extends \JKingWeb\Arsse\Test\AbstractTest {
     use SeriesMiscellany;
     use SeriesMeta;
     use SeriesUser;
@@ -34,7 +34,7 @@ abstract class Base extends \JKingWeb\Arsse\Test\AbstractTest{
     protected static $failureReason = "";
     protected $primed = false;
 
-    protected abstract function nextID(string $table): int;
+    abstract protected function nextID(string $table): int;
 
     protected function findTraitOfTest(string $test): string {
         $class = new \ReflectionClass(self::class);
@@ -50,7 +50,7 @@ abstract class Base extends \JKingWeb\Arsse\Test\AbstractTest{
         // establish a clean baseline
         static::clearData();
         // perform an initial connection to the database to reset its version to zero
-        // in the case of SQLite this will always be the case (we use a memory database), 
+        // in the case of SQLite this will always be the case (we use a memory database),
         // but other engines should clean up from potentially interrupted prior tests
         static::$dbInfo = new DatabaseInformation(static::$implementation);
         static::setConf();

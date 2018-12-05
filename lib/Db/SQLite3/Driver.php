@@ -104,7 +104,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     }
 
     public function sqlToken(string $token): string {
-        switch(strtolower($token)) {
+        switch (strtolower($token)) {
             case "greatest":
                 return "max";
             default:

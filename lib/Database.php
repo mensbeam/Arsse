@@ -808,20 +808,20 @@ class Database {
         $greatest = $this->db->sqlToken("greatest");
         // prepare the output column list
         $colDefs = [
-            'id' => "arsse_articles.id", 
-            'edition' => "latest_editions.edition", 
-            'url' => "arsse_articles.url", 
-            'title' => "arsse_articles.title", 
-            'author' => "arsse_articles.author", 
-            'content' => "arsse_articles.content", 
-            'guid' => "arsse_articles.guid", 
+            'id' => "arsse_articles.id",
+            'edition' => "latest_editions.edition",
+            'url' => "arsse_articles.url",
+            'title' => "arsse_articles.title",
+            'author' => "arsse_articles.author",
+            'content' => "arsse_articles.content",
+            'guid' => "arsse_articles.guid",
             'fingerprint' => "arsse_articles.url_title_hash || ':' || arsse_articles.url_content_hash || ':' || arsse_articles.title_content_hash",
             'subscription' => "arsse_subscriptions.id",
             'feed' => "arsse_subscriptions.feed",
             'starred' => "coalesce(arsse_marks.starred,0)",
             'unread' => "abs(coalesce(arsse_marks.read,0) - 1)",
             'note' => "coalesce(arsse_marks.note,'')",
-            'published_date' => "arsse_articles.published", 
+            'published_date' => "arsse_articles.published",
             'edited_date' => "arsse_articles.edited",
             'modified_date' => "arsse_articles.modified",
             'marked_date' => "$greatest(arsse_articles.modified, coalesce(arsse_marks.modified, '0001-01-01 00:00:00'), coalesce(arsse_label_members.modified, '0001-01-01 00:00:00'))",
@@ -855,7 +855,8 @@ class Database {
             left join arsse_enclosures on arsse_enclosures.article = arsse_articles.id
             left join arsse_label_members on arsse_label_members.subscription = arsse_subscriptions.id and arsse_label_members.article = arsse_articles.id and arsse_label_members.assigned = 1
             left join arsse_labels on arsse_labels.owner = arsse_subscriptions.owner and arsse_label_members.label = arsse_labels.id",
-            ["str"], [$user]
+            ["str"],
+            [$user]
         );
         $q->setCTE("latest_editions(article,edition)", "SELECT article,max(id) from arsse_editions group by article", [], [], "join latest_editions on arsse_articles.id = latest_editions.article");
         if ($cols) {
