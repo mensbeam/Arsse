@@ -134,7 +134,10 @@ abstract class Base extends \JKingWeb\Arsse\Test\AbstractTest{
 
     public function compareExpectations(array $expected): bool {
         foreach ($expected as $table => $info) {
-            $cols = implode(",", array_keys($info['columns']));
+            $cols = array_map(function($v) {
+                return '"'.str_replace('"', '""', $v).'"';
+            }, array_keys($info['columns']));
+            $cols = implode(",", $cols);
             $types = $info['columns'];
             $data = static::$drv->prepare("SELECT $cols from $table")->run()->getAll();
             $cols = array_keys($info['columns']);
