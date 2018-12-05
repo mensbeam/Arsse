@@ -1193,12 +1193,10 @@ class Database {
         }
         $id = $this->articleValidateId($user, $id)['article'];
         $out = $this->db->prepare("SELECT id,name from arsse_labels where owner = ? and exists(select id from arsse_label_members where article = ? and label = arsse_labels.id and assigned = 1)", "str", "int")->run($user, $id)->getAll();
-        if (!$out) {
-            return $out;
-        } else {
-            // flatten the result to return just the label ID or name
-            return array_column($out, !$byName ? "id" : "name");
-        }
+        // flatten the result to return just the label ID or name, sorted
+        $out = $out ? array_column($out, !$byName ? "id" : "name") : [];
+        sort($out);
+        return $out;
     }
 
     public function articleCategoriesGet(string $user, $id): array {
@@ -1444,7 +1442,7 @@ class Database {
         $this->labelValidateId($user, $id, $byName, false);
         $field = !$byName ? "id" : "name";
         $type = !$byName ? "int" : "str";
-        $out = $this->db->prepare("SELECT article from arsse_label_members join arsse_labels on label = id where assigned = 1 and $field = ? and owner = ?", $type, "str")->run($id, $user)->getAll();
+        $out = $this->db->prepare("SELECT article from arsse_label_members join arsse_labels on label = id where assigned = 1 and $field = ? and owner = ? order by article", $type, "str")->run($id, $user)->getAll();
         if (!$out) {
             // if no results were returned, do a full validation on the label ID
             $this->labelValidateId($user, $id, $byName, true, true);

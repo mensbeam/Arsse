@@ -19,6 +19,7 @@ trait PDOError {
                 return [ExceptionInput::class, 'engineTypeViolation', $err[2]];
             case "23000":
             case "23502":
+            case "23505":
                 return [ExceptionInput::class, "constraintViolation", $err[2]];
             case "55P03":
             case "57014":

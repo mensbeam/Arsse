@@ -957,7 +957,7 @@ trait SeriesArticle {
     }
 
     public function testListTheLabelsOfAnArticle() {
-        $this->assertEquals([2,1], Arsse::$db->articleLabelsGet("john.doe@example.com", 1));
+        $this->assertEquals([1,2], Arsse::$db->articleLabelsGet("john.doe@example.com", 1));
         $this->assertEquals([2], Arsse::$db->articleLabelsGet("john.doe@example.com", 5));
         $this->assertEquals([], Arsse::$db->articleLabelsGet("john.doe@example.com", 2));
         $this->assertEquals(["Fascinating","Interesting"], Arsse::$db->articleLabelsGet("john.doe@example.com", 1, true));
