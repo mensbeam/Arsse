@@ -16,11 +16,6 @@ use JKingWeb\Arsse\Misc\ValueInfo;
 class Database {
     const SCHEMA_VERSION = 4;
     const LIMIT_ARTICLES = 50;
-    // articleList verbosity levels
-    const LIST_MINIMAL      = 0; // only that metadata which is required for context matching
-    const LIST_CONSERVATIVE = 1; // base metadata plus anything that is not potentially large text
-    const LIST_TYPICAL      = 2; // conservative, with the addition of content
-    const LIST_FULL         = 3; // all possible fields
 
     /** @var Db\Driver */
     public $db;
@@ -994,7 +989,7 @@ class Database {
         }
     }
 
-    public function articleList(string $user, Context $context = null, int $fields = self::LIST_FULL): Db\Result {
+    public function articleList(string $user, Context $context = null, array $fields = ["id"]): Db\Result {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
@@ -1009,52 +1004,9 @@ class Database {
             $tr->commit();
             return new Db\ResultAggregate(...$out);
         } else {
-            $columns = [];
-            switch ($fields) {
-                // NOTE: the cases all cascade into each other: a given verbosity level is always a superset of the previous one
-                case self::LIST_FULL: // everything
-                    $columns = array_merge($columns, [
-                        "note",
-                    ]);
-                    // no break
-                case self::LIST_TYPICAL: // conservative, plus content
-                    $columns = array_merge($columns, [
-                        "content",
-                        "media_url", // enclosures are potentially large due to data: URLs
-                        "media_type", // FIXME: enclosures should eventually have their own fetch method
-                    ]);
-                    // no break
-                case self::LIST_CONSERVATIVE: // base metadata, plus anything that is not likely to be large text
-                    $columns = array_merge($columns, [
-                        "url",
-                        "title",
-                        "subscription_title",
-                        "author",
-                        "guid",
-                        "published_date",
-                        "edited_date",
-                        "fingerprint",
-                    ]);
-                    // no break
-                case self::LIST_MINIMAL: // base metadata (always included: required for context matching)
-                    $columns = array_merge($columns, [
-                        "id", 
-                        "subscription", 
-                        "feed", 
-                        "modified_date", 
-                        "marked_date", 
-                        "unread", 
-                        "starred", 
-                        "edition",
-                        "edited_date",
-                    ]);
-                    break;
-                default:
-                    throw new Exception("constantUnknown", $fields);
-            }
-            $q = $this->articleQuery($user, $context, $columns);
-            $q->setOrder("edited_date".($context->reverse ? " desc" : ""));
-            $q->setOrder("edition".($context->reverse ? " desc" : ""));
+            $q = $this->articleQuery($user, $context, $fields);
+            $q->setOrder("arsse_articles.edited".($context->reverse ? " desc" : ""));
+            $q->setOrder("latest_editions.edition".($context->reverse ? " desc" : ""));
             // perform the query and return results
             return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
         }

@@ -1113,8 +1113,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                         $out += Arsse::$db->articleMark(Arsse::$user->id, ['starred' => (bool) $data['mode']], (new Context)->articles($articles));
                         break;
                     case 2: //toggle
-                        $on = array_column(Arsse::$db->articleList(Arsse::$user->id, (new Context)->articles($articles)->starred(true), Database::LIST_MINIMAL)->getAll(), "id");
-                        $off = array_column(Arsse::$db->articleList(Arsse::$user->id, (new Context)->articles($articles)->starred(false), Database::LIST_MINIMAL)->getAll(), "id");
+                        $on = array_column(Arsse::$db->articleList(Arsse::$user->id, (new Context)->articles($articles)->starred(true), ["id"])->getAll(), "id");
+                        $off = array_column(Arsse::$db->articleList(Arsse::$user->id, (new Context)->articles($articles)->starred(false), ["id"])->getAll(), "id");
                         if ($off) {
                             $out += Arsse::$db->articleMark(Arsse::$user->id, ['starred' => true], (new Context)->articles($off));
                         }
@@ -1145,8 +1145,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                         $out += Arsse::$db->articleMark(Arsse::$user->id, ['read' => !$data['mode']], (new Context)->articles($articles));
                         break;
                     case 2: //toggle
-                        $on = array_column(Arsse::$db->articleList(Arsse::$user->id, (new Context)->articles($articles)->unread(true), Database::LIST_MINIMAL)->getAll(), "id");
-                        $off = array_column(Arsse::$db->articleList(Arsse::$user->id, (new Context)->articles($articles)->unread(false), Database::LIST_MINIMAL)->getAll(), "id");
+                        $on = array_column(Arsse::$db->articleList(Arsse::$user->id, (new Context)->articles($articles)->unread(true), ["id"])->getAll(), "id");
+                        $off = array_column(Arsse::$db->articleList(Arsse::$user->id, (new Context)->articles($articles)->unread(false), ["id"])->getAll(), "id");
                         if ($off) {
                             $out += Arsse::$db->articleMark(Arsse::$user->id, ['read' => false], (new Context)->articles($off));
                         }
@@ -1183,7 +1183,22 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // retrieve the requested articles
         $out = [];
-        foreach (Arsse::$db->articleList(Arsse::$user->id, (new Context)->articles($articles)) as $article) {
+        $columns = [
+            "id",
+            "guid",
+            "title",
+            "url",
+            "unread",
+            "starred",
+            "edited_date",
+            "subscription",
+            "subscription_title",
+            "note",
+            "content",
+            "media_url",
+            "media_type",
+        ];
+        foreach (Arsse::$db->articleList(Arsse::$user->id, (new Context)->articles($articles), $columns) as $article) {
             $out[] = [
                 'id' => (string) $article['id'], // string cast to be consistent with TTRSS
                 'guid' => $article['guid'] ? "SHA256:".$article['guid'] : null,
@@ -1246,7 +1261,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         // fetch the list of IDs
         $out = [];
         try {
-            foreach ($this->fetchArticles($data, Database::LIST_MINIMAL) as $row) {
+            foreach ($this->fetchArticles($data, ["id"]) as $row) {
                 $out[] = ['id' => (int) $row['id']];
             }
         } catch (ExceptionInput $e) {
@@ -1267,7 +1282,23 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         // retrieve the requested articles
         $out = [];
         try {
-            foreach ($this->fetchArticles($data, Database::LIST_FULL) as $article) {
+            $columns = [
+                "id",
+                "guid",
+                "title",
+                "url",
+                "unread",
+                "starred",
+                "edited_date",
+                "published_date",
+                "subscription",
+                "subscription_title",
+                "note",
+                ($data['show_content'] || $data['show_excerpt']) ? "content" : "",
+                ($data['include_attachments']) ? "media_url": "",
+                ($data['include_attachments']) ? "media_type": "",
+            ];
+            foreach ($this->fetchArticles($data, $columns) as $article) {
                 $row = [
                     'id' => (int) $article['id'],
                     'guid' => $article['guid'] ? "SHA256:".$article['guid'] : "",
@@ -1325,7 +1356,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 // when paginating the header returns the latest ("first") item ID in the full list; we get this ID here
                 $data['skip'] = 0;
                 $data['limit'] = 1;
-                $firstID = ($this->fetchArticles($data, Database::LIST_MINIMAL)->getRow() ?? ['id' => 0])['id'];
+                $firstID = ($this->fetchArticles($data, ["id"])->getRow() ?? ['id' => 0])['id'];
             } elseif ($data['order_by']=="date_reverse") {
                 // the "date_reverse" sort order doesn't get a first ID because it's meaningless for ascending-order pagination (pages doesn't go stale)
                 $firstID = 0;
@@ -1346,7 +1377,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return $out;
     }
 
-    protected function fetchArticles(array $data, int $fields): \JKingWeb\Arsse\Db\Result {
+    protected function fetchArticles(array $data, array $fields): \JKingWeb\Arsse\Db\Result {
         // normalize input
         if (is_null($data['feed_id'])) {
             throw new Exception("INCORRECT_USAGE");

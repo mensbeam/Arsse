@@ -364,24 +364,10 @@ trait SeriesArticle {
             ],
         ];
         $this->fields = [
-            Database::LIST_MINIMAL => [
-                "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", "edited_date",
-            ],
-            Database::LIST_CONSERVATIVE => [
-                "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", "edited_date",
-                "url", "title", "subscription_title", "author", "guid", "published_date", "fingerprint",
-            ],
-            Database::LIST_TYPICAL => [
-                "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", "edited_date",
-                "url", "title", "subscription_title", "author", "guid", "published_date", "fingerprint",
-                "content", "media_url", "media_type",
-            ],
-            Database::LIST_FULL => [
-                "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", "edited_date",
-                "url", "title", "subscription_title", "author", "guid", "published_date", "fingerprint",
-                "content", "media_url", "media_type",
-                "note",
-            ],
+            "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", "edited_date",
+            "url", "title", "subscription_title", "author", "guid", "published_date", "fingerprint",
+            "content", "media_url", "media_type",
+            "note",
         ];
         $this->checkTables = ['arsse_marks' => ["subscription","article","read","starred","modified","note"],];
         $this->user = "john.doe@example.net";
@@ -522,17 +508,15 @@ trait SeriesArticle {
 
     public function testListArticlesCheckingProperties() {
         $this->user = "john.doe@example.org";
-        $this->assertResult($this->matches, Arsse::$db->articleList($this->user));
         // check that the different fieldset groups return the expected columns
-        foreach ($this->fields as $constant => $columns) {
-            $test = array_keys(Arsse::$db->articleList($this->user, (new Context)->article(101), $constant)->getRow());
-            sort($columns);
-            sort($test);
-            $this->assertEquals($columns, $test, "Fields do not match expectation for verbosity $constant");
+        foreach ($this->fields as $column) {
+            $test = array_keys(Arsse::$db->articleList($this->user, (new Context)->article(101), [$column])->getRow());
+            $this->assertEquals([$column], $test);
         }
-        // check that an unknown fieldset produces an exception
-        $this->assertException("constantUnknown");
-        Arsse::$db->articleList($this->user, (new Context)->article(101), \PHP_INT_MAX);
+        // check that an unknown field is silently ignored
+        $columns = array_merge($this->fields, ["unknown_column", "bogus_column"]);
+        $test = array_keys(Arsse::$db->articleList($this->user, (new Context)->article(101), $columns)->getRow());
+        $this->assertEquals($this->fields, $test);
     }
 
     public function testListArticlesWithoutAuthority() {
