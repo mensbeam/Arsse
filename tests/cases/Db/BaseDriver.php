@@ -57,7 +57,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public static function tearDownAfterClass() {
-        static::$implementation = null;
+        static::$interface = null;
         static::$dbInfo = null;
         self::clearData();
     }

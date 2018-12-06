@@ -4,29 +4,20 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse\TestCase\Db\SQLite3;
+namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
 
 use JKingWeb\Arsse\Test\DatabaseInformation;
 
 /**
- * @covers \JKingWeb\Arsse\Db\SQLite3\Result<extended>
+ * @covers \JKingWeb\Arsse\Db\ResultPDO<extended>
  */
 class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
-    protected static $implementation = "SQLite 3";
+    protected static $implementation = "PDO SQLite 3";
     protected static $createMeta = "CREATE TABLE arsse_meta(key text primary key not null, value text) without rowid";
     protected static $createTest = "CREATE TABLE arsse_test(id integer primary key)";
 
-    public static function tearDownAfterClass() {
-        if (static::$interface) {
-            static::$interface->close();
-        }
-        parent::tearDownAfterClass();
-    }
-
     protected function makeResult(string $q): array {
         $set = static::$interface->query($q);
-        $rows = static::$interface->changes();
-        $id = static::$interface->lastInsertRowID();
-        return [$set, [$rows, $id]];
+        return [static::$interface, $set];
     }
 }

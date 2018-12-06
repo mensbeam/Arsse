@@ -56,13 +56,20 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testGetChangeCountAndLastInsertId() {
-        $this->makeResult("CREATE TABLE arsse_meta(key varchar(255) primary key not null, value text)");
-        $out = $this->makeResult("INSERT INTO arsse_meta(key,value) values('test', 1)");
-        $rows = $out[1][0];
-        $id = $out[1][1];
-        $r = new $this->resultClass(...$out);
-        $this->assertSame((int) $rows, $r->changes());
-        $this->assertSame((int) $id, $r->lastId());
+        $this->makeResult(static::$createMeta);
+        $r = new $this->resultClass(...$this->makeResult("INSERT INTO arsse_meta(key,value) values('test', 1)"));
+        $this->assertSame(1, $r->changes());
+        $this->assertSame(0, $r->lastId());
+    }
+
+    public function testGetChangeCountAndLastInsertIdBis() {
+        $this->makeResult(static::$createTest);
+        $r = new $this->resultClass(...$this->makeResult("INSERT INTO arsse_test default values"));
+        $this->assertSame(1, $r->changes());
+        $this->assertSame(1, $r->lastId());
+        $r = new $this->resultClass(...$this->makeResult("INSERT INTO arsse_test default values"));
+        $this->assertSame(1, $r->changes());
+        $this->assertSame(2, $r->lastId());
     }
 
     public function testIterateOverResults() {
@@ -91,7 +98,7 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testGetSingleValues() {
         $exp = [1867, 1970, 2112];
         $exp = $this->stringOutput ? $this->stringify($exp) : $exp;
-        $test = new $this->resultClass(...$this->makeResult("SELECT 1867 as year union select 1970 as year union select 2112 as year"));
+        $test = new $this->resultClass(...$this->makeResult("SELECT 1867 as year union all select 1970 as year union all select 2112 as year"));
         $this->assertSame($exp[0], $test->getValue());
         $this->assertSame($exp[1], $test->getValue());
         $this->assertSame($exp[2], $test->getValue());
@@ -101,7 +108,7 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testGetFirstValuesOnly() {
         $exp = [1867, 1970, 2112];
         $exp = $this->stringOutput ? $this->stringify($exp) : $exp;
-        $test = new $this->resultClass(...$this->makeResult("SELECT 1867 as year, 19 as century union select 1970 as year, 20 as century union select 2112 as year, 22 as century"));
+        $test = new $this->resultClass(...$this->makeResult("SELECT 1867 as year, 19 as century union all select 1970 as year, 20 as century union all select 2112 as year, 22 as century"));
         $this->assertSame($exp[0], $test->getValue());
         $this->assertSame($exp[1], $test->getValue());
         $this->assertSame($exp[2], $test->getValue());

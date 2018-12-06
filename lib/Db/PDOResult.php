@@ -10,26 +10,28 @@ use JKingWeb\Arsse\Db\Exception;
 
 class PDOResult extends AbstractResult {
     protected $set;
+    protected $db;
     protected $cur = null;
-    protected $rows = 0;
-    protected $id = 0;
 
     // actual public methods
 
     public function changes(): int {
-        return $this->rows;
+        return $this->set->rowCount();
     }
 
     public function lastId(): int {
-        return $this->id;
+        try {
+            return (int) $this->db->lastInsertId();
+        } catch (\PDOException $e) {
+            return 0;
+        }
     }
 
     // constructor/destructor
 
-    public function __construct(\PDOStatement $result, array $changes = [0,0]) {
+    public function __construct(\PDO $db, \PDOStatement $result) {
         $this->set = $result;
-        $this->rows = (int) $changes[0];
-        $this->id = (int) $changes[1];
+        $this->db = $db;
     }
 
     public function __destruct() {
@@ -38,6 +40,7 @@ class PDOResult extends AbstractResult {
         } catch (\PDOException $e) { // @codeCoverageIgnore
         }
         unset($this->set);
+        unset($this->db);
     }
 
     // PHP iterator methods

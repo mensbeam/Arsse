@@ -40,13 +40,7 @@ class PDOStatement extends AbstractStatement {
             list($excClass, $excMsg, $excData) = $this->exceptionBuild();
             throw new $excClass($excMsg, $excData);
         }
-        $changes = $this->st->rowCount();
-        try {
-            $lastId = 0;
-            $lastId = ($changes) ? $this->db->lastInsertId() : 0;
-        } catch (\PDOException $e) { // @codeCoverageIgnore
-        }
-        return new PDOResult($this->st, [$changes, $lastId]);
+        return new PDOResult($this->db, $this->st);
     }
 
     protected function bindValue($value, string $type, int $position): bool {
