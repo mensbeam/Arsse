@@ -61,7 +61,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         }
     }
 
-    protected function assertMessage(MessageInterface $exp, MessageInterface $act, string $text = null) {
+    protected function assertMessage(MessageInterface $exp, MessageInterface $act, string $text = '') {
         if ($exp instanceof ResponseInterface) {
             $this->assertInstanceOf(ResponseInterface::class, $act, $text);
             $this->assertEquals($exp->getStatusCode(), $act->getStatusCode(), $text);
@@ -83,7 +83,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         $this->assertEquals($exp->getHeaders(), $act->getHeaders(), $text);
     }
 
-    public function assertTime($exp, $test, string $msg = null) {
+    public function assertTime($exp, $test, string $msg = '') {
         $test = $this->approximateTime($exp, $test);
         $exp  = Date::transform($exp, "iso8601");
         $test = Date::transform($test, "iso8601");
