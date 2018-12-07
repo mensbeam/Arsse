@@ -768,7 +768,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(false)->limit(10)->oldestEdition(6), Database::LIST_TYPICAL); // offset is one more than specified
         Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->limit(5)->latestEdition(4), Database::LIST_TYPICAL);   // offset is one less than specified
         Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->unread(true), Database::LIST_TYPICAL);
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->markedSince($t), Database::LIST_TYPICAL);
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, $this->equalTo((new Context)->reverse(true)->markedSince($t), 2), Database::LIST_TYPICAL); // within two seconds
         Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->limit(5), Database::LIST_TYPICAL);
     }
 

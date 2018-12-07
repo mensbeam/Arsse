@@ -1133,7 +1133,7 @@ LONG_STRING;
         Phake::when(Arsse::$db)->folderList($this->anything(), null, false)->thenReturn(new Result($this->v($this->topFolders)));
         Phake::when(Arsse::$db)->subscriptionList($this->anything())->thenReturn(new Result($this->v($this->subscriptions)));
         Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result($this->v($this->labels)));
-        Phake::when(Arsse::$db)->articleCount($this->anything(), $this->anything())->thenReturn(7); // FIXME: this should check an unread+modifiedSince context
+        Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->unread(true)->modifiedSince(Date::sub("PT24H")), 2))->thenReturn(7);
         Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn($this->v($this->starred));
         $exp = [
             [
@@ -1197,7 +1197,7 @@ LONG_STRING;
         Phake::when(Arsse::$db)->folderList($this->anything())->thenReturn(new Result($this->v($this->folders)));
         Phake::when(Arsse::$db)->subscriptionList($this->anything())->thenReturn(new Result($this->v($this->subscriptions)));
         Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result($this->v($this->usedLabels)));
-        Phake::when(Arsse::$db)->articleCount($this->anything(), $this->anything())->thenReturn(7); // FIXME: this should check an unread+modifiedSince context
+        Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->unread(true)->modifiedSince(Date::sub("PT24H")), 2))->thenReturn(7);
         Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn($this->v($this->starred));
         $exp = [
             ['id' => "global-unread", 'counter' => 35],
@@ -1318,7 +1318,7 @@ LONG_STRING;
         Phake::when(Arsse::$db)->folderList($this->anything(), null, true)->thenReturn(new Result($this->v($this->folders)));
         Phake::when(Arsse::$db)->subscriptionList($this->anything())->thenReturn(new Result($this->v($this->subscriptions)));
         Phake::when(Arsse::$db)->labelList($this->anything(), true)->thenReturn(new Result($this->v($this->labels)));
-        Phake::when(Arsse::$db)->articleCount($this->anything(), $this->anything())->thenReturn(7); // FIXME: this should check an unread+modifiedSince context
+        Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->unread(true)->modifiedSince(Date::sub("PT24H")), 2))->thenReturn(7);
         Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn($this->v($this->starred));
         // the expectations are packed tightly since they're very verbose; one can use var_export() (or convert to JSON) to pretty-print them
         $exp = ['categories'=>['identifier'=>'id','label'=>'name','items'=>[['name'=>'Special','id'=>'CAT:-1','bare_id'=>-1,'type'=>'category','unread'=>0,'items'=>[['name'=>'All articles','id'=>'FEED:-4','bare_id'=>-4,'icon'=>'images/folder.png','unread'=>35,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Fresh articles','id'=>'FEED:-3','bare_id'=>-3,'icon'=>'images/fresh.png','unread'=>7,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Starred articles','id'=>'FEED:-1','bare_id'=>-1,'icon'=>'images/star.png','unread'=>4,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Published articles','id'=>'FEED:-2','bare_id'=>-2,'icon'=>'images/feed.png','unread'=>0,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Archived articles','id'=>'FEED:0','bare_id'=>0,'icon'=>'images/archive.png','unread'=>0,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Recently read','id'=>'FEED:-6','bare_id'=>-6,'icon'=>'images/time.png','unread'=>0,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],],],['name'=>'Labels','id'=>'CAT:-2','bare_id'=>-2,'type'=>'category','unread'=>6,'items'=>[['name'=>'Fascinating','id'=>'FEED:-1027','bare_id'=>-1027,'unread'=>0,'icon'=>'images/label.png','type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'','fg_color'=>'','bg_color'=>'',],['name'=>'Interesting','id'=>'FEED:-1029','bare_id'=>-1029,'unread'=>0,'icon'=>'images/label.png','type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'','fg_color'=>'','bg_color'=>'',],['name'=>'Logical','id'=>'FEED:-1025','bare_id'=>-1025,'unread'=>0,'icon'=>'images/label.png','type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'','fg_color'=>'','bg_color'=>'',],],],['name'=>'Photography','id'=>'CAT:4','bare_id'=>4,'parent_id'=>null,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(0 feeds)','items'=>[],],['name'=>'Politics','id'=>'CAT:3','bare_id'=>3,'parent_id'=>null,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(3 feeds)','items'=>[['name'=>'Local','id'=>'CAT:5','bare_id'=>5,'parent_id'=>3,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(1 feed)','items'=>[['name'=>'Toronto Star','id'=>'FEED:2','bare_id'=>2,'icon'=>'feed-icons/2.ico','error'=>'oops','param'=>'2011-11-11T11:11:11Z','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],['name'=>'National','id'=>'CAT:6','bare_id'=>6,'parent_id'=>3,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(2 feeds)','items'=>[['name'=>'CBC News','id'=>'FEED:4','bare_id'=>4,'icon'=>'feed-icons/4.ico','error'=>'','param'=>'2017-10-09T15:58:34Z','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],['name'=>'Ottawa Citizen','id'=>'FEED:5','bare_id'=>5,'icon'=>false,'error'=>'','param'=>'2017-07-07T17:07:17Z','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],],],['name'=>'Science','id'=>'CAT:1','bare_id'=>1,'parent_id'=>null,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(2 feeds)','items'=>[['name'=>'Rocketry','id'=>'CAT:2','bare_id'=>2,'parent_id'=>1,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(1 feed)','items'=>[['name'=>'NASA JPL','id'=>'FEED:1','bare_id'=>1,'icon'=>false,'error'=>'','param'=>'2017-09-15T22:54:16Z','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],['name'=>'Ars Technica','id'=>'FEED:3','bare_id'=>3,'icon'=>'feed-icons/3.ico','error'=>'argh','param'=>'2016-05-23T06:40:02Z','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],['name'=>'Uncategorized','id'=>'CAT:0','bare_id'=>0,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'parent_id'=>null,'param'=>'(1 feed)','items'=>[['name'=>'Eurogamer','id'=>'FEED:6','bare_id'=>6,'icon'=>'feed-icons/6.ico','error'=>'','param'=>'2010-02-12T20:08:47Z','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],],],];
@@ -1375,7 +1375,7 @@ LONG_STRING;
         for ($a = 0; $a < sizeof($in3); $a++) {
             $this->assertMessage($exp, $this->req($in3[$a]), "Test $a failed");
         }
-        Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->modifiedSince($t));
+        Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], $this->equalTo((new Context)->modifiedSince($t), 2)); // within two seconds
     }
 
     public function testRetrieveFeedList() {
@@ -1405,7 +1405,7 @@ LONG_STRING;
         ];
         // statistical mocks
         Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn($this->v($this->starred));
-        Phake::when(Arsse::$db)->articleCount->thenReturn(7); // FIXME: this should check an unread+modifiedSince context
+        Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->unread(true)->modifiedSince(Date::sub("PT24H")), 2))->thenReturn(7);
         Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true))->thenReturn(35);
         // label mocks
         Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result($this->v($this->labels)));
@@ -1793,9 +1793,9 @@ LONG_STRING;
             $this->assertMessage($out1[$a], $this->req($in1[$a]), "Test $a failed");
         }
         for ($a = 0; $a < sizeof($in2); $a++) {
-            Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(false)->markedSince(Date::sub("PT24H")), Database::LIST_MINIMAL)->thenReturn(new Result($this->v([['id' => 1001]])));
-            Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(true)->modifiedSince(Date::sub("PT24H")), Database::LIST_MINIMAL)->thenReturn(new Result($this->v([['id' => 1002]])));
-            Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(true)->modifiedSince(Date::sub("PT24H"))->starred(true), Database::LIST_MINIMAL)->thenReturn(new Result($this->v([['id' => 1003]])));
+            Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(false)->markedSince(Date::sub("PT24H")), 2), Database::LIST_MINIMAL)->thenReturn(new Result($this->v([['id' => 1001]])));
+            Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(true)->modifiedSince(Date::sub("PT24H")), 2), Database::LIST_MINIMAL)->thenReturn(new Result($this->v([['id' => 1002]])));
+            Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(true)->modifiedSince(Date::sub("PT24H"))->starred(true), 2), Database::LIST_MINIMAL)->thenReturn(new Result($this->v([['id' => 1003]])));
             $this->assertMessage($out2[$a], $this->req($in2[$a]), "Test $a failed");
         }
     }
@@ -1904,9 +1904,9 @@ LONG_STRING;
             $this->assertMessage($out2[$a], $this->req($in2[$a]), "Test $a failed");
         }
         for ($a = 0; $a < sizeof($in3); $a++) {
-            Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(false)->markedSince(Date::sub("PT24H")), Database::LIST_FULL)->thenReturn($this->generateHeadlines(1001));
-            Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(true)->modifiedSince(Date::sub("PT24H")), Database::LIST_FULL)->thenReturn($this->generateHeadlines(1002));
-            Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(true)->modifiedSince(Date::sub("PT24H"))->starred(true), Database::LIST_FULL)->thenReturn($this->generateHeadlines(1003));
+            Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(false)->markedSince(Date::sub("PT24H")), 2), Database::LIST_FULL)->thenReturn($this->generateHeadlines(1001));
+            Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(true)->modifiedSince(Date::sub("PT24H")), 2), Database::LIST_FULL)->thenReturn($this->generateHeadlines(1002));
+            Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(true)->modifiedSince(Date::sub("PT24H"))->starred(true), 2), Database::LIST_FULL)->thenReturn($this->generateHeadlines(1003));
             $this->assertMessage($out3[$a], $this->req($in3[$a]), "Test $a failed");
         }
     }
