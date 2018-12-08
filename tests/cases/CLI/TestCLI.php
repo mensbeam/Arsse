@@ -19,6 +19,8 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function setUp() {
         $this->clearData(false);
+        $this->cli = Phake::partialMock(CLI::class);
+        Phake::when($this->cli)->logError->thenReturn(null);
     }
 
     public function assertConsole(CLI $cli, string $command, int $exitStatus, string $output = "", bool $pattern = false) {
@@ -45,13 +47,13 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testPrintVersion() {
-        $this->assertConsole(new CLI, "arsse.php --version", 0, Arsse::VERSION);
+        $this->assertConsole($this->cli, "arsse.php --version", 0, Arsse::VERSION);
         $this->assertLoaded(false);
     }
 
     /** @dataProvider provideHelpText */
     public function testPrintHelp(string $cmd, string $name) {
-        $this->assertConsole(new CLI, $cmd, 0, str_replace("arsse.php", $name, CLI::USAGE));
+        $this->assertConsole($this->cli, $cmd, 0, str_replace("arsse.php", $name, CLI::USAGE));
         $this->assertLoaded(false);
     }
 
@@ -65,13 +67,12 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testStartTheDaemon() {
         $srv = Phake::mock(Service::class);
-        $cli = Phake::partialMock(CLI::class);
         Phake::when($srv)->watch->thenReturn(new \DateTimeImmutable);
-        Phake::when($cli)->getService->thenReturn($srv);
-        $this->assertConsole($cli, "arsse.php daemon", 0);
+        Phake::when($this->cli)->getService->thenReturn($srv);
+        $this->assertConsole($this->cli, "arsse.php daemon", 0);
         $this->assertLoaded(true);
         Phake::verify($srv)->watch(true);
-        Phake::verify($cli)->getService;
+        Phake::verify($this->cli)->getService;
     }
 
     /** @dataProvider provideFeedUpdates */
@@ -79,7 +80,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$db = Phake::mock(Database::class);
         Phake::when(Arsse::$db)->feedUpdate(1, true)->thenReturn(true);
         Phake::when(Arsse::$db)->feedUpdate(2, true)->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.com/", new \PicoFeed\Client\InvalidUrlException));
-        $this->assertConsole(new CLI, $cmd, $exitStatus, $output);
+        $this->assertConsole($this->cli, $cmd, $exitStatus, $output);
         $this->assertLoaded(true);
         Phake::verify(Arsse::$db)->feedUpdate;
     }
@@ -94,12 +95,11 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideDefaultConfigurationSaves */
     public function testSaveTheDefaultConfiguration(string $cmd, int $exitStatus, string $file) {
         $conf = Phake::mock(Conf::class);
-        $cli = Phake::partialMock(CLI::class);
         Phake::when($conf)->exportFile("php://output", true)->thenReturn(true);
         Phake::when($conf)->exportFile("good.conf", true)->thenReturn(true);
         Phake::when($conf)->exportFile("bad.conf", true)->thenThrow(new \JKingWeb\Arsse\Conf\Exception("fileUnwritable"));
-        Phake::when($cli)->getConf->thenReturn($conf);
-        $this->assertConsole($cli, $cmd, $exitStatus);
+        Phake::when($this->cli)->getConf->thenReturn($conf);
+        $this->assertConsole($this->cli, $cmd, $exitStatus);
         $this->assertLoaded(false);
         Phake::verify($conf)->exportFile($file, true);
     }
@@ -118,7 +118,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
         Arsse::$user = $this->createMock(User::class);
         Arsse::$user->method("list")->willReturn($list);
-        $this->assertConsole(new CLI, $cmd, $exitStatus, $output);
+        $this->assertConsole($this->cli, $cmd, $exitStatus, $output);
     }
 
     public function provideUserList() {
@@ -144,7 +144,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
                     return is_null($pass) ? "random password" : $pass;
             }
         }));
-        $this->assertConsole(new CLI, $cmd, $exitStatus, $output);
+        $this->assertConsole($this->cli, $cmd, $exitStatus, $output);
     }
 
     public function provideUserAdditions() {
@@ -165,7 +165,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
                 ($user == "jane.doe@example.com" && $pass == "superman")
             );
         }));
-        $this->assertConsole(new CLI, $cmd, $exitStatus, $output);
+        $this->assertConsole($this->cli, $cmd, $exitStatus, $output);
     }
 
     public function provideUserAuthentication() {
@@ -188,7 +188,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             }
             throw new \JKingWeb\Arsse\User\Exception("doesNotExist");
         }));
-        $this->assertConsole(new CLI, $cmd, $exitStatus, $output);
+        $this->assertConsole($this->cli, $cmd, $exitStatus, $output);
     }
 
     public function provideUserRemovals() {
@@ -210,7 +210,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
                     return is_null($pass) ? "random password" : $pass;
             }
         }));
-        $this->assertConsole(new CLI, $cmd, $exitStatus, $output);
+        $this->assertConsole($this->cli, $cmd, $exitStatus, $output);
     }
 
     public function provideUserPasswordChanges() {
