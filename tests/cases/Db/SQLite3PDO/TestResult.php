@@ -9,7 +9,7 @@ namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
 use JKingWeb\Arsse\Test\DatabaseInformation;
 
 /**
- * @covers \JKingWeb\Arsse\Db\ResultPDO<extended>
+ * @covers \JKingWeb\Arsse\Db\PDOResult<extended>
  */
 class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
     protected static $implementation = "PDO SQLite 3";
