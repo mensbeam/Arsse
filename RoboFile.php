@@ -81,13 +81,16 @@ class RoboFile extends \Robo\Tasks {
     }
 
     protected function findCoverageEngine(): string {
-        $null = null;
-        $code = 0;
-        exec("phpdbg --version", $null, $code);
-        if (!$code) {
-            return "phpdbg -qrr";
+        if ($this->isWindows()) {
+            $dbg = dirname(\PHP_BINARY)."\\phpdbg.exe";
+            $dbg = file_exists($dbg) ? $dbg : "";
         } else {
-            return "php";
+            $dbg = `which phpdbg`;
+        }
+        if ($dbg) {
+            return escapeshellarg($dbg)." -qrr";
+        } else {
+            return escapeshellarg(\PHP_BINARY);
         }
     }
 
@@ -114,9 +117,8 @@ class RoboFile extends \Robo\Tasks {
         }
         $execpath = realpath(self::BASE."vendor-bin/phpunit/vendor/phpunit/phpunit/phpunit");
         $confpath = realpath(self::BASE_TEST."phpunit.xml");
-        $blackhole = $this->isWindows() ? "nul" : "/dev/null";
         $this->taskServer(8000)->host("localhost")->dir(self::BASE_TEST."docroot")->rawArg("-n")->arg(self::BASE_TEST."server.php")->background()->run();
-        return $this->taskExec($executor)->arg($execpath)->option("-c", $confpath)->args(array_merge($set, $args))->rawArg("2>$blackhole")->run();
+        return $this->taskExec($executor)->arg($execpath)->option("-c", $confpath)->args(array_merge($set, $args))->run();
     }
 
     /** Packages a given commit of the software into a release tarball
