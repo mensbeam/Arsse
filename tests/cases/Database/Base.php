@@ -225,7 +225,7 @@ abstract class Base extends \JKingWeb\Arsse\Test\AbstractTest {
                 $found = array_search($row, $expected);
                 unset($expected[$found]);
             }
-            $this->assertArraySubset($expected, [], "Expectations not in result set.");
+            $this->assertArraySubset($expected, [], false, "Expectations not in result set.");
         }
     }
 }

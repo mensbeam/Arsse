@@ -411,26 +411,36 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [I::T_STRING, "String",       ],
             [I::T_ARRAY,  "Array",        ],
         ];
+        $assert = function($exp, $act, string $msg) {
+            if (is_null($exp)) {
+                $this->assertNull($act, $msg);
+            } elseif (is_float($exp) && is_nan($exp)) {
+                $this->assertNan($act, $msg);
+            } elseif (is_scalar($exp)) {
+                $this->assertSame($exp, $act, $msg);
+            } else {
+                $this->assertEquals($exp, $act, $msg);
+            }
+        };
         foreach ($params as $index => $param) {
             list($type, $name) = $param;
-            $this->assertNull(I::normalize(null, $type | I::M_STRICT | I::M_NULL), $name." null-passthrough test failed");
+            $assert(null, I::normalize(null, $type | I::M_STRICT | I::M_NULL), $name." null-passthrough test failed");
             foreach ($tests as $test) {
                 list($exp, $pass) = $index ? $test[$index] : [$test[$index], true];
                 $value = $test[0];
-                $assert = (is_float($exp) && is_nan($exp) ? "assertNan" : (is_scalar($exp) ? "assertSame" : "assertEquals"));
-                $this->$assert($exp, I::normalize($value, $type), $name." test failed for value: ".var_export($value, true));
+                $assert($exp, I::normalize($value, $type), $name." test failed for value: ".var_export($value, true));
                 if ($pass) {
-                    $this->$assert($exp, I::normalize($value, $type | I::M_DROP), $name." drop test failed for value: ".var_export($value, true));
-                    $this->$assert($exp, I::normalize($value, $type | I::M_STRICT), $name." error test failed for value: ".var_export($value, true));
+                    $assert($exp, I::normalize($value, $type | I::M_DROP), $name." drop test failed for value: ".var_export($value, true));
+                    $assert($exp, I::normalize($value, $type | I::M_STRICT), $name." error test failed for value: ".var_export($value, true));
                 } else {
-                    $this->assertNull(I::normalize($value, $type | I::M_DROP), $name." drop test failed for value: ".var_export($value, true));
+                    $assert(null, I::normalize($value, $type | I::M_DROP), $name." drop test failed for value: ".var_export($value, true));
                     $exc = new ExceptionType("strictFailure", $type);
                     try {
                         $act = I::normalize($value, $type | I::M_STRICT);
                     } catch (ExceptionType $e) {
                         $act = $e;
                     } finally {
-                        $this->assertEquals($exc, $act, $name." error test failed for value: ".var_export($value, true));
+                        $assert($exc, $act, $name." error test failed for value: ".var_export($value, true));
                     }
                 }
             }

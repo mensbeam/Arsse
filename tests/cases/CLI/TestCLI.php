@@ -114,7 +114,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideUserList */
     public function testListUsers(string $cmd, array $list, int $exitStatus, string $output) {
-        // Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
+        // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
         Arsse::$user = $this->createMock(User::class);
         Arsse::$user->method("list")->willReturn($list);
         $this->assertConsole(new CLI, $cmd, $exitStatus, $output);
@@ -133,7 +133,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideUserAdditions */
     public function testAddAUser(string $cmd, int $exitStatus, string $output) {
-        // Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
+        // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
         Arsse::$user = $this->createMock(User::class);
         Arsse::$user->method("add")->will($this->returnCallback(function($user, $pass = null) {
             switch ($user) {
@@ -156,7 +156,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideUserAuthentication */
     public function testAuthenticateAUser(string $cmd, int $exitStatus, string $output) {
-        // Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
+        // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
         Arsse::$user = $this->createMock(User::class);
         Arsse::$user->method("auth")->will($this->returnCallback(function($user, $pass) {
             return (
@@ -179,7 +179,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideUserRemovals */
     public function testRemoveAUser(string $cmd, int $exitStatus, string $output) {
-        // Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
+        // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
         Arsse::$user = $this->createMock(User::class);
         Arsse::$user->method("remove")->will($this->returnCallback(function($user) {
             if ($user == "john.doe@example.com") {
@@ -199,7 +199,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideUserPasswordChanges */
     public function testChangeAUserPassword(string $cmd, int $exitStatus, string $output) {
-        // Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
+        // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
         Arsse::$user = $this->createMock(User::class);
         Arsse::$user->method("passwordSet")->will($this->returnCallback(function($user, $pass = null) {
             switch ($user) {
