@@ -39,15 +39,15 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function tearDown() {
-        if (static::$interface) {
-            // completely clear the database
-            (static::$dbInfo->razeFunction)(static::$interface);
-        }
         self::clearData();
     }
 
     public static function tearDownAfterClass() {
-        static::$implementation = null;
+        if (static::$interface) {
+            // completely clear the database
+            (static::$dbInfo->razeFunction)(static::$interface);
+        }
+        static::$interface = null;
         static::$dbInfo = null;
         self::clearData();
     }

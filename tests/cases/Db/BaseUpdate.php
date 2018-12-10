@@ -48,16 +48,16 @@ class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
     public function tearDown() {
         // deconstruct the driver
         unset($this->drv);
-        if (static::$interface) {
-            // completely clear the database
-            (static::$dbInfo->razeFunction)(static::$interface);
-        }
         unset($this->path, $this->base, $this->vfs);
         self::clearData();
     }
 
     public static function tearDownAfterClass() {
-        static::$implementation = null;
+        if (static::$interface) {
+            // completely clear the database
+            (static::$dbInfo->razeFunction)(static::$interface);
+        }
+        static::$interface = null;
         static::$dbInfo = null;
         self::clearData();
     }

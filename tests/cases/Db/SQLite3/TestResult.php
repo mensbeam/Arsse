@@ -17,9 +17,8 @@ class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
     protected static $createTest = "CREATE TABLE arsse_test(id integer primary key)";
 
     public static function tearDownAfterClass() {
-        if (static::$interface) {
-            static::$interface->close();
-        }
+        static::$interface->close();
+        static::$interface = null;
         parent::tearDownAfterClass();
     }
 

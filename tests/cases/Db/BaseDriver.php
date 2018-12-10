@@ -49,14 +49,14 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
     public function tearDown() {
         // deconstruct the driver
         unset($this->drv);
-        if (static::$interface) {
-            // completely clear the database
-            (static::$dbInfo->razeFunction)(static::$interface);
-        }
         self::clearData();
     }
 
     public static function tearDownAfterClass() {
+        if (static::$interface) {
+            // completely clear the database
+            (static::$dbInfo->razeFunction)(static::$interface);
+        }
         static::$interface = null;
         static::$dbInfo = null;
         self::clearData();

@@ -14,6 +14,7 @@ class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
 
     public static function tearDownAfterClass() {
         static::$interface->close();
+        static::$interface = null;
         parent::tearDownAfterClass();
     }
 
