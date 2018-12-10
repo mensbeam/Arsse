@@ -10,6 +10,7 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Db\PostgreSQL\Driver;
 
 /**
+ * @group slow
  * @covers \JKingWeb\Arsse\Db\PostgreSQL\Driver<extended> */
 class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideConnectionStrings */

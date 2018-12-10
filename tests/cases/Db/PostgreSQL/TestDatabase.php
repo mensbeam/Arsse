@@ -7,7 +7,8 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Db\PosgreSQL;
 
 /**
- * @group excludeFromCoverage
+ * @group slow
+ * @group coverageOptional
  * @covers \JKingWeb\Arsse\Database<extended>
  * @covers \JKingWeb\Arsse\Misc\Query<extended>
  */

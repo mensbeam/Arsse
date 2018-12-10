@@ -107,7 +107,7 @@ class RoboFile extends \Robo\Tasks {
                 $set = ["--exclude-group", "optional,slow"];
                 break;
             case "coverage":
-                $set = ["--exclude-group", "optional,excludeFromCoverage"];
+                $set = ["--exclude-group", "optional,coverageOptional"];
                 break;
             case "full":
                 $set = [];

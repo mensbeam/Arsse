@@ -9,6 +9,7 @@ namespace JKingWeb\Arsse\TestCase\Db\PostgreSQL;
 use JKingWeb\Arsse\Test\DatabaseInformation;
 
 /**
+ * @group slow
  * @covers \JKingWeb\Arsse\Db\PDOResult<extended>
  */
 class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {

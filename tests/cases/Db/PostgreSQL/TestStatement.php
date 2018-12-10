@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Db\PostgreSQL;
 
 /**
+ * @group slow
  * @covers \JKingWeb\Arsse\Db\PostgreSQL\PDOStatement<extended>
  * @covers \JKingWeb\Arsse\Db\PDOError */
 class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
