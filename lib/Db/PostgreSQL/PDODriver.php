@@ -24,7 +24,7 @@ class PDODriver extends Driver {
         $dsn = $this->makeconnectionString(true, $user, $pass, $db, $host, $port, $service);
         $this->db = new \PDO("pgsql:$dsn", $user, $pass, [
             \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-            //\PDO::ATTR_PERSISTENT => true,
+            \PDO::ATTR_PERSISTENT => true,
         ]);
     }
 
