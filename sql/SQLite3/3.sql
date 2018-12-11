@@ -19,6 +19,9 @@ create table arsse_marks(
 insert into arsse_marks select article,subscription,read,starred,modified,note,0 from arsse_marks_old;
 drop table arsse_marks_old;
 
+-- reindex anything which uses the nocase collation sequence; it has been replaced with a Unicode collation
+reindex nocase;
+
 -- set version marker
 pragma user_version = 4;
 update arsse_meta set value = '4' where key = 'schema_version';

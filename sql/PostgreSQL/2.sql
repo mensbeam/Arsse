@@ -4,9 +4,7 @@
 
 -- Please consult the SQLite 3 schemata for commented version
 
--- create a case-insensitive generic collation sequence
--- this collation is Unicode-aware, whereas SQLite's built-in nocase 
--- collation is ASCII-only
+-- create a case-insensitive generic Unicode collation sequence
 create collation nocase(
     provider = icu,
     locale = '@kf=false'

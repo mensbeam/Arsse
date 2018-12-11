@@ -57,6 +57,10 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $this->setTimeout($timeout);
         // set other initial options
         $this->exec("PRAGMA foreign_keys = yes");
+        // use a case-insensitive Unicode collation sequence
+        $this->collator = new \Collator("@kf=false");
+        $m = ($this->db instanceof \PDO) ? "sqliteCreateCollation" : "createCollation";
+        $this->db->$m("nocase", [$this->collator, "compare"]);
     }
 
     public static function requirementsMet(): bool {
