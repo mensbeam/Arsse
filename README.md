@@ -4,7 +4,7 @@ The Arsse is a news aggregator server which implements multiple synchronization 
 
 At present the software should be considered in an "alpha" state: though its core subsystems are covered by unit tests and should be free of major bugs, not everything has been rigorously tested. Additionally, many features one would expect from other similar software have yet to be implemented. Areas of future work include:
 
-- Support for more database engines (PostgreSQL, MySQL, MariaDB)
+- Support for more database engines (MySQL, MariaDB)
 - Providing more sync protocols (Google Reader, Fever, others)
 - Better packaging and configuration samples
 
@@ -16,7 +16,9 @@ The Arsse has the following requirements:
 - PHP 7.0.7 or later with the following extensions:
     - [intl](http://php.net/manual/en/book.intl.php), [json](http://php.net/manual/en/book.json.php), [hash](http://php.net/manual/en/book.hash.php), and [pcre](http://php.net/manual/en/book.pcre.php)
     - [dom](http://php.net/manual/en/book.dom.php), [simplexml](http://php.net/manual/en/book.simplexml.php), and [iconv](http://php.net/manual/en/book.iconv.php) (for picoFeed)
-    - [sqlite3](http://php.net/manual/en/book.sqlite3.php) or [pdo_sqlite](http://ca1.php.net/manual/en/ref.pdo-sqlite.php)
+    - Either of:
+        - [sqlite3](http://php.net/manual/en/book.sqlite3.php) or [pdo_sqlite](http://ca1.php.net/manual/en/ref.pdo-sqlite.php) for SQLite databases
+        - [pdo_pgsql](http://ca1.php.net/manual/en/ref.pdo-pgsql.php) for PostgreSQL 9.1 or later databases
 - Privileges to create and run daemon processes on the server
 
 ## Installation
@@ -68,6 +70,10 @@ The Arsse is made available under the permissive MIT license.  See the `LICENSE`
 ## Contributing
 
 Please refer to `CONTRIBUTING.md` for guidelines on contributing code to The Arsse.
+
+## Database compatibility notes
+
+Functionally there is no reason to prefer either SQLite or PostgreSQL over the other. SQLite, however, is significantly simpler to set up in most cases, requiring only read and write access to a containing directory in order to function. PostgreSQL may perform better than SQLite when serving hundreds of users or more, but this has not been tested.
 
 ## Protocol compatibility notes
 
