@@ -4,7 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse\TestCase\Db\PosgreSQL;
+namespace JKingWeb\Arsse\TestCase\Db\PostgreSQLPDO;
 
 /**
  * @group slow

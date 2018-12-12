@@ -62,11 +62,18 @@
         <file>cases/Db/PostgreSQL/TestCreation.php</file>
         <file>cases/Db/PostgreSQL/TestDriver.php</file>
         <file>cases/Db/PostgreSQL/TestUpdate.php</file>
+
+        <file>cases/Db/PostgreSQLPDO/TestResult.php</file>
+        <file>cases/Db/PostgreSQLPDO/TestStatement.php</file>
+        <file>cases/Db/PostgreSQLPDO/TestCreation.php</file>
+        <file>cases/Db/PostgreSQLPDO/TestDriver.php</file>
+        <file>cases/Db/PostgreSQLPDO/TestUpdate.php</file>
     </testsuite>
     <testsuite name="Database functions">
         <file>cases/Db/SQLite3/TestDatabase.php</file>
         <file>cases/Db/SQLite3PDO/TestDatabase.php</file>
         <file>cases/Db/PostgreSQL/TestDatabase.php</file>
+        <file>cases/Db/PostgreSQLPDO/TestDatabase.php</file>
     </testsuite>
     <testsuite name="REST">
         <file>cases/REST/TestTarget.php</file>
