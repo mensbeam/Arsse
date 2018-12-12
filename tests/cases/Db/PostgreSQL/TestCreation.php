@@ -7,11 +7,11 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Db\PostgreSQL;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Db\PostgreSQL\Driver;
+use JKingWeb\Arsse\Db\PostgreSQL\PDODriver as Driver;
 
 /**
  * @group slow
- * @covers \JKingWeb\Arsse\Db\PostgreSQL\Driver<extended> */
+ * @covers \JKingWeb\Arsse\Db\PostgreSQL\PDODriver<extended> */
 class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideConnectionStrings */
     public function testGenerateConnectionString(bool $pdo, string $user, string $pass, string $db, string $host, int $port, string $service, string $exp) {
@@ -54,5 +54,14 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
             [true,  "T'Pau of Vulcan", "",         "",          "",          5432, "",      ""],
             [true,  "T'Pau of Vulcan", "superman", "datumbase", "somehost",  2112, "arsse", "service='arsse'"],
         ];
+    }
+
+    public function testFailToConnect() {
+        // PDO dies not distinguish between different connection failure modes
+        self::setConf([
+            'dbPostgreSQLPass' => (string) rand(),
+        ]);
+        $this->assertException("connectionFailure", "Db");
+        new Driver;
     }
 }

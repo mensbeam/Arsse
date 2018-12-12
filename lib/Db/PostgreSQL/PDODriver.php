@@ -22,10 +22,22 @@ class PDODriver extends Driver {
 
     protected function makeConnection(string $user, string $pass, string $db, string $host, int $port, string $service) {
         $dsn = $this->makeconnectionString(true, $user, $pass, $db, $host, $port, $service);
-        $this->db = new \PDO("pgsql:$dsn", $user, $pass, [
-            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-            \PDO::ATTR_PERSISTENT => true,
-        ]);
+        try {
+            $this->db = new \PDO("pgsql:$dsn", $user, $pass, [
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_PERSISTENT => true,
+            ]);
+        } catch (\PDOException $e) {
+            if ($e->getCode() == 7) {
+                switch (substr($e->getMessage(), 9, 5)) {
+                    case "08006":
+                        throw new Exception("connectionFailure", ["PostgreSQL", substr($e->getMessage(), 28)]);
+                    default:
+                        throw $e; // @codeCoverageIgnore
+                }
+            }
+            throw $e; // @codeCoverageIgnore
+        }
     }
 
     public function __destruct() {
