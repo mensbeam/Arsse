@@ -8,7 +8,8 @@ namespace JKingWeb\Arsse\TestCase\Db\PostgreSQL;
 
 /**
  * @group slow
- * @covers \JKingWeb\Arsse\Db\PostgreSQL\Driver<extended>  */
+ * @covers \JKingWeb\Arsse\Db\PostgreSQL\Driver<extended>
+ * @covers \JKingWeb\Arsse\Db\PostgreSQL\Dispatch<extended> */
 class TestDriver extends \JKingWeb\Arsse\TestCase\Db\BaseDriver {
     protected static $implementation = "PostgreSQL";
     protected $create = "CREATE TABLE arsse_test(id bigserial primary key)";
