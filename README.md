@@ -18,7 +18,7 @@ The Arsse has the following requirements:
     - [dom](http://php.net/manual/en/book.dom.php), [simplexml](http://php.net/manual/en/book.simplexml.php), and [iconv](http://php.net/manual/en/book.iconv.php) (for picoFeed)
     - Either of:
         - [sqlite3](http://php.net/manual/en/book.sqlite3.php) or [pdo_sqlite](http://ca1.php.net/manual/en/ref.pdo-sqlite.php) for SQLite databases
-        - [pdo_pgsql](http://ca1.php.net/manual/en/ref.pdo-pgsql.php) for PostgreSQL 9.1 or later databases
+        - [pgsql](http://php.net/manual/en/book.pgsql.php) or [pdo_pgsql](http://ca1.php.net/manual/en/ref.pdo-pgsql.php) for PostgreSQL 9.1 or later databases
 - Privileges to create and run daemon processes on the server
 
 ## Installation
@@ -73,7 +73,7 @@ Please refer to `CONTRIBUTING.md` for guidelines on contributing code to The Ars
 
 ## Database compatibility notes
 
-Functionally there is no reason to prefer either SQLite or PostgreSQL over the other. SQLite, however, is significantly simpler to set up in most cases, requiring only read and write access to a containing directory in order to function. PostgreSQL may perform better than SQLite when serving hundreds of users or more, but this has not been tested.
+Functionally there is no reason to prefer either SQLite or PostgreSQL over the other. SQLite, however, is significantly simpler to set up in most cases, requiring only read and write access to a containing directory in order to function. On the other hand PostgreSQL may perform better than SQLite when serving hundreds of users or more, but this has not been tested.
 
 ## Protocol compatibility notes
 

@@ -2,7 +2,10 @@ Version 0.6.0 (????-??-??)
 ==========================
 
 New features:
-- Support for PostgreSQL databases (via PDO)
+- Support for PostgreSQL databases
+
+Bug fixes:
+- Use a general-purpose Unicode collation with SQLite databases
 
 Changes:
 - Improve performance of common database queries by 80-90%
