@@ -159,7 +159,7 @@ return [
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.subjectMissing'            => 'Referenced ID ({id}) in field "{field}" does not exist',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.idMissing'                 => 'Referenced ID ({id}) in field "{field}" does not exist',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.circularDependence'        => 'Referenced ID ({id}) in field "{field}" creates a circular dependence',
-    'Exception.JKingWeb/Arsse/Db/ExceptionInput.constraintViolation'       => 'Specified value in field "{0}" already exists',
+    'Exception.JKingWeb/Arsse/Db/ExceptionInput.constraintViolation'       => 'Specified value in field "{field}" already exists',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.engineConstraintViolation' => '{0}',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.engineTypeViolation'       => '{0}',
     'Exception.JKingWeb/Arsse/Db/ExceptionTimeout.general'                 => '{0}',

@@ -116,7 +116,50 @@ class DatabaseInformation {
             } elseif ($db instanceof \PDO) {
                 return $db->query($listObjects)->fetchAll(\PDO::FETCH_ASSOC);
             } else {
-                throw \Exception("Native PostgreSQL interface not implemented");
+                $r = @pg_query($db, $listObjects);
+                $out = $r ? pg_fetch_all($r) : false;
+                return $out ? $out : [];
+            }
+        };
+        $pgExecFunction = function($db, $q) {
+            if ($db instanceof Driver) {
+                $db->exec($q);
+            } elseif ($db instanceof \PDO) {
+                $db->exec($q);
+            } else {
+                pg_query($db, $q);
+            }
+        };
+        $pgTruncateFunction = function($db, array $afterStatements = []) use ($pgObjectList, $pgExecFunction) {
+            // rollback any pending transaction
+            try {
+                @$pgExecFunction($db, "ROLLBACK");
+            } catch (\Throwable $e) {
+            }
+            foreach ($pgObjectList($db) as $obj) {
+                if ($obj['type'] != "TABLE") {
+                    continue;
+                } elseif ($obj['name'] == "arsse_meta") {
+                    $pgExecFunction($db, "DELETE FROM {$obj['name']} where key <> 'schema_version'");
+                } else {
+                    $pgExecFunction($db, "TRUNCATE TABLE {$obj['name']} restart identity cascade");
+                }
+            }
+            foreach ($afterStatements as $st) {
+                $pgExecFunction($db, $st);
+            }
+        };
+        $pgRazeFunction = function($db, array $afterStatements = []) use ($pgObjectList, $pgExecFunction) {
+            // rollback any pending transaction
+            try {
+                $pgExecFunction($db, "ROLLBACK");
+            } catch (\Throwable $e) {
+            }
+            foreach ($pgObjectList($db) as $obj) {
+                $pgExecFunction($db, "DROP {$obj['type']} IF EXISTS {$obj['name']} cascade");
+            }
+            foreach ($afterStatements as $st) {
+                $pgExecFunction($db, $st);
             }
         };
         return [
@@ -158,6 +201,27 @@ class DatabaseInformation {
                 'truncateFunction' => $sqlite3TruncateFunction,
                 'razeFunction' => $sqlite3RazeFunction,
             ],
+            'PostgreSQL' => [
+                'pdo' => false,
+                'backend' => "PostgreSQL",
+                'statementClass' => \JKingWeb\Arsse\Db\PostgreSQL\Statement::class,
+                'resultClass' => \JKingWeb\Arsse\Db\PostgreSQL\Result::class,
+                'driverClass' => \JKingWeb\Arsse\Db\PostgreSQL\Driver::class,
+                'stringOutput' => true,
+                'interfaceConstructor' => function() {
+                    $connString = \JKingWeb\Arsse\Db\PostgreSQL\Driver::makeConnectionString(false, Arsse::$conf->dbPostgreSQLUser, Arsse::$conf->dbPostgreSQLPass, Arsse::$conf->dbPostgreSQLDb, Arsse::$conf->dbPostgreSQLHost, Arsse::$conf->dbPostgreSQLPort, "");
+                    if ($d = @pg_connect($connString, \PGSQL_CONNECT_FORCE_NEW)) {
+                        foreach (\JKingWeb\Arsse\Db\PostgreSQL\Driver::makeSetupQueries(Arsse::$conf->dbPostgreSQLSchema) as $q) {
+                            pg_query($d, $q);
+                        }
+                        return $d;
+                    } else {
+                        return;
+                    }
+                },
+                'truncateFunction' => $pgTruncateFunction,
+                'razeFunction' => $pgRazeFunction,
+            ],
             'PDO PostgreSQL' => [
                 'pdo' => true,
                 'backend' => "PostgreSQL",
@@ -177,38 +241,8 @@ class DatabaseInformation {
                     }
                     return $d;
                 },
-                'truncateFunction' => function($db, array $afterStatements = []) use ($pgObjectList) {
-                    // rollback any pending transaction
-                    try {
-                        $db->exec("ROLLBACK");
-                    } catch (\Throwable $e) {
-                    }
-                    foreach ($pgObjectList($db) as $obj) {
-                        if ($obj['type'] != "TABLE") {
-                            continue;
-                        } elseif ($obj['name'] == "arsse_meta") {
-                            $db->exec("DELETE FROM {$obj['name']} where key <> 'schema_version'");
-                        } else {
-                            $db->exec("TRUNCATE TABLE {$obj['name']} restart identity cascade");
-                        }
-                    }
-                    foreach ($afterStatements as $st) {
-                        $db->exec($st);
-                    }
-                },
-                'razeFunction' => function($db, array $afterStatements = []) use ($pgObjectList) {
-                    // rollback any pending transaction
-                    try {
-                        $db->exec("ROLLBACK");
-                    } catch (\Throwable $e) {
-                    }
-                    foreach ($pgObjectList($db) as $obj) {
-                        $db->exec("DROP {$obj['type']} IF EXISTS {$obj['name']} cascade");
-                    }
-                    foreach ($afterStatements as $st) {
-                        $db->exec($st);
-                    }
-                },
+                'truncateFunction' => $pgTruncateFunction,
+                'razeFunction' => $pgRazeFunction,
             ],
         ];
     }

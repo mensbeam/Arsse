@@ -6,17 +6,8 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Db\PostgreSQL;
 
-class PDOStatement extends \JKingWeb\Arsse\Db\AbstractStatement {
+class PDOStatement extends Statement {
     use \JKingWeb\Arsse\Db\PDOError;
-
-    const BINDINGS = [
-        "integer"   => "bigint",
-        "float"     => "decimal",
-        "datetime"  => "timestamp(0) without time zone",
-        "binary"    => "bytea",
-        "string"    => "text",
-        "boolean"   => "smallint", // FIXME: using boolean leads to incompatibilities with versions of SQLite bundled prior to PHP 7.3
-    ];
 
     protected $db;
     protected $st;
@@ -25,7 +16,7 @@ class PDOStatement extends \JKingWeb\Arsse\Db\AbstractStatement {
     protected $bindings;
 
     public function __construct(\PDO $db, string $query, array $bindings = []) {
-        $this->db = $db; // both db and st are the same object due to the logic of the PDOError handler
+        $this->db = $db;
         $this->qOriginal = $query;
         $this->retypeArray($bindings);
     }
@@ -53,19 +44,6 @@ class PDOStatement extends \JKingWeb\Arsse\Db\AbstractStatement {
         return true;
     }
 
-    public static function mungeQuery(string $q, array $types, bool $mungeParamMarkers = true): string {
-        $q = explode("?", $q);
-        $out = "";
-        for ($b = 1; $b < sizeof($q); $b++) {
-            $a = $b - 1;
-            $mark = $mungeParamMarkers ? "\$$b" : "?";
-            $type = isset($types[$a]) ? "::".self::BINDINGS[$types[$a]] : "";
-            $out .= $q[$a].$mark.$type;
-        }
-        $out .= array_pop($q);
-        return $out;
-    }
-
     public function runArray(array $values = []): \JKingWeb\Arsse\Db\Result {
         return $this->st->runArray($values);
     }
@@ -73,6 +51,6 @@ class PDOStatement extends \JKingWeb\Arsse\Db\AbstractStatement {
     /** @codeCoverageIgnore */
     protected function bindValue($value, string $type, int $position): bool {
         // stub required by abstract parent, but never used
-        return $value;
+        return true;
     }
 }

@@ -4,21 +4,21 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse\TestCase\Db\PostgreSQLPDO;
+namespace JKingWeb\Arsse\TestCase\Db\PostgreSQL;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Db\PostgreSQL\PDODriver as Driver;
+use JKingWeb\Arsse\Db\PostgreSQL\Driver;
 
 /**
  * @group slow
- * @covers \JKingWeb\Arsse\Db\PostgreSQL\PDODriver<extended> */
+ * @covers \JKingWeb\Arsse\Db\PostgreSQL\Driver<extended> */
 class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp() {
         if (!Driver::requirementsMet()) {
-            $this->markTestSkipped("PDO-PostgreSQL extension not loaded");
+            $this->markTestSkipped("PostgreSQL extension not loaded");
         }
     }
-
+    
     /** @dataProvider provideConnectionStrings */
     public function testGenerateConnectionString(bool $pdo, string $user, string $pass, string $db, string $host, int $port, string $service, string $exp) {
         self::setConf();
@@ -63,7 +63,7 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testFailToConnect() {
-        // PDO dies not distinguish between different connection failure modes
+        // we cannnot distinguish between different connection failure modes
         self::setConf([
             'dbPostgreSQLPass' => (string) rand(),
         ]);

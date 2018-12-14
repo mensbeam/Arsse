@@ -4,17 +4,16 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse\TestCase\Db\PostgreSQLPDO;
+namespace JKingWeb\Arsse\TestCase\Db\PostgreSQL;
 
 /**
  * @group slow
- * @group optional
  * @group coverageOptional
  * @covers \JKingWeb\Arsse\Database<extended>
  * @covers \JKingWeb\Arsse\Misc\Query<extended>
  */
 class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\Base {
-    protected static $implementation = "PDO PostgreSQL";
+    protected static $implementation = "PostgreSQL";
 
     protected function nextID(string $table): int {
         return (int) static::$drv->query("SELECT coalesce(last_value, (select max(id) from $table)) + 1 from pg_sequences where sequencename = '{$table}_id_seq'")->getValue();

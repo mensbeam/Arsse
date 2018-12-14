@@ -384,9 +384,9 @@ class Database {
                 folders as (SELECT id from arsse_folders join target on owner = userid and coalesce(parent,0) = source union select arsse_folders.id as id from arsse_folders join folders on arsse_folders.parent=folders.id)
             ".
             "SELECT
-                ((select dest from target) is null or exists(select id from arsse_folders join target on owner = userid and coalesce(id,0) = coalesce(dest,0))) as extant,
-                not exists(select id from folders where id = coalesce((select dest from target),0)) as valid,
-                not exists(select id from arsse_folders join target on coalesce(parent,0) = coalesce(dest,0) and name = coalesce((select rename from target),(select name from arsse_folders join target on id = source))) as available
+                case when ((select dest from target) is null or exists(select id from arsse_folders join target on owner = userid and coalesce(id,0) = coalesce(dest,0))) then 1 else 0 end as extant,
+                case when not exists(select id from folders where id = coalesce((select dest from target),0)) then 1 else 0 end as valid,
+                case when not exists(select id from arsse_folders join target on coalesce(parent,0) = coalesce(dest,0) and name = coalesce((select rename from target),(select name from arsse_folders join target on id = source))) then 1 else 0 end as available
             ",
             "str",
             "strict int",
@@ -418,7 +418,7 @@ class Database {
             // make sure that a folder with the same prospective name and parent does not already exist: if the parent is null,
             // SQL will happily accept duplicates (null is not unique), so we must do this check ourselves
             $parent = $parent ? $parent : null;
-            if ($this->db->prepare("SELECT exists(select id from arsse_folders where coalesce(parent,0) = ? and name = ?)", "strict int", "str")->run($parent, $name)->getValue()) {
+            if ($this->db->prepare("SELECT count(*) from arsse_folders where coalesce(parent,0) = ? and name = ?", "strict int", "str")->run($parent, $name)->getValue()) {
                 throw new Db\ExceptionInput("constraintViolation", ["action" => $this->caller(), "field" => "name"]);
             }
             return true;

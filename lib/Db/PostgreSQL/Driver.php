@@ -13,6 +13,9 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\ExceptionTimeout;
 
 class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
+    use Dispatch;
+
+    protected $db;
     protected $transStart = 0;
 
     public function __construct(string $user = null, string $pass = null, string $db = null, string $host = null, int $port = null, string $schema = null, string $service = null) {
@@ -156,46 +159,60 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     }
 
     public function __destruct() {
+        if (isset($this->db)) {
+            pg_close($this->db);
+            unset($this->db);
+        }
     }
 
-    /** @codeCoverageIgnore */
     public static function driverName(): string {
         return Arsse::$lang->msg("Driver.Db.PostgreSQL.Name");
     }
 
-    /** @codeCoverageIgnore */
     public static function requirementsMet(): bool {
-        // stub: native interface is not yet supported
-        return false;
+        return \extension_loaded("pgsql");
     }
 
-    /** @codeCoverageIgnore */
     protected function makeConnection(string $user, string $pass, string $db, string $host, int $port, string $service) {
-        // stub: native interface is not yet supported
-        throw new \Exception;
+        $dsn = $this->makeconnectionString(false, $user, $pass, $db, $host, $port, $service);
+        set_error_handler(function(int $code, string $msg) {
+            $msg = substr($msg, 62);
+            throw new Exception("connectionFailure", ["PostgreSQL", $msg]);
+        });
+        try {
+            $this->db = pg_connect($dsn, \PGSQL_CONNECT_FORCE_NEW);
+        } finally {
+            restore_error_handler();
+        }
     }
 
-    /** @codeCoverageIgnore */
     protected function getError(): string {
-        // stub: native interface is not yet supported
+        // stub
         return "";
     }
 
-    /** @codeCoverageIgnore */
     public function exec(string $query): bool {
-        // stub: native interface is not yet supported
+        pg_send_query($this->db, $query);
+        while ($result = pg_get_result($this->db)) {
+            if (($code = pg_result_error_field($result, \PGSQL_DIAG_SQLSTATE)) && isset($code) && $code) {
+                list($excClass, $excMsg, $excData) = $this->buildException($code, pg_result_error($result));
+                throw new $excClass($excMsg, $excData);
+            }
+        }
         return true;
     }
 
-    /** @codeCoverageIgnore */
     public function query(string $query): \JKingWeb\Arsse\Db\Result {
-        // stub: native interface is not yet supported
-        return new ResultEmpty;
+        $r = $this->dispatchQuery($query);
+        if (is_resource($r)) {
+            return new Result($this->db, $r);
+        } else {
+            list($excClass, $excMsg, $excData) = $r;
+            throw new $excClass($excMsg, $excData);
+        }
     }
 
-    /** @codeCoverageIgnore */
     public function prepareArray(string $query, array $paramTypes): \JKingWeb\Arsse\Db\Statement {
-        // stub: native interface is not yet supported
-        return new Statement($this->db, $s, $paramTypes);
+        return new Statement($this->db, $query, $paramTypes);
     }
 }
