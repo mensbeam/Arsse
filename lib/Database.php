@@ -475,7 +475,8 @@ class Database {
                 join arsse_feeds on feed = arsse_feeds.id
                 left join topmost on folder=f_id"
         );
-        $q->setOrder("pinned desc, coalesce(arsse_subscriptions.title, arsse_feeds.title) collate nocase");
+        $nocase = $this->db->sqlToken("nocase");
+        $q->setOrder("pinned desc, coalesce(arsse_subscriptions.title, arsse_feeds.title) collate $nocase");
         // define common table expressions
         $q->setCTE("userdata(userid)", "SELECT ?", "str", $user);  // the subject user; this way we only have to pass it to prepare() once
         // topmost folders belonging to the user

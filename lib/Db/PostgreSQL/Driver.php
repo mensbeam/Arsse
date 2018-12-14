@@ -113,7 +113,12 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     }
 
     public function sqlToken(string $token): string {
-        return $token;
+        switch (strtolower($token)) {
+            case "nocase":
+                return '"und-x-icu"';
+            default:
+                return $token;
+        }
     }
 
     public function savepointCreate(bool $lock = false): int {
