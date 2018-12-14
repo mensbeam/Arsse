@@ -23,8 +23,8 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $user = "john.doe@example.com";
 
     public function setUp() {
-        $this->clearData();
-        $this->setConf();
+        self::clearData();
+        self::setConf();
         // create a mock user manager
         Arsse::$user = Phake::mock(User::class);
         // create a mock database interface
@@ -33,7 +33,7 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function tearDown() {
-        $this->clearData();
+        self::clearData();
     }
 
     protected function req(string $target, string $method = "GET", string $user = null): ResponseInterface {
@@ -108,7 +108,7 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->reqAuthFailed("42.ico"));
         $this->assertMessage($exp, $this->reqAuthFailed("1337.ico"));
         // with HTTP auth required, only authenticated requests should succeed
-        $this->setConf(['userHTTPAuthRequired' => true]);
+        self::setConf(['userHTTPAuthRequired' => true]);
         $exp = new Response(301, ['Location' => "http://example.org/icon.gif"]);
         $this->assertMessage($exp, $this->reqAuth("42.ico"));
         $this->assertMessage($exp, $this->reqAuth("1337.ico"));

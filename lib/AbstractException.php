@@ -26,6 +26,7 @@ abstract class AbstractException extends \Exception {
         "Db/Exception.fileUnwritable"                 => 10205,
         "Db/Exception.fileUncreatable"                => 10206,
         "Db/Exception.fileCorrupt"                    => 10207,
+        "Db/Exception.connectionFailure"              => 10208,
         "Db/Exception.updateTooNew"                   => 10211,
         "Db/Exception.updateManual"                   => 10212,
         "Db/Exception.updateManualOnly"               => 10213,

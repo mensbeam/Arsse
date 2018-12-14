@@ -31,10 +31,6 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $timeout = Arsse::$conf->dbSQLite3Timeout * 1000;
         try {
             $this->makeConnection($dbFile, $dbKey);
-            // set the timeout; parameters are not allowed for pragmas, but this usage should be safe
-            $this->exec("PRAGMA busy_timeout = $timeout");
-            // set other initial options
-            $this->exec("PRAGMA foreign_keys = yes");
         } catch (\Throwable $e) {
             // if opening the database doesn't work, check various pre-conditions to find out what the problem might be
             $files = [
@@ -56,6 +52,15 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
             // otherwise the database is probably corrupt
             throw new Exception("fileCorrupt", $dbFile);
         }
+        // set the timeout
+        $timeout = (int) ceil((Arsse::$conf->dbSQLite3Timeout ?? 0) * 1000);
+        $this->setTimeout($timeout);
+        // set other initial options
+        $this->exec("PRAGMA foreign_keys = yes");
+        // use a case-insensitive Unicode collation sequence
+        $this->collator = new \Collator("@kf=false");
+        $m = ($this->db instanceof \PDO) ? "sqliteCreateCollation" : "createCollation";
+        $this->db->$m("nocase", [$this->collator, "compare"]);
     }
 
     public static function requirementsMet(): bool {
@@ -66,6 +71,10 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $this->db = new \SQLite3($file, \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE, $key);
         // enable exceptions
         $this->db->enableExceptions(true);
+    }
+
+    protected function setTimeout(int $msec) {
+        $this->exec("PRAGMA busy_timeout = $msec");
     }
 
     public function __destruct() {
@@ -100,20 +109,27 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         return (int) $this->query("PRAGMA user_version")->getValue();
     }
 
+    public function sqlToken(string $token): string {
+        switch (strtolower($token)) {
+            case "greatest":
+                return "max";
+            default:
+                return $token;
+        }
+    }
+
     public function schemaUpdate(int $to, string $basePath = null): bool {
         // turn off foreign keys
         $this->exec("PRAGMA foreign_keys = no");
+        $this->exec("PRAGMA legacy_alter_table = yes");
         // run the generic updater
         try {
             parent::schemaUpdate($to, $basePath);
-        } catch (\Throwable $e) {
+        } finally {
             // turn foreign keys back on
             $this->exec("PRAGMA foreign_keys = yes");
-            // pass the exception up
-            throw $e;
+            $this->exec("PRAGMA legacy_alter_table = no");
         }
-        // turn foreign keys back on
-        $this->exec("PRAGMA foreign_keys = yes");
         return true;
     }
 
@@ -158,7 +174,13 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     }
 
     protected function lock(): bool {
-        $this->exec("BEGIN EXCLUSIVE TRANSACTION");
+        $timeout = (int) $this->query("PRAGMA busy_timeout")->getValue();
+        $this->setTimeout(0);
+        try {
+            $this->exec("BEGIN EXCLUSIVE TRANSACTION");
+        } finally {
+            $this->setTimeout($timeout);
+        }
         return true;
     }
 

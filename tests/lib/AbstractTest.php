@@ -21,14 +21,14 @@ use Zend\Diactoros\Response\EmptyResponse;
 /** @coversNothing */
 abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     public function setUp() {
-        $this->clearData();
+        self::clearData();
     }
 
     public function tearDown() {
-        $this->clearData();
+        self::clearData();
     }
 
-    public function clearData(bool $loadLang = true) {
+    public static function clearData(bool $loadLang = true) {
         date_default_timezone_set("America/Toronto");
         $r = new \ReflectionClass(\JKingWeb\Arsse\Arsse::class);
         $props = array_keys($r->getStaticProperties());
@@ -40,8 +40,16 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         }
     }
 
-    public function setConf(array $conf = []) {
-        Arsse::$conf = (new Conf)->import($conf);
+    public static function setConf(array $conf = [], bool $force = true) {
+        $defaults = [
+            'dbSQLite3File' => ":memory:",
+            'dbSQLite3Timeout' => 0,
+            'dbPostgreSQLUser' => "arsse_test",
+            'dbPostgreSQLPass' => "arsse_test",
+            'dbPostgreSQLDb' => "arsse_test",
+            'dbPostgreSQLSchema' => "arsse_test",
+        ];
+        Arsse::$conf = ($force ? null : Arsse::$conf) ?? (new Conf)->import($defaults)->import($conf);
     }
 
     public function assertException(string $msg = "", string $prefix = "", string $type = "Exception") {

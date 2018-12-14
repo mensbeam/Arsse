@@ -26,13 +26,7 @@ trait PDODriver {
             list($excClass, $excMsg, $excData) = $this->exceptionBuild();
             throw new $excClass($excMsg, $excData);
         }
-        $changes = $r->rowCount();
-        try {
-            $lastId = 0;
-            $lastId = $this->db->lastInsertId();
-        } catch (\PDOException $e) { // @codeCoverageIgnore
-        }
-        return new PDOResult($r, [$changes, $lastId]);
+        return new PDOResult($this->db, $r);
     }
 
     public function prepareArray(string $query, array $paramTypes): Statement {

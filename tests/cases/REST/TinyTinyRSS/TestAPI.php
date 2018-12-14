@@ -176,8 +176,8 @@ LONG_STRING;
     }
 
     public function setUp() {
-        $this->clearData();
-        $this->setConf();
+        self::clearData();
+        self::setConf();
         // create a mock user manager
         Arsse::$user = Phake::mock(User::class);
         Phake::when(Arsse::$user)->auth->thenReturn(true);
@@ -196,7 +196,7 @@ LONG_STRING;
     }
 
     public function tearDown() {
-        $this->clearData();
+        self::clearData();
     }
 
     public function testHandleInvalidPaths() {
@@ -225,7 +225,7 @@ LONG_STRING;
     /** @dataProvider provideLoginRequests */
     public function testLogIn(array $conf, $httpUser, array $data, $sessions) {
         Arsse::$user->id = null;
-        $this->setConf($conf);
+        self::setConf($conf);
         Phake::when(Arsse::$user)->auth->thenReturn(false);
         Phake::when(Arsse::$user)->auth("john.doe@example.com", "secret")->thenReturn(true);
         Phake::when(Arsse::$user)->auth("jane.doe@example.com", "superman")->thenReturn(true);
@@ -259,7 +259,7 @@ LONG_STRING;
     /** @dataProvider provideResumeRequests */
     public function testValidateASession(array $conf, $httpUser, string $data, $result) {
         Arsse::$user->id = null;
-        $this->setConf($conf);
+        self::setConf($conf);
         Phake::when(Arsse::$db)->sessionResume("PriestsOfSyrinx")->thenReturn([
             'id' => "PriestsOfSyrinx",
             'created' => "2000-01-01 00:00:00",
@@ -1516,13 +1516,13 @@ LONG_STRING;
     }
 
     protected function filterFolders(int $id = null): array {
-        return array_filter($this->folders, function ($value) use ($id) {
+        return array_filter($this->folders, function($value) use ($id) {
             return $value['parent']==$id;
         });
     }
 
     protected function filterSubs(int $folder = null): array {
-        return array_filter($this->subscriptions, function ($value) use ($folder) {
+        return array_filter($this->subscriptions, function($value) use ($folder) {
             return $value['folder']==$folder;
         });
     }
@@ -1532,9 +1532,9 @@ LONG_STRING;
         foreach ($this->filterFolders($id) as $f) {
             $out += $this->reduceFolders($f['id']);
         }
-        $out += array_reduce(array_filter($this->subscriptions, function ($value) use ($id) {
+        $out += array_reduce(array_filter($this->subscriptions, function($value) use ($id) {
             return $value['folder']==$id;
-        }), function ($sum, $value) {
+        }), function($sum, $value) {
             return $sum + $value['unread'];
         }, 0);
         return $out;
@@ -1641,9 +1641,9 @@ LONG_STRING;
         Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result($this->v($this->usedLabels)));
         Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 101)->thenReturn([]);
         Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 102)->thenReturn($this->v([1,3]));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([101, 102]))->thenReturn(new Result($this->v($this->articles)));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([101]))->thenReturn(new Result($this->v([$this->articles[0]])));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([102]))->thenReturn(new Result($this->v([$this->articles[1]])));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([101, 102]), $this->anything())->thenReturn(new Result($this->v($this->articles)));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([101]), $this->anything())->thenReturn(new Result($this->v([$this->articles[0]])));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([102]), $this->anything())->thenReturn(new Result($this->v([$this->articles[1]])));
         $exp = $this->respErr("INCORRECT_USAGE");
         $this->assertMessage($exp, $this->req($in[0]));
         $this->assertMessage($exp, $this->req($in[1]));
@@ -1750,18 +1750,18 @@ LONG_STRING;
         Phake::when(Arsse::$db)->articleCount->thenReturn(0);
         Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true))->thenReturn(1);
         $c = (new Context)->reverse(true);
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(2112), Database::LIST_MINIMAL)->thenThrow(new ExceptionInput("subjectMissing"));
-        Phake::when(Arsse::$db)->articleList($this->anything(), $c, Database::LIST_MINIMAL)->thenReturn(new Result($this->v($this->articles)));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->starred(true), Database::LIST_MINIMAL)->thenReturn(new Result($this->v([['id' => 1]])));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->label(1088), Database::LIST_MINIMAL)->thenReturn(new Result($this->v([['id' => 2]])));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(true), Database::LIST_MINIMAL)->thenReturn(new Result($this->v([['id' => 3]])));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->label(1088)->unread(true), Database::LIST_MINIMAL)->thenReturn(new Result($this->v([['id' => 4]])));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(42)->starred(true), Database::LIST_MINIMAL)->thenReturn(new Result($this->v([['id' => 5]])));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(42)->annotated(true), Database::LIST_MINIMAL)->thenReturn(new Result($this->v([['id' => 6]])));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->limit(5), Database::LIST_MINIMAL)->thenReturn(new Result($this->v([['id' => 7]])));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->offset(2), Database::LIST_MINIMAL)->thenReturn(new Result($this->v([['id' => 8]])));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->limit(5)->offset(2), Database::LIST_MINIMAL)->thenReturn(new Result($this->v([['id' => 9]])));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->oldestArticle(48), Database::LIST_MINIMAL)->thenReturn(new Result($this->v([['id' => 10]])));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(2112), ["id"])->thenThrow(new ExceptionInput("subjectMissing"));
+        Phake::when(Arsse::$db)->articleList($this->anything(), $c, ["id"])->thenReturn(new Result($this->v($this->articles)));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->starred(true), ["id"])->thenReturn(new Result($this->v([['id' => 1]])));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->label(1088), ["id"])->thenReturn(new Result($this->v([['id' => 2]])));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(true), ["id"])->thenReturn(new Result($this->v([['id' => 3]])));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->label(1088)->unread(true), ["id"])->thenReturn(new Result($this->v([['id' => 4]])));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(42)->starred(true), ["id"])->thenReturn(new Result($this->v([['id' => 5]])));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(42)->annotated(true), ["id"])->thenReturn(new Result($this->v([['id' => 6]])));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->limit(5), ["id"])->thenReturn(new Result($this->v([['id' => 7]])));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->offset(2), ["id"])->thenReturn(new Result($this->v([['id' => 8]])));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->limit(5)->offset(2), ["id"])->thenReturn(new Result($this->v([['id' => 9]])));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->oldestArticle(48), ["id"])->thenReturn(new Result($this->v([['id' => 10]])));
         $out1 = [
             $this->respErr("INCORRECT_USAGE"),
             $this->respGood([]),
@@ -1793,9 +1793,9 @@ LONG_STRING;
             $this->assertMessage($out1[$a], $this->req($in1[$a]), "Test $a failed");
         }
         for ($a = 0; $a < sizeof($in2); $a++) {
-            Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(false)->markedSince(Date::sub("PT24H")), 2), Database::LIST_MINIMAL)->thenReturn(new Result($this->v([['id' => 1001]])));
-            Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(true)->modifiedSince(Date::sub("PT24H")), 2), Database::LIST_MINIMAL)->thenReturn(new Result($this->v([['id' => 1002]])));
-            Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(true)->modifiedSince(Date::sub("PT24H"))->starred(true), 2), Database::LIST_MINIMAL)->thenReturn(new Result($this->v([['id' => 1003]])));
+            Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(false)->markedSince(Date::sub("PT24H")), 2), ["id"])->thenReturn(new Result($this->v([['id' => 1001]])));
+            Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(true)->modifiedSince(Date::sub("PT24H")), 2), ["id"])->thenReturn(new Result($this->v([['id' => 1002]])));
+            Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(true)->modifiedSince(Date::sub("PT24H"))->starred(true), 2), ["id"])->thenReturn(new Result($this->v([['id' => 1003]])));
             $this->assertMessage($out2[$a], $this->req($in2[$a]), "Test $a failed");
         }
     }
@@ -1851,23 +1851,23 @@ LONG_STRING;
         Phake::when(Arsse::$db)->articleCount->thenReturn(0);
         Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true))->thenReturn(1);
         $c = (new Context)->limit(200)->reverse(true);
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(2112), Database::LIST_FULL)->thenThrow(new ExceptionInput("subjectMissing"));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->starred(true), Database::LIST_FULL)->thenReturn($this->generateHeadlines(1));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->label(1088), Database::LIST_FULL)->thenReturn($this->generateHeadlines(2));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(true), Database::LIST_FULL)->thenReturn($this->generateHeadlines(3));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->label(1088)->unread(true), Database::LIST_FULL)->thenReturn($this->generateHeadlines(4));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(42)->starred(true), Database::LIST_FULL)->thenReturn($this->generateHeadlines(5));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(42)->annotated(true), Database::LIST_FULL)->thenReturn($this->generateHeadlines(6));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->limit(5), Database::LIST_FULL)->thenReturn($this->generateHeadlines(7));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->offset(2), Database::LIST_FULL)->thenReturn($this->generateHeadlines(8));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->limit(5)->offset(2), Database::LIST_FULL)->thenReturn($this->generateHeadlines(9));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->oldestArticle(48), Database::LIST_FULL)->thenReturn($this->generateHeadlines(10));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c), Database::LIST_FULL)->thenReturn($this->generateHeadlines(11));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->labelled(true), Database::LIST_FULL)->thenReturn($this->generateHeadlines(12));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->folderShallow(0), Database::LIST_FULL)->thenReturn($this->generateHeadlines(13));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->folderShallow(42), Database::LIST_FULL)->thenReturn($this->generateHeadlines(14));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->folder(42), Database::LIST_FULL)->thenReturn($this->generateHeadlines(15));
-        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->reverse(false), Database::LIST_FULL)->thenReturn($this->generateHeadlines(16));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(2112), $this->anything())->thenThrow(new ExceptionInput("subjectMissing"));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->starred(true), $this->anything())->thenReturn($this->generateHeadlines(1));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->label(1088), $this->anything())->thenReturn($this->generateHeadlines(2));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(true), $this->anything())->thenReturn($this->generateHeadlines(3));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->label(1088)->unread(true), $this->anything())->thenReturn($this->generateHeadlines(4));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(42)->starred(true), $this->anything())->thenReturn($this->generateHeadlines(5));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(42)->annotated(true), $this->anything())->thenReturn($this->generateHeadlines(6));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->limit(5), $this->anything())->thenReturn($this->generateHeadlines(7));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->offset(2), $this->anything())->thenReturn($this->generateHeadlines(8));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->limit(5)->offset(2), $this->anything())->thenReturn($this->generateHeadlines(9));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->oldestArticle(48), $this->anything())->thenReturn($this->generateHeadlines(10));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c), $this->anything())->thenReturn($this->generateHeadlines(11));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->labelled(true), $this->anything())->thenReturn($this->generateHeadlines(12));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->folderShallow(0), $this->anything())->thenReturn($this->generateHeadlines(13));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->folderShallow(42), $this->anything())->thenReturn($this->generateHeadlines(14));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->folder(42), $this->anything())->thenReturn($this->generateHeadlines(15));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->reverse(false), $this->anything())->thenReturn($this->generateHeadlines(16));
         $out2 = [
             $this->respErr("INCORRECT_USAGE"),
             $this->outputHeadlines(11),
@@ -1904,9 +1904,9 @@ LONG_STRING;
             $this->assertMessage($out2[$a], $this->req($in2[$a]), "Test $a failed");
         }
         for ($a = 0; $a < sizeof($in3); $a++) {
-            Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(false)->markedSince(Date::sub("PT24H")), 2), Database::LIST_FULL)->thenReturn($this->generateHeadlines(1001));
-            Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(true)->modifiedSince(Date::sub("PT24H")), 2), Database::LIST_FULL)->thenReturn($this->generateHeadlines(1002));
-            Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(true)->modifiedSince(Date::sub("PT24H"))->starred(true), 2), Database::LIST_FULL)->thenReturn($this->generateHeadlines(1003));
+            Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(false)->markedSince(Date::sub("PT24H")), 2), $this->anything())->thenReturn($this->generateHeadlines(1001));
+            Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(true)->modifiedSince(Date::sub("PT24H")), 2), $this->anything())->thenReturn($this->generateHeadlines(1002));
+            Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(true)->modifiedSince(Date::sub("PT24H"))->starred(true), 2), $this->anything())->thenReturn($this->generateHeadlines(1003));
             $this->assertMessage($out3[$a], $this->req($in3[$a]), "Test $a failed");
         }
     }
@@ -2000,7 +2000,7 @@ LONG_STRING;
         ]);
         $this->assertMessage($exp, $test);
         // test 'include_header' with skip
-        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->reverse(true)->limit(1)->subscription(42), Database::LIST_MINIMAL)->thenReturn($this->generateHeadlines(1867));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->reverse(true)->limit(1)->subscription(42), $this->anything())->thenReturn($this->generateHeadlines(1867));
         $test = $this->req($in[8]);
         $exp = $this->respGood([
             ['id' => 42, 'is_cat' => false, 'first_id' => 1867],

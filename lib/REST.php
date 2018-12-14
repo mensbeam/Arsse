@@ -97,7 +97,7 @@ class REST {
     public function apiMatch(string $url): array {
         $map = $this->apis;
         // sort the API list so the longest URL prefixes come first
-        uasort($map, function ($a, $b) {
+        uasort($map, function($a, $b) {
             return (strlen($a['match']) <=> strlen($b['match'])) * -1;
         });
         // normalize the target URL
@@ -270,7 +270,7 @@ class REST {
             } else {
                 // if the host is a domain name or IP address, split it along dots and just perform URL decoding
                 $host = explode(".", $host);
-                $host = array_map(function ($segment) {
+                $host = array_map(function($segment) {
                     return str_replace(".", "%2E", rawurlencode(strtolower(rawurldecode($segment))));
                 }, $host);
                 $host = implode(".", $host);

@@ -14,7 +14,7 @@ use JKingWeb\Arsse\Test\Result;
 /** @covers \JKingWeb\Arsse\Misc\ValueInfo */
 class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp() {
-        $this->clearData();
+        self::clearData();
     }
 
     public function testGetIntegerInfo() {

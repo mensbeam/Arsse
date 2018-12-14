@@ -21,7 +21,9 @@ class PDODriver extends Driver {
     }
 
     protected function makeConnection(string $file, string $key) {
-        $this->db = new \PDO("sqlite:".$file, "", "", [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
+        $this->db = new \PDO("sqlite:".$file, "", "", [
+            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+        ]);
     }
 
     public function __destruct() {

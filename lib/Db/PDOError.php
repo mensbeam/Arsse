@@ -7,15 +7,23 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Db;
 
 trait PDOError {
-    public function exceptionBuild(): array {
-        if ($this instanceof Statement) {
+    public function exceptionBuild(bool $statementError = null): array {
+        if ($statementError ?? ($this instanceof Statement)) {
             $err = $this->st->errorInfo();
         } else {
             $err = $this->db->errorInfo();
         }
         switch ($err[0]) {
+            case "22P02":
+            case "42804":
+                return [ExceptionInput::class, 'engineTypeViolation', $err[2]];
             case "23000":
+            case "23502":
+            case "23505":
                 return [ExceptionInput::class, "constraintViolation", $err[2]];
+            case "55P03":
+            case "57014":
+                return [ExceptionTimeout::class, 'general', $err[2]];
             case "HY000":
                 // engine-specific errors
                 switch ($this->db->getAttribute(\PDO::ATTR_DRIVER_NAME)) {

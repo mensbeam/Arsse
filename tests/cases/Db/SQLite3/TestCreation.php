@@ -24,7 +24,7 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
         if (!Driver::requirementsMet()) {
             $this->markTestSkipped("SQLite extension not loaded");
         }
-        $this->clearData();
+        self::clearData();
         // test files
         $this->files = [
             // cannot create files
@@ -107,11 +107,11 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
         chmod($path."Awal/arsse.db-wal", 0111);
         chmod($path."Ashm/arsse.db-shm", 0111);
         // set up configuration
-        $this->setConf(['dbSQLite3File' => ":memory:"]);
+        self::setConf();
     }
 
     public function tearDown() {
-        $this->clearData();
+        self::clearData();
     }
 
     public function testFailToCreateDatabase() {

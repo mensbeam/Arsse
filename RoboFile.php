@@ -52,6 +52,21 @@ class RoboFile extends \Robo\Tasks {
     public function coverage(array $args): Result {
         // run tests with code coverage reporting enabled
         $exec = $this->findCoverageEngine();
+        return $this->runTests($exec, "coverage", array_merge(["--coverage-html", self::BASE_TEST."coverage"], $args));
+    }
+
+    /** Produces a code coverage report, with redundant tests
+     *
+     * Depending on the environment, some tests that normally provide
+     * coverage may be skipped, while working alternatives are normally
+     * suppressed for reasons of time. This coverage report will try to
+     * run all tests which may cover code.
+     *
+     * See also help for the "coverage" task for more details.
+    */
+    public function coverageFull(array $args): Result {
+        // run tests with code coverage reporting enabled
+        $exec = $this->findCoverageEngine();
         return $this->runTests($exec, "typical", array_merge(["--coverage-html", self::BASE_TEST."coverage"], $args));
     }
 
@@ -90,6 +105,9 @@ class RoboFile extends \Robo\Tasks {
                 break;
             case "quick":
                 $set = ["--exclude-group", "optional,slow"];
+                break;
+            case "coverage":
+                $set = ["--exclude-group", "optional,coverageOptional"];
                 break;
             case "full":
                 $set = [];

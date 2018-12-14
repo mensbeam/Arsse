@@ -16,9 +16,8 @@ use Phake;
 
 /** @covers \JKingWeb\Arsse\CLI */
 class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
-
     public function setUp() {
-        $this->clearData(false);
+        self::clearData(false);
         $this->cli = Phake::partialMock(CLI::class);
         Phake::when($this->cli)->logError->thenReturn(null);
     }
@@ -27,7 +26,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         $argv = \Clue\Arguments\split($command);
         $output = strlen($output) ? $output.\PHP_EOL : "";
         if ($pattern) {
-            $this->expectOutputRegex($output);   
+            $this->expectOutputRegex($output);
         } else {
             $this->expectOutputString($output);
         }

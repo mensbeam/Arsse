@@ -33,14 +33,14 @@ class Feed {
         } else {
             $links = $f->reader->find($f->getUrl(), $f->getContent());
             if (!$links) {
-                // work around a PicoFeed memory leak FIXME: remove this hack (or not) once PicoFeed stops leaking memory
+                // work around a PicoFeed memory leak
                 libxml_use_internal_errors(false);
                 throw new Feed\Exception($url, new \PicoFeed\Reader\SubscriptionNotFoundException('Unable to find a subscription'));
             } else {
                 $out = $links[0];
             }
         }
-        // work around a PicoFeed memory leak FIXME: remove this hack (or not) once PicoFeed stops leaking memory
+        // work around a PicoFeed memory leak
         libxml_use_internal_errors(false);
         return $out;
     }
@@ -115,10 +115,10 @@ class Feed {
             // Some feeds might use a different domain (eg: feedburner), so the site url is
             // used instead of the feed's url.
             $this->favicon = (new Favicon)->find($feed->siteUrl);
-            // work around a PicoFeed memory leak FIXME: remove this hack (or not) once PicoFeed stops leaking memory
+            // work around a PicoFeed memory leak
             libxml_use_internal_errors(false);
         } catch (PicoFeedException $e) {
-            // work around a PicoFeed memory leak FIXME: remove this hack (or not) once PicoFeed stops leaking memory
+            // work around a PicoFeed memory leak
             libxml_use_internal_errors(false);
             throw new Feed\Exception($this->resource->getUrl(), $e);
         }

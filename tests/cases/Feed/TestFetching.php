@@ -25,8 +25,8 @@ class TestFetching extends \JKingWeb\Arsse\Test\AbstractTest {
             $this->markTestSkipped("Test Web server is not accepting requests");
         }
         $this->base = self::$host."Feed/";
-        $this->clearData();
-        $this->setConf();
+        self::clearData();
+        self::setConf();
     }
 
     public function testHandle400() {

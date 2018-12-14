@@ -15,7 +15,7 @@ class PDOStatement extends AbstractStatement {
         "datetime"  => \PDO::PARAM_STR,
         "binary"    => \PDO::PARAM_LOB,
         "string"    => \PDO::PARAM_STR,
-        "boolean"   => \PDO::PARAM_BOOL,
+        "boolean"   => \PDO::PARAM_INT, // FIXME: using \PDO::PARAM_BOOL leads to incompatibilities with versions of SQLite bundled prior to PHP 7.3
     ];
 
     protected $st;
@@ -28,10 +28,10 @@ class PDOStatement extends AbstractStatement {
     }
 
     public function __destruct() {
-        unset($this->st);
+        unset($this->st, $this->db);
     }
 
-    public function runArray(array $values = []): \JKingWeb\Arsse\Db\Result {
+    public function runArray(array $values = []): Result {
         $this->st->closeCursor();
         $this->bindValues($values);
         try {
@@ -40,13 +40,7 @@ class PDOStatement extends AbstractStatement {
             list($excClass, $excMsg, $excData) = $this->exceptionBuild();
             throw new $excClass($excMsg, $excData);
         }
-        $changes = $this->st->rowCount();
-        try {
-            $lastId = 0;
-            $lastId = $this->db->lastInsertId();
-        } catch (\PDOException $e) { // @codeCoverageIgnore
-        }
-        return new PDOResult($this->st, [$changes, $lastId]);
+        return new PDOResult($this->db, $this->st);
     }
 
     protected function bindValue($value, string $type, int $position): bool {
