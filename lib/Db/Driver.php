@@ -39,4 +39,6 @@ interface Driver {
     public function prepareArray(string $query, array $paramTypes): Statement;
     // report whether the database character set is correct/acceptable
     public function charsetAcceptable(): bool;
+    // return an implementation-dependent form of a reference SQL function or operator
+    public function sqlToken(string $token): string;
 }

@@ -13,17 +13,9 @@ abstract class AbstractDriver implements Driver {
     protected $transDepth = 0;
     protected $transStatus = [];
 
+    abstract protected function lock(): bool;
+    abstract protected function unlock(bool $rollback = false): bool;
     abstract protected function getError(): string;
-
-    /** @codeCoverageIgnore */
-    public function schemaVersion(): int {
-        // FIXME: generic schemaVersion() will need to be covered for database engines other than SQLite
-        try {
-            return (int) $this->query("SELECT value from arsse_meta where key is schema_version")->getValue();
-        } catch (Exception $e) {
-            return 0;
-        }
-    }
 
     public function schemaUpdate(int $to, string $basePath = null): bool {
         $ver = $this->schemaVersion();
@@ -78,50 +70,63 @@ abstract class AbstractDriver implements Driver {
     }
 
     public function savepointCreate(bool $lock = false): int {
+        // if no transaction is active and a lock was requested, lock the database using a backend-specific routine
         if ($lock && !$this->transDepth) {
             $this->lock();
             $this->locked = true;
         }
+        // create a savepoint, incrementing the transaction depth
         $this->exec("SAVEPOINT arsse_".(++$this->transDepth));
+        // set the state of the newly created savepoint to pending
         $this->transStatus[$this->transDepth] = self::TR_PEND;
+        // return the depth number
         return $this->transDepth;
     }
 
     public function savepointRelease(int $index = null): bool {
+        // assume the most recent savepoint if none was specified
         $index = $index ?? $this->transDepth;
         if (array_key_exists($index, $this->transStatus)) {
             switch ($this->transStatus[$index]) {
                 case self::TR_PEND:
+                    // release the requested savepoint and set its state to committed
                     $this->exec("RELEASE SAVEPOINT arsse_".$index);
                     $this->transStatus[$index] = self::TR_COMMIT;
+                    // for any later pending savepoints, set their state to implicitly committed
                     $a = $index;
                     while (++$a && $a <= $this->transDepth) {
                         if ($this->transStatus[$a] <= self::TR_PEND) {
                             $this->transStatus[$a] = self::TR_PEND_COMMIT;
                         }
                     }
+                    // return success
                     $out = true;
                     break;
                 case self::TR_PEND_COMMIT:
+                    // set the state to explicitly committed
                     $this->transStatus[$index] = self::TR_COMMIT;
                     $out = true;
                     break;
                 case self::TR_PEND_ROLLBACK:
+                    // set the state to explicitly committed
                     $this->transStatus[$index] = self::TR_COMMIT;
                     $out = false;
                     break;
                 case self::TR_COMMIT:
                 case self::TR_ROLLBACK: //@codeCoverageIgnore
+                    // savepoint has already been released or rolled back; this is an error
                     throw new Exception("savepointStale", ['action' => "commit", 'index' => $index]);
                 default:
                     throw new Exception("savepointStatusUnknown", $this->transStatus[$index]); // @codeCoverageIgnore
             }
             if ($index==$this->transDepth) {
+                // if we've released the topmost savepoint, clean up all prior savepoints which have already been explicitly committed (or rolled back), if any
                 while ($this->transDepth > 0 && $this->transStatus[$this->transDepth] > self::TR_PEND) {
                     array_pop($this->transStatus);
                     $this->transDepth--;
                 }
             }
+            // if no savepoints are pending and the database was locked, unlock it
             if (!$this->transDepth && $this->locked) {
                 $this->unlock();
                 $this->locked = false;

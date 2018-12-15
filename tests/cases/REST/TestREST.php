@@ -95,7 +95,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testSendAuthenticationChallenges() {
-        $this->setConf();
+        self::setConf();
         $r = new REST();
         $in = new EmptyResponse(401);
         $exp = $in->withHeader("WWW-Authenticate", 'Basic realm="OOK"');
@@ -151,9 +151,9 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideCorsNegotiations */
     public function testNegotiateCors($origin, bool $exp, string $allowed = null, string $denied = null) {
-        $this->setConf();
+        self::setConf();
         $r = Phake::partialMock(REST::class);
-        Phake::when($r)->corsNormalizeOrigin->thenReturnCallback(function ($origin) {
+        Phake::when($r)->corsNormalizeOrigin->thenReturnCallback(function($origin) {
             return $origin;
         });
         $headers = isset($origin) ? ['Origin' => $origin] : [];
@@ -255,10 +255,10 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testNormalizeHttpResponses(ResponseInterface $res, ResponseInterface $exp, RequestInterface $req = null) {
         $r = Phake::partialMock(REST::class);
         Phake::when($r)->corsNegotiate->thenReturn(true);
-        Phake::when($r)->challenge->thenReturnCallback(function ($res) {
+        Phake::when($r)->challenge->thenReturnCallback(function($res) {
             return $res->withHeader("WWW-Authenticate", "Fake Value");
         });
-        Phake::when($r)->corsApply->thenReturnCallback(function ($res) {
+        Phake::when($r)->corsApply->thenReturnCallback(function($res) {
             return $res;
         });
         $act = $r->normalizeResponse($res, $req);
@@ -298,10 +298,10 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideMockRequests */
     public function testDispatchRequests(ServerRequest $req, string $method, bool $called, string $class = "", string $target ="") {
         $r = Phake::partialMock(REST::class);
-        Phake::when($r)->normalizeResponse->thenReturnCallback(function ($res) {
+        Phake::when($r)->normalizeResponse->thenReturnCallback(function($res) {
             return $res;
         });
-        Phake::when($r)->authenticateRequest->thenReturnCallback(function ($req) {
+        Phake::when($r)->authenticateRequest->thenReturnCallback(function($req) {
             return $req;
         });
         if ($called) {

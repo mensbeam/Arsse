@@ -81,9 +81,14 @@ USAGE_TEXT;
                     return $this->userManage($args);
             }
         } catch (AbstractException $e) {
-            fwrite(STDERR, $e->getMessage().\PHP_EOL);
+            $this->logError($e->getMessage());
             return $e->getCode();
         }
+    }
+
+    /** @codeCoverageIgnore */
+    protected function logError(string $msg) {
+        fwrite(STDERR,$msg.\PHP_EOL);
     }
 
     /** @codeCoverageIgnore */

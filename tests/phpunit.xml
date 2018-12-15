@@ -7,7 +7,6 @@
     convertWarningsToExceptions="false"
     beStrictAboutTestsThatDoNotTestAnything="true"
     beStrictAboutOutputDuringTests="true"
-    beStrictAboutTestSize="true"
     stopOnError="true">
 
 <filter>
@@ -45,39 +44,36 @@
         <file>cases/Db/TestTransaction.php</file>
         <file>cases/Db/TestResultAggregate.php</file>
         <file>cases/Db/TestResultEmpty.php</file>
-        <file>cases/Db/TestResult.php</file>
-        <file>cases/Db/TestStatement.php</file>
 
+        <file>cases/Db/SQLite3/TestResult.php</file>
+        <file>cases/Db/SQLite3/TestStatement.php</file>
         <file>cases/Db/SQLite3/TestCreation.php</file>
         <file>cases/Db/SQLite3/TestDriver.php</file>
         <file>cases/Db/SQLite3/TestUpdate.php</file>
 
+        <file>cases/Db/SQLite3PDO/TestResult.php</file>
+        <file>cases/Db/SQLite3PDO/TestStatement.php</file>
         <file>cases/Db/SQLite3PDO/TestCreation.php</file>
         <file>cases/Db/SQLite3PDO/TestDriver.php</file>
         <file>cases/Db/SQLite3PDO/TestUpdate.php</file>
+
+        <file>cases/Db/PostgreSQL/TestResult.php</file>
+        <file>cases/Db/PostgreSQL/TestStatement.php</file>
+        <file>cases/Db/PostgreSQL/TestCreation.php</file>
+        <file>cases/Db/PostgreSQL/TestDriver.php</file>
+        <file>cases/Db/PostgreSQL/TestUpdate.php</file>
+
+        <file>cases/Db/PostgreSQLPDO/TestResult.php</file>
+        <file>cases/Db/PostgreSQLPDO/TestStatement.php</file>
+        <file>cases/Db/PostgreSQLPDO/TestCreation.php</file>
+        <file>cases/Db/PostgreSQLPDO/TestDriver.php</file>
+        <file>cases/Db/PostgreSQLPDO/TestUpdate.php</file>
     </testsuite>
     <testsuite name="Database functions">
-        <file>cases/Db/SQLite3/Database/TestMiscellany.php</file>
-        <file>cases/Db/SQLite3/Database/TestMeta.php</file>
-        <file>cases/Db/SQLite3/Database/TestUser.php</file>
-        <file>cases/Db/SQLite3/Database/TestSession.php</file>
-        <file>cases/Db/SQLite3/Database/TestFolder.php</file>
-        <file>cases/Db/SQLite3/Database/TestFeed.php</file>
-        <file>cases/Db/SQLite3/Database/TestSubscription.php</file>
-        <file>cases/Db/SQLite3/Database/TestArticle.php</file>
-        <file>cases/Db/SQLite3/Database/TestLabel.php</file>
-        <file>cases/Db/SQLite3/Database/TestCleanup.php</file>
-
-        <file>cases/Db/SQLite3PDO/Database/TestMiscellany.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestMeta.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestUser.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestSession.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestFolder.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestFeed.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestSubscription.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestArticle.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestLabel.php</file>
-        <file>cases/Db/SQLite3PDO/Database/TestCleanup.php</file>
+        <file>cases/Db/SQLite3/TestDatabase.php</file>
+        <file>cases/Db/SQLite3PDO/TestDatabase.php</file>
+        <file>cases/Db/PostgreSQL/TestDatabase.php</file>
+        <file>cases/Db/PostgreSQLPDO/TestDatabase.php</file>
     </testsuite>
     <testsuite name="REST">
         <file>cases/REST/TestTarget.php</file>

@@ -563,7 +563,23 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // perform the fetch
         try {
-            $items = Arsse::$db->articleList(Arsse::$user->id, $c, Database::LIST_TYPICAL);
+            $items = Arsse::$db->articleList(Arsse::$user->id, $c, [
+                "edition",
+                "guid",
+                "id",
+                "url",
+                "title",
+                "author",
+                "edited_date",
+                "content",
+                "media_type",
+                "media_url",
+                "subscription",
+                "unread",
+                "starred",
+                "modified_date",
+                "fingerprint",
+            ]);
         } catch (ExceptionInput $e) {
             // ID of subscription or folder is not valid
             return new EmptyResponse(422);

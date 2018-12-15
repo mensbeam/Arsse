@@ -17,10 +17,9 @@ use Phake;
 
 /** @covers \JKingWeb\Arsse\User */
 class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
-
     public function setUp() {
-        $this->clearData();
-        $this->setConf();
+        self::clearData();
+        self::setConf();
         // create a mock database interface
         Arsse::$db = Phake::mock(Database::class);
         Phake::when(Arsse::$db)->begin->thenReturn(Phake::mock(\JKingWeb\Arsse\Db\Transaction::class));
@@ -236,7 +235,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
                 $this->assertException("doesNotExist", "User");
             }
             $calls = 0;
-        } else{
+        } else {
             $calls = 1;
         }
         try {

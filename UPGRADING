@@ -9,6 +9,12 @@ When upgrading between any two versions of The Arsse, the following are usually 
 - If installing from source, update dependencies with `composer install -o --no-dev`
 
 
+Upgrading from 0.5.1 to 0.6.0
+=============================
+
+- The database schema has changed from rev3 to rev4; if upgrading the database manually, apply the 3.sql file
+
+
 Upgrading from 0.2.1 to 0.3.0
 =============================
 

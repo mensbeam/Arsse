@@ -9,7 +9,6 @@ namespace JKingWeb\Arsse;
 use PasswordGenerator\Generator as PassGen;
 
 class User {
-
     public $id = null;
 
     /**

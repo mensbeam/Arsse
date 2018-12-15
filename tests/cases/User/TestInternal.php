@@ -17,10 +17,9 @@ use Phake;
 
 /** @covers \JKingWeb\Arsse\User\Internal\Driver */
 class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
-
     public function setUp() {
-        $this->clearData();
-        $this->setConf();
+        self::clearData();
+        self::setConf();
         // create a mock database interface
         Arsse::$db = Phake::mock(Database::class);
         Phake::when(Arsse::$db)->begin->thenReturn(Phake::mock(\JKingWeb\Arsse\Db\Transaction::class));
@@ -34,8 +33,8 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertTrue(strlen(Driver::driverName()) > 0);
     }
 
-    /** 
-     * @dataProvider provideAuthentication 
+    /**
+     * @dataProvider provideAuthentication
      * @group slow
     */
     public function testAuthenticateAUser(bool $authorized, string $user, string $password, bool $exp) {

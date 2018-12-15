@@ -20,6 +20,7 @@ class Query {
     protected $qWhere = []; // WHERE clause components
     protected $tWhere = []; // WHERE clause type bindings
     protected $vWhere = []; // WHERE clause binding values
+    protected $group = []; // GROUP BY clause components
     protected $order = []; // ORDER BY clause components
     protected $limit = 0;
     protected $offset = 0;
@@ -68,6 +69,13 @@ class Query {
         return true;
     }
 
+    public function setGroup(string ...$column): bool {
+        foreach ($column as $col) {
+            $this->group[] = $col;
+        }
+        return true;
+    }
+
     public function setOrder(string $order, bool $prepend = false): bool {
         if ($prepend) {
             array_unshift($this->order, $order);
@@ -97,6 +105,7 @@ class Query {
         $this->tJoin = [];
         $this->vJoin = [];
         $this->order = [];
+        $this->group = [];
         $this->setLimit(0, 0);
         if (strlen($join)) {
             $this->jCTE[] = $join;
@@ -166,6 +175,10 @@ class Query {
         // add any WHERE terms
         if (sizeof($this->qWhere)) {
             $out .= " WHERE ".implode(" AND ", $this->qWhere);
+        }
+        // add any GROUP BY terms
+        if (sizeof($this->group)) {
+            $out .= " GROUP BY ".implode(", ", $this->group);
         }
         // add any ORDER BY terms
         if (sizeof($this->order)) {

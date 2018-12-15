@@ -39,7 +39,7 @@ trait Setup {
         // make the test Lang class use the vfs files
         $this->l = new TestLang($this->path);
         // create a mock Lang object so as not to create a dependency loop
-        $this->clearData(false);
+        self::clearData(false);
         Arsse::$lang = Phake::mock(Lang::class);
         Phake::when(Arsse::$lang)->msg->thenReturn("");
         // call the additional setup method if it exists
@@ -53,7 +53,7 @@ trait Setup {
         Phake::verify(Arsse::$lang, Phake::atLeast(0))->msg($this->isType("string"), $this->anything());
         Phake::verifyNoOtherInteractions(Arsse::$lang);
         // clean up
-        $this->clearData(true);
+        self::clearData(true);
         // call the additional teardiwn method if it exists
         if (method_exists($this, "tearDownSeries")) {
             $this->tearDownSeries();

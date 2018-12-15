@@ -16,7 +16,7 @@ class TestTransaction extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $drv;
 
     public function setUp() {
-        $this->clearData();
+        self::clearData();
         $drv = Phake::mock(\JKingWeb\Arsse\Db\SQLite3\Driver::class);
         Phake::when($drv)->savepointRelease->thenReturn(true);
         Phake::when($drv)->savepointUndo->thenReturn(true);

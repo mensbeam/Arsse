@@ -140,7 +140,7 @@ class Lang {
     protected function listFiles(): array {
         $out = $this->globFiles($this->path."*.php");
         // trim the returned file paths to return just the language tag
-        $out = array_map(function ($file) {
+        $out = array_map(function($file) {
             $file = str_replace(DIRECTORY_SEPARATOR, "/", $file); // we replace the directory separator because we don't use native paths in testing
             $file = substr($file, strrpos($file, "/")+1);
             return strtolower(substr($file, 0, strrpos($file, ".")));

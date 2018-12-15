@@ -15,7 +15,7 @@ use Phake;
 /** @covers \JKingWeb\Arsse\AbstractException */
 class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp() {
-        $this->clearData(false);
+        self::clearData(false);
         // create a mock Lang object so as not to create a dependency loop
         Arsse::$lang = Phake::mock(Lang::class);
         Phake::when(Arsse::$lang)->msg->thenReturn("");
@@ -26,7 +26,7 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
         Phake::verify(Arsse::$lang, Phake::atLeast(0))->msg($this->isType("string"), $this->anything());
         Phake::verifyNoOtherInteractions(Arsse::$lang);
         // clean up
-        $this->clearData(true);
+        self::clearData(true);
     }
 
     public function testBaseClass() {

@@ -339,8 +339,8 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function setUp() {
-        $this->clearData();
-        $this->setConf();
+        self::clearData();
+        self::setConf();
         // create a mock user manager
         Arsse::$user = Phake::mock(User::class);
         Phake::when(Arsse::$user)->auth->thenReturn(true);
@@ -352,7 +352,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function tearDown() {
-        $this->clearData();
+        self::clearData();
     }
 
     protected function v($value) {
@@ -734,11 +734,11 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['lastModified' => $t->getTimestamp()],
             ['oldestFirst' => false, 'batchSize' => 5, 'offset' => 0], // offset=0 should not set the latestEdition context
         ];
-        Phake::when(Arsse::$db)->articleList(Arsse::$user->id, $this->anything(), Database::LIST_TYPICAL)->thenReturn(new Result($this->v($this->articles['db'])));
-        Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->subscription(42), Database::LIST_TYPICAL)->thenThrow(new ExceptionInput("idMissing"));
-        Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->folder(2112), Database::LIST_TYPICAL)->thenThrow(new ExceptionInput("idMissing"));
-        Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->subscription(-1), Database::LIST_TYPICAL)->thenThrow(new ExceptionInput("typeViolation"));
-        Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->folder(-1), Database::LIST_TYPICAL)->thenThrow(new ExceptionInput("typeViolation"));
+        Phake::when(Arsse::$db)->articleList(Arsse::$user->id, $this->anything(), $this->anything())->thenReturn(new Result($this->v($this->articles['db'])));
+        Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->subscription(42), $this->anything())->thenThrow(new ExceptionInput("idMissing"));
+        Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->folder(2112), $this->anything())->thenThrow(new ExceptionInput("idMissing"));
+        Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->subscription(-1), $this->anything())->thenThrow(new ExceptionInput("typeViolation"));
+        Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->folder(-1), $this->anything())->thenThrow(new ExceptionInput("typeViolation"));
         $exp = new Response(['items' => $this->articles['rest']]);
         // check the contents of the response
         $this->assertMessage($exp, $this->req("GET", "/items")); // first instance of base context
@@ -759,17 +759,17 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->req("GET", "/items", json_encode($in[10]));
         $this->req("GET", "/items", json_encode($in[11]));
         // perform method verifications
-        Phake::verify(Arsse::$db, Phake::times(4))->articleList(Arsse::$user->id, (new Context)->reverse(true), Database::LIST_TYPICAL);
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->subscription(42), Database::LIST_TYPICAL);
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->folder(2112), Database::LIST_TYPICAL);
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->subscription(-1), Database::LIST_TYPICAL);
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->folder(-1), Database::LIST_TYPICAL);
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->starred(true), Database::LIST_TYPICAL);
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(false)->limit(10)->oldestEdition(6), Database::LIST_TYPICAL); // offset is one more than specified
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->limit(5)->latestEdition(4), Database::LIST_TYPICAL);   // offset is one less than specified
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->unread(true), Database::LIST_TYPICAL);
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->markedSince($t), Database::LIST_TYPICAL);
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->limit(5), Database::LIST_TYPICAL);
+        Phake::verify(Arsse::$db, Phake::times(4))->articleList(Arsse::$user->id, (new Context)->reverse(true), $this->anything());
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->subscription(42), $this->anything());
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->folder(2112), $this->anything());
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->subscription(-1), $this->anything());
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->folder(-1), $this->anything());
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->starred(true), $this->anything());
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(false)->limit(10)->oldestEdition(6), $this->anything()); // offset is one more than specified
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->limit(5)->latestEdition(4), $this->anything());   // offset is one less than specified
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->unread(true), $this->anything());
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, $this->equalTo((new Context)->reverse(true)->markedSince($t), 2), $this->anything());
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(true)->limit(5), $this->anything());
     }
 
     public function testMarkAFolderRead() {
@@ -958,6 +958,6 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $url = "/items?type=2";
         Phake::when(Arsse::$db)->articleList->thenReturn(new Result([]));
         $this->req("GET", $url, json_encode($in));
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(false)->starred(true), Database::LIST_TYPICAL);
+        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->reverse(false)->starred(true), $this->anything());
     }
 }

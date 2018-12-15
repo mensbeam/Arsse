@@ -64,6 +64,9 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             } else {
                 $this->assertSame($c->$method, $v[$method], "Context method $method did not return the expected results");
             }
+            // clear the context option
+            $c->$method(null);
+            $this->assertFalse($c->$method());
         }
     }
 

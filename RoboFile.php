@@ -52,6 +52,21 @@ class RoboFile extends \Robo\Tasks {
     public function coverage(array $args): Result {
         // run tests with code coverage reporting enabled
         $exec = $this->findCoverageEngine();
+        return $this->runTests($exec, "coverage", array_merge(["--coverage-html", self::BASE_TEST."coverage"], $args));
+    }
+
+    /** Produces a code coverage report, with redundant tests
+     *
+     * Depending on the environment, some tests that normally provide
+     * coverage may be skipped, while working alternatives are normally
+     * suppressed for reasons of time. This coverage report will try to
+     * run all tests which may cover code.
+     *
+     * See also help for the "coverage" task for more details.
+    */
+    public function coverageFull(array $args): Result {
+        // run tests with code coverage reporting enabled
+        $exec = $this->findCoverageEngine();
         return $this->runTests($exec, "typical", array_merge(["--coverage-html", self::BASE_TEST."coverage"], $args));
     }
 
@@ -66,13 +81,16 @@ class RoboFile extends \Robo\Tasks {
     }
 
     protected function findCoverageEngine(): string {
-        $null = null;
-        $code = 0;
-        exec("phpdbg --version", $null, $code);
-        if (!$code) {
-            return "phpdbg -qrr";
+        if ($this->isWindows()) {
+            $dbg = dirname(\PHP_BINARY)."\\phpdbg.exe";
+            $dbg = file_exists($dbg) ? $dbg : "";
         } else {
-            return "php";
+            $dbg = `which phpdbg`;
+        }
+        if ($dbg) {
+            return escapeshellarg($dbg)." -qrr";
+        } else {
+            return escapeshellarg(\PHP_BINARY);
         }
     }
 
@@ -88,6 +106,9 @@ class RoboFile extends \Robo\Tasks {
             case "quick":
                 $set = ["--exclude-group", "optional,slow"];
                 break;
+            case "coverage":
+                $set = ["--exclude-group", "optional,coverageOptional"];
+                break;
             case "full":
                 $set = [];
                 break;
@@ -96,9 +117,8 @@ class RoboFile extends \Robo\Tasks {
         }
         $execpath = realpath(self::BASE."vendor-bin/phpunit/vendor/phpunit/phpunit/phpunit");
         $confpath = realpath(self::BASE_TEST."phpunit.xml");
-        $blackhole = $this->isWindows() ? "nul" : "/dev/null";
         $this->taskServer(8000)->host("localhost")->dir(self::BASE_TEST."docroot")->rawArg("-n")->arg(self::BASE_TEST."server.php")->background()->run();
-        return $this->taskExec($executor)->arg($execpath)->option("-c", $confpath)->args(array_merge($set, $args))->rawArg("2>$blackhole")->run();
+        return $this->taskExec($executor)->arg($execpath)->option("-c", $confpath)->args(array_merge($set, $args))->run();
     }
 
     /** Packages a given commit of the software into a release tarball
