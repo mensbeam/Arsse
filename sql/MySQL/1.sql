@@ -9,7 +9,7 @@ create table arsse_sessions (
     created datetime(0) not null default CURRENT_TIMESTAMP,
     expires datetime(0) not null,
     `user` varchar(255) not null references arsse_users(id) on delete cascade on update cascade
-);
+) character set utf8mb4;
 
 create table arsse_labels (
     id serial primary key,
@@ -17,7 +17,7 @@ create table arsse_labels (
     name varchar(255) not null,
     modified datetime(0) not null default CURRENT_TIMESTAMP,
     unique(owner,name)
-);
+) character set utf8mb4;
 
 create table arsse_label_members (
     label bigint not null references arsse_labels(id) on delete cascade,
@@ -26,7 +26,7 @@ create table arsse_label_members (
     assigned boolean not null default 1,
     modified datetime(0) not null default CURRENT_TIMESTAMP,
     primary key(label,article)
-);
+) character set utf8mb4;
 
 alter table arsse_marks add column note longtext not null default '';
 

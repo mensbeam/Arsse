@@ -7,7 +7,7 @@
 create table arsse_meta(
     `key` varchar(255) primary key,
     value longtext
-);
+) character set utf8mb4;
 
 create table arsse_users(
     id varchar(255) primary key,
@@ -17,14 +17,14 @@ create table arsse_users(
     avatar_data longblob,
     admin boolean default 0,
     rights bigint not null default 0
-);
+) character set utf8mb4;
 
 create table arsse_users_meta(
     owner varchar(255) not null references arsse_users(id) on delete cascade on update cascade,
     `key` varchar(255) not null,
     value varchar(255),
     primary key(owner,`key`)
-);
+) character set utf8mb4;
 
 create table arsse_folders(
     id serial primary key,
@@ -33,7 +33,7 @@ create table arsse_folders(
     name varchar(255) not null,
     modified datetime(0) not null default CURRENT_TIMESTAMP,                                                       --
     unique(owner,name,parent)
-);
+) character set utf8mb4;
 
 create table arsse_feeds(
     id serial primary key,
@@ -53,7 +53,7 @@ create table arsse_feeds(
     size bigint not null default 0,
     scrape boolean not null default 0,
     unique(url,username,password)
-);
+) character set utf8mb4;
 
 create table arsse_subscriptions(
     id serial primary key,
@@ -66,7 +66,7 @@ create table arsse_subscriptions(
     pinned boolean not null default 0,
     folder bigint references arsse_folders(id) on delete cascade,
     unique(owner,feed)
-);
+) character set utf8mb4;
 
 create table arsse_articles(
     id serial primary key,
@@ -82,13 +82,13 @@ create table arsse_articles(
     url_title_hash varchar(255) not null,
     url_content_hash varchar(255) not null,
     title_content_hash varchar(255) not null
-);
+) character set utf8mb4;
 
 create table arsse_enclosures(
     article bigint not null references arsse_articles(id) on delete cascade,
     url varchar(255),
     type varchar(255)
-);
+) character set utf8mb4;
 
 create table arsse_marks(
     article bigint not null references arsse_articles(id) on delete cascade,
@@ -97,17 +97,17 @@ create table arsse_marks(
     starred boolean not null default 0,
     modified datetime(0) not null default CURRENT_TIMESTAMP,
     primary key(article,subscription)
-);
+) character set utf8mb4;
 
 create table arsse_editions(
     id serial primary key,
     article bigint not null references arsse_articles(id) on delete cascade,
     modified datetime(0) not null default CURRENT_TIMESTAMP
-);
+) character set utf8mb4;
 
 create table arsse_categories(
     article bigint not null references arsse_articles(id) on delete cascade,
     name varchar(255)
-);
+) character set utf8mb4;
 
 insert into arsse_meta(`key`,value) values('schema_version','1');
