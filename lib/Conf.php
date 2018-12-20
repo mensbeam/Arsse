@@ -43,6 +43,16 @@ class Conf {
     public $dbPostgreSQLSchema      = "";
     /** @var string Service file entry to use (if using PostgreSQL); if using a service entry all above parameters except schema are ignored */
     public $dbPostgreSQLService     = "";
+    /** @var string Host name, address, or socket path of MySQL/MariaDB database server (if using MySQL/MariaDB) */
+    public $dbMySQLHost             = "localhost";
+    /** @var string Log-in user name for MySQL/MariaDB database server (if using MySQL/MariaDB) */
+    public $dbMySQLUser             = "arsse";
+    /** @var string Log-in password for MySQL/MariaDB database server (if using MySQL/MariaDB) */
+    public $dbMySQLPass             = "";
+    /** @var integer Listening port for MySQL/MariaDB database server (if using MySQL/MariaDB over TCP) */
+    public $dbMySQLPort             = 3306;
+    /** @var string Database name on MySQL/MariaDB database server (if using MySQL/MariaDB) */
+    public $dbMySQLDb               = "arsse";
 
     /** @var string Class of the user management driver in use (Internal by default) */
     public $userDriver              = User\Internal\Driver::class;

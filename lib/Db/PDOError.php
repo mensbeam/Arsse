@@ -6,6 +6,8 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Db;
 
+use JKingWeb\Arsse\Db\SQLite3\Driver as SQLite3;
+
 trait PDOError {
     public function exceptionBuild(bool $statementError = null): array {
         if ($statementError ?? ($this instanceof Statement)) {
@@ -14,6 +16,7 @@ trait PDOError {
             $err = $this->db->errorInfo();
         }
         switch ($err[0]) {
+            case "22007":
             case "22P02":
             case "42804":
                 return [ExceptionInput::class, 'engineTypeViolation', $err[2]];
@@ -29,18 +32,22 @@ trait PDOError {
                 switch ($this->db->getAttribute(\PDO::ATTR_DRIVER_NAME)) {
                     case "sqlite":
                         switch ($err[1]) {
-                            case \JKingWeb\Arsse\Db\SQLite3\Driver::SQLITE_BUSY:
+                            case SQLite3::SQLITE_BUSY:
                                 return [ExceptionTimeout::class, 'general', $err[2]];
-                            case \JKingWeb\Arsse\Db\SQLite3\Driver::SQLITE_MISMATCH:
+                            case SQLite3::SQLITE_MISMATCH:
                                 return [ExceptionInput::class, 'engineTypeViolation', $err[2]];
-                            default:
-                                return [Exception::class, "engineErrorGeneral", $err[1]." - ".$err[2]];
                         }
-                        // no break
-                    default:
-                        return [Exception::class, "engineErrorGeneral", $err[2]]; // @codeCoverageIgnore
+                        break;
+                    case "mysql":
+                        switch ($err[1]) {
+                            case 1205:
+                                return [ExceptionTimeout::class, 'general', $err[2]];
+                            case 1364:
+                                return [ExceptionInput::class, "constraintViolation", $err[2]];
+                        }
+                        break;
                 }
-                // no break
+                return [Exception::class, "engineErrorGeneral", $err[0]."/".$err[1].": ".$err[2]]; // @codeCoverageIgnore
             default:
                 return [Exception::class, "engineErrorGeneral", $err[0].": ".$err[2]]; // @codeCoverageIgnore
         }

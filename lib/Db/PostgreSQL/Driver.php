@@ -15,6 +15,8 @@ use JKingWeb\Arsse\Db\ExceptionTimeout;
 class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     use Dispatch;
 
+    const TRANSACTIONAL_LOCKS = true;
+
     protected $db;
     protected $transStart = 0;
 

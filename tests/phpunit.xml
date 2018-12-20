@@ -68,6 +68,12 @@
         <file>cases/Db/PostgreSQLPDO/TestCreation.php</file>
         <file>cases/Db/PostgreSQLPDO/TestDriver.php</file>
         <file>cases/Db/PostgreSQLPDO/TestUpdate.php</file>
+
+        <file>cases/Db/MySQLPDO/TestResult.php</file>
+        <file>cases/Db/MySQLPDO/TestStatement.php</file>
+        <file>cases/Db/MySQLPDO/TestCreation.php</file>
+        <file>cases/Db/MySQLPDO/TestDriver.php</file>
+        <file>cases/Db/MySQLPDO/TestUpdate.php</file>
     </testsuite>
     <testsuite name="Database functions">
         <file>cases/Db/SQLite3/TestDatabase.php</file>

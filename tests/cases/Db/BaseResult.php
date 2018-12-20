@@ -10,6 +10,7 @@ use JKingWeb\Arsse\Db\Result;
 use JKingWeb\Arsse\Test\DatabaseInformation;
 
 abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
+    protected static $insertDefault = "INSERT INTO arsse_test default values";
     protected static $dbInfo;
     protected static $interface;
     protected $resultClass;
@@ -57,17 +58,17 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testGetChangeCountAndLastInsertId() {
         $this->makeResult(static::$createMeta);
-        $r = new $this->resultClass(...$this->makeResult("INSERT INTO arsse_meta(key,value) values('test', 1)"));
+        $r = new $this->resultClass(...$this->makeResult("INSERT INTO arsse_meta(\"key\",value) values('test', 1)"));
         $this->assertSame(1, $r->changes());
         $this->assertSame(0, $r->lastId());
     }
 
     public function testGetChangeCountAndLastInsertIdBis() {
         $this->makeResult(static::$createTest);
-        $r = new $this->resultClass(...$this->makeResult("INSERT INTO arsse_test default values"));
+        $r = new $this->resultClass(...$this->makeResult(static::$insertDefault));
         $this->assertSame(1, $r->changes());
         $this->assertSame(1, $r->lastId());
-        $r = new $this->resultClass(...$this->makeResult("INSERT INTO arsse_test default values"));
+        $r = new $this->resultClass(...$this->makeResult(static::$insertDefault));
         $this->assertSame(1, $r->changes());
         $this->assertSame(2, $r->lastId());
     }

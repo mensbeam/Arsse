@@ -75,8 +75,13 @@ abstract class AbstractDriver implements Driver {
             $this->lock();
             $this->locked = true;
         }
-        // create a savepoint, incrementing the transaction depth
-        $this->exec("SAVEPOINT arsse_".(++$this->transDepth));
+        if ($this->locked && static::TRANSACTIONAL_LOCKS == false) {
+            // if locks are not compatible with transactions (and savepoints), don't actually create a savepoint)
+            $this->transDepth++;
+        } else {
+            // create a savepoint, incrementing the transaction depth
+            $this->exec("SAVEPOINT arsse_".(++$this->transDepth));
+        }
         // set the state of the newly created savepoint to pending
         $this->transStatus[$this->transDepth] = self::TR_PEND;
         // return the depth number
@@ -89,8 +94,13 @@ abstract class AbstractDriver implements Driver {
         if (array_key_exists($index, $this->transStatus)) {
             switch ($this->transStatus[$index]) {
                 case self::TR_PEND:
-                    // release the requested savepoint and set its state to committed
-                    $this->exec("RELEASE SAVEPOINT arsse_".$index);
+                    if ($this->locked && static::TRANSACTIONAL_LOCKS == false) {
+                        // if locks are not compatible with transactions, do nothing
+                    } else {
+                        // release the requested savepoint
+                        $this->exec("RELEASE SAVEPOINT arsse_".$index);
+                    }
+                    // set its state to committed
                     $this->transStatus[$index] = self::TR_COMMIT;
                     // for any later pending savepoints, set their state to implicitly committed
                     $a = $index;
@@ -142,8 +152,14 @@ abstract class AbstractDriver implements Driver {
         if (array_key_exists($index, $this->transStatus)) {
             switch ($this->transStatus[$index]) {
                 case self::TR_PEND:
-                    $this->exec("ROLLBACK TRANSACTION TO SAVEPOINT arsse_".$index);
-                    $this->exec("RELEASE SAVEPOINT arsse_".$index);
+                    if ($this->locked && static::TRANSACTIONAL_LOCKS == false) {
+                        // if locks are not compatible with transactions, do nothing and report failure as a rollback cannot occur
+                        $out = false;
+                    } else {
+                        // roll back and then erase the savepoint
+                        $this->exec("ROLLBACK TO SAVEPOINT arsse_".$index);
+                        $this->exec("RELEASE SAVEPOINT arsse_".$index);
+                    }
                     $this->transStatus[$index] = self::TR_ROLLBACK;
                     $a = $index;
                     while (++$a && $a <= $this->transDepth) {
@@ -151,7 +167,7 @@ abstract class AbstractDriver implements Driver {
                             $this->transStatus[$a] = self::TR_PEND_ROLLBACK;
                         }
                     }
-                    $out = true;
+                    $out = $out ?? true;
                     break;
                 case self::TR_PEND_COMMIT:
                     $this->transStatus[$index] = self::TR_ROLLBACK;

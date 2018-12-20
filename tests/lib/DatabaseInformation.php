@@ -27,7 +27,7 @@ class DatabaseInformation {
         if (!isset(self::$data)) {
             self::$data = self::getData();
         }
-        if (!isset(self::$data[$name])) {
+        if (!array_key_exists($name, self::$data)) {
             throw new \Exception("Invalid database driver name");
         }
         $this->name = $name;
@@ -162,6 +162,48 @@ class DatabaseInformation {
                 $pgExecFunction($db, $st);
             }
         };
+        $mysqlTableList = function($db): array {
+            $listTables = "SELECT table_name as name from information_schema.tables where table_schema = database() and table_name like 'arsse_%'";
+            if ($db instanceof Driver) {
+                $tables = $db->query($listTables)->getAll();
+            } elseif ($db instanceof \PDO) {
+                $tables = $db->query($listTables)->fetchAll(\PDO::FETCH_ASSOC);
+            } else {
+                $tables = $db->query($listTables)->fetch_all(\MYSQLI_ASSOC);
+            }
+            $tables = sizeof($tables) ? array_column($tables, "name") : [];
+            return $tables;
+        };
+        $mysqlTruncateFunction = function($db, array $afterStatements = []) use ($mysqlTableList) {
+            // rollback any pending transaction
+            try {
+                $db->query("UNLOCK TABLES; ROLLBACK");
+            } catch (\Throwable $e) {
+            }
+            foreach ($mysqlTableList($db) as $table) {
+                if ($table == "arsse_meta") {
+                    $db->query("DELETE FROM $table where `key` <> 'schema_version'");
+                } else {
+                    $db->query("DELETE FROM $table");
+                }
+            }
+            foreach ($afterStatements as $st) {
+                $db->query($st);
+            }
+        };
+        $mysqlRazeFunction = function($db, array $afterStatements = []) use ($mysqlTableList) {
+            // rollback any pending transaction
+            try {
+                $db->query("UNLOCK TABLES; ROLLBACK");
+            } catch (\Throwable $e) {
+            }
+            foreach ($mysqlTableList($db) as $table) {
+                $db->query("DROP TABLE IF EXISTS $table");
+            }
+            foreach ($afterStatements as $st) {
+                $db->query($st);
+            }
+        };
         return [
             'SQLite 3' => [
                 'pdo' => false,
@@ -243,6 +285,34 @@ class DatabaseInformation {
                 },
                 'truncateFunction' => $pgTruncateFunction,
                 'razeFunction' => $pgRazeFunction,
+            ],
+            'PDO MySQL' => [
+                'pdo' => true,
+                'backend' => "MySQL",
+                'statementClass' => \JKingWeb\Arsse\Db\PDOStatement::class,
+                'resultClass' => \JKingWeb\Arsse\Db\PDOResult::class,
+                'driverClass' => \JKingWeb\Arsse\Db\MySQL\PDODriver::class,
+                'stringOutput' => true,
+                'interfaceConstructor' => function() {
+                    try {
+                        $dsn = [];
+                        $params = [
+                            'charset' => "utf8mb4",
+                            'host' => Arsse::$conf->dbMySQLHost,
+                            'port' => Arsse::$conf->dbMySQLPort,
+                            'dbname' => Arsse::$conf->dbMySQLDb,
+                        ];
+                        foreach ($params as $k => $v) {
+                            $dsn[] = "$k=$v";
+                        }
+                        $dsn = "mysql:".implode(";", $dsn);
+                        return new \PDO($dsn, Arsse::$conf->dbMySQLUser, Arsse::$conf->dbMySQLPass, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION, \PDO::MYSQL_ATTR_MULTI_STATEMENTS => false, \PDO::MYSQL_ATTR_INIT_COMMAND => "SET sql_mode = '".\JKingWeb\Arsse\Db\MySQL\PDODriver::SQL_MODE."'",]);
+                    } catch (\Throwable $e) {
+                        return;
+                    }
+                },
+                'truncateFunction' => $mysqlTruncateFunction,
+                'razeFunction' => $mysqlRazeFunction,
             ],
         ];
     }

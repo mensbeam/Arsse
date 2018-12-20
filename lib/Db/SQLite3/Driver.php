@@ -14,6 +14,8 @@ use JKingWeb\Arsse\Db\ExceptionTimeout;
 class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     use ExceptionBuilder;
 
+    const TRANSACTIONAL_LOCKS = true;
+
     const SQLITE_BUSY = 5;
     const SQLITE_CONSTRAINT = 19;
     const SQLITE_MISMATCH = 20;

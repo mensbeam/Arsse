@@ -81,7 +81,7 @@ class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testLoadIncompleteFile() {
-        file_put_contents($this->path."0.sql", "create table arsse_meta(key text primary key not null, value text);");
+        file_put_contents($this->path."0.sql", "create table arsse_meta(\"key\" varchar(255) primary key not null, value text);");
         $this->assertException("updateFileIncomplete", "Db");
         $this->drv->schemaUpdate(1, $this->base);
     }
@@ -100,7 +100,7 @@ class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testPerformPartialUpdate() {
         file_put_contents($this->path."0.sql", static::$minimal1);
-        file_put_contents($this->path."1.sql", "UPDATE arsse_meta set value = '1' where key = 'schema_version'");
+        file_put_contents($this->path."1.sql", "UPDATE arsse_meta set value = '1' where \"key\" = 'schema_version'");
         $this->assertException("updateFileIncomplete", "Db");
         try {
             $this->drv->schemaUpdate(2, $this->base);

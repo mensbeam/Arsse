@@ -11,6 +11,7 @@ use JKingWeb\Arsse\Db\Result;
 use JKingWeb\Arsse\Test\DatabaseInformation;
 
 abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
+    protected static $insertDefaultValues = "INSERT INTO arsse_test default values";
     protected static $dbInfo;
     protected static $interface;
     protected $drv;
@@ -39,8 +40,8 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         }
         // completely clear the database and ensure the schema version can easily be altered
         (static::$dbInfo->razeFunction)(static::$interface, [
-            "CREATE TABLE arsse_meta(key varchar(255) primary key not null, value text)",
-            "INSERT INTO arsse_meta(key,value) values('schema_version','0')",
+            "CREATE TABLE arsse_meta(\"key\" varchar(255) primary key not null, value text)",
+            "INSERT INTO arsse_meta(\"key\",value) values('schema_version','0')",
         ]);
         // construct a fresh driver for each test
         $this->drv = new static::$dbInfo->driverClass;
@@ -115,14 +116,13 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->exec($this->create);
         $this->exec($this->lock);
         $this->assertException("general", "Db", "ExceptionTimeout");
-        $lock = is_array($this->lock) ? implode("; ", $this->lock) : $this->lock;
-        $this->drv->exec($lock);
+        $this->drv->exec("INSERT INTO arsse_meta(\"key\", value) values('lock', '1')");
     }
 
     public function testExecConstraintViolation() {
         $this->drv->exec("CREATE TABLE arsse_test(id varchar(255) not null)");
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
-        $this->drv->exec("INSERT INTO arsse_test default values");
+        $this->drv->exec(static::$insertDefaultValues);
     }
 
     public function testExecTypeViolation() {
@@ -140,18 +140,10 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv->query("Apollo was astonished; Dionysus thought me mad");
     }
 
-    public function testQueryTimeout() {
-        $this->exec($this->create);
-        $this->exec($this->lock);
-        $this->assertException("general", "Db", "ExceptionTimeout");
-        $lock = is_array($this->lock) ? implode("; ", $this->lock) : $this->lock;
-        $this->drv->exec($lock);
-    }
-
     public function testQueryConstraintViolation() {
         $this->drv->exec("CREATE TABLE arsse_test(id integer not null)");
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
-        $this->drv->query("INSERT INTO arsse_test default values");
+        $this->drv->query(static::$insertDefaultValues);
     }
 
     public function testQueryTypeViolation() {
@@ -220,23 +212,21 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testBeginATransaction() {
         $select = "SELECT count(*) FROM arsse_test";
-        $insert = "INSERT INTO arsse_test default values";
         $this->drv->exec($this->create);
         $tr = $this->drv->begin();
-        $this->drv->query($insert);
+        $this->drv->query(static::$insertDefaultValues);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $this->query($select));
-        $this->drv->query($insert);
+        $this->drv->query(static::$insertDefaultValues);
         $this->assertEquals(2, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $this->query($select));
     }
 
     public function testCommitATransaction() {
         $select = "SELECT count(*) FROM arsse_test";
-        $insert = "INSERT INTO arsse_test default values";
         $this->drv->exec($this->create);
         $tr = $this->drv->begin();
-        $this->drv->query($insert);
+        $this->drv->query(static::$insertDefaultValues);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $this->query($select));
         $tr->commit();
@@ -246,10 +236,9 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testRollbackATransaction() {
         $select = "SELECT count(*) FROM arsse_test";
-        $insert = "INSERT INTO arsse_test default values";
         $this->drv->exec($this->create);
         $tr = $this->drv->begin();
-        $this->drv->query($insert);
+        $this->drv->query(static::$insertDefaultValues);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $this->query($select));
         $tr->rollback();
@@ -259,28 +248,26 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testBeginChainedTransactions() {
         $select = "SELECT count(*) FROM arsse_test";
-        $insert = "INSERT INTO arsse_test default values";
         $this->drv->exec($this->create);
         $tr1 = $this->drv->begin();
-        $this->drv->query($insert);
+        $this->drv->query(static::$insertDefaultValues);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $this->query($select));
         $tr2 = $this->drv->begin();
-        $this->drv->query($insert);
+        $this->drv->query(static::$insertDefaultValues);
         $this->assertEquals(2, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $this->query($select));
     }
 
     public function testCommitChainedTransactions() {
         $select = "SELECT count(*) FROM arsse_test";
-        $insert = "INSERT INTO arsse_test default values";
         $this->drv->exec($this->create);
         $tr1 = $this->drv->begin();
-        $this->drv->query($insert);
+        $this->drv->query(static::$insertDefaultValues);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $this->query($select));
         $tr2 = $this->drv->begin();
-        $this->drv->query($insert);
+        $this->drv->query(static::$insertDefaultValues);
         $this->assertEquals(2, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $this->query($select));
         $tr2->commit();
@@ -291,14 +278,13 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testCommitChainedTransactionsOutOfOrder() {
         $select = "SELECT count(*) FROM arsse_test";
-        $insert = "INSERT INTO arsse_test default values";
         $this->drv->exec($this->create);
         $tr1 = $this->drv->begin();
-        $this->drv->query($insert);
+        $this->drv->query(static::$insertDefaultValues);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $this->query($select));
         $tr2 = $this->drv->begin();
-        $this->drv->query($insert);
+        $this->drv->query(static::$insertDefaultValues);
         $this->assertEquals(2, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $this->query($select));
         $tr1->commit();
@@ -308,14 +294,13 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testRollbackChainedTransactions() {
         $select = "SELECT count(*) FROM arsse_test";
-        $insert = "INSERT INTO arsse_test default values";
         $this->drv->exec($this->create);
         $tr1 = $this->drv->begin();
-        $this->drv->query($insert);
+        $this->drv->query(static::$insertDefaultValues);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $this->query($select));
         $tr2 = $this->drv->begin();
-        $this->drv->query($insert);
+        $this->drv->query(static::$insertDefaultValues);
         $this->assertEquals(2, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $this->query($select));
         $tr2->rollback();
@@ -328,14 +313,13 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testRollbackChainedTransactionsOutOfOrder() {
         $select = "SELECT count(*) FROM arsse_test";
-        $insert = "INSERT INTO arsse_test default values";
         $this->drv->exec($this->create);
         $tr1 = $this->drv->begin();
-        $this->drv->query($insert);
+        $this->drv->query(static::$insertDefaultValues);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $this->query($select));
         $tr2 = $this->drv->begin();
-        $this->drv->query($insert);
+        $this->drv->query(static::$insertDefaultValues);
         $this->assertEquals(2, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $this->query($select));
         $tr1->rollback();
@@ -348,14 +332,13 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testPartiallyRollbackChainedTransactions() {
         $select = "SELECT count(*) FROM arsse_test";
-        $insert = "INSERT INTO arsse_test default values";
         $this->drv->exec($this->create);
         $tr1 = $this->drv->begin();
-        $this->drv->query($insert);
+        $this->drv->query(static::$insertDefaultValues);
         $this->assertEquals(1, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $this->query($select));
         $tr2 = $this->drv->begin();
-        $this->drv->query($insert);
+        $this->drv->query(static::$insertDefaultValues);
         $this->assertEquals(2, $this->drv->query($select)->getValue());
         $this->assertEquals(0, $this->query($select));
         $tr2->rollback();

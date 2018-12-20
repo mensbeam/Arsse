@@ -124,8 +124,8 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testViolateConstraint() {
-        (new $this->statementClass(...$this->makeStatement("CREATE TABLE if not exists arsse_meta(key varchar(255) primary key not null, value text)")))->run();
-        $s = new $this->statementClass(...$this->makeStatement("INSERT INTO arsse_meta(key) values(?)", ["str"]));
+        (new $this->statementClass(...$this->makeStatement("CREATE TABLE if not exists arsse_meta(\"key\" varchar(255) primary key not null, value text)")))->run();
+        $s = new $this->statementClass(...$this->makeStatement("INSERT INTO arsse_meta(\"key\") values(?)", ["str"]));
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         $s->runArray([null]);
     }

@@ -48,6 +48,9 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             'dbPostgreSQLPass' => "arsse_test",
             'dbPostgreSQLDb' => "arsse_test",
             'dbPostgreSQLSchema' => "arsse_test",
+            'dbMySQLUser' => "arsse_test",
+            'dbMySQLPass' => "arsse_test",
+            'dbMySQLDb' => "arsse_test",
         ];
         Arsse::$conf = ($force ? null : Arsse::$conf) ?? (new Conf)->import($defaults)->import($conf);
     }
