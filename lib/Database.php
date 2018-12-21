@@ -272,7 +272,7 @@ class Database {
         if (!ValueInfo::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "folder", 'type' => "int > 0"]);
         }
-        $changes = $this->db->prepare("DELETE FROM arsse_folders where owner = ? and id = ?", "str", "int")->run($user, $id)->changes();
+        $changes = $this->db->prepare("WITH RECURSIVE folders(folder) as (SELECT ? union select id from arsse_folders join folders on parent = folder) DELETE FROM arsse_folders where owner = ? and id in (select folder from folders)", "int", "str")->run($id, $user)->changes();
         if (!$changes) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id]);
         }
