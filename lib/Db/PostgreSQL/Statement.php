@@ -24,25 +24,14 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
 
     protected $db;
     protected $in = [];
-    protected $qOriginal;
+    protected $query;
     protected $qMunged;
     protected $bindings;
 
     public function __construct($db, string $query, array $bindings = []) {
         $this->db = $db; 
-        $this->qOriginal = $query;
+        $this->query = $query;
         $this->retypeArray($bindings);
-    }
-
-    public function retypeArray(array $bindings, bool $append = false): bool {
-        if ($append) {
-            return parent::retypeArray($bindings, $append);
-        } else {
-            $this->bindings = $bindings;
-            parent::retypeArray($bindings, $append);
-            $this->qMunged = self::mungeQuery($this->qOriginal, $this->types, true);
-        }
-        return true;
     }
 
     public function runArray(array $values = []): \JKingWeb\Arsse\Db\Result {
@@ -62,7 +51,8 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         return true;
     }
 
-    protected static function mungeQuery(string $q, array $types, bool $mungeParamMarkers = true): string {
+    public static function mungeQuery(string $q, array $types, ...$extraData): string {
+        $mungeParamMarkers = (bool) ($extraData[0] ?? true);
         $q = explode("?", $q);
         $out = "";
         for ($b = 1; $b < sizeof($q); $b++) {
@@ -73,5 +63,10 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         }
         $out .= array_pop($q);
         return $out;
+    }
+
+    protected function prepare(string $query): bool {
+        $this->qMunged = $query;
+        return true;
     }
 }

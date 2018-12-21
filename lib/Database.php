@@ -1054,9 +1054,9 @@ class Database {
             if ($data['read'] || $data['starred'] || strlen($data['note'] ?? "")) {
                 // first prepare a query to insert any missing marks rows for the articles we want to mark
                 // but only insert new mark records if we're setting at least one "positive" mark
-                $q = $this->articleQuery($user, $context, ["id", "subscription"]);
+                $q = $this->articleQuery($user, $context, ["id", "subscription", "note"]);
                 $q->setWhere("arsse_marks.starred is null"); // null means there is no marks row for the article
-                $this->db->prepare("INSERT INTO arsse_marks(article,subscription) ".$q->getQuery(), $q->getTypes())->run($q->getValues());
+                $this->db->prepare("INSERT INTO arsse_marks(article,subscription,note) ".$q->getQuery(), $q->getTypes())->run($q->getValues());
             }
             if (isset($data['read']) && (isset($data['starred']) || isset($data['note'])) && ($context->edition() || $context->editions())) {
                 // if marking by edition both read and something else, do separate marks for starred and note than for read

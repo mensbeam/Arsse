@@ -290,7 +290,7 @@ class DatabaseInformation {
             'PDO MySQL' => [
                 'pdo' => true,
                 'backend' => "MySQL",
-                'statementClass' => \JKingWeb\Arsse\Db\PDOStatement::class,
+                'statementClass' => \JKingWeb\Arsse\Db\MySQL\PDOStatement::class,
                 'resultClass' => \JKingWeb\Arsse\Db\PDOResult::class,
                 'driverClass' => \JKingWeb\Arsse\Db\MySQL\PDODriver::class,
                 'stringOutput' => true,

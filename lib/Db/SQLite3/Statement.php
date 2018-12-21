@@ -27,11 +27,22 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
 
     protected $db;
     protected $st;
+    protected $query;
 
-    public function __construct(\SQLite3 $db, \SQLite3Stmt $st, array $bindings = []) {
+    public function __construct(\SQLite3 $db, string $query, array $bindings = []) {
         $this->db = $db;
-        $this->st = $st;
+        $this->query = $query;
         $this->retypeArray($bindings);
+    }
+
+    protected function prepare(string $query): bool {
+        try {
+            $this->st = $this->db->prepare($query);
+            return true;
+        } catch (\Exception $e) {
+            list($excClass, $excMsg, $excData) = $this->exceptionBuild();
+            throw new $excClass($excMsg, $excData);
+        }
     }
 
     public function __destruct() {

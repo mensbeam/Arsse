@@ -15,6 +15,7 @@ abstract class AbstractStatement implements Statement {
 
     abstract public function runArray(array $values = []): Result;
     abstract protected function bindValue($value, string $type, int $position): bool;
+    abstract protected function prepare(string $query): bool;
 
     public function run(...$values): Result {
         return $this->runArray($values);
@@ -22,6 +23,10 @@ abstract class AbstractStatement implements Statement {
 
     public function retype(...$bindings): bool {
         return $this->retypeArray($bindings);
+    }
+
+    public static function mungeQuery(string $query, array $types, ...$extraData): string {
+        return $query;
     }
 
     public function retypeArray(array $bindings, bool $append = false): bool {
@@ -46,6 +51,9 @@ abstract class AbstractStatement implements Statement {
                 }
                 $this->types[] = self::TYPES[$binding];
             }
+        }
+        if (!$append) {
+            $this->prepare(static::mungeQuery($this->query, $this->types));
         }
         return true;
     }

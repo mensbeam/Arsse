@@ -9,8 +9,8 @@ namespace JKingWeb\Arsse\Db;
 use JKingWeb\Arsse\Db\SQLite3\Driver as SQLite3;
 
 trait PDOError {
-    public function exceptionBuild(bool $statementError = null): array {
-        if ($statementError ?? ($this instanceof Statement)) {
+    public function exceptionBuild(bool $statementError = false): array {
+        if ($statementError) {
             $err = $this->st->errorInfo();
         } else {
             $err = $this->db->errorInfo();

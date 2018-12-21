@@ -30,12 +30,6 @@ trait PDODriver {
     }
 
     public function prepareArray(string $query, array $paramTypes): Statement {
-        try {
-            $s = $this->db->prepare($query);
-        } catch (\PDOException $e) {
-            list($excClass, $excMsg, $excData) = $this->exceptionBuild();
-            throw new $excClass($excMsg, $excData);
-        }
-        return new PDOStatement($this->db, $s, $paramTypes);
+        return new PDOStatement($this->db, $query, $paramTypes);
     }
 }

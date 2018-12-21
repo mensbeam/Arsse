@@ -166,13 +166,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     }
 
     public function prepareArray(string $query, array $paramTypes): \JKingWeb\Arsse\Db\Statement {
-        try {
-            $s = $this->db->prepare($query);
-        } catch (\Exception $e) {
-            list($excClass, $excMsg, $excData) = $this->exceptionBuild();
-            throw new $excClass($excMsg, $excData);
-        }
-        return new Statement($this->db, $s, $paramTypes);
+        return new Statement($this->db, $query, $paramTypes);
     }
 
     protected function lock(): bool {

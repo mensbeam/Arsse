@@ -20,11 +20,22 @@ class PDOStatement extends AbstractStatement {
 
     protected $st;
     protected $db;
+    protected $query;
 
-    public function __construct(\PDO $db, \PDOStatement $st, array $bindings = []) {
+    public function __construct(\PDO $db, string $query, array $bindings = []) {
         $this->db = $db;
-        $this->st = $st;
+        $this->query = $query;
         $this->retypeArray($bindings);
+    }
+
+    protected function prepare(string $query): bool {
+        try {
+            $this->st = $this->db->prepare($query);
+            return true;
+        } catch (\PDOException $e) {
+            list($excClass, $excMsg, $excData) = $this->exceptionBuild();
+            throw new $excClass($excMsg, $excData);
+        }
     }
 
     public function __destruct() {
@@ -37,7 +48,7 @@ class PDOStatement extends AbstractStatement {
         try {
             $this->st->execute();
         } catch (\PDOException $e) {
-            list($excClass, $excMsg, $excData) = $this->exceptionBuild();
+            list($excClass, $excMsg, $excData) = $this->exceptionBuild(true);
             throw new $excClass($excMsg, $excData);
         }
         return new PDOResult($this->db, $this->st);
