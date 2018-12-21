@@ -40,6 +40,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $db = Arsse::$conf->dbMySQLDb ?? "arsse";
         $this->makeConnection($user, $pass, $db, $host, $port, $socket ?? "");
         $this->exec("SET lock_wait_timeout = 1");
+        $this->exec("SET time_zone = '+00:00'");
     }
 
     /** @codeCoverageIgnore */

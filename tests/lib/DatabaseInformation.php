@@ -186,6 +186,7 @@ class DatabaseInformation {
                 } else {
                     $db->query("DELETE FROM $table");
                 }
+                $db->query("ALTER TABLE $table auto_increment = 1");
             }
             foreach ($afterStatements as $st) {
                 $db->query($st);

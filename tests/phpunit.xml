@@ -80,6 +80,7 @@
         <file>cases/Db/SQLite3PDO/TestDatabase.php</file>
         <file>cases/Db/PostgreSQL/TestDatabase.php</file>
         <file>cases/Db/PostgreSQLPDO/TestDatabase.php</file>
+        <file>cases/Db/MySQLPDO/TestDatabase.php</file>
     </testsuite>
     <testsuite name="REST">
         <file>cases/REST/TestTarget.php</file>
