@@ -4,7 +4,6 @@ The Arsse is a news aggregator server which implements multiple synchronization 
 
 At present the software should be considered in an "alpha" state: though its core subsystems are covered by unit tests and should be free of major bugs, not everything has been rigorously tested. Additionally, many features one would expect from other similar software have yet to be implemented. Areas of future work include:
 
-- Support for more database engines (MySQL, MariaDB)
 - Providing more sync protocols (Google Reader, Fever, others)
 - Better packaging and configuration samples
 
@@ -19,6 +18,7 @@ The Arsse has the following requirements:
     - Either of:
         - [sqlite3](http://php.net/manual/en/book.sqlite3.php) or [pdo_sqlite](http://ca1.php.net/manual/en/ref.pdo-sqlite.php) for SQLite databases
         - [pgsql](http://php.net/manual/en/book.pgsql.php) or [pdo_pgsql](http://ca1.php.net/manual/en/ref.pdo-pgsql.php) for PostgreSQL 9.1 or later databases
+        - [mysqli](http://php.net/manual/en/book.mysqli.php) or [pdo_mysql](http://ca1.php.net/manual/en/ref.pdo-mysql.php) for MySQL 8.0.7 or later databases
 - Privileges to create and run daemon processes on the server
 
 ## Installation
@@ -73,7 +73,9 @@ Please refer to `CONTRIBUTING.md` for guidelines on contributing code to The Ars
 
 ## Database compatibility notes
 
-Functionally there is no reason to prefer either SQLite or PostgreSQL over the other. SQLite, however, is significantly simpler to set up in most cases, requiring only read and write access to a containing directory in order to function. On the other hand PostgreSQL may perform better than SQLite when serving hundreds of users or more, but this has not been tested.
+Functionally there is no reason to prefer either SQLite or PostgreSQL over the other. SQLite is significantly simpler to set up in most cases, requiring only read and write access to a containing directory in order to function; PostgreSQL may perform better than SQLite when serving hundreds of users or more, though this has not been tested.
+
+MySQL, on the other hand, is *not recommended* due to its relatively constrained index prefix limits which may cause some newsfeeds which would otherwise work to be rejected. Note also that MariaDB is not compatible with The Arsse: its support for common table expressions is, as of this writing, not sufficient for our needs.
 
 ## Protocol compatibility notes
 

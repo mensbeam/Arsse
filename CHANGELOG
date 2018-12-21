@@ -3,6 +3,7 @@ Version 0.6.0 (????-??-??)
 
 New features:
 - Support for PostgreSQL databases
+- Support for MySQL databases
 
 Bug fixes:
 - Use a general-purpose Unicode collation with SQLite databases
