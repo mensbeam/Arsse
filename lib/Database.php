@@ -70,7 +70,7 @@ class Database {
             if (!array_key_exists($prop, $props)) {
                 continue;
             }
-            $out[0][] = "$prop = ?";
+            $out[0][] = "\"$prop\" = ?";
             $out[1][] = $type;
             $out[2][] = $props[$prop];
         }
@@ -89,16 +89,8 @@ class Database {
             // the binding types are just a repetition of the supplied type
             $out[1] = array_fill(0, sizeof($values), $type);
         } else {
-            // if the set is empty, some databases require a query which returns an empty set
-            $standin = [
-                'string' => "''",
-                'binary' => "''",
-                'datetime' => "''",
-                'integer' => "1",
-                'boolean' => "1",
-                'float' => "1.0",
-            ][Statement::TYPES[$type] ?? "string"];
-            $out[0] = "select $standin where 1 = 0";
+            // if the set is empty, some databases require an explicit null
+            $out[0] = "null";
         }
         return $out;
     }
@@ -108,19 +100,19 @@ class Database {
     }
 
     public function metaGet(string $key) {
-        return $this->db->prepare("SELECT value from arsse_meta where key = ?", "str")->run($key)->getValue();
+        return $this->db->prepare("SELECT value from arsse_meta where \"key\" = ?", "str")->run($key)->getValue();
     }
 
     public function metaSet(string $key, $value, string $type = "str"): bool {
-        $out = $this->db->prepare("UPDATE arsse_meta set value = ? where key = ?", $type, "str")->run($value, $key)->changes();
+        $out = $this->db->prepare("UPDATE arsse_meta set value = ? where \"key\" = ?", $type, "str")->run($value, $key)->changes();
         if (!$out) {
-            $out = $this->db->prepare("INSERT INTO arsse_meta(key,value) values(?,?)", "str", $type)->run($key, $value)->changes();
+            $out = $this->db->prepare("INSERT INTO arsse_meta(\"key\",value) values(?,?)", "str", $type)->run($key, $value)->changes();
         }
         return (bool) $out;
     }
 
     public function metaRemove(string $key): bool {
-        return (bool) $this->db->prepare("DELETE from arsse_meta where key = ?", "str")->run($key)->changes();
+        return (bool) $this->db->prepare("DELETE from arsse_meta where \"key\" = ?", "str")->run($key)->changes();
     }
 
     public function userExists(string $user): bool {
@@ -380,13 +372,13 @@ class Database {
         // SQL will happily accept duplicates (null is not unique), so we must do this check ourselves
         $p = $this->db->prepare(
             "WITH RECURSIVE
-                target as (select ? as userid, ? as source, ? as dest, ? as rename),
+                target as (select ? as userid, ? as source, ? as dest, ? as new_name),
                 folders as (SELECT id from arsse_folders join target on owner = userid and coalesce(parent,0) = source union select arsse_folders.id as id from arsse_folders join folders on arsse_folders.parent=folders.id)
             ".
             "SELECT
                 case when ((select dest from target) is null or exists(select id from arsse_folders join target on owner = userid and coalesce(id,0) = coalesce(dest,0))) then 1 else 0 end as extant,
                 case when not exists(select id from folders where id = coalesce((select dest from target),0)) then 1 else 0 end as valid,
-                case when not exists(select id from arsse_folders join target on coalesce(parent,0) = coalesce(dest,0) and name = coalesce((select rename from target),(select name from arsse_folders join target on id = source))) then 1 else 0 end as available
+                case when not exists(select id from arsse_folders join target on coalesce(parent,0) = coalesce(dest,0) and name = coalesce((select new_name from target),(select name from arsse_folders join target on id = source))) then 1 else 0 end as available
             ",
             "str",
             "strict int",
@@ -469,7 +461,7 @@ class Database {
                 arsse_feeds.updated as updated,
                 topmost.top as top_folder,
                 coalesce(arsse_subscriptions.title, arsse_feeds.title) as title,
-                (SELECT count(*) from arsse_articles where feed = arsse_subscriptions.feed) - (SELECT count(*) from arsse_marks where subscription = arsse_subscriptions.id and read = 1) as unread
+                (SELECT count(*) from arsse_articles where feed = arsse_subscriptions.feed) - (SELECT count(*) from arsse_marks where subscription = arsse_subscriptions.id and \"read\" = 1) as unread
              from arsse_subscriptions
                 join userdata on userid = owner
                 join arsse_feeds on feed = arsse_feeds.id
@@ -670,7 +662,7 @@ class Database {
         if (sizeof($feed->changedItems)) {
             $qDeleteEnclosures = $this->db->prepare("DELETE FROM arsse_enclosures WHERE article = ?", 'int');
             $qDeleteCategories = $this->db->prepare("DELETE FROM arsse_categories WHERE article = ?", 'int');
-            $qClearReadMarks = $this->db->prepare("UPDATE arsse_marks SET read = 0, modified = CURRENT_TIMESTAMP WHERE article = ? and read = 1", 'int');
+            $qClearReadMarks = $this->db->prepare("UPDATE arsse_marks SET \"read\" = 0, modified = CURRENT_TIMESTAMP WHERE article = ? and \"read\" = 1", 'int');
             $qUpdateArticle = $this->db->prepare(
                 "UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id = ?",
                 'str',
@@ -1064,9 +1056,7 @@ class Database {
                 // but only insert new mark records if we're setting at least one "positive" mark
                 $q = $this->articleQuery($user, $context, ["id", "subscription"]);
                 $q->setWhere("arsse_marks.starred is null"); // null means there is no marks row for the article
-                $q->pushCTE("missing_marks(article,subscription)");
-                $q->setBody("INSERT INTO arsse_marks(article,subscription) SELECT article,subscription from missing_marks");
-                $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
+                $this->db->prepare("INSERT INTO arsse_marks(article,subscription) ".$q->getQuery(), $q->getTypes())->run($q->getValues());
             }
             if (isset($data['read']) && (isset($data['starred']) || isset($data['note'])) && ($context->edition() || $context->editions())) {
                 // if marking by edition both read and something else, do separate marks for starred and note than for read
@@ -1076,7 +1066,7 @@ class Database {
                 $q = $this->articleQuery($user, $context, ["id", "subscription"]);
                 $q->setWhere("arsse_marks.read <> coalesce(?,arsse_marks.read)", "bool", $data['read']);
                 $q->pushCTE("target_articles(article,subscription)");
-                $q->setBody("UPDATE arsse_marks set read = ?, touched = 1 where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", "bool", $data['read']);
+                $q->setBody("UPDATE arsse_marks set \"read\" = ?, touched = 1 where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", "bool", $data['read']);
                 $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
                 // get the articles associated with the requested editions
                 if ($context->edition()) {
@@ -1132,10 +1122,10 @@ class Database {
         return $this->db->prepare(
             "SELECT
                 count(*) as total,
-                coalesce(sum(abs(read - 1)),0) as unread,
-                coalesce(sum(read),0) as read
+                coalesce(sum(abs(\"read\" - 1)),0) as unread,
+                coalesce(sum(\"read\"),0) as \"read\"
             FROM (
-                select read from arsse_marks where starred = 1 and subscription in (select id from arsse_subscriptions where owner = ?)
+                select \"read\" from arsse_marks where starred = 1 and subscription in (select id from arsse_subscriptions where owner = ?)
             ) as starred_data",
             "str"
         )->run($user)->getRow();
@@ -1190,7 +1180,7 @@ class Database {
                 and (select count(*) from arsse_marks where article = arsse_articles.id and starred = 1) = 0
                 and (
                     coalesce((select max(modified) from arsse_marks where article = arsse_articles.id),modified) <= ?
-                    or ((select max(subs) from target_feed) = (select count(*) from arsse_marks where article = arsse_articles.id and read = 1) and coalesce((select max(modified) from arsse_marks where article = arsse_articles.id),modified) <= ?)
+                    or ((select max(subs) from target_feed) = (select count(*) from arsse_marks where article = arsse_articles.id and \"read\" = 1) and coalesce((select max(modified) from arsse_marks where article = arsse_articles.id),modified) <= ?)
                 )
             ",
             "int",
@@ -1317,8 +1307,8 @@ class Database {
                     (select count(*) from arsse_label_members where label = id and assigned = 1) as articles,
                     (select count(*) from arsse_label_members
                         join arsse_marks on arsse_label_members.article = arsse_marks.article and arsse_label_members.subscription = arsse_marks.subscription
-                    where label = id and assigned = 1 and read = 1
-                    ) as read
+                    where label = id and assigned = 1 and \"read\" = 1
+                    ) as \"read\"
                 FROM arsse_labels where owner = ?) as label_data
             where articles >= ? order by name
             ",
@@ -1354,8 +1344,8 @@ class Database {
                 (select count(*) from arsse_label_members where label = id and assigned = 1) as articles,
                 (select count(*) from arsse_label_members
                     join arsse_marks on arsse_label_members.article = arsse_marks.article and arsse_label_members.subscription = arsse_marks.subscription
-                 where label = id and assigned = 1 and read = 1
-                ) as read
+                 where label = id and assigned = 1 and \"read\" = 1
+                ) as \"read\"
             FROM arsse_labels where $field = ? and owner = ?
             ",
             $type,
@@ -1438,16 +1428,14 @@ class Database {
             $q->setWhere("not exists(select article from arsse_label_members where label = ? and article = arsse_articles.id)", "int", $id);
             $q->pushCTE("target_articles");
             $q->setBody(
-                "INSERT INTO
-                    arsse_label_members(label,article,subscription)
-                SELECT
+                "SELECT
                     ?,id,
                     (select id from arsse_subscriptions where owner = ? and arsse_subscriptions.feed = target_articles.feed)
                 FROM target_articles",
                 ["int", "str"],
                 [$id, $user]
             );
-            $out += $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
+            $out += $this->db->prepare("INSERT INTO arsse_label_members(label,article,subscription) ".$q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
         }
         // commit the transaction
         $tr->commit();
