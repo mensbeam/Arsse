@@ -37,11 +37,12 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
 
     protected function prepare(string $query): bool {
         try {
+            // statements aren't evaluated at creation, and so should not fail
             $this->st = $this->db->prepare($query);
             return true;
-        } catch (\Exception $e) {
-            list($excClass, $excMsg, $excData) = $this->exceptionBuild();
-            throw new $excClass($excMsg, $excData);
+        } catch (\Exception $e) { // @codeCoverageIgnore
+            list($excClass, $excMsg, $excData) = $this->exceptionBuild(); // @codeCoverageIgnore
+            throw new $excClass($excMsg, $excData); // @codeCoverageIgnore
         }
     }
 

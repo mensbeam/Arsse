@@ -30,11 +30,12 @@ class PDOStatement extends AbstractStatement {
 
     protected function prepare(string $query): bool {
         try {
+            // PDO statements aren't usually evaluated at creation, and so should not fail
             $this->st = $this->db->prepare($query);
             return true;
-        } catch (\PDOException $e) {
-            list($excClass, $excMsg, $excData) = $this->exceptionBuild();
-            throw new $excClass($excMsg, $excData);
+        } catch (\PDOException $e) { // @codeCoverageIgnore
+            list($excClass, $excMsg, $excData) = $this->exceptionBuild(); // @codeCoverageIgnore
+            throw new $excClass($excMsg, $excData); // @codeCoverageIgnore
         }
     }
 

@@ -37,7 +37,7 @@ trait PDOError {
                             case SQLite3::SQLITE_MISMATCH:
                                 return [ExceptionInput::class, 'engineTypeViolation', $err[2]];
                         }
-                        break;
+                        break; // @codeCoverageIgnore
                     case "mysql":
                         switch ($err[1]) {
                             case 1205:
@@ -47,7 +47,7 @@ trait PDOError {
                             case 1366:
                                 return [ExceptionInput::class, 'engineTypeViolation', $err[2]];
                         }
-                        break;
+                        break; // @codeCoverageIgnore
                 }
                 return [Exception::class, "engineErrorGeneral", $err[0]."/".$err[1].": ".$err[2]]; // @codeCoverageIgnore
             default:

@@ -8,7 +8,7 @@ namespace JKingWeb\Arsse\TestCase\Db\MySQLPDO;
 
 /**
  * @group slow
- * @covers \JKingWeb\Arsse\Db\PDOStatement<extended>
+ * @covers \JKingWeb\Arsse\Db\MySQL\PDOStatement<extended>
  * @covers \JKingWeb\Arsse\Db\PDOError */
 class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
     protected static $implementation = "PDO MySQL";
