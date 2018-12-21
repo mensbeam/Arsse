@@ -52,6 +52,9 @@ class PDODriver extends Driver {
         }
     }
 
+    public function prepareArray(string $query, array $paramTypes): \JKingWeb\Arsse\Db\Statement {
+        return new PDOStatement($this->db, $query, $paramTypes);
+    }
 
     public static function driverName(): string {
         return Arsse::$lang->msg("Driver.Db.MySQLPDO.Name");
