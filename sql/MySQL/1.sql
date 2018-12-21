@@ -28,6 +28,6 @@ create table arsse_label_members (
     primary key(label,article)
 ) character set utf8mb4;
 
-alter table arsse_marks add column note longtext not null default '';
+alter table arsse_marks add column note longtext;
 
 update arsse_meta set value = '2' where `key` = 'schema_version';

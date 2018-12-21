@@ -44,6 +44,8 @@ trait PDOError {
                                 return [ExceptionTimeout::class, 'general', $err[2]];
                             case 1364:
                                 return [ExceptionInput::class, "constraintViolation", $err[2]];
+                            case 1366:
+                                return [ExceptionInput::class, 'engineTypeViolation', $err[2]];
                         }
                         break;
                 }

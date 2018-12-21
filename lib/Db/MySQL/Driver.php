@@ -13,7 +13,7 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\ExceptionTimeout;
 
 class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
-    const SQL_MODE = "ANSI_QUOTES,HIGH_NOT_PRECEDENCE,NO_BACKSLASH_ESCAPES,NO_ENGINE_SUBSTITUTION,ONLY_FULL_GROUP_BY,PIPES_AS_CONCAT,STRICT_ALL_TABLES";
+    const SQL_MODE = "ANSI_QUOTES,HIGH_NOT_PRECEDENCE,NO_BACKSLASH_ESCAPES,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT,STRICT_ALL_TABLES";
     const TRANSACTIONAL_LOCKS = false;
 
     protected $db;
@@ -72,7 +72,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     public function sqlToken(string $token): string {
         switch (strtolower($token)) {
             case "nocase":
-                return '"utf8mb4_unicode_nopad_ci"';
+                return '"utf8mb4_unicode_ci"';
             default:
                 return $token;
         }
@@ -120,7 +120,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
             try {
                 $this->exec("SET lock_wait_timeout = 1; LOCK TABLES $tables");
             } finally {
-                $this->exec("SET lock_wait_timeout = 0");
+                $this->exec("SET lock_wait_timeout = 60");
             }
         }
         return true;
