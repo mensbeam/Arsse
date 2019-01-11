@@ -33,7 +33,6 @@ class PDODriver extends Driver {
         $dsn = "mysql:".implode(";", $dsn);
         $this->db = new \PDO($dsn, $user, $password, [
             \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-            \PDO::MYSQL_ATTR_INIT_COMMAND => "SET sql_mode = '".self::SQL_MODE."'",
         ]);
     }
 

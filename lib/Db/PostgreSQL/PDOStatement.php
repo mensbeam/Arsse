@@ -6,8 +6,13 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Db\PostgreSQL;
 
-class PDOStatement extends \JKingWeb\Arsse\Db\PDOStatement {    
+class PDOStatement extends \JKingWeb\Arsse\Db\PDOStatement {
     public static function mungeQuery(string $query, array $types, ...$extraData): string {
         return Statement::mungeQuery($query, $types, false);
+    }
+
+    public static function buildEngineException($code, string $msg): array {
+        // PostgreSQL uses SQLSTATE exclusively, so this is not used
+        return [];
     }
 }

@@ -4,7 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse\Db\SQLite3;
+namespace JKingWeb\Arsse\Db\MySQL;
 
 use JKingWeb\Arsse\Db\Exception;
 use JKingWeb\Arsse\Db\ExceptionInput;
@@ -12,16 +12,16 @@ use JKingWeb\Arsse\Db\ExceptionTimeout;
 
 trait ExceptionBuilder {
     protected function buildException(): array {
-        return self::buildEngineException($this->db->lastErrorCode(), $this->db->lastErrorMsg());
+        return self::buildEngineException($this->db->errno, $this->db->error);
     }
 
     public static function buildEngineException($code, string $msg): array {
         switch ($code) {
-            case Driver::SQLITE_BUSY:
+            case 1205:
                 return [ExceptionTimeout::class, 'general', $msg];
-            case Driver::SQLITE_CONSTRAINT:
-                return [ExceptionInput::class, 'engineConstraintViolation', $msg];
-            case Driver::SQLITE_MISMATCH:
+            case 1364:
+                return [ExceptionInput::class, "constraintViolation", $msg];
+            case 1366:
                 return [ExceptionInput::class, 'engineTypeViolation', $msg];
             default:
                 return [Exception::class, 'engineErrorGeneral', $msg];

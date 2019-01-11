@@ -13,11 +13,15 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\ExceptionTimeout;
 
 class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
+    use ExceptionBuilder;
+
     const SQL_MODE = "ANSI_QUOTES,HIGH_NOT_PRECEDENCE,NO_BACKSLASH_ESCAPES,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT,STRICT_ALL_TABLES";
     const TRANSACTIONAL_LOCKS = false;
 
+    /** @var \mysql */
     protected $db;
     protected $transStart = 0;
+    protected $packetSize = 4194304;
 
     public function __construct() {
         // check to make sure required extension is loaded
@@ -26,7 +30,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         }
         $host = Arsse::$conf->dbMySQLHost;
         if ($host[0] == "/") {
-            // host is a socket
+            // host is a Unix socket
             $socket = $host;
             $host = "";
         } elseif(substr($host, 0, 9) == "\\\\.\\pipe\\") {
@@ -38,9 +42,22 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $pass = Arsse::$conf->dbMySQLPass ?? "";
         $port = Arsse::$conf->dbMySQLPost ?? 3306;
         $db = Arsse::$conf->dbMySQLDb ?? "arsse";
+        // make the connection
         $this->makeConnection($user, $pass, $db, $host, $port, $socket ?? "");
-        $this->exec("SET lock_wait_timeout = 1");
-        $this->exec("SET time_zone = '+00:00'");
+        // set session variables
+        foreach (static::makeSetupQueries() as $q) {
+            $this->exec($q);
+        }
+        // get the maximum packet size; parameter strings larger than this size need to be chunked
+        $this->packetSize = $this->query("select variable_value from performance_schema.session_variables where variable_name = 'max_allowed_packet'")->getValue();
+    }
+
+    public static function makeSetupQueries(): array {
+        return [
+            "SET sql_mode = '".self::SQL_MODE."'",
+            "SET time_zone = '+00:00'",
+            "SET lock_wait_timeout = 1",
+        ];
     }
 
     /** @codeCoverageIgnore */
@@ -148,17 +165,47 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     }
 
     protected function makeConnection(string $db, string $user, string $password, string $host, int $port, string $socket) {
-    }
-
-    protected function getError(): string {
+        try {
+            $this->db = new \mysqli($host, $user, $password, $db, $port, $socket);
+            if ($this->db->connect_errno) {
+                echo $this->db->connect_errno.": ".$this->db->connect_error;
+            }
+            $this->db->set_character_set("utf8mb4");
+        } catch (\Exception $e) {
+            throw $e;
+        }
     }
 
     public function exec(string $query): bool {
+        $this->dispatch($query);
+        return true;
+    }
+
+    protected function dispatch(string $query) {
+        $r = $this->db->query($query);
+        if ($this->db->sqlstate != "00000") {
+            if ($this->db->sqlstate == "HY000") {
+                list($excClass, $excMsg, $excData) = $this->buildEngineException($this->db->errno, $this->db->error);
+            } else {
+                list($excClass, $excMsg, $excData) = $this->buildStandardException($this->db->sqlstate, $this->db->error);
+            }
+            throw new $excClass($excMsg, $excData);
+        }
+        return $r;
     }
 
     public function query(string $query): \JKingWeb\Arsse\Db\Result {
+        $r = $this->dispatch($query);
+        $rows = (int) $this->db->affected_rows;
+        $id = (int) $this->db->insert_id;
+        if ($r === true) {
+            return new \JKingWeb\Arsse\Db\ResultEmpty($rows, $id);
+        } else {
+            return new ResultE($r, [$rows, $id]);
+        }
     }
 
     public function prepareArray(string $query, array $paramTypes): \JKingWeb\Arsse\Db\Statement {
+        return new Statement($this->db, $query, $paramTypes, $this->packetSize);
     }
 }

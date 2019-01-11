@@ -41,7 +41,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
             $this->st = $this->db->prepare($query);
             return true;
         } catch (\Exception $e) { // @codeCoverageIgnore
-            list($excClass, $excMsg, $excData) = $this->exceptionBuild(); // @codeCoverageIgnore
+            list($excClass, $excMsg, $excData) = $this->buildException(); // @codeCoverageIgnore
             throw new $excClass($excMsg, $excData); // @codeCoverageIgnore
         }
     }
@@ -60,7 +60,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         try {
             $r = $this->st->execute();
         } catch (\Exception $e) {
-            list($excClass, $excMsg, $excData) = $this->exceptionBuild();
+            list($excClass, $excMsg, $excData) = $this->buildException();
             throw new $excClass($excMsg, $excData);
         }
         $changes = $this->db->changes();

@@ -9,13 +9,15 @@ namespace JKingWeb\Arsse\Db;
 use JKingWeb\Arsse\Arsse;
 
 abstract class AbstractDriver implements Driver {
+    use SQLState;
+
     protected $locked = false;
     protected $transDepth = 0;
     protected $transStatus = [];
 
     abstract protected function lock(): bool;
     abstract protected function unlock(bool $rollback = false): bool;
-    abstract protected function getError(): string;
+    abstract protected static function buildEngineException($code, string $msg): array;
 
     public function schemaUpdate(int $to, string $basePath = null): bool {
         $ver = $this->schemaVersion();
@@ -46,7 +48,7 @@ abstract class AbstractDriver implements Driver {
                 try {
                     $this->exec($sql);
                 } catch (\Throwable $e) {
-                    throw new Exception("updateFileError", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a, 'message' => $this->getError()]);
+                    throw new Exception("updateFileError", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a, 'message' => $e->getMessage()]);
                 }
                 if ($this->schemaVersion() != $a+1) {
                     throw new Exception("updateFileIncomplete", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]);

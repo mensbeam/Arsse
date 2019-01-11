@@ -6,7 +6,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Db;
 
-class PDOStatement extends AbstractStatement {
+abstract class PDOStatement extends AbstractStatement {
     use PDOError;
 
     const BINDINGS = [
@@ -34,7 +34,7 @@ class PDOStatement extends AbstractStatement {
             $this->st = $this->db->prepare($query);
             return true;
         } catch (\PDOException $e) { // @codeCoverageIgnore
-            list($excClass, $excMsg, $excData) = $this->exceptionBuild(); // @codeCoverageIgnore
+            list($excClass, $excMsg, $excData) = $this->buildPDOException(); // @codeCoverageIgnore
             throw new $excClass($excMsg, $excData); // @codeCoverageIgnore
         }
     }
@@ -49,7 +49,7 @@ class PDOStatement extends AbstractStatement {
         try {
             $this->st->execute();
         } catch (\PDOException $e) {
-            list($excClass, $excMsg, $excData) = $this->exceptionBuild(true);
+            list($excClass, $excMsg, $excData) = $this->buildPDOException(true);
             throw new $excClass($excMsg, $excData);
         }
         return new PDOResult($this->db, $this->st);

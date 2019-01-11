@@ -22,7 +22,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
 
     protected $db;
 
-    public function __construct(string $dbFile = null, string $dbKey = null) {
+    public function __construct() {
         // check to make sure required extension is loaded
         if (!static::requirementsMet()) {
             throw new Exception("extMissing", static::driverName()); // @codeCoverageIgnore
@@ -140,15 +140,11 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         return true;
     }
 
-    protected function getError(): string {
-        return $this->db->lastErrorMsg();
-    }
-
     public function exec(string $query): bool {
         try {
             return (bool) $this->db->exec($query);
         } catch (\Exception $e) {
-            list($excClass, $excMsg, $excData) = $this->exceptionBuild();
+            list($excClass, $excMsg, $excData) = $this->buildException();
             throw new $excClass($excMsg, $excData);
         }
     }
@@ -157,7 +153,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         try {
             $r = $this->db->query($query);
         } catch (\Exception $e) {
-            list($excClass, $excMsg, $excData) = $this->exceptionBuild();
+            list($excClass, $excMsg, $excData) = $this->buildException();
             throw new $excClass($excMsg, $excData);
         }
         $changes = $this->db->changes();

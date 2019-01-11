@@ -9,12 +9,20 @@ namespace JKingWeb\Arsse\Db;
 use JKingWeb\Arsse\Db\Exception;
 
 class ResultEmpty extends AbstractResult {
+    protected $changes = 0;
+    protected $id = 0;
+    
+    public function __construct(int $changes = 0, int $id = 0) {
+        $this->changes = $changes;
+        $this->id = $id;
+    }
+
     public function changes(): int {
-        return 0;
+        return $this->changes;
     }
 
     public function lastId(): int {
-        return 0;
+        return $this->id;
     }
 
     // PHP iterator methods

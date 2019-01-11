@@ -228,7 +228,7 @@ class DatabaseInformation {
             'PDO SQLite 3' => [
                 'pdo' => true,
                 'backend' => "SQLite 3",
-                'statementClass' => \JKingWeb\Arsse\Db\PDOStatement::class,
+                'statementClass' => \JKingWeb\Arsse\Db\SQLite3\PDOStatement::class,
                 'resultClass' => \JKingWeb\Arsse\Db\PDOResult::class,
                 'driverClass' => \JKingWeb\Arsse\Db\SQLite3\PDODriver::class,
                 'stringOutput' => true,

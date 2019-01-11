@@ -20,7 +20,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     protected $db;
     protected $transStart = 0;
 
-    public function __construct(string $user = null, string $pass = null, string $db = null, string $host = null, int $port = null, string $schema = null, string $service = null) {
+    public function __construct() {
         // check to make sure required extension is loaded
         if (!static::requirementsMet()) {
             throw new Exception("extMissing", static::driverName()); // @codeCoverageIgnore
@@ -193,16 +193,11 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         }
     }
 
-    protected function getError(): string {
-        // stub
-        return "";
-    }
-
     public function exec(string $query): bool {
         pg_send_query($this->db, $query);
         while ($result = pg_get_result($this->db)) {
             if (($code = pg_result_error_field($result, \PGSQL_DIAG_SQLSTATE)) && isset($code) && $code) {
-                list($excClass, $excMsg, $excData) = $this->buildException($code, pg_result_error($result));
+                list($excClass, $excMsg, $excData) = $this->buildStandardException($code, pg_result_error($result));
                 throw new $excClass($excMsg, $excData);
             }
         }

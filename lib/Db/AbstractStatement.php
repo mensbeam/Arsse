@@ -10,12 +10,15 @@ use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 
 abstract class AbstractStatement implements Statement {
+    use SQLState;
+
     protected $types = [];
     protected $isNullable = [];
 
     abstract public function runArray(array $values = []): Result;
     abstract protected function bindValue($value, string $type, int $position): bool;
     abstract protected function prepare(string $query): bool;
+    abstract protected static function buildEngineException($code, string $msg): array;
 
     public function run(...$values): Result {
         return $this->runArray($values);

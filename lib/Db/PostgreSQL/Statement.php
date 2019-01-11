@@ -38,6 +38,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         $this->in = [];
         $this->bindValues($values);
         $r = $this->dispatchQuery($this->qMunged, $this->in);
+        $this->in = [];
         if (is_resource($r)) {
             return new Result($this->db, $r);
         } else {
