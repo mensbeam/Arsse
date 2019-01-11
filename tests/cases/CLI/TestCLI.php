@@ -160,8 +160,8 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user = $this->createMock(User::class);
         Arsse::$user->method("auth")->will($this->returnCallback(function($user, $pass) {
             return (
-                ($user == "john.doe@example.com" && $pass == "secret") ||
-                ($user == "jane.doe@example.com" && $pass == "superman")
+                ($user === "john.doe@example.com" && $pass === "secret") ||
+                ($user === "jane.doe@example.com" && $pass === "superman")
             );
         }));
         $this->assertConsole($this->cli, $cmd, $exitStatus, $output);
@@ -182,7 +182,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
         Arsse::$user = $this->createMock(User::class);
         Arsse::$user->method("remove")->will($this->returnCallback(function($user) {
-            if ($user == "john.doe@example.com") {
+            if ($user === "john.doe@example.com") {
                 return true;
             }
             throw new \JKingWeb\Arsse\User\Exception("doesNotExist");

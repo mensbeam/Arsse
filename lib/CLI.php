@@ -74,7 +74,7 @@ USAGE_TEXT;
                     return (int) !Arsse::$db->feedUpdate((int) $args['<n>'], true);
                 case "conf save-defaults":
                     $file = $args['<file>'];
-                    $file = ($file=="-" ? null : $file) ?? "php://output";
+                    $file = ($file === "-" ? null : $file) ?? "php://output";
                     return (int) !($this->getConf())->exportFile($file, true);
                 case "user":
                     $this->loadConf();

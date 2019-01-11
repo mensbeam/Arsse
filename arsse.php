@@ -14,7 +14,7 @@ ini_set("memory_limit", "-1");
 ini_set("max_execution_time", "0");
 
 
-if (\PHP_SAPI=="cli") {
+if (\PHP_SAPI === "cli") {
     // initialize the CLI; this automatically handles --help and --version
     $cli = new CLI;
     // handle other CLI requests; some do not require configuration

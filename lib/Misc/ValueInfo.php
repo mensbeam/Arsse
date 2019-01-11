@@ -157,7 +157,7 @@ class ValueInfo {
                         return $out;
                     } else {
                         $out = sprintf("%F", $value);
-                        return substr($out, -2)==".0" ? (string) (int) $out : $out;
+                        return preg_match("/\.0{1,}$/", $out) ? (string) (int) $out : $out;
                     }
                 }
                 $info = self::str($value);
@@ -189,7 +189,7 @@ class ValueInfo {
                     try {
                         if (!is_null($dateInFormat)) {
                             $out = false;
-                            if ($dateInFormat=="microtime") {
+                            if ($dateInFormat === "microtime") {
                                 // PHP is not able to correctly handle the output of microtime() as the input of DateTime::createFromFormat(), so we fudge it to look like a float
                                 if (preg_match("<^0\.\d{6}00 \d+$>", $value)) {
                                     $value = substr($value, 11).".".substr($value, 2, 6);
@@ -198,9 +198,9 @@ class ValueInfo {
                                 }
                             }
                             $f = isset(self::DATE_FORMATS[$dateInFormat]) ? self::DATE_FORMATS[$dateInFormat][0] : $dateInFormat;
-                            if ($dateInFormat=="iso8601" || $dateInFormat=="iso8601m") {
+                            if ($dateInFormat === "iso8601" || $dateInFormat === "iso8601m") {
                                 // DateTimeImmutable::createFromFormat() doesn't provide one catch-all for ISO 8601 timezone specifiers, so we try all of them till one works
-                                if ($dateInFormat=="iso8601m") {
+                                if ($dateInFormat === "iso8601m") {
                                     $f2 = self::DATE_FORMATS["iso8601"][0];
                                     $zones = [$f."", $f."\Z", $f."P", $f."O", $f2."", $f2."\Z", $f2."P", $f2."O"];
                                 } else {
@@ -355,7 +355,7 @@ class ValueInfo {
         $out = filter_var($value, \FILTER_VALIDATE_BOOLEAN, \FILTER_NULL_ON_FAILURE);
         if (is_null($out) && (ValueInfo::int($value) & ValueInfo::VALID)) {
             $out = (int) filter_var($value, \FILTER_VALIDATE_FLOAT);
-            return ($out==1 || $out==0) ? (bool) $out : $default;
+            return ($out == 1 || $out == 0) ? (bool) $out : $default;
         }
         return !is_null($out) ? $out : $default;
     }

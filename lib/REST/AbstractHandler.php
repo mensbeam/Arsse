@@ -28,7 +28,7 @@ abstract class AbstractHandler implements Handler {
     protected function fieldMapTypes(array $data, array $map, string $dateFormat = "sql"): array {
         foreach ($map as $key => $type) {
             if (array_key_exists($key, $data)) {
-                if ($type=="datetime" && $dateFormat != "sql") {
+                if ($type === "datetime" && $dateFormat !== "sql") {
                     $data[$key] = Date::transform($data[$key], $dateFormat, "sql");
                 } else {
                     settype($data[$key], $type);

@@ -17,8 +17,8 @@ class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
     }
 
     protected function decorateTypeSyntax(string $value, string $type): string {
-        if ($type=="float") {
-            return (substr($value, -2)==".0") ? "'".substr($value, 0, strlen($value) - 2)."'" : "'$value'";
+        if ($type === "float") {
+            return (substr($value, -2) === ".0") ? "'".substr($value, 0, strlen($value) - 2)."'" : "'$value'";
         } else {
             return $value;
         }

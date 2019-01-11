@@ -115,7 +115,7 @@ class Conf {
      * @param string $import_file Optional file to read configuration data from
      * @see self::importFile() */
     public function __construct(string $import_file = "") {
-        if ($import_file != "") {
+        if ($import_file !== "") {
             $this->importFile($import_file);
         }
     }

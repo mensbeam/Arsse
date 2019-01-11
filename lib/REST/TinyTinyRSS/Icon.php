@@ -23,7 +23,7 @@ class Icon extends \JKingWeb\Arsse\REST\AbstractHandler {
             // otherwise if HTTP authentication failed or did not occur when it is required, deny access at the HTTP level
             return new Response(401);
         }
-        if ($req->getMethod() != "GET") {
+        if ($req->getMethod() !== "GET") {
             // only GET requests are allowed
             return new Response(405, ['Allow' => "GET"]);
         } elseif (!preg_match("<^(\d+)\.ico$>", $req->getRequestTarget(), $match) || !((int) $match[1])) {

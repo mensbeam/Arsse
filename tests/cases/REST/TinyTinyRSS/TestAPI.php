@@ -350,7 +350,7 @@ LONG_STRING;
             'userSessionEnforced' => false,
         ];
         $http401 = new EmptyResponse(401);
-        if ($type=="login") {
+        if ($type === "login") {
             return [
                 // conf,    user,  data,      result
                 [$defaults, null,  $johnGood, $johnSess],
@@ -474,7 +474,7 @@ LONG_STRING;
                 [$fullHttp, "",    $missingU, $http401],
                 [$fullHttp, "",    $missingP, $http401],
             ];
-        } elseif ($type=="isLoggedIn") {
+        } elseif ($type === "isLoggedIn") {
             return [
                 // conf,    user,  session,  result
                 [$defaults, null,  $sidJohn, $john],
@@ -1517,13 +1517,13 @@ LONG_STRING;
 
     protected function filterFolders(int $id = null): array {
         return array_filter($this->folders, function($value) use ($id) {
-            return $value['parent']==$id;
+            return $value['parent'] == $id;
         });
     }
 
     protected function filterSubs(int $folder = null): array {
         return array_filter($this->subscriptions, function($value) use ($folder) {
-            return $value['folder']==$folder;
+            return $value['folder'] == $folder;
         });
     }
 
@@ -1533,7 +1533,7 @@ LONG_STRING;
             $out += $this->reduceFolders($f['id']);
         }
         $out += array_reduce(array_filter($this->subscriptions, function($value) use ($id) {
-            return $value['folder']==$id;
+            return $value['folder'] == $id;
         }), function($sum, $value) {
             return $sum + $value['unread'];
         }, 0);

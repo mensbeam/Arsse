@@ -364,7 +364,7 @@ class Database {
             $parent = (int) $parent;
         }
         // if the target parent is the folder itself, this is a circular dependence
-        if ($id==$parent) {
+        if ($id == $parent) {
             throw new Db\ExceptionInput("circularDependence", $errData);
         }
         // make sure both that the prospective parent exists, and that the it is not one of its children (a circular dependence);

@@ -96,7 +96,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             // reject paths other than the index
             return new EmptyResponse(404);
         }
-        if ($req->getMethod()=="OPTIONS") {
+        if ($req->getMethod() === "OPTIONS") {
             // respond to OPTIONS rquests; the response is a fib, as we technically accept any type or method
             return new EmptyResponse(204, [
                 'Allow'  => "POST",
@@ -107,7 +107,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($data) {
             // only JSON entities are allowed, but Content-Type is ignored, as is request method
             $data = @json_decode($data, true);
-            if (json_last_error() != \JSON_ERROR_NONE || !is_array($data)) {
+            if (json_last_error() !== \JSON_ERROR_NONE || !is_array($data)) {
                 return new Response(self::FATAL_ERR);
             }
             try {
@@ -125,7 +125,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     // otherwise if HTTP authentication failed or is required, deny access at the HTTP level
                     return new EmptyResponse(401);
                 }
-                if (strtolower((string) $data['op']) != "login") {
+                if (strtolower((string) $data['op']) !== "login") {
                     // unless logging in, a session identifier is required
                     $this->resumeSession((string) $data['sid']);
                 }
@@ -432,7 +432,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function enumerateFeeds(array $subs, $parent = null): array {
         $out = [];
         foreach ($subs as $s) {
-            if ($s['folder'] != $parent) {
+            if ($s['folder'] !== $parent) {
                 continue;
             }
             $out[] = [
@@ -455,7 +455,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $out = [];
         $feedTotal = 0;
         foreach ($cats as $c) {
-            if ($c['parent'] != $parent || (!$all && !($c['children'] + $c['feeds']))) {
+            if ($c['parent'] !== $parent || (!$all && !($c['children'] + $c['feeds']))) {
                 // if the category is the wrong level, or if it's empty and we're not including empties, skip it
                 continue;
             }
@@ -546,7 +546,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         // transform the result and return
         $out = [];
         for ($a = 0; $a < sizeof($cats); $a++) {
-            if ($cats[$a]['id']==-2) {
+            if ($cats[$a]['id'] == -2) {
                 // the Labels category has its unread count as a string in TTRSS (don't ask me why)
                 settype($cats[$a]['unread'], "string");
             }
@@ -573,7 +573,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     // retrieve the ID of the existing folder; duplicating a folder silently returns the existing one
                     $folders = Arsse::$db->folderList(Arsse::$user->id, $in['parent'], false);
                     foreach ($folders as $folder) {
-                        if ($folder['name']==$in['name']) {
+                        if ($folder['name'] === $in['name']) {
                             return (string) ((int) $folder['id']); // output is a string in TTRSS
                         }
                     }
@@ -657,7 +657,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $subs = [];
         $count = 0;
         // if the category is the special Labels category or the special All category (which includes labels), add labels to the list
-        if ($cat==self::CAT_ALL || $cat==self::CAT_LABELS) {
+        if ($cat == self::CAT_ALL || $cat == self::CAT_LABELS) {
             // NOTE: unused labels are not included
             foreach (Arsse::$db->labelList($user, false) as $l) {
                 if ($unread && !$l['unread']) {
@@ -672,7 +672,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         // if the category is the special Special (!) category or the special All category (which includes "special" feeds), add those feeds to the list
-        if ($cat==self::CAT_ALL || $cat==self::CAT_SPECIAL) {
+        if ($cat == self::CAT_ALL || $cat == self::CAT_SPECIAL) {
             // gather some statistics
             $starred = Arsse::$db->articleStarred($user)['unread'];
             $fresh = Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H")));
@@ -754,10 +754,10 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         try {
-            if ($cat==self::CAT_NOT_SPECIAL || $cat==self::CAT_ALL) {
+            if ($cat == self::CAT_NOT_SPECIAL || $cat == self::CAT_ALL) {
                 // if the "All" or "Not Special" categories were selected this returns all subscription, to any depth
                 $subs = Arsse::$db->subscriptionList($user, null, true);
-            } elseif ($cat==self::CAT_UNCATEGORIZED) {
+            } elseif ($cat == self::CAT_UNCATEGORIZED) {
                 // the "Uncategorized" special category returns subscriptions in the root, without going deeper
                 $subs = Arsse::$db->subscriptionList($user, null, false);
             } else {
@@ -1005,7 +1005,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             // try to rename the folder
             Arsse::$db->labelPropertiesSet(Arsse::$user->id, $id, ['name' => $name]);
         } catch (ExceptionInput $e) {
-            if ($e->getCode()==10237) {
+            if ($e->getCode() == 10237) {
                 // if the supplied ID was invalid, report an error; other errors are to be ignored
                 throw new Exception("INCORRECT_USAGE");
             }
@@ -1352,12 +1352,12 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             $data['skip'] = null;
         }
         if ($data['include_header']) {
-            if ($data['skip'] > 0 && $data['order_by'] != "date_reverse") {
+            if ($data['skip'] > 0 && $data['order_by'] !== "date_reverse") {
                 // when paginating the header returns the latest ("first") item ID in the full list; we get this ID here
                 $data['skip'] = 0;
                 $data['limit'] = 1;
                 $firstID = ($this->fetchArticles($data, ["id"])->getRow() ?? ['id' => 0])['id'];
-            } elseif ($data['order_by']=="date_reverse") {
+            } elseif ($data['order_by'] === "date_reverse") {
                 // the "date_reverse" sort order doesn't get a first ID because it's meaningless for ascending-order pagination (pages doesn't go stale)
                 $firstID = 0;
             } else {

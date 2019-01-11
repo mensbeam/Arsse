@@ -83,7 +83,7 @@ class DatabaseInformation {
             } catch (\Throwable $e) {
             }
             foreach ($sqlite3TableList($db) as $table) {
-                if ($table == "arsse_meta") {
+                if ($table === "arsse_meta") {
                     $db->exec("DELETE FROM $table where key <> 'schema_version'");
                 } else {
                     $db->exec("DELETE FROM $table");
@@ -137,9 +137,9 @@ class DatabaseInformation {
             } catch (\Throwable $e) {
             }
             foreach ($pgObjectList($db) as $obj) {
-                if ($obj['type'] != "TABLE") {
+                if ($obj['type'] !== "TABLE") {
                     continue;
-                } elseif ($obj['name'] == "arsse_meta") {
+                } elseif ($obj['name'] === "arsse_meta") {
                     $pgExecFunction($db, "DELETE FROM {$obj['name']} where key <> 'schema_version'");
                 } else {
                     $pgExecFunction($db, "TRUNCATE TABLE {$obj['name']} restart identity cascade");
@@ -181,7 +181,7 @@ class DatabaseInformation {
             } catch (\Throwable $e) {
             }
             foreach ($mysqlTableList($db) as $table) {
-                if ($table == "arsse_meta") {
+                if ($table === "arsse_meta") {
                     $db->query("DELETE FROM $table where `key` <> 'schema_version'");
                 } else {
                     $db->query("DELETE FROM $table");

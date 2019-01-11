@@ -135,19 +135,19 @@ class Feed {
             // id doesn't exist.
             $content = $f->content.$f->enclosureUrl.$f->enclosureType;
             // if the item link URL and item title are both equal to the feed link URL, then the item has neither a link URL nor a title
-            if ($f->url==$feed->siteUrl && $f->title==$feed->siteUrl) {
+            if ($f->url === $feed->siteUrl && $f->title === $feed->siteUrl) {
                 $f->urlTitleHash = "";
             } else {
                 $f->urlTitleHash = hash('sha256', $f->url.$f->title);
             }
             // if the item link URL is equal to the feed link URL, it has no link URL; if there is additionally no content, these should not be hashed
-            if (!strlen($content) && $f->url==$feed->siteUrl) {
+            if (!strlen($content) && $f->url === $feed->siteUrl) {
                 $f->urlContentHash = "";
             } else {
                 $f->urlContentHash = hash('sha256', $f->url.$content);
             }
             // if the item's title is the same as its link URL, it has no title; if there is additionally no content, these should not be hashed
-            if (!strlen($content) && $f->title==$f->url) {
+            if (!strlen($content) && $f->title === $f->url) {
                 $f->titleContentHash = "";
             } else {
                 $f->titleContentHash = hash('sha256', $f->title.$content);
@@ -215,15 +215,15 @@ class Feed {
         foreach ($items as $item) {
             foreach ($out as $index => $check) {
                 // if the two items both have IDs and they differ, they do not match, regardless of hashes
-                if ($item->id && $check->id && $item->id != $check->id) {
+                if ($item->id && $check->id && $item->id !== $check->id) {
                     continue;
                 }
                 // if the two items have the same ID or any one hash matches, they are two versions of the same item
                 if (
-                    ($item->id && $check->id && $item->id == $check->id) ||
-                    ($item->urlTitleHash     && $item->urlTitleHash     == $check->urlTitleHash)      ||
-                    ($item->urlContentHash   && $item->urlContentHash   == $check->urlContentHash)    ||
-                    ($item->titleContentHash && $item->titleContentHash == $check->titleContentHash)
+                    ($item->id && $check->id && $item->id === $check->id) ||
+                    ($item->urlTitleHash     && $item->urlTitleHash     === $check->urlTitleHash)      ||
+                    ($item->urlContentHash   && $item->urlContentHash   === $check->urlContentHash)    ||
+                    ($item->titleContentHash && $item->titleContentHash === $check->titleContentHash)
                 ) {
                     if (// because newsfeeds are usually order newest-first, the later item should only be used if...
                         // the later item has an update date and the existing item does not
@@ -346,9 +346,9 @@ class Feed {
                     $diff = $dates[$a] - $dates[$a+1];
                     $offsets[] = $this->normalizeDateDiff($diff);
                 }
-                if ($offsets[0]==$offsets[1] || $offsets[0]==$offsets[2]) {
+                if ($offsets[0] === $offsets[1] || $offsets[0] === $offsets[2]) {
                     return $now->modify("+".$offsets[0]);
-                } elseif ($offsets[1]==$offsets[2]) {
+                } elseif ($offsets[1] === $offsets[2]) {
                     return $now->modify("+".$offsets[1]);
                 } else {
                     return $now->modify("+ 1 hour");

@@ -65,8 +65,8 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         $this->types = "";
         $this->values = [];
         // check for errors
-        if ($this->st->sqlstate != "00000") {
-            if ($this->st->sqlstate == "HY000") {
+        if ($this->st->sqlstate !== "00000") {
+            if ($this->st->sqlstate === "HY000") {
                 list($excClass, $excMsg, $excData) = $this->buildEngineException($this->st->errno, $this->st->error);
             } else {
                 list($excClass, $excMsg, $excData) = $this->buildStandardException($this->st->sqlstate, $this->st->error);
@@ -98,7 +98,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         $out = "";
         for ($b = 1; $b < sizeof($query); $b++) {
             $a = $b - 1;
-            $mark = (($types[$a] ?? "") == "datetime") ? "cast(? as datetime(0))" : "?";
+            $mark = (($types[$a] ?? "") === "datetime") ? "cast(? as datetime(0))" : "?";
             $out .= $query[$a].$mark;
         }
         $out .= array_pop($query);

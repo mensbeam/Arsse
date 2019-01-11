@@ -31,9 +31,9 @@ class Target {
                 } else {
                     continue;
                 }
-            } elseif ($segment==".") {
+            } elseif ($segment === ".") {
                 $path[] = "%2E";
-            } elseif ($segment=="..") {
+            } elseif ($segment === "..") {
                 $path[] = "%2E%2E";
             } else {
                 $path[] = rawurlencode(ValueInfo::normalize($segment, ValueInfo::T_STRING));
@@ -86,7 +86,7 @@ class Target {
         // note that the function assumes any fragment identifier or query has already been stripped off
         // syntax-based normalization is applied to the path segments (see RFC 3986 sec. 6.2.2)
         // duplicate slashes are NOT collapsed
-        if (substr($target, 0, 1)=="/") {
+        if (substr($target, 0, 1) === "/") {
             // if the path starts with a slash, strip it off
             $target = substr($target, 1);
         } else {
@@ -96,7 +96,7 @@ class Target {
         if (!strlen($target)) {
             // if the target is an empty string, this is an index target
             $this->index = true;
-        } elseif (substr($target, -1, 1)=="/") {
+        } elseif (substr($target, -1, 1) === "/") {
             // if the path ends in a slash, this is an index target and the slash should be stripped off
             $this->index = true;
             $target = substr($target, 0, strlen($target) -1);
@@ -107,11 +107,11 @@ class Target {
             $out = [];
             // resolve relative path segments and decode each retained segment
             foreach ($target as $index => $segment) {
-                if ($segment==".") {
+                if ($segment === ".") {
                     // self-referential segments can be ignored
                     continue;
-                } elseif ($segment=="..") {
-                    if ($index==0) {
+                } elseif ($segment === "..") {
+                    if ($index == 0) {
                         // if the first path segment refers to its parent (which we don't know about) we cannot output a correct path, so we do the best we can
                         $out[] = null;
                     } else {

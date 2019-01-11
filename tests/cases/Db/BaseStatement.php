@@ -58,7 +58,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideBindings */
     public function testBindATypedValue($value, string $type, string $exp) {
-        if ($exp=="null") {
+        if ($exp === "null") {
             $query = "SELECT (? is null) as pass";
         } else {
             $query = "SELECT ($exp = ?) as pass";
@@ -75,7 +75,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         if (in_array(static::$implementation, ["PostgreSQL", "PDO PostgreSQL"])) {
             $this->markTestSkipped("Correct handling of binary data with PostgreSQL is currently unknown");
         }
-        if ($exp=="null") {
+        if ($exp === "null") {
             $query = "SELECT (? is null) as pass";
         } else {
             $query = "SELECT ($exp = ?) as pass";
@@ -275,7 +275,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
         foreach ($tests as $index => list($value, $type, $exp)) {
             $t = preg_replace("<^strict >", "", $type);
-            $exp = ($exp=="null") ? $exp : $this->decorateTypeSyntax($exp, $t);
+            $exp = ($exp === "null") ? $exp : $this->decorateTypeSyntax($exp, $t);
             yield $index => [$value, $type, $exp];
         }
     }
@@ -326,7 +326,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
         foreach ($tests as $index => list($value, $type, $exp)) {
             $t = preg_replace("<^strict >", "", $type);
-            $exp = ($exp=="null") ? $exp : $this->decorateTypeSyntax($exp, $t);
+            $exp = ($exp === "null") ? $exp : $this->decorateTypeSyntax($exp, $t);
             yield $index => [$value, $type, $exp];
         }
     }

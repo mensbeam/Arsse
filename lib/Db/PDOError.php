@@ -15,7 +15,7 @@ trait PDOError {
         } else {
             $err = $this->db->errorInfo();
         }
-        if ($err[0]=="HY000") {
+        if ($err[0] === "HY000") {
             return static::buildEngineException($err[1], $err[2]);
         } else {
             return static::buildStandardException($err[0], $err[2]);

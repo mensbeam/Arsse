@@ -83,7 +83,7 @@ abstract class AbstractException extends \Exception {
     ];
 
     public function __construct(string $msgID = "", $vars = null, \Throwable $e = null) {
-        if ($msgID=="") {
+        if ($msgID === "") {
             $msg = "Exception.unknown";
             $code = 10000;
         } else {

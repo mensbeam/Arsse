@@ -76,7 +76,7 @@ class REST {
             // fetch the correct handler
             $drv = $this->getHandler($class);
             // generate a response
-            if ($req->getMethod()=="HEAD") {
+            if ($req->getMethod() === "HEAD") {
                 // if the request is a HEAD request, we act exactly as if it were a GET request, and simply remove the response body later
                 $res = $drv->dispatch($req->withMethod("GET"));
             } else {
@@ -108,7 +108,7 @@ class REST {
             if (strpos($url, $api['match'])===0) {
                 // if it matches, perform a more rigorous match and then strip off any defined prefix
                 $pattern = "<^".preg_quote($api['match'])."([/\?#]|$)>";
-                if ($url==$api['match'] || in_array(substr($api['match'], -1, 1), ["/", "?", "#"]) || preg_match($pattern, $url)) {
+                if ($url === $api['match'] || in_array(substr($api['match'], -1, 1), ["/", "?", "#"]) || preg_match($pattern, $url)) {
                     $target = substr($url, strlen($api['strip']));
                 } else {
                     // if the match fails we are not able to handle the request
@@ -152,13 +152,13 @@ class REST {
 
     public function normalizeResponse(ResponseInterface $res, RequestInterface $req = null): ResponseInterface {
         // if the response code is 401, issue an HTTP authentication challenge
-        if ($res->getStatusCode()==401) {
+        if ($res->getStatusCode() == 401) {
             $res = $this->challenge($res);
         }
         // set or clear the Content-Length header field
         $body = $res->getBody();
         $bodySize = $body->getSize();
-        if ($bodySize || $res->getStatusCode()==200) {
+        if ($bodySize || $res->getStatusCode() == 200) {
             // if there is a message body or the response is 200, make sure Content-Length is included
             $res = $res->withHeader("Content-Length", (string) $bodySize);
         } else {
@@ -166,7 +166,7 @@ class REST {
             $res = $res->withoutHeader("Content-Length");
         }
         // if the response is to a HEAD request, the body should be omitted
-        if ($req && $req->getMethod()=="HEAD") {
+        if ($req && $req->getMethod() === "HEAD") {
             $res = new EmptyResponse($res->getStatusCode(), $res->getHeaders());
         }
         // if an Allow header field is present, normalize it
@@ -190,7 +190,7 @@ class REST {
     }
 
     public function corsApply(ResponseInterface $res, RequestInterface $req = null): ResponseInterface {
-        if ($req && $req->getMethod()=="OPTIONS") {
+        if ($req && $req->getMethod() === "OPTIONS") {
             if ($res->hasHeader("Allow")) {
                 $res = $res->withHeader("Access-Control-Allow-Methods", $res->getHeaderLine("Allow"));
             }
@@ -211,12 +211,12 @@ class REST {
         if ($allowed) {
             // continue if the request has exactly one Origin header
             $origin = $req->getHeader("Origin");
-            if (sizeof($origin)==1) {
+            if (sizeof($origin) == 1) {
                 // continue if the origin is syntactically valid
                 $origin = $this->corsNormalizeOrigin($origin[0]);
                 if ($origin) {
                     // the special "null" origin should not be matched by the wildcard origin
-                    $null = ($origin=="null");
+                    $null = ($origin === "null");
                     // pad all strings for simpler comparison
                     $allowed = " ".$allowed." ";
                     $denied = " ".$denied." ";
@@ -243,7 +243,7 @@ class REST {
 
     public function corsNormalizeOrigin(string $origin, array $ports = null): string {
         $origin = trim($origin);
-        if ($origin=="null") {
+        if ($origin === "null") {
             // if the origin is the special value "null", use it
             return "null";
         }
@@ -259,7 +259,7 @@ class REST {
                 // if the normalized port contains anything but numbers, or the scheme does not follow the generic URL syntax, the origin is invalid
                 return "";
             }
-            if ($host[0]=="[") {
+            if ($host[0] === "[") {
                 // if the host appears to be an IPv6 address, validate it
                 $host = rawurldecode(substr($host, 1, strlen($host) - 2));
                 if (!filter_var($host, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV6)) {
@@ -279,7 +279,7 @@ class REST {
             if (strlen($port)) {
                 $port = (int) substr($port, 1);
                 $list = array_merge($ports ?? [], self::DEFAULT_PORTS);
-                if (isset($list[$scheme]) && $port==$list[$scheme]) {
+                if (isset($list[$scheme]) && $port == $list[$scheme]) {
                     $port = "";
                 } else {
                     $port = ":".$port;

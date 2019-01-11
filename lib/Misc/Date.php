@@ -13,9 +13,9 @@ class Date {
             return null;
         }
         $out = ValueInfo::normalize($date, ValueInfo::T_STRING, null, $outFormat);
-        if ($outFormat=="unix") {
+        if ($outFormat === "unix") {
             $out = (int) $out;
-        } elseif ($outFormat=="float") {
+        } elseif ($outFormat === "float") {
             $out = (float) $out;
         }
         return $out;

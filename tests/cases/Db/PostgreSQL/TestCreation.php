@@ -25,7 +25,7 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
         $timeout = (string) ceil(Arsse::$conf->dbTimeoutConnect ?? 0);
         $postfix = "application_name='arsse' client_encoding='UTF8' connect_timeout='$timeout'";
         $act = Driver::makeConnectionString($pdo, $user, $pass, $db, $host, $port, $service);
-        if ($act==$postfix) {
+        if ($act === $postfix) {
             $this->assertSame($exp, "");
         } else {
             $test = substr($act, 0, strlen($act) - (strlen($postfix) + 1));

@@ -131,7 +131,7 @@ abstract class AbstractDriver implements Driver {
                 default:
                     throw new Exception("savepointStatusUnknown", $this->transStatus[$index]); // @codeCoverageIgnore
             }
-            if ($index==$this->transDepth) {
+            if ($index == $this->transDepth) {
                 // if we've released the topmost savepoint, clean up all prior savepoints which have already been explicitly committed (or rolled back), if any
                 while ($this->transDepth > 0 && $this->transStatus[$this->transDepth] > self::TR_PEND) {
                     array_pop($this->transStatus);
@@ -185,7 +185,7 @@ abstract class AbstractDriver implements Driver {
                 default:
                     throw new Exception("savepointStatusUnknown", $this->transStatus[$index]); // @codeCoverageIgnore
             }
-            if ($index==$this->transDepth) {
+            if ($index == $this->transDepth) {
                 while ($this->transDepth > 0 && $this->transStatus[$this->transDepth] > self::TR_PEND) {
                     array_pop($this->transStatus);
                     $this->transDepth--;

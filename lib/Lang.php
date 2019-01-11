@@ -37,14 +37,14 @@ class Lang {
             $this->checkRequirements();
         }
         // if requesting the same locale as already wanted, just return (but load first if we've requested an immediate load)
-        if ($locale==$this->wanted) {
+        if ($locale === $this->wanted) {
             if ($immediate && !$this->synched) {
                 $this->load();
             }
             return $locale;
         }
         // if we've requested a locale other than the null locale, fetch the list of available files and find the closest match e.g. en_ca_somedialect -> en_ca
-        if ($locale != "") {
+        if ($locale !== "") {
             $list = $this->listFiles();
             // if the default locale is unavailable, this is (for now) an error
             if (!in_array(self::DEFAULT, $list)) {
@@ -81,7 +81,7 @@ class Lang {
             try {
                 $this->load();
             } catch (Lang\Exception $e) {
-                if ($this->wanted==self::DEFAULT) {
+                if ($this->wanted === self::DEFAULT) {
                     $this->set("", true);
                 } else {
                     throw $e;
@@ -112,14 +112,14 @@ class Lang {
         $out = [];
         $files = $this->listFiles();
         foreach ($files as $tag) {
-            $out[$tag] = \Locale::getDisplayName($tag, ($locale=="") ? $tag : $locale);
+            $out[$tag] = \Locale::getDisplayName($tag, ($locale === "") ? $tag : $locale);
         }
         return $out;
     }
 
     public function match(string $locale, array $list = null): string {
         $list = $list ?? $this->listFiles();
-        $default = ($this->locale=="") ? self::DEFAULT : $this->locale;
+        $default = ($this->locale === "") ? self::DEFAULT : $this->locale;
         return \Locale::lookup($list, $locale, true, $default);
     }
 
@@ -155,7 +155,7 @@ class Lang {
             $this->checkRequirements();
         }
         // if we've requested no locale (""), just load the fallback strings and return
-        if ($this->wanted=="") {
+        if ($this->wanted === "") {
             $this->strings = self::REQUIRED;
             $this->locale = $this->wanted;
             $this->synched = true;
@@ -169,7 +169,7 @@ class Lang {
             $tag = array_pop($tags);
         }
         // include the default locale as the base if the most general locale requested is not the default
-        if ($tag != self::DEFAULT) {
+        if ($tag !== self::DEFAULT) {
             $files[] = self::DEFAULT;
         }
         // save the list of files to be loaded for later reference
@@ -177,14 +177,14 @@ class Lang {
         // reduce the list of files to be loaded to the minimum necessary (e.g. if we go from "fr" to "fr_ca", we don't need to load "fr" or "en")
         $files = [];
         foreach ($loaded as $file) {
-            if ($file==$this->locale) {
+            if ($file === $this->locale) {
                 break;
             }
             $files[] = $file;
         }
         // if we need to load all files, start with the fallback strings
         $strings = [];
-        if ($files==$loaded) {
+        if ($files === $loaded) {
             $strings[] = self::REQUIRED;
         } else {
             // otherwise start with the strings we already have if we're going from e.g. "fr" to "fr_ca"

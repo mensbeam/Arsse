@@ -359,7 +359,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         // SQLite is unaffected by the removal of the metadata table; other backends are
         // in neither case should a query for the schema version produce an error, however
         $this->exec("DROP TABLE IF EXISTS arsse_meta");
-        $exp = (static::$dbInfo->backend == "SQLite 3") ? 2 : 0;
+        $exp = (static::$dbInfo->backend === "SQLite 3") ? 2 : 0;
         $this->assertSame($exp, $this->drv->schemaVersion());
     }
 

@@ -60,7 +60,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, $u->auth($user, $password));
         $this->assertNull($u->id);
         Phake::verify(Arsse::$db, Phake::times($exp ? 1 : 0))->userExists($user);
-        Phake::verify(Arsse::$db, Phake::times($exp && $user == "jane.doe@example.com" ? 1 : 0))->userAdd($user, $password);
+        Phake::verify(Arsse::$db, Phake::times($exp && $user === "jane.doe@example.com" ? 1 : 0))->userAdd($user, $password);
     }
 
     public function provideAuthentication() {
@@ -274,7 +274,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         } finally {
             Phake::verify($this->drv, Phake::times($calls))->userPasswordSet;
             Phake::verify($u, Phake::times($calls / 2))->generatePassword;
-            Phake::verify(Arsse::$db, Phake::times($calls==4 ? 2 : 0))->userExists($user);
+            Phake::verify(Arsse::$db, Phake::times($calls == 4 ? 2 : 0))->userExists($user);
             if ($calls == 4) {
                 Phake::verify(Arsse::$db, Phake::times($exists ? 1 : 0))->userPasswordSet($user, $pass1, null);
                 Phake::verify(Arsse::$db, Phake::times($exists ? 1 : 0))->userPasswordSet($user, $pass2, null);

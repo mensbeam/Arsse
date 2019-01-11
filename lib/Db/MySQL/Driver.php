@@ -29,11 +29,11 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
             throw new Exception("extMissing", static::driverName()); // @codeCoverageIgnore
         }
         $host = Arsse::$conf->dbMySQLHost;
-        if ($host[0] == "/") {
+        if ($host[0] === "/") {
             // host is a Unix socket
             $socket = $host;
             $host = "";
-        } elseif(substr($host, 0, 9) == "\\\\.\\pipe\\") {
+        } elseif(substr($host, 0, 9) === "\\\\.\\pipe\\") {
             // host is a Windows named piple
             $socket = substr($host, 10);
             $host = "";
@@ -183,8 +183,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
 
     protected function dispatch(string $query) {
         $r = $this->db->query($query);
-        if ($this->db->sqlstate != "00000") {
-            if ($this->db->sqlstate == "HY000") {
+        if ($this->db->sqlstate !== "00000") {
+            if ($this->db->sqlstate === "HY000") {
                 list($excClass, $excMsg, $excData) = $this->buildEngineException($this->db->errno, $this->db->error);
             } else {
                 list($excClass, $excMsg, $excData) = $this->buildStandardException($this->db->sqlstate, $this->db->error);

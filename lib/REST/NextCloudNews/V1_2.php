@@ -88,7 +88,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // explode and normalize the URL path
         $target = new Target($req->getRequestTarget());
         // handle HTTP OPTIONS requests
-        if ($req->getMethod()=="OPTIONS") {
+        if ($req->getMethod() === "OPTIONS") {
             return $this->handleHTTPOptions((string) $target);
         }
         // normalize the input
@@ -104,7 +104,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 return new EmptyResponse(415, ['Accept' => "application/json"]);
             }
             $data = @json_decode($data, true);
-            if (json_last_error() != \JSON_ERROR_NONE) {
+            if (json_last_error() !== \JSON_ERROR_NONE) {
                 // if the body could not be parsed as JSON, return "400 Bad Request"
                 return new EmptyResponse(400);
             }
@@ -612,7 +612,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $c = new Context;
         $c->edition((int) $url[1]);
         // determine whether to mark read or unread
-        $set = ($url[2]=="read");
+        $set = ($url[2] === "read");
         try {
             Arsse::$db->articleMark(Arsse::$user->id, ['read' => $set], $c);
         } catch (ExceptionInput $e) {
@@ -628,7 +628,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $c = new Context;
         $c->article((int) $url[2]);
         // determine whether to mark read or unread
-        $set = ($url[3]=="star");
+        $set = ($url[3] ==="star");
         try {
             Arsse::$db->articleMark(Arsse::$user->id, ['starred' => $set], $c);
         } catch (ExceptionInput $e) {
@@ -641,7 +641,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     // mark an array of articles as read
     protected function articleMarkReadMulti(array $url, array $data): ResponseInterface {
         // determine whether to mark read or unread
-        $set = ($url[1]=="read");
+        $set = ($url[1] ==="read");
         // initialize the matching context
         $c = new Context;
         $c->editions($data['items'] ?? []);
@@ -655,7 +655,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     // mark an array of articles as starred
     protected function articleMarkStarredMulti(array $url, array $data): ResponseInterface {
         // determine whether to mark starred or unstarred
-        $set = ($url[1]=="star");
+        $set = ($url[1] ==="star");
         // initialize the matching context
         $c = new Context;
         $c->articles(array_column($data['items'] ?? [], "guidHash"));
