@@ -11,7 +11,8 @@ namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
  * @covers \JKingWeb\Arsse\Db\PDODriver
  * @covers \JKingWeb\Arsse\Db\PDOError */
 class TestDriver extends \JKingWeb\Arsse\TestCase\Db\BaseDriver {
-    protected static $implementation = "PDO SQLite 3";
+    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\SQLite3PDO;
+
     protected $create = "CREATE TABLE arsse_test(id integer primary key)";
     protected $lock = "BEGIN EXCLUSIVE TRANSACTION";
     protected $setVersion = "PRAGMA user_version=#";

@@ -11,7 +11,8 @@ namespace JKingWeb\Arsse\TestCase\Db\PostgreSQL;
  * @covers \JKingWeb\Arsse\Db\PostgreSQL\Driver<extended>
  * @covers \JKingWeb\Arsse\Db\PostgreSQL\Dispatch<extended> */
 class TestDriver extends \JKingWeb\Arsse\TestCase\Db\BaseDriver {
-    protected static $implementation = "PostgreSQL";
+    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\PostgreSQL;
+
     protected $create = "CREATE TABLE arsse_test(id bigserial primary key)";
     protected $lock = ["BEGIN", "LOCK TABLE arsse_meta IN EXCLUSIVE MODE NOWAIT"];
     protected $setVersion = "UPDATE arsse_meta set value = '#' where key = 'schema_version'";
@@ -26,7 +27,7 @@ class TestDriver extends \JKingWeb\Arsse\TestCase\Db\BaseDriver {
 
     public static function tearDownAfterClass() {
         if (static::$interface) {
-            (static::$dbInfo->razeFunction)(static::$interface);
+            static::dbRaze(static::$interface);
             @pg_close(static::$interface);
             static::$interface = null;
         }

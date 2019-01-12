@@ -13,7 +13,8 @@ use JKingWeb\Arsse\Test\DatabaseInformation;
  * @covers \JKingWeb\Arsse\Db\PostgreSQL\Result<extended>
  */
 class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
-    protected static $implementation = "PostgreSQL";
+    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\PostgreSQL;
+
     protected static $createMeta = "CREATE TABLE arsse_meta(key text primary key not null, value text)";
     protected static $createTest = "CREATE TABLE arsse_test(id bigserial primary key)";
 
@@ -24,7 +25,7 @@ class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
 
     public static function tearDownAfterClass() {
         if (static::$interface) {
-            (static::$dbInfo->razeFunction)(static::$interface);
+            static::dbRaze(static::$interface);
             @pg_close(static::$interface);
             static::$interface = null;
         }

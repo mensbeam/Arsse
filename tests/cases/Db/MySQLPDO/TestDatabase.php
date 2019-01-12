@@ -13,7 +13,7 @@ namespace JKingWeb\Arsse\TestCase\Db\MySQLPDO;
  * @covers \JKingWeb\Arsse\Misc\Query<extended>
  */
 class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\Base {
-    protected static $implementation = "PDO MySQL";
+    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\MySQLPDO;
 
     protected function nextID(string $table): int {
         return (int) (static::$drv->query("SELECT auto_increment from information_schema.tables where table_name = '$table'")->getValue() ?? 1);

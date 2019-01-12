@@ -13,7 +13,7 @@ namespace JKingWeb\Arsse\TestCase\Db\PostgreSQL;
  * @covers \JKingWeb\Arsse\Misc\Query<extended>
  */
 class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\Base {
-    protected static $implementation = "PostgreSQL";
+    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\PostgreSQL;
 
     protected function nextID(string $table): int {
         return (int) static::$drv->query("SELECT coalesce(last_value, (select max(id) from $table)) + 1 from pg_sequences where sequencename = '{$table}_id_seq'")->getValue();

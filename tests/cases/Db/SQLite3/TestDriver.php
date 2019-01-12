@@ -10,7 +10,8 @@ namespace JKingWeb\Arsse\TestCase\Db\SQLite3;
  * @covers \JKingWeb\Arsse\Db\SQLite3\Driver<extended>
  * @covers \JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder */
 class TestDriver extends \JKingWeb\Arsse\TestCase\Db\BaseDriver {
-    protected static $implementation = "SQLite 3";
+    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\SQLite3;
+
     protected $create = "CREATE TABLE arsse_test(id integer primary key)";
     protected $lock = "BEGIN EXCLUSIVE TRANSACTION";
     protected $setVersion = "PRAGMA user_version=#";

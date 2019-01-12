@@ -12,7 +12,6 @@ use JKingWeb\Arsse\Test\DatabaseInformation;
 
 abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
     protected static $insertDefaultValues = "INSERT INTO arsse_test default values";
-    protected static $dbInfo;
     protected static $interface;
     protected $drv;
     protected $create;
@@ -27,9 +26,8 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
     public static function setUpBeforeClass() {
         // establish a clean baseline
         static::clearData();
-        static::$dbInfo = new DatabaseInformation(static::$implementation);
         static::setConf(static::$conf);
-        static::$interface = (static::$dbInfo->interfaceConstructor)();
+        static::$interface = static::dbInterface();
     }
     
     public function setUp() {
@@ -39,12 +37,12 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
             $this->markTestSkipped(static::$implementation." database driver not available");
         }
         // completely clear the database and ensure the schema version can easily be altered
-        (static::$dbInfo->razeFunction)(static::$interface, [
+        static::dbRaze(static::$interface, [
             "CREATE TABLE arsse_meta(\"key\" varchar(255) primary key not null, value text)",
             "INSERT INTO arsse_meta(\"key\",value) values('schema_version','0')",
         ]);
         // construct a fresh driver for each test
-        $this->drv = new static::$dbInfo->driverClass;
+        $this->drv = new static::$dbDriverClass;
     }
 
     public function tearDown() {
@@ -56,10 +54,9 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
     public static function tearDownAfterClass() {
         if (static::$interface) {
             // completely clear the database
-            (static::$dbInfo->razeFunction)(static::$interface);
+            static::dbRaze(static::$interface);
         }
         static::$interface = null;
-        static::$dbInfo = null;
         self::clearData();
     }
 
@@ -359,7 +356,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         // SQLite is unaffected by the removal of the metadata table; other backends are
         // in neither case should a query for the schema version produce an error, however
         $this->exec("DROP TABLE IF EXISTS arsse_meta");
-        $exp = (static::$dbInfo->backend === "SQLite 3") ? 2 : 0;
+        $exp = (static::$backend === "SQLite 3") ? 2 : 0;
         $this->assertSame($exp, $this->drv->schemaVersion());
     }
 

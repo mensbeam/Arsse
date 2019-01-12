@@ -12,7 +12,7 @@ use JKingWeb\Arsse\Database;
 trait SeriesMiscellany {
     protected function setUpSeriesMiscellany() {
         static::setConf([
-            'dbDriver' => static::$dbInfo->driverClass,
+            'dbDriver' => static::$dbDriverClass,
         ]);
     }
 
@@ -27,13 +27,13 @@ trait SeriesMiscellany {
     }
 
     public function testInitializeDatabase() {
-        (static::$dbInfo->razeFunction)(static::$drv);
+        static::dbRaze(static::$drv);
         $d = new Database(true);
         $this->assertSame(Database::SCHEMA_VERSION, $d->driverSchemaVersion());
     }
 
     public function testManuallyInitializeDatabase() {
-        (static::$dbInfo->razeFunction)(static::$drv);
+        static::dbRaze(static::$drv);
         $d = new Database(false);
         $this->assertSame(0, $d->driverSchemaVersion());
         $this->assertTrue($d->driverSchemaUpdate());

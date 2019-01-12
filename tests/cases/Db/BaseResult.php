@@ -11,19 +11,16 @@ use JKingWeb\Arsse\Test\DatabaseInformation;
 
 abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
     protected static $insertDefault = "INSERT INTO arsse_test default values";
-    protected static $dbInfo;
     protected static $interface;
     protected $resultClass;
-    protected $stringOutput;
 
     abstract protected function makeResult(string $q): array;
 
     public static function setUpBeforeClass() {
         // establish a clean baseline
         static::clearData();
-        static::$dbInfo = new DatabaseInformation(static::$implementation);
         static::setConf();
-        static::$interface = (static::$dbInfo->interfaceConstructor)();
+        static::$interface = static::dbInterface();
     }
     
     public function setUp() {
@@ -33,9 +30,8 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
             $this->markTestSkipped(static::$implementation." database driver not available");
         }
         // completely clear the database
-        (static::$dbInfo->razeFunction)(static::$interface);
-        $this->resultClass = static::$dbInfo->resultClass;
-        $this->stringOutput = static::$dbInfo->stringOutput;
+        static::dbRaze(static::$interface);
+        $this->resultClass = static::$dbResultClass;
     }
 
     public function tearDown() {
@@ -45,10 +41,9 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
     public static function tearDownAfterClass() {
         if (static::$interface) {
             // completely clear the database
-            (static::$dbInfo->razeFunction)(static::$interface);
+            static::dbRaze(static::$interface);
         }
         static::$interface = null;
-        static::$dbInfo = null;
         self::clearData();
     }
 
@@ -75,7 +70,7 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testIterateOverResults() {
         $exp = [0 => 1, 1 => 2, 2 => 3];
-        $exp = $this->stringOutput ? $this->stringify($exp) : $exp;
+        $exp = static::$stringOutput ? $this->stringify($exp) : $exp;
         foreach (new $this->resultClass(...$this->makeResult("SELECT 1 as col union select 2 as col union select 3 as col")) as $index => $row) {
             $rows[$index] = $row['col'];
         }
@@ -84,7 +79,7 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testIterateOverResultsTwice() {
         $exp = [0 => 1, 1 => 2, 2 => 3];
-        $exp = $this->stringOutput ? $this->stringify($exp) : $exp;
+        $exp = static::$stringOutput ? $this->stringify($exp) : $exp;
         $result = new $this->resultClass(...$this->makeResult("SELECT 1 as col union select 2 as col union select 3 as col"));
         foreach ($result as $index => $row) {
             $rows[$index] = $row['col'];
@@ -98,7 +93,7 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testGetSingleValues() {
         $exp = [1867, 1970, 2112];
-        $exp = $this->stringOutput ? $this->stringify($exp) : $exp;
+        $exp = static::$stringOutput ? $this->stringify($exp) : $exp;
         $test = new $this->resultClass(...$this->makeResult("SELECT 1867 as year union all select 1970 as year union all select 2112 as year"));
         $this->assertSame($exp[0], $test->getValue());
         $this->assertSame($exp[1], $test->getValue());
@@ -108,7 +103,7 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testGetFirstValuesOnly() {
         $exp = [1867, 1970, 2112];
-        $exp = $this->stringOutput ? $this->stringify($exp) : $exp;
+        $exp = static::$stringOutput ? $this->stringify($exp) : $exp;
         $test = new $this->resultClass(...$this->makeResult("SELECT 1867 as year, 19 as century union all select 1970 as year, 20 as century union all select 2112 as year, 22 as century"));
         $this->assertSame($exp[0], $test->getValue());
         $this->assertSame($exp[1], $test->getValue());

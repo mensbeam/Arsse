@@ -13,7 +13,6 @@ use JKingWeb\Arsse\Test\DatabaseInformation;
 use org\bovigo\vfs\vfsStream;
 
 class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
-    protected static $dbInfo;
     protected static $interface;
     protected $drv;
     protected $vfs;
@@ -23,9 +22,8 @@ class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
     public static function setUpBeforeClass() {
         // establish a clean baseline
         static::clearData();
-        static::$dbInfo = new DatabaseInformation(static::$implementation);
         static::setConf();
-        static::$interface = (static::$dbInfo->interfaceConstructor)();
+        static::$interface = static::dbInterface();
     }
     
     public function setUp() {
@@ -35,14 +33,14 @@ class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
         self::setConf();
         // construct a fresh driver for each test
-        $this->drv = new static::$dbInfo->driverClass;
+        $this->drv = new static::$dbDriverClass;
         $schemaId = (get_class($this->drv))::schemaID();
         // set up a virtual filesystem for schema files
         $this->vfs = vfsStream::setup("schemata", null, [$schemaId => []]);
         $this->base = $this->vfs->url();
         $this->path = $this->base."/$schemaId/";
         // completely clear the database
-        (static::$dbInfo->razeFunction)(static::$interface);
+        static::dbRaze(static::$interface);
     }
 
     public function tearDown() {
@@ -55,10 +53,9 @@ class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
     public static function tearDownAfterClass() {
         if (static::$interface) {
             // completely clear the database
-            (static::$dbInfo->razeFunction)(static::$interface);
+            static::dbRaze(static::$interface);
         }
         static::$interface = null;
-        static::$dbInfo = null;
         self::clearData();
     }
 

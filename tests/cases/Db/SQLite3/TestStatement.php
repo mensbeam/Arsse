@@ -10,7 +10,7 @@ namespace JKingWeb\Arsse\TestCase\Db\SQLite3;
  * @covers \JKingWeb\Arsse\Db\SQLite3\Statement<extended>
  * @covers \JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder */
 class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
-    protected static $implementation = "SQLite 3";
+    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\SQLite3;
 
     public static function tearDownAfterClass() {
         static::$interface->close();

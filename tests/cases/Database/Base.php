@@ -27,8 +27,6 @@ abstract class Base extends \JKingWeb\Arsse\Test\AbstractTest {
     use SeriesLabel;
     use SeriesCleanup;
 
-    /** @var \JKingWeb\Arsse\Test\DatabaseInformation */
-    protected static $dbInfo;
     /** @var \JKingWeb\Arsse\Db\Driver */
     protected static $drv;
     protected static $failureReason = "";
@@ -52,16 +50,15 @@ abstract class Base extends \JKingWeb\Arsse\Test\AbstractTest {
         // perform an initial connection to the database to reset its version to zero
         // in the case of SQLite this will always be the case (we use a memory database),
         // but other engines should clean up from potentially interrupted prior tests
-        static::$dbInfo = new DatabaseInformation(static::$implementation);
         static::setConf();
         try {
-            static::$drv = new static::$dbInfo->driverClass;
+            static::$drv = new static::$dbDriverClass;
         } catch (\JKingWeb\Arsse\Db\Exception $e) {
             static::$failureReason = $e->getMessage();
             return;
         }
         // wipe the database absolutely clean
-        (static::$dbInfo->razeFunction)(static::$drv);
+        static::dbRaze(static::$drv);
         // create the database interface with the suitable driver and apply the latest schema
         Arsse::$db = new Database(static::$drv);
         Arsse::$db->driverSchemaUpdate();
@@ -97,17 +94,16 @@ abstract class Base extends \JKingWeb\Arsse\Test\AbstractTest {
         // clean up
         $this->primed = false;
         // call the database-specific table cleanup function
-        (static::$dbInfo->truncateFunction)(static::$drv);
+        static::dbTruncate(static::$drv);
         // clear state
         static::clearData();
     }
 
     public static function tearDownAfterClass() {
         // wipe the database absolutely clean
-        (static::$dbInfo->razeFunction)(static::$drv);
+        static::dbRaze(static::$drv);
         // clean up
         static::$drv = null;
-        static::$dbInfo = null;
         static::$failureReason = "";
         static::clearData();
     }

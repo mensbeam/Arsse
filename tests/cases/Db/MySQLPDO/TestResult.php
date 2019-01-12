@@ -13,7 +13,8 @@ use JKingWeb\Arsse\Test\DatabaseInformation;
  * @covers \JKingWeb\Arsse\Db\PDOResult<extended>
  */
 class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
-    protected static $implementation = "PDO MySQL";
+    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\MySQLPDO;
+
     protected static $createMeta = "CREATE TABLE arsse_meta(`key` varchar(255) primary key not null, value text)";
     protected static $createTest = "CREATE TABLE arsse_test(id bigint auto_increment primary key)";
     protected static $insertDefault = "INSERT INTO arsse_test(id) values(default)";

@@ -13,7 +13,8 @@ use JKingWeb\Arsse\Test\DatabaseInformation;
  * @covers \JKingWeb\Arsse\Db\PDOResult<extended>
  */
 class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
-    protected static $implementation = "PDO PostgreSQL";
+    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\PostgreSQLPDO;
+
     protected static $createMeta = "CREATE TABLE arsse_meta(key text primary key not null, value text)";
     protected static $createTest = "CREATE TABLE arsse_test(id bigserial primary key)";
 

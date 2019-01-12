@@ -12,7 +12,8 @@ namespace JKingWeb\Arsse\TestCase\Db\MySQLPDO;
  * @covers \JKingWeb\Arsse\Db\PDODriver
  * @covers \JKingWeb\Arsse\Db\PDOError */
 class TestDriver extends \JKingWeb\Arsse\TestCase\Db\BaseDriver {
-    protected static $implementation = "PDO MySQL";
+    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\MySQLPDO;
+
     protected $create = "CREATE TABLE arsse_test(id bigint auto_increment primary key)";
     protected $lock = ["SET lock_wait_timeout = 1", "LOCK TABLES arsse_meta WRITE"];
     protected $setVersion = "UPDATE arsse_meta set value = '#' where `key` = 'schema_version'";

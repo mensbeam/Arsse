@@ -10,10 +10,8 @@ use JKingWeb\Arsse\Db\Statement;
 use JKingWeb\Arsse\Test\DatabaseInformation;
 
 abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
-    protected static $dbInfo;
     protected static $interface;
     protected $statementClass;
-    protected $stringOutput;
 
     abstract protected function makeStatement(string $q, array $types = []): array;
     abstract protected function decorateTypeSyntax(string $value, string $type): string;
@@ -21,9 +19,8 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     public static function setUpBeforeClass() {
         // establish a clean baseline
         static::clearData();
-        static::$dbInfo = new DatabaseInformation(static::$implementation);
         static::setConf();
-        static::$interface = (static::$dbInfo->interfaceConstructor)();
+        static::$interface = static::dbInterface();
     }
     
     public function setUp() {
@@ -33,9 +30,8 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
             $this->markTestSkipped(static::$implementation." database driver not available");
         }
         // completely clear the database
-        (static::$dbInfo->razeFunction)(static::$interface);
-        $this->statementClass = static::$dbInfo->statementClass;
-        $this->stringOutput = static::$dbInfo->stringOutput;
+        static::dbRaze(static::$interface);
+        $this->statementClass = static::$dbStatementClass;
     }
 
     public function tearDown() {
@@ -45,10 +41,9 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     public static function tearDownAfterClass() {
         if (static::$interface) {
             // completely clear the database
-            (static::$dbInfo->razeFunction)(static::$interface);
+            static::dbRaze(static::$interface);
         }
         static::$interface = null;
-        static::$dbInfo = null;
         self::clearData();
     }
 
@@ -98,7 +93,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
             'one' => 1,
             'two' => 2,
         ];
-        $exp = $this->stringOutput ? $this->stringify($exp) : $exp;
+        $exp = static::$stringOutput ? $this->stringify($exp) : $exp;
         $s = new $this->statementClass(...$this->makeStatement("SELECT ? as one, ? as two", ["int", "int"]));
         $val = $s->runArray([1,2])->getRow();
         $this->assertSame($exp, $val);
@@ -111,7 +106,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
             'three' => 3,
             'four'  => 4,
         ];
-        $exp = $this->stringOutput ? $this->stringify($exp) : $exp;
+        $exp = static::$stringOutput ? $this->stringify($exp) : $exp;
         $s = new $this->statementClass(...$this->makeStatement("SELECT ? as one, ? as two, ? as three, ? as four", ["int", ["int", "int"], "int"]));
         $val = $s->runArray([1, [2, 3], 4])->getRow();
         $this->assertSame($exp, $val);

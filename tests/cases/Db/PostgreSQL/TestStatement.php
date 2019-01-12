@@ -11,7 +11,7 @@ namespace JKingWeb\Arsse\TestCase\Db\PostgreSQL;
  * @covers \JKingWeb\Arsse\Db\PostgreSQL\Statement<extended>
  * @covers \JKingWeb\Arsse\Db\PostgreSQL\Dispatch<extended> */
 class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
-    protected static $implementation = "PostgreSQL";
+    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\PostgreSQL;
 
     protected function makeStatement(string $q, array $types = []): array {
         return [static::$interface, $q, $types];
@@ -33,7 +33,7 @@ class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
 
     public static function tearDownAfterClass() {
         if (static::$interface) {
-            (static::$dbInfo->razeFunction)(static::$interface);
+            static::dbRaze(static::$interface);
             @pg_close(static::$interface);
             static::$interface = null;
         }

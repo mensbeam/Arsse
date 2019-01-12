@@ -11,7 +11,7 @@ namespace JKingWeb\Arsse\TestCase\Db\PostgreSQLPDO;
  * @covers \JKingWeb\Arsse\Db\PostgreSQL\PDOStatement<extended>
  * @covers \JKingWeb\Arsse\Db\PDOError */
 class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
-    protected static $implementation = "PDO PostgreSQL";
+    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\PostgreSQLPDO;
 
     protected function makeStatement(string $q, array $types = []): array {
         return [static::$interface, $q, $types];
