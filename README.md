@@ -17,7 +17,7 @@ The Arsse has the following requirements:
     - [dom](http://php.net/manual/en/book.dom.php), [simplexml](http://php.net/manual/en/book.simplexml.php), and [iconv](http://php.net/manual/en/book.iconv.php) (for picoFeed)
     - One of:
         - [sqlite3](http://php.net/manual/en/book.sqlite3.php) or [pdo_sqlite](http://php.net/manual/en/ref.pdo-sqlite.php) for SQLite databases
-        - [pgsql](http://php.net/manual/en/book.pgsql.php) or [pdo_pgsql](http://php.net/manual/en/ref.pdo-pgsql.php) for PostgreSQL 9.1 or later databases
+        - [pgsql](http://php.net/manual/en/book.pgsql.php) or [pdo_pgsql](http://php.net/manual/en/ref.pdo-pgsql.php) for PostgreSQL 10 or later databases
         - [mysqli](http://php.net/manual/en/book.mysqli.php) or [pdo_mysql](http://php.net/manual/en/ref.pdo-mysql.php) for MySQL 8.0.7 or later databases
 - Privileges to create and run daemon processes on the server
 
@@ -75,7 +75,9 @@ Please refer to `CONTRIBUTING.md` for guidelines on contributing code to The Ars
 
 Functionally there is no reason to prefer either SQLite or PostgreSQL over the other. SQLite is significantly simpler to set up in most cases, requiring only read and write access to a containing directory in order to function; PostgreSQL may perform better than SQLite when serving hundreds of users or more, though this has not been tested.
 
-MySQL, on the other hand, is *not recommended* due to its relatively constrained index prefix limits which may cause some newsfeeds which would otherwise work to be rejected. Note also that MariaDB is not compatible with The Arsse: its support for common table expressions is, as of this writing, not sufficient for our needs.
+MySQL, on the other hand, is *not recommended* due to its relatively constrained index prefix limits which may cause some newsfeeds which would otherwise work to be rejected. If using MySQL, special care should also be taken when performing schema upgrades, as errors during the process can leave the database in a half-upgraded state which The Arsse cannot itself recover from.
+
+Note that MariaDB is not compatible with The Arsse: its support for common table expressions is, as of this writing, not sufficient for our needs.
 
 ## Protocol compatibility notes
 
