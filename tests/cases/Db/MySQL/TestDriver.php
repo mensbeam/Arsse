@@ -18,18 +18,14 @@ class TestDriver extends \JKingWeb\Arsse\TestCase\Db\BaseDriver {
     protected static $insertDefaultValues = "INSERT INTO arsse_test(id) values(default)";
 
     protected function exec($q): bool {
-        if (is_array($q)) {
-            $q = implode("; ", $q);
+        if (!is_array($q)) {
+            $q = [$q];
         }
-        static::$interface->multi_query($q);
-        $e = null;
-        do {
-            if (!$e && static::$interface->sqlstate !== "00000") {
-                $e = new \Exception(static::$interface->error);
+        foreach ($q as $query) {
+            static::$interface->query($query);
+            if (static::$interface->sqlstate !== "00000") {
+                throw new \Exception(static::$interface->error);
             }
-        } while (static::$interface->more_results() && static::$interface->next_result());
-        if ($e) {
-            throw $e;
         }
         return true;
     }

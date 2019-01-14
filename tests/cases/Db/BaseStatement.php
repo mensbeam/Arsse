@@ -90,25 +90,23 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testBindMultipleValues() {
         $exp = [
-            'one' => 1,
-            'two' => 2,
+            'one' => "A",
+            'two' => "B",
         ];
-        $exp = static::$stringOutput ? $this->stringify($exp) : $exp;
-        $s = new $this->statementClass(...$this->makeStatement("SELECT ? as one, ? as two", ["int", "int"]));
-        $val = $s->runArray([1,2])->getRow();
+        $s = new $this->statementClass(...$this->makeStatement("SELECT ? as one, ? as two", ["str", "str"]));
+        $val = $s->runArray(["A", "B"])->getRow();
         $this->assertSame($exp, $val);
     }
 
     public function testBindRecursively() {
         $exp = [
-            'one'   => 1,
-            'two'   => 2,
-            'three' => 3,
-            'four'  => 4,
+            'one'   => "A",
+            'two'   => "B",
+            'three' => "C",
+            'four'  => "D",
         ];
-        $exp = static::$stringOutput ? $this->stringify($exp) : $exp;
-        $s = new $this->statementClass(...$this->makeStatement("SELECT ? as one, ? as two, ? as three, ? as four", ["int", ["int", "int"], "int"]));
-        $val = $s->runArray([1, [2, 3], 4])->getRow();
+        $s = new $this->statementClass(...$this->makeStatement("SELECT ? as one, ? as two, ? as three, ? as four", ["str", ["str", "str"], "str"]));
+        $val = $s->runArray(["A", ["B", "C"], "D"])->getRow();
         $this->assertSame($exp, $val);
     }
 

@@ -25,6 +25,8 @@ class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
                     return "'".\IntlChar::chr((int) $match[1])."'";
                 }
                 return $value;
+            case "datetime":
+                return "cast($value as datetime(0))";
             default:
                 return $value;
         }
