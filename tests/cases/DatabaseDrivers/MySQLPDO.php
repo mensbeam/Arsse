@@ -30,7 +30,14 @@ trait MySQLPDO {
                 $dsn[] = "$k=$v";
             }
             $dsn = "mysql:".implode(";", $dsn);
-            return new \PDO($dsn, Arsse::$conf->dbMySQLUser, Arsse::$conf->dbMySQLPass, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION, \PDO::MYSQL_ATTR_MULTI_STATEMENTS => false, \PDO::MYSQL_ATTR_INIT_COMMAND => "SET sql_mode = '".\JKingWeb\Arsse\Db\MySQL\PDODriver::SQL_MODE."'",]);
+            $d = new \PDO($dsn, Arsse::$conf->dbMySQLUser, Arsse::$conf->dbMySQLPass, [
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                \PDO::MYSQL_ATTR_MULTI_STATEMENTS => false,
+            ]);
+            foreach (\JKingWeb\Arsse\Db\MySQL\PDODriver::makeSetupQueries() as $q) {
+                $d->exec($q);
+            }
+            return $d;
         } catch (\Throwable $e) {
             return;
         }

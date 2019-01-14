@@ -15,9 +15,18 @@ trait MySQL {
     protected static $dbResultClass = \JKingWeb\Arsse\Db\MySQL\Result::class;
     protected static $dbStatementClass = \JKingWeb\Arsse\Db\MySQL\Statement::class;
     protected static $dbDriverClass = \JKingWeb\Arsse\Db\MySQL\Driver::class;
-    protected static $stringOutput = false;
+    protected static $stringOutput = true;
     
     public static function dbInterface() {
+        $d = new \mysqli(Arsse::$conf->dbMySQLHost, Arsse::$conf->dbMySQLUser, Arsse::$conf->dbMySQLPass, Arsse::$conf->dbMySQLDb, Arsse::$conf->dbMySQLPort);
+        if ($d->connect_errno) {
+            return;
+        }
+        $d->set_charset("utf8mb4");
+        foreach (\JKingWeb\Arsse\Db\MySQL\PDODriver::makeSetupQueries() as $q) {
+            $d->query($q);
+        }
+        return $d;
     }
     
     public static function dbTableList($db): array {

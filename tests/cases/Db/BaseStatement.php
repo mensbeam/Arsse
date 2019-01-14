@@ -67,8 +67,8 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideBinaryBindings */
     public function testHandleBinaryData($value, string $type, string $exp) {
-        if (in_array(static::$implementation, ["PostgreSQL", "PDO PostgreSQL"])) {
-            $this->markTestSkipped("Correct handling of binary data with PostgreSQL is currently unknown");
+        if (in_array(static::$implementation, ["MySQL", "PostgreSQL", "PDO PostgreSQL"])) {
+            $this->markTestSkipped("Correct handling of binary data with PostgreSQL and native MySQL is currently unknown");
         }
         if ($exp === "null") {
             $query = "SELECT (? is null) as pass";

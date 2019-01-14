@@ -69,6 +69,12 @@
         <file>cases/Db/PostgreSQLPDO/TestDriver.php</file>
         <file>cases/Db/PostgreSQLPDO/TestUpdate.php</file>
 
+        <file>cases/Db/MySQL/TestResult.php</file>
+        <file>cases/Db/MySQL/TestStatement.php</file>
+        <file>cases/Db/MySQL/TestCreation.php</file>
+        <file>cases/Db/MySQL/TestDriver.php</file>
+        <file>cases/Db/MySQL/TestUpdate.php</file>
+
         <file>cases/Db/MySQLPDO/TestResult.php</file>
         <file>cases/Db/MySQLPDO/TestStatement.php</file>
         <file>cases/Db/MySQLPDO/TestCreation.php</file>
@@ -80,6 +86,7 @@
         <file>cases/Db/SQLite3PDO/TestDatabase.php</file>
         <file>cases/Db/PostgreSQL/TestDatabase.php</file>
         <file>cases/Db/PostgreSQLPDO/TestDatabase.php</file>
+        <file>cases/Db/MySQL/TestDatabase.php</file>
         <file>cases/Db/MySQLPDO/TestDatabase.php</file>
     </testsuite>
     <testsuite name="REST">

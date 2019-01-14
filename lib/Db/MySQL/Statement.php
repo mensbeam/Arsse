@@ -28,9 +28,9 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     protected $packetSize;
 
     protected $values;
-    protected $types;
+    protected $binds = "";
 
-    public function __construct(\mysqli $db, string $query, array $bindings = [], int $packetSize) {
+    public function __construct(\mysqli $db, string $query, array $bindings = [], int $packetSize = 4194304) {
         $this->db = $db;
         $this->query = $query;
         $this->packetSize = $packetSize;
@@ -58,11 +58,13 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         $this->st->reset();
         // prepare values and them all at once
         $this->bindValues($values);
-        $this->st->bind_params($this->types, ...$this->values);
+        if ($this->values) {
+            $this->st->bind_param($this->binds, ...$this->values);
+        }
         // execute the statement
         $this->st->execute();
         // clear normalized values
-        $this->types = "";
+        $this->binds = "";
         $this->values = [];
         // check for errors
         if ($this->st->sqlstate !== "00000") {
@@ -84,13 +86,13 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         // this is a bit of a hack: we collect values (and MySQL bind types) here so that we can take 
         // advantage of the work done by bindValues() even though MySQL requires everything to be bound 
         // all at once; we also packetize large values here if necessary
-        if (is_string($value) && strlen($value) > $this->packetSize) {
+        if (($type === "binary" && !is_null($value)) || (is_string($value) && strlen($value) > $this->packetSize)) {
             $this->values[] = null;
             $this->st->send_long_data($position - 1, $value);
         } else {
             $this->values[] = $value;
-            $this->types .= self::BINDINGS[$type];
         }
+        $this->binds .= self::BINDINGS[$type];
         return true;
     }
     public static function mungeQuery(string $query, array $types, ...$extraData): string {

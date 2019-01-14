@@ -49,7 +49,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
             $this->exec($q);
         }
         // get the maximum packet size; parameter strings larger than this size need to be chunked
-        $this->packetSize = $this->query("select variable_value from performance_schema.session_variables where variable_name = 'max_allowed_packet'")->getValue();
+        $this->packetSize = (int) $this->query("select variable_value from performance_schema.session_variables where variable_name = 'max_allowed_packet'")->getValue();
     }
 
     public static function makeSetupQueries(): array {
@@ -161,7 +161,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     }
 
     public static function requirementsMet(): bool {
-        return false;
+        return class_exists("mysqli");
     }
 
     protected function makeConnection(string $db, string $user, string $password, string $host, int $port, string $socket) {
@@ -170,39 +170,47 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
             if ($this->db->connect_errno) {
                 echo $this->db->connect_errno.": ".$this->db->connect_error;
             }
-            $this->db->set_character_set("utf8mb4");
+            $this->db->set_charset("utf8mb4");
         } catch (\Exception $e) {
             throw $e;
         }
     }
 
     public function exec(string $query): bool {
-        $this->dispatch($query);
+        $this->dispatch($query, true);
         return true;
     }
 
-    protected function dispatch(string $query) {
-        $r = $this->db->query($query);
-        if ($this->db->sqlstate !== "00000") {
-            if ($this->db->sqlstate === "HY000") {
-                list($excClass, $excMsg, $excData) = $this->buildEngineException($this->db->errno, $this->db->error);
-            } else {
-                list($excClass, $excMsg, $excData) = $this->buildStandardException($this->db->sqlstate, $this->db->error);
-            }
-            throw new $excClass($excMsg, $excData);
+    protected function dispatch(string $query, bool $multi = false) {
+        if ($multi) {
+            $this->db->multi_query($query);
+        } else {
+            $this->db->real_query($query);
         }
-        return $r;
+        $e = null;
+        do {
+            if ($this->db->sqlstate !== "00000") {
+                if ($this->db->sqlstate === "HY000") {
+                    list($excClass, $excMsg, $excData) = $this->buildEngineException($this->db->errno, $this->db->error);
+                } else {
+                    list($excClass, $excMsg, $excData) = $this->buildStandardException($this->db->sqlstate, $this->db->error);
+                }
+                $e =  new $excClass($excMsg, $excData, $e);
+            }
+            $r = $this->db->store_result();
+        } while ($this->db->more_results() && $this->db->next_result());
+        if ($e) {
+            throw $e;
+        } else {
+            return $r;
+        }
     }
 
     public function query(string $query): \JKingWeb\Arsse\Db\Result {
         $r = $this->dispatch($query);
         $rows = (int) $this->db->affected_rows;
         $id = (int) $this->db->insert_id;
-        if ($r === true) {
-            return new \JKingWeb\Arsse\Db\ResultEmpty($rows, $id);
-        } else {
-            return new ResultE($r, [$rows, $id]);
-        }
+        return new Result($r, [$rows, $id]);
     }
 
     public function prepareArray(string $query, array $paramTypes): \JKingWeb\Arsse\Db\Statement {

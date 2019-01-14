@@ -27,9 +27,9 @@ class Result extends \JKingWeb\Arsse\Db\AbstractResult {
 
     // constructor/destructor
 
-    public function __construct(\mysqli_result $result, array $changes = [0,0], Statement $statement = null) {
+    public function __construct($result, array $changes = [0,0], Statement $statement = null) {
         $this->st = $statement; //keeps the statement from being destroyed, invalidating the result set
-        $this->set = $result;
+        $this->set = ($result instanceof \mysqli_result) ? $result : null;
         $this->rows = $changes[0];
         $this->id = $changes[1];
     }
@@ -45,7 +45,7 @@ class Result extends \JKingWeb\Arsse\Db\AbstractResult {
     // PHP iterator methods
 
     public function valid() {
-        $this->cur = $this->set->fetch_assoc();
+        $this->cur = $this->set ? $this->set->fetch_assoc() : null;
         return ($this->cur !== null);
     }
 }
