@@ -28,9 +28,17 @@ class PDODriver extends Driver {
             "socket=$socket",
             "port=$port",
         ]);
-        $this->db = new \PDO($dsn, $user, $password, [
-            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-        ]);
+        try {
+            $this->db = new \PDO($dsn, $user, $password, [
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            ]);
+        } catch (\PDOException $e) {
+            $msg = $e->getMessage();
+            $code = (int) substr($msg, 17, 4);
+            $msg = substr($msg, 23);
+            list($excClass, $excMsg, $excData) = $this->buildConnectionException($code, $msg);
+            throw new $excClass($excMsg, $excData);
+        }
     }
 
     public function __destruct() {

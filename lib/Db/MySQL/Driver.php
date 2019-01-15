@@ -35,7 +35,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $port = Arsse::$conf->dbMySQLPost ?? 3306;
         $db = Arsse::$conf->dbMySQLDb ?? "arsse";
         // make the connection
-        $this->makeConnection($user, $pass, $db, $host, $port, $socket);
+        $this->makeConnection($db, $user, $pass, $host, $port, $socket);
         // set session variables
         foreach (static::makeSetupQueries() as $q) {
             $this->exec($q);
@@ -157,15 +157,12 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     }
 
     protected function makeConnection(string $db, string $user, string $password, string $host, int $port, string $socket) {
-        try {
-            $this->db = new \mysqli($host, $user, $password, $db, $port, $socket);
-            if ($this->db->connect_errno) {
-                echo $this->db->connect_errno.": ".$this->db->connect_error;
-            }
-            $this->db->set_charset("utf8mb4");
-        } catch (\Exception $e) {
-            throw $e;
+        $this->db = @new \mysqli($host, $user, $password, $db, $port, $socket);
+        if ($this->db->connect_errno) {
+            list($excClass, $excMsg, $excData) = $this->buildConnectionException($this->db->connect_errno, $this->db->connect_error);
+            throw new $excClass($excMsg, $excData);
         }
+        $this->db->set_charset("utf8mb4");
     }
 
     public function exec(string $query): bool {

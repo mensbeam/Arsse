@@ -31,7 +31,7 @@ class PDODriver extends Driver {
             if ($e->getCode() == 7) {
                 switch (substr($e->getMessage(), 9, 5)) {
                     case "08006":
-                        throw new Exception("connectionFailure", ["PostgreSQL", substr($e->getMessage(), 28)]);
+                        throw new Exception("connectionFailure", ['engine' => "PostgreSQL", 'message' => substr($e->getMessage(), 28)]);
                     default:
                         throw $e; // @codeCoverageIgnore
                 }

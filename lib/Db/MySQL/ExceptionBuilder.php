@@ -23,4 +23,35 @@ trait ExceptionBuilder {
                 return [Exception::class, 'engineErrorGeneral', $msg];
         }
     }
+
+    public static function buildConnectionException($code, string $msg): array {
+        switch ($code) {
+            case 1045:
+            // @codeCoverageIgnoreStart
+            case 1043:
+            case 1044:
+            case 1046:
+            case 1049:
+            case 2001:
+            case 2002:
+            case 2003:
+            case 2004:
+            case 2005:
+            case 2007:
+            case 2009:
+            case 2010:
+            case 2011:
+            case 2012:
+            case 2015:
+            case 2016:
+            case 2017:
+            case 2018:
+            case 2026:
+            case 2028:
+            // @codeCoverageIgnoreEnd
+                return [Exception::class, 'connectionFailure', ['engine' => "MySQL", 'message' => $msg]];
+            default:
+                return [Exception::class, 'engineErrorGeneral', $msg]; // @codeCoverageIgnore
+        }
+    }
 }
