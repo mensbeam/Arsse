@@ -11,7 +11,9 @@ use JKingWeb\Arsse\Test\DatabaseInformation;
 /**
  * @group slow
  * @covers \JKingWeb\Arsse\Db\PDOResult<extended>
- */
+ * @covers \JKingWeb\Arsse\Db\MySQL\ExceptionBuilder
+ * @covers \JKingWeb\Arsse\Db\PDOError
+ * @covers \JKingWeb\Arsse\Db\SQLState */
 class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
     use \JKingWeb\Arsse\TestCase\DatabaseDrivers\MySQLPDO;
 

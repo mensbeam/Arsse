@@ -20,7 +20,7 @@ trait SQLState {
             case "23000":
             case "23502":
             case "23505":
-                return [ExceptionInput::class, "constraintViolation", $msg];
+                return [ExceptionInput::class, "engineConstraintViolation", $msg];
             case "55P03":
             case "57014":
                 return [ExceptionTimeout::class, 'general', $msg];

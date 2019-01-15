@@ -28,6 +28,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     protected $packetSize;
 
     protected $values;
+    protected $longs;
     protected $binds = "";
 
     public function __construct(\mysqli $db, string $query, array $bindings = [], int $packetSize = 4194304) {
@@ -39,9 +40,9 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
 
     protected function prepare(string $query): bool {
         $this->st = $this->db->prepare($query);
-        if (!$this->st) {
-            list($excClass, $excMsg, $excData) = $this->buildEngineException($this->db->errno, $this->db->error);
-            throw new $excClass($excMsg, $excData);
+        if (!$this->st) { // @codeCoverageIgnore
+            list($excClass, $excMsg, $excData) = $this->buildEngineException($this->db->errno, $this->db->error); // @codeCoverageIgnore
+            throw new $excClass($excMsg, $excData); // @codeCoverageIgnore
         }
         return true;
     }
@@ -56,16 +57,26 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
 
     public function runArray(array $values = []): \JKingWeb\Arsse\Db\Result {
         $this->st->reset();
+        // clear normalized values
+        $this->binds = "";
+        $this->values = [];
+        $this->longs = [];
         // prepare values and them all at once
         $this->bindValues($values);
         if ($this->values) {
             $this->st->bind_param($this->binds, ...$this->values);
+        }
+        // packetize any large values
+        foreach ($this->longs as $pos => $data) {
+            $this->st->send_long_data($pos, $data);
+            unset($data);
         }
         // execute the statement
         $this->st->execute();
         // clear normalized values
         $this->binds = "";
         $this->values = [];
+        $this->longs = [];
         // check for errors
         if ($this->st->sqlstate !== "00000") {
             if ($this->st->sqlstate === "HY000") {
@@ -85,14 +96,15 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     protected function bindValue($value, string $type, int $position): bool {
         // this is a bit of a hack: we collect values (and MySQL bind types) here so that we can take 
         // advantage of the work done by bindValues() even though MySQL requires everything to be bound 
-        // all at once; we also packetize large values here if necessary
+        // all at once; we also segregate large values for later packetization
         if (($type === "binary" && !is_null($value)) || (is_string($value) && strlen($value) > $this->packetSize)) {
             $this->values[] = null;
-            $this->st->send_long_data($position - 1, $value);
+            $this->longs[$position - 1] = $value;
+            $this->binds .= "b";
         } else {
             $this->values[] = $value;
+            $this->binds .= self::BINDINGS[$type];
         }
-        $this->binds .= self::BINDINGS[$type];
         return true;
     }
     public static function mungeQuery(string $query, array $types, ...$extraData): string {

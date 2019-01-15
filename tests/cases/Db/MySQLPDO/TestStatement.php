@@ -9,7 +9,9 @@ namespace JKingWeb\Arsse\TestCase\Db\MySQLPDO;
 /**
  * @group slow
  * @covers \JKingWeb\Arsse\Db\MySQL\PDOStatement<extended>
- * @covers \JKingWeb\Arsse\Db\PDOError */
+ * @covers \JKingWeb\Arsse\Db\MySQL\ExceptionBuilder
+ * @covers \JKingWeb\Arsse\Db\PDOError
+ * @covers \JKingWeb\Arsse\Db\SQLState */
 class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
     use \JKingWeb\Arsse\TestCase\DatabaseDrivers\MySQLPDO;
 

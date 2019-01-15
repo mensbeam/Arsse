@@ -9,7 +9,8 @@ namespace JKingWeb\Arsse\TestCase\Db\PostgreSQL;
 /**
  * @group slow
  * @covers \JKingWeb\Arsse\Db\PostgreSQL\Statement<extended>
- * @covers \JKingWeb\Arsse\Db\PostgreSQL\Dispatch<extended> */
+ * @covers \JKingWeb\Arsse\Db\PostgreSQL\Dispatch<extended>
+ * @covers \JKingWeb\Arsse\Db\SQLState */
 class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
     use \JKingWeb\Arsse\TestCase\DatabaseDrivers\PostgreSQL;
 

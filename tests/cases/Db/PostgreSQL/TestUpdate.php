@@ -8,7 +8,8 @@ namespace JKingWeb\Arsse\TestCase\Db\PostgreSQL;
 
 /**
  * @group slow
- * @covers \JKingWeb\Arsse\Db\PostgreSQL\Driver<extended> */
+ * @covers \JKingWeb\Arsse\Db\PostgreSQL\Driver<extended>
+ * @covers \JKingWeb\Arsse\Db\SQLState */
 class TestUpdate extends \JKingWeb\Arsse\TestCase\Db\BaseUpdate {
     use \JKingWeb\Arsse\TestCase\DatabaseDrivers\PostgreSQL;
 

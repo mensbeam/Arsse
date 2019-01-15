@@ -9,7 +9,10 @@ namespace JKingWeb\Arsse\TestCase\Db\MySQLPDO;
 /**
  * @group slow
  * @covers \JKingWeb\Arsse\Db\MySQL\PDODriver<extended>
- * @covers \JKingWeb\Arsse\Db\PDOError */
+ * @covers \JKingWeb\Arsse\Db\MySQL\ExceptionBuilder
+ * @covers \JKingWeb\Arsse\Db\PDODriver
+ * @covers \JKingWeb\Arsse\Db\PDOError
+ * @covers \JKingWeb\Arsse\Db\SQLState */
 class TestUpdate extends \JKingWeb\Arsse\TestCase\Db\BaseUpdate {
     use \JKingWeb\Arsse\TestCase\DatabaseDrivers\MySQLPDO;
 

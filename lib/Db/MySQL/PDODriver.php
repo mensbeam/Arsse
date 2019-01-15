@@ -21,16 +21,13 @@ class PDODriver extends Driver {
     }
 
     protected function makeConnection(string $db, string $user, string $password, string $host, int $port, string $socket) {
-        $dsn = [];
-        $dsn[] = "charset=utf8mb4";
-        $dsn[] = "dbname=$db";
-        if (strlen($host)) {
-            $dsn[] = "host=$host";
-            $dsn[] = "port=$port";
-        } elseif (strlen($socket)) {
-            $dsn[] = "socket=$socket";
-        }
-        $dsn = "mysql:".implode(";", $dsn);
+        $dsn = "mysql:".implode(";", [
+            "charset=utf8mb4",
+            "dbname=$db",
+            "host=$host",
+            "socket=$socket",
+            "port=$port",
+        ]);
         $this->db = new \PDO($dsn, $user, $password, [
             \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
         ]);

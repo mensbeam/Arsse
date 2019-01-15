@@ -8,7 +8,9 @@ namespace JKingWeb\Arsse\TestCase\Db\MySQL;
 
 /**
  * @group slow
- * @covers \JKingWeb\Arsse\Db\MySQL\Statement<extended> */
+ * @covers \JKingWeb\Arsse\Db\MySQL\Statement<extended>
+ * @covers \JKingWeb\Arsse\Db\MySQL\ExceptionBuilder
+ * @covers \JKingWeb\Arsse\Db\SQLState */
 class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
     use \JKingWeb\Arsse\TestCase\DatabaseDrivers\MySQL;
 
@@ -30,5 +32,17 @@ class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
             default:
                 return $value;
         }
+    }
+
+    public function testBindLongString() {
+        // this test requires some set-up to be effective
+        static::$interface->query("CREATE TABLE arsse_test(`value` longtext not null) character set utf8mb4");
+        // we'll use an unrealistic packet size of 1 byte to trigger special handling for strings which are too long for the maximum packet size
+        $str = "long string";
+        $s = new \JKingWeb\Arsse\Db\MySQL\Statement(static::$interface, "INSERT INTO arsse_test values(?)", ["str"], 1);
+        $s->runArray([$str]);
+        $s = new \JKingWeb\Arsse\Db\MySQL\Statement(static::$interface, "SELECT * from arsse_test", []);
+        $val = $s->run()->getValue();
+        $this->assertSame($str, $val);
     }
 }

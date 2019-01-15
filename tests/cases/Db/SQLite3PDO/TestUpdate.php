@@ -8,7 +8,9 @@ namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
 
 /**
  * @covers \JKingWeb\Arsse\Db\SQLite3\PDODriver<extended>
- * @covers \JKingWeb\Arsse\Db\PDOError */
+ * @covers \JKingWeb\Arsse\Db\PDODriver
+ * @covers \JKingWeb\Arsse\Db\PDOError
+ * @covers \JKingWeb\Arsse\Db\SQLState */
 class TestUpdate extends \JKingWeb\Arsse\TestCase\Db\BaseUpdate {
     use \JKingWeb\Arsse\TestCase\DatabaseDrivers\SQLite3PDO;
 

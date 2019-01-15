@@ -8,7 +8,9 @@ namespace JKingWeb\Arsse\TestCase\Db\MySQL;
 
 /**
  * @group slow
- * @covers \JKingWeb\Arsse\Db\MySQL\Driver<extended> */
+ * @covers \JKingWeb\Arsse\Db\MySQL\Driver<extended>
+ * @covers \JKingWeb\Arsse\Db\MySQL\ExceptionBuilder
+ * @covers \JKingWeb\Arsse\Db\SQLState */
 class TestUpdate extends \JKingWeb\Arsse\TestCase\Db\BaseUpdate {
     use \JKingWeb\Arsse\TestCase\DatabaseDrivers\MySQL;
 

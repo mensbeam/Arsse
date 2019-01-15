@@ -9,7 +9,8 @@ namespace JKingWeb\Arsse\TestCase\Db\PostgreSQLPDO;
 /**
  * @group slow
  * @covers \JKingWeb\Arsse\Db\PostgreSQL\PDOStatement<extended>
- * @covers \JKingWeb\Arsse\Db\PDOError */
+ * @covers \JKingWeb\Arsse\Db\PDOError
+ * @covers \JKingWeb\Arsse\Db\SQLState */
 class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
     use \JKingWeb\Arsse\TestCase\DatabaseDrivers\PostgreSQLPDO;
 

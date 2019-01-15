@@ -28,22 +28,14 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         if (!static::requirementsMet()) {
             throw new Exception("extMissing", static::driverName()); // @codeCoverageIgnore
         }
-        $host = Arsse::$conf->dbMySQLHost;
-        if ($host[0] === "/") {
-            // host is a Unix socket
-            $socket = $host;
-            $host = "";
-        } elseif(substr($host, 0, 9) === "\\\\.\\pipe\\") {
-            // host is a Windows named piple
-            $socket = substr($host, 10);
-            $host = "";
-        }
+        $host = strtolower(!strlen((string) Arsse::$conf->dbMySQLHost) ? "localhost" : Arsse::$conf->dbMySQLHost);
+        $socket = strlen((string) Arsse::$conf->dbMySQLSocket) ? Arsse::$conf->dbMySQLSocket : ini_get("mysqli.default_socket");
         $user = Arsse::$conf->dbMySQLUser ?? "";
         $pass = Arsse::$conf->dbMySQLPass ?? "";
         $port = Arsse::$conf->dbMySQLPost ?? 3306;
         $db = Arsse::$conf->dbMySQLDb ?? "arsse";
         // make the connection
-        $this->makeConnection($user, $pass, $db, $host, $port, $socket ?? "");
+        $this->makeConnection($user, $pass, $db, $host, $port, $socket);
         // set session variables
         foreach (static::makeSetupQueries() as $q) {
             $this->exec($q);

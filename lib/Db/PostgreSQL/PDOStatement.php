@@ -11,6 +11,7 @@ class PDOStatement extends \JKingWeb\Arsse\Db\PDOStatement {
         return Statement::mungeQuery($query, $types, false);
     }
 
+    /** @codeCoverageIgnore */
     public static function buildEngineException($code, string $msg): array {
         // PostgreSQL uses SQLSTATE exclusively, so this is not used
         return [];

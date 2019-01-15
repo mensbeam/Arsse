@@ -53,6 +53,8 @@ class Conf {
     public $dbMySQLPort             = 3306;
     /** @var string Database name on MySQL/MariaDB database server (if using MySQL/MariaDB) */
     public $dbMySQLDb               = "arsse";
+    /** @var string Unix domain socket or named pipe to use for MySQL when not connecting over TCP */
+    public $dbMySQLSocket           = "";
 
     /** @var string Class of the user management driver in use (Internal by default) */
     public $userDriver              = User\Internal\Driver::class;
