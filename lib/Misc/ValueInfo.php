@@ -28,6 +28,7 @@ class ValueInfo {
     const T_DATE     = 5; // convert to DateTimeInterface instance
     const T_STRING   = 6; // convert to string
     const T_ARRAY    = 7; // convert to array
+    const T_INTERVAL = 8; // convert to time interval
     // normalization modes
     const M_NULL     = 1 << 28; // pass nulls through regardless of target type
     const M_DROP     = 1 << 29; // drop the value (return null) if the type doesn't match
@@ -95,6 +96,29 @@ class ValueInfo {
                         throw new ExceptionType("strictFailure", $type);
                     }
                     return (!$drop) ? (int) $value->getTimestamp(): null;
+                } elseif ($value instanceof \DateInterval) {
+                    if ($strict && !$drop) {
+                        throw new ExceptionType("strictFailure", $type);
+                    } elseif ($drop) {
+                        return null;
+                    } else {
+                        // returns the number of seconds in the interval
+                        // days are assumed to contain (60 * 60 * 24) seconds
+                        // months are assumed to contain 30 days
+                        // years are assumed to contain 365 days
+                        $s = 0;
+                        if ($value->days !== false) {
+                            $s += ($value->days * 24 * 60 * 60);
+                        } else {
+                            $s += ($value->y * 365 * 24 * 60 * 60);
+                            $s += ($value->m * 30 * 24 * 60 * 60);
+                            $s += ($value->d * 24 * 60 * 60);
+                        }
+                        $s += ($value->h * 60 * 60);
+                        $s += ($value->i * 60);
+                        $s += $value->s;
+                        return $s;
+                    }
                 }
                 $info = self::int($value);
                 if ($strict && !($info & self::VALID)) {
@@ -124,6 +148,16 @@ class ValueInfo {
                         throw new ExceptionType("strictFailure", $type);
                     }
                     return (!$drop) ? (float) $value->getTimestamp(): null;
+                } elseif ($value instanceof \DateInterval) {
+                    if ($drop) {
+                        return null;
+                    } elseif ($strict) {
+                        throw new ExceptionType("strictFailure", $type);
+                    }
+                    // convert the interval to an integer, and then add microseconds if available (since PHP 7.1, for intervals created from a DateTime difference operation)
+                    $out = (float) self::normalize($value, self::T_INT);
+                    $out += isset($value->f) ? $value->f : 0.0;
+                    return $out;
                 } elseif (is_bool($value) && $strict) {
                     if ($drop) {
                         return null;
@@ -150,6 +184,25 @@ class ValueInfo {
                         return $value->setTimezone(new \DateTimeZone("UTC"))->format($dateOutFormat);
                     } elseif ($value instanceof \DateTime) {
                         return \DateTimeImmutable::createFromMutable($value)->setTimezone(new \DateTimeZone("UTC"))->format($dateOutFormat);
+                    }
+                } elseif ($value instanceof \DateInterval) {
+                    $dateSpec = "";
+                    $timeSpec = "";
+                    if ($value->days) {
+                        $dateSpec = $value->days."D";
+                    } else {
+                        $dateSpec .= $value->y ? $value->y."Y": "";
+                        $dateSpec .= $value->m ? $value->m."M": "";
+                        $dateSpec .= $value->d ? $value->d."D": "";
+                    }
+                    $timeSpec .= $value->h ? $value->h."H": "";
+                    $timeSpec .= $value->i ? $value->i."M": "";
+                    $timeSpec .= $value->s ? $value->s."S": "";
+                    $timeSpec = $timeSpec ? "T".$timeSpec : "";
+                    if (!$dateSpec && !$timeSpec) {
+                        return "PT0S";
+                    } else {
+                        return "P".$dateSpec.$timeSpec;
                     }
                 } elseif (is_float($value) && is_finite($value)) {
                     $out = (string) $value;
@@ -183,7 +236,7 @@ class ValueInfo {
                     return \DateTimeImmutable::createFromMutable($value)->setTimezone(new \DateTimeZone("UTC"));
                 } elseif (is_int($value)) {
                     return \DateTimeImmutable::createFromFormat("U", (string) $value, new \DateTimeZone("UTC"));
-                } elseif (is_float($value)) {
+                } elseif (is_float($value) && is_finite($value)) {
                     return \DateTimeImmutable::createFromFormat("U.u", sprintf("%F", $value), new \DateTimeZone("UTC"));
                 } elseif (is_string($value)) {
                     try {
@@ -250,6 +303,92 @@ class ValueInfo {
                     } else {
                         return [$value];
                     }
+                }
+                break; // @codeCoverageIgnore
+            case self::T_INTERVAL:
+                if ($value instanceof \DateInterval) {
+                    if ($value->invert) {
+                        $value = clone $value;
+                        $value->invert = 0;
+                    }
+                    $value->f = $value->f ?? 0.0; // add microseconds for PHP 7.0
+                    return $value;
+                } elseif (is_null($value)) {
+                    if ($strict && !$drop && !$allowNull) {
+                        throw new ExceptionType("strictFailure", $type);
+                    } else {
+                        return null;
+                    }
+                } elseif (is_bool($value) || is_array($value) || (is_float($value) && (is_infinite($value) || is_nan($value))) || $value instanceof \DateTimeInterface || (is_object($value) && !method_exists($value, "__toString"))) {
+                    if ($strict && !$drop) {
+                        throw new ExceptionType("strictFailure", $type);
+                    } else {
+                        return null;
+                    }
+                } elseif (is_string($value) || is_object($value)) {
+                    try {
+                        $out = new \DateInterval((string) $value);
+                        $out->f = 0.0;
+                        return $out;
+                    } catch (\Exception $e) {
+                        if ($strict && !$drop) {
+                            throw new ExceptionType("strictFailure", $type);
+                        } elseif ($drop) {
+                            return null;
+                        } elseif (strtotime("now + $value") !== false) {
+                            $out = \DateInterval::createFromDateString($value);
+                            $out->f = 0.0;
+                            return $out;
+                        } else {
+                            return null;
+                        }
+                    }
+                } elseif ($drop) {
+                    return null;
+                } elseif ($strict) {
+                    throw new ExceptionType("strictFailure", $type);
+                } else {
+                    // input is a number, assume this is a number of seconds
+                    // for legibility we convert large numbers to minutes, hours, and days as necessary
+                    // the DateInterval constructor only allows 12 digits for any given part of an interval,
+                    // so we also convert days to 365-day years where we must, and cap the number of years 
+                    // at (1e11 - 1); this being a very large number, the loss of precision is probably not
+                    // significant in practical usage
+                    $sec = abs($value);
+                    $msec = (float) ($sec - (int) $sec);
+                    $sec = (int) $sec;
+                    $min = 0;
+                    $hour = 0;
+                    $day = 0;
+                    $year = 0;
+                    if ($sec >= 60) {
+                        $min = ($sec - ($sec % 60)) / 60;
+                        $sec %= 60;
+                    }
+                    if ($min >= 60) {
+                        $hour = ($min - ($min % 60)) / 60;
+                        $min %= 60;
+                    }
+                    if ($hour >= 24) {
+                        $day = ($hour - ($hour % 24)) / 24;
+                        $hour %= 24;
+                    }
+                    if ($day >= 999999999999) {
+                        $year = ($day - ($day % 365)) / 365;
+                        $day %= 365;
+                    }
+                    $spec = "P";
+                    $spec .= $year ? $year."Y" : "";
+                    $spec .= $day ? $day."D" : "";
+                    $spec .= "T";
+                    $spec .= $hour ? $hour."H" : "";
+                    $spec .= $min ? $min."M" : "";
+                    $spec .= $sec ? $sec."S" : "";
+                    $spec .= ($spec === "PT") ? "0S" : "";
+                    $spec = trim($spec, "T");
+                    $out = new \DateInterval($spec);
+                    $out->f = $msec;
+                    return $out;
                 }
                 break; // @codeCoverageIgnore
             default:
