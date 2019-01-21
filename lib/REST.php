@@ -146,7 +146,7 @@ class REST {
     }
 
     public function challenge(ResponseInterface $res, string $realm = null): ResponseInterface {
-        $realm = $realm ?? Arsse::$conf->httpRealm ?? "Default";
+        $realm = $realm ?? Arsse::$conf->httpRealm;
         return $res->withAddedHeader("WWW-Authenticate", 'Basic realm="'.$realm.'"');
     }
 
@@ -205,8 +205,8 @@ class REST {
     }
 
     public function corsNegotiate(RequestInterface $req, string $allowed = null, string $denied = null): bool {
-        $allowed = trim($allowed ?? Arsse::$conf->httpOriginsAllowed ?? "");
-        $denied = trim($denied ?? Arsse::$conf->httpOriginsDenied ?? "");
+        $allowed = trim($allowed ?? Arsse::$conf->httpOriginsAllowed);
+        $denied = trim($denied ?? Arsse::$conf->httpOriginsDenied);
         // continue if at least one origin is allowed
         if ($allowed) {
             // continue if the request has exactly one Origin header

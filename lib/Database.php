@@ -16,6 +16,11 @@ use JKingWeb\Arsse\Misc\ValueInfo;
 class Database {
     const SCHEMA_VERSION = 4;
     const LIMIT_ARTICLES = 50;
+    const DRIVER_NAMES = [
+        'sqlite3'    => \JKingWeb\Arsse\Db\SQLite3\Driver::class,
+        'postgresql' => \JKingWeb\Arsse\Db\PostgreSQL\Driver::class,
+        'mysql'      => \JKingWeb\Arsse\Db\MySQL\Driver::class,
+    ];
 
     /** @var Db\Driver */
     public $db;
@@ -760,14 +765,13 @@ class Database {
         $this->db->query("UPDATE arsse_feeds set orphaned = null where exists(SELECT id from arsse_subscriptions where feed = arsse_feeds.id)");
         // next mark any newly orphaned feeds with the current date and time
         $this->db->query("UPDATE arsse_feeds set orphaned = CURRENT_TIMESTAMP where orphaned is null and not exists(SELECT id from arsse_subscriptions where feed = arsse_feeds.id)");
-        // finally delete feeds that have been orphaned longer than the retention period
-        $limit = Date::normalize("now");
+        // finally delete feeds that have been orphaned longer than the retention period, if a a purge threshold has been specified
         if (Arsse::$conf->purgeFeeds) {
-            // if there is a retention period specified, compute it; otherwise feed are deleted immediatelty
-            $limit = Date::sub(Arsse::$conf->purgeFeeds, $limit);
+            $limit = Date::sub(Arsse::$conf->purgeFeeds);
+            $out = (bool) $this->db->prepare("DELETE from arsse_feeds where orphaned <= ?", "datetime")->run($limit);
+        } else {
+            $out = false;
         }
-        $out = (bool) $this->db->prepare("DELETE from arsse_feeds where orphaned <= ?", "datetime")->run($limit);
-        // commit changes and return
         $tr->commit();
         return $out;
     }

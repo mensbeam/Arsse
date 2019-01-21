@@ -7,6 +7,8 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
+use JKingWeb\Arsse\Misc\ValueInfo as Value;
+
 /** Class for loading, saving, and querying configuration
  *
  * The Conf class serves both as a means of importing and querying configuration information, as well as a source for default parameters when a configuration file does not specify a value.
@@ -15,19 +17,19 @@ class Conf {
     /** @var string Default language to use for logging and errors */
     public $lang                    = "en";
 
-    /** @var string Class of the database driver in use (SQLite3 by default) */
-    public $dbDriver                = Db\SQLite3\Driver::class;
-    /** @var boolean Whether to attempt to automatically update the database when updated to a new version with schema changes */
+    /** @var string The database driver to use, one of "sqlite3", "postgresql", or "mysql". A fully-qualified class name may also be used for custom drivers */
+    public $dbDriver                = "sqlite3";
+    /** @var boolean Whether to attempt to automatically update the database when upgrading to a new version with schema changes */
     public $dbAutoUpdate            = true;
-    /** @var float Number of seconds to wait before returning a timeout error when connecting to a database (zero waits forever; not applicable to SQLite) */
+    /** @var \DateInterval Number of seconds to wait before returning a timeout error when connecting to a database (zero waits forever; not applicable to SQLite) */
     public $dbTimeoutConnect        = 5.0;
-    /** @var float Number of seconds to wait before returning a timeout error when executing a database operation (zero waits forever; not applicable to SQLite) */
+    /** @var \DateInterval Number of seconds to wait before returning a timeout error when executing a database operation (zero waits forever; not applicable to SQLite) */
     public $dbTimeoutExec           = 0.0;
     /** @var string|null Full path and file name of SQLite database (if using SQLite) */
     public $dbSQLite3File           = null;
     /** @var string Encryption key to use for SQLite database (if using a version of SQLite with SEE) */
     public $dbSQLite3Key            = "";
-    /** @var float Number of seconds for SQLite to wait before returning a timeout error when trying to acquire a write lock on the database (zero does not wait) */
+    /** @var \DateInterval Number of seconds for SQLite to wait before returning a timeout error when trying to acquire a write lock on the database (zero does not wait) */
     public $dbSQLite3Timeout        = 60.0;
     /** @var string Host name, address, or socket path of PostgreSQL database server (if using PostgreSQL) */
     public $dbPostgreSQLHost        = "";
@@ -43,21 +45,21 @@ class Conf {
     public $dbPostgreSQLSchema      = "";
     /** @var string Service file entry to use (if using PostgreSQL); if using a service entry all above parameters except schema are ignored */
     public $dbPostgreSQLService     = "";
-    /** @var string Host name, address, or socket path of MySQL/MariaDB database server (if using MySQL/MariaDB) */
+    /** @var string Host name or address of MySQL database server (if using MySQL) */
     public $dbMySQLHost             = "localhost";
-    /** @var string Log-in user name for MySQL/MariaDB database server (if using MySQL/MariaDB) */
+    /** @var string Log-in user name for MySQL database server (if using MySQL) */
     public $dbMySQLUser             = "arsse";
-    /** @var string Log-in password for MySQL/MariaDB database server (if using MySQL/MariaDB) */
+    /** @var string Log-in password for MySQL database server (if using MySQL) */
     public $dbMySQLPass             = "";
-    /** @var integer Listening port for MySQL/MariaDB database server (if using MySQL/MariaDB over TCP) */
+    /** @var integer Listening port for MySQL database server (if using MySQL over TCP) */
     public $dbMySQLPort             = 3306;
-    /** @var string Database name on MySQL/MariaDB database server (if using MySQL/MariaDB) */
+    /** @var string Database name on MySQL database server (if using MySQL) */
     public $dbMySQLDb               = "arsse";
     /** @var string Unix domain socket or named pipe to use for MySQL when not connecting over TCP */
     public $dbMySQLSocket           = "";
 
-    /** @var string Class of the user management driver in use (Internal by default) */
-    public $userDriver              = User\Internal\Driver::class;
+    /** @var string The user management driver to use, currently only "internal". A fully-qualified class name may also be used for custom drivers */
+    public $userDriver              = "internal";
     /** @var boolean Whether users are already authenticated by the Web server before the application is executed */
     public $userPreAuth             = false;
     /** @var boolean Whether to require successful HTTP authentication before processing API-level authentication for protocols which have any. Normally the Tiny Tiny RSS relies on its own session-token authentication scheme, for example */
@@ -66,43 +68,43 @@ class Conf {
     public $userTempPasswordLength  = 20;
     /** @var boolean Whether invalid or expired API session tokens should prevent logging in when HTTP authentication is used, for protocol which implement their own authentication */
     public $userSessionEnforced     = true;
-    /** @var string Period of inactivity after which log-in sessions should be considered invalid, as an ISO 8601 duration (default: 24 hours)
+    /** @var \DateInterval Period of inactivity after which log-in sessions should be considered invalid, as an ISO 8601 duration (default: 24 hours)
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
     public $userSessionTimeout      = "PT24H";
-    /** @var string Maximum lifetime of log-in sessions regardless of activity, as an ISO 8601 duration (default: 7 days);
+    /** @var \DateInterval Maximum lifetime of log-in sessions regardless of activity, as an ISO 8601 duration (default: 7 days);
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
     public $userSessionLifetime     = "P7D";
 
-    /** @var string Class of the background feed update service driver in use (Forking by default) */
-    public $serviceDriver           = Service\Forking\Driver::class;
-    /** @var string The interval between checks for new articles, as an ISO 8601 duration
+    /** @var string Feed update service driver to use, one of "serial", "subprocess", or "curl". A fully-qualified class name may also be used for custom drivers */
+    public $serviceDriver           = "subprocess";
+    /** @var \DateInterval The interval between checks for new articles, as an ISO 8601 duration
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
     public $serviceFrequency        = "PT2M";
     /** @var integer Number of concurrent feed updates to perform */
     public $serviceQueueWidth       = 5;
     /** @var string The base server address (with scheme, host, port if necessary, and terminal slash) to connect to the server when performing feed updates using cURL */
     public $serviceCurlBase         = "http://localhost/";
-    /** @var string The user name to use when performing feed updates using cURL; if none is provided, a temporary name and password will be stored in the database (this is not compatible with pre-authentication) */
-    public $serviceCurlUser         = null;
+    /** @var string The user name to use when performing feed updates using cURL */
+    public $serviceCurlUser         = "";
     /** @var string The password to use when performing feed updates using cURL */
-    public $serviceCurlPassword     = null;
+    public $serviceCurlPassword     = "";
 
-    /** @var integer Number of seconds to wait for data when fetching feeds from foreign servers */
+    /** @var \DateInterval Number of seconds to wait for data when fetching feeds from foreign servers */
     public $fetchTimeout            = 10;
     /** @var integer Maximum size, in bytes, of data when fetching feeds from foreign servers */
     public $fetchSizeLimit          = 2 * 1024 * 1024;
     /** @var boolean Whether to allow the possibility of fetching full article contents using an item's URL. Whether fetching will actually happen is also governed by a per-feed setting */
     public $fetchEnableScraping     = true;
     /** @var string|null User-Agent string to use when fetching feeds from foreign servers */
-    public $fetchUserAgentString;
+    public $fetchUserAgentString    = null;
 
-    /** @var string When to delete a feed from the database after all its subscriptions have been deleted, as an ISO 8601 duration (default: 24 hours; empty string for never)
+    /** @var \DateInterval|null When to delete a feed from the database after all its subscriptions have been deleted, as an ISO 8601 duration (default: 24 hours; null for never)
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
     public $purgeFeeds              = "PT24H";
-    /** @var string When to delete an unstarred article in the database after it has been marked read by all users, as an ISO 8601 duration (default: 7 days; empty string for never)
+    /** @var \DateInterval|null When to delete an unstarred article in the database after it has been marked read by all users, as an ISO 8601 duration (default: 7 days; null for never)
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
     public $purgeArticlesRead       = "P7D";
-    /** @var string When to delete an unstarred article in the database regardless of its read state, as an ISO 8601 duration (default: 21 days; empty string for never)
+    /** @var \DateInterval|null When to delete an unstarred article in the database regardless of its read state, as an ISO 8601 duration (default: 21 days; null for never)
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
     public $purgeArticlesUnread     = "P21D";
 
@@ -113,10 +115,26 @@ class Conf {
     /** @var string Space-separated list of origins from which to deny cross-origin resource sharing */
     public $httpOriginsDenied       = "";
 
+    const TYPE_NAMES = [
+        Value::T_BOOL     => "boolean",
+        Value::T_STRING   => "string",
+        Value::T_FLOAT    => "float",
+        VALUE::T_INT      => "integer",
+        Value::T_INTERVAL => "interval",
+    ];
+
+    protected static $types = [];
+
     /** Creates a new configuration object
      * @param string $import_file Optional file to read configuration data from
      * @see self::importFile() */
     public function __construct(string $import_file = "") {
+        if (!static::$types) {
+            static::$types = $this->propertyDiscover();
+        }
+        foreach (array_keys(static::$types) as $prop) {
+            $this->$prop = $this->propertyImport($prop, $this->$prop);
+        }
         if ($import_file !== "") {
             $this->importFile($import_file);
         }
@@ -124,7 +142,7 @@ class Conf {
 
     /** Layers configuration data from a file into an existing object
      *
-     * The file must be a PHP script which return an array with keys that match the properties of the Conf class. Malformed files will throw an exception; unknown keys are silently ignored. Files may be imported is succession, though this is not currently used.
+     * The file must be a PHP script which returns an array with keys that match the properties of the Conf class. Malformed files will throw an exception; unknown keys are silently accepted. Files may be imported in succession, though this is not currently used.
      * @param string $file Full path and file name for the file to import */
     public function importFile(string $file): self {
         if (!file_exists($file)) {
@@ -143,16 +161,22 @@ class Conf {
         if (!is_array($arr)) {
             throw new Conf\Exception("fileCorrupt", $file);
         }
-        return $this->import($arr);
+        return $this->importData($arr, $file);
     }
 
     /** Layers configuration data from an associative array into an existing object
      *
-     * The input array must have keys that match the properties of the Conf class; unknown keys are silently ignored. Arrays may be imported is succession, though this is not currently used.
+     * The input array must have keys that match the properties of the Conf class; unknown keys are silently accepted. Arrays may be imported in succession, though this is not currently used.
      * @param mixed[] $arr Array of configuration parameters to export */
     public function import(array $arr): self {
+        $file = debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0]['file'] ?? "";
+        return $this->importData($arr, $file);
+    }
+
+    /** Layers configuration data from an associative array into an existing object */
+    protected function importData(array $arr, string $file): self {
         foreach ($arr as $key => $value) {
-            $this->$key = $value;
+            $this->$key = $this->propertyImport($key, $value, $file);
         }
         return $this;
     }
@@ -165,7 +189,7 @@ class Conf {
         $conf = new \ReflectionObject($this);
         foreach ($conf->getProperties(\ReflectionProperty::IS_PUBLIC) as $prop) {
             $name = $prop->name;
-            // add the property to the output if the value is scalar (or null) and either:
+            // add the property to the output if the value is of a supported type and either:
             // 1. full output has been requested
             // 2. the property is not defined in the class
             // 3. it differs from the default
@@ -210,5 +234,80 @@ class Conf {
             throw new Conf\Exception($err, $file);
         }
         return true;
+    }
+
+    /** Caches information about configuration properties for later access */
+    protected function propertyDiscover(): array {
+        $out = [];
+        $rc = new \ReflectionClass($this);
+        foreach ($rc->getProperties(\ReflectionProperty::IS_PUBLIC) as $p) {
+            if (preg_match("/@var\s+((?:int(eger)?|float|bool(ean)?|string|\\\\DateInterval)(?:\|null)?)[^\[]/", $p->getDocComment(), $match)) {
+                $match = explode("|", $match[1]);
+                $nullable = (sizeof($match) > 1);
+                $type = [
+                    'string'         => Value::T_STRING   | Value::M_STRICT,
+                    'integer'        => Value::T_INT      | Value::M_STRICT,
+                    'boolean'        => Value::T_BOOL     | Value::M_STRICT,
+                    'float'          => Value::T_FLOAT    | Value::M_STRICT,
+                    '\\DateInterval' => Value::T_INTERVAL | Value::M_LOOSE,
+                ][$match[0]];
+                if ($nullable) {
+                    $type |= Value::M_NULL;
+                }
+            } else {
+                $type = Value::T_MIXED; // @codeCoverageIgnore
+            }
+            $out[$p->name] = ['name' => $match[0], 'const' => $type];
+        }
+        return $out;
+    }
+
+    protected function propertyImport(string $key, $value, string $file = "") {
+        try {
+            $typeName = static::$types[$key]['name'] ?? "mixed";
+            $typeConst = static::$types[$key]['const'] ?? Value::T_MIXED;
+            if ($typeName === "\\DateInterval") {
+                // date intervals have special handling: if the existing value (ultimately, the default value)
+                // is an integer or float, the new value should be imported as numeric. If the new value is a string
+                // it is first converted to an interval and then converted to the numeric type if necessary
+                if (is_string($value)) {
+                    $value =  Value::normalize($value, Value::T_INTERVAL | Value::M_STRICT);
+                }
+                switch (gettype($this->$key)) {
+                    case "integer":
+                        return Value::normalize($value, Value::T_INT | Value::M_STRICT);
+                    case "double":
+                        return Value::normalize($value, Value::T_FLOAT | Value::M_STRICT);
+                    case "string":
+                    case "object":
+                        return $value;
+                    default:
+                        throw new ExceptionType("strictFailure"); // @codeCoverageIgnore
+                }
+            }
+            $value =  Value::normalize($value, $typeConst);
+            switch ($key) {
+                case "dbDriver":
+                    $driver = $driver ?? Database::DRIVER_NAMES[strtolower($value)] ?? $value;
+                    $interface = $interface ?? Db\Driver::class;
+                    // no break
+                case "userDriver":
+                    $driver = $driver ?? User::DRIVER_NAMES[strtolower($value)] ?? $value;
+                    $interface = $interface ?? User\Driver::class;
+                    // no break
+                case "serviceDriver":
+                    $driver = $driver ?? Service::DRIVER_NAMES[strtolower($value)] ?? $value;
+                    $interface = $interface ?? Service\Driver::class;
+                    if (!is_subclass_of($driver, $interface)) {
+                        throw new Conf\Exception("semanticMismatch", ['param' => $key, 'file' => $file]);
+                    }
+                    return $driver;
+            }
+            return $value;
+        } catch (ExceptionType $e) {
+            $nullable = (int) (bool) (static::$types[$key] & Value::M_NULL);
+            $type =  static::$types[$key]['const'] & ~(Value::M_STRICT | Value::M_DROP | Value::M_NULL | Value::M_ARRAY);
+            throw new Conf\Exception("typeMismatch", ['param' => $key, 'type' => self::TYPE_NAMES[$type], 'file' => $file, 'nullable' => $nullable]);
+        }
     }
 }

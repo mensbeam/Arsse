@@ -25,16 +25,17 @@ class Date {
         return ValueInfo::normalize($date, ValueInfo::T_DATE, $inFormat);
     }
 
-    public static function add(string $interval, $date = "now") {
+    public static function add($interval, $date = "now") {
         return self::modify("add", $interval, $date);
     }
 
-    public static function sub(string $interval, $date = "now") {
+    public static function sub($interval, $date = "now") {
         return self::modify("sub", $interval, $date);
     }
 
-    protected static function modify(string $func, string $interval, $date) {
+    protected static function modify(string $func, $interval, $date) {
         $date = self::normalize($date);
-        return $date ? $date->$func(new \DateInterval($interval)) : null;
+        $interval = (!$interval instanceof \DateInterval) ? ValueInfo::normalize($interval, ValueInfo::T_INTERVAL) : $interval;
+        return $date ? $date->$func($interval) : null;
     }
 }

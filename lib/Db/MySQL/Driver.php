@@ -28,12 +28,12 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         if (!static::requirementsMet()) {
             throw new Exception("extMissing", static::driverName()); // @codeCoverageIgnore
         }
-        $host = strtolower(!strlen((string) Arsse::$conf->dbMySQLHost) ? "localhost" : Arsse::$conf->dbMySQLHost);
-        $socket = strlen((string) Arsse::$conf->dbMySQLSocket) ? Arsse::$conf->dbMySQLSocket : ini_get("mysqli.default_socket");
-        $user = Arsse::$conf->dbMySQLUser ?? "";
-        $pass = Arsse::$conf->dbMySQLPass ?? "";
-        $port = Arsse::$conf->dbMySQLPost ?? 3306;
-        $db = Arsse::$conf->dbMySQLDb ?? "arsse";
+        $host = strtolower(!strlen(Arsse::$conf->dbMySQLHost) ? "localhost" : Arsse::$conf->dbMySQLHost);
+        $socket = strlen(Arsse::$conf->dbMySQLSocket) ? Arsse::$conf->dbMySQLSocket : ini_get("mysqli.default_socket");
+        $user = Arsse::$conf->dbMySQLUser;
+        $pass = Arsse::$conf->dbMySQLPass;
+        $port = Arsse::$conf->dbMySQLPort;
+        $db = Arsse::$conf->dbMySQLDb;
         // make the connection
         $this->makeConnection($db, $user, $pass, $host, $port, $socket);
         // set session variables

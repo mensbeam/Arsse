@@ -30,6 +30,7 @@ class ValueInfo {
     const T_ARRAY    = 7; // convert to array
     const T_INTERVAL = 8; // convert to time interval
     // normalization modes
+    const M_LOOSE    = 0;
     const M_NULL     = 1 << 28; // pass nulls through regardless of target type
     const M_DROP     = 1 << 29; // drop the value (return null) if the type doesn't match
     const M_STRICT   = 1 << 30; // throw an exception if the type doesn't match

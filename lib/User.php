@@ -9,6 +9,10 @@ namespace JKingWeb\Arsse;
 use PasswordGenerator\Generator as PassGen;
 
 class User {
+    const DRIVER_NAMES = [
+        'internal' => \JKingWeb\Arsse\User\Internal\Driver::class,
+    ];
+
     public $id = null;
 
     /**

@@ -44,7 +44,10 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @depends testLoadDefaultValues */
     public function testImportFromArray() {
-        $arr = ['lang' => "xx"];
+        $arr = [
+            'lang' => "xx",
+            'purgeFeeds' => "P2D",
+        ];
         $conf = new Conf;
         $conf->import($arr);
         $this->assertEquals("xx", $conf->lang);
@@ -94,6 +97,24 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testImportFromCorruptFile() {
         $this->assertException("fileCorrupt", "Conf");
         $conf = new Conf(self::$path."confCorrupt");
+    }
+
+    public function testImportBogusValue() {
+        $arr = [
+            'dbAutoUpdate' => "yes, please",
+        ];
+        $conf = new Conf;
+        $this->assertException("typeMismatch", "Conf");
+        $conf->import($arr);
+    }
+
+    public function testImportBogusDriver() {
+        $arr = [
+            'dbDriver' => "this driver does not exist",
+        ];
+        $conf = new Conf;
+        $this->assertException("semanticMismatch", "Conf");
+        $conf->import($arr);
     }
 
     public function testExportToArray() {

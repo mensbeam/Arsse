@@ -9,6 +9,11 @@ namespace JKingWeb\Arsse;
 use JKingWeb\Arsse\Misc\Date;
 
 class Service {
+    const DRIVER_NAMES = [
+        'serial'     => \JKingWeb\Arsse\Service\Serial\Driver::class,
+        'subprocess' => \JKingWeb\Arsse\Service\Subprocess\Driver::class,
+        'curl'       => \JKingWeb\Arsse\Service\Curl\Driver::class,
+    ];
 
     /** @var Service\Driver */
     protected $drv;
@@ -27,18 +32,10 @@ class Service {
         return $classes;
     }
 
-    public static function interval(): \DateInterval {
-        try {
-            return new \DateInterval(Arsse::$conf->serviceFrequency);
-        } catch (\Exception $e) {
-            return new \DateInterval("PT2M");
-        }
-    }
-
     public function __construct() {
         $driver = Arsse::$conf->serviceDriver;
         $this->drv = new $driver();
-        $this->interval = static::interval();
+        $this->interval = Arsse::$conf->serviceFrequency;
     }
 
     public function watch(bool $loop = true): \DateTimeInterface {
@@ -77,8 +74,8 @@ class Service {
         // convert the check-in timestamp to a DateTime instance
         $checkin = Date::normalize($checkin, "sql");
         // get the checking interval
-        $int = static::interval();
-        // subtract twice the checking interval from the current time to the earliest acceptable check-in time
+        $int = Arsse::$conf->serviceFrequency;
+        // subtract twice the checking interval from the current time to yield the earliest acceptable check-in time
         $limit = new \DateTime();
         $limit->sub($int);
         $limit->sub($int);

@@ -25,13 +25,13 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         if (!static::requirementsMet()) {
             throw new Exception("extMissing", static::driverName()); // @codeCoverageIgnore
         }
-        $user = $user ?? Arsse::$conf->dbPostgreSQLUser;
-        $pass = $pass ?? Arsse::$conf->dbPostgreSQLPass;
-        $db = $db ?? Arsse::$conf->dbPostgreSQLDb;
-        $host = $host ?? Arsse::$conf->dbPostgreSQLHost;
-        $port = $port ?? Arsse::$conf->dbPostgreSQLPort;
-        $schema = $schema ?? Arsse::$conf->dbPostgreSQLSchema;
-        $service = $service ?? Arsse::$conf->dbPostgreSQLService;
+        $user = Arsse::$conf->dbPostgreSQLUser;
+        $pass = Arsse::$conf->dbPostgreSQLPass;
+        $db = Arsse::$conf->dbPostgreSQLDb;
+        $host = Arsse::$conf->dbPostgreSQLHost;
+        $port = Arsse::$conf->dbPostgreSQLPort;
+        $schema = Arsse::$conf->dbPostgreSQLSchema;
+        $service = Arsse::$conf->dbPostgreSQLService;
         $this->makeConnection($user, $pass, $db, $host, $port, $service);
         foreach (static::makeSetupQueries($schema) as $q) {
             $this->exec($q);
@@ -42,7 +42,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $base = [
             'client_encoding' => "UTF8",
             'application_name' => "arsse",
-            'connect_timeout' => (string) ceil(Arsse::$conf->dbTimeoutConnect ?? 0),
+            'connect_timeout' => (string) ceil(Arsse::$conf->dbTimeoutConnect),
         ];
         $out = [];
         if ($service != "") {

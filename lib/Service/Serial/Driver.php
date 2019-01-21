@@ -4,7 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse\Service\Forking;
+namespace JKingWeb\Arsse\Service\Serial;
 
 use JKingWeb\Arsse\Arsse;
 
@@ -12,11 +12,12 @@ class Driver implements \JKingWeb\Arsse\Service\Driver {
     protected $queue = [];
 
     public static function driverName(): string {
-        return Arsse::$lang->msg("Driver.Service.Forking.Name");
+        return Arsse::$lang->msg("Driver.Service.Serial.Name");
     }
 
     public static function requirementsMet(): bool {
-        return function_exists("popen");
+        // this driver has no requirements
+        return true;
     }
 
     public function __construct() {
@@ -28,17 +29,9 @@ class Driver implements \JKingWeb\Arsse\Service\Driver {
     }
 
     public function exec(): int {
-        $pp = [];
-        while ($this->queue) {
-            $id = (int) array_shift($this->queue);
-            $php = '"'.\PHP_BINARY.'"';
-            $arsse = '"'.$_SERVER['argv'][0].'"';
-            array_push($pp, popen("$php $arsse feed refresh $id", "r"));
-        }
-        while ($pp) {
-            $p = array_pop($pp);
-            fgets($p); // TODO: log output
-            pclose($p);
+        while (sizeof($this->queue)) {
+            $id = array_shift($this->queue);
+            Arsse::$db->feedUpdate($id);
         }
         return Arsse::$conf->serviceQueueWidth - sizeof($this->queue);
     }

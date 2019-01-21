@@ -16,7 +16,7 @@ return [
     'API.TTRSS.Feed.Published'                                             => 'Published articles',
     'API.TTRSS.Feed.Archived'                                              => 'Archived articles',
     'API.TTRSS.Feed.Read'                                                  => 'Recently read',
-    'API.TTRSS.FeedCount'                                                  => '{0, select, 1 {(1 feed)} other {({0} feeds)}}',
+    'API.TTRSS.FeedCount'                                                  => '({0, number} {0, plural, one {feed} other {feeds}})',
 
     'Driver.Db.SQLite3.Name'                                               => 'SQLite 3',
     'Driver.Db.SQLite3PDO.Name'                                            => 'SQLite 3 (PDO)',
@@ -24,74 +24,16 @@ return [
     'Driver.Db.PostgreSQLPDO.Name'                                         => 'PostgreSQL (PDO)',
     'Driver.Db.MySQL.Name'                                                 => 'MySQL',
     'Driver.Db.MySQLPDO.Name'                                              => 'MySQL (PDO)',
-    'Driver.Service.Curl.Name'                                             => 'HTTP (curl)',
-    'Driver.Service.Internal.Name'                                         => 'Internal',
+
+    'Driver.Service.Serial.Name'                                           => 'Serialized',
+    'Driver.Service.Subprocess.Name'                                       => 'Concurrent subprocess',
+    'Driver.Service.Curl.Name'                                             => 'Concurrent HTTP (curl)',
+
     'Driver.User.Internal.Name'                                            => 'Internal',
 
-    'HTTP.Status.100'                                                      => 'Continue',
-    'HTTP.Status.101'                                                      => 'Switching Protocols',
-    'HTTP.Status.102'                                                      => 'Processing',
-    'HTTP.Status.200'                                                      => 'OK',
-    'HTTP.Status.201'                                                      => 'Created',
-    'HTTP.Status.202'                                                      => 'Accepted',
-    'HTTP.Status.203'                                                      => 'Non-Authoritative Information',
-    'HTTP.Status.204'                                                      => 'No Content',
-    'HTTP.Status.205'                                                      => 'Reset Content',
-    'HTTP.Status.206'                                                      => 'Partial Content',
-    'HTTP.Status.207'                                                      => 'Multi-Status',
-    'HTTP.Status.208'                                                      => 'Already Reported',
-    'HTTP.Status.226'                                                      => 'IM Used',
-    'HTTP.Status.300'                                                      => 'Multiple Choice',
-    'HTTP.Status.301'                                                      => 'Moved Permanently',
-    'HTTP.Status.302'                                                      => 'Found',
-    'HTTP.Status.303'                                                      => 'See Other',
-    'HTTP.Status.304'                                                      => 'Not Modified',
-    'HTTP.Status.305'                                                      => 'Use Proxy',
-    'HTTP.Status.306'                                                      => 'Switch Proxy',
-    'HTTP.Status.307'                                                      => 'Temporary Redirect',
-    'HTTP.Status.308'                                                      => 'Permanent Redirect',
-    'HTTP.Status.400'                                                      => 'Bad Request',
-    'HTTP.Status.401'                                                      => 'Unauthorized',
-    'HTTP.Status.402'                                                      => 'Payment Required',
-    'HTTP.Status.403'                                                      => 'Forbidden',
-    'HTTP.Status.404'                                                      => 'Not Found',
-    'HTTP.Status.405'                                                      => 'Method Not Allowed',
-    'HTTP.Status.406'                                                      => 'Not Acceptable',
-    'HTTP.Status.407'                                                      => 'Proxy Authentication Required',
-    'HTTP.Status.408'                                                      => 'Request Timeout',
-    'HTTP.Status.409'                                                      => 'Conflict',
-    'HTTP.Status.410'                                                      => 'Gone',
-    'HTTP.Status.411'                                                      => 'Length Required',
-    'HTTP.Status.412'                                                      => 'Precondition Failed',
-    'HTTP.Status.413'                                                      => 'Payload Too Large',
-    'HTTP.Status.414'                                                      => 'URL Too Long',
-    'HTTP.Status.415'                                                      => 'Unsupported Media Type',
-    'HTTP.Status.416'                                                      => 'Range Not Satisfiable',
-    'HTTP.Status.417'                                                      => 'Expectation Failed',
-    'HTTP.Status.421'                                                      => 'Misdirected Request',
-    'HTTP.Status.422'                                                      => 'Unprocessable Entity',
-    'HTTP.Status.423'                                                      => 'Locked',
-    'HTTP.Status.424'                                                      => 'Failed Depedency',
-    'HTTP.Status.426'                                                      => 'Upgrade Required',
-    'HTTP.Status.428'                                                      => 'Precondition Failed',
-    'HTTP.Status.429'                                                      => 'Too Many Requests',
-    'HTTP.Status.431'                                                      => 'Request Header Fields Too Large',
-    'HTTP.Status.451'                                                      => 'Unavailable For Legal Reasons',
-    'HTTP.Status.500'                                                      => 'Internal Server Error',
-    'HTTP.Status.501'                                                      => 'Not Implemented',
-    'HTTP.Status.502'                                                      => 'Bad Gateway',
-    'HTTP.Status.503'                                                      => 'Service Unavailable',
-    'HTTP.Status.504'                                                      => 'Gateway Timeout',
-    'HTTP.Status.505'                                                      => 'HTTP Version Not Supported',
-    'HTTP.Status.506'                                                      => 'Variant Also Negotiates',
-    'HTTP.Status.507'                                                      => 'Insufficient Storage',
-    'HTTP.Status.508'                                                      => 'Loop Detected',
-    'HTTP.Status.510'                                                      => 'Not Extended',
-    'HTTP.Status.511'                                                      => 'Network Authentication Required',
-
-    // this should only be encountered in testing (because tests should cover all exceptions!)
+    // indicates programming error
     'Exception.JKingWeb/Arsse/Exception.uncoded'                           => 'The specified exception symbol {0} has no code specified in AbstractException.php',
-    // this should not usually be encountered
+    // indicates programming error
     'Exception.JKingWeb/Arsse/Exception.unknown'                           => 'An unknown error has occurred',
     // indicates programming error
     'Exception.JKingWeb/Arsse/Exception.constantUnknown'                   => 'Supplied constant value ({0}) is unknown or invalid in the context in which it was used',
@@ -103,20 +45,36 @@ return [
         5 {datetime}
         6 {string}
         7 {array}
-        other {requested type}
+        8 {DateInterval}
+        other {requested type {0}}
      }',
+     // indicates programming error
     'Exception.JKingWeb/Arsse/ExceptionType.typeUnknown'                   => 'Normalization type {0} is  not implemented',
     'Exception.JKingWeb/Arsse/Lang/Exception.defaultFileMissing'           => 'Default language file "{0}" missing',
     'Exception.JKingWeb/Arsse/Lang/Exception.fileMissing'                  => 'Language file "{0}" is not available',
     'Exception.JKingWeb/Arsse/Lang/Exception.fileUnreadable'               => 'Insufficient permissions to read language file "{0}"',
     'Exception.JKingWeb/Arsse/Lang/Exception.fileCorrupt'                  => 'Language file "{0}" is corrupt or does not conform to expected format',
     'Exception.JKingWeb/Arsse/Lang/Exception.stringMissing'                => 'Message string "{msgID}" missing from all loaded language files ({fileList})',
-    'Exception.JKingWeb/Arsse/Lang/Exception.stringInvalid'                => 'Message string "{msgID}" is not a valid ICU message string (language files loaded: {fileList})',
+    'Exception.JKingWeb/Arsse/Lang/Exception.stringInvalid'                => 'Message string "{msgID}" is not a valid ICU message string (language files loaded: {fileList}): {error}',
+    'Exception.JKingWeb/Arsse/Lang/Exception.dataInvalid'                  => 'Failed to format message message string "{msgID}" (language files loaded: {fileList}): {error}',
     'Exception.JKingWeb/Arsse/Conf/Exception.fileMissing'                  => 'Configuration file "{0}" does not exist',
     'Exception.JKingWeb/Arsse/Conf/Exception.fileUnreadable'               => 'Insufficient permissions to read configuration file "{0}"',
     'Exception.JKingWeb/Arsse/Conf/Exception.fileUncreatable'              => 'Insufficient permissions to write new configuration file "{0}"',
     'Exception.JKingWeb/Arsse/Conf/Exception.fileUnwritable'               => 'Insufficient permissions to overwrite configuration file "{0}"',
     'Exception.JKingWeb/Arsse/Conf/Exception.fileCorrupt'                  => 'Configuration file "{0}" is corrupt or does not conform to expected format',
+    'Exception.JKingWeb/Arsse/Conf/Exception.typeMismatch'                 => 
+        'Configuration parameter "{param}" in file "{file}" must be {type, select,
+            integer {an integral number}
+            string {a character string}
+            boolean {either true or false}
+            float {a decimal number}
+            interval {an ISO 8601 time interval}
+            other {consistent with type "{type}"}
+        }{nullable, select,
+            0 {}
+            other {, or null}
+        }',
+    'Exception.JKingWeb/Arsse/Conf/Exception.semanticMismatch'             => 'Configuration parameter "{param}" in file "{file}" is not a valid value. Consult the documentation for possible values',
     'Exception.JKingWeb/Arsse/Db/Exception.extMissing'                     => 'Required PHP extension for driver "{0}" not installed',
     'Exception.JKingWeb/Arsse/Db/Exception.fileMissing'                    => 'Database file "{0}" does not exist',
     'Exception.JKingWeb/Arsse/Db/Exception.fileUnreadable'                 => 'Insufficient permissions to open database file "{0}" for reading',
@@ -125,7 +83,9 @@ return [
     'Exception.JKingWeb/Arsse/Db/Exception.fileUncreatable'                => 'Insufficient permissions to create new database file "{0}"',
     'Exception.JKingWeb/Arsse/Db/Exception.fileCorrupt'                    => 'Database file "{0}" is corrupt or not a valid database',
     'Exception.JKingWeb/Arsse/Db/Exception.connectionFailure'              => 'Could not connect to {engine} database: {message}',
+    // indicates programming error
     'Exception.JKingWeb/Arsse/Db/Exception.paramTypeInvalid'               => 'Prepared statement parameter type "{0}" is invalid',
+    // indicates programming error
     'Exception.JKingWeb/Arsse/Db/Exception.paramTypeUnknown'               => 'Prepared statement parameter type "{0}" is valid, but not implemented',
     'Exception.JKingWeb/Arsse/Db/Exception.paramTypeMissing'               => 'Prepared statement parameter type for parameter #{0} was not specified',
     'Exception.JKingWeb/Arsse/Db/Exception.updateManual'                   =>
@@ -149,9 +109,13 @@ return [
             other {Automatic updating of the {driver_name} database failed because its version, {current}, is newer than the requested version, {target}}
         }',
     'Exception.JKingWeb/Arsse/Db/Exception.engineErrorGeneral'             => '{0}',
+    // indicates programming error
     'Exception.JKingWeb/Arsse/Db/Exception.savepointStatusUnknown'         => 'Savepoint status code {0} not implemented',
+    // indicates programming error
     'Exception.JKingWeb/Arsse/Db/Exception.savepointInvalid'               => 'Tried to {action} invalid savepoint {index}',
+    // indicates programming error
     'Exception.JKingWeb/Arsse/Db/Exception.savepointStale'                 => 'Tried to {action} stale savepoint {index}',
+    // indicates programming error
     'Exception.JKingWeb/Arsse/Db/Exception.resultReused'                   => 'Result set already iterated',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.missing'                   => 'Required field "{field}" missing while performing action "{action}"',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.whitespace'                => 'Field "{field}" of action "{action}" may not contain only whitespace',

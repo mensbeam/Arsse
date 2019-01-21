@@ -461,7 +461,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
             $children  = $c['children'] ? $this->enumerateCategories($cats, $subs, $c['id'], $all) : ['list' => [], 'feeds' => 0];
             $feeds = $c['feeds'] ? $this->enumerateFeeds($subs, $c['id']) : [];
-            $count = sizeof($feeds) + $children['feeds'];
+            $count = sizeof($feeds) + (int) $children['feeds'];
             $out[] = [
                 'name'         => $c['name'],
                 'id'           => "CAT:".$c['id'],
@@ -472,7 +472,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'unread'       => 0,
                 'child_unread' => 0,
                 'checkbox'     => false,
-                'param'        => Arsse::$lang->msg("API.TTRSS.FeedCount", $count),
+                'param'        => Arsse::$lang->msg("API.TTRSS.FeedCount", (string) $count),
                 'items'        => array_merge($children['list'], $feeds),
             ];
             $feedTotal += $count;

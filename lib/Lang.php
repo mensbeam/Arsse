@@ -26,6 +26,8 @@ class Lang {
     protected $locale = "";                     // the currently loaded locale
     protected $loaded = [];                     // the cascade of loaded locale file names
     protected $strings = self::REQUIRED;        // the loaded locale strings, merged
+    /** @var \MessageFormatter */
+    protected $formatter;
 
     public function __construct(string $path = BASE."locale".DIRECTORY_SEPARATOR) {
         $this->path = $path;
@@ -101,9 +103,13 @@ class Lang {
         } elseif (!is_array($vars)) {
             $vars = [$vars];
         }
-        $msg = \MessageFormatter::formatMessage($this->locale, $msg, $vars);
+        $this->formatter = $this->formatter ?? new \MessageFormatter($this->locale, "Initial message");
+        if (!$this->formatter->setPattern($msg)) {
+            throw new Lang\Exception("stringInvalid", ['error' => $this->formatter->getErrorMessage(), 'msgID' => $msgID, 'fileList' => implode(", ", $this->loaded)]);
+        }
+        $msg = $this->formatter->format($vars);
         if ($msg===false) {
-            throw new Lang\Exception("stringInvalid", ['msgID' => $msgID, 'fileList' => implode(", ", $this->loaded)]);
+            throw new Lang\Exception("dataInvalid", ['error' => $this->formatter->getErrorMessage(), 'msgID' => $msgID, 'fileList' => implode(", ", $this->loaded)]); // @codeCoverageIgnore
         }
         return $msg;
     }
@@ -159,6 +165,7 @@ class Lang {
             $this->strings = self::REQUIRED;
             $this->locale = $this->wanted;
             $this->synched = true;
+            $this->formatter = null;
             return true;
         }
         // decompose the requested locale from specific to general, building a list of files to load
@@ -217,6 +224,7 @@ class Lang {
         $this->loaded = $loaded;
         $this->locale = $this->wanted;
         $this->synched = true;
+        $this->formatter = null;
         return true;
     }
 }

@@ -151,6 +151,20 @@ trait SeriesCleanup {
         $this->compareExpectations($state);
     }
 
+    public function testCleanUpOrphanedFeedsWithUnlimitedRetention() {
+        Arsse::$conf->import([
+            'purgeFeeds' => null,
+        ]);
+        Arsse::$db->feedCleanup();
+        $now = gmdate("Y-m-d H:i:s");
+        $state = $this->primeExpectations($this->data, [
+            'arsse_feeds' => ["id","orphaned"]
+        ]);
+        $state['arsse_feeds']['rows'][0][1] = null;
+        $state['arsse_feeds']['rows'][2][1] = $now;
+        $this->compareExpectations($state);
+    }
+
     public function testCleanUpOldArticlesWithStandardRetention() {
         Arsse::$db->articleCleanup();
         $state = $this->primeExpectations($this->data, [
@@ -163,7 +177,9 @@ trait SeriesCleanup {
     }
 
     public function testCleanUpOldArticlesWithUnlimitedReadRetention() {
-        Arsse::$conf->purgeArticlesRead = "";
+        Arsse::$conf->import([
+            'purgeArticlesRead' => null,
+        ]);
         Arsse::$db->articleCleanup();
         $state = $this->primeExpectations($this->data, [
             'arsse_articles' => ["id"]
@@ -175,7 +191,9 @@ trait SeriesCleanup {
     }
 
     public function testCleanUpOldArticlesWithUnlimitedUnreadRetention() {
-        Arsse::$conf->purgeArticlesUnread = "";
+        Arsse::$conf->import([
+            'purgeArticlesUnread' => null,
+        ]);
         Arsse::$db->articleCleanup();
         $state = $this->primeExpectations($this->data, [
             'arsse_articles' => ["id"]
@@ -187,8 +205,10 @@ trait SeriesCleanup {
     }
 
     public function testCleanUpOldArticlesWithUnlimitedRetention() {
-        Arsse::$conf->purgeArticlesRead = "";
-        Arsse::$conf->purgeArticlesUnread = "";
+        Arsse::$conf->import([
+            'purgeArticlesRead' => null,
+            'purgeArticlesUnread' => null,
+        ]);
         Arsse::$db->articleCleanup();
         $state = $this->primeExpectations($this->data, [
             'arsse_articles' => ["id"]

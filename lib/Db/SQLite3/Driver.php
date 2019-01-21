@@ -28,8 +28,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
             throw new Exception("extMissing", static::driverName()); // @codeCoverageIgnore
         }
         // if no database file is specified in the configuration, use a suitable default
-        $dbFile = $dbFile ?? Arsse::$conf->dbSQLite3File ?? \JKingWeb\Arsse\BASE."arsse.db";
-        $dbKey = $dbKey ?? Arsse::$conf->dbSQLite3Key;
+        $dbFile = Arsse::$conf->dbSQLite3File ?? \JKingWeb\Arsse\BASE."arsse.db";
+        $dbKey = Arsse::$conf->dbSQLite3Key;
         $timeout = Arsse::$conf->dbSQLite3Timeout * 1000;
         try {
             $this->makeConnection($dbFile, $dbKey);
@@ -55,7 +55,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
             throw new Exception("fileCorrupt", $dbFile);
         }
         // set the timeout
-        $timeout = (int) ceil((Arsse::$conf->dbSQLite3Timeout ?? 0) * 1000);
+        $timeout = (int) ceil(Arsse::$conf->dbSQLite3Timeout * 1000);
         $this->setTimeout($timeout);
         // set other initial options
         $this->exec("PRAGMA foreign_keys = yes");

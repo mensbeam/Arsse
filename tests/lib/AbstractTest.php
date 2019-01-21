@@ -52,7 +52,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             'dbMySQLPass' => "arsse_test",
             'dbMySQLDb' => "arsse_test",
         ];
-        Arsse::$conf = ($force ? null : Arsse::$conf) ?? (new Conf)->import($defaults)->import($conf);
+        Arsse::$conf = (($force ? null : Arsse::$conf) ?? (new Conf))->import($defaults)->import($conf);
     }
 
     public function assertException(string $msg = "", string $prefix = "", string $type = "Exception") {
@@ -68,7 +68,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             $this->expectExceptionCode($code);
         } else {
             // expecting a standard PHP exception
-            $this->expectException(\Exception::class);
+            $this->expectException(\Throwable::class);
         }
     }
 
