@@ -1,0 +1,5 @@
+{
+    "require": {
+        "daux/daux.io": "*"
+    }
+}
