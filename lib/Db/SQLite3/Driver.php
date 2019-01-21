@@ -123,14 +123,12 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     public function schemaUpdate(int $to, string $basePath = null): bool {
         // turn off foreign keys
         $this->exec("PRAGMA foreign_keys = no");
-        $this->exec("PRAGMA legacy_alter_table = yes");
         // run the generic updater
         try {
             parent::schemaUpdate($to, $basePath);
         } finally {
             // turn foreign keys back on
             $this->exec("PRAGMA foreign_keys = yes");
-            $this->exec("PRAGMA legacy_alter_table = no");
         }
         return true;
     }

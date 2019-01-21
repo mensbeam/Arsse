@@ -5,8 +5,7 @@
 -- Correct collation sequences in order for various things to sort case-insensitively
 -- SQLite has limited ALTER TABLE support, so the tables must be re-created
 -- and their data re-entered; other database systems have a much simpler prodecure
-alter table arsse_users rename to arsse_users_old;
-create table arsse_users(
+create table arsse_users_new(
 -- users
     id text primary key not null collate nocase,                                                            -- user id
     password text,                                                                                          -- password, salted and hashed; if using external authentication this would be blank
@@ -16,11 +15,11 @@ create table arsse_users(
     admin boolean default 0,                                                                                -- whether the user is a member of the special "admin" group
     rights integer not null default 0                                                                       -- temporary admin-rights marker FIXME: remove reliance on this
 );
-insert into arsse_users(id,password,name,avatar_type,avatar_data,admin,rights) select id,password,name,avatar_type,avatar_data,admin,rights from arsse_users_old;
-drop table arsse_users_old;
+insert into arsse_users_new(id,password,name,avatar_type,avatar_data,admin,rights) select id,password,name,avatar_type,avatar_data,admin,rights from arsse_users;
+drop table arsse_users;
+alter table arsse_users_new rename to arsse_users;
 
-alter table arsse_folders rename to arsse_folders_old;
-create table arsse_folders(
+create table arsse_folders_new(
 -- folders, used by NextCloud News and Tiny Tiny RSS
 -- feed subscriptions may belong to at most one folder;
 -- in Tiny Tiny RSS folders may nest
@@ -31,11 +30,11 @@ create table arsse_folders(
     modified text not null default CURRENT_TIMESTAMP,                                                       -- time at which the folder itself (not its contents) was changed; not currently used
     unique(owner,name,parent)                                                                               -- cannot have multiple folders with the same name under the same parent for the same owner
 );
-insert into arsse_folders select * from arsse_folders_old;
-drop table arsse_folders_old;
+insert into arsse_folders_new select * from arsse_folders;
+drop table arsse_folders;
+alter table arsse_folders_new rename to arsse_folders;
 
-alter table arsse_feeds rename to arsse_feeds_old;
-create table arsse_feeds(
+create table arsse_feeds_new(
 -- newsfeeds, deduplicated
 -- users have subscriptions to these feeds in another table
     id integer primary key,                                                                                 -- sequence number
@@ -56,11 +55,11 @@ create table arsse_feeds(
     scrape boolean not null default 0,                                                                      -- whether to use picoFeed's content scraper with this feed
     unique(url,username,password)                                                                           -- a URL with particular credentials should only appear once
 );
-insert into arsse_feeds select * from arsse_feeds_old;
-drop table arsse_feeds_old;
+insert into arsse_feeds_new select * from arsse_feeds;
+drop table arsse_feeds;
+alter table arsse_feeds_new rename to arsse_feeds;
 
-alter table arsse_subscriptions rename to arsse_subscriptions_old;
-create table arsse_subscriptions(
+create table arsse_subscriptions_new(
 -- users' subscriptions to newsfeeds, with settings
     id integer primary key,                                                                                 -- sequence number
     owner text not null references arsse_users(id) on delete cascade on update cascade,                     -- owner of subscription
@@ -73,11 +72,11 @@ create table arsse_subscriptions(
     folder integer references arsse_folders(id) on delete cascade,                                          -- TT-RSS category (nestable); the first-level category (which acts as NextCloud folder) is joined in when needed
     unique(owner,feed)                                                                                      -- a given feed should only appear once for a given owner
 );
-insert into arsse_subscriptions select * from arsse_subscriptions_old;
-drop table arsse_subscriptions_old;
+insert into arsse_subscriptions_new select * from arsse_subscriptions;
+drop table arsse_subscriptions;
+alter table arsse_subscriptions_new rename to arsse_subscriptions;
 
-alter table arsse_articles rename to arsse_articles_old;
-create table arsse_articles(
+create table arsse_articles_new(
 -- entries in newsfeeds
     id integer primary key,                                                                                 -- sequence number
     feed integer not null references arsse_feeds(id) on delete cascade,                                     -- feed for the subscription
@@ -93,22 +92,22 @@ create table arsse_articles(
     url_content_hash text not null,                                                                         -- hash of URL + content, enclosure URL, & content type; used when checking for updates and for identification if there is no guid.
     title_content_hash text not null                                                                        -- hash of title + content, enclosure URL, & content type; used when checking for updates and for identification if there is no guid.
 );
-insert into arsse_articles select * from arsse_articles_old;
-drop table arsse_articles_old;
+insert into arsse_articles_new select * from arsse_articles;
+drop table arsse_articles;
+alter table arsse_articles_new rename to arsse_articles;
 
-alter table arsse_categories rename to arsse_categories_old;
-create table arsse_categories(
+create table arsse_categories_new(
 -- author categories associated with newsfeed entries
 -- these are not user-modifiable
     article integer not null references arsse_articles(id) on delete cascade,                               -- article associated with the category
     name text collate nocase                                                                                -- freeform name of the category
 );
-insert into arsse_categories select * from arsse_categories_old;
-drop table arsse_categories_old;
+insert into arsse_categories_new select * from arsse_categories;
+drop table arsse_categories;
+alter table arsse_categories_new rename to arsse_categories;
 
 
-alter table arsse_labels rename to arsse_labels_old;
-create table arsse_labels (
+create table arsse_labels_new(
 -- user-defined article labels for Tiny Tiny RSS
     id integer primary key,                                                                 -- numeric ID
     owner text not null references arsse_users(id) on delete cascade on update cascade,     -- owning user
@@ -116,8 +115,9 @@ create table arsse_labels (
     modified text not null default CURRENT_TIMESTAMP,                                       -- time at which the label was last modified
     unique(owner,name)
 );
-insert into arsse_labels select * from arsse_labels_old;
-drop table arsse_labels_old;
+insert into arsse_labels_new select * from arsse_labels;
+drop table arsse_labels;
+alter table arsse_labels_new rename to arsse_labels;
 
 -- set version marker
 pragma user_version = 3;

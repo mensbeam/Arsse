@@ -8,6 +8,7 @@ New features:
 
 Bug fixes:
 - Use a general-purpose Unicode collation with SQLite databases
+- Use the correct SQLite schema change procedure for 3.25 and later
 
 Changes:
 - Improve performance of common database queries by 80-90%
