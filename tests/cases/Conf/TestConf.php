@@ -122,10 +122,12 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
         $conf->lang = ["en", "fr"]; // should not be exported: not scalar
         $conf->dbSQLite3File = "test.db"; // should be exported: value changed
         $conf->userDriver = null; // should be exported: changed value, even when null
+        $conf->serviceFrequency = new \DateInterval("PT1H"); // should be exported (as string): value changed
         $conf->someCustomProperty = "Look at me!"; // should be exported: unknown property
         $exp = [
             'dbSQLite3File' => "test.db",
             'userDriver' => null,
+            'serviceFrequency' => "PT1H",
             'someCustomProperty' => "Look at me!",
         ];
         $this->assertSame($exp, $conf->export());

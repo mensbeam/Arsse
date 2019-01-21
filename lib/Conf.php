@@ -184,17 +184,23 @@ class Conf {
     /** Outputs configuration settings, either non-default ones or all, as an associative array
      * @param bool $full Whether to output all configuration options rather than only changed ones */
     public function export(bool $full = false): array {
-        $ref = new self;
-        $out = [];
         $conf = new \ReflectionObject($this);
+        $ref = (new \ReflectionClass($this))->getDefaultProperties();
+        $out = [];
         foreach ($conf->getProperties(\ReflectionProperty::IS_PUBLIC) as $prop) {
             $name = $prop->name;
-            // add the property to the output if the value is of a supported type and either:
-            // 1. full output has been requested
-            // 2. the property is not defined in the class
-            // 3. it differs from the default
-            if ((is_scalar($this->$name) || is_null($this->$name)) && ($full || !$prop->isDefault() || $this->$name !== $ref->$name)) {
-                $out[$name] = $this->$name;
+            $value = $prop->getValue($this);
+            if ($prop->isDefault()) {
+                $default = $ref[$name];
+                // if the property is a known property (rather than one added by a hypothetical plug-in)
+                // we convert intervals to strings and then export anything which doesn't match the default value
+                $value = $this->propertyExport($name, $value);
+                if ((is_scalar($value) || is_null($value)) && ($full || $value !== $ref[$name])) {
+                    $out[$name] = $value;
+                }
+            } elseif (is_scalar($value) || is_null($value)) {
+                // otherwise export the property only if it is scalar
+                $out[$name] = $value;
             }
         }
         return $out;
@@ -213,13 +219,11 @@ class Conf {
             // retrieve the property's docblock, if it exists
             try {
                 $doc = (new \ReflectionProperty(self::class, $prop))->getDocComment();
-            } catch (\ReflectionException $e) {
-            }
-            if ($doc) {
                 // parse the docblock to extract the property description
-                if (preg_match("<@var\s+\S+\s+(.+?)(?:\s*\*/)?$>m", $doc, $match)) {
+                if (preg_match("<@var\s+\S+\s+(.+?)(?:\s*\*/)?\s*$>m", $doc, $match)) {
                     $comment = $match[1];
                 }
+            } catch (\ReflectionException $e) {
             }
             // append the docblock description if there is one, or an empty comment otherwise
             $out .= " // ".$comment.PHP_EOL;
@@ -308,6 +312,20 @@ class Conf {
             $nullable = (int) (bool) (static::$types[$key] & Value::M_NULL);
             $type =  static::$types[$key]['const'] & ~(Value::M_STRICT | Value::M_DROP | Value::M_NULL | Value::M_ARRAY);
             throw new Conf\Exception("typeMismatch", ['param' => $key, 'type' => self::TYPE_NAMES[$type], 'file' => $file, 'nullable' => $nullable]);
+        }
+    }
+
+    protected function propertyExport(string $key, $value) {
+        $value = ($value instanceof \DateInterval) ? Value::normalize($value, Value::T_STRING) : $value;
+        switch ($key) {
+            case "dbDriver":
+                return array_flip(Database::DRIVER_NAMES)[$value] ?? $value;
+            case "userDriver":
+                return array_flip(User::DRIVER_NAMES)[$value] ?? $value;
+            case "serviceDriver":
+                return array_flip(Service::DRIVER_NAMES)[$value] ?? $value;
+            default:
+                return $value;
         }
     }
 }
