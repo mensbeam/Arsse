@@ -3,6 +3,7 @@
 /vendor/
 /vendor-bin/*/vendor
 /documentation/
+/manual/
 /tests/coverage/
 /arsse.db*
 /config.php

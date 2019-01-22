@@ -17,7 +17,7 @@ class RoboFile extends \Robo\Tasks {
      * Please see the PHPUnit documentation for available options.
     */
     public function test(array $args): Result {
-        return $this->runTests("php", "typical", $args);
+        return $this->runTests(escapeshellarg(\PHP_BINARY), "typical", $args);
     }
 
     /**
@@ -27,7 +27,7 @@ class RoboFile extends \Robo\Tasks {
      * See help for the "test" task for more details.
     */
     public function testFull(array $args): Result {
-        return $this->runTests("php", "full", $args);
+        return $this->runTests(escapeshellarg(\PHP_BINARY), "full", $args);
     }
 
     /**
@@ -36,7 +36,7 @@ class RoboFile extends \Robo\Tasks {
      * See help for the "test" task for more details.
     */
     public function testQuick(array $args): Result {
-        return $this->runTests("php", "quick", $args);
+        return $this->runTests(escapeshellarg(\PHP_BINARY), "quick", $args);
     }
 
     /** Produces a code coverage report
@@ -161,7 +161,7 @@ class RoboFile extends \Robo\Tasks {
             $dir."robo.bat",
         ]);
         // generate a sample configuration file
-        $t->taskExec("php arsse.php conf save-defaults config.defaults.php")->dir($dir);
+        $t->taskExec(escapeshellarg(\PHP_BINARY)." arsse.php conf save-defaults config.defaults.php")->dir($dir);
         // package it all up
         $t->taskPack($archive)->addDir("arsse", $dir);
         // execute the collection
@@ -169,5 +169,10 @@ class RoboFile extends \Robo\Tasks {
         // clean the Git worktree list
         $this->_exec("git worktree prune");
         return $out;
+    }
+
+    public function manual(array $args): Result {
+        $execpath = escapeshellarg(realpath(self::BASE."vendor/bin/daux"));
+        return $this->taskExec($execpath)->arg("generate")->option("-d", self::BASE."manual")->args($args)->run();
     }
 }

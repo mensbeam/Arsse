@@ -1,0 +1,11 @@
+{
+    "title": "The Arsse",
+    "tagline": "The clean & modern RSS server that doesn't give you any crap.",
+    "languages": {
+        "en": "English"
+    },
+    "html": {
+        "float": false,
+        "toggle_code": false
+    }
+}
