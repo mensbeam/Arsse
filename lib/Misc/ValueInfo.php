@@ -352,7 +352,7 @@ class ValueInfo {
                     // input is a number, assume this is a number of seconds
                     // for legibility we convert large numbers to minutes, hours, and days as necessary
                     // the DateInterval constructor only allows 12 digits for any given part of an interval,
-                    // so we also convert days to 365-day years where we must, and cap the number of years 
+                    // so we also convert days to 365-day years where we must, and cap the number of years
                     // at (1e11 - 1); this being a very large number, the loss of precision is probably not
                     // significant in practical usage
                     $sec = abs($value);

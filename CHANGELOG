@@ -1,4 +1,5 @@
 Version 0.6.1 (2019-01-23)
+==========================
 
 Bug Fixes:
 - Unify SQL timeout settings

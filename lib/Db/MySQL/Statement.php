@@ -94,8 +94,8 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     }
 
     protected function bindValue($value, string $type, int $position): bool {
-        // this is a bit of a hack: we collect values (and MySQL bind types) here so that we can take 
-        // advantage of the work done by bindValues() even though MySQL requires everything to be bound 
+        // this is a bit of a hack: we collect values (and MySQL bind types) here so that we can take
+        // advantage of the work done by bindValues() even though MySQL requires everything to be bound
         // all at once; we also segregate large values for later packetization
         if (($type === "binary" && !is_null($value)) || (is_string($value) && strlen($value) > $this->packetSize)) {
             $this->values[] = null;
