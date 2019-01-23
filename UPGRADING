@@ -1,41 +1,49 @@
 General upgrade notes
 =====================
 
-When upgrading between any two versions of The Arsse, the following are usually prudent:
+When upgrading between any two versions of The Arsse, the following are 
+usually prudent:
 
 - Back up your database
 - Check for any changes to sample Web server configuration
 - Check for any changes to sample systemd unit or other init files
-- If installing from source, update dependencies with `composer install -o --no-dev`
+- If installing from source, update dependencies with:
+  `composer install -o --no-dev`
 
 
 Upgrading from 0.5.1 to 0.6.0
 =============================
 
-- The database schema has changed from rev3 to rev4; if upgrading the database manually, apply the 3.sql file
+- The database schema has changed from rev3 to rev4; if upgrading the database
+  manually, apply the 3.sql file
+- Configuration is now validated for type and semantics: some previously 
+  working configurations may no longer be accepted
 
 
 Upgrading from 0.2.1 to 0.3.0
 =============================
 
 - The following Composer dependencies have been added:
- - zendframework/zend-diactoros
- - psr/http-message
+    - zendframework/zend-diactoros
+    - psr/http-message
 
 
 Upgrading from 0.2.0 to 0.2.1
 =============================
 
-- The database schema has changed from rev2 to rev3; if upgrading the database manually, apply the 2.sql file
+- The database schema has changed from rev2 to rev3; if upgrading the database
+  manually, apply the 2.sql file
 
 
 Upgrading from 0.1.x to 0.2.0
 =============================
 
-- The database schema has changed from rev1 to rev2; if upgrading the database manually, apply the 1.sql file
-- Web server configuration has changed to accommodate Tiny Tiny RSS; the following URL paths are affected:
- - /tt-rss/api/
- - /tt-rss/feed-icons/
- - /tt-rss/images/
+- The database schema has changed from rev1 to rev2; if upgrading the database
+  manually, apply the 1.sql file
+- Web server configuration has changed to accommodate Tiny Tiny RSS; the
+  following URL paths are affected:
+    - /tt-rss/api/
+    - /tt-rss/feed-icons/
+    - /tt-rss/images/
 - The following Composer dependencies have been added:
- - jkingweb/druuid
+    - jkingweb/druuid

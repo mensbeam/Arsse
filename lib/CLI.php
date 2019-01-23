@@ -88,7 +88,7 @@ USAGE_TEXT;
 
     /** @codeCoverageIgnore */
     protected function logError(string $msg) {
-        fwrite(STDERR,$msg.\PHP_EOL);
+        fwrite(STDERR, $msg.\PHP_EOL);
     }
 
     /** @codeCoverageIgnore */

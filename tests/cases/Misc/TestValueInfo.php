@@ -457,7 +457,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             */
             /* Input value                          null         bool           int                      float                        string                          array                                            interval                   */
             [null,                                  [null,true], [false,false], [0,              false], [0.0,                false], ["",                    false], [[],                                     false], [null, false]],
-            ["",                                    [null,true], [false,true],  [0,              false], [0.0,                false], ["",                    true],  [[""],                                   false], [null, false]], 
+            ["",                                    [null,true], [false,true],  [0,              false], [0.0,                false], ["",                    true],  [[""],                                   false], [null, false]],
             [1,                                     [null,true], [true, true],  [1,              true],  [1.0,                true],  ["1",                   true],  [[1],                                    false], [$this->i("PT1S"), false]],
             [PHP_INT_MAX,                           [null,true], [true, false], [PHP_INT_MAX,    true],  [(float) PHP_INT_MAX,true],  [(string) PHP_INT_MAX,  true],  [[PHP_INT_MAX],                          false], [$this->i("P292471208677Y195DT15H30M7S"), false]],
             [1.0,                                   [null,true], [true, true],  [1,              true],  [1.0,                true],  ["1",                   true],  [[1.0],                                  false], [$this->i("PT1S"), false]],
@@ -571,7 +571,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             "!M j, Y (D)",
             null,
         ];
-        foreach([
+        foreach ([
             /* Input value                          microtime                    iso8601                      iso8601m                     http                         sql                          date                         time                         unix                         float                        '!M j, Y (D)'                *strtotime* (null)                  */
             [null,                                  null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                                   ],
             [INF,                                   null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                                   ],

@@ -4,8 +4,7 @@
 
 -- allow marks to initially have a null date due to changes in how marks are first created
 -- and also add a "touched" column to aid in tracking changes during the course of some transactions
-alter table arsse_marks rename to arsse_marks_old;
-create table arsse_marks(
+create table arsse_marks_new(
 -- users' actions on newsfeed entries
     article integer not null references arsse_articles(id) on delete cascade,                               -- article associated with the marks
     subscription integer not null references arsse_subscriptions(id) on delete cascade on update cascade,   -- subscription associated with the marks; the subscription in turn belongs to a user
@@ -16,8 +15,9 @@ create table arsse_marks(
     touched boolean not null default 0,                                                                     -- used to indicate a record has been modified during the course of some transactions
     primary key(article,subscription)                                                                       -- no more than one mark-set per article per user
 );
-insert into arsse_marks select article,subscription,read,starred,modified,note,0 from arsse_marks_old;
-drop table arsse_marks_old;
+insert into arsse_marks_new select article,subscription,read,starred,modified,note,0 from arsse_marks;
+drop table arsse_marks;
+alter table arsse_marks_new rename to arsse_marks;
 
 -- reindex anything which uses the nocase collation sequence; it has been replaced with a Unicode collation
 reindex nocase;

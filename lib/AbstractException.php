@@ -65,6 +65,7 @@ abstract class AbstractException extends \Exception {
         "Conf/Exception.fileCorrupt"                  => 10306,
         "Conf/Exception.typeMismatch"                 => 10311,
         "Conf/Exception.semanticMismatch"             => 10312,
+        "Conf/Exception.ambiguousDefault"             => 10313,
         "User/Exception.functionNotImplemented"       => 10401,
         "User/Exception.doesNotExist"                 => 10402,
         "User/Exception.alreadyExists"                => 10403,

@@ -29,7 +29,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     protected $bindings;
 
     public function __construct($db, string $query, array $bindings = []) {
-        $this->db = $db; 
+        $this->db = $db;
         $this->query = $query;
         $this->retypeArray($bindings);
     }

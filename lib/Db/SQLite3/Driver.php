@@ -55,7 +55,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
             throw new Exception("fileCorrupt", $dbFile);
         }
         // set the timeout
-        $timeout = (int) ceil(Arsse::$conf->dbSQLite3Timeout * 1000);
+        $timeout = Arsse::$conf->dbSQLite3Timeout ?? Arsse::$conf->dbTimeoutLock; // old SQLite-specific timeout takes precedence
+        $timeout = is_null($timeout) ? PHP_INT_MAX : (int) ceil($timeout * 1000);
         $this->setTimeout($timeout);
         // set other initial options
         $this->exec("PRAGMA foreign_keys = yes");
@@ -123,14 +124,12 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     public function schemaUpdate(int $to, string $basePath = null): bool {
         // turn off foreign keys
         $this->exec("PRAGMA foreign_keys = no");
-        $this->exec("PRAGMA legacy_alter_table = yes");
         // run the generic updater
         try {
             parent::schemaUpdate($to, $basePath);
         } finally {
             // turn foreign keys back on
             $this->exec("PRAGMA foreign_keys = yes");
-            $this->exec("PRAGMA legacy_alter_table = no");
         }
         return true;
     }

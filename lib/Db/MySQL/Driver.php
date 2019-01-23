@@ -18,7 +18,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     const SQL_MODE = "ANSI_QUOTES,HIGH_NOT_PRECEDENCE,NO_BACKSLASH_ESCAPES,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT,STRICT_ALL_TABLES";
     const TRANSACTIONAL_LOCKS = false;
 
-    /** @var \mysql */
+    /** @var \mysqli */
     protected $db;
     protected $transStart = 0;
     protected $packetSize = 4194304;
@@ -48,7 +48,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         return [
             "SET sql_mode = '".self::SQL_MODE."'",
             "SET time_zone = '+00:00'",
-            "SET lock_wait_timeout = 1",
+            "SET lock_wait_timeout = ".self::lockTimeout(),
+            "SET max_execution_time = ".ceil(Arsse::$conf->dbTimeoutExec * 1000),
         ];
     }
 
@@ -130,7 +131,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
             try {
                 $this->exec("SET lock_wait_timeout = 1; LOCK TABLES $tables");
             } finally {
-                $this->exec("SET lock_wait_timeout = 60");
+                $this->exec("SET lock_wait_timeout = ".self::lockTimeout());
             }
         }
         return true;
@@ -139,6 +140,10 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     protected function unlock(bool $rollback = false): bool {
         $this->exec("UNLOCK TABLES");
         return true;
+    }
+
+    protected static function lockTimeout(): int {
+        return (int) max(min(ceil(Arsse::$conf->dbTimeoutLock ?? 31536000), 31536000), 1);
     }
 
     public function __destruct() {
@@ -157,7 +162,9 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     }
 
     protected function makeConnection(string $db, string $user, string $password, string $host, int $port, string $socket) {
-        $this->db = @new \mysqli($host, $user, $password, $db, $port, $socket);
+        $this->db = mysqli_init();
+        $this->db->options(\MYSQLI_OPT_CONNECT_TIMEOUT, ceil(Arsse::$conf->dbTimeoutConnect));
+        @$this->db->real_connect($host, $user, $password, $db, $port, $socket);
         if ($this->db->connect_errno) {
             list($excClass, $excMsg, $excData) = $this->buildConnectionException($this->db->connect_errno, $this->db->connect_error);
             throw new $excClass($excMsg, $excData);

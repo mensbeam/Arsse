@@ -21,16 +21,16 @@ class Conf {
     public $dbDriver                = "sqlite3";
     /** @var boolean Whether to attempt to automatically update the database when upgrading to a new version with schema changes */
     public $dbAutoUpdate            = true;
-    /** @var \DateInterval Number of seconds to wait before returning a timeout error when connecting to a database (zero waits forever; not applicable to SQLite) */
+    /** @var \DateInterval|null Number of seconds to wait before returning a timeout error when connecting to a database (null waits forever; not applicable to SQLite) */
     public $dbTimeoutConnect        = 5.0;
-    /** @var \DateInterval Number of seconds to wait before returning a timeout error when executing a database operation (zero waits forever; not applicable to SQLite) */
-    public $dbTimeoutExec           = 0.0;
+    /** @var \DateInterval|null Number of seconds to wait before returning a timeout error when executing a database operation (null waits forever; not applicable to SQLite) */
+    public $dbTimeoutExec           = null;
+    /** @var \DateInterval|null Number of seconds to wait before returning a timeout error when acquiring a database lock (null waits forever) */
+    public $dbTimeoutLock           = 60.0;
     /** @var string|null Full path and file name of SQLite database (if using SQLite) */
     public $dbSQLite3File           = null;
     /** @var string Encryption key to use for SQLite database (if using a version of SQLite with SEE) */
     public $dbSQLite3Key            = "";
-    /** @var \DateInterval Number of seconds for SQLite to wait before returning a timeout error when trying to acquire a write lock on the database (zero does not wait) */
-    public $dbSQLite3Timeout        = 60.0;
     /** @var string Host name, address, or socket path of PostgreSQL database server (if using PostgreSQL) */
     public $dbPostgreSQLHost        = "";
     /** @var string Log-in user name for PostgreSQL database server (if using PostgreSQL) */
@@ -75,22 +75,16 @@ class Conf {
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
     public $userSessionLifetime     = "P7D";
 
-    /** @var string Feed update service driver to use, one of "serial", "subprocess", or "curl". A fully-qualified class name may also be used for custom drivers */
+    /** @var string Feed update service driver to use, one of "serial" or "subprocess". A fully-qualified class name may also be used for custom drivers */
     public $serviceDriver           = "subprocess";
     /** @var \DateInterval The interval between checks for new articles, as an ISO 8601 duration
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
     public $serviceFrequency        = "PT2M";
     /** @var integer Number of concurrent feed updates to perform */
     public $serviceQueueWidth       = 5;
-    /** @var string The base server address (with scheme, host, port if necessary, and terminal slash) to connect to the server when performing feed updates using cURL */
-    public $serviceCurlBase         = "http://localhost/";
-    /** @var string The user name to use when performing feed updates using cURL */
-    public $serviceCurlUser         = "";
-    /** @var string The password to use when performing feed updates using cURL */
-    public $serviceCurlPassword     = "";
 
     /** @var \DateInterval Number of seconds to wait for data when fetching feeds from foreign servers */
-    public $fetchTimeout            = 10;
+    public $fetchTimeout            = 10.0;
     /** @var integer Maximum size, in bytes, of data when fetching feeds from foreign servers */
     public $fetchSizeLimit          = 2 * 1024 * 1024;
     /** @var boolean Whether to allow the possibility of fetching full article contents using an item's URL. Whether fetching will actually happen is also governed by a per-feed setting */
@@ -115,12 +109,23 @@ class Conf {
     /** @var string Space-separated list of origins from which to deny cross-origin resource sharing */
     public $httpOriginsDenied       = "";
 
+    ### OBSOLETE SETTINGS
+
+    /** @var \DateInterval|null (OBSOLETE) Number of seconds for SQLite to wait before returning a timeout error when trying to acquire a write lock on the database (zero does not wait) */
+    public $dbSQLite3Timeout        = null; // previously 60.0
+
     const TYPE_NAMES = [
         Value::T_BOOL     => "boolean",
         Value::T_STRING   => "string",
         Value::T_FLOAT    => "float",
         VALUE::T_INT      => "integer",
         Value::T_INTERVAL => "interval",
+    ];
+    const EXPECTED_TYPES = [
+        'dbTimeoutExec'    => "double",
+        'dbTimeoutLock'    => "double",
+        'dbTimeoutConnect' => "double",
+        'dbSQLite3Timeout' => "double",
     ];
 
     protected static $types = [];
@@ -184,17 +189,23 @@ class Conf {
     /** Outputs configuration settings, either non-default ones or all, as an associative array
      * @param bool $full Whether to output all configuration options rather than only changed ones */
     public function export(bool $full = false): array {
-        $ref = new self;
-        $out = [];
         $conf = new \ReflectionObject($this);
+        $ref = (new \ReflectionClass($this))->getDefaultProperties();
+        $out = [];
         foreach ($conf->getProperties(\ReflectionProperty::IS_PUBLIC) as $prop) {
             $name = $prop->name;
-            // add the property to the output if the value is of a supported type and either:
-            // 1. full output has been requested
-            // 2. the property is not defined in the class
-            // 3. it differs from the default
-            if ((is_scalar($this->$name) || is_null($this->$name)) && ($full || !$prop->isDefault() || $this->$name !== $ref->$name)) {
-                $out[$name] = $this->$name;
+            $value = $prop->getValue($this);
+            if ($prop->isDefault()) {
+                $default = $ref[$name];
+                // if the property is a known property (rather than one added by a hypothetical plug-in)
+                // we convert intervals to strings and then export anything which doesn't match the default value
+                $value = $this->propertyExport($name, $value);
+                if ((is_scalar($value) || is_null($value)) && ($full || $value !== $ref[$name])) {
+                    $out[$name] = $value;
+                }
+            } elseif (is_scalar($value) || is_null($value)) {
+                // otherwise export the property only if it is scalar
+                $out[$name] = $value;
             }
         }
         return $out;
@@ -213,13 +224,11 @@ class Conf {
             // retrieve the property's docblock, if it exists
             try {
                 $doc = (new \ReflectionProperty(self::class, $prop))->getDocComment();
-            } catch (\ReflectionException $e) {
-            }
-            if ($doc) {
                 // parse the docblock to extract the property description
-                if (preg_match("<@var\s+\S+\s+(.+?)(?:\s*\*/)?$>m", $doc, $match)) {
+                if (preg_match("<@var\s+\S+\s+(.+?)(?:\s*\*/)?\s*$>m", $doc, $match)) {
                     $comment = $match[1];
                 }
+            } catch (\ReflectionException $e) {
             }
             // append the docblock description if there is one, or an empty comment otherwise
             $out .= " // ".$comment.PHP_EOL;
@@ -263,26 +272,28 @@ class Conf {
     }
 
     protected function propertyImport(string $key, $value, string $file = "") {
+        $typeName = static::$types[$key]['name'] ?? "mixed";
+        $typeConst = static::$types[$key]['const'] ?? Value::T_MIXED;
+        $nullable = (int) (bool) (static::$types[$key]['const'] & Value::M_NULL);
         try {
-            $typeName = static::$types[$key]['name'] ?? "mixed";
-            $typeConst = static::$types[$key]['const'] ?? Value::T_MIXED;
             if ($typeName === "\\DateInterval") {
                 // date intervals have special handling: if the existing value (ultimately, the default value)
                 // is an integer or float, the new value should be imported as numeric. If the new value is a string
                 // it is first converted to an interval and then converted to the numeric type if necessary
+                $mode = $nullable ? Value::M_STRICT | Value::M_NULL : Value::M_STRICT;
                 if (is_string($value)) {
-                    $value =  Value::normalize($value, Value::T_INTERVAL | Value::M_STRICT);
+                    $value =  Value::normalize($value, Value::T_INTERVAL | $mode);
                 }
-                switch (gettype($this->$key)) {
+                switch (self::EXPECTED_TYPES[$key] ?? gettype($this->$key)) {
                     case "integer":
-                        return Value::normalize($value, Value::T_INT | Value::M_STRICT);
+                        return Value::normalize($value, Value::T_INT | $mode);
                     case "double":
-                        return Value::normalize($value, Value::T_FLOAT | Value::M_STRICT);
+                        return Value::normalize($value, Value::T_FLOAT | $mode);
                     case "string":
                     case "object":
                         return $value;
                     default:
-                        throw new ExceptionType("strictFailure"); // @codeCoverageIgnore
+                        throw new Conf\Exception("ambiguousDefault", ['param' => $key]); // @codeCoverageIgnore
                 }
             }
             $value =  Value::normalize($value, $typeConst);
@@ -305,9 +316,22 @@ class Conf {
             }
             return $value;
         } catch (ExceptionType $e) {
-            $nullable = (int) (bool) (static::$types[$key] & Value::M_NULL);
             $type =  static::$types[$key]['const'] & ~(Value::M_STRICT | Value::M_DROP | Value::M_NULL | Value::M_ARRAY);
             throw new Conf\Exception("typeMismatch", ['param' => $key, 'type' => self::TYPE_NAMES[$type], 'file' => $file, 'nullable' => $nullable]);
+        }
+    }
+
+    protected function propertyExport(string $key, $value) {
+        $value = ($value instanceof \DateInterval) ? Value::normalize($value, Value::T_STRING) : $value;
+        switch ($key) {
+            case "dbDriver":
+                return array_flip(Database::DRIVER_NAMES)[$value] ?? $value;
+            case "userDriver":
+                return array_flip(User::DRIVER_NAMES)[$value] ?? $value;
+            case "serviceDriver":
+                return array_flip(Service::DRIVER_NAMES)[$value] ?? $value;
+            default:
+                return $value;
         }
     }
 }

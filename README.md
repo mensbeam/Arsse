@@ -6,6 +6,7 @@ At present the software should be considered in an "alpha" state: though its cor
 
 - Providing more sync protocols (Google Reader, Fever, others)
 - Better packaging and configuration samples
+- A user manual
 
 ## Requirements
 
@@ -75,7 +76,7 @@ Please refer to `CONTRIBUTING.md` for guidelines on contributing code to The Ars
 
 Functionally there is no reason to prefer either SQLite or PostgreSQL over the other. SQLite is significantly simpler to set up in most cases, requiring only read and write access to a containing directory in order to function; PostgreSQL may perform better than SQLite when serving hundreds of users or more, though this has not been tested.
 
-MySQL, on the other hand, is *not recommended* due to its relatively constrained index prefix limits which may cause some newsfeeds which would otherwise work to be rejected. If using MySQL, special care should also be taken when performing schema upgrades, as errors during the process can leave the database in a half-upgraded state which The Arsse cannot itself recover from.
+MySQL, on the other hand, is **not recommended** due to its relatively constrained index prefix limits which may cause some newsfeeds which would otherwise work to be rejected. If using MySQL, special care should also be taken when performing schema upgrades, as errors during the process can leave the database in a half-upgraded state which The Arsse cannot itself recover from.
 
 Note that MariaDB is not compatible with The Arsse: its support for common table expressions is, as of this writing, not sufficient for our needs.
 

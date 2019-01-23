@@ -1,15 +1,30 @@
-Version 0.6.0 (????-??-??)
+Version 0.6.1 (2019-01-23)
+==========================
+
+Bug Fixes:
+- Unify SQL timeout settings
+- Correctly escape shell command in subprocess service driver
+- Correctly allow null time intervals in configuration when appropriate
+
+Changes:
+- Change PicoFeed dependency to maintained version (Thanks, Aaron Parecki!)
+- Remove non-functional cURL service driver
+
+Version 0.6.0 (2019-01-21)
 ==========================
 
 New features:
 - Support for PostgreSQL databases
 - Support for MySQL databases
+- Validation of configuration parameters
 
 Bug fixes:
 - Use a general-purpose Unicode collation with SQLite databases
+- Use the correct SQLite schema change procedure for 3.25 and later
 
 Changes:
 - Improve performance of common database queries by 80-90%
+- Make configuration defaults consistent with their defined types
 
 Version 0.5.1 (2018-11-10)
 ==========================

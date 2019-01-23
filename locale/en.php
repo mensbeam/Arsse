@@ -27,7 +27,6 @@ return [
 
     'Driver.Service.Serial.Name'                                           => 'Serialized',
     'Driver.Service.Subprocess.Name'                                       => 'Concurrent subprocess',
-    'Driver.Service.Curl.Name'                                             => 'Concurrent HTTP (curl)',
 
     'Driver.User.Internal.Name'                                            => 'Internal',
 
@@ -75,6 +74,8 @@ return [
             other {, or null}
         }',
     'Exception.JKingWeb/Arsse/Conf/Exception.semanticMismatch'             => 'Configuration parameter "{param}" in file "{file}" is not a valid value. Consult the documentation for possible values',
+    // indicates programming error
+    'Exception.JKingWeb/Arsse/Conf/Exception.ambiguousDefault'             => 'Preferred type of configuration parameter "{param}" could not be inferred from its default value. The parameter must be added to the Conf::EXPECTED_TYPES array',
     'Exception.JKingWeb/Arsse/Db/Exception.extMissing'                     => 'Required PHP extension for driver "{0}" not installed',
     'Exception.JKingWeb/Arsse/Db/Exception.fileMissing'                    => 'Database file "{0}" does not exist',
     'Exception.JKingWeb/Arsse/Db/Exception.fileUnreadable'                 => 'Insufficient permissions to open database file "{0}" for reading',
