@@ -1,3 +1,14 @@
+Version 0.6.1 (2019-01-23)
+
+Bug Fixes:
+- Unify SQL timeout settings
+- Correctly escape shell command in subprocess service driver
+- Correctly allow null time intervals in configuration when appropriate
+
+Changes:
+- Change PicoFeed dependency to maintained version (Thanks, Aaron Parecki!)
+- Remove non-functional cURL service driver
+
 Version 0.6.0 (2019-01-21)
 ==========================
 
