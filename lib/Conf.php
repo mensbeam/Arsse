@@ -21,16 +21,16 @@ class Conf {
     public $dbDriver                = "sqlite3";
     /** @var boolean Whether to attempt to automatically update the database when upgrading to a new version with schema changes */
     public $dbAutoUpdate            = true;
-    /** @var \DateInterval Number of seconds to wait before returning a timeout error when connecting to a database (zero waits forever; not applicable to SQLite) */
+    /** @var \DateInterval|null Number of seconds to wait before returning a timeout error when connecting to a database (null waits forever; not applicable to SQLite) */
     public $dbTimeoutConnect        = 5.0;
-    /** @var \DateInterval Number of seconds to wait before returning a timeout error when executing a database operation (zero waits forever; not applicable to SQLite) */
-    public $dbTimeoutExec           = 0.0;
+    /** @var \DateInterval|null Number of seconds to wait before returning a timeout error when executing a database operation (null waits forever; not applicable to SQLite) */
+    public $dbTimeoutExec           = null;
+    /** @var \DateInterval|null Number of seconds to wait before returning a timeout error when acquiring a database lock (null waits forever) */
+    public $dbTimeoutLock           = 60.0;
     /** @var string|null Full path and file name of SQLite database (if using SQLite) */
     public $dbSQLite3File           = null;
     /** @var string Encryption key to use for SQLite database (if using a version of SQLite with SEE) */
     public $dbSQLite3Key            = "";
-    /** @var \DateInterval Number of seconds for SQLite to wait before returning a timeout error when trying to acquire a write lock on the database (zero does not wait) */
-    public $dbSQLite3Timeout        = 60.0;
     /** @var string Host name, address, or socket path of PostgreSQL database server (if using PostgreSQL) */
     public $dbPostgreSQLHost        = "";
     /** @var string Log-in user name for PostgreSQL database server (if using PostgreSQL) */
@@ -109,12 +109,23 @@ class Conf {
     /** @var string Space-separated list of origins from which to deny cross-origin resource sharing */
     public $httpOriginsDenied       = "";
 
+    ### OBSOLETE SETTINGS
+
+    /** @var \DateInterval|null (OBSOLETE) Number of seconds for SQLite to wait before returning a timeout error when trying to acquire a write lock on the database (zero does not wait) */
+    public $dbSQLite3Timeout        = null; // previously 60.0
+
     const TYPE_NAMES = [
         Value::T_BOOL     => "boolean",
         Value::T_STRING   => "string",
         Value::T_FLOAT    => "float",
         VALUE::T_INT      => "integer",
         Value::T_INTERVAL => "interval",
+    ];
+    const EXPECTED_TYPES = [
+        'dbTimeoutExec'    => "double",
+        'dbTimeoutLock'    => "double",
+        'dbTimeoutConnect' => "double",
+        'dbSQLite3Timeout' => "double",
     ];
 
     protected static $types = [];
@@ -261,26 +272,28 @@ class Conf {
     }
 
     protected function propertyImport(string $key, $value, string $file = "") {
+        $typeName = static::$types[$key]['name'] ?? "mixed";
+        $typeConst = static::$types[$key]['const'] ?? Value::T_MIXED;
+        $nullable = (int) (bool) (static::$types[$key]['const'] & Value::M_NULL);
         try {
-            $typeName = static::$types[$key]['name'] ?? "mixed";
-            $typeConst = static::$types[$key]['const'] ?? Value::T_MIXED;
             if ($typeName === "\\DateInterval") {
                 // date intervals have special handling: if the existing value (ultimately, the default value)
                 // is an integer or float, the new value should be imported as numeric. If the new value is a string
                 // it is first converted to an interval and then converted to the numeric type if necessary
+                $mode = $nullable ? Value::M_STRICT | Value::M_NULL : Value::M_STRICT;
                 if (is_string($value)) {
-                    $value =  Value::normalize($value, Value::T_INTERVAL | Value::M_STRICT);
+                    $value =  Value::normalize($value, Value::T_INTERVAL | $mode);
                 }
-                switch (gettype($this->$key)) {
+                switch (self::EXPECTED_TYPES[$key] ?? gettype($this->$key)) {
                     case "integer":
-                        return Value::normalize($value, Value::T_INT | Value::M_STRICT);
+                        return Value::normalize($value, Value::T_INT | $mode);
                     case "double":
-                        return Value::normalize($value, Value::T_FLOAT | Value::M_STRICT);
+                        return Value::normalize($value, Value::T_FLOAT | $mode);
                     case "string":
                     case "object":
                         return $value;
                     default:
-                        throw new ExceptionType("strictFailure"); // @codeCoverageIgnore
+                        throw new Conf\Exception("ambiguousDefault", ['param' => $key]); // @codeCoverageIgnore
                 }
             }
             $value =  Value::normalize($value, $typeConst);
@@ -303,7 +316,6 @@ class Conf {
             }
             return $value;
         } catch (ExceptionType $e) {
-            $nullable = (int) (bool) (static::$types[$key] & Value::M_NULL);
             $type =  static::$types[$key]['const'] & ~(Value::M_STRICT | Value::M_DROP | Value::M_NULL | Value::M_ARRAY);
             throw new Conf\Exception("typeMismatch", ['param' => $key, 'type' => self::TYPE_NAMES[$type], 'file' => $file, 'nullable' => $nullable]);
         }

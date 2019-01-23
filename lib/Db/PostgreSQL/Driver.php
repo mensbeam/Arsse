@@ -74,11 +74,13 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     }
 
     public static function makeSetupQueries(string $schema = ""): array {
-        $timeout = ceil(Arsse::$conf->dbTimeoutExec * 1000);
+        $timeExec = is_null(Arsse::$conf->dbTimeoutExec) ? 0 : ceil(max(Arsse::$conf->dbTimeoutExec * 1000, 1));
+        $timeLock = is_null(Arsse::$conf->dbTimeoutLock) ? 0 : ceil(max(Arsse::$conf->dbTimeoutLock * 1000, 1));
         $out = [
             "SET TIME ZONE UTC",
             "SET DateStyle = 'ISO, MDY'",
-            "SET statement_timeout = '$timeout'",
+            "SET statement_timeout = '$timeExec'",
+            "SET lock_timeout = '$timeLock'",
         ];
         if (strlen($schema) > 0) {
             $schema = '"'.str_replace('"', '""', $schema).'"';
