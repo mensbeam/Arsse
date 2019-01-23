@@ -27,7 +27,6 @@ return [
 
     'Driver.Service.Serial.Name'                                           => 'Serialized',
     'Driver.Service.Subprocess.Name'                                       => 'Concurrent subprocess',
-    'Driver.Service.Curl.Name'                                             => 'Concurrent HTTP (curl)',
 
     'Driver.User.Internal.Name'                                            => 'Internal',
 

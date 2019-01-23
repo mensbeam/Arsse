@@ -75,19 +75,13 @@ class Conf {
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
     public $userSessionLifetime     = "P7D";
 
-    /** @var string Feed update service driver to use, one of "serial", "subprocess", or "curl". A fully-qualified class name may also be used for custom drivers */
+    /** @var string Feed update service driver to use, one of "serial" or "subprocess". A fully-qualified class name may also be used for custom drivers */
     public $serviceDriver           = "subprocess";
     /** @var \DateInterval The interval between checks for new articles, as an ISO 8601 duration
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
     public $serviceFrequency        = "PT2M";
     /** @var integer Number of concurrent feed updates to perform */
     public $serviceQueueWidth       = 5;
-    /** @var string The base server address (with scheme, host, port if necessary, and terminal slash) to connect to the server when performing feed updates using cURL */
-    public $serviceCurlBase         = "http://localhost/";
-    /** @var string The user name to use when performing feed updates using cURL */
-    public $serviceCurlUser         = "";
-    /** @var string The password to use when performing feed updates using cURL */
-    public $serviceCurlPassword     = "";
 
     /** @var \DateInterval Number of seconds to wait for data when fetching feeds from foreign servers */
     public $fetchTimeout            = 10;
