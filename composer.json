@@ -22,7 +22,7 @@
         "ext-intl": "*",
         "ext-json": "*",
         "ext-hash": "*",
-        "fguillot/picofeed": ">=0.1.31",
+        "p3k/picofeed": "0.1.*",
         "hosteurope/password-generator": "^1.0",
         "docopt/docopt": "^1.0",
         "jkingweb/druuid": "^3.0",
