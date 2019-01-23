@@ -84,7 +84,7 @@ class Conf {
     public $serviceQueueWidth       = 5;
 
     /** @var \DateInterval Number of seconds to wait for data when fetching feeds from foreign servers */
-    public $fetchTimeout            = 10;
+    public $fetchTimeout            = 10.0;
     /** @var integer Maximum size, in bytes, of data when fetching feeds from foreign servers */
     public $fetchSizeLimit          = 2 * 1024 * 1024;
     /** @var boolean Whether to allow the possibility of fetching full article contents using an item's URL. Whether fetching will actually happen is also governed by a per-feed setting */
