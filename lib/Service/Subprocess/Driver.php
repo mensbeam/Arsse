@@ -31,8 +31,8 @@ class Driver implements \JKingWeb\Arsse\Service\Driver {
         $pp = [];
         while ($this->queue) {
             $id = (int) array_shift($this->queue);
-            $php = '"'.\PHP_BINARY.'"';
-            $arsse = '"'.$_SERVER['argv'][0].'"';
+            $php = escapeshellarg(\PHP_BINARY);
+            $arsse = escapeshellarg($_SERVER['argv'][0]);
             array_push($pp, popen("$php $arsse feed refresh $id", "r"));
         }
         while ($pp) {
