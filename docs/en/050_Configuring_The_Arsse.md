@@ -36,23 +36,51 @@ If set to `false`, the database schema must be manually upgraded. Schema files c
 
 ### dbTimeoutConnect
 
-| Type     | Default |
-|----------|---------|
-| interval | `5.0`   |
+| Type             | Default |
+|------------------|---------|
+| interval or null | `5.0`   |
 
-The number of seconds to wait before returning a timeout error when connecting to a database server.
+The number of seconds to wait before returning a timeout error when connecting to a database server. The special value `null` waits the maximum amount of time, while `0.0` waits the minimum amount of time. The minimums are maximums for each backend are as follows:
 
-Consult [PostgreSQL's documentation](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNECT-CONNECT-TIMEOUT) for details on how the timeout is interpreted by PostgreSQL. This setting does not apply to SQLite.
+| Backend    | Minimum  | Maximum  |
+|------------|----------|----------|
+| SQLite 3   | *(does not apply)*  | *(does not apply)* |
+| PostgreSQL | 1 second | forever  |
+| MySQL      | 1 second | forever  |
+
+Note that in practice neither PostgreSQL nor MySQL will wait indefinitely: they are still subject to PHP's socket timeouts. Consult [PostgreSQL's documentation](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNECT-CONNECT-TIMEOUT) for details on how the timeout is interpreted by PostgreSQL. 
 
 ### dbTimeoutExec
 
 | Type     | Default |
 |----------|---------|
-| interval | `0.0`   |
+| interval | `null`  |
 
-The number of seconds to wait before returning a timeout error when executing a database operation (i.e. computing results).
+The number of seconds to wait before returning a timeout error when executing a database operation (i.e. computing results). The special value `null` waits the maximum amount of time, while `0.0` waits the minimum amount of time. The minimums are maximums for each backend are as follows:
 
-PostgreSQL and MySQL both interpret `0.0` as "wait forever". This setting does not apply to SQLite.
+| Backend    | Minimum       | Maximum  |
+|------------|---------------|----------|
+| SQLite 3   | *(does not apply)*       | *(does not apply)* |
+| PostgreSQL | 1 millisecond | forever  |
+| MySQL      | 1 second      | forever  |
+
+With MySQL this timeout only to read operations, whereas PostgreSQL will time out write operations as well. 
+
+### dbTimeoutLock
+
+| Type     | Default |
+|----------|---------|
+| interval | `60.0`  |
+
+The number of seconds to wait before returning a timeout error when acquiring database locks. The special value `null` waits the maximum amount of time, while `0.0` waits the minimum amount of time. The minimums are maximums for each backend are as follows:
+
+| Backend    | Minimum        | Maximum               |
+|------------|----------------|-----------------------|
+| SQLite 3   | 0 milliseconds | at least 24 days      |
+| PostgreSQL | 1 millisecond  | forever               |
+| MySQL      | 1 second       | approximately 1 year  |
+
+Note that PostgreSQL counts time spent waiting for locks as part of the above execution timeout. The maximum timeout for SQLite is `PHP_INT_MAX` milliseconds, which on 32-bit systems is just under 25 days, and on 64-bit systems is billions of years.
 
 ## Database Settings Specific to SQLite 3
 
@@ -71,16 +99,6 @@ The full path and file name of SQLite database. The special value `null` evaluat
 | string | `""`    |
 
 The key used to encrypt/decrypt the SQLite database. This is only relevant if using the [SQLite Encryption Extension](https://www.sqlite.org/see/).
-
-### dbSQLite3Timeout
-
-| Type     | Default |
-|----------|---------|
-| interval | `60.0`  |
-
-The number of seconds for SQLite to wait before returning a timeout error when trying to acquire a write lock on the database file. Setting this to a low value may cause operations to fail with an error.
-
-Consult [SQLite's documentation](https://sqlite.org/c3ref/busy_timeout.html) for more details.
 
 ## Database Settings Specific to PostgreSQL
 
@@ -366,3 +384,17 @@ This setting also governs when an article is hidden from a user after being read
 How long to keep a an article in the database regardless of whether any users have read it. Specifying `null` will retain articles forever, whereas an interval evaluating to zero (e.g. `"PT0S"`) will delete them immediately. 
 
 If an article is starred by any user, it is retained indefinitely regardless of this setting.
+
+# Obsolete Settings
+
+### dbSQLite3Timeout
+
+| Type     | Historical Default |
+|----------|--------------------|
+| interval | `60.0`             |
+
+*This setting has been replaced by [dbTimeoutLock](#dbTimeoutLock).*
+
+The number of seconds for SQLite to wait before returning a timeout error when trying to acquire a write lock on the database file. Setting this to a low value may cause operations to fail with an error.
+
+Consult [SQLite's documentation](https://sqlite.org/c3ref/busy_timeout.html) for more details.
