@@ -8,7 +8,7 @@
 
 The default language locale, mostly used when reporting errors on the command line or in logs. Currently only `"en"` (English) is available.
 
-## Database Settings
+## Database settings
 
 ### dbDriver
 
@@ -82,7 +82,7 @@ The number of seconds to wait before returning a timeout error when acquiring da
 
 Note that PostgreSQL counts time spent waiting for locks as part of the above execution timeout. The maximum timeout for SQLite is `PHP_INT_MAX` milliseconds, which on 32-bit systems is just under 25 days, and on 64-bit systems is billions of years.
 
-## Database Settings Specific to SQLite 3
+## Database settings specific to SQLite 3
 
 ### dbSQLite3File
 
@@ -100,7 +100,7 @@ The full path and file name of SQLite database. The special value `null` evaluat
 
 The key used to encrypt/decrypt the SQLite database. This is only relevant if using the [SQLite Encryption Extension](https://www.sqlite.org/see/).
 
-## Database Settings Specific to PostgreSQL
+## Database settings specific to PostgreSQL
 
 ### dbPostgreSQLHost
 
@@ -164,7 +164,7 @@ A PostgreSQL service file entry to use *instead of* the above configuration; if 
 
 Consult [PostgreSQL's documentation](https://www.postgresql.org/docs/current/libpq-pgservice.html) for more details.
 
-## Database Settings Specific to MySQL
+## Database settings specific to MySQL
 
 ### dbMySQLHost
 
@@ -216,7 +216,7 @@ The name of the database used by The Arsse on the MySQL database server.
 
 A Unix domain socket or named pipe to use for the MySQL database server when not connecting via TCP.
 
-## User Management Settings
+## User management settings
 
 ### userDriver
 
@@ -280,7 +280,7 @@ The maximum lifetime of log-in sessions regardless of recent activity. Session l
 
 The desired length in characters of randomly-generated user passwords. When [adding users](/en/Command-Line_Functionality), omitting a desired password generates a random one; this setting controls the length of these passwords.
 
-## Newsfeed Fetching Service Settings
+## Newsfeed fetching service settings
 
 ### serviceDriver
 
@@ -290,8 +290,8 @@ The desired length in characters of randomly-generated user passwords. When [add
 
 The newsfeed fetching service driver to use. The following values are understood:
 
-- `"serial"`: Fetches feeds and processed them one at a time. This is the slowest method, but is simple and reliable.
-- `"subprocess"`: Fetches and processes multiple feeds concurrently by starting a separate process for each feed using PHP's [`popen`](https://php.net/manual/en/function.popen.php) function. This uses more memory and processing power, but takes less total time.
+- `"serial"`: Fetches newsfeeds and processed them one at a time. This is the slowest method, but is simple and reliable.
+- `"subprocess"`: Fetches and processes multiple newsfeeds concurrently by starting a separate process for each newsfeed using PHP's [`popen`](https://php.net/manual/en/function.popen.php) function. This uses more memory and processing power, but takes less total time.
 
 It is also possible to specify the fully-qualified name of a class which implements the service driver interface. For example, specifying `"JKingWeb\Arsse\Service\Serial\Driver"` would use the serial driver.
 
@@ -311,7 +311,7 @@ Consult "[Newsfeed Refresh Schedule](/en/Installation/Using_the_Daemon#Newsfeed_
 |---------|---------|
 | integer | `5`     |
 
-The maximum number of concurrent feed updates to perform, if a concurrent service driver is used. 
+The maximum number of concurrent newsfeed updates to perform, if a concurrent service driver is used. 
 
 ### fetchTimeout
 
@@ -361,7 +361,7 @@ Arsse/0.6.0 (Linux 4.15.0; x86_64; https://thearsse.com/)
 
 How long to keep a newsfeed and its articles in the database after all its subscriptions have been deleted. Specifying `null` will retain unsubscribed newsfeeds forever, whereas an interval evaluating to zero (e.g. `"PT0S"`) will delete them immediately.
 
-Note that articles of orphaned feeds are still subject to the `purgeArticleUnread` threshold below.
+Note that articles of orphaned newsfeeds are still subject to the `purgeArticleUnread` threshold below.
 
 ### purgeArticlesRead
 
@@ -369,7 +369,7 @@ Note that articles of orphaned feeds are still subject to the `purgeArticleUnrea
 |------------------|---------|
 | interval or null | `"P7D"` |
 
-How long to keep a an article in the database after all users subscribed to its feed have read it. Specifying `null` will retain articles up to the `purgeArticlesUnread` threshold below, whereas an interval evaluating to zero (e.g. `"PT0S"`) will delete them immediately. 
+How long to keep a an article in the database after all users subscribed to its newsfeed have read it. Specifying `null` will retain articles up to the `purgeArticlesUnread` threshold below, whereas an interval evaluating to zero (e.g. `"PT0S"`) will delete them immediately. 
 
 If an article is starred by any user, it is retained indefinitely regardless of this setting.
 
@@ -385,7 +385,7 @@ How long to keep a an article in the database regardless of whether any users ha
 
 If an article is starred by any user, it is retained indefinitely regardless of this setting.
 
-# Obsolete Settings
+# Obsolete settings
 
 ### dbSQLite3Timeout
 
