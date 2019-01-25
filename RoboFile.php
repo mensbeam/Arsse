@@ -6,8 +6,7 @@ class RoboFile extends \Robo\Tasks {
     const BASE = __DIR__.\DIRECTORY_SEPARATOR;
     const BASE_TEST = self::BASE."tests".\DIRECTORY_SEPARATOR;
 
-    /**
-     * Runs the typical test suite
+    /** Runs the typical test suite
      *
      * Arguments passed to the task are passed on to PHPUnit. Thus one may, for
      * example, run the following command and get the expected results:
@@ -20,8 +19,7 @@ class RoboFile extends \Robo\Tasks {
         return $this->runTests(escapeshellarg(\PHP_BINARY), "typical", $args);
     }
 
-    /**
-     * Runs the full test suite
+    /** Runs the full test suite
      *
      * This includes pedantic tests which may help to identify problems.
      * See help for the "test" task for more details.
@@ -171,8 +169,18 @@ class RoboFile extends \Robo\Tasks {
         return $out;
     }
 
+    /** Generates static manual pages in the "manual" directory
+     * 
+     * The resultant files are suitable for offline viewing and inclusion into release builds
+     */
     public function manual(array $args): Result {
         $execpath = escapeshellarg(realpath(self::BASE."vendor/bin/daux"));
         return $this->taskExec($execpath)->arg("generate")->option("-d", self::BASE."manual")->args($args)->run();
+    }
+
+    /** Serves a live view of the manual using PHP's built-in Web server */
+    public function manualLive(array $args): Result {
+        $execpath = escapeshellarg(realpath(self::BASE."vendor/bin/daux"));
+        return $this->taskExec($execpath)->arg("serve")->args($args)->run();
     }
 }
