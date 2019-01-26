@@ -1,6 +1,6 @@
 {
     "require": {
-        "phpunit/phpunit": "^6.5",
+        "phpunit/phpunit": "*",
         "phake/phake": "^3.0",
         "clue/arguments": "^2.0",
         "mikey179/vfsStream": "^1.6",
