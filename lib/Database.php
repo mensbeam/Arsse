@@ -14,8 +14,11 @@ use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 
 class Database {
+    /** The version number of the latest schema the interface is aware of */
     const SCHEMA_VERSION = 4;
+    /** The maximum number of articles to mark in one query without chunking */
     const LIMIT_ARTICLES = 50;
+    /** A map database driver short-names and their associated class names */
     const DRIVER_NAMES = [
         'sqlite3'    => \JKingWeb\Arsse\Db\SQLite3\Driver::class,
         'postgresql' => \JKingWeb\Arsse\Db\PostgreSQL\Driver::class,
@@ -25,6 +28,10 @@ class Database {
     /** @var Db\Driver */
     public $db;
 
+    /** Constructs the database interface
+     * 
+     * @param boolean $initialize Whether to attempt to upgrade the databse schema when constructing
+     */
     public function __construct($initialize = true) {
         $driver = Arsse::$conf->dbDriver;
         $this->db = $driver::create();
@@ -34,10 +41,14 @@ class Database {
         }
     }
 
+    /** Returns the bare name of the calling context's calling method, when __FUNCTION__ is not appropriate */
     protected function caller(): string {
         return debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3)[2]['function'];
     }
 
+    /** Lists the available database drivers, as an associative array with 
+     * fully-qualified class names as keys, and human-readable descriptions as values
+     */
     public static function driverList(): array {
         $sep = \DIRECTORY_SEPARATOR;
         $path = __DIR__.$sep."Db".$sep;
@@ -50,10 +61,12 @@ class Database {
         return $classes;
     }
 
+    /** Returns the current (actual) schema version of the database; compared against self::SCHEMA_VERSION to know when an upgrade is required */
     public function driverSchemaVersion(): int {
         return $this->db->schemaVersion();
     }
 
+    /** Attempts to update the database schema. If it is already up to date, false is returned */
     public function driverSchemaUpdate(): bool {
         if ($this->db->schemaVersion() < self::SCHEMA_VERSION) {
             return $this->db->schemaUpdate(self::SCHEMA_VERSION);
@@ -61,10 +74,18 @@ class Database {
         return false;
     }
 
+    /** Returns whether the database's character set is Unicode */
     public function driverCharsetAcceptable(): bool {
         return $this->db->charsetAcceptable();
     }
 
+    /** Computes the column and value text of an SQL "SET" clause, validating arbitrary input against a whitelist
+     * 
+     * Returns an indexed array containing the clause text, an array of types, and another array of values
+     * 
+     * @param array $props An associative array containing untrusted data; keys are column names
+     * @param array $valid An associative array containing a whitelist: keys are column names, and values are strings representing data types
+     */
     protected function generateSet(array $props, array $valid): array {
         $out = [
             [], // query clause
@@ -83,6 +104,13 @@ class Database {
         return $out;
     }
 
+    /** Conputes the contents of an SQL "IN()" clause, producing one parameter placeholder for each input value
+     * 
+     * Returns an indexed array containing the clause text, and an array of types
+     * 
+     * @param array $values Arbitrary values
+     * @param string $type A single data type applied to each value
+     */
     protected function generateIn(array $values, string $type): array {
         $out = [
             "", // query clause
@@ -100,14 +128,17 @@ class Database {
         return $out;
     }
 
+    /** Returns a Transaction object, which is rolled back unless explicitly committed */
     public function begin(): Db\Transaction {
         return $this->db->begin();
     }
 
+    /** Retrieve a value from the metadata table. If the key is not set null is returned */
     public function metaGet(string $key) {
         return $this->db->prepare("SELECT value from arsse_meta where \"key\" = ?", "str")->run($key)->getValue();
     }
 
+    /** Sets the given key in the metadata table to the given value. If the key already exists it is silently overwritten */
     public function metaSet(string $key, $value, string $type = "str"): bool {
         $out = $this->db->prepare("UPDATE arsse_meta set value = ? where \"key\" = ?", $type, "str")->run($value, $key)->changes();
         if (!$out) {
@@ -116,10 +147,12 @@ class Database {
         return (bool) $out;
     }
 
+    /** Unsets the given key in the metadata table. Returns false if the key does not exist */
     public function metaRemove(string $key): bool {
         return (bool) $this->db->prepare("DELETE from arsse_meta where \"key\" = ?", "str")->run($key)->changes();
     }
 
+    /** Returns whether the specified user exists in the database */
     public function userExists(string $user): bool {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -127,6 +160,11 @@ class Database {
         return (bool) $this->db->prepare("SELECT count(*) from arsse_users where id = ?", "str")->run($user)->getValue();
     }
 
+    /** Adds a user to the database
+     * 
+     * @param string $user The user to add
+     * @param string $passwordThe user's password in cleartext. It will be stored hashed
+     */
     public function userAdd(string $user, string $password): bool {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -138,6 +176,7 @@ class Database {
         return true;
     }
 
+    /** Removes a user from the database */
     public function userRemove(string $user): bool {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -148,6 +187,7 @@ class Database {
         return true;
     }
 
+    /** Returns a flat, indexed array of all users in the database */
     public function userList(): array {
         $out = [];
         if (!Arsse::$user->authorize("", __FUNCTION__)) {
@@ -159,6 +199,7 @@ class Database {
         return $out;
     }
 
+    /** Retrieves the hashed password of a user */
     public function userPasswordGet(string $user): string {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -168,6 +209,11 @@ class Database {
         return (string) $this->db->prepare("SELECT password from arsse_users where id = ?", "str")->run($user)->getValue();
     }
 
+    /** Sets the password of an existing user
+     * 
+     * @param string $user The user for whom to set the password
+     * @param string $password The new password, in cleartext. The password will be stored hashed
+     */
     public function userPasswordSet(string $user, string $password): bool {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -179,6 +225,7 @@ class Database {
         return true;
     }
 
+    /** Creates a new session for the given user and returns the session identifier */
     public function sessionCreate(string $user): string {
         // If the user isn't authorized to perform this action then throw an exception.
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
@@ -193,6 +240,14 @@ class Database {
         return $id;
     }
 
+    /** Explicitly removes a session from the database
+     * 
+     * Sessions may also be invalidated as they expire, and then be automatically pruned. 
+     * This function can be used to explicitly invalidate a session after a user logs out
+     * 
+     * @param string $user The user who owns the session to be destroyed
+     * @param string $id The identifier of the session to destroy
+     */
     public function sessionDestroy(string $user, string $id): bool {
         // If the user isn't authorized to perform this action then throw an exception.
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
@@ -202,6 +257,10 @@ class Database {
         return (bool) $this->db->prepare("DELETE FROM arsse_sessions where id = ? and \"user\" = ?", "str", "str")->run($id, $user)->changes();
     }
 
+    /** Resumes a session, returning available session data
+     * 
+     * This also has the side effect of refreshing the session if it is near its timeout
+     */
     public function sessionResume(string $id): array {
         $maxAge = Date::sub(Arsse::$conf->userSessionLifetime);
         $out = $this->db->prepare("SELECT id,created,expires,\"user\" from arsse_sessions where id = ? and expires > CURRENT_TIMESTAMP and created > ?", "str", "datetime")->run($id, $maxAge)->getRow();
@@ -217,11 +276,13 @@ class Database {
         return $out;
     }
 
+    /** Deletes expires sessions from the database, returning the number of deleted sessions */
     public function sessionCleanup(): int {
         $maxAge = Date::sub(Arsse::$conf->userSessionLifetime);
         return $this->db->prepare("DELETE FROM arsse_sessions where expires < CURRENT_TIMESTAMP or created < ?", "datetime")->run($maxAge)->changes();
     }
 
+    /** Checks if a given future timeout is less than half the session timeout interval */
     protected function sessionExpiringSoon(\DateTimeInterface $expiry): bool {
         // calculate half the session timeout as a number of seconds
         $now = time();
@@ -231,6 +292,18 @@ class Database {
         return (($now + $diff) >= $expiry->getTimestamp());
     }
 
+    /** Adds a folder for containing newsfeed subscriptions, returning an integer identifying the created folder
+     * 
+     * The $data array may contain the following keys:
+     * 
+     * - "name": A folder name, which must be a non-empty string not composed solely of whitespace; this key is required
+     * - "parent": An integer (or null) identifying a parent folder; this key is optional
+     * 
+     * If a folder with the same name and parent already exists, this is an error
+     * 
+     * @param string $user The user who will own the folder
+     * @param array $data An associative array defining the folder
+     */
     public function folderAdd(string $user, array $data): int {
         // If the user isn't authorized to perform this action then throw an exception.
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
@@ -245,6 +318,20 @@ class Database {
         return $this->db->prepare("INSERT INTO arsse_folders(owner,parent,name) values(?,?,?)", "str", "int", "str")->run($user, $parent, $name)->lastId();
     }
 
+    /** Returns a result set listing a user's folders
+     * 
+     * Each record in the result set contains:
+     * 
+     * - "id":       The folder identifier, an integer
+     * - "name":     The folder's name, a string
+     * - "parent":   The integer identifier of the folder's parent, or null
+     * - "children": The number of child folders contained in the given folder
+     * - "feeds":    The number of newsfeed subscriptions contained in the given folder, not including subscriptions in descendent folders 
+     * 
+     * @param string $uer The user whose folders are to be listed
+     * @param integer|null $parent Restricts the list to the descendents of the specified folder identifier
+     * @param boolean $recursive Whether to list all descendents, or only direct children
+     */
     public function folderList(string $user, $parent = null, bool $recursive = true): Db\Result {
         // if the user isn't authorized to perform this action then throw an exception.
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
@@ -270,6 +357,13 @@ class Database {
         return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
     }
 
+    /** Deletes a folder from the database
+     * 
+     * Any descendent folders are also deleted, as are all newsfeed subscriptions contained in the deleted folder tree
+     * 
+     * @param string $user The user to whom the folder to be deleted belongs
+     * @param integer $id The identifier of the folder to delete
+     */
     public function folderRemove(string $user, $id): bool {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -284,6 +378,7 @@ class Database {
         return true;
     }
 
+    /** Returns the identifier, name, and parent of the given folder as an associative array */
     public function folderPropertiesGet(string $user, $id): array {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -298,6 +393,19 @@ class Database {
         return $props;
     }
 
+    /** Modifies the properties of a folder
+     * 
+     * The $data array must contain one or more of the following keys:
+     * 
+     * - "name":   A new folder name, which must be a non-empty string not composed solely of whitespace
+     * - "parent": An integer (or null) identifying a parent folder
+     * 
+     * If a folder with the new name and parent combination already exists, this is an error; it is also an error to move a folder to itself or one of its descendents
+     * 
+     * @param string $user The user who owns the folder to be modified
+     * @param integer $id The identifier of the folder to be modified
+     * @param array $data An associative array of properties to modify. Anything not specified will remain unchanged
+     */
     public function folderPropertiesSet(string $user, $id, array $data): bool {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -334,6 +442,14 @@ class Database {
         return (bool) $this->db->prepare("UPDATE arsse_folders set $setClause, modified = CURRENT_TIMESTAMP where owner = ? and id = ?", $setTypes, "str", "int")->run($setValues, $user, $id)->changes();
     }
 
+    /** Ensures the specified folder exists and raises an exception otherwise
+     * 
+     * Returns an associative array containing the id, name, and parent of the folder if it exists 
+     * 
+     * @param string $user The user who owns the folder to be validated
+     * @param integer|null $id The identifier of the folder to validate; null or zero represent the implied root folder
+     * @param boolean $subject Whether the folder is the subject rather than the object of the operation being performed; this only affects the semantics of the error message if validation fails
+     */
     protected function folderValidateId(string $user, $id = null, bool $subject = false): array {
         // if the specified ID is not a non-negative integer (or null), this will always fail
         if (!ValueInfo::id($id, true)) {
@@ -351,6 +467,7 @@ class Database {
         return $f;
     }
 
+    /** Ensures an operation to rename and/or move a folder does not result in a conflict or circular dependence, and raises an exception otherwise */
     protected function folderValidateMove(string $user, $id = null, $parent = null, string $name = null) {
         $errData = ["action" => $this->caller(), "field" => "parent", 'id' => $parent];
         if (!$id) {
@@ -403,6 +520,12 @@ class Database {
         return $parent;
     }
 
+    /** Ensures a prospective folder name is valid, and optionally ensure it is not a duplicate if renamed
+     * 
+     * @param string $name The name to check
+     * @param boolean $checkDuplicates Whether to also check if the new name would cause a collision
+     * @param integer|null $parent The parent folder context in which to check for duplication
+     */
     protected function folderValidateName($name, bool $checkDuplicates = false, $parent = null): bool {
         $info = ValueInfo::str($name);
         if ($info & (ValueInfo::NULL | ValueInfo::EMPTY)) {
@@ -424,6 +547,14 @@ class Database {
         }
     }
 
+    /** Adds a subscription to a newsfeed, and returns the numeric identifier of the added subscription
+     * 
+     * @param string $user The user which will own the subscription
+     * @param string $url The URL of the newsfeed or discovery source
+     * @param string $fetchUser The user name required to access the newsfeed, if applicable
+     * @param string $fetchPassword The password required to fetch the newsfeed, if applicable; this will be stored in cleartext
+     * @param boolean $discovery Whether to perform newsfeed discovery if $url points to an HTML document
+     */
     public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = "", bool $discover = true): int {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -452,6 +583,13 @@ class Database {
         return $this->db->prepare('INSERT INTO arsse_subscriptions(owner,feed) values(?,?)', 'str', 'int')->run($user, $feedID)->lastId();
     }
 
+    /** Lists a user's subscriptions, returning various data
+     * 
+     * @param string $user The user whose subscriptions are to be listed
+     * @param integer|null $folder The identifier of the folder under which to list subscriptions; by default the root folder is used
+     * @param boolean $recursive Whether to list subscriptions of descendent folders as well as the selected folder
+     * @param integer|null $id The numeric identifier of a particular subscription; used internally by subscriptionPropertiesGet
+     */
     public function subscriptionList(string $user, $folder = null, bool $recursive = true, int $id = null): Db\Result {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -494,6 +632,7 @@ class Database {
         return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
     }
 
+    /** Returns the number of subscriptions in a folder, counting recursively */
     public function subscriptionCount(string $user, $folder = null): int {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -512,6 +651,13 @@ class Database {
         return (int) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
     }
 
+    /** Deletes a subscription from the database
+     * 
+     * This has the side effect of deleting all marks the user has set on articles 
+     * belonging to the newsfeed, but may not delete the articles themselves, as
+     * other users may also be subscribed to the same newsfeed. There is also a
+     * configurable retention period for newsfeeds
+     */
     public function subscriptionRemove(string $user, $id): bool {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -526,6 +672,24 @@ class Database {
         return true;
     }
 
+    /** Retrieves data about a particular subscription, as an associative array with the following keys:
+     * 
+     * - "id": The numeric identifier of the subscription
+     * - "feed": The numeric identifier of the underlying newsfeed
+     * - "url": The URL of the newsfeed, after discovery and HTTP redirects
+     * - "title": The title of the newsfeed
+     * - "favicon": The URL of an icon representing the newsfeed or its source
+     * - "source": The URL of the source of the newsfeed i.e. its parent Web site
+     * - "folder": The numeric identifier (or null) of the subscription's folder
+     * - "top_folder": The numeric identifier (or null) of the top-level folder for the subscription
+     * - "pinned": Whether the subscription is pinned
+     * - "err_count": The count of times attempting to refresh the newsfeed has resulted in an error since the last successful retrieval
+     * - "err_msg": The error message of the last unsuccessful retrieval
+     * - "order_type": Whether articles should be sorted in reverse cronological order (2), chronological order (1), or the default (0)
+     * - "added": The date and time at which the subscription was added
+     * - "updated": The date and time at which the newsfeed was last updated (not when it was last refreshed)
+     * - "unread": The number of unread articles associated with the subscription
+     */
     public function subscriptionPropertiesGet(string $user, $id): array {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -540,6 +704,19 @@ class Database {
         return $sub;
     }
 
+    /** Modifies the properties of a subscription
+     * 
+     * The $data array must contain one or more of the following keys:
+     * 
+     * - "title": The title of the newsfeed
+     * - "folder": The numeric identifier (or null) of the subscription's folder
+     * - "pinned": Whether the subscription is pinned
+     * - "order_type": Whether articles should be sorted in reverse cronological order (2), chronological order (1), or the default (0)
+     * 
+     * @param string $user The user whose subscription is to be modified
+     * @param integer|null $id the numeric identifier of the subscription to modfify
+     * @param array $data An associative array of properties to modify; any keys not specified will be left unchanged
+     */
     public function subscriptionPropertiesSet(string $user, $id, array $data): bool {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -580,6 +757,18 @@ class Database {
         return $out;
     }
 
+    /** Retrieves the URL of the icon for a subscription.
+     * 
+     * Note that while the $user parameter is optional, it
+     * is NOT recommended to omit it, as this can lead to 
+     * leaks of private information. The parameter is only 
+     * optional because this is required for Tiny Tiny RSS,
+     * the original implementation of which leaks private
+     * information due to a design flaw.
+     * 
+     * @param integer $id The numeric identifier of the subscription
+     * @param string|null $user The user who owns the subscription being queried
+     */
     public function subscriptionFavicon(int $id, string $user = null): string {
         $q = new Query("SELECT favicon from arsse_feeds join arsse_subscriptions on feed = arsse_feeds.id");
         $q->setWhere("arsse_subscriptions.id = ?", "int", $id);
@@ -592,6 +781,14 @@ class Database {
         return (string) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
     }
 
+    /** Ensures the specified subscription exists and raises an exception otherwise
+     * 
+     * Returns an associative array containing the id of the subscription and the id of the underlying newsfeed
+     * 
+     * @param string $user The user who owns the subscription to be validated
+     * @param integer|null $id The identifier of the subscription to validate
+     * @param boolean $subject Whether the subscription is the subject rather than the object of the operation being performed; this only affects the semantics of the error message if validation fails
+     */
     protected function subscriptionValidateId(string $user, $id, bool $subject = false): array {
         if (!ValueInfo::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "feed", 'type' => "int > 0"]);
