@@ -800,11 +800,17 @@ class Database {
         return $out;
     }
 
+    /** Returns an indexed array of numeric identifiers for newsfeeds which should be refreshed */
     public function feedListStale(): array {
         $feeds = $this->db->query("SELECT id from arsse_feeds where next_fetch <= CURRENT_TIMESTAMP")->getAll();
         return array_column($feeds, 'id');
     }
 
+    /** Attempts to refresh a newsfeed, returning an indication of success
+     * 
+     * @param integer $feedID The numerical identifier of the newsfeed to refresh
+     * @param boolean $throwError Whether to throw an exception on failure in addition to storing error information in the database
+     */
     public function feedUpdate($feedID, bool $throwError = false): bool {
         // check to make sure the feed exists
         if (!ValueInfo::id($feedID)) {
@@ -956,6 +962,10 @@ class Database {
         return true;
     }
 
+    /** Deletes orphaned newsfeeds from the database
+     * 
+     * Newsfeeds are orphaned if no users are subscribed to them. Deleting a newsfeed also deletes its articles
+     */
     public function feedCleanup(): bool {
         $tr = $this->begin();
         // first unmark any feeds which are no longer orphaned
@@ -973,6 +983,18 @@ class Database {
         return $out;
     }
 
+    /** Retrieves various identifiers for the latest $count articles in the given newsfeed. The identifiers are:
+     * 
+     * - "id": The database record key for the article
+     * - "guid": The (theoretically) unique identifier for the article
+     * - "edited": The time at which the article was last edited, per the newsfeed
+     * - "url_title_hash": A cryptographic hash of the article URL and its title
+     * - "url_content_hash": A cryptographic hash of the article URL and its content
+     * - "title_content_hash": A cryptographic hash of the article title and its content
+     * 
+     * @param integer $feedID The numeric identifier of the feed
+     * @param integer $count The number of records to return
+     */
     public function feedMatchLatest(int $feedID, int $count): Db\Result {
         return $this->db->prepare(
             "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed = ? ORDER BY modified desc, id desc limit ?",
@@ -981,6 +1003,21 @@ class Database {
         )->run($feedID, $count);
     }
 
+    /** Retrieves various identifiers for articles in the given newsfeed which match the input identifiers. The output identifiers are:
+     * 
+     * - "id": The database record key for the article
+     * - "guid": The (theoretically) unique identifier for the article
+     * - "edited": The time at which the article was last edited, per the newsfeed
+     * - "url_title_hash": A cryptographic hash of the article URL and its title
+     * - "url_content_hash": A cryptographic hash of the article URL and its content
+     * - "title_content_hash": A cryptographic hash of the article title and its content
+     * 
+     * @param integer $feedID The numeric identifier of the feed
+     * @param array $ids An array of GUIDs of articles
+     * @param array $hashesUT An array of hashes of articles' URL and title
+     * @param array $hashesUC An array of hashes of articles' URL and content
+     * @param array $hashesTC An array of hashes of articles' title and content
+     */
     public function feedMatchIds(int $feedID, array $ids = [], array $hashesUT = [], array $hashesUC = [], array $hashesTC = []): Db\Result {
         // compile SQL IN() clauses and necessary type bindings for the four identifier lists
         list($cId, $tId)     = $this->generateIn($ids, "str");
@@ -998,6 +1035,14 @@ class Database {
         )->run($feedID, $ids, $hashesUT, $hashesUC, $hashesTC);
     }
 
+    /** Computes an SQL query to find and retrieve data about articles in the database
+     * 
+     * If an empty column list is supplied, a count of articles matching the context is queried instead
+     * 
+     * @param string $user The user whose articles are to be queried
+     * @param Context $context The search context
+     * @param array $cols The columns to request in the result set
+     */
     protected function articleQuery(string $user, Context $context, array $cols = ["id"]): Query {
         $greatest = $this->db->sqlToken("greatest");
         // prepare the output column list
@@ -1022,7 +1067,6 @@ class Database {
             'subscription_title' => "coalesce(arsse_subscriptions.title, arsse_feeds.title)",
             'media_url' => "arsse_enclosures.url",
             'media_type' => "arsse_enclosures.type",
-
         ];
         if (!$cols) {
             // if no columns are specified return a count
@@ -1160,6 +1204,7 @@ class Database {
         return $q;
     }
 
+    /** Chunk a context with more than the maximum number of articles or editions into an array of contexts */
     protected function contextChunk(Context $context): array {
         $exception = "";
         if ($context->editions()) {
@@ -1184,6 +1229,15 @@ class Database {
         }
     }
 
+
+    /** Lists articles in the database which match a given query context
+     * 
+     * If an empty column list is supplied, a count of articles is returned instead
+     * 
+     * @param string $user The user whose articles are to be listed
+     * @param Context $context The search context
+     * @param array $cols The columns to return in the result set, any of: id, edition, url, title, author, content, guid, fingerprint, subscription, feed, starred, unread, note, published_date, edited_date, modified_date, marked_date, subscription_title, media_url, media_type
+     */
     public function articleList(string $user, Context $context = null, array $fields = ["id"]): Db\Result {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -1207,6 +1261,11 @@ class Database {
         }
     }
 
+    /** Returns a count of articles which match the given query context
+     * 
+     * @param string $user The user whose articles are to be counted
+     * @param Context $context The search context
+     */
     public function articleCount(string $user, Context $context = null): int {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -1227,6 +1286,18 @@ class Database {
         }
     }
 
+    /** Applies one or multiple modifications to all articles matching the given query context
+     * 
+     * The $data array enumerates the modifications to perform and must contain one or more of the following keys:
+     * 
+     * - "read":    Whether the article should be marked as read (true) or unread (false)
+     * - "starred": Whether the article should (true) or should not (false) be marked as starred/favourite
+     * - "note":    A string containing a freeform plain-text note for the article
+     * 
+     * @param string $user The user who owns the articles to be modified
+     * @param array $data An associative array of properties to modify. Anything not specified will remain unchanged
+     * @param Context $context The query context to match articles against
+     */
     public function articleMark(string $user, array $data, Context $context = null): int {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -1316,6 +1387,14 @@ class Database {
         }
     }
 
+    /** Returns statistics about the articles starred by the given user
+     * 
+     * The associative array returned has the following keys:
+     * 
+     * - "total":  The count of all starred articles
+     * - "unread": The count of starred articles which are unread
+     * - "read":   The count of starred articles which are read
+     */
     public function articleStarred(string $user): array {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -1332,6 +1411,12 @@ class Database {
         )->run($user)->getRow();
     }
 
+    /** Returns an indexed array listing the labels assigned to an article
+     * 
+     * @param string $user The user whose labels are to be listed
+     * @param integer $id The numeric identifier of the article whose labels are to be listed
+     * @param boolean $byName Whether to return the label names instead of the numeric label identifiers
+     */
     public function articleLabelsGet(string $user, $id, bool $byName = false): array {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -1344,6 +1429,7 @@ class Database {
         return $out;
     }
 
+    /** Returns the author-supplied categories associated with an article */
     public function articleCategoriesGet(string $user, $id): array {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -1358,6 +1444,7 @@ class Database {
         }
     }
 
+    /** Deletes from the database articles which are beyond the configured clean-up threshold */
     public function articleCleanup(): bool {
         $query = $this->db->prepare(
             "WITH target_feed(id,subs) as (".
@@ -1404,6 +1491,13 @@ class Database {
         return true;
     }
 
+    /** Ensures the specified article exists and raises an exception otherwise
+     * 
+     * Returns an associative array containing the id and latest edition of the article if it exists 
+     * 
+     * @param string $user The user who owns the article to be validated
+     * @param integer|null $id The identifier of the article to validate
+     */
     protected function articleValidateId(string $user, $id): array {
         if (!ValueInfo::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "article", 'type' => "int > 0"]); // @codeCoverageIgnore
@@ -1426,6 +1520,13 @@ class Database {
         return $out;
     }
 
+    /** Ensures the specified article edition exists and raises an exception otherwise
+     * 
+     * Returns an associative array containing the edition id, article id, and latest edition of the edition if it exists 
+     * 
+     * @param string $user The user who owns the edition to be validated
+     * @param integer|null $id The identifier of the edition to validate
+     */
     protected function articleValidateEdition(string $user, int $id): array {
         if (!ValueInfo::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "edition", 'type' => "int > 0"]); // @codeCoverageIgnore
@@ -1450,6 +1551,7 @@ class Database {
         return array_map("intval", $out);
     }
 
+    /** Returns the numeric identifier of the most recent edition of an article matching the given context */
     public function editionLatest(string $user, Context $context = null): int {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -1465,6 +1567,7 @@ class Database {
         return (int) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
     }
 
+    /** Returns a map between all the given edition identifiers and their associated article identifiers */
     public function editionArticle(int ...$edition): array {
         $out = [];
         $context = (new Context)->editions($edition);
@@ -1484,6 +1587,13 @@ class Database {
         }
     }
 
+    /** Creates a label, and returns its numeric identifier
+     * 
+     * Labels are discrete objects in the database and can be associated with multiple articles; an article may in turn be associated with multiple labels
+     * 
+     * @param string $user The user who will own the created label
+     * @param array $data An associative array defining the label's properties; currently only "name" is understood
+     */
     public function labelAdd(string $user, array $data): int {
         // if the user isn't authorized to perform this action then throw an exception.
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
@@ -1496,6 +1606,18 @@ class Database {
         return $this->db->prepare("INSERT INTO arsse_labels(owner,name) values(?,?)", "str", "str")->run($user, $name)->lastId();
     }
 
+    /** Lists a user's article labels
+     * 
+     * The following keys are included in each record:
+     * 
+     * - "id": The label's numeric identifier
+     * - "name" The label's textual name
+     * - "articles": The count of articles which have the label assigned to them
+     * - "read": How many of the total articles assigned to the label are read
+     * 
+     * @param string $user The user whose labels are to be listed
+     * @param boolean $includeEmpty Whether to include (true) or supress (false) labels which have no articles assigned to them
+     */
     public function labelList(string $user, bool $includeEmpty = true): Db\Result {
         // if the user isn't authorized to perform this action then throw an exception.
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
@@ -1518,6 +1640,14 @@ class Database {
         )->run($user, !$includeEmpty);
     }
 
+    /** Deletes a label from the database
+     * 
+     * Any articles associated with the label remains untouched
+     * 
+     * @param string $user The owner of the label to remove
+     * @param integer|string $id The numeric identifier or name of the label
+     * @param boolean $byName Whether to interpret the $id parameter as the label's name (true) or identifier (false)
+     */
     public function labelRemove(string $user, $id, bool $byName = false): bool {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -1532,6 +1662,19 @@ class Database {
         return true;
     }
 
+    /** Retrieves the properties of a label
+     * 
+     * The following keys are included in the output array:
+     * 
+     * - "id": The label's numeric identifier
+     * - "name" The label's textual name
+     * - "articles": The count of articles which have the label assigned to them
+     * - "read": How many of the total articles assigned to the label are read
+     * 
+     * @param string $user The owner of the label to remove
+     * @param integer|string $id The numeric identifier or name of the label
+     * @param boolean $byName Whether to interpret the $id parameter as the label's name (true) or identifier (false)
+     */
     public function labelPropertiesGet(string $user, $id, bool $byName = false): array {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -1558,6 +1701,13 @@ class Database {
         return $out;
     }
 
+    /** Sets the properties of a label
+     * 
+     * @param string $user The owner of the label to query
+     * @param integer|string $id The numeric identifier or name of the label
+     * @param array $data An associative array defining the label's properties; currently only "name" is understood
+     * @param boolean $byName Whether to interpret the $id parameter as the label's name (true) or identifier (false)
+     */
     public function labelPropertiesSet(string $user, $id, array $data, bool $byName = false): bool {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -1583,6 +1733,12 @@ class Database {
         return $out;
     }
 
+    /** Returns an indexed array of article identifiers assigned to a label
+     * 
+     * @param string $user The owner of the label to query
+     * @param integer|string $id The numeric identifier or name of the label
+     * @param boolean $byName Whether to interpret the $id parameter as the label's name (true) or identifier (false)
+     */
     public function labelArticlesGet(string $user, $id, bool $byName = false): array {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -1603,6 +1759,14 @@ class Database {
         }
     }
 
+    /** Makes or breaks associations between a given label and articles matching the given query context
+     * 
+     * @param string $user The owner of the label
+     * @param integer|string $id The numeric identifier or name of the label
+     * @param Context $context The query context matching the desired articles
+     * @param boolean $remove Whether to remove (true) rather than add (true) an association with the articles matching the context
+     * @param boolean $byName Whether to interpret the $id parameter as the label's name (true) or identifier (false)
+     */
     public function labelArticlesSet(string $user, $id, Context $context = null, bool $remove = false, bool $byName = false): int {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -1643,6 +1807,16 @@ class Database {
         return $out;
     }
 
+    /** Ensures the specified label identifier or name is valid (and optionally whether it exists) and raises an exception otherwise
+     * 
+     * Returns an associative array containing the id, name of the label if it exists 
+     * 
+     * @param string $user The user who owns the label to be validated
+     * @param integer|string $id The numeric identifier or name of the label to validate
+     * @param boolean $byName Whether to interpret the $id parameter as the label's name (true) or identifier (false)
+     * @param boolean $checkDb Whether to check whether the label exists (true) or only if the identifier or name is syntactically valid (false)
+     * @param boolean $subject Whether the label is the subject rather than the object of the operation being performed; this only affects the semantics of the error message if validation fails
+     */
     protected function labelValidateId(string $user, $id, bool $byName, bool $checkDb = true, bool $subject = false): array {
         if (!$byName && !ValueInfo::id($id)) {
             // if we're not referring to a label by name and the ID is invalid, throw an exception
@@ -1666,6 +1840,7 @@ class Database {
         ];
     }
 
+    /** Ensures a prospective label name is syntactically valid and raises an exception otherwise */
     protected function labelValidateName($name): bool {
         $info = ValueInfo::str($name);
         if ($info & (ValueInfo::NULL | ValueInfo::EMPTY)) {
