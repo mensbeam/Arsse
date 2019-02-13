@@ -13,6 +13,27 @@ use JKingWeb\Arsse\Misc\Context;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 
+/** The high-level interface with the database
+ * 
+ * The database stores information on the following things:
+ * 
+ * - Users
+ * - Subscriptions to feeds, which belong to users
+ * - Folders, which belong to users and contain subscriptions
+ * - Feeds to which users are subscribed
+ * - Articles, which belong to feeds and for which users can only affect metadata
+ * - Editions, identifying authorial modifications to articles
+ * - Labels, which belong to users and can be assigned to multiple articles
+ * - Sessions, used by some protocols to identify users across periods of time
+ * - Metadata, used internally by the server
+ * 
+ * The various methods of this class perform operations on these things, with
+ * each public method prefixed with the thing it concerns e.g. userRemove() 
+ * deletes a user from the database, and labelArticlesSet() changes a label's
+ * associations with articles. There has been an effort to keep public method
+ * names consistent throughout, but protected methods, having different
+ * concerns, will typicsally follow different conventions.
+ */
 class Database {
     /** The version number of the latest schema the interface is aware of */
     const SCHEMA_VERSION = 4;
