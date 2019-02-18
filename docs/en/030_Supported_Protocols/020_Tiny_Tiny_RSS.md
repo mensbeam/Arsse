@@ -61,25 +61,31 @@ Tiny Tiny RSS itself is unaware of HTTP authentication: if HTTP authentication i
     - Clients may optionally provide HTTP credentials
     - API authentication proceeds as normal
     - All feed icons are visible to unauthenticated clients
+    - Analogous to multi-user mode
 - If the `userHTTPAuthRequired` setting is `true`:
     - Clients must pass HTTP authentication
     - API authentication proceeds as normal
     - Feed icons are visible only to their owners
+    - Analoguous to multi-user mode with additional HTTP authentication
 - If the `userSessionEnforced` setting is `false`:
     - Clients may optionally provide HTTP credentials
     - If HTTP authentication succeeded API authentication is skipped: tokens are issued upon login, but ignored for HTTP-authenticated requests
     - All feed icons are visible to unauthenticated clients
+    - Analogous to single-user mode if using HTTP authentication, and to multi-user mode otherwise
 - If the `userHTTPAuthRequired` setting is `true` and the `userSessionEnforced` setting is `false`:
     - Clients must pass HTTP authentication
     - API authentication is skipped: tokens are issued upon login, but thereafter ignored
     - Feed icons are visible only to their owners
+    - Analogous to single-user mode
 - If the `userPreAuth` setting is `true`:
     - The Web server asserts HTTP authentication was successful
     - API authentication only checks that HTTP and API user names match
     - Feed icons are visible only to their owners
+    - Analoguous to multi-user mode with additional HTTP authentication
 - If the `userPreAuth` setting is `true` and the `userSessionEnforced` setting is `false`:
     - The Web server asserts HTTP authentication was successful
     - API authentication is skipped: tokens are issued upon login, but thereafter ignored
     - Feed icons are visible only to their owners
+    - Analogous to single-user mode
 
 In all cases, supplying invalid HTTP credentials will result in a 401 response.
