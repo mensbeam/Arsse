@@ -303,7 +303,7 @@ It is also possible to specify the fully-qualified name of a class which impleme
 
 The interval the newsfeed fetching service observes between checks for new articles. Note that requests to foreign servers are not necessarily made at this frequency: each newsfeed is assigned its own time at which to be next retrieved. This setting instead defines the length of time the fetching service will sleep between periods of activity.
 
-Consult "[Newsfeed Refresh Schedule](/en/Installation/Using_the_Daemon#Newsfeed_Refresh_Schedule)" for details on how often newsfeeds are fetched.
+Consult "[Newsfeed Refresh Schedule](/en/Installation/Using_the_Daemon#page_Newsfeed_Refresh_Schedule)" for details on how often newsfeeds are fetched.
 
 ### serviceQueueWidth
 
@@ -393,7 +393,7 @@ If an article is starred by any user, it is retained indefinitely regardless of 
 |----------|--------------------|
 | interval | `60.0`             |
 
-*This setting has been replaced by [dbTimeoutLock](#dbTimeoutLock).*
+*This setting has been replaced by [dbTimeoutLock](#page_dbTimeoutLock).*
 
 The number of seconds for SQLite to wait before returning a timeout error when trying to acquire a write lock on the database file. Setting this to a low value may cause operations to fail with an error.
 
