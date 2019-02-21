@@ -13,32 +13,66 @@ interface Driver {
     const TR_PEND_COMMIT = -1;
     const TR_PEND_ROLLBACK = -2;
 
+    /** Creates and returns an instance of the class; this is so that either a native or PDO driver may be returned depending on what is available on the server */
     public static function create(): Driver;
-    // returns a human-friendly name for the driver (for display in installer, for example)
+
+    /** Returns a human-friendly name for the driver */
     public static function driverName(): string;
-    // returns the version of the scheme of the opened database; if uninitialized should return 0
+
+    /** Returns the version of the schema of the opened database; if uninitialized should return 0
+     * 
+     * Normally the version is stored under the 'schema_version' key in the arsse_meta table, but another method may be used if appropriate
+     */
     public function schemaVersion(): int;
-    // returns the schema set to be used for database set-up
+
+    /** Returns the schema set to be used for database set-up */
     public static function schemaID(): string;
-    // return a Transaction object
+
+    /** Returns a Transaction object */
     public function begin(bool $lock = false): Transaction;
-    // manually begin a real or synthetic transactions, with real or synthetic nesting
+
+    /** Manually begins a real or synthetic transactions, with real or synthetic nesting, and returns its numeric ID
+     * 
+     * If the database backend does not implement savepoints, IDs must still be tracked as if it does
+     */
     public function savepointCreate(): int;
-    // manually commit either the latest or all pending nested transactions
+
+    /** Manually commits either the latest or a specified nested transaction */
     public function savepointRelease(int $index = null): bool;
-    // manually rollback either the latest or all pending nested transactions
+
+    /** Manually rolls back either the latest or a specified nested transaction */
     public function savepointUndo(int $index = null): bool;
-    // attempt to perform an in-place upgrade of the database schema; this may be a no-op which always throws an exception
+
+    /** Performs an in-place upgrade of the database schema
+     * 
+     * The driver may choose not to implement in-place upgrading, in which case an exception should be thrown
+     */
     public function schemaUpdate(int $to): bool;
-    // execute one or more unsanitized SQL queries and return an indication of success
+
+    /** Executes one or more queries without parameters, returning only an indication of success */
     public function exec(string $query): bool;
-    // perform a single unsanitized query and return a result set
+
+    /** Executes a single query without parameters, and returns a result set */
     public function query(string $query): Result;
-    // ready a prepared statement for later execution
+
+    /** Readies a prepared statement for later execution */
     public function prepare(string $query, ...$paramType): Statement;
+
+    /** Readies a prepared statement for later execution */
     public function prepareArray(string $query, array $paramTypes): Statement;
-    // report whether the database character set is correct/acceptable
+
+    /** Reports whether the database character set is correct/acceptable
+     * 
+     * The backend must be able to accept and provide UTF-8 text; information may be stored in any encoding capable of representing the entire range of Unicode
+     */
     public function charsetAcceptable(): bool;
-    // return an implementation-dependent form of a reference SQL function or operator
+
+    /** Returns an implementation-dependent form of a reference SQL function or operator
+     * 
+     * The tokens the implementation must understand are:
+     * 
+     * - "greatest": the GREATEST function implemented by PostgreSQL and MySQL
+     * - "nocase": the name of a general-purpose case-insensitive collation sequence
+     */
     public function sqlToken(string $token): string;
 }
