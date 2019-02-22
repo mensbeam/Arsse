@@ -179,4 +179,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $this->exec((!$rollback) ? "COMMIT" : "ROLLBACK");
         return true;
     }
+
+    public function fulltextEnabled(): bool {
+        return false;
+    }
 }

@@ -212,4 +212,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     public function prepareArray(string $query, array $paramTypes): \JKingWeb\Arsse\Db\Statement {
         return new Statement($this->db, $query, $paramTypes, $this->packetSize);
     }
+
+    public function fulltextEnabled(): bool {
+        return false;
+    }
 }
