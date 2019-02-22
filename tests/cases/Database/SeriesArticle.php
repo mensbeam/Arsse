@@ -111,9 +111,9 @@ trait SeriesArticle {
                     'modified'           => "datetime",
                 ],
                 'rows' => [
-                    [1,1,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z"],
-                    [2,1,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z"],
-                    [3,2,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z"],
+                    [1,1,null,"Title one",  null,null,null,"First article", null,"","","","2000-01-01T00:00:00Z"],
+                    [2,1,null,"Title two",  null,null,null,"Second article",null,"","","","2010-01-01T00:00:00Z"],
+                    [3,2,null,"Title three",null,null,null,"Third article", null,"","","","2000-01-01T00:00:00Z"],
                     [4,2,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z"],
                     [5,3,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z"],
                     [6,3,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z"],
@@ -494,6 +494,9 @@ trait SeriesArticle {
         // get specific starred articles
         $compareIds([1], (new Context)->articles([1,2,3])->starred(true));
         $compareIds([2,3], (new Context)->articles([1,2,3])->starred(false));
+        // get items that match search terms
+        $compareIds([1,2,3], (new Context)->searchTerms(["Article"]));
+        $compareIds([1], (new Context)->searchTerms(["one", "first"]));
     }
 
     public function testListArticlesOfAMissingFolder() {
@@ -984,5 +987,15 @@ trait SeriesArticle {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->articleCategoriesGet($this->user, 19);
+    }
+
+    public function testSearchTooFewTerms() {
+        $this->assertException("tooShort", "Db", "ExceptionInput");
+        Arsse::$db->articleList($this->user, (new Context)->searchTerms([]));
+    }
+
+    public function testSearchTooManyTerms() {
+        $this->assertException("tooLong", "Db", "ExceptionInput");
+        Arsse::$db->articleList($this->user, (new Context)->searchTerms(range(1, 105)));
     }
 }

@@ -39,6 +39,8 @@ class Database {
     const SCHEMA_VERSION = 4;
     /** The maximum number of articles to mark in one query without chunking */
     const LIMIT_ARTICLES = 50;
+    /** The maximum number of search terms allowed; this is a hard limit */
+    const LIMIT_TERMS = 100;
     /** A map database driver short-names and their associated class names */
     const DRIVER_NAMES = [
         'sqlite3'    => \JKingWeb\Arsse\Db\SQLite3\Driver::class,
@@ -147,6 +149,35 @@ class Database {
             $out[0] = "null";
         }
         return $out;
+    }
+
+    /** Computes basic LIKE-based text search constraints for use in a WHERE clause
+     * 
+     * Returns an indexed array containing the clause text, an array of types, and another array of values
+     * 
+     * The clause is structured such that all terms must be present across any of the columns
+     * 
+     * @param string[] $terms The terms to search for
+     * @param string[] $cols The columns to match against; these are -not- sanitized, so much -not- come directly from user input
+     */
+    protected function generateSearch(array $terms, array $cols): array {
+        $clause = [];
+        $types = [];
+        $values = [];
+        $like = $this->db->sqlToken("like");
+        foreach($terms as $term) {
+            $term = str_replace(["%", "_", "^"], ["^%", "^_", "^^"], $term);
+            $term = "%$term%";
+            $spec = [];
+            foreach ($cols as $col) {
+                $spec[] = "$col $like ? escape '^'";
+                $types[] = "str";
+                $values[] = $term;
+            }
+            $clause[] = "(".implode(" or ", $spec).")";
+        }
+        $clause = "(".implode(" and ", $clause).")";
+        return [$clause, $types, $values];
     }
 
     /** Returns a Transaction object, which is rolled back unless explicitly committed */
@@ -1160,7 +1191,7 @@ class Database {
             list($inParams, $inTypes) = $this->generateIn($context->editions, "int");
             $q->setWhere("latest_editions.edition in ($inParams)", $inTypes, $context->editions);
         } elseif ($context->articles()) {
-            // if multiple specific articles have been requested, prepare a CTE to list them and their articles
+            // if multiple specific articles have been requested, filter against the list
             if (!$context->articles) {
                 throw new Db\ExceptionInput("tooShort", ['field' => "articles", 'action' => __FUNCTION__, 'min' => 1]); // must have at least one array element
             } elseif (sizeof($context->articles) > self::LIMIT_ARTICLES) {
@@ -1220,6 +1251,15 @@ class Database {
         if ($context->annotated()) {
             $comp = ($context->annotated) ? "<>" : "=";
             $q->setWhere("coalesce(arsse_marks.note,'') $comp ''");
+        }
+        // filter based on search terms
+        if ($context->searchTerms()) {
+            if (!$context->searchTerms) {
+                throw new Db\ExceptionInput("tooShort", ['field' => "searchTerms", 'action' => __FUNCTION__, 'min' => 1]); // must have at least one array element
+            } elseif (sizeof($context->searchTerms) > self::LIMIT_TERMS) {
+                throw new Db\ExceptionInput("tooLong", ['field' => "searchTerms", 'action' => __FUNCTION__, 'max' => self::LIMIT_TERMS]);
+            }
+            $q->setWhere(...$this->generateSearch($context->searchTerms, ["arsse_articles.title", "arsse_articles.content"]));
         }
         // return the query
         return $q;
