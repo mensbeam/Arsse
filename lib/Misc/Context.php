@@ -34,6 +34,7 @@ class Context {
     public $labelName;
     public $labelled = null;
     public $annotated = null;
+    public $searchTerms = [];
 
     protected $props = [];
 
@@ -52,7 +53,7 @@ class Context {
         }
     }
 
-    protected function cleanArray(array $spec): array {
+    protected function cleanIdArray(array $spec): array {
         $spec = array_values($spec);
         for ($a = 0; $a < sizeof($spec); $a++) {
             if (ValueInfo::id($spec[$a])) {
@@ -62,6 +63,18 @@ class Context {
             }
         }
         return array_values(array_filter($spec));
+    }
+
+    protected function cleanStringArray(array $spec): array {
+        $spec = array_values($spec);
+        for ($a = 0; $a < sizeof($spec); $a++) {
+            if (strlen($str = ValueInfo::normalize($spec[$a], ValueInfo::T_STRING))) {
+                $spec[$a] = $str;
+            } else {
+                unset($spec[$a]);
+            }
+        }
+        return array_values($spec);
     }
 
     public function reverse(bool $spec = null) {
@@ -142,14 +155,14 @@ class Context {
 
     public function editions(array $spec = null) {
         if (isset($spec)) {
-            $spec = $this->cleanArray($spec);
+            $spec = $this->cleanIdArray($spec);
         }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
     public function articles(array $spec = null) {
         if (isset($spec)) {
-            $spec = $this->cleanArray($spec);
+            $spec = $this->cleanIdArray($spec);
         }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
@@ -167,6 +180,13 @@ class Context {
     }
 
     public function annotated(bool $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function searchTerms(array $spec = null) {
+        if (isset($spec)) {
+            $spec = $this->cleanStringArray($spec);
+        }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 }
