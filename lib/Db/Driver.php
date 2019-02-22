@@ -76,7 +76,4 @@ interface Driver {
      * - "like": the case-insensitive LIKE operator
      */
     public function sqlToken(string $token): string;
-
-    /** Indicates whether the implementation is capable of full-text searching */
-    public function fulltextEnabled(): bool;
 }
