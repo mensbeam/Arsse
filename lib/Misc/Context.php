@@ -34,7 +34,7 @@ class Context {
     public $labelName;
     public $labelled = null;
     public $annotated = null;
-    public $searchTerms = [];
+    public $searchTerms = null;
 
     protected $props = [];
 
@@ -67,8 +67,9 @@ class Context {
 
     protected function cleanStringArray(array $spec): array {
         $spec = array_values($spec);
-        for ($a = 0; $a < sizeof($spec); $a++) {
-            if (strlen($str = ValueInfo::normalize($spec[$a], ValueInfo::T_STRING))) {
+        $stop = sizeof($spec);
+        for ($a = 0; $a < $stop; $a++) {
+            if (strlen($str = ValueInfo::normalize($spec[$a], ValueInfo::T_STRING | ValueInfo::M_DROP) ?? "")) {
                 $spec[$a] = $str;
             } else {
                 unset($spec[$a]);

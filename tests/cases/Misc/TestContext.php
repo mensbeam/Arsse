@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Misc;
 
 use JKingWeb\Arsse\Misc\Context;
+use JKingWeb\Arsse\Misc\ValueInfo;
 
 /** @covers \JKingWeb\Arsse\Misc\Context */
 class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -48,6 +49,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             'labelName' => "Rush",
             'labelled' => true,
             'annotated' => true,
+            'searchTerms' => ["foo", "bar"],
         ];
         $times = ['modifiedSince','notModifiedSince','markedSince','notMarkedSince'];
         $c = new Context;
@@ -70,10 +72,21 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function testCleanArrayValues() {
+    public function testCleanIdArrayValues() {
         $methods = ["articles", "editions"];
         $in = [1, "2", 3.5, 3.0, "ook", 0, -20, true, false, null, new \DateTime(), -1.0];
         $out = [1,2, 3];
+        $c = new Context;
+        foreach ($methods as $method) {
+            $this->assertSame($out, $c->$method($in)->$method, "Context method $method did not return the expected results");
+        }
+    }
+
+    public function testCleanStringArrayValues() {
+        $methods = ["searchTerms"];
+        $now = new \DateTime;
+        $in = [1, 3.0, "ook", 0, true, false, null, $now, ""];
+        $out = ["1", "3", "ook", "0", valueInfo::normalize($now, ValueInfo::T_STRING)];
         $c = new Context;
         foreach ($methods as $method) {
             $this->assertSame($out, $c->$method($in)->$method, "Context method $method did not return the expected results");
