@@ -1184,18 +1184,18 @@ class Database {
         if ($context->editions()) {
             // if multiple specific editions have been requested, filter against the list
             if (!$context->editions) {
-                throw new Db\ExceptionInput("tooShort", ['field' => "editions", 'action' => __FUNCTION__, 'min' => 1]); // must have at least one array element
+                throw new Db\ExceptionInput("tooShort", ['field' => "editions", 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
             } elseif (sizeof($context->editions) > self::LIMIT_ARTICLES) {
-                throw new Db\ExceptionInput("tooLong", ['field' => "editions", 'action' => __FUNCTION__, 'max' => self::LIMIT_ARTICLES]); // @codeCoverageIgnore
+                throw new Db\ExceptionInput("tooLong", ['field' => "editions", 'action' => $this->caller(), 'max' => self::LIMIT_ARTICLES]); // @codeCoverageIgnore
             }
             list($inParams, $inTypes) = $this->generateIn($context->editions, "int");
             $q->setWhere("latest_editions.edition in ($inParams)", $inTypes, $context->editions);
         } elseif ($context->articles()) {
             // if multiple specific articles have been requested, filter against the list
             if (!$context->articles) {
-                throw new Db\ExceptionInput("tooShort", ['field' => "articles", 'action' => __FUNCTION__, 'min' => 1]); // must have at least one array element
+                throw new Db\ExceptionInput("tooShort", ['field' => "articles", 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
             } elseif (sizeof($context->articles) > self::LIMIT_ARTICLES) {
-                throw new Db\ExceptionInput("tooLong", ['field' => "articles", 'action' => __FUNCTION__, 'max' => self::LIMIT_ARTICLES]); // @codeCoverageIgnore
+                throw new Db\ExceptionInput("tooLong", ['field' => "articles", 'action' => $this->caller(), 'max' => self::LIMIT_ARTICLES]); // @codeCoverageIgnore
             }
             list($inParams, $inTypes) = $this->generateIn($context->articles, "int");
             $q->setWhere("arsse_articles.id in ($inParams)", $inTypes, $context->articles);
@@ -1255,11 +1255,20 @@ class Database {
         // filter based on search terms
         if ($context->searchTerms()) {
             if (!$context->searchTerms) {
-                throw new Db\ExceptionInput("tooShort", ['field' => "searchTerms", 'action' => __FUNCTION__, 'min' => 1]); // must have at least one array element
+                throw new Db\ExceptionInput("tooShort", ['field' => "searchTerms", 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
             } elseif (sizeof($context->searchTerms) > self::LIMIT_TERMS) {
-                throw new Db\ExceptionInput("tooLong", ['field' => "searchTerms", 'action' => __FUNCTION__, 'max' => self::LIMIT_TERMS]);
+                throw new Db\ExceptionInput("tooLong", ['field' => "searchTerms", 'action' => $this->caller(), 'max' => self::LIMIT_TERMS]);
             }
             $q->setWhere(...$this->generateSearch($context->searchTerms, ["arsse_articles.title", "arsse_articles.content"]));
+        }
+        // filter based on search terms in note
+        if ($context->annotationTerms()) {
+            if (!$context->annotationTerms) {
+                throw new Db\ExceptionInput("tooShort", ['field' => "annotationTerms", 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
+            } elseif (sizeof($context->annotationTerms) > self::LIMIT_TERMS) {
+                throw new Db\ExceptionInput("tooLong", ['field' => "annotationTerms", 'action' => $this->caller(), 'max' => self::LIMIT_TERMS]);
+            }
+            $q->setWhere(...$this->generateSearch($context->annotationTerms, ["arsse_marks.note"]));
         }
         // return the query
         return $q;

@@ -497,6 +497,11 @@ trait SeriesArticle {
         // get items that match search terms
         $compareIds([1,2,3], (new Context)->searchTerms(["Article"]));
         $compareIds([1], (new Context)->searchTerms(["one", "first"]));
+        // get items that match search terms in note
+        $compareIds([2], (new Context)->annotationTerms(["some"]));
+        $compareIds([2], (new Context)->annotationTerms(["some", "note"]));
+        $compareIds([2], (new Context)->annotationTerms(["some note"]));
+        $compareIds([], (new Context)->annotationTerms(["some", "sauce"]));
     }
 
     public function testListArticlesOfAMissingFolder() {
@@ -997,5 +1002,15 @@ trait SeriesArticle {
     public function testSearchTooManyTerms() {
         $this->assertException("tooLong", "Db", "ExceptionInput");
         Arsse::$db->articleList($this->user, (new Context)->searchTerms(range(1, 105)));
+    }
+
+    public function testSearchTooFewTermsInNote() {
+        $this->assertException("tooShort", "Db", "ExceptionInput");
+        Arsse::$db->articleList($this->user, (new Context)->annotationTerms([]));
+    }
+
+    public function testSearchTooManyTermsInNote() {
+        $this->assertException("tooLong", "Db", "ExceptionInput");
+        Arsse::$db->articleList($this->user, (new Context)->annotationTerms(range(1, 105)));
     }
 }

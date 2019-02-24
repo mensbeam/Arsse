@@ -34,6 +34,7 @@ class Context {
     public $labelName;
     public $labelled = null;
     public $annotated = null;
+    public $annotationTerms = null;
     public $searchTerms = null;
 
     protected $props = [];
@@ -181,6 +182,13 @@ class Context {
     }
 
     public function annotated(bool $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function annotationTerms(array $spec = null) {
+        if (isset($spec)) {
+            $spec = $this->cleanStringArray($spec);
+        }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 

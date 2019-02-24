@@ -50,6 +50,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             'labelled' => true,
             'annotated' => true,
             'searchTerms' => ["foo", "bar"],
+            'annotationTerms' => ["foo", "bar"],
         ];
         $times = ['modifiedSince','notModifiedSince','markedSince','notMarkedSince'];
         $c = new Context;
@@ -83,7 +84,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testCleanStringArrayValues() {
-        $methods = ["searchTerms"];
+        $methods = ["searchTerms", "annotationTerms"];
         $now = new \DateTime;
         $in = [1, 3.0, "ook", 0, true, false, null, $now, ""];
         $out = ["1", "3", "ook", "0", valueInfo::normalize($now, ValueInfo::T_STRING)];
