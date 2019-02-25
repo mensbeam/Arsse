@@ -39,8 +39,6 @@ class Database {
     const SCHEMA_VERSION = 4;
     /** The maximum number of articles to mark in one query without chunking */
     const LIMIT_ARTICLES = 50;
-    /** The maximum number of search terms allowed; this is a hard limit */
-    const LIMIT_TERMS = 100;
     /** A map database driver short-names and their associated class names */
     const DRIVER_NAMES = [
         'sqlite3'    => \JKingWeb\Arsse\Db\SQLite3\Driver::class,
@@ -129,7 +127,7 @@ class Database {
 
     /** Conputes the contents of an SQL "IN()" clause, producing one parameter placeholder for each input value
      * 
-     * Returns an indexed array containing the clause text, and an array of types
+     * Returns an indexed array containing the clause text, an array of types, and the array of values
      * 
      * @param array $values Arbitrary values
      * @param string $type A single data type applied to each value
@@ -138,6 +136,7 @@ class Database {
         $out = [
             "", // query clause
             [], // binding types
+            $values, // binding values
         ];
         if (sizeof($values)) {
             // the query clause is just a series of question marks separated by commas
@@ -1096,8 +1095,32 @@ class Database {
      * @param array $cols The columns to request in the result set
      */
     protected function articleQuery(string $user, Context $context, array $cols = ["id"]): Query {
+        // validate input
+        if ($context->subscription()) {
+            $this->subscriptionValidateId($user, $context->subscription);
+        }
+        if ($context->folder()) {
+            $this->folderValidateId($user, $context->folder);
+        } 
+        if ($context->folderShallow()) {
+            $this->folderValidateId($user, $context->folderShallow);
+        }
+        if ($context->edition()) {
+            $this->articleValidateEdition($user, $context->edition);
+        } 
+        if ($context->article()) {
+            $this->articleValidateId($user, $context->article);
+        }
+        if ($context->label()) {
+            $this->labelValidateId($user, $context->label, false);
+        }
+        if ($context->labelName()) {
+            // dereference the label name to an ID
+            $context->label((int) $this->labelValidateId($user, $context->labelName, true)['id']);
+            $context->labelName(null);
+        }
+        // prepare the output column list; the column definitions are also used later
         $greatest = $this->db->sqlToken("greatest");
-        // prepare the output column list
         $colDefs = [
             'id' => "arsse_articles.id",
             'edition' => "latest_editions.edition",
@@ -1107,6 +1130,7 @@ class Database {
             'content' => "arsse_articles.content",
             'guid' => "arsse_articles.guid",
             'fingerprint' => "arsse_articles.url_title_hash || ':' || arsse_articles.url_content_hash || ':' || arsse_articles.title_content_hash",
+            'folder' => "coalesce(arsse_subscriptions.folder,0)",
             'subscription' => "arsse_subscriptions.id",
             'feed' => "arsse_subscriptions.feed",
             'starred' => "coalesce(arsse_marks.starred,0)",
@@ -1148,127 +1172,82 @@ class Database {
             ["str"],
             [$user]
         );
+        $q->setLimit($context->limit, $context->offset);
         $q->setCTE("latest_editions(article,edition)", "SELECT article,max(id) from arsse_editions group by article", [], [], "join latest_editions on arsse_articles.id = latest_editions.article");
         if ($cols) {
             // if there are no output columns requested we're getting a count and should not group, but otherwise we should
             $q->setGroup("arsse_articles.id", "arsse_marks.note", "arsse_enclosures.url", "arsse_enclosures.type", "arsse_subscriptions.title", "arsse_feeds.title", "arsse_subscriptions.id", "arsse_marks.modified", "arsse_label_members.modified", "arsse_marks.read", "arsse_marks.starred", "latest_editions.edition");
         }
-        $q->setLimit($context->limit, $context->offset);
-        if ($context->subscription()) {
-            // if a subscription is specified, make sure it exists
-            $this->subscriptionValidateId($user, $context->subscription);
-            // filter for the subscription
-            $q->setWhere("arsse_subscriptions.id = ?", "int", $context->subscription);
-        } elseif ($context->folder()) {
-            // if a folder is specified, make sure it exists
-            $this->folderValidateId($user, $context->folder);
-            // if it does exist, add a common table expression to list it and its children so that we select from the entire subtree
-            $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on parent = folder", "int", $context->folder);
-            // limit subscriptions to the listed folders
-            $q->setWhere("arsse_subscriptions.folder in (select folder from folders)");
-        } elseif ($context->folderShallow()) {
-            // if a shallow folder is specified, make sure it exists
-            $this->folderValidateId($user, $context->folderShallow);
-            // if it does exist, filter for that folder only
-            $q->setWhere("coalesce(arsse_subscriptions.folder,0) = ?", "int", $context->folderShallow);
-        }
-        if ($context->edition()) {
-            // if an edition is specified, first validate it, then filter for it
-            $this->articleValidateEdition($user, $context->edition);
-            $q->setWhere("latest_editions.edition = ?", "int", $context->edition);
-        } elseif ($context->article()) {
-            // if an article is specified, first validate it, then filter for it
-            $this->articleValidateId($user, $context->article);
-            $q->setWhere("arsse_articles.id = ?", "int", $context->article);
-        }
-        if ($context->editions()) {
-            // if multiple specific editions have been requested, filter against the list
-            if (!$context->editions) {
-                throw new Db\ExceptionInput("tooShort", ['field' => "editions", 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
-            } elseif (sizeof($context->editions) > self::LIMIT_ARTICLES) {
-                throw new Db\ExceptionInput("tooLong", ['field' => "editions", 'action' => $this->caller(), 'max' => self::LIMIT_ARTICLES]); // @codeCoverageIgnore
+        // handle the simple context options
+        foreach ([
+            // each context array consists of a column identifier (see $colDefs above), a comparison operator, a data type, and an upper bound if the value is an array
+            "edition"          => ["edition",       "=",  "int",      1],
+            "editions"         => ["edition",       "in", "int",      self::LIMIT_ARTICLES],
+            "article"          => ["id",            "=",  "int",      1],
+            "articles"         => ["id",            "in", "int",      self::LIMIT_ARTICLES],
+            "oldestArticle"    => ["id",            ">=", "int",      1],
+            "latestArticle"    => ["id",            "<=", "int",      1],
+            "oldestEdition"    => ["edition",       ">=", "int",      1],
+            "latestEdition"    => ["edition",       "<=", "int",      1],
+            "modifiedSince"    => ["modified_date", ">=", "datetime", 1],
+            "notModifiedSince" => ["modified_date", "<=", "datetime", 1],
+            "markedSince"      => ["marked_date",   ">=", "datetime", 1],
+            "notMarkedSince"   => ["marked_date",   "<=", "datetime", 1],
+            "folderShallow"    => ["folder",        "=",  "int",      1],
+            "subscription"     => ["subscription",  "=",  "int",      1],
+            "unread"           => ["unread",        "=",  "bool",     1],
+            "starred"          => ["starred",       "=",  "bool",     1],
+        ] as $m => list($col, $op, $type, $max)) {
+            if (!$context->$m()) {
+                // context is not being used
+                continue;
+            } elseif (is_array($context->$m)) {
+                if (!$context->$m) {
+                    throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
+                } elseif (sizeof($context->$m) > $max) {
+                    throw new Db\ExceptionInput("tooLong", ['field' => $m, 'action' => $this->caller(), 'max' => $max]); // @codeCoverageIgnore
+                }
+                list($clause, $types, $values) = $this->generateIn($context->$m, $type);
+                $q->setWhere("{$colDefs[$col]} $op ($clause)", $types, $values);
+            } else {
+                $q->setWhere("{$colDefs[$col]} $op ?", $type, $context->$m);
             }
-            list($inParams, $inTypes) = $this->generateIn($context->editions, "int");
-            $q->setWhere("latest_editions.edition in ($inParams)", $inTypes, $context->editions);
-        } elseif ($context->articles()) {
-            // if multiple specific articles have been requested, filter against the list
-            if (!$context->articles) {
-                throw new Db\ExceptionInput("tooShort", ['field' => "articles", 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
-            } elseif (sizeof($context->articles) > self::LIMIT_ARTICLES) {
-                throw new Db\ExceptionInput("tooLong", ['field' => "articles", 'action' => $this->caller(), 'max' => self::LIMIT_ARTICLES]); // @codeCoverageIgnore
-            }
-            list($inParams, $inTypes) = $this->generateIn($context->articles, "int");
-            $q->setWhere("arsse_articles.id in ($inParams)", $inTypes, $context->articles);
         }
-        // filter based on label by ID or name
+        // handle complex context options
         if ($context->labelled()) {
             // any label (true) or no label (false)
             $isOrIsNot = (!$context->labelled ? "is" : "is not");
             $q->setWhere("arsse_labels.id $isOrIsNot null");
-        } elseif ($context->label() || $context->labelName()) {
-            // specific label ID or name
-            if ($context->label()) {
-                $id = $this->labelValidateId($user, $context->label, false)['id'];
-            } else {
-                $id = $this->labelValidateId($user, $context->labelName, true)['id'];
-            }
-            $q->setWhere("arsse_labels.id = ?", "int", $id);
         }
-        // filter based on article or edition offset
-        if ($context->oldestArticle()) {
-            $q->setWhere("arsse_articles.id >= ?", "int", $context->oldestArticle);
+        if ($context->label()) {
+            // label ID (label names are dereferenced during input validation above)
+            $q->setWhere("arsse_labels.id = ?", "int", $context->label);
         }
-        if ($context->latestArticle()) {
-            $q->setWhere("arsse_articles.id <= ?", "int", $context->latestArticle);
-        }
-        if ($context->oldestEdition()) {
-            $q->setWhere("latest_editions.edition >= ?", "int", $context->oldestEdition);
-        }
-        if ($context->latestEdition()) {
-            $q->setWhere("latest_editions.edition <= ?", "int", $context->latestEdition);
-        }
-        // filter based on time at which an article was changed by feed updates (modified), or by user action (marked)
-        if ($context->modifiedSince()) {
-            $q->setWhere("arsse_articles.modified >= ?", "datetime", $context->modifiedSince);
-        }
-        if ($context->notModifiedSince()) {
-            $q->setWhere("arsse_articles.modified <= ?", "datetime", $context->notModifiedSince);
-        }
-        if ($context->markedSince()) {
-            $q->setWhere($colDefs['marked_date']." >= ?", "datetime", $context->markedSince);
-        }
-        if ($context->notMarkedSince()) {
-            $q->setWhere($colDefs['marked_date']." <= ?", "datetime", $context->notMarkedSince);
-        }
-        // filter for un/read and un/starred status if specified
-        if ($context->unread()) {
-            $q->setWhere("coalesce(arsse_marks.read,0) = ?", "bool", !$context->unread);
-        }
-        if ($context->starred()) {
-            $q->setWhere("coalesce(arsse_marks.starred,0) = ?", "bool", $context->starred);
-        }
-        // filter based on whether the article has a note
         if ($context->annotated()) {
             $comp = ($context->annotated) ? "<>" : "=";
             $q->setWhere("coalesce(arsse_marks.note,'') $comp ''");
         }
-        // filter based on search terms
-        if ($context->searchTerms()) {
-            if (!$context->searchTerms) {
-                throw new Db\ExceptionInput("tooShort", ['field' => "searchTerms", 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
-            } elseif (sizeof($context->searchTerms) > self::LIMIT_TERMS) {
-                throw new Db\ExceptionInput("tooLong", ['field' => "searchTerms", 'action' => $this->caller(), 'max' => self::LIMIT_TERMS]);
-            }
-            $q->setWhere(...$this->generateSearch($context->searchTerms, ["arsse_articles.title", "arsse_articles.content"]));
+        if ($context->folder()) {
+            // add a common table expression to list the folder and its children so that we select from the entire subtree
+            $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on parent = folder", "int", $context->folder);
+            // limit subscriptions to the listed folders
+            $q->setWhere("arsse_subscriptions.folder in (select folder from folders)");
         }
-        // filter based on search terms in note
-        if ($context->annotationTerms()) {
-            if (!$context->annotationTerms) {
-                throw new Db\ExceptionInput("tooShort", ['field' => "annotationTerms", 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
-            } elseif (sizeof($context->annotationTerms) > self::LIMIT_TERMS) {
-                throw new Db\ExceptionInput("tooLong", ['field' => "annotationTerms", 'action' => $this->caller(), 'max' => self::LIMIT_TERMS]);
+        // handle text-matching context options
+        foreach ([
+            "titleTerms"      => [10, ["arsse_articles.title"]],
+            "searchTerms"     => [20, ["arsse_articles.title", "arsse_articles.content"]],
+            "authorTerms"     => [10, ["arsse_articles.author"]],
+            "annotationTerms" => [20, ["arsse_marks.note"]],
+        ] as $m => list($max, $cols)) {
+            if (!$context->$m()) {
+                continue;
+            } elseif (!$context->$m) {
+                throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
+            } elseif (sizeof($context->$m) > $max) {
+                throw new Db\ExceptionInput("tooLong", ['field' => $m, 'action' => $this->caller(), 'max' => $max]);
             }
-            $q->setWhere(...$this->generateSearch($context->annotationTerms, ["arsse_marks.note"]));
+            $q->setWhere(...$this->generateSearch($context->$m, $cols));
         }
         // return the query
         return $q;
@@ -1306,7 +1285,7 @@ class Database {
      * 
      * @param string $user The user whose articles are to be listed
      * @param Context $context The search context
-     * @param array $cols The columns to return in the result set, any of: id, edition, url, title, author, content, guid, fingerprint, subscription, feed, starred, unread, note, published_date, edited_date, modified_date, marked_date, subscription_title, media_url, media_type
+     * @param array $cols The columns to return in the result set, any of: id, edition, url, title, author, content, guid, fingerprint, folder, subscription, feed, starred, unread, note, published_date, edited_date, modified_date, marked_date, subscription_title, media_url, media_type
      */
     public function articleList(string $user, Context $context = null, array $fields = ["id"]): Db\Result {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
