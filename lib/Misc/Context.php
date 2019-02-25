@@ -10,6 +10,7 @@ use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 
 class Context {
+    public $not = null;
     public $reverse = false;
     public $limit = 0;
     public $offset = 0;
@@ -36,8 +37,15 @@ class Context {
     public $annotated = null;
     public $annotationTerms = null;
     public $searchTerms = null;
+    public $titleTerms = null;
+    public $authorTerms = null;
 
     protected $props = [];
+
+    public function __clone() {
+        // clone the negation context, if any
+        $this->not = $this->not ? clone $this->not : null;
+    }
 
     protected function act(string $prop, int $set, $value) {
         if ($set) {
@@ -196,6 +204,24 @@ class Context {
         if (isset($spec)) {
             $spec = $this->cleanStringArray($spec);
         }
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function titleTerms(array $spec = null) {
+        if (isset($spec)) {
+            $spec = $this->cleanStringArray($spec);
+        }
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function authorTerms(array $spec = null) {
+        if (isset($spec)) {
+            $spec = $this->cleanStringArray($spec);
+        }
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function not(self $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 }
