@@ -159,8 +159,9 @@ class Database {
      * 
      * @param string[] $terms The terms to search for
      * @param string[] $cols The columns to match against; these are -not- sanitized, so much -not- come directly from user input
+     * @param boolean $matchAny Whether the search is successful when it matches any (true) or all (false) terms
      */
-    protected function generateSearch(array $terms, array $cols): array {
+    protected function generateSearch(array $terms, array $cols, bool $matchAny = false): array {
         $clause = [];
         $types = [];
         $values = [];
@@ -176,7 +177,8 @@ class Database {
             }
             $clause[] = "(".implode(" or ", $spec).")";
         }
-        $clause = "(".implode(" and ", $clause).")";
+        $glue = $matchAny ? "or" : "and";
+        $clause = "(".implode(" $glue ", $clause).")";
         return [$clause, $types, $values];
     }
 
@@ -382,7 +384,7 @@ class Database {
      * 
      * @param string $uer The user whose folders are to be listed
      * @param integer|null $parent Restricts the list to the descendents of the specified folder identifier
-     * @param boolean $recursive Whether to list all descendents, or only direct children
+     * @param boolean $recursive Whether to list all descendents (true) or only direct children (false)
      */
     public function folderList(string $user, $parent = null, bool $recursive = true): Db\Result {
         // if the user isn't authorized to perform this action then throw an exception.
@@ -500,7 +502,7 @@ class Database {
      * 
      * @param string $user The user who owns the folder to be validated
      * @param integer|null $id The identifier of the folder to validate; null or zero represent the implied root folder
-     * @param boolean $subject Whether the folder is the subject rather than the object of the operation being performed; this only affects the semantics of the error message if validation fails
+     * @param boolean $subject Whether the folder is the subject (true) rather than the object (false) of the operation being performed; this only affects the semantics of the error message if validation fails
      */
     protected function folderValidateId(string $user, $id = null, bool $subject = false): array {
         // if the specified ID is not a non-negative integer (or null), this will always fail
@@ -839,7 +841,7 @@ class Database {
      * 
      * @param string $user The user who owns the subscription to be validated
      * @param integer|null $id The identifier of the subscription to validate
-     * @param boolean $subject Whether the subscription is the subject rather than the object of the operation being performed; this only affects the semantics of the error message if validation fails
+     * @param boolean $subject Whether the subscription is the subject (true) rather than the object (false) of the operation being performed; this only affects the semantics of the error message if validation fails
      */
     protected function subscriptionValidateId(string $user, $id, bool $subject = false): array {
         if (!ValueInfo::id($id)) {
@@ -1199,7 +1201,6 @@ class Database {
             "unread"           => ["unread",        "=",  "bool",     "",                 1],
             "starred"          => ["starred",       "=",  "bool",     "",                 1],
         ];
-        $optionsSeen = [];
         foreach ($options as $m => list($col, $op, $type, $pair, $max)) {
 
             if (!$context->$m()) {
@@ -1273,12 +1274,13 @@ class Database {
             $q->setWhere("arsse_subscriptions.folder in (select folder from folders)");
         }
         // handle text-matching context options
-        foreach ([
+        $options = [
             "titleTerms"      => [10, ["arsse_articles.title"]],
             "searchTerms"     => [20, ["arsse_articles.title", "arsse_articles.content"]],
             "authorTerms"     => [10, ["arsse_articles.author"]],
             "annotationTerms" => [20, ["arsse_marks.note"]],
-        ] as $m => list($max, $cols)) {
+        ];
+        foreach ($options as $m => list($max, $cols)) {
             if (!$context->$m()) {
                 continue;
             } elseif (!$context->$m) {
@@ -1287,6 +1289,17 @@ class Database {
                 throw new Db\ExceptionInput("tooLong", ['field' => $m, 'action' => $this->caller(), 'max' => $max]);
             }
             $q->setWhere(...$this->generateSearch($context->$m, $cols));
+        }
+        // further handle exclusionary text-matching context options
+        foreach ($options as $m => list($max, $cols)) {
+            if (!$context->not->$m()) {
+                continue;
+            } elseif (!$context->not->$m) {
+                continue;
+            } elseif (sizeof($context->not->$m) > $max) {
+                throw new Db\ExceptionInput("tooLong", ['field' => "$m (not)", 'action' => $this->caller(), 'max' => $max]);
+            }
+            $q->setWhereNot(...$this->generateSearch($context->not->$m, $cols, true));
         }
         // return the query
         return $q;
@@ -1503,7 +1516,7 @@ class Database {
      * 
      * @param string $user The user whose labels are to be listed
      * @param integer $id The numeric identifier of the article whose labels are to be listed
-     * @param boolean $byName Whether to return the label names instead of the numeric label identifiers
+     * @param boolean $byName Whether to return the label names (true) instead of the numeric label identifiers (false)
      */
     public function articleLabelsGet(string $user, $id, bool $byName = false): array {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
@@ -1903,7 +1916,7 @@ class Database {
      * @param integer|string $id The numeric identifier or name of the label to validate
      * @param boolean $byName Whether to interpret the $id parameter as the label's name (true) or identifier (false)
      * @param boolean $checkDb Whether to check whether the label exists (true) or only if the identifier or name is syntactically valid (false)
-     * @param boolean $subject Whether the label is the subject rather than the object of the operation being performed; this only affects the semantics of the error message if validation fails
+     * @param boolean $subject Whether the label is the subject (true) rather than the object (false) of the operation being performed; this only affects the semantics of the error message if validation fails
      */
     protected function labelValidateId(string $user, $id, bool $byName, bool $checkDb = true, bool $subject = false): array {
         if (!$byName && !ValueInfo::id($id)) {
