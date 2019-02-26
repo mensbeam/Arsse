@@ -113,6 +113,9 @@ class Query {
         $this->qWhere = [];
         $this->tWhere = [];
         $this->vWhere = [];
+        $this->qWhereNot = [];
+        $this->tWhereNot = [];
+        $this->vWhereNot = [];
         $this->qJoin = [];
         $this->tJoin = [];
         $this->vJoin = [];

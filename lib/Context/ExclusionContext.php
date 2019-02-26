@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Context;
 
 use JKingWeb\Arsse\Misc\ValueInfo;
+use JKingWeb\Arsse\Misc\Date;
 
 class ExclusionContext {
     public $folder;
@@ -22,6 +23,14 @@ class ExclusionContext {
     public $searchTerms;
     public $titleTerms;
     public $authorTerms;
+    public $oldestArticle;
+    public $latestArticle;
+    public $oldestEdition;
+    public $latestEdition;
+    public $modifiedSince;
+    public $notModifiedSince;
+    public $markedSince;
+    public $notMarkedSince;
 
     protected $props = [];
     protected $parent;
@@ -150,6 +159,42 @@ class ExclusionContext {
         if (isset($spec)) {
             $spec = $this->cleanStringArray($spec);
         }
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function latestArticle(int $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function oldestArticle(int $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function latestEdition(int $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function oldestEdition(int $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function modifiedSince($spec = null) {
+        $spec = Date::normalize($spec);
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function notModifiedSince($spec = null) {
+        $spec = Date::normalize($spec);
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function markedSince($spec = null) {
+        $spec = Date::normalize($spec);
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function notMarkedSince($spec = null) {
+        $spec = Date::normalize($spec);
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 }

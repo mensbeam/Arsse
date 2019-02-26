@@ -1179,32 +1179,34 @@ class Database {
             // if there are no output columns requested we're getting a count and should not group, but otherwise we should
             $q->setGroup("arsse_articles.id", "arsse_marks.note", "arsse_enclosures.url", "arsse_enclosures.type", "arsse_subscriptions.title", "arsse_feeds.title", "arsse_subscriptions.id", "arsse_marks.modified", "arsse_label_members.modified", "arsse_marks.read", "arsse_marks.starred", "latest_editions.edition");
         }
-        $excContext = new ExclusionContext;
         // handle the simple context options
         $options = [
-            // each context array consists of a column identifier (see $colDefs above), a comparison operator, a data type, and an upper bound if the value is an array
-            "edition"          => ["edition",       "=",  "int",      1],
-            "editions"         => ["edition",       "in", "int",      self::LIMIT_ARTICLES],
-            "article"          => ["id",            "=",  "int",      1],
-            "articles"         => ["id",            "in", "int",      self::LIMIT_ARTICLES],
-            "oldestArticle"    => ["id",            ">=", "int",      1],
-            "latestArticle"    => ["id",            "<=", "int",      1],
-            "oldestEdition"    => ["edition",       ">=", "int",      1],
-            "latestEdition"    => ["edition",       "<=", "int",      1],
-            "modifiedSince"    => ["modified_date", ">=", "datetime", 1],
-            "notModifiedSince" => ["modified_date", "<=", "datetime", 1],
-            "markedSince"      => ["marked_date",   ">=", "datetime", 1],
-            "notMarkedSince"   => ["marked_date",   "<=", "datetime", 1],
-            "folderShallow"    => ["folder",        "=",  "int",      1],
-            "subscription"     => ["subscription",  "=",  "int",      1],
-            "unread"           => ["unread",        "=",  "bool",     1],
-            "starred"          => ["starred",       "=",  "bool",     1],
+            // each context array consists of a column identifier (see $colDefs above), a comparison operator, a data type, an option to pair with for BETWEEN evaluation, and an upper bound if the value is an array
+            "edition"          => ["edition",       "=",  "int",      "",                 1],
+            "editions"         => ["edition",       "in", "int",      "",                 self::LIMIT_ARTICLES],
+            "article"          => ["id",            "=",  "int",      "",                 1],
+            "articles"         => ["id",            "in", "int",      "",                 self::LIMIT_ARTICLES],
+            "oldestArticle"    => ["id",            ">=", "int",      "latestArticle",    1],
+            "latestArticle"    => ["id",            "<=", "int",      "oldestArticle",    1],
+            "oldestEdition"    => ["edition",       ">=", "int",      "latestEdition",    1],
+            "latestEdition"    => ["edition",       "<=", "int",      "oldestEdition",    1],
+            "modifiedSince"    => ["modified_date", ">=", "datetime", "notModifiedSince", 1],
+            "notModifiedSince" => ["modified_date", "<=", "datetime", "modifiedSince",    1],
+            "markedSince"      => ["marked_date",   ">=", "datetime", "notMarkedSince",   1],
+            "notMarkedSince"   => ["marked_date",   "<=", "datetime", "markedSince",      1],
+            "folderShallow"    => ["folder",        "=",  "int",      "",                 1],
+            "subscription"     => ["subscription",  "=",  "int",      "",                 1],
+            "unread"           => ["unread",        "=",  "bool",     "",                 1],
+            "starred"          => ["starred",       "=",  "bool",     "",                 1],
         ];
-        foreach ($options as $m => list($col, $op, $type, $max)) {
+        $optionsSeen = [];
+        foreach ($options as $m => list($col, $op, $type, $pair, $max)) {
+
             if (!$context->$m()) {
                 // context is not being used
                 continue;
             } elseif (is_array($context->$m)) {
+                // context option is an array of values
                 if (!$context->$m) {
                     throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
                 } elseif (sizeof($context->$m) > $max) {
@@ -1212,27 +1214,42 @@ class Database {
                 }
                 list($clause, $types, $values) = $this->generateIn($context->$m, $type);
                 $q->setWhere("{$colDefs[$col]} $op ($clause)", $types, $values);
+            } elseif ($pair && $context->$pair()) {
+                // option is paired with another which is also being used
+                if ($op === ">=") {
+                    $q->setWhere("{$colDefs[$col]} BETWEEN ? AND ?",  [$type, $type], [$context->$m, $context->$pair]);
+                } else {
+                    // option has already been paired
+                    continue;
+                }
             } else {
                 $q->setWhere("{$colDefs[$col]} $op ?", $type, $context->$m);
             }
         }
-        if ($context->not != $excContext) {
-            // further handle exclusionary options if specified
-            foreach ($options as $m => list($col, $op, $type, $max)) {
-                if (!method_exists($context->not, $m) || !$context->not->$m()) {
-                    // context option is not being used
+        // further handle exclusionary options if specified
+        foreach ($options as $m => list($col, $op, $type, $pair, $max)) {
+            if (!method_exists($context->not, $m) || !$context->not->$m()) {
+                // context option is not being used
+                continue;
+            } elseif (is_array($context->not->$m)) {
+                if (!$context->not->$m) {
+                    // for exclusions we don't care if the array is empty
                     continue;
-                } elseif (is_array($context->not->$m)) {
-                    if (!$context->not->$m) {
-                        // for exclusions we don't care if the array is empty
-                    } elseif (sizeof($context->not->$m) > $max) {
-                        throw new Db\ExceptionInput("tooLong", ['field' => $m, 'action' => $this->caller(), 'max' => $max]); // @codeCoverageIgnore
-                    }
-                    list($clause, $types, $values) = $this->generateIn($context->$m, $type);
-                    $q->setWhereNot("{$colDefs[$col]} $op ($clause)", $types, $values);
-                } else {
-                    $q->setWhereNot("{$colDefs[$col]} $op ?", $type, $context->$m);
+                } elseif (sizeof($context->not->$m) > $max) {
+                    throw new Db\ExceptionInput("tooLong", ['field' => "$m (not)", 'action' => $this->caller(), 'max' => $max]);
                 }
+                list($clause, $types, $values) = $this->generateIn($context->not->$m, $type);
+                $q->setWhereNot("{$colDefs[$col]} $op ($clause)", $types, $values);
+            } elseif ($pair && $context->not->$pair()) {
+                // option is paired with another which is also being used
+                if ($op === ">=") {
+                    $q->setWhereNot("{$colDefs[$col]} BETWEEN ? AND ?",  [$type, $type], [$context->not->$m, $context->not->$pair]);
+                } else {
+                    // option has already been paired
+                    continue;
+                }
+            } else {
+                $q->setWhereNot("{$colDefs[$col]} $op ?", $type, $context->not->$m);
             }
         }
         // handle complex context options

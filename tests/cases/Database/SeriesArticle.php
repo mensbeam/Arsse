@@ -377,43 +377,6 @@ trait SeriesArticle {
         unset($this->data, $this->matches, $this->fields, $this->checkTables, $this->user);
     }
 
-    public function testRetrieveArticleIdsForEditions() {
-        $exp = [
-            1 => 1,
-            2 => 2,
-            3 => 3,
-            4 => 4,
-            5 => 5,
-            6 => 6,
-            7 => 7,
-            8 => 8,
-            9 => 9,
-            10 => 10,
-            11 => 11,
-            12 => 12,
-            13 => 13,
-            14 => 14,
-            15 => 15,
-            16 => 16,
-            17 => 17,
-            18 => 18,
-            19 => 19,
-            20 => 20,
-            101 => 101,
-            102 => 102,
-            103 => 103,
-            104 => 104,
-            105 => 105,
-            202 => 102,
-            203 => 103,
-            204 => 104,
-            205 => 105,
-            305 => 105,
-            1001 => 20,
-        ];
-        $this->assertEquals($exp, Arsse::$db->editionArticle(...range(1, 1001)));
-    }
-
     /** @dataProvider provideContextMatches */
     public function testListArticlesCheckingContext(Context $c, array $exp) {
         $ids = array_column($ids = Arsse::$db->articleList("john.doe@example.com", $c)->getAll(), "id");
@@ -454,6 +417,8 @@ trait SeriesArticle {
             "Marked or labelled since 2010" => [(new Context)->markedSince("2010-01-01T00:00:00Z"), [2,4,6,8,19,20]],
             "Not marked or labelled since 2014" => [(new Context)->notMarkedSince("2014-01-01T00:00:00Z"), [1,2,3,4,5,6,7,20]],
             "Not marked or labelled since 2005" => [(new Context)->notMarkedSince("2005-01-01T00:00:00Z"), [1,3,5,7]],
+            "Marked or labelled between 2000 and 2015" => [(new Context)->markedSince("2000-01-01T00:00:00Z")->notMarkedSince("2015-12-31T23:59:59Z"), [1,2,3,4,5,6,7,8,20]],
+            "Marked or labelled in 2010" => [(new Context)->markedSince("2010-01-01T00:00:00Z")->notMarkedSince("2010-12-31T23:59:59Z"), [2,4,6,20]],
             "Paged results" => [(new Context)->limit(2)->oldestEdition(4), [4,5]],
             "Reversed paged results" => [(new Context)->limit(2)->latestEdition(7)->reverse(true), [7,6]],
             "With label ID 1" => [(new Context)->label(1), [1,19]],
@@ -483,7 +448,48 @@ trait SeriesArticle {
             "Search author 2" => [(new Context)->authorTerms(["jane doe"]), [6,7]],
             "Search author 3" => [(new Context)->authorTerms(["doe", "jane"]), [6,7]],
             "Search author 4" => [(new Context)->authorTerms(["doe jane"]), []],
+            "Folder tree 1 excluding subscription 4" => [(new Context)->not->subscription(4)->folder(1), [5,6]],
+            "Folder tree 1 excluding articles 7 and 8" => [(new Context)->folder(1)->not->articles([7,8]), [5,6]],
+            "Folder tree 1 excluding no articles" => [(new Context)->folder(1)->not->articles([]), [5,6,7,8]],
+            "Marked or labelled between 2000 and 2015 excluding in 2010" => [(new Context)->markedSince("2000-01-01T00:00:00Z")->notMarkedSince("2015-12-31T23:59:59")->not->markedSince("2010-01-01T00:00:00Z")->not->notMarkedSince("2010-12-31T23:59:59Z"), [1,3,5,7,8]],
         ];
+    }
+
+    public function testRetrieveArticleIdsForEditions() {
+        $exp = [
+            1 => 1,
+            2 => 2,
+            3 => 3,
+            4 => 4,
+            5 => 5,
+            6 => 6,
+            7 => 7,
+            8 => 8,
+            9 => 9,
+            10 => 10,
+            11 => 11,
+            12 => 12,
+            13 => 13,
+            14 => 14,
+            15 => 15,
+            16 => 16,
+            17 => 17,
+            18 => 18,
+            19 => 19,
+            20 => 20,
+            101 => 101,
+            102 => 102,
+            103 => 103,
+            104 => 104,
+            105 => 105,
+            202 => 102,
+            203 => 103,
+            204 => 104,
+            205 => 105,
+            305 => 105,
+            1001 => 20,
+        ];
+        $this->assertEquals($exp, Arsse::$db->editionArticle(...range(1, 1001)));
     }
 
     public function testListArticlesOfAMissingFolder() {
