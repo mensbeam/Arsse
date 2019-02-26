@@ -32,9 +32,9 @@ class ExclusionContext {
 
     public function __clone() {
         if ($this->parent) {
-            $p = debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS | \DEBUG_BACKTRACE_PROVIDE_OBJECT, 2)[1]['object'] ?? null;
-            if ($p instanceof self) {
-                $this->parent = $p;
+            $t = debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS | \DEBUG_BACKTRACE_PROVIDE_OBJECT, 2)[1];
+            if (($t['object'] ?? null) instanceof self && $t['function'] === "__clone") {
+                $this->parent = $t['object'];
             }
         }
     }

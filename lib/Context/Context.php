@@ -9,6 +9,7 @@ namespace JKingWeb\Arsse\Context;
 use JKingWeb\Arsse\Misc\Date;
 
 class Context extends ExclusionContext {
+    /** @var ExclusionContext */
     public $not;
     public $reverse = false;
     public $limit = 0;
