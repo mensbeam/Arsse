@@ -24,6 +24,24 @@ class ExclusionContext {
     public $authorTerms;
 
     protected $props = [];
+    protected $parent;
+
+    public function __construct(self $c = null) {
+        $this->parent = $c;
+    }
+
+    public function __clone() {
+        if ($this->parent) {
+            $p = debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS | \DEBUG_BACKTRACE_PROVIDE_OBJECT, 2)[1]['object'] ?? null;
+            if ($p instanceof self) {
+                $this->parent = $p;
+            }
+        }
+    }
+
+    public function __destruct() {
+        unset($this->parent);
+    }
 
     protected function act(string $prop, int $set, $value) {
         if ($set) {
@@ -34,7 +52,7 @@ class ExclusionContext {
                 $this->props[$prop] = true;
                 $this->$prop = $value;
             }
-            return $this;
+            return $this->parent ?? $this;
         } else {
             return isset($this->props[$prop]);
         }

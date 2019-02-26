@@ -27,12 +27,16 @@ class Context extends ExclusionContext {
     public $notMarkedSince;
 
     public function __construct() {
-        $this->not = new ExclusionContext;
+        $this->not = new ExclusionContext($this);
     }
 
     public function __clone() {
         // clone the exclusion context as well
         $this->not = clone $this->not;
+    }
+
+    public function __destruct() {
+        unset($this->not);
     }
 
     public function reverse(bool $spec = null) {

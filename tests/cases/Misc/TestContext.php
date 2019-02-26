@@ -104,5 +104,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertEquals($c1->not, $c2->not);
         $this->assertNotSame($c1, $c2);
         $this->assertNotSame($c1->not, $c2->not);
+        $this->assertSame($c1, $c1->not->article(null));
+        $this->assertSame($c2, $c2->not->article(null));
     }
 }
