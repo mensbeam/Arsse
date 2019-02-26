@@ -48,6 +48,7 @@ class ExclusionContext {
         }
     }
 
+    /** @codeCoverageIgnore */
     public function __destruct() {
         unset($this->parent);
     }

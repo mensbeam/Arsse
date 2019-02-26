@@ -26,6 +26,7 @@ class Context extends ExclusionContext {
         $this->not = clone $this->not;
     }
 
+    /** @codeCoverageIgnore */
     public function __destruct() {
         unset($this->not);
     }
