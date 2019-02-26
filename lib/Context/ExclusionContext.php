@@ -77,7 +77,7 @@ class ExclusionContext {
                 $spec[$a] = 0;
             }
         }
-        return array_values(array_filter($spec));
+        return array_values(array_unique(array_filter($spec)));
     }
 
     protected function cleanStringArray(array $spec): array {
@@ -90,7 +90,7 @@ class ExclusionContext {
                 unset($spec[$a]);
             }
         }
-        return array_values($spec);
+        return array_values(array_unique($spec));
     }
 
     public function folder(int $spec = null) {
