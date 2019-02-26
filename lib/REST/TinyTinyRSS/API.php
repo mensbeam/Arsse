@@ -12,7 +12,7 @@ use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\Misc\Date;
-use JKingWeb\Arsse\Misc\Context;
+use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\ExceptionType;

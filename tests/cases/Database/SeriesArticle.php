@@ -8,7 +8,7 @@ namespace JKingWeb\Arsse\TestCase\Database;
 
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Misc\Context;
+use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\Date;
 use Phake;
 

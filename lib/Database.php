@@ -9,7 +9,8 @@ namespace JKingWeb\Arsse;
 use JKingWeb\DrUUID\UUID;
 use JKingWeb\Arsse\Db\Statement;
 use JKingWeb\Arsse\Misc\Query;
-use JKingWeb\Arsse\Misc\Context;
+use JKingWeb\Arsse\Context\Context;
+use JKingWeb\Arsse\Context\ExclusionContext;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 
@@ -1178,8 +1179,9 @@ class Database {
             // if there are no output columns requested we're getting a count and should not group, but otherwise we should
             $q->setGroup("arsse_articles.id", "arsse_marks.note", "arsse_enclosures.url", "arsse_enclosures.type", "arsse_subscriptions.title", "arsse_feeds.title", "arsse_subscriptions.id", "arsse_marks.modified", "arsse_label_members.modified", "arsse_marks.read", "arsse_marks.starred", "latest_editions.edition");
         }
+        $excContext = new ExclusionContext;
         // handle the simple context options
-        foreach ([
+        $options = [
             // each context array consists of a column identifier (see $colDefs above), a comparison operator, a data type, and an upper bound if the value is an array
             "edition"          => ["edition",       "=",  "int",      1],
             "editions"         => ["edition",       "in", "int",      self::LIMIT_ARTICLES],
@@ -1197,7 +1199,8 @@ class Database {
             "subscription"     => ["subscription",  "=",  "int",      1],
             "unread"           => ["unread",        "=",  "bool",     1],
             "starred"          => ["starred",       "=",  "bool",     1],
-        ] as $m => list($col, $op, $type, $max)) {
+        ];
+        foreach ($options as $m => list($col, $op, $type, $max)) {
             if (!$context->$m()) {
                 // context is not being used
                 continue;
@@ -1211,6 +1214,25 @@ class Database {
                 $q->setWhere("{$colDefs[$col]} $op ($clause)", $types, $values);
             } else {
                 $q->setWhere("{$colDefs[$col]} $op ?", $type, $context->$m);
+            }
+        }
+        if ($context->not != $excContext) {
+            // further handle exclusionary options if specified
+            foreach ($options as $m => list($col, $op, $type, $max)) {
+                if (!method_exists($context->not, $m) || !$context->not->$m()) {
+                    // context option is not being used
+                    continue;
+                } elseif (is_array($context->not->$m)) {
+                    if (!$context->not->$m) {
+                        // for exclusions we don't care if the array is empty
+                    } elseif (sizeof($context->not->$m) > $max) {
+                        throw new Db\ExceptionInput("tooLong", ['field' => $m, 'action' => $this->caller(), 'max' => $max]); // @codeCoverageIgnore
+                    }
+                    list($clause, $types, $values) = $this->generateIn($context->$m, $type);
+                    $q->setWhereNot("{$colDefs[$col]} $op ($clause)", $types, $values);
+                } else {
+                    $q->setWhereNot("{$colDefs[$col]} $op ?", $type, $context->$m);
+                }
             }
         }
         // handle complex context options

@@ -4,48 +4,26 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse\Misc;
+namespace JKingWeb\Arsse\Context;
 
-use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 
-class Context {
-    public $not = null;
-    public $reverse = false;
-    public $limit = 0;
-    public $offset = 0;
+class ExclusionContext {
     public $folder;
     public $folderShallow;
     public $subscription;
-    public $oldestArticle;
-    public $latestArticle;
-    public $oldestEdition;
-    public $latestEdition;
-    public $unread = null;
-    public $starred = null;
-    public $modifiedSince;
-    public $notModifiedSince;
-    public $markedSince;
-    public $notMarkedSince;
     public $edition;
     public $article;
     public $editions;
     public $articles;
     public $label;
     public $labelName;
-    public $labelled = null;
-    public $annotated = null;
-    public $annotationTerms = null;
-    public $searchTerms = null;
-    public $titleTerms = null;
-    public $authorTerms = null;
+    public $annotationTerms;
+    public $searchTerms;
+    public $titleTerms;
+    public $authorTerms;
 
     protected $props = [];
-
-    public function __clone() {
-        // clone the negation context, if any
-        $this->not = $this->not ? clone $this->not : null;
-    }
 
     protected function act(string $prop, int $set, $value) {
         if ($set) {
@@ -87,18 +65,6 @@ class Context {
         return array_values($spec);
     }
 
-    public function reverse(bool $spec = null) {
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function limit(int $spec = null) {
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function offset(int $spec = null) {
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
     public function folder(int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
@@ -108,50 +74,6 @@ class Context {
     }
 
     public function subscription(int $spec = null) {
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function latestArticle(int $spec = null) {
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function oldestArticle(int $spec = null) {
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function latestEdition(int $spec = null) {
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function oldestEdition(int $spec = null) {
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function unread(bool $spec = null) {
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function starred(bool $spec = null) {
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function modifiedSince($spec = null) {
-        $spec = Date::normalize($spec);
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function notModifiedSince($spec = null) {
-        $spec = Date::normalize($spec);
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function markedSince($spec = null) {
-        $spec = Date::normalize($spec);
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function notMarkedSince($spec = null) {
-        $spec = Date::normalize($spec);
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
@@ -185,14 +107,6 @@ class Context {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function labelled(bool $spec = null) {
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function annotated(bool $spec = null) {
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
     public function annotationTerms(array $spec = null) {
         if (isset($spec)) {
             $spec = $this->cleanStringArray($spec);
@@ -218,10 +132,6 @@ class Context {
         if (isset($spec)) {
             $spec = $this->cleanStringArray($spec);
         }
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function not(self $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 }
