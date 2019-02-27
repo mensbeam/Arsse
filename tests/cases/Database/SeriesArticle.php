@@ -453,6 +453,8 @@ trait SeriesArticle {
             "Folder tree 1 excluding no articles" => [(new Context)->folder(1)->not->articles([]), [5,6,7,8]],
             "Marked or labelled between 2000 and 2015 excluding in 2010" => [(new Context)->markedSince("2000-01-01T00:00:00Z")->notMarkedSince("2015-12-31T23:59:59")->not->markedSince("2010-01-01T00:00:00Z")->not->notMarkedSince("2010-12-31T23:59:59Z"), [1,3,5,7,8]],
             "Search with exclusion" => [(new Context)->searchTerms(["Article"])->not->searchTerms(["one", "two"]), [3]],
+            "Excluded folder tree" => [(new Context)->not->folder(1), [1,2,3,4,19,20]],
+            "Excluding label ID 2" => [(new Context)->not->label(2), [2,3,4,6,7,8,19]],
         ];
     }
 

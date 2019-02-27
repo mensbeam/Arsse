@@ -1118,9 +1118,7 @@ class Database {
             $this->labelValidateId($user, $context->label, false);
         }
         if ($context->labelName()) {
-            // dereference the label name to an ID
-            $context->label((int) $this->labelValidateId($user, $context->labelName, true)['id']);
-            $context->labelName(null);
+            $this->labelValidateId($user, $context->labelName, true);
         }
         // prepare the output column list; the column definitions are also used later
         $greatest = $this->db->sqlToken("greatest");
@@ -1142,7 +1140,7 @@ class Database {
             'published_date' => "arsse_articles.published",
             'edited_date' => "arsse_articles.edited",
             'modified_date' => "arsse_articles.modified",
-            'marked_date' => "$greatest(arsse_articles.modified, coalesce(arsse_marks.modified, '0001-01-01 00:00:00'), coalesce(arsse_label_members.modified, '0001-01-01 00:00:00'))",
+            'marked_date' => "$greatest(arsse_articles.modified, coalesce(arsse_marks.modified, '0001-01-01 00:00:00'), coalesce(label_stats.modified, '0001-01-01 00:00:00'))",
             'subscription_title' => "coalesce(arsse_subscriptions.title, arsse_feeds.title)",
             'media_url' => "arsse_enclosures.url",
             'media_type' => "arsse_enclosures.type",
@@ -1170,17 +1168,16 @@ class Database {
             join arsse_feeds on arsse_subscriptions.feed = arsse_feeds.id
             left join arsse_marks on arsse_marks.subscription = arsse_subscriptions.id and arsse_marks.article = arsse_articles.id
             left join arsse_enclosures on arsse_enclosures.article = arsse_articles.id
-            left join arsse_label_members on arsse_label_members.subscription = arsse_subscriptions.id and arsse_label_members.article = arsse_articles.id and arsse_label_members.assigned = 1
-            left join arsse_labels on arsse_labels.owner = arsse_subscriptions.owner and arsse_label_members.label = arsse_labels.id",
-            ["str"],
-            [$user]
+            join (
+                SELECT article, max(id) as edition from arsse_editions group by article
+            ) as latest_editions on arsse_articles.id = latest_editions.article
+            left join (
+                SELECT arsse_label_members.article, max(arsse_label_members.modified) as modified, sum(arsse_label_members.assigned) as assigned from arsse_label_members join arsse_labels on arsse_labels.id = arsse_label_members.label where arsse_labels.owner = ? group by arsse_label_members.article
+            ) as label_stats on label_stats.article = arsse_articles.id",
+            ["str", "str"],
+            [$user, $user]
         );
         $q->setLimit($context->limit, $context->offset);
-        $q->setCTE("latest_editions(article,edition)", "SELECT article,max(id) from arsse_editions group by article", [], [], "join latest_editions on arsse_articles.id = latest_editions.article");
-        if ($cols) {
-            // if there are no output columns requested we're getting a count and should not group, but otherwise we should
-            $q->setGroup("arsse_articles.id", "arsse_marks.note", "arsse_enclosures.url", "arsse_enclosures.type", "arsse_subscriptions.title", "arsse_feeds.title", "arsse_subscriptions.id", "arsse_marks.modified", "arsse_label_members.modified", "arsse_marks.read", "arsse_marks.starred", "latest_editions.edition");
-        }
         // handle the simple context options
         $options = [
             // each context array consists of a column identifier (see $colDefs above), a comparison operator, a data type, an option to pair with for BETWEEN evaluation, and an upper bound if the value is an array
@@ -1202,7 +1199,6 @@ class Database {
             "starred"          => ["starred",       "=",  "bool",     "",                 1],
         ];
         foreach ($options as $m => list($col, $op, $type, $pair, $max)) {
-
             if (!$context->$m()) {
                 // context is not being used
                 continue;
@@ -1254,24 +1250,41 @@ class Database {
             }
         }
         // handle complex context options
-        if ($context->labelled()) {
-            // any label (true) or no label (false)
-            $isOrIsNot = (!$context->labelled ? "is" : "is not");
-            $q->setWhere("arsse_labels.id $isOrIsNot null");
-        }
-        if ($context->label()) {
-            // label ID (label names are dereferenced during input validation above)
-            $q->setWhere("arsse_labels.id = ?", "int", $context->label);
-        }
         if ($context->annotated()) {
             $comp = ($context->annotated) ? "<>" : "=";
             $q->setWhere("coalesce(arsse_marks.note,'') $comp ''");
+        }
+        if ($context->labelled()) {
+            // any label (true) or no label (false)
+            $op = $context->labelled ? ">" : "=";
+            $q->setWhere("coalesce(label_stats.assigned,0) $op 0");
+        }
+        if ($context->label() || $context->not->label() || $context->labelName() || $context->not->labelName()) {
+            $q->setCTE("labelled(article,label_id,label_name)","SELECT m.article, l.id, l.name from arsse_label_members as m join arsse_labels as l on l.id = m.label where l.owner = ? and m.assigned = 1", "str", $user);
+            if ($context->label()) {
+                $q->setWhere("arsse_articles.id in (select article from labelled where label_id = ?)", "int", $context->label);
+            }
+            if ($context->not->label()) {
+                $q->setWhereNot("arsse_articles.id in (select article from labelled where label_id = ?)", "int", $context->not->label);
+            }
+            if ($context->labelName()) {
+                $q->setWhere("arsse_articles.id in (select article from labelled where label_name = ?)", "str", $context->labelName);
+            }
+            if ($context->not->labelName()) {
+                $q->setWhereNot("arsse_articles.id in (select article from labelled where label_name = ?)", "str", $context->not->labelName);
+            }
         }
         if ($context->folder()) {
             // add a common table expression to list the folder and its children so that we select from the entire subtree
             $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on parent = folder", "int", $context->folder);
             // limit subscriptions to the listed folders
-            $q->setWhere("arsse_subscriptions.folder in (select folder from folders)");
+            $q->setWhere("coalesce(arsse_subscriptions.folder,0) in (select folder from folders)");
+        }
+        if ($context->not->folder()) {
+            // add a common table expression to list the folder and its children so that we exclude from the entire subtree
+            $q->setCTE("folders_excluded(folder)", "SELECT ? union select id from arsse_folders join folders_excluded on parent = folder", "int", $context->not->folder);
+            // excluded any subscriptions in the listed folders
+            $q->setWhereNot("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_excluded)");
         }
         // handle text-matching context options
         $options = [
