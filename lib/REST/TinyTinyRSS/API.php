@@ -49,7 +49,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         'sid'                 => ValueInfo::T_STRING,                           // session ID
         'seq'                 => ValueInfo::T_INT,                              // request number from client
         'user'                => ValueInfo::T_STRING | ValueInfo::M_STRICT,     // user name for `login`
-        'password'            => ValueInfo::T_STRING | ValueInfo::M_STRICT,     // password for `login` and `subscribeToFeed`
+        'password'            => ValueInfo::T_STRING | ValueInfo::M_STRICT,     // password for `login` or remote password for `subscribeToFeed`
         'include_empty'       => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to include empty items in `getFeedTree` and `getCategories`
         'unread_only'         => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to exclude items without unread articles in `getCategories` and `getFeeds`
         'enable_nested'       => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to NOT show subcategories in `getCategories
@@ -76,7 +76,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         'since_id'            => ValueInfo::T_INT,                              // cut-off article ID for `getHeadlines` and `getCompactHeadlines; returns only higher article IDs when specified
         'order_by'            => ValueInfo::T_STRING,                           // sort order for `getHeadlines`
         'include_header'      => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to attach a header to the results of `getHeadlines`
-        'search'              => ValueInfo::T_STRING,                           // search string for `getHeadlines` (not yet implemented)
+        'search'              => ValueInfo::T_STRING,                           // search string for `getHeadlines`
         'field'               => ValueInfo::T_INT,                              // which state to change in `updateArticle`
         'mode'                => ValueInfo::T_INT,                              // whether to set, clear, or toggle the selected state in `updateArticle`
         'data'                => ValueInfo::T_STRING,                           // note text in `updateArticle` if setting a note
@@ -1478,7 +1478,14 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             default:
                 throw new \JKingWeb\Arsse\Exception("constantUnknown", $viewMode); // @codeCoverageIgnore
         }
-        // TODO: implement searching
+        // handle the search string, if any
+        if (isset($data['search'])) {
+            $c = Search::parse($data['search'], $c);
+            if (!$c) {
+                // the search string inherently returns an empty result, either directly or interacting with other input
+                return new ResultEmpty;
+            }
+        }
         // handle sorting
         switch ($data['order_by']) {
             case "date_reverse":

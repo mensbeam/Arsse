@@ -1809,6 +1809,8 @@ LONG_STRING;
             ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'view_mode' => "published"],
             ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -6, 'view_mode' => "unread"],
             ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2112],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'view_mode' => "unread", 'search' => "unread:false"],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'search' => "pub:true"],
         ];
         $in2 = [
             // simple context tests
@@ -1833,6 +1835,7 @@ LONG_STRING;
             ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'is_cat' => true, 'include_nested' => true],
             ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'order_by' => "feed_dates"],
             ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'order_by' => "date_reverse"],
+            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'search' => "interesting"],
         ];
         $in3 = [
             // time-based context tests
@@ -1868,6 +1871,7 @@ LONG_STRING;
         Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->folderShallow(42), $this->anything())->thenReturn($this->generateHeadlines(14));
         Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->folder(42), $this->anything())->thenReturn($this->generateHeadlines(15));
         Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->reverse(false), $this->anything())->thenReturn($this->generateHeadlines(16));
+        Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(42)->searchTerms(["interesting"]), $this->anything())->thenReturn($this->generateHeadlines(17));
         $out2 = [
             $this->respErr("INCORRECT_USAGE"),
             $this->outputHeadlines(11),
@@ -1890,6 +1894,7 @@ LONG_STRING;
             $this->outputHeadlines(15),
             $this->outputHeadlines(11), // defaulting sorting is not fully implemented
             $this->outputHeadlines(16),
+            $this->outputHeadlines(17),
         ];
         $out3 = [
             $this->outputHeadlines(1001),
