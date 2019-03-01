@@ -120,6 +120,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         switch (strtolower($token)) {
             case "nocase":
                 return '"und-x-icu"';
+            case "like":
+                return "ilike";
             default:
                 return $token;
         }

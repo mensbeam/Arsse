@@ -6,14 +6,15 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Misc;
 
-use JKingWeb\Arsse\Misc\Context;
+use JKingWeb\Arsse\Context\Context;
+use JKingWeb\Arsse\Misc\ValueInfo;
 
-/** @covers \JKingWeb\Arsse\Misc\Context */
+/** @covers \JKingWeb\Arsse\Context\Context<extended> */
 class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testVerifyInitialState() {
         $c = new Context;
         foreach ((new \ReflectionObject($c))->getMethods(\ReflectionMethod::IS_PUBLIC) as $m) {
-            if ($m->isConstructor() || $m->isStatic()) {
+            if ($m->isStatic() || strpos($m->name, "__") === 0) {
                 continue;
             }
             $method = $m->name;
@@ -48,11 +49,16 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             'labelName' => "Rush",
             'labelled' => true,
             'annotated' => true,
+            'searchTerms' => ["foo", "bar"],
+            'annotationTerms' => ["foo", "bar"],
+            'titleTerms' => ["foo", "bar"],
+            'authorTerms' => ["foo", "bar"],
+            'not' => (new Context)->subscription(5),
         ];
         $times = ['modifiedSince','notModifiedSince','markedSince','notMarkedSince'];
         $c = new Context;
         foreach ((new \ReflectionObject($c))->getMethods(\ReflectionMethod::IS_PUBLIC) as $m) {
-            if ($m->isConstructor() || $m->isStatic()) {
+            if ($m->isStatic() || strpos($m->name, "__") === 0) {
                 continue;
             }
             $method = $m->name;
@@ -70,7 +76,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function testCleanArrayValues() {
+    public function testCleanIdArrayValues() {
         $methods = ["articles", "editions"];
         $in = [1, "2", 3.5, 3.0, "ook", 0, -20, true, false, null, new \DateTime(), -1.0];
         $out = [1,2, 3];
@@ -78,5 +84,27 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
         foreach ($methods as $method) {
             $this->assertSame($out, $c->$method($in)->$method, "Context method $method did not return the expected results");
         }
+    }
+
+    public function testCleanStringArrayValues() {
+        $methods = ["searchTerms", "annotationTerms", "titleTerms", "authorTerms"];
+        $now = new \DateTime;
+        $in = [1, 3.0, "ook", 0, true, false, null, $now, ""];
+        $out = ["1", "3", "ook", "0", valueInfo::normalize($now, ValueInfo::T_STRING)];
+        $c = new Context;
+        foreach ($methods as $method) {
+            $this->assertSame($out, $c->$method($in)->$method, "Context method $method did not return the expected results");
+        }
+    }
+
+    public function testCloneAContext() {
+        $c1 = new Context;
+        $c2 = clone $c1;
+        $this->assertEquals($c1, $c2);
+        $this->assertEquals($c1->not, $c2->not);
+        $this->assertNotSame($c1, $c2);
+        $this->assertNotSame($c1->not, $c2->not);
+        $this->assertSame($c1, $c1->not->article(null));
+        $this->assertSame($c2, $c2->not->article(null));
     }
 }

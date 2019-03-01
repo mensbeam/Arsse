@@ -99,6 +99,7 @@
             <file>cases/REST/NextCloudNews/PDO/TestV1_2.php</file>
     </testsuite>
     <testsuite name="TTRSS">
+        <file>cases/REST/TinyTinyRSS/TestSearch.php</file>
         <file>cases/REST/TinyTinyRSS/TestAPI.php</file>
         <file>cases/REST/TinyTinyRSS/TestIcon.php</file>
         <file>cases/REST/TinyTinyRSS/PDO/TestAPI.php</file>

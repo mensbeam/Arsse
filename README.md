@@ -130,7 +130,6 @@ We are not aware of any other extensions to the TTRSS protocol. If you know of a
 - The `getPref` operation is not implemented; it returns `UNKNOWN_METHOD`
 - The `shareToPublished` operation is not implemented; it returns `UNKNOWN_METHOD`
 - Setting an article's "published" flag with the `updateArticle` operation is not implemented and will gracefully fail
-- The `search` parameter of the `getHeadlines` operation is not implemented; the operation will proceed as if no search string were specified
 - The `sanitize`, `force_update`, and `has_sandbox` parameters of the `getHeadlines` operation are ignored
 - String `feed_id` values for the `getCompactHeadlines` operation are not supported and will yield an `INCORRECT_USAGE` error
 - Articles are limited to a single attachment rather than multiple attachments
@@ -141,6 +140,13 @@ We are not aware of any other extensions to the TTRSS protocol. If you know of a
 - Feed, category, and label names are normally unrestricted; The Arsse rejects empty strings, as well as strings composed solely of whitespace
 - Discovering multiple feeds during `subscribeToFeed` processing normally produces an error; The Arsse instead chooses the first feed it finds
 - Providing the `setArticleLabel` operation with an invalid label normally silently fails; The Arsse returns an `INVALID_USAGE` error instead
+- Processing of the `search` parameter of the `getHeadlines` operation differs in the following ways:
+    - Values other than `"true"` or `"false"` for the `unread`, `star`, and `pub` special keywords treat the entire token as a search term rather than as `"false"`
+    - Limits are placed on the number of search terms: ten each for `title`, `author`, and `note`, and twenty for content searching; exceeding the limits will yield a non-standard `TOO_MANY_SEARCH_TERMS` error
+    - Invalid dates are ignored rather than assumed to be `"1970-01-01"`
+    - Only a single negative date is allowed (this is a known bug rather than intentional)
+    - Dates are always relative to UTC
+    - Full-text search is not yet employed with any database, including PostgreSQL
 - Article hashes are normally SHA1; The Arsse uses SHA256 hashes
 - Article attachments normally have unique IDs; The Arsse always gives attachments an ID of `"0"`
 - The default sort order of the `getHeadlines` operation normally uses custom sorting for "special" feeds; The Arsse's default sort order is equivalent to `feed_dates` for all feeds
