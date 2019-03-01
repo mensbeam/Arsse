@@ -14,7 +14,7 @@ It allows organizing newsfeeds into nested folders, and supports an odd patchwor
     <dt>API endpoint</dt>
         <dd>/tt-rss/api</dd>
     <dt>Specifications</dt>
-        <dd><a href="https://git.tt-rss.org/git/tt-rss/wiki/ApiReference">Main</a>, <a href="https://github.com/jangernert/FeedReader/blob/master/data/tt-rss-feedreader-plugin/README.md">FeedReader extensions</a>, <a href="https://github.com/hrk/tt-rss-newsplus-plugin/blob/master/README.md">News+ extension</a></dd>
+        <dd><a href="https://git.tt-rss.org/git/tt-rss/wiki/ApiReference">Main</a>, <a href="https://git.tt-rss.org/fox/tt-rss/wiki/SearchSyntax">search syntax</a>, <a href="https://github.com/jangernert/FeedReader/blob/master/data/tt-rss-feedreader-plugin/README.md">FeedReader extensions</a>, <a href="https://github.com/hrk/tt-rss-newsplus-plugin/blob/master/README.md">News+ extension</a></dd>
 </dl>
 
 # Missing features
@@ -23,7 +23,6 @@ The Arsse does not currently support the entire protocol. Notably missing featur
 
 - The `shareToPublished` operation is not implemented; it returns `UNKNOWN_METHOD`
 - Setting an article's "published" flag with the `updateArticle` operation is not implemented and will gracefully fail
-- The `search` parameter of the `getHeadlines` operation is not implemented; the operation will proceed as if no search string were specified
 - The `sanitize`, `force_update`, and `has_sandbox` parameters of the `getHeadlines` operation are ignored
 - String `feed_id` values for the `getCompactHeadlines` operation are not supported and will yield an `INCORRECT_USAGE` error
 - Articles are limited to a single attachment rather than multiple attachments
@@ -35,6 +34,12 @@ The Arsse does not currently support the entire protocol. Notably missing featur
 - Feed, category, and label names are normally unrestricted; The Arsse rejects empty strings, as well as strings composed solely of whitespace
 - Discovering multiple feeds during `subscribeToFeed` processing normally produces an error; The Arsse instead chooses the first feed it finds
 - Providing the `setArticleLabel` operation with an invalid label normally silently fails; The Arsse returns an `INVALID_USAGE` error instead
+- Processing of the `search` parameter of the `getHeadlines` operation differs in the following ways:
+    - Values other than `"true"` or `"false"` for the `unread`, `star`, and `pub` special keywords treat the entire token as a search term rather than as `"false"`
+    - Invalid dates are ignored rather than assumed to be `"1970-01-01"`
+    - Only a single negative date is allowed (this is a known bug rather than intentional)
+    - Dates are always relative to UTC
+    - Full-text search is not yet employed with any database, including PostgreSQL
 - Article hashes are normally SHA1; The Arsse uses SHA256 hashes
 - Article attachments normally have unique IDs; The Arsse always gives attachments an ID of `"0"`
 - The default sort order of the `getHeadlines` operation normally uses custom sorting for "special" feeds; The Arsse's default sort order is equivalent to `feed_dates` for all feeds
