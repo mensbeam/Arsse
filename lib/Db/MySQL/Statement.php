@@ -14,12 +14,12 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     use ExceptionBuilder;
 
     const BINDINGS = [
-        "integer"   => "i",
-        "float"     => "d",
-        "datetime"  => "s",
-        "binary"    => "b",
-        "string"    => "s",
-        "boolean"   => "i",
+        self::T_INTEGER  => "i",
+        self::T_FLOAT    => "d",
+        self::T_DATETIME => "s",
+        self::T_BINARY   => "b",
+        self::T_STRING   => "s",
+        self::T_BOOLEAN  => "i",
     ];
 
     protected $db;
@@ -93,11 +93,11 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         return new Result($r, [$changes, $lastId], $this);
     }
 
-    protected function bindValue($value, string $type, int $position): bool {
+    protected function bindValue($value, int $type, int $position): bool {
         // this is a bit of a hack: we collect values (and MySQL bind types) here so that we can take
         // advantage of the work done by bindValues() even though MySQL requires everything to be bound
         // all at once; we also segregate large values for later packetization
-        if (($type === "binary" && !is_null($value)) || (is_string($value) && strlen($value) > $this->packetSize)) {
+        if (($type == self::T_BINARY && !is_null($value)) || (is_string($value) && strlen($value) > $this->packetSize)) {
             $this->values[] = null;
             $this->longs[$position - 1] = $value;
             $this->binds .= "b";
@@ -112,7 +112,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         $out = "";
         for ($b = 1; $b < sizeof($query); $b++) {
             $a = $b - 1;
-            $mark = (($types[$a] ?? "") === "datetime") ? "cast(? as datetime(0))" : "?";
+            $mark = (($types[$a] ?? 0) % self::T_NOT_NULL == self::T_DATETIME) ? "cast(? as datetime(0))" : "?";
             $out .= $query[$a].$mark;
         }
         $out .= array_pop($query);

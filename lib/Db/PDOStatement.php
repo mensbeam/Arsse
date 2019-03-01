@@ -10,12 +10,12 @@ abstract class PDOStatement extends AbstractStatement {
     use PDOError;
 
     const BINDINGS = [
-        "integer"   => \PDO::PARAM_INT,
-        "float"     => \PDO::PARAM_STR,
-        "datetime"  => \PDO::PARAM_STR,
-        "binary"    => \PDO::PARAM_LOB,
-        "string"    => \PDO::PARAM_STR,
-        "boolean"   => \PDO::PARAM_INT, // FIXME: using \PDO::PARAM_BOOL leads to incompatibilities with versions of SQLite bundled prior to PHP 7.3
+        self::T_INTEGER  => \PDO::PARAM_INT,
+        self::T_FLOAT    => \PDO::PARAM_STR,
+        self::T_DATETIME => \PDO::PARAM_STR,
+        self::T_BINARY   => \PDO::PARAM_LOB,
+        self::T_STRING   => \PDO::PARAM_STR,
+        self::T_BOOLEAN  => \PDO::PARAM_INT, // FIXME: using \PDO::PARAM_BOOL leads to incompatibilities with versions of SQLite bundled prior to PHP 7.3
     ];
 
     protected $st;
@@ -55,7 +55,7 @@ abstract class PDOStatement extends AbstractStatement {
         return new PDOResult($this->db, $this->st);
     }
 
-    protected function bindValue($value, string $type, int $position): bool {
+    protected function bindValue($value, int $type, int $position): bool {
         return $this->st->bindValue($position, $value, is_null($value) ? \PDO::PARAM_NULL : self::BINDINGS[$type]);
     }
 }

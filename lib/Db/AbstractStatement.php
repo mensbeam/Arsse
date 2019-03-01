@@ -12,11 +12,25 @@ use JKingWeb\Arsse\Misc\ValueInfo;
 abstract class AbstractStatement implements Statement {
     use SQLState;
 
+    const TYPE_NORM_MAP = [
+        self::T_INTEGER  => ValueInfo::M_NULL | ValueInfo::T_INT,
+        self::T_STRING   => ValueInfo::M_NULL | ValueInfo::T_STRING,
+        self::T_BOOLEAN  => ValueInfo::M_NULL | ValueInfo::T_BOOL,
+        self::T_DATETIME => ValueInfo::M_NULL | ValueInfo::T_DATE,
+        self::T_FLOAT    => ValueInfo::M_NULL | ValueInfo::T_FLOAT,
+        self::T_BINARY   => ValueInfo::M_NULL | ValueInfo::T_STRING,
+        self::T_NOT_NULL + self::T_INTEGER  => ValueInfo::T_INT,
+        self::T_NOT_NULL + self::T_STRING   => ValueInfo::T_STRING,
+        self::T_NOT_NULL + self::T_BOOLEAN  => ValueInfo::T_BOOL,
+        self::T_NOT_NULL + self::T_DATETIME => ValueInfo::T_DATE,
+        self::T_NOT_NULL + self::T_FLOAT    => ValueInfo::T_FLOAT,
+        self::T_NOT_NULL + self::T_BINARY   => ValueInfo::T_STRING,
+    ];
+
     protected $types = [];
-    protected $isNullable = [];
 
     abstract public function runArray(array $values = []): Result;
-    abstract protected function bindValue($value, string $type, int $position): bool;
+    abstract protected function bindValue($value, int $type, int $position): bool;
     abstract protected function prepare(string $query): bool;
     abstract protected static function buildEngineException($code, string $msg): array;
 
@@ -41,18 +55,11 @@ abstract class AbstractStatement implements Statement {
                 // recursively flatten any arrays, which may be provided for SET or IN() clauses
                 $this->retypeArray($binding, true);
             } else {
-                $binding = trim(strtolower($binding));
-                if (strpos($binding, "strict ")===0) {
-                    // "strict" types' values may never be null; null values will later be cast to the type specified
-                    $this->isNullable[] = false;
-                    $binding = substr($binding, 7);
-                } else {
-                    $this->isNullable[] = true;
-                }
-                if (!array_key_exists($binding, self::TYPES)) {
+                $bindId = self::TYPES[trim(strtolower($binding))] ?? 0;
+                if (!$bindId) {
                     throw new Exception("paramTypeInvalid", $binding); // @codeCoverageIgnore
                 }
-                $this->types[] = self::TYPES[$binding];
+                $this->types[] = $bindId;
             }
         }
         if (!$append) {
@@ -61,27 +68,16 @@ abstract class AbstractStatement implements Statement {
         return true;
     }
 
-    protected function cast($v, string $t, bool $nullable) {
+    protected function cast($v, int $t) {
         switch ($t) {
-            case "datetime":
+            case self::T_DATETIME:
+                return Date::transform($v, "sql");
+            case self::T_DATETIME + self::T_NOT_NULL:
                 $v = Date::transform($v, "sql");
-                if (is_null($v) && !$nullable) {
-                    $v = 0;
-                    $v = Date::transform($v, "sql");
-                }
-                return $v;
-            case "integer":
-                return ValueInfo::normalize($v, ValueInfo::T_INT | ($nullable ? ValueInfo::M_NULL : 0), null, "sql");
-            case "float":
-                return ValueInfo::normalize($v, ValueInfo::T_FLOAT | ($nullable ? ValueInfo::M_NULL : 0), null, "sql");
-            case "binary":
-            case "string":
-                return ValueInfo::normalize($v, ValueInfo::T_STRING | ($nullable ? ValueInfo::M_NULL : 0), null, "sql");
-            case "boolean":
-                $v = ValueInfo::normalize($v, ValueInfo::T_BOOL | ($nullable ? ValueInfo::M_NULL : 0), null, "sql");
-                return is_null($v) ? $v : (int) $v;
+                return $v ? $v : "0001-01-01 00:00:00";
             default:
-                throw new Exception("paramTypeUnknown", $type); // @codeCoverageIgnore
+                $v = ValueInfo::normalize($v, self::TYPE_NORM_MAP[$t], null, "sql");
+                return is_bool($v) ? (int) $v : $v;
         }
     }
 
@@ -92,8 +88,8 @@ abstract class AbstractStatement implements Statement {
                 // recursively flatten any arrays, which may be provided for SET or IN() clauses
                 $a += $this->bindValues($value, $a);
             } elseif (array_key_exists($a, $this->types)) {
-                $value = $this->cast($value, $this->types[$a], $this->isNullable[$a]);
-                $this->bindValue($value, $this->types[$a], ++$a);
+                $value = $this->cast($value, $this->types[$a]);
+                $this->bindValue($value, $this->types[$a] % self::T_NOT_NULL, ++$a);
             } else {
                 throw new Exception("paramTypeMissing", $a+1);
             }
@@ -102,7 +98,7 @@ abstract class AbstractStatement implements Statement {
         // SQLite will happily substitute null for a missing value, but other engines (viz. PostgreSQL) produce an error
         if (is_null($offset)) {
             while ($a < sizeof($this->types)) {
-                $this->bindValue(null, $this->types[$a], ++$a);
+                $this->bindValue(null, $this->types[$a] % self::T_NOT_NULL, ++$a);
             }
         }
         return $a - $offset;

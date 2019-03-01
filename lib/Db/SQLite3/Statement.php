@@ -17,12 +17,12 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     const SQLITE_CONSTRAINT = 19;
     const SQLITE_MISMATCH = 20;
     const BINDINGS = [
-        "integer"   => \SQLITE3_INTEGER,
-        "float"     => \SQLITE3_FLOAT,
-        "datetime"  => \SQLITE3_TEXT,
-        "binary"    => \SQLITE3_BLOB,
-        "string"    => \SQLITE3_TEXT,
-        "boolean"   => \SQLITE3_INTEGER,
+        self::T_INTEGER  => \SQLITE3_INTEGER,
+        self::T_FLOAT    => \SQLITE3_FLOAT,
+        self::T_DATETIME => \SQLITE3_TEXT,
+        self::T_BINARY   => \SQLITE3_BLOB,
+        self::T_STRING   => \SQLITE3_TEXT,
+        self::T_BOOLEAN  => \SQLITE3_INTEGER,
     ];
 
     protected $db;
@@ -68,7 +68,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         return new Result($r, [$changes, $lastId], $this);
     }
 
-    protected function bindValue($value, string $type, int $position): bool {
+    protected function bindValue($value, int $type, int $position): bool {
         return $this->st->bindValue($position, $value, is_null($value) ? \SQLITE3_NULL : self::BINDINGS[$type]);
     }
 }
