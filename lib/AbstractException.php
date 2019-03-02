@@ -11,6 +11,7 @@ abstract class AbstractException extends \Exception {
         "Exception.uncoded"                           => -1,
         "Exception.unknown"                           => 10000,
         "Exception.constantUnknown"                   => 10001,
+        "Exception.arrayEmpty"                        => 10002,
         "ExceptionType.strictFailure"                 => 10011,
         "ExceptionType.typeUnknown"                   => 10012,
         "Lang/Exception.defaultFileMissing"           => 10101,

@@ -36,6 +36,8 @@ return [
     'Exception.JKingWeb/Arsse/Exception.unknown'                           => 'An unknown error has occurred',
     // indicates programming error
     'Exception.JKingWeb/Arsse/Exception.constantUnknown'                   => 'Supplied constant value ({0}) is unknown or invalid in the context in which it was used',
+    // indicates programming error
+    'Exception.JKingWeb/Arsse/Exception.arrayEmpty'                        => 'Supplied array "{0}" is empty, but should have at least one element',
     'Exception.JKingWeb/Arsse/ExceptionType.strictFailure'                 => 'Supplied value could not be normalized to {0, select,
         1 {null}
         2 {boolean}

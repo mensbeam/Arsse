@@ -120,7 +120,6 @@ class TestSearch extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideSearchStrings */
     public function testApplySearchToContext(string $search, $exp) {
         $act = Search::parse($search);
-        //var_export($act);
         $this->assertEquals($exp, $act);
     }
 }

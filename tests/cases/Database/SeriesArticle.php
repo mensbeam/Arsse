@@ -456,6 +456,7 @@ trait SeriesArticle {
             "Excluded folder tree" => [(new Context)->not->folder(1), [1,2,3,4,19,20]],
             "Excluding label ID 2" => [(new Context)->not->label(2), [2,3,4,6,7,8,19]],
             "Excluding label 'Fascinating'" => [(new Context)->not->labelName("Fascinating"), [2,3,4,6,7,8,19]],
+            "Search 501 terms" => [(new Context)->searchTerms(array_merge(range(1,500),[str_repeat("a", 1000)])), []],
         ];
     }
 
@@ -991,18 +992,8 @@ trait SeriesArticle {
         Arsse::$db->articleList($this->user, (new Context)->searchTerms([]));
     }
 
-    public function testSearchTooManyTerms() {
-        $this->assertException("tooLong", "Db", "ExceptionInput");
-        Arsse::$db->articleList($this->user, (new Context)->searchTerms(range(1, 105)));
-    }
-
     public function testSearchTooFewTermsInNote() {
         $this->assertException("tooShort", "Db", "ExceptionInput");
         Arsse::$db->articleList($this->user, (new Context)->annotationTerms([]));
-    }
-
-    public function testSearchTooManyTermsInNote() {
-        $this->assertException("tooLong", "Db", "ExceptionInput");
-        Arsse::$db->articleList($this->user, (new Context)->annotationTerms(range(1, 105)));
     }
 }

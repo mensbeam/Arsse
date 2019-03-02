@@ -142,7 +142,6 @@ We are not aware of any other extensions to the TTRSS protocol. If you know of a
 - Providing the `setArticleLabel` operation with an invalid label normally silently fails; The Arsse returns an `INVALID_USAGE` error instead
 - Processing of the `search` parameter of the `getHeadlines` operation differs in the following ways:
     - Values other than `"true"` or `"false"` for the `unread`, `star`, and `pub` special keywords treat the entire token as a search term rather than as `"false"`
-    - Limits are placed on the number of search terms: ten each for `title`, `author`, and `note`, and twenty for content searching; exceeding the limits will yield a non-standard `TOO_MANY_SEARCH_TERMS` error
     - Invalid dates are ignored rather than assumed to be `"1970-01-01"`
     - Only a single negative date is allowed (this is a known bug rather than intentional)
     - Dates are always relative to UTC

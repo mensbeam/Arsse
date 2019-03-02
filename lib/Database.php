@@ -185,23 +185,33 @@ class Database {
      * @param boolean $matchAny Whether the search is successful when it matches any (true) or all (false) terms
      */
     protected function generateSearch(array $terms, array $cols, bool $matchAny = false): array {
+        if (!$cols) {
+            throw new Exception("arrayEmpty", "cols"); // @codeCoverageIgnore
+        }
         $clause = [];
         $types = [];
         $values = [];
         $like = $this->db->sqlToken("like");
+        $embedSet = sizeof($terms) > ((int) (self::LIMIT_SET_SIZE / sizeof($cols)));
         foreach($terms as $term) {
+            $embedTerm = ($embedSet && strlen($term) <= self::LIMIT_SET_STRING_LENGTH);
             $term = str_replace(["%", "_", "^"], ["^%", "^_", "^^"], $term);
             $term = "%$term%";
+            $term = $embedTerm ? $this->db->literalString($term) : $term;
             $spec = [];
             foreach ($cols as $col) {
-                $spec[] = "$col $like ? escape '^'";
-                $types[] = "str";
-                $values[] = $term;
+                if ($embedTerm) {
+                    $spec[] = "$col $like $term escape '^'";
+                } else {
+                    $spec[] = "$col $like ? escape '^'";
+                    $types[] = "str";
+                    $values[] = $term;
+                }
             }
             $clause[] = "(".implode(" or ", $spec).")";
         }
         $glue = $matchAny ? "or" : "and";
-        $clause = "(".implode(" $glue ", $clause).")";
+        $clause = $clause ? "(".implode(" $glue ", $clause).")" : "";
         return [$clause, $types, $values];
     }
 
@@ -1307,34 +1317,27 @@ class Database {
         }
         // handle text-matching context options
         $options = [
-            "titleTerms"      => [10, ["arsse_articles.title"]],
-            "searchTerms"     => [20, ["arsse_articles.title", "arsse_articles.content"]],
-            "authorTerms"     => [10, ["arsse_articles.author"]],
-            "annotationTerms" => [20, ["arsse_marks.note"]],
+            "titleTerms"      => ["arsse_articles.title"],
+            "searchTerms"     => ["arsse_articles.title", "arsse_articles.content"],
+            "authorTerms"     => ["arsse_articles.author"],
+            "annotationTerms" => ["arsse_marks.note"],
         ];
-        foreach ($options as $m => list($max, $cols)) {
+        foreach ($options as $m => $cols) {
             if (!$context->$m()) {
                 continue;
             } elseif (!$context->$m) {
                 throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
-            } elseif (sizeof($context->$m) > $max) {
-                throw new Db\ExceptionInput("tooLong", ['field' => $m, 'action' => $this->caller(), 'max' => $max]);
             }
             $q->setWhere(...$this->generateSearch($context->$m, $cols));
         }
         // further handle exclusionary text-matching context options
-        foreach ($options as $m => list($max, $cols)) {
-            if (!$context->not->$m()) {
+        foreach ($options as $m => $cols) {
+            if (!$context->not->$m() || !$context->not->$m) {
                 continue;
-            } elseif (!$context->not->$m) {
-                continue;
-            } elseif (sizeof($context->not->$m) > $max) {
-                throw new Db\ExceptionInput("tooLong", ['field' => "$m (not)", 'action' => $this->caller(), 'max' => $max]);
             }
             $q->setWhereNot(...$this->generateSearch($context->not->$m, $cols, true));
         }
         // return the query
-        //var_export((string) $q);
         return $q;
     }
 
