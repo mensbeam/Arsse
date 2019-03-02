@@ -1,8 +1,12 @@
-Version 0.7.0 (2019-??-??)
+Version 0.7.0 (2019-03-02)
 ==========================
 
 New features:
 - Support for basic freeform searching in Tiny Tiny RSS
+- Console command to refresh all stale feeds once then exit
+
+Bug fixes:
+- Ensure updating does not fail with newsfeeds larger than 250 entries
 
 Version 0.6.1 (2019-01-23)
 ==========================

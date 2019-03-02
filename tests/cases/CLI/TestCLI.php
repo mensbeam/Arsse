@@ -74,6 +74,16 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         Phake::verify($this->cli)->getService;
     }
 
+    public function testRefreshAllFeeds() {
+        $srv = Phake::mock(Service::class);
+        Phake::when($srv)->watch->thenReturn(new \DateTimeImmutable);
+        Phake::when($this->cli)->getService->thenReturn($srv);
+        $this->assertConsole($this->cli, "arsse.php feed refresh-all", 0);
+        $this->assertLoaded(true);
+        Phake::verify($srv)->watch(false);
+        Phake::verify($this->cli)->getService;
+    }
+
     /** @dataProvider provideFeedUpdates */
     public function testRefreshAFeed(string $cmd, int $exitStatus, string $output) {
         Arsse::$db = Phake::mock(Database::class);

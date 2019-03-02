@@ -12,6 +12,7 @@ class CLI {
     const USAGE = <<<USAGE_TEXT
 Usage:
     arsse.php daemon
+    arsse.php feed refresh-all
     arsse.php feed refresh <n>
     arsse.php conf save-defaults [<file>]
     arsse.php user [list]
@@ -23,8 +24,8 @@ Usage:
     arsse.php --help | -h
 
 The Arsse command-line interface currently allows you to start the refresh
-daemon, refresh a specific feed by numeric ID, manage users, or save default
-configuration to a sample file.
+daemon, refresh all feeds or a specific feed by numeric ID, manage users,
+or save default configuration to a sample file.
 USAGE_TEXT;
 
     protected function usage($prog): string {
@@ -58,7 +59,7 @@ USAGE_TEXT;
             'help' => false,
         ]);
         try {
-            switch ($this->command(["--help", "--version", "daemon", "feed refresh", "conf save-defaults", "user"], $args)) {
+            switch ($this->command(["--help", "--version", "daemon", "feed refresh", "feed refresh-all", "conf save-defaults", "user"], $args)) {
                 case "--help":
                     echo $this->usage($argv0).\PHP_EOL;
                     return 0;
@@ -72,6 +73,10 @@ USAGE_TEXT;
                 case "feed refresh":
                     $this->loadConf();
                     return (int) !Arsse::$db->feedUpdate((int) $args['<n>'], true);
+                case "feed refresh-all":
+                    $this->loadConf();
+                    $this->getService()->watch(false);
+                    return 0;
                 case "conf save-defaults":
                     $file = $args['<file>'];
                     $file = ($file === "-" ? null : $file) ?? "php://output";
