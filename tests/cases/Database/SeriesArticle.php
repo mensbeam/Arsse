@@ -432,7 +432,7 @@ trait SeriesArticle {
             "Multiple unstarred articles" => [(new Context)->articles([1,2,3])->starred(false), [2,3]],
             "Multiple articles" => [(new Context)->articles([1,20,50]), [1,20]],
             "Multiple editions" => [(new Context)->editions([1,1001,50]), [1,20]],
-            "150 articles" => [(new Context)->articles(range(1, Database::LIMIT_ARTICLES * 3)), [1,2,3,4,5,6,7,8,19,20]],
+            "150 articles" => [(new Context)->articles(range(1, Database::LIMIT_SET_SIZE * 3)), [1,2,3,4,5,6,7,8,19,20]],
             "Search title or content 1" => [(new Context)->searchTerms(["Article"]), [1,2,3]],
             "Search title or content 2" => [(new Context)->searchTerms(["one", "first"]), [1]],
             "Search title or content 3" => [(new Context)->searchTerms(["one first"]), []],
@@ -455,6 +455,7 @@ trait SeriesArticle {
             "Search with exclusion" => [(new Context)->searchTerms(["Article"])->not->searchTerms(["one", "two"]), [3]],
             "Excluded folder tree" => [(new Context)->not->folder(1), [1,2,3,4,19,20]],
             "Excluding label ID 2" => [(new Context)->not->label(2), [2,3,4,6,7,8,19]],
+            "Excluding label 'Fascinating'" => [(new Context)->not->labelName("Fascinating"), [2,3,4,6,7,8,19]],
         ];
     }
 
@@ -744,7 +745,7 @@ trait SeriesArticle {
     }
 
     public function testMarkTooManyMultipleArticles() {
-        $this->assertSame(7, Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->articles(range(1, Database::LIMIT_ARTICLES * 3))));
+        $this->assertSame(7, Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->articles(range(1, Database::LIMIT_SET_SIZE * 3))));
     }
 
     public function testMarkAMissingArticle() {
@@ -907,7 +908,7 @@ trait SeriesArticle {
         $this->assertSame(2, Arsse::$db->articleCount("john.doe@example.com", (new Context)->starred(true)));
         $this->assertSame(4, Arsse::$db->articleCount("john.doe@example.com", (new Context)->folder(1)));
         $this->assertSame(0, Arsse::$db->articleCount("jane.doe@example.com", (new Context)->starred(true)));
-        $this->assertSame(10, Arsse::$db->articleCount("john.doe@example.com", (new Context)->articles(range(1, Database::LIMIT_ARTICLES *3))));
+        $this->assertSame(10, Arsse::$db->articleCount("john.doe@example.com", (new Context)->articles(range(1, Database::LIMIT_SET_SIZE * 3))));
     }
 
     public function testCountArticlesWithoutAuthority() {

@@ -378,4 +378,8 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv->savepointUndo();
         $this->assertTrue($this->exec(str_replace("#", "3", $this->setVersion)));
     }
+
+    public function testProduceAStringLiteral() {
+        $this->assertSame("'It''s a string!'", $this->drv->literalString("It's a string!"));
+    }
 }

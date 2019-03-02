@@ -76,4 +76,10 @@ interface Driver {
      * - "like": the case-insensitive LIKE operator
      */
     public function sqlToken(string $token): string;
+
+    /** Returns a string literal which is properly escaped to guard against SQL injections. Delimiters are included in the output string
+     * 
+     * This functionality should be avoided in favour of using statement parameters whenever possible
+     */
+    public function literalString(string $str): string;
 }

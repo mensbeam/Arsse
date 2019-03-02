@@ -179,4 +179,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $this->exec((!$rollback) ? "COMMIT" : "ROLLBACK");
         return true;
     }
+
+    public function literalString(string $str): string {
+        return "'".\SQLite3::escapeString($str)."'";
+    }
 }

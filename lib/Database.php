@@ -38,8 +38,10 @@ use JKingWeb\Arsse\Misc\ValueInfo;
 class Database {
     /** The version number of the latest schema the interface is aware of */
     const SCHEMA_VERSION = 4;
-    /** The maximum number of articles to mark in one query without chunking */
-    const LIMIT_ARTICLES = 50;
+    /** The size of a set of values beyond which the set will be embedded into the query text */
+    const LIMIT_SET_SIZE = 25;
+    /** The length of a string in an embedded set beyond which a parameter placeholder will be used for the string */
+    const LIMIT_SET_STRING_LENGTH = 200;
     /** A map database driver short-names and their associated class names */
     const DRIVER_NAMES = [
         'sqlite3'    => \JKingWeb\Arsse\Db\SQLite3\Driver::class,
@@ -126,29 +128,50 @@ class Database {
         return $out;
     }
 
-    /** Conputes the contents of an SQL "IN()" clause, producing one parameter placeholder for each input value
+    /** Computes the contents of an SQL "IN()" clause, for each input value either embedding the value or producing a parameter placeholder
      * 
-     * Returns an indexed array containing the clause text, an array of types, and the array of values
+     * Returns an indexed array containing the clause text, an array of types, and an array of values. Note that the array of output values may not match the array of input values
      * 
      * @param array $values Arbitrary values
      * @param string $type A single data type applied to each value
      */
     protected function generateIn(array $values, string $type): array {
-        $out = [
-            "", // query clause
-            [], // binding types
-            $values, // binding values
-        ];
-        if (sizeof($values)) {
-            // the query clause is just a series of question marks separated by commas
-            $out[0] = implode(",", array_fill(0, sizeof($values), "?"));
-            // the binding types are just a repetition of the supplied type
-            $out[1] = array_fill(0, sizeof($values), $type);
-        } else {
+        if (!sizeof($values)) {
             // if the set is empty, some databases require an explicit null
-            $out[0] = "null";
+            return ["null", [], []];
         }
-        return $out;
+        $t = (Statement::TYPES[$type] ?? 0) % Statement::T_NOT_NULL;
+        if (sizeof($values) > self::LIMIT_SET_SIZE && ($t == Statement::T_INTEGER || $t == Statement::T_STRING)) {
+            $clause = [];
+            $params = [];
+            $count = 0;
+            $convType = Db\AbstractStatement::TYPE_NORM_MAP[Statement::TYPES[$type]];
+            foreach($values as $v) {
+                $v = ValueInfo::normalize($v, $convType, null, "sql");
+                if (is_null($v)) {
+                    // nulls are pointless to have
+                    continue;
+                } elseif (is_string($v)) {
+                    if (strlen($v) > self::LIMIT_SET_STRING_LENGTH) {
+                        $clause[] = "?";
+                        $params[] = $v;
+                    } else {
+                        $clause[] = $this->db->literalString($v);
+                    }
+                } else {
+                    $clause[] = ValueInfo::normalize($v, ValueInfo::T_STRING, null, "sql");
+                }
+                $count++;
+            }
+            if (!$count) {
+                // the set is actually empty
+                return ["null", [], []];
+            } else {
+                return [implode(",", $clause), array_fill(0, sizeof($params), $type), $params];
+            }
+        } else {
+            return [implode(",", array_fill(0, sizeof($values), "?")), array_fill(0, sizeof($values), $type), $values];
+        }
     }
 
     /** Computes basic LIKE-based text search constraints for use in a WHERE clause
@@ -1074,10 +1097,10 @@ class Database {
      */
     public function feedMatchIds(int $feedID, array $ids = [], array $hashesUT = [], array $hashesUC = [], array $hashesTC = []): Db\Result {
         // compile SQL IN() clauses and necessary type bindings for the four identifier lists
-        list($cId, $tId)     = $this->generateIn($ids, "str");
-        list($cHashUT, $tHashUT) = $this->generateIn($hashesUT, "str");
-        list($cHashUC, $tHashUC) = $this->generateIn($hashesUC, "str");
-        list($cHashTC, $tHashTC) = $this->generateIn($hashesTC, "str");
+        list($cId, $tId, $vId)             = $this->generateIn($ids, "str");
+        list($cHashUT, $tHashUT, $vHashUT) = $this->generateIn($hashesUT, "str");
+        list($cHashUC, $tHashUC, $vHashUC) = $this->generateIn($hashesUC, "str");
+        list($cHashTC, $tHashTC, $vHashTC) = $this->generateIn($hashesTC, "str");
         // perform the query
         return $articles = $this->db->prepare(
             "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed = ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC))",
@@ -1086,7 +1109,7 @@ class Database {
             $tHashUT,
             $tHashUC,
             $tHashTC
-        )->run($feedID, $ids, $hashesUT, $hashesUC, $hashesTC);
+        )->run($feedID, $vId, $vHashUT, $vHashUC, $vHashTC);
     }
 
     /** Computes an SQL query to find and retrieve data about articles in the database
@@ -1180,25 +1203,25 @@ class Database {
         $q->setLimit($context->limit, $context->offset);
         // handle the simple context options
         $options = [
-            // each context array consists of a column identifier (see $colDefs above), a comparison operator, a data type, an option to pair with for BETWEEN evaluation, and an upper bound if the value is an array
-            "edition"          => ["edition",       "=",  "int",      "",                 1],
-            "editions"         => ["edition",       "in", "int",      "",                 self::LIMIT_ARTICLES],
-            "article"          => ["id",            "=",  "int",      "",                 1],
-            "articles"         => ["id",            "in", "int",      "",                 self::LIMIT_ARTICLES],
-            "oldestArticle"    => ["id",            ">=", "int",      "latestArticle",    1],
-            "latestArticle"    => ["id",            "<=", "int",      "oldestArticle",    1],
-            "oldestEdition"    => ["edition",       ">=", "int",      "latestEdition",    1],
-            "latestEdition"    => ["edition",       "<=", "int",      "oldestEdition",    1],
-            "modifiedSince"    => ["modified_date", ">=", "datetime", "notModifiedSince", 1],
-            "notModifiedSince" => ["modified_date", "<=", "datetime", "modifiedSince",    1],
-            "markedSince"      => ["marked_date",   ">=", "datetime", "notMarkedSince",   1],
-            "notMarkedSince"   => ["marked_date",   "<=", "datetime", "markedSince",      1],
-            "folderShallow"    => ["folder",        "=",  "int",      "",                 1],
-            "subscription"     => ["subscription",  "=",  "int",      "",                 1],
-            "unread"           => ["unread",        "=",  "bool",     "",                 1],
-            "starred"          => ["starred",       "=",  "bool",     "",                 1],
+            // each context array consists of a column identifier (see $colDefs above), a comparison operator, a data type, and an option to pair with for BETWEEN evaluation
+            "edition"          => ["edition",       "=",  "int",      ""],
+            "editions"         => ["edition",       "in", "int",      ""],
+            "article"          => ["id",            "=",  "int",      ""],
+            "articles"         => ["id",            "in", "int",      ""],
+            "oldestArticle"    => ["id",            ">=", "int",      "latestArticle"],
+            "latestArticle"    => ["id",            "<=", "int",      "oldestArticle"],
+            "oldestEdition"    => ["edition",       ">=", "int",      "latestEdition"],
+            "latestEdition"    => ["edition",       "<=", "int",      "oldestEdition"],
+            "modifiedSince"    => ["modified_date", ">=", "datetime", "notModifiedSince"],
+            "notModifiedSince" => ["modified_date", "<=", "datetime", "modifiedSince"],
+            "markedSince"      => ["marked_date",   ">=", "datetime", "notMarkedSince"],
+            "notMarkedSince"   => ["marked_date",   "<=", "datetime", "markedSince"],
+            "folderShallow"    => ["folder",        "=",  "int",      ""],
+            "subscription"     => ["subscription",  "=",  "int",      ""],
+            "unread"           => ["unread",        "=",  "bool",     ""],
+            "starred"          => ["starred",       "=",  "bool",     ""],
         ];
-        foreach ($options as $m => list($col, $op, $type, $pair, $max)) {
+        foreach ($options as $m => list($col, $op, $type, $pair)) {
             if (!$context->$m()) {
                 // context is not being used
                 continue;
@@ -1206,8 +1229,6 @@ class Database {
                 // context option is an array of values
                 if (!$context->$m) {
                     throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
-                } elseif (sizeof($context->$m) > $max) {
-                    throw new Db\ExceptionInput("tooLong", ['field' => $m, 'action' => $this->caller(), 'max' => $max]); // @codeCoverageIgnore
                 }
                 list($clause, $types, $values) = $this->generateIn($context->$m, $type);
                 $q->setWhere("{$colDefs[$col]} $op ($clause)", $types, $values);
@@ -1224,7 +1245,7 @@ class Database {
             }
         }
         // further handle exclusionary options if specified
-        foreach ($options as $m => list($col, $op, $type, $pair, $max)) {
+        foreach ($options as $m => list($col, $op, $type, $pair)) {
             if (!method_exists($context->not, $m) || !$context->not->$m()) {
                 // context option is not being used
                 continue;
@@ -1232,8 +1253,6 @@ class Database {
                 if (!$context->not->$m) {
                     // for exclusions we don't care if the array is empty
                     continue;
-                } elseif (sizeof($context->not->$m) > $max) {
-                    throw new Db\ExceptionInput("tooLong", ['field' => "$m (not)", 'action' => $this->caller(), 'max' => $max]);
                 }
                 list($clause, $types, $values) = $this->generateIn($context->not->$m, $type);
                 $q->setWhereNot("{$colDefs[$col]} $op ($clause)", $types, $values);
@@ -1315,34 +1334,9 @@ class Database {
             $q->setWhereNot(...$this->generateSearch($context->not->$m, $cols, true));
         }
         // return the query
+        //var_export((string) $q);
         return $q;
     }
-
-    /** Chunk a context with more than the maximum number of articles or editions into an array of contexts */
-    protected function contextChunk(Context $context): array {
-        $exception = "";
-        if ($context->editions()) {
-            // editions take precedence over articles
-            if (sizeof($context->editions) > self::LIMIT_ARTICLES) {
-                $exception = "editions";
-            }
-        } elseif ($context->articles()) {
-            if (sizeof($context->articles) > self::LIMIT_ARTICLES) {
-                $exception = "articles";
-            }
-        }
-        if ($exception) {
-            $out = [];
-            $list = array_chunk($context->$exception, self::LIMIT_ARTICLES);
-            foreach ($list as $chunk) {
-                $out[] = (clone $context)->$exception($chunk);
-            }
-            return $out;
-        } else {
-            return [];
-        }
-    }
-
 
     /** Lists articles in the database which match a given query context
      * 
@@ -1357,22 +1351,11 @@ class Database {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         $context = $context ?? new Context;
-        // if the context has more articles or editions than we can process in one query, perform a series of queries and return an aggregate result
-        if ($contexts = $this->contextChunk($context)) {
-            $out = [];
-            $tr = $this->begin();
-            foreach ($contexts as $context) {
-                $out[] = $this->articleList($user, $context, $fields);
-            }
-            $tr->commit();
-            return new Db\ResultAggregate(...$out);
-        } else {
-            $q = $this->articleQuery($user, $context, $fields);
-            $q->setOrder("arsse_articles.edited".($context->reverse ? " desc" : ""));
-            $q->setOrder("latest_editions.edition".($context->reverse ? " desc" : ""));
-            // perform the query and return results
-            return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
-        }
+        $q = $this->articleQuery($user, $context, $fields);
+        $q->setOrder("arsse_articles.edited".($context->reverse ? " desc" : ""));
+        $q->setOrder("latest_editions.edition".($context->reverse ? " desc" : ""));
+        // perform the query and return results
+        return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
     }
 
     /** Returns a count of articles which match the given query context
@@ -1385,19 +1368,8 @@ class Database {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         $context = $context ?? new Context;
-        // if the context has more articles or editions than we can process in one query, perform a series of queries and return an aggregate result
-        if ($contexts = $this->contextChunk($context)) {
-            $out = 0;
-            $tr = $this->begin();
-            foreach ($contexts as $context) {
-                $out += $this->articleCount($user, $context);
-            }
-            $tr->commit();
-            return $out;
-        } else {
-            $q = $this->articleQuery($user, $context, []);
-            return (int) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
-        }
+        $q = $this->articleQuery($user, $context, []);
+        return (int) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
     }
 
     /** Applies one or multiple modifications to all articles matching the given query context
@@ -1425,80 +1397,69 @@ class Database {
             return 0;
         }
         $context = $context ?? new Context;
-        // if the context has more articles or editions than we can process in one query, perform a series of queries and return an aggregate result
-        if ($contexts = $this->contextChunk($context)) {
-            $out = 0;
-            $tr = $this->begin();
-            foreach ($contexts as $context) {
-                $out += $this->articleMark($user, $data, $context);
+        $tr = $this->begin();
+        $out = 0;
+        if ($data['read'] || $data['starred'] || strlen($data['note'] ?? "")) {
+            // first prepare a query to insert any missing marks rows for the articles we want to mark
+            // but only insert new mark records if we're setting at least one "positive" mark
+            $q = $this->articleQuery($user, $context, ["id", "subscription", "note"]);
+            $q->setWhere("arsse_marks.starred is null"); // null means there is no marks row for the article
+            $this->db->prepare("INSERT INTO arsse_marks(article,subscription,note) ".$q->getQuery(), $q->getTypes())->run($q->getValues());
+        }
+        if (isset($data['read']) && (isset($data['starred']) || isset($data['note'])) && ($context->edition() || $context->editions())) {
+            // if marking by edition both read and something else, do separate marks for starred and note than for read
+            // marking as read is ignored if the edition is not the latest, but the same is not true of the other two marks
+            $this->db->query("UPDATE arsse_marks set touched = 0 where touched <> 0");
+            // set read marks
+            $q = $this->articleQuery($user, $context, ["id", "subscription"]);
+            $q->setWhere("arsse_marks.read <> coalesce(?,arsse_marks.read)", "bool", $data['read']);
+            $q->pushCTE("target_articles(article,subscription)");
+            $q->setBody("UPDATE arsse_marks set \"read\" = ?, touched = 1 where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", "bool", $data['read']);
+            $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
+            // get the articles associated with the requested editions
+            if ($context->edition()) {
+                $context->article($this->articleValidateEdition($user, $context->edition)['article'])->edition(null);
+            } else {
+                $context->articles($this->editionArticle(...$context->editions))->editions(null);
             }
-            $tr->commit();
-            return $out;
-        } else {
-            $tr = $this->begin();
-            $out = 0;
-            if ($data['read'] || $data['starred'] || strlen($data['note'] ?? "")) {
-                // first prepare a query to insert any missing marks rows for the articles we want to mark
-                // but only insert new mark records if we're setting at least one "positive" mark
-                $q = $this->articleQuery($user, $context, ["id", "subscription", "note"]);
-                $q->setWhere("arsse_marks.starred is null"); // null means there is no marks row for the article
-                $this->db->prepare("INSERT INTO arsse_marks(article,subscription,note) ".$q->getQuery(), $q->getTypes())->run($q->getValues());
-            }
-            if (isset($data['read']) && (isset($data['starred']) || isset($data['note'])) && ($context->edition() || $context->editions())) {
-                // if marking by edition both read and something else, do separate marks for starred and note than for read
-                // marking as read is ignored if the edition is not the latest, but the same is not true of the other two marks
-                $this->db->query("UPDATE arsse_marks set touched = 0 where touched <> 0");
-                // set read marks
+            // set starred and/or note marks (unless all requested editions actually do not exist)
+            if ($context->article || $context->articles) {
                 $q = $this->articleQuery($user, $context, ["id", "subscription"]);
-                $q->setWhere("arsse_marks.read <> coalesce(?,arsse_marks.read)", "bool", $data['read']);
+                $q->setWhere("(arsse_marks.note <> coalesce(?,arsse_marks.note) or arsse_marks.starred <> coalesce(?,arsse_marks.starred))", ["str", "bool"], [$data['note'], $data['starred']]);
                 $q->pushCTE("target_articles(article,subscription)");
-                $q->setBody("UPDATE arsse_marks set \"read\" = ?, touched = 1 where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", "bool", $data['read']);
+                $data = array_filter($data, function($v) {
+                    return isset($v);
+                });
+                list($set, $setTypes, $setValues) = $this->generateSet($data, ['starred' => "bool", 'note' => "str"]);
+                $q->setBody("UPDATE arsse_marks set touched = 1, $set where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", $setTypes, $setValues);
                 $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
+            }
+            // finally set the modification date for all touched marks and return the number of affected marks
+            $out = $this->db->query("UPDATE arsse_marks set modified = CURRENT_TIMESTAMP, touched = 0 where touched = 1")->changes();
+        } else {
+            if (!isset($data['read']) && ($context->edition() || $context->editions())) {
                 // get the articles associated with the requested editions
                 if ($context->edition()) {
                     $context->article($this->articleValidateEdition($user, $context->edition)['article'])->edition(null);
                 } else {
                     $context->articles($this->editionArticle(...$context->editions))->editions(null);
                 }
-                // set starred and/or note marks (unless all requested editions actually do not exist)
-                if ($context->article || $context->articles) {
-                    $q = $this->articleQuery($user, $context, ["id", "subscription"]);
-                    $q->setWhere("(arsse_marks.note <> coalesce(?,arsse_marks.note) or arsse_marks.starred <> coalesce(?,arsse_marks.starred))", ["str", "bool"], [$data['note'], $data['starred']]);
-                    $q->pushCTE("target_articles(article,subscription)");
-                    $data = array_filter($data, function($v) {
-                        return isset($v);
-                    });
-                    list($set, $setTypes, $setValues) = $this->generateSet($data, ['starred' => "bool", 'note' => "str"]);
-                    $q->setBody("UPDATE arsse_marks set touched = 1, $set where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", $setTypes, $setValues);
-                    $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
+                if (!$context->article && !$context->articles) {
+                    return 0;
                 }
-                // finally set the modification date for all touched marks and return the number of affected marks
-                $out = $this->db->query("UPDATE arsse_marks set modified = CURRENT_TIMESTAMP, touched = 0 where touched = 1")->changes();
-            } else {
-                if (!isset($data['read']) && ($context->edition() || $context->editions())) {
-                    // get the articles associated with the requested editions
-                    if ($context->edition()) {
-                        $context->article($this->articleValidateEdition($user, $context->edition)['article'])->edition(null);
-                    } else {
-                        $context->articles($this->editionArticle(...$context->editions))->editions(null);
-                    }
-                    if (!$context->article && !$context->articles) {
-                        return 0;
-                    }
-                }
-                $q = $this->articleQuery($user, $context, ["id", "subscription"]);
-                $q->setWhere("(arsse_marks.note <> coalesce(?,arsse_marks.note) or arsse_marks.starred <> coalesce(?,arsse_marks.starred) or arsse_marks.read <> coalesce(?,arsse_marks.read))", ["str", "bool", "bool"], [$data['note'], $data['starred'], $data['read']]);
-                $q->pushCTE("target_articles(article,subscription)");
-                $data = array_filter($data, function($v) {
-                    return isset($v);
-                });
-                list($set, $setTypes, $setValues) = $this->generateSet($data, ['read' => "bool", 'starred' => "bool", 'note' => "str"]);
-                $q->setBody("UPDATE arsse_marks set $set, modified = CURRENT_TIMESTAMP where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", $setTypes, $setValues);
-                $out = $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
             }
-            $tr->commit();
-            return $out;
+            $q = $this->articleQuery($user, $context, ["id", "subscription"]);
+            $q->setWhere("(arsse_marks.note <> coalesce(?,arsse_marks.note) or arsse_marks.starred <> coalesce(?,arsse_marks.starred) or arsse_marks.read <> coalesce(?,arsse_marks.read))", ["str", "bool", "bool"], [$data['note'], $data['starred'], $data['read']]);
+            $q->pushCTE("target_articles(article,subscription)");
+            $data = array_filter($data, function($v) {
+                return isset($v);
+            });
+            list($set, $setTypes, $setValues) = $this->generateSet($data, ['read' => "bool", 'starred' => "bool", 'note' => "str"]);
+            $q->setBody("UPDATE arsse_marks set $set, modified = CURRENT_TIMESTAMP where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", $setTypes, $setValues);
+            $out = $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
         }
+        $tr->commit();
+        return $out;
     }
 
     /** Returns statistics about the articles starred by the given user
@@ -1685,20 +1646,9 @@ class Database {
     public function editionArticle(int ...$edition): array {
         $out = [];
         $context = (new Context)->editions($edition);
-        // if the context has more articles or editions than we can process in one query, perform a series of queries and return an aggregate result
-        if ($contexts = $this->contextChunk($context)) {
-            $articles = $editions = [];
-            foreach ($contexts as $context) {
-                $out = $this->editionArticle(...$context->editions);
-                $editions = array_merge($editions, array_map("intval", array_keys($out)));
-                $articles = array_merge($articles, array_map("intval", array_values($out)));
-            }
-            return array_combine($editions, $articles);
-        } else {
-            list($in, $inTypes) = $this->generateIn($context->editions, "int");
-            $out = $this->db->prepare("SELECT id as edition, article from arsse_editions where id in($in)", $inTypes)->run($context->editions)->getAll();
-            return $out ? array_combine(array_column($out, "edition"), array_column($out, "article")) : [];
-        }
+        list($in, $inTypes, $inValues) = $this->generateIn($context->editions, "int");
+        $out = $this->db->prepare("SELECT id as edition, article from arsse_editions where id in($in)", $inTypes)->run($inValues)->getAll();
+        return $out ? array_combine(array_column($out, "edition"), array_column($out, "article")) : [];
     }
 
     /** Creates a label, and returns its numeric identifier

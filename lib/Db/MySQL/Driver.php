@@ -212,4 +212,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     public function prepareArray(string $query, array $paramTypes): \JKingWeb\Arsse\Db\Statement {
         return new Statement($this->db, $query, $paramTypes, $this->packetSize);
     }
+
+    public function literalString(string $str): string {
+        return "'".$this->db->real_escape_string($str)."'";
+    }
 }
