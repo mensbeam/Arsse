@@ -130,4 +130,4 @@ create table arsse_categories(
 
 -- set version marker
 pragma user_version = 1;
-insert into arsse_meta(key,value) values('schema_version','1');
+insert into arsse_meta("key",value) values('schema_version','1');

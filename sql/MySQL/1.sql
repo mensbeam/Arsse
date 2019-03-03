@@ -8,7 +8,7 @@ create table arsse_sessions (
     id varchar(255) primary key,
     created datetime(0) not null default CURRENT_TIMESTAMP,
     expires datetime(0) not null,
-    `user` varchar(255) not null references arsse_users(id) on delete cascade on update cascade
+    "user" varchar(255) not null references arsse_users(id) on delete cascade on update cascade
 ) character set utf8mb4;
 
 create table arsse_labels (
@@ -30,4 +30,4 @@ create table arsse_label_members (
 
 alter table arsse_marks add column note longtext;
 
-update arsse_meta set value = '2' where `key` = 'schema_version';
+update arsse_meta set value = '2' where "key" = 'schema_version';

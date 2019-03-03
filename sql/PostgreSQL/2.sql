@@ -13,4 +13,4 @@ alter table arsse_articles alter column author type text collate "und-x-icu";
 alter table arsse_categories alter column name type text collate "und-x-icu";
 alter table arsse_labels alter column name type text collate "und-x-icu";
 
-update arsse_meta set value = '3' where key = 'schema_version';
+update arsse_meta set value = '3' where "key" = 'schema_version';

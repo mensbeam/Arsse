@@ -121,4 +121,4 @@ alter table arsse_labels_new rename to arsse_labels;
 
 -- set version marker
 pragma user_version = 3;
-update arsse_meta set value = '3' where key = 'schema_version';
+update arsse_meta set value = '3' where "key" = 'schema_version';

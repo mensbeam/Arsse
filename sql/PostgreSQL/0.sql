@@ -110,4 +110,4 @@ create table arsse_categories(
     name text
 );
 
-insert into arsse_meta(key,value) values('schema_version','1');
+insert into arsse_meta("key",value) values('schema_version','1');

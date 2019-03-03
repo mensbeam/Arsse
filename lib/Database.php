@@ -37,7 +37,7 @@ use JKingWeb\Arsse\Misc\ValueInfo;
  */
 class Database {
     /** The version number of the latest schema the interface is aware of */
-    const SCHEMA_VERSION = 4;
+    const SCHEMA_VERSION = 5;
     /** The size of a set of values beyond which the set will be embedded into the query text */
     const LIMIT_SET_SIZE = 25;
     /** The length of a string in an embedded set beyond which a parameter placeholder will be used for the string */

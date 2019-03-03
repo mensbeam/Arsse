@@ -30,4 +30,4 @@ create table arsse_label_members (
 
 alter table arsse_marks add column note text not null default '';
 
-update arsse_meta set value = '2' where key = 'schema_version';
+update arsse_meta set value = '2' where "key" = 'schema_version';

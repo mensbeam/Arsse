@@ -20,7 +20,7 @@ create table arsse_labels(
 );
 
 create table arsse_label_members(
--- uabels assignments for articles
+-- label assignments for articles
     label integer not null references arsse_labels(id) on delete cascade,                   -- label ID associated to an article; label IDs belong to a user
     article integer not null references arsse_articles(id) on delete cascade,               -- article associated to a label
     subscription integer not null references arsse_subscriptions(id) on delete cascade,     -- Subscription is included so that records are deleted when a subscription is removed
@@ -48,4 +48,4 @@ alter table arsse_marks_new rename to arsse_marks;
 
 -- set version marker
 pragma user_version = 2;
-update arsse_meta set value = '2' where key = 'schema_version';
+update arsse_meta set value = '2' where "key" = 'schema_version';

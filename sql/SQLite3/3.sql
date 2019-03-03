@@ -24,4 +24,4 @@ reindex nocase;
 
 -- set version marker
 pragma user_version = 4;
-update arsse_meta set value = '4' where key = 'schema_version';
+update arsse_meta set value = '4' where "key" = 'schema_version';

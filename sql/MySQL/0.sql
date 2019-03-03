@@ -5,7 +5,7 @@
 -- Please consult the SQLite 3 schemata for commented version
 
 create table arsse_meta(
-    `key` varchar(255) primary key,
+    "key" varchar(255) primary key,
     value longtext
 ) character set utf8mb4;
 
@@ -21,9 +21,9 @@ create table arsse_users(
 
 create table arsse_users_meta(
     owner varchar(255) not null references arsse_users(id) on delete cascade on update cascade,
-    `key` varchar(255) not null,
+    "key" varchar(255) not null,
     value varchar(255),
-    primary key(owner,`key`)
+    primary key(owner,"key")
 ) character set utf8mb4;
 
 create table arsse_folders(
@@ -93,7 +93,7 @@ create table arsse_enclosures(
 create table arsse_marks(
     article bigint not null references arsse_articles(id) on delete cascade,
     subscription bigint not null references arsse_subscriptions(id) on delete cascade on update cascade,
-    `read` boolean not null default 0,
+    "read" boolean not null default 0,
     starred boolean not null default 0,
     modified datetime(0) not null default CURRENT_TIMESTAMP,
     primary key(article,subscription)
@@ -110,4 +110,4 @@ create table arsse_categories(
     name varchar(255)
 ) character set utf8mb4;
 
-insert into arsse_meta(`key`,value) values('schema_version','1');
+insert into arsse_meta("key",value) values('schema_version','1');

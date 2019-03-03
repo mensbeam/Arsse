@@ -20,4 +20,4 @@ alter table arsse_articles convert to character set utf8mb4 collate utf8mb4_unic
 alter table arsse_categories convert to character set utf8mb4 collate utf8mb4_unicode_ci;
 alter table arsse_labels convert to character set utf8mb4 collate utf8mb4_unicode_ci;
 
-update arsse_meta set value = '3' where `key` = 'schema_version';
+update arsse_meta set value = '3' where "key" = 'schema_version';
