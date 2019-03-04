@@ -2,9 +2,6 @@
 -- Copyright 2017 J. King, Dustin Wilson et al.
 -- See LICENSE and AUTHORS files for details
 
--- Make the database WAL-journalled; this is persitent
-PRAGMA journal_mode = wal;
-
 create table arsse_meta(
 -- application metadata
     key text primary key not null,                                                                          -- metadata key

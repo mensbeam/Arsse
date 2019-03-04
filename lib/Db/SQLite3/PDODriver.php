@@ -11,9 +11,7 @@ use JKingWeb\Arsse\Db\Exception;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\ExceptionTimeout;
 
-class PDODriver extends Driver {
-    use \JKingWeb\Arsse\Db\PDODriver;
-
+class PDODriver extends AbstractPDODriver {
     protected $db;
 
     public static function requirementsMet(): bool {
@@ -48,5 +46,41 @@ class PDODriver extends Driver {
 
     public function prepareArray(string $query, array $paramTypes): \JKingWeb\Arsse\Db\Statement {
         return new PDOStatement($this->db, $query, $paramTypes);
+    }
+
+    /** @codeCoverageIgnore */
+    public function exec(string $query): bool {
+        // because PDO uses sqlite3_prepare() internally instead of sqlite3_prepare_v2(), 
+        // we have to retry ourselves in cases of schema changes
+        // the SQLite3 class is not similarly affected
+        $attempts = 0;
+        retry:
+        try {
+            return parent::exec($query);
+        } catch (\JKingWeb\Arsse\Db\ExceptionRetry $e) {
+            if (++$attempts > 50) {
+                throw $e;
+            } else {
+                goto retry;
+            }
+        }
+    }
+
+    /** @codeCoverageIgnore */
+    public function query(string $query): \JKingWeb\Arsse\Db\Result {
+        // because PDO uses sqlite3_prepare() internally instead of sqlite3_prepare_v2(), 
+        // we have to retry ourselves in cases of schema changes
+        // the SQLite3 class is not similarly affected
+        $attempts = 0;
+        retry:
+        try {
+            return parent::query($query);
+        } catch (\JKingWeb\Arsse\Db\ExceptionRetry $e) {
+            if (++$attempts > 50) {
+                throw $e;
+            } else {
+                goto retry;
+            }
+        }
     }
 }

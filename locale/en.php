@@ -120,6 +120,7 @@ return [
     'Exception.JKingWeb/Arsse/Db/Exception.savepointStale'                 => 'Tried to {action} stale savepoint {index}',
     // indicates programming error
     'Exception.JKingWeb/Arsse/Db/Exception.resultReused'                   => 'Result set already iterated',
+    'Exception.JKingWeb/Arsse/Db/ExceptionRetry.schemaChange'              => '{0}',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.missing'                   => 'Required field "{field}" missing while performing action "{action}"',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.whitespace'                => 'Field "{field}" of action "{action}" may not contain only whitespace',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.tooLong'                   => 'Field "{field}" of action "{action}" has a maximum length of {max}',
