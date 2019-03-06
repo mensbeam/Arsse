@@ -49,6 +49,49 @@ trait SeriesFolder {
                     [6, "john.doe@example.com",    2, "Politics"],
                 ]
             ],
+            'arsse_feeds' => [
+                'columns' => [
+                    'id'         => "int",
+                    'url'        => "str",
+                    'title'      => "str",
+                ],
+                'rows' => [
+                    [1,"http://example.com/1", "Feed 1"],
+                    [2,"http://example.com/2", "Feed 2"],
+                    [3,"http://example.com/3", "Feed 3"],
+                    [4,"http://example.com/4", "Feed 4"],
+                    [5,"http://example.com/5", "Feed 5"],
+                    [6,"http://example.com/6", "Feed 6"],
+                    [7,"http://example.com/7", "Feed 7"],
+                    [8,"http://example.com/8", "Feed 8"],
+                    [9,"http://example.com/9", "Feed 9"],
+                    [10,"http://example.com/10", "Feed 10"],
+                    [11,"http://example.com/11", "Feed 11"],
+                    [12,"http://example.com/12", "Feed 12"],
+                    [13,"http://example.com/13", "Feed 13"],
+                ]
+            ],
+            'arsse_subscriptions' => [
+                'columns' => [
+                    'id'         => "int",
+                    'owner'      => "str",
+                    'feed'       => "int",
+                    'folder'     => "int",
+                ],
+                'rows' => [
+                    [1, "john.doe@example.com",1, null],
+                    [2, "john.doe@example.com",2, null],
+                    [3, "john.doe@example.com",3,    1],
+                    [4, "john.doe@example.com",4,    6],
+                    [5, "john.doe@example.com",5,    5],
+                    [6, "john.doe@example.com",10,   5],
+                    [7, "jane.doe@example.com",1, null],
+                    [8, "jane.doe@example.com",10,null],
+                    [9, "jane.doe@example.com",2,    4],
+                    [10,"jane.doe@example.com",3,    4],
+                    [11,"jane.doe@example.com",4,    4],
+                ]
+            ],
         ];
     }
 
@@ -119,8 +162,8 @@ trait SeriesFolder {
 
     public function testListRootFolders() {
         $exp = [
-            ['id' => 5, 'name' => "Politics",   'parent' => null, 'children' => 0],
-            ['id' => 1, 'name' => "Technology", 'parent' => null, 'children' => 2],
+            ['id' => 5, 'name' => "Politics",   'parent' => null, 'children' => 0, 'feeds' => 2],
+            ['id' => 1, 'name' => "Technology", 'parent' => null, 'children' => 2, 'feeds' => 1],
         ];
         $this->assertResult($exp, Arsse::$db->folderList("john.doe@example.com", null, false));
         $exp = [
@@ -136,17 +179,17 @@ trait SeriesFolder {
 
     public function testListFoldersRecursively() {
         $exp = [
-            ['id' => 5, 'name' => "Politics",   'parent' => null, 'children' => 0],
-            ['id' => 6, 'name' => "Politics",   'parent' => 2, 'children' => 0],
-            ['id' => 3, 'name' => "Rocketry",   'parent' => 1, 'children' => 0],
-            ['id' => 2, 'name' => "Software",   'parent' => 1, 'children' => 1],
-            ['id' => 1, 'name' => "Technology", 'parent' => null, 'children' => 2],
+            ['id' => 5, 'name' => "Politics",   'parent' => null, 'children' => 0, 'feeds' => 2],
+            ['id' => 6, 'name' => "Politics",   'parent' => 2,    'children' => 0, 'feeds' => 1],
+            ['id' => 3, 'name' => "Rocketry",   'parent' => 1,    'children' => 0, 'feeds' => 0],
+            ['id' => 2, 'name' => "Software",   'parent' => 1,    'children' => 1, 'feeds' => 0],
+            ['id' => 1, 'name' => "Technology", 'parent' => null, 'children' => 2, 'feeds' => 1],
         ];
         $this->assertResult($exp, Arsse::$db->folderList("john.doe@example.com", null, true));
         $exp = [
-            ['id' => 6, 'name' => "Politics",   'parent' => 2, 'children' => 0],
-            ['id' => 3, 'name' => "Rocketry",   'parent' => 1, 'children' => 0],
-            ['id' => 2, 'name' => "Software",   'parent' => 1, 'children' => 1],
+            ['id' => 6, 'name' => "Politics",   'parent' => 2, 'children' => 0, 'feeds' => 1],
+            ['id' => 3, 'name' => "Rocketry",   'parent' => 1, 'children' => 0, 'feeds' => 0],
+            ['id' => 2, 'name' => "Software",   'parent' => 1, 'children' => 1, 'feeds' => 0],
         ];
         $this->assertResult($exp, Arsse::$db->folderList("john.doe@example.com", 1, true));
         $exp = [];

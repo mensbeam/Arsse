@@ -428,14 +428,18 @@ class Database {
         $parent = $this->folderValidateId($user, $parent)['id'];
         $q = new Query(
             "SELECT
-                id,name,parent,
-                (select count(*) from arsse_folders as parents where coalesce(parents.parent,0) = coalesce(arsse_folders.id,0)) as children,
-                (select count(*) from arsse_subscriptions where coalesce(folder,0) = coalesce(arsse_folders.id,0)) as feeds
-            FROM arsse_folders"
+                id,
+                name,
+                arsse_folders.parent as parent,
+                coalesce(children,0) as children, 
+                coalesce(feeds,0) as feeds
+            FROM arsse_folders
+            left join (SELECT parent,count(id) as children from arsse_folders group by parent) as child_stats on child_stats.parent = arsse_folders.id
+            left join (SELECT folder,count(id) as feeds from arsse_subscriptions group by folder) as sub_stats on sub_stats.folder = arsse_folders.id"
         );
         if (!$recursive) {
             $q->setWhere("owner = ?", "str", $user);
-            $q->setWhere("coalesce(parent,0) = ?", "strict int", $parent);
+            $q->setWhere("coalesce(arsse_folders.parent,0) = ?", "strict int", $parent);
         } else {
             $q->setCTE("folders", "SELECT id from arsse_folders where owner = ? and coalesce(parent,0) = ? union select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id", ["str", "strict int"], [$user, $parent]);
             $q->setWhere("id in (SELECT id from folders)");
@@ -687,22 +691,23 @@ class Database {
         $q = new Query(
             "SELECT
                 arsse_subscriptions.id as id,
-                feed,url,favicon,source,folder,pinned,err_count,err_msg,order_type,added,
+                arsse_subscriptions.feed,
+                url,favicon,source,folder,pinned,err_count,err_msg,order_type,added,
                 arsse_feeds.updated as updated,
                 topmost.top as top_folder,
                 coalesce(arsse_subscriptions.title, arsse_feeds.title) as title,
-                (SELECT count(*) from arsse_articles where feed = arsse_subscriptions.feed) - (SELECT count(*) from arsse_marks where subscription = arsse_subscriptions.id and \"read\" = 1) as unread
-             from arsse_subscriptions
-                join userdata on userid = owner
-                join arsse_feeds on feed = arsse_feeds.id
-                left join topmost on folder=f_id"
+                (articles - marked) as unread
+            FROM arsse_subscriptions
+                left join topmost on topmost.f_id = arsse_subscriptions.folder
+                join arsse_feeds on arsse_feeds.id = arsse_subscriptions.feed
+                left join (select feed, count(*) as articles from arsse_articles group by feed) as article_stats on article_stats.feed = arsse_subscriptions.feed
+                left join (select subscription, sum(\"read\") as marked from arsse_marks group by subscription) as mark_stats on mark_stats.subscription = arsse_subscriptions.id"
         );
+        $q->setWhere("arsse_subscriptions.owner = ?", ["str"], [$user]);
         $nocase = $this->db->sqlToken("nocase");
         $q->setOrder("pinned desc, coalesce(arsse_subscriptions.title, arsse_feeds.title) collate $nocase");
-        // define common table expressions
-        $q->setCTE("userdata(userid)", "SELECT ?", "str", $user);  // the subject user; this way we only have to pass it to prepare() once
         // topmost folders belonging to the user
-        $q->setCTE("topmost(f_id,top)", "SELECT id,id from arsse_folders join userdata on owner = userid where parent is null union select id,top from arsse_folders join topmost on parent=f_id");
+        $q->setCTE("topmost(f_id,top)", "SELECT id,id from arsse_folders where owner = ? and parent is null union select id,top from arsse_folders join topmost on parent=f_id", ["str"], [$user]);
         if ($id) {
             // this condition facilitates the implementation of subscriptionPropertiesGet, which would otherwise have to duplicate the complex query; it takes precedence over a specified folder
             // if an ID is specified, add a suitable WHERE condition and bindings
@@ -801,7 +806,7 @@ class Database {
      * - "order_type": Whether articles should be sorted in reverse cronological order (2), chronological order (1), or the default (0)
      * 
      * @param string $user The user whose subscription is to be modified
-     * @param integer|null $id the numeric identifier of the subscription to modfify
+     * @param integer $id the numeric identifier of the subscription to modfify
      * @param array $data An associative array of properties to modify; any keys not specified will be left unchanged
      */
     public function subscriptionPropertiesSet(string $user, $id, array $data): bool {
@@ -873,7 +878,7 @@ class Database {
      * Returns an associative array containing the id of the subscription and the id of the underlying newsfeed
      * 
      * @param string $user The user who owns the subscription to be validated
-     * @param integer|null $id The identifier of the subscription to validate
+     * @param integer $id The identifier of the subscription to validate
      * @param boolean $subject Whether the subscription is the subject (true) rather than the object (false) of the operation being performed; this only affects the semantics of the error message if validation fails
      */
     protected function subscriptionValidateId(string $user, $id, bool $subject = false): array {
@@ -1056,9 +1061,9 @@ class Database {
     public function feedCleanup(): bool {
         $tr = $this->begin();
         // first unmark any feeds which are no longer orphaned
-        $this->db->query("UPDATE arsse_feeds set orphaned = null where exists(SELECT id from arsse_subscriptions where feed = arsse_feeds.id)");
+        $this->db->query("WITH active_feeds as (select id from arsse_feeds left join (select feed, count(id) as count from arsse_subscriptions group by feed) as sub_stats on sub_stats.feed = arsse_feeds.id where orphaned is not null and count is not null) UPDATE arsse_feeds set orphaned = null where id in (select id from active_feeds)");
         // next mark any newly orphaned feeds with the current date and time
-        $this->db->query("UPDATE arsse_feeds set orphaned = CURRENT_TIMESTAMP where orphaned is null and not exists(SELECT id from arsse_subscriptions where feed = arsse_feeds.id)");
+        $this->db->query("WITH orphaned_feeds as (select id from arsse_feeds left join (select feed, count(id) as count from arsse_subscriptions group by feed) as sub_stats on sub_stats.feed = arsse_feeds.id where orphaned is null and count is null) UPDATE arsse_feeds set orphaned = CURRENT_TIMESTAMP where id in (select id from orphaned_feeds)");
         // finally delete feeds that have been orphaned longer than the retention period, if a a purge threshold has been specified
         if (Arsse::$conf->purgeFeeds) {
             $limit = Date::sub(Arsse::$conf->purgeFeeds);
@@ -1500,7 +1505,7 @@ class Database {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         $id = $this->articleValidateId($user, $id)['article'];
-        $out = $this->db->prepare("SELECT id,name from arsse_labels where owner = ? and exists(select id from arsse_label_members where article = ? and label = arsse_labels.id and assigned = 1)", "str", "int")->run($user, $id)->getAll();
+        $out = $this->db->prepare("SELECT id, name from arsse_labels join arsse_label_members on arsse_label_members.label = arsse_labels.id where owner = ? and article = ? and assigned = 1", "str", "int")->run($user, $id)->getAll();
         // flatten the result to return just the label ID or name, sorted
         $out = $out ? array_column($out, !$byName ? "id" : "name") : [];
         sort($out);
@@ -1525,30 +1530,16 @@ class Database {
     /** Deletes from the database articles which are beyond the configured clean-up threshold */
     public function articleCleanup(): bool {
         $query = $this->db->prepare(
-            "WITH target_feed(id,subs) as (".
-                "SELECT
-                    id, (select count(*) from arsse_subscriptions where feed = arsse_feeds.id) as subs
-                from arsse_feeds where id = ?".
-            "), latest_editions(article,edition) as (".
-                "SELECT article,max(id) from arsse_editions group by article".
-            "), excepted_articles(id,edition) as (".
-                "SELECT
-                    arsse_articles.id as id,
-                    latest_editions.edition as edition
-                from arsse_articles
-                    join target_feed on arsse_articles.feed = target_feed.id
-                    join latest_editions on arsse_articles.id = latest_editions.article
-                order by edition desc limit ?".
-            ") ".
-            "DELETE from arsse_articles where
-                feed = (select max(id) from target_feed)
-                and id not in (select id from excepted_articles)
-                and (select count(*) from arsse_marks where article = arsse_articles.id and starred = 1) = 0
-                and (
-                    coalesce((select max(modified) from arsse_marks where article = arsse_articles.id),modified) <= ?
-                    or ((select max(subs) from target_feed) = (select count(*) from arsse_marks where article = arsse_articles.id and \"read\" = 1) and coalesce((select max(modified) from arsse_marks where article = arsse_articles.id),modified) <= ?)
+            "WITH RECURSIVE
+                exempt_articles as (SELECT id from arsse_articles join (SELECT article, max(id) as edition from arsse_editions group by article) as latest_editions on arsse_articles.id = latest_editions.article where feed = ? order by edition desc limit ?),
+                target_articles as (
+                    select id from arsse_articles
+                        left join (select article, sum(starred) as starred, sum(\"read\") as \"read\", max(arsse_marks.modified) as marked_date from arsse_marks join arsse_subscriptions on arsse_subscriptions.id = arsse_marks.subscription group by article) as mark_stats on mark_stats.article = arsse_articles.id
+                        left join (select feed, count(*) as subs from arsse_subscriptions group by feed) as feed_stats on feed_stats.feed = arsse_articles.feed
+                    where arsse_articles.feed = ? and coalesce(starred,0) = 0 and (coalesce(marked_date,modified) <= ? or (coalesce(\"read\",0) = coalesce(subs,0) and coalesce(marked_date,modified) <= ?))
                 )
-            ",
+            DELETE FROM arsse_articles WHERE id not in (select id from exempt_articles) and id in (select id from target_articles)",
+            "int",
             "int",
             "int",
             "datetime",
@@ -1564,7 +1555,7 @@ class Database {
         }
         $feeds = $this->db->query("SELECT id, size from arsse_feeds")->getAll();
         foreach ($feeds as $feed) {
-            $query->run($feed['id'], $feed['size'], $limitUnread, $limitRead);
+            $query->run($feed['id'], $feed['size'], $feed['id'], $limitUnread, $limitRead);
         }
         return true;
     }
@@ -1574,21 +1565,19 @@ class Database {
      * Returns an associative array containing the id and latest edition of the article if it exists 
      * 
      * @param string $user The user who owns the article to be validated
-     * @param integer|null $id The identifier of the article to validate
+     * @param integer $id The identifier of the article to validate
      */
     protected function articleValidateId(string $user, $id): array {
         if (!ValueInfo::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "article", 'type' => "int > 0"]); // @codeCoverageIgnore
         }
         $out = $this->db->prepare(
-            "SELECT
-                arsse_articles.id as article,
-                (select max(id) from arsse_editions where article = arsse_articles.id) as edition
-            FROM arsse_articles
-                join arsse_feeds on arsse_feeds.id = arsse_articles.feed
-                join arsse_subscriptions on arsse_subscriptions.feed = arsse_feeds.id
-            WHERE
-                arsse_articles.id = ? and arsse_subscriptions.owner = ?",
+            "SELECT articles.article as article, max(arsse_editions.id)  as edition from (
+                select arsse_articles.id as article
+                FROM arsse_articles
+                    join arsse_subscriptions on arsse_subscriptions.feed = arsse_articles.feed
+                WHERE arsse_articles.id = ? and arsse_subscriptions.owner = ?
+            ) as articles join arsse_editions on arsse_editions.article = articles.article group by articles.article",
             "int",
             "str"
         )->run($id, $user)->getRow();
@@ -1603,7 +1592,7 @@ class Database {
      * Returns an associative array containing the edition id, article id, and latest edition of the edition if it exists 
      * 
      * @param string $user The user who owns the edition to be validated
-     * @param integer|null $id The identifier of the edition to validate
+     * @param integer $id The identifier of the edition to validate
      */
     protected function articleValidateEdition(string $user, int $id): array {
         if (!ValueInfo::id($id)) {
@@ -1611,15 +1600,12 @@ class Database {
         }
         $out = $this->db->prepare(
             "SELECT
-                arsse_editions.id as edition,
-                arsse_editions.article as article,
-                (arsse_editions.id = (select max(id) from arsse_editions where article = arsse_editions.article)) as current
-            FROM arsse_editions
-                join arsse_articles on arsse_editions.article = arsse_articles.id
-                join arsse_feeds on arsse_feeds.id = arsse_articles.feed
-                join arsse_subscriptions on arsse_subscriptions.feed = arsse_feeds.id
-            WHERE
-                arsse_editions.id = ? and arsse_subscriptions.owner = ?",
+                arsse_editions.id, arsse_editions.article, edition_stats.edition as current
+            from arsse_editions 
+                join arsse_articles on arsse_articles.id = arsse_editions.article
+                join arsse_subscriptions on arsse_subscriptions.feed = arsse_articles.feed
+                join (select article, max(id) as edition from arsse_editions group by article) as edition_stats on edition_stats.article = arsse_editions.article
+            where arsse_editions.id = ? and arsse_subscriptions.owner = ?",
             "int",
             "str"
         )->run($id, $user)->getRow();
@@ -1693,18 +1679,28 @@ class Database {
         return $this->db->prepare(
             "SELECT * FROM (
                 SELECT
-                    id,name,
-                    (select count(*) from arsse_label_members where label = id and assigned = 1) as articles,
-                    (select count(*) from arsse_label_members
-                        join arsse_marks on arsse_label_members.article = arsse_marks.article and arsse_label_members.subscription = arsse_marks.subscription
-                    where label = id and assigned = 1 and \"read\" = 1
-                    ) as \"read\"
-                FROM arsse_labels where owner = ?) as label_data
+                    id,name,coalesce(articles,0) as articles,coalesce(marked,0) as \"read\"
+                from arsse_labels
+                    left join (
+                        SELECT label, sum(assigned) as articles from arsse_label_members group by label
+                    ) as label_stats on label_stats.label = arsse_labels.id
+                    left join (
+                        SELECT 
+                            label, sum(\"read\") as marked
+                        from arsse_marks
+                            join arsse_subscriptions on arsse_subscriptions.id = arsse_marks.subscription
+                            join arsse_label_members on arsse_label_members.article = arsse_marks.article
+                        where arsse_subscriptions.owner = ?
+                        group by label
+                    ) as mark_stats on mark_stats.label = arsse_labels.id
+                WHERE owner = ?
+            ) as label_data
             where articles >= ? order by name
             ",
             "str",
+            "str",
             "int"
-        )->run($user, !$includeEmpty);
+        )->run($user, $user, !$includeEmpty);
     }
 
     /** Deletes a label from the database
@@ -1751,17 +1747,26 @@ class Database {
         $type = $byName ? "str" : "int";
         $out = $this->db->prepare(
             "SELECT
-                id,name,
-                (select count(*) from arsse_label_members where label = id and assigned = 1) as articles,
-                (select count(*) from arsse_label_members
-                    join arsse_marks on arsse_label_members.article = arsse_marks.article and arsse_label_members.subscription = arsse_marks.subscription
-                 where label = id and assigned = 1 and \"read\" = 1
-                ) as \"read\"
-            FROM arsse_labels where $field = ? and owner = ?
+                id,name,coalesce(articles,0) as articles,coalesce(marked,0) as \"read\"
+            FROM arsse_labels
+                left join (
+                    SELECT label, sum(assigned) as articles from arsse_label_members group by label
+                ) as label_stats on label_stats.label = arsse_labels.id
+                left join (
+                    SELECT 
+                        label, sum(\"read\") as marked
+                    from arsse_marks
+                    join arsse_subscriptions on arsse_subscriptions.id = arsse_marks.subscription
+                    join arsse_label_members on arsse_label_members.article = arsse_marks.article
+                    where arsse_subscriptions.owner = ?
+                    group by label
+                ) as mark_stats on mark_stats.label = arsse_labels.id
+            WHERE $field = ? and owner = ?
             ",
+            "str",
             $type,
             "str"
-        )->run($id, $user)->getRow();
+        )->run($user, $id, $user)->getRow();
         if (!$out) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "label", 'id' => $id]);
         }
@@ -1846,27 +1851,14 @@ class Database {
         $tr = $this->begin();
         // first update any existing entries with the removal or re-addition of their association
         $q = $this->articleQuery($user, $context);
-        $q->setWhere("exists(select article from arsse_label_members where label = ? and article = arsse_articles.id)", "int", $id);
         $q->pushCTE("target_articles");
-        $q->setBody(
-            "UPDATE arsse_label_members set assigned = ?, modified = CURRENT_TIMESTAMP where label = ? and assigned <> ? and article in (select id from target_articles)",
-            ["bool","int","bool"],
-            [!$remove, $id, !$remove]
-        );
+        $q->setBody("UPDATE arsse_label_members set assigned = ?, modified = CURRENT_TIMESTAMP where label = ? and assigned <> ? and article in (select id from target_articles)", ["bool","int","bool"], [!$remove, $id, !$remove]);
         $out += $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
         // next, if we're not removing, add any new entries that need to be added
         if (!$remove) {
-            $q = $this->articleQuery($user, $context, ["id", "feed"]);
-            $q->setWhere("not exists(select article from arsse_label_members where label = ? and article = arsse_articles.id)", "int", $id);
+            $q = $this->articleQuery($user, $context, ["id", "subscription"]);
             $q->pushCTE("target_articles");
-            $q->setBody(
-                "SELECT
-                    ?,id,
-                    (select id from arsse_subscriptions where owner = ? and arsse_subscriptions.feed = target_articles.feed)
-                FROM target_articles",
-                ["int", "str"],
-                [$id, $user]
-            );
+            $q->setBody("SELECT ?,id,subscription from target_articles where id not in (select article from arsse_label_members where label = ?)", ["int", "int"], [$id, $id]);
             $out += $this->db->prepare("INSERT INTO arsse_label_members(label,article,subscription) ".$q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
         }
         // commit the transaction
