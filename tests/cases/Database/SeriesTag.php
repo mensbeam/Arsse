@@ -378,11 +378,11 @@ trait SeriesTag {
 
     public function testSummarizeTags() {
         $exp = [
-            ['tag_id' => 1, 'tag_name' => "Interesting", 'subscription_id' => 1, 'subscription_name' => "Lord of Carrots"],
-            ['tag_id' => 1, 'tag_name' => "Interesting", 'subscription_id' => 5, 'subscription_name' => "Feed Title"],
-            ['tag_id' => 2, 'tag_name' => "Fascinating", 'subscription_id' => 1, 'subscription_name' => "Lord of Carrots"],
-            ['tag_id' => 2, 'tag_name' => "Fascinating", 'subscription_id' => 3, 'subscription_name' => "Subscription Title"],
-            ['tag_id' => 2, 'tag_name' => "Fascinating", 'subscription_id' => 5, 'subscription_name' => "Feed Title"],
+            ['id' => 1, 'name' => "Interesting", 'subscription' => 1],
+            ['id' => 1, 'name' => "Interesting", 'subscription' => 5],
+            ['id' => 2, 'name' => "Fascinating", 'subscription' => 1],
+            ['id' => 2, 'name' => "Fascinating", 'subscription' => 3],
+            ['id' => 2, 'name' => "Fascinating", 'subscription' => 5],
         ];
         $this->assertResult($exp, Arsse::$db->tagSummarize("john.doe@example.com"));
     }

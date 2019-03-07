@@ -2002,14 +2002,11 @@ class Database {
         }
         return $this->db->prepare(
             "SELECT
-                arsse_tags.id as tag_id,
-                arsse_tags.name as tag_name,
-                arsse_subscriptions.id as subscription_id,
-                coalesce(arsse_subscriptions.title, arsse_feeds.title) as subscription_name
+                arsse_tags.id as id,
+                arsse_tags.name as name,
+                arsse_tag_members.subscription as subscription
             FROM arsse_tag_members
                 join arsse_tags on arsse_tags.id = arsse_tag_members.tag
-                join arsse_subscriptions on arsse_subscriptions.id = arsse_tag_members.subscription
-                join arsse_feeds on arsse_feeds.id = arsse_subscriptions.feed
             WHERE arsse_tags.owner = ? and assigned = 1",
             "str"
         )->run($user);
