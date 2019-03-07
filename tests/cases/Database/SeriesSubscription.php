@@ -69,6 +69,33 @@ trait SeriesSubscription {
                     [3,"john.doe@example.com",3,"Ook",2,0,1],
                 ]
             ],
+            'arsse_tags' => [
+                'columns' => [
+                    'id'       => "int",
+                    'owner'    => "str",
+                    'name'     => "str",
+                ],
+                'rows' => [
+                    [1,"john.doe@example.com","Interesting"],
+                    [2,"john.doe@example.com","Fascinating"],
+                    [3,"jane.doe@example.com","Boring"],
+                    [4,"john.doe@example.com","Lonely"],
+                ],
+            ],
+            'arsse_tag_members' => [
+                'columns' => [
+                    'tag' => "int",
+                    'subscription' => "int",
+                    'assigned' => "bool",
+                ],
+                'rows' => [
+                    [1,1,1],
+                    [1,3,0],
+                    [2,1,1],
+                    [2,3,1],
+                    [3,2,1],
+                ],
+            ],
             'arsse_articles' => [
                 'columns' => [
                     'id'                 => "int",
@@ -446,5 +473,23 @@ trait SeriesSubscription {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->subscriptionFavicon(-2112, $user);
+    }
+
+    public function testListTheTagsOfASubscription() {
+        $this->assertEquals([1,2], Arsse::$db->subscriptionTagsGet("john.doe@example.com", 1));
+        $this->assertEquals([2], Arsse::$db->subscriptionTagsGet("john.doe@example.com", 3));
+        $this->assertEquals(["Fascinating","Interesting"], Arsse::$db->subscriptionTagsGet("john.doe@example.com", 1, true));
+        $this->assertEquals(["Fascinating"], Arsse::$db->subscriptionTagsGet("john.doe@example.com", 3, true));
+    }
+
+    public function testListTheTagsOfAMissingSubscription() {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        Arsse::$db->subscriptionTagsGet($this->user, 101);
+    }
+
+    public function testListTheTagsOfASubscriptionWithoutAuthority() {
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Arsse::$db->subscriptionTagsGet("john.doe@example.com", 1);
     }
 }

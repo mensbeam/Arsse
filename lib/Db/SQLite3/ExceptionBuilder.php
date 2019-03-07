@@ -21,7 +21,8 @@ trait ExceptionBuilder {
             case Driver::SQLITE_BUSY:
                 return [ExceptionTimeout::class, 'general', $msg];
             case Driver::SQLITE_SCHEMA:
-                return [ExceptionRetry::class, 'schemaChange', $msg];
+                // sometimes encountered with PDO, because PDO sucks
+                return [ExceptionRetry::class, 'schemaChange', $msg]; // @codeCoverageIgnore
             case Driver::SQLITE_CONSTRAINT:
                 return [ExceptionInput::class, 'engineConstraintViolation', $msg];
             case Driver::SQLITE_MISMATCH:

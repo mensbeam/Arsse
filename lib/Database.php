@@ -21,6 +21,7 @@ use JKingWeb\Arsse\Misc\ValueInfo;
  * - Users
  * - Subscriptions to feeds, which belong to users
  * - Folders, which belong to users and contain subscriptions
+ * - Tags, which belong to users and can be assigned to multiple subscriptions
  * - Feeds to which users are subscribed
  * - Articles, which belong to feeds and for which users can only affect metadata
  * - Editions, identifying authorial modifications to articles
@@ -849,6 +850,22 @@ class Database {
         return $out;
     }
 
+    /** Returns an indexed array listing the tags assigned to a subscription
+     * 
+     * @param string $user The user whose tags are to be listed
+     * @param integer $id The numeric identifier of the subscription whose tags are to be listed
+     * @param boolean $byName Whether to return the tag names (true) instead of the numeric tag identifiers (false)
+     */
+    public function subscriptionTagsGet(string $user, $id, bool $byName = false): array {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        $this->subscriptionValidateId($user, $id, true);
+        $field = !$byName ? "id" : "name";
+        $out = $this->db->prepare("SELECT $field from arsse_tags where id in (select tag from arsse_tag_members where subscription = ? and assigned = 1) order by $field", "int")->run($id)->getAll();
+        return $out ? array_column($out, $field) : [];
+    }
+
     /** Retrieves the URL of the icon for a subscription.
      * 
      * Note that while the $user parameter is optional, it
@@ -1505,11 +1522,9 @@ class Database {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         $id = $this->articleValidateId($user, $id)['article'];
-        $out = $this->db->prepare("SELECT id, name from arsse_labels join arsse_label_members on arsse_label_members.label = arsse_labels.id where owner = ? and article = ? and assigned = 1", "str", "int")->run($user, $id)->getAll();
-        // flatten the result to return just the label ID or name, sorted
-        $out = $out ? array_column($out, !$byName ? "id" : "name") : [];
-        sort($out);
-        return $out;
+        $field = !$byName ? "id" : "name";
+        $out = $this->db->prepare("SELECT $field from arsse_labels join arsse_label_members on arsse_label_members.label = arsse_labels.id where owner = ? and article = ? and assigned = 1 order by $field", "str", "int")->run($user, $id)->getAll();
+        return $out ? array_column($out, $field) : [];
     }
 
     /** Returns the author-supplied categories associated with an article */
@@ -1846,22 +1861,28 @@ class Database {
         // validate the label ID, and get the numeric ID if matching by name
         $id = $this->labelValidateId($user, $id, $byName, true)['id'];
         $context = $context ?? new Context;
-        $out = 0;
-        // wrap this UPDATE and INSERT together into a transaction
-        $tr = $this->begin();
+        // prepare either one or two queries
         // first update any existing entries with the removal or re-addition of their association
-        $q = $this->articleQuery($user, $context);
-        $q->pushCTE("target_articles");
-        $q->setBody("UPDATE arsse_label_members set assigned = ?, modified = CURRENT_TIMESTAMP where label = ? and assigned <> ? and article in (select id from target_articles)", ["bool","int","bool"], [!$remove, $id, !$remove]);
-        $out += $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
+        $q1 = $this->articleQuery($user, $context);
+        $q1->pushCTE("target_articles");
+        $q1->setBody("UPDATE arsse_label_members set assigned = ?, modified = CURRENT_TIMESTAMP where label = ? and assigned <> ? and article in (select id from target_articles)", ["bool","int","bool"], [!$remove, $id, !$remove]);
+        $v1 = $q1->getValues();
+        $q1 = $this->db->prepare($q1->getQuery(), $q1->getTypes());
         // next, if we're not removing, add any new entries that need to be added
         if (!$remove) {
-            $q = $this->articleQuery($user, $context, ["id", "subscription"]);
-            $q->pushCTE("target_articles");
-            $q->setBody("SELECT ?,id,subscription from target_articles where id not in (select article from arsse_label_members where label = ?)", ["int", "int"], [$id, $id]);
-            $out += $this->db->prepare("INSERT INTO arsse_label_members(label,article,subscription) ".$q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
+            $q2 = $this->articleQuery($user, $context, ["id", "subscription"]);
+            $q2->pushCTE("target_articles");
+            $q2->setBody("SELECT ?,id,subscription from target_articles where id not in (select article from arsse_label_members where label = ?)", ["int", "int"], [$id, $id]);
+            $v2 = $q2->getValues();
+            $q2 = $this->db->prepare("INSERT INTO arsse_label_members(label,article,subscription) ".$q2->getQuery(), $q2->getTypes());
         }
-        // commit the transaction
+        // execute them in a transaction
+        $out = 0;
+        $tr = $this->begin();
+        $out += $q1->run($v1)->changes();
+        if (!$remove) {
+            $out += $q2->run($v2)->changes();
+        }
         $tr->commit();
         return $out;
     }
@@ -1901,6 +1922,299 @@ class Database {
 
     /** Ensures a prospective label name is syntactically valid and raises an exception otherwise */
     protected function labelValidateName($name): bool {
+        $info = ValueInfo::str($name);
+        if ($info & (ValueInfo::NULL | ValueInfo::EMPTY)) {
+            throw new Db\ExceptionInput("missing", ["action" => $this->caller(), "field" => "name"]);
+        } elseif ($info & ValueInfo::WHITE) {
+            throw new Db\ExceptionInput("whitespace", ["action" => $this->caller(), "field" => "name"]);
+        } elseif (!($info & ValueInfo::VALID)) {
+            throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "name", 'type' => "string"]);
+        } else {
+            return true;
+        }
+    }
+
+    /** Creates a tag, and returns its numeric identifier
+     * 
+     * Tags are discrete objects in the database and can be associated with multiple subscriptions; a subscription may in turn be associated with multiple tags
+     * 
+     * @param string $user The user who will own the created tag
+     * @param array $data An associative array defining the tag's properties; currently only "name" is understood
+     */
+    public function tagAdd(string $user, array $data): int {
+        // if the user isn't authorized to perform this action then throw an exception.
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        // validate the tag name
+        $name = array_key_exists("name", $data) ? $data['name'] : "";
+        $this->tagValidateName($name, true);
+        // perform the insert
+        return $this->db->prepare("INSERT INTO arsse_tags(owner,name) values(?,?)", "str", "str")->run($user, $name)->lastId();
+    }
+
+    /** Lists a user's subscription tags
+     * 
+     * The following keys are included in each record:
+     * 
+     * - "id": The tag's numeric identifier
+     * - "name" The tag's textual name
+     * - "subscriptions": The count of subscriptions which have the tag assigned to them
+     * 
+     * @param string $user The user whose tags are to be listed
+     * @param boolean $includeEmpty Whether to include (true) or supress (false) tags which have no subscriptions assigned to them
+     */
+    public function tagList(string $user, bool $includeEmpty = true): Db\Result {
+        // if the user isn't authorized to perform this action then throw an exception.
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        return $this->db->prepare(
+            "SELECT * FROM (
+                SELECT
+                    id,name,coalesce(subscriptions,0) as subscriptions
+                from arsse_tags 
+                    left join (SELECT tag, sum(assigned) as subscriptions from arsse_tag_members group by tag) as tag_stats on tag_stats.tag = arsse_tags.id
+                WHERE owner = ?
+            ) as tag_data
+            where subscriptions >= ? order by name
+            ",
+            "str",
+            "int"
+        )->run($user, !$includeEmpty);
+    }
+
+    /** Lists the associations between all tags and subscription
+     * 
+     * The following keys are included in each record:
+     * 
+     * - "tag_id": The tag's numeric identifier
+     * - "tag_name" The tag's textual name
+     * - "subscription_id": The numeric identifier of the associated subscription
+     * - "subscription_name" The subscription's textual name
+     * 
+     * @param string $user The user whose tags are to be listed
+     */
+    public function tagSummarize(string $user): Db\Result {
+        // if the user isn't authorized to perform this action then throw an exception.
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        return $this->db->prepare(
+            "SELECT
+                arsse_tags.id as tag_id,
+                arsse_tags.name as tag_name,
+                arsse_subscriptions.id as subscription_id,
+                coalesce(arsse_subscriptions.title, arsse_feeds.title) as subscription_name
+            FROM arsse_tag_members
+                join arsse_tags on arsse_tags.id = arsse_tag_members.tag
+                join arsse_subscriptions on arsse_subscriptions.id = arsse_tag_members.subscription
+                join arsse_feeds on arsse_feeds.id = arsse_subscriptions.feed
+            WHERE arsse_tags.owner = ? and assigned = 1",
+            "str"
+        )->run($user);
+    }
+
+    /** Deletes a tag from the database
+     * 
+     * Any subscriptions associated with the tag remains untouched
+     * 
+     * @param string $user The owner of the tag to remove
+     * @param integer|string $id The numeric identifier or name of the tag
+     * @param boolean $byName Whether to interpret the $id parameter as the tag's name (true) or identifier (false)
+     */
+    public function tagRemove(string $user, $id, bool $byName = false): bool {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        $this->tagValidateId($user, $id, $byName, false);
+        $field = $byName ? "name" : "id";
+        $type = $byName ? "str" : "int";
+        $changes = $this->db->prepare("DELETE FROM arsse_tags where owner = ? and $field = ?", "str", $type)->run($user, $id)->changes();
+        if (!$changes) {
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "tag", 'id' => $id]);
+        }
+        return true;
+    }
+
+    /** Retrieves the properties of a tag
+     * 
+     * The following keys are included in the output array:
+     * 
+     * - "id": The tag's numeric identifier
+     * - "name" The tag's textual name
+     * - "subscriptions": The count of subscriptions which have the tag assigned to them
+     * 
+     * @param string $user The owner of the tag to remove
+     * @param integer|string $id The numeric identifier or name of the tag
+     * @param boolean $byName Whether to interpret the $id parameter as the tag's name (true) or identifier (false)
+     */
+    public function tagPropertiesGet(string $user, $id, bool $byName = false): array {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        $this->tagValidateId($user, $id, $byName, false);
+        $field = $byName ? "name" : "id";
+        $type = $byName ? "str" : "int";
+        $out = $this->db->prepare(
+            "SELECT
+                id,name,coalesce(subscriptions,0) as subscriptions
+            FROM arsse_tags
+                left join (SELECT tag, sum(assigned) as subscriptions from arsse_tag_members group by tag) as tag_stats on tag_stats.tag = arsse_tags.id
+            WHERE $field = ? and owner = ?
+            ",
+            $type,
+            "str"
+        )->run($id, $user)->getRow();
+        if (!$out) {
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "tag", 'id' => $id]);
+        }
+        return $out;
+    }
+
+    /** Sets the properties of a tag
+     * 
+     * @param string $user The owner of the tag to query
+     * @param integer|string $id The numeric identifier or name of the tag
+     * @param array $data An associative array defining the tag's properties; currently only "name" is understood
+     * @param boolean $byName Whether to interpret the $id parameter as the tag's name (true) or identifier (false)
+     */
+    public function tagPropertiesSet(string $user, $id, array $data, bool $byName = false): bool {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        $this->tagValidateId($user, $id, $byName, false);
+        if (isset($data['name'])) {
+            $this->tagValidateName($data['name']);
+        }
+        $field = $byName ? "name" : "id";
+        $type = $byName ? "str" : "int";
+        $valid = [
+            'name'      => "str",
+        ];
+        list($setClause, $setTypes, $setValues) = $this->generateSet($data, $valid);
+        if (!$setClause) {
+            // if no changes would actually be applied, just return
+            return false;
+        }
+        $out = (bool) $this->db->prepare("UPDATE arsse_tags set $setClause, modified = CURRENT_TIMESTAMP where owner = ? and $field = ?", $setTypes, "str", $type)->run($setValues, $user, $id)->changes();
+        if (!$out) {
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "tag", 'id' => $id]);
+        }
+        return $out;
+    }
+
+    /** Returns an indexed array of subscription identifiers assigned to a tag
+     * 
+     * @param string $user The owner of the tag to query
+     * @param integer|string $id The numeric identifier or name of the tag
+     * @param boolean $byName Whether to interpret the $id parameter as the tag's name (true) or identifier (false)
+     */
+    public function tagSubscriptionsGet(string $user, $id, bool $byName = false): array {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        // just do a syntactic check on the tag ID
+        $this->tagValidateId($user, $id, $byName, false);
+        $field = !$byName ? "id" : "name";
+        $type = !$byName ? "int" : "str";
+        $out = $this->db->prepare("SELECT subscription from arsse_tag_members join arsse_tags on tag = id where assigned = 1 and $field = ? and owner = ? order by subscription", $type, "str")->run($id, $user)->getAll();
+        if (!$out) {
+            // if no results were returned, do a full validation on the tag ID
+            $this->tagValidateId($user, $id, $byName, true, true);
+            // if the validation passes, return the empty result
+            return $out;
+        } else {
+            // flatten the result to return just the subscription IDs in a simple array
+            return array_column($out, "subscription");
+        }
+    }
+
+    /** Makes or breaks associations between a given tag and specified subscriptions
+     * 
+     * @param string $user The owner of the tag
+     * @param integer|string $id The numeric identifier or name of the tag
+     * @param integer[] $context The query context matching the desired subscriptions
+     * @param boolean $remove Whether to remove (true) rather than add (true) an association with the subscriptions matching the context
+     * @param boolean $byName Whether to interpret the $id parameter as the tag's name (true) or identifier (false)
+     */
+    public function tagSubscriptionsSet(string $user, $id, array $subscriptions, bool $remove = false, bool $byName = false): int {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        // validate the tag ID, and get the numeric ID if matching by name
+        $id = $this->tagValidateId($user, $id, $byName, true)['id'];
+        // prepare either one or two queries
+        list($inClause, $inTypes, $inValues) = $this->generateIn($subscriptions, "int");
+        // first update any existing entries with the removal or re-addition of their association
+        $q1 = $this->db->prepare(
+            "UPDATE arsse_tag_members 
+            set assigned = ?, modified = CURRENT_TIMESTAMP 
+            where tag = ? and assigned <> ? and subscription in (select id from arsse_subscriptions where owner = ? and id in ($inClause))", 
+            "bool",
+            "int",
+            "bool",
+            "str",
+            $inTypes
+        );
+        $v1 = [!$remove, $id, !$remove, $user, $inValues];
+        // next, if we're not removing, add any new entries that need to be added
+        if (!$remove) {
+            $q2 = $this->db->prepare(
+                "INSERT INTO arsse_tag_members(tag,subscription) SELECT ?,id from arsse_subscriptions where id not in (select subscription from arsse_tag_members where tag = ?) and owner = ? and id in ($inClause)",
+                "int",
+                "int",
+                "str",
+                $inTypes
+            );
+            $v2 = [$id, $id, $user, $inValues];
+        }
+        // execute them in a transaction
+        $out = 0;
+        $tr = $this->begin();
+        $out += $q1->run($v1)->changes();
+        if (!$remove) {
+            $out += $q2->run($v2)->changes();
+        }
+        $tr->commit();
+        return $out;
+    }
+
+    /** Ensures the specified tag identifier or name is valid (and optionally whether it exists) and raises an exception otherwise
+     * 
+     * Returns an associative array containing the id, name of the tag if it exists 
+     * 
+     * @param string $user The user who owns the tag to be validated
+     * @param integer|string $id The numeric identifier or name of the tag to validate
+     * @param boolean $byName Whether to interpret the $id parameter as the tag's name (true) or identifier (false)
+     * @param boolean $checkDb Whether to check whether the tag exists (true) or only if the identifier or name is syntactically valid (false)
+     * @param boolean $subject Whether the tag is the subject (true) rather than the object (false) of the operation being performed; this only affects the semantics of the error message if validation fails
+     */
+    protected function tagValidateId(string $user, $id, bool $byName, bool $checkDb = true, bool $subject = false): array {
+        if (!$byName && !ValueInfo::id($id)) {
+            // if we're not referring to a tag by name and the ID is invalid, throw an exception
+            throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "tag", 'type' => "int > 0"]);
+        } elseif ($byName && !(ValueInfo::str($id) & ValueInfo::VALID)) {
+            // otherwise if we are referring to a tag by name but the ID is not a string, also throw an exception
+            throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "tag", 'type' => "string"]);
+        } elseif ($checkDb) {
+            $field = !$byName ? "id" : "name";
+            $type = !$byName ? "int" : "str";
+            $l = $this->db->prepare("SELECT id,name from arsse_tags where $field = ? and owner = ?", $type, "str")->run($id, $user)->getRow();
+            if (!$l) {
+                throw new Db\ExceptionInput($subject ? "subjectMissing" : "idMissing", ["action" => $this->caller(), "field" => "tag", 'id' => $id]);
+            } else {
+                return $l;
+            }
+        }
+        return [
+            'id'   => !$byName ? $id : null,
+            'name' => $byName ? $id : null,
+        ];
+    }
+
+    /** Ensures a prospective tag name is syntactically valid and raises an exception otherwise */
+    protected function tagValidateName($name): bool {
         $info = ValueInfo::str($name);
         if ($info & (ValueInfo::NULL | ValueInfo::EMPTY)) {
             throw new Db\ExceptionInput("missing", ["action" => $this->caller(), "field" => "name"]);

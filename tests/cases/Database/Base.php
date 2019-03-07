@@ -23,8 +23,9 @@ abstract class Base extends \JKingWeb\Arsse\Test\AbstractTest {
     use SeriesFolder;
     use SeriesFeed;
     use SeriesSubscription;
-    use SeriesArticle;
     use SeriesLabel;
+    use SeriesTag;
+    use SeriesArticle;
     use SeriesCleanup;
 
     /** @var \JKingWeb\Arsse\Db\Driver */
