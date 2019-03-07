@@ -30,6 +30,8 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             'offset' => 5,
             'folder' => 42,
             'folderShallow' => 42,
+            'tag' => 44,
+            'tagName' => "XLIV",
             'subscription' => 2112,
             'article' => 255,
             'edition' => 65535,

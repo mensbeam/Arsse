@@ -1325,6 +1325,21 @@ class Database {
                 $q->setWhereNot("arsse_articles.id in (select article from labelled where label_name = ?)", "str", $context->not->labelName);
             }
         }
+        if ($context->tag() || $context->not->tag() || $context->tagName() || $context->not->tagName()) {
+            $q->setCTE("tagged(id,name,subscription)","SELECT arsse_tags.id, arsse_tags.name, arsse_tag_members.subscription FROM arsse_tag_members join arsse_tags on arsse_tags.id = arsse_tag_members.tag WHERE arsse_tags.owner = ? and assigned = 1", "str", $user);
+            if ($context->tag()) {
+                $q->setWhere("arsse_subscriptions.id in (select subscription from tagged where id = ?)", "int", $context->tag);
+            }
+            if ($context->not->tag()) {
+                $q->setWhereNot("arsse_subscriptions.id in (select subscription from tagged where id = ?)", "int", $context->not->tag);
+            }
+            if ($context->tagName()) {
+                $q->setWhere("arsse_subscriptions.id in (select subscription from tagged where name = ?)", "str", $context->tagName);
+            }
+            if ($context->not->tagName()) {
+                $q->setWhereNot("arsse_subscriptions.id in (select subscription from tagged where name = ?)", "str", $context->not->tagName);
+            }
+        }
         if ($context->folder()) {
             // add a common table expression to list the folder and its children so that we select from the entire subtree
             $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on parent = folder", "int", $context->folder);

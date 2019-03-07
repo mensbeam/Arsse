@@ -12,6 +12,8 @@ use JKingWeb\Arsse\Misc\Date;
 class ExclusionContext {
     public $folder;
     public $folderShallow;
+    public $tag;
+    public $tagName;
     public $subscription;
     public $edition;
     public $article;
@@ -98,6 +100,14 @@ class ExclusionContext {
     }
 
     public function folderShallow(int $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function tag(int $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function tagName(string $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
