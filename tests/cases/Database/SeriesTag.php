@@ -17,13 +17,12 @@ trait SeriesTag {
                 'columns' => [
                     'id'       => 'str',
                     'password' => 'str',
-                    'name'     => 'str',
                 ],
                 'rows' => [
-                    ["jane.doe@example.com", "", "Jane Doe"],
-                    ["john.doe@example.com", "", "John Doe"],
-                    ["john.doe@example.org", "", "John Doe"],
-                    ["john.doe@example.net", "", "John Doe"],
+                    ["jane.doe@example.com", ""],
+                    ["john.doe@example.com", ""],
+                    ["john.doe@example.org", ""],
+                    ["john.doe@example.net", ""],
                 ],
             ],
             'arsse_feeds' => [

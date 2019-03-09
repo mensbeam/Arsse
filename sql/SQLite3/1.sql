@@ -5,8 +5,8 @@
 create table arsse_sessions(
 -- sessions for Tiny Tiny RSS (and possibly others)
     id text primary key,                                                                    -- UUID of session
-    created text not null default CURRENT_TIMESTAMP,                                        -- Session start timestamp
-    expires text not null,                                                                  -- Time at which session is no longer valid
+    created text not null default CURRENT_TIMESTAMP,                                        -- session start timestamp
+    expires text not null,                                                                  -- time at which session is no longer valid
     user text not null references arsse_users(id) on delete cascade on update cascade       -- user associated with the session
 ) without rowid;
 

@@ -20,6 +20,7 @@ abstract class Base extends \JKingWeb\Arsse\Test\AbstractTest {
     use SeriesMeta;
     use SeriesUser;
     use SeriesSession;
+    use SeriesToken;
     use SeriesFolder;
     use SeriesFeed;
     use SeriesSubscription;

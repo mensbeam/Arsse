@@ -41,7 +41,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
             $this->exec($q);
         }
         // get the maximum packet size; parameter strings larger than this size need to be chunked
-        $this->packetSize = (int) $this->query("select variable_value from performance_schema.session_variables where variable_name = 'max_allowed_packet'")->getValue();
+        $this->packetSize = (int) $this->query("SELECT variable_value from performance_schema.session_variables where variable_name = 'max_allowed_packet'")->getValue();
     }
 
     public static function makeSetupQueries(): array {

@@ -17,13 +17,11 @@ trait SeriesUser {
                 'columns' => [
                     'id'       => 'str',
                     'password' => 'str',
-                    'name'     => 'str',
-                    'rights'   => 'int',
                 ],
                 'rows' => [
-                    ["admin@example.net", '$2y$10$PbcG2ZR3Z8TuPzM7aHTF8.v61dtCjzjK78gdZJcp4UePE8T9jEgBW', "Hard Lip Herbert", 100], // password is hash of "secret"
-                    ["jane.doe@example.com", "", "Jane Doe", 0],
-                    ["john.doe@example.com", "", "John Doe", 0],
+                    ["admin@example.net", '$2y$10$PbcG2ZR3Z8TuPzM7aHTF8.v61dtCjzjK78gdZJcp4UePE8T9jEgBW'], // password is hash of "secret"
+                    ["jane.doe@example.com", ""],
+                    ["john.doe@example.com", ""],
                 ],
             ],
         ];
@@ -68,8 +66,8 @@ trait SeriesUser {
     public function testAddANewUser() {
         $this->assertTrue(Arsse::$db->userAdd("john.doe@example.org", ""));
         Phake::verify(Arsse::$user)->authorize("john.doe@example.org", "userAdd");
-        $state = $this->primeExpectations($this->data, ['arsse_users' => ['id','name','rights']]);
-        $state['arsse_users']['rows'][] = ["john.doe@example.org", null, 0];
+        $state = $this->primeExpectations($this->data, ['arsse_users' => ['id']]);
+        $state['arsse_users']['rows'][] = ["john.doe@example.org"];
         $this->compareExpectations($state);
     }
 

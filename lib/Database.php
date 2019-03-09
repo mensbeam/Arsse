@@ -27,6 +27,7 @@ use JKingWeb\Arsse\Misc\ValueInfo;
  * - Editions, identifying authorial modifications to articles
  * - Labels, which belong to users and can be assigned to multiple articles
  * - Sessions, used by some protocols to identify users across periods of time
+ * - Tokens, similar to sessions, but with more control over their properties
  * - Metadata, used internally by the server
  * 
  * The various methods of this class perform operations on these things, with
@@ -378,6 +379,59 @@ class Database {
         $diff = intdiv($max - $now, 2);
         // determine if the expiry time is less than half the session timeout into the future
         return (($now + $diff) >= $expiry->getTimestamp());
+    }
+
+    /** Creates a new token for the given user in the given class 
+     * 
+     * @param string $user The user for whom to create the token
+     * @param string $class The class of the token e.g. the protocol name
+     * @param string|null $id The value of the token; if none is provided a UUID will be generated
+     * @param \DateTimeInterface|null $expires An optional expiry date and time for the token
+    */
+    public function tokenCreate(string $user, string $class, string $id = null, \DateTimeInterface $expires = null): string {
+        // If the user isn't authorized to perform this action then throw an exception.
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        // generate a token if it's not provided
+        $id = $id ?? UUID::mint()->hex;
+        // save the token to the database
+        $this->db->prepare("INSERT INTO arsse_tokens(id,class,\"user\",expires) values(?,?,?,?)", "str", "str", "str", "datetime")->run($id, $class, $user, $expires);
+        // return the ID
+        return $id;
+    }
+
+    /** Revokes one or all tokens for a user in a class
+     * 
+     * @param string $user The user who owns the token to be revoked
+     * @param string $class The class of the token e.g. the protocol name
+     * @param string|null $id The ID of a specific token, or null for all tokens in the class
+     */
+    public function tokenRevoke(string $user, string $class, string $id = null): bool {
+        // If the user isn't authorized to perform this action then throw an exception.
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        if (is_null($id)) {
+            $out = $this->db->prepare("DELETE FROM arsse_tokens where \"user\" = ? and class = ?", "str", "str")->run($user, $class)->changes();
+        } else {
+            $out = $this->db->prepare("DELETE FROM arsse_tokens where \"user\" = ? and class = ? and id = ?", "str", "str", "str")->run($user, $class, $id)->changes();
+        }
+        return (bool) $out;
+    }
+
+    /** Look up data associated with a token */
+    public function tokenLookup(string $class, string $id): array {
+        $out = $this->db->prepare("SELECT id,class,\"user\",created,expires from arsse_tokens where class = ? and id = ? and expires > CURRENT_TIMESTAMP", "str", "str")->run($class, $id)->getRow();
+        if (!$out) {
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "token", 'id' => $id]);
+        }
+        return $out;
+    }
+
+    /** Deletes expires tokens from the database, returning the number of deleted tokens */
+    public function tokenCleanup(): int {
+        return $this->db->query("DELETE FROM arsse_tokens where expires < CURRENT_TIMESTAMP")->changes();
     }
 
     /** Adds a folder for containing newsfeed subscriptions, returning an integer identifying the created folder

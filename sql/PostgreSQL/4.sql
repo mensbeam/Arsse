@@ -20,4 +20,21 @@ create table arsse_tag_members(
     primary key(tag,subscription)
 );
 
+create table arsse_tokens(
+    id text,
+    class text not null,
+    "user" text not null references arsse_users(id) on delete cascade on update cascade,
+    created timestamp(0) without time zone not null default CURRENT_TIMESTAMP,
+    expires timestamp(0) without time zone,
+    primary key(id,class)
+);
+
+alter table arsse_users drop column name;
+alter table arsse_users drop column avatar_type;
+alter table arsse_users drop column avatar_data;
+alter table arsse_users drop column admin;
+alter table arsse_users drop column rights;
+
+drop table arsse_users_meta;
+
 update arsse_meta set value = '5' where "key" = 'schema_version';

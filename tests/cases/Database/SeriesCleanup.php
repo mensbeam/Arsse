@@ -29,11 +29,10 @@ trait SeriesCleanup {
                 'columns' => [
                     'id'       => 'str',
                     'password' => 'str',
-                    'name'     => 'str',
                 ],
                 'rows' => [
-                    ["jane.doe@example.com", "", "Jane Doe"],
-                    ["john.doe@example.com", "", "John Doe"],
+                    ["jane.doe@example.com", ""],
+                    ["john.doe@example.com", ""],
                 ],
             ],
             'arsse_sessions' => [
@@ -49,6 +48,20 @@ trait SeriesCleanup {
                     ["c", $daysago, $soon,   "jane.doe@example.com"], // created more than a day ago, thus deleted
                     ["d", $nowish,  $nowish, "jane.doe@example.com"], // recently created but expired, thus deleted
                     ["e", $daysago, $nowish, "jane.doe@example.com"], // created more than a day ago and expired, thus deleted
+                ],
+            ],
+            'arsse_tokens' => [
+                'columns' => [
+                    'id'      => "str",
+                    'class'   => "str",
+                    'user'   => "str",
+                    'expires' => "datetime",
+                ],
+                'rows' => [
+                    ["80fa94c1a11f11e78667001e673b2560", "fever.login", "jane.doe@example.com", $faroff],
+                    ["27c6de8da13311e78667001e673b2560", "fever.login", "jane.doe@example.com", $weeksago], // expired
+                    ["ab3b3eb8a13311e78667001e673b2560", "class.class", "jane.doe@example.com", null],
+                    ["da772f8fa13c11e78667001e673b2560", "class.class", "john.doe@example.com", $soon],
                 ],
             ],
             'arsse_feeds' => [
@@ -223,6 +236,17 @@ trait SeriesCleanup {
         ]);
         foreach ([3,4,5] as $id) {
             unset($state['arsse_sessions']['rows'][$id - 1]);
+        }
+        $this->compareExpectations($state);
+    }
+
+    public function testCleanUpExpiredTokens() {
+        Arsse::$db->tokenCleanup();
+        $state = $this->primeExpectations($this->data, [
+            'arsse_tokens' => ["id", "class"]
+        ]);
+        foreach ([2] as $id) {
+            unset($state['arsse_tokens']['rows'][$id - 1]);
         }
         $this->compareExpectations($state);
     }
