@@ -96,6 +96,11 @@ trait SeriesToken {
         $this->compareExpectations($state);
     }
 
+    public function testCreateATokenForAMissingUser() {
+        $this->assertException("doesNotExist", "User");
+        Arsse::$db->tokenCreate("fever.login", "jane.doe@example.biz");
+    }
+
     public function testCreateATokenWithoutAuthority() {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");

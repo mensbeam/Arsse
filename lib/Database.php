@@ -392,6 +392,8 @@ class Database {
         // If the user isn't authorized to perform this action then throw an exception.
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        } elseif (!$this->userExists($user)) {
+            throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
         // generate a token if it's not provided
         $id = $id ?? UUID::mint()->hex;
