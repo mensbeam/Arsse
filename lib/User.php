@@ -114,7 +114,7 @@ class User {
         return $out;
     }
 
-    protected function generatePassword(): string {
+    public function generatePassword(): string {
         return (new PassGen)->length(Arsse::$conf->userTempPasswordLength)->get();
     }
 }
