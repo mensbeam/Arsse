@@ -24,6 +24,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
    <td>
     <p>Excellent reader; one of the best on any platform.</p>
+    <p>Not compatible with HTTP authentication when using TT-RSS.</p>
    </td>
   </tr>
   <tr>
@@ -65,6 +66,15 @@ The Arsse does not at this time have any first party clients. However, because T
    <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
    <td>
     <p>Very bland looking application, but it functions well.</p>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://play.google.com/store/apps/details?id=com.seazon.feedme">FeedMe</a></td>
+   <td>Android</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
+   <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
+   <td>
+    <p>Not compatible with HTTP authentication.</p>
    </td>
   </tr>
   <tr>
