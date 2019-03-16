@@ -102,10 +102,12 @@ abstract class Base extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public static function tearDownAfterClass() {
-        // wipe the database absolutely clean
-        static::dbRaze(static::$drv);
-        // clean up
-        static::$drv = null;
+        if (static::$drv) {
+            // wipe the database absolutely clean
+            static::dbRaze(static::$drv);
+            // clean up
+            static::$drv = null;
+        }
         static::$failureReason = "";
         static::clearData();
     }

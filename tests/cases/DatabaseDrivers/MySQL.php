@@ -18,7 +18,7 @@ trait MySQL {
     protected static $stringOutput = true;
     
     public static function dbInterface() {
-        $d = new \mysqli(Arsse::$conf->dbMySQLHost, Arsse::$conf->dbMySQLUser, Arsse::$conf->dbMySQLPass, Arsse::$conf->dbMySQLDb, Arsse::$conf->dbMySQLPort);
+        $d = @new \mysqli(Arsse::$conf->dbMySQLHost, Arsse::$conf->dbMySQLUser, Arsse::$conf->dbMySQLPass, Arsse::$conf->dbMySQLDb, Arsse::$conf->dbMySQLPort);
         if ($d->connect_errno) {
             return;
         }
