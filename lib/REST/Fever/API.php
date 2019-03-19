@@ -20,7 +20,7 @@ use JKingWeb\Arsse\REST\Exception404;
 use JKingWeb\Arsse\REST\Exception405;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\Response\JsonResponse as Response;
+use Zend\Diactoros\Response\JsonResponse;
 use Zend\Diactoros\Response\EmptyResponse;
 
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
@@ -31,7 +31,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
         $inR = $req->getQueryParams();
-        if (!array_key_exists("api")) {
+        $inW = $req->getParsedBody();
+        if (!array_key_exists("api", $inR)) {
             // the original would have shown the Fever UI in the absence of the "api" parameter, but we'll return 404
             return new EmptyResponse(404);
         }
@@ -44,7 +45,6 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 if (strlen($req->getHeaderLine("Content-Type")) && $req->getHeaderLine("Content-Type") !== "application/x-www-form-urlencoded") {
                     return new EmptyResponse(415, ['Accept' => "application/x-www-form-urlencoded"]);
                 }
-                $inW = $req->getParsedBody();
                 $out = [
                     'api_version' => self::LEVEL,
                     'auth' => 0,
@@ -80,7 +80,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         try {
             // verify the supplied hash is valid
-            $s = Arsse::$db->TokenLookup($id, "fever.login");
+            $s = Arsse::$db->TokenLookup("fever.login", $hash);
         } catch (\JKingWeb\Arsse\Db\ExceptionInput $e) {
             return false;
         }

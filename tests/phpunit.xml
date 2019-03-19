@@ -104,6 +104,10 @@
         <file>cases/REST/TinyTinyRSS/TestIcon.php</file>
         <file>cases/REST/TinyTinyRSS/PDO/TestAPI.php</file>
     </testsuite>
+    <testsuite name="Fever">
+        <file>cases/REST/Fever/TestAPI.php</file>
+        <file>cases/REST/Fever/PDO/TestAPI.php</file>
+    </testsuite>
     <testsuite name="Admin tools">
         <file>cases/Service/TestService.php</file>
         <file>cases/CLI/TestCLI.php</file>
