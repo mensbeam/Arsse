@@ -104,4 +104,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         Arsse::$db->tokenCreate($user, "fever.login", $hash);
         return $password;
     }
+
+    public static function unregisterUser(string $user): bool {
+        return (bool) Arsse::$db->tokenRevoke($user, "fever.login");
+    }
 }
