@@ -80,21 +80,59 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideAuthenticationRequests */
-    public function testAuthenticateAUser(bool $httpRequired, bool $tokenEnforced, string $httpUser = null, array $dataPost, array $dataGet, bool $success) {
+    public function testAuthenticateAUser(bool $httpRequired, bool $tokenEnforced, string $httpUser = null, array $dataPost, array $dataGet, ResponseInterface $exp) {
         self::setConf([
             'userHTTPAuthRequired' => $httpRequired,
             'userSessionEnforced' => $tokenEnforced,
         ], true);
+        Arsse::$user->id = null;
         \Phake::when(Arsse::$db)->tokenLookup->thenThrow(new ExceptionInput("subjectMissing"));
         \Phake::when(Arsse::$db)->tokenLookup("fever.login", "validtoken")->thenReturn(['user' => "jane.doe@example.com"]);
-        $exp = new JsonResponse($success ? ['api_version' => API::LEVEL, 'auth' => 1] : ['api_version' => API::LEVEL, 'auth' => 0]);
         $act = $this->req($dataGet, $dataPost, "POST", null, "", $httpUser);
         $this->assertMessage($exp, $act);
     }
 
     public function provideAuthenticationRequests() {
+        $success = new JsonResponse(['api_version' => API::LEVEL, 'auth' => 1]);
+        $failure = new JsonResponse(['api_version' => API::LEVEL, 'auth' => 0]);
+        $denied = new EmptyResponse(401);
         return [
-            [false, true, null, ['api_key' => "validToken"], ['api' => null], true],
+            [false, true,  null, [], ['api' => null], $failure],
+            [false, false, null, [], ['api' => null], $failure],
+            [true,  true,  null, [], ['api' => null], $denied],
+            [true,  false, null, [], ['api' => null], $denied],
+            [false, true,  "", [], ['api' => null], $denied],
+            [false, false, "", [], ['api' => null], $denied],
+            [true,  true,  "", [], ['api' => null], $denied],
+            [true,  false, "", [], ['api' => null], $denied],
+            [false, true,  null, [], ['api' => null, 'api_key' => "validToken"], $failure],
+            [false, false, null, [], ['api' => null, 'api_key' => "validToken"], $failure],
+            [true,  true,  null, [], ['api' => null, 'api_key' => "validToken"], $denied],
+            [true,  false, null, [], ['api' => null, 'api_key' => "validToken"], $denied],
+            [false, true,  null, ['api_key' => "validToken"], ['api' => null], $success],
+            [false, false, null, ['api_key' => "validToken"], ['api' => null], $success],
+            [true,  true,  null, ['api_key' => "validToken"], ['api' => null], $denied],
+            [true,  false, null, ['api_key' => "validToken"], ['api' => null], $denied],
+            [false, true,  "", ['api_key' => "validToken"], ['api' => null], $denied],
+            [false, false, "", ['api_key' => "validToken"], ['api' => null], $denied],
+            [true,  true,  "", ['api_key' => "validToken"], ['api' => null], $denied],
+            [true,  false, "", ['api_key' => "validToken"], ['api' => null], $denied],
+            [false, true,  "validUser", ['api_key' => "validToken"], ['api' => null], $success],
+            [false, false, "validUser", ['api_key' => "validToken"], ['api' => null], $success],
+            [true,  true,  "validUser", ['api_key' => "validToken"], ['api' => null], $success],
+            [true,  false, "validUser", ['api_key' => "validToken"], ['api' => null], $success],
+            [false, true,  null, ['api_key' => "invalidToken"], ['api' => null], $failure],
+            [false, false, null, ['api_key' => "invalidToken"], ['api' => null], $failure],
+            [true,  true,  null, ['api_key' => "invalidToken"], ['api' => null], $denied],
+            [true,  false, null, ['api_key' => "invalidToken"], ['api' => null], $denied],
+            [false, true,  "", ['api_key' => "invalidToken"], ['api' => null], $denied],
+            [false, false, "", ['api_key' => "invalidToken"], ['api' => null], $denied],
+            [true,  true,  "", ['api_key' => "invalidToken"], ['api' => null], $denied],
+            [true,  false, "", ['api_key' => "invalidToken"], ['api' => null], $denied],
+            [false, true,  "validUser", ['api_key' => "invalidToken"], ['api' => null], $failure],
+            [false, false, "validUser", ['api_key' => "invalidToken"], ['api' => null], $success],
+            [true,  true,  "validUser", ['api_key' => "invalidToken"], ['api' => null], $failure],
+            [true,  false, "validUser", ['api_key' => "invalidToken"], ['api' => null], $success],
         ];
     }
 }

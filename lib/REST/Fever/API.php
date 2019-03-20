@@ -49,10 +49,19 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     'api_version' => self::LEVEL,
                     'auth' => 0,
                 ];
+                if ($req->getAttribute("authenticated", false)) {
+                    // if HTTP authentication was successfully used, set the expected user ID
+                    Arsse::$user->id = $req->getAttribute("authenticatedUser");
+                    $out['auth'] = 1;
+                } elseif (Arsse::$conf->userHTTPAuthRequired || Arsse::$conf->userPreAuth || $req->getAttribute("authenticationFailed", false)) {
+                    // otherwise if HTTP authentication failed or is required, deny access at the HTTP level
+                    return new EmptyResponse(401);
+                }
                 // check that the user specified credentials
                 if ($this->logIn(strtolower($inW['api_key'] ?? ""))) {
                     $out['auth'] = 1;
                 } else {
+                    $out['auth'] = 0;
                     return $this->formatResponse($out, $xml);
                 }
                 // handle each possible parameter
