@@ -85,7 +85,7 @@ class RoboFile extends \Robo\Tasks {
             $dbg = dirname(\PHP_BINARY)."\\phpdbg.exe";
             $dbg = file_exists($dbg) ? $dbg : "";
         } else {
-            $dbg = `which phpdbg`;
+            $dbg = trim(`which phpdbg`);
         }
         if ($dbg) {
             return escapeshellarg($dbg)." -qrr";
