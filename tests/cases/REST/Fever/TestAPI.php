@@ -81,7 +81,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideAuthenticationRequests */
-    public function testAuthenticateAUser(bool $httpRequired, bool $tokenEnforced, string $httpUser = null, array $dataPost, array $dataGet, ResponseInterface $exp) {
+    public function testAuthenticateAUserToken(bool $httpRequired, bool $tokenEnforced, string $httpUser = null, array $dataPost, array $dataGet, ResponseInterface $exp) {
         self::setConf([
             'userHTTPAuthRequired' => $httpRequired,
             'userSessionEnforced' => $tokenEnforced,
@@ -144,14 +144,17 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             return $id ?? "RANDOM_TOKEN";
         });
         \Phake::when(Arsse::$db)->tokenCreate("john.doe@example.org", $this->anything(), $this->anything())->thenThrow(new UserException("doesNotExist"));
-        if ($exp instanceof \JKingWeb\Arsse\AbstractException) {
-            $this->assertException($exp);
-            API::userRegister($user, $password);
-        } else {
-            $this->assertSame($exp, API::userRegister($user, $password));
+        try {
+            if ($exp instanceof \JKingWeb\Arsse\AbstractException) {
+                $this->assertException($exp);
+                API::userRegister($user, $password);
+            } else {
+                $this->assertSame($exp, API::userRegister($user, $password));
+            }
+        } finally {
+            \Phake::verify(Arsse::$db)->tokenRevoke($user, "fever.login");
+            \Phake::verify(Arsse::$db)->tokenCreate($user, "fever.login", md5($user.":".($password ?? "RANDOM_PASSWORD")));
         }
-        \Phake::verify(Arsse::$db)->tokenRevoke($user, "fever.login");
-        \Phake::verify(Arsse::$db)->tokenCreate($user, "fever.login", md5($user.":".($password ?? "RANDOM_PASSWORD")));
     }
 
     public function providePasswordCreations() {
