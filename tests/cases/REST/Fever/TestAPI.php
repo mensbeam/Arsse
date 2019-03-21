@@ -146,9 +146,9 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$db)->tokenCreate("john.doe@example.org", $this->anything(), $this->anything())->thenThrow(new UserException("doesNotExist"));
         if ($exp instanceof \JKingWeb\Arsse\AbstractException) {
             $this->assertException($exp);
-            API::registerUser($user, $password);
+            API::userRegister($user, $password);
         } else {
-            $this->assertSame($exp, API::registerUser($user, $password));
+            $this->assertSame($exp, API::userRegister($user, $password));
         }
         \Phake::verify(Arsse::$db)->tokenRevoke($user, "fever.login");
         \Phake::verify(Arsse::$db)->tokenCreate($user, "fever.login", md5($user.":".($password ?? "RANDOM_PASSWORD")));
@@ -167,10 +167,10 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testUnregisterAUser() {
         \Phake::when(Arsse::$db)->tokenRevoke->thenReturn(3);
-        $this->assertTrue(API::unregisterUser("jane.doe@example.com"));
+        $this->assertTrue(API::userUnregister("jane.doe@example.com"));
         \Phake::verify(Arsse::$db)->tokenRevoke("jane.doe@example.com", "fever.login");
         \Phake::when(Arsse::$db)->tokenRevoke->thenReturn(0);
-        $this->assertFalse(API::unregisterUser("john.doe@example.com"));
+        $this->assertFalse(API::userUnregister("john.doe@example.com"));
         \Phake::verify(Arsse::$db)->tokenRevoke("john.doe@example.com", "fever.login");
     }
 }

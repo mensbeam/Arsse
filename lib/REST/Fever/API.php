@@ -98,7 +98,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return true;
     }
 
-    public static function registerUser(string $user, string $password = null): string {
+    public static function userRegister(string $user, string $password = null): string {
         $password = $password ?? Arsse::$user->generatePassword();
         $hash = md5("$user:$password");
         $tr = Arsse::$db->begin();
@@ -108,7 +108,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return $password;
     }
 
-    public static function unregisterUser(string $user): bool {
+    public static function userUnregister(string $user): bool {
         return (bool) Arsse::$db->tokenRevoke($user, "fever.login");
     }
 }
