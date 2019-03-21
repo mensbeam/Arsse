@@ -101,7 +101,10 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     public static function registerUser(string $user, string $password = null): string {
         $password = $password ?? Arsse::$user->generatePassword();
         $hash = md5("$user:$password");
+        $tr = Arsse::$db->begin();
+        Arsse::$db->tokenRevoke($user, "fever.login");
         Arsse::$db->tokenCreate($user, "fever.login", $hash);
+        $tr->commit();
         return $password;
     }
 

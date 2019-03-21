@@ -55,17 +55,22 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         Arsse::$conf = (($force ? null : Arsse::$conf) ?? (new Conf))->import($defaults)->import($conf);
     }
 
-    public function assertException(string $msg = "", string $prefix = "", string $type = "Exception") {
+    public function assertException($msg = "", string $prefix = "", string $type = "Exception") {
         if (func_num_args()) {
-            $class = \JKingWeb\Arsse\NS_BASE . ($prefix !== "" ? str_replace("/", "\\", $prefix) . "\\" : "") . $type;
-            $msgID = ($prefix !== "" ? $prefix . "/" : "") . $type. ".$msg";
-            if (array_key_exists($msgID, Exception::CODES)) {
-                $code = Exception::CODES[$msgID];
+            if ($msg instanceof \JKingWeb\Arsse\AbstractException) {
+                $this->expectException(get_class($msg));
+                $this->expectExceptionCode($msg->getCode());
             } else {
-                $code = 0;
+                $class = \JKingWeb\Arsse\NS_BASE . ($prefix !== "" ? str_replace("/", "\\", $prefix) . "\\" : "") . $type;
+                $msgID = ($prefix !== "" ? $prefix . "/" : "") . $type. ".$msg";
+                if (array_key_exists($msgID, Exception::CODES)) {
+                    $code = Exception::CODES[$msgID];
+                } else {
+                    $code = 0;
+                }
+                $this->expectException($class);
+                $this->expectExceptionCode($code);
             }
-            $this->expectException($class);
-            $this->expectExceptionCode($code);
         } else {
             // expecting a standard PHP exception
             $this->expectException(\Throwable::class);
