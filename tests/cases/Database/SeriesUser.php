@@ -127,6 +127,13 @@ trait SeriesUser {
         $this->assertTrue(password_verify($pass, $hash), "Failed verifying password of $user '$pass' against hash '$hash'.");
     }
 
+    public function testUnsetAPassword() {
+        $user = "john.doe@example.com";
+        $this->assertEquals("", Arsse::$db->userPasswordGet($user));
+        $this->assertTrue(Arsse::$db->userPasswordSet($user, null));
+        $this->assertNull(Arsse::$db->userPasswordGet($user));
+    }
+
     public function testSetThePasswordOfAMissingUser() {
         $this->assertException("doesNotExist", "User");
         Arsse::$db->userPasswordSet("john.doe@example.org", "secret");

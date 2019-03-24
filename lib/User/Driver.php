@@ -29,4 +29,6 @@ interface Driver {
     public function userList(): array;
     // sets a user's password; if the driver does not require the old password, it may be ignored
     public function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null);
+    // removes a user's password; this makes authentication fail unconditionally
+    public function userPasswordUnset(string $user, string $oldPassword = null): bool;
 }

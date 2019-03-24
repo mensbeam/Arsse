@@ -289,27 +289,27 @@ class Database {
     }
 
     /** Retrieves the hashed password of a user */
-    public function userPasswordGet(string $user): string {
+    public function userPasswordGet(string $user) {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         } elseif (!$this->userExists($user)) {
             throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
-        return (string) $this->db->prepare("SELECT password from arsse_users where id = ?", "str")->run($user)->getValue();
+        return $this->db->prepare("SELECT password from arsse_users where id = ?", "str")->run($user)->getValue();
     }
 
     /** Sets the password of an existing user
      * 
      * @param string $user The user for whom to set the password
-     * @param string $password The new password, in cleartext. The password will be stored hashed
+     * @param string $password The new password, in cleartext. The password will be stored hashed. If null is passed, the password is unset and authentication not possible
      */
-    public function userPasswordSet(string $user, string $password): bool {
+    public function userPasswordSet(string $user, string $password = null): bool {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         } elseif (!$this->userExists($user)) {
             throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
-        $hash = (strlen($password) > 0) ? password_hash($password, \PASSWORD_DEFAULT) : "";
+        $hash = (strlen($password ?? "") > 0) ? password_hash($password, \PASSWORD_DEFAULT) : $password;
         $this->db->prepare("UPDATE arsse_users set password = ? where id = ?", "str", "str")->run($hash, $user);
         return true;
     }
