@@ -80,7 +80,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
     }
 
-    /** @dataProvider provideAuthenticationRequests */
+    /** @dataProvider provideTokenAuthenticationRequests */
     public function testAuthenticateAUserToken(bool $httpRequired, bool $tokenEnforced, string $httpUser = null, array $dataPost, array $dataGet, ResponseInterface $exp) {
         self::setConf([
             'userHTTPAuthRequired' => $httpRequired,
@@ -93,7 +93,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $act);
     }
 
-    public function provideAuthenticationRequests() {
+    public function provideTokenAuthenticationRequests() {
         $success = new JsonResponse(['api_version' => API::LEVEL, 'auth' => 1]);
         $failure = new JsonResponse(['api_version' => API::LEVEL, 'auth' => 0]);
         $denied = new EmptyResponse(401);
@@ -183,5 +183,22 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$db)->tokenRevoke->thenReturn(0);
         $this->assertFalse(API::userUnregister("john.doe@example.com"));
         \Phake::verify(Arsse::$db)->tokenRevoke("john.doe@example.com", "fever.login");
+    }
+
+    /** @dataProvider provideUserAuthenticationRequests */
+    public function testAuthenticateAUserName(string $user, string $password, bool $exp) {
+        \Phake::when(Arsse::$db)->tokenLookup->thenThrow(new ExceptionInput("constraintViolation"));
+        \Phake::when(Arsse::$db)->tokenLookup("fever.login", md5("jane.doe@example.com:secret"))->thenReturn(['user' => "jane.doe@example.com"]);
+        \Phake::when(Arsse::$db)->tokenLookup("fever.login", md5("john.doe@example.com:superman"))->thenReturn(['user' => "john.doe@example.com"]);
+        $this->assertSame($exp, API::userAuthenticate($user, $password));
+    }
+
+    public function provideUserAuthenticationRequests() {
+        return [
+            ["jane.doe@example.com", "secret",   true],
+            ["jane.doe@example.com", "superman", false],
+            ["john.doe@example.com", "secret",   false],
+            ["john.doe@example.com", "superman", true],
+        ];
     }
 }

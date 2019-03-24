@@ -111,4 +111,12 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     public static function userUnregister(string $user): bool {
         return (bool) Arsse::$db->tokenRevoke($user, "fever.login");
     }
+
+    public static function userAuthenticate(string $user, string $password): bool {
+        try {
+            return (bool) Arsse::$db->tokenLookup("fever.login", md5("$user:$password"));
+        } catch (ExceptionInput $e) {
+            return false;
+        }
+    }
 }
