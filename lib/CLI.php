@@ -115,7 +115,7 @@ USAGE_TEXT;
     }
 
     protected function userManage($args): int {
-        switch ($this->command(["add", "remove", "set-pass", "list", "auth"], $args)) {
+        switch ($this->command(["add", "remove", "set-pass", "unset-pass", "list", "auth"], $args)) {
             case "add":
                 return $this->userAddOrSetPassword("add", $args["<username>"], $args["<password>"]);
             case "set-pass":
@@ -130,7 +130,7 @@ USAGE_TEXT;
                 }
             case "unset-pass":
                 if ($args['--fever']) {
-                    $this->getFever()->unegister($args["<username>"]);
+                    $this->getFever()->unregister($args["<username>"]);
                 } else {
                     Arsse::$user->passwordUnset($args["<username>"], $args["--oldpass"]);
                 }

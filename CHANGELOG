@@ -1,3 +1,11 @@
+Version 0.8.0 (2019-??-??)
+==========================
+
+New features:
+- Support for the Fever protocol (see README.md for details)
+- Command line functionality for clearing a password, disabling the account
+- Command line options for dealing with Fever passwords
+
 Version 0.7.1 (2019-03-25)
 ==========================
 
