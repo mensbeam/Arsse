@@ -1,3 +1,15 @@
+Version 0.7.1 (2019-03-25)
+==========================
+
+Bug fixes:
+- Correctly initialize new on-disk SQLite databases
+- Retry queries on schema changes with PDO SQLite
+- Correctly read author name from database in Tiny Tiny RSS
+- Update internal version number to correct version
+
+Changes:
+- Improve performance of lesser-used database queries
+
 Version 0.7.0 (2019-03-02)
 ==========================
 
