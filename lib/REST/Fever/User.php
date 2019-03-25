@@ -10,7 +10,7 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Db\ExceptionInput;
 
 class User {
-    public static function register(string $user, string $password = null): string {
+    public function register(string $user, string $password = null): string {
         $password = $password ?? Arsse::$user->generatePassword();
         $hash = md5("$user:$password");
         $tr = Arsse::$db->begin();
@@ -20,11 +20,11 @@ class User {
         return $password;
     }
 
-    public static function unregister(string $user): bool {
+    public function unregister(string $user): bool {
         return (bool) Arsse::$db->tokenRevoke($user, "fever.login");
     }
 
-    public static function authenticate(string $user, string $password): bool {
+    public function authenticate(string $user, string $password): bool {
         try {
             return (bool) Arsse::$db->tokenLookup("fever.login", md5("$user:$password"));
         } catch (ExceptionInput $e) {

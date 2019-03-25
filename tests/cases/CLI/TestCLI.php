@@ -12,6 +12,7 @@ use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\CLI;
+use JKingWeb\Arsse\REST\Fever\User as FeverUser;
 use Phake;
 
 /** @covers \JKingWeb\Arsse\CLI */
@@ -174,16 +175,27 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
                 ($user === "jane.doe@example.com" && $pass === "superman")
             );
         }));
+        $fever = \Phake::mock(FeverUser::class);
+        \Phake::when($fever)->authenticate->thenReturn(false);
+        \Phake::when($fever)->authenticate("john.doe@example.com", "ashalla")->thenReturn(true);
+        \Phake::when($fever)->authenticate("jane.doe@example.com", "thx1388")->thenReturn(true);
+        \Phake::when($this->cli)->getFever->thenReturn($fever);
         $this->assertConsole($this->cli, $cmd, $exitStatus, $output);
     }
 
     public function provideUserAuthentication() {
         $l = new \JKingWeb\Arsse\Lang;
+        $success = $l("CLI.Auth.Success");
+        $failure = $l("CLI.Auth.Failure");
         return [
-            ["arsse.php user auth john.doe@example.com secret",     0, $l("CLI.Auth.Success")],
-            ["arsse.php user auth john.doe@example.com superman",   1, $l("CLI.Auth.Failure")],
-            ["arsse.php user auth jane.doe@example.com secret",     1, $l("CLI.Auth.Failure")],
-            ["arsse.php user auth jane.doe@example.com superman",   0, $l("CLI.Auth.Success")],
+            ["arsse.php user auth john.doe@example.com secret",          0, $success],
+            ["arsse.php user auth john.doe@example.com superman",        1, $failure],
+            ["arsse.php user auth jane.doe@example.com secret",          1, $failure],
+            ["arsse.php user auth jane.doe@example.com superman",        0, $success],
+            ["arsse.php user auth john.doe@example.com ashalla --fever", 0, $success],
+            ["arsse.php user auth john.doe@example.com thx1138 --fever", 1, $failure],
+            ["arsse.php user auth --fever jane.doe@example.com ashalla", 1, $failure],
+            ["arsse.php user auth --fever jane.doe@example.com thx1138", 0, $success],
         ];
     }
 
@@ -228,5 +240,9 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             ["arsse.php user set-pass john.doe@example.com superman", 0,     ""],
             ["arsse.php user set-pass jane.doe@example.com",          10402, ""],
         ];
+    }
+
+    public function testChangeAFeverPassword() {
+        $this->markTestIncomplete();
     }
 }

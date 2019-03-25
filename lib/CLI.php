@@ -6,7 +6,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
-use Docopt\Response as Opts;
+use JKingWeb\Arsse\REST\Fever\User as Fever;
 
 class CLI {
     const USAGE = <<<USAGE_TEXT
@@ -18,8 +18,11 @@ Usage:
     arsse.php user [list]
     arsse.php user add <username> [<password>]
     arsse.php user remove <username>
-    arsse.php user set-pass [--oldpass=<pass>] <username> [<password>]
-    arsse.php user auth <username> <password>
+    arsse.php user set-pass <username> [<password>]
+        [--oldpass=<pass>] [--fever]
+    arsse.php user unset-pass <username>
+        [--oldpass=<pass>] [--fever]
+    arsse.php user auth <username> <password> [--fever]
     arsse.php --version
     arsse.php --help | -h
 
@@ -106,16 +109,36 @@ USAGE_TEXT;
         return new Conf;
     }
 
+    /** @codeCoverageIgnore */
+    protected function getFever(): Fever {
+        return new Fever;
+    }
+
     protected function userManage($args): int {
         switch ($this->command(["add", "remove", "set-pass", "list", "auth"], $args)) {
             case "add":
                 return $this->userAddOrSetPassword("add", $args["<username>"], $args["<password>"]);
             case "set-pass":
-                return $this->userAddOrSetPassword("passwordSet", $args["<username>"], $args["<password>"], $args["--oldpass"]);
+                if ($args['--fever']) {
+                    $passwd = $this->getFever()->register($args["<username>"], $args["<password>"]);
+                    if (is_null($args["<password>"])) {
+                        echo $passwd.\PHP_EOL;
+                    }
+                    return 0;
+                } else {
+                    return $this->userAddOrSetPassword("passwordSet", $args["<username>"], $args["<password>"], $args["--oldpass"]);
+                }
+            case "unset-pass":
+                if ($args['--fever']) {
+                    $this->getFever()->unegister($args["<username>"]);
+                } else {
+                    Arsse::$user->passwordUnset($args["<username>"], $args["--oldpass"]);
+                }
+                return 0;
             case "remove":
                 return (int) !Arsse::$user->remove($args["<username>"]);
             case "auth":
-                return $this->userAuthenticate($args["<username>"], $args["<password>"]);
+                return $this->userAuthenticate($args["<username>"], $args["<password>"], $args["--fever"]);
             case "list":
             case "":
                 return $this->userList();
@@ -138,8 +161,9 @@ USAGE_TEXT;
         return 0;
     }
 
-    protected function userAuthenticate(string $user, string $password): int {
-        if (Arsse::$user->auth($user, $password)) {
+    protected function userAuthenticate(string $user, string $password, bool $fever = false): int {
+        $result  = $fever ? $this->getFever()->authenticate($user, $password) : Arsse::$user->auth($user, $password);
+        if ($result) {
             echo Arsse::$lang->msg("CLI.Auth.Success").\PHP_EOL;
             return 0;
         } else {
