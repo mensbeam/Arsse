@@ -1286,6 +1286,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 "id",
                 "guid",
                 "title",
+                "author",
                 "url",
                 "unread",
                 "starred",
