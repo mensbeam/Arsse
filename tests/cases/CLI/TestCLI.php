@@ -178,7 +178,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         $fever = \Phake::mock(FeverUser::class);
         \Phake::when($fever)->authenticate->thenReturn(false);
         \Phake::when($fever)->authenticate("john.doe@example.com", "ashalla")->thenReturn(true);
-        \Phake::when($fever)->authenticate("jane.doe@example.com", "thx1388")->thenReturn(true);
+        \Phake::when($fever)->authenticate("jane.doe@example.com", "thx1138")->thenReturn(true);
         \Phake::when($this->cli)->getFever->thenReturn($fever);
         $this->assertConsole($this->cli, $cmd, $exitStatus, $output);
     }
