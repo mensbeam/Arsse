@@ -221,28 +221,59 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideUserPasswordChanges */
     public function testChangeAUserPassword(string $cmd, int $exitStatus, string $output) {
-        // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
-        Arsse::$user = $this->createMock(User::class);
-        Arsse::$user->method("passwordSet")->will($this->returnCallback(function($user, $pass = null) {
+        $passwordChange = function($user, $pass = null) {
             switch ($user) {
                 case "jane.doe@example.com":
                     throw new \JKingWeb\Arsse\User\Exception("doesNotExist");
                 case "john.doe@example.com":
                     return is_null($pass) ? "random password" : $pass;
             }
-        }));
+        };
+        // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
+        Arsse::$user = $this->createMock(User::class);
+        Arsse::$user->method("passwordSet")->will($this->returnCallback($passwordChange));
+        $fever = \Phake::mock(FeverUser::class);
+        \Phake::when($fever)->register->thenReturnCallback($passwordChange);
+        \Phake::when($this->cli)->getFever->thenReturn($fever);
         $this->assertConsole($this->cli, $cmd, $exitStatus, $output);
     }
 
     public function provideUserPasswordChanges() {
         return [
-            ["arsse.php user set-pass john.doe@example.com",          0,     "random password"],
-            ["arsse.php user set-pass john.doe@example.com superman", 0,     ""],
-            ["arsse.php user set-pass jane.doe@example.com",          10402, ""],
+            ["arsse.php user set-pass john.doe@example.com",                  0,     "random password"],
+            ["arsse.php user set-pass john.doe@example.com superman",         0,     ""],
+            ["arsse.php user set-pass jane.doe@example.com",                  10402, ""],
+            ["arsse.php user set-pass john.doe@example.com --fever",          0,     "random password"],
+            ["arsse.php user set-pass --fever john.doe@example.com superman", 0,     ""],
+            ["arsse.php user set-pass jane.doe@example.com --fever",          10402, ""],
         ];
     }
 
-    public function testChangeAFeverPassword() {
-        $this->markTestIncomplete();
+    /** @dataProvider provideUserPasswordClearings */
+    public function testClearAUserPassword(string $cmd, int $exitStatus, string $output) {
+        $passwordClear = function($user) {
+            switch ($user) {
+                case "jane.doe@example.com":
+                    throw new \JKingWeb\Arsse\User\Exception("doesNotExist");
+                case "john.doe@example.com":
+                    return true;
+            }
+        };
+        // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
+        Arsse::$user = $this->createMock(User::class);
+        Arsse::$user->method("passwordUnet")->will($this->returnCallback($passwordChange));
+        $fever = \Phake::mock(FeverUser::class);
+        \Phake::when($fever)->unregister->thenReturnCallback($passwordChange);
+        \Phake::when($this->cli)->getFever->thenReturn($fever);
+        $this->assertConsole($this->cli, $cmd, $exitStatus, $output);
+    }
+
+    public function provideUserPasswordClearings() {
+        return [
+            ["arsse.php user unset-pass john.doe@example.com",                  0,     ""],
+            ["arsse.php user unset-pass jane.doe@example.com",                  10402, ""],
+            ["arsse.php user unset-pass john.doe@example.com --fever",          0,     ""],
+            ["arsse.php user unset-pass jane.doe@example.com --fever",          10402, ""],
+        ];
     }
 }
