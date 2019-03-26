@@ -47,6 +47,7 @@ trait SeriesSubscription {
                     'title'      => "str",
                     'username'   => "str",
                     'password'   => "str",
+                    'updated'    => "datetime",
                     'next_fetch' => "datetime",
                     'favicon'    => "str",
                 ],
@@ -134,9 +135,9 @@ trait SeriesSubscription {
             ],
         ];
         $this->data['arsse_feeds']['rows'] = [
-            [1,"http://example.com/feed1", "Ook", "", "",strtotime("now"),''],
-            [2,"http://example.com/feed2", "eek", "", "",strtotime("now - 1 hour"),'http://example.com/favicon.ico'],
-            [3,"http://example.com/feed3", "Ack", "", "",strtotime("now + 1 hour"),''],
+            [1,"http://example.com/feed1", "Ook", "", "",strtotime("now"),strtotime("now"),''],
+            [2,"http://example.com/feed2", "eek", "", "",strtotime("now - 1 hour"),strtotime("now - 1 hour"),'http://example.com/favicon.ico'],
+            [3,"http://example.com/feed3", "Ack", "", "",strtotime("now + 1 hour"),strtotime("now + 1 hour"),''],
         ];
         // initialize a partial mock of the Database object to later manipulate the feedUpdate method
         Arsse::$db = Phake::partialMock(Database::class, static::$drv);
@@ -490,5 +491,22 @@ trait SeriesSubscription {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->subscriptionTagsGet("john.doe@example.com", 1);
+    }
+
+    public function testGetRefreshTimeOfASubscription() {
+        $user = "john.doe@example.com";
+        $this->assertTime(strtotime("now + 1 hour"), Arsse::$db->subscriptionRefreshed($user));
+        $this->assertTime(strtotime("now - 1 hour"), Arsse::$db->subscriptionRefreshed($user, 1));
+    }
+
+    public function testGetRefreshTimeOfAMissingSubscription() {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        $this->assertTime(strtotime("now - 1 hour"), Arsse::$db->subscriptionRefreshed("john.doe@example.com", 2));
+    }
+
+    public function testGetRefreshTimeOfASubscriptionWithoutAuthority() {
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        $this->assertTime(strtotime("now + 1 hour"), Arsse::$db->subscriptionRefreshed("john.doe@example.com"));
     }
 }

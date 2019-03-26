@@ -10,7 +10,6 @@ use JKingWeb\DrUUID\UUID;
 use JKingWeb\Arsse\Db\Statement;
 use JKingWeb\Arsse\Misc\Query;
 use JKingWeb\Arsse\Context\Context;
-use JKingWeb\Arsse\Context\ExclusionContext;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 
@@ -751,6 +750,8 @@ class Database {
                 arsse_subscriptions.feed as feed,
                 url,favicon,source,folder,pinned,err_count,err_msg,order_type,added,
                 arsse_feeds.updated as updated,
+                arsse_feeds.modified as edited,
+                arsse_subscriptions.modified as modified,
                 topmost.top as top_folder,
                 coalesce(arsse_subscriptions.title, arsse_feeds.title) as title,
                 (articles - marked) as unread
@@ -944,6 +945,23 @@ class Database {
             $q->setWhere("arsse_subscriptions.owner = ?", "str", $user);
         }
         return (string) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
+    }
+
+    /** Returns the time at which any of a user's subscriptions (or a specific subscription) was last refreshed, as a DateTimeImmutable object */
+    public function subscriptionRefreshed(string $user, int $id = null) {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        $q = new Query("SELECT max(arsse_feeds.updated) from arsse_feeds join arsse_subscriptions on arsse_subscriptions.feed = arsse_feeds.id");
+        $q->setWhere("arsse_subscriptions.owner = ?", "str", $user);
+        if ($id) {
+            $q->setWhere("arsse_subscriptions.id = ?", "int", $id);
+        }
+        $out = $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
+        if (!$out && $id) {
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
+        }
+        return ValueInfo::normalize($out, ValueInfo::T_DATE | ValueInfo::M_NULL, "sql");
     }
 
     /** Ensures the specified subscription exists and raises an exception otherwise
