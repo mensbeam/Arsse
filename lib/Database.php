@@ -748,7 +748,7 @@ class Database {
         $q = new Query(
             "SELECT
                 arsse_subscriptions.id as id,
-                arsse_subscriptions.feed,
+                arsse_subscriptions.feed as feed,
                 url,favicon,source,folder,pinned,err_count,err_msg,order_type,added,
                 arsse_feeds.updated as updated,
                 topmost.top as top_folder,

@@ -12,9 +12,9 @@ use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\ValueInfo;
+use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Db\ExceptionInput;
-use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\REST\Target;
 use JKingWeb\Arsse\REST\Exception404;
 use JKingWeb\Arsse\REST\Exception405;
@@ -65,7 +65,19 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     return $this->formatResponse($out, $xml);
                 }
                 // handle each possible parameter
-                # do stuff
+                if (array_key_exists("feeds", $inR) || array_key_exists("groups", $inR)) {
+                    $groupData = (array) Arsse::$db->tagSummarize(Arsse::$user->id);
+                    if (array_key_exists("groups", $inR)) {
+                        $out['groups'] = $this->getGroups($groupData);
+                    }
+                    if (array_key_exists("feeds", $inR)) {
+                        $out['feeds'] = $this->getFeeds();
+                    }
+                    $out['feeds_groups'] = $this->getRelationships($groupData);
+                }
+                if (array_key_exists("favicons", $inR)) {
+                    # deal with favicons
+                }
                 // return the result
                 return $this->formatResponse($out, $xml);
                 break;
@@ -96,5 +108,54 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         // set the user name
         Arsse::$user->id = $s['user'];
         return true;
+    }
+
+    protected function getFeeds(): array {
+        $out = [];
+        foreach (arsse::$db->subscriptionList(Arsse::$user->id) as $sub) {
+            $out[] = [
+                'id'                  => (int) $sub['id'],
+                'favicon_id'          => (int) ($sub['favicon'] ? $sub['feed'] : 0),
+                'title'               => (string) $sub['title'],
+                'url'                 => $sub['url'],
+                'site_url'            => $sub['source'],
+                'is_spark'            => 0,
+                'lat_updated_on_time' => Date::transform($sub['updated'], "unix"),
+            ];
+        }
+        return $out;
+    }
+
+    protected function getGroups(array $data): array {
+        $out = [];
+        $seen = [];
+        foreach ($data as $member) {
+            if (!($seen[$member['id']] ?? false)) {
+                $seen[$member['id']] = true;
+                $out[] = [
+                    'id' => (int) $member['id'],
+                    'title' => $member['name'],
+                ];
+            }
+        }
+        return $out;
+    }
+
+    protected function getRelationships(array $data): array {
+        $out = [];
+        $sets = [];
+        foreach ($data as $member) {
+            if (!isset($sets[$member['id']])) {
+                $sets[$member['id']] = [];
+            }
+            $sets[$member['id']][] = (int) $member['subscription'];
+        }
+        foreach ($sets as $id => $subs) {
+            $out[] = [
+                'group_id' => (int) $id,
+                'feed_ids' => implode(",", $subs),
+            ];
+        }
+        return $out;
     }
 }
