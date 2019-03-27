@@ -31,7 +31,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         return $value;
     }
 
-    protected function req($dataGet, $dataPost, string $method = "POST", string $type = null, string $url = "", string $user = null): ResponseInterface {
+    protected function req($dataGet, $dataPost = "", string $method = "POST", string $type = null, string $url = "", string $user = null): ResponseInterface {
         $url = "/fever/".$url;
         $server = [
             'REQUEST_METHOD'    => $method,
@@ -39,11 +39,10 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             'HTTP_CONTENT_TYPE' => $type ?? "application/x-www-form-urlencoded",
         ];
         $req = new ServerRequest($server, [], $url, $method, "php://memory");
-        if (is_array($dataGet)) {
-            $req = $req->withRequestTarget($url)->withQueryParams($dataGet);
-        } else {
-            $req = $req->withRequestTarget($url."?".http_build_query((string) $dataGet, "", "&", \PHP_QUERY_RFC3986));
+        if (!is_array($dataGet)) {
+            parse_str($dataGet, $dataGet);
         }
+        $req = $req->withRequestTarget($url)->withQueryParams($dataGet);
         if (is_array($dataPost)) {
             $req = $req->withParsedBody($dataPost);
         } else {
@@ -72,8 +71,9 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$db = \Phake::mock(Database::class);
         \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(Transaction::class));
         \Phake::when(Arsse::$db)->tokenLookup->thenReturn(['user' => "john.doe@example.com"]);
-        // instantiate the handler
-        $this->h = new API();
+        // instantiate the handler as a partial mock to simplify testing
+        $this->h = \Phake::partialMock(API::class);
+        \Phake::when($this->h)->baseResponse->thenReturn([]);
     }
 
     public function tearDown() {
@@ -89,8 +89,10 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user->id = null;
         \Phake::when(Arsse::$db)->tokenLookup->thenThrow(new ExceptionInput("subjectMissing"));
         \Phake::when(Arsse::$db)->tokenLookup("fever.login", "validtoken")->thenReturn(['user' => "jane.doe@example.com"]);
-        // use a partial mock to test only the authentication process
-        $this->h = \Phake::partialMock(API::class);
+        // test only the authentication process
+        \Phake::when($this->h)->baseResponse->thenReturnCallback(function(bool $authenticated) {
+            return ['auth' => (int) $authenticated];
+        });
         \Phake::when($this->h)->processRequest->thenReturnCallback(function($out, $G, $P) {
             return $out;
         });
@@ -99,8 +101,8 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function provideTokenAuthenticationRequests() {
-        $success = new JsonResponse(['api_version' => API::LEVEL, 'auth' => 1]);
-        $failure = new JsonResponse(['api_version' => API::LEVEL, 'auth' => 0]);
+        $success = new JsonResponse(['auth' => 1]);
+        $failure = new JsonResponse(['auth' => 0]);
         $denied = new EmptyResponse(401);
         return [
             [false, true,  null, [], ['api' => null], $failure],
@@ -148,5 +150,59 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             [true,  true,  "validUser", ['api_key' => "invalidToken"], ['api' => null], $failure],
             [true,  false, "validUser", ['api_key' => "invalidToken"], ['api' => null], $success],
         ];
+    }
+
+    public function testListGroups() {
+        \Phake::when(Arsse::$db)->tagList(Arsse::$user->id)->thenReturn(new Result([
+            ['id' => 1, 'name' => "Fascinating", 'subscriptions' => 2],
+            ['id' => 2, 'name' => "Interesting", 'subscriptions' => 2],
+            ['id' => 3, 'name' => "Boring",      'subscriptions' => 0],
+        ]));
+        \Phake::when(Arsse::$db)->tagSummarize(Arsse::$user->id)->thenReturn(new Result([
+            ['id' => 1, 'name' => "Fascinating", 'subscription' => 1],
+            ['id' => 1, 'name' => "Fascinating", 'subscription' => 2],
+            ['id' => 2, 'name' => "Interesting", 'subscription' => 1],
+            ['id' => 2, 'name' => "Interesting", 'subscription' => 3],
+        ]));
+        $exp = new JsonResponse([
+            'groups' => [
+                ['id' => 1, 'title' => "Fascinating"],
+                ['id' => 2, 'title' => "Interesting"],
+                ['id' => 3, 'title' => "Boring"],
+            ],
+            'feeds_groups' => [
+                ['group_id' => 1, 'feed_ids' => "1,2"],
+                ['group_id' => 2, 'feed_ids' => "1,3"],
+            ],
+        ]);
+        $act = $this->req("api&groups");
+        $this->assertMessage($exp, $act);
+    }
+
+    public function testListFeeds() {
+        \Phake::when(Arsse::$db)->subscriptionList(Arsse::$user->id)->thenReturn(new Result([
+            ['id' => 1, 'feed' => 5, 'title' => "Ankh-Morpork News", 'url' => "http://example.com/feed", 'source' => "http://example.com/", 'edited' => "2019-01-01 21:12:00", 'favicon' => "http://example.com/favicon.ico"],
+            ['id' => 2, 'feed' => 9, 'title' => "Ook, Ook Eek Ook!", 'url' => "http://example.net/feed", 'source' => "http://example.net/", 'edited' => "1988-06-24 12:21:00", 'favicon' => ""],
+            ['id' => 3, 'feed' => 1, 'title' => "The Last Soul",     'url' => "http://example.org/feed", 'source' => "http://example.org/", 'edited' => "1991-08-12 03:22:00", 'favicon' => "http://example.org/favicon.ico"],
+        ]));
+        \Phake::when(Arsse::$db)->tagSummarize(Arsse::$user->id)->thenReturn(new Result([
+            ['id' => 1, 'name' => "Fascinating", 'subscription' => 1],
+            ['id' => 1, 'name' => "Fascinating", 'subscription' => 2],
+            ['id' => 2, 'name' => "Interesting", 'subscription' => 1],
+            ['id' => 2, 'name' => "Interesting", 'subscription' => 3],
+        ]));
+        $exp = new JsonResponse([
+            'feeds' => [
+                ['id' => 1, 'favicon_id' => 5, 'title' => "Ankh-Morpork News", 'url' => "http://example.com/feed", 'site_url' => "http://example.com/", 'is_spark' => 0, 'last_updated_on_time' => strtotime("2019-01-01T21:12:00Z")],
+                ['id' => 2, 'favicon_id' => 0, 'title' => "Ook, Ook Eek Ook!", 'url' => "http://example.net/feed", 'site_url' => "http://example.net/", 'is_spark' => 0, 'last_updated_on_time' => strtotime("1988-06-24T12:21:00Z")],
+                ['id' => 3, 'favicon_id' => 1, 'title' => "The Last Soul",     'url' => "http://example.org/feed", 'site_url' => "http://example.org/", 'is_spark' => 0, 'last_updated_on_time' => strtotime("1991-08-12T03:22:00Z")],
+            ],
+            'feeds_groups' => [
+                ['group_id' => 1, 'feed_ids' => "1,2"],
+                ['group_id' => 2, 'feed_ids' => "1,3"],
+            ],
+        ]);
+        $act = $this->req("api&feeds");
+        $this->assertMessage($exp, $act);
     }
 }

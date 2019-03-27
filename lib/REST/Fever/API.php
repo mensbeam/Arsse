@@ -30,8 +30,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
-        $inR = $req->getQueryParams();
-        $inW = $req->getParsedBody();
+        $inR = $req->getQueryParams() ?? [];
+        $inW = $req->getParsedBody() ?? [];
         if (!array_key_exists("api", $inR)) {
             // the original would have shown the Fever UI in the absence of the "api" parameter, but we'll return 404
             return new EmptyResponse(404);
@@ -57,14 +57,13 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     // otherwise if HTTP authentication failed or is required, deny access at the HTTP level
                     return new EmptyResponse(401);
                 }
-                // check that the user specified credentials
+                // produce a full response if authenticated or a basic response otherwise
                 if ($this->logIn(strtolower($inW['api_key'] ?? ""))) {
-                    $out['auth'] = 1;
-                    $out = $this->processRequest($out, $inR, $inW);
+                    $out = $this->processRequest($this->baseResponse(true), $inR, $inW);
                 } else {
-                    $out['auth'] = 0;
+                    $out = $this->baseResponse(false);
                 }
-                // return the result
+                // return the result, possibly formatted as XML
                 return $this->formatResponse($out, $xml);
                 break;
             default:
@@ -73,9 +72,6 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function processRequest(array $out, array $G, array $P): array {
-        // add base metadata
-        $out['last_refreshed_on_time'] = Date::transform(Arsse::$db->subscriptionRefreshed(Arsse::$user->id), "unix");
-        // handle each possible parameter
         if (array_key_exists("feeds", $G) || array_key_exists("groups", $G)) {
             if (array_key_exists("groups", $G)) {
                 $out['groups'] = $this->getGroups();
@@ -87,6 +83,18 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         if (array_key_exists("favicons", $G)) {
             # deal with favicons
+        }
+        return $out;
+    }
+
+    protected function baseResponse(bool $authenticated): array {
+        $out = [
+            'api_version' => self::LEVEL,
+            'auth' => (int) $authenticated,
+        ];
+        if ($authenticated) {
+            // authenticated requests always include the most recent feed refresh
+            $out['last_refreshed_on_time'] = $this->getRefreshTime();
         }
         return $out;
     }
@@ -115,17 +123,21 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return true;
     }
 
+    protected function getRefreshTime() {
+        return Date::transform(Arsse::$db->subscriptionRefreshed(Arsse::$user->id), "unix");
+    }
+
     protected function getFeeds(): array {
         $out = [];
         foreach (arsse::$db->subscriptionList(Arsse::$user->id) as $sub) {
             $out[] = [
-                'id'                  => (int) $sub['id'],
-                'favicon_id'          => (int) ($sub['favicon'] ? $sub['feed'] : 0),
-                'title'               => (string) $sub['title'],
-                'url'                 => $sub['url'],
-                'site_url'            => $sub['source'],
-                'is_spark'            => 0,
-                'lat_updated_on_time' => Date::transform($sub['edited'], "unix", "sql"),
+                'id'                   => (int) $sub['id'],
+                'favicon_id'           => (int) ($sub['favicon'] ? $sub['feed'] : 0),
+                'title'                => (string) $sub['title'],
+                'url'                  => $sub['url'],
+                'site_url'             => $sub['source'],
+                'is_spark'             => 0,
+                'last_updated_on_time' => Date::transform($sub['edited'], "unix", "sql"),
             ];
         }
         return $out;
