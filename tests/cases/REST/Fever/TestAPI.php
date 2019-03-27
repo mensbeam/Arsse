@@ -23,7 +23,6 @@ use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\ServerRequest;
 use Zend\Diactoros\Response\JsonResponse;
 use Zend\Diactoros\Response\EmptyResponse;
-use Phake;
 
 /** @covers \JKingWeb\Arsse\REST\Fever\API<extended> */
 class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -66,12 +65,13 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
         self::setConf();
         // create a mock user manager
-        Arsse::$user = Phake::mock(User::class);
-        Phake::when(Arsse::$user)->auth->thenReturn(true);
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->auth->thenReturn(true);
         Arsse::$user->id = "john.doe@example.com";
         // create a mock database interface
-        Arsse::$db = Phake::mock(Database::class);
-        Phake::when(Arsse::$db)->begin->thenReturn(Phake::mock(Transaction::class));
+        Arsse::$db = \Phake::mock(Database::class);
+        \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(Transaction::class));
+        \Phake::when(Arsse::$db)->tokenLookup->thenReturn(['user' => "john.doe@example.com"]);
         // instantiate the handler
         $this->h = new API();
     }
@@ -89,6 +89,11 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user->id = null;
         \Phake::when(Arsse::$db)->tokenLookup->thenThrow(new ExceptionInput("subjectMissing"));
         \Phake::when(Arsse::$db)->tokenLookup("fever.login", "validtoken")->thenReturn(['user' => "jane.doe@example.com"]);
+        // use a partial mock to test only the authentication process
+        $this->h = \Phake::partialMock(API::class);
+        \Phake::when($this->h)->processRequest->thenReturnCallback(function($out, $G, $P) {
+            return $out;
+        });
         $act = $this->req($dataGet, $dataPost, "POST", null, "", $httpUser);
         $this->assertMessage($exp, $act);
     }

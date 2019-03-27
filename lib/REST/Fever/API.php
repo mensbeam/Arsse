@@ -60,23 +60,9 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 // check that the user specified credentials
                 if ($this->logIn(strtolower($inW['api_key'] ?? ""))) {
                     $out['auth'] = 1;
+                    $out = $this->processRequest($out, $inR, $inW);
                 } else {
                     $out['auth'] = 0;
-                    return $this->formatResponse($out, $xml);
-                }
-                // handle each possible parameter
-                if (array_key_exists("feeds", $inR) || array_key_exists("groups", $inR)) {
-                    $groupData = (array) Arsse::$db->tagSummarize(Arsse::$user->id);
-                    if (array_key_exists("groups", $inR)) {
-                        $out['groups'] = $this->getGroups($groupData);
-                    }
-                    if (array_key_exists("feeds", $inR)) {
-                        $out['feeds'] = $this->getFeeds();
-                    }
-                    $out['feeds_groups'] = $this->getRelationships($groupData);
-                }
-                if (array_key_exists("favicons", $inR)) {
-                    # deal with favicons
                 }
                 // return the result
                 return $this->formatResponse($out, $xml);
@@ -84,6 +70,25 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             default:
                 return new EmptyResponse(405, ['Allow' => "OPTIONS,POST"]);
         }
+    }
+
+    protected function processRequest(array $out, array $G, array $P): array {
+        // add base metadata
+        $out['last_refreshed_on_time'] = Date::transform(Arsse::$db->subscriptionRefreshed(Arsse::$user->id), "unix");
+        // handle each possible parameter
+        if (array_key_exists("feeds", $G) || array_key_exists("groups", $G)) {
+            if (array_key_exists("groups", $G)) {
+                $out['groups'] = $this->getGroups();
+            }
+            if (array_key_exists("feeds", $G)) {
+                $out['feeds'] = $this->getFeeds();
+            }
+            $out['feeds_groups'] = $this->getRelationships();
+        }
+        if (array_key_exists("favicons", $G)) {
+            # deal with favicons
+        }
+        return $out;
     }
 
     protected function formatResponse(array $data, bool $xml): ResponseInterface {
@@ -120,31 +125,27 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'url'                 => $sub['url'],
                 'site_url'            => $sub['source'],
                 'is_spark'            => 0,
-                'lat_updated_on_time' => Date::transform($sub['updated'], "unix"),
+                'lat_updated_on_time' => Date::transform($sub['edited'], "unix", "sql"),
             ];
         }
         return $out;
     }
 
-    protected function getGroups(array $data): array {
+    protected function getGroups(): array {
         $out = [];
-        $seen = [];
-        foreach ($data as $member) {
-            if (!($seen[$member['id']] ?? false)) {
-                $seen[$member['id']] = true;
-                $out[] = [
-                    'id' => (int) $member['id'],
-                    'title' => $member['name'],
-                ];
-            }
+        foreach (Arsse::$db->tagList(Arsse::$user->id) as $member) {
+            $out[] = [
+                'id' => (int) $member['id'],
+                'title' => $member['name'],
+            ];
         }
         return $out;
     }
 
-    protected function getRelationships(array $data): array {
+    protected function getRelationships(): array {
         $out = [];
         $sets = [];
-        foreach ($data as $member) {
+        foreach (Arsse::$db->tagSummarize(Arsse::$user->id) as $member) {
             if (!isset($sets[$member['id']])) {
                 $sets[$member['id']] = [];
             }
