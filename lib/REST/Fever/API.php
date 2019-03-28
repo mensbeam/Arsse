@@ -11,7 +11,7 @@ use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\Context\Context;
-use JKingWeb\Arsse\Misc\ValueInfo;
+use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Db\ExceptionInput;
@@ -26,17 +26,40 @@ use Zend\Diactoros\Response\EmptyResponse;
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     const LEVEL = 3;
 
+    // GET parameters for which we only check presence: these will be converted to booleans
+    const PARAM_BOOL = ["groups", "feeds", "items", "favicons", "links", "unread_item_ids", "saved_item_ids"];
+    // GET parameters which contain meaningful values
+    const PARAM_GET = [
+        'api'       => V::T_STRING, // this parameter requires special handling
+        'page'      => V::T_INT, // parameter for hot links
+        'range'     => V::T_INT, // parameter for hot links
+        'offset'    => V::T_INT, // parameter for hot links
+        'since_id'  => V::T_INT,
+        'max_id'    => V::T_INT,
+        'with_ids'  => V::T_STRING,
+        'group_ids' => V::T_STRING, // undocumented parameter for 'items' lookup
+        'feed_ids'  => V::T_STRING, // undocumented parameter for 'items' lookup
+    ];
+    // POST parameters, all of which contain meaningful values
+    const PARAM_POST = [
+        'api_key'              => V::T_STRING,
+        'mark'                 => V::T_STRING,
+        'as'                   => V::T_STRING,
+        'id'                   => V::T_INT,
+        'before'               => V::T_DATE,
+        'unread_recently_read' => V::T_BOOL,
+    ];
+
     public function __construct() {
     }
 
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
-        $inR = $req->getQueryParams() ?? [];
-        $inW = $req->getParsedBody() ?? [];
-        if (!array_key_exists("api", $inR)) {
+        $G = $this->normalizeInputGet($req->getQueryParams() ?? []);
+        $P = $this->normalizeInputPost($req->getParsedBody() ?? []);
+        if (!isset($G['api'])) {
             // the original would have shown the Fever UI in the absence of the "api" parameter, but we'll return 404
             return new EmptyResponse(404);
         }
-        $xml = $inR['api'] === "xml";
         switch ($req->getMethod()) {
             case "OPTIONS":
                 // do stuff
@@ -58,31 +81,62 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     return new EmptyResponse(401);
                 }
                 // produce a full response if authenticated or a basic response otherwise
-                if ($this->logIn(strtolower($inW['api_key'] ?? ""))) {
-                    $out = $this->processRequest($this->baseResponse(true), $inR, $inW);
+                if ($this->logIn(strtolower($P['api_key'] ?? ""))) {
+                    $out = $this->processRequest($this->baseResponse(true), $G, $P);
                 } else {
                     $out = $this->baseResponse(false);
                 }
                 // return the result, possibly formatted as XML
-                return $this->formatResponse($out, $xml);
-                break;
+                return $this->formatResponse($out, ($G['api'] === "xml"));
             default:
                 return new EmptyResponse(405, ['Allow' => "OPTIONS,POST"]);
         }
     }
 
+    protected function normalizeInputGet(array $data): array {
+        $out = [];
+        if (array_key_exists("api", $data)) {
+            // the "api" parameter must be handled specially as it a string, but null has special meaning
+            $data['api'] = $data['api'] ?? "json";
+        }
+        foreach (self::PARAM_BOOL as $p) {
+            // first handle all the boolean parameters
+            $out[$p] = array_key_exists($p, $data);
+        }
+        foreach (self::PARAM_GET as $p => $t) {
+            $out[$p] = V::normalize($data[$p] ?? null, $t | V::M_DROP, "unix");
+        }
+        return $out;
+    }
+
+    protected function normalizeInputPost(array $data): array {
+        $out = [];
+        foreach (self::PARAM_POST as $p => $t) {
+            $out[$p] = V::normalize($data[$p] ?? null, $t | V::M_DROP, "unix");
+        }
+        return $out;
+    }
+
     protected function processRequest(array $out, array $G, array $P): array {
-        if (array_key_exists("feeds", $G) || array_key_exists("groups", $G)) {
-            if (array_key_exists("groups", $G)) {
+        if ($G['feeds'] || $G['groups']) {
+            if ($G['groups']) {
                 $out['groups'] = $this->getGroups();
             }
-            if (array_key_exists("feeds", $G)) {
+            if ($G['feeds']) {
                 $out['feeds'] = $this->getFeeds();
             }
             $out['feeds_groups'] = $this->getRelationships();
         }
-        if (array_key_exists("favicons", $G)) {
+        if ($G['favicons']) {
             # deal with favicons
+        }
+        if ($G['items']) {
+            $out['items'] = $this->getItems($G);
+            $out['total_items'] = Arsse::$db->articleCount(Arsse::$user->id);
+        }
+        if ($G['links']) {
+            // TODO: implement hot links
+            $out['inks'] = [];
         }
         return $out;
     }
