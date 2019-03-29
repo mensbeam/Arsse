@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d7a6a00be3d97c11d09ec4d4e56d36e0",
+    "content-hash": "f61a02cd168914d91847b89dcd00d464",
     "packages": [
         {
             "name": "docopt/docopt",
@@ -354,16 +354,16 @@
     "packages-dev": [
         {
             "name": "bamarni/composer-bin-plugin",
-            "version": "v1.2.0",
+            "version": "v1.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bamarni/composer-bin-plugin.git",
-                "reference": "62fef740245a85f00665e81ea8f0aa0b72afe6e7"
+                "reference": "67f9d314dc7ecf7245b8637906e151ccc62b8d24"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bamarni/composer-bin-plugin/zipball/62fef740245a85f00665e81ea8f0aa0b72afe6e7",
-                "reference": "62fef740245a85f00665e81ea8f0aa0b72afe6e7",
+                "url": "https://api.github.com/repos/bamarni/composer-bin-plugin/zipball/67f9d314dc7ecf7245b8637906e151ccc62b8d24",
+                "reference": "67f9d314dc7ecf7245b8637906e151ccc62b8d24",
                 "shasum": ""
             },
             "require": {
@@ -371,7 +371,7 @@
             },
             "require-dev": {
                 "composer/composer": "dev-master",
-                "symfony/console": "^2.5 || ^3.0"
+                "symfony/console": "^2.5 || ^3.0 || ^4.0"
             },
             "type": "composer-plugin",
             "extra": {
@@ -389,7 +389,7 @@
             "license": [
                 "MIT"
             ],
-            "time": "2017-09-11T13:13:58+00:00"
+            "time": "2019-03-17T12:38:04+00:00"
         }
     ],
     "aliases": [],
@@ -401,7 +401,8 @@
         "php": "^7.0",
         "ext-intl": "*",
         "ext-json": "*",
-        "ext-hash": "*"
+        "ext-hash": "*",
+        "ext-dom": "*"
     },
     "platform-dev": []
 }
