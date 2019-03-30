@@ -44,20 +44,20 @@ class OPML {
                 $el->setAttribute("text", $r['name']);
                 $folders[$r['id']] = $el;
             }
-            // insert each folder into its parent node; for the root folder the parent is the document root node
-            foreach ($folders as $id => $el) {
-                $parent = $parents[$id] ?? $document->documentElement;
-                $parent->appendChild($el);
-            }
+        }
+        // insert each folder into its parent node; for the root folder the parent is the document root node
+        foreach ($folders as $id => $el) {
+            $parent = $folders[$parents[$id]] ?? $document->documentElement;
+            $parent->appendChild($el);
         }
         // create a DOM node for each subscription and insert them directly into their folder DOM node
         foreach (Arsse::$db->subscriptionList($user) as $r) {
             $el = $document->createElement(("outline"));
-            $el->setAttribute("text", $r['title']);
             $el->setAttribute("type", "rss");
+            $el->setAttribute("text", $r['title']);
             $el->setAttribute("xmlUrl", $r['url']);
             // include the category attribute only if there are tags
-            if (sizeof($tags[$r['id']])) {
+            if (isset($tags[$r['id']]) && sizeof($tags[$r['id']])) {
                 $el->setAttribute("category", implode(",", $tags[$r['id']]));
             }
             // if flat output was requested subscriptions are inserted into the root folder

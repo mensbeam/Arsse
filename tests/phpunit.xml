@@ -113,5 +113,8 @@
         <file>cases/Service/TestService.php</file>
         <file>cases/CLI/TestCLI.php</file>
     </testsuite>
+    <testsuite name="Import/Export">
+        <file>cases/ImportExport/TestOPML.php</file>
+    </testsuite>
 </testsuites>
 </phpunit>
