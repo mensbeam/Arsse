@@ -79,7 +79,10 @@ OPML_EXPORT_SERIALIZATION;
 OPML_EXPORT_SERIALIZATION;
 
     public function setUp() {
+        self::clearData();
         Arsse::$db = \Phake::mock(\JKingWeb\Arsse\Database::class);
+        Arsse::$user = \Phake::mock(\JKingWeb\Arsse\User::class);
+        \Phake::when(Arsse::$user)->exists->thenReturn(true);
     }
 
     public function testExportToOpml() {
@@ -94,5 +97,11 @@ OPML_EXPORT_SERIALIZATION;
         \Phake::when(Arsse::$db)->subscriptionList("john.doe@example.com")->thenReturn(new Result($this->subscriptions));
         \Phake::when(Arsse::$db)->tagSummarize("john.doe@example.com")->thenReturn(new Result($this->tags));
         $this->assertXmlStringEqualsXmlString($this->serializationFlat, (new OPML)->export("john.doe@example.com", true));
+    }
+
+    public function testExportToOpmlAMissingUser() {
+        \Phake::when(Arsse::$user)->exists->thenReturn(false);
+        $this->assertException("doesNotExist", "User");
+        (new OPML)->export("john.doe@example.com");
     }
 }

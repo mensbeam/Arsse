@@ -155,4 +155,14 @@ return [
     'Exception.JKingWeb/Arsse/Feed/Exception.xmlEntity'                    => 'Refused to parse feed "{url}" because it contains an XXE attack',
     'Exception.JKingWeb/Arsse/Feed/Exception.subscriptionNotFound'         => 'Unable to find a feed at location "{url}"',
     'Exception.JKingWeb/Arsse/Feed/Exception.unsupportedFeedFormat'        => 'Feed "{url}" is of an unsupported format',
+    'Exception.JKingWeb/Arsse/ImportExport/Exception.fileUncreatable'      => 
+        'Insufficient permissions to write {type, select,
+            OPML {OPML}
+            other {"{type}"}
+        } export to file "{file}"',
+    'Exception.JKingWeb/Arsse/ImportExport/Exception.fileUnwritable'       => 
+        'Insufficient permissions to write {type, select,
+            OPML {OPML}
+            other {"{type}"}
+        } export to existing file "{file}"',
 ];

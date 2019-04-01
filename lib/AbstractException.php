@@ -86,6 +86,8 @@ abstract class AbstractException extends \Exception {
         "Feed/Exception.xmlEntity"                    => 10512,
         "Feed/Exception.subscriptionNotFound"         => 10521,
         "Feed/Exception.unsupportedFeedFormat"        => 10522,
+        "ImportExport/Exception.fileUnwritable"       => 10604,
+        "ImportExport/Exception.fileUncreatable"      => 10605,
     ];
 
     public function __construct(string $msgID = "", $vars = null, \Throwable $e = null) {

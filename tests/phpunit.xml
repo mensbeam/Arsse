@@ -115,6 +115,7 @@
     </testsuite>
     <testsuite name="Import/Export">
         <file>cases/ImportExport/TestOPML.php</file>
+        <file>cases/ImportExport/TestOPMLFile.php</file>
     </testsuite>
 </testsuites>
 </phpunit>

@@ -7,9 +7,13 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\ImportExport;
 
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\User\Exception as UserException;
 
 class OPML {
     public function export(string $user, bool $flat = false): string {
+        if (!Arsse::$user->exists($user)) {
+            throw new UserException("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        }
         $tags = [];
         $folders = [];
         $parents = [0 => null];
@@ -67,5 +71,15 @@ class OPML {
         $transaction->rollback();
         // return the serialization
         return $document->saveXML();
+    }
+
+    public function exportFile(string $file, string $user, bool $flat = false): bool {
+        $data = $this->export($user, $flat);
+        if (!@file_put_contents($file, $data)) {
+            // if it fails throw an exception
+            $err = file_exists($file) ? "fileUnwritable" : "fileUncreatable";
+            throw new Exception($err, ['file' => $file, 'format' => str_replace(__NAMESPACE__."\\", "", __CLASS__)]);
+        }
+        return true;
     }
 }
