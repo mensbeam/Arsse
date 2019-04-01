@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 use JKingWeb\Arsse\REST\Fever\User as Fever;
+use JKingWeb\Arsse\ImportExport\OPML;
 
 class CLI {
     const USAGE = <<<USAGE_TEXT
@@ -23,6 +24,7 @@ Usage:
     arsse.php user unset-pass <username>
         [--oldpass=<pass>] [--fever]
     arsse.php user auth <username> <password> [--fever]
+    arsse.php export <username> [<file>] [-f | --flat]
     arsse.php --version
     arsse.php --help | -h
 
@@ -54,6 +56,12 @@ USAGE_TEXT;
         return true;
     }
 
+    protected function resolveFile($file, string $mode): string {
+        // TODO: checking read/write permissions on the provided path may be useful
+        $stdinOrStdout = in_array($mode, ["r", "r+"]) ? "php://input" : "php://output";
+        return ($file === "-" ? null : $file) ?? $stdinOrStdout;
+    }
+
     public function dispatch(array $argv = null) {
         $argv = $argv ?? $_SERVER['argv'];
         $argv0 = array_shift($argv);
@@ -62,7 +70,12 @@ USAGE_TEXT;
             'help' => false,
         ]);
         try {
-            switch ($this->command(["--help", "--version", "daemon", "feed refresh", "feed refresh-all", "conf save-defaults", "user"], $args)) {
+            $cmd = $this->command(["--help", "--version", "daemon", "feed refresh", "feed refresh-all", "conf save-defaults", "user", "export"], $args);
+            if ($cmd && !in_array($cmd, ["--help", "--version", "conf save-defaults"])) {
+                // only certain commands don't require configuration to be loaded
+                $this->loadConf();
+            }
+            switch ($cmd) {
                 case "--help":
                     echo $this->usage($argv0).\PHP_EOL;
                     return 0;
@@ -70,23 +83,22 @@ USAGE_TEXT;
                     echo Arsse::VERSION.\PHP_EOL;
                     return 0;
                 case "daemon":
-                    $this->loadConf();
-                    $this->getService()->watch(true);
+                    $this->getInstance(Service::class)->watch(true);
                     return 0;
                 case "feed refresh":
-                    $this->loadConf();
                     return (int) !Arsse::$db->feedUpdate((int) $args['<n>'], true);
                 case "feed refresh-all":
-                    $this->loadConf();
-                    $this->getService()->watch(false);
+                    $this->getInstance(Service::class)->watch(false);
                     return 0;
                 case "conf save-defaults":
-                    $file = $args['<file>'];
-                    $file = ($file === "-" ? null : $file) ?? "php://output";
-                    return (int) !($this->getConf())->exportFile($file, true);
+                    $file = $this->resolveFile($args['<file>'], "w");
+                    return (int) !$this->getInstance(Conf::class)->exportFile($file, true);
                 case "user":
-                    $this->loadConf();
                     return $this->userManage($args);
+                case "export":
+                    $u = $args['<username>'];
+                    $file = $this->resolveFile($args['<file>'], "w");
+                    return (int) !$this->getInstance(OPML::class)->exportFile($file, $u, $args['--flat']);
             }
         } catch (AbstractException $e) {
             $this->logError($e->getMessage());
@@ -99,19 +111,8 @@ USAGE_TEXT;
         fwrite(STDERR, $msg.\PHP_EOL);
     }
 
-    /** @codeCoverageIgnore */
-    protected function getService(): Service {
-        return new Service;
-    }
-
-    /** @codeCoverageIgnore */
-    protected function getConf(): Conf {
-        return new Conf;
-    }
-
-    /** @codeCoverageIgnore */
-    protected function getFever(): Fever {
-        return new Fever;
+    protected function getInstance(string $class) {
+        return new $class;
     }
 
     protected function userManage($args): int {
@@ -120,7 +121,7 @@ USAGE_TEXT;
                 return $this->userAddOrSetPassword("add", $args["<username>"], $args["<password>"]);
             case "set-pass":
                 if ($args['--fever']) {
-                    $passwd = $this->getFever()->register($args["<username>"], $args["<password>"]);
+                    $passwd = $this->getInstance(Fever::class)->register($args["<username>"], $args["<password>"]);
                     if (is_null($args["<password>"])) {
                         echo $passwd.\PHP_EOL;
                     }
@@ -130,7 +131,7 @@ USAGE_TEXT;
                 }
             case "unset-pass":
                 if ($args['--fever']) {
-                    $this->getFever()->unregister($args["<username>"]);
+                    $this->getInstance(Fever::class)->unregister($args["<username>"]);
                 } else {
                     Arsse::$user->passwordUnset($args["<username>"], $args["--oldpass"]);
                 }
@@ -162,7 +163,7 @@ USAGE_TEXT;
     }
 
     protected function userAuthenticate(string $user, string $password, bool $fever = false): int {
-        $result  = $fever ? $this->getFever()->authenticate($user, $password) : Arsse::$user->auth($user, $password);
+        $result  = $fever ? $this->getInstance(Fever::class)->authenticate($user, $password) : Arsse::$user->auth($user, $password);
         if ($result) {
             echo Arsse::$lang->msg("CLI.Auth.Success").\PHP_EOL;
             return 0;
