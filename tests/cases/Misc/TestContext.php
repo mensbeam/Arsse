@@ -29,10 +29,15 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             'limit' => 10,
             'offset' => 5,
             'folder' => 42,
+            'folders' => [12,22],
             'folderShallow' => 42,
+            'foldersShallow' => [0,1],
             'tag' => 44,
+            'tags' => [44, 2112],
             'tagName' => "XLIV",
+            'tagNames' => ["XLIV", "MMCXII"],
             'subscription' => 2112,
+            'subscriptions' => [44, 2112],
             'article' => 255,
             'edition' => 65535,
             'latestArticle' => 47,
@@ -48,7 +53,9 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             'editions' => [1,2],
             'articles' => [1,2],
             'label' => 2112,
+            'labels' => [2112, 1984],
             'labelName' => "Rush",
+            'labelNames' => ["Rush", "Orwell"],
             'labelled' => true,
             'annotated' => true,
             'searchTerms' => ["foo", "bar"],
@@ -79,9 +86,19 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testCleanIdArrayValues() {
-        $methods = ["articles", "editions"];
-        $in = [1, "2", 3.5, 3.0, "ook", 0, -20, true, false, null, new \DateTime(), -1.0];
-        $out = [1,2, 3];
+        $methods = ["articles", "editions", "tags", "labels", "subscriptions"];
+        $in = [1, "2", 3.5, 4.0, 4, "ook", 0, -20, true, false, null, new \DateTime(), -1.0];
+        $out = [1, 2, 4];
+        $c = new Context;
+        foreach ($methods as $method) {
+            $this->assertSame($out, $c->$method($in)->$method, "Context method $method did not return the expected results");
+        }
+    }
+
+    public function testCleanFolderIdArrayValues() {
+        $methods = ["folders", "foldersShallow"];
+        $in = [1, "2", 3.5, 4.0, 4, "ook", 0, -20, true, false, null, new \DateTime(), -1.0];
+        $out = [1, 2, 4, 0];
         $c = new Context;
         foreach ($methods as $method) {
             $this->assertSame($out, $c->$method($in)->$method, "Context method $method did not return the expected results");
@@ -89,7 +106,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testCleanStringArrayValues() {
-        $methods = ["searchTerms", "annotationTerms", "titleTerms", "authorTerms"];
+        $methods = ["searchTerms", "annotationTerms", "titleTerms", "authorTerms", "tagNames", "labelNames"];
         $now = new \DateTime;
         $in = [1, 3.0, "ook", 0, true, false, null, $now, ""];
         $out = ["1", "3", "ook", "0", valueInfo::normalize($now, ValueInfo::T_STRING)];

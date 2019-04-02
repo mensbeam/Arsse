@@ -11,16 +11,23 @@ use JKingWeb\Arsse\Misc\Date;
 
 class ExclusionContext {
     public $folder;
+    public $folders;
     public $folderShallow;
+    public $foldersShallow;
     public $tag;
+    public $tags;
     public $tagName;
+    public $tagNames;
     public $subscription;
+    public $subscriptions;
     public $edition;
-    public $article;
     public $editions;
+    public $article;
     public $articles;
     public $label;
+    public $labels;
     public $labelName;
+    public $labelNames;
     public $annotationTerms;
     public $searchTerms;
     public $titleTerms;
@@ -70,16 +77,18 @@ class ExclusionContext {
         }
     }
 
-    protected function cleanIdArray(array $spec): array {
+    protected function cleanIdArray(array $spec, bool $allowZero = false): array {
         $spec = array_values($spec);
         for ($a = 0; $a < sizeof($spec); $a++) {
-            if (ValueInfo::id($spec[$a])) {
+            if (ValueInfo::id($spec[$a], $allowZero)) {
                 $spec[$a] = (int) $spec[$a];
             } else {
-                $spec[$a] = 0;
+                $spec[$a] = null;
             }
         }
-        return array_values(array_unique(array_filter($spec)));
+        return array_values(array_unique(array_filter($spec, function ($v) {
+            return !is_null($v);
+        })));
     }
 
     protected function cleanStringArray(array $spec): array {
@@ -99,7 +108,21 @@ class ExclusionContext {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
+    public function folders(array $spec = null) {
+        if (isset($spec)) {
+            $spec = $this->cleanIdArray($spec, true);
+        }
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
     public function folderShallow(int $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function foldersShallow(array $spec = null) {
+        if (isset($spec)) {
+            $spec = $this->cleanIdArray($spec, true);
+        }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
@@ -107,11 +130,32 @@ class ExclusionContext {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
+    public function tags(array $spec = null) {
+        if (isset($spec)) {
+            $spec = $this->cleanIdArray($spec);
+        }
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
     public function tagName(string $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
+    public function tagNames(array $spec = null) {
+        if (isset($spec)) {
+            $spec = $this->cleanStringArray($spec);
+        }
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
     public function subscription(int $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function subscriptions(array $spec = null) {
+        if (isset($spec)) {
+            $spec = $this->cleanIdArray($spec);
+        }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
@@ -141,7 +185,21 @@ class ExclusionContext {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
+    public function labels(array $spec = null) {
+        if (isset($spec)) {
+            $spec = $this->cleanIdArray($spec);
+        }
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
     public function labelName(string $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function labelNames(array $spec = null) {
+        if (isset($spec)) {
+            $spec = $this->cleanStringArray($spec);
+        }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
