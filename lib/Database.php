@@ -1418,6 +1418,9 @@ class Database {
                 $col = $opt['cte_cols'][$named ? 2 : 1];
                 if ($context->$m()) {
                     $seen = true;
+                    if (!$context->$m) {
+                        throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
+                    }
                     if ($multi) {
                         list($test, $types, $values) = $this->generateIn($context->$m, $named ? "str" : "int");
                         $test = "in ($test)";

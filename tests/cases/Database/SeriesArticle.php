@@ -789,11 +789,6 @@ trait SeriesArticle {
         $this->compareExpectations($state);
     }
 
-    public function testMarkTooFewMultipleArticles() {
-        $this->assertException("tooShort", "Db", "ExceptionInput");
-        Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->articles([]));
-    }
-
     public function testMarkTooManyMultipleArticles() {
         $this->assertSame(7, Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->articles(range(1, Database::LIMIT_SET_SIZE * 3))));
     }
@@ -858,11 +853,6 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][11][4] = $now;
         $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
         $this->compareExpectations($state);
-    }
-
-    public function testMarkTooFewMultipleEditions() {
-        $this->assertException("tooShort", "Db", "ExceptionInput");
-        Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->editions([]));
     }
 
     public function testMarkTooManyMultipleEditions() {
@@ -1036,13 +1026,20 @@ trait SeriesArticle {
         Arsse::$db->articleCategoriesGet($this->user, 19);
     }
 
-    public function testSearchTooFewTerms() {
-        $this->assertException("tooShort", "Db", "ExceptionInput");
-        Arsse::$db->articleList($this->user, (new Context)->searchTerms([]));
-    }
-
-    public function testSearchTooFewTermsInNote() {
+    /** @dataProvider provideArrayContextOptions */
+    public function testUseTooFewValuesInArrayContext(string $option) {
         $this->assertException("tooShort", "Db", "ExceptionInput");
         Arsse::$db->articleList($this->user, (new Context)->annotationTerms([]));
+    }
+
+    public function provideArrayContextOptions() {
+        foreach([
+            "articles", "editions", 
+            "subscriptions", "foldersShallow", //"folders",
+            "tags", "tagNames", "labels", "labelNames",
+            "searchTerms", "authorTerms", "annotationTerms",
+        ] as $method) {
+            yield [$method];
+        }
     }
 }
