@@ -1323,7 +1323,9 @@ class Database {
             "markedSince"      => ["marked_date",   ">=", "datetime", "notMarkedSince"],
             "notMarkedSince"   => ["marked_date",   "<=", "datetime", "markedSince"],
             "folderShallow"    => ["folder",        "=",  "int",      ""],
+            "foldersShallow"   => ["folder",        "in", "int",      ""],
             "subscription"     => ["subscription",  "=",  "int",      ""],
+            "subscriptions"    => ["subscription",  "in", "int",      ""],
             "unread"           => ["unread",        "=",  "bool",     ""],
             "starred"          => ["starred",       "=",  "bool",     ""],
         ];
@@ -1374,6 +1376,76 @@ class Database {
                 $q->setWhereNot("{$colDefs[$col]} $op ?", $type, $context->not->$m);
             }
         }
+        // handle labels and tags
+        $options = [
+            'label' => [
+                'match_col' => "arsse_articles.id",
+                'cte_name' => "labelled",
+                'cte_cols' => ["article", "label_id", "label_name"],
+                'cte_body' => "SELECT m.article, l.id, l.name from arsse_label_members as m join arsse_labels as l on l.id = m.label where l.owner = ? and m.assigned = 1",
+                'cte_types' => ["str"],
+                'cte_values' => [$user],
+                'options' => [
+                    'label'      => ['use_name' => false, 'multi' => false],
+                    'labels'     => ['use_name' => false, 'multi' => true],
+                    'labelName'  => ['use_name' => true,  'multi' => false],
+                    'labelNames' => ['use_name' => true,  'multi' => true],
+                ],
+            ],
+            'tag' => [
+                'match_col' => "arsse_subscriptions.id",
+                'cte_name' => "tagged",
+                'cte_cols' => ["subscription", "tag_id", "tag_name"],
+                'cte_body' => "SELECT m.subscription, t.id, t.name from arsse_tag_members as m join arsse_tags as t on t.id = m.tag where t.owner = ? and m.assigned = 1",
+                'cte_types' => ["str"],
+                'cte_values' => [$user],
+                'options' => [
+                    'tag'      => ['use_name' => false, 'multi' => false],
+                    'tags'     => ['use_name' => false, 'multi' => true],
+                    'tagName'  => ['use_name' => true,  'multi' => false],
+                    'tagNames' => ['use_name' => true,  'multi' => true],
+                ],
+            ],
+        ];
+        foreach ($options as $opt) {
+            $seen = false;
+            $match = $opt['match_col'];
+            $table = $opt['cte_name'];
+            foreach ($opt['options'] as $m => $props) {
+                $named = $props['use_name'];
+                $multi = $props['multi'];
+                $selection = $opt['cte_cols'][0];
+                $col = $opt['cte_cols'][$named ? 2 : 1];
+                if ($context->$m()) {
+                    $seen = true;
+                    if ($multi) {
+                        list($test, $types, $values) = $this->generateIn($context->$m, $named ? "str" : "int");
+                        $test = "in ($test)";
+                    } else {
+                        $test = "= ?";
+                        $types = $named ? "str" : "int";
+                        $values = $context->$m;
+                    }
+                    $q->setWhere("$match in (select $selection from $table where $col $test)", $types, $values);
+                }
+                if ($context->not->$m()) {
+                    $seen = true;
+                    if ($multi) {
+                        list($test, $types, $values) = $this->generateIn($context->not->$m, $named ? "str" : "int");
+                        $test = "in ($test)";
+                    } else {
+                        $test = "= ?";
+                        $types = $named ? "str" : "int";
+                        $values = $context->not->$m;
+                    }
+                    $q->setWhereNot("$match in (select $selection from $table where $col $test)", $types, $values);
+                }
+            }
+            if ($seen) {
+                $spec = $opt['cte_name']."(".implode(",",$opt['cte_cols']).")";
+                $q->setCTE($spec, $opt['cte_body'], $opt['cte_types'], $opt['cte_values']);
+            }
+        }
         // handle complex context options
         if ($context->annotated()) {
             $comp = ($context->annotated) ? "<>" : "=";
@@ -1383,36 +1455,6 @@ class Database {
             // any label (true) or no label (false)
             $op = $context->labelled ? ">" : "=";
             $q->setWhere("coalesce(label_stats.assigned,0) $op 0");
-        }
-        if ($context->label() || $context->not->label() || $context->labelName() || $context->not->labelName()) {
-            $q->setCTE("labelled(article,label_id,label_name)","SELECT m.article, l.id, l.name from arsse_label_members as m join arsse_labels as l on l.id = m.label where l.owner = ? and m.assigned = 1", "str", $user);
-            if ($context->label()) {
-                $q->setWhere("arsse_articles.id in (select article from labelled where label_id = ?)", "int", $context->label);
-            }
-            if ($context->not->label()) {
-                $q->setWhereNot("arsse_articles.id in (select article from labelled where label_id = ?)", "int", $context->not->label);
-            }
-            if ($context->labelName()) {
-                $q->setWhere("arsse_articles.id in (select article from labelled where label_name = ?)", "str", $context->labelName);
-            }
-            if ($context->not->labelName()) {
-                $q->setWhereNot("arsse_articles.id in (select article from labelled where label_name = ?)", "str", $context->not->labelName);
-            }
-        }
-        if ($context->tag() || $context->not->tag() || $context->tagName() || $context->not->tagName()) {
-            $q->setCTE("tagged(id,name,subscription)","SELECT arsse_tags.id, arsse_tags.name, arsse_tag_members.subscription FROM arsse_tag_members join arsse_tags on arsse_tags.id = arsse_tag_members.tag WHERE arsse_tags.owner = ? and assigned = 1", "str", $user);
-            if ($context->tag()) {
-                $q->setWhere("arsse_subscriptions.id in (select subscription from tagged where id = ?)", "int", $context->tag);
-            }
-            if ($context->not->tag()) {
-                $q->setWhereNot("arsse_subscriptions.id in (select subscription from tagged where id = ?)", "int", $context->not->tag);
-            }
-            if ($context->tagName()) {
-                $q->setWhere("arsse_subscriptions.id in (select subscription from tagged where name = ?)", "str", $context->tagName);
-            }
-            if ($context->not->tagName()) {
-                $q->setWhereNot("arsse_subscriptions.id in (select subscription from tagged where name = ?)", "str", $context->not->tagName);
-            }
         }
         if ($context->folder()) {
             // add a common table expression to list the folder and its children so that we select from the entire subtree
