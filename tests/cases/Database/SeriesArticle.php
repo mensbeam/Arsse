@@ -424,6 +424,7 @@ trait SeriesArticle {
         return [
             'Blank context' => [new Context, [1,2,3,4,5,6,7,8,19,20]],
             'Folder tree' => [(new Context)->folder(1), [5,6,7,8]],
+            'Entire folder tree' => [(new Context)->folder(0), [1,2,3,4,5,6,7,8,19,20]],
             'Leaf folder' => [(new Context)->folder(6), [7,8]],
             'Root folder only' => [(new Context)->folderShallow(0), [1,2,3,4]],
             'Shallow folder' => [(new Context)->folderShallow(1), [5,6]],
@@ -506,6 +507,7 @@ trait SeriesArticle {
             'Excluding tag ID 5' => [(new Context)->not->tag(5), [1,2,3,4,5,6]],
             'Excluding tag "Technology"' => [(new Context)->not->tagName("Technology"), [1,2,3,4,19,20]],
             'Excluding tag "Politics"' => [(new Context)->not->tagName("Politics"), [1,2,3,4,5,6]],
+            'Excluding entire folder tree' => [(new Context)->not->folder(0), []],
         ];
     }
 

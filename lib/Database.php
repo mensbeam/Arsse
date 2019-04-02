@@ -1461,13 +1461,13 @@ class Database {
         }
         if ($context->folder()) {
             // add a common table expression to list the folder and its children so that we select from the entire subtree
-            $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on parent = folder", "int", $context->folder);
+            $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on coalesce(parent,0) = folder", "int", $context->folder);
             // limit subscriptions to the listed folders
             $q->setWhere("coalesce(arsse_subscriptions.folder,0) in (select folder from folders)");
         }
         if ($context->not->folder()) {
             // add a common table expression to list the folder and its children so that we exclude from the entire subtree
-            $q->setCTE("folders_excluded(folder)", "SELECT ? union select id from arsse_folders join folders_excluded on parent = folder", "int", $context->not->folder);
+            $q->setCTE("folders_excluded(folder)", "SELECT ? union select id from arsse_folders join folders_excluded on coalesce(parent,0) = folder", "int", $context->not->folder);
             // excluded any subscriptions in the listed folders
             $q->setWhereNot("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_excluded)");
         }

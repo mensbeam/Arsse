@@ -49,6 +49,7 @@ class ExclusionContext {
     }
 
     public function __clone() {
+        // if the context was cloned because its parent was cloned, change the parent to the clone
         if ($this->parent) {
             $t = debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS | \DEBUG_BACKTRACE_PROVIDE_OBJECT, 2)[1];
             if (($t['object'] ?? null) instanceof self && $t['function'] === "__clone") {
