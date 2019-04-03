@@ -1465,11 +1465,25 @@ class Database {
             // limit subscriptions to the listed folders
             $q->setWhere("coalesce(arsse_subscriptions.folder,0) in (select folder from folders)");
         }
+        if ($context->folders()) {
+            list($inClause, $inTypes, $inValues) = $this->generateIn($context->folders, "int");
+            // add a common table expression to list the folders and their children so that we select from the entire subtree
+            $q->setCTE("folders_multi(folder)", "SELECT id as folder from (select id from (select 0 as id union select id from arsse_folders where owner = ?) as f where id in ($inClause)) as folders_multi union select id from arsse_folders join folders_multi on coalesce(parent,0) = folder", ["str", $inTypes], [$user, $inValues]);
+            // limit subscriptions to the listed folders
+            $q->setWhere("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_multi)");
+        }
         if ($context->not->folder()) {
             // add a common table expression to list the folder and its children so that we exclude from the entire subtree
             $q->setCTE("folders_excluded(folder)", "SELECT ? union select id from arsse_folders join folders_excluded on coalesce(parent,0) = folder", "int", $context->not->folder);
             // excluded any subscriptions in the listed folders
             $q->setWhereNot("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_excluded)");
+        }
+        if ($context->not->folders()) {
+            list($inClause, $inTypes, $inValues) = $this->generateIn($context->not->folders, "int");
+            // add a common table expression to list the folders and their children so that we select from the entire subtree
+            $q->setCTE("folders_multi_excluded(folder)", "SELECT id as folder from (select id from (select 0 as id union select id from arsse_folders where owner = ?) as f where id in ($inClause)) as folders_multi_excluded union select id from arsse_folders join folders_multi_excluded on coalesce(parent,0) = folder", ["str", $inTypes], [$user, $inValues]);
+            // limit subscriptions to the listed folders
+            $q->setWhereNot("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_multi_excluded)");
         }
         // handle text-matching context options
         $options = [

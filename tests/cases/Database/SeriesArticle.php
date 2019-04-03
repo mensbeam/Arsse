@@ -426,8 +426,10 @@ trait SeriesArticle {
             'Folder tree' => [(new Context)->folder(1), [5,6,7,8]],
             'Entire folder tree' => [(new Context)->folder(0), [1,2,3,4,5,6,7,8,19,20]],
             'Leaf folder' => [(new Context)->folder(6), [7,8]],
-            'Root folder only' => [(new Context)->folderShallow(0), [1,2,3,4]],
+            'Multiple folder trees' => [(new Context)->folders([1,5]), [5,6,7,8,19,20]],
+            'Multiple folder trees including root' => [(new Context)->folders([0,1,5]), [1,2,3,4,5,6,7,8,19,20]],
             'Shallow folder' => [(new Context)->folderShallow(1), [5,6]],
+            'Root folder only' => [(new Context)->folderShallow(0), [1,2,3,4]],
             'Multiple shallow folders' => [(new Context)->foldersShallow([1,6]), [5,6,7,8]],
             'Subscription' => [(new Context)->subscription(5), [19,20]],
             'Multiple subscriptions' => [(new Context)->subscriptions([4,5]), [7,8,19,20]],
@@ -508,6 +510,8 @@ trait SeriesArticle {
             'Excluding tag "Technology"' => [(new Context)->not->tagName("Technology"), [1,2,3,4,19,20]],
             'Excluding tag "Politics"' => [(new Context)->not->tagName("Politics"), [1,2,3,4,5,6]],
             'Excluding entire folder tree' => [(new Context)->not->folder(0), []],
+            'Excluding multiple folder trees' => [(new Context)->not->folders([1,5]), [1,2,3,4]],
+            'Excluding multiple folder trees including root' => [(new Context)->not->folders([0,1,5]), []],
         ];
     }
 
