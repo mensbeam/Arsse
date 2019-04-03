@@ -1226,7 +1226,7 @@ class Database {
      * @param Context $context The search context
      * @param array $cols The columns to request in the result set
      */
-    protected function articleQuery(string $user, Context $context, array $cols = ["id"]): Query {
+    protected function articleQuery(string $user, Context $context, array $cols = ["id"], array $sort = []): Query {
         // validate input
         if ($context->subscription()) {
             $this->subscriptionValidateId($user, $context->subscription);
@@ -1275,23 +1275,55 @@ class Database {
             'media_type' => "arsse_enclosures.type",
         ];
         if (!$cols) {
-            // if no columns are specified return a count
-            $columns = "count(distinct arsse_articles.id) as count";
+            // if no columns are specified return a count; don't borther with sorting
+            $outColumns = "count(distinct arsse_articles.id) as count";
+            $sortColumns = [];
         } else {
-            $columns = [];
+            // normalize requested output and sorting columns
+            $norm = function($v) {
+                return trim(strtolower(ValueInfo::normalize($v, ValueInfo::T_STRING)));
+            };
+            $cols = array_map($norm, $cols);
+            $sort = array_map($norm, $sort);
+            // make an output column list
+            $outColumns = [];
             foreach ($cols as $col) {
-                $col = trim(strtolower($col));
                 if (!isset($colDefs[$col])) {
                     continue;
                 }
-                $columns[] = $colDefs[$col]." as ".$col;
+                $outColumns[] = $colDefs[$col]." as ".$col;
             }
-            $columns = implode(",", $columns);
+            $outColumns = implode(",", $outColumns);
+            // make an ORDER BY column list
+            $sortColumns = [];
+            foreach ($sort as $spec) {
+                $col = explode(" ", $spec, 1);
+                $order = $col[1] ?? "";
+                $col = $col[0];
+                if ($order === "desc") {
+                    $order = " desc";
+                } elseif ($order === "asc" || $order === "") {
+                    $order = "";
+                } else {
+                    // column direction spec is bogus
+                    continue;
+                }
+                if (!isset($colDefs[$col])) {
+                    // column name spec is bogus
+                    continue;
+                } elseif (in_array($col, $cols)) {
+                    // if the sort column is also an output column, use it as-is
+                    $sortColumns[] = $col.$order;
+                } else {
+                    // otherwise if the column name is valid, use its expression
+                    $sortColumns[] = $colDefs[$col].$order;
+                }
+            }
         }
         // define the basic query, to which we add lots of stuff where necessary
         $q = new Query(
             "SELECT 
-                $columns
+                $outColumns
             from arsse_articles
             join arsse_subscriptions on arsse_subscriptions.feed = arsse_articles.feed and arsse_subscriptions.owner = ?
             join arsse_feeds on arsse_subscriptions.feed = arsse_feeds.id
@@ -1307,6 +1339,10 @@ class Database {
             [$user, $user]
         );
         $q->setLimit($context->limit, $context->offset);
+        // apply the ORDER BY definition computed above
+        array_walk($sortColumns, function($v, $k, Query $q) {
+            $q->setOrder($v);
+        }, $q);
         // handle the simple context options
         $options = [
             // each context array consists of a column identifier (see $colDefs above), a comparison operator, a data type, and an option to pair with for BETWEEN evaluation
@@ -1492,20 +1528,20 @@ class Database {
             "authorTerms"     => ["arsse_articles.author"],
             "annotationTerms" => ["arsse_marks.note"],
         ];
-        foreach ($options as $m => $cols) {
+        foreach ($options as $m => $columns) {
             if (!$context->$m()) {
                 continue;
             } elseif (!$context->$m) {
                 throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
             }
-            $q->setWhere(...$this->generateSearch($context->$m, $cols));
+            $q->setWhere(...$this->generateSearch($context->$m, $columns));
         }
         // further handle exclusionary text-matching context options
-        foreach ($options as $m => $cols) {
+        foreach ($options as $m => $columns) {
             if (!$context->not->$m() || !$context->not->$m) {
                 continue;
             }
-            $q->setWhereNot(...$this->generateSearch($context->not->$m, $cols, true));
+            $q->setWhereNot(...$this->generateSearch($context->not->$m, $columns, true));
         }
         // return the query
         return $q;
