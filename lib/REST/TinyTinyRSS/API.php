@@ -23,6 +23,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\Response\JsonResponse as Response;
 use Zend\Diactoros\Response\EmptyResponse;
+use Robo\Task\Archive\Pack;
 
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     const LEVEL = 14;           // emulated API level
@@ -1438,7 +1439,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                         // no context needed here
                         break;
                     case self::FEED_READ:
-                        $c->markedSince(Date::sub("PT24H"))->unread(false); // FIXME: this selects any recently touched article which is read, not necessarily a recently read one
+                        $c->markedSince(Date::sub("PT24H"))->unread(false); // FIXME: this selects any recently touched (read, starred, annotated) article which is read, not necessarily a recently read one
                         break;
                     default:
                         // any actual feed
@@ -1491,15 +1492,15 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         switch ($data['order_by']) {
             case "date_reverse":
                 // sort oldest first
-                $c->reverse(false);
+                $order = ["edited_date"];
                 break;
             case "feed_dates":
                 // sort newest first
-                $c->reverse(true);
+                $order = ["edited_date desc"];
                 break;
             default:
-                // in TT-RSS the default sort order is unusual for some of the special feeds; we do not implement this
-                $c->reverse(true);
+                // sort most recently marked for special feeds, newest first otherwise 
+                $order = (!$cat && ($id == self::FEED_READ || $id == self::FEED_STARRED)) ? ["marked_date desc"] : ["edited_date desc"];
                 break;
         }
         // set the limit and offset
@@ -1514,6 +1515,6 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             $c->oldestArticle($data['since_id'] + 1);
         }
         // return results
-        return Arsse::$db->articleList(Arsse::$user->id, $c, $fields);
+        return Arsse::$db->articleList(Arsse::$user->id, $c, $fields, $order);
     }
 }

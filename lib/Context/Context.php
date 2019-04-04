@@ -9,7 +9,6 @@ namespace JKingWeb\Arsse\Context;
 class Context extends ExclusionContext {
     /** @var ExclusionContext */
     public $not;
-    public $reverse = false;
     public $limit = 0;
     public $offset = 0;
     public $unread;
@@ -29,10 +28,6 @@ class Context extends ExclusionContext {
     /** @codeCoverageIgnore */
     public function __destruct() {
         unset($this->not);
-    }
-
-    public function reverse(bool $spec = null) {
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
     public function limit(int $spec = null) {

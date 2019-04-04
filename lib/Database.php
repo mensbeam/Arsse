@@ -1218,40 +1218,13 @@ class Database {
         )->run($feedID, $vId, $vHashUT, $vHashUC, $vHashTC);
     }
 
-    /** Computes an SQL query to find and retrieve data about articles in the database
+    /** Returns an associative array of result column names and their SQL computations for article queries
      * 
-     * If an empty column list is supplied, a count of articles matching the context is queried instead
-     * 
-     * @param string $user The user whose articles are to be queried
-     * @param Context $context The search context
-     * @param array $cols The columns to request in the result set
+     * This is used for whitelisting and defining both output column and order-by columns, as well as for resolution of some context options
      */
-    protected function articleQuery(string $user, Context $context, array $cols = ["id"], array $sort = []): Query {
-        // validate input
-        if ($context->subscription()) {
-            $this->subscriptionValidateId($user, $context->subscription);
-        }
-        if ($context->folder()) {
-            $this->folderValidateId($user, $context->folder);
-        } 
-        if ($context->folderShallow()) {
-            $this->folderValidateId($user, $context->folderShallow);
-        }
-        if ($context->edition()) {
-            $this->articleValidateEdition($user, $context->edition);
-        } 
-        if ($context->article()) {
-            $this->articleValidateId($user, $context->article);
-        }
-        if ($context->label()) {
-            $this->labelValidateId($user, $context->label, false);
-        }
-        if ($context->labelName()) {
-            $this->labelValidateId($user, $context->labelName, true);
-        }
-        // prepare the output column list; the column definitions are also used later
+    protected function articleColumns(): array {
         $greatest = $this->db->sqlToken("greatest");
-        $colDefs = [
+        return [
             'id' => "arsse_articles.id",
             'edition' => "latest_editions.edition",
             'url' => "arsse_articles.url",
@@ -1274,17 +1247,50 @@ class Database {
             'media_url' => "arsse_enclosures.url",
             'media_type' => "arsse_enclosures.type",
         ];
+    }
+
+    /** Computes an SQL query to find and retrieve data about articles in the database
+     * 
+     * If an empty column list is supplied, a count of articles matching the context is queried instead
+     * 
+     * @param string $user The user whose articles are to be queried
+     * @param Context $context The search context
+     * @param array $cols The columns to request in the result set
+     */
+    protected function articleQuery(string $user, Context $context, array $cols = ["id"]): Query {
+        // validate input
+        if ($context->subscription()) {
+            $this->subscriptionValidateId($user, $context->subscription);
+        }
+        if ($context->folder()) {
+            $this->folderValidateId($user, $context->folder);
+        }
+        if ($context->folderShallow()) {
+            $this->folderValidateId($user, $context->folderShallow);
+        }
+        if ($context->edition()) {
+            $this->articleValidateEdition($user, $context->edition);
+        } 
+        if ($context->article()) {
+            $this->articleValidateId($user, $context->article);
+        }
+        if ($context->label()) {
+            $this->labelValidateId($user, $context->label, false);
+        }
+        if ($context->labelName()) {
+            $this->labelValidateId($user, $context->labelName, true);
+        }
+        // prepare the output column list; the column definitions are also used later
+        $colDefs = $this->articleColumns();
         if (!$cols) {
             // if no columns are specified return a count; don't borther with sorting
             $outColumns = "count(distinct arsse_articles.id) as count";
-            $sortColumns = [];
         } else {
             // normalize requested output and sorting columns
             $norm = function($v) {
                 return trim(strtolower(ValueInfo::normalize($v, ValueInfo::T_STRING)));
             };
             $cols = array_map($norm, $cols);
-            $sort = array_map($norm, $sort);
             // make an output column list
             $outColumns = [];
             foreach ($cols as $col) {
@@ -1294,31 +1300,6 @@ class Database {
                 $outColumns[] = $colDefs[$col]." as ".$col;
             }
             $outColumns = implode(",", $outColumns);
-            // make an ORDER BY column list
-            $sortColumns = [];
-            foreach ($sort as $spec) {
-                $col = explode(" ", $spec, 1);
-                $order = $col[1] ?? "";
-                $col = $col[0];
-                if ($order === "desc") {
-                    $order = " desc";
-                } elseif ($order === "asc" || $order === "") {
-                    $order = "";
-                } else {
-                    // column direction spec is bogus
-                    continue;
-                }
-                if (!isset($colDefs[$col])) {
-                    // column name spec is bogus
-                    continue;
-                } elseif (in_array($col, $cols)) {
-                    // if the sort column is also an output column, use it as-is
-                    $sortColumns[] = $col.$order;
-                } else {
-                    // otherwise if the column name is valid, use its expression
-                    $sortColumns[] = $colDefs[$col].$order;
-                }
-            }
         }
         // define the basic query, to which we add lots of stuff where necessary
         $q = new Query(
@@ -1339,10 +1320,6 @@ class Database {
             [$user, $user]
         );
         $q->setLimit($context->limit, $context->offset);
-        // apply the ORDER BY definition computed above
-        array_walk($sortColumns, function($v, $k, Query $q) {
-            $q->setOrder($v);
-        }, $q);
         // handle the simple context options
         $options = [
             // each context array consists of a column identifier (see $colDefs above), a comparison operator, a data type, and an option to pair with for BETWEEN evaluation
@@ -1553,16 +1530,47 @@ class Database {
      * 
      * @param string $user The user whose articles are to be listed
      * @param Context $context The search context
-     * @param array $cols The columns to return in the result set, any of: id, edition, url, title, author, content, guid, fingerprint, folder, subscription, feed, starred, unread, note, published_date, edited_date, modified_date, marked_date, subscription_title, media_url, media_type
+     * @param array $fieldss The columns to return in the result set, any of: id, edition, url, title, author, content, guid, fingerprint, folder, subscription, feed, starred, unread, note, published_date, edited_date, modified_date, marked_date, subscription_title, media_url, media_type
+     * @param array $sort The columns to sort the result by eg. "edition desc" in decreasing order of importance
      */
-    public function articleList(string $user, Context $context = null, array $fields = ["id"]): Db\Result {
+    public function articleList(string $user, Context $context = null, array $fields = ["id"], array $sort = []): Db\Result {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
+        // make a base query based on context and output columns
         $context = $context ?? new Context;
         $q = $this->articleQuery($user, $context, $fields);
-        $q->setOrder("arsse_articles.edited".($context->reverse ? " desc" : ""));
-        $q->setOrder("latest_editions.edition".($context->reverse ? " desc" : ""));
+        // make an ORDER BY column list
+        $colDefs = $this->articleColumns();
+        // normalize requested output and sorting columns
+        $norm = function($v) {
+            return trim(strtolower((string) $v));
+        };
+        $fields = array_map($norm, $fields);
+        $sort = array_map($norm, $sort);
+        foreach ($sort as $spec) {
+            $col = explode(" ", $spec, 1);
+            $order = $col[1] ?? "";
+            $col = $col[0];
+            if ($order === "desc") {
+                $order = " desc";
+            } elseif ($order === "asc" || $order === "") {
+                $order = "";
+            } else {
+                // column direction spec is bogus
+                continue;
+            }
+            if (!isset($colDefs[$col])) {
+                // column name spec is bogus
+                continue;
+            } elseif (in_array($col, $fields)) {
+                // if the sort column is also an output column, use it as-is
+                $q->setOrder($col.$order);
+            } else {
+                // otherwise if the column name is valid, use its expression
+                $q->setOrder($colDefs[$col].$order);
+            }
+        }
         // perform the query and return results
         return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
     }

@@ -460,7 +460,6 @@ trait SeriesArticle {
             'Marked or labelled between 2000 and 2015' => [(new Context)->markedSince("2000-01-01T00:00:00Z")->notMarkedSince("2015-12-31T23:59:59Z"), [1,2,3,4,5,6,7,8,20]],
             'Marked or labelled in 2010' => [(new Context)->markedSince("2010-01-01T00:00:00Z")->notMarkedSince("2010-12-31T23:59:59Z"), [2,4,6,20]],
             'Paged results' => [(new Context)->limit(2)->oldestEdition(4), [4,5]],
-            'Reversed paged results' => [(new Context)->limit(2)->latestEdition(7)->reverse(true), [7,6]],
             'With label ID 1' => [(new Context)->label(1), [1,19]],
             'With label ID 2' => [(new Context)->label(2), [1,5,20]],
             'With label ID 1 or 2' => [(new Context)->labels([1,2]), [1,5,19,20]],
