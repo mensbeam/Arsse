@@ -225,4 +225,41 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         return $out;
     }
+
+    protected function getItems(array $G): array {
+        $c = (new Context)->limit(50);
+        $reverse = false;
+        // handle the standard options
+        if ($G['with_ids']) {
+            $c->articles(explode(",", $G['with_ids']));
+        } elseif ($G['since_id']) {
+            $c->oldestArticle($G['since_id'] + 1);
+        } elseif ($G['max_id']) {
+            $c->newestArticle($G['max_id'] - 1);
+            $reverse = true;
+        }
+        // handle the undocumented options
+        if ($G['group_ids']) {
+            $c->tags(explode(",", $G['group_ids']));
+        }
+        if ($G['feed_ids']) {
+            $c->subscriptions(explode(",", $G['feed_ids']));
+        }
+        // get results
+        $out = [];
+        $order = $reverse ? "id desc" : "id";
+        foreach (Arsse::$db->articleList(Arsse::$user->id, $c, ["id", "subscription", "title", "author", "content", "url", "starred", "unread", "published_date"], [$order]) as $r) {
+            $out[] = [
+                'id'              => (int) $r['id'],
+                'feed_id'         => (int) $r['subscription'],
+                'title'           => (string) $r['title'],
+                'author'          => (string) $r['author'],
+                'html'            => (string) $r['content'],
+                'is_saved'        => (int) $r['starred'],
+                'is_read'         => (int) !$r['unread'],
+                'created_on_time' => Date::transform($r['published_date'], "unix", "sql"),
+            ];
+        }
+        return $out;
+    }
 }
