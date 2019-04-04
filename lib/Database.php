@@ -1549,7 +1549,7 @@ class Database {
         $fields = array_map($norm, $fields);
         $sort = array_map($norm, $sort);
         foreach ($sort as $spec) {
-            $col = explode(" ", $spec, 1);
+            $col = explode(" ", $spec, 2);
             $order = $col[1] ?? "";
             $col = $col[0];
             if ($order === "desc") {

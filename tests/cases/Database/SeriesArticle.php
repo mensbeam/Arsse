@@ -10,6 +10,7 @@ use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Misc\ValueInfo;
 use Phake;
 
 trait SeriesArticle {
@@ -508,6 +509,8 @@ trait SeriesArticle {
             'Excluding tag ID 5' => [(new Context)->not->tag(5), [1,2,3,4,5,6]],
             'Excluding tag "Technology"' => [(new Context)->not->tagName("Technology"), [1,2,3,4,19,20]],
             'Excluding tag "Politics"' => [(new Context)->not->tagName("Politics"), [1,2,3,4,5,6]],
+            'Excluding tags ID 1 and 5' => [(new Context)->not->tags([1,5]), [1,2,3,4]],
+            'Excluding tags "Technology" and "Politics"' => [(new Context)->not->tagNames(["Technology","Politics"]), [1,2,3,4]],
             'Excluding entire folder tree' => [(new Context)->not->folder(0), []],
             'Excluding multiple folder trees' => [(new Context)->not->folders([1,5]), [1,2,3,4]],
             'Excluding multiple folder trees including root' => [(new Context)->not->folders([0,1,5]), []],
@@ -572,6 +575,25 @@ trait SeriesArticle {
         $columns = array_merge($this->fields, ["unknown_column", "bogus_column"]);
         $test = array_keys(Arsse::$db->articleList($this->user, (new Context)->article(101), $columns)->getRow());
         $this->assertEquals($this->fields, $test);
+    }
+
+    /** @dataProvider provideOrderedLists */
+    public function testListArticlesCheckingOrder(array $sortCols, array $exp) {
+        $act = ValueInfo::normalize(array_column(iterator_to_array(Arsse::$db->articleList("john.doe@example.com", null, ["id"], $sortCols)), "id"), ValueInfo::T_INT | ValueInfo::M_ARRAY);
+        $this->assertSame($exp, $act);
+    }
+
+    public function provideOrderedLists() {
+        return [
+            [["id"], [1,2,3,4,5,6,7,8,19,20]],
+            [["id asc"], [1,2,3,4,5,6,7,8,19,20]],
+            [["id desc"], [20,19,8,7,6,5,4,3,2,1]],
+            [["edition"], [1,2,3,4,5,6,7,8,19,20]],
+            [["edition asc"], [1,2,3,4,5,6,7,8,19,20]],
+            [["edition desc"], [20,19,8,7,6,5,4,3,2,1]],
+            [["id", "edition desk"], [1,2,3,4,5,6,7,8,19,20]],
+            [["id", "editio"], [1,2,3,4,5,6,7,8,19,20]],
+        ];
     }
 
     public function testListArticlesWithoutAuthority() {
@@ -1034,7 +1056,7 @@ trait SeriesArticle {
     /** @dataProvider provideArrayContextOptions */
     public function testUseTooFewValuesInArrayContext(string $option) {
         $this->assertException("tooShort", "Db", "ExceptionInput");
-        Arsse::$db->articleList($this->user, (new Context)->annotationTerms([]));
+        Arsse::$db->articleList($this->user, (new Context)->$option([]));
     }
 
     public function provideArrayContextOptions() {
