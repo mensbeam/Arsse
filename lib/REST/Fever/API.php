@@ -138,6 +138,12 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             // TODO: implement hot links
             $out['inks'] = [];
         }
+        if ($G['unread_item_ids']) {
+            $out['unread_item_ids'] = $this->getItemIds((new Context)->unread(true));
+        }
+        if ($G['saved_item_ids']) {
+            $out['saved_item_ids'] = $this->getItemIds((new Context)->starred(true));
+        }
         return $out;
     }
 
@@ -259,6 +265,14 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'is_read'         => (int) !$r['unread'],
                 'created_on_time' => Date::transform($r['published_date'], "unix", "sql"),
             ];
+        }
+        return $out;
+    }
+
+    protected function getItemIds(Context $c = null): array {
+        $out = [];
+        foreach (Arsse::$db->articleList(Arsse::$user->id, $c) as $r) {
+            $out[] = (int) $r['id'];
         }
         return $out;
     }
