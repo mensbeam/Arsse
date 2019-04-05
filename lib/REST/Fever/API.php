@@ -269,11 +269,11 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return $out;
     }
 
-    protected function getItemIds(Context $c = null): array {
+    protected function getItemIds(Context $c = null): string {
         $out = [];
         foreach (Arsse::$db->articleList(Arsse::$user->id, $c) as $r) {
             $out[] = (int) $r['id'];
         }
-        return $out;
+        return implode(",", $out);
     }
 }
