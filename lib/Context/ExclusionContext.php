@@ -87,7 +87,7 @@ class ExclusionContext {
                 $spec[$a] = null;
             }
         }
-        return array_values(array_unique(array_filter($spec, function ($v) {
+        return array_values(array_unique(array_filter($spec, function($v) {
             return !is_null($v);
         })));
     }

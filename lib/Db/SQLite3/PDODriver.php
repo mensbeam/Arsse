@@ -50,7 +50,7 @@ class PDODriver extends AbstractPDODriver {
 
     /** @codeCoverageIgnore */
     public function exec(string $query): bool {
-        // because PDO uses sqlite3_prepare() internally instead of sqlite3_prepare_v2(), 
+        // because PDO uses sqlite3_prepare() internally instead of sqlite3_prepare_v2(),
         // we have to retry ourselves in cases of schema changes
         // the SQLite3 class is not similarly affected
         $attempts = 0;
@@ -68,7 +68,7 @@ class PDODriver extends AbstractPDODriver {
 
     /** @codeCoverageIgnore */
     public function query(string $query): \JKingWeb\Arsse\Db\Result {
-        // because PDO uses sqlite3_prepare() internally instead of sqlite3_prepare_v2(), 
+        // because PDO uses sqlite3_prepare() internally instead of sqlite3_prepare_v2(),
         // we have to retry ourselves in cases of schema changes
         // the SQLite3 class is not similarly affected
         $attempts = 0;

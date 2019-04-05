@@ -498,7 +498,7 @@ trait SeriesArticle {
             'Excluded folder tree' => [(new Context)->not->folder(1), [1,2,3,4,19,20]],
             'Excluding label ID 2' => [(new Context)->not->label(2), [2,3,4,6,7,8,19]],
             'Excluding label "Fascinating"' => [(new Context)->not->labelName("Fascinating"), [2,3,4,6,7,8,19]],
-            'Search 501 terms' => [(new Context)->searchTerms(array_merge(range(1,500),[str_repeat("a", 1000)])), []],
+            'Search 501 terms' => [(new Context)->searchTerms(array_merge(range(1, 500), [str_repeat("a", 1000)])), []],
             'With tag ID 1' => [(new Context)->tag(1), [5,6,7,8]],
             'With tag ID 5' => [(new Context)->tag(5), [7,8,19,20]],
             'With tag ID 1 or 5' => [(new Context)->tags([1,5]), [5,6,7,8,19,20]],
@@ -1060,8 +1060,8 @@ trait SeriesArticle {
     }
 
     public function provideArrayContextOptions() {
-        foreach([
-            "articles", "editions", 
+        foreach ([
+            "articles", "editions",
             "subscriptions", "foldersShallow", //"folders",
             "tags", "tagNames", "labels", "labelNames",
             "searchTerms", "authorTerms", "annotationTerms",

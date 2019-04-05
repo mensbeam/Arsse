@@ -82,6 +82,7 @@ class Search {
                                 $state = self::STATE_IN_TOKEN_OR_TAG;
                                 continue 3;
                         }
+                        // no break
                     case self::STATE_BEFORE_TOKEN_QUOTED:
                         switch ($char) {
                             case "":
@@ -130,6 +131,7 @@ class Search {
                                 $state = self::STATE_IN_TOKEN_OR_TAG_QUOTED;
                                 continue 3;
                         }
+                        // no break
                     case self::STATE_IN_DATE:
                         while ($pos < $stop && $search[$pos] !== " ") {
                             $buffer .= $search[$pos++];
@@ -169,6 +171,7 @@ class Search {
                                 $buffer .= $char;
                                 continue 3;
                         }
+                        // no break
                     case self::STATE_IN_TOKEN:
                         while ($pos < $stop && $search[$pos] !== " ") {
                             $buffer .= $search[$pos++];
@@ -214,6 +217,7 @@ class Search {
                                 $buffer .= $char;
                                 continue 3;
                         }
+                        // no break
                     case self::STATE_IN_TOKEN_OR_TAG:
                         switch ($char) {
                             case "":
@@ -223,7 +227,7 @@ class Search {
                                 $flag_negative = false;
                                 $buffer = $tag = "";
                                 continue 3;
-                            case ":";
+                            case ":":
                                 $tag = $buffer;
                                 $buffer = "";
                                 $state = self::STATE_IN_TOKEN;
@@ -232,6 +236,7 @@ class Search {
                                 $buffer .= $char;
                                 continue 3;
                         }
+                        // no break
                     case self::STATE_IN_TOKEN_OR_TAG_QUOTED:
                         switch ($char) {
                             case "":
@@ -267,6 +272,7 @@ class Search {
                                 $buffer .= $char;
                                 continue 3;
                         }
+                        // no break
                     default:
                         throw new \Exception; // @codeCoverageIgnore
                 }

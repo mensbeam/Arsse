@@ -1499,7 +1499,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 $order = ["edited_date desc"];
                 break;
             default:
-                // sort most recently marked for special feeds, newest first otherwise 
+                // sort most recently marked for special feeds, newest first otherwise
                 $order = (!$cat && ($id == self::FEED_READ || $id == self::FEED_STARRED)) ? ["marked_date desc"] : ["edited_date desc"];
                 break;
         }

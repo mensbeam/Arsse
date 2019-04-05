@@ -20,7 +20,7 @@ interface Driver {
     public static function driverName(): string;
 
     /** Returns the version of the schema of the opened database; if uninitialized should return 0
-     * 
+     *
      * Normally the version is stored under the 'schema_version' key in the arsse_meta table, but another method may be used if appropriate
      */
     public function schemaVersion(): int;
@@ -32,7 +32,7 @@ interface Driver {
     public function begin(bool $lock = false): Transaction;
 
     /** Manually begins a real or synthetic transactions, with real or synthetic nesting, and returns its numeric ID
-     * 
+     *
      * If the database backend does not implement savepoints, IDs must still be tracked as if it does
      */
     public function savepointCreate(): int;
@@ -44,7 +44,7 @@ interface Driver {
     public function savepointUndo(int $index = null): bool;
 
     /** Performs an in-place upgrade of the database schema
-     * 
+     *
      * The driver may choose not to implement in-place upgrading, in which case an exception should be thrown
      */
     public function schemaUpdate(int $to): bool;
@@ -62,15 +62,15 @@ interface Driver {
     public function prepareArray(string $query, array $paramTypes): Statement;
 
     /** Reports whether the database character set is correct/acceptable
-     * 
+     *
      * The backend must be able to accept and provide UTF-8 text; information may be stored in any encoding capable of representing the entire range of Unicode
      */
     public function charsetAcceptable(): bool;
 
     /** Returns an implementation-dependent form of a reference SQL function or operator
-     * 
+     *
      * The tokens the implementation must understand are:
-     * 
+     *
      * - "greatest": the GREATEST function implemented by PostgreSQL and MySQL
      * - "nocase": the name of a general-purpose case-insensitive collation sequence
      * - "like": the case-insensitive LIKE operator
@@ -78,7 +78,7 @@ interface Driver {
     public function sqlToken(string $token): string;
 
     /** Returns a string literal which is properly escaped to guard against SQL injections. Delimiters are included in the output string
-     * 
+     *
      * This functionality should be avoided in favour of using statement parameters whenever possible
      */
     public function literalString(string $str): string;

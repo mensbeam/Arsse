@@ -12,7 +12,7 @@ class PDOStatement extends \JKingWeb\Arsse\Db\PDOStatement {
 
     /** @codeCoverageIgnore */
     public function runArray(array $values = []): \JKingWeb\Arsse\Db\Result {
-        // because PDO uses sqlite3_prepare() internally instead of sqlite3_prepare_v2(), 
+        // because PDO uses sqlite3_prepare() internally instead of sqlite3_prepare_v2(),
         // we have to retry ourselves in cases of schema changes
         // the SQLite3 class is not similarly affected
         $attempts = 0;
