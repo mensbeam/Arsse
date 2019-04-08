@@ -238,11 +238,11 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         // handle the standard options
         if ($G['with_ids']) {
             $c->articles(explode(",", $G['with_ids']));
+        } elseif ($G['max_id']) {
+            $c->latestArticle($G['max_id'] - 1);
+            $reverse = true;
         } elseif ($G['since_id']) {
             $c->oldestArticle($G['since_id'] + 1);
-        } elseif ($G['max_id']) {
-            $c->newestArticle($G['max_id'] - 1);
-            $reverse = true;
         }
         // handle the undocumented options
         if ($G['group_ids']) {
@@ -261,6 +261,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'title'           => (string) $r['title'],
                 'author'          => (string) $r['author'],
                 'html'            => (string) $r['content'],
+                'url'             => (string) $r['url'],
                 'is_saved'        => (int) $r['starred'],
                 'is_read'         => (int) !$r['unread'],
                 'created_on_time' => Date::transform($r['published_date'], "unix", "sql"),

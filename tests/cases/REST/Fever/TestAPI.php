@@ -26,6 +26,122 @@ use Zend\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST\Fever\API<extended> */
 class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
+    protected $articles = [
+        'db' => [
+            [
+                'id' => 101,
+                'url' => 'http://example.com/1',
+                'title' => 'Article title 1',
+                'author' => '',
+                'content' => '<p>Article content 1</p>',
+                'published_date' => '2000-01-01 00:00:00',
+                'unread' => 1,
+                'starred' => 0,
+                'subscription' => 8,
+            ],
+            [
+                'id' => 102,
+                'url' => 'http://example.com/2',
+                'title' => 'Article title 2',
+                'author' => '',
+                'content' => '<p>Article content 2</p>',
+                'published_date' => '2000-01-02 00:00:00',
+                'unread' => 0,
+                'starred' => 0,
+                'subscription' => 8,
+            ],
+            [
+                'id' => 103,
+                'url' => 'http://example.com/3',
+                'title' => 'Article title 3',
+                'author' => '',
+                'content' => '<p>Article content 3</p>',
+                'published_date' => '2000-01-03 00:00:00',
+                'unread' => 1,
+                'starred' => 1,
+                'subscription' => 9,
+            ],
+            [
+                'id' => 104,
+                'url' => 'http://example.com/4',
+                'title' => 'Article title 4',
+                'author' => '',
+                'content' => '<p>Article content 4</p>',
+                'published_date' => '2000-01-04 00:00:00',
+                'unread' => 0,
+                'starred' => 1,
+                'subscription' => 9,
+            ],
+            [
+                'id' => 105,
+                'url' => 'http://example.com/5',
+                'title' => 'Article title 5',
+                'author' => '',
+                'content' => '<p>Article content 5</p>',
+                'published_date' => '2000-01-05 00:00:00',
+                'unread' => 1,
+                'starred' => 0,
+                'subscription' => 10,
+            ],
+        ],
+        'rest' => [
+            [
+                'id' => 101,
+                'feed_id' => 8,
+                'title' => 'Article title 1',
+                'author' => '',
+                'html' => '<p>Article content 1</p>',
+                'url' => 'http://example.com/1',
+                'is_saved' => 0,
+                'is_read' => 0,
+                'created_on_time' => 946684800,
+            ],
+            [
+                'id' => 102,
+                'feed_id' => 8,
+                'title' => 'Article title 2',
+                'author' => '',
+                'html' => '<p>Article content 2</p>',
+                'url' => 'http://example.com/2',
+                'is_saved' => 0,
+                'is_read' => 1,
+                'created_on_time' => 946771200,
+            ],
+            [
+                'id' => 103,
+                'feed_id' => 9,
+                'title' => 'Article title 3',
+                'author' => '',
+                'html' => '<p>Article content 3</p>',
+                'url' => 'http://example.com/3',
+                'is_saved' => 1,
+                'is_read' => 0,
+                'created_on_time' => 946857600,
+            ],
+            [
+                'id' => 104,
+                'feed_id' => 9,
+                'title' => 'Article title 4',
+                'author' => '',
+                'html' => '<p>Article content 4</p>',
+                'url' => 'http://example.com/4',
+                'is_saved' => 1,
+                'is_read' => 1,
+                'created_on_time' => 946944000,
+            ],
+            [
+                'id' => 105,
+                'feed_id' => 10,
+                'title' => 'Article title 5',
+                'author' => '',
+                'html' => '<p>Article content 5</p>',
+                'url' => 'http://example.com/5',
+                'is_saved' => 0,
+                'is_read' => 0,
+                'created_on_time' => 947030400,
+            ],
+        ],
+    ];
     protected function v($value) {
         return $value;
     }
@@ -203,5 +319,36 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         ]);
         $act = $this->req("api&feeds");
         $this->assertMessage($exp, $act);
+    }
+
+    /** @dataProvider provideItemListContexts */
+    public function testListItems(string $url, Context $c, bool $desc) {
+        $fields = ["id", "subscription", "title", "author", "content", "url", "starred", "unread", "published_date"];
+        $order = [$desc ? "id desc" : "id"];
+        \Phake::when(Arsse::$db)->articleList->thenReturn(new Result($this->articles['db']));
+        \Phake::when(Arsse::$db)->articleCount($this->anything())->thenReturn(1024);
+        $exp = new JsonResponse([
+            'items' => $this->articles['rest'],
+            'total_items' => 1024,
+        ]);
+        $act = $this->req("api&$url");
+        $this->assertMessage($exp, $act);
+        \Phake::verify(Arsse::$db)->articleList($this->anything(), $c, $fields, $order);
+    }
+
+    public function provideItemListContexts() {
+        $c = (new Context)->limit(50);
+        return [
+            ["items", (clone $c), false],
+            ["items&group_ids=1,2,3,4", (clone $c)->tags([1,2,3,4]), false],
+            ["items&feed_ids=1,2,3,4", (clone $c)->subscriptions([1,2,3,4]), false],
+            ["items&with_ids=1,2,3,4", (clone $c)->articles([1,2,3,4]), false],
+            ["items&since_id=1", (clone $c)->oldestArticle(2), false],
+            ["items&max_id=2", (clone $c)->latestArticle(1), true],
+            ["items&with_ids=1,2,3,4&max_id=6", (clone $c)->articles([1,2,3,4]), false],
+            ["items&with_ids=1,2,3,4&since_id=6", (clone $c)->articles([1,2,3,4]), false],
+            ["items&max_id=3&since_id=6", (clone $c)->latestArticle(2), true],
+            ["items&feed_ids=1,2,3,4&since_id=6", (clone $c)->subscriptions([1,2,3,4])->oldestArticle(7), false],
+        ];
     }
 }
