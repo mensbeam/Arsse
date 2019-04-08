@@ -366,4 +366,12 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         ]);
         $this->assertMessage($exp, $this->req("api&unread_item_ids"));
     }
+
+    public function testListHotLinks() {
+        // hot links are not actually implemented, so an empty array should be all we get
+        $exp = new JsonResponse([
+            'links' => []
+        ]);
+        $this->assertMessage($exp, $this->req("api&links"));
+    }
 }

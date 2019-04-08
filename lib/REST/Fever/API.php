@@ -136,7 +136,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         if ($G['links']) {
             // TODO: implement hot links
-            $out['inks'] = [];
+            $out['links'] = [];
         }
         if ($G['unread_item_ids']) {
             $out['unread_item_ids'] = $this->getItemIds((new Context)->unread(true));
