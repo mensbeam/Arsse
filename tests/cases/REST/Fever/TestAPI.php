@@ -351,4 +351,19 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             ["items&feed_ids=1,2,3,4&since_id=6", (clone $c)->subscriptions([1,2,3,4])->oldestArticle(7), false],
         ];
     }
+
+    public function testListItemIds() {
+        $saved = [['id' => 1],['id' => 2],['id' => 3]];
+        $unread = [['id' => 4],['id' => 5],['id' => 6]];
+        \Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->starred(true))->thenReturn(new Result($saved));
+        \Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->unread(true))->thenReturn(new Result($unread));
+        $exp = new JsonResponse([
+            'saved_item_ids' => "1,2,3"
+        ]);
+        $this->assertMessage($exp, $this->req("api&saved_item_ids"));
+        $exp = new JsonResponse([
+            'unread_item_ids' => "4,5,6"
+        ]);
+        $this->assertMessage($exp, $this->req("api&unread_item_ids"));
+    }
 }
