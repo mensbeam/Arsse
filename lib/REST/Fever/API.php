@@ -21,6 +21,7 @@ use JKingWeb\Arsse\REST\Exception405;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\Response\JsonResponse;
+use Zend\Diactoros\Response\XmlResponse;
 use Zend\Diactoros\Response\EmptyResponse;
 
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
@@ -161,10 +162,45 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function formatResponse(array $data, bool $xml): ResponseInterface {
         if ($xml) {
-            throw \Exception("Not implemented yet");
+            $d = new \DOMDocument("1.0", "utf-8");
+            $d->appendChild($this->makeXMLAssoc($data, $d->createElement("response")));
+            return new XmlResponse($d->saveXML());
         } else {
             return new JsonResponse($data, 200, [], \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
         }
+    }
+
+    protected function makeXMLAssoc(array $data, \DOMElement $p): \DOMElement {
+        $d = $p->ownerDocument;
+        foreach ($data as $k => $v) {
+            if (!is_array($v)) {
+                $p->appendChild($d->createElement($k, $v));
+            } elseif (isset($v[0])) {
+                // this is a very simplistic check for an indexed array
+                // it would not pass muster in the face of generic data,
+                // but we'll assume our code produces only well-ordered 
+                // indexed arrays
+                $p->appendChild($this->makeXMLIndexed($v, $d->createElement($k), substr($k, 0, strlen($k) - 1)));
+            } else {
+                $p->appendChild($this->makeXMLAssoc($v, $d->createElement($k)));
+            }
+        }
+        return $p;
+    }
+
+    protected function makeXMLIndexed(array $data, \DOMElement $p, string $k): \DOMElement {
+        $d = $p->ownerDocument;
+        foreach ($data as $v) {
+            if (!is_array($v)) {
+                $p->appendChild($d->createElement($k, $v));
+            } elseif (isset($v[0])) {
+                $p->appendChild($this->makeXMLIndexed($v, $d->createElement($k), substr($k, 0, strlen($k) - 1)));
+            } else {
+                $p->appendChild($this->makeXMLAssoc($v, $d->createElement($k)));
+            }
+        }
+        return $p;
+
     }
 
     protected function logIn(string $hash): bool {
