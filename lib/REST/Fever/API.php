@@ -119,6 +119,18 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function processRequest(array $out, array $G, array $P): array {
+        $listUnread = false;
+        $listSaved = false;
+        if ($P['unread_recently_read']) {
+            $this->setUnread();
+            $listUnread = true;
+        }
+        if ($P['mark']) {
+            // depending on which mark are being made,
+            // either an 'unread_item_ids' or a
+            // 'saved_item_ids' entry will be added later
+            $listSaved = $this->setMarks($P, $listUnread);
+        }
         if ($G['feeds'] || $G['groups']) {
             if ($G['groups']) {
                 $out['groups'] = $this->getGroups();
@@ -139,10 +151,10 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             // TODO: implement hot links
             $out['links'] = [];
         }
-        if ($G['unread_item_ids']) {
+        if ($G['unread_item_ids'] || $listUnread) {
             $out['unread_item_ids'] = $this->getItemIds((new Context)->unread(true));
         }
-        if ($G['saved_item_ids']) {
+        if ($G['saved_item_ids'] || $listSaved) {
             $out['saved_item_ids'] = $this->getItemIds((new Context)->starred(true));
         }
         return $out;
@@ -217,6 +229,65 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         // set the user name
         Arsse::$user->id = $s['user'];
         return true;
+    }
+
+    protected function setMarks(array $P, &$listUnread): bool {
+        $listSaved = false;
+        $c = new Context;
+        $id = $P['id'];
+        if ($P['before']) {
+            $c->notMarkedSince($P['before']);
+        }
+        switch ($P['mark']) {
+            case "item":
+                $c->article($id);
+                break;
+            case "group":
+                if ($id > 0) {
+                    // group zero is the "Kindling" supergroup i.e. all feeds
+                    $c->tag($id);
+                } elseif ($id < 0) {
+                    // group negative-one is the "Sparks" supergroup i.e. no feeds
+                    $c->not->folder(0);
+                }
+                break;
+            case "feed":
+                $c->subscription($id);
+                break;
+            default:
+                return $listSaved;
+        }
+        switch ($P['as']) {
+            case "read":
+                $data = ['read' => true];
+                $listUnread = true;
+                break;
+            case "unread":
+                // this option is undocumented, but valid
+                $data = ['read' => false];
+                $listUnread = true;
+                break;
+            case "saved":
+                $data = ['starred' => true];
+                $listSaved = true;
+                break;
+            case "unsaved":
+                $data = ['starred' => false];
+                $listSaved = true;
+                break;
+            default:
+                return $listSaved;
+        }
+        try {
+            Arsse::$db->articleMark(Arsse::$user->id, $data, $c);
+        } catch (ExceptionInput $e) {
+            // ignore any errors
+        }
+        return $listSaved;
+    }
+
+    protected function setUnread() {
+        // stub
     }
 
     protected function getRefreshTime() {
