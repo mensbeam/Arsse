@@ -290,7 +290,19 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function setUnread() {
-        // stub
+        $lastUnread = Arsse::$db->articleList(Arsse::$user->id, (new Context)->limit(1), ["marked_date"], ["marked_date desc"])->getValue();
+        if (!$lastUnread) {
+            // there are no articles
+            return;
+        }
+        // Fever takes the date of the last read article less fifteen seconds as a cut-off.
+        // We take the date of last mark (whether it be read, unread, saved, unsaved), which
+        // not actually signify a mark, but we'll otherwise also count back fifteen seconds
+        $c = new Context;
+        $lastUnread = Date::normalize($lastUnread, "sql");
+        $since = Date::sub("DT15S", $lastUnread);
+        $c->unread(false)->markedSince($since);
+        Arsse::$db->articleMark(Arsse::$user->id, ['read' => false], $c); 
     }
 
     protected function getRefreshTime() {
