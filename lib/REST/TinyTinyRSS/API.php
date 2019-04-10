@@ -8,11 +8,9 @@ namespace JKingWeb\Arsse\REST\TinyTinyRSS;
 
 use JKingWeb\Arsse\Feed;
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Database;
-use JKingWeb\Arsse\User;
-use JKingWeb\Arsse\Service;
-use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Service;;
 use JKingWeb\Arsse\Context\Context;
+use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\ExceptionType;
@@ -23,7 +21,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\Response\JsonResponse as Response;
 use Zend\Diactoros\Response\EmptyResponse;
-use Robo\Task\Archive\Pack;
 
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     const LEVEL = 14;           // emulated API level
