@@ -467,4 +467,20 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $act = $this->h->dispatch($this->req("api"));
         $this->assertMessage($exp, $act);
     }
+
+    public function testUndoReadMarks() {
+        $unread = [['id' => 4],['id' => 5],['id' => 6]];
+        $out = ['unread_item_ids' => "4,5,6"];
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->limit(1), ["marked_date"], ["marked_date desc"])->thenReturn(new Result([['marked_date' => "2000-01-01 00:00:00"]]));
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->unread(true))->thenReturn(new Result($unread));
+        \Phake::when(Arsse::$db)->articleMark->thenReturn(0);
+        $exp = new JsonResponse($out);
+        $act = $this->h->dispatch($this->req("api", ['unread_recently_read' => 1]));
+        $this->assertMessage($exp, $act);
+        \Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, ['read' => false], (new Context)->unread(false)->markedSince("1999-12-31T23:59:45Z"));
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->limit(1), ["marked_date"], ["marked_date desc"])->thenReturn(new Result([]));
+        $act = $this->h->dispatch($this->req("api", ['unread_recently_read' => 1]));
+        $this->assertMessage($exp, $act);
+        \Phake::verify(Arsse::$db)->articleMark; // only called one time, above
+    }
 }

@@ -302,7 +302,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         // may not actually signify a mark, but we'll otherwise also count back fifteen seconds
         $c = new Context;
         $lastUnread = Date::normalize($lastUnread, "sql");
-        $since = Date::sub("DT15S", $lastUnread);
+        $since = Date::sub("PT15S", $lastUnread);
         $c->unread(false)->markedSince($since);
         Arsse::$db->articleMark(Arsse::$user->id, ['read' => false], $c); 
     }
