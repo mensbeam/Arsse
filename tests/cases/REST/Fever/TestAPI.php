@@ -141,14 +141,15 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         return $value;
     }
 
-    protected function req($dataGet, $dataPost = "", string $method = "POST", string $type = null, string $url = "", string $user = null): ResponseInterface {
+    protected function req($dataGet, $dataPost = "", string $method = "POST", string $type = null, string $url = "", string $user = null): ServerRequest {
         $url = "/fever/".$url;
+        $type = $type ?? "application/x-www-form-urlencoded";
         $server = [
             'REQUEST_METHOD'    => $method,
             'REQUEST_URI'       => $url,
-            'HTTP_CONTENT_TYPE' => $type ?? "application/x-www-form-urlencoded",
+            'HTTP_CONTENT_TYPE' => $type,
         ];
-        $req = new ServerRequest($server, [], $url, $method, "php://memory");
+        $req = new ServerRequest($server, [], $url, $method, "php://memory", ['Content-Type' => $type]);
         if (!is_array($dataGet)) {
             parse_str($dataGet, $dataGet);
         }
@@ -166,7 +167,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
                 $req = $req->withAttribute("authenticationFailed", true);
             }
         }
-        return $this->h->dispatch($req);
+        return $req;
     }
 
     public function setUp() {
@@ -205,7 +206,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when($this->h)->processRequest->thenReturnCallback(function($out, $G, $P) {
             return $out;
         });
-        $act = $this->req($dataGet, $dataPost, "POST", null, "", $httpUser);
+        $act = $this->h->dispatch($this->req($dataGet, $dataPost, "POST", null, "", $httpUser));
         $this->assertMessage($exp, $act);
     }
 
@@ -284,7 +285,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
                 ['group_id' => 2, 'feed_ids' => "1,3"],
             ],
         ]);
-        $act = $this->req("api&groups");
+        $act = $this->h->dispatch($this->req("api&groups"));
         $this->assertMessage($exp, $act);
     }
 
@@ -311,7 +312,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
                 ['group_id' => 2, 'feed_ids' => "1,3"],
             ],
         ]);
-        $act = $this->req("api&feeds");
+        $act = $this->h->dispatch($this->req("api&feeds"));
         $this->assertMessage($exp, $act);
     }       
 
@@ -325,7 +326,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             'items' => $this->articles['rest'],
             'total_items' => 1024,
         ]);
-        $act = $this->req("api&$url");
+        $act = $this->h->dispatch($this->req("api&$url"));
         $this->assertMessage($exp, $act);
         \Phake::verify(Arsse::$db)->articleList($this->anything(), $c, $fields, $order);
     }
@@ -354,11 +355,11 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $exp = new JsonResponse([
             'saved_item_ids' => "1,2,3"
         ]);
-        $this->assertMessage($exp, $this->req("api&saved_item_ids"));
+        $this->assertMessage($exp, $this->h->dispatch($this->req("api&saved_item_ids")));
         $exp = new JsonResponse([
             'unread_item_ids' => "4,5,6"
         ]);
-        $this->assertMessage($exp, $this->req("api&unread_item_ids"));
+        $this->assertMessage($exp, $this->h->dispatch($this->req("api&unread_item_ids")));
     }
 
     public function testListHotLinks() {
@@ -366,7 +367,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $exp = new JsonResponse([
             'links' => []
         ]);
-        $this->assertMessage($exp, $this->req("api&links"));
+        $this->assertMessage($exp, $this->h->dispatch($this->req("api&links")));
     }
 
     /** @dataProvider provideMarkingContexts */
@@ -378,7 +379,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$db)->articleMark->thenReturn(0);
         \Phake::when(Arsse::$db)->articleMark($this->anything(), $this->anything(), (new Context)->article(2112))->thenThrow(new \JKingWeb\Arsse\Db\ExceptionInput("subjectMissing"));
         $exp = new JsonResponse($out);
-        $act = $this->req("api", $post);
+        $act = $this->h->dispatch($this->req("api", $post));
         $this->assertMessage($exp, $act);
         if ($c && $data) {
             \Phake::verify(Arsse::$db)->articleMark($this->anything(), $data, $c);
@@ -422,6 +423,19 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             ["mark=item&as=unread", new Context, [], []],
             ["mark=item&id=6", new Context, [], []],
             ["as=unread&id=6", new Context, [], []],
+        ];
+    }
+
+    /** @dataProvider provideInvalidRequests */
+    public function testSendInvalidRequests(ServerRequest $req, ResponseInterface $exp) {
+        $this->assertMessage($exp, $this->h->dispatch($req));
+    }
+
+    public function provideInvalidRequests() {
+        return [
+            'Not an API request' => [$this->req(""), new EmptyResponse(404)],
+            'Wrong method'       => [$this->req("api", "", "GET"), new EmptyResponse(405, ['Allow' => "OPTIONS,POST"])],
+            'Wrong content type' => [$this->req("api", "", "POST", "application/json"), new EmptyResponse(415, ['Accept' => "application/x-www-form-urlencoded"])],
         ];
     }
 }
