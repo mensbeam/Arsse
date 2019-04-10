@@ -18,6 +18,7 @@ use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\ServerRequest;
 use Zend\Diactoros\Response\JsonResponse;
 use Zend\Diactoros\Response\EmptyResponse;
+use PHPUnit\Util\Json;
 
 /** @covers \JKingWeb\Arsse\REST\Fever\API<extended> */
 class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -321,14 +322,14 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $fields = ["id", "subscription", "title", "author", "content", "url", "starred", "unread", "published_date"];
         $order = [$desc ? "id desc" : "id"];
         \Phake::when(Arsse::$db)->articleList->thenReturn(new Result($this->articles['db']));
-        \Phake::when(Arsse::$db)->articleCount($this->anything())->thenReturn(1024);
+        \Phake::when(Arsse::$db)->articleCount(Arsse::$user->id)->thenReturn(1024);
         $exp = new JsonResponse([
             'items' => $this->articles['rest'],
             'total_items' => 1024,
         ]);
         $act = $this->h->dispatch($this->req("api&$url"));
         $this->assertMessage($exp, $act);
-        \Phake::verify(Arsse::$db)->articleList($this->anything(), $c, $fields, $order);
+        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, $c, $fields, $order);
     }
 
     public function provideItemListContexts() {
@@ -350,8 +351,8 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testListItemIds() {
         $saved = [['id' => 1],['id' => 2],['id' => 3]];
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->starred(true))->thenReturn(new Result($saved));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->unread(true))->thenReturn(new Result($unread));
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true))->thenReturn(new Result($saved));
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->unread(true))->thenReturn(new Result($unread));
         $exp = new JsonResponse([
             'saved_item_ids' => "1,2,3"
         ]);
@@ -374,15 +375,15 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testSetMarks(string $post, Context $c, array $data, array $out) {
         $saved = [['id' => 1],['id' => 2],['id' => 3]];
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->starred(true))->thenReturn(new Result($saved));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->unread(true))->thenReturn(new Result($unread));
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true))->thenReturn(new Result($saved));
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->unread(true))->thenReturn(new Result($unread));
         \Phake::when(Arsse::$db)->articleMark->thenReturn(0);
-        \Phake::when(Arsse::$db)->articleMark($this->anything(), $this->anything(), (new Context)->article(2112))->thenThrow(new \JKingWeb\Arsse\Db\ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->article(2112))->thenThrow(new \JKingWeb\Arsse\Db\ExceptionInput("subjectMissing"));
         $exp = new JsonResponse($out);
         $act = $this->h->dispatch($this->req("api", $post));
         $this->assertMessage($exp, $act);
         if ($c && $data) {
-            \Phake::verify(Arsse::$db)->articleMark($this->anything(), $data, $c);
+            \Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $data, $c);
         } else {
             \Phake::verify(Arsse::$db, \Phake::times(0))->articleMark;
         }
@@ -419,7 +420,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             ["mark=group&as=unread&id=-1", (new Context)->not->folder(0), $markUnread, $listUnread],
             ["mark=group&as=saved&id=-1", (new Context)->not->folder(0), $markSaved, $listSaved],
             ["mark=group&as=unsaved&id=-1", (new Context)->not->folder(0), $markUnsaved, $listSaved],
-            ["mark=group&as=read&id=-1&before=946684800", (new Context)->not->folder(0)->notMarkedSince("2000-01-01T00:00:00"), $markRead, $listUnread],
+            ["mark=group&as=read&id=-1&before=946684800", (new Context)->not->folder(0)->notMarkedSince("2000-01-01T00:00:00Z"), $markRead, $listUnread],
             ["mark=item&as=unread", new Context, [], []],
             ["mark=item&id=6", new Context, [], []],
             ["as=unread&id=6", new Context, [], []],
@@ -437,5 +438,33 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             'Wrong method'       => [$this->req("api", "", "GET"), new EmptyResponse(405, ['Allow' => "OPTIONS,POST"])],
             'Wrong content type' => [$this->req("api", "", "POST", "application/json"), new EmptyResponse(415, ['Accept' => "application/x-www-form-urlencoded"])],
         ];
+    }
+
+    public function testMakeABaseQuery() {
+        $this->h = \Phake::partialMock(API::class);
+        \Phake::when($this->h)->logIn->thenReturn(true);
+        \Phake::when(Arsse::$db)->subscriptionRefreshed(Arsse::$user->id)->thenReturn(new \DateTimeImmutable("2000-01-01T00:00:00Z"));
+        $exp = new JsonResponse([
+            'api_version' => API::LEVEL,
+            'auth' => 1,
+            'last_refreshed_on_time' => 946684800,
+        ]);
+        $act = $this->h->dispatch($this->req("api"));
+        $this->assertMessage($exp, $act);
+        \Phake::when(Arsse::$db)->subscriptionRefreshed(Arsse::$user->id)->thenReturn(null); // no subscriptions
+        $exp = new JsonResponse([
+            'api_version' => API::LEVEL,
+            'auth' => 1,
+            'last_refreshed_on_time' => null,
+        ]);
+        $act = $this->h->dispatch($this->req("api"));
+        $this->assertMessage($exp, $act);
+        \Phake::when($this->h)->logIn->thenReturn(false);
+        $exp = new JsonResponse([
+            'api_version' => API::LEVEL,
+            'auth' => 0,
+        ]);
+        $act = $this->h->dispatch($this->req("api"));
+        $this->assertMessage($exp, $act);
     }
 }
