@@ -125,7 +125,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             $this->setUnread();
             $listUnread = true;
         }
-        if ($P['mark']) {
+        if ($P['mark'] && $P['as'] && is_int($P['id'])) {
             // depending on which mark are being made,
             // either an 'unread_item_ids' or a
             // 'saved_item_ids' entry will be added later
@@ -244,11 +244,14 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 break;
             case "group":
                 if ($id > 0) {
-                    // group zero is the "Kindling" supergroup i.e. all feeds
+                    // concrete groups
                     $c->tag($id);
                 } elseif ($id < 0) {
                     // group negative-one is the "Sparks" supergroup i.e. no feeds
                     $c->not->folder(0);
+                } else {
+                    // group zero is the "Kindling" supergroup i.e. all feeds
+                    // nothing need to be done for this
                 }
                 break;
             case "feed":

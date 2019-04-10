@@ -7,16 +7,11 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\REST\Fever;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
-use JKingWeb\Arsse\Service;
-use JKingWeb\Arsse\REST\Request;
 use JKingWeb\Arsse\Test\Result;
-use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Db\ExceptionInput;
-use JKingWeb\Arsse\User\Exception as UserException;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\Fever\API;
 use Psr\Http\Message\ResponseInterface;
@@ -161,9 +156,8 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         if (is_array($dataPost)) {
             $req = $req->withParsedBody($dataPost);
         } else {
-            $body = $req->getBody();
-            $body->write($dataPost);
-            $req = $req->withBody($body);
+            parse_str($dataPost, $arr);
+            $req = $req->withParsedBody($arr);
         }
         if (isset($user)) {
             if (strlen($user)) {
@@ -319,7 +313,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         ]);
         $act = $this->req("api&feeds");
         $this->assertMessage($exp, $act);
-    }
+    }       
 
     /** @dataProvider provideItemListContexts */
     public function testListItems(string $url, Context $c, bool $desc) {
@@ -373,5 +367,61 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             'links' => []
         ]);
         $this->assertMessage($exp, $this->req("api&links"));
+    }
+
+    /** @dataProvider provideMarkingContexts */
+    public function testSetMarks(string $post, Context $c, array $data, array $out) {
+        $saved = [['id' => 1],['id' => 2],['id' => 3]];
+        $unread = [['id' => 4],['id' => 5],['id' => 6]];
+        \Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->starred(true))->thenReturn(new Result($saved));
+        \Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->unread(true))->thenReturn(new Result($unread));
+        \Phake::when(Arsse::$db)->articleMark->thenReturn(0);
+        \Phake::when(Arsse::$db)->articleMark($this->anything(), $this->anything(), (new Context)->article(2112))->thenThrow(new \JKingWeb\Arsse\Db\ExceptionInput("subjectMissing"));
+        $exp = new JsonResponse($out);
+        $act = $this->req("api", $post);
+        $this->assertMessage($exp, $act);
+        if ($c && $data) {
+            \Phake::verify(Arsse::$db)->articleMark($this->anything(), $data, $c);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::times(0))->articleMark;
+        }
+    }
+
+    public function provideMarkingContexts() {
+        $markRead = ['read' => true];
+        $markUnread = ['read' => false];
+        $markSaved = ['starred' => true];
+        $markUnsaved = ['starred' => false];
+        $listSaved = ['saved_item_ids' => "1,2,3"];
+        $listUnread = ['unread_item_ids' => "4,5,6"];
+        return [
+            ["mark=item&as=read&id=5", (new Context)->article(5), $markRead, $listUnread],
+            ["mark=item&as=unread&id=42", (new Context)->article(42), $markUnread, $listUnread],
+            ["mark=item&as=read&id=2112", (new Context)->article(2112), $markRead, $listUnread], // article doesn't exist
+            ["mark=item&as=saved&id=5", (new Context)->article(5), $markSaved, $listSaved],
+            ["mark=item&as=unsaved&id=42", (new Context)->article(42), $markUnsaved, $listSaved],
+            ["mark=feed&as=read&id=5", (new Context)->subscription(5), $markRead, $listUnread],
+            ["mark=feed&as=unread&id=42", (new Context)->subscription(42), $markUnread, $listUnread],
+            ["mark=feed&as=saved&id=5", (new Context)->subscription(5), $markSaved, $listSaved],
+            ["mark=feed&as=unsaved&id=42", (new Context)->subscription(42), $markUnsaved, $listSaved],
+            ["mark=group&as=read&id=5", (new Context)->tag(5), $markRead, $listUnread],
+            ["mark=group&as=unread&id=42", (new Context)->tag(42), $markUnread, $listUnread],
+            ["mark=group&as=saved&id=5", (new Context)->tag(5), $markSaved, $listSaved],
+            ["mark=group&as=unsaved&id=42", (new Context)->tag(42), $markUnsaved, $listSaved],
+            ["mark=item&as=invalid&id=42", new Context, [], []],
+            ["mark=invalid&as=unread&id=42", new Context, [], []],
+            ["mark=group&as=read&id=0", (new Context), $markRead, $listUnread],
+            ["mark=group&as=unread&id=0", (new Context), $markUnread, $listUnread],
+            ["mark=group&as=saved&id=0", (new Context), $markSaved, $listSaved],
+            ["mark=group&as=unsaved&id=0", (new Context), $markUnsaved, $listSaved],
+            ["mark=group&as=read&id=-1", (new Context)->not->folder(0), $markRead, $listUnread],
+            ["mark=group&as=unread&id=-1", (new Context)->not->folder(0), $markUnread, $listUnread],
+            ["mark=group&as=saved&id=-1", (new Context)->not->folder(0), $markSaved, $listSaved],
+            ["mark=group&as=unsaved&id=-1", (new Context)->not->folder(0), $markUnsaved, $listSaved],
+            ["mark=group&as=read&id=-1&before=946684800", (new Context)->not->folder(0)->notMarkedSince("2000-01-01T00:00:00"), $markRead, $listUnread],
+            ["mark=item&as=unread", new Context, [], []],
+            ["mark=item&id=6", new Context, [], []],
+            ["as=unread&id=6", new Context, [], []],
+        ];
     }
 }
