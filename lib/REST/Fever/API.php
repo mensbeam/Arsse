@@ -63,8 +63,10 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         switch ($req->getMethod()) {
             case "OPTIONS":
-                // do stuff
-                break;
+                return new EmptyResponse(204, [
+                    'Allow' => "POST",
+                    'Accept' => "application/x-www-form-urlencoded",
+                ]);
             case "POST":
                 if (strlen($req->getHeaderLine("Content-Type")) && $req->getHeaderLine("Content-Type") !== "application/x-www-form-urlencoded") {
                     return new EmptyResponse(415, ['Accept' => "application/x-www-form-urlencoded"]);
@@ -297,7 +299,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // Fever takes the date of the last read article less fifteen seconds as a cut-off.
         // We take the date of last mark (whether it be read, unread, saved, unsaved), which
-        // not actually signify a mark, but we'll otherwise also count back fifteen seconds
+        // may not actually signify a mark, but we'll otherwise also count back fifteen seconds
         $c = new Context;
         $lastUnread = Date::normalize($lastUnread, "sql");
         $since = Date::sub("DT15S", $lastUnread);
