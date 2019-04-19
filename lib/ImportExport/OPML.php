@@ -10,6 +10,59 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User\Exception as UserException;
 
 class OPML {
+    public function import(string $user, string $opml, bool $flat = false, bool $replace = false): bool {
+        list($folders, $feeds) = $this->parse($opml, $flat);
+        return true;
+    }
+
+    protected function parse(string $opml, bool $flat): array {
+        $d = new \DOMDocument;
+        if (!@$d->loadXML($opml)) {
+            // not a valid XML document
+            throw new \Exception;
+        }
+        $body = $d->getElementsByTagName("body");
+        if ($d->documentElement->nodeName !== "opml" || !$body->length || $body->item(0)->parentNode != $d->documentElement) {
+            // not a valid OPML document
+            throw new \Exception;
+        }
+        $body = $body->item(0);
+        $folders = [];
+        $feeds = [];
+        $folderMap = new \SplObjectStorage;
+        $folderMap[$body] = sizeof($folderMap);
+        $node = $body->firstChild;
+        while ($node && $node != $body) {
+            if ($node->nodeType == \XML_ELEMENT_NODE && $node->nodeName === "outline") {
+                if ($node->getAttribute("type") === "rss") {
+                    $url = $node->getAttribute("xmlUrl");
+                    if (strlen($url)) {
+                        $title = $node->getAttribute("text");
+                        $folder = $folderMap[$node->parentNode] ?? 0;
+                        $categories = $node->getAttribute("category");
+                        if (strlen($categories)) {
+                            $categories = array_map(function($v) {
+                                return trim(preg_replace("/\s+/g", " ", $v));
+                            }, explode(",", $categories));
+                        }
+                        $feeds[] = ['url' => $url, 'title' => $title, 'folder' => $folder, 'categories' => $categories];
+                    }
+                    $node = $node->nextSibling ?: $node->parentNode;
+                } else {
+                    if (!$flat) {
+                        $id = sizeof($folderMap);
+                        $folderMap[$node] = $id;
+                        $folders[$id] = ['id' => $id, 'name' => $node->getAttribute("text"), 'parent' => $folderMap[$node->parentNode]];
+                    }
+                    $node = $node->hasChildNodes() ? $node->firstChild : ($node->nextSibling ?: $node->parentNode);
+                }
+            } else {
+                $node = $node->nextSibling ?: $node->parentNode;
+            }
+        }
+        return [$feeds, $folders];
+    }
+
     public function export(string $user, bool $flat = false): string {
         if (!Arsse::$user->exists($user)) {
             throw new UserException("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
