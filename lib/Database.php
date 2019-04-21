@@ -700,7 +700,7 @@ class Database {
      * @param string $url The URL of the newsfeed or discovery source
      * @param string $fetchUser The user name required to access the newsfeed, if applicable
      * @param string $fetchPassword The password required to fetch the newsfeed, if applicable; this will be stored in cleartext
-     * @param boolean $discovery Whether to perform newsfeed discovery if $url points to an HTML document
+     * @param boolean $discover Whether to perform newsfeed discovery if $url points to an HTML document
      */
     public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = "", bool $discover = true): int {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
