@@ -706,26 +706,8 @@ class Database {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
-        // check to see if the feed exists
-        $check = $this->db->prepare("SELECT id from arsse_feeds where url = ? and username = ? and password = ?", "str", "str", "str");
-        $feedID = $check->run($url, $fetchUser, $fetchPassword)->getValue();
-        if ($discover && is_null($feedID)) {
-            // if the feed doesn't exist, first perform discovery if requested and check for the existence of that URL
-            $url = Feed::discover($url, $fetchUser, $fetchPassword);
-            $feedID = $check->run($url, $fetchUser, $fetchPassword)->getValue();
-        }
-        if (is_null($feedID)) {
-            // if the feed still doesn't exist in the database, add it to the database; we do this unconditionally so as to lock SQLite databases for as little time as possible
-            $feedID = $this->db->prepare('INSERT INTO arsse_feeds(url,username,password) values(?,?,?)', 'str', 'str', 'str')->run($url, $fetchUser, $fetchPassword)->lastId();
-            try {
-                // perform an initial update on the newly added feed
-                $this->feedUpdate($feedID, true);
-            } catch (\Throwable $e) {
-                // if the update fails, delete the feed we just added
-                $this->db->prepare('DELETE from arsse_feeds where id = ?', 'int')->run($feedID);
-                throw $e;
-            }
-        }
+        // get the ID of the underlying feed, or add it if it's not yet in the database
+        $feedID = $this->feedAdd($url, $fetchUser, $fetchPassword, $discover);
         // Add the feed to the user's subscriptions and return the new subscription's ID.
         return $this->db->prepare('INSERT INTO arsse_subscriptions(owner,feed) values(?,?)', 'str', 'int')->run($user, $feedID)->lastId();
     }
@@ -981,6 +963,39 @@ class Database {
             throw new Db\ExceptionInput($subject ? "subjectMissing" : "idMissing", ["action" => $this->caller(), "field" => "subscription", 'id' => $id]);
         }
         return $out;
+    }
+
+    /** Adds a newsfeed to the database without adding any subscriptions, and returns the numeric identifier of the added feed
+     * 
+     * If the feed already exists in the database, the existing ID is returned
+     * 
+     * @param string $url The URL of the newsfeed or discovery source
+     * @param string $fetchUser The user name required to access the newsfeed, if applicable
+     * @param string $fetchPassword The password required to fetch the newsfeed, if applicable; this will be stored in cleartext
+     * @param boolean $discover Whether to perform newsfeed discovery if $url points to an HTML document
+     */
+    public function feedAdd(string $url, string $fetchUser = "", string $fetchPassword = "", bool $discover = true): int {
+        // check to see if the feed already exists
+        $check = $this->db->prepare("SELECT id from arsse_feeds where url = ? and username = ? and password = ?", "str", "str", "str");
+        $feedID = $check->run($url, $fetchUser, $fetchPassword)->getValue();
+        if ($discover && is_null($feedID)) {
+            // if the feed doesn't exist, first perform discovery if requested and check for the existence of that URL
+            $url = Feed::discover($url, $fetchUser, $fetchPassword);
+            $feedID = $check->run($url, $fetchUser, $fetchPassword)->getValue();
+        }
+        if (is_null($feedID)) {
+            // if the feed still doesn't exist in the database, add it to the database; we do this unconditionally so as to lock SQLite databases for as little time as possible
+            $feedID = $this->db->prepare('INSERT INTO arsse_feeds(url,username,password) values(?,?,?)', 'str', 'str', 'str')->run($url, $fetchUser, $fetchPassword)->lastId();
+            try {
+                // perform an initial update on the newly added feed
+                $this->feedUpdate($feedID, true);
+            } catch (\Throwable $e) {
+                // if the update fails, delete the feed we just added
+                $this->db->prepare('DELETE from arsse_feeds where id = ?', 'int')->run($feedID);
+                throw $e;
+            }
+        }
+        return (int) $feedID;
     }
 
     /** Returns an indexed array of numeric identifiers for newsfeeds which should be refreshed */
