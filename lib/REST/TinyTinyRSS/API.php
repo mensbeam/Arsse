@@ -1017,6 +1017,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $label = $this->labelIn($data['label_id']);
         $articles = explode(",", (string) $data['article_ids']);
         $assign = $data['assign'] ?? false;
+        $assign = $assign ? Database::ASSOC_ADD : Database::ASSOC_REMOVE;
         $out = 0;
         $in = array_chunk($articles, 50);
         for ($a = 0; $a < sizeof($in); $a++) {
@@ -1024,7 +1025,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             $c = new Context;
             $c->articles($in[$a]);
             try {
-                $out += Arsse::$db->labelArticlesSet(Arsse::$user->id, $label, $c, !$assign);
+                $out += Arsse::$db->labelArticlesSet(Arsse::$user->id, $label, $c, $assign);
             } catch (ExceptionInput $e) {
             }
         }

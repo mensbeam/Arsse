@@ -43,6 +43,12 @@ class Database {
     const LIMIT_SET_SIZE = 25;
     /** The length of a string in an embedded set beyond which a parameter placeholder will be used for the string */
     const LIMIT_SET_STRING_LENGTH = 200;
+    /** Makes tag/label association change operations remove members */
+    const ASSOC_REMOVE = 0;
+    /** Makes tag/label association change operations add members */
+    const ASSOC_ADD = 1;
+    /** Makes tag/label association change operations replace members */
+    const ASSOC_REPLACE = 2;
     /** A map database driver short-names and their associated class names */
     const DRIVER_NAMES = [
         'sqlite3'    => \JKingWeb\Arsse\Db\SQLite3\Driver::class,
@@ -1955,37 +1961,61 @@ class Database {
      * @param string $user The owner of the label
      * @param integer|string $id The numeric identifier or name of the label
      * @param Context $context The query context matching the desired articles
-     * @param boolean $remove Whether to remove (true) rather than add (true) an association with the articles matching the context
+     * @param int $mode Whether to add (ASSOC_ADD), remove (ASSOC_REMOVE), or replace with (ASSOC_REPLACE) the matching associations
      * @param boolean $byName Whether to interpret the $id parameter as the label's name (true) or identifier (false)
      */
-    public function labelArticlesSet(string $user, $id, Context $context = null, bool $remove = false, bool $byName = false): int {
+    public function labelArticlesSet(string $user, $id, Context $context, int $mode = self::ASSOC_ADD, bool $byName = false): int {
+        if (!in_array($mode, [self::ASSOC_ADD, self::ASSOC_REMOVE, self::ASSOC_REPLACE])) {
+            throw new Exception("constantUnknown", $mode); // @codeCoverageIgnore
+        }
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
-        // validate the label ID, and get the numeric ID if matching by name
+        // validate the tag ID, and get the numeric ID if matching by name
         $id = $this->labelValidateId($user, $id, $byName, true)['id'];
-        $context = $context ?? new Context;
-        // prepare either one or two queries
-        // first update any existing entries with the removal or re-addition of their association
-        $q1 = $this->articleQuery($user, $context);
-        $q1->pushCTE("target_articles");
-        $q1->setBody("UPDATE arsse_label_members set assigned = ?, modified = CURRENT_TIMESTAMP where label = ? and assigned <> ? and article in (select id from target_articles)", ["bool","int","bool"], [!$remove, $id, !$remove]);
-        $v1 = $q1->getValues();
-        $q1 = $this->db->prepare($q1->getQuery(), $q1->getTypes());
-        // next, if we're not removing, add any new entries that need to be added
-        if (!$remove) {
-            $q2 = $this->articleQuery($user, $context, ["id", "subscription"]);
-            $q2->pushCTE("target_articles");
-            $q2->setBody("SELECT ?,id,subscription from target_articles where id not in (select article from arsse_label_members where label = ?)", ["int", "int"], [$id, $id]);
-            $v2 = $q2->getValues();
-            $q2 = $this->db->prepare("INSERT INTO arsse_label_members(label,article,subscription) ".$q2->getQuery(), $q2->getTypes());
+        // get the list of articles matching the context
+        $articles = iterator_to_array($this->articleList($user, $context ?? new Context));
+        // an empty article list is a special case
+        if (!sizeof($articles)) {
+            if ($mode == self::ASSOC_REPLACE) {
+                // replacing with an empty set means setting everything to zero
+                return $this->db->prepare("UPDATE arsse_label_members set assigned = 0, modified = CURRENT_TIMESTAMP where label = ? and assigned = 1", "int")->run($id)->changes();
+            } else {
+                // adding or removing is a no-op
+                return 0;
+            }
+        } else {
+            $articles = array_column($articles, "id");
+        }
+        // prepare up to three queries: removing requires one, adding two, and replacing three
+        list($inClause, $inTypes, $inValues) = $this->generateIn($articles, "int");
+        $updateQ = "UPDATE arsse_label_members set assigned = ?, modified = CURRENT_TIMESTAMP where label = ? and assigned <> ? and article %in% ($inClause)";
+        $updateT = ["bool", "int", "bool", $inTypes];
+        $insertQ = "INSERT INTO arsse_label_members(label,article,subscription) SELECT ?,a.id,s.id from arsse_articles as a join arsse_subscriptions as s on a.feed = s.feed where s.owner = ? and a.id not in (select article from arsse_label_members where label = ?) and a.id in ($inClause)";
+        $insertT = ["int", "str", "int", $inTypes];
+        $clearQ = str_replace("%in%", "not in", $updateQ);
+        $clearT = $updateT;
+        $updateQ = str_replace("%in%", "in", $updateQ);
+        $qList = [];
+        switch ($mode) {
+            case self::ASSOC_REMOVE:
+                $qList[] = [$updateQ, $updateT, [false, $id, false, $inValues]]; // soft-delete any existing associations
+                break;
+            case self::ASSOC_ADD:
+                $qList[] = [$updateQ, $updateT, [true, $id, true, $inValues]]; // re-enable any previously soft-deleted association
+                $qList[] = [$insertQ, $insertT, [$id, $user, $id, $inValues]]; // insert any newly-required associations
+                break;
+            case self::ASSOC_REPLACE:
+                $qList[] = [$clearQ, $clearT, [false, $id, false, $inValues]]; // soft-delete any existing associations for articles not in the list
+                $qList[] = [$updateQ, $updateT, [true, $id, true, $inValues]]; // re-enable any previously soft-deleted association
+                $qList[] = [$insertQ, $insertT, [$id, $user, $id, $inValues]]; // insert any newly-required associations
+                break;
         }
         // execute them in a transaction
         $out = 0;
         $tr = $this->begin();
-        $out += $q1->run($v1)->changes();
-        if (!$remove) {
-            $out += $q2->run($v2)->changes();
+        foreach ($qList as list($q, $t, $v)) {
+            $out += $this->db->prepare($q, ...$t)->run(...$v)->changes();
         }
         $tr->commit();
         return $out;
@@ -2235,47 +2265,58 @@ class Database {
      * 
      * @param string $user The owner of the tag
      * @param integer|string $id The numeric identifier or name of the tag
-     * @param integer[] $context The query context matching the desired subscriptions
-     * @param boolean $remove Whether to remove (true) rather than add (true) an association with the subscriptions matching the context
+     * @param integer[] $subscriptions An array listing the desired subscriptions
+     * @param int $mode Whether to add (ASSOC_ADD), remove (ASSOC_REMOVE), or replace with (ASSOC_REPLACE) the listed associations
      * @param boolean $byName Whether to interpret the $id parameter as the tag's name (true) or identifier (false)
      */
-    public function tagSubscriptionsSet(string $user, $id, array $subscriptions, bool $remove = false, bool $byName = false): int {
+    public function tagSubscriptionsSet(string $user, $id, array $subscriptions, int $mode = self::ASSOC_ADD, bool $byName = false): int {
+        if (!in_array($mode, [self::ASSOC_ADD, self::ASSOC_REMOVE, self::ASSOC_REPLACE])) {
+            throw new Exception("constantUnknown", $mode); // @codeCoverageIgnore
+        }
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         // validate the tag ID, and get the numeric ID if matching by name
         $id = $this->tagValidateId($user, $id, $byName, true)['id'];
-        // prepare either one or two queries
+        // an empty subscription list is a special case
+        if (!sizeof($subscriptions)) {
+            if ($mode == self::ASSOC_REPLACE) {
+                // replacing with an empty set means setting everything to zero
+                return $this->db->prepare("UPDATE arsse_tag_members set assigned = 0, modified = CURRENT_TIMESTAMP where tag = ? and assigned = 1", "int")->run($id)->changes();
+            } else {
+                // adding or removing is a no-op
+                return 0;
+            }
+        }
+        // prepare up to three queries: removing requires one, adding two, and replacing three
         list($inClause, $inTypes, $inValues) = $this->generateIn($subscriptions, "int");
-        // first update any existing entries with the removal or re-addition of their association
-        $q1 = $this->db->prepare(
-            "UPDATE arsse_tag_members 
-            set assigned = ?, modified = CURRENT_TIMESTAMP 
-            where tag = ? and assigned <> ? and subscription in (select id from arsse_subscriptions where owner = ? and id in ($inClause))", 
-            "bool",
-            "int",
-            "bool",
-            "str",
-            $inTypes
-        );
-        $v1 = [!$remove, $id, !$remove, $user, $inValues];
-        // next, if we're not removing, add any new entries that need to be added
-        if (!$remove) {
-            $q2 = $this->db->prepare(
-                "INSERT INTO arsse_tag_members(tag,subscription) SELECT ?,id from arsse_subscriptions where id not in (select subscription from arsse_tag_members where tag = ?) and owner = ? and id in ($inClause)",
-                "int",
-                "int",
-                "str",
-                $inTypes
-            );
-            $v2 = [$id, $id, $user, $inValues];
+        $updateQ = "UPDATE arsse_tag_members set assigned = ?, modified = CURRENT_TIMESTAMP where tag = ? and assigned <> ? and subscription in (select id from arsse_subscriptions where owner = ? and id %in% ($inClause))";
+        $updateT = ["bool", "int", "bool", "str", $inTypes];
+        $insertQ = "INSERT INTO arsse_tag_members(tag,subscription) SELECT ?,id from arsse_subscriptions where id not in (select subscription from arsse_tag_members where tag = ?) and owner = ? and id in ($inClause)";
+        $insertT = ["int", "int", "str", $inTypes];
+        $clearQ = str_replace("%in%", "not in", $updateQ);
+        $clearT = $updateT;
+        $updateQ = str_replace("%in%", "in", $updateQ);
+        $qList = [];
+        switch ($mode) {
+            case self::ASSOC_REMOVE:
+                $qList[] = [$updateQ, $updateT, [0, $id, 0, $user, $inValues]]; // soft-delete any existing associations
+                break;
+            case self::ASSOC_ADD:
+                $qList[] = [$updateQ, $updateT, [1, $id, 1, $user, $inValues]]; // re-enable any previously soft-deleted association
+                $qList[] = [$insertQ, $insertT, [$id, $id, $user, $inValues]]; // insert any newly-required associations
+                break;
+            case self::ASSOC_REPLACE:
+                $qList[] = [$clearQ, $clearT, [0, $id, 0, $user, $inValues]]; // soft-delete any existing associations for subscriptions not in the list
+                $qList[] = [$updateQ, $updateT, [1, $id, 1, $user, $inValues]]; // re-enable any previously soft-deleted association
+                $qList[] = [$insertQ, $insertT, [$id, $id, $user, $inValues]]; // insert any newly-required associations
+                break;
         }
         // execute them in a transaction
         $out = 0;
         $tr = $this->begin();
-        $out += $q1->run($v1)->changes();
-        if (!$remove) {
-            $out += $q2->run($v2)->changes();
+        foreach ($qList as list($q, $t, $v)) {
+            $out += $this->db->prepare($q, ...$t)->run(...$v)->changes();
         }
         $tr->commit();
         return $out;

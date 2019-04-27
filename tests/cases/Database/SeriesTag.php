@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Database;
 
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Misc\Date;
 use Phake;
 
@@ -311,7 +312,7 @@ trait SeriesTag {
         Arsse::$db->tagPropertiesSet("john.doe@example.com", 1, ['name' => "Exciting"]);
     }
 
-    public function testListTagledSubscriptions() {
+    public function testListTaggedSubscriptions() {
         $exp = [1,5];
         $this->assertEquals($exp, Arsse::$db->tagSubscriptionsGet("john.doe@example.com", 1));
         $this->assertEquals($exp, Arsse::$db->tagSubscriptionsGet("john.doe@example.com", "Interesting", true));
@@ -323,17 +324,17 @@ trait SeriesTag {
         $this->assertEquals($exp, Arsse::$db->tagSubscriptionsGet("john.doe@example.com", "Lonely", true));
     }
 
-    public function testListTagledSubscriptionsForAMissingTag() {
+    public function testListTaggedSubscriptionsForAMissingTag() {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->tagSubscriptionsGet("john.doe@example.com", 3);
     }
 
-    public function testListTagledSubscriptionsForAnInvalidTag() {
+    public function testListTaggedSubscriptionsForAnInvalidTag() {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->tagSubscriptionsGet("john.doe@example.com", -1);
     }
 
-    public function testListTagledSubscriptionsWithoutAuthority() {
+    public function testListTaggedSubscriptionsWithoutAuthority() {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->tagSubscriptionsGet("john.doe@example.com", 1);
@@ -348,14 +349,14 @@ trait SeriesTag {
     }
 
     public function testClearATagFromSubscriptions() {
-        Arsse::$db->tagSubscriptionsSet("john.doe@example.com", 1, [1,3], true);
+        Arsse::$db->tagSubscriptionsSet("john.doe@example.com", 1, [1,3], Database::ASSOC_REMOVE);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $state['arsse_tag_members']['rows'][0][2] = 0;
         $this->compareExpectations($state);
     }
 
     public function testApplyATagToSubscriptionsByName() {
-        Arsse::$db->tagSubscriptionsSet("john.doe@example.com", "Interesting", [3,4], false, true);
+        Arsse::$db->tagSubscriptionsSet("john.doe@example.com", "Interesting", [3,4], Database::ASSOC_ADD, true);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $state['arsse_tag_members']['rows'][1][2] = 1;
         $state['arsse_tag_members']['rows'][] = [1,4,1];
@@ -363,9 +364,39 @@ trait SeriesTag {
     }
 
     public function testClearATagFromSubscriptionsByName() {
-        Arsse::$db->tagSubscriptionsSet("john.doe@example.com", "Interesting", [1,3], true, true);
+        Arsse::$db->tagSubscriptionsSet("john.doe@example.com", "Interesting", [1,3], Database::ASSOC_REMOVE, true);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $state['arsse_tag_members']['rows'][0][2] = 0;
+        $this->compareExpectations($state);
+    }
+
+    public function testApplyATagToNoSubscriptionsByName() {
+        Arsse::$db->tagSubscriptionsSet("john.doe@example.com", "Interesting", [], Database::ASSOC_ADD, true);
+        $state = $this->primeExpectations($this->data, $this->checkMembers);
+        $this->compareExpectations($state);
+    }
+
+    public function testClearATagFromNoSubscriptionsByName() {
+        Arsse::$db->tagSubscriptionsSet("john.doe@example.com", "Interesting", [], Database::ASSOC_REMOVE, true);
+        $state = $this->primeExpectations($this->data, $this->checkMembers);
+        $this->compareExpectations($state);
+    }
+
+    public function testReplaceSubscriptionsOfATag() {
+        Arsse::$db->tagSubscriptionsSet("john.doe@example.com", 1, [3,4], Database::ASSOC_REPLACE);
+        $state = $this->primeExpectations($this->data, $this->checkMembers);
+        $state['arsse_tag_members']['rows'][0][2] = 0;
+        $state['arsse_tag_members']['rows'][1][2] = 1;
+        $state['arsse_tag_members']['rows'][2][2] = 0;
+        $state['arsse_tag_members']['rows'][] = [1,4,1];
+        $this->compareExpectations($state);
+    }
+
+    public function testPurgeSubscriptionsOfATag() {
+        Arsse::$db->tagSubscriptionsSet("john.doe@example.com", 1, [], Database::ASSOC_REPLACE);
+        $state = $this->primeExpectations($this->data, $this->checkMembers);
+        $state['arsse_tag_members']['rows'][0][2] = 0;
+        $state['arsse_tag_members']['rows'][2][2] = 0;
         $this->compareExpectations($state);
     }
 
