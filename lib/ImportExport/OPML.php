@@ -7,12 +7,134 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\ImportExport;
 
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Database;
+use JKingWeb\Arsse\Db\ExceptionInput as InputException;
 use JKingWeb\Arsse\User\Exception as UserException;
 
 class OPML {
     public function import(string $user, string $opml, bool $flat = false, bool $replace = false): bool {
+        // first extract useful information from the input
         list($feeds, $folders) = $this->parse($opml, $flat);
-        
+        $folderMap = [];
+        foreach ($folders as $f) {
+            // check to make sure folder names are all valid
+            if (!strlen(trim($f['name']))) {
+                throw new \Exception;
+            }
+            // check for duplicates
+            if (!isset($folderMap[$f['parent']])) {
+                $folderMap[$f['parent']] = [];
+            }
+            if (isset($folderMap[$f['parent']][$f['name']])) {
+                throw new \Exception;
+            } else {
+                $folderMap[$f['parent']][$f['name']] = true;
+            }
+        }
+        // get feed IDs for each URL, adding feeds where necessary
+        foreach ($feeds as $k => $f) {
+            $feeds[$k]['id'] = Arsse::$db->feedAdd(($f['url']));
+        }
+        // start a transaction for atomic rollback
+        $tr = Arsse::$db->begin();
+        // get current state of database
+        $foldersDb = iterator_to_array(Arsse::$db->folderList(Arsse::$user->id));
+        $feedsDb =  iterator_to_array(Arsse::$db->subscriptionList(Arsse::$user->id));
+        $tagsDb = iterator_to_array(Arsse::$db->tagList(Arsse::$user->id));
+        // reconcile folders
+        $folderMap = [0 => 0];
+        foreach ($folders as $id => $f) {
+            $parent = $folderMap[$f['parent']];
+            // find a match for the import folder in the existing folders
+            foreach ($foldersDb as $db) {
+                if ((int) $db['parent'] == $parent && $db['name'] === $f['name']) {
+                    $folderMap[$id] = (int) $db['id'];
+                    break;
+                }
+            }
+            if (!isset($folderMap[$id])) {
+                // if no existing folder exists, add one
+                $folderMap[$id] = Arsse::$db->folderAdd(Arsse::$user->id, ['name' => $f['name'], 'parent' -> $parent]);
+            }
+        }
+        // process newsfeed subscriptions
+        $feedMap = [];
+        $tagMap = [];
+        foreach ($feeds as $f) {
+            $folder = $folderMap[$f['folder']];
+            $title = strlen(trim($f['title'])) ? $f['title'] : null;
+            $found = false;
+            // find a match for the import feed is existing subscriptions
+            foreach ($feedsDb as $db) {
+                if ((int) $db['feed'] == $f['id']) {
+                    $found = true;
+                    $feedMap[$f['id']] = (int) $db['id'];
+                    break; 
+                }
+            }
+            if (!$found) {
+                // if no subscription exists, add one
+                $feedMap[$f['id']] = Arsse::$db->subscriptionAdd(Arsse::$user->id, $f['url']);
+            }
+            if (!$found || $replace) {
+                // set the subscription's properties, if this is a new feed or we're doing a full replacement
+                Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, $feedMap[$f['id']], ['title' => $title, 'folder' => $folder]);
+                // compile the set of used tags, if this is a new feed or we're doing a full replacement
+                foreach ($f['tags'] as $t) {
+                    if (!strlen(trim($t))) {
+                        // ignore any blank tags
+                        continue;
+                    }
+                    if (!isset($tagMap[$t])) {
+                        // populate the tag map
+                        $tagMap[$t] = [];
+                    }
+                    $tagMap[$t][] = $f['id'];
+                }
+            }
+        }
+        // set tags
+        $mode = $replace ? Database::ASSOC_REPLACE : Database::ASSOC_ADD;
+        foreach ($tagMap as $tag => $subs) {
+            // make sure the tag exists
+            $found = false;
+            foreach ($tagsDb as $db) {
+                if ($tag === $db['name']) {
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                // add the tag if it wasn't found
+                Arsse::$db->tagAdd(Arsse::$user->id, ['name' => $tag]);
+            }
+            Arsse::$db->tagSubscriptionsSet(Arsse::$user->id, $tag, $subs, $mode, true);
+        }
+        // finally, if we're performing a replacement, delete any subscriptions, folders, or tags which were not present in the import
+        if ($replace) {
+            foreach (array_diff(array_column($feedsDb, "id"), $feedMap) as $id) {
+                try {
+                    Arsse::$db->subscriptionRemove(Arsse::$user->id, $id);
+                } catch (InputException $e) {
+                    // ignore errors
+                }
+            }
+            foreach (array_diff(array_column($foldersDb, "id"), $folderMap) as $id) {
+                try {
+                    Arsse::$db->folderRemove(Arsse::$user->id, $id);
+                } catch (InputException $e) {
+                    // ignore errors
+                }
+            }
+            foreach (array_diff(array_column($tagsDb, "name"), array_keys($tagMap)) as $id) {
+                try {
+                    Arsse::$db->tagRemove(Arsse::$user->id, $id, true);
+                } catch (InputException $e) {
+                    // ignore errors
+                }
+            }
+        }
+        $tr->commit();
         return true;
     }
 
@@ -41,21 +163,18 @@ class OPML {
                 if ($node->getAttribute("type") === "rss") {
                     // feed nodes
                     $url = $node->getAttribute("xmlUrl");
-                    if (strlen($url)) {
-                        // only process the node if it has a URL
-                        $title = $node->getAttribute("text");
-                        $folder = $folderMap[$node->parentNode] ?? 0;
-                        $categories = $node->getAttribute("category");
-                        if (strlen($categories)) {
-                            // collapse and trim whitespace from category names, if any, splitting along commas
-                            $categories = array_map(function($v) {
-                                return trim(preg_replace("/\s+/g", " ", $v));
-                            }, explode(",", $categories));
-                        } else {
-                            $categories = [];
-                        }
-                        $feeds[] = ['url' => $url, 'title' => $title, 'folder' => $folder, 'categories' => $categories];
+                    $title = $node->getAttribute("text");
+                    $folder = $folderMap[$node->parentNode] ?? 0;
+                    $categories = $node->getAttribute("category");
+                    if (strlen($categories)) {
+                        // collapse and trim whitespace from category names, if any, splitting along commas
+                        $categories = array_map(function($v) {
+                            return trim(preg_replace("/\s+/g", " ", $v));
+                        }, explode(",", $categories));
+                    } else {
+                        $categories = [];
                     }
+                    $feeds[] = ['url' => $url, 'title' => $title, 'folder' => $folder, 'tags' => $categories];
                     // skip any child nodes of a feed outline-entry
                     $node = $node->nextSibling ?: $node->parentNode;
                 } else {
