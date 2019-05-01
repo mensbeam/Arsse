@@ -24,7 +24,10 @@ Usage:
     arsse.php user unset-pass <username>
         [--oldpass=<pass>] [--fever]
     arsse.php user auth <username> <password> [--fever]
-    arsse.php export <username> [<file>] [-f | --flat]
+    arsse.php export <username> [<file>] 
+        [-f | --flat]
+    arsse.php import <username> [<file>] 
+        [-f | --flat] [-r | --replace]
     arsse.php --version
     arsse.php --help | -h
 
@@ -70,7 +73,7 @@ USAGE_TEXT;
             'help' => false,
         ]);
         try {
-            $cmd = $this->command(["--help", "--version", "daemon", "feed refresh", "feed refresh-all", "conf save-defaults", "user", "export"], $args);
+            $cmd = $this->command(["--help", "--version", "daemon", "feed refresh", "feed refresh-all", "conf save-defaults", "user", "export", "import"], $args);
             if ($cmd && !in_array($cmd, ["--help", "--version", "conf save-defaults"])) {
                 // only certain commands don't require configuration to be loaded
                 $this->loadConf();
@@ -99,6 +102,10 @@ USAGE_TEXT;
                     $u = $args['<username>'];
                     $file = $this->resolveFile($args['<file>'], "w");
                     return (int) !$this->getInstance(OPML::class)->exportFile($file, $u, $args['--flat']);
+                case "import":
+                    $u = $args['<username>'];
+                    $file = $this->resolveFile($args['<file>'], "w");
+                    return (int) !$this->getInstance(OPML::class)->importFile($file, $u, $args['--flat'], $args['--replace']);
             }
         } catch (AbstractException $e) {
             $this->logError($e->getMessage());

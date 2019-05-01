@@ -19,14 +19,14 @@ class OPML {
         foreach ($folders as $f) {
             // check to make sure folder names are all valid
             if (!strlen(trim($f['name']))) {
-                throw new \Exception;
+                throw new Exception("invalidFolderName");
             }
             // check for duplicates
             if (!isset($folderMap[$f['parent']])) {
                 $folderMap[$f['parent']] = [];
             }
             if (isset($folderMap[$f['parent']][$f['name']])) {
-                throw new \Exception;
+                throw new Exception("invalidFolderCopy");
             } else {
                 $folderMap[$f['parent']][$f['name']] = true;
             }
@@ -142,12 +142,13 @@ class OPML {
         $d = new \DOMDocument;
         if (!@$d->loadXML($opml)) {
             // not a valid XML document
-            throw new \Exception;
+            $err = libxml_get_last_error();
+            throw new Exception("invalidSyntax", ['line' => $err->line, 'column' => $err->column]);
         }
         $body = $d->getElementsByTagName("body");
         if ($d->documentElement->nodeName !== "opml" || !$body->length || $body->item(0)->parentNode != $d->documentElement) {
             // not a valid OPML document
-            throw new \Exception;
+            throw new Exception("invalidSemantics", ['type' => "OPML"]);
         }
         $body = $body->item(0);
         $folders = [];
@@ -267,5 +268,15 @@ class OPML {
             throw new Exception($err, ['file' => $file, 'format' => str_replace(__NAMESPACE__."\\", "", __CLASS__)]);
         }
         return true;
+    }
+
+    public function imortFile(string $file, string $user, bool $flat = false, bool $replace): bool {
+        $data = @file_get_contents($file);
+        if ($data === false) {
+            // if it fails throw an exception
+            $err = file_exists($file) ? "fileUnreadable" : "fileMissing";
+            throw new Exception($err, ['file' => $file, 'format' => str_replace(__NAMESPACE__."\\", "", __CLASS__)]);
+        }
+        return $this->import($user, $data, $flat, $replace);
     }
 }

@@ -155,14 +155,12 @@ return [
     'Exception.JKingWeb/Arsse/Feed/Exception.xmlEntity'                    => 'Refused to parse feed "{url}" because it contains an XXE attack',
     'Exception.JKingWeb/Arsse/Feed/Exception.subscriptionNotFound'         => 'Unable to find a feed at location "{url}"',
     'Exception.JKingWeb/Arsse/Feed/Exception.unsupportedFeedFormat'        => 'Feed "{url}" is of an unsupported format',
-    'Exception.JKingWeb/Arsse/ImportExport/Exception.fileUncreatable'      => 
-        'Insufficient permissions to write {type, select,
-            OPML {OPML}
-            other {"{type}"}
-        } export to file "{file}"',
-    'Exception.JKingWeb/Arsse/ImportExport/Exception.fileUnwritable'       => 
-        'Insufficient permissions to write {type, select,
-            OPML {OPML}
-            other {"{type}"}
-        } export to existing file "{file}"',
+    'Exception.JKingWeb/Arsse/ImportExport/Exception.fileMissing'          => 'Import {type} file "{file}" does not exist',
+    'Exception.JKingWeb/Arsse/ImportExport/Exception.fileUnreadable'       => 'Insufficient permissions to read {type} file "{file}" for import',
+    'Exception.JKingWeb/Arsse/ImportExport/Exception.fileUncreatable'      => 'Insufficient permissions to write {type} export to file "{file}"',
+    'Exception.JKingWeb/Arsse/ImportExport/Exception.fileUnwritable'       => 'Insufficient permissions to write {type} export to existing file "{file}"',
+    'Exception.JKingWeb/Arsse/ImportExport/Exception.invalidSyntax'        => 'Input data syntax error at line {line}, column {column}',
+    'Exception.JKingWeb/Arsse/ImportExport/Exception.invalidSemantics'     => 'Input data is not valid {type} data',
+    'Exception.JKingWeb/Arsse/ImportExport/Exception.invalidFolderName'    => 'Input data contains an invalid folder name',
+    'Exception.JKingWeb/Arsse/ImportExport/Exception.invalidFolderCopy'    => 'Input data contains multiple folders of the same name under the same parent',
 ];
