@@ -14,9 +14,9 @@ use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 
 /** The high-level interface with the database
- * 
+ *
  * The database stores information on the following things:
- * 
+ *
  * - Users
  * - Subscriptions to feeds, which belong to users
  * - Folders, which belong to users and contain subscriptions
@@ -28,9 +28,9 @@ use JKingWeb\Arsse\Misc\ValueInfo;
  * - Sessions, used by some protocols to identify users across periods of time
  * - Tokens, similar to sessions, but with more control over their properties
  * - Metadata, used internally by the server
- * 
+ *
  * The various methods of this class perform operations on these things, with
- * each public method prefixed with the thing it concerns e.g. userRemove() 
+ * each public method prefixed with the thing it concerns e.g. userRemove()
  * deletes a user from the database, and labelArticlesSet() changes a label's
  * associations with articles. There has been an effort to keep public method
  * names consistent throughout, but protected methods, having different
@@ -60,7 +60,7 @@ class Database {
     public $db;
 
     /** Constructs the database interface
-     * 
+     *
      * @param boolean $initialize Whether to attempt to upgrade the databse schema when constructing
      */
     public function __construct($initialize = true) {
@@ -77,7 +77,7 @@ class Database {
         return debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3)[2]['function'];
     }
 
-    /** Lists the available database drivers, as an associative array with 
+    /** Lists the available database drivers, as an associative array with
      * fully-qualified class names as keys, and human-readable descriptions as values
      */
     public static function driverList(): array {
@@ -111,9 +111,9 @@ class Database {
     }
 
     /** Computes the column and value text of an SQL "SET" clause, validating arbitrary input against a whitelist
-     * 
+     *
      * Returns an indexed array containing the clause text, an array of types, and another array of values
-     * 
+     *
      * @param array $props An associative array containing untrusted data; keys are column names
      * @param array $valid An associative array containing a whitelist: keys are column names, and values are strings representing data types
      */
@@ -136,9 +136,9 @@ class Database {
     }
 
     /** Computes the contents of an SQL "IN()" clause, for each input value either embedding the value or producing a parameter placeholder
-     * 
+     *
      * Returns an indexed array containing the clause text, an array of types, and an array of values. Note that the array of output values may not match the array of input values
-     * 
+     *
      * @param array $values Arbitrary values
      * @param string $type A single data type applied to each value
      */
@@ -153,7 +153,7 @@ class Database {
             $params = [];
             $count = 0;
             $convType = Db\AbstractStatement::TYPE_NORM_MAP[Statement::TYPES[$type]];
-            foreach($values as $v) {
+            foreach ($values as $v) {
                 $v = ValueInfo::normalize($v, $convType, null, "sql");
                 if (is_null($v)) {
                     // nulls are pointless to have
@@ -182,11 +182,11 @@ class Database {
     }
 
     /** Computes basic LIKE-based text search constraints for use in a WHERE clause
-     * 
+     *
      * Returns an indexed array containing the clause text, an array of types, and another array of values
-     * 
+     *
      * The clause is structured such that all terms must be present across any of the columns
-     * 
+     *
      * @param string[] $terms The terms to search for
      * @param string[] $cols The columns to match against; these are -not- sanitized, so much -not- come directly from user input
      * @param boolean $matchAny Whether the search is successful when it matches any (true) or all (false) terms
@@ -200,7 +200,7 @@ class Database {
         $values = [];
         $like = $this->db->sqlToken("like");
         $embedSet = sizeof($terms) > ((int) (self::LIMIT_SET_SIZE / sizeof($cols)));
-        foreach($terms as $term) {
+        foreach ($terms as $term) {
             $embedTerm = ($embedSet && strlen($term) <= self::LIMIT_SET_STRING_LENGTH);
             $term = str_replace(["%", "_", "^"], ["^%", "^_", "^^"], $term);
             $term = "%$term%";
@@ -255,7 +255,7 @@ class Database {
     }
 
     /** Adds a user to the database
-     * 
+     *
      * @param string $user The user to add
      * @param string $passwordThe user's password in cleartext. It will be stored hashed
      */
@@ -304,7 +304,7 @@ class Database {
     }
 
     /** Sets the password of an existing user
-     * 
+     *
      * @param string $user The user for whom to set the password
      * @param string $password The new password, in cleartext. The password will be stored hashed. If null is passed, the password is unset and authentication not possible
      */
@@ -335,10 +335,10 @@ class Database {
     }
 
     /** Explicitly removes a session from the database
-     * 
-     * Sessions may also be invalidated as they expire, and then be automatically pruned. 
+     *
+     * Sessions may also be invalidated as they expire, and then be automatically pruned.
      * This function can be used to explicitly invalidate a session after a user logs out
-     * 
+     *
      * @param string $user The user who owns the session to be destroyed
      * @param string $id The identifier of the session to destroy
      */
@@ -352,7 +352,7 @@ class Database {
     }
 
     /** Resumes a session, returning available session data
-     * 
+     *
      * This also has the side effect of refreshing the session if it is near its timeout
      */
     public function sessionResume(string $id): array {
@@ -386,8 +386,8 @@ class Database {
         return (($now + $diff) >= $expiry->getTimestamp());
     }
 
-    /** Creates a new token for the given user in the given class 
-     * 
+    /** Creates a new token for the given user in the given class
+     *
      * @param string $user The user for whom to create the token
      * @param string $class The class of the token e.g. the protocol name
      * @param string|null $id The value of the token; if none is provided a UUID will be generated
@@ -409,7 +409,7 @@ class Database {
     }
 
     /** Revokes one or all tokens for a user in a class
-     * 
+     *
      * @param string $user The user who owns the token to be revoked
      * @param string $class The class of the token e.g. the protocol name
      * @param string|null $id The ID of a specific token, or null for all tokens in the class
@@ -442,14 +442,14 @@ class Database {
     }
 
     /** Adds a folder for containing newsfeed subscriptions, returning an integer identifying the created folder
-     * 
+     *
      * The $data array may contain the following keys:
-     * 
+     *
      * - "name": A folder name, which must be a non-empty string not composed solely of whitespace; this key is required
      * - "parent": An integer (or null) identifying a parent folder; this key is optional
-     * 
+     *
      * If a folder with the same name and parent already exists, this is an error
-     * 
+     *
      * @param string $user The user who will own the folder
      * @param array $data An associative array defining the folder
      */
@@ -468,15 +468,15 @@ class Database {
     }
 
     /** Returns a result set listing a user's folders
-     * 
+     *
      * Each record in the result set contains:
-     * 
+     *
      * - "id":       The folder identifier, an integer
      * - "name":     The folder's name, a string
      * - "parent":   The integer identifier of the folder's parent, or null
      * - "children": The number of child folders contained in the given folder
-     * - "feeds":    The number of newsfeed subscriptions contained in the given folder, not including subscriptions in descendent folders 
-     * 
+     * - "feeds":    The number of newsfeed subscriptions contained in the given folder, not including subscriptions in descendent folders
+     *
      * @param string $uer The user whose folders are to be listed
      * @param integer|null $parent Restricts the list to the descendents of the specified folder identifier
      * @param boolean $recursive Whether to list all descendents (true) or only direct children (false)
@@ -511,9 +511,9 @@ class Database {
     }
 
     /** Deletes a folder from the database
-     * 
+     *
      * Any descendent folders are also deleted, as are all newsfeed subscriptions contained in the deleted folder tree
-     * 
+     *
      * @param string $user The user to whom the folder to be deleted belongs
      * @param integer $id The identifier of the folder to delete
      */
@@ -547,14 +547,14 @@ class Database {
     }
 
     /** Modifies the properties of a folder
-     * 
+     *
      * The $data array must contain one or more of the following keys:
-     * 
+     *
      * - "name":   A new folder name, which must be a non-empty string not composed solely of whitespace
      * - "parent": An integer (or null) identifying a parent folder
-     * 
+     *
      * If a folder with the new name and parent combination already exists, this is an error; it is also an error to move a folder to itself or one of its descendents
-     * 
+     *
      * @param string $user The user who owns the folder to be modified
      * @param integer $id The identifier of the folder to be modified
      * @param array $data An associative array of properties to modify. Anything not specified will remain unchanged
@@ -596,9 +596,9 @@ class Database {
     }
 
     /** Ensures the specified folder exists and raises an exception otherwise
-     * 
-     * Returns an associative array containing the id, name, and parent of the folder if it exists 
-     * 
+     *
+     * Returns an associative array containing the id, name, and parent of the folder if it exists
+     *
      * @param string $user The user who owns the folder to be validated
      * @param integer|null $id The identifier of the folder to validate; null or zero represent the implied root folder
      * @param boolean $subject Whether the folder is the subject (true) rather than the object (false) of the operation being performed; this only affects the semantics of the error message if validation fails
@@ -674,7 +674,7 @@ class Database {
     }
 
     /** Ensures a prospective folder name is valid, and optionally ensure it is not a duplicate if renamed
-     * 
+     *
      * @param string $name The name to check
      * @param boolean $checkDuplicates Whether to also check if the new name would cause a collision
      * @param integer|null $parent The parent folder context in which to check for duplication
@@ -701,7 +701,7 @@ class Database {
     }
 
     /** Adds a subscription to a newsfeed, and returns the numeric identifier of the added subscription
-     * 
+     *
      * @param string $user The user which will own the subscription
      * @param string $url The URL of the newsfeed or discovery source
      * @param string $fetchUser The user name required to access the newsfeed, if applicable
@@ -719,7 +719,7 @@ class Database {
     }
 
     /** Lists a user's subscriptions, returning various data
-     * 
+     *
      * @param string $user The user whose subscriptions are to be listed
      * @param integer|null $folder The identifier of the folder under which to list subscriptions; by default the root folder is used
      * @param boolean $recursive Whether to list subscriptions of descendent folders as well as the selected folder
@@ -790,8 +790,8 @@ class Database {
     }
 
     /** Deletes a subscription from the database
-     * 
-     * This has the side effect of deleting all marks the user has set on articles 
+     *
+     * This has the side effect of deleting all marks the user has set on articles
      * belonging to the newsfeed, but may not delete the articles themselves, as
      * other users may also be subscribed to the same newsfeed. There is also a
      * configurable retention period for newsfeeds
@@ -811,7 +811,7 @@ class Database {
     }
 
     /** Retrieves data about a particular subscription, as an associative array with the following keys:
-     * 
+     *
      * - "id": The numeric identifier of the subscription
      * - "feed": The numeric identifier of the underlying newsfeed
      * - "url": The URL of the newsfeed, after discovery and HTTP redirects
@@ -843,14 +843,14 @@ class Database {
     }
 
     /** Modifies the properties of a subscription
-     * 
+     *
      * The $data array must contain one or more of the following keys:
-     * 
+     *
      * - "title": The title of the newsfeed
      * - "folder": The numeric identifier (or null) of the subscription's folder
      * - "pinned": Whether the subscription is pinned
      * - "order_type": Whether articles should be sorted in reverse cronological order (2), chronological order (1), or the default (0)
-     * 
+     *
      * @param string $user The user whose subscription is to be modified
      * @param integer $id the numeric identifier of the subscription to modfify
      * @param array $data An associative array of properties to modify; any keys not specified will be left unchanged
@@ -896,7 +896,7 @@ class Database {
     }
 
     /** Returns an indexed array listing the tags assigned to a subscription
-     * 
+     *
      * @param string $user The user whose tags are to be listed
      * @param integer $id The numeric identifier of the subscription whose tags are to be listed
      * @param boolean $byName Whether to return the tag names (true) instead of the numeric tag identifiers (false)
@@ -912,14 +912,14 @@ class Database {
     }
 
     /** Retrieves the URL of the icon for a subscription.
-     * 
+     *
      * Note that while the $user parameter is optional, it
-     * is NOT recommended to omit it, as this can lead to 
-     * leaks of private information. The parameter is only 
+     * is NOT recommended to omit it, as this can lead to
+     * leaks of private information. The parameter is only
      * optional because this is required for Tiny Tiny RSS,
      * the original implementation of which leaks private
      * information due to a design flaw.
-     * 
+     *
      * @param integer $id The numeric identifier of the subscription
      * @param string|null $user The user who owns the subscription being queried
      */
@@ -953,9 +953,9 @@ class Database {
     }
 
     /** Ensures the specified subscription exists and raises an exception otherwise
-     * 
+     *
      * Returns an associative array containing the id of the subscription and the id of the underlying newsfeed
-     * 
+     *
      * @param string $user The user who owns the subscription to be validated
      * @param integer $id The identifier of the subscription to validate
      * @param boolean $subject Whether the subscription is the subject (true) rather than the object (false) of the operation being performed; this only affects the semantics of the error message if validation fails
@@ -972,9 +972,9 @@ class Database {
     }
 
     /** Adds a newsfeed to the database without adding any subscriptions, and returns the numeric identifier of the added feed
-     * 
+     *
      * If the feed already exists in the database, the existing ID is returned
-     * 
+     *
      * @param string $url The URL of the newsfeed or discovery source
      * @param string $fetchUser The user name required to access the newsfeed, if applicable
      * @param string $fetchPassword The password required to fetch the newsfeed, if applicable; this will be stored in cleartext
@@ -1011,7 +1011,7 @@ class Database {
     }
 
     /** Attempts to refresh a newsfeed, returning an indication of success
-     * 
+     *
      * @param integer $feedID The numerical identifier of the newsfeed to refresh
      * @param boolean $throwError Whether to throw an exception on failure in addition to storing error information in the database
      */
@@ -1167,7 +1167,7 @@ class Database {
     }
 
     /** Deletes orphaned newsfeeds from the database
-     * 
+     *
      * Newsfeeds are orphaned if no users are subscribed to them. Deleting a newsfeed also deletes its articles
      */
     public function feedCleanup(): bool {
@@ -1188,14 +1188,14 @@ class Database {
     }
 
     /** Retrieves various identifiers for the latest $count articles in the given newsfeed. The identifiers are:
-     * 
+     *
      * - "id": The database record key for the article
      * - "guid": The (theoretically) unique identifier for the article
      * - "edited": The time at which the article was last edited, per the newsfeed
      * - "url_title_hash": A cryptographic hash of the article URL and its title
      * - "url_content_hash": A cryptographic hash of the article URL and its content
      * - "title_content_hash": A cryptographic hash of the article title and its content
-     * 
+     *
      * @param integer $feedID The numeric identifier of the feed
      * @param integer $count The number of records to return
      */
@@ -1208,14 +1208,14 @@ class Database {
     }
 
     /** Retrieves various identifiers for articles in the given newsfeed which match the input identifiers. The output identifiers are:
-     * 
+     *
      * - "id": The database record key for the article
      * - "guid": The (theoretically) unique identifier for the article
      * - "edited": The time at which the article was last edited, per the newsfeed
      * - "url_title_hash": A cryptographic hash of the article URL and its title
      * - "url_content_hash": A cryptographic hash of the article URL and its content
      * - "title_content_hash": A cryptographic hash of the article title and its content
-     * 
+     *
      * @param integer $feedID The numeric identifier of the feed
      * @param array $ids An array of GUIDs of articles
      * @param array $hashesUT An array of hashes of articles' URL and title
@@ -1240,9 +1240,9 @@ class Database {
     }
 
     /** Computes an SQL query to find and retrieve data about articles in the database
-     * 
+     *
      * If an empty column list is supplied, a count of articles matching the context is queried instead
-     * 
+     *
      * @param string $user The user whose articles are to be queried
      * @param Context $context The search context
      * @param array $cols The columns to request in the result set
@@ -1254,13 +1254,13 @@ class Database {
         }
         if ($context->folder()) {
             $this->folderValidateId($user, $context->folder);
-        } 
+        }
         if ($context->folderShallow()) {
             $this->folderValidateId($user, $context->folderShallow);
         }
         if ($context->edition()) {
             $this->articleValidateEdition($user, $context->edition);
-        } 
+        }
         if ($context->article()) {
             $this->articleValidateId($user, $context->article);
         }
@@ -1362,7 +1362,7 @@ class Database {
             } elseif ($pair && $context->$pair()) {
                 // option is paired with another which is also being used
                 if ($op === ">=") {
-                    $q->setWhere("{$colDefs[$col]} BETWEEN ? AND ?",  [$type, $type], [$context->$m, $context->$pair]);
+                    $q->setWhere("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], [$context->$m, $context->$pair]);
                 } else {
                     // option has already been paired
                     continue;
@@ -1386,7 +1386,7 @@ class Database {
             } elseif ($pair && $context->not->$pair()) {
                 // option is paired with another which is also being used
                 if ($op === ">=") {
-                    $q->setWhereNot("{$colDefs[$col]} BETWEEN ? AND ?",  [$type, $type], [$context->not->$m, $context->not->$pair]);
+                    $q->setWhereNot("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], [$context->not->$m, $context->not->$pair]);
                 } else {
                     // option has already been paired
                     continue;
@@ -1406,7 +1406,7 @@ class Database {
             $q->setWhere("coalesce(label_stats.assigned,0) $op 0");
         }
         if ($context->label() || $context->not->label() || $context->labelName() || $context->not->labelName()) {
-            $q->setCTE("labelled(article,label_id,label_name)","SELECT m.article, l.id, l.name from arsse_label_members as m join arsse_labels as l on l.id = m.label where l.owner = ? and m.assigned = 1", "str", $user);
+            $q->setCTE("labelled(article,label_id,label_name)", "SELECT m.article, l.id, l.name from arsse_label_members as m join arsse_labels as l on l.id = m.label where l.owner = ? and m.assigned = 1", "str", $user);
             if ($context->label()) {
                 $q->setWhere("arsse_articles.id in (select article from labelled where label_id = ?)", "int", $context->label);
             }
@@ -1421,7 +1421,7 @@ class Database {
             }
         }
         if ($context->tag() || $context->not->tag() || $context->tagName() || $context->not->tagName()) {
-            $q->setCTE("tagged(id,name,subscription)","SELECT arsse_tags.id, arsse_tags.name, arsse_tag_members.subscription FROM arsse_tag_members join arsse_tags on arsse_tags.id = arsse_tag_members.tag WHERE arsse_tags.owner = ? and assigned = 1", "str", $user);
+            $q->setCTE("tagged(id,name,subscription)", "SELECT arsse_tags.id, arsse_tags.name, arsse_tag_members.subscription FROM arsse_tag_members join arsse_tags on arsse_tags.id = arsse_tag_members.tag WHERE arsse_tags.owner = ? and assigned = 1", "str", $user);
             if ($context->tag()) {
                 $q->setWhere("arsse_subscriptions.id in (select subscription from tagged where id = ?)", "int", $context->tag);
             }
@@ -1474,9 +1474,9 @@ class Database {
     }
 
     /** Lists articles in the database which match a given query context
-     * 
+     *
      * If an empty column list is supplied, a count of articles is returned instead
-     * 
+     *
      * @param string $user The user whose articles are to be listed
      * @param Context $context The search context
      * @param array $cols The columns to return in the result set, any of: id, edition, url, title, author, content, guid, fingerprint, folder, subscription, feed, starred, unread, note, published_date, edited_date, modified_date, marked_date, subscription_title, media_url, media_type
@@ -1494,7 +1494,7 @@ class Database {
     }
 
     /** Returns a count of articles which match the given query context
-     * 
+     *
      * @param string $user The user whose articles are to be counted
      * @param Context $context The search context
      */
@@ -1508,13 +1508,13 @@ class Database {
     }
 
     /** Applies one or multiple modifications to all articles matching the given query context
-     * 
+     *
      * The $data array enumerates the modifications to perform and must contain one or more of the following keys:
-     * 
+     *
      * - "read":    Whether the article should be marked as read (true) or unread (false)
      * - "starred": Whether the article should (true) or should not (false) be marked as starred/favourite
      * - "note":    A string containing a freeform plain-text note for the article
-     * 
+     *
      * @param string $user The user who owns the articles to be modified
      * @param array $data An associative array of properties to modify. Anything not specified will remain unchanged
      * @param Context $context The query context to match articles against
@@ -1598,9 +1598,9 @@ class Database {
     }
 
     /** Returns statistics about the articles starred by the given user
-     * 
+     *
      * The associative array returned has the following keys:
-     * 
+     *
      * - "total":  The count of all starred articles
      * - "unread": The count of starred articles which are unread
      * - "read":   The count of starred articles which are read
@@ -1622,7 +1622,7 @@ class Database {
     }
 
     /** Returns an indexed array listing the labels assigned to an article
-     * 
+     *
      * @param string $user The user whose labels are to be listed
      * @param integer $id The numeric identifier of the article whose labels are to be listed
      * @param boolean $byName Whether to return the label names (true) instead of the numeric label identifiers (false)
@@ -1686,9 +1686,9 @@ class Database {
     }
 
     /** Ensures the specified article exists and raises an exception otherwise
-     * 
-     * Returns an associative array containing the id and latest edition of the article if it exists 
-     * 
+     *
+     * Returns an associative array containing the id and latest edition of the article if it exists
+     *
      * @param string $user The user who owns the article to be validated
      * @param integer $id The identifier of the article to validate
      */
@@ -1713,9 +1713,9 @@ class Database {
     }
 
     /** Ensures the specified article edition exists and raises an exception otherwise
-     * 
-     * Returns an associative array containing the edition id, article id, and latest edition of the edition if it exists 
-     * 
+     *
+     * Returns an associative array containing the edition id, article id, and latest edition of the edition if it exists
+     *
      * @param string $user The user who owns the edition to be validated
      * @param integer $id The identifier of the edition to validate
      */
@@ -1766,9 +1766,9 @@ class Database {
     }
 
     /** Creates a label, and returns its numeric identifier
-     * 
+     *
      * Labels are discrete objects in the database and can be associated with multiple articles; an article may in turn be associated with multiple labels
-     * 
+     *
      * @param string $user The user who will own the created label
      * @param array $data An associative array defining the label's properties; currently only "name" is understood
      */
@@ -1785,14 +1785,14 @@ class Database {
     }
 
     /** Lists a user's article labels
-     * 
+     *
      * The following keys are included in each record:
-     * 
+     *
      * - "id": The label's numeric identifier
      * - "name" The label's textual name
      * - "articles": The count of articles which have the label assigned to them
      * - "read": How many of the total articles assigned to the label are read
-     * 
+     *
      * @param string $user The user whose labels are to be listed
      * @param boolean $includeEmpty Whether to include (true) or supress (false) labels which have no articles assigned to them
      */
@@ -1829,9 +1829,9 @@ class Database {
     }
 
     /** Deletes a label from the database
-     * 
+     *
      * Any articles associated with the label remains untouched
-     * 
+     *
      * @param string $user The owner of the label to remove
      * @param integer|string $id The numeric identifier or name of the label
      * @param boolean $byName Whether to interpret the $id parameter as the label's name (true) or identifier (false)
@@ -1851,14 +1851,14 @@ class Database {
     }
 
     /** Retrieves the properties of a label
-     * 
+     *
      * The following keys are included in the output array:
-     * 
+     *
      * - "id": The label's numeric identifier
      * - "name" The label's textual name
      * - "articles": The count of articles which have the label assigned to them
      * - "read": How many of the total articles assigned to the label are read
-     * 
+     *
      * @param string $user The owner of the label to remove
      * @param integer|string $id The numeric identifier or name of the label
      * @param boolean $byName Whether to interpret the $id parameter as the label's name (true) or identifier (false)
@@ -1899,7 +1899,7 @@ class Database {
     }
 
     /** Sets the properties of a label
-     * 
+     *
      * @param string $user The owner of the label to query
      * @param integer|string $id The numeric identifier or name of the label
      * @param array $data An associative array defining the label's properties; currently only "name" is understood
@@ -1931,7 +1931,7 @@ class Database {
     }
 
     /** Returns an indexed array of article identifiers assigned to a label
-     * 
+     *
      * @param string $user The owner of the label to query
      * @param integer|string $id The numeric identifier or name of the label
      * @param boolean $byName Whether to interpret the $id parameter as the label's name (true) or identifier (false)
@@ -1957,7 +1957,7 @@ class Database {
     }
 
     /** Makes or breaks associations between a given label and articles matching the given query context
-     * 
+     *
      * @param string $user The owner of the label
      * @param integer|string $id The numeric identifier or name of the label
      * @param Context $context The query context matching the desired articles
@@ -2022,9 +2022,9 @@ class Database {
     }
 
     /** Ensures the specified label identifier or name is valid (and optionally whether it exists) and raises an exception otherwise
-     * 
-     * Returns an associative array containing the id, name of the label if it exists 
-     * 
+     *
+     * Returns an associative array containing the id, name of the label if it exists
+     *
      * @param string $user The user who owns the label to be validated
      * @param integer|string $id The numeric identifier or name of the label to validate
      * @param boolean $byName Whether to interpret the $id parameter as the label's name (true) or identifier (false)
@@ -2069,9 +2069,9 @@ class Database {
     }
 
     /** Creates a tag, and returns its numeric identifier
-     * 
+     *
      * Tags are discrete objects in the database and can be associated with multiple subscriptions; a subscription may in turn be associated with multiple tags
-     * 
+     *
      * @param string $user The user who will own the created tag
      * @param array $data An associative array defining the tag's properties; currently only "name" is understood
      */
@@ -2088,13 +2088,13 @@ class Database {
     }
 
     /** Lists a user's subscription tags
-     * 
+     *
      * The following keys are included in each record:
-     * 
+     *
      * - "id": The tag's numeric identifier
      * - "name" The tag's textual name
      * - "subscriptions": The count of subscriptions which have the tag assigned to them
-     * 
+     *
      * @param string $user The user whose tags are to be listed
      * @param boolean $includeEmpty Whether to include (true) or supress (false) tags which have no subscriptions assigned to them
      */
@@ -2119,14 +2119,14 @@ class Database {
     }
 
     /** Lists the associations between all tags and subscription
-     * 
+     *
      * The following keys are included in each record:
-     * 
+     *
      * - "tag_id": The tag's numeric identifier
      * - "tag_name" The tag's textual name
      * - "subscription_id": The numeric identifier of the associated subscription
      * - "subscription_name" The subscription's textual name
-     * 
+     *
      * @param string $user The user whose tags are to be listed
      */
     public function tagSummarize(string $user): Db\Result {
@@ -2147,9 +2147,9 @@ class Database {
     }
 
     /** Deletes a tag from the database
-     * 
+     *
      * Any subscriptions associated with the tag remains untouched
-     * 
+     *
      * @param string $user The owner of the tag to remove
      * @param integer|string $id The numeric identifier or name of the tag
      * @param boolean $byName Whether to interpret the $id parameter as the tag's name (true) or identifier (false)
@@ -2169,13 +2169,13 @@ class Database {
     }
 
     /** Retrieves the properties of a tag
-     * 
+     *
      * The following keys are included in the output array:
-     * 
+     *
      * - "id": The tag's numeric identifier
      * - "name" The tag's textual name
      * - "subscriptions": The count of subscriptions which have the tag assigned to them
-     * 
+     *
      * @param string $user The owner of the tag to remove
      * @param integer|string $id The numeric identifier or name of the tag
      * @param boolean $byName Whether to interpret the $id parameter as the tag's name (true) or identifier (false)
@@ -2204,7 +2204,7 @@ class Database {
     }
 
     /** Sets the properties of a tag
-     * 
+     *
      * @param string $user The owner of the tag to query
      * @param integer|string $id The numeric identifier or name of the tag
      * @param array $data An associative array defining the tag's properties; currently only "name" is understood
@@ -2236,7 +2236,7 @@ class Database {
     }
 
     /** Returns an indexed array of subscription identifiers assigned to a tag
-     * 
+     *
      * @param string $user The owner of the tag to query
      * @param integer|string $id The numeric identifier or name of the tag
      * @param boolean $byName Whether to interpret the $id parameter as the tag's name (true) or identifier (false)
@@ -2262,7 +2262,7 @@ class Database {
     }
 
     /** Makes or breaks associations between a given tag and specified subscriptions
-     * 
+     *
      * @param string $user The owner of the tag
      * @param integer|string $id The numeric identifier or name of the tag
      * @param integer[] $subscriptions An array listing the desired subscriptions
@@ -2323,9 +2323,9 @@ class Database {
     }
 
     /** Ensures the specified tag identifier or name is valid (and optionally whether it exists) and raises an exception otherwise
-     * 
-     * Returns an associative array containing the id, name of the tag if it exists 
-     * 
+     *
+     * Returns an associative array containing the id, name of the tag if it exists
+     *
      * @param string $user The user who owns the tag to be validated
      * @param integer|string $id The numeric identifier or name of the tag to validate
      * @param boolean $byName Whether to interpret the $id parameter as the tag's name (true) or identifier (false)

@@ -69,7 +69,7 @@ class OPML {
                 if ((int) $db['feed'] == $f['id']) {
                     $found = true;
                     $feedMap[$f['id']] = (int) $db['id'];
-                    break; 
+                    break;
                 }
             }
             if (!$found) {
@@ -138,7 +138,7 @@ class OPML {
         return true;
     }
 
-    protected function parse(string $opml, bool $flat): array {
+    public function parse(string $opml, bool $flat): array {
         $d = new \DOMDocument;
         if (!@$d->loadXML($opml)) {
             // not a valid XML document

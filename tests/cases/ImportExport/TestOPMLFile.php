@@ -10,7 +10,6 @@ use JKingWeb\Arsse\ImportExport\OPML;
 use JKingWeb\Arsse\ImportExport\Exception;
 use org\bovigo\vfs\vfsStream;
 
-
 /** @covers \JKingWeb\Arsse\ImportExport\OPML<extended> */
 class TestOPMLFile extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $vfs;

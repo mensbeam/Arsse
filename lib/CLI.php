@@ -136,6 +136,7 @@ USAGE_TEXT;
                 } else {
                     return $this->userAddOrSetPassword("passwordSet", $args["<username>"], $args["<password>"], $args["--oldpass"]);
                 }
+                // no break
             case "unset-pass":
                 if ($args['--fever']) {
                     $this->getInstance(Fever::class)->unregister($args["<username>"]);

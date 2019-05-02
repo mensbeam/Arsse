@@ -26,7 +26,6 @@ use Zend\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST\Fever\API<extended> */
 class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
-
     protected function v($value) {
         return $value;
     }

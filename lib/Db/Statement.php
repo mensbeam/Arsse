@@ -24,7 +24,7 @@ interface Statement {
         'str'              => self::T_STRING,
         'bool'             => self::T_BOOLEAN,
         'boolean'          => self::T_BOOLEAN,
-        'bit'              => self::T_BOOLEAN,        
+        'bit'              => self::T_BOOLEAN,
         'strict int'       => self::T_NOT_NULL + self::T_INTEGER,
         'strict integer'   => self::T_NOT_NULL + self::T_INTEGER,
         'strict float'     => self::T_NOT_NULL + self::T_FLOAT,
