@@ -9,6 +9,7 @@ namespace JKingWeb\Arsse\TestCase\ImportExport;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Test\Result;
 use JKingWeb\Arsse\ImportExport\OPML;
+use JKingWeb\Arsse\ImportExport\Exception;
 
 /** @covers \JKingWeb\Arsse\ImportExport\OPML<extended> */
 class TestOPML extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -103,5 +104,26 @@ OPML_EXPORT_SERIALIZATION;
         \Phake::when(Arsse::$user)->exists->thenReturn(false);
         $this->assertException("doesNotExist", "User");
         (new OPML)->export("john.doe@example.com");
+    }
+
+    /** @dataProvider provideParserData */
+    public function testParseOpmlForImport(string $file, bool $flat, $exp) {
+        $data = file_get_contents(\JKingWeb\Arsse\DOCROOT."Import/OPML/$file");
+        $parser = new OPML;
+        if ($exp instanceof \JKingWeb\Arsse\AbstractException) {
+            $this->assertException($exp);
+            $parser->parse($data, $flat);
+        } else {
+            $this->assertSame($exp, $parse->parse($data, $flat));
+        }
+    }
+
+    public function provideParserData() {
+        return [
+            ["BrokenXML.opml", false, new Exception("invalidSyntax")],
+            ["BrokenOPML.1.opml", false, new Exception("invalidSemantics")],
+            ["BrokenOPML.2.opml", false, new Exception("invalidSemantics")],
+            ["BrokenOPML.3.opml", false, new Exception("invalidSemantics")],
+        ];
     }
 }
