@@ -1,0 +1,9 @@
+<opml>
+    <head>
+        <body>
+            <outline text="I should be ignored!"/>
+        </body>
+    </head>
+    <body/>
+</opml>
+<!-- Only body in root counts -->

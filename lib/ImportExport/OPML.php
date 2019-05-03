@@ -145,8 +145,8 @@ class OPML {
             $err = libxml_get_last_error();
             throw new Exception("invalidSyntax", ['line' => $err->line, 'column' => $err->column]);
         }
-        $body = $d->getElementsByTagName("body");
-        if ($d->documentElement->nodeName !== "opml" || !$body->length || !$body->item(0)->parentNode->isSameNode($d->documentElement)) {
+        $body = (new \DOMXPath($d))->query("/opml/body");
+        if ($body->length != 1) {
             // not a valid OPML document
             throw new Exception("invalidSemantics", ['type' => "OPML"]);
         }

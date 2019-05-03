@@ -114,7 +114,7 @@ OPML_EXPORT_SERIALIZATION;
             $this->assertException($exp);
             $parser->parse($data, $flat);
         } else {
-            $this->assertSame($exp, $parse->parse($data, $flat));
+            $this->assertSame($exp, $parser->parse($data, $flat));
         }
     }
 
@@ -124,6 +124,10 @@ OPML_EXPORT_SERIALIZATION;
             ["BrokenOPML.1.opml", false, new Exception("invalidSemantics")],
             ["BrokenOPML.2.opml", false, new Exception("invalidSemantics")],
             ["BrokenOPML.3.opml", false, new Exception("invalidSemantics")],
+            ["BrokenOPML.4.opml", false, new Exception("invalidSemantics")],
+            ["Empty.1.opml", false, [[], []]],
+            ["Empty.2.opml", false, [[], []]],
+            ["Empty.3.opml", false, [[], []]],
         ];
     }
 }

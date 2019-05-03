@@ -1,0 +1,11 @@
+<opml>
+    <body>
+        <someOtherElement>
+            <outline text="I should be skipped over!"/>
+        </someOtherElement>
+        <body>
+            <outline text="I should be skipped over, too!"/>
+        </body>
+    </body>
+</opml>
+<!-- The descendents of elements other than <outline> are ignored -->
