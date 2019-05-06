@@ -128,6 +128,44 @@ OPML_EXPORT_SERIALIZATION;
             ["Empty.1.opml", false, [[], []]],
             ["Empty.2.opml", false, [[], []]],
             ["Empty.3.opml", false, [[], []]],
+            ["FeedsOnly.opml", false, [[
+                [
+                    'url' => "http://example.com/1",
+                    'title' => "Feed 1",
+                    'folder' => 0,
+                    'tags' => [],
+                ],
+                [
+                    'url' => "http://example.com/2",
+                    'title' => "",
+                    'folder' => 0,
+                    'tags' => [],
+                ],
+                [
+                    'url' => "http://example.com/3",
+                    'title' => "",
+                    'folder' => 0,
+                    'tags' => [],
+                ],
+                [
+                    'url' => "http://example.com/4",
+                    'title' => "",
+                    'folder' => 0,
+                    'tags' => [],
+                ],
+                [
+                    'url' => "",
+                    'title' => "",
+                    'folder' => 0,
+                    'tags' => ["whee"],
+                ],
+                [
+                    'url' => "",
+                    'title' => "",
+                    'folder' => 0,
+                    'tags' => ["whee", "whoo", ""],
+                ],
+            ], []]],
         ];
     }
 }

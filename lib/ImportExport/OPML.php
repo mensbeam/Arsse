@@ -158,7 +158,7 @@ class OPML {
         $folderMap[$body] = sizeof($folderMap);
         // iterate through each node in the body
         $node = $body->firstChild;
-        while ($node && $node != $body) {
+        while ($node && !$node->isSameNode($body)) {
             if ($node->nodeType == \XML_ELEMENT_NODE && $node->nodeName === "outline") {
                 // process any nodes which are outlines
                 if ($node->getAttribute("type") === "rss") {
@@ -170,7 +170,7 @@ class OPML {
                     if (strlen($categories)) {
                         // collapse and trim whitespace from category names, if any, splitting along commas
                         $categories = array_map(function($v) {
-                            return trim(preg_replace("/\s+/g", " ", $v));
+                            return trim(preg_replace("/\s+/", " ", $v));
                         }, explode(",", $categories));
                     } else {
                         $categories = [];
