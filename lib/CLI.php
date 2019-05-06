@@ -24,16 +24,111 @@ Usage:
     arsse.php user unset-pass <username>
         [--oldpass=<pass>] [--fever]
     arsse.php user auth <username> <password> [--fever]
+    arsse.php import <username> [<file>]
+        [-f | --flat] [-r | --replace]
     arsse.php export <username> [<file>] 
         [-f | --flat]
-    arsse.php import <username> [<file>] 
-        [-f | --flat] [-r | --replace]
     arsse.php --version
-    arsse.php --help | -h
+    arsse.php -h | --help
 
-The Arsse command-line interface currently allows you to start the refresh
-daemon, refresh all feeds or a specific feed by numeric ID, manage users,
-or save default configuration to a sample file.
+The Arsse command-line interface can be used to perform various administrative
+tasks such as starting the newsfeed refresh service, managing users, and 
+importing or exporting data.
+
+Commands:
+
+    daemon
+
+    Starts the newsfeed refreshing service, which will refresh stale feeds at
+    the configured interval automatically.
+
+    feed refresh-all
+
+    Refreshes any stale feeds once, then exits. This performs the same 
+    function as the daemon command without looping; this is useful if use of
+    a scheduler such a cron is preferred over a persitent service.
+
+    feed refresh <n>
+
+    Refreshes a single feed by numeric ID. This is principally for internal
+    use as the feed ID numbers are not usually exposed to the user.
+
+    conf save-defaults [<file>]
+
+    Prints default configuration parameters to standard output, or to <file>
+    if specified. Each parameter is annotated with a short description of its
+    purpose and usage.
+
+    user [list]
+
+    Prints a list of all existing users, one per line.
+
+    user add <username> [<password>]
+
+    Adds the user specified by <username>, with the provided password
+    <password>. If no password is specified, a random password will be
+    generated and printed to standard output.
+
+    user remove <username>
+
+    Removes the user specified by <username>. Data related to the user, 
+    including folders and subscriptions, are immediately deleted. Feeds to
+    which the user was subscribed will be retained and refreshed until the
+    configured retention time elapses.
+
+    user set-pass <username> [<password>]
+
+    Changes <username>'s password to <password>. If not password is
+    specified, a random password will be generated and printed to standard
+    output.
+
+    The --oldpass=<pass> option can be used to supply a user's exiting 
+    password if this is required by the authentication driver to change a
+    password. Currently this is not used by any existing driver.
+    
+    The --fever option sets a user's Fever protocol password instead of their
+    general password. As Fever requires that passwords be stored insecurely,
+    users do not have Fever passwords by default, and logging in to the Fever
+    protocol is disabled until a password is set. It is highly recommended
+    that a user's Fever password be different from their general password.
+
+    user unset-pass <username>
+
+    Unsets a user's password, effectively disabling their account. As with
+    password setting, the --oldpass and --fever options may be used.
+
+    user auth <username> <password>
+
+    Tests logging in as <username> with password <password>. This only checks
+    that the user's password is currectly recognized; it has no side effects.
+
+    The --fever option may be used to test the user's Fever protocol password,
+    if any.
+
+    import <username> [<file>]
+
+    Imports the feeds, folders, and tags found in the OPML formatted <file>
+    into the account of <username>. If no file is specified, data is instead
+    read from standard input.
+
+    The --replace option interprets the OPML file as the list of all desired 
+    feeds, folders and tags, performing any deletion or moving of existing 
+    entries which do not appear in the flle. If this option is not specified,
+    the file is assumed to list desired additions only.
+
+    The --flat option can be used to ignore any folder structures in the file,
+    importing any feeds only into the root folder.
+
+    export <username> [<file>]
+
+    Exports <username>'s feeds, folders, and tags to the OPML file specified
+    by <file>, or standard output if none is provided. Note that due to a 
+    limitation of the OPML format, any commas present in tag names will not be
+    retained in the export.
+
+    The --flat option can be used to omit folders from the export. Some OPML
+    implementations may not support folders, or arbitrary nesting; this option
+    may be used when planning to import into such software.
 USAGE_TEXT;
 
     protected function usage($prog): string {
@@ -73,12 +168,13 @@ USAGE_TEXT;
             'help' => false,
         ]);
         try {
-            $cmd = $this->command(["--help", "--version", "daemon", "feed refresh", "feed refresh-all", "conf save-defaults", "user", "export", "import"], $args);
-            if ($cmd && !in_array($cmd, ["--help", "--version", "conf save-defaults"])) {
+            $cmd = $this->command(["-h", "--help", "--version", "daemon", "feed refresh", "feed refresh-all", "conf save-defaults", "user", "export", "import"], $args);
+            if ($cmd && !in_array($cmd, ["-h", "--help", "--version", "conf save-defaults"])) {
                 // only certain commands don't require configuration to be loaded
                 $this->loadConf();
             }
             switch ($cmd) {
+                case "-h":
                 case "--help":
                     echo $this->usage($argv0).\PHP_EOL;
                     return 0;

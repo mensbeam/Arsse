@@ -63,6 +63,9 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             ["arsse.php --help", "arsse.php"],
             ["arsse     --help", "arsse"],
             ["thearsse  --help", "thearsse"],
+            ["arsse.php -h", "arsse.php"],
+            ["arsse     -h", "arsse"],
+            ["thearsse  -h", "thearsse"],
         ];
     }
 
