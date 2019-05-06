@@ -1,0 +1,12 @@
+<opml>
+    <body>
+        <outline text="Folder 1"/>
+        <outline text="Folder 2">
+            <outline type="atom" text="Also a folder"/>
+            <outline type=" rss " text="Still a folder">
+                <outline text="Folder 5"/>
+            </outline>
+        </outline>
+        <outline text="Folder 6"/>
+    </body>
+</opml>

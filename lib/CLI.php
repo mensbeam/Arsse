@@ -78,9 +78,8 @@ Commands:
 
     user set-pass <username> [<password>]
 
-    Changes <username>'s password to <password>. If not password is
-    specified, a random password will be generated and printed to standard
-    output.
+    Changes <username>'s password to <password>. If no password is specified,
+    a random password will be generated and printed to standard output.
 
     The --oldpass=<pass> option can be used to supply a user's exiting 
     password if this is required by the authentication driver to change a

@@ -151,6 +151,23 @@ class OPML {
             throw new Exception("invalidSemantics", ['type' => "OPML"]);
         }
         $body = $body->item(0);
+        // function to find the next node in the tree
+        $next = function(\DOMNode $node, bool $visitChildren = true) use ($body) {
+            if ($visitChildren && $node->hasChildNodes()) {
+                return $node->firstChild;
+            } elseif ($node->nextSibling) {
+                return $node->nextSibling;
+            } else {
+                while (!$node->nextSibling && !$node->isSameNode($body)) {
+                    $node = $node->parentNode;
+                }
+                if (!$node->isSameNode($body)) {
+                    return $node->nextSibling;
+                } else {
+                    return null;
+                }
+            }
+        };
         $folders = [];
         $feeds = [];
         // add the root folder to a map from folder DOM nodes to folder ID numbers
@@ -158,7 +175,7 @@ class OPML {
         $folderMap[$body] = sizeof($folderMap);
         // iterate through each node in the body
         $node = $body->firstChild;
-        while ($node && !$node->isSameNode($body)) {
+        while ($node) {
             if ($node->nodeType == \XML_ELEMENT_NODE && $node->nodeName === "outline") {
                 // process any nodes which are outlines
                 if ($node->getAttribute("type") === "rss") {
@@ -187,11 +204,11 @@ class OPML {
                         $folders[$id] = ['id' => $id, 'name' => $node->getAttribute("text"), 'parent' => $folderMap[$node->parentNode]];
                     }
                     // proceed to child nodes, if any
-                    $node = $node->hasChildNodes() ? $node->firstChild : ($node->nextSibling ?: $node->parentNode);
+                    $node = $next($node);
                 }
             } else {
                 // skip any node which is not an outline element; if the node has descendents they are skipped as well
-                $node = $node->nextSibling ?: $node->parentNode;
+                $node = $next($node, false);
             }
         }
         return [$feeds, $folders];

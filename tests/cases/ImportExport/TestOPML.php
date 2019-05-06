@@ -166,6 +166,39 @@ OPML_EXPORT_SERIALIZATION;
                     'tags' => ["whee", "whoo", ""],
                 ],
             ], []]],
+            ["FoldersOnly.opml", true, [[], []]],
+            ["FoldersOnly.opml", false, [[], [1 =>
+                [
+                    'id' => 1,
+                    'name' => "Folder 1",
+                    'parent' => 0,
+                ],
+                [
+                    'id' => 2,
+                    'name' => "Folder 2",
+                    'parent' => 0,
+                ],
+                [
+                    'id' => 3,
+                    'name' => "Also a folder",
+                    'parent' => 2,
+                ],
+                [
+                    'id' => 4,
+                    'name' => "Still a folder",
+                    'parent' => 2,
+                ],
+                [
+                    'id' => 5,
+                    'name' => "Folder 5",
+                    'parent' => 4,
+                ],
+                [
+                    'id' => 6,
+                    'name' => "Folder 6",
+                    'parent' => 0,
+                ],
+            ]]],
         ];
     }
 }
