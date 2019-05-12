@@ -21,16 +21,20 @@ class TestOPMLFile extends \JKingWeb\Arsse\Test\AbstractTest {
         // create a mock OPML processor with stubbed underlying import/export routines
         $this->opml = \Phake::partialMock(OPML::class);
         \Phake::when($this->opml)->export->thenReturn("OPML_FILE");
+        \Phake::when($this->opml)->import->thenReturn(true);
         $this->vfs = vfsStream::setup("root", null, [
             'exportGoodFile' => "",
             'exportGoodDir'  => [],
             'exportBadFile'  => "",
             'exportBadDir'   => [],
+            'importGoodFile' => "<opml/>",
+            'importBadFile'  => "",
         ]);
         $this->path = $this->vfs->url()."/";
         // make the "bad" entries inaccessible
         chmod($this->path."exportBadFile", 0000);
         chmod($this->path."exportBadDir", 0000);
+        chmod($this->path."importBadFile", 0000);
     }
 
     public function tearDown() {
@@ -76,6 +80,52 @@ class TestOPMLFile extends \JKingWeb\Arsse\Test\AbstractTest {
             ["exportBadDir/file",  "john.doe@example.com", false, $createException],
             ["exportBadDir/file",  "jane.doe@example.com", true,  $createException],
             ["exportBadDir/file",  "jane.doe@example.com", false, $createException],
+        ];
+    }
+
+    /** @dataProvider provideFileImports */
+    public function testImportFromOpmlFile(string $file, string $user, bool $flat, bool $replace, $exp) {
+        $path = $this->path.$file;
+        try {
+            if ($exp instanceof \JKingWeb\Arsse\AbstractException) {
+                $this->assertException($exp);
+                $this->opml->importFile($path, $user, $flat, $replace);
+            } else {
+                $this->assertSame($exp, $this->opml->importFile($path, $user, $flat, $replace));
+            }
+        } finally {
+            \Phake::verify($this->opml, \Phake::times((int) ($exp === true)))->import($user, "<opml/>", $flat, $replace);
+        }
+    }
+
+    public function provideFileImports() {
+        $missingException = new Exception("fileMissing");
+        $permissionException = new Exception("fileUnreadable");
+        return [
+            ["importGoodFile", "john.doe@example.com", true,  true,  true],
+            ["importBadFile",  "john.doe@example.com", true,  true,  $permissionException],
+            ["importNonFile",  "john.doe@example.com", true,  true,  $missingException],
+            ["importGoodFile", "john.doe@example.com", true,  false, true],
+            ["importBadFile",  "john.doe@example.com", true,  false, $permissionException],
+            ["importNonFile",  "john.doe@example.com", true,  false, $missingException],
+            ["importGoodFile", "john.doe@example.com", false, true,  true],
+            ["importBadFile",  "john.doe@example.com", false, true,  $permissionException],
+            ["importNonFile",  "john.doe@example.com", false, true,  $missingException],
+            ["importGoodFile", "john.doe@example.com", false, false, true],
+            ["importBadFile",  "john.doe@example.com", false, false, $permissionException],
+            ["importNonFile",  "john.doe@example.com", false, false, $missingException],
+            ["importGoodFile", "jane.doe@example.com", true,  true,  true],
+            ["importBadFile",  "jane.doe@example.com", true,  true,  $permissionException],
+            ["importNonFile",  "jane.doe@example.com", true,  true,  $missingException],
+            ["importGoodFile", "jane.doe@example.com", true,  false, true],
+            ["importBadFile",  "jane.doe@example.com", true,  false, $permissionException],
+            ["importNonFile",  "jane.doe@example.com", true,  false, $missingException],
+            ["importGoodFile", "jane.doe@example.com", false, true,  true],
+            ["importBadFile",  "jane.doe@example.com", false, true,  $permissionException],
+            ["importNonFile",  "jane.doe@example.com", false, true,  $missingException],
+            ["importGoodFile", "jane.doe@example.com", false, false, true],
+            ["importBadFile",  "jane.doe@example.com", false, false, $permissionException],
+            ["importNonFile",  "jane.doe@example.com", false, false, $missingException],
         ];
     }
 }
