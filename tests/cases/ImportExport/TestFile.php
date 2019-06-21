@@ -10,24 +10,24 @@ use JKingWeb\Arsse\ImportExport\OPML;
 use JKingWeb\Arsse\ImportExport\Exception;
 use org\bovigo\vfs\vfsStream;
 
-/** @covers \JKingWeb\Arsse\ImportExport\OPML<extended> */
-class TestOPMLFile extends \JKingWeb\Arsse\Test\AbstractTest {
+/** @covers \JKingWeb\Arsse\ImportExport\AbstractImportExport */
+class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $vfs;
     protected $path;
-    protected $opml;
+    protected $proc;
 
     public function setUp() {
         self::clearData();
         // create a mock OPML processor with stubbed underlying import/export routines
-        $this->opml = \Phake::partialMock(OPML::class);
-        \Phake::when($this->opml)->export->thenReturn("OPML_FILE");
-        \Phake::when($this->opml)->import->thenReturn(true);
+        $this->proc = \Phake::partialMock(OPML::class);
+        \Phake::when($this->proc)->export->thenReturn("EXPORT_FILE");
+        \Phake::when($this->proc)->import->thenReturn(true);
         $this->vfs = vfsStream::setup("root", null, [
             'exportGoodFile' => "",
             'exportGoodDir'  => [],
             'exportBadFile'  => "",
             'exportBadDir'   => [],
-            'importGoodFile' => "<opml/>",
+            'importGoodFile' => "GOOD_FILE",
             'importBadFile'  => "",
         ]);
         $this->path = $this->vfs->url()."/";
@@ -40,7 +40,7 @@ class TestOPMLFile extends \JKingWeb\Arsse\Test\AbstractTest {
     public function tearDown() {
         $this->path = null;
         $this->vfs = null;
-        $this->opml = null;
+        $this->proc = null;
         self::clearData();
     }
 
@@ -50,13 +50,13 @@ class TestOPMLFile extends \JKingWeb\Arsse\Test\AbstractTest {
         try {
             if ($exp instanceof \JKingWeb\Arsse\AbstractException) {
                 $this->assertException($exp);
-                $this->opml->exportFile($path, $user, $flat);
+                $this->proc->exportFile($path, $user, $flat);
             } else {
-                $this->assertSame($exp, $this->opml->exportFile($path, $user, $flat));
-                $this->assertSame("OPML_FILE", $this->vfs->getChild($file)->getContent());
+                $this->assertSame($exp, $this->proc->exportFile($path, $user, $flat));
+                $this->assertSame("EXPORT_FILE", $this->vfs->getChild($file)->getContent());
             }
         } finally {
-            \Phake::verify($this->opml)->export($user, $flat);
+            \Phake::verify($this->proc)->export($user, $flat);
         }
     }
 
@@ -89,12 +89,12 @@ class TestOPMLFile extends \JKingWeb\Arsse\Test\AbstractTest {
         try {
             if ($exp instanceof \JKingWeb\Arsse\AbstractException) {
                 $this->assertException($exp);
-                $this->opml->importFile($path, $user, $flat, $replace);
+                $this->proc->importFile($path, $user, $flat, $replace);
             } else {
-                $this->assertSame($exp, $this->opml->importFile($path, $user, $flat, $replace));
+                $this->assertSame($exp, $this->proc->importFile($path, $user, $flat, $replace));
             }
         } finally {
-            \Phake::verify($this->opml, \Phake::times((int) ($exp === true)))->import($user, "<opml/>", $flat, $replace);
+            \Phake::verify($this->proc, \Phake::times((int) ($exp === true)))->import($user, "GOOD_FILE", $flat, $replace);
         }
     }
 
