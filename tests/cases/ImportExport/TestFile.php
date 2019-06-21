@@ -6,7 +6,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\ImportExport;
 
-use JKingWeb\Arsse\ImportExport\OPML;
+use JKingWeb\Arsse\ImportExport\AbstractImportExport;
 use JKingWeb\Arsse\ImportExport\Exception;
 use org\bovigo\vfs\vfsStream;
 
@@ -18,8 +18,8 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function setUp() {
         self::clearData();
-        // create a mock OPML processor with stubbed underlying import/export routines
-        $this->proc = \Phake::partialMock(OPML::class);
+        // create a mock Import/Export processor with stubbed underlying import/export routines
+        $this->proc = \Phake::partialMock(AbstractImportExport::class);
         \Phake::when($this->proc)->export->thenReturn("EXPORT_FILE");
         \Phake::when($this->proc)->import->thenReturn(true);
         $this->vfs = vfsStream::setup("root", null, [
@@ -45,7 +45,7 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideFileExports */
-    public function testExportOpmlToAFile(string $file, string $user, bool $flat, $exp) {
+    public function testExportToAFile(string $file, string $user, bool $flat, $exp) {
         $path = $this->path.$file;
         try {
             if ($exp instanceof \JKingWeb\Arsse\AbstractException) {
@@ -84,7 +84,7 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideFileImports */
-    public function testImportFromOpmlFile(string $file, string $user, bool $flat, bool $replace, $exp) {
+    public function testImportFromAFile(string $file, string $user, bool $flat, bool $replace, $exp) {
         $path = $this->path.$file;
         try {
             if ($exp instanceof \JKingWeb\Arsse\AbstractException) {
