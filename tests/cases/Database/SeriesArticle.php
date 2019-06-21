@@ -581,7 +581,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][9][4] = $now;
         $state['arsse_marks']['rows'][11][2] = 0;
         $state['arsse_marks']['rows'][11][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAllArticlesRead() {
@@ -596,7 +596,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][] = [13,6,1,0,$now,''];
         $state['arsse_marks']['rows'][] = [14,7,1,0,$now,''];
         $state['arsse_marks']['rows'][] = [14,8,1,0,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAllArticlesUnstarred() {
@@ -607,7 +607,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][10][4] = $now;
         $state['arsse_marks']['rows'][11][3] = 0;
         $state['arsse_marks']['rows'][11][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAllArticlesStarred() {
@@ -622,7 +622,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][] = [13,6,0,1,$now,''];
         $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
         $state['arsse_marks']['rows'][] = [14,8,0,1,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAllArticlesUnreadAndUnstarred() {
@@ -636,7 +636,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][11][2] = 0;
         $state['arsse_marks']['rows'][11][3] = 0;
         $state['arsse_marks']['rows'][11][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAllArticlesReadAndStarred() {
@@ -654,7 +654,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][] = [13,6,1,1,$now,''];
         $state['arsse_marks']['rows'][] = [14,7,1,1,$now,''];
         $state['arsse_marks']['rows'][] = [14,8,1,1,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAllArticlesUnreadAndStarred() {
@@ -672,7 +672,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][] = [13,6,0,1,$now,''];
         $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
         $state['arsse_marks']['rows'][] = [14,8,0,1,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAllArticlesReadAndUnstarred() {
@@ -690,7 +690,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][] = [13,6,1,0,$now,''];
         $state['arsse_marks']['rows'][] = [14,7,1,0,$now,''];
         $state['arsse_marks']['rows'][] = [14,8,1,0,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testSetNoteForAllArticles() {
@@ -709,7 +709,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][] = [13,6,0,0,$now,'New note'];
         $state['arsse_marks']['rows'][] = [14,7,0,0,$now,'New note'];
         $state['arsse_marks']['rows'][] = [14,8,0,0,$now,'New note'];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkATreeFolder() {
@@ -720,7 +720,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][] = [13,6,1,0,$now,''];
         $state['arsse_marks']['rows'][] = [14,7,1,0,$now,''];
         $state['arsse_marks']['rows'][] = [14,8,1,0,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkALeafFolder() {
@@ -729,7 +729,7 @@ trait SeriesArticle {
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][] = [13,5,1,0,$now,''];
         $state['arsse_marks']['rows'][] = [13,6,1,0,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAMissingFolder() {
@@ -743,7 +743,7 @@ trait SeriesArticle {
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][] = [13,5,1,0,$now,''];
         $state['arsse_marks']['rows'][] = [13,6,1,0,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAMissingSubscription() {
@@ -757,7 +757,7 @@ trait SeriesArticle {
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkMultipleArticles() {
@@ -767,7 +767,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
         $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkMultipleArticlessUnreadAndStarred() {
@@ -780,7 +780,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][11][2] = 0;
         $state['arsse_marks']['rows'][11][4] = $now;
         $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkTooFewMultipleArticles() {
@@ -803,7 +803,7 @@ trait SeriesArticle {
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkMultipleEditions() {
@@ -813,13 +813,13 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
         $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkMultipleMissingEditions() {
         $this->assertSame(0, Arsse::$db->articleMark($this->user, ['starred'=>true], (new Context)->editions([500,501])));
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkMultipleEditionsUnread() {
@@ -830,7 +830,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][9][4] = $now;
         $state['arsse_marks']['rows'][11][2] = 0;
         $state['arsse_marks']['rows'][11][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkMultipleEditionsUnreadWithStale() {
@@ -839,7 +839,7 @@ trait SeriesArticle {
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][11][2] = 0;
         $state['arsse_marks']['rows'][11][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkMultipleEditionsUnreadAndStarredWithStale() {
@@ -851,7 +851,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][11][2] = 0;
         $state['arsse_marks']['rows'][11][4] = $now;
         $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkTooFewMultipleEditions() {
@@ -866,7 +866,7 @@ trait SeriesArticle {
     public function testMarkAStaleEditionUnread() {
         Arsse::$db->articleMark($this->user, ['read'=>false], (new Context)->edition(20)); // no changes occur
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAStaleEditionStarred() {
@@ -875,7 +875,7 @@ trait SeriesArticle {
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAStaleEditionUnreadAndStarred() {
@@ -884,13 +884,13 @@ trait SeriesArticle {
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAStaleEditionUnreadAndUnstarred() {
         Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>false], (new Context)->edition(20)); // no changes occur
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAMissingEdition() {
@@ -906,7 +906,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][8][4] = $now;
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkByLatestEdition() {
@@ -919,7 +919,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][] = [13,6,0,1,$now,''];
         $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
         $state['arsse_marks']['rows'][] = [14,8,0,1,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkByLastMarked() {
@@ -930,7 +930,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][8][4] = $now;
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkByNotLastMarked() {
@@ -939,7 +939,7 @@ trait SeriesArticle {
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][] = [13,5,0,1,$now,''];
         $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkArticlesWithoutAuthority() {

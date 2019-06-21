@@ -161,7 +161,7 @@ trait SeriesCleanup {
         $state['arsse_feeds']['rows'][0][1] = null;
         unset($state['arsse_feeds']['rows'][1]);
         $state['arsse_feeds']['rows'][2][1] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testCleanUpOrphanedFeedsWithUnlimitedRetention() {
@@ -175,7 +175,7 @@ trait SeriesCleanup {
         ]);
         $state['arsse_feeds']['rows'][0][1] = null;
         $state['arsse_feeds']['rows'][2][1] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testCleanUpOldArticlesWithStandardRetention() {
@@ -186,7 +186,7 @@ trait SeriesCleanup {
         foreach ([7,8,9] as $id) {
             unset($state['arsse_articles']['rows'][$id - 1]);
         }
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testCleanUpOldArticlesWithUnlimitedReadRetention() {
@@ -200,7 +200,7 @@ trait SeriesCleanup {
         foreach ([7,8] as $id) {
             unset($state['arsse_articles']['rows'][$id - 1]);
         }
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testCleanUpOldArticlesWithUnlimitedUnreadRetention() {
@@ -214,7 +214,7 @@ trait SeriesCleanup {
         foreach ([9] as $id) {
             unset($state['arsse_articles']['rows'][$id - 1]);
         }
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testCleanUpOldArticlesWithUnlimitedRetention() {
@@ -226,7 +226,7 @@ trait SeriesCleanup {
         $state = $this->primeExpectations($this->data, [
             'arsse_articles' => ["id"]
         ]);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testCleanUpExpiredSessions() {
@@ -237,7 +237,7 @@ trait SeriesCleanup {
         foreach ([3,4,5] as $id) {
             unset($state['arsse_sessions']['rows'][$id - 1]);
         }
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testCleanUpExpiredTokens() {
@@ -248,6 +248,6 @@ trait SeriesCleanup {
         foreach ([2] as $id) {
             unset($state['arsse_tokens']['rows'][$id - 1]);
         }
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 }

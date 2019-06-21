@@ -36,7 +36,7 @@ trait SeriesUser {
         $this->assertFalse(Arsse::$db->userExists("jane.doe@example.org"));
         Phake::verify(Arsse::$user)->authorize("jane.doe@example.com", "userExists");
         Phake::verify(Arsse::$user)->authorize("jane.doe@example.org", "userExists");
-        $this->compareExpectations($this->data);
+        $this->compareExpectations(static::$drv, $this->data);
     }
 
     public function testCheckThatAUserExistsWithoutAuthority() {
@@ -68,7 +68,7 @@ trait SeriesUser {
         Phake::verify(Arsse::$user)->authorize("john.doe@example.org", "userAdd");
         $state = $this->primeExpectations($this->data, ['arsse_users' => ['id']]);
         $state['arsse_users']['rows'][] = ["john.doe@example.org"];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testAddAnExistingUser() {
@@ -87,7 +87,7 @@ trait SeriesUser {
         Phake::verify(Arsse::$user)->authorize("admin@example.net", "userRemove");
         $state = $this->primeExpectations($this->data, ['arsse_users' => ['id']]);
         array_shift($state['arsse_users']['rows']);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testRemoveAMissingUser() {

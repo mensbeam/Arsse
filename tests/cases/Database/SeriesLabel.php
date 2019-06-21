@@ -257,7 +257,7 @@ trait SeriesLabel {
         Phake::verify(Arsse::$user)->authorize($user, "labelAdd");
         $state = $this->primeExpectations($this->data, $this->checkLabels);
         $state['arsse_labels']['rows'][] = [$labelID, $user, "Entertaining"];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testAddADuplicateLabel() {
@@ -313,7 +313,7 @@ trait SeriesLabel {
         Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "labelRemove");
         $state = $this->primeExpectations($this->data, $this->checkLabels);
         array_shift($state['arsse_labels']['rows']);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testRemoveALabelByName() {
@@ -321,7 +321,7 @@ trait SeriesLabel {
         Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "labelRemove");
         $state = $this->primeExpectations($this->data, $this->checkLabels);
         array_shift($state['arsse_labels']['rows']);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testRemoveAMissingLabel() {
@@ -397,7 +397,7 @@ trait SeriesLabel {
         Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "labelPropertiesSet");
         $state = $this->primeExpectations($this->data, $this->checkLabels);
         $state['arsse_labels']['rows'][0][2] = "Curious";
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testRenameALabelByName() {
@@ -405,7 +405,7 @@ trait SeriesLabel {
         Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "labelPropertiesSet");
         $state = $this->primeExpectations($this->data, $this->checkLabels);
         $state['arsse_labels']['rows'][0][2] = "Curious";
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testRenameALabelToTheEmptyString() {
@@ -487,14 +487,14 @@ trait SeriesLabel {
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $state['arsse_label_members']['rows'][4][3] = 1;
         $state['arsse_label_members']['rows'][] = [1,2,1,1];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testClearALabelFromArticles() {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([1,5]), Database::ASSOC_REMOVE);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $state['arsse_label_members']['rows'][0][3] = 0;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testApplyALabelToArticlesByName() {
@@ -502,26 +502,26 @@ trait SeriesLabel {
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $state['arsse_label_members']['rows'][4][3] = 1;
         $state['arsse_label_members']['rows'][] = [1,2,1,1];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testClearALabelFromArticlesByName() {
         Arsse::$db->labelArticlesSet("john.doe@example.com", "Interesting", (new Context)->articles([1,5]), Database::ASSOC_REMOVE, true);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $state['arsse_label_members']['rows'][0][3] = 0;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testApplyALabelToNoArticles() {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([10000]));
         $state = $this->primeExpectations($this->data, $this->checkMembers);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testClearALabelFromNoArticles() {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([10000]), Database::ASSOC_REMOVE);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testReplaceArticlesOfALabel() {
@@ -531,7 +531,7 @@ trait SeriesLabel {
         $state['arsse_label_members']['rows'][2][3] = 0;
         $state['arsse_label_members']['rows'][4][3] = 1;
         $state['arsse_label_members']['rows'][] = [1,2,1,1];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testPurgeArticlesOfALabel() {
@@ -539,7 +539,7 @@ trait SeriesLabel {
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $state['arsse_label_members']['rows'][0][3] = 0;
         $state['arsse_label_members']['rows'][2][3] = 0;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testApplyALabelToArticlesWithoutAuthority() {

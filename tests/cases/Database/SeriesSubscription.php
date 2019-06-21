@@ -160,7 +160,7 @@ trait SeriesSubscription {
             'arsse_subscriptions' => ['id','owner','feed'],
         ]);
         $state['arsse_subscriptions']['rows'][] = [$subID,$this->user,1];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testAddASubscriptionToANewFeed() {
@@ -177,7 +177,7 @@ trait SeriesSubscription {
         ]);
         $state['arsse_feeds']['rows'][] = [$feedID,$url,"",""];
         $state['arsse_subscriptions']['rows'][] = [$subID,$this->user,$feedID];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testAddASubscriptionToANewFeedViaDiscovery() {
@@ -195,7 +195,7 @@ trait SeriesSubscription {
         ]);
         $state['arsse_feeds']['rows'][] = [$feedID,$discovered,"",""];
         $state['arsse_subscriptions']['rows'][] = [$subID,$this->user,$feedID];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testAddASubscriptionToAnInvalidFeed() {
@@ -211,7 +211,7 @@ trait SeriesSubscription {
                 'arsse_feeds'         => ['id','url','username','password'],
                 'arsse_subscriptions' => ['id','owner','feed'],
             ]);
-            $this->compareExpectations($state);
+            $this->compareExpectations(static::$drv, $state);
             $this->assertException("invalidUrl", "Feed");
             throw $e;
         }
@@ -238,7 +238,7 @@ trait SeriesSubscription {
             'arsse_subscriptions' => ['id','owner','feed'],
         ]);
         array_shift($state['arsse_subscriptions']['rows']);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testRemoveAMissingSubscription() {
@@ -377,15 +377,15 @@ trait SeriesSubscription {
             'arsse_subscriptions' => ['id','owner','feed','title','folder','pinned','order_type'],
         ]);
         $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com",2,"Ook Ook",3,0,0];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, [
             'title' => null,
         ]);
         $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com",2,null,3,0,0];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
         // making no changes is a valid result
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['unhinged' => true]);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMoveASubscriptionToAMissingFolder() {

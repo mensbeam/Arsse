@@ -87,13 +87,13 @@ trait SeriesToken {
         $state = $this->primeExpectations($this->data, ['arsse_tokens' => ["id", "class", "expires", "user"]]);
         $id = Arsse::$db->tokenCreate($user, "fever.login");
         $state['arsse_tokens']['rows'][] = [$id, "fever.login", null, $user];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
         $id = Arsse::$db->tokenCreate($user, "fever.login", null, new \DateTime("2020-01-01T00:00:00Z"));
         $state['arsse_tokens']['rows'][] = [$id, "fever.login", "2020-01-01 00:00:00", $user];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
         Arsse::$db->tokenCreate($user, "fever.login", "token!", new \DateTime("2021-01-01T00:00:00Z"));
         $state['arsse_tokens']['rows'][] = ["token!", "fever.login", "2021-01-01 00:00:00", $user];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testCreateATokenForAMissingUser() {
@@ -113,7 +113,7 @@ trait SeriesToken {
         $this->assertTrue(Arsse::$db->tokenRevoke($user, "fever.login", $id));
         $state = $this->primeExpectations($this->data, ['arsse_tokens' => ["id", "expires", "user"]]);
         unset($state['arsse_tokens']['rows'][0]);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
         // revoking a token which does not exist is not an error
         $this->assertFalse(Arsse::$db->tokenRevoke($user, "fever.login", $id));
     }
@@ -124,10 +124,10 @@ trait SeriesToken {
         $this->assertTrue(Arsse::$db->tokenRevoke($user, "fever.login"));
         unset($state['arsse_tokens']['rows'][0]);
         unset($state['arsse_tokens']['rows'][1]);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
         $this->assertTrue(Arsse::$db->tokenRevoke($user, "class.class"));
         unset($state['arsse_tokens']['rows'][2]);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
         // revoking tokens which do not exist is not an error
         $this->assertFalse(Arsse::$db->tokenRevoke($user, "unknown.class"));
     }

@@ -105,7 +105,7 @@ trait SeriesFolder {
         Phake::verify(Arsse::$user)->authorize($user, "folderAdd");
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
         $state['arsse_folders']['rows'][] = [$folderID, $user, null, "Entertainment"];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testAddADuplicateRootFolder() {
@@ -120,7 +120,7 @@ trait SeriesFolder {
         Phake::verify(Arsse::$user)->authorize($user, "folderAdd");
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
         $state['arsse_folders']['rows'][] = [$folderID, $user, 2, "GNOME"];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testAddANestedFolderToAMissingParent() {
@@ -218,7 +218,7 @@ trait SeriesFolder {
         Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderRemove");
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
         array_pop($state['arsse_folders']['rows']);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testRemoveAFolderTree() {
@@ -228,7 +228,7 @@ trait SeriesFolder {
         foreach ([0,1,2,5] as $index) {
             unset($state['arsse_folders']['rows'][$index]);
         }
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testRemoveAMissingFolder() {
@@ -292,7 +292,7 @@ trait SeriesFolder {
         Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderPropertiesSet");
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
         $state['arsse_folders']['rows'][5][3] = "Opinion";
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testRenameTheRootFolder() {
@@ -319,7 +319,7 @@ trait SeriesFolder {
         Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderPropertiesSet");
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
         $state['arsse_folders']['rows'][5][2] = 5; // parent should have changed
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMoveTheRootFolder() {
