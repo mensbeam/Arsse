@@ -203,7 +203,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         return true;
     }
 
-    public function primeExpectations(array $source, array $tableSpecs = null): array {
+    public function primeExpectations(array $source, array $tableSpecs): array {
         $out = [];
         foreach ($tableSpecs as $table => $columns) {
             // make sure the source has the table we want
