@@ -10,7 +10,7 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User\Exception as UserException;
 
 class OPML extends AbstractImportExport {
-    public function parse(string $opml, bool $flat): array {
+    protected function parse(string $opml, bool $flat): array {
         $d = new \DOMDocument;
         if (!@$d->loadXML($opml)) {
             // not a valid XML document

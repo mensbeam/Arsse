@@ -109,7 +109,8 @@ OPML_EXPORT_SERIALIZATION;
     /** @dataProvider provideParserData */
     public function testParseOpmlForImport(string $file, bool $flat, $exp) {
         $data = file_get_contents(\JKingWeb\Arsse\DOCROOT."Import/OPML/$file");
-        $parser = new OPML;
+        // set up a partial mock to make the ImportExport::parse() method visible
+        $parser = \Phake::makeVisible(\Phake::partialMock(OPML::class));
         if ($exp instanceof \JKingWeb\Arsse\AbstractException) {
             $this->assertException($exp);
             $parser->parse($data, $flat);

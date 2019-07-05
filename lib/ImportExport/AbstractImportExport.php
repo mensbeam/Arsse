@@ -141,7 +141,7 @@ abstract class AbstractImportExport {
         return true;
     }
 
-    abstract public function parse(string $data, bool $flat): array;
+    abstract protected function parse(string $data, bool $flat): array;
 
     abstract public function export(string $user, bool $flat = false): string;
 
