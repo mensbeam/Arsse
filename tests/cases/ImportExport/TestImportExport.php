@@ -147,7 +147,34 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
     }
 
-    public function testMakeNoEffectiveChnages() {
+    public function testImportForAMissingUser() {
+        \Phake::when(Arsse::$user)->exists->thenReturn(false);
+        $this->assertException("doesNotExist", "User");
+        $this->proc->import("john.doe@example.com", "", false, false);
+    }
+
+    public function testImportWithInvalidFolder() {
+        $in = [[
+        ], [1 =>
+            ['id' => 1, 'name' => "", 'parent' => 0],
+        ]];
+        \Phake::when($this->proc)->parse->thenReturn($in);
+        $this->assertException("invalidFolderName", "ImportExport");
+        $this->proc->import("john.doe@example.com", "", false, false);
+    }
+
+    public function testImportWithDuplicateFolder() {
+        $in = [[
+        ], [1 =>
+            ['id' => 1, 'name' => "New", 'parent' => 0],
+            ['id' => 2, 'name' => "New", 'parent' => 0],
+        ]];
+        \Phake::when($this->proc)->parse->thenReturn($in);
+        $this->assertException("invalidFolderCopy", "ImportExport");
+        $this->proc->import("john.doe@example.com", "", false, false);
+    }
+
+    public function testMakeNoEffectiveChanges() {
         $in = [[
             ['url' => "http://localhost:8000/Import/nasa-jpl",  'title' => "NASA JPL",       'folder' => 3, 'tags' => ["tech"]],
             ['url' => "http://localhost:8000/Import/ars",       'title' => "Ars Technica",   'folder' => 2, 'tags' => ["frequent", "tech"]],
