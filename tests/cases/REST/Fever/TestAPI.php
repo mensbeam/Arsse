@@ -502,4 +502,13 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $exp = new JsonResponse(['favicons' => [['id' => 0, 'data' => API::GENERIC_ICON_TYPE.",".API::GENERIC_ICON_DATA]]]);
         $this->assertMessage($exp, $act);        
     }
+
+    public function testAnswerOptionsRequest() {
+        $act = $this->h->dispatch($this->req("api", "", "OPTIONS"));
+        $exp = new EmptyResponse(204, [
+            'Allow' => "POST",
+            'Accept' => "application/x-www-form-urlencoded",
+        ]);
+        $this->assertMessage($exp, $act);
+    }
 }
