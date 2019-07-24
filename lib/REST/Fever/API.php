@@ -188,7 +188,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $d = $p->ownerDocument;
         foreach ($data as $k => $v) {
             if (!is_array($v)) {
-                $p->appendChild($d->createElement($k, $v));
+                $p->appendChild($d->createElement($k, (string) $v));
             } elseif (isset($v[0])) {
                 // this is a very simplistic check for an indexed array
                 // it would not pass muster in the face of generic data,
@@ -206,9 +206,11 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $d = $p->ownerDocument;
         foreach ($data as $v) {
             if (!is_array($v)) {
-                $p->appendChild($d->createElement($k, $v));
+                // this case is never encountered with Fever's output
+                $p->appendChild($d->createElement($k, (string) $v)); // @codeCoverageIgnore
             } elseif (isset($v[0])) {
-                $p->appendChild($this->makeXMLIndexed($v, $d->createElement($k), substr($k, 0, strlen($k) - 1)));
+                // this case is never encountered with Fever's output
+                $p->appendChild($this->makeXMLIndexed($v, $d->createElement($k), substr($k, 0, strlen($k) - 1))); // @codeCoverageIgnore
             } else {
                 $p->appendChild($this->makeXMLAssoc($v, $d->createElement($k)));
             }
