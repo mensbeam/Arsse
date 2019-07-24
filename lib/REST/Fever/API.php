@@ -26,6 +26,8 @@ use Zend\Diactoros\Response\EmptyResponse;
 
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     const LEVEL = 3;
+    const GENERIC_ICON_TYPE = "image/png;base64";
+    const GENERIC_ICON_DATA = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMjHxIGmVAAAADUlEQVQYV2NgYGBgAAAABQABijPjAAAAAABJRU5ErkJggg==";
 
     // GET parameters for which we only check presence: these will be converted to booleans
     const PARAM_BOOL = ["groups", "feeds", "items", "favicons", "links", "unread_item_ids", "saved_item_ids"];
@@ -143,7 +145,14 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             $out['feeds_groups'] = $this->getRelationships();
         }
         if ($G['favicons']) {
-            # deal with favicons
+            // TODO: implement favicons properly
+            // we provide a single blank favicon for now
+            $out['favicons'] = [
+                [
+                    'id' => 0,
+                    'data' => self::GENERIC_ICON_TYPE.",".self::GENERIC_ICON_DATA,
+                ],
+            ];
         }
         if ($G['items']) {
             $out['items'] = $this->getItems($G);
@@ -318,7 +327,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         foreach (arsse::$db->subscriptionList(Arsse::$user->id) as $sub) {
             $out[] = [
                 'id'                   => (int) $sub['id'],
-                'favicon_id'           => (int) ($sub['favicon'] ? $sub['feed'] : 0),
+                'favicon_id'           => 0, // TODO: implement favicons
                 'title'                => (string) $sub['title'],
                 'url'                  => $sub['url'],
                 'site_url'             => $sub['source'],
