@@ -163,4 +163,5 @@ return [
     'Exception.JKingWeb/Arsse/ImportExport/Exception.invalidSemantics'     => 'Input data is not valid {type} data',
     'Exception.JKingWeb/Arsse/ImportExport/Exception.invalidFolderName'    => 'Input data contains an invalid folder name',
     'Exception.JKingWeb/Arsse/ImportExport/Exception.invalidFolderCopy'    => 'Input data contains multiple folders of the same name under the same parent',
+    'Exception.JKingWeb/Arsse/ImportExport/Exception.invalidTagName'       => 'Input data contains an invalid tag name',
 ];

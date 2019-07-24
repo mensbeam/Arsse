@@ -85,8 +85,8 @@ abstract class AbstractImportExport {
                 // compile the set of used tags, if this is a new feed or we're doing a full replacement
                 foreach ($f['tags'] as $t) {
                     if (!strlen(trim($t))) {
-                        // ignore any blank tags
-                        continue;
+                        // fail if we have any blank tags
+                        throw new Exception("invalidTagName");
                     }
                     if (!isset($tagMap[$t])) {
                         // populate the tag map

@@ -61,6 +61,10 @@ class OPML extends AbstractImportExport {
                         $categories = array_map(function($v) {
                             return trim(preg_replace("/\s+/", " ", $v));
                         }, explode(",", $categories));
+                        // filter out any blank categories
+                        $categories = array_filter($categories, function($v) {
+                            return strlen($v);
+                        });
                     } else {
                         $categories = [];
                     }

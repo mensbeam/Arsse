@@ -94,6 +94,7 @@ abstract class AbstractException extends \Exception {
         "ImportExport/Exception.invalidSemantics"     => 10612,
         "ImportExport/Exception.invalidFolderName"    => 10613,
         "ImportExport/Exception.invalidFolderCopy"    => 10614,
+        "ImportExport/Exception.invalidTagName"       => 10615,
     ];
 
     public function __construct(string $msgID = "", $vars = null, \Throwable $e = null) {

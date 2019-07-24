@@ -135,7 +135,7 @@ OPML_EXPORT_SERIALIZATION;
                 ['url' => "http://example.com/3", 'title' => "",       'folder' => 0, 'tags' => []],
                 ['url' => "http://example.com/4", 'title' => "",       'folder' => 0, 'tags' => []],
                 ['url' => "",                     'title' => "",       'folder' => 0, 'tags' => ["whee"]],
-                ['url' => "",                     'title' => "",       'folder' => 0, 'tags' => ["whee", "whoo", ""]],
+                ['url' => "",                     'title' => "",       'folder' => 0, 'tags' => ["whee", "whoo"]],
             ], []]],
             ["FoldersOnly.opml", true, [[], []]],
             ["FoldersOnly.opml", false, [[], [1 =>
