@@ -10,6 +10,7 @@ use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Misc\ValueInfo;
 use Phake;
 
 trait SeriesArticle {
@@ -424,10 +425,15 @@ trait SeriesArticle {
         return [
             'Blank context' => [new Context, [1,2,3,4,5,6,7,8,19,20]],
             'Folder tree' => [(new Context)->folder(1), [5,6,7,8]],
+            'Entire folder tree' => [(new Context)->folder(0), [1,2,3,4,5,6,7,8,19,20]],
             'Leaf folder' => [(new Context)->folder(6), [7,8]],
-            'Root folder only' => [(new Context)->folderShallow(0), [1,2,3,4]],
+            'Multiple folder trees' => [(new Context)->folders([1,5]), [5,6,7,8,19,20]],
+            'Multiple folder trees including root' => [(new Context)->folders([0,1,5]), [1,2,3,4,5,6,7,8,19,20]],
             'Shallow folder' => [(new Context)->folderShallow(1), [5,6]],
+            'Root folder only' => [(new Context)->folderShallow(0), [1,2,3,4]],
+            'Multiple shallow folders' => [(new Context)->foldersShallow([1,6]), [5,6,7,8]],
             'Subscription' => [(new Context)->subscription(5), [19,20]],
+            'Multiple subscriptions' => [(new Context)->subscriptions([4,5]), [7,8,19,20]],
             'Unread' => [(new Context)->subscription(5)->unread(true), [20]],
             'Read' => [(new Context)->subscription(5)->unread(false), [19]],
             'Starred' => [(new Context)->starred(true), [1,20]],
@@ -455,11 +461,12 @@ trait SeriesArticle {
             'Marked or labelled between 2000 and 2015' => [(new Context)->markedSince("2000-01-01T00:00:00Z")->notMarkedSince("2015-12-31T23:59:59Z"), [1,2,3,4,5,6,7,8,20]],
             'Marked or labelled in 2010' => [(new Context)->markedSince("2010-01-01T00:00:00Z")->notMarkedSince("2010-12-31T23:59:59Z"), [2,4,6,20]],
             'Paged results' => [(new Context)->limit(2)->oldestEdition(4), [4,5]],
-            'Reversed paged results' => [(new Context)->limit(2)->latestEdition(7)->reverse(true), [7,6]],
             'With label ID 1' => [(new Context)->label(1), [1,19]],
             'With label ID 2' => [(new Context)->label(2), [1,5,20]],
+            'With label ID 1 or 2' => [(new Context)->labels([1,2]), [1,5,19,20]],
             'With label "Interesting"' => [(new Context)->labelName("Interesting"), [1,19]],
             'With label "Fascinating"' => [(new Context)->labelName("Fascinating"), [1,5,20]],
+            'With label "Interesting" or "Fascinating"' => [(new Context)->labelNames(["Interesting","Fascinating"]), [1,5,19,20]],
             'Article ID 20' => [(new Context)->article(20), [20]],
             'Edition ID 1001' => [(new Context)->edition(1001), [20]],
             'Multiple articles' => [(new Context)->articles([1,20,50]), [1,20]],
@@ -494,12 +501,19 @@ trait SeriesArticle {
             'Search 501 terms' => [(new Context)->searchTerms(array_merge(range(1, 500), [str_repeat("a", 1000)])), []],
             'With tag ID 1' => [(new Context)->tag(1), [5,6,7,8]],
             'With tag ID 5' => [(new Context)->tag(5), [7,8,19,20]],
+            'With tag ID 1 or 5' => [(new Context)->tags([1,5]), [5,6,7,8,19,20]],
             'With tag "Technology"' => [(new Context)->tagName("Technology"), [5,6,7,8]],
             'With tag "Politics"' => [(new Context)->tagName("Politics"), [7,8,19,20]],
+            'With tag "Technology" or "Politics"' => [(new Context)->tagNames(["Technology","Politics"]), [5,6,7,8,19,20]],
             'Excluding tag ID 1' => [(new Context)->not->tag(1), [1,2,3,4,19,20]],
             'Excluding tag ID 5' => [(new Context)->not->tag(5), [1,2,3,4,5,6]],
             'Excluding tag "Technology"' => [(new Context)->not->tagName("Technology"), [1,2,3,4,19,20]],
             'Excluding tag "Politics"' => [(new Context)->not->tagName("Politics"), [1,2,3,4,5,6]],
+            'Excluding tags ID 1 and 5' => [(new Context)->not->tags([1,5]), [1,2,3,4]],
+            'Excluding tags "Technology" and "Politics"' => [(new Context)->not->tagNames(["Technology","Politics"]), [1,2,3,4]],
+            'Excluding entire folder tree' => [(new Context)->not->folder(0), []],
+            'Excluding multiple folder trees' => [(new Context)->not->folders([1,5]), [1,2,3,4]],
+            'Excluding multiple folder trees including root' => [(new Context)->not->folders([0,1,5]), []],
         ];
     }
 
@@ -561,6 +575,25 @@ trait SeriesArticle {
         $columns = array_merge($this->fields, ["unknown_column", "bogus_column"]);
         $test = array_keys(Arsse::$db->articleList($this->user, (new Context)->article(101), $columns)->getRow());
         $this->assertEquals($this->fields, $test);
+    }
+
+    /** @dataProvider provideOrderedLists */
+    public function testListArticlesCheckingOrder(array $sortCols, array $exp) {
+        $act = ValueInfo::normalize(array_column(iterator_to_array(Arsse::$db->articleList("john.doe@example.com", null, ["id"], $sortCols)), "id"), ValueInfo::T_INT | ValueInfo::M_ARRAY);
+        $this->assertSame($exp, $act);
+    }
+
+    public function provideOrderedLists() {
+        return [
+            [["id"], [1,2,3,4,5,6,7,8,19,20]],
+            [["id asc"], [1,2,3,4,5,6,7,8,19,20]],
+            [["id desc"], [20,19,8,7,6,5,4,3,2,1]],
+            [["edition"], [1,2,3,4,5,6,7,8,19,20]],
+            [["edition asc"], [1,2,3,4,5,6,7,8,19,20]],
+            [["edition desc"], [20,19,8,7,6,5,4,3,2,1]],
+            [["id", "edition desk"], [1,2,3,4,5,6,7,8,19,20]],
+            [["id", "editio"], [1,2,3,4,5,6,7,8,19,20]],
+        ];
     }
 
     public function testListArticlesWithoutAuthority() {
@@ -783,11 +816,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testMarkTooFewMultipleArticles() {
-        $this->assertException("tooShort", "Db", "ExceptionInput");
-        Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->articles([]));
-    }
-
     public function testMarkTooManyMultipleArticles() {
         $this->assertSame(7, Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->articles(range(1, Database::LIMIT_SET_SIZE * 3))));
     }
@@ -852,11 +880,6 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][11][4] = $now;
         $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
         $this->compareExpectations(static::$drv, $state);
-    }
-
-    public function testMarkTooFewMultipleEditions() {
-        $this->assertException("tooShort", "Db", "ExceptionInput");
-        Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->editions([]));
     }
 
     public function testMarkTooManyMultipleEditions() {
@@ -1030,13 +1053,20 @@ trait SeriesArticle {
         Arsse::$db->articleCategoriesGet($this->user, 19);
     }
 
-    public function testSearchTooFewTerms() {
+    /** @dataProvider provideArrayContextOptions */
+    public function testUseTooFewValuesInArrayContext(string $option) {
         $this->assertException("tooShort", "Db", "ExceptionInput");
-        Arsse::$db->articleList($this->user, (new Context)->searchTerms([]));
+        Arsse::$db->articleList($this->user, (new Context)->$option([]));
     }
 
-    public function testSearchTooFewTermsInNote() {
-        $this->assertException("tooShort", "Db", "ExceptionInput");
-        Arsse::$db->articleList($this->user, (new Context)->annotationTerms([]));
+    public function provideArrayContextOptions() {
+        foreach ([
+            "articles", "editions",
+            "subscriptions", "foldersShallow", //"folders",
+            "tags", "tagNames", "labels", "labelNames",
+            "searchTerms", "authorTerms", "annotationTerms",
+        ] as $method) {
+            yield [$method];
+        }
     }
 }

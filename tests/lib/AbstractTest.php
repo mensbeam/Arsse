@@ -18,6 +18,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\Response\JsonResponse;
+use Zend\Diactoros\Response\XmlResponse;
 
 /** @coversNothing */
 abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
@@ -98,6 +99,8 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         if ($exp instanceof JsonResponse) {
             $this->assertEquals($exp->getPayload(), $act->getPayload(), $text);
             $this->assertSame($exp->getPayload(), $act->getPayload(), $text);
+        } elseif ($exp instanceof XmlResponse) {
+            $this->assertXmlStringEqualsXmlString((string) $exp->getBody(), (string) $act->getBody(), $text);
         } else {
             $this->assertEquals((string) $exp->getBody(), (string) $act->getBody(), $text);
         }

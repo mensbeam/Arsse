@@ -10,6 +10,12 @@ usually prudent:
 - If installing from source, update dependencies with:
   `composer install -o --no-dev`
 
+Upgrading from 0.7.1 to 0.8.0
+=============================
+
+- The database schema has changed from rev4 to rev5; if upgrading the database
+  manually, apply the 4.sql file
+
 
 Upgrading from 0.5.1 to 0.6.0
 =============================

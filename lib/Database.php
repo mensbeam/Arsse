@@ -1239,6 +1239,37 @@ class Database {
         )->run($feedID, $vId, $vHashUT, $vHashUC, $vHashTC);
     }
 
+    /** Returns an associative array of result column names and their SQL computations for article queries
+     *
+     * This is used for whitelisting and defining both output column and order-by columns, as well as for resolution of some context options
+     */
+    protected function articleColumns(): array {
+        $greatest = $this->db->sqlToken("greatest");
+        return [
+            'id' => "arsse_articles.id",
+            'edition' => "latest_editions.edition",
+            'url' => "arsse_articles.url",
+            'title' => "arsse_articles.title",
+            'author' => "arsse_articles.author",
+            'content' => "arsse_articles.content",
+            'guid' => "arsse_articles.guid",
+            'fingerprint' => "arsse_articles.url_title_hash || ':' || arsse_articles.url_content_hash || ':' || arsse_articles.title_content_hash",
+            'folder' => "coalesce(arsse_subscriptions.folder,0)",
+            'subscription' => "arsse_subscriptions.id",
+            'feed' => "arsse_subscriptions.feed",
+            'starred' => "coalesce(arsse_marks.starred,0)",
+            'unread' => "abs(coalesce(arsse_marks.read,0) - 1)",
+            'note' => "coalesce(arsse_marks.note,'')",
+            'published_date' => "arsse_articles.published",
+            'edited_date' => "arsse_articles.edited",
+            'modified_date' => "arsse_articles.modified",
+            'marked_date' => "$greatest(arsse_articles.modified, coalesce(arsse_marks.modified, '0001-01-01 00:00:00'), coalesce(label_stats.modified, '0001-01-01 00:00:00'))",
+            'subscription_title' => "coalesce(arsse_subscriptions.title, arsse_feeds.title)",
+            'media_url' => "arsse_enclosures.url",
+            'media_type' => "arsse_enclosures.type",
+        ];
+    }
+
     /** Computes an SQL query to find and retrieve data about articles in the database
      *
      * If an empty column list is supplied, a count of articles matching the context is queried instead
@@ -1271,48 +1302,30 @@ class Database {
             $this->labelValidateId($user, $context->labelName, true);
         }
         // prepare the output column list; the column definitions are also used later
-        $greatest = $this->db->sqlToken("greatest");
-        $colDefs = [
-            'id' => "arsse_articles.id",
-            'edition' => "latest_editions.edition",
-            'url' => "arsse_articles.url",
-            'title' => "arsse_articles.title",
-            'author' => "arsse_articles.author",
-            'content' => "arsse_articles.content",
-            'guid' => "arsse_articles.guid",
-            'fingerprint' => "arsse_articles.url_title_hash || ':' || arsse_articles.url_content_hash || ':' || arsse_articles.title_content_hash",
-            'folder' => "coalesce(arsse_subscriptions.folder,0)",
-            'subscription' => "arsse_subscriptions.id",
-            'feed' => "arsse_subscriptions.feed",
-            'starred' => "coalesce(arsse_marks.starred,0)",
-            'unread' => "abs(coalesce(arsse_marks.read,0) - 1)",
-            'note' => "coalesce(arsse_marks.note,'')",
-            'published_date' => "arsse_articles.published",
-            'edited_date' => "arsse_articles.edited",
-            'modified_date' => "arsse_articles.modified",
-            'marked_date' => "$greatest(arsse_articles.modified, coalesce(arsse_marks.modified, '0001-01-01 00:00:00'), coalesce(label_stats.modified, '0001-01-01 00:00:00'))",
-            'subscription_title' => "coalesce(arsse_subscriptions.title, arsse_feeds.title)",
-            'media_url' => "arsse_enclosures.url",
-            'media_type' => "arsse_enclosures.type",
-        ];
+        $colDefs = $this->articleColumns();
         if (!$cols) {
-            // if no columns are specified return a count
-            $columns = "count(distinct arsse_articles.id) as count";
+            // if no columns are specified return a count; don't borther with sorting
+            $outColumns = "count(distinct arsse_articles.id) as count";
         } else {
-            $columns = [];
+            // normalize requested output and sorting columns
+            $norm = function($v) {
+                return trim(strtolower(ValueInfo::normalize($v, ValueInfo::T_STRING)));
+            };
+            $cols = array_map($norm, $cols);
+            // make an output column list
+            $outColumns = [];
             foreach ($cols as $col) {
-                $col = trim(strtolower($col));
                 if (!isset($colDefs[$col])) {
                     continue;
                 }
-                $columns[] = $colDefs[$col]." as ".$col;
+                $outColumns[] = $colDefs[$col]." as ".$col;
             }
-            $columns = implode(",", $columns);
+            $outColumns = implode(",", $outColumns);
         }
         // define the basic query, to which we add lots of stuff where necessary
         $q = new Query(
             "SELECT 
-                $columns
+                $outColumns
             from arsse_articles
             join arsse_subscriptions on arsse_subscriptions.feed = arsse_articles.feed and arsse_subscriptions.owner = ?
             join arsse_feeds on arsse_subscriptions.feed = arsse_feeds.id
@@ -1344,7 +1357,9 @@ class Database {
             "markedSince"      => ["marked_date",   ">=", "datetime", "notMarkedSince"],
             "notMarkedSince"   => ["marked_date",   "<=", "datetime", "markedSince"],
             "folderShallow"    => ["folder",        "=",  "int",      ""],
+            "foldersShallow"   => ["folder",        "in", "int",      ""],
             "subscription"     => ["subscription",  "=",  "int",      ""],
+            "subscriptions"    => ["subscription",  "in", "int",      ""],
             "unread"           => ["unread",        "=",  "bool",     ""],
             "starred"          => ["starred",       "=",  "bool",     ""],
         ];
@@ -1395,6 +1410,79 @@ class Database {
                 $q->setWhereNot("{$colDefs[$col]} $op ?", $type, $context->not->$m);
             }
         }
+        // handle labels and tags
+        $options = [
+            'label' => [
+                'match_col' => "arsse_articles.id",
+                'cte_name' => "labelled",
+                'cte_cols' => ["article", "label_id", "label_name"],
+                'cte_body' => "SELECT m.article, l.id, l.name from arsse_label_members as m join arsse_labels as l on l.id = m.label where l.owner = ? and m.assigned = 1",
+                'cte_types' => ["str"],
+                'cte_values' => [$user],
+                'options' => [
+                    'label'      => ['use_name' => false, 'multi' => false],
+                    'labels'     => ['use_name' => false, 'multi' => true],
+                    'labelName'  => ['use_name' => true,  'multi' => false],
+                    'labelNames' => ['use_name' => true,  'multi' => true],
+                ],
+            ],
+            'tag' => [
+                'match_col' => "arsse_subscriptions.id",
+                'cte_name' => "tagged",
+                'cte_cols' => ["subscription", "tag_id", "tag_name"],
+                'cte_body' => "SELECT m.subscription, t.id, t.name from arsse_tag_members as m join arsse_tags as t on t.id = m.tag where t.owner = ? and m.assigned = 1",
+                'cte_types' => ["str"],
+                'cte_values' => [$user],
+                'options' => [
+                    'tag'      => ['use_name' => false, 'multi' => false],
+                    'tags'     => ['use_name' => false, 'multi' => true],
+                    'tagName'  => ['use_name' => true,  'multi' => false],
+                    'tagNames' => ['use_name' => true,  'multi' => true],
+                ],
+            ],
+        ];
+        foreach ($options as $opt) {
+            $seen = false;
+            $match = $opt['match_col'];
+            $table = $opt['cte_name'];
+            foreach ($opt['options'] as $m => $props) {
+                $named = $props['use_name'];
+                $multi = $props['multi'];
+                $selection = $opt['cte_cols'][0];
+                $col = $opt['cte_cols'][$named ? 2 : 1];
+                if ($context->$m()) {
+                    $seen = true;
+                    if (!$context->$m) {
+                        throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
+                    }
+                    if ($multi) {
+                        list($test, $types, $values) = $this->generateIn($context->$m, $named ? "str" : "int");
+                        $test = "in ($test)";
+                    } else {
+                        $test = "= ?";
+                        $types = $named ? "str" : "int";
+                        $values = $context->$m;
+                    }
+                    $q->setWhere("$match in (select $selection from $table where $col $test)", $types, $values);
+                }
+                if ($context->not->$m()) {
+                    $seen = true;
+                    if ($multi) {
+                        list($test, $types, $values) = $this->generateIn($context->not->$m, $named ? "str" : "int");
+                        $test = "in ($test)";
+                    } else {
+                        $test = "= ?";
+                        $types = $named ? "str" : "int";
+                        $values = $context->not->$m;
+                    }
+                    $q->setWhereNot("$match in (select $selection from $table where $col $test)", $types, $values);
+                }
+            }
+            if ($seen) {
+                $spec = $opt['cte_name']."(".implode(",", $opt['cte_cols']).")";
+                $q->setCTE($spec, $opt['cte_body'], $opt['cte_types'], $opt['cte_values']);
+            }
+        }
         // handle complex context options
         if ($context->annotated()) {
             $comp = ($context->annotated) ? "<>" : "=";
@@ -1405,47 +1493,31 @@ class Database {
             $op = $context->labelled ? ">" : "=";
             $q->setWhere("coalesce(label_stats.assigned,0) $op 0");
         }
-        if ($context->label() || $context->not->label() || $context->labelName() || $context->not->labelName()) {
-            $q->setCTE("labelled(article,label_id,label_name)", "SELECT m.article, l.id, l.name from arsse_label_members as m join arsse_labels as l on l.id = m.label where l.owner = ? and m.assigned = 1", "str", $user);
-            if ($context->label()) {
-                $q->setWhere("arsse_articles.id in (select article from labelled where label_id = ?)", "int", $context->label);
-            }
-            if ($context->not->label()) {
-                $q->setWhereNot("arsse_articles.id in (select article from labelled where label_id = ?)", "int", $context->not->label);
-            }
-            if ($context->labelName()) {
-                $q->setWhere("arsse_articles.id in (select article from labelled where label_name = ?)", "str", $context->labelName);
-            }
-            if ($context->not->labelName()) {
-                $q->setWhereNot("arsse_articles.id in (select article from labelled where label_name = ?)", "str", $context->not->labelName);
-            }
-        }
-        if ($context->tag() || $context->not->tag() || $context->tagName() || $context->not->tagName()) {
-            $q->setCTE("tagged(id,name,subscription)", "SELECT arsse_tags.id, arsse_tags.name, arsse_tag_members.subscription FROM arsse_tag_members join arsse_tags on arsse_tags.id = arsse_tag_members.tag WHERE arsse_tags.owner = ? and assigned = 1", "str", $user);
-            if ($context->tag()) {
-                $q->setWhere("arsse_subscriptions.id in (select subscription from tagged where id = ?)", "int", $context->tag);
-            }
-            if ($context->not->tag()) {
-                $q->setWhereNot("arsse_subscriptions.id in (select subscription from tagged where id = ?)", "int", $context->not->tag);
-            }
-            if ($context->tagName()) {
-                $q->setWhere("arsse_subscriptions.id in (select subscription from tagged where name = ?)", "str", $context->tagName);
-            }
-            if ($context->not->tagName()) {
-                $q->setWhereNot("arsse_subscriptions.id in (select subscription from tagged where name = ?)", "str", $context->not->tagName);
-            }
-        }
         if ($context->folder()) {
             // add a common table expression to list the folder and its children so that we select from the entire subtree
-            $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on parent = folder", "int", $context->folder);
+            $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on coalesce(parent,0) = folder", "int", $context->folder);
             // limit subscriptions to the listed folders
             $q->setWhere("coalesce(arsse_subscriptions.folder,0) in (select folder from folders)");
         }
+        if ($context->folders()) {
+            list($inClause, $inTypes, $inValues) = $this->generateIn($context->folders, "int");
+            // add a common table expression to list the folders and their children so that we select from the entire subtree
+            $q->setCTE("folders_multi(folder)", "SELECT id as folder from (select id from (select 0 as id union select id from arsse_folders where owner = ?) as f where id in ($inClause)) as folders_multi union select id from arsse_folders join folders_multi on coalesce(parent,0) = folder", ["str", $inTypes], [$user, $inValues]);
+            // limit subscriptions to the listed folders
+            $q->setWhere("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_multi)");
+        }
         if ($context->not->folder()) {
             // add a common table expression to list the folder and its children so that we exclude from the entire subtree
-            $q->setCTE("folders_excluded(folder)", "SELECT ? union select id from arsse_folders join folders_excluded on parent = folder", "int", $context->not->folder);
+            $q->setCTE("folders_excluded(folder)", "SELECT ? union select id from arsse_folders join folders_excluded on coalesce(parent,0) = folder", "int", $context->not->folder);
             // excluded any subscriptions in the listed folders
             $q->setWhereNot("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_excluded)");
+        }
+        if ($context->not->folders()) {
+            list($inClause, $inTypes, $inValues) = $this->generateIn($context->not->folders, "int");
+            // add a common table expression to list the folders and their children so that we select from the entire subtree
+            $q->setCTE("folders_multi_excluded(folder)", "SELECT id as folder from (select id from (select 0 as id union select id from arsse_folders where owner = ?) as f where id in ($inClause)) as folders_multi_excluded union select id from arsse_folders join folders_multi_excluded on coalesce(parent,0) = folder", ["str", $inTypes], [$user, $inValues]);
+            // limit subscriptions to the listed folders
+            $q->setWhereNot("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_multi_excluded)");
         }
         // handle text-matching context options
         $options = [
@@ -1454,20 +1526,20 @@ class Database {
             "authorTerms"     => ["arsse_articles.author"],
             "annotationTerms" => ["arsse_marks.note"],
         ];
-        foreach ($options as $m => $cols) {
+        foreach ($options as $m => $columns) {
             if (!$context->$m()) {
                 continue;
             } elseif (!$context->$m) {
                 throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
             }
-            $q->setWhere(...$this->generateSearch($context->$m, $cols));
+            $q->setWhere(...$this->generateSearch($context->$m, $columns));
         }
         // further handle exclusionary text-matching context options
-        foreach ($options as $m => $cols) {
+        foreach ($options as $m => $columns) {
             if (!$context->not->$m() || !$context->not->$m) {
                 continue;
             }
-            $q->setWhereNot(...$this->generateSearch($context->not->$m, $cols, true));
+            $q->setWhereNot(...$this->generateSearch($context->not->$m, $columns, true));
         }
         // return the query
         return $q;
@@ -1479,16 +1551,47 @@ class Database {
      *
      * @param string $user The user whose articles are to be listed
      * @param Context $context The search context
-     * @param array $cols The columns to return in the result set, any of: id, edition, url, title, author, content, guid, fingerprint, folder, subscription, feed, starred, unread, note, published_date, edited_date, modified_date, marked_date, subscription_title, media_url, media_type
+     * @param array $fieldss The columns to return in the result set, any of: id, edition, url, title, author, content, guid, fingerprint, folder, subscription, feed, starred, unread, note, published_date, edited_date, modified_date, marked_date, subscription_title, media_url, media_type
+     * @param array $sort The columns to sort the result by eg. "edition desc" in decreasing order of importance
      */
-    public function articleList(string $user, Context $context = null, array $fields = ["id"]): Db\Result {
+    public function articleList(string $user, Context $context = null, array $fields = ["id"], array $sort = []): Db\Result {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
+        // make a base query based on context and output columns
         $context = $context ?? new Context;
         $q = $this->articleQuery($user, $context, $fields);
-        $q->setOrder("arsse_articles.edited".($context->reverse ? " desc" : ""));
-        $q->setOrder("latest_editions.edition".($context->reverse ? " desc" : ""));
+        // make an ORDER BY column list
+        $colDefs = $this->articleColumns();
+        // normalize requested output and sorting columns
+        $norm = function($v) {
+            return trim(strtolower((string) $v));
+        };
+        $fields = array_map($norm, $fields);
+        $sort = array_map($norm, $sort);
+        foreach ($sort as $spec) {
+            $col = explode(" ", $spec, 2);
+            $order = $col[1] ?? "";
+            $col = $col[0];
+            if ($order === "desc") {
+                $order = " desc";
+            } elseif ($order === "asc" || $order === "") {
+                $order = "";
+            } else {
+                // column direction spec is bogus
+                continue;
+            }
+            if (!isset($colDefs[$col])) {
+                // column name spec is bogus
+                continue;
+            } elseif (in_array($col, $fields)) {
+                // if the sort column is also an output column, use it as-is
+                $q->setOrder($col.$order);
+            } else {
+                // otherwise if the column name is valid, use its expression
+                $q->setOrder($colDefs[$col].$order);
+            }
+        }
         // perform the query and return results
         return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
     }

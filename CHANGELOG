@@ -5,10 +5,12 @@ New features:
 - Support for the Fever protocol (see README.md for details)
 - Command line functionality for clearing a password, disabling the account
 - Command line options for dealing with Fever passwords
+- Command line functionality for exporting subscriptions to OPML
 - Command line documentation of all commands and options
 
 Bug fixes:
 - Treat command line option -h the same as --help
+- Sort Tiny Tiny RSS special feeds according to special ordering
 
 Version 0.7.1 (2019-03-25)
 ==========================
