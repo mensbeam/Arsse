@@ -196,11 +196,11 @@ USAGE_TEXT;
                 case "export":
                     $u = $args['<username>'];
                     $file = $this->resolveFile($args['<file>'], "w");
-                    return (int) !$this->getInstance(OPML::class)->exportFile($file, $u, $args['--flat']);
+                    return (int) !$this->getInstance(OPML::class)->exportFile($file, $u, ($args['--flat'] || $args['-f']));
                 case "import":
                     $u = $args['<username>'];
-                    $file = $this->resolveFile($args['<file>'], "w");
-                    return (int) !$this->getInstance(OPML::class)->importFile($file, $u, $args['--flat'], $args['--replace']);
+                    $file = $this->resolveFile($args['<file>'], "r");
+                    return (int) !$this->getInstance(OPML::class)->importFile($file, $u, ($args['--flat'] || $args['-f']), ($args['--replace'] || $args['-r']));
             }
         } catch (AbstractException $e) {
             $this->logError($e->getMessage());
@@ -213,6 +213,7 @@ USAGE_TEXT;
         fwrite(STDERR, $msg.\PHP_EOL);
     }
 
+    /** @codeCoverageIgnore */
     protected function getInstance(string $class) {
         return new $class;
     }

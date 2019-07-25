@@ -155,7 +155,7 @@ abstract class AbstractImportExport {
         return true;
     }
 
-    public function importFile(string $file, string $user, bool $flat = false, bool $replace): bool {
+    public function importFile(string $file, string $user, bool $flat = false, bool $replace = false): bool {
         $data = @file_get_contents($file);
         if ($data === false) {
             // if it fails throw an exception
