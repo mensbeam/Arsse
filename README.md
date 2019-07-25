@@ -1,10 +1,14 @@
 # The Advanced RSS Environment
 
-The Arsse is a news aggregator server which implements multiple synchronization protocols, including [version 1.2][NCNv1] of [NextCloud News][NCN]' protocol and the [Tiny Tiny RSS][TTRSS] protocol (details below). Unlike most other aggregator servers, The Arsse does not include a Web front-end (though one is planned as a separate project), and it relies on existing protocols to maximize compatibility with existing clients.
+The Arsse is a news aggregator server which implements multiple synchronization protocols. Unlike most other aggregator servers, The Arsse does not include a Web front-end (though one is planned as a separate project), and it relies on existing protocols to maximize compatibility with existing clients. Supported protocols are:
 
-At present the software should be considered in an "alpha" state: though its core subsystems are covered by unit tests and should be free of major bugs, not everything has been rigorously tested. Additionally, many features one would expect from other similar software have yet to be implemented. Areas of future work include:
+- [NextCloud News][NCNv1]
+- [Tiny Tiny RSS][TTRSS]
+- [Fever][Fever]
 
-- Providing more sync protocols (Google Reader, Fever, others)
+At present the software should be considered in an "alpha" state: many features one would expect from other similar software have yet to be implemented. Areas of future work include:
+
+- Providing more sync protocols (Google Reader, others)
 - Better packaging and configuration samples
 - A user manual
 
@@ -47,6 +51,8 @@ Sample configuration parameters for Nginx can be found in `arsse/dist/nginx.conf
 The Arsse includes a `user add <username> [<password>]` console command to add users to the database; for example running `php arsse.php user add admin password` will add the user `admin` with the password `pasword` to the database. Other commands for managing users are also available.
 
 Alternatively, if the Web server is configured to handle authentication, you may set the configuration option `userPreAuth` to `true` and The Arsse will defer to the Web server and automatically add any missing users as it encounters them.
+
+Console commands are also available to import from and export to OPML files. Consult `php arsse.php --help` for full details.
 
 ## Installation from source
 
@@ -194,6 +200,27 @@ Tiny Tiny RSS itself is unaware of HTTP authentication: if HTTP authentication i
 
 In all cases, supplying invalid HTTP credentials will result in a 401 response.
 
+### Fever
+
+Unlike other protocols thus far supported by The Arsse, a reference implementation of [the Fever protocol][Fever] is no longer available: Fever was witdrawn from sale in 2016. Consequently the Arsse's implementation may not replicate all of Fever's functionality correctly. Moreover, some features have been deliberately omitted.
+
+#### Special considerations
+
+- Because of Fever's insecure authentication protocol, a Fever-specific password must be created before a user can communicate via the Fever protocol. Consult The Arsse's online help (`php arsse.php --help`) for instructions on how to set the necessary password
+- The Fever protocol does not allow for adding or modifying feeds. Another protocol or OPML importing must be used to manage feeds
+- Unlike other protocols supported by The Arsse, Fever uses "groups" (more commonly known as tags or labels) instead of folders to organize feeds. Currently OPML importing is the only means of managing groups
+
+#### Missing features
+
+- All feeds are considered "Kindling"
+- The "Hot Links" feature is not implemented; when requested, an empty array will be returned. As there is no way to classify a feed as a "Spark" in the protocol itself and no documentation exists on how link temperature was calculated, an implementation is unlikely to appear in the future
+- Favicons are not currently supported; all feeds have a simple blank image as their favicon
+
+#### Other notes
+
+- The undocumented `group_ids`, `feed_ids`, and `as=unread` parameters are all supported
+- XML output is supported, but may not behave as Fever did. JSON output is highly recommended
+
 [newIssue]: https://code.mensbeam.com/MensBeam/arsse/issues/new
 [Composer]: https://getcomposer.org/
 [picoFeed]: https://github.com/miniflux/picoFeed/
@@ -205,3 +232,4 @@ In all cases, supplying invalid HTTP credentials will result in a 401 response.
 [News+]: https://github.com/noinnion/newsplus/
 [ext-feedreader]: https://github.com/jangernert/FeedReader/tree/master/data/tt-rss-feedreader-plugin
 [ext-newsplus]: https://github.com/hrk/tt-rss-newsplus-plugin
+[Fever]: https://web.archive.org/web/20161217042229/https://feedafever.com/api

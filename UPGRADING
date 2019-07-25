@@ -15,7 +15,12 @@ Upgrading from 0.7.1 to 0.8.0
 
 - The database schema has changed from rev4 to rev5; if upgrading the database
   manually, apply the 4.sql file
-
+- Web server configuration has changed to accommodate Fever; the following URL
+  paths are affected:
+    - /fever/
+- The following Composer dependencies have been added:
+    - zendframework/zend-diactoros (version 2.x)
+    - zendframework/zend-httphandlerrunner
 
 Upgrading from 0.5.1 to 0.6.0
 =============================
