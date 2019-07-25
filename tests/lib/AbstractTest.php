@@ -173,7 +173,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             $data = $drv->prepare("SELECT $cols from $table")->run()->getAll();
             $cols = array_keys($info['columns']);
             foreach ($info['rows'] as $index => $row) {
-                $this->assertCount(sizeof($cols), $row, "The number of values for array index $index does not match the number of fields");
+                $this->assertCount(sizeof($cols), $row, "The number of columns in array index $index of expectations for table $table does not match its definition");
                 $row = array_combine($cols, $row);
                 foreach ($data as $index => $test) {
                     foreach ($test as $col => $value) {
@@ -197,11 +197,11 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                         break;
                     }
                 }
-                $this->assertContains($row, $data, "Table $table does not contain record at array index $index.");
+                $this->assertContains($row, $data, "Actual Table $table does not contain record at expected array index $index");
                 $found = array_search($row, $data, true);
                 unset($data[$found]);
             }
-            $this->assertSame([], $data);
+            $this->assertSame([], $data, "Actual table $table contains extra rows not in expectations");
         }
         return true;
     }

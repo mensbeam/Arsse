@@ -18,7 +18,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $proc;
     protected $checkTables = [
         'arsse_folders'       => ["id", "owner", "parent", "name"],
-        'arsse_feeds'         => ['id', 'url'],
+        'arsse_feeds'         => ["id", "url", "title"],
         'arsse_subscriptions' => ["id", "owner", "folder", "feed", "title"],
         'arsse_tags'          => ["id", "owner", "name"],
         'arsse_tag_members'   => ["tag", "subscription", "assigned"],
@@ -195,6 +195,70 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->proc->import("john.doe@example.com", "", false, false);
         $this->compareExpectations($this->drv, $exp);
         $this->proc->import("john.doe@example.com", "", false, true);
+        $this->compareExpectations($this->drv, $exp);
+    }
+
+    public function testModifyASubscription() {
+        $in = [[
+            ['url' => "http://localhost:8000/Import/nasa-jpl",  'title' => "NASA JPL",       'folder' => 3, 'tags' => ["tech"]],
+            ['url' => "http://localhost:8000/Import/ars",       'title' => "Ars Technica",   'folder' => 2, 'tags' => ["frequent", "tech"]],
+            ['url' => "http://localhost:8000/Import/torstar",   'title' => "Toronto Star",   'folder' => 5, 'tags' => ["news", "canada", "toronto"]],
+            ['url' => "http://localhost:8000/Import/citizen",   'title' => "Ottawa Citizen", 'folder' => 6, 'tags' => ["news", "canada"]],
+            ['url' => "http://localhost:8000/Import/eurogamer", 'title' => "Eurogamer",      'folder' => 0, 'tags' => ["gaming", "frequent"]],
+            ['url' => "http://localhost:8000/Import/cbc",       'title' => "CBC",            'folder' => 0, 'tags' => ["news", "canada"]], // moved to root and renamed
+        ], [1 =>
+            ['id' => 1, 'name' => "Photography", 'parent' => 0],
+            ['id' => 2, 'name' => "Science",     'parent' => 0],
+            ['id' => 3, 'name' => "Rocketry",    'parent' => 2],
+            ['id' => 4, 'name' => "Politics",    'parent' => 0],
+            ['id' => 5, 'name' => "Local",       'parent' => 4],
+            ['id' => 6, 'name' => "National",    'parent' => 4],
+        ]];
+        \Phake::when($this->proc)->parse->thenReturn($in);
+        $this->proc->import("john.doe@example.com", "", false, true);
+        $exp = $this->primeExpectations($this->data, $this->checkTables);
+        $exp['arsse_subscriptions']['rows'][3] = [4, "john.doe@example.com", null, 4, "CBC"];
+        $this->compareExpectations($this->drv, $exp);
+    }
+
+    public function testImportAFeed() {
+        $in = [[
+            ['url' => "http://localhost:8000/Import/some-feed", 'title' => "Some Feed", 'folder' => 0, 'tags' => ["frequent", "cryptic"]], //one existing tag and one new one
+        ], []];
+        \Phake::when($this->proc)->parse->thenReturn($in);
+        $this->proc->import("john.doe@example.com", "", false, false);
+        $exp = $this->primeExpectations($this->data, $this->checkTables);
+        $exp['arsse_feeds']['rows'][] = [7, "http://localhost:8000/Import/some-feed", "Some feed"]; // author-supplied and user-supplied titles differ
+        $exp['arsse_subscriptions']['rows'][] = [7, "john.doe@example.com", null, 7, "Some Feed"];
+        $exp['arsse_tags']['rows'][] = [7, "john.doe@example.com", "cryptic"];
+        $exp['arsse_tag_members']['rows'][] = [2, 7, 1];
+        $exp['arsse_tag_members']['rows'][] = [7, 7, 1];
+        $this->compareExpectations($this->drv, $exp);
+    }
+
+    public function testImportAFeedWithAnInvalidTag() {
+        $in = [[
+            ['url' => "http://localhost:8000/Import/some-feed", 'title' => "Some Feed", 'folder' => 0, 'tags' => [""]],
+        ], []];
+        \Phake::when($this->proc)->parse->thenReturn($in);
+        $this->assertException("invalidTagName", "ImportExport");
+        $this->proc->import("john.doe@example.com", "", false, false);
+    }
+
+    public function testReplaceData() {
+        $in = [[
+            ['url' => "http://localhost:8000/Import/some-feed", 'title' => "Some Feed", 'folder' => 1, 'tags' => ["frequent", "cryptic"]],
+        ], [1 =>
+            ['id' => 1, 'name' => "Photography", 'parent' => 0],
+        ]];
+        \Phake::when($this->proc)->parse->thenReturn($in);
+        $this->proc->import("john.doe@example.com", "", false, true);
+        $exp = $this->primeExpectations($this->data, $this->checkTables);
+        $exp['arsse_feeds']['rows'][] = [7, "http://localhost:8000/Import/some-feed", "Some feed"]; // author-supplied and user-supplied titles differ
+        $exp['arsse_subscriptions']['rows'] = [[7, "john.doe@example.com", 4, 7, "Some Feed"]];
+        $exp['arsse_tags']['rows'] = [[2, "john.doe@example.com", "frequent"], [7, "john.doe@example.com", "cryptic"]];
+        $exp['arsse_tag_members']['rows'] = [[2, 7, 1], [7, 7, 1]];
+        $exp['arsse_folders']['rows'] = [[4, "john.doe@example.com", null, "Photography"]];
         $this->compareExpectations($this->drv, $exp);
     }
 }
