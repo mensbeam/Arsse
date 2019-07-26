@@ -5,26 +5,38 @@ The Arsse does not at this time have any first party clients. However, because T
   <tr>
    <th rowspan="2" style="text-align:left; width:15%">Name</th>
    <th rowspan="2" style="text-align:left">OS</th>
-   <th colspan="2" style="width:50%">Protocol</th>
+   <th colspan="3" style="width:50%">Protocol</th>
    <th rowspan="2" style="text-align:left">Notes</th>
   </tr>
   <tr>
    <th style="text-align:center">Nextcloud News</th>
    <th style="text-align:center">Tiny Tiny RSS</th>
+   <th style="text-align:center">Fever</th>
   </tr>
  </thead>
  <tbody>
   <tr>
-   <th colspan="5">Desktop</th>
+   <th colspan="6">Desktop</th>
   </tr>
   <tr>
    <td><a href="https://jangernert.github.io/FeedReader/">FeedReader</a></td>
    <td>Linux</td>
    <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
    <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
    <td>
     <p>Excellent reader; one of the best on any platform.</p>
     <p>Not compatible with HTTP authentication when using TT-RSS.</p>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://github.com/jeena/feedthemonkey">FeedTheMonkey</a></td>
+   <td>Linux</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
+   <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
+   <td>
+    <p></p>
    </td>
   </tr>
   <tr>
@@ -32,8 +44,29 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>Linux, macOS</td>
    <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
    <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
    <td>
     <p>Terminal-based client.</p>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://apps.apple.com/app/id588726889">ReadKit</a></td>
+   <td>macOS</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
+   <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
+   <td>
+    <p>Requires purchase.</p>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://apps.apple.com/app/id1449412482">Reeder</a></td>
+   <td>macOS</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
+   <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
+   <td>
+    <p>Also available for iOS.</p>
    </td>
   </tr>
   <tr>
@@ -41,15 +74,17 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>Windows, macOS, Linux</td>
    <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
    <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
    <td>
     <p>Very basic client; now discontinued.</p>
    </td>
   </tr>
   <tr>
-   <td><a href="https://www.microsoft.com/store/apps/tiny-tiny-rss-reader/9wzdncrdmbn3">Tiny Tiny RSS Reader</td>
+   <td><a href="https://www.microsoft.com/store/apps/9wzdncrdmbn3">Tiny Tiny RSS Reader</td>
    <td>Windows</td>
    <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
    <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
    <td>
     <p>Does not deal well with expired sessions; discontinued.</p>
    </td>
@@ -57,12 +92,13 @@ The Arsse does not at this time have any first party clients. However, because T
  </tbody>
  <tbody>
   <tr>
-   <th colspan="5">Mobile</th>
+   <th colspan="6">Mobile</th>
   </tr>
   <tr>
    <td><a href="https://peterandlinda.com/cloudnews/">CloudNews</a></td>
    <td>iOS</td>
    <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
    <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
    <td>
     <p>Very bland looking application, but it functions well.</p>
@@ -73,6 +109,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>Android</td>
    <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
    <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
    <td>
     <p>Not compatible with HTTP authentication.</p>
    </td>
@@ -82,15 +119,27 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>iOS</td>
    <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
    <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
+   <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
    <td>
     <p>Rentalware - For the software to be usable (you can't even add feeds otherwise) a subscription fee must be paid.</p>
     <p>Currently keeps showing items in the unread badge which have already been read.</p>
    </td>
   </tr>
   <tr>
+   <td><a href="https://github.com/SimonSchubert/NewsOut">Newsout</a></td>
+   <td>Android, iOS</td>
+   <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
+   <td>
+    <p>iOS version only as source code.</p>
+   </td>
+  </tr>
+  <tr>
    <td><a href="https://github.com/nextcloud/news-android/">NextCloud News</a></td>
    <td>Android</td>
    <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
    <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
    <td>
     <p>Official Android client for NextCloud News.</p>
@@ -101,13 +150,33 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>Android</td>
    <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
    <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
    <td></td>
+  </tr>
+  <tr>
+   <td><a href="https://play.google.com/store/apps/details?id=com.isaiasmatewos.readably">Readably</a></td>
+   <td>Android</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
+   <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
+   <td></td>
+  </tr>
+  <tr>
+   <td><a href="https://apps.apple.com/app/id1449412357">Reeder</a></td>
+   <td>iOS</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
+   <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
+   <td>
+    <p>Also available for macOS.</p>
+   </td>
   </tr>
   <tr>
    <td><a href="http://tt-rss.org/">Tiny Tiny RSS</a></td>
    <td>Android</td>
    <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
    <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
    <td>
     <p>Official Android client for Tiny Tiny RSS.</p>
    </td>
@@ -117,8 +186,19 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>Android</td>
    <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
    <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
    <td>
     <p></p>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://apps.apple.com/app/id1252376153">Unread</a></td>
+   <td>iOS</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
+   <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
+   <td>
+    <p>Trialware with one-time purchase.</p>
    </td>
   </tr>
  </tbody>
@@ -131,12 +211,13 @@ The Arsse does not at this time have any first party clients. However, because T
   <tr>
    <th rowspan="2" style="text-align:left; width:15%">Name</th>
    <th rowspan="2" style="text-align:left">OS</th>
-   <th colspan="2" style="width:50%">Protocol</th>
+   <th colspan="3" style="width:50%">Protocol</th>
    <th rowspan="2" style="text-align:left">Notes</th>
   </tr>
   <tr>
    <th style="text-align:center">Nextcloud News</th>
    <th style="text-align:center">Tiny Tiny RSS</th>
+   <th style="text-align:center">Fever</th>
   </tr>
  </thead>
  <tbody>
@@ -145,6 +226,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>iOS</td>
    <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
    <td style="text-align:center;color:#00953b;font-size:larger">✔</td>
+   <td style="text-align:center;color:#cf102d;font-size:larger">✘</td>
    <td>
     <p>Does not support HTTP authentication.</p>
    </td>
