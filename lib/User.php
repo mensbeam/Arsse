@@ -110,6 +110,8 @@ class User {
         if (Arsse::$db->userExists($user)) {
             // if the password change was successful and the user exists, set the internal password to the same value
             Arsse::$db->userPasswordSet($user, $out);
+            // also invalidate any current sessions for the user
+            Arsse::$db->sessionDestroy($user);
         }
         return $out;
     }
@@ -123,6 +125,8 @@ class User {
         if (Arsse::$db->userExists($user)) {
             // if the password change was successful and the user exists, set the internal password to the same value
             Arsse::$db->userPasswordSet($user, null);
+            // also invalidate any current sessions for the user
+            Arsse::$db->sessionDestroy($user);
         }
         return $out;
     }

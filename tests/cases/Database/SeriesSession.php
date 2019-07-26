@@ -116,6 +116,16 @@ trait SeriesSession {
         $this->assertFalse(Arsse::$db->sessionDestroy($user, $id));
     }
 
+    public function testDestroyAllSessions() {
+        $user = "jane.doe@example.com";
+        $this->assertTrue(Arsse::$db->sessionDestroy($user));
+        $state = $this->primeExpectations($this->data, ['arsse_sessions' => ["id", "created", "expires", "user"]]);
+        unset($state['arsse_sessions']['rows'][0]);
+        unset($state['arsse_sessions']['rows'][1]);
+        unset($state['arsse_sessions']['rows'][2]);
+        $this->compareExpectations(static::$drv, $state);
+    }
+
     public function testDestroyASessionForTheWrongUser() {
         $user = "john.doe@example.com";
         $id = "80fa94c1a11f11e78667001e673b2560";

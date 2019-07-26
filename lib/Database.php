@@ -340,15 +340,21 @@ class Database {
      * This function can be used to explicitly invalidate a session after a user logs out
      *
      * @param string $user The user who owns the session to be destroyed
-     * @param string $id The identifier of the session to destroy
+     * @param string|null $id The identifier of the session to destroy
      */
-    public function sessionDestroy(string $user, string $id): bool {
+    public function sessionDestroy(string $user, string $id = null): bool {
         // If the user isn't authorized to perform this action then throw an exception.
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
-        // delete the session and report success.
-        return (bool) $this->db->prepare("DELETE FROM arsse_sessions where id = ? and \"user\" = ?", "str", "str")->run($id, $user)->changes();
+        if (is_null($id)) {
+            // delete all sessions and report success unconditionally if no identifier was specified
+            $this->db->prepare("DELETE FROM arsse_sessions where \"user\" = ?", "str")->run($user);
+            return true;
+        } else {
+            // otherwise delete only the specified session and report success.
+            return (bool) $this->db->prepare("DELETE FROM arsse_sessions where id = ? and \"user\" = ?", "str", "str")->run($id, $user)->changes();
+        }
     }
 
     /** Resumes a session, returning available session data
