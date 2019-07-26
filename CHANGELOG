@@ -12,6 +12,7 @@ Bug fixes:
 - Treat command line option -h the same as --help
 - Sort Tiny Tiny RSS special feeds according to special ordering
 - Invalidate sessions when passwords are changed
+- Correct example systemd unit to start after PostgreSQL and MySQL
 
 Changes:
 - Perform regular database maintenance to improve long-term performance
