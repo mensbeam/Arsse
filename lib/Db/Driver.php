@@ -82,4 +82,10 @@ interface Driver {
      * This functionality should be avoided in favour of using statement parameters whenever possible
      */
     public function literalString(string $str): string;
+
+    /** Performs implementation-specific database maintenance to ensure good performance
+     * 
+     * This should be restricted to quick maintenance; in SQLite terms it might include ANALYZE, but not VACUUM
+     */
+    public function maintenance(): bool;
 }

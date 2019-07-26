@@ -110,6 +110,11 @@ class Database {
         return $this->db->charsetAcceptable();
     }
 
+    /** Performs maintenance on the database to ensure good performance */
+    public function driverMaintenance(): bool {
+        return $this->db->maintenance();
+    }
+
     /** Computes the column and value text of an SQL "SET" clause, validating arbitrary input against a whitelist
      *
      * Returns an indexed array containing the clause text, an array of types, and another array of values
@@ -1788,10 +1793,11 @@ class Database {
             $limitUnread = Date::sub(Arsse::$conf->purgeArticlesUnread);
         }
         $feeds = $this->db->query("SELECT id, size from arsse_feeds")->getAll();
+        $deleted = 0;
         foreach ($feeds as $feed) {
-            $query->run($feed['id'], $feed['size'], $feed['id'], $limitUnread, $limitRead);
+            $deleted += $query->run($feed['id'], $feed['size'], $feed['id'], $limitUnread, $limitRead)->changes();
         }
-        return true;
+        return (bool) $deleted;
     }
 
     /** Ensures the specified article exists and raises an exception otherwise

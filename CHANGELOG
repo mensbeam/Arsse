@@ -13,6 +13,9 @@ Bug fixes:
 - Sort Tiny Tiny RSS special feeds according to special ordering
 - Invalidate sessions when passwords are changed
 
+Changes:
+- Perform regular database maintenance to improve long-term performance
+
 Version 0.7.1 (2019-03-25)
 ==========================
 

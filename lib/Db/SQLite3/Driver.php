@@ -188,4 +188,10 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     public function literalString(string $str): string {
         return "'".\SQLite3::escapeString($str)."'";
     }
+
+    public function maintenance(): bool {
+        // analyze the database then checkpoint and truncate the write-ahead log
+        $this->exec("ANALYZE; PRAGMA wal_checkpoint(truncate)");
+        return true;
+    }
 }

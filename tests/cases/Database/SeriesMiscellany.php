@@ -44,4 +44,8 @@ trait SeriesMiscellany {
     public function testCheckCharacterSetAcceptability() {
         $this->assertInternalType("bool", Arsse::$db->driverCharsetAcceptable());
     }
+
+    public function testPerformMaintenance() {
+        $this->assertTrue(Arsse::$db->driverMaintenance());
+    }
 }

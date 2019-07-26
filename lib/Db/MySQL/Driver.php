@@ -216,4 +216,17 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     public function literalString(string $str): string {
         return "'".$this->db->real_escape_string($str)."'";
     }
+
+    public function maintenance(): bool {
+        // with MySQL each table must be analyzed separately, so we first have to get a list of tables
+        foreach ($this->query("SHOW TABLES like 'arsse\\_%'") as $table) {
+            $table = array_pop($table);
+            if (!preg_match("/^arsse_[a-z_]+$/", $table)) {
+                // table is not one of ours
+                continue; // @codeCoverageIgnore
+            }
+            $this->query("ANALYZE TABLE $table");
+        }
+        return true;
+    }
 }

@@ -382,4 +382,9 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testProduceAStringLiteral() {
         $this->assertSame("'It''s a string!'", $this->drv->literalString("It's a string!"));
     }
+
+    public function testPerformMaintenance() {
+        // this performs maintenance in the absence of tables; see BaseUpdate.php for another test with tables
+        $this->assertTrue($this->drv->maintenance());
+    }
 }
