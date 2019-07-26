@@ -6,7 +6,6 @@ New features:
 - Command line functionality for clearing a password, disabling the account
 - Command line options for dealing with Fever passwords
 - Command line functionality for importing and exporting OPML
-- Command line functionality for cron-based feed updating
 - Command line documentation of all commands and options
 
 Bug fixes:
