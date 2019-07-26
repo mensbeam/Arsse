@@ -28,4 +28,8 @@ trait PDODriver {
         }
         return new PDOResult($this->db, $r);
     }
+
+    public function literalString(string $str): string {
+        return $this->db->quote($str);
+    }
 }

@@ -14,12 +14,12 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     use Dispatch;
 
     const BINDINGS = [
-        "integer"   => "bigint",
-        "float"     => "decimal",
-        "datetime"  => "timestamp(0) without time zone",
-        "binary"    => "bytea",
-        "string"    => "text",
-        "boolean"   => "smallint", // FIXME: using boolean leads to incompatibilities with versions of SQLite bundled prior to PHP 7.3
+        self::T_INTEGER  => "bigint",
+        self::T_FLOAT    => "decimal",
+        self::T_DATETIME => "timestamp(0) without time zone",
+        self::T_BINARY   => "bytea",
+        self::T_STRING   => "text",
+        self::T_BOOLEAN  => "smallint", // FIXME: using boolean leads to incompatibilities with versions of SQLite bundled prior to PHP 7.3
     ];
 
     protected $db;
@@ -47,7 +47,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         }
     }
 
-    protected function bindValue($value, string $type, int $position): bool {
+    protected function bindValue($value, int $type, int $position): bool {
         $this->in[] = $value;
         return true;
     }
@@ -59,7 +59,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         for ($b = 1; $b < sizeof($q); $b++) {
             $a = $b - 1;
             $mark = $mungeParamMarkers ? "\$$b" : "?";
-            $type = isset($types[$a]) ? "::".self::BINDINGS[$types[$a]] : "";
+            $type = isset($types[$a]) ? "::".self::BINDINGS[$types[$a] % self::T_NOT_NULL] : "";
             $out .= $q[$a].$mark.$type;
         }
         $out .= array_pop($q);

@@ -27,11 +27,10 @@ trait SeriesSession {
                 'columns' => [
                     'id'       => 'str',
                     'password' => 'str',
-                    'name'     => 'str',
                 ],
                 'rows' => [
-                    ["jane.doe@example.com", "", "Jane Doe"],
-                    ["john.doe@example.com", "", "John Doe"],
+                    ["jane.doe@example.com", ""],
+                    ["john.doe@example.com", ""],
                 ],
             ],
             'arsse_sessions' => [
@@ -70,7 +69,7 @@ trait SeriesSession {
         // sessions near timeout should be refreshed automatically
         $state = $this->primeExpectations($this->data, ['arsse_sessions' => ["id", "created", "expires", "user"]]);
         $state['arsse_sessions']['rows'][3][2] = Date::transform(Date::add(Arsse::$conf->userSessionTimeout, $now), "sql");
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
         // session resumption should not check authorization
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertArraySubset($exp1, Arsse::$db->sessionResume("80fa94c1a11f11e78667001e673b2560"));
@@ -97,7 +96,7 @@ trait SeriesSession {
         $now = time();
         $state = $this->primeExpectations($this->data, ['arsse_sessions' => ["id", "created", "expires", "user"]]);
         $state['arsse_sessions']['rows'][] = [$id, Date::transform($now, "sql"), Date::transform(Date::add(Arsse::$conf->userSessionTimeout, $now), "sql"), $user];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testCreateASessionWithoutAuthority() {
@@ -112,9 +111,19 @@ trait SeriesSession {
         $this->assertTrue(Arsse::$db->sessionDestroy($user, $id));
         $state = $this->primeExpectations($this->data, ['arsse_sessions' => ["id", "created", "expires", "user"]]);
         unset($state['arsse_sessions']['rows'][0]);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
         // destroying a session which does not exist is not an error
         $this->assertFalse(Arsse::$db->sessionDestroy($user, $id));
+    }
+
+    public function testDestroyAllSessions() {
+        $user = "jane.doe@example.com";
+        $this->assertTrue(Arsse::$db->sessionDestroy($user));
+        $state = $this->primeExpectations($this->data, ['arsse_sessions' => ["id", "created", "expires", "user"]]);
+        unset($state['arsse_sessions']['rows'][0]);
+        unset($state['arsse_sessions']['rows'][1]);
+        unset($state['arsse_sessions']['rows'][2]);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testDestroyASessionForTheWrongUser() {

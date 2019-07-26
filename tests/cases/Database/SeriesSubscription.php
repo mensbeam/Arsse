@@ -18,11 +18,10 @@ trait SeriesSubscription {
                 'columns' => [
                     'id'       => 'str',
                     'password' => 'str',
-                    'name'     => 'str',
                 ],
                 'rows' => [
-                    ["jane.doe@example.com", "", "Jane Doe"],
-                    ["john.doe@example.com", "", "John Doe"],
+                    ["jane.doe@example.com", ""],
+                    ["john.doe@example.com", ""],
                 ],
             ],
             'arsse_folders' => [
@@ -48,6 +47,7 @@ trait SeriesSubscription {
                     'title'      => "str",
                     'username'   => "str",
                     'password'   => "str",
+                    'updated'    => "datetime",
                     'next_fetch' => "datetime",
                     'favicon'    => "str",
                 ],
@@ -68,6 +68,33 @@ trait SeriesSubscription {
                     [2,"jane.doe@example.com",2,null,null,0,0],
                     [3,"john.doe@example.com",3,"Ook",2,0,1],
                 ]
+            ],
+            'arsse_tags' => [
+                'columns' => [
+                    'id'       => "int",
+                    'owner'    => "str",
+                    'name'     => "str",
+                ],
+                'rows' => [
+                    [1,"john.doe@example.com","Interesting"],
+                    [2,"john.doe@example.com","Fascinating"],
+                    [3,"jane.doe@example.com","Boring"],
+                    [4,"john.doe@example.com","Lonely"],
+                ],
+            ],
+            'arsse_tag_members' => [
+                'columns' => [
+                    'tag' => "int",
+                    'subscription' => "int",
+                    'assigned' => "bool",
+                ],
+                'rows' => [
+                    [1,1,1],
+                    [1,3,0],
+                    [2,1,1],
+                    [2,3,1],
+                    [3,2,1],
+                ],
             ],
             'arsse_articles' => [
                 'columns' => [
@@ -108,9 +135,9 @@ trait SeriesSubscription {
             ],
         ];
         $this->data['arsse_feeds']['rows'] = [
-            [1,"http://example.com/feed1", "Ook", "", "",strtotime("now"),''],
-            [2,"http://example.com/feed2", "eek", "", "",strtotime("now - 1 hour"),'http://example.com/favicon.ico'],
-            [3,"http://example.com/feed3", "Ack", "", "",strtotime("now + 1 hour"),''],
+            [1,"http://example.com/feed1", "Ook", "", "",strtotime("now"),strtotime("now"),''],
+            [2,"http://example.com/feed2", "eek", "", "",strtotime("now - 1 hour"),strtotime("now - 1 hour"),'http://example.com/favicon.ico'],
+            [3,"http://example.com/feed3", "Ack", "", "",strtotime("now + 1 hour"),strtotime("now + 1 hour"),''],
         ];
         // initialize a partial mock of the Database object to later manipulate the feedUpdate method
         Arsse::$db = Phake::partialMock(Database::class, static::$drv);
@@ -133,7 +160,7 @@ trait SeriesSubscription {
             'arsse_subscriptions' => ['id','owner','feed'],
         ]);
         $state['arsse_subscriptions']['rows'][] = [$subID,$this->user,1];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testAddASubscriptionToANewFeed() {
@@ -150,7 +177,7 @@ trait SeriesSubscription {
         ]);
         $state['arsse_feeds']['rows'][] = [$feedID,$url,"",""];
         $state['arsse_subscriptions']['rows'][] = [$subID,$this->user,$feedID];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testAddASubscriptionToANewFeedViaDiscovery() {
@@ -168,7 +195,7 @@ trait SeriesSubscription {
         ]);
         $state['arsse_feeds']['rows'][] = [$feedID,$discovered,"",""];
         $state['arsse_subscriptions']['rows'][] = [$subID,$this->user,$feedID];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testAddASubscriptionToAnInvalidFeed() {
@@ -184,7 +211,7 @@ trait SeriesSubscription {
                 'arsse_feeds'         => ['id','url','username','password'],
                 'arsse_subscriptions' => ['id','owner','feed'],
             ]);
-            $this->compareExpectations($state);
+            $this->compareExpectations(static::$drv, $state);
             $this->assertException("invalidUrl", "Feed");
             throw $e;
         }
@@ -211,7 +238,7 @@ trait SeriesSubscription {
             'arsse_subscriptions' => ['id','owner','feed'],
         ]);
         array_shift($state['arsse_subscriptions']['rows']);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testRemoveAMissingSubscription() {
@@ -350,15 +377,15 @@ trait SeriesSubscription {
             'arsse_subscriptions' => ['id','owner','feed','title','folder','pinned','order_type'],
         ]);
         $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com",2,"Ook Ook",3,0,0];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, [
             'title' => null,
         ]);
         $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com",2,null,3,0,0];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
         // making no changes is a valid result
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['unhinged' => true]);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMoveASubscriptionToAMissingFolder() {
@@ -446,5 +473,40 @@ trait SeriesSubscription {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->subscriptionFavicon(-2112, $user);
+    }
+
+    public function testListTheTagsOfASubscription() {
+        $this->assertEquals([1,2], Arsse::$db->subscriptionTagsGet("john.doe@example.com", 1));
+        $this->assertEquals([2], Arsse::$db->subscriptionTagsGet("john.doe@example.com", 3));
+        $this->assertEquals(["Fascinating","Interesting"], Arsse::$db->subscriptionTagsGet("john.doe@example.com", 1, true));
+        $this->assertEquals(["Fascinating"], Arsse::$db->subscriptionTagsGet("john.doe@example.com", 3, true));
+    }
+
+    public function testListTheTagsOfAMissingSubscription() {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        Arsse::$db->subscriptionTagsGet($this->user, 101);
+    }
+
+    public function testListTheTagsOfASubscriptionWithoutAuthority() {
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Arsse::$db->subscriptionTagsGet("john.doe@example.com", 1);
+    }
+
+    public function testGetRefreshTimeOfASubscription() {
+        $user = "john.doe@example.com";
+        $this->assertTime(strtotime("now + 1 hour"), Arsse::$db->subscriptionRefreshed($user));
+        $this->assertTime(strtotime("now - 1 hour"), Arsse::$db->subscriptionRefreshed($user, 1));
+    }
+
+    public function testGetRefreshTimeOfAMissingSubscription() {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        $this->assertTime(strtotime("now - 1 hour"), Arsse::$db->subscriptionRefreshed("john.doe@example.com", 2));
+    }
+
+    public function testGetRefreshTimeOfASubscriptionWithoutAuthority() {
+        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        $this->assertTime(strtotime("now + 1 hour"), Arsse::$db->subscriptionRefreshed("john.doe@example.com"));
     }
 }

@@ -130,4 +130,9 @@ class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertException("updateTooNew", "Db");
         $this->drv->schemaUpdate(-1, $this->base);
     }
+
+    public function testPerformMaintenance() {
+        $this->drv->schemaUpdate(Database::SCHEMA_VERSION);
+        $this->assertTrue($this->drv->maintenance());
+    }
 }

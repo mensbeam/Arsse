@@ -20,6 +20,9 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
     public function auth(string $user, string $password): bool {
         try {
             $hash = $this->userPasswordGet($user);
+            if (is_null($hash)) {
+                return false;
+            }
         } catch (Exception $e) {
             return false;
         }
@@ -58,7 +61,17 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
         return $newPassword;
     }
 
-    protected function userPasswordGet(string $user): string {
+    public function userPasswordUnset(string $user, string $oldPassword = null): bool {
+        // do nothing: the internal database is updated regardless of what the driver does (assuming it does not throw an exception)
+        // throw an exception if the user does not exist
+        if (!$this->userExists($user)) {
+            throw new Exception("doesNotExist", ['action' => "userPasswordUnset", 'user' => $user]);
+        } else {
+            return true;
+        }
+    }
+
+    protected function userPasswordGet(string $user) {
         return Arsse::$db->userPasswordGet($user);
     }
 }

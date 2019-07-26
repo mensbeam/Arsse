@@ -94,6 +94,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testTranslateAToken() {
         $this->assertRegExp("/^[a-z][a-z0-9]*$/i", $this->drv->sqlToken("greatest"));
         $this->assertRegExp("/^\"?[a-z][a-z0-9_\-]*\"?$/i", $this->drv->sqlToken("nocase"));
+        $this->assertRegExp("/^[a-z][a-z0-9]*$/i", $this->drv->sqlToken("like"));
         $this->assertSame("distinct", $this->drv->sqlToken("distinct"));
     }
 
@@ -376,5 +377,14 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv->savepointCreate(true);
         $this->drv->savepointUndo();
         $this->assertTrue($this->exec(str_replace("#", "3", $this->setVersion)));
+    }
+
+    public function testProduceAStringLiteral() {
+        $this->assertSame("'It''s a string!'", $this->drv->literalString("It's a string!"));
+    }
+
+    public function testPerformMaintenance() {
+        // this performs maintenance in the absence of tables; see BaseUpdate.php for another test with tables
+        $this->assertTrue($this->drv->maintenance());
     }
 }

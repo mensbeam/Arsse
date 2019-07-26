@@ -36,6 +36,8 @@ return [
     'Exception.JKingWeb/Arsse/Exception.unknown'                           => 'An unknown error has occurred',
     // indicates programming error
     'Exception.JKingWeb/Arsse/Exception.constantUnknown'                   => 'Supplied constant value ({0}) is unknown or invalid in the context in which it was used',
+    // indicates programming error
+    'Exception.JKingWeb/Arsse/Exception.arrayEmpty'                        => 'Supplied array "{0}" is empty, but should have at least one element',
     'Exception.JKingWeb/Arsse/ExceptionType.strictFailure'                 => 'Supplied value could not be normalized to {0, select,
         1 {null}
         2 {boolean}
@@ -118,6 +120,7 @@ return [
     'Exception.JKingWeb/Arsse/Db/Exception.savepointStale'                 => 'Tried to {action} stale savepoint {index}',
     // indicates programming error
     'Exception.JKingWeb/Arsse/Db/Exception.resultReused'                   => 'Result set already iterated',
+    'Exception.JKingWeb/Arsse/Db/ExceptionRetry.schemaChange'              => '{0}',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.missing'                   => 'Required field "{field}" missing while performing action "{action}"',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.whitespace'                => 'Field "{field}" of action "{action}" may not contain only whitespace',
     'Exception.JKingWeb/Arsse/Db/ExceptionInput.tooLong'                   => 'Field "{field}" of action "{action}" has a maximum length of {max}',
@@ -152,4 +155,13 @@ return [
     'Exception.JKingWeb/Arsse/Feed/Exception.xmlEntity'                    => 'Refused to parse feed "{url}" because it contains an XXE attack',
     'Exception.JKingWeb/Arsse/Feed/Exception.subscriptionNotFound'         => 'Unable to find a feed at location "{url}"',
     'Exception.JKingWeb/Arsse/Feed/Exception.unsupportedFeedFormat'        => 'Feed "{url}" is of an unsupported format',
+    'Exception.JKingWeb/Arsse/ImportExport/Exception.fileMissing'          => 'Import {type} file "{file}" does not exist',
+    'Exception.JKingWeb/Arsse/ImportExport/Exception.fileUnreadable'       => 'Insufficient permissions to read {type} file "{file}" for import',
+    'Exception.JKingWeb/Arsse/ImportExport/Exception.fileUncreatable'      => 'Insufficient permissions to write {type} export to file "{file}"',
+    'Exception.JKingWeb/Arsse/ImportExport/Exception.fileUnwritable'       => 'Insufficient permissions to write {type} export to existing file "{file}"',
+    'Exception.JKingWeb/Arsse/ImportExport/Exception.invalidSyntax'        => 'Input data syntax error at line {line}, column {column}',
+    'Exception.JKingWeb/Arsse/ImportExport/Exception.invalidSemantics'     => 'Input data is not valid {type} data',
+    'Exception.JKingWeb/Arsse/ImportExport/Exception.invalidFolderName'    => 'Input data contains an invalid folder name',
+    'Exception.JKingWeb/Arsse/ImportExport/Exception.invalidFolderCopy'    => 'Input data contains multiple folders of the same name under the same parent',
+    'Exception.JKingWeb/Arsse/ImportExport/Exception.invalidTagName'       => 'Input data contains an invalid tag name',
 ];

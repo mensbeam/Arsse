@@ -8,8 +8,9 @@ namespace JKingWeb\Arsse\TestCase\Database;
 
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Misc\Context;
+use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Misc\ValueInfo;
 use Phake;
 
 trait SeriesArticle {
@@ -19,33 +20,13 @@ trait SeriesArticle {
                 'columns' => [
                     'id'       => 'str',
                     'password' => 'str',
-                    'name'     => 'str',
                 ],
                 'rows' => [
-                    ["jane.doe@example.com", "", "Jane Doe"],
-                    ["john.doe@example.com", "", "John Doe"],
-                    ["john.doe@example.org", "", "John Doe"],
-                    ["john.doe@example.net", "", "John Doe"],
+                    ["jane.doe@example.com", ""],
+                    ["john.doe@example.com", ""],
+                    ["john.doe@example.org", ""],
+                    ["john.doe@example.net", ""],
                 ],
-            ],
-            'arsse_folders' => [
-                'columns' => [
-                    'id'     => "int",
-                    'owner'  => "str",
-                    'parent' => "int",
-                    'name'   => "str",
-                ],
-                'rows' => [
-                    [1, "john.doe@example.com", null, "Technology"],
-                    [2, "john.doe@example.com",    1, "Software"],
-                    [3, "john.doe@example.com",    1, "Rocketry"],
-                    [4, "jane.doe@example.com", null, "Politics"],
-                    [5, "john.doe@example.com", null, "Politics"],
-                    [6, "john.doe@example.com",    2, "Politics"],
-                    [7, "john.doe@example.net", null, "Technology"],
-                    [8, "john.doe@example.net",    7, "Software"],
-                    [9, "john.doe@example.net", null, "Politics"],
-                ]
             ],
             'arsse_feeds' => [
                 'columns' => [
@@ -67,6 +48,42 @@ trait SeriesArticle {
                     [11,"http://example.com/11", "Feed 11"],
                     [12,"http://example.com/12", "Feed 12"],
                     [13,"http://example.com/13", "Feed 13"],
+                ]
+            ],
+            'arsse_folders' => [
+                'columns' => [
+                    'id'     => "int",
+                    'owner'  => "str",
+                    'parent' => "int",
+                    'name'   => "str",
+                ],
+                'rows' => [
+                    [1, "john.doe@example.com", null, "Technology"],
+                    [2, "john.doe@example.com",    1, "Software"],
+                    [3, "john.doe@example.com",    1, "Rocketry"],
+                    [4, "jane.doe@example.com", null, "Politics"],
+                    [5, "john.doe@example.com", null, "Politics"],
+                    [6, "john.doe@example.com",    2, "Politics"],
+                    [7, "john.doe@example.net", null, "Technology"],
+                    [8, "john.doe@example.net",    7, "Software"],
+                    [9, "john.doe@example.net", null, "Politics"],
+                ]
+            ],
+            'arsse_tags' => [
+                'columns' => [
+                    'id'    => "int",
+                    'owner' => "str",
+                    'name'  => "str",
+                ],
+                'rows' => [
+                    [1, "john.doe@example.com", "Technology"],
+                    [2, "john.doe@example.com", "Software"],
+                    [3, "john.doe@example.com", "Rocketry"],
+                    [4, "jane.doe@example.com", "Politics"],
+                    [5, "john.doe@example.com", "Politics"],
+                    [6, "john.doe@example.net", "Technology"],
+                    [7, "john.doe@example.net", "Software"],
+                    [8, "john.doe@example.net", "Politics"],
                 ]
             ],
             'arsse_subscriptions' => [
@@ -94,6 +111,25 @@ trait SeriesArticle {
                     [14,"john.doe@example.net",4,    7,null],
                 ]
             ],
+            'arsse_tag_members' => [
+                'columns' => [
+                    'tag'          => "int",
+                    'subscription' => "int",
+                    'assigned'     => "bool",
+                ],
+                'rows' => [
+                    [1,3,1],
+                    [1,4,1],
+                    [2,4,1],
+                    [5,1,0],
+                    [5,4,1],
+                    [5,5,1],
+                    [6,13,1],
+                    [6,14,1],
+                    [7,13,1],
+                    [8,12,1],
+                ],
+            ],
             'arsse_articles' => [
                 'columns' => [
                     'id'                 => "int",
@@ -111,13 +147,13 @@ trait SeriesArticle {
                     'modified'           => "datetime",
                 ],
                 'rows' => [
-                    [1,1,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z"],
-                    [2,1,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z"],
-                    [3,2,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z"],
-                    [4,2,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z"],
-                    [5,3,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z"],
-                    [6,3,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z"],
-                    [7,4,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z"],
+                    [1,1,null,"Title one",  null,null,null,"First article", null,"","","","2000-01-01T00:00:00Z"],
+                    [2,1,null,"Title two",  null,null,null,"Second article",null,"","","","2010-01-01T00:00:00Z"],
+                    [3,2,null,"Title three",null,null,null,"Third article", null,"","","","2000-01-01T00:00:00Z"],
+                    [4,2,null,null,"John Doe",null,null,null,null,"","","","2010-01-01T00:00:00Z"],
+                    [5,3,null,null,"John Doe",null,null,null,null,"","","","2000-01-01T00:00:00Z"],
+                    [6,3,null,null,"Jane Doe",null,null,null,null,"","","","2010-01-01T00:00:00Z"],
+                    [7,4,null,null,"Jane Doe",null,null,null,null,"","","","2000-01-01T00:00:00Z"],
                     [8,4,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z"],
                     [9,5,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z"],
                     [10,5,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z"],
@@ -377,6 +413,110 @@ trait SeriesArticle {
         unset($this->data, $this->matches, $this->fields, $this->checkTables, $this->user);
     }
 
+    /** @dataProvider provideContextMatches */
+    public function testListArticlesCheckingContext(Context $c, array $exp) {
+        $ids = array_column($ids = Arsse::$db->articleList("john.doe@example.com", $c)->getAll(), "id");
+        sort($ids);
+        sort($exp);
+        $this->assertEquals($exp, $ids);
+    }
+
+    public function provideContextMatches() {
+        return [
+            'Blank context' => [new Context, [1,2,3,4,5,6,7,8,19,20]],
+            'Folder tree' => [(new Context)->folder(1), [5,6,7,8]],
+            'Entire folder tree' => [(new Context)->folder(0), [1,2,3,4,5,6,7,8,19,20]],
+            'Leaf folder' => [(new Context)->folder(6), [7,8]],
+            'Multiple folder trees' => [(new Context)->folders([1,5]), [5,6,7,8,19,20]],
+            'Multiple folder trees including root' => [(new Context)->folders([0,1,5]), [1,2,3,4,5,6,7,8,19,20]],
+            'Shallow folder' => [(new Context)->folderShallow(1), [5,6]],
+            'Root folder only' => [(new Context)->folderShallow(0), [1,2,3,4]],
+            'Multiple shallow folders' => [(new Context)->foldersShallow([1,6]), [5,6,7,8]],
+            'Subscription' => [(new Context)->subscription(5), [19,20]],
+            'Multiple subscriptions' => [(new Context)->subscriptions([4,5]), [7,8,19,20]],
+            'Unread' => [(new Context)->subscription(5)->unread(true), [20]],
+            'Read' => [(new Context)->subscription(5)->unread(false), [19]],
+            'Starred' => [(new Context)->starred(true), [1,20]],
+            'Unstarred' => [(new Context)->starred(false), [2,3,4,5,6,7,8,19]],
+            'Starred and Read' => [(new Context)->starred(true)->unread(false), [1]],
+            'Starred and Read in subscription' => [(new Context)->starred(true)->unread(false)->subscription(5), []],
+            'Annotated' => [(new Context)->annotated(true), [2]],
+            'Not annotated' => [(new Context)->annotated(false), [1,3,4,5,6,7,8,19,20]],
+            'Labelled' => [(new Context)->labelled(true), [1,5,8,19,20]],
+            'Not labelled' => [(new Context)->labelled(false), [2,3,4,6,7]],
+            'Not after edition 999' => [(new Context)->subscription(5)->latestEdition(999), [19]],
+            'Not after edition 19' => [(new Context)->subscription(5)->latestEdition(19), [19]],
+            'Not before edition 999' => [(new Context)->subscription(5)->oldestEdition(999), [20]],
+            'Not before edition 1001' => [(new Context)->subscription(5)->oldestEdition(1001), [20]],
+            'Not after article 3' => [(new Context)->latestArticle(3), [1,2,3]],
+            'Not before article 19' => [(new Context)->oldestArticle(19), [19,20]],
+            'Modified by author since 2005' => [(new Context)->modifiedSince("2005-01-01T00:00:00Z"), [2,4,6,8,20]],
+            'Modified by author since 2010' => [(new Context)->modifiedSince("2010-01-01T00:00:00Z"), [2,4,6,8,20]],
+            'Not modified by author since 2005' => [(new Context)->notModifiedSince("2005-01-01T00:00:00Z"), [1,3,5,7,19]],
+            'Not modified by author since 2000' => [(new Context)->notModifiedSince("2000-01-01T00:00:00Z"), [1,3,5,7,19]],
+            'Marked or labelled since 2014' => [(new Context)->markedSince("2014-01-01T00:00:00Z"), [8,19]],
+            'Marked or labelled since 2010' => [(new Context)->markedSince("2010-01-01T00:00:00Z"), [2,4,6,8,19,20]],
+            'Not marked or labelled since 2014' => [(new Context)->notMarkedSince("2014-01-01T00:00:00Z"), [1,2,3,4,5,6,7,20]],
+            'Not marked or labelled since 2005' => [(new Context)->notMarkedSince("2005-01-01T00:00:00Z"), [1,3,5,7]],
+            'Marked or labelled between 2000 and 2015' => [(new Context)->markedSince("2000-01-01T00:00:00Z")->notMarkedSince("2015-12-31T23:59:59Z"), [1,2,3,4,5,6,7,8,20]],
+            'Marked or labelled in 2010' => [(new Context)->markedSince("2010-01-01T00:00:00Z")->notMarkedSince("2010-12-31T23:59:59Z"), [2,4,6,20]],
+            'Paged results' => [(new Context)->limit(2)->oldestEdition(4), [4,5]],
+            'With label ID 1' => [(new Context)->label(1), [1,19]],
+            'With label ID 2' => [(new Context)->label(2), [1,5,20]],
+            'With label ID 1 or 2' => [(new Context)->labels([1,2]), [1,5,19,20]],
+            'With label "Interesting"' => [(new Context)->labelName("Interesting"), [1,19]],
+            'With label "Fascinating"' => [(new Context)->labelName("Fascinating"), [1,5,20]],
+            'With label "Interesting" or "Fascinating"' => [(new Context)->labelNames(["Interesting","Fascinating"]), [1,5,19,20]],
+            'Article ID 20' => [(new Context)->article(20), [20]],
+            'Edition ID 1001' => [(new Context)->edition(1001), [20]],
+            'Multiple articles' => [(new Context)->articles([1,20,50]), [1,20]],
+            'Multiple starred articles' => [(new Context)->articles([1,2,3])->starred(true), [1]],
+            'Multiple unstarred articles' => [(new Context)->articles([1,2,3])->starred(false), [2,3]],
+            'Multiple articles' => [(new Context)->articles([1,20,50]), [1,20]],
+            'Multiple editions' => [(new Context)->editions([1,1001,50]), [1,20]],
+            '150 articles' => [(new Context)->articles(range(1, Database::LIMIT_SET_SIZE * 3)), [1,2,3,4,5,6,7,8,19,20]],
+            'Search title or content 1' => [(new Context)->searchTerms(["Article"]), [1,2,3]],
+            'Search title or content 2' => [(new Context)->searchTerms(["one", "first"]), [1]],
+            'Search title or content 3' => [(new Context)->searchTerms(["one first"]), []],
+            'Search title 1' => [(new Context)->titleTerms(["two"]), [2]],
+            'Search title 2' => [(new Context)->titleTerms(["title two"]), [2]],
+            'Search title 3' => [(new Context)->titleTerms(["two", "title"]), [2]],
+            'Search title 4' => [(new Context)->titleTerms(["two title"]), []],
+            'Search note 1' => [(new Context)->annotationTerms(["some"]), [2]],
+            'Search note 2' => [(new Context)->annotationTerms(["some Note"]), [2]],
+            'Search note 3' => [(new Context)->annotationTerms(["note", "some"]), [2]],
+            'Search note 4' => [(new Context)->annotationTerms(["some", "sauce"]), []],
+            'Search author 1' => [(new Context)->authorTerms(["doe"]), [4,5,6,7]],
+            'Search author 2' => [(new Context)->authorTerms(["jane doe"]), [6,7]],
+            'Search author 3' => [(new Context)->authorTerms(["doe", "jane"]), [6,7]],
+            'Search author 4' => [(new Context)->authorTerms(["doe jane"]), []],
+            'Folder tree 1 excluding subscription 4' => [(new Context)->not->subscription(4)->folder(1), [5,6]],
+            'Folder tree 1 excluding articles 7 and 8' => [(new Context)->folder(1)->not->articles([7,8]), [5,6]],
+            'Folder tree 1 excluding no articles' => [(new Context)->folder(1)->not->articles([]), [5,6,7,8]],
+            'Marked or labelled between 2000 and 2015 excluding in 2010' => [(new Context)->markedSince("2000-01-01T00:00:00Z")->notMarkedSince("2015-12-31T23:59:59")->not->markedSince("2010-01-01T00:00:00Z")->not->notMarkedSince("2010-12-31T23:59:59Z"), [1,3,5,7,8]],
+            'Search with exclusion' => [(new Context)->searchTerms(["Article"])->not->searchTerms(["one", "two"]), [3]],
+            'Excluded folder tree' => [(new Context)->not->folder(1), [1,2,3,4,19,20]],
+            'Excluding label ID 2' => [(new Context)->not->label(2), [2,3,4,6,7,8,19]],
+            'Excluding label "Fascinating"' => [(new Context)->not->labelName("Fascinating"), [2,3,4,6,7,8,19]],
+            'Search 501 terms' => [(new Context)->searchTerms(array_merge(range(1, 500), [str_repeat("a", 1000)])), []],
+            'With tag ID 1' => [(new Context)->tag(1), [5,6,7,8]],
+            'With tag ID 5' => [(new Context)->tag(5), [7,8,19,20]],
+            'With tag ID 1 or 5' => [(new Context)->tags([1,5]), [5,6,7,8,19,20]],
+            'With tag "Technology"' => [(new Context)->tagName("Technology"), [5,6,7,8]],
+            'With tag "Politics"' => [(new Context)->tagName("Politics"), [7,8,19,20]],
+            'With tag "Technology" or "Politics"' => [(new Context)->tagNames(["Technology","Politics"]), [5,6,7,8,19,20]],
+            'Excluding tag ID 1' => [(new Context)->not->tag(1), [1,2,3,4,19,20]],
+            'Excluding tag ID 5' => [(new Context)->not->tag(5), [1,2,3,4,5,6]],
+            'Excluding tag "Technology"' => [(new Context)->not->tagName("Technology"), [1,2,3,4,19,20]],
+            'Excluding tag "Politics"' => [(new Context)->not->tagName("Politics"), [1,2,3,4,5,6]],
+            'Excluding tags ID 1 and 5' => [(new Context)->not->tags([1,5]), [1,2,3,4]],
+            'Excluding tags "Technology" and "Politics"' => [(new Context)->not->tagNames(["Technology","Politics"]), [1,2,3,4]],
+            'Excluding entire folder tree' => [(new Context)->not->folder(0), []],
+            'Excluding multiple folder trees' => [(new Context)->not->folders([1,5]), [1,2,3,4]],
+            'Excluding multiple folder trees including root' => [(new Context)->not->folders([0,1,5]), []],
+        ];
+    }
+
     public function testRetrieveArticleIdsForEditions() {
         $exp = [
             1 => 1,
@@ -414,88 +554,6 @@ trait SeriesArticle {
         $this->assertEquals($exp, Arsse::$db->editionArticle(...range(1, 1001)));
     }
 
-    public function testListArticlesCheckingContext() {
-        $compareIds = function(array $exp, Context $c) {
-            $ids = array_column($ids = Arsse::$db->articleList("john.doe@example.com", $c)->getAll(), "id");
-            sort($ids);
-            sort($exp);
-            $this->assertEquals($exp, $ids);
-        };
-        // get all items for user
-        $exp = [1,2,3,4,5,6,7,8,19,20];
-        $compareIds($exp, new Context);
-        $compareIds($exp, (new Context)->articles(range(1, Database::LIMIT_ARTICLES * 3)));
-        // get items from a folder tree
-        $compareIds([5,6,7,8], (new Context)->folder(1));
-        // get items from a leaf folder
-        $compareIds([7,8], (new Context)->folder(6));
-        // get items from a non-leaf folder without descending
-        $compareIds([1,2,3,4], (new Context)->folderShallow(0));
-        $compareIds([5,6], (new Context)->folderShallow(1));
-        // get items from a single subscription
-        $exp = [19,20];
-        $compareIds($exp, (new Context)->subscription(5));
-        // get un/read items from a single subscription
-        $compareIds([20], (new Context)->subscription(5)->unread(true));
-        $compareIds([19], (new Context)->subscription(5)->unread(false));
-        // get starred articles
-        $compareIds([1,20], (new Context)->starred(true));
-        $compareIds([2,3,4,5,6,7,8,19], (new Context)->starred(false));
-        $compareIds([1], (new Context)->starred(true)->unread(false));
-        $compareIds([], (new Context)->starred(true)->unread(false)->subscription(5));
-        // get items relative to edition
-        $compareIds([19], (new Context)->subscription(5)->latestEdition(999));
-        $compareIds([19], (new Context)->subscription(5)->latestEdition(19));
-        $compareIds([20], (new Context)->subscription(5)->oldestEdition(999));
-        $compareIds([20], (new Context)->subscription(5)->oldestEdition(1001));
-        // get items relative to article ID
-        $compareIds([1,2,3], (new Context)->latestArticle(3));
-        $compareIds([19,20], (new Context)->oldestArticle(19));
-        // get items relative to (feed) modification date
-        $exp = [2,4,6,8,20];
-        $compareIds($exp, (new Context)->modifiedSince("2005-01-01T00:00:00Z"));
-        $compareIds($exp, (new Context)->modifiedSince("2010-01-01T00:00:00Z"));
-        $exp = [1,3,5,7,19];
-        $compareIds($exp, (new Context)->notModifiedSince("2005-01-01T00:00:00Z"));
-        $compareIds($exp, (new Context)->notModifiedSince("2000-01-01T00:00:00Z"));
-        // get items relative to (user) modification date (both marks and labels apply)
-        $compareIds([8,19], (new Context)->markedSince("2014-01-01T00:00:00Z"));
-        $compareIds([2,4,6,8,19,20], (new Context)->markedSince("2010-01-01T00:00:00Z"));
-        $compareIds([1,2,3,4,5,6,7,20], (new Context)->notMarkedSince("2014-01-01T00:00:00Z"));
-        $compareIds([1,3,5,7], (new Context)->notMarkedSince("2005-01-01T00:00:00Z"));
-        // paged results
-        $compareIds([1], (new Context)->limit(1));
-        $compareIds([2], (new Context)->limit(1)->oldestEdition(1+1));
-        $compareIds([3], (new Context)->limit(1)->oldestEdition(2+1));
-        $compareIds([4,5], (new Context)->limit(2)->oldestEdition(3+1));
-        // reversed results
-        $compareIds([20], (new Context)->reverse(true)->limit(1));
-        $compareIds([19], (new Context)->reverse(true)->limit(1)->latestEdition(1001-1));
-        $compareIds([8], (new Context)->reverse(true)->limit(1)->latestEdition(19-1));
-        $compareIds([7,6], (new Context)->reverse(true)->limit(2)->latestEdition(8-1));
-        // get articles by label ID
-        $compareIds([1,19], (new Context)->label(1));
-        $compareIds([1,5,20], (new Context)->label(2));
-        // get articles by label name
-        $compareIds([1,19], (new Context)->labelName("Interesting"));
-        $compareIds([1,5,20], (new Context)->labelName("Fascinating"));
-        // get articles with any or no label
-        $compareIds([1,5,8,19,20], (new Context)->labelled(true));
-        $compareIds([2,3,4,6,7], (new Context)->labelled(false));
-        // get a specific article or edition
-        $compareIds([20], (new Context)->article(20));
-        $compareIds([20], (new Context)->edition(1001));
-        // get multiple specific articles or editions
-        $compareIds([1,20], (new Context)->articles([1,20,50]));
-        $compareIds([1,20], (new Context)->editions([1,1001,50]));
-        // get articles base on whether or not they have notes
-        $compareIds([1,3,4,5,6,7,8,19,20], (new Context)->annotated(false));
-        $compareIds([2], (new Context)->annotated(true));
-        // get specific starred articles
-        $compareIds([1], (new Context)->articles([1,2,3])->starred(true));
-        $compareIds([2,3], (new Context)->articles([1,2,3])->starred(false));
-    }
-
     public function testListArticlesOfAMissingFolder() {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->articleList($this->user, (new Context)->folder(1));
@@ -519,6 +577,25 @@ trait SeriesArticle {
         $this->assertEquals($this->fields, $test);
     }
 
+    /** @dataProvider provideOrderedLists */
+    public function testListArticlesCheckingOrder(array $sortCols, array $exp) {
+        $act = ValueInfo::normalize(array_column(iterator_to_array(Arsse::$db->articleList("john.doe@example.com", null, ["id"], $sortCols)), "id"), ValueInfo::T_INT | ValueInfo::M_ARRAY);
+        $this->assertSame($exp, $act);
+    }
+
+    public function provideOrderedLists() {
+        return [
+            [["id"], [1,2,3,4,5,6,7,8,19,20]],
+            [["id asc"], [1,2,3,4,5,6,7,8,19,20]],
+            [["id desc"], [20,19,8,7,6,5,4,3,2,1]],
+            [["edition"], [1,2,3,4,5,6,7,8,19,20]],
+            [["edition asc"], [1,2,3,4,5,6,7,8,19,20]],
+            [["edition desc"], [20,19,8,7,6,5,4,3,2,1]],
+            [["id", "edition desk"], [1,2,3,4,5,6,7,8,19,20]],
+            [["id", "editio"], [1,2,3,4,5,6,7,8,19,20]],
+        ];
+    }
+
     public function testListArticlesWithoutAuthority() {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
@@ -537,7 +614,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][9][4] = $now;
         $state['arsse_marks']['rows'][11][2] = 0;
         $state['arsse_marks']['rows'][11][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAllArticlesRead() {
@@ -552,7 +629,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][] = [13,6,1,0,$now,''];
         $state['arsse_marks']['rows'][] = [14,7,1,0,$now,''];
         $state['arsse_marks']['rows'][] = [14,8,1,0,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAllArticlesUnstarred() {
@@ -563,7 +640,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][10][4] = $now;
         $state['arsse_marks']['rows'][11][3] = 0;
         $state['arsse_marks']['rows'][11][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAllArticlesStarred() {
@@ -578,7 +655,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][] = [13,6,0,1,$now,''];
         $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
         $state['arsse_marks']['rows'][] = [14,8,0,1,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAllArticlesUnreadAndUnstarred() {
@@ -592,7 +669,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][11][2] = 0;
         $state['arsse_marks']['rows'][11][3] = 0;
         $state['arsse_marks']['rows'][11][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAllArticlesReadAndStarred() {
@@ -610,7 +687,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][] = [13,6,1,1,$now,''];
         $state['arsse_marks']['rows'][] = [14,7,1,1,$now,''];
         $state['arsse_marks']['rows'][] = [14,8,1,1,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAllArticlesUnreadAndStarred() {
@@ -628,7 +705,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][] = [13,6,0,1,$now,''];
         $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
         $state['arsse_marks']['rows'][] = [14,8,0,1,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAllArticlesReadAndUnstarred() {
@@ -646,7 +723,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][] = [13,6,1,0,$now,''];
         $state['arsse_marks']['rows'][] = [14,7,1,0,$now,''];
         $state['arsse_marks']['rows'][] = [14,8,1,0,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testSetNoteForAllArticles() {
@@ -665,7 +742,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][] = [13,6,0,0,$now,'New note'];
         $state['arsse_marks']['rows'][] = [14,7,0,0,$now,'New note'];
         $state['arsse_marks']['rows'][] = [14,8,0,0,$now,'New note'];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkATreeFolder() {
@@ -676,7 +753,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][] = [13,6,1,0,$now,''];
         $state['arsse_marks']['rows'][] = [14,7,1,0,$now,''];
         $state['arsse_marks']['rows'][] = [14,8,1,0,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkALeafFolder() {
@@ -685,7 +762,7 @@ trait SeriesArticle {
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][] = [13,5,1,0,$now,''];
         $state['arsse_marks']['rows'][] = [13,6,1,0,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAMissingFolder() {
@@ -699,7 +776,7 @@ trait SeriesArticle {
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][] = [13,5,1,0,$now,''];
         $state['arsse_marks']['rows'][] = [13,6,1,0,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAMissingSubscription() {
@@ -713,7 +790,7 @@ trait SeriesArticle {
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkMultipleArticles() {
@@ -723,7 +800,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
         $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkMultipleArticlessUnreadAndStarred() {
@@ -736,16 +813,11 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][11][2] = 0;
         $state['arsse_marks']['rows'][11][4] = $now;
         $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
-        $this->compareExpectations($state);
-    }
-
-    public function testMarkTooFewMultipleArticles() {
-        $this->assertException("tooShort", "Db", "ExceptionInput");
-        Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->articles([]));
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkTooManyMultipleArticles() {
-        $this->assertSame(7, Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->articles(range(1, Database::LIMIT_ARTICLES * 3))));
+        $this->assertSame(7, Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->articles(range(1, Database::LIMIT_SET_SIZE * 3))));
     }
 
     public function testMarkAMissingArticle() {
@@ -759,7 +831,7 @@ trait SeriesArticle {
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkMultipleEditions() {
@@ -769,13 +841,13 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
         $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkMultipleMissingEditions() {
         $this->assertSame(0, Arsse::$db->articleMark($this->user, ['starred'=>true], (new Context)->editions([500,501])));
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkMultipleEditionsUnread() {
@@ -786,7 +858,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][9][4] = $now;
         $state['arsse_marks']['rows'][11][2] = 0;
         $state['arsse_marks']['rows'][11][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkMultipleEditionsUnreadWithStale() {
@@ -795,7 +867,7 @@ trait SeriesArticle {
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][11][2] = 0;
         $state['arsse_marks']['rows'][11][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkMultipleEditionsUnreadAndStarredWithStale() {
@@ -807,12 +879,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][11][2] = 0;
         $state['arsse_marks']['rows'][11][4] = $now;
         $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
-        $this->compareExpectations($state);
-    }
-
-    public function testMarkTooFewMultipleEditions() {
-        $this->assertException("tooShort", "Db", "ExceptionInput");
-        Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>true], (new Context)->editions([]));
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkTooManyMultipleEditions() {
@@ -822,7 +889,7 @@ trait SeriesArticle {
     public function testMarkAStaleEditionUnread() {
         Arsse::$db->articleMark($this->user, ['read'=>false], (new Context)->edition(20)); // no changes occur
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAStaleEditionStarred() {
@@ -831,7 +898,7 @@ trait SeriesArticle {
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAStaleEditionUnreadAndStarred() {
@@ -840,13 +907,13 @@ trait SeriesArticle {
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAStaleEditionUnreadAndUnstarred() {
         Arsse::$db->articleMark($this->user, ['read'=>false,'starred'=>false], (new Context)->edition(20)); // no changes occur
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkAMissingEdition() {
@@ -862,7 +929,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][8][4] = $now;
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkByLatestEdition() {
@@ -875,7 +942,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][] = [13,6,0,1,$now,''];
         $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
         $state['arsse_marks']['rows'][] = [14,8,0,1,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkByLastMarked() {
@@ -886,7 +953,7 @@ trait SeriesArticle {
         $state['arsse_marks']['rows'][8][4] = $now;
         $state['arsse_marks']['rows'][9][3] = 1;
         $state['arsse_marks']['rows'][9][4] = $now;
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkByNotLastMarked() {
@@ -895,7 +962,7 @@ trait SeriesArticle {
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][] = [13,5,0,1,$now,''];
         $state['arsse_marks']['rows'][] = [14,7,0,1,$now,''];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkArticlesWithoutAuthority() {
@@ -908,7 +975,7 @@ trait SeriesArticle {
         $this->assertSame(2, Arsse::$db->articleCount("john.doe@example.com", (new Context)->starred(true)));
         $this->assertSame(4, Arsse::$db->articleCount("john.doe@example.com", (new Context)->folder(1)));
         $this->assertSame(0, Arsse::$db->articleCount("jane.doe@example.com", (new Context)->starred(true)));
-        $this->assertSame(10, Arsse::$db->articleCount("john.doe@example.com", (new Context)->articles(range(1, Database::LIMIT_ARTICLES *3))));
+        $this->assertSame(10, Arsse::$db->articleCount("john.doe@example.com", (new Context)->articles(range(1, Database::LIMIT_SET_SIZE * 3))));
     }
 
     public function testCountArticlesWithoutAuthority() {
@@ -984,5 +1051,22 @@ trait SeriesArticle {
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->articleCategoriesGet($this->user, 19);
+    }
+
+    /** @dataProvider provideArrayContextOptions */
+    public function testUseTooFewValuesInArrayContext(string $option) {
+        $this->assertException("tooShort", "Db", "ExceptionInput");
+        Arsse::$db->articleList($this->user, (new Context)->$option([]));
+    }
+
+    public function provideArrayContextOptions() {
+        foreach ([
+            "articles", "editions",
+            "subscriptions", "foldersShallow", //"folders",
+            "tags", "tagNames", "labels", "labelNames",
+            "searchTerms", "authorTerms", "annotationTerms",
+        ] as $method) {
+            yield [$method];
+        }
     }
 }

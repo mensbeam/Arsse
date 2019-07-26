@@ -10,7 +10,7 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Service;
-use JKingWeb\Arsse\Misc\Context;
+use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Db\ExceptionInput;
@@ -521,14 +521,10 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $c->limit($data['batchSize']);
         }
         // set the order of returned items
-        if ($data['oldestFirst']) {
-            $c->reverse(false);
-        } else {
-            $c->reverse(true);
-        }
+        $reverse = !$data['oldestFirst'];
         // set the edition mark-off; the database uses an or-equal comparison for internal consistency, but the protocol does not, so we must adjust by one
         if ($data['offset'] > 0) {
-            if ($c->reverse) {
+            if ($reverse) {
                 $c->latestEdition($data['offset'] - 1);
             } else {
                 $c->oldestEdition($data['offset'] + 1);
@@ -579,7 +575,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 "starred",
                 "modified_date",
                 "fingerprint",
-            ]);
+            ], [$reverse ? "edition desc" : "edition"]);
         } catch (ExceptionInput $e) {
             // ID of subscription or folder is not valid
             return new EmptyResponse(422);

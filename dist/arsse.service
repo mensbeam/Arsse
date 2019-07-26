@@ -1,6 +1,6 @@
 [Unit]
 Description=The Arsse feed fetching service
-After=network.target
+After=network.target mysql.service postgresql.service
 
 [Service]
 User=www-data

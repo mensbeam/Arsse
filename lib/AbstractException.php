@@ -11,6 +11,7 @@ abstract class AbstractException extends \Exception {
         "Exception.uncoded"                           => -1,
         "Exception.unknown"                           => 10000,
         "Exception.constantUnknown"                   => 10001,
+        "Exception.arrayEmpty"                        => 10002,
         "ExceptionType.strictFailure"                 => 10011,
         "ExceptionType.typeUnknown"                   => 10012,
         "Lang/Exception.defaultFileMissing"           => 10101,
@@ -44,6 +45,7 @@ abstract class AbstractException extends \Exception {
         "Db/Exception.savepointInvalid"               => 10226,
         "Db/Exception.savepointStale"                 => 10227,
         "Db/Exception.resultReused"                   => 10228,
+        "Db/ExceptionRetry.schemaChange"              => 10229,
         "Db/ExceptionInput.missing"                   => 10231,
         "Db/ExceptionInput.whitespace"                => 10232,
         "Db/ExceptionInput.tooLong"                   => 10233,
@@ -84,6 +86,15 @@ abstract class AbstractException extends \Exception {
         "Feed/Exception.xmlEntity"                    => 10512,
         "Feed/Exception.subscriptionNotFound"         => 10521,
         "Feed/Exception.unsupportedFeedFormat"        => 10522,
+        "ImportExport/Exception.fileMissing"          => 10601,
+        "ImportExport/Exception.fileUnreadable"       => 10603,
+        "ImportExport/Exception.fileUnwritable"       => 10604,
+        "ImportExport/Exception.fileUncreatable"      => 10605,
+        "ImportExport/Exception.invalidSyntax"        => 10611,
+        "ImportExport/Exception.invalidSemantics"     => 10612,
+        "ImportExport/Exception.invalidFolderName"    => 10613,
+        "ImportExport/Exception.invalidFolderCopy"    => 10614,
+        "ImportExport/Exception.invalidTagName"       => 10615,
     ];
 
     public function __construct(string $msgID = "", $vars = null, \Throwable $e = null) {

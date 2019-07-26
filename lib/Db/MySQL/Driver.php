@@ -41,7 +41,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
             $this->exec($q);
         }
         // get the maximum packet size; parameter strings larger than this size need to be chunked
-        $this->packetSize = (int) $this->query("select variable_value from performance_schema.session_variables where variable_name = 'max_allowed_packet'")->getValue();
+        $this->packetSize = (int) $this->query("SELECT variable_value from performance_schema.session_variables where variable_name = 'max_allowed_packet'")->getValue();
     }
 
     public static function makeSetupQueries(): array {
@@ -211,5 +211,22 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
 
     public function prepareArray(string $query, array $paramTypes): \JKingWeb\Arsse\Db\Statement {
         return new Statement($this->db, $query, $paramTypes, $this->packetSize);
+    }
+
+    public function literalString(string $str): string {
+        return "'".$this->db->real_escape_string($str)."'";
+    }
+
+    public function maintenance(): bool {
+        // with MySQL each table must be analyzed separately, so we first have to get a list of tables
+        foreach ($this->query("SHOW TABLES like 'arsse\\_%'") as $table) {
+            $table = array_pop($table);
+            if (!preg_match("/^arsse_[a-z_]+$/", $table)) {
+                // table is not one of ours
+                continue; // @codeCoverageIgnore
+            }
+            $this->query("ANALYZE TABLE $table");
+        }
+        return true;
     }
 }

@@ -286,7 +286,7 @@ class Conf {
                 }
                 switch (self::EXPECTED_TYPES[$key] ?? gettype($this->$key)) {
                     case "integer":
-                        return Value::normalize($value, Value::T_INT | $mode);
+                        return Value::normalize($value, Value::T_INT | $mode); // @codeCoverageIgnore
                     case "double":
                         return Value::normalize($value, Value::T_FLOAT | $mode);
                     case "string":

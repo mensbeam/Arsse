@@ -1,0 +1,20 @@
+<opml>
+    <body>
+        <outline text="Photography"/>
+        <outline text="Science">
+            <outline text="Rocketry">
+                <outline type="rss" text="NASA JPL" xmlUrl="https://www.jpl.nasa.gov/multimedia/rss/news.xml" category="tech"/>
+            </outline>
+            <outline type="rss" text="Ars Technica" xmlUrl="http://feeds.arstechnica.com/arstechnica/index/" category="frequent,tech"/>
+        </outline>
+        <outline text="Politics">
+            <outline text="Local">
+                <outline type="rss" text="Toronto Star" xmlUrl="https://www.thestar.com/content/thestar/feed.RSSManagerServlet.topstories.rss" category="news,canada,toronto"/>
+            </outline>
+            <outline text="National">
+                <outline type="rss" text="Ottawa Citizen" xmlUrl="http://rss.canada.com/get/?F239" category="news,canada"/>
+            </outline>
+        </outline>
+        <outline type="rss" text="Eurogamer" xmlUrl="https://www.eurogamer.net/?format=rss" category="gaming,frequent"/>
+    </body>
+</opml>

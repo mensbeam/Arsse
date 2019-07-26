@@ -28,7 +28,7 @@ trait SQLite3 {
     }
     
     public static function dbTableList($db): array {
-        $listTables = "SELECT name from sqlite_master where type = 'table' and name like 'arsse_%'";
+        $listTables = "SELECT name from sqlite_master where type = 'table' and name like 'arsse^_%' escape '^'";
         if ($db instanceof Driver) {
             $tables = $db->query($listTables)->getAll();
             $tables = sizeof($tables) ? array_column($tables, "name") : [];

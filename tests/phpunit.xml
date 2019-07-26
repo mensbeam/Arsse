@@ -7,7 +7,22 @@
     convertWarningsToExceptions="false"
     beStrictAboutTestsThatDoNotTestAnything="true"
     beStrictAboutOutputDuringTests="true"
-    stopOnError="true">
+    forceCoversAnnotation="true"
+>
+
+<php>
+    <env name="ARSSE_TEST_PGSQL_HOST"   value=""/>
+    <env name="ARSSE_TEST_PGSQL_PORT"   value="5432"/>
+    <env name="ARSSE_TEST_PGSQL_USER"   value="arsse_test"/>
+    <env name="ARSSE_TEST_PGSQL_PASS"   value="arsse_test"/>
+    <env name="ARSSE_TEST_PGSQL_DB"     value="arsse_test"/>
+    <env name="ARSSE_TEST_PGSQL_SCHEMA" value="arsse_test"/>
+    <env name="ARSSE_TEST_MYSQL_HOST"   value="localhost"/>
+    <env name="ARSSE_TEST_MYSQL_PORT"   value="3306"/>
+    <env name="ARSSE_TEST_MYSQL_USER"   value="arsse_test"/>
+    <env name="ARSSE_TEST_MYSQL_PASS"   value="arsse_test"/>
+    <env name="ARSSE_TEST_MYSQL_DB"     value="arsse_test"/>
+</php>
 
 <filter>
   <whitelist processUncoveredFilesFromWhitelist="true">
@@ -99,13 +114,24 @@
             <file>cases/REST/NextCloudNews/PDO/TestV1_2.php</file>
     </testsuite>
     <testsuite name="TTRSS">
+        <file>cases/REST/TinyTinyRSS/TestSearch.php</file>
         <file>cases/REST/TinyTinyRSS/TestAPI.php</file>
         <file>cases/REST/TinyTinyRSS/TestIcon.php</file>
         <file>cases/REST/TinyTinyRSS/PDO/TestAPI.php</file>
     </testsuite>
+    <testsuite name="Fever">
+        <file>cases/REST/Fever/TestUser.php</file>
+        <file>cases/REST/Fever/TestAPI.php</file>
+        <file>cases/REST/Fever/PDO/TestAPI.php</file>
+    </testsuite>
     <testsuite name="Admin tools">
         <file>cases/Service/TestService.php</file>
         <file>cases/CLI/TestCLI.php</file>
+    </testsuite>
+    <testsuite name="Import/Export">
+        <file>cases/ImportExport/TestFile.php</file>
+        <file>cases/ImportExport/TestImportExport.php</file>
+        <file>cases/ImportExport/TestOPML.php</file>
     </testsuite>
 </testsuites>
 </phpunit>

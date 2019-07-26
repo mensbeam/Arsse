@@ -1,3 +1,44 @@
+Version 0.8.0 (2019-07-26)
+==========================
+
+New features:
+- Support for the Fever protocol (see README.md for details)
+- Command line functionality for clearing a password, disabling the account
+- Command line options for dealing with Fever passwords
+- Command line functionality for importing and exporting OPML
+- Command line documentation of all commands and options
+
+Bug fixes:
+- Treat command line option -h the same as --help
+- Sort Tiny Tiny RSS special feeds according to special ordering
+- Invalidate sessions when passwords are changed
+- Correct example systemd unit to start after PostgreSQL and MySQL
+
+Changes:
+- Perform regular database maintenance to improve long-term performance
+
+Version 0.7.1 (2019-03-25)
+==========================
+
+Bug fixes:
+- Correctly initialize new on-disk SQLite databases
+- Retry queries on schema changes with PDO SQLite
+- Correctly read author name from database in Tiny Tiny RSS
+- Update internal version number to correct version
+
+Changes:
+- Improve performance of lesser-used database queries
+
+Version 0.7.0 (2019-03-02)
+==========================
+
+New features:
+- Support for basic freeform searching in Tiny Tiny RSS
+- Console command to refresh all stale feeds once then exit
+
+Bug fixes:
+- Ensure updating does not fail with newsfeeds larger than 250 entries
+
 Version 0.6.1 (2019-01-23)
 ==========================
 

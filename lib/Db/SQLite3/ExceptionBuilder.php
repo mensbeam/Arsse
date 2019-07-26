@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Db\SQLite3;
 
 use JKingWeb\Arsse\Db\Exception;
+use JKingWeb\Arsse\Db\ExceptionRetry;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\ExceptionTimeout;
 
@@ -19,6 +20,9 @@ trait ExceptionBuilder {
         switch ($code) {
             case Driver::SQLITE_BUSY:
                 return [ExceptionTimeout::class, 'general', $msg];
+            case Driver::SQLITE_SCHEMA:
+                // sometimes encountered with PDO, because PDO sucks
+                return [ExceptionRetry::class, 'schemaChange', $msg]; // @codeCoverageIgnore
             case Driver::SQLITE_CONSTRAINT:
                 return [ExceptionInput::class, 'engineConstraintViolation', $msg];
             case Driver::SQLITE_MISMATCH:

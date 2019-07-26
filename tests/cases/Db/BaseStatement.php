@@ -68,7 +68,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideBinaryBindings */
     public function testHandleBinaryData($value, string $type, string $exp) {
         if (in_array(static::$implementation, ["PostgreSQL", "PDO PostgreSQL"])) {
-            $this->markTestSkipped("Correct handling of binary data with PostgreSQL and native MySQL is currently unknown");
+            $this->markTestIncomplete("Correct handling of binary data with PostgreSQL is not currently implemented");
         }
         if ($exp === "null") {
             $query = "SELECT (? is null) as pass";
@@ -143,7 +143,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
             'Null as strict integer' => [null, "strict integer", "0"],
             'Null as strict float' => [null, "strict float", "0.0"],
             'Null as strict string' => [null, "strict string", "''"],
-            'Null as strict datetime' => [null, "strict datetime", "'1970-01-01 00:00:00'"],
+            'Null as strict datetime' => [null, "strict datetime", "'0001-01-01 00:00:00'"],
             'Null as strict boolean' => [null, "strict boolean", "0"],
             'True as integer' => [true, "integer", "1"],
             'True as float' => [true, "float", "1.0"],
@@ -153,7 +153,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
             'True as strict integer' => [true, "strict integer", "1"],
             'True as strict float' => [true, "strict float", "1.0"],
             'True as strict string' => [true, "strict string", "'1'"],
-            'True as strict datetime' => [true, "strict datetime", "'1970-01-01 00:00:00'"],
+            'True as strict datetime' => [true, "strict datetime", "'0001-01-01 00:00:00'"],
             'True as strict boolean' => [true, "strict boolean", "1"],
             'False as integer' => [false, "integer", "0"],
             'False as float' => [false, "float", "0.0"],
@@ -163,7 +163,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
             'False as strict integer' => [false, "strict integer", "0"],
             'False as strict float' => [false, "strict float", "0.0"],
             'False as strict string' => [false, "strict string", "''"],
-            'False as strict datetime' => [false, "strict datetime", "'1970-01-01 00:00:00'"],
+            'False as strict datetime' => [false, "strict datetime", "'0001-01-01 00:00:00'"],
             'False as strict boolean' => [false, "strict boolean", "0"],
             'Integer as integer' => [2112, "integer", "2112"],
             'Integer as float' => [2112, "float", "2112.0"],
@@ -213,7 +213,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
             'ASCII string as strict integer' => ["Random string", "strict integer", "0"],
             'ASCII string as strict float' => ["Random string", "strict float", "0.0"],
             'ASCII string as strict string' => ["Random string", "strict string", "'Random string'"],
-            'ASCII string as strict datetime' => ["Random string", "strict datetime", "'1970-01-01 00:00:00'"],
+            'ASCII string as strict datetime' => ["Random string", "strict datetime", "'0001-01-01 00:00:00'"],
             'ASCII string as strict boolean' => ["Random string", "strict boolean", "1"],
             'UTF-8 string as integer' => ["\u{e9}", "integer", "0"],
             'UTF-8 string as float' => ["\u{e9}", "float", "0.0"],
@@ -223,7 +223,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
             'UTF-8 string as strict integer' => ["\u{e9}", "strict integer", "0"],
             'UTF-8 string as strict float' => ["\u{e9}", "strict float", "0.0"],
             'UTF-8 string as strict string' => ["\u{e9}", "strict string", "char(233)"],
-            'UTF-8 string as strict datetime' => ["\u{e9}", "strict datetime", "'1970-01-01 00:00:00'"],
+            'UTF-8 string as strict datetime' => ["\u{e9}", "strict datetime", "'0001-01-01 00:00:00'"],
             'UTF-8 string as strict boolean' => ["\u{e9}", "strict boolean", "1"],
             'ISO 8601 string as integer' => ["2017-01-09T13:11:17", "integer", "0"],
             'ISO 8601 string as float' => ["2017-01-09T13:11:17", "float", "0.0"],
@@ -306,7 +306,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
             'Binary string as strict float' => [chr(233).chr(233), "strict float", "0.0"],
             'Binary string as strict string' => [chr(233).chr(233), "strict string", "'".chr(233).chr(233)."'"],
             'Binary string as strict binary' => [chr(233).chr(233), "strict binary", "x'e9e9'"],
-            'Binary string as strict datetime' => [chr(233).chr(233), "strict datetime", "'1970-01-01 00:00:00'"],
+            'Binary string as strict datetime' => [chr(233).chr(233), "strict datetime", "'0001-01-01 00:00:00'"],
             'Binary string as strict boolean' => [chr(233).chr(233), "strict boolean", "1"],
             'ISO 8601 string as binary' => ["2017-01-09T13:11:17", "binary", "x'323031372d30312d30395431333a31313a3137'"],
             'ISO 8601 string as strict binary' => ["2017-01-09T13:11:17", "strict binary", "x'323031372d30312d30395431333a31313a3137'"],

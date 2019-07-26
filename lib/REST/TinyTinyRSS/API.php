@@ -8,11 +8,10 @@ namespace JKingWeb\Arsse\REST\TinyTinyRSS;
 
 use JKingWeb\Arsse\Feed;
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Database;
-use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Service;
+use JKingWeb\Arsse\Database;
+use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\Date;
-use JKingWeb\Arsse\Misc\Context;
 use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\ExceptionType;
@@ -49,7 +48,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         'sid'                 => ValueInfo::T_STRING,                           // session ID
         'seq'                 => ValueInfo::T_INT,                              // request number from client
         'user'                => ValueInfo::T_STRING | ValueInfo::M_STRICT,     // user name for `login`
-        'password'            => ValueInfo::T_STRING | ValueInfo::M_STRICT,     // password for `login` and `subscribeToFeed`
+        'password'            => ValueInfo::T_STRING | ValueInfo::M_STRICT,     // password for `login` or remote password for `subscribeToFeed`
         'include_empty'       => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to include empty items in `getFeedTree` and `getCategories`
         'unread_only'         => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to exclude items without unread articles in `getCategories` and `getFeeds`
         'enable_nested'       => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to NOT show subcategories in `getCategories
@@ -76,7 +75,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         'since_id'            => ValueInfo::T_INT,                              // cut-off article ID for `getHeadlines` and `getCompactHeadlines; returns only higher article IDs when specified
         'order_by'            => ValueInfo::T_STRING,                           // sort order for `getHeadlines`
         'include_header'      => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to attach a header to the results of `getHeadlines`
-        'search'              => ValueInfo::T_STRING,                           // search string for `getHeadlines` (not yet implemented)
+        'search'              => ValueInfo::T_STRING,                           // search string for `getHeadlines`
         'field'               => ValueInfo::T_INT,                              // which state to change in `updateArticle`
         'mode'                => ValueInfo::T_INT,                              // whether to set, clear, or toggle the selected state in `updateArticle`
         'data'                => ValueInfo::T_STRING,                           // note text in `updateArticle` if setting a note
@@ -1017,6 +1016,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $label = $this->labelIn($data['label_id']);
         $articles = explode(",", (string) $data['article_ids']);
         $assign = $data['assign'] ?? false;
+        $assign = $assign ? Database::ASSOC_ADD : Database::ASSOC_REMOVE;
         $out = 0;
         $in = array_chunk($articles, 50);
         for ($a = 0; $a < sizeof($in); $a++) {
@@ -1024,7 +1024,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             $c = new Context;
             $c->articles($in[$a]);
             try {
-                $out += Arsse::$db->labelArticlesSet(Arsse::$user->id, $label, $c, !$assign);
+                $out += Arsse::$db->labelArticlesSet(Arsse::$user->id, $label, $c, $assign);
             } catch (ExceptionInput $e) {
             }
         }
@@ -1286,6 +1286,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 "id",
                 "guid",
                 "title",
+                "author",
                 "url",
                 "unread",
                 "starred",
@@ -1437,7 +1438,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                         // no context needed here
                         break;
                     case self::FEED_READ:
-                        $c->markedSince(Date::sub("PT24H"))->unread(false); // FIXME: this selects any recently touched article which is read, not necessarily a recently read one
+                        $c->markedSince(Date::sub("PT24H"))->unread(false); // FIXME: this selects any recently touched (read, starred, annotated) article which is read, not necessarily a recently read one
                         break;
                     default:
                         // any actual feed
@@ -1478,20 +1479,27 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             default:
                 throw new \JKingWeb\Arsse\Exception("constantUnknown", $viewMode); // @codeCoverageIgnore
         }
-        // TODO: implement searching
+        // handle the search string, if any
+        if (isset($data['search'])) {
+            $c = Search::parse($data['search'], $c);
+            if (!$c) {
+                // the search string inherently returns an empty result, either directly or interacting with other input
+                return new ResultEmpty;
+            }
+        }
         // handle sorting
         switch ($data['order_by']) {
             case "date_reverse":
                 // sort oldest first
-                $c->reverse(false);
+                $order = ["edited_date"];
                 break;
             case "feed_dates":
                 // sort newest first
-                $c->reverse(true);
+                $order = ["edited_date desc"];
                 break;
             default:
-                // in TT-RSS the default sort order is unusual for some of the special feeds; we do not implement this
-                $c->reverse(true);
+                // sort most recently marked for special feeds, newest first otherwise
+                $order = (!$cat && ($id == self::FEED_READ || $id == self::FEED_STARRED)) ? ["marked_date desc"] : ["edited_date desc"];
                 break;
         }
         // set the limit and offset
@@ -1506,6 +1514,6 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             $c->oldestArticle($data['since_id'] + 1);
         }
         // return results
-        return Arsse::$db->articleList(Arsse::$user->id, $c, $fields);
+        return Arsse::$db->articleList(Arsse::$user->id, $c, $fields, $order);
     }
 }

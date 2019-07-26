@@ -8,4 +8,4 @@ alter table arsse_marks alter column modified drop default;
 alter table arsse_marks alter column modified drop not null;
 alter table arsse_marks add column touched smallint not null default 0;
 
-update arsse_meta set value = '4' where key = 'schema_version';
+update arsse_meta set value = '4' where "key" = 'schema_version';

@@ -17,13 +17,11 @@ trait SeriesUser {
                 'columns' => [
                     'id'       => 'str',
                     'password' => 'str',
-                    'name'     => 'str',
-                    'rights'   => 'int',
                 ],
                 'rows' => [
-                    ["admin@example.net", '$2y$10$PbcG2ZR3Z8TuPzM7aHTF8.v61dtCjzjK78gdZJcp4UePE8T9jEgBW', "Hard Lip Herbert", 100], // password is hash of "secret"
-                    ["jane.doe@example.com", "", "Jane Doe", 0],
-                    ["john.doe@example.com", "", "John Doe", 0],
+                    ["admin@example.net", '$2y$10$PbcG2ZR3Z8TuPzM7aHTF8.v61dtCjzjK78gdZJcp4UePE8T9jEgBW'], // password is hash of "secret"
+                    ["jane.doe@example.com", ""],
+                    ["john.doe@example.com", ""],
                 ],
             ],
         ];
@@ -38,7 +36,7 @@ trait SeriesUser {
         $this->assertFalse(Arsse::$db->userExists("jane.doe@example.org"));
         Phake::verify(Arsse::$user)->authorize("jane.doe@example.com", "userExists");
         Phake::verify(Arsse::$user)->authorize("jane.doe@example.org", "userExists");
-        $this->compareExpectations($this->data);
+        $this->compareExpectations(static::$drv, $this->data);
     }
 
     public function testCheckThatAUserExistsWithoutAuthority() {
@@ -68,9 +66,9 @@ trait SeriesUser {
     public function testAddANewUser() {
         $this->assertTrue(Arsse::$db->userAdd("john.doe@example.org", ""));
         Phake::verify(Arsse::$user)->authorize("john.doe@example.org", "userAdd");
-        $state = $this->primeExpectations($this->data, ['arsse_users' => ['id','name','rights']]);
-        $state['arsse_users']['rows'][] = ["john.doe@example.org", null, 0];
-        $this->compareExpectations($state);
+        $state = $this->primeExpectations($this->data, ['arsse_users' => ['id']]);
+        $state['arsse_users']['rows'][] = ["john.doe@example.org"];
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testAddAnExistingUser() {
@@ -89,7 +87,7 @@ trait SeriesUser {
         Phake::verify(Arsse::$user)->authorize("admin@example.net", "userRemove");
         $state = $this->primeExpectations($this->data, ['arsse_users' => ['id']]);
         array_shift($state['arsse_users']['rows']);
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testRemoveAMissingUser() {
@@ -127,6 +125,13 @@ trait SeriesUser {
         $this->assertNotEquals("", $hash);
         Phake::verify(Arsse::$user)->authorize($user, "userPasswordSet");
         $this->assertTrue(password_verify($pass, $hash), "Failed verifying password of $user '$pass' against hash '$hash'.");
+    }
+
+    public function testUnsetAPassword() {
+        $user = "john.doe@example.com";
+        $this->assertEquals("", Arsse::$db->userPasswordGet($user));
+        $this->assertTrue(Arsse::$db->userPasswordSet($user, null));
+        $this->assertNull(Arsse::$db->userPasswordGet($user));
     }
 
     public function testSetThePasswordOfAMissingUser() {

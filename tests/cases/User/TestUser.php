@@ -297,4 +297,42 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
             [true,  $jane, "secret",   true,  new \JKingWeb\Arsse\User\Exception("doesNotExist")],
         ];
     }
+
+    /** @dataProvider providePasswordClearings */
+    public function testClearAPassword(bool $authorized, bool $exists, string $user, $exp) {
+        Phake::when($this->drv)->authorize->thenReturn($authorized);
+        Phake::when($this->drv)->userPasswordUnset->thenReturn(true);
+        Phake::when($this->drv)->userPasswordUnset("jane.doe@example.net", null)->thenThrow(new \JKingWeb\Arsse\User\Exception("doesNotExist"));
+        Phake::when(Arsse::$db)->userExists->thenReturn($exists);
+        $u = new User($this->drv);
+        try {
+            if ($exp instanceof \JKingWeb\Arsse\AbstractException) {
+                $this->assertException($exp);
+                $u->passwordUnset($user);
+            } else {
+                $this->assertSame($exp, $u->passwordUnset($user));
+            }
+        } finally {
+            Phake::verify(Arsse::$db, Phake::times((int) ($authorized && $exists && is_bool($exp))))->userPasswordSet($user, null);
+        }
+    }
+
+    public function providePasswordClearings() {
+        $forbidden = new \JKingWeb\Arsse\User\ExceptionAuthz("notAuthorized");
+        $missing = new \JKingWeb\Arsse\User\Exception("doesNotExist");
+        return [
+            [false, true,  "jane.doe@example.com", $forbidden],
+            [false, true,  "john.doe@example.com", $forbidden],
+            [false, true,  "jane.doe@example.net", $forbidden],
+            [false, false, "jane.doe@example.com", $forbidden],
+            [false, false, "john.doe@example.com", $forbidden],
+            [false, false, "jane.doe@example.net", $forbidden],
+            [true,  true,  "jane.doe@example.com", true],
+            [true,  true,  "john.doe@example.com", true],
+            [true,  true,  "jane.doe@example.net", $missing],
+            [true,  false, "jane.doe@example.com", true],
+            [true,  false, "john.doe@example.com", true],
+            [true,  false, "jane.doe@example.net", $missing],
+        ];
+    }
 }

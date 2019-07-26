@@ -7,4 +7,4 @@
 alter table arsse_marks change column modified modified datetime(0);
 alter table arsse_marks add column touched boolean not null default 0;
 
-update arsse_meta set value = '4' where `key` = 'schema_version';
+update arsse_meta set value = '4' where "key" = 'schema_version';

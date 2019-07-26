@@ -13,13 +13,12 @@ class Query {
     protected $qCTE = []; // Common table expression query components
     protected $tCTE = []; // Common table expression type bindings
     protected $vCTE = []; // Common table expression binding values
-    protected $jCTE = []; // Common Table Expression joins
-    protected $qJoin = []; // JOIN clause components
-    protected $tJoin = []; // JOIN clause type bindings
-    protected $vJoin = []; // JOIN clause binding values
     protected $qWhere = []; // WHERE clause components
     protected $tWhere = []; // WHERE clause type bindings
     protected $vWhere = []; // WHERE clause binding values
+    protected $qWhereNot = []; // WHERE NOT clause components
+    protected $tWhereNot = []; // WHERE NOT clause type bindings
+    protected $vWhereNot = []; // WHERE NOT clause binding values
     protected $group = []; // GROUP BY clause components
     protected $order = []; // ORDER BY clause components
     protected $limit = 0;
@@ -39,23 +38,11 @@ class Query {
         return true;
     }
 
-    public function setCTE(string $tableSpec, string $body, $types = null, $values = null, string $join = ''): bool {
+    public function setCTE(string $tableSpec, string $body, $types = null, $values = null): bool {
         $this->qCTE[] = "$tableSpec as ($body)";
         if (!is_null($types)) {
             $this->tCTE[] = $types;
             $this->vCTE[] = $values;
-        }
-        if (strlen($join)) { // the CTE might only participate in subqueries rather than a join on the main query
-            $this->jCTE[] = $join;
-        }
-        return true;
-    }
-
-    public function setJoin(string $join, $types = null, $values = null): bool {
-        $this->qJoin[] = $join;
-        if (!is_null($types)) {
-            $this->tJoin[] = $types;
-            $this->vJoin[] = $values;
         }
         return true;
     }
@@ -69,6 +56,15 @@ class Query {
         return true;
     }
 
+    public function setWhereNot(string $where, $types = null, $values = null): bool {
+        $this->qWhereNot[] = $where;
+        if (!is_null($types)) {
+            $this->tWhereNot[] = $types;
+            $this->vWhereNot[] = $values;
+        }
+        return true;
+    }
+
     public function setGroup(string ...$column): bool {
         foreach ($column as $col) {
             $this->group[] = $col;
@@ -76,12 +72,8 @@ class Query {
         return true;
     }
 
-    public function setOrder(string $order, bool $prepend = false): bool {
-        if ($prepend) {
-            array_unshift($this->order, $order);
-        } else {
-            $this->order[] = $order;
-        }
+    public function setOrder(string $order): bool {
+        $this->order[] = $order;
         return true;
     }
 
@@ -91,25 +83,21 @@ class Query {
         return true;
     }
 
-    public function pushCTE(string $tableSpec, string $join = ''): bool {
+    public function pushCTE(string $tableSpec): bool {
         // this function takes the query body and converts it to a common table expression, putting it at the bottom of the existing CTE stack
         // all WHERE, ORDER BY, and LIMIT parts belong to the new CTE and are removed from the main query
-        $this->setCTE($tableSpec, $this->buildQueryBody(), [$this->tBody, $this->tWhere], [$this->vBody, $this->vWhere]);
-        $this->jCTE = [];
+        $this->setCTE($tableSpec, $this->buildQueryBody(), [$this->tBody, $this->tWhere, $this->tWhereNot], [$this->vBody, $this->vWhere, $this->vWhereNot]);
         $this->tBody = [];
         $this->vBody = [];
         $this->qWhere = [];
         $this->tWhere = [];
         $this->vWhere = [];
-        $this->qJoin = [];
-        $this->tJoin = [];
-        $this->vJoin = [];
+        $this->qWhereNot = [];
+        $this->tWhereNot = [];
+        $this->vWhereNot = [];
         $this->order = [];
         $this->group = [];
         $this->setLimit(0, 0);
-        if (strlen($join)) {
-            $this->jCTE[] = $join;
-        }
         return true;
     }
 
@@ -129,52 +117,24 @@ class Query {
     }
 
     public function getTypes(): array {
-        return [$this->tCTE, $this->tBody, $this->tJoin, $this->tWhere];
+        return [$this->tCTE, $this->tBody, $this->tWhere, $this->tWhereNot];
     }
 
     public function getValues(): array {
-        return [$this->vCTE, $this->vBody, $this->vJoin, $this->vWhere];
-    }
-
-    public function getJoinTypes(): array {
-        return $this->tJoin;
-    }
-
-    public function getJoinValues(): array {
-        return $this->vJoin;
-    }
-
-    public function getWhereTypes(): array {
-        return $this->tWhere;
-    }
-
-    public function getWhereValues(): array {
-        return $this->vWhere;
-    }
-
-    public function getCTETypes(): array {
-        return $this->tCTE;
-    }
-
-    public function getCTEValues(): array {
-        return $this->vCTE;
+        return [$this->vCTE, $this->vBody, $this->vWhere, $this->vWhereNot];
     }
 
     protected function buildQueryBody(): string {
         $out = "";
         // add the body
         $out .= $this->qBody;
-        if (sizeof($this->qCTE)) {
-            // add any joins against CTEs
-            $out .= " ".implode(" ", $this->jCTE);
-        }
-        // add any JOINs
-        if (sizeof($this->qJoin)) {
-            $out .= " ".implode(" ", $this->qJoin);
-        }
         // add any WHERE terms
-        if (sizeof($this->qWhere)) {
-            $out .= " WHERE ".implode(" AND ", $this->qWhere);
+        if (sizeof($this->qWhere) || sizeof($this->qWhereNot)) {
+            $where = implode(" AND ", $this->qWhere);
+            $whereNot = implode(" OR ", $this->qWhereNot);
+            $whereNot = strlen($whereNot) ? "NOT ($whereNot)" : "";
+            $where = implode(" AND ", array_filter([$where, $whereNot]));
+            $out .= " WHERE $where";
         }
         // add any GROUP BY terms
         if (sizeof($this->group)) {

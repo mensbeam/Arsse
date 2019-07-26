@@ -17,6 +17,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     const TRANSACTIONAL_LOCKS = true;
 
     const SQLITE_BUSY = 5;
+    const SQLITE_SCHEMA = 17;
     const SQLITE_CONSTRAINT = 19;
     const SQLITE_MISMATCH = 20;
 
@@ -122,6 +123,10 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     }
 
     public function schemaUpdate(int $to, string $basePath = null): bool {
+        if ($to == 1) {
+            // if we're initializing the database for the first time, switch to WAL mode
+            $this->exec("PRAGMA journal_mode = wal");
+        }
         // turn off foreign keys
         $this->exec("PRAGMA foreign_keys = no");
         // run the generic updater
@@ -177,6 +182,16 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
 
     protected function unlock(bool $rollback = false): bool {
         $this->exec((!$rollback) ? "COMMIT" : "ROLLBACK");
+        return true;
+    }
+
+    public function literalString(string $str): string {
+        return "'".\SQLite3::escapeString($str)."'";
+    }
+
+    public function maintenance(): bool {
+        // analyze the database then checkpoint and truncate the write-ahead log
+        $this->exec("ANALYZE; PRAGMA wal_checkpoint(truncate)");
         return true;
     }
 }

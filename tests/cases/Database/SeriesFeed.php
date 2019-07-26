@@ -22,11 +22,10 @@ trait SeriesFeed {
                 'columns' => [
                     'id'       => 'str',
                     'password' => 'str',
-                    'name'     => 'str',
                 ],
                 'rows' => [
-                    ["jane.doe@example.com", "", "Jane Doe"],
-                    ["john.doe@example.com", "", "John Doe"],
+                    ["jane.doe@example.com", ""],
+                    ["john.doe@example.com", ""],
                 ],
             ],
             'arsse_feeds' => [
@@ -205,7 +204,7 @@ trait SeriesFeed {
         $state['arsse_marks']['rows'][3] = [6,4,0,0,$now];
         $state['arsse_marks']['rows'][6] = [1,3,0,0,$now];
         $state['arsse_feeds']['rows'][0] = [1,6];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
         // update a valid feed which previously had an error
         Arsse::$db->feedUpdate(2);
         // update an erroneous feed which previously had no errors
@@ -215,12 +214,12 @@ trait SeriesFeed {
         ]);
         $state['arsse_feeds']['rows'][1] = [2,0,""];
         $state['arsse_feeds']['rows'][2] = [3,1,'Feed URL "http://localhost:8000/Feed/Fetching/Error?code=404" is invalid'];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
         // update the bad feed again, twice
         Arsse::$db->feedUpdate(3);
         Arsse::$db->feedUpdate(3);
         $state['arsse_feeds']['rows'][2] = [3,3,'Feed URL "http://localhost:8000/Feed/Fetching/Error?code=404" is invalid'];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testUpdateAMissingFeed() {
@@ -255,7 +254,7 @@ trait SeriesFeed {
             ["Bodybuilders"],
             ["Men"],
         ];
-        $this->compareExpectations($state);
+        $this->compareExpectations(static::$drv, $state);
     }
 
     public function testListStaleFeeds() {

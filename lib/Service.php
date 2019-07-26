@@ -92,7 +92,12 @@ class Service {
     }
 
     public static function cleanupPost(): bool {
-        // delete old articles, according to configured threasholds
-        return Arsse::$db->articleCleanup();
+        // delete old articles, according to configured thresholds
+        $deleted = Arsse::$db->articleCleanup();
+        // if any articles were deleted, perform database maintenance
+        if ($deleted) {
+            Arsse::$db->driverMaintenance();
+        }
+        return true;
     }
 }

@@ -110,11 +110,28 @@ class User {
         if (Arsse::$db->userExists($user)) {
             // if the password change was successful and the user exists, set the internal password to the same value
             Arsse::$db->userPasswordSet($user, $out);
+            // also invalidate any current sessions for the user
+            Arsse::$db->sessionDestroy($user);
         }
         return $out;
     }
 
-    protected function generatePassword(): string {
+    public function passwordUnset(string $user, $oldPassword = null): bool {
+        $func = "userPasswordUnset";
+        if (!$this->authorize($user, $func)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
+        }
+        $out = $this->u->userPasswordUnset($user, $oldPassword);
+        if (Arsse::$db->userExists($user)) {
+            // if the password change was successful and the user exists, set the internal password to the same value
+            Arsse::$db->userPasswordSet($user, null);
+            // also invalidate any current sessions for the user
+            Arsse::$db->sessionDestroy($user);
+        }
+        return $out;
+    }
+
+    public function generatePassword(): string {
         return (new PassGen)->length(Arsse::$conf->userTempPasswordLength)->get();
     }
 }

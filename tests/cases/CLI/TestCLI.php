@@ -12,6 +12,8 @@ use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\CLI;
+use JKingWeb\Arsse\REST\Fever\User as FeverUser;
+use JKingWeb\Arsse\ImportExport\OPML;
 use Phake;
 
 /** @covers \JKingWeb\Arsse\CLI */
@@ -61,17 +63,30 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             ["arsse.php --help", "arsse.php"],
             ["arsse     --help", "arsse"],
             ["thearsse  --help", "thearsse"],
+            ["arsse.php -h", "arsse.php"],
+            ["arsse     -h", "arsse"],
+            ["thearsse  -h", "thearsse"],
         ];
     }
 
     public function testStartTheDaemon() {
         $srv = Phake::mock(Service::class);
         Phake::when($srv)->watch->thenReturn(new \DateTimeImmutable);
-        Phake::when($this->cli)->getService->thenReturn($srv);
+        Phake::when($this->cli)->getInstance(Service::class)->thenReturn($srv);
         $this->assertConsole($this->cli, "arsse.php daemon", 0);
         $this->assertLoaded(true);
         Phake::verify($srv)->watch(true);
-        Phake::verify($this->cli)->getService;
+        Phake::verify($this->cli)->getInstance(Service::class);
+    }
+
+    public function testRefreshAllFeeds() {
+        $srv = Phake::mock(Service::class);
+        Phake::when($srv)->watch->thenReturn(new \DateTimeImmutable);
+        Phake::when($this->cli)->getInstance(Service::class)->thenReturn($srv);
+        $this->assertConsole($this->cli, "arsse.php feed refresh-all", 0);
+        $this->assertLoaded(true);
+        Phake::verify($srv)->watch(false);
+        Phake::verify($this->cli)->getInstance(Service::class);
     }
 
     /** @dataProvider provideFeedUpdates */
@@ -97,7 +112,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         Phake::when($conf)->exportFile("php://output", true)->thenReturn(true);
         Phake::when($conf)->exportFile("good.conf", true)->thenReturn(true);
         Phake::when($conf)->exportFile("bad.conf", true)->thenThrow(new \JKingWeb\Arsse\Conf\Exception("fileUnwritable"));
-        Phake::when($this->cli)->getConf->thenReturn($conf);
+        Phake::when($this->cli)->getInstance(Conf::class)->thenReturn($conf);
         $this->assertConsole($this->cli, $cmd, $exitStatus);
         $this->assertLoaded(false);
         Phake::verify($conf)->exportFile($file, true);
@@ -164,16 +179,27 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
                 ($user === "jane.doe@example.com" && $pass === "superman")
             );
         }));
+        $fever = \Phake::mock(FeverUser::class);
+        \Phake::when($fever)->authenticate->thenReturn(false);
+        \Phake::when($fever)->authenticate("john.doe@example.com", "ashalla")->thenReturn(true);
+        \Phake::when($fever)->authenticate("jane.doe@example.com", "thx1138")->thenReturn(true);
+        \Phake::when($this->cli)->getInstance(FeverUser::class)->thenReturn($fever);
         $this->assertConsole($this->cli, $cmd, $exitStatus, $output);
     }
 
     public function provideUserAuthentication() {
         $l = new \JKingWeb\Arsse\Lang;
+        $success = $l("CLI.Auth.Success");
+        $failure = $l("CLI.Auth.Failure");
         return [
-            ["arsse.php user auth john.doe@example.com secret",     0, $l("CLI.Auth.Success")],
-            ["arsse.php user auth john.doe@example.com superman",   1, $l("CLI.Auth.Failure")],
-            ["arsse.php user auth jane.doe@example.com secret",     1, $l("CLI.Auth.Failure")],
-            ["arsse.php user auth jane.doe@example.com superman",   0, $l("CLI.Auth.Success")],
+            ["arsse.php user auth john.doe@example.com secret",          0, $success],
+            ["arsse.php user auth john.doe@example.com superman",        1, $failure],
+            ["arsse.php user auth jane.doe@example.com secret",          1, $failure],
+            ["arsse.php user auth jane.doe@example.com superman",        0, $success],
+            ["arsse.php user auth john.doe@example.com ashalla --fever", 0, $success],
+            ["arsse.php user auth john.doe@example.com thx1138 --fever", 1, $failure],
+            ["arsse.php user auth --fever jane.doe@example.com ashalla", 1, $failure],
+            ["arsse.php user auth --fever jane.doe@example.com thx1138", 0, $success],
         ];
     }
 
@@ -199,24 +225,149 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideUserPasswordChanges */
     public function testChangeAUserPassword(string $cmd, int $exitStatus, string $output) {
-        // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
-        Arsse::$user = $this->createMock(User::class);
-        Arsse::$user->method("passwordSet")->will($this->returnCallback(function($user, $pass = null) {
+        $passwordChange = function($user, $pass = null) {
             switch ($user) {
                 case "jane.doe@example.com":
                     throw new \JKingWeb\Arsse\User\Exception("doesNotExist");
                 case "john.doe@example.com":
                     return is_null($pass) ? "random password" : $pass;
             }
-        }));
+        };
+        // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
+        Arsse::$user = $this->createMock(User::class);
+        Arsse::$user->method("passwordSet")->will($this->returnCallback($passwordChange));
+        $fever = \Phake::mock(FeverUser::class);
+        \Phake::when($fever)->register->thenReturnCallback($passwordChange);
+        \Phake::when($this->cli)->getInstance(FeverUser::class)->thenReturn($fever);
         $this->assertConsole($this->cli, $cmd, $exitStatus, $output);
     }
 
     public function provideUserPasswordChanges() {
         return [
-            ["arsse.php user set-pass john.doe@example.com",          0,     "random password"],
-            ["arsse.php user set-pass john.doe@example.com superman", 0,     ""],
-            ["arsse.php user set-pass jane.doe@example.com",          10402, ""],
+            ["arsse.php user set-pass john.doe@example.com",                  0,     "random password"],
+            ["arsse.php user set-pass john.doe@example.com superman",         0,     ""],
+            ["arsse.php user set-pass jane.doe@example.com",                  10402, ""],
+            ["arsse.php user set-pass john.doe@example.com --fever",          0,     "random password"],
+            ["arsse.php user set-pass --fever john.doe@example.com superman", 0,     ""],
+            ["arsse.php user set-pass jane.doe@example.com --fever",          10402, ""],
+        ];
+    }
+
+    /** @dataProvider provideUserPasswordClearings */
+    public function testClearAUserPassword(string $cmd, int $exitStatus, string $output) {
+        $passwordClear = function($user) {
+            switch ($user) {
+                case "jane.doe@example.com":
+                    throw new \JKingWeb\Arsse\User\Exception("doesNotExist");
+                case "john.doe@example.com":
+                    return true;
+            }
+        };
+        // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
+        Arsse::$user = $this->createMock(User::class);
+        Arsse::$user->method("passwordUnset")->will($this->returnCallback($passwordClear));
+        $fever = \Phake::mock(FeverUser::class);
+        \Phake::when($fever)->unregister->thenReturnCallback($passwordClear);
+        \Phake::when($this->cli)->getInstance(FeverUser::class)->thenReturn($fever);
+        $this->assertConsole($this->cli, $cmd, $exitStatus, $output);
+    }
+
+    public function provideUserPasswordClearings() {
+        return [
+            ["arsse.php user unset-pass john.doe@example.com",                  0,     ""],
+            ["arsse.php user unset-pass jane.doe@example.com",                  10402, ""],
+            ["arsse.php user unset-pass john.doe@example.com --fever",          0,     ""],
+            ["arsse.php user unset-pass jane.doe@example.com --fever",          10402, ""],
+        ];
+    }
+
+    /** @dataProvider provideOpmlExports */
+    public function testExportToOpml(string $cmd, int $exitStatus, string $file, string $user, bool $flat) {
+        $opml = Phake::mock(OPML::class);
+        Phake::when($opml)->exportFile("php://output", $user, $flat)->thenReturn(true);
+        Phake::when($opml)->exportFile("good.opml", $user, $flat)->thenReturn(true);
+        Phake::when($opml)->exportFile("bad.opml", $user, $flat)->thenThrow(new \JKingWeb\Arsse\ImportExport\Exception("fileUnwritable"));
+        Phake::when($this->cli)->getInstance(OPML::class)->thenReturn($opml);
+        $this->assertConsole($this->cli, $cmd, $exitStatus);
+        $this->assertLoaded(true);
+        Phake::verify($opml)->exportFile($file, $user, $flat);
+    }
+
+    public function provideOpmlExports() {
+        return [
+            ["arsse.php export john.doe@example.com",                  0,     "php://output", "john.doe@example.com", false],
+            ["arsse.php export john.doe@example.com -",                0,     "php://output", "john.doe@example.com", false],
+            ["arsse.php export john.doe@example.com good.opml",        0,     "good.opml",    "john.doe@example.com", false],
+            ["arsse.php export john.doe@example.com bad.opml",         10604, "bad.opml",     "john.doe@example.com", false],
+            ["arsse.php export john.doe@example.com --flat",           0,     "php://output", "john.doe@example.com", true],
+            ["arsse.php export john.doe@example.com - --flat",         0,     "php://output", "john.doe@example.com", true],
+            ["arsse.php export --flat john.doe@example.com good.opml", 0,     "good.opml",    "john.doe@example.com", true],
+            ["arsse.php export john.doe@example.com bad.opml --flat",  10604, "bad.opml",     "john.doe@example.com", true],
+            ["arsse.php export jane.doe@example.com",                  0,     "php://output", "jane.doe@example.com", false],
+            ["arsse.php export jane.doe@example.com -",                0,     "php://output", "jane.doe@example.com", false],
+            ["arsse.php export jane.doe@example.com good.opml",        0,     "good.opml",    "jane.doe@example.com", false],
+            ["arsse.php export jane.doe@example.com bad.opml",         10604, "bad.opml",     "jane.doe@example.com", false],
+            ["arsse.php export jane.doe@example.com --flat",           0,     "php://output", "jane.doe@example.com", true],
+            ["arsse.php export jane.doe@example.com - --flat",         0,     "php://output", "jane.doe@example.com", true],
+            ["arsse.php export --flat jane.doe@example.com good.opml", 0,     "good.opml",    "jane.doe@example.com", true],
+            ["arsse.php export jane.doe@example.com bad.opml --flat",  10604, "bad.opml",     "jane.doe@example.com", true],
+            ["arsse.php export john.doe@example.com -f",               0,     "php://output", "john.doe@example.com", true],
+            ["arsse.php export john.doe@example.com - -f",             0,     "php://output", "john.doe@example.com", true],
+            ["arsse.php export -f john.doe@example.com good.opml",     0,     "good.opml",    "john.doe@example.com", true],
+            ["arsse.php export john.doe@example.com bad.opml -f",      10604, "bad.opml",     "john.doe@example.com", true],
+            ["arsse.php export jane.doe@example.com -f",               0,     "php://output", "jane.doe@example.com", true],
+            ["arsse.php export jane.doe@example.com - -f",             0,     "php://output", "jane.doe@example.com", true],
+            ["arsse.php export -f jane.doe@example.com good.opml",     0,     "good.opml",    "jane.doe@example.com", true],
+            ["arsse.php export jane.doe@example.com bad.opml -f",      10604, "bad.opml",     "jane.doe@example.com", true],
+        ];
+    }
+
+    /** @dataProvider provideOpmlImports */
+    public function testImportFromOpml(string $cmd, int $exitStatus, string $file, string $user, bool $flat, bool $replace) {
+        $opml = Phake::mock(OPML::class);
+        Phake::when($opml)->importFile("php://input", $user, $flat, $replace)->thenReturn(true);
+        Phake::when($opml)->importFile("good.opml", $user, $flat, $replace)->thenReturn(true);
+        Phake::when($opml)->importFile("bad.opml", $user, $flat, $replace)->thenThrow(new \JKingWeb\Arsse\ImportExport\Exception("fileUnreadable"));
+        Phake::when($this->cli)->getInstance(OPML::class)->thenReturn($opml);
+        $this->assertConsole($this->cli, $cmd, $exitStatus);
+        $this->assertLoaded(true);
+        Phake::verify($opml)->importFile($file, $user, $flat, $replace);
+    }
+
+    public function provideOpmlImports() {
+        return [
+            ["arsse.php import john.doe@example.com",                            0,     "php://input", "john.doe@example.com", false, false],
+            ["arsse.php import john.doe@example.com -",                          0,     "php://input", "john.doe@example.com", false, false],
+            ["arsse.php import john.doe@example.com good.opml",                  0,     "good.opml",   "john.doe@example.com", false, false],
+            ["arsse.php import john.doe@example.com bad.opml",                   10603, "bad.opml",    "john.doe@example.com", false, false],
+            ["arsse.php import john.doe@example.com --flat",                     0,     "php://input", "john.doe@example.com", true,  false],
+            ["arsse.php import john.doe@example.com - --flat",                   0,     "php://input", "john.doe@example.com", true,  false],
+            ["arsse.php import --flat john.doe@example.com good.opml",           0,     "good.opml",   "john.doe@example.com", true,  false],
+            ["arsse.php import john.doe@example.com bad.opml --flat",            10603, "bad.opml",    "john.doe@example.com", true,  false],
+            ["arsse.php import jane.doe@example.com",                            0,     "php://input", "jane.doe@example.com", false, false],
+            ["arsse.php import jane.doe@example.com -",                          0,     "php://input", "jane.doe@example.com", false, false],
+            ["arsse.php import jane.doe@example.com good.opml",                  0,     "good.opml",   "jane.doe@example.com", false, false],
+            ["arsse.php import jane.doe@example.com bad.opml",                   10603, "bad.opml",    "jane.doe@example.com", false, false],
+            ["arsse.php import jane.doe@example.com --flat",                     0,     "php://input", "jane.doe@example.com", true,  false],
+            ["arsse.php import jane.doe@example.com - --flat",                   0,     "php://input", "jane.doe@example.com", true,  false],
+            ["arsse.php import --flat jane.doe@example.com good.opml",           0,     "good.opml",   "jane.doe@example.com", true,  false],
+            ["arsse.php import jane.doe@example.com bad.opml --flat",            10603, "bad.opml",    "jane.doe@example.com", true,  false],
+            ["arsse.php import john.doe@example.com --replace",                  0,     "php://input", "john.doe@example.com", false, true],
+            ["arsse.php import john.doe@example.com - -r",                       0,     "php://input", "john.doe@example.com", false, true],
+            ["arsse.php import --replace john.doe@example.com good.opml",        0,     "good.opml",   "john.doe@example.com", false, true],
+            ["arsse.php import -r john.doe@example.com bad.opml",                10603, "bad.opml",    "john.doe@example.com", false, true],
+            ["arsse.php import --replace john.doe@example.com --flat",           0,     "php://input", "john.doe@example.com", true,  true],
+            ["arsse.php import -r john.doe@example.com - --flat",                0,     "php://input", "john.doe@example.com", true,  true],
+            ["arsse.php import --flat john.doe@example.com good.opml -r",        0,     "good.opml",   "john.doe@example.com", true,  true],
+            ["arsse.php import --replace john.doe@example.com bad.opml --flat",  10603, "bad.opml",    "john.doe@example.com", true,  true],
+            ["arsse.php import jane.doe@example.com -r ",                        0,     "php://input", "jane.doe@example.com", false, true],
+            ["arsse.php import jane.doe@example.com - --replace",                0,     "php://input", "jane.doe@example.com", false, true],
+            ["arsse.php import -r jane.doe@example.com good.opml",               0,     "good.opml",   "jane.doe@example.com", false, true],
+            ["arsse.php import --replace jane.doe@example.com bad.opml",         10603, "bad.opml",    "jane.doe@example.com", false, true],
+            ["arsse.php import jane.doe@example.com --flat -r",                  0,     "php://input", "jane.doe@example.com", true,  true],
+            ["arsse.php import jane.doe@example.com - --flat --replace",         0,     "php://input", "jane.doe@example.com", true,  true],
+            ["arsse.php import --flat jane.doe@example.com good.opml -r",        0,     "good.opml",   "jane.doe@example.com", true,  true],
+            ["arsse.php import jane.doe@example.com bad.opml --replace --flat",  10603, "bad.opml",    "jane.doe@example.com", true,  true],
         ];
     }
 }

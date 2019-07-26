@@ -120,6 +120,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         switch (strtolower($token)) {
             case "nocase":
                 return '"und-x-icu"';
+            case "like":
+                return "ilike";
             default:
                 return $token;
         }
@@ -218,5 +220,15 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
 
     public function prepareArray(string $query, array $paramTypes): \JKingWeb\Arsse\Db\Statement {
         return new Statement($this->db, $query, $paramTypes);
+    }
+
+    public function literalString(string $str): string {
+        return pg_escape_literal($this->db, $str);
+    }
+
+    public function maintenance(): bool {
+        // analyze the database
+        $this->exec("ANALYZE");
+        return true;
     }
 }
