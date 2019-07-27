@@ -60,8 +60,14 @@ trait SeriesToken {
             'class' => "class.class",
             'user' => "john.doe@example.com"
         ];
+        $exp3 = [
+            'id' => "ab3b3eb8a13311e78667001e673b2560",
+            'class' => "class.class",
+            'user' => "jane.doe@example.com"
+        ];
         $this->assertArraySubset($exp1, Arsse::$db->tokenLookup("fever.login", "80fa94c1a11f11e78667001e673b2560"));
         $this->assertArraySubset($exp2, Arsse::$db->tokenLookup("class.class", "da772f8fa13c11e78667001e673b2560"));
+        $this->assertArraySubset($exp3, Arsse::$db->tokenLookup("class.class", "ab3b3eb8a13311e78667001e673b2560"));
         // token lookup should not check authorization
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertArraySubset($exp1, Arsse::$db->tokenLookup("fever.login", "80fa94c1a11f11e78667001e673b2560"));

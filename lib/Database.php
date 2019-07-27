@@ -440,7 +440,7 @@ class Database {
 
     /** Look up data associated with a token */
     public function tokenLookup(string $class, string $id): array {
-        $out = $this->db->prepare("SELECT id,class,\"user\",created,expires from arsse_tokens where class = ? and id = ? and expires > CURRENT_TIMESTAMP", "str", "str")->run($class, $id)->getRow();
+        $out = $this->db->prepare("SELECT id,class,\"user\",created,expires from arsse_tokens where class = ? and id = ? and (expires is null or expires > CURRENT_TIMESTAMP)", "str", "str")->run($class, $id)->getRow();
         if (!$out) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "token", 'id' => $id]);
         }
