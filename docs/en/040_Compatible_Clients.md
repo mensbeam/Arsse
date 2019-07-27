@@ -107,6 +107,17 @@ The Arsse does not at this time have any first party clients. However, because T
     <p>Very basic client; now discontinued.</p>
    </td>
   </tr>
+  </tr>
+  <tr>
+   <td><a href="https://github.com/matoung/SparkReader">SparkReader</a></td>
+   <td>Windows</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td>
+    <p></p>
+   </td>
+  </tr>
   <tr>
    <td><a href="https://www.microsoft.com/store/apps/9wzdncrdmbn3">Tiny Tiny RSS Reader</td>
    <td>Windows</td>
