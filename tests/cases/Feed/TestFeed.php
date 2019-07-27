@@ -258,50 +258,31 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function testComputeNextFetchFrom304() {
-        // if less than half an hour, check in 15 minutes
-        $t = strtotime("now");
+    /** @dataProvider provide304Timestamps */
+    public function testComputeNextFetchFrom304(string $t, string $exp) {
+        $t = $t ? strtotime($t) : "";
         $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
-        $exp = strtotime("now + 15 minutes");
+        $exp = strtotime($exp);
         $this->assertTime($exp, $f->nextFetch);
-        $t = strtotime("now - 29 minutes");
-        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
-        $exp = strtotime("now + 15 minutes");
-        $this->assertTime($exp, $f->nextFetch);
-        // if less than an hour, check in 30 minutes
-        $t = strtotime("now - 30 minutes");
-        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
-        $exp = strtotime("now + 30 minutes");
-        $this->assertTime($exp, $f->nextFetch);
-        $t = strtotime("now - 59 minutes");
-        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
-        $exp = strtotime("now + 30 minutes");
-        $this->assertTime($exp, $f->nextFetch);
-        // if less than three hours, check in an hour
-        $t = strtotime("now - 1 hour");
-        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
-        $exp = strtotime("now + 1 hour");
-        $this->assertTime($exp, $f->nextFetch);
-        $t = strtotime("now - 2 hours 59 minutes");
-        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
-        $exp = strtotime("now + 1 hour");
-        $this->assertTime($exp, $f->nextFetch);
-        // if more than 36 hours, check in 24 hours
-        $t = strtotime("now - 36 hours");
-        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
-        $exp = strtotime("now + 1 day");
-        $this->assertTime($exp, $f->nextFetch);
-        $t = strtotime("now - 2 years");
-        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
-        $exp = strtotime("now + 1 day");
-        $this->assertTime($exp, $f->nextFetch);
-        // otherwise check in three hours
-        $t = strtotime("now - 3 hours");
-        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
-        $exp = strtotime("now + 3 hours");
-        $this->assertTime($exp, $f->nextFetch);
-        $t = strtotime("now - 35 hours");
-        $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
+    }
+
+    public function provide304Timestamps() {
+        return [
+            'less than half an hour 1' =>     ["now",                      "now + 15 minutes"],
+            'less than half an hour 2' =>     ["now - 29 minutes",         "now + 15 minutes"],
+            'less than one hour 1' =>         ["now - 30 minutes",         "now + 30 minutes"],
+            'less than one hour 2' =>         ["now - 59 minutes",         "now + 30 minutes"],
+            'less than three hours 1' =>      ["now - 1 hour",             "now + 1 hour"],
+            'less than three hours 2' =>      ["now - 2 hours 59 minutes", "now + 1 hour"],
+            'more than thirty-six hours 1' => ["now - 36 hours",           "now + 1 day"],
+            'more than thirty-six hours 2' => ["now - 2 years",            "now + 1 day"],
+            'fallback 1' =>                   ["now - 3 hours",            "now + 3 hours"],
+            'fallback 2' =>                   ["now - 35 hours",           "now + 3 hours"],
+        ];
+    }
+
+    public function testComputeNextFetchFrom304WithoutDate() {
+        $f = new Feed(null, $this->base."NextFetch/NotModifiedEtag");
         $exp = strtotime("now + 3 hours");
         $this->assertTime($exp, $f->nextFetch);
     }

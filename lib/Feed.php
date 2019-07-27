@@ -331,8 +331,13 @@ class Feed {
     protected function computeNextFetch(): \DateTimeImmutable {
         $now = Date::normalize(time());
         if (!$this->modified) {
-            $diff = $now->getTimestamp() - $this->lastModified->getTimestamp();
-            $offset = $this->normalizeDateDiff($diff);
+            if ($this->lastModified) {
+                $diff = $now->getTimestamp() - $this->lastModified->getTimestamp();
+                $offset = $this->normalizeDateDiff($diff);
+            } else {
+                // if no timestamp is available, fall back to three hours
+                $offset = "3 hours";
+            }
             return $now->modify("+".$offset);
         } else {
             // the algorithm for updated feeds (returning 200 rather than 304) uses the same parameters as for 304,
