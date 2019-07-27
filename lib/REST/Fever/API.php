@@ -253,7 +253,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return true;
     }
 
-                                                                                                                                                                            protected function setMarks(array $P, &$listUnread): bool {
+    protected function setMarks(array $P, &$listUnread): bool {
         $listSaved = false;
         $c = new Context;
         $id = $P['id'];
