@@ -84,7 +84,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td class="Y">✔</td>
    <td>
-    <p>Requires purchase.</p>
+    <p>Requires purchase. Presumed to work.</p>
    </td>
   </tr>
   <tr>
