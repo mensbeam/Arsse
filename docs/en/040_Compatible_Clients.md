@@ -1,4 +1,4 @@
-The Arsse does not at this time have any first party clients. However, because The Arsse supports other protocols, most clients built for NextCloud News and Tiny Tiny RSS are compatible with The Arsse. Below are a few that we personally know of and have tested with The Arsse.
+The Arsse does not at this time have any first party clients. However, because The Arsse [supports existing protocols](/en/Supported_Protocols), most clients built for these protocols are compatible with The Arsse. Below are those that we personally know of and have tested with The Arsse.
 
 <style>
     .clients thead tr:first-child th {

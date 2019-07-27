@@ -4,7 +4,7 @@
 
 The Fever protocol is a basic protocol which has historically been popular with iOS and macOS clients.
 
-It allows marking articles as read or starred, but does not allow adding or modifying newsfeeds. Instead of being classified into folders, newfeeds may belong to multiple groups, which do not nest.
+It allows marking articles as read or starred, but does not allow adding or modifying newsfeeds. Moreover, instead of being classified into folders, newfeeds may belong to multiple groups, which do not nest.
 
 <dl>
     <dt>Supported since</dt>

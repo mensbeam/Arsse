@@ -64,7 +64,7 @@ The number of seconds to wait before returning a timeout error when executing a 
 | PostgreSQL | 1 millisecond | forever  |
 | MySQL      | 1 second      | forever  |
 
-With MySQL this timeout only to read operations, whereas PostgreSQL will time out write operations as well. 
+With MySQL this timeout only applies to read operations, whereas PostgreSQL will time out write operations as well. 
 
 ### dbTimeoutLock
 

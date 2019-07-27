@@ -36,4 +36,4 @@ It allows organizing newsfeeds into single-level folders, and supports a wide ra
 
 # Interaction with nested folders
 
-Tiny Tiny RSS is unique in allowing newsfeeds to be grouped into folders nested to arbitrary depth. When nesfeeds are placed into nested folders, they simply appear in the top-level folder when accessed via the NextCloud News protocol.
+Tiny Tiny RSS is unique in allowing newsfeeds to be grouped into folders nested to arbitrary depth. When newsfeeds are placed into nested folders, they simply appear in the top-level folder when accessed via the NextCloud News protocol.
