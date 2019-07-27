@@ -33,15 +33,21 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     const PARAM_BOOL = ["groups", "feeds", "items", "favicons", "links", "unread_item_ids", "saved_item_ids"];
     // GET parameters which contain meaningful values
     const PARAM_GET = [
-        'api'       => V::T_STRING, // this parameter requires special handling
-        'page'      => V::T_INT, // parameter for hot links
-        'range'     => V::T_INT, // parameter for hot links
-        'offset'    => V::T_INT, // parameter for hot links
-        'since_id'  => V::T_INT,
-        'max_id'    => V::T_INT,
-        'with_ids'  => V::T_STRING,
-        'group_ids' => V::T_STRING, // undocumented parameter for 'items' lookup
-        'feed_ids'  => V::T_STRING, // undocumented parameter for 'items' lookup
+        'api'                  => V::T_STRING, // this parameter requires special handling
+        'page'                 => V::T_INT, // parameter for hot links
+        'range'                => V::T_INT, // parameter for hot links
+        'offset'               => V::T_INT, // parameter for hot links
+        'since_id'             => V::T_INT,
+        'max_id'               => V::T_INT,
+        'with_ids'             => V::T_STRING,
+        'group_ids'            => V::T_STRING, // undocumented parameter for 'items' lookup
+        'feed_ids'             => V::T_STRING, // undocumented parameter for 'items' lookup
+        // these should be POST parameters only, but some clients misbehave
+        'mark'                 => V::T_STRING,
+        'as'                   => V::T_STRING,
+        'id'                   => V::T_INT,
+        'before'               => V::T_DATE,
+        'unread_recently_read' => V::T_BOOL,
     ];
     // POST parameters, all of which contain meaningful values
     const PARAM_POST = [
@@ -134,6 +140,9 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             // either an 'unread_item_ids' or a
             // 'saved_item_ids' entry will be added later
             $listSaved = $this->setMarks($P, $listUnread);
+        } elseif ($G['mark'] && $G['as'] && is_int($G['id'])) {
+            // some clients send GET rather than POST parameters for marking
+            $listSaved = $this->setMarks($G, $listUnread);
         }
         if ($G['feeds'] || $G['groups']) {
             if ($G['groups']) {
@@ -244,7 +253,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return true;
     }
 
-    protected function setMarks(array $P, &$listUnread): bool {
+                                                                                                                                                                            protected function setMarks(array $P, &$listUnread): bool {
         $listSaved = false;
         $c = new Context;
         $id = $P['id'];

@@ -392,6 +392,24 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
+    /** @dataProvider provideMarkingContexts */
+    public function testSetMarksWithQuery(string $get, Context $c, array $data, array $out) {
+        $saved = [['id' => 1],['id' => 2],['id' => 3]];
+        $unread = [['id' => 4],['id' => 5],['id' => 6]];
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true))->thenReturn(new Result($saved));
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->unread(true))->thenReturn(new Result($unread));
+        \Phake::when(Arsse::$db)->articleMark->thenReturn(0);
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->article(2112))->thenThrow(new \JKingWeb\Arsse\Db\ExceptionInput("subjectMissing"));
+        $exp = new JsonResponse($out);
+        $act = $this->h->dispatch($this->req("api&$get"));
+        $this->assertMessage($exp, $act);
+        if ($c && $data) {
+            \Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $data, $c);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::times(0))->articleMark;
+        }
+    }
+
     public function provideMarkingContexts() {
         $markRead = ['read' => true];
         $markUnread = ['read' => false];
