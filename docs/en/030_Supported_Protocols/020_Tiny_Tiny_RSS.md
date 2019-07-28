@@ -2,10 +2,6 @@
 
 # About
 
-The Arsse supports not only the Tiny Tiny RSS protocol, but also extensions required by the FeedReader client and the more commonly supported `getCompactHeadlines` extension.
-
-It allows organizing newsfeeds into nested folders, and supports an odd patchwork subset of Tiny Tiny RSS' full capabilities. The FeedReader extensions round out the protocol with significantly more features. Unlike TT-RSS itself, API access is always enabled with The Arsse.
-
 <dl>
     <dt>Supported since</dt>
         <dd>0.2.0</dd>
@@ -16,6 +12,10 @@ It allows organizing newsfeeds into nested folders, and supports an odd patchwor
     <dt>Specifications</dt>
         <dd><a href="https://git.tt-rss.org/git/tt-rss/wiki/ApiReference">Main</a>, <a href="https://git.tt-rss.org/fox/tt-rss/wiki/SearchSyntax">search syntax</a>, <a href="https://github.com/jangernert/FeedReader/blob/master/data/tt-rss-feedreader-plugin/README.md">FeedReader extensions</a>, <a href="https://github.com/hrk/tt-rss-newsplus-plugin/blob/master/README.md">News+ extension</a></dd>
 </dl>
+
+The Arsse supports not only the Tiny Tiny RSS protocol, but also extensions required by the FeedReader client and the more commonly supported `getCompactHeadlines` extension.
+
+It allows organizing newsfeeds into nested folders, and supports an odd patchwork subset of Tiny Tiny RSS' full capabilities. The FeedReader extensions round out the protocol with significantly more features. Unlike with TT-RSS itself, API access is always enabled with The Arsse.
 
 # Missing features
 

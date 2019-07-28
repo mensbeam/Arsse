@@ -2,10 +2,6 @@
 
 # About
 
-The NextCloud News protocol was the first supported by The Arsse, and has been supported in full since version 0.3.0.
-
-It allows organizing newsfeeds into single-level folders, and supports a wide range of operations on newsfeeds, folders, and articles.
-
 <dl>
     <dt>Supported since</dt>
         <dd>0.1.0</dd>
@@ -16,6 +12,10 @@ It allows organizing newsfeeds into single-level folders, and supports a wide ra
     <dt>Specifications</dt>
         <dd><a href="https://github.com/nextcloud/news/blob/master/docs/externalapi/Legacy.md">Version 1.2</a></dd>
 </dl>
+
+The NextCloud News protocol was the first supported by The Arsse, and has been supported in full since version 0.3.0.
+
+It allows organizing newsfeeds into single-level folders, and supports a wide range of operations on newsfeeds, folders, and articles.
 
 # Differences
 

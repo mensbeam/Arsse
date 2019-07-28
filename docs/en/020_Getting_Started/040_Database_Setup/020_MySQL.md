@@ -6,14 +6,14 @@
     <dt>dbDriver identifier</dt>
         <dd>mysql</dd>
     <dt>Minimum version</dt>
-        <dd>8.0.7</dd>
+        <dd>8.0.11</dd>
     <dt>Configuration</dt>
         <dd><a href="/en/Configuring_The_Arsse#page_Database-settings">General</a>, <a href="/en/Configuring_The_Arsse#page_Database-settings-specific-to-MySQL">Specific</a></dd>
 </dl>
 
 While MySQL can be used as a database for The Arsse, this is **not recommended** due to MySQL's technical limitations. It is fully functional, but may fail with some newsfeeds where other database systems do not. Additionally, it is particularly important before upgrading from one version of The Arsse to the next to back up your database: a failure in a database upgrade can corrupt your database much more easily than when using other database systems.
 
-Please note that as of this writing MariaDB cannot be used in place of MySQL as it lacks features of MySQL 8 which The Arsse requires.
+Please note that as of this writing MariaDB cannot be used in place of MySQL as it lacks features of MySQL 8 which The Arsse requires. The awkwardly-named _Percona Server for MySQL_, on the other hand, should work, though this has not been tested.
 
 # Set-up
 
