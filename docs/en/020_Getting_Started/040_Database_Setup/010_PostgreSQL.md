@@ -15,14 +15,14 @@ If for whatever reason an SQLite database does not suit your configuration, Post
 
 # Set-up
 
-In order to use a PostgreSQL database for The Arsse, the database must already exist. The procedure for doing for creating a database can differ between systems, but a typical Linux procedure is as follows:
+In order to use a PostgreSQL database for The Arsse, the database must already exist. The procedure for creating a database can differ between systems, but a typical Linux procedure is as follows:
 
 ```sh
 sudo -u postgres psql -c "CREATE USER arsseuser WITH PASSWORD 'super secret password'"
 sudo -u postgres psql -c "CREATE DATABASE arssedb WITH OWNER arsseuser"
 ```
 
-Tha Arsse must then be configured to use the create database. A suitable [configuration file](/en/Configuring_The_Arsse) might look like this:
+Tha Arsse must then be configured to use the created database. A suitable [configuration file](/en/Configuring_The_Arsse) might look like this:
 
 ```php
 <?php
