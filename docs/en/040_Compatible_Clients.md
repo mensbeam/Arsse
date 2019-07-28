@@ -68,6 +68,16 @@ The Arsse does not at this time have any first party clients. However, because T
    </td>
   </tr>
   <tr>
+   <td><a href="https://lzone.de/liferea/">Liferea</a></td>
+   <td>Linux</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td>
+    <p>Not compatible with HTTP authentication.</p>
+   </td>
+  </tr>
+  <tr>
    <td><a href="https://newsboat.org/">Newsboat</a></td>
    <td>Linux, macOS</td>
    <td class="Y">✔</td>
