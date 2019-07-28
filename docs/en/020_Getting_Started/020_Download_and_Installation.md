@@ -45,8 +45,10 @@ sudo systemctl enable --now arsse.service
 
 If using a database other than SQLite, you will likely want to [set it up](Database_Setup) before setting up the service.
 
+It's also possible to instead use a cron job to schedule newsfeed checks, but using the systemd service when possible is recommended.
+
 # Next Steps
 
 In order for the various synchronization protocols to work, a Web server [must be configured](Web_Server_Configuration), and in order for The Arsse to serve users, those users [must be created](Managing_Users). The following manual pages provide details on how to get this set up.
 
-You may also want to review the `config.default.php` file included in the download package and create [a configuration file](/en/Configuring_The_Arsse), though The Arsse can function even without using a configuration file.
+You may also want to review the `config.defaults.php` file included in the download package and create [a configuration file](/en/Configuring_The_Arsse), though The Arsse can function even without using a configuration file.
