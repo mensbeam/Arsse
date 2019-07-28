@@ -10,14 +10,14 @@ Installation from source code is also possible, but the release packages are rec
 
 At present installing The Arsse is largely a manual process. We hope to some day make this easier by integrating the software into commonly used package managers, but for now the below instructions should serve as a useful guide.
 
-In order for The Arsse to function correctly, [its requirements](Requirements) must be satisfied. The process of installing the required PHP extensions differs from one system to the next, but on Debian the following series of commands should do:
+In order for The Arsse to function correctly, [its requirements](Requirements) must first be satisfied. The process of installing the required PHP extensions differs from one system to the next, but on Debian the following series of commands should do:
 
 ```sh
 # Install PHP; this assumes the FastCGI process manager will be used
 sudo apt install php-cli php-fpm
-# Install the needed PHP extensions; curl is optional
+# Install the needed PHP extensions; php-curl is optional
 sudo apt install php-intl php-json php-xml php-curl
-# Install one of the required database extensions
+# Install any one of the required database extensions
 sudo apt install php-sqlite3 php-pgsql php-mysql
 ```
 
@@ -47,4 +47,6 @@ If using a database other than SQLite, you will likely want to [set it up](Datab
 
 # Next Steps
 
-In order for The Arsse to serve users, those users [must be created](Managing_Users), and in order for the various synchronization protocols to work, a Web server [must be configured](Web_Server_Configuration). The following manual pages provide details on how to get this set up.
+In order for the various synchronization protocols to work, a Web server [must be configured](Web_Server_Configuration), and in order for The Arsse to serve users, those users [must be created](Managing_Users). The following manual pages provide details on how to get this set up.
+
+You may also want to review the `config.default.php` file included in the download package and create [a configuration file](/en/Configuring_The_Arsse), though The Arsse can function even without using a configuration file.
