@@ -1,3 +1,7 @@
+# The Configuration File
+
+# List of All Settings
+
 ## General settings
 
 ### lang

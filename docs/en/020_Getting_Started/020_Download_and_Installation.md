@@ -51,4 +51,4 @@ It's also possible to instead use a cron job to schedule newsfeed checks, but us
 
 In order for the various synchronization protocols to work, a Web server [must be configured](Web_Server_Configuration), and in order for The Arsse to serve users, those users [must be created](Managing_Users). The following manual pages provide details on how to get this set up.
 
-You may also want to review the `config.defaults.php` file included in the download package and create [a configuration file](/en/Configuring_The_Arsse), though The Arsse can function even without using a configuration file.
+You may also want to review the `config.defaults.php` file included in the download package and create [a configuration file](Configuration), though The Arsse can function even without using a configuration file.

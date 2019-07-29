@@ -8,7 +8,7 @@
     <dt>Minimum version</dt>
         <dd>10</dd>
     <dt>Configuration</dt>
-        <dd><a href="/en/Configuring_The_Arsse#page_Database-settings">General</a>, <a href="/en/Configuring_The_Arsse#page_Database-settings-specific-to-PostgreSQL">Specific</a></dd>
+        <dd><a href="/en/Getting_Started/Configuration#page_Database-settings">General</a>, <a href="/en/Getting_Started/Configuration#page_Database-settings-specific-to-PostgreSQL">Specific</a></dd>
 </dl>
 
 If for whatever reason an SQLite database does not suit your configuration, PostgreSQL is the best alternative. It is functionally equivalent to SQLite in every way.
@@ -22,7 +22,7 @@ sudo -u postgres psql -c "CREATE USER arsseuser WITH PASSWORD 'super secret pass
 sudo -u postgres psql -c "CREATE DATABASE arssedb WITH OWNER arsseuser"
 ```
 
-Tha Arsse must then be configured to use the created database. A suitable [configuration file](/en/Configuring_The_Arsse) might look like this:
+Tha Arsse must then be configured to use the created database. A suitable [configuration file](/en/Getting_Started/Configuration) might look like this:
 
 ```php
 <?php
