@@ -35,3 +35,11 @@ The Fever protocol is incomplete, unusual, _and_ a product of proprietary softwa
 
 - The undocumented `group_ids`, `feed_ids`, and `as=unread` parameters are all supported
 - XML output is supported, but may not behave as Fever did. Its use by clients is discouraged
+
+# Interaction with HTTP Authentication
+
+We are not aware of any Fever clients which respond to HTTP authentication challenges. If the Web server or The Arsse is configured to require successful HTTP authentication, Fever clients are not likely to be able to connect properly.
+
+# Interaction with Folders
+
+Unlike other protocols supported by The Arsse, Fever uses "groups" (more commonly known as tags or labels) to organize newsfeeds. These are fully supported and are exposed as categories in OPML import and export. They are treated separately from folders.
