@@ -1,5 +1,19 @@
 # The Configuration File
 
+The Arsse looks for configuration in a file named `config.php` in the directory where it is installed. For example, if The Arsse is installed at `/usr/share/arsse`, it will look for configuration in the file `/usr/share/arsse/config.php`. It is not an error for this file not to exist or to be empty: The Arsse will function with no configuration whatsoever, provided other conditions allow.
+
+The configuration file is a PHP script which returns an associative array with keys and values for one or more settings. Any settings which are not specified in the configuration file will be set to its default. Invalid values will cause an error on start-up; unknown keys are ignored. A basic configuration file might look like this:
+
+```php
+<?php return [
+    'lang'          => "en",
+    'dbDriver'      => "sqlite3",
+    'dbSQLite3File' => "/var/lib/arsse/arsse.db",
+];
+```
+
+The `config.defaults.php` file included with copies of The Arsse contains an annotated listing of every configuration setting with its default value. The settings are also documented in more detail below.
+
 # List of All Settings
 
 ## General settings

@@ -6,7 +6,7 @@ As a PHP application, The Arsse requires the aid of a Web server in order to com
 
 Samples included here only cover the bare minimum for configuring a virtual host. In particular, configuration for HTTPS (which is highly recommended) is omitted for the sake of clarity
 
-## Configuration for Nginx
+# Configuration for Nginx
 
 ```nginx
 server {
