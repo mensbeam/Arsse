@@ -2,7 +2,7 @@
 
 The Arsse looks for configuration in a file named `config.php` in the directory where it is installed. For example, if The Arsse is installed at `/usr/share/arsse`, it will look for configuration in the file `/usr/share/arsse/config.php`. It is not an error for this file not to exist or to be empty: The Arsse will function with no configuration whatsoever, provided other conditions allow.
 
-The configuration file is a PHP script which returns an associative array with keys and values for one or more settings. Any settings which are not specified in the configuration file will be set to its default. Invalid values will cause an error on start-up; unknown keys are ignored. A basic configuration file might look like this:
+The configuration file is a PHP script which returns an associative array with keys and values for one or more settings. Any settings which are not specified in the configuration file will be set to their defaults. Invalid values will cause an error on start-up, while unknown keys are ignored. A basic configuration file might look like this:
 
 ```php
 <?php return [
