@@ -32,23 +32,12 @@ sudo chown -R www-data:www-data "/usr/share/arsse"
 sudo chmod o+rwX "/usr/share/arsse"
 ```
 
-Finally, The Arsse's newsfeed refreshing service needs to be installed in order for news to actually be fetched from the Internet:
-
-```sh
-# Copy the service unit
-sudo cp "/usr/share/arsse/dist/arsse.service" "/etc/systemd/system"
-# Modify the unit file if needed
-sudoedit "/etc/systemd/system/arsse.service"
-# Enable and start the service
-sudo systemctl enable --now arsse.service
-```
-
-If using a database other than SQLite, you will likely want to [set it up](Database_Setup) before setting up the service.
-
-It's also possible to instead use a cron job to schedule newsfeed checks, but using the systemd service when possible is recommended.
-
 # Next Steps
 
-In order for the various synchronization protocols to work, a Web server [must be configured](Web_Server_Configuration), and in order for The Arsse to serve users, those users [must be created](/en/Using_The_Arsse/Managing_Users). The following manual pages provide details on how to get this set up.
+If using a database other than SQLite, you will likely want to [set it up](Database_Setup) before doing anything else.
+
+In order for the various synchronization protocols to work, a Web server [must be configured](Web_Server_Configuration), and in order for The Arsse to serve users, those users [must be created](/en/Using_The_Arsse/Managing_Users).
 
 You may also want to review the `config.defaults.php` file included in the download package and create [a configuration file](Configuration), though The Arsse can function even without using a configuration file.
+
+Finally, The Arsse's [newsfeed refreshing service](/en/Using_The_Arsse/Keeping_Newsfeeds_Up_to_Date) needs to be installed in order for news to actually be fetched from the Internet.
