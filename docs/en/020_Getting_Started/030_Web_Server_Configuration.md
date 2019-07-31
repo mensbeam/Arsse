@@ -80,10 +80,15 @@ sudo systemctl restart apache2
 Afterward the follow virtual host configuration should work, after modifying path as appropriate:
 
 ```apache
+# N.B. the unix:/var/run/php/php7.2-fpm.sock path used repeatedly below will 
+#      vary from system to system and will be probably need to be changed
+
 <VirtualHost *:80>
     ServerName localhost
+    # adjust according to your installation path
     DocumentRoot /usr/share/arsse/www
 
+    # adjust according to your installation path
     ProxyFCGISetEnvIf "true" SCRIPT_FILENAME "/usr/share/arsse/arsse.php"
     ProxyPreserveHost On
 
