@@ -8,7 +8,7 @@ There are many ways to administer daemons, and many schedulers can be used. This
 
 # As a Daemon via Systemd
 
-The Arsse includes a sample system service unit file which can be used to quickly get a daemon running with the following procedure:
+The Arsse includes a sample systemd service unit file which can be used to quickly get a daemon running with the following procedure:
 
 ```sh
 # Copy the service unit
