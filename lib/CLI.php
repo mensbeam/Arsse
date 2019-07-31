@@ -99,7 +99,7 @@ Commands:
     user auth <username> <password>
 
     Tests logging in as <username> with password <password>. This only checks
-    that the user's password is currectly recognized; it has no side effects.
+    that the user's password is correctly recognized; it has no side effects.
 
     The --fever option may be used to test the user's Fever protocol password,
     if any.
