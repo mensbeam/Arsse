@@ -1,0 +1,27 @@
+/* Daux imports; fonts are omitted */
+@import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/vendor/normalize.scss";
+@import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/_variables.scss";
+@import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/_mixins.scss";
+@import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/_structure.scss";
+@import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/_typography.scss";
+@import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/_components.scss";
+@import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/_homepage.scss";
+@import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/vendor/highlight.scss";
+@import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/_print.scss" print;
+
+
+/* The Arsse overrides */
+:root {
+    --font-family-text: -apple-system, ".SFNSText-Regular", "San Francisco",
+        "Roboto", "Segoe UI", "Helvetica Neue", "Lucida Grande", Arial,
+        sans-serif;
+    --font-family-monospace: Monaco, Menlo, Consolas, "Lucida Console",
+        "Courier New", monospace;
+    --font-family-heading: "Roboto Slab", var(--font-family-text);
+}
+:root {
+    --sidebar-background: #f7f7f7;
+    --sidebar-link-active-background: #c5c5cb;
+    --dark: #3f4657;
+    --light: #82becd;
+}

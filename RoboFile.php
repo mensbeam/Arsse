@@ -188,4 +188,18 @@ class RoboFile extends \Robo\Tasks {
         $execpath = escapeshellarg(realpath(self::BASE."vendor/bin/daux"));
         return $this->taskExec($execpath)->arg("serve")->args($args)->run();
     }
+
+    /** Rebuilds the manual theme
+     * 
+     * This requires Node and Yarn to be installed, and only needs to be done when
+     * Daux's theme changes
+     */
+    public function manualTheme(array $args): Result {
+        $postcss = escapeshellarg(realpath(self::BASE."node_modules/.bin/postcss"));
+        $themesrc = realpath(self::BASE."docs/theme/src/");
+        $themeout = realpath(self::BASE."docs/theme/arsse/");
+        $scss = $themesrc."/arsse.scss";
+        $css = $themeout."/arsse.css";
+        return $this->taskExec($postcss)->arg($scss)->option("-o", $css)->args($args)->run();
+    }
 }
