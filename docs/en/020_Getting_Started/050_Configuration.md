@@ -296,7 +296,7 @@ The maximum lifetime of log-in sessions regardless of recent activity. Session l
 |---------|---------|
 | integer | `20`    |
 
-The desired length in characters of randomly-generated user passwords. When [adding users](/en/Command-Line_Functionality), omitting a desired password generates a random one; this setting controls the length of these passwords.
+The desired length in characters of randomly-generated user passwords. When [adding users](/en/Using_The_Arsse/Managing_Users), omitting a desired password generates a random one; this setting controls the length of these passwords.
 
 ## Newsfeed fetching service settings
 
