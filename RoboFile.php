@@ -1,6 +1,7 @@
 <?php
 
 use Robo\Result;
+use splitbrain\PHPArchive\Zip;
 
 class RoboFile extends \Robo\Tasks {
     const BASE = __DIR__.\DIRECTORY_SEPARATOR;
@@ -200,6 +201,54 @@ class RoboFile extends \Robo\Tasks {
         $themeout = realpath(self::BASE."docs/theme/arsse/");
         $scss = $themesrc."/arsse.scss";
         $css = $themeout."/arsse.css";
-        return $this->taskExec($postcss)->arg($scss)->option("-o", $css)->args($args)->run();
+        // start a collection; this stops after the first failure
+        $t = $this->collectionBuilder();
+        $tmp = $t->tmpDir().\DIRECTORY_SEPARATOR;
+        // install dependencies via Yarn
+        $t->taskExec("yarn install");
+        // compile the stylesheet
+        $t->taskExec($postcss)->arg($scss)->option("-o", $css);
+        // download highlight.js
+        $t->addCode(function() use ($tmp, $themeout) {
+            $languages = ["php", "bash", "shell", "xml", "nginx", "apache"];
+            $post = http_build_query((function($langs) {
+                $out = [];
+                foreach($langs as $l) {
+                    $out[$l.".js"] = "on";
+                }
+                return $out;
+            })($languages));
+            $conn = fopen("https://highlightjs.org/download/", "r");
+            if ($conn === false) {
+                throw new Exception("Unable to download Highlight.js");
+            }
+            foreach (stream_get_meta_data($conn)['wrapper_data'] as $field) {
+                if (preg_match("/^Set-Cookie: csrftoken=([^;]+)/i", $field, $cookie)) {
+                    break;
+                }
+            }
+            $token = stream_get_contents($conn);
+            preg_match("/<input type='hidden' name='csrfmiddlewaretoken' value='([^']*)'/", $token, $token);
+            $post = "csrfmiddlewaretoken={$token[1]}&$post";
+            $hljs = file_get_contents("https://highlightjs.org/download/", false, stream_context_create(['http' => [
+                'method' => "POST",
+                'content' => $post,
+                'header' => [
+                    "Referer: https://highlightjs.org/download/",
+                    "Cookie: csrftoken={$cookie[1]}",
+                    "Content-Type: application/x-www-form-urlencoded",
+                ],
+            ]]));
+            if ($hljs === false) {
+                throw new Exception("Unable to download Highlight.js");
+            } else {
+                file_put_contents($tmp."highlightjs.zip", $hljs);
+            }
+            $z = new Zip;
+            $z->open($tmp."highlightjs.zip");
+            $z->extract($themeout, "", "", "highlight.pack.js");
+        }, "downloadHighlightjs");
+        // execute the collection
+        return $t->run();
     }
 }

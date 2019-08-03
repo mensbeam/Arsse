@@ -3,5 +3,8 @@
         "consolidation/robo": "^1.1",
         "pear/archive_tar": "^1.4",
         "symfony/process": "^3.0"
+    },
+    "require-dev": {
+        "splitbrain/php-archive": "^1.1"
     }
 }
