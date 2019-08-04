@@ -196,20 +196,30 @@ class RoboFile extends \Robo\Tasks {
      */
     public function manualTheme(array $args): Result {
         $postcss = escapeshellarg(realpath(self::BASE."node_modules/.bin/postcss"));
-        $themesrc = realpath(self::BASE."docs/theme/src/");
-        $themeout = realpath(self::BASE."docs/theme/arsse/");
-        $scss = $themesrc."/arsse.scss";
-        $css = $themeout."/arsse.css";
+        $languages = ["php", "bash", "shell", "xml", "nginx", "apache"];
+        $themesrc = realpath(self::BASE."docs/theme/src/").\DIRECTORY_SEPARATOR;
+        $themeout = realpath(self::BASE."docs/theme/arsse/").\DIRECTORY_SEPARATOR;
+        $dauxjs = realpath(self::BASE."vendor-bin/daux/vendor/daux/daux.io/themes/daux/js/").\DIRECTORY_SEPARATOR;
+        $dauxout = realpath(self::BASE."docs/theme/daux/js/").\DIRECTORY_SEPARATOR;
         // start a collection; this stops after the first failure
         $t = $this->collectionBuilder();
         $tmp = $t->tmpDir().\DIRECTORY_SEPARATOR;
         // install dependencies via Yarn
         $t->taskExec("yarn install");
         // compile the stylesheet
-        $t->taskExec($postcss)->arg($scss)->option("-o", $css);
+        $t->taskExec($postcss)->arg($themesrc."arsse.scss")->option("-o", $themeout."arsse.css");
+        // copy JavaScript files from the Daux theme
+        foreach(glob($dauxjs."daux*") as $file) {
+            $t->taskFilesystemStack()->copy($file, $themeout.basename($file), true);
+        }
+        foreach(glob($dauxjs."jquery*") as $file) {
+            $t->taskFilesystemStack()->copy($file, $themeout.basename("jquery.min.js"), true);
+        }
+        foreach(glob($dauxjs."html5shiv*") as $file) {
+            $t->taskFilesystemStack()->copy($file, $dauxout.basename($file), true);
+        }
         // download highlight.js
-        $t->addCode(function() use ($tmp, $themeout) {
-            $languages = ["php", "bash", "shell", "xml", "nginx", "apache"];
+        $t->addCode(function() use ($languages, $tmp, $themeout) {
             $post = http_build_query((function($langs) {
                 $out = [];
                 foreach($langs as $l) {
@@ -244,10 +254,8 @@ class RoboFile extends \Robo\Tasks {
                 file_put_contents($tmp."highlightjs.zip", $hljs);
             }
             $this->taskExtract($tmp."highlightjs.zip")->to($tmp."hljs")->run();
-            $this->taskFilesystemStack()->copy($tmp."hljs/highlight.pack.js", $themeout."/highlight.pack.js")->run();
+            $this->taskFilesystemStack()->copy($tmp."hljs".\DIRECTORY_SEPARATOR."highlight.pack.js", $themeout."highlight.pack.js")->run();
         }, "downloadHighlightjs");
-        // copy JavaScript files from the Daux theme
-        # TODO
         // execute the collection
         return $t->run();
     }

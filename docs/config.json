@@ -4,7 +4,9 @@
     "languages": {
         "en": "English"
     },
+    "themes_directory": "docs/theme",
     "html": {
+        "theme": "arsse",
         "float": false,
         "toggle_code": false
     }
