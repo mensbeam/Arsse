@@ -119,7 +119,7 @@ class RoboFile extends \Robo\Tasks {
                 throw new \Exception;
         }
         $execpath = realpath(self::BASE."vendor-bin/phpunit/vendor/phpunit/phpunit/phpunit");
-        $confpath = realpath(self::BASE_TEST."phpunit.xml");
+        $confpath = realpath(self::BASE_TEST."phpunit.dist.xml") ?: realpath(self::BASE_TEST."phpunit.xml");
         $this->taskServer(8000)->host("localhost")->dir(self::BASE_TEST."docroot")->rawArg("-n")->arg(self::BASE_TEST."server.php")->rawArg($this->blackhole())->background()->run();
         return $this->taskExec($executor)->arg($execpath)->option("-c", $confpath)->args(array_merge($set, $args))->run();
     }
