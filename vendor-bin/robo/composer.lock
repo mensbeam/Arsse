@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0f7d93d4c470b72b0f6f0bc0317d603f",
+    "content-hash": "d95cf402fed434140db8ae87c3c8bf32",
     "packages": [
         {
             "name": "consolidation/annotated-command",
@@ -1734,62 +1734,7 @@
             "time": "2019-04-06T14:04:46+00:00"
         }
     ],
-    "packages-dev": [
-        {
-            "name": "splitbrain/php-archive",
-            "version": "1.1.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/splitbrain/php-archive.git",
-                "reference": "10d89013572ba1f4d4ad7fcb74860242f4c3860b"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/splitbrain/php-archive/zipball/10d89013572ba1f4d4ad7fcb74860242f4c3860b",
-                "reference": "10d89013572ba1f4d4ad7fcb74860242f4c3860b",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.4"
-            },
-            "require-dev": {
-                "ext-bz2": "*",
-                "ext-zip": "*",
-                "mikey179/vfsstream": "^1.6",
-                "phpunit/phpunit": "^4.8"
-            },
-            "suggest": {
-                "ext-iconv": "Used for proper filename encode handling",
-                "ext-mbstring": "Can be used alternatively for handling filename encoding"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "splitbrain\\PHPArchive\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Andreas Gohr",
-                    "email": "andi@splitbrain.org"
-                }
-            ],
-            "description": "Pure-PHP implementation to read and write TAR and ZIP archives",
-            "keywords": [
-                "archive",
-                "extract",
-                "tar",
-                "unpack",
-                "unzip",
-                "zip"
-            ],
-            "time": "2018-09-09T12:13:53+00:00"
-        }
-    ],
+    "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": [],

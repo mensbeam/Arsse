@@ -208,49 +208,46 @@ class RoboFile extends \Robo\Tasks {
         // compile the stylesheet
         $t->taskExec($postcss)->arg($scss)->option("-o", $css);
         // download highlight.js
-        if (extension_loaded("zip")) {
-            $t->addCode(function() use ($tmp, $themeout) {
-                $languages = ["php", "bash", "shell", "xml", "nginx", "apache"];
-                $post = http_build_query((function($langs) {
-                    $out = [];
-                    foreach($langs as $l) {
-                        $out[$l.".js"] = "on";
-                    }
-                    return $out;
-                })($languages));
-                $conn = @fopen("https://highlightjs.org/download/", "r");
-                if ($conn === false) {
-                    throw new Exception("Unable to download Highlight.js");
+        $t->addCode(function() use ($tmp, $themeout) {
+            $languages = ["php", "bash", "shell", "xml", "nginx", "apache"];
+            $post = http_build_query((function($langs) {
+                $out = [];
+                foreach($langs as $l) {
+                    $out[$l.".js"] = "on";
                 }
-                foreach (stream_get_meta_data($conn)['wrapper_data'] as $field) {
-                    if (preg_match("/^Set-Cookie: csrftoken=([^;]+)/i", $field, $cookie)) {
-                        break;
-                    }
+                return $out;
+            })($languages));
+            $conn = @fopen("https://highlightjs.org/download/", "r");
+            if ($conn === false) {
+                throw new Exception("Unable to download Highlight.js");
+            }
+            foreach (stream_get_meta_data($conn)['wrapper_data'] as $field) {
+                if (preg_match("/^Set-Cookie: csrftoken=([^;]+)/i", $field, $cookie)) {
+                    break;
                 }
-                $token = stream_get_contents($conn);
-                preg_match("/<input type='hidden' name='csrfmiddlewaretoken' value='([^']*)'/", $token, $token);
-                $post = "csrfmiddlewaretoken={$token[1]}&$post";
-                $hljs = @file_get_contents("https://highlightjs.org/download/", false, stream_context_create(['http' => [
-                    'method' => "POST",
-                    'content' => $post,
-                    'header' => [
-                        "Referer: https://highlightjs.org/download/",
-                        "Cookie: csrftoken={$cookie[1]}",
-                        "Content-Type: application/x-www-form-urlencoded",
-                    ],
-                ]]));
-                if ($hljs === false) {
-                    throw new Exception("Unable to download Highlight.js");
-                } else {
-                    file_put_contents($tmp."highlightjs.zip", $hljs);
-                }
-                $z = new \ZipArchive;
-                $z->open($tmp."highlightjs.zip");
-                $z->extractTo($themeout, "highlight.pack.js");
-            }, "downloadHighlightjs");
-        } else {
-            $this->say("Zip extension not installed; not updating hightlight.js");
-        }
+            }
+            $token = stream_get_contents($conn);
+            preg_match("/<input type='hidden' name='csrfmiddlewaretoken' value='([^']*)'/", $token, $token);
+            $post = "csrfmiddlewaretoken={$token[1]}&$post";
+            $hljs = @file_get_contents("https://highlightjs.org/download/", false, stream_context_create(['http' => [
+                'method' => "POST",
+                'content' => $post,
+                'header' => [
+                    "Referer: https://highlightjs.org/download/",
+                    "Cookie: csrftoken={$cookie[1]}",
+                    "Content-Type: application/x-www-form-urlencoded",
+                ],
+            ]]));
+            if ($hljs === false) {
+                throw new Exception("Unable to download Highlight.js");
+            } else {
+                file_put_contents($tmp."highlightjs.zip", $hljs);
+            }
+            $this->taskExtract($tmp."highlightjs.zip")->to($tmp."hljs")->run();
+            $this->taskFilesystemStack()->copy($tmp."hljs/highlight.pack.js", $themeout."/highlight.pack.js")->run();
+        }, "downloadHighlightjs");
+        // copy JavaScript files from the Daux theme
+        # TODO
         // execute the collection
         return $t->run();
     }

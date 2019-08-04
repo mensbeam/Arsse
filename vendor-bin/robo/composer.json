@@ -5,6 +5,5 @@
         "symfony/process": "^3.0"
     },
     "require-dev": {
-        "splitbrain/php-archive": "^1.1"
     }
 }
