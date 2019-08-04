@@ -1,6 +1,7 @@
 {
     "title": "The Advanced RSS Environment",
     "tagline": "The clean & modern RSS server that doesn't give you any crap.",
+    "author": "J. King",
     "languages": {
         "en": "English"
     },
@@ -8,6 +9,7 @@
     "html": {
         "theme": "arsse",
         "float": false,
-        "toggle_code": false
+        "toggle_code": false,
+        "search": false
     }
 }

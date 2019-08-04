@@ -180,7 +180,11 @@ class RoboFile extends \Robo\Tasks {
      */
     public function manual(array $args): Result {
         $execpath = escapeshellarg(realpath(self::BASE."vendor/bin/daux"));
-        return $this->taskExec($execpath)->arg("generate")->option("-d", self::BASE."manual")->args($args)->run();
+        $t = $this->collectionBuilder();
+        $t->taskExec($execpath)->arg("generate")->option("-d", self::BASE."manual")->args($args);
+        $t->taskDeleteDir(realpath(self::BASE."manual/theme"));
+        $t->taskDeleteDir(realpath(self::BASE."manual/themes/src"));
+        return $t->run();
     }
 
     /** Serves a live view of the manual using PHP's built-in Web server */
@@ -196,7 +200,6 @@ class RoboFile extends \Robo\Tasks {
      */
     public function manualTheme(array $args): Result {
         $languages = ["php", "bash", "shell", "xml", "nginx", "apache"];
-        $themesrc = realpath(self::BASE."docs/theme/src/").\DIRECTORY_SEPARATOR;
         $themeout = realpath(self::BASE."docs/theme/arsse/").\DIRECTORY_SEPARATOR;
         $dauxjs = realpath(self::BASE."vendor-bin/daux/vendor/daux/daux.io/themes/daux/js/").\DIRECTORY_SEPARATOR;
         $dauxout = realpath(self::BASE."docs/theme/daux/js/").\DIRECTORY_SEPARATOR;
