@@ -195,7 +195,6 @@ class RoboFile extends \Robo\Tasks {
      * Daux's theme changes
      */
     public function manualTheme(array $args): Result {
-        $postcss = escapeshellarg(realpath(self::BASE."node_modules/.bin/postcss"));
         $languages = ["php", "bash", "shell", "xml", "nginx", "apache"];
         $themesrc = realpath(self::BASE."docs/theme/src/").\DIRECTORY_SEPARATOR;
         $themeout = realpath(self::BASE."docs/theme/arsse/").\DIRECTORY_SEPARATOR;
@@ -204,10 +203,8 @@ class RoboFile extends \Robo\Tasks {
         // start a collection; this stops after the first failure
         $t = $this->collectionBuilder();
         $tmp = $t->tmpDir().\DIRECTORY_SEPARATOR;
-        // install dependencies via Yarn
-        $t->taskExec("yarn install");
-        // compile the stylesheet
-        $t->taskExec($postcss)->arg($themesrc."arsse.scss")->option("-o", $themeout."arsse.css");
+        // rebuild the stylesheet
+        $t->addCode([$this, "manualCss"]);
         // copy JavaScript files from the Daux theme
         foreach(glob($dauxjs."daux*") as $file) {
             $t->taskFilesystemStack()->copy($file, $themeout.basename($file), true);
@@ -256,6 +253,25 @@ class RoboFile extends \Robo\Tasks {
             $this->taskExtract($tmp."highlightjs.zip")->to($tmp."hljs")->run();
             $this->taskFilesystemStack()->copy($tmp."hljs".\DIRECTORY_SEPARATOR."highlight.pack.js", $themeout."highlight.pack.js")->run();
         }, "downloadHighlightjs");
+        // execute the collection
+        return $t->run();
+    }
+
+    /** Rebuilds the manual theme's stylesheet only
+     * 
+     * This requires Node and Yarn to be installed.
+     */
+    public function manualCss(): Result {
+        $postcss = escapeshellarg(realpath(self::BASE."node_modules/.bin/postcss"));
+        $themesrc = realpath(self::BASE."docs/theme/src/").\DIRECTORY_SEPARATOR;
+        $themeout = realpath(self::BASE."docs/theme/arsse/").\DIRECTORY_SEPARATOR;
+        // start a collection; this stops after the first failure
+        $t = $this->collectionBuilder();
+        $tmp = $t->tmpDir().\DIRECTORY_SEPARATOR;
+        // install dependencies via Yarn
+        $t->taskExec("yarn install");
+        // compile the stylesheet
+        $t->taskExec($postcss)->arg($themesrc."arsse.scss")->option("-o", $themeout."arsse.css");
         // execute the collection
         return $t->run();
     }
