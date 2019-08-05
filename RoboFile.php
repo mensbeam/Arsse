@@ -136,7 +136,7 @@ class RoboFile extends \Robo\Tasks {
     */
     public function package(string $version = null): Result {
         // establish which commit to package
-        $version = $version ?? $this->askDefault("Commit to package:", "head");
+        $version = $version ?? $this->askDefault("Commit to package:", "HEAD");
         $archive = self::BASE."arsse-$version.tar.gz";
         // start a collection
         $t = $this->collectionBuilder();
@@ -144,7 +144,11 @@ class RoboFile extends \Robo\Tasks {
         $dir = $t->tmpDir().\DIRECTORY_SEPARATOR;
         // create a Git worktree for the selected commit in the temp location
         $t->taskExec("git worktree add ".escapeshellarg($dir)." ".escapeshellarg($version));
-        // perform Composer installation in the temp location
+        // perform Composer installation in the temp location with dev dependencies
+        $t->taskComposerInstall()->dir($dir);
+        // generate the manual
+        $t->taskExec(escapeshellarg($dir."robo")." manual")->dir($dir);
+        // perform Composer installation in the temp location for final output
         $t->taskComposerInstall()->dir($dir)->noDev()->optimizeAutoloader()->arg("--no-scripts");
         // delete unwanted files
         $t->taskFilesystemStack()->remove([
@@ -158,10 +162,14 @@ class RoboFile extends \Robo\Tasks {
             $dir."build.xml",
             $dir."RoboFile.php",
             $dir."CONTRIBUTING.md",
+            $dir."docs",
             $dir."tests",
             $dir."vendor-bin",
             $dir."robo",
             $dir."robo.bat",
+            $dir."package.json",
+            $dir."yarn.lock",
+            $dir."postcss.config.js",
         ]);
         // generate a sample configuration file
         $t->taskExec(escapeshellarg(\PHP_BINARY)." arsse.php conf save-defaults config.defaults.php")->dir($dir);
@@ -187,13 +195,13 @@ class RoboFile extends \Robo\Tasks {
         return $t->run();
     }
 
-    /** Serves a live view of the manual using PHP's built-in Web server */
+    /** Serves a live view of the manual using the built-in Web server */
     public function manualLive(array $args): Result {
         $execpath = escapeshellarg(realpath(self::BASE."vendor/bin/daux"));
         return $this->taskExec($execpath)->arg("serve")->args($args)->run();
     }
 
-    /** Rebuilds the manual theme
+    /** Rebuilds the entire manual theme
      * 
      * This requires Node and Yarn to be installed, and only needs to be done when
      * Daux's theme changes
