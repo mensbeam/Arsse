@@ -165,6 +165,7 @@ class RoboFile extends \Robo\Tasks {
             $dir."docs",
             $dir."tests",
             $dir."vendor-bin",
+            $dir."vendor/bin",
             $dir."robo",
             $dir."robo.bat",
             $dir."package.json",
@@ -190,8 +191,8 @@ class RoboFile extends \Robo\Tasks {
         $execpath = escapeshellarg(realpath(self::BASE."vendor/bin/daux"));
         $t = $this->collectionBuilder();
         $t->taskExec($execpath)->arg("generate")->option("-d", self::BASE."manual")->args($args);
-        $t->taskDeleteDir(realpath(self::BASE."manual/theme"));
-        $t->taskDeleteDir(realpath(self::BASE."manual/themes/src"));
+        $t->taskDeleteDir(self::BASE."manual/theme");
+        $t->taskDeleteDir(self::BASE."manual/themes/src");
         return $t->run();
     }
 
