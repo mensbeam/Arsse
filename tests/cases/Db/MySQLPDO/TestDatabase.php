@@ -17,6 +17,6 @@ class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\Base {
     use \JKingWeb\Arsse\TestCase\DatabaseDrivers\MySQLPDO;
 
     protected function nextID(string $table): int {
-        return (int) (static::$drv->query("SELECT auto_increment from information_schema.tables where table_name = '$table'")->getValue() ?? 1);
+        return (int) (static::$drv->query("SELECT (case when max(id) then max(id) else 0 end)+1 from $table")->getValue() ?? 1);
     }
 }

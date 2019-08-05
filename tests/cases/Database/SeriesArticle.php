@@ -415,7 +415,7 @@ trait SeriesArticle {
 
     /** @dataProvider provideContextMatches */
     public function testListArticlesCheckingContext(Context $c, array $exp) {
-        $ids = array_column($ids = Arsse::$db->articleList("john.doe@example.com", $c)->getAll(), "id");
+        $ids = array_column($ids = Arsse::$db->articleList("john.doe@example.com", $c, ["id"], ["id"])->getAll(), "id");
         sort($ids);
         sort($exp);
         $this->assertEquals($exp, $ids);
