@@ -9,6 +9,7 @@ module.exports = ctx => ({
     'postcss-custom-media': {preserve: false},
     'postcss-media-minmax': {},
     'postcss-custom-properties': {preserve: false},
+    'postcss-color-function': {},
     'postcss-nested': {},
     'autoprefixer': {},
     'postcss-csso': {},
