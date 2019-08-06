@@ -3,7 +3,7 @@ Version 0.8.1 (2019-??-??)
 
 Bug fixes:
 - Don't crash updating feeds cached solely via ETag
-- Don't update feed URLs when fetching
+- Don't fail adding a feed which collides with another via redirection
 
 Version 0.8.0 (2019-07-26)
 ==========================

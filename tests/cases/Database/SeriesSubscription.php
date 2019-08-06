@@ -223,6 +223,14 @@ trait SeriesSubscription {
         Arsse::$db->subscriptionAdd($this->user, $url);
     }
 
+    public function testAddADuplicateSubscriptionViaRedirection() {
+        $url = "http://localhost:8000/Feed/Parsing/Valid";
+        Arsse::$db->subscriptionAdd($this->user, $url);
+        $subID = $this->nextID("arsse_subscriptions");
+        $url = "http://localhost:8000/Feed/Fetching/RedirectionDuplicate";
+        $this->assertSame($subID, Arsse::$db->subscriptionAdd($this->user, $url));
+    }
+
     public function testAddASubscriptionWithoutAuthority() {
         $url = "http://example.com/feed1";
         Phake::when(Arsse::$user)->authorize->thenReturn(false);
