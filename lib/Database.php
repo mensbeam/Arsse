@@ -1152,8 +1152,7 @@ class Database {
         }
         // lastly update the feed database itself with updated information.
         $this->db->prepare(
-            "UPDATE arsse_feeds SET url = ?, title = ?, favicon = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = '', next_fetch = ?, size = ? WHERE id = ?",
-            'str',
+            "UPDATE arsse_feeds SET title = ?, favicon = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = '', next_fetch = ?, size = ? WHERE id = ?",
             'str',
             'str',
             'str',
@@ -1163,7 +1162,6 @@ class Database {
             'int',
             'int'
         )->run(
-            $feed->data->feedUrl,
             $feed->data->title,
             $feed->favicon,
             $feed->data->siteUrl,
