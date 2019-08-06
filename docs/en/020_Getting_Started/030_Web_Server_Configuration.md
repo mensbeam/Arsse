@@ -63,7 +63,7 @@ server {
     # Fever protocol
     location /fever/ {
         # this path should not be behind HTTP authentication
-        try_files $uri @arsse_no_auth;
+        try_files $uri @arsse;
     }
 }
 ```
