@@ -10,18 +10,106 @@
 @import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/_print.scss" print;
 
 
+
 /* The Arsse overrides */
+
+@font-face {
+    font-family: 'League Gothic';
+    src: url('fonts/leaguegothic.woff2') format('woff2'),
+         url('fonts/leaguegothic.woff') format('woff');
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Cabin';
+    src: url('fonts/cabin-regular.woff2') format('woff2'),
+         url('fonts/cabin-regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Cabin';
+    src: url('fonts/cabin-italic.woff2') format('woff2'),
+         url('fonts/cabin-italic.woff') format('woff');
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Cabin';
+    src: url('fonts/cabin-bold.woff2') format('woff2'),
+         url('fonts/cabin-bold.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+
 :root {
-    --font-family-text: -apple-system, ".SFNSText-Regular", "San Francisco",
+    --font-family-text: "Cabin", "Trebuchet MS", -apple-system, ".SFNSText-Regular", "San Francisco",
         "Roboto", "Segoe UI", "Helvetica Neue", "Lucida Grande", Arial,
         sans-serif;
     --font-family-monospace: Monaco, Menlo, Consolas, "Lucida Console",
         "Courier New", monospace;
-    --font-family-heading: "Roboto Slab", var(--font-family-text);
+    --font-family-heading: "League Gothic", -apple-system, ".SFNSText-Regular", "San Francisco",
+        "Roboto", "Segoe UI", "Helvetica Neue", "Lucida Grande", Arial,
+        sans-serif;
+
+    --type-size-1: 4rem;
+    --type-size-2: 3.236rem;
+    --type-size-3: 2.618rem;
+    --type-size-4: 2rem;
+    --type-size-5: 1.618rem;
+    --type-size-6: 1.309rem;
 }
 :root {
     --sidebar-background: #f7f7f7;
     --sidebar-link-active-background: #c5c5cb;
     --dark: #3f4657;
     --light: #82becd;
+}
+
+body {
+    line-height: 1.618;
+}
+
+.Brand, h1, h2, h3, h4, h5, h6 {
+    font-weight: normal;
+}
+
+.s-content table {
+    font-size: 1rem;
+}
+
+.Nav__item {
+    font-size: var(--type-size-6);
+}
+
+.clients thead tr:first-child th {
+    text-align:left;
+}
+.clients thead tr:first-child th:first-child {
+    width: 15%;
+}
+.clients thead tr:first-child th:nth-child(3) {
+    width:50%;
+    text-align:center;
+}
+.clients thead tr + tr th {
+    width:16.66%;
+    text-align:center;
+}
+.clients tbody td:nth-child(3),
+.clients tbody td:nth-child(4),
+.clients tbody td:nth-child(5) {
+    text-align:center;
+}
+.clients tbody td.Y {
+    color:#00953b;
+}
+.clients tbody td.N {
+    color:#cf102d;
 }

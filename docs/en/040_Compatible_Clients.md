@@ -1,33 +1,5 @@
 The Arsse does not at this time have any first party clients. However, because The Arsse [supports existing protocols](/en/Supported_Protocols), most clients built for these protocols are compatible with The Arsse. Below are those that we personally know of and have tested with The Arsse.
 
-<style>
-    .clients thead tr:first-child th {
-        text-align:left;
-    }
-    .clients thead tr:first-child th:first-child {
-        width: 15%;
-    }
-    .clients thead tr:first-child th:nth-child(3) {
-        width:50%;
-        text-align:center;
-    }
-    .clients thead tr + tr th {
-        width:16.66%;
-        text-align:center;
-    }
-    .clients tbody td:nth-child(3),
-    .clients tbody td:nth-child(4),
-    .clients tbody td:nth-child(5) {
-        text-align:center;
-        font-size:larger;
-    }
-    .clients tbody td.Y {
-        color:#00953b;
-    }
-    .clients tbody td.N {
-        color:#cf102d;
-    }
-</style>
 <table class="clients">
  <thead>
   <tr>
