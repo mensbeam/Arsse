@@ -229,6 +229,7 @@ class RoboFile extends \Robo\Tasks {
         }
         // download highlight.js
         $t->addCode(function() use ($languages, $tmp, $themeout) {
+            // compile the list of desired language (enumerated above) into an application/x-www-form-urlencoded body
             $post = http_build_query((function($langs) {
                 $out = [];
                 foreach($langs as $l) {
@@ -236,6 +237,7 @@ class RoboFile extends \Robo\Tasks {
                 }
                 return $out;
             })($languages));
+            // get the two cross-site request forgery tokens the Highlight.js Web site requires
             $conn = @fopen("https://highlightjs.org/download/", "r");
             if ($conn === false) {
                 throw new Exception("Unable to download Highlight.js");
@@ -247,7 +249,9 @@ class RoboFile extends \Robo\Tasks {
             }
             $token = stream_get_contents($conn);
             preg_match("/<input type='hidden' name='csrfmiddlewaretoken' value='([^']*)'/", $token, $token);
+            // add the form CSRF token to the POST body
             $post = "csrfmiddlewaretoken={$token[1]}&$post";
+            // download a copy of Highlight.js with the desired languages to a temporary file
             $hljs = @file_get_contents("https://highlightjs.org/download/", false, stream_context_create(['http' => [
                 'method' => "POST",
                 'content' => $post,
@@ -262,6 +266,7 @@ class RoboFile extends \Robo\Tasks {
             } else {
                 file_put_contents($tmp."highlightjs.zip", $hljs);
             }
+            // extract the downloaded zip file and keep only the JS file
             $this->taskExtract($tmp."highlightjs.zip")->to($tmp."hljs")->run();
             $this->taskFilesystemStack()->copy($tmp."hljs".\DIRECTORY_SEPARATOR."highlight.pack.js", $themeout."highlight.pack.js")->run();
         }, "downloadHighlightjs");
