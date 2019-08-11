@@ -211,7 +211,6 @@ class RoboFile extends \Robo\Tasks {
         $languages = ["php", "bash", "shell", "xml", "nginx", "apache"];
         $themeout = realpath(self::BASE."docs/theme/arsse/").\DIRECTORY_SEPARATOR;
         $dauxjs = realpath(self::BASE."vendor-bin/daux/vendor/daux/daux.io/themes/daux/js/").\DIRECTORY_SEPARATOR;
-        $dauxout = realpath(self::BASE."docs/theme/daux/js/").\DIRECTORY_SEPARATOR;
         // start a collection; this stops after the first failure
         $t = $this->collectionBuilder();
         $tmp = $t->tmpDir().\DIRECTORY_SEPARATOR;
@@ -220,12 +219,6 @@ class RoboFile extends \Robo\Tasks {
         // copy JavaScript files from the Daux theme
         foreach(glob($dauxjs."daux*") as $file) {
             $t->taskFilesystemStack()->copy($file, $themeout.basename($file), true);
-        }
-        foreach(glob($dauxjs."jquery*") as $file) {
-            $t->taskFilesystemStack()->copy($file, $themeout.basename("jquery.min.js"), true);
-        }
-        foreach(glob($dauxjs."html5shiv*") as $file) {
-            $t->taskFilesystemStack()->copy($file, $dauxout.basename($file), true);
         }
         // download highlight.js
         $t->addCode(function() use ($languages, $tmp, $themeout) {
