@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "daux/daux.io",
-            "version": "0.9.4",
+            "version": "0.10.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/dauxio/daux.io.git",
-                "reference": "a1875a2726b8efc8fc1359d9835374a2402498c8"
+                "reference": "5a19258651d5ff7d4079eda09faa537626b28420"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dauxio/daux.io/zipball/a1875a2726b8efc8fc1359d9835374a2402498c8",
-                "reference": "a1875a2726b8efc8fc1359d9835374a2402498c8",
+                "url": "https://api.github.com/repos/dauxio/daux.io/zipball/5a19258651d5ff7d4079eda09faa537626b28420",
+                "reference": "5a19258651d5ff7d4079eda09faa537626b28420",
                 "shasum": ""
             },
             "require": {
@@ -74,7 +74,7 @@
                 "markdown",
                 "md"
             ],
-            "time": "2019-08-08T12:21:31+00:00"
+            "time": "2019-08-13T09:20:39+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
@@ -389,16 +389,16 @@
         },
         {
             "name": "myclabs/deep-copy",
-            "version": "1.9.1",
+            "version": "1.9.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/myclabs/DeepCopy.git",
-                "reference": "e6828efaba2c9b79f4499dae1d66ef8bfa7b2b72"
+                "reference": "007c053ae6f31bba39dfa19a7726f56e9763bbea"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/myclabs/DeepCopy/zipball/e6828efaba2c9b79f4499dae1d66ef8bfa7b2b72",
-                "reference": "e6828efaba2c9b79f4499dae1d66ef8bfa7b2b72",
+                "url": "https://api.github.com/repos/myclabs/DeepCopy/zipball/007c053ae6f31bba39dfa19a7726f56e9763bbea",
+                "reference": "007c053ae6f31bba39dfa19a7726f56e9763bbea",
                 "shasum": ""
             },
             "require": {
@@ -433,7 +433,7 @@
                 "object",
                 "object graph"
             ],
-            "time": "2019-04-07T13:18:21+00:00"
+            "time": "2019-08-09T12:45:53+00:00"
         },
         {
             "name": "psr/container",

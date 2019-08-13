@@ -272,15 +272,15 @@ class RoboFile extends \Robo\Tasks {
      * This requires Node and Yarn to be installed.
      */
     public function manualCss(): Result {
-        $postcss = escapeshellarg(realpath(self::BASE."node_modules/.bin/postcss"));
-        $themesrc = realpath(self::BASE."docs/theme/src/").\DIRECTORY_SEPARATOR;
-        $themeout = realpath(self::BASE."docs/theme/arsse/").\DIRECTORY_SEPARATOR;
         // start a collection; this stops after the first failure
         $t = $this->collectionBuilder();
         $tmp = $t->tmpDir().\DIRECTORY_SEPARATOR;
         // install dependencies via Yarn
         $t->taskExec("yarn install");
         // compile the stylesheet
+        $postcss = escapeshellarg(realpath(self::BASE."node_modules/.bin/postcss"));
+        $themesrc = realpath(self::BASE."docs/theme/src/").\DIRECTORY_SEPARATOR;
+        $themeout = realpath(self::BASE."docs/theme/arsse/").\DIRECTORY_SEPARATOR;
         $t->taskExec($postcss)->arg($themesrc."arsse.scss")->option("-o", $themeout."arsse.css");
         // execute the collection
         return $t->run();
