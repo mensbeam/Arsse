@@ -2,10 +2,20 @@
 
 use Robo\Result;
 
-class RoboFile extends \Robo\Tasks {
-    const BASE = __DIR__.\DIRECTORY_SEPARATOR;
-    const BASE_TEST = self::BASE."tests".\DIRECTORY_SEPARATOR;
 
+const BASE = __DIR__.\DIRECTORY_SEPARATOR;
+const BASE_TEST = BASE."tests".\DIRECTORY_SEPARATOR;
+define("IS_WIN", defined("PHP_WINDOWS_VERSION_MAJOR"));
+
+function norm(string $path): string {
+    $out = realpath($path);
+    if (!$out) {
+        $out = str_replace(["/", "\\"], \DIRECTORY_SEPARATOR, $path);
+    }
+    return $out;
+}
+
+class RoboFile extends \Robo\Tasks {
     /** Runs the typical test suite
      *
      * Arguments passed to the task are passed on to PHPUnit. Thus one may, for
@@ -50,7 +60,7 @@ class RoboFile extends \Robo\Tasks {
     public function coverage(array $args): Result {
         // run tests with code coverage reporting enabled
         $exec = $this->findCoverageEngine();
-        return $this->runTests($exec, "coverage", array_merge(["--coverage-html", self::BASE_TEST."coverage"], $args));
+        return $this->runTests($exec, "coverage", array_merge(["--coverage-html", BASE_TEST."coverage"], $args));
     }
 
     /** Produces a code coverage report, with redundant tests
@@ -65,12 +75,12 @@ class RoboFile extends \Robo\Tasks {
     public function coverageFull(array $args): Result {
         // run tests with code coverage reporting enabled
         $exec = $this->findCoverageEngine();
-        return $this->runTests($exec, "typical", array_merge(["--coverage-html", self::BASE_TEST."coverage"], $args));
+        return $this->runTests($exec, "typical", array_merge(["--coverage-html", BASE_TEST."coverage"], $args));
     }
 
     /** Runs the coding standards fixer */
     public function clean($opts = ['demo|d' => false]): Result {
-        $t = $this->taskExec(realpath(self::BASE."vendor/bin/php-cs-fixer"));
+        $t = $this->taskExec(norm(BASE."vendor/bin/php-cs-fixer"));
         $t->arg("fix");
         if ($opts['demo']) {
             $t->args("--dry-run", "--diff")->option("--diff-format", "udiff");
@@ -79,7 +89,7 @@ class RoboFile extends \Robo\Tasks {
     }
 
     protected function findCoverageEngine(): string {
-        if ($this->isWindows()) {
+        if (IS_WIN) {
             $dbg = dirname(\PHP_BINARY)."\\phpdbg.exe";
             $dbg = file_exists($dbg) ? $dbg : "";
         } else {
@@ -92,12 +102,8 @@ class RoboFile extends \Robo\Tasks {
         }
     }
 
-    protected function isWindows(): bool {
-        return defined("PHP_WINDOWS_VERSION_MAJOR");
-    }
-
     protected function blackhole(bool $all = false): string {
-        $hole = $this->isWindows() ? "nul" : "/dev/null";
+        $hole = IS_WIN ? "nul" : "/dev/null";
         return $all ? ">$hole 2>&1" : "2>$hole";
     }
 
@@ -118,9 +124,9 @@ class RoboFile extends \Robo\Tasks {
             default:
                 throw new \Exception;
         }
-        $execpath = realpath(self::BASE."vendor-bin/phpunit/vendor/phpunit/phpunit/phpunit");
-        $confpath = realpath(self::BASE_TEST."phpunit.dist.xml") ?: realpath(self::BASE_TEST."phpunit.xml");
-        $this->taskServer(8000)->host("localhost")->dir(self::BASE_TEST."docroot")->rawArg("-n")->arg(self::BASE_TEST."server.php")->rawArg($this->blackhole())->background()->run();
+        $execpath = norm(BASE."vendor-bin/phpunit/vendor/phpunit/phpunit/phpunit");
+        $confpath = realpath(BASE_TEST."phpunit.dist.xml") ?: norm(BASE_TEST."phpunit.xml");
+        $this->taskServer(8000)->host("localhost")->dir(BASE_TEST."docroot")->rawArg("-n")->arg(BASE_TEST."server.php")->rawArg($this->blackhole())->background()->run();
         return $this->taskExec($executor)->arg($execpath)->option("-c", $confpath)->args(array_merge($set, $args))->run();
     }
 
@@ -137,7 +143,7 @@ class RoboFile extends \Robo\Tasks {
     public function package(string $version = null): Result {
         // establish which commit to package
         $version = $version ?? $this->askDefault("Commit to package:", "HEAD");
-        $archive = self::BASE."arsse-$version.tar.gz";
+        $archive = BASE."arsse-$version.tar.gz";
         // start a collection
         $t = $this->collectionBuilder();
         // create a temporary directory
@@ -188,17 +194,17 @@ class RoboFile extends \Robo\Tasks {
      * The resultant files are suitable for offline viewing and inclusion into release builds
      */
     public function manual(array $args): Result {
-        $execpath = escapeshellarg(realpath(self::BASE."vendor/bin/daux"));
+        $execpath = escapeshellarg(norm(BASE."vendor/bin/daux"));
         $t = $this->collectionBuilder();
-        $t->taskExec($execpath)->arg("generate")->option("-d", self::BASE."manual")->args($args);
-        $t->taskDeleteDir(self::BASE."manual/theme");
-        $t->taskDeleteDir(self::BASE."manual/themes/src");
+        $t->taskExec($execpath)->arg("generate")->option("-d", BASE."manual")->args($args);
+        $t->taskDeleteDir(BASE."manual/theme");
+        $t->taskDeleteDir(BASE."manual/themes/src");
         return $t->run();
     }
 
     /** Serves a live view of the manual using the built-in Web server */
     public function manualLive(array $args): Result {
-        $execpath = escapeshellarg(realpath(self::BASE."vendor/bin/daux"));
+        $execpath = escapeshellarg(norm(BASE."vendor/bin/daux"));
         return $this->taskExec($execpath)->arg("serve")->args($args)->run();
     }
 
@@ -209,8 +215,8 @@ class RoboFile extends \Robo\Tasks {
      */
     public function manualTheme(array $args): Result {
         $languages = ["php", "bash", "shell", "xml", "nginx", "apache"];
-        $themeout = realpath(self::BASE."docs/theme/arsse/").\DIRECTORY_SEPARATOR;
-        $dauxjs = realpath(self::BASE."vendor-bin/daux/vendor/daux/daux.io/themes/daux/js/").\DIRECTORY_SEPARATOR;
+        $themeout = norm(BASE."docs/theme/arsse/").\DIRECTORY_SEPARATOR;
+        $dauxjs = norm(BASE."vendor-bin/daux/vendor/daux/daux.io/themes/daux/js/").\DIRECTORY_SEPARATOR;
         // start a collection; this stops after the first failure
         $t = $this->collectionBuilder();
         $tmp = $t->tmpDir().\DIRECTORY_SEPARATOR;
@@ -278,9 +284,9 @@ class RoboFile extends \Robo\Tasks {
         // install dependencies via Yarn
         $t->taskExec("yarn install");
         // compile the stylesheet
-        $postcss = escapeshellarg(realpath(self::BASE."node_modules/.bin/postcss"));
-        $themesrc = realpath(self::BASE."docs/theme/src/").\DIRECTORY_SEPARATOR;
-        $themeout = realpath(self::BASE."docs/theme/arsse/").\DIRECTORY_SEPARATOR;
+        $postcss = escapeshellarg(norm(BASE."node_modules/.bin/postcss"));
+        $themesrc = norm(BASE."docs/theme/src/").\DIRECTORY_SEPARATOR;
+        $themeout = norm(BASE."docs/theme/arsse/").\DIRECTORY_SEPARATOR;
         $t->taskExec($postcss)->arg($themesrc."arsse.scss")->option("-o", $themeout."arsse.css");
         // execute the collection
         return $t->run();
