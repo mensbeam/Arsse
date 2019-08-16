@@ -56,6 +56,26 @@ The `/tests/` directory contains everything related to automated testing. It is 
 | `phpunit.dist.xml` | PHPUnit configuration file                                                         |
 | `server.php`       | Simple driver for the PHP HTTP server used during testing                          |
 
+PHPUnit's configuration can be customized by copying its configuration file to `/tests/phpunit.xml` and modifying the copy accordingly.
+
+## Tooling
+
+The `/vendor-bin/` directory houses the files needed for the tools used in The Arsse's programming environment. These are managed by the Composer ["bin" plugin](https://github.com/bamarni/composer-bin-plugin) and are not used by The Arsse itself. The following files are also related to various programming tools:
+
+| Path              | Description                                              |
+|-------------------|----------------------------------------------------------|
+| `/.gitattributes` | Git settings for handling files                          |
+| `/.gitignore`     | Git file exclusion patterns                              |
+| `/.php_cs.dist`   | Configuration for [php-cs-fixer](https://cs.symfony.com) |
+| `/.php_cs.cache`  | Cache for php-cs-fixer                                   |
+| `/composer.json`  | Configuration for Composer                               |
+| `/composer.lock`  | Version synchronization data for Composer                |
+| `/RoboFile.php`   | Task definitions for [Robo](https://robo.li/)            |
+| `/robo`           | Simple wrapper for executing Robo on POSIX systems       |
+| `/robo.bat`       | Simple wrapper for executing Robo on Windows             |
+
+In addition the files `/package.json`, `/yarn.lock`, and `/postcss.config.js` as well as the `/node_modules/` directory are used by [Yarn](https://yarnpkg.com/) and [PostCSS](https://postcss.org/) when modifying the stylesheet for The Arsse's manual.
+
 # Common tasks
 
 We use a tool called [Robo](https://robo.li/) to simplify the execution of common tasks. It is installed with The Arsse's other dependencies, and its configured tasks can be listed by executing `./robo` without arguments.
@@ -83,7 +103,7 @@ The Arsse's user manual, made using [Daux](https://daux.io/), can be compiled by
 
 ### Rebuilding the manual theme
 
-The manual employs a custom theme derived from the standard Daux theme. If the standard Daux theme receives improvements, the custom theme can be rebuilt by running `./robo manual:theme`. This requires that [NodeJS](https://nodejs,org) and [Yarn](https://yarnpkg.com/) be installed, but JavaScript tools are not required to modify The Arsse itself, nor the content of the manual.
+The manual employs a custom theme derived from the standard Daux theme. If the standard Daux theme receives improvements, the custom theme can be rebuilt by running `./robo manual:theme`. This requires that [NodeJS](https://nodejs.org) and [Yarn](https://yarnpkg.com/) be installed, but JavaScript tools are not required to modify The Arsse itself, nor the content of the manual.
 
 The Robo task `manual:css` will recompile the theme's stylesheet without rebuilding the entire theme.
 
