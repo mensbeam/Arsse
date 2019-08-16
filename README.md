@@ -82,13 +82,13 @@ We use a tool called [Robo](https://robo.li/) to simplify the execution of commo
 
 ## Running tests
 
-The Arsse has an extensive [PHPUnit](https://phpunit.de/) test suite; tests can be run by executing `./robo test`, which can be supplemented with any arguments understoof by PHPUnit. For example, to test only the Tiny Tiny RSS protocol, one could run `/robo test --testsuite TTRSS`.
+The Arsse has an extensive [PHPUnit](https://phpunit.de/) test suite; tests can be run by executing `./robo test`, which can be supplemented with any arguments understoof by PHPUnit. For example, to test only the Tiny Tiny RSS protocol, one could run `./robo test --testsuite TTRSS`.
 
 There is also a `test:quick` Robo task which excludes slower tests, and a `test:full` task which includes redundant tests in addition to the standard test suite
 
 ### Test coverage
 
-Computing the coverage of tests can be done by running `./robo coverage`. Either [phpdbg](https://php.net/manual/en/book.phpdbg.php) or [Xdebug](https://xdebug.org) is required for this. An HTML-format coverage report will be written to `./tests/coverage/`.
+Computing the coverage of tests can be done by running `./robo coverage`. Either [phpdbg](https://php.net/manual/en/book.phpdbg.php) or [Xdebug](https://xdebug.org) is required for this. An HTML-format coverage report will be written to `/tests/coverage/`.
 
 ## Enforcing coding style
 
@@ -99,7 +99,7 @@ The [php-cs-fixer](https://cs.symfony.com) tool, executed via `./robo clean`, ca
 
 ## Building the manual
 
-The Arsse's user manual, made using [Daux](https://daux.io/), can be compiled by running `./robo manual`, which will output files to `./manual/`. It is also possible to serve the manual from a test HTTP server on port 8085 by running `./robo manual:live`.
+The Arsse's user manual, made using [Daux](https://daux.io/), can be compiled by running `./robo manual`, which will output files to `/manual/`. It is also possible to serve the manual from a test HTTP server on port 8085 by running `./robo manual:live`.
 
 ### Rebuilding the manual theme
 
