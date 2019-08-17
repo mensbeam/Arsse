@@ -6,7 +6,6 @@
 @import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/_typography.scss";
 @import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/_components.scss";
 @import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/_homepage.scss";
-@import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/vendor/highlight.scss";
 @import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/_print.scss" print;
 
 
@@ -70,12 +69,6 @@
     --light-blue: #93b7bb;
     --beige: #e8d5d3;
     --green: #2c9a42;
-
-    /* --dark-gray: #7c868d;
-    --gray: #a3aaae;
-    --light-gray: #c2c6c9;
-    --lighter-gray: #dad9d7;
-    --lightest-gray: color(var(--lighter-gray) blend(#fff 50%)); */
 
     --dark-gray: color(var(--beige) blend(var(--blue) 50%));
     --gray: color(var(--beige) blend(var(--blue) 25%));
@@ -269,6 +262,63 @@ ul.TableOfContents {
             color: var(--red);
         }
     }
+}
+
+.hljs, .s-content pre {
+    background: var(--blue);
+    color: var(--beige);
+}
+
+.hljs {
+    display: block;
+    overflow-x: auto;
+    padding: 0.5em;
+}
+
+.hljs-emphasis {
+    font-style: italic;
+}
+
+.hljs-strong {
+    font-weight: bold;
+}
+
+.hljs-comment, .hljs-quote {
+    color: #978e9c;
+}
+
+/* Green */
+.hljs-keyword, .hljs-selector-tag, .hljs-addition {
+    color: #acb39a;
+}
+
+/* Cyan */
+.hljs-number, .hljs-string, .hljs-meta .hljs-meta-string, .hljs-literal, .hljs-doctag, .hljs-regexp {
+    color: var(--light-blue);
+}
+
+/* Blue */
+.hljs-title, .hljs-section, .hljs-name, .hljs-selector-id, .hljs-selector-class {
+    color: #82b7e5;
+}
+
+/* Yellow */
+.hljs-attribute, .hljs-attr, .hljs-variable, .hljs-template-variable, .hljs-class .hljs-title, .hljs-type {
+    color: #c5b031;
+}
+
+/* Orange */
+.hljs-symbol, .hljs-bullet, .hljs-subst, .hljs-meta, .hljs-meta .hljs-keyword, .hljs-selector-attr, .hljs-selector-pseudo, .hljs-link {
+    color: #ea8031;
+}
+
+/* Red */
+.hljs-built_in, .hljs-deletion {
+    color: var(--red);
+}
+
+.hljs-formula {
+    background: #686986;
 }
 
 @media (--viewport-large) {
