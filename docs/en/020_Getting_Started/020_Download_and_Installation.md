@@ -32,7 +32,7 @@ sudo chown -R www-data:www-data "/usr/share/arsse"
 sudo chmod o+rwX "/usr/share/arsse"
 ```
 
-# Next Steps
+# Next steps
 
 If using a database other than SQLite, you will likely want to [set it up](Database_Setup) before doing anything else.
 

@@ -1,4 +1,4 @@
-# The Configuration File
+# The configuration file
 
 The Arsse looks for configuration in a file named `config.php` in the directory where it is installed. For example, if The Arsse is installed at `/usr/share/arsse`, it will look for configuration in the file `/usr/share/arsse/config.php`. It is not an error for this file not to exist or to be empty: The Arsse will function with no configuration whatsoever, provided other conditions allow.
 
@@ -14,7 +14,7 @@ The configuration file is a PHP script which returns an associative array with k
 
 The `config.defaults.php` file included with copies of The Arsse contains an annotated listing of every configuration setting with its default value. The settings are also documented in more detail below.
 
-# List of All Settings
+# List of all settings
 
 ## General settings
 

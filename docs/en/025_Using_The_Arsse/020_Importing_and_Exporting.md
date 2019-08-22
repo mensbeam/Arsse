@@ -4,7 +4,7 @@
 
 This section describes in brief some CLI commands. Please read [the general notes on the command line interface](index) before continuing.
 
-# Importing Newsfeeds from OPML
+# Importing newsfeeds from OPML
 
 It's possible to import not only newsfeeds but also folders and Fever groups using OPML files. The process is simple:
 
@@ -14,7 +14,7 @@ sudo -u www-data php arsse.php import "user@example.com" "subscriptions.opml"
 
 The importer is forgiving, but some OPML files may fail, with the reason printed out. Files are either imported in total, or not at all.
 
-# Exporting Newsfeeds to OPML
+# Exporting newsfeeds to OPML
 
 It's possible to export not only newsfeeds but also folders and Fever groups to OPML files. The process is simple:
 
@@ -40,7 +40,7 @@ The output might look like this:
 </opml>
 ```
 
-# Managing Newsfeeds via OPML
+# Managing newsfeeds via OPML
 
 Not all protocols supported by The Arsse allow modifying newsfeeds or folders, et cetera; additionally, not all clients support these capabilities even if the protocol has the necessary features. An OPML export/import sequence with the `--replace` import option specified, however, makes any kind of modification possible. For example:
 
