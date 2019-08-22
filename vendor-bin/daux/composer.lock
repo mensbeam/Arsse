@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "18f1867fdb8b951d62546b63f535d837",
+    "content-hash": "42b5c476c1c8044c78bad07aa023a824",
     "packages": [
         {
             "name": "daux/daux.io",
-            "version": "0.10.0",
+            "version": "dev-sans-jquery",
             "source": {
                 "type": "git",
-                "url": "https://github.com/dauxio/daux.io.git",
-                "reference": "5a19258651d5ff7d4079eda09faa537626b28420"
+                "url": "https://github.com/mensbeam/daux.io.git",
+                "reference": "7e45ef7f0040f0cabd2bd6792b074b2e9a629db0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dauxio/daux.io/zipball/5a19258651d5ff7d4079eda09faa537626b28420",
-                "reference": "5a19258651d5ff7d4079eda09faa537626b28420",
+                "url": "https://api.github.com/repos/mensbeam/daux.io/zipball/7e45ef7f0040f0cabd2bd6792b074b2e9a629db0",
+                "reference": "7e45ef7f0040f0cabd2bd6792b074b2e9a629db0",
                 "shasum": ""
             },
             "require": {
@@ -52,7 +52,11 @@
                     "Todaymade\\Daux\\": "libs/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "scripts": {
+                "test": [
+                    "phpunit"
+                ]
+            },
             "license": [
                 "MIT"
             ],
@@ -74,7 +78,10 @@
                 "markdown",
                 "md"
             ],
-            "time": "2019-08-13T09:20:39+00:00"
+            "support": {
+                "source": "https://github.com/mensbeam/daux.io/tree/sans-jquery"
+            },
+            "time": "2019-08-17T01:08:58+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
@@ -1485,7 +1492,9 @@
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "daux/daux.io": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": [],
