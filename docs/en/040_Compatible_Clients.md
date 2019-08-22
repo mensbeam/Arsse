@@ -30,16 +30,6 @@ The Arsse does not at this time have any first party clients. However, because T
    </td>
   </tr>
   <tr>
-   <td><a href="https://github.com/jeena/feedthemonkey">FeedTheMonkey</a></td>
-   <td>Linux</td>
-   <td class="N">✘</td>
-   <td class="Y">✔</td>
-   <td class="N">✘</td>
-   <td>
-    <p></p>
-   </td>
-  </tr>
-  <tr>
    <td><a href="https://lzone.de/liferea/">Liferea</a></td>
    <td>Linux</td>
    <td class="N">✘</td>
@@ -57,16 +47,6 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td>
     <p>Terminal-based client.</p>
-   </td>
-  </tr>
-  <tr>
-   <td><a href="https://apps.apple.com/app/id588726889">ReadKit</a></td>
-   <td>macOS</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="Y">✔</td>
-   <td>
-    <p>Requires purchase. Presumed to work.</p>
    </td>
   </tr>
   <tr>
@@ -89,16 +69,6 @@ The Arsse does not at this time have any first party clients. However, because T
     <p>Very basic client; now discontinued.</p>
    </td>
   </tr>
-  </tr>
-  <tr>
-   <td><a href="https://github.com/matoung/SparkReader">SparkReader</a></td>
-   <td>Windows</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="Y">✔</td>
-   <td>
-    <p></p>
-   </td>
   </tr>
   <tr>
    <td><a href="https://www.microsoft.com/store/apps/9wzdncrdmbn3">Tiny Tiny RSS Reader</td>
@@ -227,7 +197,7 @@ The Arsse does not at this time have any first party clients. However, because T
  </tbody>
 </table>
 
-## Known Incompatible Clients
+## Untested clients
 
 <table class="clients">
  <thead>
@@ -244,6 +214,36 @@ The Arsse does not at this time have any first party clients. However, because T
   </tr>
  </thead>
  <tbody>
+  <tr>
+   <td><a href="https://github.com/jeena/feedthemonkey">FeedTheMonkey</a></td>
+   <td>Linux</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td>
+    <p></p>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://apps.apple.com/app/id588726889">ReadKit</a></td>
+   <td>macOS</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td>
+    <p>Requires purchase. Presumed to work.</p>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://github.com/matoung/SparkReader">SparkReader</a></td>
+   <td>Windows</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td>
+    <p>Requires manual configuration.</p>
+   </td>
+  </tr>
   <tr>
    <td><a href="http://www.pluchon.com/en/tiny_reader_rss.php">tiny Reader RSS</a></td>
    <td>iOS</td>
