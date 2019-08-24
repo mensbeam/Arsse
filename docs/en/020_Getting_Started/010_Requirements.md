@@ -10,4 +10,6 @@ The Arsse has the following requirements:
         - [mysqli](http://php.net/manual/en/book.mysqli.php) or [pdo_mysql](http://php.net/manual/en/ref.pdo-mysql.php) for MySQL/Percona 8.0.11 or later databases
 - Privileges either to create and run systemd services, or to run cron jobs
 
-It is also be possible to run The Arsse on other operating systems (including Windows) and with other Web servers, but the configuration required to do so is not documented here.
+Instructions for how to satisfy the PHP extension requirements for Debian systems are included in the next section.
+
+It is also be possible to run The Arsse on other operating systems (including Windows) and with other Web servers, but the configuration required to do so is not documented in this manual.
