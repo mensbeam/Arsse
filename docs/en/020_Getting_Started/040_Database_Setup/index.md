@@ -1,8 +1,8 @@
 The Arsse supports the following database backends:
 
-- SQLite 3.8.3 and later
-- PostgreSQL 10 and later
-- MySQL 8.0.11 and later
+- [SQLite 3.8.3](SQLite) and later
+- [PostgreSQL 10](PostgreSQL) and later
+- [MySQL 8.0.11](MySQL) and later
 
 All of the above are supported both via their PDO driver extensions as well as their native PHP extensions. One or the other is selected based on availability in your PHP installation.
 

@@ -8,8 +8,6 @@ Installation from source code is also possible, but the release packages are rec
 
 # Installation
 
-At present installing The Arsse is largely a manual process. We hope to some day make this easier by integrating the software into commonly used package managers, but for now the below instructions should serve as a useful guide.
-
 In order for The Arsse to function correctly, [its requirements](Requirements) must first be satisfied. The process of installing the required PHP extensions differs from one system to the next, but on Debian the following series of commands should do:
 
 ```sh
