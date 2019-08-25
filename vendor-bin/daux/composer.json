@@ -1,0 +1,11 @@
+{
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/mensbeam/daux.io/"
+        }
+    ],
+    "require": {
+        "daux/daux.io": "dev-sans-jquery"
+    }
+}

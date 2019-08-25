@@ -42,7 +42,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $base = [
             'client_encoding' => "UTF8",
             'application_name' => "arsse",
-            'connect_timeout' => (string) ceil(Arsse::$conf->dbTimeoutConnect),
+            'connect_timeout' => (string) (int) ceil(Arsse::$conf->dbTimeoutConnect),
         ];
         $out = [];
         if ($service != "") {

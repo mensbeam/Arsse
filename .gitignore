@@ -2,12 +2,14 @@
 
 /vendor/
 /vendor-bin/*/vendor
+/node_modules
 /documentation/
 /manual/
 /tests/coverage/
 /arsse.db*
 /config.php
 /.php_cs.cache
+yarn-error.log
 
 
 # Windows files

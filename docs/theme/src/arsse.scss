@@ -1,0 +1,328 @@
+/* Daux imports; fonts are omitted */
+@import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/vendor/normalize.scss";
+@import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/_variables.scss";
+@import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/_mixins.scss";
+@import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/_structure.scss";
+@import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/_typography.scss";
+@import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/_components.scss";
+@import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/_homepage.scss";
+@import "../../../vendor-bin/daux/vendor/daux/daux.io/themes/daux/scss/_print.scss" print;
+
+
+
+/* The Arsse overrides */
+
+@font-face {
+    font-family: 'League Gothic';
+    src: url('fonts/leaguegothic.woff2') format('woff2'),
+         url('fonts/leaguegothic.woff') format('woff');
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Cabin';
+    src: url('fonts/cabin-regular.woff2') format('woff2'),
+         url('fonts/cabin-regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Cabin';
+    src: url('fonts/cabin-italic.woff2') format('woff2'),
+         url('fonts/cabin-italic.woff') format('woff');
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Cabin';
+    src: url('fonts/cabin-bold.woff2') format('woff2'),
+         url('fonts/cabin-bold.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+
+:root {
+    --font-family-text: "Cabin", "Trebuchet MS", -apple-system, ".SFNSText-Regular", "San Francisco",
+        "Roboto", "Segoe UI", "Helvetica Neue", "Lucida Grande", Arial,
+        sans-serif;
+    --font-family-monospace: Monaco, Menlo, Consolas, "Lucida Console",
+        "Courier New", monospace;
+    --font-family-heading: "League Gothic", -apple-system, ".SFNSText-Regular", "San Francisco",
+        "Roboto", "Segoe UI", "Helvetica Neue", "Lucida Grande", Arial,
+        sans-serif;
+
+    --type-size-1: 4rem;
+    --type-size-2: 3.236rem;
+    --type-size-3: 2.618rem;
+    --type-size-4: 2rem;
+    --type-size-5: 1.618rem;
+    --type-size-6: 1.309rem;
+
+    --red: #e63c2f;
+    --blue: #15284b;
+    --light-blue: #93b7bb;
+    --beige: #e8d5d3;
+    --green: #2c9a42;
+
+    --dark-gray: color(var(--beige) blend(var(--blue) 50%));
+    --gray: color(var(--beige) blend(var(--blue) 25%));
+    --light-gray: color(var(--beige) blend(var(--blue) 12.5%));
+    --lighter-gray: var(--beige);
+    --lightest-gray: color(var(--beige) blend(#fff 75%));
+
+    --dark: var(--blue);
+    --light: var(--light-blue);
+
+    --sidebar-background: var(--beige);
+    --sidebar-link-active-background: var(--light-blue);
+    --sidebar-collapsible--hamburger-color: var(--beige);
+
+    --text: var(--blue);
+    --link-color: var(--red);
+    --brand-color: var(--blue);
+    --brand-background: var(--red);
+
+    --code-tag-background-color: var(--lightest-gray);
+    --code-tag-border-radius: 0;
+    --code-tag-box-shadow: none;
+
+    --homepage-navbar-background: var(--red);
+    --hero-button-block-background: var(--beige);
+    --homepage-hero-background: #fff;
+    --content-floating-blocks-background: var(--blue);
+}
+
+body {
+    line-height: 1.618;
+}
+
+a.Link--external::after {
+    content: '';
+}
+
+.s-content {
+    code {
+        display: inline-block;
+        padding-top: 0;
+        padding-bottom: 0;
+        padding: 0.5ch;
+        border: 0;
+
+        &::before, &::after {
+            content: '';
+        }
+
+        pre & {
+            display: inline;
+        }
+    }
+
+    table {
+        border-collapse: separate;
+        border-spacing: 2px;
+        border: 2px solid var(--gray);
+
+        thead, tbody {
+            background-color: #fff;
+        }
+
+        tr {
+            border-top: 0;
+
+            &:nth-child(2n) {
+                background-color: transparent;
+
+                td {
+                    background-color: var(--lightest-gray);
+                }
+            }
+        }
+
+        th, td {
+            border: 0;
+        }
+    }
+}
+
+.s-content table, .Nav__item .Nav__item {
+    font-size: 1rem;
+}
+
+.Brand, h1, h2, h3, h4, h5, h6 {
+    font-weight: normal;
+}
+
+.Button {
+    border-radius: 0;
+}
+
+.HomepageButtons .Button--hero {
+    font-weight: normal;
+    font-size: var(--type-size-6);
+}
+
+.Page__header {
+    border-bottom: 2px solid var(--lighter-gray);
+}
+
+.Pager li > a {
+    border: 2px solid var(--lighter-gray);
+    border-radius: 0;
+
+    &:hover, &:focus {
+        background-color: var(--lighter-gray);
+    }
+}
+
+.Pager--prev a::before {
+    content: "\2190\00a0";
+}
+.Pager--next a::after {
+    content: "\00a0\2192";
+}
+
+.Navbar {
+    height: auto;
+    box-shadow: none;
+
+    .Brand {
+        float: none;
+        line-height: inherit;
+        height: auto;
+    }
+}
+
+.Homepage {
+    padding-top: 10px !important;
+}
+
+.Nav__item {
+    font-size: var(--type-size-6);
+}
+
+.Nav__arrow:before, .Nav .Nav .Nav__item a .Nav__arrow:before {
+    font-family: var(--font-family-heading);
+    width: 1ch;
+    height: 1ch;
+}
+
+.TableOfContentsContainer__title {
+    border-bottom: 4px solid var(--lighter-gray);
+}
+
+ul.TableOfContents {
+    border-left: 6px solid var(--lighter-gray);
+}
+
+.Columns__right--full .TableOfContentsContainer {
+    .TableOfContentsContainer__content > .TableOfContents {
+        border-right: 2px solid var(--lighter-gray);
+    }
+
+    a {
+        border-bottom: 1px solid var(--lighter-gray);
+    }
+}
+
+.clients {
+    thead tr:first-child th {
+        text-align: left;
+
+        &:first-child {
+            width: 15%;
+        }
+
+        &:nth-child(3) {
+            width: 50%;
+            text-align: center;
+        }
+    }
+
+    thead tr + tr th {
+        width: 16.66%;
+        text-align: center;
+    }
+
+    tbody td {
+        &:nth-child(3), &:nth-child(4), &:nth-child(5) {
+            text-align: center;
+        }
+
+        &.Y {
+            color: var(--green);
+        }
+
+        &.N {
+            color: var(--red);
+        }
+    }
+}
+
+.hljs, .s-content pre {
+    background: var(--blue);
+    color: var(--beige);
+}
+
+.hljs {
+    display: block;
+    overflow-x: auto;
+    padding: 0.5em;
+}
+
+.hljs-emphasis {
+    font-style: italic;
+}
+
+.hljs-strong {
+    font-weight: bold;
+}
+
+.hljs-comment, .hljs-quote {
+    color: #978e9c;
+}
+
+/* Green */
+.hljs-keyword, .hljs-selector-tag, .hljs-addition {
+    color: #acb39a;
+}
+
+/* Cyan */
+.hljs-number, .hljs-string, .hljs-meta .hljs-meta-string, .hljs-literal, .hljs-doctag, .hljs-regexp {
+    color: var(--light-blue);
+}
+
+/* Blue */
+.hljs-title, .hljs-section, .hljs-name, .hljs-selector-id, .hljs-selector-class {
+    color: #82b7e5;
+}
+
+/* Yellow */
+.hljs-attribute, .hljs-attr, .hljs-variable, .hljs-template-variable, .hljs-class .hljs-title, .hljs-type {
+    color: #c5b031;
+}
+
+/* Orange */
+.hljs-symbol, .hljs-bullet, .hljs-subst, .hljs-meta, .hljs-meta .hljs-keyword, .hljs-selector-attr, .hljs-selector-pseudo, .hljs-link {
+    color: #ea8031;
+}
+
+/* Red */
+.hljs-built_in, .hljs-deletion {
+    color: var(--red);
+}
+
+.hljs-formula {
+    background: #686986;
+}
+
+@media (--viewport-large) {
+    .Columns__left {
+        border: 0;
+    }
+}

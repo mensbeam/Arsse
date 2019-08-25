@@ -2,12 +2,21 @@
 
 use Robo\Result;
 
-class RoboFile extends \Robo\Tasks {
-    const BASE = __DIR__.\DIRECTORY_SEPARATOR;
-    const BASE_TEST = self::BASE."tests".\DIRECTORY_SEPARATOR;
 
-    /**
-     * Runs the typical test suite
+const BASE = __DIR__.\DIRECTORY_SEPARATOR;
+const BASE_TEST = BASE."tests".\DIRECTORY_SEPARATOR;
+define("IS_WIN", defined("PHP_WINDOWS_VERSION_MAJOR"));
+
+function norm(string $path): string {
+    $out = realpath($path);
+    if (!$out) {
+        $out = str_replace(["/", "\\"], \DIRECTORY_SEPARATOR, $path);
+    }
+    return $out;
+}
+
+class RoboFile extends \Robo\Tasks {
+    /** Runs the typical test suite
      *
      * Arguments passed to the task are passed on to PHPUnit. Thus one may, for
      * example, run the following command and get the expected results:
@@ -17,17 +26,16 @@ class RoboFile extends \Robo\Tasks {
      * Please see the PHPUnit documentation for available options.
     */
     public function test(array $args): Result {
-        return $this->runTests("php", "typical", $args);
+        return $this->runTests(escapeshellarg(\PHP_BINARY), "typical", $args);
     }
 
-    /**
-     * Runs the full test suite
+    /** Runs the full test suite
      *
      * This includes pedantic tests which may help to identify problems.
      * See help for the "test" task for more details.
     */
     public function testFull(array $args): Result {
-        return $this->runTests("php", "full", $args);
+        return $this->runTests(escapeshellarg(\PHP_BINARY), "full", $args);
     }
 
     /**
@@ -36,7 +44,7 @@ class RoboFile extends \Robo\Tasks {
      * See help for the "test" task for more details.
     */
     public function testQuick(array $args): Result {
-        return $this->runTests("php", "quick", $args);
+        return $this->runTests(escapeshellarg(\PHP_BINARY), "quick", $args);
     }
 
     /** Produces a code coverage report
@@ -52,7 +60,7 @@ class RoboFile extends \Robo\Tasks {
     public function coverage(array $args): Result {
         // run tests with code coverage reporting enabled
         $exec = $this->findCoverageEngine();
-        return $this->runTests($exec, "coverage", array_merge(["--coverage-html", self::BASE_TEST."coverage"], $args));
+        return $this->runTests($exec, "coverage", array_merge(["--coverage-html", BASE_TEST."coverage"], $args));
     }
 
     /** Produces a code coverage report, with redundant tests
@@ -67,12 +75,12 @@ class RoboFile extends \Robo\Tasks {
     public function coverageFull(array $args): Result {
         // run tests with code coverage reporting enabled
         $exec = $this->findCoverageEngine();
-        return $this->runTests($exec, "typical", array_merge(["--coverage-html", self::BASE_TEST."coverage"], $args));
+        return $this->runTests($exec, "typical", array_merge(["--coverage-html", BASE_TEST."coverage"], $args));
     }
 
     /** Runs the coding standards fixer */
     public function clean($opts = ['demo|d' => false]): Result {
-        $t = $this->taskExec(realpath(self::BASE."vendor/bin/php-cs-fixer"));
+        $t = $this->taskExec(norm(BASE."vendor/bin/php-cs-fixer"));
         $t->arg("fix");
         if ($opts['demo']) {
             $t->args("--dry-run", "--diff")->option("--diff-format", "udiff");
@@ -81,7 +89,7 @@ class RoboFile extends \Robo\Tasks {
     }
 
     protected function findCoverageEngine(): string {
-        if ($this->isWindows()) {
+        if (IS_WIN) {
             $dbg = dirname(\PHP_BINARY)."\\phpdbg.exe";
             $dbg = file_exists($dbg) ? $dbg : "";
         } else {
@@ -94,12 +102,8 @@ class RoboFile extends \Robo\Tasks {
         }
     }
 
-    protected function isWindows(): bool {
-        return defined("PHP_WINDOWS_VERSION_MAJOR");
-    }
-
     protected function blackhole(bool $all = false): string {
-        $hole = $this->isWindows() ? "nul" : "/dev/null";
+        $hole = IS_WIN ? "nul" : "/dev/null";
         return $all ? ">$hole 2>&1" : "2>$hole";
     }
 
@@ -120,9 +124,9 @@ class RoboFile extends \Robo\Tasks {
             default:
                 throw new \Exception;
         }
-        $execpath = realpath(self::BASE."vendor-bin/phpunit/vendor/phpunit/phpunit/phpunit");
-        $confpath = realpath(self::BASE_TEST."phpunit.xml");
-        $this->taskServer(8000)->host("localhost")->dir(self::BASE_TEST."docroot")->rawArg("-n")->arg(self::BASE_TEST."server.php")->rawArg($this->blackhole())->background()->run();
+        $execpath = norm(BASE."vendor-bin/phpunit/vendor/phpunit/phpunit/phpunit");
+        $confpath = realpath(BASE_TEST."phpunit.dist.xml") ?: norm(BASE_TEST."phpunit.xml");
+        $this->taskServer(8000)->host("localhost")->dir(BASE_TEST."docroot")->rawArg("-n")->arg(BASE_TEST."server.php")->rawArg($this->blackhole())->background()->run();
         return $this->taskExec($executor)->arg($execpath)->option("-c", $confpath)->args(array_merge($set, $args))->run();
     }
 
@@ -138,15 +142,19 @@ class RoboFile extends \Robo\Tasks {
     */
     public function package(string $version = null): Result {
         // establish which commit to package
-        $version = $version ?? $this->askDefault("Commit to package:", "head");
-        $archive = self::BASE."arsse-$version.tar.gz";
+        $version = $version ?? $this->askDefault("Commit to package:", "HEAD");
+        $archive = BASE."arsse-$version.tar.gz";
         // start a collection
         $t = $this->collectionBuilder();
         // create a temporary directory
         $dir = $t->tmpDir().\DIRECTORY_SEPARATOR;
         // create a Git worktree for the selected commit in the temp location
         $t->taskExec("git worktree add ".escapeshellarg($dir)." ".escapeshellarg($version));
-        // perform Composer installation in the temp location
+        // perform Composer installation in the temp location with dev dependencies
+        $t->taskComposerInstall()->dir($dir);
+        // generate the manual
+        $t->taskExec(escapeshellarg($dir."robo")." manual")->dir($dir);
+        // perform Composer installation in the temp location for final output
         $t->taskComposerInstall()->dir($dir)->noDev()->optimizeAutoloader()->arg("--no-scripts");
         // delete unwanted files
         $t->taskFilesystemStack()->remove([
@@ -160,13 +168,18 @@ class RoboFile extends \Robo\Tasks {
             $dir."build.xml",
             $dir."RoboFile.php",
             $dir."CONTRIBUTING.md",
+            $dir."docs",
             $dir."tests",
             $dir."vendor-bin",
+            $dir."vendor/bin",
             $dir."robo",
             $dir."robo.bat",
+            $dir."package.json",
+            $dir."yarn.lock",
+            $dir."postcss.config.js",
         ]);
         // generate a sample configuration file
-        $t->taskExec("php arsse.php conf save-defaults config.defaults.php")->dir($dir);
+        $t->taskExec(escapeshellarg(\PHP_BINARY)." arsse.php conf save-defaults config.defaults.php")->dir($dir);
         // package it all up
         $t->taskPack($archive)->addDir("arsse", $dir);
         // execute the collection
@@ -174,5 +187,108 @@ class RoboFile extends \Robo\Tasks {
         // clean the Git worktree list
         $this->_exec("git worktree prune");
         return $out;
+    }
+
+    /** Generates static manual pages in the "manual" directory
+     * 
+     * The resultant files are suitable for offline viewing and inclusion into release builds
+     */
+    public function manual(array $args): Result {
+        $execpath = escapeshellarg(norm(BASE."vendor/bin/daux"));
+        $t = $this->collectionBuilder();
+        $t->taskExec($execpath)->arg("generate")->option("-d", BASE."manual")->args($args);
+        $t->taskDeleteDir(BASE."manual/theme");
+        $t->taskDeleteDir(BASE."manual/themes/src");
+        return $t->run();
+    }
+
+    /** Serves a live view of the manual using the built-in Web server */
+    public function manualLive(array $args): Result {
+        $execpath = escapeshellarg(norm(BASE."vendor/bin/daux"));
+        return $this->taskExec($execpath)->arg("serve")->args($args)->run();
+    }
+
+    /** Rebuilds the entire manual theme
+     * 
+     * This requires Node and Yarn to be installed, and only needs to be done when
+     * Daux's theme changes
+     */
+    public function manualTheme(array $args): Result {
+        $languages = ["php", "bash", "shell", "xml", "nginx", "apache"];
+        $themeout = norm(BASE."docs/theme/arsse/").\DIRECTORY_SEPARATOR;
+        $dauxjs = norm(BASE."vendor-bin/daux/vendor/daux/daux.io/themes/daux/js/").\DIRECTORY_SEPARATOR;
+        // start a collection; this stops after the first failure
+        $t = $this->collectionBuilder();
+        $tmp = $t->tmpDir().\DIRECTORY_SEPARATOR;
+        // rebuild the stylesheet
+        $t->addCode([$this, "manualCss"]);
+        // copy JavaScript files from the Daux theme
+        foreach(glob($dauxjs."daux*") as $file) {
+            $t->taskFilesystemStack()->copy($file, $themeout.basename($file), true);
+        }
+        // download highlight.js
+        $t->addCode(function() use ($languages, $tmp, $themeout) {
+            // compile the list of desired language (enumerated above) into an application/x-www-form-urlencoded body
+            $post = http_build_query((function($langs) {
+                $out = [];
+                foreach($langs as $l) {
+                    $out[$l.".js"] = "on";
+                }
+                return $out;
+            })($languages));
+            // get the two cross-site request forgery tokens the Highlight.js Web site requires
+            $conn = @fopen("https://highlightjs.org/download/", "r");
+            if ($conn === false) {
+                throw new Exception("Unable to download Highlight.js");
+            }
+            foreach (stream_get_meta_data($conn)['wrapper_data'] as $field) {
+                if (preg_match("/^Set-Cookie: csrftoken=([^;]+)/i", $field, $cookie)) {
+                    break;
+                }
+            }
+            $token = stream_get_contents($conn);
+            preg_match("/<input type='hidden' name='csrfmiddlewaretoken' value='([^']*)'/", $token, $token);
+            // add the form CSRF token to the POST body
+            $post = "csrfmiddlewaretoken={$token[1]}&$post";
+            // download a copy of Highlight.js with the desired languages to a temporary file
+            $hljs = @file_get_contents("https://highlightjs.org/download/", false, stream_context_create(['http' => [
+                'method' => "POST",
+                'content' => $post,
+                'header' => [
+                    "Referer: https://highlightjs.org/download/",
+                    "Cookie: csrftoken={$cookie[1]}",
+                    "Content-Type: application/x-www-form-urlencoded",
+                ],
+            ]]));
+            if ($hljs === false) {
+                throw new Exception("Unable to download Highlight.js");
+            } else {
+                file_put_contents($tmp."highlightjs.zip", $hljs);
+            }
+            // extract the downloaded zip file and keep only the JS file
+            $this->taskExtract($tmp."highlightjs.zip")->to($tmp."hljs")->run();
+            $this->taskFilesystemStack()->copy($tmp."hljs".\DIRECTORY_SEPARATOR."highlight.pack.js", $themeout."highlight.pack.js")->run();
+        }, "downloadHighlightjs");
+        // execute the collection
+        return $t->run();
+    }
+
+    /** Rebuilds the manual theme's stylesheet only
+     * 
+     * This requires Node and Yarn to be installed.
+     */
+    public function manualCss(): Result {
+        // start a collection; this stops after the first failure
+        $t = $this->collectionBuilder();
+        $tmp = $t->tmpDir().\DIRECTORY_SEPARATOR;
+        // install dependencies via Yarn
+        $t->taskExec("yarn install");
+        // compile the stylesheet
+        $postcss = escapeshellarg(norm(BASE."node_modules/.bin/postcss"));
+        $themesrc = norm(BASE."docs/theme/src/").\DIRECTORY_SEPARATOR;
+        $themeout = norm(BASE."docs/theme/arsse/").\DIRECTORY_SEPARATOR;
+        $t->taskExec($postcss)->arg($themesrc."arsse.scss")->option("-o", $themeout."arsse.css");
+        // execute the collection
+        return $t->run();
     }
 }

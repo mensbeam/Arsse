@@ -1,11 +1,14 @@
 #! /bin/sh
 base=`dirname "$0"`
 roboCommand="$1"
-shift
-
-ulimit -n 2048
-if [ "$1" = "clean" ]; then
-    "$base/vendor/bin/robo" "$roboCommand" "$@"
+if [ $# -eq 0 ]; then
+    "$base/vendor/bin/robo"
 else
-    "$base/vendor/bin/robo" "$roboCommand" -- "$@"
+    shift
+    ulimit -n 2048
+    if [ "$1" = "clean" ]; then
+        "$base/vendor/bin/robo" "$roboCommand" "$@"
+    else
+        "$base/vendor/bin/robo" "$roboCommand" -- "$@"
+    fi
 fi

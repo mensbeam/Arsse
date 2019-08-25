@@ -1,0 +1,1 @@
+Welcome to the user manual for The Advanced RSS Environment. It is included with each copy of the software, and is also [available online](https://thearsse.com/manual/en/). Please select a language above.

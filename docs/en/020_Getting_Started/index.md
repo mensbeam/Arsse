@@ -1,0 +1,3 @@
+Presently installing and setting up The Arsse is a manual process. We hope to have pre-configured installation packages available for various operating systems eventually, but for now the pages in this section should help get you up and running.
+
+Though The Arsse itself makes no assumptions about the operating system which hosts it, we use and have the most experience with Debian; the instructions contained here therefore are for Debian systems will will probably either not work with other systems or not be consistent with their conventions. Nevertheless, they should still serve as a useful guide.
