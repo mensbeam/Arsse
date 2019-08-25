@@ -5,6 +5,9 @@ Bug fixes:
 - Don't crash updating feeds cached solely via ETag
 - Don't fail adding a feed which collides with another via redirection
 
+Changes:
+- Include a user manual
+
 Version 0.8.0 (2019-07-26)
 ==========================
 
