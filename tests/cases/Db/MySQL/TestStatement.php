@@ -12,7 +12,7 @@ namespace JKingWeb\Arsse\TestCase\Db\MySQL;
  * @covers \JKingWeb\Arsse\Db\MySQL\ExceptionBuilder
  * @covers \JKingWeb\Arsse\Db\SQLState */
 class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
-    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\MySQL;
+    use \JKingWeb\Arsse\Test\DatabaseDrivers\MySQL;
 
     protected function makeStatement(string $q, array $types = []): array {
         return [static::$interface, $q, $types];

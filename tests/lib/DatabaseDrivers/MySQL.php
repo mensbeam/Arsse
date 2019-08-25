@@ -4,7 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse\TestCase\DatabaseDrivers;
+namespace JKingWeb\Arsse\Test\DatabaseDrivers;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Db\Driver;

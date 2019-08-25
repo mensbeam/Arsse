@@ -14,7 +14,7 @@ use JKingWeb\Arsse\Test\DatabaseInformation;
  * @covers \JKingWeb\Arsse\Db\MySQL\ExceptionBuilder
  * @covers \JKingWeb\Arsse\Db\SQLState */
 class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
-    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\MySQL;
+    use \JKingWeb\Arsse\Test\DatabaseDrivers\MySQL;
 
     protected static $createMeta = "CREATE TABLE arsse_meta(`key` varchar(255) primary key not null, value text)";
     protected static $createTest = "CREATE TABLE arsse_test(id bigint auto_increment primary key)";

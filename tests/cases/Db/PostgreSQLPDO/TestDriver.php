@@ -13,7 +13,7 @@ namespace JKingWeb\Arsse\TestCase\Db\PostgreSQLPDO;
  * @covers \JKingWeb\Arsse\Db\PDOError
  * @covers \JKingWeb\Arsse\Db\SQLState */
 class TestDriver extends \JKingWeb\Arsse\TestCase\Db\BaseDriver {
-    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\PostgreSQLPDO;
+    use \JKingWeb\Arsse\Test\DatabaseDrivers\PostgreSQLPDO;
 
     protected $create = "CREATE TABLE arsse_test(id bigserial primary key)";
     protected $lock = ["BEGIN", "LOCK TABLE arsse_meta IN EXCLUSIVE MODE NOWAIT"];

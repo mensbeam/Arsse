@@ -14,7 +14,7 @@ namespace JKingWeb\Arsse\TestCase\Db\PostgreSQLPDO;
  * @covers \JKingWeb\Arsse\Misc\Query<extended>
  */
 class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\Base {
-    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\PostgreSQLPDO;
+    use \JKingWeb\Arsse\Test\DatabaseDrivers\PostgreSQLPDO;
 
     protected function nextID(string $table): int {
         return (int) static::$drv->query("SELECT coalesce(last_value, (select max(id) from $table)) + 1 from pg_sequences where sequencename = '{$table}_id_seq'")->getValue();

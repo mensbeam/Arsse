@@ -11,7 +11,7 @@ namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
  * @covers \JKingWeb\Arsse\Db\PDOError
  * @covers \JKingWeb\Arsse\Db\SQLState */
 class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
-    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\SQLite3PDO;
+    use \JKingWeb\Arsse\Test\DatabaseDrivers\SQLite3PDO;
 
     protected function makeStatement(string $q, array $types = []): array {
         return [static::$interface, $q, $types];

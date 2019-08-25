@@ -10,7 +10,7 @@ namespace JKingWeb\Arsse\TestCase\Db\SQLite3;
  * @covers \JKingWeb\Arsse\Db\SQLite3\Driver<extended>
  * @covers \JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder */
 class TestDriver extends \JKingWeb\Arsse\TestCase\Db\BaseDriver {
-    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\SQLite3;
+    use \JKingWeb\Arsse\Test\DatabaseDrivers\SQLite3;
 
     protected $create = "CREATE TABLE arsse_test(id integer primary key)";
     protected $lock = "BEGIN EXCLUSIVE TRANSACTION";

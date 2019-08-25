@@ -12,7 +12,7 @@ use JKingWeb\Arsse\Test\DatabaseInformation;
  * @covers \JKingWeb\Arsse\Db\PDOResult<extended>
  */
 class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
-    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\SQLite3PDO;
+    use \JKingWeb\Arsse\Test\DatabaseDrivers\SQLite3PDO;
 
     protected static $createMeta = "CREATE TABLE arsse_meta(key text primary key not null, value text) without rowid";
     protected static $createTest = "CREATE TABLE arsse_test(id integer primary key)";

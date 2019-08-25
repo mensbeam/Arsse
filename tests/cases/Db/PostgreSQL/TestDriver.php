@@ -12,7 +12,7 @@ namespace JKingWeb\Arsse\TestCase\Db\PostgreSQL;
  * @covers \JKingWeb\Arsse\Db\PostgreSQL\Dispatch<extended>
  * @covers \JKingWeb\Arsse\Db\SQLState */
 class TestDriver extends \JKingWeb\Arsse\TestCase\Db\BaseDriver {
-    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\PostgreSQL;
+    use \JKingWeb\Arsse\Test\DatabaseDrivers\PostgreSQL;
 
     protected $create = "CREATE TABLE arsse_test(id bigserial primary key)";
     protected $lock = ["BEGIN", "LOCK TABLE arsse_meta IN EXCLUSIVE MODE NOWAIT"];

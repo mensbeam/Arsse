@@ -14,7 +14,7 @@ namespace JKingWeb\Arsse\TestCase\Db\MySQLPDO;
  * @covers \JKingWeb\Arsse\Misc\Query<extended>
  */
 class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\Base {
-    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\MySQLPDO;
+    use \JKingWeb\Arsse\Test\DatabaseDrivers\MySQLPDO;
 
     protected function nextID(string $table): int {
         return (int) (static::$drv->query("SELECT (case when max(id) then max(id) else 0 end)+1 from $table")->getValue() ?? 1);

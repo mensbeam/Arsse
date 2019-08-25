@@ -13,7 +13,7 @@ namespace JKingWeb\Arsse\TestCase\Db\MySQLPDO;
  * @covers \JKingWeb\Arsse\Db\PDOError
  * @covers \JKingWeb\Arsse\Db\SQLState */
 class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
-    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\MySQLPDO;
+    use \JKingWeb\Arsse\Test\DatabaseDrivers\MySQLPDO;
 
     protected function makeStatement(string $q, array $types = []): array {
         return [static::$interface, $q, $types];

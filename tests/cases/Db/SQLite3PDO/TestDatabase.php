@@ -11,7 +11,7 @@ namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
  * @covers \JKingWeb\Arsse\Misc\Query<extended>
  */
 class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\Base {
-    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\SQLite3PDO;
+    use \JKingWeb\Arsse\Test\DatabaseDrivers\SQLite3PDO;
 
     protected function nextID(string $table): int {
         return (int) static::$drv->query("SELECT (case when max(id) then max(id) else 0 end)+1 from $table")->getValue();

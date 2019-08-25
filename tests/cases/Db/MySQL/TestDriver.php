@@ -12,7 +12,7 @@ namespace JKingWeb\Arsse\TestCase\Db\MySQL;
  * @covers \JKingWeb\Arsse\Db\MySQL\ExceptionBuilder
  * @covers \JKingWeb\Arsse\Db\SQLState */
 class TestDriver extends \JKingWeb\Arsse\TestCase\Db\BaseDriver {
-    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\MySQL;
+    use \JKingWeb\Arsse\Test\DatabaseDrivers\MySQL;
 
     protected $create = "CREATE TABLE arsse_test(id bigint auto_increment primary key)";
     protected $lock = ["SET lock_wait_timeout = 1", "LOCK TABLES arsse_meta WRITE"];

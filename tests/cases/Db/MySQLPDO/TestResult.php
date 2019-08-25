@@ -15,7 +15,7 @@ use JKingWeb\Arsse\Test\DatabaseInformation;
  * @covers \JKingWeb\Arsse\Db\PDOError
  * @covers \JKingWeb\Arsse\Db\SQLState */
 class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
-    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\MySQLPDO;
+    use \JKingWeb\Arsse\Test\DatabaseDrivers\MySQLPDO;
 
     protected static $createMeta = "CREATE TABLE arsse_meta(`key` varchar(255) primary key not null, value text)";
     protected static $createTest = "CREATE TABLE arsse_test(id bigint auto_increment primary key)";

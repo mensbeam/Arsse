@@ -12,7 +12,7 @@ namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
  * @covers \JKingWeb\Arsse\Db\PDOError
  * @covers \JKingWeb\Arsse\Db\SQLState */
 class TestUpdate extends \JKingWeb\Arsse\TestCase\Db\BaseUpdate {
-    use \JKingWeb\Arsse\TestCase\DatabaseDrivers\SQLite3PDO;
+    use \JKingWeb\Arsse\Test\DatabaseDrivers\SQLite3PDO;
 
     protected static $minimal1 = "create table arsse_meta(key text primary key not null, value text); pragma user_version=1";
     protected static $minimal2 = "pragma user_version=2";
