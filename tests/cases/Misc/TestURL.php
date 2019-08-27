@@ -58,6 +58,9 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
             ["http://example.com/a/../b/",    "http://example.com/b/"],
             ["http://example.com/.a/",        "http://example.com/.a/"],
             ["http://example.com/..a/",       "http://example.com/..a/"],
+            ["http://日本.example.com/",      "http://日本.example.com/"],
+            ["http://EXAMPLE.COM/",           "http://example.com/"],
+            ["http://É.example.com/",         "http://é.example.com/"],
         ];
     }
 }

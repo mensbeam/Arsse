@@ -24,14 +24,15 @@ class URL {
      * Normalizations performed are:
      * 
      * - Lowercasing scheme
-     * - Lowercasing host names
-     * - IDN normalization (IDN rather than punycode is returned)
-     * - IPv6 address normalization
+     * - Lowercasing ASCII host names
+     * - IDN normalization
      * - Resolution of relative path segments
      * - Discarding empty path segments
      * - Discarding empty queries
      * - %-encoding normalization
      * - Fragment discarding
+     * 
+     * It does NOT perform IPv6 address normalization, nor does it drop trailing slashes from paths
      * 
      * @param string $url The URL to normalize. Relative URLs are returned unchanged
      * @param string $u Username to add to the URL, replacing any existing credentials
@@ -56,11 +57,7 @@ class URL {
             }
             $out .= "@";
         }
-        if ($host[0] === "[") {
-            $out .= self::normalizeIPv6($host);
-        } else {
-            $out .= self::normalizeHost($host);
-        }
+        $out .= self::normalizeHost($host);
         $out .= isset($port) ? ":$port" : "";
         $out .= self::normalizePath($path ?? "");
         if (isset($query) && strlen($query)) {
@@ -75,13 +72,8 @@ class URL {
     }
 
     protected static function normalizeHost(string $host): string {
-        // stub
-        return $host;
-    }
-
-    protected static function normalizeIPv6(string $addr): string {
-        // stub
-        return $addr;
+        $idn = idn_to_ascii($host, \IDNA_NONTRANSITIONAL_TO_ASCII, \INTL_IDNA_VARIANT_UTS46);
+        return $idn !== false ? idn_to_utf8($idn, \IDNA_NONTRANSITIONAL_TO_UNICODE, \INTL_IDNA_VARIANT_UTS46) : $host;
     }
 
     /** Normalizes the whole path segment to remove empty segments and relative segments */
