@@ -46,4 +46,4 @@ Though by default The Arsse will wake up every two minutes, newsfeeds are not ac
 - The interval between publishing of articles in the newsfeed
 - Whether the last fetch or last several fetches resulted in error
 
-As a general rule, newsfeeds which changed frequently are checked frequently, and those which change seldom are fetched at most daily.
+As a general rule, newsfeeds which change frequently are checked frequently, and those which change seldom are fetched at most daily.
