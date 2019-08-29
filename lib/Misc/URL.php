@@ -45,9 +45,9 @@ class URL {
         }
         $out = strtolower($scheme)."://";
         if (strlen($u ?? "")) {
-            $out .= self::normalizePart(rawurlencode($u), self::P_USER, false);
+            $out .= self::normalizePart(rawurlencode($u), self::P_USER);
             if (strlen($p ?? "")) {
-                $out .= ":".self::normalizePart(rawurlencode($p), self::P_PASS, false);
+                $out .= ":".self::normalizePart(rawurlencode($p), self::P_PASS);
             }
             $out .= "@";
         } elseif (strlen($user ?? "")) {
@@ -66,11 +66,13 @@ class URL {
         return $out;
     }
 
-    protected static function normalizePart(string $part, int $type, bool $passthrough_encoded = true): string {
+    /** Perform percent-encoding normalization for a given URL component */
+    protected static function normalizePart(string $part, int $type): string {
         // stub
         return $part;
     }
 
+    /** Normalizes a hostname per IDNA:2008 */
     protected static function normalizeHost(string $host): string {
         $idn = idn_to_ascii($host, \IDNA_NONTRANSITIONAL_TO_ASCII, \INTL_IDNA_VARIANT_UTS46);
         return $idn !== false ? idn_to_utf8($idn, \IDNA_NONTRANSITIONAL_TO_UNICODE, \INTL_IDNA_VARIANT_UTS46) : $host;
