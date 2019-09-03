@@ -23,6 +23,8 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
         return [
             ["/",                             "/"],
             ["//example.com/",                "//example.com/"],
+            ["/ ",                             "/ "],
+            ["//EXAMPLE.COM/",                "//EXAMPLE.COM/"],
             ["http://example.com/",           "http://example.com/"],
             ["HTTP://example.com/",           "http://example.com/"],
             ["http://example.com",            "http://example.com/"],

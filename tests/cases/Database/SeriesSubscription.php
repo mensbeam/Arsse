@@ -202,9 +202,10 @@ trait SeriesSubscription {
         $url = "http://example.org/feed1";
         $feedID = $this->nextID("arsse_feeds");
         Phake::when(Arsse::$db)->feedUpdate->thenThrow(new FeedException($url, new \PicoFeed\Client\InvalidUrlException()));
+        $this->assertException("invalidUrl", "Feed");
         try {
             Arsse::$db->subscriptionAdd($this->user, $url, "", "", false);
-        } catch (FeedException $e) {
+        } finally {
             Phake::verify(Arsse::$user)->authorize($this->user, "subscriptionAdd");
             Phake::verify(Arsse::$db)->feedUpdate($feedID, true);
             $state = $this->primeExpectations($this->data, [
@@ -212,13 +213,17 @@ trait SeriesSubscription {
                 'arsse_subscriptions' => ['id','owner','feed'],
             ]);
             $this->compareExpectations(static::$drv, $state);
-            $this->assertException("invalidUrl", "Feed");
-            throw $e;
         }
     }
 
     public function testAddADuplicateSubscription() {
         $url = "http://example.com/feed2";
+        $this->assertException("constraintViolation", "Db", "ExceptionInput");
+        Arsse::$db->subscriptionAdd($this->user, $url);
+    }
+
+    public function testAddADuplicateSubscriptionWithEquivalentUrl() {
+        $url = "http://EXAMPLE.COM/feed2";
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         Arsse::$db->subscriptionAdd($this->user, $url);
     }
