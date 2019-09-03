@@ -23,7 +23,6 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
         return [
             ["/",                             "/"],
             ["//example.com/",                "//example.com/"],
-            ["http://[::1]/",                 "http://[::1]/"],
             ["http://example.com/",           "http://example.com/"],
             ["HTTP://example.com/",           "http://example.com/"],
             ["http://example.com",            "http://example.com/"],
@@ -61,6 +60,13 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
             ["http://日本.example.com/",      "http://日本.example.com/"],
             ["http://EXAMPLE.COM/",           "http://example.com/"],
             ["http://É.example.com/",         "http://é.example.com/"],
+            ["http://[::1]/",                 "http://[::1]/"],
+            ["http://[0::1]/",                "http://[::1]/"],
+            ["http://[Z]/",                   "http://[z]/"],
+            ["http://example.com/ ?%61=%3d",  "http://example.com/%20?a=%3D"],
+            ["http://example.com/%",          "http://example.com/%25"],
+            ["http://example.com/%a",         "http://example.com/%25a"],
+            ["http://example.com/%za",        "http://example.com/%25za"],
         ];
     }
 }

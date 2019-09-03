@@ -10,14 +10,6 @@ namespace JKingWeb\Arsse\Misc;
  * A collection of functions for manipulating URLs
  */
 class URL {
-    /** User component */
-    const P_USER = 1;
-    /** Password component */
-    const P_PASS = 2;
-    /** Path segment component */
-    const P_PATH = 3;
-    /** Full query component  */
-    const P_QUERY = 4;
 
     /** Normalizes an absolute URL
      * 
@@ -45,15 +37,15 @@ class URL {
         }
         $out = strtolower($scheme)."://";
         if (strlen($u ?? "")) {
-            $out .= self::normalizePart(rawurlencode($u), self::P_USER);
+            $out .= self::normalizeEncoding(rawurlencode($u));
             if (strlen($p ?? "")) {
-                $out .= ":".self::normalizePart(rawurlencode($p), self::P_PASS);
+                $out .= ":".self::normalizeEncoding(rawurlencode($p));
             }
             $out .= "@";
         } elseif (strlen($user ?? "")) {
-            $out .= self::normalizePart($user, self::P_USER);
+            $out .= self::normalizeEncoding($user);
             if (strlen($pass ?? "")) {
-                $out .= ":".self::normalizePart($pass, self::P_PASS);
+                $out .= ":".self::normalizeEncoding($pass);
             }
             $out .= "@";
         }
@@ -61,26 +53,68 @@ class URL {
         $out .= isset($port) ? ":$port" : "";
         $out .= self::normalizePath($path ?? "");
         if (isset($query) && strlen($query)) {
-            $out .= "?".self::normalizePart($query, self::P_QUERY);
+            $out .= "?".self::normalizeEncoding($query);
         }
         return $out;
     }
 
     /** Perform percent-encoding normalization for a given URL component */
-    protected static function normalizePart(string $part, int $type): string {
-        // stub
-        return $part;
+    protected static function normalizeEncoding(string $part): string {
+        $pos = 0;
+        $end = strlen($part);
+        $out = "";
+        // process each character in sequence
+        while ($pos < $end) {
+            $c = $part[$pos];
+            if ($c === "%") {
+                // the % character signals an encoded character...
+                $d = substr($part, $pos+1, 2);
+                if (!preg_match("/^[0-9a-fA-F]{2}$/", $d)) {
+                    // unless there are fewer than two characters left in the string or the two characters are not hex digits
+                    $d = ord($c);
+                } else {
+                    $d = hexdec($d);
+                    $pos += 2;
+                }
+            } else {
+                $d = ord($c);
+            }
+            $dc = chr($d);
+            if ($d < 0x21 || $d > 0x7E || $d == 0x25) {
+                // these characters are always encoded
+                $out .= "%".strtoupper(dechex($d));
+            } elseif (preg_match("/[a-zA-Z0-9\._~-]/", $dc)) {
+                // these characters are never encoded
+                $out .= $dc;
+            } else {
+                // these characters are passed through as-is
+                if ($c === "%") {
+                    $out .= "%".strtoupper(dechex($d));
+                } else {
+                    $out .= $c;
+                }
+            }
+            $pos++;
+        }
+        return $out;
     }
 
     /** Normalizes a hostname per IDNA:2008 */
     protected static function normalizeHost(string $host): string {
+        if ($host[0] === "[" && substr($host, -1) === "]") {
+            // normalize IPv6 addresses
+            $addr = @inet_pton(substr($host, 1, strlen($host) - 2));
+            if ($addr !== false) {
+                return "[".inet_ntop($addr)."]";
+            }
+        }
         $idn = idn_to_ascii($host, \IDNA_NONTRANSITIONAL_TO_ASCII, \INTL_IDNA_VARIANT_UTS46);
         return $idn !== false ? idn_to_utf8($idn, \IDNA_NONTRANSITIONAL_TO_UNICODE, \INTL_IDNA_VARIANT_UTS46) : $host;
     }
 
     /** Normalizes the whole path segment to remove empty segments and relative segments */
     protected static function normalizePath(string $path): string {
-        $parts = explode("/", $path);
+        $parts = explode("/", self::normalizeEncoding($path));
         $out = [];
         foreach($parts as $p) {
             switch ($p) {
@@ -91,7 +125,7 @@ class URL {
                     array_pop($out);
                     break;
                 default:
-                    $out[] = self::normalizePart($p, self::P_PATH);
+                    $out[] = $p;
             }
         }
         return str_replace("//", "/", "/".implode("/", $out).(substr($path, -1) === "/" ? "/" : ""));
