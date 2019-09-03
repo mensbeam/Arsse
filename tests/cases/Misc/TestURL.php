@@ -21,10 +21,6 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provideNormalizations() {
         return [
-            ["/",                             "/"],
-            ["//example.com/",                "//example.com/"],
-            ["/ ",                             "/ "],
-            ["//EXAMPLE.COM/",                "//EXAMPLE.COM/"],
             ["http://example.com/",           "http://example.com/"],
             ["HTTP://example.com/",           "http://example.com/"],
             ["http://example.com",            "http://example.com/"],
@@ -46,6 +42,7 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
             ["http://user:pass@example.com/", "http://user:pass@example.com/", "", "p"],
             ["http://example.com/",           "http://example.com/", "", "p"],
             ["http://example.com/path",       "http://example.com/path"],
+            ["http://example.com/PATH",       "http://example.com/PATH"],
             ["http://example.com/path/",      "http://example.com/path/"],
             ["http://example.com/path/.",     "http://example.com/path"],
             ["http://example.com/path/./",    "http://example.com/path/"],
@@ -69,6 +66,13 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
             ["http://example.com/%",          "http://example.com/%25"],
             ["http://example.com/%a",         "http://example.com/%25a"],
             ["http://example.com/%za",        "http://example.com/%25za"],
+            ["//EXAMPLE.COM/",                "//example.com/"],
+            ["//EXAMPLE.COM/",                "//u:p@example.com/", "u", "p"],
+            ["/ ",                            "/%20"],
+            ["/ ",                            "/%20", "u", "p"],
+            ["EXAMPLE.COM/",                  "EXAMPLE.COM/"],
+            ["EXAMPLE.COM",                   "EXAMPLE.COM"],
+            [" ",                             "%20"],
         ];
     }
 }

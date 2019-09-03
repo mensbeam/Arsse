@@ -11,7 +11,7 @@ namespace JKingWeb\Arsse\Misc;
  */
 class URL {
 
-    /** Normalizes an absolute URL
+    /** Normalizes a URL
      * 
      * Normalizations performed are:
      * 
@@ -27,32 +27,35 @@ class URL {
      * 
      * It does NOT drop trailing slashes from paths, nor does it perform Unicode normalization or context-aware percent-encoding normalization
      * 
-     * @param string $url The URL to normalize. Relative URLs are returned unchanged
+     * @param string $url The URL to normalize
      * @param string $u Username to add to the URL, replacing any existing credentials
      * @param string $p Password to add to the URL, if a username is specified
      */
     public static function normalize(string $url, string $u = null, string $p = null): string {
         extract(parse_url($url));
-        if (!isset($scheme) || !isset($host) || !strlen($host)) {
-            return $url;
+        $out = "";
+        if (isset($scheme)) {
+            $out .= strtolower($scheme).":";
         }
-        $out = strtolower($scheme)."://";
-        if (strlen($u ?? "")) {
-            $out .= self::normalizeEncoding(rawurlencode($u));
-            if (strlen($p ?? "")) {
-                $out .= ":".self::normalizeEncoding(rawurlencode($p));
+        if (isset($host)) {
+            $out .= "//";
+            if (strlen($u ?? "")) {
+                $out .= self::normalizeEncoding(rawurlencode($u));
+                if (strlen($p ?? "")) {
+                    $out .= ":".self::normalizeEncoding(rawurlencode($p));
+                }
+                $out .= "@";
+            } elseif (strlen($user ?? "")) {
+                $out .= self::normalizeEncoding($user);
+                if (strlen($pass ?? "")) {
+                    $out .= ":".self::normalizeEncoding($pass);
+                }
+                $out .= "@";
             }
-            $out .= "@";
-        } elseif (strlen($user ?? "")) {
-            $out .= self::normalizeEncoding($user);
-            if (strlen($pass ?? "")) {
-                $out .= ":".self::normalizeEncoding($pass);
-            }
-            $out .= "@";
+            $out .= self::normalizeHost($host);
+            $out .= isset($port) ? ":$port" : "";
         }
-        $out .= self::normalizeHost($host);
-        $out .= isset($port) ? ":$port" : "";
-        $out .= self::normalizePath($path ?? "");
+        $out .= self::normalizePath($path ?? "", isset($host));
         if (isset($query) && strlen($query)) {
             $out .= "?".self::normalizeEncoding($query);
         }
@@ -114,8 +117,10 @@ class URL {
     }
 
     /** Normalizes the whole path segment to remove empty segments and relative segments */
-    protected static function normalizePath(string $path): string {
+    protected static function normalizePath(string $path, bool $hasHost): string {
         $parts = explode("/", self::normalizeEncoding($path));
+        $absolute = ($hasHost || $path[0] === "/");
+        $index = (substr($path, -1) === "/");
         $out = [];
         foreach($parts as $p) {
             switch ($p) {
@@ -129,6 +134,8 @@ class URL {
                     $out[] = $p;
             }
         }
-        return str_replace("//", "/", "/".implode("/", $out).(substr($path, -1) === "/" ? "/" : ""));
+        $out = implode("/", $out);
+        $out = ($absolute ? "/" : "").$out.($index ? "/" : "");
+        return str_replace("//", "/", $out);
     }
 }
