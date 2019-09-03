@@ -18,13 +18,14 @@ class URL {
      * - Lowercasing scheme
      * - Lowercasing ASCII host names
      * - IDN normalization
+     * - IPv6 address normalization
      * - Resolution of relative path segments
      * - Discarding empty path segments
      * - Discarding empty queries
-     * - %-encoding normalization
+     * - Generic percent-encoding normalization
      * - Fragment discarding
      * 
-     * It does NOT perform IPv6 address normalization, nor does it drop trailing slashes from paths
+     * It does NOT drop trailing slashes from paths, nor does it perform Unicode normalization or context-aware percent-encoding normalization
      * 
      * @param string $url The URL to normalize. Relative URLs are returned unchanged
      * @param string $u Username to add to the URL, replacing any existing credentials
