@@ -8,7 +8,6 @@ namespace JKingWeb\Arsse\TestCase\Database;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Misc\Date;
-use Phake;
 
 trait SeriesSession {
     protected function setUpSeriesSession() {
@@ -71,7 +70,7 @@ trait SeriesSession {
         $state['arsse_sessions']['rows'][3][2] = Date::transform(Date::add(Arsse::$conf->userSessionTimeout, $now), "sql");
         $this->compareExpectations(static::$drv, $state);
         // session resumption should not check authorization
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertArraySubset($exp1, Arsse::$db->sessionResume("80fa94c1a11f11e78667001e673b2560"));
     }
 
@@ -100,7 +99,7 @@ trait SeriesSession {
     }
 
     public function testCreateASessionWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->sessionCreate("jane.doe@example.com");
     }
@@ -133,7 +132,7 @@ trait SeriesSession {
     }
 
     public function testDestroyASessionWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->sessionDestroy("jane.doe@example.com", "80fa94c1a11f11e78667001e673b2560");
     }

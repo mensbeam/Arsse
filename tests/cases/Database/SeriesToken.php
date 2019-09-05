@@ -7,8 +7,6 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Database;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Misc\Date;
-use Phake;
 
 trait SeriesToken {
     protected function setUpSeriesToken() {
@@ -69,7 +67,7 @@ trait SeriesToken {
         $this->assertArraySubset($exp2, Arsse::$db->tokenLookup("class.class", "da772f8fa13c11e78667001e673b2560"));
         $this->assertArraySubset($exp3, Arsse::$db->tokenLookup("class.class", "ab3b3eb8a13311e78667001e673b2560"));
         // token lookup should not check authorization
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertArraySubset($exp1, Arsse::$db->tokenLookup("fever.login", "80fa94c1a11f11e78667001e673b2560"));
     }
 
@@ -108,7 +106,7 @@ trait SeriesToken {
     }
 
     public function testCreateATokenWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->tokenCreate("fever.login", "jane.doe@example.com");
     }
@@ -139,7 +137,7 @@ trait SeriesToken {
     }
 
     public function testRevokeATokenWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->tokenRevoke("jane.doe@example.com", "fever.login");
     }

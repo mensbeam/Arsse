@@ -6,8 +6,6 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Db;
 
-use JKingWeb\Arsse\Db\Exception;
-
 class ResultAggregate extends AbstractResult {
     protected $data;
     protected $index = 0;

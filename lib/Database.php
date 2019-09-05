@@ -12,6 +12,7 @@ use JKingWeb\Arsse\Misc\Query;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
+use JKingWeb\Arsse\Misc\URL;
 
 /** The high-level interface with the database
  *
@@ -992,6 +993,8 @@ class Database {
      * @param boolean $discover Whether to perform newsfeed discovery if $url points to an HTML document
      */
     public function feedAdd(string $url, string $fetchUser = "", string $fetchPassword = "", bool $discover = true): int {
+        // normalize the input URL
+        $url = URL::normalize($url);
         // check to see if the feed already exists
         $check = $this->db->prepare("SELECT id from arsse_feeds where url = ? and username = ? and password = ?", "str", "str", "str");
         $feedID = $check->run($url, $fetchUser, $fetchPassword)->getValue();

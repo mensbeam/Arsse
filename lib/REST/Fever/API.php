@@ -7,17 +7,10 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\REST\Fever;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Database;
-use JKingWeb\Arsse\User;
-use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\Misc\Date;
-use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Db\ExceptionInput;
-use JKingWeb\Arsse\REST\Target;
-use JKingWeb\Arsse\REST\Exception404;
-use JKingWeb\Arsse\REST\Exception405;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\Response\JsonResponse;
@@ -210,7 +203,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             } elseif (isset($v[0])) {
                 // this is a very simplistic check for an indexed array
                 // it would not pass muster in the face of generic data,
-                // but we'll assume our code produces only well-ordered 
+                // but we'll assume our code produces only well-ordered
                 // indexed arrays
                 $p->appendChild($this->makeXMLIndexed($v, $d->createElement($k), substr($k, 0, strlen($k) - 1)));
             } else {
@@ -234,7 +227,6 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         return $p;
-
     }
 
     protected function logIn(string $hash): bool {
@@ -324,7 +316,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $lastUnread = Date::normalize($lastUnread, "sql");
         $since = Date::sub("PT15S", $lastUnread);
         $c->unread(false)->markedSince($since);
-        Arsse::$db->articleMark(Arsse::$user->id, ['read' => false], $c); 
+        Arsse::$db->articleMark(Arsse::$user->id, ['read' => false], $c);
     }
 
     protected function getRefreshTime() {

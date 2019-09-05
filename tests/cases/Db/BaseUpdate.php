@@ -9,7 +9,6 @@ namespace JKingWeb\Arsse\TestCase\Db;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\Exception;
-use JKingWeb\Arsse\Test\DatabaseInformation;
 use org\bovigo\vfs\vfsStream;
 
 class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {

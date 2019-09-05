@@ -7,10 +7,8 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\REST\NextCloudNews;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
-use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\Test\Result;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Context\Context;
@@ -21,7 +19,6 @@ use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\ServerRequest;
 use Zend\Diactoros\Response\JsonResponse as Response;
 use Zend\Diactoros\Response\EmptyResponse;
-use Phake;
 
 /** @covers \JKingWeb\Arsse\REST\NextCloudNews\V1_2<extended> */
 class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -342,12 +339,12 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
         self::setConf();
         // create a mock user manager
-        Arsse::$user = Phake::mock(User::class);
-        Phake::when(Arsse::$user)->auth->thenReturn(true);
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->auth->thenReturn(true);
         Arsse::$user->id = "john.doe@example.com";
         // create a mock database interface
-        Arsse::$db = Phake::mock(Database::class);
-        Phake::when(Arsse::$db)->begin->thenReturn(Phake::mock(Transaction::class));
+        Arsse::$db = \Phake::mock(Database::class);
+        \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(Transaction::class));
         $this->h = new V1_2();
     }
 
@@ -360,7 +357,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testSendAuthenticationChallenge() {
-        Phake::when(Arsse::$user)->auth->thenReturn(false);
+        \Phake::when(Arsse::$user)->auth->thenReturn(false);
         $exp = new EmptyResponse(401);
         $this->assertMessage($exp, $this->req("GET", "/"));
     }
@@ -448,7 +445,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 1,  'name' => "Software"],
             ['id' => 12, 'name' => "Hardware"],
         ];
-        Phake::when(Arsse::$db)->folderList(Arsse::$user->id, null, false)->thenReturn(new Result([]))->thenReturn(new Result($this->v($list)));
+        \Phake::when(Arsse::$db)->folderList(Arsse::$user->id, null, false)->thenReturn(new Result([]))->thenReturn(new Result($this->v($list)));
         $exp = new Response(['folders' => []]);
         $this->assertMessage($exp, $this->req("GET", "/folders"));
         $exp = new Response(['folders' => $out]);
@@ -469,24 +466,24 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 2, 'name' => "Hardware"],
         ];
         // set of various mocks for testing
-        Phake::when(Arsse::$db)->folderAdd($this->anything(), $this->anything())->thenThrow(new \Exception);
-        Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $in[0])->thenReturn(1)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $in[1])->thenReturn(2)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 1)->thenReturn($this->v($db[0]));
-        Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 2)->thenReturn($this->v($db[1]));
+        \Phake::when(Arsse::$db)->folderAdd($this->anything(), $this->anything())->thenThrow(new \Exception);
+        \Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $in[0])->thenReturn(1)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
+        \Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $in[1])->thenReturn(2)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
+        \Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 1)->thenReturn($this->v($db[0]));
+        \Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 2)->thenReturn($this->v($db[1]));
         // set up mocks that produce errors
-        Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, [])->thenThrow(new ExceptionInput("missing"));
-        Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => ""])->thenThrow(new ExceptionInput("missing"));
-        Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => " "])->thenThrow(new ExceptionInput("whitespace"));
+        \Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, [])->thenThrow(new ExceptionInput("missing"));
+        \Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => ""])->thenThrow(new ExceptionInput("missing"));
+        \Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => " "])->thenThrow(new ExceptionInput("whitespace"));
         // correctly add two folders, using different means
         $exp = new Response(['folders' => [$out[0]]]);
         $this->assertMessage($exp, $this->req("POST", "/folders", json_encode($in[0])));
         $exp = new Response(['folders' => [$out[1]]]);
         $this->assertMessage($exp, $this->req("POST", "/folders?name=Hardware"));
-        Phake::verify(Arsse::$db)->folderAdd(Arsse::$user->id, $in[0]);
-        Phake::verify(Arsse::$db)->folderAdd(Arsse::$user->id, $in[1]);
-        Phake::verify(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 1);
-        Phake::verify(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 2);
+        \Phake::verify(Arsse::$db)->folderAdd(Arsse::$user->id, $in[0]);
+        \Phake::verify(Arsse::$db)->folderAdd(Arsse::$user->id, $in[1]);
+        \Phake::verify(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 1);
+        \Phake::verify(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 2);
         // test bad folder names
         $exp = new EmptyResponse(422);
         $this->assertMessage($exp, $this->req("POST", "/folders"));
@@ -501,13 +498,13 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testRemoveAFolder() {
-        Phake::when(Arsse::$db)->folderRemove(Arsse::$user->id, 1)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->folderRemove(Arsse::$user->id, 1)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("DELETE", "/folders/1"));
         // fail on the second invocation because it no longer exists
         $exp = new EmptyResponse(404);
         $this->assertMessage($exp, $this->req("DELETE", "/folders/1"));
-        Phake::verify(Arsse::$db, Phake::times(2))->folderRemove(Arsse::$user->id, 1);
+        \Phake::verify(Arsse::$db, \Phake::times(2))->folderRemove(Arsse::$user->id, 1);
     }
 
     public function testRenameAFolder() {
@@ -518,12 +515,12 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ["name" => " "],
             [],
         ];
-        Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[0])->thenReturn(true);
-        Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 2, $in[1])->thenThrow(new ExceptionInput("constraintViolation"));
-        Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[2])->thenThrow(new ExceptionInput("missing"));
-        Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[3])->thenThrow(new ExceptionInput("whitespace"));
-        Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[4])->thenReturn(true); // this should be stopped by the handler before the request gets to the database
-        Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 3, $this->anything())->thenThrow(new ExceptionInput("subjectMissing")); // folder ID 3 does not exist
+        \Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[0])->thenReturn(true);
+        \Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 2, $in[1])->thenThrow(new ExceptionInput("constraintViolation"));
+        \Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[2])->thenThrow(new ExceptionInput("missing"));
+        \Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[3])->thenThrow(new ExceptionInput("whitespace"));
+        \Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[4])->thenReturn(true); // this should be stopped by the handler before the request gets to the database
+        \Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 3, $this->anything())->thenThrow(new ExceptionInput("subjectMissing")); // folder ID 3 does not exist
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("PUT", "/folders/1", json_encode($in[0])));
         $exp = new EmptyResponse(409);
@@ -556,9 +553,9 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             'starredCount' => 5,
             'newestItemId' => 4758915,
         ];
-        Phake::when(Arsse::$db)->subscriptionList(Arsse::$user->id)->thenReturn(new Result([]))->thenReturn(new Result($this->v($this->feeds['db'])));
-        Phake::when(Arsse::$db)->articleStarred(Arsse::$user->id)->thenReturn($this->v(['total' => 0]))->thenReturn($this->v(['total' => 5]));
-        Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id)->thenReturn(0)->thenReturn(4758915);
+        \Phake::when(Arsse::$db)->subscriptionList(Arsse::$user->id)->thenReturn(new Result([]))->thenReturn(new Result($this->v($this->feeds['db'])));
+        \Phake::when(Arsse::$db)->articleStarred(Arsse::$user->id)->thenReturn($this->v(['total' => 0]))->thenReturn($this->v(['total' => 5]));
+        \Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id)->thenReturn(0)->thenReturn(4758915);
         $exp = new Response($exp1);
         $this->assertMessage($exp, $this->req("GET", "/feeds"));
         $exp = new Response($exp2);
@@ -579,20 +576,20 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['feeds' => [$this->feeds['rest'][2]], 'newestItemId' => 2112],
         ];
         // set up the necessary mocks
-        Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.com/news.atom")->thenReturn(2112)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.org/news.atom")->thenReturn(42)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "")->thenThrow(new \JKingWeb\Arsse\Feed\Exception("", new \PicoFeed\Reader\SubscriptionNotFoundException));
-        Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 2112)->thenReturn($this->v($this->feeds['db'][0]));
-        Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 42)->thenReturn($this->v($this->feeds['db'][1]));
-        Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 47)->thenReturn($this->v($this->feeds['db'][2]));
-        Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription(2112))->thenReturn(0);
-        Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription(42))->thenReturn(4758915);
-        Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription(47))->thenReturn(2112);
-        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 2112, ['folder' =>  3])->thenThrow(new ExceptionInput("idMissing")); // folder ID 3 does not exist
-        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 42, ['folder' =>  8])->thenReturn(true);
-        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 47, ['folder' => -1])->thenThrow(new ExceptionInput("typeViolation")); // folder ID -1 is invalid
+        \Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.com/news.atom")->thenReturn(2112)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
+        \Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.org/news.atom")->thenReturn(42)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
+        \Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "")->thenThrow(new \JKingWeb\Arsse\Feed\Exception("", new \PicoFeed\Reader\SubscriptionNotFoundException));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 2112)->thenReturn($this->v($this->feeds['db'][0]));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 42)->thenReturn($this->v($this->feeds['db'][1]));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 47)->thenReturn($this->v($this->feeds['db'][2]));
+        \Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription(2112))->thenReturn(0);
+        \Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription(42))->thenReturn(4758915);
+        \Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription(47))->thenReturn(2112);
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 2112, ['folder' =>  3])->thenThrow(new ExceptionInput("idMissing")); // folder ID 3 does not exist
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 42, ['folder' =>  8])->thenReturn(true);
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 47, ['folder' => -1])->thenThrow(new ExceptionInput("typeViolation")); // folder ID -1 is invalid
         // set up a mock for a bad feed which succeeds the second time
-        Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.net/news.atom")->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.net/news.atom", new \PicoFeed\Client\InvalidUrlException()))->thenReturn(47);
+        \Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.net/news.atom")->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.net/news.atom", new \PicoFeed\Client\InvalidUrlException()))->thenReturn(47);
         // add the subscriptions
         $exp = new Response($out[0]);
         $this->assertMessage($exp, $this->req("POST", "/feeds", json_encode($in[0])));
@@ -614,13 +611,13 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testRemoveASubscription() {
-        Phake::when(Arsse::$db)->subscriptionRemove(Arsse::$user->id, 1)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->subscriptionRemove(Arsse::$user->id, 1)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("DELETE", "/feeds/1"));
         // fail on the second invocation because it no longer exists
         $exp = new EmptyResponse(404);
         $this->assertMessage($exp, $this->req("DELETE", "/feeds/1"));
-        Phake::verify(Arsse::$db, Phake::times(2))->subscriptionRemove(Arsse::$user->id, 1);
+        \Phake::verify(Arsse::$db, \Phake::times(2))->subscriptionRemove(Arsse::$user->id, 1);
     }
 
     public function testMoveASubscription() {
@@ -632,11 +629,11 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['folderId' =>   -1],
             [],
         ];
-        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, ['folder' =>   42])->thenReturn(true);
-        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, ['folder' => null])->thenReturn(true);
-        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, ['folder' => 2112])->thenThrow(new ExceptionInput("idMissing")); // folder does not exist
-        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, ['folder' =>   -1])->thenThrow(new ExceptionInput("typeViolation")); // folder is invalid
-        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 42, $this->anything())->thenThrow(new ExceptionInput("subjectMissing")); // subscription does not exist
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, ['folder' =>   42])->thenReturn(true);
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, ['folder' => null])->thenReturn(true);
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, ['folder' => 2112])->thenThrow(new ExceptionInput("idMissing")); // folder does not exist
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, ['folder' =>   -1])->thenThrow(new ExceptionInput("typeViolation")); // folder is invalid
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 42, $this->anything())->thenThrow(new ExceptionInput("subjectMissing")); // subscription does not exist
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/move", json_encode($in[0])));
         $exp = new EmptyResponse(204);
@@ -661,12 +658,12 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['feedTitle' => "Feed does not exist"],
             [],
         ];
-        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, $this->identicalTo(['title' =>  null]))->thenReturn(true);
-        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, $this->identicalTo(['title' => "Ook"]))->thenReturn(true);
-        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, $this->identicalTo(['title' => "   "]))->thenThrow(new ExceptionInput("whitespace"));
-        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, $this->identicalTo(['title' =>    ""]))->thenThrow(new ExceptionInput("missing"));
-        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, $this->identicalTo(['title' => false]))->thenThrow(new ExceptionInput("missing"));
-        Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 42, $this->anything())->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, $this->identicalTo(['title' =>  null]))->thenReturn(true);
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, $this->identicalTo(['title' => "Ook"]))->thenReturn(true);
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, $this->identicalTo(['title' => "   "]))->thenThrow(new ExceptionInput("whitespace"));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, $this->identicalTo(['title' =>    ""]))->thenThrow(new ExceptionInput("missing"));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, $this->identicalTo(['title' => false]))->thenThrow(new ExceptionInput("missing"));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 42, $this->anything())->thenThrow(new ExceptionInput("subjectMissing"));
         $exp = new EmptyResponse(422);
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/rename", json_encode($in[0])));
         $exp = new EmptyResponse(204);
@@ -692,7 +689,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
                 'userId' => "",
             ],
         ];
-        Phake::when(Arsse::$db)->feedListStale->thenReturn($this->v(array_column($out, "id")));
+        \Phake::when(Arsse::$db)->feedListStale->thenReturn($this->v(array_column($out, "id")));
         $exp = new Response(['feeds' => $out]);
         $this->assertMessage($exp, $this->req("GET", "/feeds/all"));
     }
@@ -705,9 +702,9 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['feedId' =>    -1], // invalid ID
             ['feed'   =>    42], // invalid input
         ];
-        Phake::when(Arsse::$db)->feedUpdate(42)->thenReturn(true);
-        Phake::when(Arsse::$db)->feedUpdate(2112)->thenThrow(new ExceptionInput("subjectMissing"));
-        Phake::when(Arsse::$db)->feedUpdate($this->lessThan(1))->thenThrow(new ExceptionInput("typeViolation"));
+        \Phake::when(Arsse::$db)->feedUpdate(42)->thenReturn(true);
+        \Phake::when(Arsse::$db)->feedUpdate(2112)->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->feedUpdate($this->lessThan(1))->thenThrow(new ExceptionInput("typeViolation"));
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[0])));
         $exp = new EmptyResponse(404);
@@ -734,11 +731,11 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['lastModified' => $t->getTimestamp()],
             ['oldestFirst' => false, 'batchSize' => 5, 'offset' => 0], // offset=0 should not set the latestEdition context
         ];
-        Phake::when(Arsse::$db)->articleList->thenReturn(new Result($this->v($this->articles['db'])));
-        Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->subscription(42), $this->anything(), ["edition desc"])->thenThrow(new ExceptionInput("idMissing"));
-        Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->folder(2112), $this->anything(), ["edition desc"])->thenThrow(new ExceptionInput("idMissing"));
-        Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->subscription(-1), $this->anything(), ["edition desc"])->thenThrow(new ExceptionInput("typeViolation"));
-        Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->folder(-1), $this->anything(), ["edition desc"])->thenThrow(new ExceptionInput("typeViolation"));
+        \Phake::when(Arsse::$db)->articleList->thenReturn(new Result($this->v($this->articles['db'])));
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->subscription(42), $this->anything(), ["edition desc"])->thenThrow(new ExceptionInput("idMissing"));
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->folder(2112), $this->anything(), ["edition desc"])->thenThrow(new ExceptionInput("idMissing"));
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->subscription(-1), $this->anything(), ["edition desc"])->thenThrow(new ExceptionInput("typeViolation"));
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->folder(-1), $this->anything(), ["edition desc"])->thenThrow(new ExceptionInput("typeViolation"));
         $exp = new Response(['items' => $this->articles['rest']]);
         // check the contents of the response
         $this->assertMessage($exp, $this->req("GET", "/items")); // first instance of base context
@@ -759,24 +756,24 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->req("GET", "/items", json_encode($in[10]));
         $this->req("GET", "/items", json_encode($in[11]));
         // perform method verifications
-        Phake::verify(Arsse::$db, Phake::times(4))->articleList(Arsse::$user->id, new Context, $this->anything(), ["edition desc"]);
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->subscription(42), $this->anything(), ["edition desc"]);
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->folder(2112), $this->anything(), ["edition desc"]);
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->subscription(-1), $this->anything(), ["edition desc"]);
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->folder(-1), $this->anything(), ["edition desc"]);
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true), $this->anything(), ["edition desc"]);
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->limit(10)->oldestEdition(6), $this->anything(), ["edition"]); // offset is one more than specified
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->limit(5)->latestEdition(4), $this->anything(), ["edition desc"]);   // offset is one less than specified
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->unread(true), $this->anything(), ["edition desc"]);
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, $this->equalTo((new Context)->markedSince($t), 2), $this->anything(), ["edition desc"]);
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->limit(5), $this->anything(), ["edition desc"]);
+        \Phake::verify(Arsse::$db, \Phake::times(4))->articleList(Arsse::$user->id, new Context, $this->anything(), ["edition desc"]);
+        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->subscription(42), $this->anything(), ["edition desc"]);
+        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->folder(2112), $this->anything(), ["edition desc"]);
+        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->subscription(-1), $this->anything(), ["edition desc"]);
+        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->folder(-1), $this->anything(), ["edition desc"]);
+        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true), $this->anything(), ["edition desc"]);
+        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->limit(10)->oldestEdition(6), $this->anything(), ["edition"]); // offset is one more than specified
+        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->limit(5)->latestEdition(4), $this->anything(), ["edition desc"]);   // offset is one less than specified
+        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->unread(true), $this->anything(), ["edition desc"]);
+        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, $this->equalTo((new Context)->markedSince($t), 2), $this->anything(), ["edition desc"]);
+        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->limit(5), $this->anything(), ["edition desc"]);
     }
 
     public function testMarkAFolderRead() {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->folder(1)->latestEdition(2112))->thenReturn(42);
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->folder(42)->latestEdition(2112))->thenThrow(new ExceptionInput("idMissing")); // folder doesn't exist
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->folder(1)->latestEdition(2112))->thenReturn(42);
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->folder(42)->latestEdition(2112))->thenThrow(new ExceptionInput("idMissing")); // folder doesn't exist
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("PUT", "/folders/1/read", $in));
         $this->assertMessage($exp, $this->req("PUT", "/folders/1/read?newestItemId=2112"));
@@ -790,8 +787,8 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testMarkASubscriptionRead() {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->subscription(1)->latestEdition(2112))->thenReturn(42);
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->subscription(42)->latestEdition(2112))->thenThrow(new ExceptionInput("idMissing")); // subscription doesn't exist
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->subscription(1)->latestEdition(2112))->thenReturn(42);
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->subscription(42)->latestEdition(2112))->thenThrow(new ExceptionInput("idMissing")); // subscription doesn't exist
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/read", $in));
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/read?newestItemId=2112"));
@@ -805,7 +802,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testMarkAllItemsRead() {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->latestEdition(2112))->thenReturn(42);
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->latestEdition(2112))->thenReturn(42);
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("PUT", "/items/read", $in));
         $this->assertMessage($exp, $this->req("PUT", "/items/read?newestItemId=2112"));
@@ -819,14 +816,14 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $unread = ['read' => false];
         $star = ['starred' => true];
         $unstar = ['starred' => false];
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->edition(1))->thenReturn(42);
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->edition(42))->thenThrow(new ExceptionInput("subjectMissing")); // edition doesn't exist doesn't exist
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unread, (new Context)->edition(2))->thenReturn(42);
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unread, (new Context)->edition(47))->thenThrow(new ExceptionInput("subjectMissing")); // edition doesn't exist doesn't exist
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $star, (new Context)->article(3))->thenReturn(42);
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $star, (new Context)->article(2112))->thenThrow(new ExceptionInput("subjectMissing")); // article doesn't exist doesn't exist
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unstar, (new Context)->article(4))->thenReturn(42);
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unstar, (new Context)->article(1337))->thenThrow(new ExceptionInput("subjectMissing")); // article doesn't exist doesn't exist
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->edition(1))->thenReturn(42);
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->edition(42))->thenThrow(new ExceptionInput("subjectMissing")); // edition doesn't exist doesn't exist
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unread, (new Context)->edition(2))->thenReturn(42);
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unread, (new Context)->edition(47))->thenThrow(new ExceptionInput("subjectMissing")); // edition doesn't exist doesn't exist
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $star, (new Context)->article(3))->thenReturn(42);
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $star, (new Context)->article(2112))->thenThrow(new ExceptionInput("subjectMissing")); // article doesn't exist doesn't exist
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unstar, (new Context)->article(4))->thenReturn(42);
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $unstar, (new Context)->article(1337))->thenThrow(new ExceptionInput("subjectMissing")); // article doesn't exist doesn't exist
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("PUT", "/items/1/read"));
         $this->assertMessage($exp, $this->req("PUT", "/items/2/unread"));
@@ -837,7 +834,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("PUT", "/items/47/unread"));
         $this->assertMessage($exp, $this->req("PUT", "/items/1/2112/star"));
         $this->assertMessage($exp, $this->req("PUT", "/items/4400/1337/unstar"));
-        Phake::verify(Arsse::$db, Phake::times(8))->articleMark(Arsse::$user->id, $this->anything(), $this->anything());
+        \Phake::verify(Arsse::$db, \Phake::times(8))->articleMark(Arsse::$user->id, $this->anything(), $this->anything());
     }
 
     public function testChangeMarksOfMultipleArticles() {
@@ -855,9 +852,9 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
                 $inStar[$a][$b] = ['feedId' => 2112, 'guidHash' => $inStar[$a][$b]];
             }
         }
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), $this->anything())->thenReturn(42);
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->editions([]))->thenThrow(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
-        Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->articles([]))->thenThrow(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), $this->anything())->thenReturn(42);
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->editions([]))->thenThrow(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->articles([]))->thenThrow(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("PUT", "/items/read/multiple"));
         $this->assertMessage($exp, $this->req("PUT", "/items/unread/multiple"));
@@ -880,27 +877,27 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("PUT", "/items/star/multiple", json_encode(['items' => $inStar[1]])));
         $this->assertMessage($exp, $this->req("PUT", "/items/unstar/multiple", json_encode(['items' => $inStar[1]])));
         // ensure the data model was queried appropriately for read/unread
-        Phake::verify(Arsse::$db, Phake::atLeast(1))->articleMark(Arsse::$user->id, $read, (new Context)->editions([]));
-        Phake::verify(Arsse::$db, Phake::atLeast(1))->articleMark(Arsse::$user->id, $read, (new Context)->editions($in[0]));
-        Phake::verify(Arsse::$db, Phake::atLeast(1))->articleMark(Arsse::$user->id, $read, (new Context)->editions($in[1]));
-        Phake::verify(Arsse::$db, Phake::atLeast(1))->articleMark(Arsse::$user->id, $unread, (new Context)->editions([]));
-        Phake::verify(Arsse::$db, Phake::atLeast(1))->articleMark(Arsse::$user->id, $unread, (new Context)->editions($in[0]));
-        Phake::verify(Arsse::$db, Phake::atLeast(1))->articleMark(Arsse::$user->id, $unread, (new Context)->editions($in[1]));
+        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark(Arsse::$user->id, $read, (new Context)->editions([]));
+        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark(Arsse::$user->id, $read, (new Context)->editions($in[0]));
+        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark(Arsse::$user->id, $read, (new Context)->editions($in[1]));
+        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark(Arsse::$user->id, $unread, (new Context)->editions([]));
+        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark(Arsse::$user->id, $unread, (new Context)->editions($in[0]));
+        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark(Arsse::$user->id, $unread, (new Context)->editions($in[1]));
         // ensure the data model was queried appropriately for star/unstar
-        Phake::verify(Arsse::$db, Phake::atLeast(1))->articleMark(Arsse::$user->id, $star, (new Context)->articles([]));
-        Phake::verify(Arsse::$db, Phake::atLeast(1))->articleMark(Arsse::$user->id, $star, (new Context)->articles($in[0]));
-        Phake::verify(Arsse::$db, Phake::atLeast(1))->articleMark(Arsse::$user->id, $star, (new Context)->articles($in[1]));
-        Phake::verify(Arsse::$db, Phake::atLeast(1))->articleMark(Arsse::$user->id, $unstar, (new Context)->articles([]));
-        Phake::verify(Arsse::$db, Phake::atLeast(1))->articleMark(Arsse::$user->id, $unstar, (new Context)->articles($in[0]));
-        Phake::verify(Arsse::$db, Phake::atLeast(1))->articleMark(Arsse::$user->id, $unstar, (new Context)->articles($in[1]));
+        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark(Arsse::$user->id, $star, (new Context)->articles([]));
+        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark(Arsse::$user->id, $star, (new Context)->articles($in[0]));
+        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark(Arsse::$user->id, $star, (new Context)->articles($in[1]));
+        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark(Arsse::$user->id, $unstar, (new Context)->articles([]));
+        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark(Arsse::$user->id, $unstar, (new Context)->articles($in[0]));
+        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark(Arsse::$user->id, $unstar, (new Context)->articles($in[1]));
     }
 
     public function testQueryTheServerStatus() {
         $interval = Arsse::$conf->serviceFrequency;
         $valid = (new \DateTimeImmutable("now", new \DateTimezone("UTC")))->sub($interval);
         $invalid = $valid->sub($interval)->sub($interval);
-        Phake::when(Arsse::$db)->metaGet("service_last_checkin")->thenReturn(Date::transform($valid, "sql"))->thenReturn(Date::transform($invalid, "sql"));
-        Phake::when(Arsse::$db)->driverCharsetAcceptable->thenReturn(true)->thenReturn(false);
+        \Phake::when(Arsse::$db)->metaGet("service_last_checkin")->thenReturn(Date::transform($valid, "sql"))->thenReturn(Date::transform($invalid, "sql"));
+        \Phake::when(Arsse::$db)->driverCharsetAcceptable->thenReturn(true)->thenReturn(false);
         $arr1 = $arr2 = [
             'version' => V1_2::VERSION,
             'arsse_version' => Arsse::VERSION,
@@ -916,17 +913,17 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testCleanUpBeforeUpdate() {
-        Phake::when(Arsse::$db)->feedCleanup()->thenReturn(true);
+        \Phake::when(Arsse::$db)->feedCleanup()->thenReturn(true);
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("GET", "/cleanup/before-update"));
-        Phake::verify(Arsse::$db)->feedCleanup();
+        \Phake::verify(Arsse::$db)->feedCleanup();
     }
 
     public function testCleanUpAfterUpdate() {
-        Phake::when(Arsse::$db)->articleCleanup()->thenReturn(true);
+        \Phake::when(Arsse::$db)->articleCleanup()->thenReturn(true);
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("GET", "/cleanup/after-update"));
-        Phake::verify(Arsse::$db)->articleCleanup();
+        \Phake::verify(Arsse::$db)->articleCleanup();
     }
 
     public function testQueryTheUserStatus() {
@@ -945,10 +942,10 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $url = "/folders?name=Hardware";
         $out1 = ['id' => 1, 'name' => "Software"];
         $out2 = ['id' => 2, 'name' => "Hardware"];
-        Phake::when(Arsse::$db)->folderAdd($this->anything(), $this->anything())->thenReturn(2);
-        Phake::when(Arsse::$db)->folderAdd($this->anything(), $in)->thenReturn(1);
-        Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 1)->thenReturn($this->v($out1));
-        Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 2)->thenReturn($this->v($out2));
+        \Phake::when(Arsse::$db)->folderAdd($this->anything(), $this->anything())->thenReturn(2);
+        \Phake::when(Arsse::$db)->folderAdd($this->anything(), $in)->thenReturn(1);
+        \Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 1)->thenReturn($this->v($out1));
+        \Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 2)->thenReturn($this->v($out2));
         $exp = new Response(['folders' => [$out1]]);
         $this->assertMessage($exp, $this->req("POST", "/folders?name=Hardware", json_encode($in)));
     }
@@ -956,8 +953,8 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testMeldJsonAndQueryParameters() {
         $in = ['oldestFirst' => true];
         $url = "/items?type=2";
-        Phake::when(Arsse::$db)->articleList->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->articleList->thenReturn(new Result([]));
         $this->req("GET", $url, json_encode($in));
-        Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true), $this->anything(), ["edition"]);
+        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true), $this->anything(), ["edition"]);
     }
 }

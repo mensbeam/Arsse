@@ -9,7 +9,6 @@ namespace JKingWeb\Arsse\TestCase\ImportExport;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Db\SQLite3\Driver;
 use JKingWeb\Arsse\ImportExport\AbstractImportExport;
-use JKingWeb\Arsse\ImportExport\Exception;
 use JKingWeb\Arsse\Test\Database;
 
 /** @covers \JKingWeb\Arsse\ImportExport\AbstractImportExport */

@@ -7,10 +7,8 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Db\SQLite3;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\Db\SQLite3\Driver;
 use org\bovigo\vfs\vfsStream;
-use Phake;
 
 /**
  * @covers \JKingWeb\Arsse\Db\SQLite3\Driver<extended>

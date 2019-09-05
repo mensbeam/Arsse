@@ -318,7 +318,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         ]);
         $act = $this->h->dispatch($this->req("api&feeds"));
         $this->assertMessage($exp, $act);
-    }       
+    }
 
     /** @dataProvider provideItemListContexts */
     public function testListItems(string $url, Context $c, bool $desc) {
@@ -518,7 +518,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testListFeedIcons() {
         $act = $this->h->dispatch($this->req("api&favicons"));
         $exp = new JsonResponse(['favicons' => [['id' => 0, 'data' => API::GENERIC_ICON_TYPE.",".API::GENERIC_ICON_DATA]]]);
-        $this->assertMessage($exp, $act);        
+        $this->assertMessage($exp, $act);
     }
 
     public function testAnswerOptionsRequest() {

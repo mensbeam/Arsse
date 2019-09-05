@@ -7,15 +7,12 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\REST\TinyTinyRSS;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\REST\TinyTinyRSS\Icon;
-use JKingWeb\Arsse\REST\Request;
 use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\ServerRequest;
 use Zend\Diactoros\Response\EmptyResponse as Response;
-use Phake;
 
 /** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Icon<extended> */
 class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -26,9 +23,9 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
         self::setConf();
         // create a mock user manager
-        Arsse::$user = Phake::mock(User::class);
+        Arsse::$user = \Phake::mock(User::class);
         // create a mock database interface
-        Arsse::$db = Phake::mock(Database::class);
+        Arsse::$db = \Phake::mock(Database::class);
         $this->h = new Icon();
     }
 
@@ -63,10 +60,10 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testRetrieveFavion() {
-        Phake::when(Arsse::$db)->subscriptionFavicon->thenReturn("");
-        Phake::when(Arsse::$db)->subscriptionFavicon(42, $this->anything())->thenReturn("http://example.com/favicon.ico");
-        Phake::when(Arsse::$db)->subscriptionFavicon(2112, $this->anything())->thenReturn("http://example.net/logo.png");
-        Phake::when(Arsse::$db)->subscriptionFavicon(1337, $this->anything())->thenReturn("http://example.org/icon.gif\r\nLocation: http://bad.example.com/");
+        \Phake::when(Arsse::$db)->subscriptionFavicon->thenReturn("");
+        \Phake::when(Arsse::$db)->subscriptionFavicon(42, $this->anything())->thenReturn("http://example.com/favicon.ico");
+        \Phake::when(Arsse::$db)->subscriptionFavicon(2112, $this->anything())->thenReturn("http://example.net/logo.png");
+        \Phake::when(Arsse::$db)->subscriptionFavicon(1337, $this->anything())->thenReturn("http://example.org/icon.gif\r\nLocation: http://bad.example.com/");
         // these requests should succeed
         $exp = new Response(301, ['Location' => "http://example.com/favicon.ico"]);
         $this->assertMessage($exp, $this->req("42.ico"));
@@ -87,13 +84,13 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testRetrieveFavionWithHttpAuthentication() {
         $url = "http://example.org/icon.gif\r\nLocation: http://bad.example.com/";
-        Phake::when(Arsse::$db)->subscriptionFavicon->thenReturn("");
-        Phake::when(Arsse::$db)->subscriptionFavicon(42, $this->user)->thenReturn($url);
-        Phake::when(Arsse::$db)->subscriptionFavicon(2112, "jane.doe")->thenReturn($url);
-        Phake::when(Arsse::$db)->subscriptionFavicon(1337, $this->user)->thenReturn($url);
-        Phake::when(Arsse::$db)->subscriptionFavicon(42, null)->thenReturn($url);
-        Phake::when(Arsse::$db)->subscriptionFavicon(2112, null)->thenReturn($url);
-        Phake::when(Arsse::$db)->subscriptionFavicon(1337, null)->thenReturn($url);
+        \Phake::when(Arsse::$db)->subscriptionFavicon->thenReturn("");
+        \Phake::when(Arsse::$db)->subscriptionFavicon(42, $this->user)->thenReturn($url);
+        \Phake::when(Arsse::$db)->subscriptionFavicon(2112, "jane.doe")->thenReturn($url);
+        \Phake::when(Arsse::$db)->subscriptionFavicon(1337, $this->user)->thenReturn($url);
+        \Phake::when(Arsse::$db)->subscriptionFavicon(42, null)->thenReturn($url);
+        \Phake::when(Arsse::$db)->subscriptionFavicon(2112, null)->thenReturn($url);
+        \Phake::when(Arsse::$db)->subscriptionFavicon(1337, null)->thenReturn($url);
         // these requests should succeed
         $exp = new Response(301, ['Location' => "http://example.org/icon.gif"]);
         $this->assertMessage($exp, $this->req("42.ico"));

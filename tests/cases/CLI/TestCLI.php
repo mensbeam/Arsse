@@ -14,14 +14,13 @@ use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\CLI;
 use JKingWeb\Arsse\REST\Fever\User as FeverUser;
 use JKingWeb\Arsse\ImportExport\OPML;
-use Phake;
 
 /** @covers \JKingWeb\Arsse\CLI */
 class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp() {
         self::clearData(false);
-        $this->cli = Phake::partialMock(CLI::class);
-        Phake::when($this->cli)->logError->thenReturn(null);
+        $this->cli = \Phake::partialMock(CLI::class);
+        \Phake::when($this->cli)->logError->thenReturn(null);
     }
 
     public function assertConsole(CLI $cli, string $command, int $exitStatus, string $output = "", bool $pattern = false) {
@@ -70,33 +69,33 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testStartTheDaemon() {
-        $srv = Phake::mock(Service::class);
-        Phake::when($srv)->watch->thenReturn(new \DateTimeImmutable);
-        Phake::when($this->cli)->getInstance(Service::class)->thenReturn($srv);
+        $srv = \Phake::mock(Service::class);
+        \Phake::when($srv)->watch->thenReturn(new \DateTimeImmutable);
+        \Phake::when($this->cli)->getInstance(Service::class)->thenReturn($srv);
         $this->assertConsole($this->cli, "arsse.php daemon", 0);
         $this->assertLoaded(true);
-        Phake::verify($srv)->watch(true);
-        Phake::verify($this->cli)->getInstance(Service::class);
+        \Phake::verify($srv)->watch(true);
+        \Phake::verify($this->cli)->getInstance(Service::class);
     }
 
     public function testRefreshAllFeeds() {
-        $srv = Phake::mock(Service::class);
-        Phake::when($srv)->watch->thenReturn(new \DateTimeImmutable);
-        Phake::when($this->cli)->getInstance(Service::class)->thenReturn($srv);
+        $srv = \Phake::mock(Service::class);
+        \Phake::when($srv)->watch->thenReturn(new \DateTimeImmutable);
+        \Phake::when($this->cli)->getInstance(Service::class)->thenReturn($srv);
         $this->assertConsole($this->cli, "arsse.php feed refresh-all", 0);
         $this->assertLoaded(true);
-        Phake::verify($srv)->watch(false);
-        Phake::verify($this->cli)->getInstance(Service::class);
+        \Phake::verify($srv)->watch(false);
+        \Phake::verify($this->cli)->getInstance(Service::class);
     }
 
     /** @dataProvider provideFeedUpdates */
     public function testRefreshAFeed(string $cmd, int $exitStatus, string $output) {
-        Arsse::$db = Phake::mock(Database::class);
-        Phake::when(Arsse::$db)->feedUpdate(1, true)->thenReturn(true);
-        Phake::when(Arsse::$db)->feedUpdate(2, true)->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.com/", new \PicoFeed\Client\InvalidUrlException));
+        Arsse::$db = \Phake::mock(Database::class);
+        \Phake::when(Arsse::$db)->feedUpdate(1, true)->thenReturn(true);
+        \Phake::when(Arsse::$db)->feedUpdate(2, true)->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.com/", new \PicoFeed\Client\InvalidUrlException));
         $this->assertConsole($this->cli, $cmd, $exitStatus, $output);
         $this->assertLoaded(true);
-        Phake::verify(Arsse::$db)->feedUpdate;
+        \Phake::verify(Arsse::$db)->feedUpdate;
     }
 
     public function provideFeedUpdates() {
@@ -108,14 +107,14 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideDefaultConfigurationSaves */
     public function testSaveTheDefaultConfiguration(string $cmd, int $exitStatus, string $file) {
-        $conf = Phake::mock(Conf::class);
-        Phake::when($conf)->exportFile("php://output", true)->thenReturn(true);
-        Phake::when($conf)->exportFile("good.conf", true)->thenReturn(true);
-        Phake::when($conf)->exportFile("bad.conf", true)->thenThrow(new \JKingWeb\Arsse\Conf\Exception("fileUnwritable"));
-        Phake::when($this->cli)->getInstance(Conf::class)->thenReturn($conf);
+        $conf = \Phake::mock(Conf::class);
+        \Phake::when($conf)->exportFile("php://output", true)->thenReturn(true);
+        \Phake::when($conf)->exportFile("good.conf", true)->thenReturn(true);
+        \Phake::when($conf)->exportFile("bad.conf", true)->thenThrow(new \JKingWeb\Arsse\Conf\Exception("fileUnwritable"));
+        \Phake::when($this->cli)->getInstance(Conf::class)->thenReturn($conf);
         $this->assertConsole($this->cli, $cmd, $exitStatus);
         $this->assertLoaded(false);
-        Phake::verify($conf)->exportFile($file, true);
+        \Phake::verify($conf)->exportFile($file, true);
     }
 
     public function provideDefaultConfigurationSaves() {
@@ -283,14 +282,14 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideOpmlExports */
     public function testExportToOpml(string $cmd, int $exitStatus, string $file, string $user, bool $flat) {
-        $opml = Phake::mock(OPML::class);
-        Phake::when($opml)->exportFile("php://output", $user, $flat)->thenReturn(true);
-        Phake::when($opml)->exportFile("good.opml", $user, $flat)->thenReturn(true);
-        Phake::when($opml)->exportFile("bad.opml", $user, $flat)->thenThrow(new \JKingWeb\Arsse\ImportExport\Exception("fileUnwritable"));
-        Phake::when($this->cli)->getInstance(OPML::class)->thenReturn($opml);
+        $opml = \Phake::mock(OPML::class);
+        \Phake::when($opml)->exportFile("php://output", $user, $flat)->thenReturn(true);
+        \Phake::when($opml)->exportFile("good.opml", $user, $flat)->thenReturn(true);
+        \Phake::when($opml)->exportFile("bad.opml", $user, $flat)->thenThrow(new \JKingWeb\Arsse\ImportExport\Exception("fileUnwritable"));
+        \Phake::when($this->cli)->getInstance(OPML::class)->thenReturn($opml);
         $this->assertConsole($this->cli, $cmd, $exitStatus);
         $this->assertLoaded(true);
-        Phake::verify($opml)->exportFile($file, $user, $flat);
+        \Phake::verify($opml)->exportFile($file, $user, $flat);
     }
 
     public function provideOpmlExports() {
@@ -324,14 +323,14 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideOpmlImports */
     public function testImportFromOpml(string $cmd, int $exitStatus, string $file, string $user, bool $flat, bool $replace) {
-        $opml = Phake::mock(OPML::class);
-        Phake::when($opml)->importFile("php://input", $user, $flat, $replace)->thenReturn(true);
-        Phake::when($opml)->importFile("good.opml", $user, $flat, $replace)->thenReturn(true);
-        Phake::when($opml)->importFile("bad.opml", $user, $flat, $replace)->thenThrow(new \JKingWeb\Arsse\ImportExport\Exception("fileUnreadable"));
-        Phake::when($this->cli)->getInstance(OPML::class)->thenReturn($opml);
+        $opml = \Phake::mock(OPML::class);
+        \Phake::when($opml)->importFile("php://input", $user, $flat, $replace)->thenReturn(true);
+        \Phake::when($opml)->importFile("good.opml", $user, $flat, $replace)->thenReturn(true);
+        \Phake::when($opml)->importFile("bad.opml", $user, $flat, $replace)->thenThrow(new \JKingWeb\Arsse\ImportExport\Exception("fileUnreadable"));
+        \Phake::when($this->cli)->getInstance(OPML::class)->thenReturn($opml);
         $this->assertConsole($this->cli, $cmd, $exitStatus);
         $this->assertLoaded(true);
-        Phake::verify($opml)->importFile($file, $user, $flat, $replace);
+        \Phake::verify($opml)->importFile($file, $user, $flat, $replace);
     }
 
     public function provideOpmlImports() {

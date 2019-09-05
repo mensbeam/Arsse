@@ -46,6 +46,7 @@
         <file>cases/Misc/TestValueInfo.php</file>
         <file>cases/Misc/TestDate.php</file>
         <file>cases/Misc/TestContext.php</file>
+        <file>cases/Misc/TestURL.php</file>
     </testsuite>
     <testsuite name="User management">
         <file>cases/User/TestInternal.php</file>
@@ -105,7 +106,6 @@
         <file>cases/Db/MySQLPDO/TestDatabase.php</file>
     </testsuite>
     <testsuite name="REST">
-        <file>cases/REST/TestTarget.php</file>
         <file>cases/REST/TestREST.php</file>
     </testsuite>
     <testsuite name="NCNv1">

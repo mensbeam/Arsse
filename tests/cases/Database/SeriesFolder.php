@@ -7,7 +7,6 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Database;
 
 use JKingWeb\Arsse\Arsse;
-use Phake;
 
 trait SeriesFolder {
     protected function setUpSeriesFolder() {
@@ -102,7 +101,7 @@ trait SeriesFolder {
         $user = "john.doe@example.com";
         $folderID = $this->nextID("arsse_folders");
         $this->assertSame($folderID, Arsse::$db->folderAdd($user, ['name' => "Entertainment"]));
-        Phake::verify(Arsse::$user)->authorize($user, "folderAdd");
+        \Phake::verify(Arsse::$user)->authorize($user, "folderAdd");
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
         $state['arsse_folders']['rows'][] = [$folderID, $user, null, "Entertainment"];
         $this->compareExpectations(static::$drv, $state);
@@ -117,7 +116,7 @@ trait SeriesFolder {
         $user = "john.doe@example.com";
         $folderID = $this->nextID("arsse_folders");
         $this->assertSame($folderID, Arsse::$db->folderAdd($user, ['name' => "GNOME", 'parent' => 2]));
-        Phake::verify(Arsse::$user)->authorize($user, "folderAdd");
+        \Phake::verify(Arsse::$user)->authorize($user, "folderAdd");
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
         $state['arsse_folders']['rows'][] = [$folderID, $user, 2, "GNOME"];
         $this->compareExpectations(static::$drv, $state);
@@ -154,7 +153,7 @@ trait SeriesFolder {
     }
 
     public function testAddAFolderWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->folderAdd("john.doe@example.com", ['name' => "Sociology"]);
     }
@@ -171,9 +170,9 @@ trait SeriesFolder {
         $this->assertResult($exp, Arsse::$db->folderList("jane.doe@example.com", null, false));
         $exp = [];
         $this->assertResult($exp, Arsse::$db->folderList("admin@example.net", null, false));
-        Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderList");
-        Phake::verify(Arsse::$user)->authorize("jane.doe@example.com", "folderList");
-        Phake::verify(Arsse::$user)->authorize("admin@example.net", "folderList");
+        \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderList");
+        \Phake::verify(Arsse::$user)->authorize("jane.doe@example.com", "folderList");
+        \Phake::verify(Arsse::$user)->authorize("admin@example.net", "folderList");
     }
 
     public function testListFoldersRecursively() {
@@ -193,8 +192,8 @@ trait SeriesFolder {
         $this->assertResult($exp, Arsse::$db->folderList("john.doe@example.com", 1, true));
         $exp = [];
         $this->assertResult($exp, Arsse::$db->folderList("jane.doe@example.com", 4, true));
-        Phake::verify(Arsse::$user, Phake::times(2))->authorize("john.doe@example.com", "folderList");
-        Phake::verify(Arsse::$user)->authorize("jane.doe@example.com", "folderList");
+        \Phake::verify(Arsse::$user, \Phake::times(2))->authorize("john.doe@example.com", "folderList");
+        \Phake::verify(Arsse::$user)->authorize("jane.doe@example.com", "folderList");
     }
 
     public function testListFoldersOfAMissingParent() {
@@ -208,14 +207,14 @@ trait SeriesFolder {
     }
 
     public function testListFoldersWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->folderList("john.doe@example.com");
     }
 
     public function testRemoveAFolder() {
         $this->assertTrue(Arsse::$db->folderRemove("john.doe@example.com", 6));
-        Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderRemove");
+        \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderRemove");
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
         array_pop($state['arsse_folders']['rows']);
         $this->compareExpectations(static::$drv, $state);
@@ -223,7 +222,7 @@ trait SeriesFolder {
 
     public function testRemoveAFolderTree() {
         $this->assertTrue(Arsse::$db->folderRemove("john.doe@example.com", 1));
-        Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderRemove");
+        \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderRemove");
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
         foreach ([0,1,2,5] as $index) {
             unset($state['arsse_folders']['rows'][$index]);
@@ -247,7 +246,7 @@ trait SeriesFolder {
     }
 
     public function testRemoveAFolderWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->folderRemove("john.doe@example.com", 1);
     }
@@ -259,7 +258,7 @@ trait SeriesFolder {
             'parent' => 2,
         ];
         $this->assertArraySubset($exp, Arsse::$db->folderPropertiesGet("john.doe@example.com", 6));
-        Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderPropertiesGet");
+        \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderPropertiesGet");
     }
 
     public function testGetThePropertiesOfAMissingFolder() {
@@ -278,7 +277,7 @@ trait SeriesFolder {
     }
 
     public function testGetThePropertiesOfAFolderWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->folderPropertiesGet("john.doe@example.com", 1);
     }
@@ -289,7 +288,7 @@ trait SeriesFolder {
 
     public function testRenameAFolder() {
         $this->assertTrue(Arsse::$db->folderPropertiesSet("john.doe@example.com", 6, ['name' => "Opinion"]));
-        Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderPropertiesSet");
+        \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderPropertiesSet");
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
         $state['arsse_folders']['rows'][5][3] = "Opinion";
         $this->compareExpectations(static::$drv, $state);
@@ -316,7 +315,7 @@ trait SeriesFolder {
 
     public function testMoveAFolder() {
         $this->assertTrue(Arsse::$db->folderPropertiesSet("john.doe@example.com", 6, ['parent' => 5]));
-        Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderPropertiesSet");
+        \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderPropertiesSet");
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
         $state['arsse_folders']['rows'][5][2] = 5; // parent should have changed
         $this->compareExpectations(static::$drv, $state);
@@ -373,7 +372,7 @@ trait SeriesFolder {
     }
 
     public function testSetThePropertiesOfAFolderWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", 1, ['parent' => null]);
     }

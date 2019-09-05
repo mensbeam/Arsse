@@ -9,7 +9,6 @@ namespace JKingWeb\Arsse\TestCase\Database;
 use JKingWeb\Arsse\Test\Database;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User;
-use Phake;
 
 abstract class Base extends \JKingWeb\Arsse\Test\AbstractTest {
     use SeriesMiscellany;
@@ -73,8 +72,8 @@ abstract class Base extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$db = new Database(static::$drv);
         Arsse::$db->driverSchemaUpdate();
         // create a mock user manager
-        Arsse::$user = Phake::mock(User::class);
-        Phake::when(Arsse::$user)->authorize->thenReturn(true);
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(true);
         // call the series-specific setup method
         $setUp = "setUp".$this->series;
         $this->$setUp();

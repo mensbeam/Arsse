@@ -7,7 +7,6 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Db;
 
 use JKingWeb\Arsse\Db\Statement;
-use JKingWeb\Arsse\Test\DatabaseInformation;
 
 abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     protected static $interface;

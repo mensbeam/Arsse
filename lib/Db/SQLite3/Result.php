@@ -6,8 +6,6 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Db\SQLite3;
 
-use JKingWeb\Arsse\Db\Exception;
-
 class Result extends \JKingWeb\Arsse\Db\AbstractResult {
     protected $st;
     protected $set;

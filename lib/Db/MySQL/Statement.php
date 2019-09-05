@@ -6,10 +6,6 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Db\MySQL;
 
-use JKingWeb\Arsse\Db\Exception;
-use JKingWeb\Arsse\Db\ExceptionInput;
-use JKingWeb\Arsse\Db\ExceptionTimeout;
-
 class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     use ExceptionBuilder;
 

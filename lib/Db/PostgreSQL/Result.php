@@ -6,8 +6,6 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Db\PostgreSQL;
 
-use JKingWeb\Arsse\Db\Exception;
-
 class Result extends \JKingWeb\Arsse\Db\AbstractResult {
     protected $db;
     protected $r;

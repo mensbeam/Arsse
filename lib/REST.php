@@ -7,10 +7,10 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Misc\URL;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\ServerRequest;
 use Zend\Diactoros\ServerRequestFactory;
 use Zend\Diactoros\Response\EmptyResponse;
 
@@ -103,7 +103,7 @@ class REST {
             return (strlen($a['match']) <=> strlen($b['match'])) * -1;
         });
         // normalize the target URL
-        $url = REST\Target::normalize($url);
+        $url = URL::normalize($url);
         // find a match
         foreach ($map as $id => $api) {
             // first try a simple substring match

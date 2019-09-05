@@ -7,13 +7,9 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\User;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\Database;
-use JKingWeb\Arsse\User;
-use JKingWeb\Arsse\AbstractException as Exception;
 use JKingWeb\Arsse\User\Driver as DriverInterface;
 use JKingWeb\Arsse\User\Internal\Driver;
-use Phake;
 
 /** @covers \JKingWeb\Arsse\User\Internal\Driver */
 class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -21,8 +17,8 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
         self::setConf();
         // create a mock database interface
-        Arsse::$db = Phake::mock(Database::class);
-        Phake::when(Arsse::$db)->begin->thenReturn(Phake::mock(\JKingWeb\Arsse\Db\Transaction::class));
+        Arsse::$db = \Phake::mock(Database::class);
+        \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(\JKingWeb\Arsse\Db\Transaction::class));
     }
 
     public function testConstruct() {
@@ -39,13 +35,13 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
     */
     public function testAuthenticateAUser(bool $authorized, string $user, $password, bool $exp) {
         if ($authorized) {
-            Phake::when(Arsse::$db)->userPasswordGet("john.doe@example.com")->thenReturn('$2y$10$1zbqRJhxM8uUjeSBPp4IhO90xrqK0XjEh9Z16iIYEFRV4U.zeAFom'); // hash of "secret"
-            Phake::when(Arsse::$db)->userPasswordGet("jane.doe@example.com")->thenReturn('$2y$10$bK1ljXfTSyc2D.NYvT.Eq..OpehLRXVbglW.23ihVuyhgwJCd.7Im'); // hash of "superman"
-            Phake::when(Arsse::$db)->userPasswordGet("owen.hardy@example.com")->thenReturn("");
-            Phake::when(Arsse::$db)->userPasswordGet("kira.nerys@example.com")->thenThrow(new \JKingWeb\Arsse\User\Exception("doesNotExist"));
-            Phake::when(Arsse::$db)->userPasswordGet("007@example.com")->thenReturn(null);
+            \Phake::when(Arsse::$db)->userPasswordGet("john.doe@example.com")->thenReturn('$2y$10$1zbqRJhxM8uUjeSBPp4IhO90xrqK0XjEh9Z16iIYEFRV4U.zeAFom'); // hash of "secret"
+            \Phake::when(Arsse::$db)->userPasswordGet("jane.doe@example.com")->thenReturn('$2y$10$bK1ljXfTSyc2D.NYvT.Eq..OpehLRXVbglW.23ihVuyhgwJCd.7Im'); // hash of "superman"
+            \Phake::when(Arsse::$db)->userPasswordGet("owen.hardy@example.com")->thenReturn("");
+            \Phake::when(Arsse::$db)->userPasswordGet("kira.nerys@example.com")->thenThrow(new \JKingWeb\Arsse\User\Exception("doesNotExist"));
+            \Phake::when(Arsse::$db)->userPasswordGet("007@example.com")->thenReturn(null);
         } else {
-            Phake::when(Arsse::$db)->userPasswordGet->thenThrow(new \JKingWeb\Arsse\User\ExceptionAuthz("notAuthorized"));
+            \Phake::when(Arsse::$db)->userPasswordGet->thenThrow(new \JKingWeb\Arsse\User\ExceptionAuthz("notAuthorized"));
         }
         $this->assertSame($exp, (new Driver)->auth($user, $password));
     }
@@ -79,62 +75,62 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testAuthorizeAnAction() {
-        Phake::verifyNoFurtherInteraction(Arsse::$db);
+        \Phake::verifyNoFurtherInteraction(Arsse::$db);
         $this->assertTrue((new Driver)->authorize("someone", "something"));
     }
 
     public function testListUsers() {
         $john = "john.doe@example.com";
         $jane = "jane.doe@example.com";
-        Phake::when(Arsse::$db)->userList->thenReturn([$john, $jane])->thenReturn([$jane, $john]);
+        \Phake::when(Arsse::$db)->userList->thenReturn([$john, $jane])->thenReturn([$jane, $john]);
         $driver = new Driver;
         $this->assertSame([$john, $jane], $driver->userList());
         $this->assertSame([$jane, $john], $driver->userList());
-        Phake::verify(Arsse::$db, Phake::times(2))->userList;
+        \Phake::verify(Arsse::$db, \Phake::times(2))->userList;
     }
 
     public function testCheckThatAUserExists() {
         $john = "john.doe@example.com";
         $jane = "jane.doe@example.com";
-        Phake::when(Arsse::$db)->userExists($john)->thenReturn(true);
-        Phake::when(Arsse::$db)->userExists($jane)->thenReturn(false);
+        \Phake::when(Arsse::$db)->userExists($john)->thenReturn(true);
+        \Phake::when(Arsse::$db)->userExists($jane)->thenReturn(false);
         $driver = new Driver;
         $this->assertTrue($driver->userExists($john));
-        Phake::verify(Arsse::$db)->userExists($john);
+        \Phake::verify(Arsse::$db)->userExists($john);
         $this->assertFalse($driver->userExists($jane));
-        Phake::verify(Arsse::$db)->userExists($jane);
+        \Phake::verify(Arsse::$db)->userExists($jane);
     }
 
     public function testAddAUser() {
         $john = "john.doe@example.com";
-        Phake::when(Arsse::$db)->userAdd->thenReturnCallback(function($user, $pass) {
+        \Phake::when(Arsse::$db)->userAdd->thenReturnCallback(function($user, $pass) {
             return $pass;
         });
         $driver = new Driver;
         $this->assertNull($driver->userAdd($john));
         $this->assertNull($driver->userAdd($john, null));
         $this->assertSame("secret", $driver->userAdd($john, "secret"));
-        Phake::verify(Arsse::$db)->userAdd($john, "secret");
-        Phake::verify(Arsse::$db)->userAdd;
+        \Phake::verify(Arsse::$db)->userAdd($john, "secret");
+        \Phake::verify(Arsse::$db)->userAdd;
     }
 
     public function testRemoveAUser() {
         $john = "john.doe@example.com";
-        Phake::when(Arsse::$db)->userRemove->thenReturn(true)->thenThrow(new \JKingWeb\Arsse\User\Exception("doesNotExist"));
+        \Phake::when(Arsse::$db)->userRemove->thenReturn(true)->thenThrow(new \JKingWeb\Arsse\User\Exception("doesNotExist"));
         $driver = new Driver;
         $this->assertTrue($driver->userRemove($john));
-        Phake::verify(Arsse::$db, Phake::times(1))->userRemove($john);
+        \Phake::verify(Arsse::$db, \Phake::times(1))->userRemove($john);
         $this->assertException("doesNotExist", "User");
         try {
             $this->assertFalse($driver->userRemove($john));
         } finally {
-            Phake::verify(Arsse::$db, Phake::times(2))->userRemove($john);
+            \Phake::verify(Arsse::$db, \Phake::times(2))->userRemove($john);
         }
     }
 
     public function testSetAPassword() {
         $john = "john.doe@example.com";
-        Phake::verifyNoFurtherInteraction(Arsse::$db);
+        \Phake::verifyNoFurtherInteraction(Arsse::$db);
         $this->assertSame("superman", (new Driver)->userPasswordSet($john, "superman"));
         $this->assertSame(null, (new Driver)->userPasswordSet($john, null));
     }
@@ -142,14 +138,14 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testUnsetAPassword() {
         $drv = \Phake::partialMock(Driver::class);
         \Phake::when($drv)->userExists->thenReturn(true);
-        Phake::verifyNoFurtherInteraction(Arsse::$db);
+        \Phake::verifyNoFurtherInteraction(Arsse::$db);
         $this->assertTrue($drv->userPasswordUnset("john.doe@example.com"));
     }
 
     public function testUnsetAPasswordForAMssingUser() {
         $drv = \Phake::partialMock(Driver::class);
         \Phake::when($drv)->userExists->thenReturn(false);
-        Phake::verifyNoFurtherInteraction(Arsse::$db);
+        \Phake::verifyNoFurtherInteraction(Arsse::$db);
         $this->assertException("doesNotExist", "User");
         $drv->userPasswordUnset("john.doe@example.com");
     }

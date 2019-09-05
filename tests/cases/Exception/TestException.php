@@ -10,21 +10,20 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Lang;
 use JKingWeb\Arsse\Exception;
 use JKingWeb\Arsse\Lang\Exception as LangException;
-use Phake;
 
 /** @covers \JKingWeb\Arsse\AbstractException */
 class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp() {
         self::clearData(false);
         // create a mock Lang object so as not to create a dependency loop
-        Arsse::$lang = Phake::mock(Lang::class);
-        Phake::when(Arsse::$lang)->msg->thenReturn("");
+        Arsse::$lang = \Phake::mock(Lang::class);
+        \Phake::when(Arsse::$lang)->msg->thenReturn("");
     }
 
     public function tearDown() {
         // verify calls to the mock Lang object
-        Phake::verify(Arsse::$lang, Phake::atLeast(0))->msg($this->isType("string"), $this->anything());
-        Phake::verifyNoOtherInteractions(Arsse::$lang);
+        \Phake::verify(Arsse::$lang, \Phake::atLeast(0))->msg($this->isType("string"), $this->anything());
+        \Phake::verifyNoOtherInteractions(Arsse::$lang);
         // clean up
         self::clearData(true);
     }
