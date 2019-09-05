@@ -7,6 +7,7 @@ Bug fixes:
 
 Changes:
 - Include a user manual
+- Normalize newsfeed URLs before checking for duplicates
 
 Version 0.8.0 (2019-07-26)
 ==========================
