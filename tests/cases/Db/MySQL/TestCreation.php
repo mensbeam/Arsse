@@ -6,7 +6,6 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Db\MySQL;
 
-use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Db\MySQL\Driver as Driver;
 
 /**

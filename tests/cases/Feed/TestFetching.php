@@ -7,9 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Feed;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\Feed;
-use Phake;
 
 /**
  * @covers \JKingWeb\Arsse\Feed

@@ -11,7 +11,6 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
-use Phake;
 
 trait SeriesArticle {
     protected function setUpSeriesArticle() {
@@ -597,7 +596,7 @@ trait SeriesArticle {
     }
 
     public function testListArticlesWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->articleList($this->user);
     }
@@ -966,7 +965,7 @@ trait SeriesArticle {
     }
 
     public function testMarkArticlesWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->articleMark($this->user, ['read'=>false]);
     }
@@ -979,7 +978,7 @@ trait SeriesArticle {
     }
 
     public function testCountArticlesWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->articleCount($this->user);
     }
@@ -992,7 +991,7 @@ trait SeriesArticle {
     }
 
     public function testFetchStarredCountsWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->articleStarred($this->user);
     }
@@ -1008,7 +1007,7 @@ trait SeriesArticle {
     }
 
     public function testFetchLatestEditionWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->editionLatest($this->user);
     }
@@ -1028,7 +1027,7 @@ trait SeriesArticle {
     }
 
     public function testListTheLabelsOfAnArticleWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->articleLabelsGet("john.doe@example.com", 1);
     }
@@ -1048,7 +1047,7 @@ trait SeriesArticle {
     }
 
     public function testListTheCategoriesOfAnArticleWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->articleCategoriesGet($this->user, 19);
     }

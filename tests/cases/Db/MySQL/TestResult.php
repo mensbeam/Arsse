@@ -6,8 +6,6 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Db\MySQL;
 
-use JKingWeb\Arsse\Test\DatabaseInformation;
-
 /**
  * @group slow
  * @covers \JKingWeb\Arsse\Db\MySQL\Result<extended>

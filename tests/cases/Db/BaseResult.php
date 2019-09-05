@@ -7,7 +7,6 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Db;
 
 use JKingWeb\Arsse\Db\Result;
-use JKingWeb\Arsse\Test\DatabaseInformation;
 
 abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
     protected static $insertDefault = "INSERT INTO arsse_test default values";

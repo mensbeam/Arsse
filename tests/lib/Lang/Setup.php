@@ -9,7 +9,6 @@ namespace JKingWeb\Arsse\Test\Lang;
 use JKingWeb\Arsse\Lang;
 use JKingWeb\Arsse\Arsse;
 use org\bovigo\vfs\vfsStream;
-use Phake;
 
 trait Setup {
     public function setUp() {
@@ -40,8 +39,8 @@ trait Setup {
         $this->l = new TestLang($this->path);
         // create a mock Lang object so as not to create a dependency loop
         self::clearData(false);
-        Arsse::$lang = Phake::mock(Lang::class);
-        Phake::when(Arsse::$lang)->msg->thenReturn("");
+        Arsse::$lang = \Phake::mock(Lang::class);
+        \Phake::when(Arsse::$lang)->msg->thenReturn("");
         // call the additional setup method if it exists
         if (method_exists($this, "setUpSeries")) {
             $this->setUpSeries();
@@ -50,8 +49,8 @@ trait Setup {
 
     public function tearDown() {
         // verify calls to the mock Lang object
-        Phake::verify(Arsse::$lang, Phake::atLeast(0))->msg($this->isType("string"), $this->anything());
-        Phake::verifyNoOtherInteractions(Arsse::$lang);
+        \Phake::verify(Arsse::$lang, \Phake::atLeast(0))->msg($this->isType("string"), $this->anything());
+        \Phake::verifyNoOtherInteractions(Arsse::$lang);
         // clean up
         self::clearData(true);
         // call the additional teardiwn method if it exists

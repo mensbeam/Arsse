@@ -7,12 +7,10 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Feed;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\Feed;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Test\Result;
-use Phake;
 
 /**
  * @covers \JKingWeb\Arsse\Feed
@@ -97,7 +95,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->base = self::$host."Feed/";
         self::clearData();
         self::setConf();
-        Arsse::$db = Phake::mock(Database::class);
+        Arsse::$db = \Phake::mock(Database::class);
     }
 
     public function testParseAFeed() {
@@ -315,7 +313,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testMatchLatestArticles() {
-        Phake::when(Arsse::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Result($this->latest));
+        \Phake::when(Arsse::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Result($this->latest));
         $f = new Feed(1, $this->base."Matching/1");
         $this->assertCount(0, $f->newItems);
         $this->assertCount(0, $f->changedItems);
@@ -331,8 +329,8 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testMatchHistoricalArticles() {
-        Phake::when(Arsse::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Result($this->latest));
-        Phake::when(Arsse::$db)->feedMatchIds(1, $this->anything(), $this->anything(), $this->anything(), $this->anything())->thenReturn(new Result($this->others));
+        \Phake::when(Arsse::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Result($this->latest));
+        \Phake::when(Arsse::$db)->feedMatchIds(1, $this->anything(), $this->anything(), $this->anything(), $this->anything())->thenReturn(new Result($this->others));
         $f = new Feed(1, $this->base."Matching/5");
         $this->assertCount(0, $f->newItems);
         $this->assertCount(0, $f->changedItems);

@@ -7,7 +7,6 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Database;
 
 use JKingWeb\Arsse\Arsse;
-use Phake;
 
 trait SeriesCleanup {
     protected function setUpSeriesCleanup() {

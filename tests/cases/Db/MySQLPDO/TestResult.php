@@ -6,8 +6,6 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Db\MySQLPDO;
 
-use JKingWeb\Arsse\Test\DatabaseInformation;
-
 /**
  * @group slow
  * @covers \JKingWeb\Arsse\Db\PDOResult<extended>

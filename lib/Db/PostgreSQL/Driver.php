@@ -7,10 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Db\PostgreSQL;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\Db\Exception;
-use JKingWeb\Arsse\Db\ExceptionInput;
-use JKingWeb\Arsse\Db\ExceptionTimeout;
 
 class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     use Dispatch;

@@ -8,8 +8,6 @@ namespace JKingWeb\Arsse\Db\SQLite3;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Db\Exception;
-use JKingWeb\Arsse\Db\ExceptionInput;
-use JKingWeb\Arsse\Db\ExceptionTimeout;
 
 class PDODriver extends AbstractPDODriver {
     protected $db;

@@ -6,8 +6,6 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
 
-use JKingWeb\Arsse\Test\DatabaseInformation;
-
 /**
  * @covers \JKingWeb\Arsse\Db\PDOResult<extended>
  */

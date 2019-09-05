@@ -7,9 +7,6 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Database;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Feed;
-use JKingWeb\Arsse\Feed\Exception as FeedException;
-use Phake;
 
 trait SeriesFeed {
     protected function setUpSeriesFeed() {

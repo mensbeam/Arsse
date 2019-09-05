@@ -8,8 +8,6 @@ namespace JKingWeb\Arsse\TestCase\Database;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
-use JKingWeb\Arsse\Misc\Date;
-use Phake;
 
 trait SeriesTag {
     protected function setUpSeriesTag() {
@@ -114,7 +112,7 @@ trait SeriesTag {
         $user = "john.doe@example.com";
         $tagID = $this->nextID("arsse_tags");
         $this->assertSame($tagID, Arsse::$db->tagAdd($user, ['name' => "Entertaining"]));
-        Phake::verify(Arsse::$user)->authorize($user, "tagAdd");
+        \Phake::verify(Arsse::$user)->authorize($user, "tagAdd");
         $state = $this->primeExpectations($this->data, $this->checkTags);
         $state['arsse_tags']['rows'][] = [$tagID, $user, "Entertaining"];
         $this->compareExpectations(static::$drv, $state);
@@ -141,7 +139,7 @@ trait SeriesTag {
     }
 
     public function testAddATagWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->tagAdd("john.doe@example.com", ['name' => "Boring"]);
     }
@@ -159,18 +157,18 @@ trait SeriesTag {
         $this->assertResult($exp, Arsse::$db->tagList("jane.doe@example.com"));
         $exp = [];
         $this->assertResult($exp, Arsse::$db->tagList("jane.doe@example.com", false));
-        Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "tagList");
+        \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "tagList");
     }
 
     public function testListTagsWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->tagList("john.doe@example.com");
     }
 
     public function testRemoveATag() {
         $this->assertTrue(Arsse::$db->tagRemove("john.doe@example.com", 1));
-        Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "tagRemove");
+        \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "tagRemove");
         $state = $this->primeExpectations($this->data, $this->checkTags);
         array_shift($state['arsse_tags']['rows']);
         $this->compareExpectations(static::$drv, $state);
@@ -178,7 +176,7 @@ trait SeriesTag {
 
     public function testRemoveATagByName() {
         $this->assertTrue(Arsse::$db->tagRemove("john.doe@example.com", "Interesting", true));
-        Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "tagRemove");
+        \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "tagRemove");
         $state = $this->primeExpectations($this->data, $this->checkTags);
         array_shift($state['arsse_tags']['rows']);
         $this->compareExpectations(static::$drv, $state);
@@ -205,7 +203,7 @@ trait SeriesTag {
     }
 
     public function testRemoveATagWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->tagRemove("john.doe@example.com", 1);
     }
@@ -217,7 +215,7 @@ trait SeriesTag {
         ];
         $this->assertArraySubset($exp, Arsse::$db->tagPropertiesGet("john.doe@example.com", 2));
         $this->assertArraySubset($exp, Arsse::$db->tagPropertiesGet("john.doe@example.com", "Fascinating", true));
-        Phake::verify(Arsse::$user, Phake::times(2))->authorize("john.doe@example.com", "tagPropertiesGet");
+        \Phake::verify(Arsse::$user, \Phake::times(2))->authorize("john.doe@example.com", "tagPropertiesGet");
     }
 
     public function testGetThePropertiesOfAMissingTag() {
@@ -241,7 +239,7 @@ trait SeriesTag {
     }
 
     public function testGetThePropertiesOfATagWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->tagPropertiesGet("john.doe@example.com", 1);
     }
@@ -252,7 +250,7 @@ trait SeriesTag {
 
     public function testRenameATag() {
         $this->assertTrue(Arsse::$db->tagPropertiesSet("john.doe@example.com", 1, ['name' => "Curious"]));
-        Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "tagPropertiesSet");
+        \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "tagPropertiesSet");
         $state = $this->primeExpectations($this->data, $this->checkTags);
         $state['arsse_tags']['rows'][0][2] = "Curious";
         $this->compareExpectations(static::$drv, $state);
@@ -260,7 +258,7 @@ trait SeriesTag {
 
     public function testRenameATagByName() {
         $this->assertTrue(Arsse::$db->tagPropertiesSet("john.doe@example.com", "Interesting", ['name' => "Curious"], true));
-        Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "tagPropertiesSet");
+        \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "tagPropertiesSet");
         $state = $this->primeExpectations($this->data, $this->checkTags);
         $state['arsse_tags']['rows'][0][2] = "Curious";
         $this->compareExpectations(static::$drv, $state);
@@ -307,7 +305,7 @@ trait SeriesTag {
     }
 
     public function testSetThePropertiesOfATagWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->tagPropertiesSet("john.doe@example.com", 1, ['name' => "Exciting"]);
     }
@@ -335,7 +333,7 @@ trait SeriesTag {
     }
 
     public function testListTaggedSubscriptionsWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->tagSubscriptionsGet("john.doe@example.com", 1);
     }
@@ -401,7 +399,7 @@ trait SeriesTag {
     }
 
     public function testApplyATagToSubscriptionsWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->tagSubscriptionsSet("john.doe@example.com", 1, [3,4]);
     }
@@ -418,7 +416,7 @@ trait SeriesTag {
     }
 
     public function testSummarizeTagsWithoutAuthority() {
-        Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->tagSummarize("john.doe@example.com");
     }

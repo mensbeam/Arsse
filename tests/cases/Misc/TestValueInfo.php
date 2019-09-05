@@ -6,7 +6,6 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Misc;
 
-use JKingWeb\Arsse\ExceptionType;
 use JKingWeb\Arsse\Misc\ValueInfo as I;
 use JKingWeb\Arsse\Test\Misc\StrClass;
 use JKingWeb\Arsse\Test\Result;

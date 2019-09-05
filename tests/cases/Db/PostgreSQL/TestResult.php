@@ -6,8 +6,6 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Db\PostgreSQL;
 
-use JKingWeb\Arsse\Test\DatabaseInformation;
-
 /**
  * @group slow
  * @covers \JKingWeb\Arsse\Db\PostgreSQL\Result<extended>

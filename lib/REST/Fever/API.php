@@ -7,17 +7,10 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\REST\Fever;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Database;
-use JKingWeb\Arsse\User;
-use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\Misc\Date;
-use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Db\ExceptionInput;
-use JKingWeb\Arsse\REST\Target;
-use JKingWeb\Arsse\REST\Exception404;
-use JKingWeb\Arsse\REST\Exception405;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\Response\JsonResponse;

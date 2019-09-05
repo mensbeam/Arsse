@@ -8,7 +8,6 @@ namespace JKingWeb\Arsse\TestCase\Db;
 
 use JKingWeb\Arsse\Db\Statement;
 use JKingWeb\Arsse\Db\Result;
-use JKingWeb\Arsse\Test\DatabaseInformation;
 
 abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
     protected static $insertDefaultValues = "INSERT INTO arsse_test default values";

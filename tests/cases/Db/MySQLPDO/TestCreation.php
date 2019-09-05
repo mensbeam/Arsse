@@ -6,7 +6,6 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Db\MySQLPDO;
 
-use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Db\MySQL\PDODriver as Driver;
 
 /**
