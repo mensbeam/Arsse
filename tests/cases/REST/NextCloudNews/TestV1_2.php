@@ -344,7 +344,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user->id = "john.doe@example.com";
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
-        \Phake::when(Arsse::$db)->begin->thenReturn(Phake::mock(Transaction::class));
+        \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(Transaction::class));
         $this->h = new V1_2();
     }
 

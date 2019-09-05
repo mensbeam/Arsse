@@ -312,7 +312,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertInstanceOf(ResponseInterface::class, $out);
         if ($called) {
             \Phake::verify($r)->authenticateRequest;
-            \Phake::verify($h)->dispatch(Phake::capture($in));
+            \Phake::verify($h)->dispatch(\Phake::capture($in));
             $this->assertSame($method, $in->getMethod());
             $this->assertSame($target, $in->getRequestTarget());
         } else {

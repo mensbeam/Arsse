@@ -19,7 +19,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         self::setConf();
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
-        \Phake::when(Arsse::$db)->begin->thenReturn(Phake::mock(\JKingWeb\Arsse\Db\Transaction::class));
+        \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(\JKingWeb\Arsse\Db\Transaction::class));
         // create a mock user driver
         $this->drv = \Phake::mock(Driver::class);
     }

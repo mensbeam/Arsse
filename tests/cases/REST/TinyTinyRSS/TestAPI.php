@@ -180,7 +180,7 @@ LONG_STRING;
         Arsse::$user->id = "john.doe@example.com";
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
-        \Phake::when(Arsse::$db)->begin->thenReturn(Phake::mock(Transaction::class));
+        \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(Transaction::class));
         \Phake::when(Arsse::$db)->sessionResume->thenThrow(new \JKingWeb\Arsse\User\ExceptionSession("invalid"));
         \Phake::when(Arsse::$db)->sessionResume("PriestsOfSyrinx")->thenReturn([
             'id' => "PriestsOfSyrinx",
