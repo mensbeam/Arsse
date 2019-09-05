@@ -106,7 +106,6 @@
         <file>cases/Db/MySQLPDO/TestDatabase.php</file>
     </testsuite>
     <testsuite name="REST">
-        <file>cases/REST/TestTarget.php</file>
         <file>cases/REST/TestREST.php</file>
     </testsuite>
     <testsuite name="NCNv1">

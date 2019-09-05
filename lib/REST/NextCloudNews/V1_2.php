@@ -7,15 +7,12 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\REST\NextCloudNews;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Database;
-use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
-use JKingWeb\Arsse\REST\Target;
 use JKingWeb\Arsse\REST\Exception404;
 use JKingWeb\Arsse\REST\Exception405;
 use Psr\Http\Message\ServerRequestInterface;
@@ -85,11 +82,11 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } else {
             return new EmptyResponse(401);
         }
-        // explode and normalize the URL path
-        $target = new Target($req->getRequestTarget());
+        // get the request path only; this is assumed to already be normalized
+        $target = parse_url($req->getRequestTarget())['path'] ?? "";
         // handle HTTP OPTIONS requests
         if ($req->getMethod() === "OPTIONS") {
-            return $this->handleHTTPOptions((string) $target);
+            return $this->handleHTTPOptions($target);
         }
         // normalize the input
         $data = (string) $req->getBody();
@@ -115,7 +112,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $data = $this->normalizeInput(array_merge($req->getQueryParams(), $data), $this->validInput, "unix");
         // check to make sure the requested function is implemented
         try {
-            $func = $this->chooseCall((string) $target, $req->getMethod());
+            $func = $this->chooseCall($target, $req->getMethod());
         } catch (Exception404 $e) {
             return new EmptyResponse(404);
         } catch (Exception405 $e) {
@@ -126,7 +123,8 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // dispatch
         try {
-            return $this->$func($target->path, $data);
+            $path = explode("/", ltrim($target, "/"));
+            return $this->$func($path, $data);
             // @codeCoverageIgnoreStart
         } catch (Exception $e) {
             // if there was a REST exception return 400
@@ -139,18 +137,14 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function normalizePathIds(string $url): string {
-        // first parse the URL and perform syntactic normalization
-        $target = new Target($url);
+        $path = explode("/", $url);
         // any path components which are database IDs (integers greater than zero) should be replaced with "1", for easier comparison (we don't care about the specific ID)
-        for ($a = 0; $a < sizeof($target->path); $a++) {
-            if (ValueInfo::id($target->path[$a])) {
-                $target->path[$a] = "1";
+        for ($a = 0; $a < sizeof($path); $a++) {
+            if (ValueInfo::id($path[$a])) {
+                $path[$a] = "1";
             }
         }
-        // discard any fragment ID (there shouldn't be any) and query string (the query is available in the request itself)
-        $target->fragment = "";
-        $target->query = "";
-        return (string) $target;
+        return implode("/", $path);
     }
 
     protected function chooseCall(string $url, string $method): string {
