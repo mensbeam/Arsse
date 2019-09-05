@@ -203,7 +203,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             } elseif (isset($v[0])) {
                 // this is a very simplistic check for an indexed array
                 // it would not pass muster in the face of generic data,
-                // but we'll assume our code produces only well-ordered 
+                // but we'll assume our code produces only well-ordered
                 // indexed arrays
                 $p->appendChild($this->makeXMLIndexed($v, $d->createElement($k), substr($k, 0, strlen($k) - 1)));
             } else {
@@ -227,7 +227,6 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         return $p;
-
     }
 
     protected function logIn(string $hash): bool {
@@ -317,7 +316,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $lastUnread = Date::normalize($lastUnread, "sql");
         $since = Date::sub("PT15S", $lastUnread);
         $c->unread(false)->markedSince($since);
-        Arsse::$db->articleMark(Arsse::$user->id, ['read' => false], $c); 
+        Arsse::$db->articleMark(Arsse::$user->id, ['read' => false], $c);
     }
 
     protected function getRefreshTime() {

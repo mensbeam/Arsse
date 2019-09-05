@@ -2,7 +2,6 @@
 
 use Robo\Result;
 
-
 const BASE = __DIR__.\DIRECTORY_SEPARATOR;
 const BASE_TEST = BASE."tests".\DIRECTORY_SEPARATOR;
 define("IS_WIN", defined("PHP_WINDOWS_VERSION_MAJOR"));
@@ -190,7 +189,7 @@ class RoboFile extends \Robo\Tasks {
     }
 
     /** Generates static manual pages in the "manual" directory
-     * 
+     *
      * The resultant files are suitable for offline viewing and inclusion into release builds
      */
     public function manual(array $args): Result {
@@ -209,7 +208,7 @@ class RoboFile extends \Robo\Tasks {
     }
 
     /** Rebuilds the entire manual theme
-     * 
+     *
      * This requires Node and Yarn to be installed, and only needs to be done when
      * Daux's theme changes
      */
@@ -223,7 +222,7 @@ class RoboFile extends \Robo\Tasks {
         // rebuild the stylesheet
         $t->addCode([$this, "manualCss"]);
         // copy JavaScript files from the Daux theme
-        foreach(glob($dauxjs."daux*") as $file) {
+        foreach (glob($dauxjs."daux*") as $file) {
             $t->taskFilesystemStack()->copy($file, $themeout.basename($file), true);
         }
         // download highlight.js
@@ -231,7 +230,7 @@ class RoboFile extends \Robo\Tasks {
             // compile the list of desired language (enumerated above) into an application/x-www-form-urlencoded body
             $post = http_build_query((function($langs) {
                 $out = [];
-                foreach($langs as $l) {
+                foreach ($langs as $l) {
                     $out[$l.".js"] = "on";
                 }
                 return $out;
@@ -274,7 +273,7 @@ class RoboFile extends \Robo\Tasks {
     }
 
     /** Rebuilds the manual theme's stylesheet only
-     * 
+     *
      * This requires Node and Yarn to be installed.
      */
     public function manualCss(): Result {
