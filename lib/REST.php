@@ -42,6 +42,7 @@ class REST {
             'class' => REST\Fever\API::class,
         ],
         // Other candidates:
+        // Microsub             https://indieweb.org/Microsub
         // Google Reader        http://feedhq.readthedocs.io/en/latest/api/index.html
         // Feedbin v2           https://github.com/feedbin/feedbin-api
         // CommaFeed            https://www.commafeed.com/api/
