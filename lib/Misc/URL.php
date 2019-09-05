@@ -10,11 +10,10 @@ namespace JKingWeb\Arsse\Misc;
  * A collection of functions for manipulating URLs
  */
 class URL {
-
     /** Normalizes a URL
-     * 
+     *
      * Normalizations performed are:
-     * 
+     *
      * - Lowercasing scheme
      * - Lowercasing ASCII host names
      * - IDN normalization
@@ -24,9 +23,9 @@ class URL {
      * - Discarding empty queries
      * - Generic percent-encoding normalization
      * - Fragment discarding
-     * 
+     *
      * It does NOT drop trailing slashes from paths, nor does it perform Unicode normalization or context-aware percent-encoding normalization
-     * 
+     *
      * @param string $url The URL to normalize
      * @param string $u Username to add to the URL, replacing any existing credentials
      * @param string $p Password to add to the URL, if a username is specified
@@ -122,7 +121,7 @@ class URL {
         $absolute = ($hasHost || $path[0] === "/");
         $index = (substr($path, -1) === "/");
         $out = [];
-        foreach($parts as $p) {
+        foreach ($parts as $p) {
             switch ($p) {
                 case "":
                 case ".":
