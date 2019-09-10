@@ -6,10 +6,18 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Misc;
 
+use function GuzzleHttp\Psr7\parse_header;
+
 /**
  * A collection of functions for manipulating URLs
  */
 class URL {
+
+    /** Returns whether a URL is absolute i.e. has a scheme */
+    public static function absolute(string $url): bool {
+        return (bool) strlen((string) parse_url($url, \PHP_URL_SCHEME));
+    }
+
     /** Normalizes a URL
      *
      * Normalizations performed are:
@@ -136,5 +144,25 @@ class URL {
         $out = implode("/", $out);
         $out = ($absolute ? "/" : "").$out.($index ? "/" : "");
         return str_replace("//", "/", $out);
+    }
+
+    /** Appends data to a URL's query component
+     * 
+     * @param string $url The input URL
+     * @param string $data The data to append. This should already be escaped where necessary and not start with any delimiter
+     * @param string $glue The query subcomponent delimiter, usually "&". If the URL has no query, "?" will be prepended instead
+     */
+    public function queryAppend(string $url, string $data, string $glue = "&"): string {
+        $insPos = strpos($url, "#");
+        $insPos = $insPos === false ? strlen($url) : $insPos;
+        $hasQuery = strpos($url, "?") !== false;
+        $glue = $hasQuery ? $glue : "?";
+        if ($hasQuery && $insPos > 0) {
+            if ($url[$insPos - 1] === $glue) {
+                // if the URL already has excess glue, use it
+                $glue = "";
+            }
+        }
+        return substr($url, 0, $insPos).$glue.$data.substr($url, $insPos);
     }
 }

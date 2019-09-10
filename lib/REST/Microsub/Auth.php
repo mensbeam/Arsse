@@ -8,6 +8,7 @@ namespace JKingWeb\Arsse\REST\Microsub;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Misc\URL;
+use JKingWeb\Arsse\Misc\Date;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\Response\HtmlResponse as Response;
@@ -75,7 +76,16 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
             if ($user !== $id || URL::normalize($query['me']) !== $url) {
                 return new EmptyResponse(403);
             } else {
-                // redirect
+                $redir = URL::normalize(rawurldecode($query['redirect_uri']));
+                $state = $query['state'] ?? "";
+                // check that the redirect URL is an absolute one
+                if (!URL::absolute($redir)) {
+                    return new EmptyResponse(400);
+                }
+                // issue an authorization code and build the redirect URL
+                $code = Arsse::$db->tokenCreate($id, "microsub.auth", null, Date::add("PT2M"));
+                $next = URL::queryAppend($redir, "code=$code&state=$state");
+                return new EmptyResponse(302, ["Location: $next"]);
             }
         }
     }
