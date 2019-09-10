@@ -6,6 +6,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\REST\Microsub;
 
+use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Misc\URL;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -33,16 +34,22 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
     }
 
-    protected function doDiscovery(string $user, ServerRequestInterface $req): ResponseInterface {
+    protected function buildIdentifier(ServerRequestInterface $req, bool $baseOnly = false): string {
         // construct the base user identifier URL; the user is never checked against the database
-        // as this route is publicly accessible, for reasons of privacy requests for user discovery work regardless of whether the user exists
         $s = $req->getServerParams();
+        $path = $req->getRequestTarget()['path'];
         $https = (strlen($s['HTTPS'] ?? "") && $s['HTTPS'] !== "off");
         $port = (int) $s['SERVER_PORT'];
         $port = (!$port || ($https && $port == 443) || (!$https && $port == 80)) ? "" : ":$port";
         $base = URL::normalize(($https ? "https" : "http")."://".$s['HTTP_HOST'].$port."/");
-        $id = $base."u/".rawurlencode($user);
+        return !$baseOnly ? URL::normalize($base.$path) : $base;
+    }
+
+    protected function doDiscovery(string $user, ServerRequestInterface $req): ResponseInterface {
+        // as this route is publicly accessible, for reasons of privacy requests for user discovery work regardless of whether the user exists
         // prepare authroizer, token, and Microsub endpoint URLs
+        $base = $this->buildIdentifier($req, true);
+        $id = $this->buildIdentifier($req);
         $urlAuth = $id."?proc=login";
         $urlToken = $id."?proc=issue";
         $urlService = $base."microsub";
@@ -53,5 +60,23 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
             "Link: <$urlToken>; rel=\"token_endpoint\"",
             "Link: <$urlService>; rel=\"microsub\"",
         ]);
+    }
+
+    protected function doLogin(string $user, ServerRequestInterface $req): ResponseInterface {
+        if (!$req->getAttribute("authenticated", false)) {
+            // user has not yet logged in, or has failed to log in
+            return new EmptyResponse(401);
+        } else {
+            // user has logged in
+            // ensure the logged-in user matches the IndieAuth identifier URL
+            $id = $req->getAttribute("authenticatedUser");
+            $query = $req->getQueryParams();
+            $url = buildIdentifier($req);
+            if ($user !== $id || URL::normalize($query['me']) !== $url) {
+                return new EmptyResponse(403);
+            } else {
+                // redirect
+            }
+        }
     }
 }
