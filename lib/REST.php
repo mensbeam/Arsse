@@ -17,32 +17,41 @@ use Zend\Diactoros\Response\EmptyResponse;
 class REST {
     const API_LIST = [
         'ncn' => [ // NextCloud News version enumerator
-            'match' => '/index.php/apps/news/api',
-            'strip' => '/index.php/apps/news/api',
+            'match' => "/index.php/apps/news/api",
+            'strip' => "/index.php/apps/news/api",
             'class' => REST\NextCloudNews\Versions::class,
         ],
         'ncn_v1-2' => [ // NextCloud News v1-2  https://github.com/nextcloud/news/blob/master/docs/externalapi/Legacy.md
-            'match' => '/index.php/apps/news/api/v1-2/',
-            'strip' => '/index.php/apps/news/api/v1-2',
+            'match' => "/index.php/apps/news/api/v1-2/",
+            'strip' => "/index.php/apps/news/api/v1-2",
             'class' => REST\NextCloudNews\V1_2::class,
         ],
         'ttrss_api' => [ // Tiny Tiny RSS  https://git.tt-rss.org/git/tt-rss/wiki/ApiReference
-            'match' => '/tt-rss/api',
-            'strip' => '/tt-rss/api',
+            'match' => "/tt-rss/api",
+            'strip' => "/tt-rss/api",
             'class' => REST\TinyTinyRSS\API::class,
         ],
         'ttrss_icon' => [ // Tiny Tiny RSS feed icons
-            'match' => '/tt-rss/feed-icons/',
-            'strip' => '/tt-rss/feed-icons/',
+            'match' => "/tt-rss/feed-icons/",
+            'strip' => "/tt-rss/feed-icons/",
             'class' => REST\TinyTinyRSS\Icon::class,
         ],
         'fever' => [ // Fever  https://web.archive.org/web/20161217042229/https://feedafever.com/api
-            'match' => '/fever/',
-            'strip' => '/fever/',
+            'match' => "/fever/",
+            'strip' => "/fever/",
             'class' => REST\Fever\API::class,
         ],
+        'microsub' => [ // Microsub  https://indieweb.org/Microsub
+            'match' => "/microsub",
+            'strip' => "",
+            'class' => REST\Microsub\API::class,
+        ],
+        'microsub_auth' => [ // IndieAuth for Microsub  https://indieauth.spec.indieweb.org/
+            'match' => "/u/",
+            'strip' => "/u/",
+            'class' => REST\Microsub\Auth::class,
+        ],
         // Other candidates:
-        // Microsub             https://indieweb.org/Microsub
         // Google Reader        http://feedhq.readthedocs.io/en/latest/api/index.html
         // Feedbin v2           https://github.com/feedbin/feedbin-api
         // CommaFeed            https://www.commafeed.com/api/
