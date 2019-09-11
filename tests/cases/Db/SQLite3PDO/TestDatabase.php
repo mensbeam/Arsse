@@ -10,7 +10,7 @@ namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
  * @covers \JKingWeb\Arsse\Database<extended>
  * @covers \JKingWeb\Arsse\Misc\Query<extended>
  */
-class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\Base {
+class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\AbstractTest {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\SQLite3PDO;
 
     protected function nextID(string $table): int {

@@ -10,7 +10,7 @@ use JKingWeb\Arsse\Test\Database;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User;
 
-abstract class Base extends \JKingWeb\Arsse\Test\AbstractTest {
+abstract class AbstractTest extends \JKingWeb\Arsse\Test\AbstractTest {
     use SeriesMiscellany;
     use SeriesMeta;
     use SeriesUser;
