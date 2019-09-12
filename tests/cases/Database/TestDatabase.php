@@ -55,4 +55,25 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
             ["$params",            $ints,         $ints,                                "bool"],
         ];
     }
+
+    /** @dataProvider provideSearchClauses */
+    public function testGenerateSearchClause(string $clause, array $values, array $inV, array $inC, bool $inAny) {
+        // this is not an exhaustive test; integration tests already cover the ins and outs of the functionality
+        $types = array_fill(0, sizeof($values), "str");
+        $exp = [$clause, $types, $values];
+        $this->assertSame($exp, self::$db->generateSearch($inV, $inC, $inAny));
+    }
+
+    public function provideSearchClauses() {
+        $terms = array_fill(0, Database::LIMIT_SET_SIZE + 1, "a");
+        $clause = array_fill(0, Database::LIMIT_SET_SIZE + 1, "test like '%a%' escape '^'");
+        $longString = str_repeat("0", Database::LIMIT_SET_STRING_LENGTH + 1);
+        return [
+            ["test like ? escape '^'",                                    ["%a%"],           ["a"],                              ["test"],         true],
+            ["(col1 like ? escape '^' or col2 like ? escape '^')",        ["%a%", "%a%"],    ["a"],                              ["col1", "col2"], true],
+            ["(".implode(" or ", $clause).")",                            [],                $terms,                             ["test"],         true],
+            ["(".implode(" and ", $clause).")",                           [],                $terms,                             ["test"],         false],
+            ["(".implode(" or ", $clause)." or test like ? escape '^')",  ["%$longString%"], array_merge($terms, [$longString]), ["test"],         true],
+        ];
+    }
 }

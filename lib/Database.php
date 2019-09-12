@@ -219,10 +219,11 @@ class Database {
                     $values[] = $term;
                 }
             }
-            $clause[] = "(".implode(" or ", $spec).")";
+            $spec = sizeof($spec) > 1 ? "(".implode(" or ", $spec).")" : (string) array_pop($spec);
+            $clause[] = $spec;
         }
         $glue = $matchAny ? "or" : "and";
-        $clause = $clause ? "(".implode(" $glue ", $clause).")" : "";
+        $clause = sizeof($clause) > 1 ? "(".implode(" $glue ", $clause).")" : (string) array_pop($clause);
         return [$clause, $types, $values];
     }
 
