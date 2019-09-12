@@ -165,7 +165,7 @@ class Database {
                     // nulls are pointless to have
                     continue;
                 } elseif (is_string($v)) {
-                    if (strlen($v) > self::LIMIT_SET_STRING_LENGTH) {
+                    if (strlen($v) > self::LIMIT_SET_STRING_LENGTH || strpos($v, "?") !== false) {
                         $clause[] = "?";
                         $params[] = $v;
                     } else {
@@ -205,7 +205,7 @@ class Database {
         assert(sizeof($cols) > 0, new Exception("arrayEmpty", "cols"));
         $embedSet = sizeof($terms) > ((int) (self::LIMIT_SET_SIZE / sizeof($cols)));
         foreach ($terms as $term) {
-            $embedTerm = ($embedSet && strlen($term) <= self::LIMIT_SET_STRING_LENGTH);
+            $embedTerm = ($embedSet && strlen($term) <= self::LIMIT_SET_STRING_LENGTH && strpos($term, "?") === false);
             $term = str_replace(["%", "_", "^"], ["^%", "^_", "^^"], $term);
             $term = "%$term%";
             $term = $embedTerm ? $this->db->literalString($term) : $term;

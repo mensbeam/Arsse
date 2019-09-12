@@ -52,6 +52,7 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
             ["$stringList",        [],            array_merge($strings, [null]),        "str"],
             ["$stringList,?",      [$longString], array_merge($strings, [$longString]), "str"],
             ["$stringList,'A''s'", [],            array_merge($strings, ["A's"]),       "str"],
+            ["$stringList,?",      ["???"],       array_merge($strings, ["???"]),       "str"],
             ["$params",            $ints,         $ints,                                "bool"],
         ];
     }
@@ -74,6 +75,8 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
             ["(".implode(" or ", $clause).")",                            [],                $terms,                             ["test"],         true],
             ["(".implode(" and ", $clause).")",                           [],                $terms,                             ["test"],         false],
             ["(".implode(" or ", $clause)." or test like ? escape '^')",  ["%$longString%"], array_merge($terms, [$longString]), ["test"],         true],
+            ["(".implode(" or ", $clause)." or test like ? escape '^')",  ["%Eh?%"],         array_merge($terms, ["Eh?"]),       ["test"],         true],
+            ["(".implode(" or ", $clause)." or test like ? escape '^')",  ["%?%"],           array_merge($terms, ["?"]),         ["test"],         true],
         ];
     }
 }
