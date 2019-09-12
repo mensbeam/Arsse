@@ -198,13 +198,11 @@ class Database {
      * @param boolean $matchAny Whether the search is successful when it matches any (true) or all (false) terms
      */
     protected function generateSearch(array $terms, array $cols, bool $matchAny = false): array {
-        if (!$cols) {
-            throw new Exception("arrayEmpty", "cols"); // @codeCoverageIgnore
-        }
         $clause = [];
         $types = [];
         $values = [];
         $like = $this->db->sqlToken("like");
+        assert(sizeof($cols) > 0, new Exception("arrayEmpty", "cols"));
         $embedSet = sizeof($terms) > ((int) (self::LIMIT_SET_SIZE / sizeof($cols)));
         foreach ($terms as $term) {
             $embedTerm = ($embedSet && strlen($term) <= self::LIMIT_SET_STRING_LENGTH);
@@ -2081,9 +2079,7 @@ class Database {
      * @param boolean $byName Whether to interpret the $id parameter as the label's name (true) or identifier (false)
      */
     public function labelArticlesSet(string $user, $id, Context $context, int $mode = self::ASSOC_ADD, bool $byName = false): int {
-        if (!in_array($mode, [self::ASSOC_ADD, self::ASSOC_REMOVE, self::ASSOC_REPLACE])) {
-            throw new Exception("constantUnknown", $mode); // @codeCoverageIgnore
-        }
+        assert(in_array($mode, [self::ASSOC_ADD, self::ASSOC_REMOVE, self::ASSOC_REPLACE]), new Exception("constantUnknown", $mode));
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
@@ -2386,9 +2382,7 @@ class Database {
      * @param boolean $byName Whether to interpret the $id parameter as the tag's name (true) or identifier (false)
      */
     public function tagSubscriptionsSet(string $user, $id, array $subscriptions, int $mode = self::ASSOC_ADD, bool $byName = false): int {
-        if (!in_array($mode, [self::ASSOC_ADD, self::ASSOC_REMOVE, self::ASSOC_REPLACE])) {
-            throw new Exception("constantUnknown", $mode); // @codeCoverageIgnore
-        }
+        assert(in_array($mode, [self::ASSOC_ADD, self::ASSOC_REMOVE, self::ASSOC_REPLACE]), new Exception("constantUnknown", $mode));
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }

@@ -56,9 +56,7 @@ abstract class AbstractStatement implements Statement {
                 $this->retypeArray($binding, true);
             } else {
                 $bindId = self::TYPES[trim(strtolower($binding))] ?? 0;
-                if (!$bindId) {
-                    throw new Exception("paramTypeInvalid", $binding); // @codeCoverageIgnore
-                }
+                assert($bindId, new Exception("paramTypeInvalid", $binding));
                 $this->types[] = $bindId;
             }
         }
