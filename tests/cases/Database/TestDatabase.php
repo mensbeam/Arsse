@@ -10,16 +10,20 @@ use JKingWeb\Arsse\Database;
 
 /** @covers \JKingWeb\Arsse\Database */
 class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
-    static $db = null;
+    protected $db = null;
     
-    public static function setUpBeforeClass() {
+    public function setUp() {
         self::clearData();
         self::setConf();
-        self::$db = \Phake::makeVisible(\Phake::partialMock(Database::class));
+        try {
+            $this->db = \Phake::makeVisible(\Phake::partialMock(Database::class));
+        } catch (\JKingWeb\Arsse\Db\Exception $e) {
+            $this->markTestSkipped("SQLite 3 database driver not available");
+        }
     }
 
-    public static function tearDownAfterClass() {
-        self::$db = null;
+    public function tearDown() {
+        $this->db = null;
         self::clearData();
     }
 
@@ -27,7 +31,7 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testGenerateInClause(string $clause, array $values, array $inV, string $inT) {
         $types = array_fill(0, sizeof($values), $inT);
         $exp = [$clause, $types, $values];
-        $this->assertSame($exp, self::$db->generateIn($inV, $inT));
+        $this->assertSame($exp, $this->db->generateIn($inV, $inT));
     }
 
     public function provideInClauses() {
@@ -62,7 +66,7 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
         // this is not an exhaustive test; integration tests already cover the ins and outs of the functionality
         $types = array_fill(0, sizeof($values), "str");
         $exp = [$clause, $types, $values];
-        $this->assertSame($exp, self::$db->generateSearch($inV, $inC, $inAny));
+        $this->assertSame($exp, $this->db->generateSearch($inV, $inC, $inAny));
     }
 
     public function provideSearchClauses() {
