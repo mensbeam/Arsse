@@ -39,7 +39,7 @@ use JKingWeb\Arsse\Misc\URL;
  */
 class Database {
     /** The version number of the latest schema the interface is aware of */
-    const SCHEMA_VERSION = 5;
+    const SCHEMA_VERSION = 6;
     /** The size of a set of values beyond which the set will be embedded into the query text */
     const LIMIT_SET_SIZE = 25;
     /** The length of a string in an embedded set beyond which a parameter placeholder will be used for the string */
@@ -404,8 +404,9 @@ class Database {
      * @param string $class The class of the token e.g. the protocol name
      * @param string|null $id The value of the token; if none is provided a UUID will be generated
      * @param \DateTimeInterface|null $expires An optional expiry date and time for the token
+     * @param string $data Application-specific data associated with a token
     */
-    public function tokenCreate(string $user, string $class, string $id = null, \DateTimeInterface $expires = null): string {
+    public function tokenCreate(string $user, string $class, string $id = null, \DateTimeInterface $expires = null, string $data = null): string {
         // If the user isn't authorized to perform this action then throw an exception.
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
@@ -415,7 +416,7 @@ class Database {
         // generate a token if it's not provided
         $id = $id ?? UUID::mint()->hex;
         // save the token to the database
-        $this->db->prepare("INSERT INTO arsse_tokens(id,class,\"user\",expires) values(?,?,?,?)", "str", "str", "str", "datetime")->run($id, $class, $user, $expires);
+        $this->db->prepare("INSERT INTO arsse_tokens(id,class,\"user\",expires,data) values(?,?,?,?,?)", "str", "str", "str", "datetime", "str")->run($id, $class, $user, $expires, $data);
         // return the ID
         return $id;
     }
@@ -441,7 +442,7 @@ class Database {
 
     /** Look up data associated with a token */
     public function tokenLookup(string $class, string $id): array {
-        $out = $this->db->prepare("SELECT id,class,\"user\",created,expires from arsse_tokens where class = ? and id = ? and (expires is null or expires > CURRENT_TIMESTAMP)", "str", "str")->run($class, $id)->getRow();
+        $out = $this->db->prepare("SELECT id,class,\"user\",created,expires,data from arsse_tokens where class = ? and id = ? and (expires is null or expires > CURRENT_TIMESTAMP)", "str", "str")->run($class, $id)->getRow();
         if (!$out) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "token", 'id' => $id]);
         }

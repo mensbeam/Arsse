@@ -89,4 +89,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
     }
+
+    protected function doIssue(string $user, ServerRequestInterface $req): ResponseInterface {
+    }
 }
