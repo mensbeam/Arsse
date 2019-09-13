@@ -15,6 +15,9 @@ use Zend\Diactoros\Response\HtmlResponse as Response;
 use Zend\Diactoros\Response\EmptyResponse;
 
 class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
+    /** The scopes which we grant to Microsub clients. Mute and block are not included because they have no meaning in an RSS/Atom context; this may signal to clients to suppress muting and blocking in their UI */
+    const SCOPES = "read follow channels";
+
     public function __construct() {
     }
 
@@ -35,20 +38,33 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
     }
 
+    /** Produces a user-identifier URL consiustent with the request
+     * 
+     * This involves reconstructing the scheme and authority based on $_SERVER
+     * variables; it may fail depending on server configuration
+     */
     protected function buildIdentifier(ServerRequestInterface $req, bool $baseOnly = false): string {
         // construct the base user identifier URL; the user is never checked against the database
         $s = $req->getServerParams();
         $path = $req->getRequestTarget()['path'];
         $https = (strlen($s['HTTPS'] ?? "") && $s['HTTPS'] !== "off");
-        $port = (int) $s['SERVER_PORT'];
+        $port = (int) ($s['SERVER_PORT'] ?? 0);
         $port = (!$port || ($https && $port == 443) || (!$https && $port == 80)) ? "" : ":$port";
         $base = URL::normalize(($https ? "https" : "http")."://".$s['HTTP_HOST'].$port."/");
         return !$baseOnly ? URL::normalize($base.$path) : $base;
     }
 
+    /** Presents a very basic user profile for discovery purposes
+     * 
+     * The HTML document itself consists only of link elements and an 
+     * encoding declaration; Link header-fields are also included for 
+     * HEAD requests
+     * 
+     * Since discovery is publicly accessible, we produce a discovery
+     * page for all potential user name so as not to facilitate user
+     * enumeration
+     */
     protected function doDiscovery(string $user, ServerRequestInterface $req): ResponseInterface {
-        // as this route is publicly accessible, for reasons of privacy requests for user discovery work regardless of whether the user exists
-        // prepare authroizer, token, and Microsub endpoint URLs
         $base = $this->buildIdentifier($req, true);
         $id = $this->buildIdentifier($req);
         $urlAuth = $id."?proc=login";
@@ -63,6 +79,13 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         ]);
     }
 
+    /** Handles the authentication/authorization process
+     * 
+     * Authentication is achieved via an HTTP Basic authentiation
+     * challenge; once the user successfully logs in a code is issued 
+     * and redirection occurs. Scopes are for all intents and purposes
+     * ignored and client information is not presented. 
+     */
     protected function doLogin(string $user, ServerRequestInterface $req): ResponseInterface {
         if (!$req->getAttribute("authenticated", false)) {
             // user has not yet logged in, or has failed to log in
@@ -83,7 +106,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
                     return new EmptyResponse(400);
                 }
                 // issue an authorization code and build the redirect URL
-                $code = Arsse::$db->tokenCreate($id, "microsub.auth", null, Date::add("PT2M"));
+                $code = Arsse::$db->tokenCreate($id, "microsub.auth", null, Date::add("PT2M"), $query['client_id']);
                 $next = URL::queryAppend($redir, "code=$code&state=$state");
                 return new EmptyResponse(302, ["Location: $next"]);
             }
@@ -91,5 +114,6 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function doIssue(string $user, ServerRequestInterface $req): ResponseInterface {
+
     }
 }
