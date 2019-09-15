@@ -21,7 +21,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
     const FUNCTIONS = [
         'discovery' => ['GET' => "opDiscovery"],
         'login'     => ['GET' => "opLogin", 'POST' => "opCodeVerification"],
-        'issue'     => ['POST' => "opIssue"],
+        'issue'     => ['GET' => "opTokenVerification", 'POST' => "opIssueAccessToken"],
     ];
 
     public function __construct() {
@@ -176,12 +176,14 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         // check that the token exists
         $token = Arsse::$db->tokenLookup("microsub.auth", $code);
         if (!$token) {
-            throw new ExceptionAuth("unsupported_grant_type");
+            throw new ExceptionAuth("invalid_grant");
         }
         $data = @json_decode($token['data'], true);
         // validate the token
-        if ($token['user'] !== $user || !is_array($data) || $data['id'] !== $id || $data['url'] !== $url) {
-            throw new ExceptionAuth("unsupported_grant_type");
+        if ($token['user'] !== $user || !is_array($data)) {
+            throw new ExceptionAuth("invalid_grant");
+        } elseif ($data['id'] !== $id || $data['url'] !== $url) {
+            throw new ExceptionAuth("invalid_client");
         } else {
             $out = ['me' => $this->buildIdentifier($req)];
             if ($data['type'] === "code") {
@@ -191,7 +193,31 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
     }
 
-    protected function opIssue(string $user, ServerRequestInterface $req): ResponseInterface {
+    protected function opIssueAccessToken(string $user, ServerRequestInterface $req): ResponseInterface {
         $post = $req->getParsedBody();
+        $type = $post['grant_type'] ?? "";
+        $me = $post['me'] ?? "";
+        if ($type !== "authorization_code") {
+            throw new ExceptionAuth("unsupported_grant_type");
+        } elseif ($this->buildIdentifier($req) !== $me) {
+            throw new ExceptionAuth("invalid_grant");
+        } else {
+            $out = $this->opCodeVerification($user, $req)->getPayload();
+            if (!isset($out['scope'])) {
+                throw new ExceptionAuth("invalid_scope");
+            }
+            // issue an access token
+            $tr = Arsse::$db->begin();
+            $token = Arsse::$db->tokenCreate($user, "microsub.access");
+            Arsse::$db->tokenRevoke($user, "microsub.auth", $post['code']);
+            $tr->commit();
+            $out['access_token'] = $token;
+            $out['token_type'] = "Bearer";
+            return new JsonResponse($out);
+        }
+    }
+
+    protected function opTokenVerification(string $user, ServerRequestInterface $req): ResponseInterface {
+        
     }
 }
