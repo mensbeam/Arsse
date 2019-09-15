@@ -50,7 +50,13 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new EmptyResponse(405, ['Allow' => implode(",", array_keys(self::FUNCTIONS[$process]))]);
         } else {
             $func = self::FUNCTIONS[$process][$method];
-            return $this->$func($id, $req);
+            try {
+                return $this->$func($id, $req);
+            } catch (ExceptionAuth $e) {
+                // human-readable error messages could be added, but these must be ASCII per OAuth, so there's probably not much point
+                // see https://tools.ietf.org/html/rfc6749#section-5.2
+                return new JsonResponse(['error' => $e->getMessage()], 400);
+            }
         }
     }
 
@@ -112,27 +118,36 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new EmptyResponse(401);
         } else {
             // user has logged in
-            // ensure the logged-in user matches the IndieAuth identifier URL
-            $id = $req->getAttribute("authenticatedUser");
             $query = $req->getQueryParams();
-            $url = buildIdentifier($req);
-            if ($user !== $id || URL::normalize($query['me']) !== $url) {
-                return new EmptyResponse(403);
-            } else {
-                $redir = URL::normalize(rawurldecode($query['redirect_uri']));
-                $state = $query['state'] ?? "";
-                // check that the redirect URL is an absolute one
-                if (!URL::absolute($redir)) {
-                    return new EmptyResponse(400);
+            $redir = URL::normalize(rawurldecode($query['redirect_uri']));
+            // check that the redirect URL is an absolute one
+            if (!URL::absolute($redir)) {
+                return new EmptyResponse(400);
+            }
+            try {
+                // ensure the logged-in user matches the IndieAuth identifier URL
+                $id = $req->getAttribute("authenticatedUser");
+                $url = buildIdentifier($req);
+                if ($user !== $id || URL::normalize($query['me']) !== $url) {
+                        throw new ExceptionAuth("access_denied");
                 }
+                $type = !strlen($query['response_type'] ?? "") ? "id" : $query['response_type'];
+                if (!in_array($type, ["code", "id"])) {
+                    throw new ExceptionAuth("unsupported_response_type");
+                }
+                $state = $query['state'] ?? "";
                 // store the client ID and redirect URL
                 $data = json_encode([
                     'id' => $query['client_id'],
                     'url' => $query['redirect_uri'],
+                    'type' => $type,
                 ],\JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
                 // issue an authorization code and build the redirect URL
                 $code = Arsse::$db->tokenCreate($id, "microsub.auth", null, Date::add("PT2M"), $data);
                 $next = URL::queryAppend($redir, "code=$code&state=$state");
+                return new EmptyResponse(302, ["Location: $next"]);
+            } catch (ExceptionAuth $e) {
+                $next = URL::queryAppend($redir, "state=$state&error=".$e->getMessage());
                 return new EmptyResponse(302, ["Location: $next"]);
             }
         }
@@ -147,33 +162,32 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
      * doesn't actually matter for our purposes
      * 
      * @see https://indieauth.spec.indieweb.org/#authorization-code-verification
+     * @see https://indieauth.spec.indieweb.org/#authorization-code-verification-0
      */
     protected function opCodeVerification(string $user, ServerRequestInterface $req): ResponseInterface {
         $post = $req->getParsedBody();
-        try {
-            // validate the request parameters
-            $code = $post['code'] ?? "";
-            $id = $post['client_id'] ?? "";
-            $url = $post['redirect_uri'] ?? "";
-            if (!strlen($code) || !strlen($id) || !strlen($url)) {
-                throw new ExceptionAuth("invalid_request");
+        // validate the request parameters
+        $code = $post['code'] ?? "";
+        $id = $post['client_id'] ?? "";
+        $url = $post['redirect_uri'] ?? "";
+        if (!strlen($code) || !strlen($id) || !strlen($url)) {
+            throw new ExceptionAuth("invalid_request");
+        }
+        // check that the token exists
+        $token = Arsse::$db->tokenLookup("microsub.auth", $code);
+        if (!$token) {
+            throw new ExceptionAuth("unsupported_grant_type");
+        }
+        $data = @json_decode($token['data'], true);
+        // validate the token
+        if ($token['user'] !== $user || !is_array($data) || $data['id'] !== $id || $data['url'] !== $url) {
+            throw new ExceptionAuth("unsupported_grant_type");
+        } else {
+            $out = ['me' => $this->buildIdentifier($req)];
+            if ($data['type'] === "code") {
+                $out['scope'] = self::SCOPES;
             }
-            // check that the token exists
-            $token = Arsse::$db->tokenLookup("microsub.auth", $code);
-            if (!$token) {
-                throw new ExceptionAuth("unsupported_grant_type");
-            }
-            $data = @json_decode($token['data'], true);
-            // validate the token
-            if ($token['user'] !== $user || !is_array($data) || $data['id'] !== $id || $data['url'] !== $url) {
-                throw new ExceptionAuth("unsupported_grant_type");
-            } else {
-                return new JsonResponse(['me' => $this->buildIdentifier($req)]);
-            }
-        } catch (ExceptionAuth $e) {
-            // human-readable error messages could be added, but these must be ASCII per OAuth, so there's probably not much point
-            // see https://tools.ietf.org/html/rfc6749#section-5.2
-            return new JsonResponse(['error' => $e->getMessage()], 400);
+            return new JsonResponse($out);
         }
     }
 
