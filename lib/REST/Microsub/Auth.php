@@ -18,27 +18,36 @@ use Zend\Diactoros\Response\EmptyResponse;
 class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
     /** The scopes which we grant to Microsub clients. Mute and block are not included because they have no meaning in an RSS/Atom context; this may signal to clients to suppress muting and blocking in their UI */
     const SCOPES = "read follow channels";
+    /** The list of the logical functions of this API, with their implementations */
     const FUNCTIONS = [
         'discovery' => ['GET' => "opDiscovery"],
-        'login'     => ['GET' => "opLogin", 'POST' => "opCodeVerification"],
-        'issue'     => ['GET' => "opTokenVerification", 'POST' => "opIssueAccessToken"],
+        'auth'      => ['GET' => "opLogin",             'POST' => "opCodeVerification"],
+        'token'     => ['GET' => "opTokenVerification", 'POST' => "opIssueAccessToken"],
+    ];
+    /** The minimal set of reserved URL characters which must be escaped when comparing user ID URLs */
+    const USERNAME_ESCAPES = [
+        '#' => "%23",
+        '%' => "%25",
+        '/' => "%2F",
+        '?' => "%3F",
     ];
 
     public function __construct() {
     }
 
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
-        // ensure that a user name is specified in the path
-        // if the path is empty or contains a slash, this is not a URL we handle
-        $id = parse_url($req->getRequestTarget())['path'] ?? "";
-        if (!strlen($id) || strpos($id, "/") !== false) {
+        // if the path contains a slash, this is not a URL we handle
+        $path = parse_url($req->getRequestTarget())['path'] ?? "";
+        if (strpos($path, "/") !== false) {
             return new EmptyResponse(404);
         }
-        $id = rawurldecode($id);
-        // gather the query parameters and act on the "proc" parameter
-        $process = $req->getQueryParams()['proc'] ?? "discovery";
+        // gather the query parameters and act on the "f" (function) parameter
+        $process = $req->getQueryParams()['f'] ?? "";
+        $process = strlen($process) ? $process : "discovery";
         $method = $req->getMethod();
-        if (isset(self::FUNCTIONS[$process])) {
+        if (isset(self::FUNCTIONS[$process]) || ($process === "discovery" && !strlen($path)) || ($process !== "discovery" && strlen($path))) {
+            // the function requested needs to exist
+            // the path should also be empty unless we're doing discovery
             return new EmptyResponse(404);
         } elseif ($method === "OPTIONS") {
             $fields = ['Allow' => implode(",", array_keys(self::FUNCTIONS[$process]))];
@@ -49,9 +58,9 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         } elseif (isset(self::FUNCTIONS[$process][$method])) {
             return new EmptyResponse(405, ['Allow' => implode(",", array_keys(self::FUNCTIONS[$process]))]);
         } else {
-            $func = self::FUNCTIONS[$process][$method];
             try {
-                return $this->$func($id, $req);
+                $func = self::FUNCTIONS[$process][$method];
+                return $this->$func($req);
             } catch (ExceptionAuth $e) {
                 // human-readable error messages could be added, but these must be ASCII per OAuth, so there's probably not much point
                 // see https://tools.ietf.org/html/rfc6749#section-5.2
@@ -60,20 +69,47 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
     }
 
-    /** Produces a user-identifier URL consiustent with the request
+    /** Produces the base URL of a server request
      * 
      * This involves reconstructing the scheme and authority based on $_SERVER
      * variables; it may fail depending on server configuration
      */
-    protected function buildIdentifier(ServerRequestInterface $req, bool $baseOnly = false): string {
+    protected function buildBaseURL(ServerRequestInterface $req): string {
         // construct the base user identifier URL; the user is never checked against the database
         $s = $req->getServerParams();
         $path = $req->getRequestTarget()['path'];
         $https = (strlen($s['HTTPS'] ?? "") && $s['HTTPS'] !== "off");
         $port = (int) ($s['SERVER_PORT'] ?? 0);
         $port = (!$port || ($https && $port == 443) || (!$https && $port == 80)) ? "" : ":$port";
-        $base = URL::normalize(($https ? "https" : "http")."://".$s['HTTP_HOST'].$port."/");
-        return !$baseOnly ? URL::normalize($base.$path) : $base;
+        return URL::normalize(($https ? "https" : "http")."://".$s['HTTP_HOST'].$port."/");
+    }
+
+    protected function buildIdentifier(ServerRequestInterface $req, string $user): string {
+        return $this->buildBaseURL($req)."u/".str_replace(array_keys(self::USERNAME_ESCAPES), array_values(self::USERNAME_ESCAPES), $user);
+    }
+
+    protected function matchIdentifier(string $canonical, string $me): bool {
+        $me = parse_url(URL::normalize($me));
+        $me['scheme'] = $me['scheme'] ?? "";
+        $me['path'] = explode("/", $me['path'] ?? "");
+        $me['id'] = rawurldecode(array_pop($me['path']) ?? "");
+        $me['port'] == (($me['scheme'] === "http" && $me['port'] == 80) || ($me['scheme'] === "https" && $me['port'] == 443)) ? 0 : $me['port'];
+        $c = parse_url($canonical);
+        $c['path'] = explode("/", $c['path']);
+        $c['id'] = rawurldecode(array_pop($c['path']));
+        if (
+            !in_array($me['scheme'] ?? "", ["http", "https"]) || 
+            ($me['host'] ?? "") !== $c['host'] ||
+            $me['path'] != $c['path'] ||
+            $me['id'] !== $c['id'] ||
+            strlen($me['user'] ?? "") ||
+            strlen($me['pass'] ?? "") ||
+            strlen($me['query'] ?? "") ||
+            ($me['port'] ?? 0) != ($c['port'] ?? 0)
+        ) {
+            return false;
+        }
+        return true;
     }
 
     /** Presents a very basic user profile for discovery purposes
@@ -83,16 +119,15 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
      * HEAD requests
      * 
      * Since discovery is publicly accessible, we produce a discovery
-     * page for all potential user name so as not to facilitate user
+     * page for all potential user names so as not to facilitate user
      * enumeration
      * 
      * @see https://indieweb.org/Microsub-spec#Discovery
      */
-    protected function opDiscovery(string $user, ServerRequestInterface $req): ResponseInterface {
-        $base = $this->buildIdentifier($req, true);
-        $id = $this->buildIdentifier($req);
-        $urlAuth = $id."?proc=login";
-        $urlToken = $id."?proc=issue";
+    protected function opDiscovery(ServerRequestInterface $req): ResponseInterface {
+        $base = $this->buildBaseURL($req);
+        $urlAuth = $base."u/?f=auth";
+        $urlToken = $base."u/?f=token";
         $urlService = $base."microsub";
         // output an extremely basic identity resource
         $html = '<meta charset="UTF-8"><link rel="authorization_endpoint" href="'.htmlspecialchars($urlAuth).'"><link rel="token_endpoint" href="'.htmlspecialchars($urlToken).'"><link rel="microsub" href="'.htmlspecialchars($urlService).'">';
@@ -112,7 +147,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
      * 
      * @see https://indieauth.spec.indieweb.org/#authentication-request
      */
-    protected function opLogin(string $user, ServerRequestInterface $req): ResponseInterface {
+    protected function opLogin(ServerRequestInterface $req): ResponseInterface {
         if (!$req->getAttribute("authenticated", false)) {
             // user has not yet logged in, or has failed to log in
             return new EmptyResponse(401);
@@ -126,9 +161,8 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
             try {
                 // ensure the logged-in user matches the IndieAuth identifier URL
-                $id = $req->getAttribute("authenticatedUser");
-                $url = buildIdentifier($req);
-                if ($user !== $id || URL::normalize($query['me']) !== $url) {
+                $user = $req->getAttribute("authenticatedUser");
+                if (!$this->matchIdentifier($this->buildIdentifier($req, $user), $query['me'])) {
                         throw new ExceptionAuth("access_denied");
                 }
                 $type = !strlen($query['response_type'] ?? "") ? "id" : $query['response_type'];
@@ -136,14 +170,15 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
                     throw new ExceptionAuth("unsupported_response_type");
                 }
                 $state = $query['state'] ?? "";
-                // store the client ID and redirect URL
+                // store the identity URL, client ID, redirect URL, and response type
                 $data = json_encode([
-                    'id' => $query['client_id'],
-                    'url' => $query['redirect_uri'],
+                    'me' => $query['me'],
+                    'client' => $query['client_id'],
+                    'redir' => $query['redirect_uri'],
                     'type' => $type,
                 ],\JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
                 // issue an authorization code and build the redirect URL
-                $code = Arsse::$db->tokenCreate($id, "microsub.auth", null, Date::add("PT2M"), $data);
+                $code = Arsse::$db->tokenCreate($user, "microsub.auth", null, Date::add("PT2M"), $data);
                 $next = URL::queryAppend($redir, "code=$code&state=$state");
                 return new EmptyResponse(302, ["Location: $next"]);
             } catch (ExceptionAuth $e) {
@@ -164,13 +199,13 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
      * @see https://indieauth.spec.indieweb.org/#authorization-code-verification
      * @see https://indieauth.spec.indieweb.org/#authorization-code-verification-0
      */
-    protected function opCodeVerification(string $user, ServerRequestInterface $req): ResponseInterface {
+    protected function opCodeVerification(ServerRequestInterface $req): ResponseInterface {
         $post = $req->getParsedBody();
         // validate the request parameters
         $code = $post['code'] ?? "";
-        $id = $post['client_id'] ?? "";
-        $url = $post['redirect_uri'] ?? "";
-        if (!strlen($code) || !strlen($id) || !strlen($url)) {
+        $client = $post['client_id'] ?? "";
+        $redir = $post['redirect_uri'] ?? "";
+        if (!strlen($code) || !strlen($client) || !strlen($redir)) {
             throw new ExceptionAuth("invalid_request");
         }
         // check that the token exists
@@ -180,12 +215,12 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         $data = @json_decode($token['data'], true);
         // validate the token
-        if ($token['user'] !== $user || !is_array($data)) {
+        if (!is_array($data)) {
             throw new ExceptionAuth("invalid_grant");
-        } elseif ($data['id'] !== $id || $data['url'] !== $url) {
+        } elseif ($data['client'] !== $client || $data['redir'] !== $redir) {
             throw new ExceptionAuth("invalid_client");
         } else {
-            $out = ['me' => $this->buildIdentifier($req)];
+            $out = ['me' => $this->buildIdentifier($req, $token['user'])];
             if ($data['type'] === "code") {
                 $out['scope'] = self::SCOPES;
             }
@@ -193,7 +228,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
     }
 
-    protected function opIssueAccessToken(string $user, ServerRequestInterface $req): ResponseInterface {
+    protected function opIssueAccessToken(ServerRequestInterface $req): ResponseInterface {
         $post = $req->getParsedBody();
         $type = $post['grant_type'] ?? "";
         $me = $post['me'] ?? "";
