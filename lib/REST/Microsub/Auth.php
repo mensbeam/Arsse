@@ -210,7 +210,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     /** Handles the auth code verification of the basic "Authentication" flow of IndieAuth
      * 
-     * This is not used by Microsub
+     * This is not used by Microsub, but is part of the IndieAuth specification
      * 
      * @see https://indieauth.spec.indieweb.org/#authorization-code-verification
      */
@@ -258,17 +258,18 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     /** Validates an auth code and throws appropriate exceptions otherwise
      * 
-     * Returns an indexed araay containing the username and the grant type (either "id" or "code")
+     * Returns an indexed array containing the username and the grant type (either "id" or "code")
      * 
-     * It is the responsibility of the calling function to revoke the auth code if the code is accepted
+     * It is the responsibility of the calling function to revoke the auth code if the code is ultimately accepted
      */
     protected function validateAuthCode(string $code, string $clientId, string $redirUrl, string $me = null): array {
         if (!strlen($code) || !strlen($clientId) || !strlen($redirUrl)) {
             throw new ExceptionAuth("invalid_request");
         }
         // check that the auth code exists
-        $token = Arsse::$db->tokenLookup("microsub.auth", $code);
-        if (!$token) {
+        try {
+            $token = Arsse::$db->tokenLookup("microsub.auth", $code);
+        } catch (\JKingWeb\Arsse\Db\ExceptionInput $e) {
             throw new ExceptionAuth("invalid_grant");
         }
         $data = @json_decode($token['data'], true);
@@ -286,5 +287,21 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function opTokenVerification(string $user, ServerRequestInterface $req): ResponseInterface {
         
+    }
+
+    /** Checks that the simplied bearer token is valid
+     * 
+     * Returns an indexed array with the user associated with the token, as well as the granted scope
+     * 
+     * @throws \JKingWeb\Arsse\REST\Microsub\ExceptionAuth
+     */
+    public static function validateBearer(string $token): array {
+        try {
+            $token = Arsse::$db->tokenLookup("microsub.auth", $token);
+        } catch (\JKingWeb\Arsse\Db\ExceptionInput $e) {
+            throw new ExceptionAuth("invalid_grant");
+        }
+        // scope is hard-coded for now
+        return [$token['user'], self::SCOPES];
     }
 }
