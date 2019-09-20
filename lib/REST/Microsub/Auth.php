@@ -84,10 +84,29 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         return URL::normalize(($https ? "https" : "http")."://".$s['HTTP_HOST'].$port."/");
     }
 
+    /** Produces a canoncial identity URL based on a server request and a user name
+     * 
+     * This involves reconstructing the scheme and authority based on $_SERVER
+     * variables; it may fail depending on server configuration
+     */
     protected function buildIdentifier(ServerRequestInterface $req, string $user): string {
         return $this->buildBaseURL($req)."u/".str_replace(array_keys(self::USERNAME_ESCAPES), array_values(self::USERNAME_ESCAPES), $user);
     }
 
+    /** Matches an identity URL against its canoncial form
+     * 
+     * The identifier matches if all of the following are true:
+     * 
+     * 1. The scheme is http or https
+     * 2. The normalized hostname matches
+     * 3. The port matches after dropping default port numbers
+     * 4. No credentials are included in the authority
+     * 5. The path is `/u/<username>`
+     * 6. There is no query content
+     * 7. The username, when URL-decoded, matches
+     * 
+     * Though IndieAuth forbids port numbers and fragments in identifiers, we do not enforce this
+     */
     protected function matchIdentifier(string $canonical, string $me): bool {
         $me = parse_url(URL::normalize($me));
         $me['scheme'] = $me['scheme'] ?? "";
@@ -138,7 +157,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         ]);
     }
 
-    /** Handles the authentication/authorization process
+    /** Handles the authentication process
      * 
      * Authentication is achieved via an HTTP Basic authentiation
      * challenge; once the user successfully logs in a code is issued 
@@ -146,6 +165,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
      * ignored and client information is not presented. 
      * 
      * @see https://indieauth.spec.indieweb.org/#authentication-request
+     * @see https://indieauth.spec.indieweb.org/#authorization-endpoint-0
      */
     protected function opLogin(ServerRequestInterface $req): ResponseInterface {
         if (!$req->getAttribute("authenticated", false)) {
@@ -188,68 +208,80 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
     }
 
-    /** Validates an authorization code against client-provided values
+    /** Handles the auth code verification of the basic "Authentication" flow of IndieAuth
      * 
-     * The redirect URL and client ID are checked, as is the user ID
-     * 
-     * If everything checks out the canonical user URL is supposed to be returned;
-     * we don't actually know what the canonical URL is modulo URL encoding, but it
-     * doesn't actually matter for our purposes
+     * This is not used by Microsub
      * 
      * @see https://indieauth.spec.indieweb.org/#authorization-code-verification
-     * @see https://indieauth.spec.indieweb.org/#authorization-code-verification-0
      */
     protected function opCodeVerification(ServerRequestInterface $req): ResponseInterface {
         $post = $req->getParsedBody();
-        // validate the request parameters
-        $code = $post['code'] ?? "";
-        $client = $post['client_id'] ?? "";
-        $redir = $post['redirect_uri'] ?? "";
-        if (!strlen($code) || !strlen($client) || !strlen($redir)) {
+        $tr = Arsse::$db->begin();
+        // validate the request parameters; an exception will be thrown if not
+        list($user, $type) = $this->validateAuthCode($post['code'] ?? "", $post['client_id'] ?? "", $post['redirect_uri'] ?? "");
+        if ($type !== "id") {
+            throw new ExceptionAuth("invalid_grant");
+        }
+        // delete the auth code since it is valid and may only be used once
+        Arsse::$db->tokenRevoke($user, "microsub.auth", $post['code']);
+        $tr->commit();
+        // return the canonical identity URL
+        return new JsonResponse(['me' => $this->buildIdentifier($req, $user)]);
+    }
+
+    /** Handles the auth code verification and token issuance of the "Authorization" flow of IndieAuth
+     * 
+     * @see https://indieauth.spec.indieweb.org/#token-endpoint-0
+     */
+    protected function opIssueAccessToken(ServerRequestInterface $req): ResponseInterface {
+        $post = $req->getParsedBody();
+        if (($post['grant_type'] ?? "") !== "authorization_code") {
+            throw new ExceptionAuth("unsupported_grant_type");
+        }
+        $tr = Arsse::$db->begin();
+        list($user, $type) = $this->validateAuthCode($post['code'] ?? "", $post['client_id'] ?? "", $post['redirect_url'] ?? "", $post['me'] ?? "");
+        if ($type !== "code") {
+            throw new ExceptionAuth("invalid_grant");
+        }
+        // issue an access token
+        $token = Arsse::$db->tokenCreate($user, "microsub.access");
+        Arsse::$db->tokenRevoke($user, "microsub.auth", $post['code']);
+        $tr->commit();
+        // return the Bearer token and associated data
+        return new JsonResponse([
+            'me' => $this->buildIdentifier($req, $user),
+            'token_type' => "Bearer",
+            'access_token' => $token,
+            'scope' => self::SCOPES,
+        ]);
+    }
+
+    /** Validates an auth code and throws appropriate exceptions otherwise
+     * 
+     * Returns an indexed araay containing the username and the grant type (either "id" or "code")
+     * 
+     * It is the responsibility of the calling function to revoke the auth code if the code is accepted
+     */
+    protected function validateAuthCode(string $code, string $clientId, string $redirUrl, string $me = null): array {
+        if (!strlen($code) || !strlen($clientId) || !strlen($redirUrl)) {
             throw new ExceptionAuth("invalid_request");
         }
-        // check that the token exists
+        // check that the auth code exists
         $token = Arsse::$db->tokenLookup("microsub.auth", $code);
         if (!$token) {
             throw new ExceptionAuth("invalid_grant");
         }
         $data = @json_decode($token['data'], true);
-        // validate the token
+        // validate the auth code
         if (!is_array($data)) {
             throw new ExceptionAuth("invalid_grant");
-        } elseif ($data['client'] !== $client || $data['redir'] !== $redir) {
+        } elseif ($data['client'] !== $clientId || $data['redir'] !== $redirUrl) {
             throw new ExceptionAuth("invalid_client");
-        } else {
-            $out = ['me' => $this->buildIdentifier($req, $token['user'])];
-            if ($data['type'] === "code") {
-                $out['scope'] = self::SCOPES;
-            }
-            return new JsonResponse($out);
-        }
-    }
-
-    protected function opIssueAccessToken(ServerRequestInterface $req): ResponseInterface {
-        $post = $req->getParsedBody();
-        $type = $post['grant_type'] ?? "";
-        $me = $post['me'] ?? "";
-        if ($type !== "authorization_code") {
-            throw new ExceptionAuth("unsupported_grant_type");
-        } elseif ($this->buildIdentifier($req) !== $me) {
+        } elseif (isset($me) && $me !== $data['me']) {
             throw new ExceptionAuth("invalid_grant");
-        } else {
-            $out = $this->opCodeVerification($user, $req)->getPayload();
-            if (!isset($out['scope'])) {
-                throw new ExceptionAuth("invalid_scope");
-            }
-            // issue an access token
-            $tr = Arsse::$db->begin();
-            $token = Arsse::$db->tokenCreate($user, "microsub.access");
-            Arsse::$db->tokenRevoke($user, "microsub.auth", $post['code']);
-            $tr->commit();
-            $out['access_token'] = $token;
-            $out['token_type'] = "Bearer";
-            return new JsonResponse($out);
         }
+        // return the associated user name and the auth-code type
+        return [$token['user'], $data['type'] ?? "id"];
     }
 
     protected function opTokenVerification(string $user, ServerRequestInterface $req): ResponseInterface {
