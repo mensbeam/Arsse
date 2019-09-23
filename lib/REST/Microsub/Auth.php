@@ -17,7 +17,7 @@ use Zend\Diactoros\Response\EmptyResponse;
 
 class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
     /** The scopes which we grant to Microsub clients. Mute and block are not included because they have no meaning in an RSS/Atom context; this may signal to clients to suppress muting and blocking in their UI */
-    const SCOPES = "read follow channels";
+    const SCOPES = ["read", "follow", "channels"];
     /** The list of the logical functions of this API, with their implementations */
     const FUNCTIONS = [
         'discovery' => ['GET' => "opDiscovery"],
@@ -252,7 +252,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
             'me' => $this->buildIdentifier($req, $user),
             'token_type' => "Bearer",
             'access_token' => $token,
-            'scope' => self::SCOPES,
+            'scope' => implode(" ", self::SCOPES),
         ]);
     }
 
@@ -295,13 +295,20 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
      * 
      * @throws \JKingWeb\Arsse\REST\Microsub\ExceptionAuth
      */
-    public static function validateBearer(string $token): array {
+    public static function validateBearer(string $authorization, array $scopes = []): array {
+        if (!preg_match("/^Bearer (.+)/", $authorization, $match)) {
+            throw new ExceptionAuth("invalid_request");
+        }
+        $token = $match[1];
         try {
-            $token = Arsse::$db->tokenLookup("microsub.auth", $token);
+            $token = Arsse::$db->tokenLookup("microsub.access", $token);
         } catch (\JKingWeb\Arsse\Db\ExceptionInput $e) {
-            throw new ExceptionAuth("invalid_grant");
+            throw new ExceptionAuth("invalid_token");
         }
         // scope is hard-coded for now
+        if (array_diff($scopes, self::SCOPES)) {
+            throw new ExceptionAuth("insufficient_scope");
+        }
         return [$token['user'], self::SCOPES];
     }
 }
