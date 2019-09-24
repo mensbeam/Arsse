@@ -196,7 +196,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
                     'client' => $query['client_id'],
                     'redir' => $query['redirect_uri'],
                     'type' => $type,
-                ],\JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
+                ], \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
                 // issue an authorization code and build the redirect URL
                 $code = Arsse::$db->tokenCreate($user, "microsub.auth", null, Date::add("PT2M"), $data);
                 $next = URL::queryAppend($redir, "code=$code&state=$state");
@@ -235,6 +235,10 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
      */
     protected function opIssueAccessToken(ServerRequestInterface $req): ResponseInterface {
         $post = $req->getParsedBody();
+        // revocation is a special case of POSTing to the token URL
+        if ($post['action'] ?? "" === "revoke") {
+            return $this->opRevokeToken($req);
+        }
         if (($post['grant_type'] ?? "") !== "authorization_code") {
             throw new ExceptionAuth("unsupported_grant_type");
         }
@@ -244,7 +248,11 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
             throw new ExceptionAuth("invalid_grant");
         }
         // issue an access token
-        $token = Arsse::$db->tokenCreate($user, "microsub.access");
+        $data = json_encode([
+            'me' => $post['me'],
+            'client_id' => $post['client_id'],
+        ], \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
+        $token = Arsse::$db->tokenCreate($user, "microsub.access", null, null, $data);
         Arsse::$db->tokenRevoke($user, "microsub.auth", $post['code']);
         $tr->commit();
         // return the Bearer token and associated data
@@ -285,14 +293,55 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         return [$token['user'], $data['type'] ?? "id"];
     }
 
-    protected function opTokenVerification(string $user, ServerRequestInterface $req): ResponseInterface {
-        
+    /** Handles token verification as an API call
+     * 
+     * The static `validateBearer` method should be used to check the validity of a bearer token in normal use
+     * 
+     * @see https://indieauth.spec.indieweb.org/#access-token-verification
+     */
+    protected function opTokenVerification(ServerRequestInterface $req): ResponseInterface {
+        try {
+            if (!$req->hasHeader("Authorization")) {
+                throw new ExceptionAuth("invalid_token");
+            }
+            $authorization = $req->getHeader("Authorization")[0];
+            list($user, $data) = self::validateBearer($authorization);
+        } catch (ExceptionAuth $e) {
+            $errCode = $e->getMessage();
+            $httpCode = [
+                'invalid_request' => 400,
+                'invalid_token' => 401,
+            ][$errCode] ?? 500;
+            return new EmptyResponse($httpCode, ['WWW-Authenticate' => "Bearer error=\"$erroCode\""]);
+        }
+        return new JsonResponse([
+            'me' => $data['me'] ?? "",
+            'client_id' => $data['client_id'] ?? "",
+            'scope' => $data['scope'] ?? self::SCOPES,
+        ]);
     }
 
-    /** Checks that the simplied bearer token is valid
+    /** Handles token revocation
      * 
-     * Returns an indexed array with the user associated with the token, as well as the granted scope
+     * @see https://indieauth.spec.indieweb.org/#token-revocation
+     */
+    protected function opRevokeToken(ServerRequestInterface $req): ResponseInterface {
+        $token = ($req->getParsedBody() ?? [])['token'] ?? "";
+        if (!strlen($token)) {
+            return new EmptyResponse(422);
+        }
+        try {
+            $info = Arsse::$db->tokenLookup("microsub.access", $token);
+            Arsse::$db->tokenRevoke($info['user'], "mucrosub.access", $token);
+        } catch (\JKingWeb\Arsse\Db\ExceptionInput $e) {
+        }
+        return new EmptyResponse(200);
+    }
+
+    /** Checks that the supplied bearer token is valid i.e. logs a bearer in
      * 
+     * Returns an indexed array with the user associated with the token, as well as other data 
+     *
      * @throws \JKingWeb\Arsse\REST\Microsub\ExceptionAuth
      */
     public static function validateBearer(string $authorization, array $scopes = []): array {
@@ -305,10 +354,12 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (\JKingWeb\Arsse\Db\ExceptionInput $e) {
             throw new ExceptionAuth("invalid_token");
         }
+        $data = @json_decode($token['data'], true) ?? [];
+        $data['scope'] = $data['scope'] ?? self::SCOPES;
         // scope is hard-coded for now
-        if (array_diff($scopes, self::SCOPES)) {
+        if (array_diff($scopes, $data['scope'])) {
             throw new ExceptionAuth("insufficient_scope");
         }
-        return [$token['user'], self::SCOPES];
+        return [$token['user'], $data];
     }
 }
