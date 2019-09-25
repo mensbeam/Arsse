@@ -298,40 +298,10 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         ],
     ];
 
-    protected function req(string $method, string $target, string $data = "", array $headers = []): ResponseInterface {
-        $url = "/index.php/apps/news/api/v1-2".$target;
-        $server = [
-            'REQUEST_METHOD'    => $method,
-            'REQUEST_URI'       => $url,
-            'PHP_AUTH_USER'     => "john.doe@example.com",
-            'PHP_AUTH_PW'       => "secret",
-            'REMOTE_USER'       => "john.doe@example.com",
-        ];
-        if (strlen($data)) {
-            $server['HTTP_CONTENT_TYPE'] = "application/json";
-        }
-        $req = new ServerRequest($server, [], $url, $method, "php://memory");
-        if (Arsse::$user->auth("john.doe@example.com", "secret")) {
-            $req = $req->withAttribute("authenticated", true)->withAttribute("authenticatedUser", "john.doe@example.com");
-        }
-        foreach ($headers as $key => $value) {
-            if (!is_null($value)) {
-                $req = $req->withHeader($key, $value);
-            } else {
-                $req = $req->withoutHeader($key);
-            }
-        }
-        if (strlen($data)) {
-            $body = $req->getBody();
-            $body->write($data);
-            $req = $req->withBody($body);
-        }
-        $q = $req->getUri()->getQuery();
-        if (strlen($q)) {
-            parse_str($q, $q);
-            $req = $req->withQueryParams($q);
-        }
-        $req = $req->withRequestTarget($target);
+    protected function req(string $method, string $target, string $data = "", array $headers = [], bool $authenticated = true): ResponseInterface {
+        $prefix = "/index.php/apps/news/api/v1-2";
+        $url = $prefix.$target;
+        $req = $this->serverRequest($method, $url, $prefix, $headers, [], $data, "application/json", [], $authenticated ? "john.doe@example.com" : "");
         return $this->h->dispatch($req);
     }
 
@@ -340,7 +310,6 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         self::setConf();
         // create a mock user manager
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->auth->thenReturn(true);
         Arsse::$user->id = "john.doe@example.com";
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
@@ -357,9 +326,8 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testSendAuthenticationChallenge() {
-        \Phake::when(Arsse::$user)->auth->thenReturn(false);
         $exp = new EmptyResponse(401);
-        $this->assertMessage($exp, $this->req("GET", "/"));
+        $this->assertMessage($exp, $this->req("GET", "/", "", [], false));
     }
 
     public function testRespondToInvalidPaths() {

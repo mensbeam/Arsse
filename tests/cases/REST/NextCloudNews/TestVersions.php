@@ -19,13 +19,9 @@ class TestVersions extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     protected function req(string $method, string $target): ResponseInterface {
-        $url = "/index.php/apps/news/api".$target;
-        $server = [
-            'REQUEST_METHOD'    => $method,
-            'REQUEST_URI'       => $url,
-        ];
-        $req = new ServerRequest($server, [], $url, $method, "php://memory");
-        $req = $req->withRequestTarget($target);
+        $prefix = "/index.php/apps/news/api";
+        $url = $prefix.$target;
+        $req = $this->serverRequest($method, $url, $prefix);
         return (new Versions)->dispatch($req);
     }
 

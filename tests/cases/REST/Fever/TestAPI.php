@@ -145,33 +145,11 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         return $value;
     }
 
-    protected function req($dataGet, $dataPost = "", string $method = "POST", string $type = null, string $url = "", string $user = null): ServerRequest {
-        $url = "/fever/".$url;
+    protected function req($dataGet, $dataPost = "", string $method = "POST", string $type = null, string $target = "", string $user = null): ServerRequest {
+        $prefix = "/fever/";
+        $url = $prefix.$target;
         $type = $type ?? "application/x-www-form-urlencoded";
-        $server = [
-            'REQUEST_METHOD'    => $method,
-            'REQUEST_URI'       => $url,
-            'HTTP_CONTENT_TYPE' => $type,
-        ];
-        $req = new ServerRequest($server, [], $url, $method, "php://memory", ['Content-Type' => $type]);
-        if (!is_array($dataGet)) {
-            parse_str($dataGet, $dataGet);
-        }
-        $req = $req->withRequestTarget($url)->withQueryParams($dataGet);
-        if (is_array($dataPost)) {
-            $req = $req->withParsedBody($dataPost);
-        } else {
-            parse_str($dataPost, $arr);
-            $req = $req->withParsedBody($arr);
-        }
-        if (isset($user)) {
-            if (strlen($user)) {
-                $req = $req->withAttribute("authenticated", true)->withAttribute("authenticatedUser", $user);
-            } else {
-                $req = $req->withAttribute("authenticationFailed", true);
-            }
-        }
-        return $req;
+        return $this->serverRequest($method, $url, $prefix, [], [], $dataPost, $type, $dataGet, $user);
     }
 
     public function setUp() {
@@ -457,7 +435,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         return [
             'Not an API request' => [$this->req(""), new EmptyResponse(404)],
             'Wrong method'       => [$this->req("api", "", "GET"), new EmptyResponse(405, ['Allow' => "OPTIONS,POST"])],
-            'Wrong content type' => [$this->req("api", "", "POST", "application/json"), new EmptyResponse(415, ['Accept' => "application/x-www-form-urlencoded"])],
+            'Wrong content type' => [$this->req("api", '{"api_key":"validToken"}', "POST", "application/json"), new EmptyResponse(415, ['Accept' => "application/x-www-form-urlencoded"])],
         ];
     }
 
