@@ -152,13 +152,17 @@ class URL {
      * @param string $data The data to append. This should already be escaped where necessary and not start with any delimiter
      * @param string $glue The query subcomponent delimiter, usually "&". If the URL has no query, "?" will be prepended instead
      */
-    public function queryAppend(string $url, string $data, string $glue = "&"): string {
+    public static function queryAppend(string $url, string $data, string $glue = "&"): string {
+        if (!strlen($data)) {
+            return $url;
+        }
         $insPos = strpos($url, "#");
         $insPos = $insPos === false ? strlen($url) : $insPos;
-        $hasQuery = strpos($url, "?") !== false;
+        $qPos = strpos($url, "?");
+        $hasQuery = $qPos !== false;
         $glue = $hasQuery ? $glue : "?";
         if ($hasQuery && $insPos > 0) {
-            if ($url[$insPos - 1] === $glue) {
+            if ($url[$insPos - 1] === $glue || ($insPos - 1) == $qPos) {
                 // if the URL already has excess glue, use it
                 $glue = "";
             }

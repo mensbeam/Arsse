@@ -13,7 +13,7 @@ namespace JKingWeb\Arsse\TestCase\Db\MySQLPDO;
  * @covers \JKingWeb\Arsse\Database<extended>
  * @covers \JKingWeb\Arsse\Misc\Query<extended>
  */
-class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\Base {
+class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\AbstractTest {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\MySQLPDO;
 
     protected function nextID(string $table): int {

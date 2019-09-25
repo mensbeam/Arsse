@@ -75,4 +75,20 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
             [" ",                             "%20"],
         ];
     }
+
+    /** @dataProvider provideQueries */
+    public function testAppendQueryParameters(string $url, string $query, string $exp) {
+        $this->assertSame($exp, URL::queryAppend($url, $query));
+    }
+
+    public function provideQueries() {
+        return [
+            ["/", "ook=eek", "/?ook=eek"],
+            ["/?", "ook=eek", "/?ook=eek"],
+            ["/#ack", "ook=eek", "/?ook=eek#ack"],
+            ["/?Huh?", "ook=eek", "/?Huh?&ook=eek"],
+            ["/?Eh?&Huh?&", "ook=eek", "/?Eh?&Huh?&ook=eek"],
+            ["/#ack", "", "/#ack"],
+        ];
+    }
 }

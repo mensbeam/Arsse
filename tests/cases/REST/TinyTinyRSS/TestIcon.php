@@ -34,20 +34,9 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     protected function req(string $target, string $method = "GET", string $user = null): ResponseInterface {
-        $url = "/tt-rss/feed-icons/".$target;
-        $server = [
-            'REQUEST_METHOD'    => $method,
-            'REQUEST_URI'       => $url,
-        ];
-        $req = new ServerRequest($server, [], $url, $method, "php://memory");
-        $req = $req->withRequestTarget($target);
-        if (isset($user)) {
-            if (strlen($user)) {
-                $req = $req->withAttribute("authenticated", true)->withAttribute("authenticatedUser", $user);
-            } else {
-                $req = $req->withAttribute("authenticationFailed", true);
-            }
-        }
+        $prefix = "/tt-rss/feed-icons/";
+        $url = $prefix.$target;
+        $req = $this->serverRequest($method, $url, $prefix, [], [], null, "", [], $user);
         return $this->h->dispatch($req);
     }
 

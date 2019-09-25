@@ -126,27 +126,10 @@ LONG_STRING;
     }
 
     protected function req($data, string $method = "POST", string $target = "", string $strData = null, string $user = null): ResponseInterface {
-        $url = "/tt-rss/api".$target;
-        $server = [
-            'REQUEST_METHOD'    => $method,
-            'REQUEST_URI'       => $url,
-            'HTTP_CONTENT_TYPE' => "application/x-www-form-urlencoded",
-        ];
-        $req = new ServerRequest($server, [], $url, $method, "php://memory");
-        $body = $req->getBody();
-        if (!is_null($strData)) {
-            $body->write($strData);
-        } else {
-            $body->write(json_encode($data));
-        }
-        $req = $req->withBody($body)->withRequestTarget($target);
-        if (isset($user)) {
-            if (strlen($user)) {
-                $req = $req->withAttribute("authenticated", true)->withAttribute("authenticatedUser", $user);
-            } else {
-                $req = $req->withAttribute("authenticationFailed", true);
-            }
-        }
+        $prefix = "/tt-rss/api";
+        $url = $prefix.$target;
+        $body = $strData ?? json_encode($data);
+        $req = $this->serverRequest($method, $url, $prefix, [], ['HTTP_CONTENT_TYPE' => "application/x-www-form-urlencoded"], $body, "application/json", [], $user);
         return $this->h->dispatch($req);
     }
 

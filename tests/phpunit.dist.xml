@@ -98,6 +98,7 @@
         <file>cases/Db/MySQLPDO/TestUpdate.php</file>
     </testsuite>
     <testsuite name="Database functions">
+        <file>cases/Database/TestDatabase.php</file>
         <file>cases/Db/SQLite3/TestDatabase.php</file>
         <file>cases/Db/SQLite3PDO/TestDatabase.php</file>
         <file>cases/Db/PostgreSQL/TestDatabase.php</file>

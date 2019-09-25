@@ -13,10 +13,12 @@ use JKingWeb\Arsse\Db\Driver;
 use JKingWeb\Arsse\Db\Result;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
+use JKingWeb\Arsse\Misc\URL;
 use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Zend\Diactoros\ServerRequest;
 use Zend\Diactoros\Response\JsonResponse;
 use Zend\Diactoros\Response\XmlResponse;
 
@@ -59,6 +61,68 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             'dbMySQLDb'          => $_ENV['ARSSE_TEST_MYSQL_DB']     ?: "arsse_test",
         ];
         Arsse::$conf = (($force ? null : Arsse::$conf) ?? (new Conf))->import($defaults)->import($conf);
+    }
+
+    protected function serverRequest(string $method, string $url, string $urlPrefix, array $headers = [], array $vars = [], $body = null, string $type = "", $params = [], string $user = null): ServerRequestInterface {
+        $server = [
+            'REQUEST_METHOD' => $method,
+            'REQUEST_URI' => $url,
+        ];
+        if (strlen($type)) {
+            $server['HTTP_CONTENT_TYPE'] = $type;
+        }
+        if (isset($params)) {
+            if (is_array($params)) {
+                $params = implode("&", array_map(function($v, $k) {
+                    return rawurlencode($k).(isset($v) ? "=".rawurlencode($v) : ""); 
+                }, $params, array_keys($params)));
+            }
+            $url = URL::queryAppend($url, (string) $params);
+        }
+        $q = parse_url($url, \PHP_URL_QUERY);
+        if (strlen($q ?? "")) {
+            parse_str($q, $params);
+        } else {
+            $params = [];
+        }
+        $parsedBody = null;
+        if (isset($body)) {
+            if (is_string($body) && in_array(strtolower($type), ["", "application/x-www-form-urlencoded"])) {
+                parse_str($body, $parsedBody);
+            } elseif (!is_string($body) && in_array(strtolower($type), ["application/json", "text/json"])) {
+                $body = json_encode($body, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);   
+            } elseif (!is_string($body) && in_array(strtolower($type), ["", "application/x-www-form-urlencoded"])) {
+                $parsedBody = $body;
+                $body = http_build_query($body, "a", "&");
+            }
+        }
+        $server = array_merge($server, $vars);
+        $req = new ServerRequest($server, [], $url, $method, "php://memory", [], [], $params, $parsedBody);
+        if (isset($user)) {
+            if (strlen($user)) {
+                $req = $req->withAttribute("authenticated", true)->withAttribute("authenticatedUser", $user);
+            } else {
+                $req = $req->withAttribute("authenticationFailed", true);
+            }
+        }
+        if (strlen($type) &&strlen($body ?? "")) {
+            $req = $req->withHeader("Content-Type", $type);
+        }
+        foreach ($headers as $key => $value) {
+            if (!is_null($value)) {
+                $req = $req->withHeader($key, $value);
+            } else {
+                $req = $req->withoutHeader($key);
+            }
+        }
+        $target = substr(URL::normalize($url), strlen($urlPrefix));
+        $req = $req->withRequestTarget($target);
+        if (strlen($body ?? "")) {
+            $p = $req->getBody();
+            $p->write($body);
+            $req = $req->withBody($p);
+        }
+        return $req;
     }
 
     public function assertException($msg = "", string $prefix = "", string $type = "Exception") {

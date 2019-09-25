@@ -12,7 +12,7 @@ namespace JKingWeb\Arsse\TestCase\Db\PostgreSQL;
  * @covers \JKingWeb\Arsse\Database<extended>
  * @covers \JKingWeb\Arsse\Misc\Query<extended>
  */
-class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\Base {
+class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\AbstractTest {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\PostgreSQL;
 
     protected function nextID(string $table): int {
