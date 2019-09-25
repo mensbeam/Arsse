@@ -20,9 +20,9 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
     const SCOPES = ["read", "follow", "channels"];
     /** The list of the logical functions of this API, with their implementations */
     const FUNCTIONS = [
-        'discovery' => ['GET' => "opDiscovery"],
-        'auth'      => ['GET' => "opLogin",             'POST' => "opCodeVerification"],
-        'token'     => ['GET' => "opTokenVerification", 'POST' => "opIssueAccessToken"],
+        ''      => ['GET' => "opDiscovery"],
+        'auth'  => ['GET' => "opLogin",             'POST' => "opCodeVerification"],
+        'token' => ['GET' => "opTokenVerification", 'POST' => "opIssueAccessToken"],
     ];
     /** The minimal set of reserved URL characters which must be escaped when comparing user ID URLs */
     const USERNAME_ESCAPES = [
@@ -43,9 +43,8 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // gather the query parameters and act on the "f" (function) parameter
         $process = $req->getQueryParams()['f'] ?? "";
-        $process = strlen($process) ? $process : "discovery";
         $method = $req->getMethod();
-        if (isset(self::FUNCTIONS[$process]) || ($process === "discovery" && !strlen($path)) || ($process !== "discovery" && strlen($path))) {
+        if (isset(self::FUNCTIONS[$process]) || ($process === "" && !strlen($path)) || ($process !== "" && strlen($path))) {
             // the function requested needs to exist
             // the path should also be empty unless we're doing discovery
             return new EmptyResponse(404);

@@ -40,12 +40,12 @@ class REST {
             'match' => "/fever/",
             'strip' => "/fever/",
             'class' => REST\Fever\API::class,
-        ],
+        ],/*
         'microsub' => [ // Microsub  https://indieweb.org/Microsub
             'match' => "/microsub",
             'strip' => "",
             'class' => REST\Microsub\API::class,
-        ],
+        ],*/
         'microsub_auth' => [ // IndieAuth for Microsub  https://indieauth.spec.indieweb.org/
             'match' => "/u/",
             'strip' => "/u/",

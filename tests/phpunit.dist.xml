@@ -124,6 +124,9 @@
         <file>cases/REST/Fever/TestAPI.php</file>
         <file>cases/REST/Fever/PDO/TestAPI.php</file>
     </testsuite>
+    <testsuite name="Microsub">
+        <file>cases/REST/Microsub/TestAuth.php</file>
+    </testsuite>
     <testsuite name="Admin tools">
         <file>cases/Service/TestService.php</file>
         <file>cases/CLI/TestCLI.php</file>
