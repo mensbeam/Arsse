@@ -9,6 +9,7 @@ namespace JKingWeb\Arsse\REST\Microsub;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Misc\URL;
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Misc\ValueInfo;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\Response\HtmlResponse;
@@ -24,13 +25,21 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         'auth'  => ['GET' => "opLogin",             'POST' => "opCodeVerification"],
         'token' => ['GET' => "opTokenVerification", 'POST' => "opIssueAccessToken"],
     ];
-    /** The minimal set of reserved URL characters which must be escaped when comparing user ID URLs */
+    /** The minimal set of reserved URL characters which mus t be escaped when comparing user ID URLs */
     const USERNAME_ESCAPES = [
         '#' => "%23",
         '%' => "%25",
         '/' => "%2F",
         '?' => "%3F",
     ];
+    /** The minimal set of reserved URL characters which must be escaped in query values */
+    const QUERY_ESCAPES = [
+        '#' => "%23",
+        '%' => "%25",
+        '&' => "%26",
+    ];
+    /** The acceptable media type of input for POST requests */
+    const ACCEPTED_TYPES = "application/x-www-form-urlencoded";
 
     public function __construct() {
     }
@@ -44,19 +53,25 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         // gather the query parameters and act on the "f" (function) parameter
         $process = $req->getQueryParams()['f'] ?? "";
         $method = $req->getMethod();
-        if (isset(self::FUNCTIONS[$process]) || ($process === "" && !strlen($path)) || ($process !== "" && strlen($path))) {
+        if (!isset(self::FUNCTIONS[$process]) || ($process === "" && !strlen($path)) || ($process !== "" && strlen($path))) {
             // the function requested needs to exist
             // the path should also be empty unless we're doing discovery
             return new EmptyResponse(404);
         } elseif ($method === "OPTIONS") {
             $fields = ['Allow' => implode(",", array_keys(self::FUNCTIONS[$process]))];
             if (isset(self::FUNCTIONS[$process]['POST'])) {
-                $fields['Accept'] = "application/x-www-form-urlencoded";
+                $fields['Accept'] = self::ACCEPTED_TYPES;
             }
             return new EmptyResponse(204, $fields);
-        } elseif (isset(self::FUNCTIONS[$process][$method])) {
+        } elseif (!isset(self::FUNCTIONS[$process][$method])) {
             return new EmptyResponse(405, ['Allow' => implode(",", array_keys(self::FUNCTIONS[$process]))]);
         } else {
+            if ($req->getMethod() !== "GET") {
+                $type = $req->getHeaderLine("Content-Type") ?? "";
+                if (strlen($type) && strtolower($type) !== self::ACCEPTED_TYPES) {
+                    return new EmptyResponse(415, ['Accept' => self::ACCEPTED_TYPES]);
+                }
+            }
             try {
                 $func = self::FUNCTIONS[$process][$method];
                 return $this->$func($req);
@@ -76,8 +91,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function buildBaseURL(ServerRequestInterface $req): string {
         // construct the base user identifier URL; the user is never checked against the database
         $s = $req->getServerParams();
-        $path = $req->getRequestTarget()['path'];
-        $https = (strlen($s['HTTPS'] ?? "") && $s['HTTPS'] !== "off");
+        $https = ValueInfo::normalize($s['HTTPS'] ?? "", ValueInfo::T_BOOL);
         $port = (int) ($s['SERVER_PORT'] ?? 0);
         $port = (!$port || ($https && $port == 443) || (!$https && $port == 80)) ? "" : ":$port";
         return URL::normalize(($https ? "https" : "http")."://".$s['HTTP_HOST'].$port."/");
@@ -149,11 +163,11 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         $urlService = $base."microsub";
         // output an extremely basic identity resource
         $html = '<meta charset="UTF-8"><link rel="authorization_endpoint" href="'.htmlspecialchars($urlAuth).'"><link rel="token_endpoint" href="'.htmlspecialchars($urlToken).'"><link rel="microsub" href="'.htmlspecialchars($urlService).'">';
-        return new HtmlResponse($html, 200, [
-            "Link: <$urlAuth>; rel=\"authorization_endpoint\"",
-            "Link: <$urlToken>; rel=\"token_endpoint\"",
-            "Link: <$urlService>; rel=\"microsub\"",
-        ]);
+        return new HtmlResponse($html, 200, ['Link' => [
+            "<$urlAuth>; rel=\"authorization_endpoint\"",
+            "<$urlToken>; rel=\"token_endpoint\"",
+            "<$urlService>; rel=\"microsub\"",
+        ]]);
     }
 
     /** Handles the authentication process
@@ -311,7 +325,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'invalid_request' => 400,
                 'invalid_token' => 401,
             ][$errCode] ?? 500;
-            return new EmptyResponse($httpCode, ['WWW-Authenticate' => "Bearer error=\"$erroCode\""]);
+            return new EmptyResponse($httpCode, ['WWW-Authenticate' => "Bearer error=\"$errCode\""]);
         }
         return new JsonResponse([
             'me' => $data['me'] ?? "",

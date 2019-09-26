@@ -64,13 +64,12 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     }
 
     protected function serverRequest(string $method, string $url, string $urlPrefix, array $headers = [], array $vars = [], $body = null, string $type = "", $params = [], string $user = null): ServerRequestInterface {
-        $server = [
-            'REQUEST_METHOD' => $method,
-            'REQUEST_URI' => $url,
-        ];
+        // build an initial $_SERVER array
+        $server = ['REQUEST_METHOD' => strtoupper($method)];
         if (strlen($type)) {
             $server['HTTP_CONTENT_TYPE'] = $type;
         }
+        // add any specified parameters to the URL
         if (isset($params)) {
             if (is_array($params)) {
                 $params = implode("&", array_map(function($v, $k) {
@@ -79,12 +78,27 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             }
             $url = URL::queryAppend($url, (string) $params);
         }
+        // glean the scheme, hostname, and port from the URL
+        $urlParts = parse_url($url);
+        if (isset($urlParts['scheme'])) {
+            $server['HTTPS'] = strtolower($urlParts['scheme']) === "https" ? "on" : "off";
+        }
+        if (isset($urlParts['host'])) {
+            $server['HTTP_HOST'] = $urlParts['host'];
+            if (isset($urlParts['port'])) {
+                $server['SERVER_PORT'] = $urlParts['port'];
+            }
+            $url = $urlParts['path'].(isset($urlParts['query']) ? "?".$urlParts['query'] : "");
+        }
+        $server['REQUEST_URI'] = $url;
+        // rebuild the parsed query parameters from the URL
         $q = parse_url($url, \PHP_URL_QUERY);
         if (strlen($q ?? "")) {
             parse_str($q, $params);
         } else {
             $params = [];
         }
+        // prepare the body and parsed body
         $parsedBody = null;
         if (isset($body)) {
             if (is_string($body) && in_array(strtolower($type), ["", "application/x-www-form-urlencoded"])) {
@@ -96,8 +110,12 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                 $body = http_build_query($body, "a", "&");
             }
         }
+        // add any override values to the $_SERVER array
         $server = array_merge($server, $vars);
+        // create the request
         $req = new ServerRequest($server, [], $url, $method, "php://memory", [], [], $params, $parsedBody);
+        // if a user is specified, act as if they were authenticated by the global handler
+        // the empty string denotes failed authentication
         if (isset($user)) {
             if (strlen($user)) {
                 $req = $req->withAttribute("authenticated", true)->withAttribute("authenticatedUser", $user);
@@ -105,9 +123,11 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                 $req = $req->withAttribute("authenticationFailed", true);
             }
         }
-        if (strlen($type) &&strlen($body ?? "")) {
+        // if a content type was specified, add it as a header
+        if (strlen($type)) {
             $req = $req->withHeader("Content-Type", $type);
         }
+        // add any other headers
         foreach ($headers as $key => $value) {
             if (!is_null($value)) {
                 $req = $req->withHeader($key, $value);
@@ -115,13 +135,16 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                 $req = $req->withoutHeader($key);
             }
         }
+        // strip the URL prefix from the request target, as the global handler does
         $target = substr(URL::normalize($url), strlen($urlPrefix));
         $req = $req->withRequestTarget($target);
+        // add the body text, if any
         if (strlen($body ?? "")) {
             $p = $req->getBody();
             $p->write($body);
             $req = $req->withBody($p);
         }
+        // return the prepared request
         return $req;
     }
 
