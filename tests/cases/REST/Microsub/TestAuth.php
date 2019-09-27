@@ -6,6 +6,8 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\REST\Microsub;
 
+use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Database;
 use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\Response\JsonResponse as Response;
 use Zend\Diactoros\Response\EmptyResponse;
@@ -13,15 +15,20 @@ use Zend\Diactoros\Response\HtmlResponse;
 
 /** @covers \JKingWeb\Arsse\REST\Microsub\Auth<extended> */
 class TestAuth extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function req(string $url, string $method = "GET", array $data = [], array $headers = [], string $type = "application/x-www-form-urlencoded", string $body = null): ResponseInterface {
+    public function setUp() {
+        self::clearData();
+        Arsse::$db = \Phake::mock(Database::class);
+    }
+
+    public function req(string $url, string $method = "GET", array $params = [], array $headers = [], array $data = [], string $type = "application/x-www-form-urlencoded", string $body = null, string $user = null): ResponseInterface {
         $type = (strtoupper($method) === "GET") ? "" : $type;
-        $req = $this->serverRequest($method, $url, "/u/", $headers, [], $body ?? $data, $type);
+        $req = $this->serverRequest($method, $url, "/u/", $headers, [], $body ?? $data, $type, $params, $user);
         return (new \JKingWeb\Arsse\REST\Microsub\Auth)->dispatch($req);
     }
 
     /** @dataProvider provideInvalidRequests */
     public function testHandleInvalidRequests(ResponseInterface $exp, string $method, string $url, string $type = null) {
-        $act = $this->req("http://example.com".$url, $method, [], [], $type ?? "");
+        $act = $this->req("http://example.com".$url, $method, [], [], [], $type ?? "");
         $this->assertMessage($exp, $act);
     }
 
@@ -81,6 +88,38 @@ class TestAuth extends \JKingWeb\Arsse\Test\AbstractTest {
             ["https://example.com:443/u/john.doe", "https://example.com"],
             ["http://example.com:443/u/john.doe",  "http://example.com:443"],
             ["https://example.com:80/u/john.doe",  "https://example.com:80"],
+        ];
+    }
+
+    /** @dataProvider provideLoginData */
+    public function testLogInAUser(array $params, string $authenticatedUser = null, ResponseInterface $exp) {
+        \Phake::when(Arsse::$db)->tokenCreate->thenReturn("authCode");
+        $act = $this->req("http://example.com/u/?f=auth", "GET", $params, [], [], "", null, $authenticatedUser);
+        $this->assertMessage($exp, $act);
+        if ($act->getStatusCode() == 302 && !preg_match("/\berror=\w/", $act->getHeaderLine("Location") ?? "")) {
+            \Phake::verify(Arsse::$db)->tokenCreate($authenticatedUser, "microsub.auth", null, null, json_encode([
+                'me'            => $params['me'],
+                'client_id'     => $params['client_id'],
+                'redirect_uri'  => $params['redirect_uri'],
+                'response_type' => strlen($params['response_type'] ?? "") ? $params['response_type'] : "id",
+            ], \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE));
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::times(0))->tokenCreate;
+        }
+    }
+
+    public function provideLoginData() {
+        return [
+            'Challenge'         => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect", 'state' => "ABCDEF", 'response_type' => "code"], null,       new EmptyResponse(401)],
+            'Failed challenge'  => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect", 'state' => "ABCDEF", 'response_type' => "code"], "",         new EmptyResponse(401)],
+            'Wrong user 1'      => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect", 'state' => "ABCDEF", 'response_type' => "code"], "jane.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=access_denied"])],
+            'Wrong user 2'      => [['me' => "https://example.com/u/jane.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect", 'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=access_denied"])],
+            'Wrong domain'      => [['me' => "https://example.net/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect", 'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=access_denied"])],
+            'Wrong port'        => [['me' => "https://example.com:80/u/john.doe", 'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect", 'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=access_denied"])],
+            'Wrong scheme'      => [['me' => "ftp://example.com/u/john.doe",      'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect", 'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=access_denied"])],
+            'Wrong path'        => [['me' => "http://example.com/user/john.doe",  'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect", 'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=access_denied"])],
+            'Bad redirect'      => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "//example.org/redirect",      'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(400)],
+            'Bad response type' => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect", 'state' => "ABCDEF", 'response_type' => "bad"],  "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=unsupported_response_type"])],
         ];
     }
 }

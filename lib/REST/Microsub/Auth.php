@@ -125,7 +125,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         $me['scheme'] = $me['scheme'] ?? "";
         $me['path'] = explode("/", $me['path'] ?? "");
         $me['id'] = rawurldecode(array_pop($me['path']) ?? "");
-        $me['port'] == (($me['scheme'] === "http" && $me['port'] == 80) || ($me['scheme'] === "https" && $me['port'] == 443)) ? 0 : $me['port'];
+        $me['port'] = (($me['scheme'] === "http" && ($me['port'] ?? 80) == 80) || ($me['scheme'] === "https" && ($me['port'] ?? 443) == 443)) ? 0 : $me['port'] ?? 0;
         $c = parse_url($canonical);
         $c['path'] = explode("/", $c['path']);
         $c['id'] = rawurldecode(array_pop($c['path']));
@@ -187,12 +187,13 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         } else {
             // user has logged in
             $query = $req->getQueryParams();
-            $redir = URL::normalize(rawurldecode($query['redirect_uri']));
+            $redir = URL::normalize($query['redirect_uri']);
             // check that the redirect URL is an absolute one
             if (!URL::absolute($redir)) {
                 return new EmptyResponse(400);
             }
             try {
+                $state = $query['state'] ?? "";
                 // ensure the logged-in user matches the IndieAuth identifier URL
                 $user = $req->getAttribute("authenticatedUser");
                 if (!$this->matchIdentifier($this->buildIdentifier($req, $user), $query['me'])) {
@@ -202,21 +203,20 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
                 if (!in_array($type, ["code", "id"])) {
                     throw new ExceptionAuth("unsupported_response_type");
                 }
-                $state = $query['state'] ?? "";
                 // store the identity URL, client ID, redirect URL, and response type
                 $data = json_encode([
                     'me' => $query['me'],
-                    'client' => $query['client_id'],
-                    'redir' => $query['redirect_uri'],
-                    'type' => $type,
+                    'client_id' => $query['client_id'],
+                    'redirect_uri' => $query['redirect_uri'],
+                    'response_type' => $type,
                 ], \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
                 // issue an authorization code and build the redirect URL
                 $code = Arsse::$db->tokenCreate($user, "microsub.auth", null, Date::add("PT2M"), $data);
                 $next = URL::queryAppend($redir, "code=$code&state=$state");
-                return new EmptyResponse(302, ["Location: $next"]);
+                return new EmptyResponse(302, ['Location' => $next]);
             } catch (ExceptionAuth $e) {
                 $next = URL::queryAppend($redir, "state=$state&error=".$e->getMessage());
-                return new EmptyResponse(302, ["Location: $next"]);
+                return new EmptyResponse(302, ['Location' => $next]);
             }
         }
     }
@@ -297,13 +297,13 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         // validate the auth code
         if (!is_array($data)) {
             throw new ExceptionAuth("invalid_grant");
-        } elseif ($data['client'] !== $clientId || $data['redir'] !== $redirUrl) {
+        } elseif ($data['client_id'] !== $clientId || $data['redirect_uri'] !== $redirUrl) {
             throw new ExceptionAuth("invalid_client");
         } elseif (isset($me) && $me !== $data['me']) {
             throw new ExceptionAuth("invalid_grant");
         }
         // return the associated user name and the auth-code type
-        return [$token['user'], $data['type'] ?? "id"];
+        return [$token['user'], $data['response_type'] ?? "id"];
     }
 
     /** Handles token verification as an API call
