@@ -6,6 +6,7 @@ Bug fixes:
 - Don't fail adding a feed which collides with another via redirection
 - Don't fail on very long text-search queries containing question marks
   when using PostgreSQL or MySQL
+- Specify HTTP authentication encoding as UTF-8
 
 Changes:
 - Include a user manual

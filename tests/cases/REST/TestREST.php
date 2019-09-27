@@ -97,10 +97,10 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         self::setConf();
         $r = new REST();
         $in = new EmptyResponse(401);
-        $exp = $in->withHeader("WWW-Authenticate", 'Basic realm="OOK"');
+        $exp = $in->withHeader("WWW-Authenticate", 'Basic realm="OOK", charset="UTF-8"');
         $act = $r->challenge($in, "OOK");
         $this->assertMessage($exp, $act);
-        $exp = $in->withHeader("WWW-Authenticate", 'Basic realm="'.Arsse::$conf->httpRealm.'"');
+        $exp = $in->withHeader("WWW-Authenticate", 'Basic realm="'.Arsse::$conf->httpRealm.'", charset="UTF-8"');
         $act = $r->challenge($in);
         $this->assertMessage($exp, $act);
     }

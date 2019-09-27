@@ -150,7 +150,7 @@ class REST {
 
     public function challenge(ResponseInterface $res, string $realm = null): ResponseInterface {
         $realm = $realm ?? Arsse::$conf->httpRealm;
-        return $res->withAddedHeader("WWW-Authenticate", 'Basic realm="'.$realm.'"');
+        return $res->withAddedHeader("WWW-Authenticate", 'Basic realm="'.$realm.'", charset="UTF-8"');
     }
 
     public function normalizeResponse(ResponseInterface $res, RequestInterface $req = null): ResponseInterface {
