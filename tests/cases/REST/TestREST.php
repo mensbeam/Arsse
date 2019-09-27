@@ -92,17 +92,24 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
             [[],                                                                                                              []],
         ];
     }
-
-    public function testSendAuthenticationChallenges() {
+    /** @dataProvider provideAuthenticationChallenges */
+    public function testSendAuthenticationChallenges(ResponseInterface $in, ResponseInterface $exp, string $realm = null) {
         self::setConf();
-        $r = new REST();
-        $in = new EmptyResponse(401);
-        $exp = $in->withHeader("WWW-Authenticate", 'Basic realm="OOK"');
-        $act = $r->challenge($in, "OOK");
+        $act = (new REST)->challenge($in, $realm);
         $this->assertMessage($exp, $act);
-        $exp = $in->withHeader("WWW-Authenticate", 'Basic realm="'.Arsse::$conf->httpRealm.'"');
-        $act = $r->challenge($in);
-        $this->assertMessage($exp, $act);
+    }
+
+    public function provideAuthenticationChallenges() {
+        self::setConf();
+        $default = 'Basic realm="'.Arsse::$conf->httpRealm.'", charset="UTF-8"';
+        return [
+            [new EmptyResponse(401),                                                                               new EmptyResponse(401, ['WWW-Authenticate' => $default])],
+            [new EmptyResponse(401),                                                                               new EmptyResponse(401, ['WWW-Authenticate' => 'Basic realm="OOK", charset="UTF-8"']), "OOK"],
+            [new EmptyResponse(401, ['WWW-Authenticate' => "Bearer"]),                                             new EmptyResponse(401, ['WWW-Authenticate' => ['Bearer', $default]])],
+            [new EmptyResponse(401, ['X-Arsse-Suppress-General-Auth' => "false"]),                                 new EmptyResponse(401, ['WWW-Authenticate' => $default])],
+            [new EmptyResponse(401, ['WWW-Authenticate' => "Bearer", 'X-Arsse-Suppress-General-Auth' => "false"]), new EmptyResponse(401, ['WWW-Authenticate' => ['Bearer', $default]])],
+            [new EmptyResponse(401, ['WWW-Authenticate' => "Bearer", 'X-Arsse-Suppress-General-Auth' => "1"]),     new EmptyResponse(401, ['WWW-Authenticate' => "Bearer"])],
+        ];
     }
 
     /** @dataProvider provideUnnormalizedOrigins */

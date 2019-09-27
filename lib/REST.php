@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\Misc\URL;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -159,7 +160,10 @@ class REST {
 
     public function challenge(ResponseInterface $res, string $realm = null): ResponseInterface {
         $realm = $realm ?? Arsse::$conf->httpRealm;
-        return $res->withAddedHeader("WWW-Authenticate", 'Basic realm="'.$realm.'"');
+        if (!ValueInfo::normalize($res->getHeaderLine("X-Arsse-Suppress-General-Auth"), ValueInfo::T_BOOL)) {
+            $res = $res->withAddedHeader("WWW-Authenticate", 'Basic realm="'.$realm.'", charset="UTF-8"');
+        }
+        return $res->withoutHeader("X-Arsse-Suppress-General-Auth");
     }
 
     public function normalizeResponse(ResponseInterface $res, RequestInterface $req = null): ResponseInterface {

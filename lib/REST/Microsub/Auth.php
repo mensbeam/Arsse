@@ -325,7 +325,10 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'invalid_request' => 400,
                 'invalid_token' => 401,
             ][$errCode] ?? 500;
-            return new EmptyResponse($httpCode, ['WWW-Authenticate' => "Bearer error=\"$errCode\""]);
+            return new EmptyResponse($httpCode, [
+                'WWW-Authenticate'              => "Bearer error=\"$errCode\"",
+                'X-Arsse-Suppress-General-Auth' => "1"
+            ]);
         }
         return new JsonResponse([
             'me' => $data['me'] ?? "",
