@@ -9,6 +9,7 @@ namespace JKingWeb\Arsse\REST\Microsub;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Misc\URL;
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Misc\ValueInfo;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -39,7 +40,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         '&' => "%26",
     ];
     /** The acceptable media type of input for POST requests */
-    const ACCEPTED_TYPES = "application/x-www-form-urlencoded";
+    const ACCEPTED_TYPE = "application/x-www-form-urlencoded";
 
     public function __construct() {
     }
@@ -60,17 +61,14 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         } elseif ($method === "OPTIONS") {
             $fields = ['Allow' => implode(",", array_keys(self::FUNCTIONS[$process]))];
             if (isset(self::FUNCTIONS[$process]['POST'])) {
-                $fields['Accept'] = self::ACCEPTED_TYPES;
+                $fields['Accept'] = self::ACCEPTED_TYPE;
             }
             return new EmptyResponse(204, $fields);
         } elseif (!isset(self::FUNCTIONS[$process][$method])) {
             return new EmptyResponse(405, ['Allow' => implode(",", array_keys(self::FUNCTIONS[$process]))]);
         } else {
-            if ($req->getMethod() !== "GET") {
-                $type = $req->getHeaderLine("Content-Type") ?? "";
-                if (strlen($type) && strtolower($type) !== self::ACCEPTED_TYPES) {
-                    return new EmptyResponse(415, ['Accept' => self::ACCEPTED_TYPES]);
-                }
+            if ($req->getMethod() !== "GET" && !HTTP::matchType($req, self::ACCEPTED_TYPE, "")) {
+                return new EmptyResponse(415, ['Accept' => self::ACCEPTED_TYPE]);
             }
             try {
                 $func = self::FUNCTIONS[$process][$method];
