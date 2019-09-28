@@ -27,6 +27,7 @@ class TestHTTP extends \JKingWeb\Arsse\Test\AbstractTest {
             ["text/json; charset=utf-8", ["application/json", "text/json"], true],
             ["",                         ["application/json"],              false],
             ["",                         ["application/json", ""],          true],
+            ["application/json ;",       ["application/json"],              true],
         ];
     }
 }
