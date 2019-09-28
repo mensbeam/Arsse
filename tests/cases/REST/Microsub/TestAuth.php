@@ -8,6 +8,7 @@ namespace JKingWeb\Arsse\TestCase\REST\Microsub;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
+use JKingWeb\Arsse\Misc\Date;
 use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\Response\JsonResponse as Response;
 use Zend\Diactoros\Response\EmptyResponse;
@@ -97,7 +98,7 @@ class TestAuth extends \JKingWeb\Arsse\Test\AbstractTest {
         $act = $this->req("http://example.com/u/?f=auth", "GET", $params, [], [], "", null, $authenticatedUser);
         $this->assertMessage($exp, $act);
         if ($act->getStatusCode() == 302 && !preg_match("/\berror=\w/", $act->getHeaderLine("Location") ?? "")) {
-            \Phake::verify(Arsse::$db)->tokenCreate($authenticatedUser, "microsub.auth", null, null, json_encode([
+            \Phake::verify(Arsse::$db)->tokenCreate($authenticatedUser, "microsub.auth", null, $this->isInstanceOf(\DateTimeInterface::class), json_encode([
                 'me'            => $params['me'],
                 'client_id'     => $params['client_id'],
                 'redirect_uri'  => $params['redirect_uri'],
@@ -110,16 +111,21 @@ class TestAuth extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provideLoginData() {
         return [
-            'Challenge'         => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect", 'state' => "ABCDEF", 'response_type' => "code"], null,       new EmptyResponse(401)],
-            'Failed challenge'  => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect", 'state' => "ABCDEF", 'response_type' => "code"], "",         new EmptyResponse(401)],
-            'Wrong user 1'      => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect", 'state' => "ABCDEF", 'response_type' => "code"], "jane.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=access_denied"])],
-            'Wrong user 2'      => [['me' => "https://example.com/u/jane.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect", 'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=access_denied"])],
-            'Wrong domain'      => [['me' => "https://example.net/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect", 'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=access_denied"])],
-            'Wrong port'        => [['me' => "https://example.com:80/u/john.doe", 'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect", 'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=access_denied"])],
-            'Wrong scheme'      => [['me' => "ftp://example.com/u/john.doe",      'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect", 'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=access_denied"])],
-            'Wrong path'        => [['me' => "http://example.com/user/john.doe",  'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect", 'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=access_denied"])],
-            'Bad redirect'      => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "//example.org/redirect",      'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(400)],
-            'Bad response type' => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect", 'state' => "ABCDEF", 'response_type' => "bad"],  "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=unsupported_response_type"])],
+            'Challenge'         => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect",    'state' => "ABCDEF", 'response_type' => "code"], null,       new EmptyResponse(401)],
+            'Failed challenge'  => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect",    'state' => "ABCDEF", 'response_type' => "code"], "",         new EmptyResponse(401)],
+            'Wrong user 1'      => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect",    'state' => "ABCDEF", 'response_type' => "code"], "jane.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=access_denied"])],
+            'Wrong user 2'      => [['me' => "https://example.com/u/jane.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect",    'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=access_denied"])],
+            'Wrong domain 1'    => [['me' => "https://example.net/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect",    'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=access_denied"])],
+            'Wrong domain 2'    => [['me' => "https:///u/john.doe",               'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect",    'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=access_denied"])],
+            'Wrong port'        => [['me' => "https://example.com:80/u/john.doe", 'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect",    'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=access_denied"])],
+            'Wrong scheme'      => [['me' => "ftp://example.com/u/john.doe",      'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect",    'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=access_denied"])],
+            'Wrong path'        => [['me' => "http://example.com/user/john.doe",  'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect",    'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=access_denied"])],
+            'Bad redirect 1'    => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "//example.org/redirect",         'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(400)],
+            'Bad redirect 2'    => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "https:///redirect",              'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(400)],
+            'Bad response type' => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect",    'state' => "ABCDEF", 'response_type' => "bad"],  "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&error=unsupported_response_type"])],
+            'Success 1'         => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect",    'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&code=authCode"])],
+            'Success 2'         => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect",    'state' => "R&R",    'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=R%26R&code=authCode"])],
+            'Success 3'         => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/?p=redirect", 'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/?p=redirect&state=ABCDEF&code=authCode"])],
         ];
     }
 }

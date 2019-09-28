@@ -39,7 +39,12 @@ class URL {
      * @param string $p Password to add to the URL, if a username is specified
      */
     public static function normalize(string $url, string $u = null, string $p = null): string {
-        extract(parse_url($url));
+        $parts = parse_url($url);
+        if (!$parts) {
+            // bail if there is no authority
+            return $url;
+        }
+        extract($parts);
         $out = "";
         if (isset($scheme)) {
             $out .= strtolower($scheme).":";

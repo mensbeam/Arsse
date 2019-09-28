@@ -73,6 +73,7 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
             ["EXAMPLE.COM/",                  "EXAMPLE.COM/"],
             ["EXAMPLE.COM",                   "EXAMPLE.COM"],
             [" ",                             "%20"],
+            ["http:///%G",                    "http:///%G"]
         ];
     }
 

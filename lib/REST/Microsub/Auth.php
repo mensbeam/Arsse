@@ -120,6 +120,9 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
      */
     protected function matchIdentifier(string $canonical, string $me): bool {
         $me = parse_url(URL::normalize($me));
+        if (!$me) {
+            return false;
+        }
         $me['scheme'] = $me['scheme'] ?? "";
         $me['path'] = explode("/", $me['path'] ?? "");
         $me['id'] = rawurldecode(array_pop($me['path']) ?? "");
@@ -191,7 +194,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
                 return new EmptyResponse(400);
             }
             try {
-                $state = $query['state'] ?? "";
+                $state = rawurlencode($query['state'] ?? "");
                 // ensure the logged-in user matches the IndieAuth identifier URL
                 $user = $req->getAttribute("authenticatedUser");
                 if (!$this->matchIdentifier($this->buildIdentifier($req, $user), $query['me'])) {
@@ -210,7 +213,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
                 ], \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
                 // issue an authorization code and build the redirect URL
                 $code = Arsse::$db->tokenCreate($user, "microsub.auth", null, Date::add("PT2M"), $data);
-                $next = URL::queryAppend($redir, "code=$code&state=$state");
+                $next = URL::queryAppend($redir, "state=$state&code=$code");
                 return new EmptyResponse(302, ['Location' => $next]);
             } catch (ExceptionAuth $e) {
                 $next = URL::queryAppend($redir, "state=$state&error=".$e->getMessage());
