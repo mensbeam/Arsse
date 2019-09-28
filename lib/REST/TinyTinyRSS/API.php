@@ -43,6 +43,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     const CAT_NOT_SPECIAL = -3;
     const CAT_ALL = -4;
     // valid input
+    const ACCEPTED_TYPES = ["application/json", "text/json"];
     const VALID_INPUT = [
         'op'                  => ValueInfo::T_STRING,                           // the function ("operation") to perform
         'sid'                 => ValueInfo::T_STRING,                           // session ID
@@ -99,7 +100,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             // respond to OPTIONS rquests; the response is a fib, as we technically accept any type or method
             return new EmptyResponse(204, [
                 'Allow'  => "POST",
-                'Accept' => "application/json, text/json",
+                'Accept' => implode(", ", self::ACCEPTED_TYPES),
             ]);
         }
         $data = (string) $req->getBody();
