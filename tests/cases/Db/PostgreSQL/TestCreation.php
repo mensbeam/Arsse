@@ -65,7 +65,7 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testFailToConnect() {
         // we cannnot distinguish between different connection failure modes
         self::setConf([
-            'dbPostgreSQLPass' => (string) rand(),
+            'dbPostgreSQLHost' => "example.invalid",
         ]);
         $this->assertException("connectionFailure", "Db");
         new Driver;
