@@ -196,6 +196,7 @@ class RoboFile extends \Robo\Tasks {
         $execpath = escapeshellarg(norm(BASE."vendor/bin/daux"));
         $t = $this->collectionBuilder();
         $t->taskExec($execpath)->arg("generate")->option("-d", BASE."manual")->args($args);
+        $t->taskDeleteDir(BASE."manual/daux_libraries");
         $t->taskDeleteDir(BASE."manual/theme");
         $t->taskDeleteDir(BASE."manual/themes/src");
         return $t->run();
