@@ -1,8 +1,7 @@
 {
     "favicon": "<theme_url>favicon.png",
     "js": [
-        "<theme_url>highlight.pack.js",
-        "<theme_url>daux.js"
+        "<theme_url>daux.min.js"
     ],
     "css": [
         "<theme_url>arsse.css"
