@@ -13,7 +13,7 @@ use JKingWeb\Arsse\Db\MySQL\Driver as Driver;
  * @covers \JKingWeb\Arsse\Db\MySQL\Driver<extended>
  * @covers \JKingWeb\Arsse\Db\MySQL\ExceptionBuilder */
 class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function setUp() {
+    public function setUp(): void {
         if (!Driver::requirementsMet()) {
             $this->markTestSkipped("MySQL extension not loaded");
         }

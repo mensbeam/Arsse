@@ -305,7 +305,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         return $this->h->dispatch($req);
     }
 
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
         self::setConf();
         // create a mock user manager
@@ -317,7 +317,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->h = new V1_2();
     }
 
-    public function tearDown() {
+    public function tearDown(): void {
         self::clearData();
     }
 

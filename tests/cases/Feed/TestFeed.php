@@ -88,7 +88,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         ],
     ];
 
-    public function setUp() {
+    public function setUp(): void {
         if (!@file_get_contents(self::$host."IsUp")) {
             $this->markTestSkipped("Test Web server is not accepting requests");
         }
@@ -264,7 +264,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertTime($exp, $f->nextFetch);
     }
 
-    public function provide304Timestamps() {
+    public function provide304Timestamps(): iterable {
         return [
             'less than half an hour 1' =>     ["now",                      "now + 15 minutes"],
             'less than half an hour 2' =>     ["now - 29 minutes",         "now + 15 minutes"],

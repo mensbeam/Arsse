@@ -20,7 +20,7 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $drv;
     protected $ch;
 
-    public function setUp() {
+    public function setUp(): void {
         if (!Driver::requirementsMet()) {
             $this->markTestSkipped("PDO-SQLite extension not loaded");
         }
@@ -110,7 +110,7 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
         self::setConf();
     }
 
-    public function tearDown() {
+    public function tearDown(): void {
         self::clearData();
     }
 

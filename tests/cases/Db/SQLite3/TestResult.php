@@ -15,7 +15,7 @@ class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
     protected static $createMeta = "CREATE TABLE arsse_meta(key text primary key not null, value text) without rowid";
     protected static $createTest = "CREATE TABLE arsse_test(id integer primary key)";
 
-    public static function tearDownAfterClass() {
+    public static function tearDownAfterClass(): void {
         static::$interface->close();
         static::$interface = null;
         parent::tearDownAfterClass();

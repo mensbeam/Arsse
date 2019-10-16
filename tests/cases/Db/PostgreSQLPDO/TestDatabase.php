@@ -20,7 +20,7 @@ class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\AbstractTest {
         return (int) static::$drv->query("SELECT coalesce(last_value, (select max(id) from $table)) + 1 from pg_sequences where sequencename = '{$table}_id_seq'")->getValue();
     }
 
-    public function setUp() {
+    public function setUp(): void {
         parent::setUp();
         $seqList =
             "select 

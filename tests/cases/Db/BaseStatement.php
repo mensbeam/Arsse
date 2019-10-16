@@ -15,14 +15,14 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     abstract protected function makeStatement(string $q, array $types = []): array;
     abstract protected function decorateTypeSyntax(string $value, string $type): string;
 
-    public static function setUpBeforeClass() {
+    public static function setUpBeforeClass(): void {
         // establish a clean baseline
         static::clearData();
         static::setConf();
         static::$interface = static::dbInterface();
     }
     
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
         self::setConf();
         if (!static::$interface) {
@@ -33,11 +33,11 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->statementClass = static::$dbStatementClass;
     }
 
-    public function tearDown() {
+    public function tearDown(): void {
         self::clearData();
     }
 
-    public static function tearDownAfterClass() {
+    public static function tearDownAfterClass(): void {
         if (static::$interface) {
             // completely clear the database
             static::dbRaze(static::$interface);
@@ -129,7 +129,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $s->runArray(['ook', 'eek']);
     }
 
-    public function provideBindings() {
+    public function provideBindings(): iterable {
         $dateMutable = new \DateTime("Noon Today", new \DateTimezone("America/Toronto"));
         $dateImmutable = new \DateTimeImmutable("Noon Today", new \DateTimezone("America/Toronto"));
         $dateUTC = new \DateTime("@".$dateMutable->getTimestamp(), new \DateTimezone("UTC"));
@@ -272,7 +272,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideBinaryBindings() {
+    public function provideBinaryBindings(): iterable {
         $dateMutable = new \DateTime("Noon Today", new \DateTimezone("America/Toronto"));
         $dateImmutable = new \DateTimeImmutable("Noon Today", new \DateTimezone("America/Toronto"));
         $dateUTC = new \DateTime("@".$dateMutable->getTimestamp(), new \DateTimezone("UTC"));

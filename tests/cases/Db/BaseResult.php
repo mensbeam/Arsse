@@ -15,14 +15,14 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
 
     abstract protected function makeResult(string $q): array;
 
-    public static function setUpBeforeClass() {
+    public static function setUpBeforeClass(): void {
         // establish a clean baseline
         static::clearData();
         static::setConf();
         static::$interface = static::dbInterface();
     }
     
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
         self::setConf();
         if (!static::$interface) {
@@ -33,11 +33,11 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->resultClass = static::$dbResultClass;
     }
 
-    public function tearDown() {
+    public function tearDown(): void {
         self::clearData();
     }
 
-    public static function tearDownAfterClass() {
+    public static function tearDownAfterClass(): void {
         if (static::$interface) {
             // completely clear the database
             static::dbRaze(static::$interface);

@@ -152,7 +152,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         return $this->serverRequest($method, $url, $prefix, [], [], $dataPost, $type, $dataGet, $user);
     }
 
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
         self::setConf();
         // create a mock user manager
@@ -168,7 +168,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when($this->h)->baseResponse->thenReturn([]);
     }
 
-    public function tearDown() {
+    public function tearDown(): void {
         self::clearData();
     }
 
@@ -192,7 +192,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $act);
     }
 
-    public function provideTokenAuthenticationRequests() {
+    public function provideTokenAuthenticationRequests(): iterable {
         $success = new JsonResponse(['auth' => 1]);
         $failure = new JsonResponse(['auth' => 0]);
         $denied = new EmptyResponse(401);
@@ -313,7 +313,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, $c, $fields, $order);
     }
 
-    public function provideItemListContexts() {
+    public function provideItemListContexts(): iterable {
         $c = (new Context)->limit(50);
         return [
             ["items", (clone $c), false],
@@ -388,7 +388,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideMarkingContexts() {
+    public function provideMarkingContexts(): iterable {
         $markRead = ['read' => true];
         $markUnread = ['read' => false];
         $markSaved = ['starred' => true];
@@ -431,7 +431,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->h->dispatch($req));
     }
 
-    public function provideInvalidRequests() {
+    public function provideInvalidRequests(): iterable {
         return [
             'Not an API request' => [$this->req(""), new EmptyResponse(404)],
             'Wrong method'       => [$this->req("api", "", "GET"), new EmptyResponse(405, ['Allow' => "OPTIONS,POST"])],

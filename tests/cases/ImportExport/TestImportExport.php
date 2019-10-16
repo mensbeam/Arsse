@@ -23,7 +23,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         'arsse_tag_members'   => ["tag", "subscription", "assigned"],
     ];
 
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
         // create a mock user manager
         Arsse::$user = \Phake::mock(\JKingWeb\Arsse\User::class);
@@ -140,7 +140,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->primeDatabase($this->drv, $this->data);
     }
 
-    public function tearDown() {
+    public function tearDown(): void {
         $this->drv = null;
         $this->proc = null;
         self::clearData();

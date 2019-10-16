@@ -13,7 +13,7 @@ use JKingWeb\Arsse\Db\PostgreSQL\Driver;
  * @group slow
  * @covers \JKingWeb\Arsse\Db\PostgreSQL\Driver<extended> */
 class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function setUp() {
+    public function setUp(): void {
         if (!Driver::requirementsMet()) {
             $this->markTestSkipped("PostgreSQL extension not loaded");
         }
@@ -35,7 +35,7 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideConnectionStrings() {
+    public function provideConnectionStrings(): iterable {
         return [
             [false, "arsse",           "secret",   "arsse",     "",          5432, "",      "dbname='arsse' password='secret' user='arsse'"],
             [false, "arsse",           "p word",   "arsse",     "",          5432, "",      "dbname='arsse' password='p word' user='arsse'"],

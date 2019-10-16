@@ -13,7 +13,7 @@ use JKingWeb\Arsse\User\Internal\Driver;
 
 /** @covers \JKingWeb\Arsse\User\Internal\Driver */
 class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
         self::setConf();
         // create a mock database interface
@@ -46,7 +46,7 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, (new Driver)->auth($user, $password));
     }
 
-    public function provideAuthentication() {
+    public function provideAuthentication(): iterable {
         $john = "john.doe@example.com";
         $jane = "jane.doe@example.com";
         $owen = "owen.hardy@example.com";

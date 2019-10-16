@@ -13,7 +13,7 @@ use JKingWeb\Arsse\Db\MySQL\PDODriver as Driver;
  * @covers \JKingWeb\Arsse\Db\MySQL\PDODriver<extended>
  * @covers \JKingWeb\Arsse\Db\MySQL\ExceptionBuilder */
 class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function setUp() {
+    public function setUp(): void {
         if (!Driver::requirementsMet()) {
             $this->markTestSkipped("PDO-MySQL extension not loaded");
         }

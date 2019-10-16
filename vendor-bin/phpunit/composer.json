@@ -1,6 +1,7 @@
 {
     "require": {
-        "phpunit/phpunit": "6.* | 7.*",
+        "phpunit/phpunit": "8.*",
+        "dms/phpunit-arraysubset-asserts": "^0.1",
         "phake/phake": "^3.0",
         "clue/arguments": "^2.0",
         "mikey179/vfsstream": "^1.6",

@@ -12,7 +12,7 @@ use JKingWeb\Arsse\Database;
 class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $db = null;
     
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
         self::setConf();
         try {
@@ -22,7 +22,7 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function tearDown() {
+    public function tearDown(): void {
         $this->db = null;
         self::clearData();
     }
@@ -34,7 +34,7 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, $this->db->generateIn($inV, $inT));
     }
 
-    public function provideInClauses() {
+    public function provideInClauses(): iterable {
         $l = Database::LIMIT_SET_SIZE + 1;
         $strings = array_fill(0, $l, "");
         $ints = range(1, $l);
@@ -69,7 +69,7 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, $this->db->generateSearch($inV, $inC, $inAny));
     }
 
-    public function provideSearchClauses() {
+    public function provideSearchClauses(): iterable {
         $terms = array_fill(0, Database::LIMIT_SET_SIZE + 1, "a");
         $clause = array_fill(0, Database::LIMIT_SET_SIZE + 1, "test like '%a%' escape '^'");
         $longString = str_repeat("0", Database::LIMIT_SET_STRING_LENGTH + 1);
