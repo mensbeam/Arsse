@@ -57,7 +57,7 @@ abstract class AbstractImportExport {
             }
             if (!isset($folderMap[$id])) {
                 // if no existing folder exists, add one
-                $folderMap[$id] = Arsse::$db->folderAdd($user, ['name' => $f['name'], 'parent' -> $parent]);
+                $folderMap[$id] = Arsse::$db->folderAdd($user, ['name' => $f['name'], 'parent' => $parent]);
             }
         }
         // process newsfeed subscriptions
@@ -118,21 +118,21 @@ abstract class AbstractImportExport {
             foreach (array_diff(array_column($feedsDb, "id"), $feedMap) as $id) {
                 try {
                     Arsse::$db->subscriptionRemove($user, $id);
-                } catch (InputException $e) {
+                } catch (InputException $e) { // @codeCoverageIgnore
                     // ignore errors
                 }
             }
             foreach (array_diff(array_column($foldersDb, "id"), $folderMap) as $id) {
                 try {
                     Arsse::$db->folderRemove($user, $id);
-                } catch (InputException $e) {
+                } catch (InputException $e) { // @codeCoverageIgnore
                     // ignore errors
                 }
             }
             foreach (array_diff(array_column($tagsDb, "name"), array_keys($tagMap)) as $id) {
                 try {
                     Arsse::$db->tagRemove($user, $id, true);
-                } catch (InputException $e) {
+                } catch (InputException $e) { // @codeCoverageIgnore
                     // ignore errors
                 }
             }

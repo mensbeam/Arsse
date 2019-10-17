@@ -5,6 +5,7 @@ use Robo\Result;
 const BASE = __DIR__.\DIRECTORY_SEPARATOR;
 const BASE_TEST = BASE."tests".\DIRECTORY_SEPARATOR;
 define("IS_WIN", defined("PHP_WINDOWS_VERSION_MAJOR"));
+define("IS_MAC", php_uname("s") === "Darwin");
 
 function norm(string $path): string {
     $out = realpath($path);
@@ -92,12 +93,13 @@ class RoboFile extends \Robo\Tasks {
             $dbg = dirname(\PHP_BINARY)."\\phpdbg.exe";
             $dbg = file_exists($dbg) ? $dbg : "";
         } else {
-            $dbg = trim(`which phpdbg`);
+            $dbg = trim(`which phpdbg 2>/dev/null`);
         }
         if ($dbg) {
             return escapeshellarg($dbg)." -qrr";
         } else {
-            return escapeshellarg(\PHP_BINARY);
+            $ext = IS_WIN ? "dll" : (IS_MAC ? "dylib" : "so");
+            return escapeshellarg(\PHP_BINARY)." -d zend_extension=xdebug.$ext";
         }
     }
 

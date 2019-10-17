@@ -212,11 +212,13 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 4, 'name' => "Politics",    'parent' => 0],
             ['id' => 5, 'name' => "Local",       'parent' => 4],
             ['id' => 6, 'name' => "National",    'parent' => 4],
+            ['id' => 7, 'name' => "Nature",      'parent' => 0], // new folder
         ]];
         \Phake::when($this->proc)->parse->thenReturn($in);
         $this->proc->import("john.doe@example.com", "", false, true);
         $exp = $this->primeExpectations($this->data, $this->checkTables);
         $exp['arsse_subscriptions']['rows'][3] = [4, "john.doe@example.com", null, 4, "CBC"];
+        $exp['arsse_folders']['rows'][] = [7, "john.doe@example.com", null, "Nature"];
         $this->compareExpectations($this->drv, $exp);
     }
 
