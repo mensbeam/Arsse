@@ -100,8 +100,8 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function provideAuthenticationChallenges() {
-        self::setConf();
-        $default = 'Basic realm="'.Arsse::$conf->httpRealm.'", charset="UTF-8"';
+        $realm = (new \ReflectionClass(\JKingWeb\Arsse\Conf::class))->getDefaultProperties()['httpRealm'];
+        $default = 'Basic realm="'.$realm.'", charset="UTF-8"';
         return [
             [new EmptyResponse(401),                                                                               new EmptyResponse(401, ['WWW-Authenticate' => $default])],
             [new EmptyResponse(401),                                                                               new EmptyResponse(401, ['WWW-Authenticate' => 'Basic realm="OOK", charset="UTF-8"']), "OOK"],
