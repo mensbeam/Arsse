@@ -46,23 +46,14 @@ abstract class AbstractStatement implements Statement {
         return $query;
     }
 
-    public function retypeArray(array $bindings, bool $append = false): bool {
-        if (!$append) {
-            $this->types = [];
+    public function retypeArray(array $bindings): bool {
+        $this->types = [];
+        foreach (ValueInfo::flatten($bindings) as $binding) { // recursively flatten any arrays, which may be provided for SET or IN() clauses
+            $bindId = self::TYPES[trim(strtolower($binding))] ?? 0;
+            assert($bindId, new Exception("paramTypeInvalid", $binding));
+            $this->types[] = $bindId;
         }
-        foreach ($bindings as $binding) {
-            if (is_array($binding)) {
-                // recursively flatten any arrays, which may be provided for SET or IN() clauses
-                $this->retypeArray($binding, true);
-            } else {
-                $bindId = self::TYPES[trim(strtolower($binding))] ?? 0;
-                assert($bindId, new Exception("paramTypeInvalid", $binding));
-                $this->types[] = $bindId;
-            }
-        }
-        if (!$append) {
-            $this->prepare(static::mungeQuery($this->query, $this->types));
-        }
+        $this->prepare(static::mungeQuery($this->query, $this->types));
         return true;
     }
 
@@ -79,26 +70,22 @@ abstract class AbstractStatement implements Statement {
         }
     }
 
-    protected function bindValues(array $values, int $offset = null): int {
-        $a = (int) $offset;
-        foreach ($values as $value) {
-            if (is_array($value)) {
-                // recursively flatten any arrays, which may be provided for SET or IN() clauses
-                $a += $this->bindValues($value, $a);
-            } elseif (array_key_exists($a, $this->types)) {
+    protected function bindValues(array $values): bool {
+         // recursively flatten any arrays, which may be provided for SET or IN() clauses
+        $values = ValueInfo::flatten($values);
+        foreach ($values as $a => $value) {
+            if (array_key_exists($a, $this->types)) {
                 $value = $this->cast($value, $this->types[$a]);
                 $this->bindValue($value, $this->types[$a] % self::T_NOT_NULL, ++$a);
             } else {
                 throw new Exception("paramTypeMissing", $a+1);
             }
         }
-        // once the last value is bound, check that all parameters have been supplied values and bind null for any missing ones
+        // once all values are bound, check that all parameters have been supplied values and bind null for any missing ones
         // SQLite will happily substitute null for a missing value, but other engines (viz. PostgreSQL) produce an error
-        if (is_null($offset)) {
-            while ($a < sizeof($this->types)) {
-                $this->bindValue(null, $this->types[$a] % self::T_NOT_NULL, ++$a);
-            }
+        for ($a = sizeof($values); $a < sizeof($this->types); $a++) {
+            $this->bindValue(null, $this->types[$a] % self::T_NOT_NULL, $a + 1);
         }
-        return $a - $offset;
+        return true;
     }
 }
