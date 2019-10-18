@@ -10,7 +10,6 @@ namespace JKingWeb\Arsse\TestCase\Db\MySQL;
  * @group slow
  * @group coverageOptional
  * @covers \JKingWeb\Arsse\Database<extended>
- * @covers \JKingWeb\Arsse\Misc\Query<extended>
  */
 class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\AbstractTest {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\MySQL;
