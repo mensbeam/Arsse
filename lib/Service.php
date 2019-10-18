@@ -20,18 +20,6 @@ class Service {
     /** @var \DateInterval */
     protected $interval;
 
-    public static function driverList(): array {
-        $sep = \DIRECTORY_SEPARATOR;
-        $path = __DIR__.$sep."Service".$sep;
-        $classes = [];
-        foreach (glob($path."*".$sep."Driver.php") as $file) {
-            $name = basename(dirname($file));
-            $class = NS_BASE."User\\$name\\Driver";
-            $classes[$class] = $class::driverName();
-        }
-        return $classes;
-    }
-
     public function __construct() {
         $driver = Arsse::$conf->serviceDriver;
         $this->drv = new $driver();
