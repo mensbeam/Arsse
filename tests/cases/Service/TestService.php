@@ -39,4 +39,24 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertTrue(Service::hasCheckedIn());
         $this->assertFalse(Service::hasCheckedIn());
     }
+
+    public function testPerformPreCleanup() {
+        $this->assertTrue(Service::cleanupPre());
+        \Phake::verify(Arsse::$db)->feedCleanup();
+        \Phake::verify(Arsse::$db)->sessionCleanup();
+    }
+
+    public function testPerformShortPostCleanup() {
+        \Phake::when(Arsse::$db)->articleCleanup()->thenReturn(0);
+        $this->assertTrue(Service::cleanupPost());
+        \Phake::verify(Arsse::$db)->articleCleanup();
+        \Phake::verify(Arsse::$db, \Phake::times(0))->driverMaintenance();
+    }
+
+    public function testPerformFullPostCleanup() {
+        \Phake::when(Arsse::$db)->articleCleanup()->thenReturn(1);
+        $this->assertTrue(Service::cleanupPost());
+        \Phake::verify(Arsse::$db)->articleCleanup();
+        \Phake::verify(Arsse::$db)->driverMaintenance();
+    }
 }

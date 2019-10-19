@@ -207,7 +207,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 // indexed arrays
                 $p->appendChild($this->makeXMLIndexed($v, $d->createElement($k), substr($k, 0, strlen($k) - 1)));
             } else {
-                // this case does not actually occur in a proper Fever response
+                // this case is never encountered with Fever's output
                 $p->appendChild($this->makeXMLAssoc($v, $d->createElement($k))); // @codeCoverageIgnore
             }
         }

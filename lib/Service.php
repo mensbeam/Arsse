@@ -40,11 +40,13 @@ class Service {
             }
             static::cleanupPost();
             $t->add($this->interval);
+            // @codeCoverageIgnoreStart
             if ($loop) {
                 do {
                     @time_sleep_until($t->getTimestamp());
                 } while ($t->getTimestamp() > time());
             }
+            // @codeCoverageIgnoreEnd
         } while ($loop);
         return $t;
     }
