@@ -129,6 +129,7 @@
     <testsuite name="Admin tools">
         <file>cases/Service/TestService.php</file>
         <file>cases/CLI/TestCLI.php</file>
+        <file>cases/TestArsse.php</file>
     </testsuite>
     <testsuite name="Import/Export">
         <file>cases/ImportExport/TestFile.php</file>
