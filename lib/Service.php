@@ -12,18 +12,14 @@ class Service {
     const DRIVER_NAMES = [
         'serial'     => \JKingWeb\Arsse\Service\Serial\Driver::class,
         'subprocess' => \JKingWeb\Arsse\Service\Subprocess\Driver::class,
-        'curl'       => \JKingWeb\Arsse\Service\Curl\Driver::class,
     ];
 
     /** @var Service\Driver */
     protected $drv;
-    /** @var \DateInterval */
-    protected $interval;
 
     public function __construct() {
         $driver = Arsse::$conf->serviceDriver;
         $this->drv = new $driver();
-        $this->interval = Arsse::$conf->serviceFrequency;
     }
 
     public function watch(bool $loop = true): \DateTimeInterface {
@@ -34,12 +30,12 @@ class Service {
             $list = Arsse::$db->feedListStale();
             if ($list) {
                 $this->drv->queue(...$list);
+                unset($list);
                 $this->drv->exec();
                 $this->drv->clean();
-                unset($list);
             }
             static::cleanupPost();
-            $t->add($this->interval);
+            $t->add(Arsse::$conf->serviceFrequency);
             // @codeCoverageIgnoreStart
             if ($loop) {
                 do {

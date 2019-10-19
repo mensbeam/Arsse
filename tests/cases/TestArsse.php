@@ -37,6 +37,9 @@ class TestArsse extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testLoadNewData() {
+        if (!\JKingWeb\Arsse\Db\SQLite3\Driver::requirementsMet() && !\JKingWeb\Arsse\Db\SQLite3\PDODriver::requirementsMet()) {
+            $this->markTestSkipped("A functional SQLite interface is required for this test");
+        }
         $conf = (new Conf)->import(['dbSQLite3File' => ":memory:"]);
         Arsse::load($conf);
         $this->assertInstanceOf(Conf::class, Arsse::$conf);

@@ -33,7 +33,7 @@ class Driver implements \JKingWeb\Arsse\Service\Driver {
             $id = (int) array_shift($this->queue);
             $php = escapeshellarg(\PHP_BINARY);
             $arsse = escapeshellarg($_SERVER['argv'][0]);
-            array_push($pp, popen("$php $arsse feed refresh $id", "r"));
+            array_push($pp, $this->execCmd("$php $arsse feed refresh $id"));
         }
         while ($pp) {
             $p = array_pop($pp);
@@ -43,8 +43,14 @@ class Driver implements \JKingWeb\Arsse\Service\Driver {
         return Arsse::$conf->serviceQueueWidth - sizeof($this->queue);
     }
 
-    public function clean(): bool {
+    /** @codeCoverageIgnore */
+    protected function execCmd(string $cmd) {
+        return popen($cmd, "r");
+    }
+
+    public function clean(): int {
+        $out = sizeof($this->queue);
         $this->queue = [];
-        return true;
+        return $out;
     }
 }
