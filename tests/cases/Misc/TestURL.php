@@ -92,4 +92,21 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
             ["/#ack", "", "/#ack"],
         ];
     }
+
+    /** @dataProvider provideAbsolutes */
+    public function testDetermineAbsoluteness(bool $exp, string $url) {
+        $this->assertSame($exp, URL::absolute($url));
+    }
+
+    public function provideAbsolutes() {
+        return [
+            [true,  "http://example.com/"],
+            [true,  "HTTP://example.com/"],
+            [false, "//example.com/"],
+            [false, "/example"],
+            [false, "example.com/"],
+            [false, "example.com"],
+            [false, "http:///example"],
+        ];
+    }
 }

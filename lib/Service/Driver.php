@@ -11,5 +11,5 @@ interface Driver {
     public static function requirementsMet(): bool;
     public function queue(int ...$feeds): int;
     public function exec(): int;
-    public function clean(): bool;
+    public function clean(): int;
 }

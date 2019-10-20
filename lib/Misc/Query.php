@@ -29,61 +29,63 @@ class Query {
         $this->setBody($body, $types, $values);
     }
 
-    public function setBody(string $body = "", $types = null, $values = null): bool {
+    public function setBody(string $body = "", $types = null, $values = null): self {
         $this->qBody = $body;
         if (!is_null($types)) {
             $this->tBody[] = $types;
             $this->vBody[] = $values;
         }
-        return true;
+        return $this;
     }
 
-    public function setCTE(string $tableSpec, string $body, $types = null, $values = null): bool {
+    public function setCTE(string $tableSpec, string $body, $types = null, $values = null): self {
         $this->qCTE[] = "$tableSpec as ($body)";
         if (!is_null($types)) {
             $this->tCTE[] = $types;
             $this->vCTE[] = $values;
         }
-        return true;
+        return $this;
     }
 
-    public function setWhere(string $where, $types = null, $values = null): bool {
+    public function setWhere(string $where, $types = null, $values = null): self {
         $this->qWhere[] = $where;
         if (!is_null($types)) {
             $this->tWhere[] = $types;
             $this->vWhere[] = $values;
         }
-        return true;
+        return $this;
     }
 
-    public function setWhereNot(string $where, $types = null, $values = null): bool {
+    public function setWhereNot(string $where, $types = null, $values = null): self {
         $this->qWhereNot[] = $where;
         if (!is_null($types)) {
             $this->tWhereNot[] = $types;
             $this->vWhereNot[] = $values;
         }
-        return true;
+        return $this;
     }
 
-    public function setGroup(string ...$column): bool {
+    public function setGroup(string ...$column): self {
         foreach ($column as $col) {
             $this->group[] = $col;
         }
-        return true;
+        return $this;
     }
 
-    public function setOrder(string $order): bool {
-        $this->order[] = $order;
-        return true;
+    public function setOrder(string ...$order): self {
+        foreach ($order as $o) {
+            $this->order[] = $o;
+        }
+        return $this;
     }
 
-    public function setLimit(int $limit, int $offset = 0): bool {
+    public function setLimit(int $limit, int $offset = 0): self {
         $this->limit = $limit;
         $this->offset = $offset;
-        return true;
+        return $this;
     }
 
-    public function pushCTE(string $tableSpec): bool {
+    public function pushCTE(string $tableSpec): self {
         // this function takes the query body and converts it to a common table expression, putting it at the bottom of the existing CTE stack
         // all WHERE, ORDER BY, and LIMIT parts belong to the new CTE and are removed from the main query
         $this->setCTE($tableSpec, $this->buildQueryBody(), [$this->tBody, $this->tWhere, $this->tWhereNot], [$this->vBody, $this->vWhere, $this->vWhereNot]);
@@ -98,7 +100,7 @@ class Query {
         $this->order = [];
         $this->group = [];
         $this->setLimit(0, 0);
-        return true;
+        return $this;
     }
 
     public function __toString(): string {
@@ -117,11 +119,11 @@ class Query {
     }
 
     public function getTypes(): array {
-        return [$this->tCTE, $this->tBody, $this->tWhere, $this->tWhereNot];
+        return ValueInfo::flatten([$this->tCTE, $this->tBody, $this->tWhere, $this->tWhereNot]);
     }
 
     public function getValues(): array {
-        return [$this->vCTE, $this->vBody, $this->vWhere, $this->vWhereNot];
+        return ValueInfo::flatten([$this->vCTE, $this->vBody, $this->vWhere, $this->vWhereNot]);
     }
 
     protected function buildQueryBody(): string {
@@ -144,9 +146,9 @@ class Query {
         if (sizeof($this->order)) {
             $out .= " ORDER BY ".implode(", ", $this->order);
         }
-        // add LIMIT and OFFSET if the former is specified
-        if ($this->limit > 0) {
-            $out .= " LIMIT ".$this->limit;
+        // add LIMIT and OFFSET if either is specified
+        if ($this->limit > 0 || $this->offset > 0) {
+            $out .= " LIMIT ".($this->limit < 1 ? -1 : $this->limit);
             if ($this->offset > 0) {
                 $out .= " OFFSET ".$this->offset;
             }

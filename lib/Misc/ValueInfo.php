@@ -397,6 +397,17 @@ class ValueInfo {
         }
     }
 
+    public static function flatten(array $arr): array {
+        $arr = array_values($arr);
+        for ($a = 0; $a < sizeof($arr); $a++) {
+            if (is_array($arr[$a])) {
+                array_splice($arr, $a, 1, $arr[$a]);
+                $a--;
+            }
+        }
+        return $arr;
+    }
+
     public static function int($value): int {
         $out = 0;
         if (is_null($value)) {
