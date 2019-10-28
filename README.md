@@ -105,8 +105,6 @@ The Arsse's user manual, made using [Daux](https://daux.io/), can be compiled by
 
 The manual employs a custom theme derived from the standard Daux theme. If the standard Daux theme receives improvements, the custom theme can be rebuilt by running `./robo manual:theme`. This requires that [NodeJS](https://nodejs.org) and [Yarn](https://yarnpkg.com/) be installed, but JavaScript tools are not required to modify The Arsse itself, nor the content of the manual.
 
-The Robo task `manual:css` will recompile the theme's stylesheet without rebuilding the entire theme.
-
 ## Packaging a release
 
 Producing a release package is done by running `./robo package`. This performs the following operations:
