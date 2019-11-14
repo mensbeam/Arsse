@@ -15,10 +15,10 @@ use JKingWeb\Arsse\Service;
 
 /** @covers \JKingWeb\Arsse\Arsse */
 class TestArsse extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function setUp() {
+    public function setUp(): void {
         self::clearData(false);
     }
-    public function tearDown() {
+    public function tearDown(): void {
         self::clearData();
     }
 

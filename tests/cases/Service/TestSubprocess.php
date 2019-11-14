@@ -13,7 +13,7 @@ use JKingWeb\Arsse\Service\Subprocess\Driver;
 
 /** @covers \JKingWeb\Arsse\Service\Subprocess\Driver */
 class TestSubprocess extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
         self::setConf();
     }

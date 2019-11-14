@@ -13,7 +13,7 @@ use JKingWeb\Arsse\Service\Serial\Driver;
 
 /** @covers \JKingWeb\Arsse\Service\Serial\Driver */
 class TestSerial extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
         self::setConf();
         Arsse::$db = \Phake::mock(Database::class);
