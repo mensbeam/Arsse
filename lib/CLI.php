@@ -206,7 +206,7 @@ USAGE_TEXT;
             $this->logError($e->getMessage());
             return $e->getCode();
         }
-    }
+    } // @codeCoverageIgnore
 
     /** @codeCoverageIgnore */
     protected function logError(string $msg) {
@@ -248,7 +248,7 @@ USAGE_TEXT;
             case "":
                 return $this->userList();
         }
-    }
+    } // @codeCoverageIgnore
 
     protected function userAddOrSetPassword(string $method, string $user, string $password = null, string $oldpass = null): int {
         $passwd = Arsse::$user->$method(...array_slice(func_get_args(), 1));

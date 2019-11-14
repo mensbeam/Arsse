@@ -264,6 +264,7 @@ class Conf {
                     $type |= Value::M_NULL;
                 }
             } else {
+                // catch-all for custom properties
                 $type = Value::T_MIXED; // @codeCoverageIgnore
             }
             $out[$p->name] = ['name' => $match[0], 'const' => $type];
@@ -286,6 +287,7 @@ class Conf {
                 }
                 switch (self::EXPECTED_TYPES[$key] ?? gettype($this->$key)) {
                     case "integer":
+                        // no properties are currently typed as integers
                         return Value::normalize($value, Value::T_INT | $mode); // @codeCoverageIgnore
                     case "double":
                         return Value::normalize($value, Value::T_FLOAT | $mode);
@@ -293,6 +295,7 @@ class Conf {
                     case "object":
                         return $value;
                     default:
+                        // this should never occur
                         throw new Conf\Exception("ambiguousDefault", ['param' => $key]); // @codeCoverageIgnore
                 }
             }

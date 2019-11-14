@@ -36,8 +36,9 @@ class Driver implements \JKingWeb\Arsse\Service\Driver {
         return Arsse::$conf->serviceQueueWidth - sizeof($this->queue);
     }
 
-    public function clean(): bool {
+    public function clean(): int {
+        $out = sizeof($this->queue);
         $this->queue = [];
-        return true;
+        return $out;
     }
 }

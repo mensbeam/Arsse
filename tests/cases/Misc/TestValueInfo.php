@@ -639,4 +639,10 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
         $out->f = $msec;
         return $out;
     }
+
+    public function testFlattenArray() {
+        $arr = [1, [2, 3, [4, 5]], 6, [[7, 8], 9, 10]];
+        $exp = range(1, 10);
+        $this->assertSame($exp, I::flatten($arr));
+    }
 }

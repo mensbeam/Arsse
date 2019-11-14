@@ -207,7 +207,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 // indexed arrays
                 $p->appendChild($this->makeXMLIndexed($v, $d->createElement($k), substr($k, 0, strlen($k) - 1)));
             } else {
-                $p->appendChild($this->makeXMLAssoc($v, $d->createElement($k)));
+                // this case is never encountered with Fever's output
+                $p->appendChild($this->makeXMLAssoc($v, $d->createElement($k))); // @codeCoverageIgnore
             }
         }
         return $p;

@@ -24,13 +24,6 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv = \Phake::mock(Driver::class);
     }
 
-    public function testListDrivers() {
-        $exp = [
-            'JKingWeb\\Arsse\\User\\Internal\\Driver' => Arsse::$lang->msg("Driver.User.Internal.Name"),
-        ];
-        $this->assertArraySubset($exp, User::driverList());
-    }
-
     public function testConstruct() {
         $this->assertInstanceOf(User::class, new User($this->drv));
         $this->assertInstanceOf(User::class, new User);

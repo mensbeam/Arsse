@@ -22,7 +22,7 @@ sudo -u postgres psql -c "CREATE USER arsseuser WITH PASSWORD 'super secret pass
 sudo -u postgres psql -c "CREATE DATABASE arssedb WITH OWNER arsseuser"
 ```
 
-Tha Arsse must then be configured to use the created database. A suitable [configuration file](/en/Getting_Started/Configuration) might look like this:
+The Arsse must then be configured to use the created database. A suitable [configuration file](/en/Getting_Started/Configuration) might look like this:
 
 ```php
 <?php

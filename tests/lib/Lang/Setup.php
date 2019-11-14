@@ -9,6 +9,7 @@ namespace JKingWeb\Arsse\Test\Lang;
 use JKingWeb\Arsse\Lang;
 use JKingWeb\Arsse\Arsse;
 use org\bovigo\vfs\vfsStream;
+use Webmozart\Glob\Glob;
 
 trait Setup {
     public function setUp(): void {
@@ -36,7 +37,10 @@ trait Setup {
         // set up a file without read access
         chmod($this->path."ru.php", 0000);
         // make the test Lang class use the vfs files
-        $this->l = new TestLang($this->path);
+        $this->l = \Phake::partialMock(Lang::class, $this->path);
+        \Phake::when($this->l)->globFiles->thenReturnCallback(function(string $path): array {
+            return Glob::glob($this->path."*.php");
+        });
         // create a mock Lang object so as not to create a dependency loop
         self::clearData(false);
         Arsse::$lang = \Phake::mock(Lang::class);
