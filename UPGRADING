@@ -10,6 +10,15 @@ usually prudent:
 - If installing from source, update dependencies with:
   `composer install -o --no-dev`
 
+
+Upgrading from 0.8.1 to 0.8.2
+=============================
+
+- The database schema has changed from rev5 to rev6; if upgrading the database
+  manually, apply the 5.sql file. MySQL databases may need manual
+  intervention to ensure foreign key constraints are not violated
+
+
 Upgrading from 0.7.1 to 0.8.0
 =============================
 
@@ -21,6 +30,7 @@ Upgrading from 0.7.1 to 0.8.0
 - The following Composer dependencies have been added:
     - zendframework/zend-diactoros (version 2.x)
     - zendframework/zend-httphandlerrunner
+
 
 Upgrading from 0.5.1 to 0.6.0
 =============================
