@@ -9,9 +9,10 @@ alter table arsse_sessions default character set utf8mb4 collate utf8mb4_unicode
 alter table arsse_sessions convert to character set utf8mb4 collate utf8mb4_unicode_ci;
 
 -- Ensure referential integrity
-delete from arsse_folders where
-    owner not in (select id from arsse_users) or
-    (parent is not null and parent not in (select id from arsse_folders));
+with valid as (select id from arsse_folders)
+    delete from arsse_folders where
+        owner not in (select id from arsse_users) or
+        (parent is not null and parent not in (select id from valid));
 delete from arsse_subscriptions where
     owner not in (select id from arsse_users) or
     feed not in (select id from arsse_feeds) or
