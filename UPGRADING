@@ -15,8 +15,7 @@ Upgrading from 0.8.1 to 0.8.2
 =============================
 
 - The database schema has changed from rev5 to rev6; if upgrading the database
-  manually, apply the 5.sql file. MySQL databases may need manual
-  intervention to ensure foreign key constraints are not violated
+  manually, apply the 5.sql file
 
 
 Upgrading from 0.7.1 to 0.8.0

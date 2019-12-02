@@ -8,6 +8,33 @@
 alter table arsse_sessions default character set utf8mb4 collate utf8mb4_unicode_ci;
 alter table arsse_sessions convert to character set utf8mb4 collate utf8mb4_unicode_ci;
 
+-- Ensure referential integrity
+delete from arsse_folders where
+    owner not in (select id from arsse_users) or
+    (parent is not null and parent not in (select id from arsse_folders));
+delete from arsse_subscriptions where
+    owner not in (select id from arsse_users) or
+    feed not in (select id from arsse_feeds) or
+    (folder is not null and folder not in (select id from arsse_folders));
+delete from arsse_articles where feed not in (select id from arsse_feeds);
+delete from arsse_enclosures where article not in (select id from arsse_articles);
+delete from arsse_marks where
+    article not in (select id from arsse_articles) or
+    subscription not in (select id from arsse_subscriptions);
+delete from arsse_editions where article not in (select id from arsse_articles);
+delete from arsse_categories where article not in (select id from arsse_articles);
+delete from arsse_sessions where "user" not in (select id from arsse_users);
+delete from arsse_labels where owner not in (select id from arsse_users);
+delete from arsse_label_members where
+    label not in (select id from arsse_labels) or
+    article not in (select id from arsse_articles) or
+    subscription not in (select id from arsse_subscriptions);
+delete from arsse_tags where owner not in (select id from arsse_users);
+delete from arsse_tag_members where
+    tag not in (select id from arsse_tags) or
+    subscription not in (select id from arsse_subscriptions);
+delete from arsse_tokens where "user" not in (select id from arsse_users);
+
 -- Make integer foreign key referrers unsigned to match serial-type keys
 alter table arsse_folders modify parent bigint unsigned;
 alter table arsse_subscriptions modify feed bigint unsigned not null;
