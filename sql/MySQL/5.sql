@@ -4,6 +4,32 @@
 
 -- Please consult the SQLite 3 schemata for commented version
 
+-- Drop unnecessary indexes
+drop index id on arsse_folders;
+drop index id on arsse_feeds;
+drop index id on arsse_subscriptions;
+drop index id on arsse_articles;
+drop index id on arsse_editions;
+drop index id on arsse_labels;
+drop index id on arsse_tags;
+
+-- Ensure tables use dynamic row-format; these should be no-ops for most installations
+alter table arsse_meta engine=InnoDB row_format=dynamic;
+alter table arsse_users engine=InnoDB row_format=dynamic;
+alter table arsse_feeds engine=InnoDB row_format=dynamic;
+alter table arsse_folders engine=InnoDB row_format=dynamic;
+alter table arsse_subscriptions engine=InnoDB row_format=dynamic;
+alter table arsse_articles engine=InnoDB row_format=dynamic;
+alter table arsse_marks engine=InnoDB row_format=dynamic;
+alter table arsse_labels engine=InnoDB row_format=dynamic;
+alter table arsse_label_members engine=InnoDB row_format=dynamic;
+alter table arsse_tags engine=InnoDB row_format=dynamic;
+alter table arsse_tag_members engine=InnoDB row_format=dynamic;
+alter table arsse_editions engine=InnoDB row_format=dynamic;
+alter table arsse_categories engine=InnoDB row_format=dynamic;
+alter table arsse_tokens engine=InnoDB row_format=dynamic;
+alter table arsse_sessions engine=InnoDB row_format=dynamic;
+
 -- Correct character set and collation of sessions table
 alter table arsse_sessions default character set utf8mb4 collate utf8mb4_unicode_ci;
 alter table arsse_sessions convert to character set utf8mb4 collate utf8mb4_unicode_ci;
@@ -51,6 +77,37 @@ alter table arsse_label_members modify article bigint unsigned not null;
 alter table arsse_label_members modify subscription bigint unsigned not null;
 alter table arsse_tag_members modify tag bigint unsigned not null;
 alter table arsse_tag_members modify subscription bigint unsigned not null;
+
+-- Use longtext columns whenever possible
+alter table arsse_users modify password longtext;
+alter table arsse_sessions drop primary key;
+alter table arsse_sessions modify id longtext;
+alter table arsse_sessions add primary key(id(768));
+alter table arsse_tokens drop primary key;
+alter table arsse_tokens modify id longtext;
+alter table arsse_tokens add primary key(id(512), class);
+alter table arsse_feeds modify title longtext;
+alter table arsse_feeds modify favicon longtext;
+alter table arsse_feeds modify source longtext;
+alter table arsse_feeds modify etag longtext;
+alter table arsse_feeds modify err_msg longtext;
+alter table arsse_articles modify url longtext;
+alter table arsse_articles modify title longtext;
+alter table arsse_articles modify author longtext;
+alter table arsse_articles modify guid longtext;
+alter table arsse_enclosures modify url longtext;
+alter table arsse_enclosures modify type longtext;
+alter table arsse_categories modify name longtext;
+drop index owner on arsse_folders;
+alter table arsse_folders modify name longtext not null;
+alter table arsse_folders add unique index(owner, name(255), parent);
+drop index owner on arsse_tags;
+alter table arsse_tags modify name longtext not null;
+alter table arsse_tags add unique index(owner, name(255));
+drop index owner on arsse_labels;
+alter table arsse_labels modify name longtext not null;
+alter table arsse_labels add unique index(owner, name(255));
+
 
 -- Fix foreign key constraints
 alter table arsse_folders add foreign key(owner) references arsse_users(id) on delete cascade on update cascade;
