@@ -19,13 +19,6 @@ trait SeriesMiscellany {
     protected function tearDownSeriesMiscellany() {
     }
 
-    public function testListDrivers() {
-        $exp = [
-            'JKingWeb\\Arsse\\Db\\SQLite3\\Driver' => Arsse::$lang->msg("Driver.Db.SQLite3.Name"),
-        ];
-        $this->assertArraySubset($exp, Database::driverList());
-    }
-
     public function testInitializeDatabase() {
         static::dbRaze(static::$drv);
         $d = new Database(true);

@@ -9,7 +9,6 @@ namespace JKingWeb\Arsse\TestCase\Db\SQLite3;
 /**
  * @group optional
  * @covers \JKingWeb\Arsse\Database<extended>
- * @covers \JKingWeb\Arsse\Misc\Query<extended>
  */
 class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\AbstractTest {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\SQLite3;

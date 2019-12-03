@@ -20,18 +20,6 @@ class User {
     */
     protected $u;
 
-    public static function driverList(): array {
-        $sep = \DIRECTORY_SEPARATOR;
-        $path = __DIR__.$sep."User".$sep;
-        $classes = [];
-        foreach (glob($path."*".$sep."Driver.php") as $file) {
-            $name = basename(dirname($file));
-            $class = NS_BASE."User\\$name\\Driver";
-            $classes[$class] = $class::driverName();
-        }
-        return $classes;
-    }
-
     public function __construct(\JKingWeb\Arsse\User\Driver $driver = null) {
         $this->u = $driver ?? new Arsse::$conf->userDriver;
     }

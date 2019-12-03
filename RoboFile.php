@@ -5,6 +5,7 @@ use Robo\Result;
 const BASE = __DIR__.\DIRECTORY_SEPARATOR;
 const BASE_TEST = BASE."tests".\DIRECTORY_SEPARATOR;
 define("IS_WIN", defined("PHP_WINDOWS_VERSION_MAJOR"));
+define("IS_MAC", php_uname("s") === "Darwin");
 
 function norm(string $path): string {
     $out = realpath($path);
@@ -92,12 +93,13 @@ class RoboFile extends \Robo\Tasks {
             $dbg = dirname(\PHP_BINARY)."\\phpdbg.exe";
             $dbg = file_exists($dbg) ? $dbg : "";
         } else {
-            $dbg = trim(`which phpdbg`);
+            $dbg = trim(`which phpdbg 2>/dev/null`);
         }
         if ($dbg) {
             return escapeshellarg($dbg)." -qrr";
         } else {
-            return escapeshellarg(\PHP_BINARY);
+            $ext = IS_WIN ? "dll" : (IS_MAC ? "dylib" : "so");
+            return escapeshellarg(\PHP_BINARY)." -d zend_extension=xdebug.$ext";
         }
     }
 
@@ -196,6 +198,7 @@ class RoboFile extends \Robo\Tasks {
         $execpath = escapeshellarg(norm(BASE."vendor/bin/daux"));
         $t = $this->collectionBuilder();
         $t->taskExec($execpath)->arg("generate")->option("-d", BASE."manual")->args($args);
+        $t->taskDeleteDir(BASE."manual/daux_libraries");
         $t->taskDeleteDir(BASE."manual/theme");
         $t->taskDeleteDir(BASE."manual/themes/src");
         return $t->run();
@@ -213,80 +216,20 @@ class RoboFile extends \Robo\Tasks {
      * Daux's theme changes
      */
     public function manualTheme(array $args): Result {
-        $languages = ["php", "bash", "shell", "xml", "nginx", "apache"];
+        $postcss = escapeshellarg(norm(BASE."node_modules/.bin/postcss"));
+        $themesrc = norm(BASE."docs/theme/src/").\DIRECTORY_SEPARATOR;
         $themeout = norm(BASE."docs/theme/arsse/").\DIRECTORY_SEPARATOR;
         $dauxjs = norm(BASE."vendor-bin/daux/vendor/daux/daux.io/themes/daux/js/").\DIRECTORY_SEPARATOR;
         // start a collection; this stops after the first failure
         $t = $this->collectionBuilder();
-        $tmp = $t->tmpDir().\DIRECTORY_SEPARATOR;
-        // rebuild the stylesheet
-        $t->addCode([$this, "manualCss"]);
-        // copy JavaScript files from the Daux theme
-        foreach (glob($dauxjs."daux*") as $file) {
-            $t->taskFilesystemStack()->copy($file, $themeout.basename($file), true);
-        }
-        // download highlight.js
-        $t->addCode(function() use ($languages, $tmp, $themeout) {
-            // compile the list of desired language (enumerated above) into an application/x-www-form-urlencoded body
-            $post = http_build_query((function($langs) {
-                $out = [];
-                foreach ($langs as $l) {
-                    $out[$l.".js"] = "on";
-                }
-                return $out;
-            })($languages));
-            // get the two cross-site request forgery tokens the Highlight.js Web site requires
-            $conn = @fopen("https://highlightjs.org/download/", "r");
-            if ($conn === false) {
-                throw new Exception("Unable to download Highlight.js");
-            }
-            foreach (stream_get_meta_data($conn)['wrapper_data'] as $field) {
-                if (preg_match("/^Set-Cookie: csrftoken=([^;]+)/i", $field, $cookie)) {
-                    break;
-                }
-            }
-            $token = stream_get_contents($conn);
-            preg_match("/<input type='hidden' name='csrfmiddlewaretoken' value='([^']*)'/", $token, $token);
-            // add the form CSRF token to the POST body
-            $post = "csrfmiddlewaretoken={$token[1]}&$post";
-            // download a copy of Highlight.js with the desired languages to a temporary file
-            $hljs = @file_get_contents("https://highlightjs.org/download/", false, stream_context_create(['http' => [
-                'method' => "POST",
-                'content' => $post,
-                'header' => [
-                    "Referer: https://highlightjs.org/download/",
-                    "Cookie: csrftoken={$cookie[1]}",
-                    "Content-Type: application/x-www-form-urlencoded",
-                ],
-            ]]));
-            if ($hljs === false) {
-                throw new Exception("Unable to download Highlight.js");
-            } else {
-                file_put_contents($tmp."highlightjs.zip", $hljs);
-            }
-            // extract the downloaded zip file and keep only the JS file
-            $this->taskExtract($tmp."highlightjs.zip")->to($tmp."hljs")->run();
-            $this->taskFilesystemStack()->copy($tmp."hljs".\DIRECTORY_SEPARATOR."highlight.pack.js", $themeout."highlight.pack.js")->run();
-        }, "downloadHighlightjs");
-        // execute the collection
-        return $t->run();
-    }
-
-    /** Rebuilds the manual theme's stylesheet only
-     *
-     * This requires Node and Yarn to be installed.
-     */
-    public function manualCss(): Result {
-        // start a collection; this stops after the first failure
-        $t = $this->collectionBuilder();
-        $tmp = $t->tmpDir().\DIRECTORY_SEPARATOR;
         // install dependencies via Yarn
         $t->taskExec("yarn install");
         // compile the stylesheet
-        $postcss = escapeshellarg(norm(BASE."node_modules/.bin/postcss"));
-        $themesrc = norm(BASE."docs/theme/src/").\DIRECTORY_SEPARATOR;
-        $themeout = norm(BASE."docs/theme/arsse/").\DIRECTORY_SEPARATOR;
         $t->taskExec($postcss)->arg($themesrc."arsse.scss")->option("-o", $themeout."arsse.css");
+        // copy JavaScript files from the Daux theme
+        foreach (glob($dauxjs."daux*.js") as $file) {
+            $t->taskFilesystemStack()->copy($file, $themeout.basename($file), true);
+        }
         // execute the collection
         return $t->run();
     }

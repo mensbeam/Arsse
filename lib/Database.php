@@ -78,21 +78,6 @@ class Database {
         return debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3)[2]['function'];
     }
 
-    /** Lists the available database drivers, as an associative array with
-     * fully-qualified class names as keys, and human-readable descriptions as values
-     */
-    public static function driverList(): array {
-        $sep = \DIRECTORY_SEPARATOR;
-        $path = __DIR__.$sep."Db".$sep;
-        $classes = [];
-        foreach (glob($path."*".$sep."Driver.php") as $file) {
-            $name = basename(dirname($file));
-            $class = NS_BASE."Db\\$name\\Driver";
-            $classes[$class] = $class::driverName();
-        }
-        return $classes;
-    }
-
     /** Returns the current (actual) schema version of the database; compared against self::SCHEMA_VERSION to know when an upgrade is required */
     public function driverSchemaVersion(): int {
         return $this->db->schemaVersion();

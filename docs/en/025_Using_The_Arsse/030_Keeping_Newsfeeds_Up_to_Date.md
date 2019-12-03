@@ -32,7 +32,7 @@ sudo crontab -u www-data -e
 
 And add a line such as this one:
 
-```cron
+```
 */2 * * * * /usr/bin/env php /usr/share/arsse/arsse.php refresh-all
 ```
 

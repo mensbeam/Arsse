@@ -22,7 +22,7 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testFailToConnect() {
         // for the sake of simplicity we don't distinguish between failure modes, but the MySQL-supplied error messages do
         self::setConf([
-            'dbMySQLPass' => (string) rand(),
+            'dbMySQLHost' => "example.invalid",
         ]);
         $this->assertException("connectionFailure", "Db");
         new Driver;
