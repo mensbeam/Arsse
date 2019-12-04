@@ -3,6 +3,7 @@ Version 0.8.2 (????-??-??)
 
 Bug fixes:
 - Enforce foreign key constraints in MySQL
+- Widen most text fields for MySQL
 
 Version 0.8.1 (2019-10-28)
 ==========================

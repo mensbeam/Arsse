@@ -2,8 +2,6 @@
 -- Copyright 2017 J. King, Dustin Wilson et al.
 -- See LICENSE and AUTHORS files for details
 
--- Please consult the SQLite 3 schemata for commented version
-
 -- Drop unnecessary indexes
 drop index id on arsse_folders;
 drop index id on arsse_feeds;
@@ -86,10 +84,12 @@ alter table arsse_sessions add primary key(id(768));
 alter table arsse_tokens drop primary key;
 alter table arsse_tokens modify id longtext;
 alter table arsse_tokens add primary key(id(512), class);
+drop index url on arsse_feeds;
+alter table arsse_feeds modify url longtext not null;
+alter table arsse_feeds add unique index(url(255), username, password);
 alter table arsse_feeds modify title longtext;
 alter table arsse_feeds modify favicon longtext;
 alter table arsse_feeds modify source longtext;
-alter table arsse_feeds modify etag longtext;
 alter table arsse_feeds modify err_msg longtext;
 alter table arsse_articles modify url longtext;
 alter table arsse_articles modify title longtext;
@@ -107,7 +107,6 @@ alter table arsse_tags add unique index(owner, name(255));
 drop index owner on arsse_labels;
 alter table arsse_labels modify name longtext not null;
 alter table arsse_labels add unique index(owner, name(255));
-
 
 -- Fix foreign key constraints
 alter table arsse_folders add foreign key(owner) references arsse_users(id) on delete cascade on update cascade;
