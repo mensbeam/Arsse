@@ -13,7 +13,7 @@
         <dd><a href="https://github.com/nextcloud/news/blob/master/docs/externalapi/Legacy.md">Version 1.2</a></dd>
 </dl>
 
-The NextCloud News protocol was the first supported by The Arsse, and has been supported in full since version 0.3.0.
+The Nextcloud News protocol was the first supported by The Arsse, and has been supported in full since version 0.3.0.
 
 It allows organizing newsfeeds into single-level folders, and supports a wide range of operations on newsfeeds, folders, and articles.
 
@@ -25,7 +25,7 @@ It allows organizing newsfeeds into single-level folders, and supports a wide ra
 - The feed updater ignores the `userId` parameter: feeds in The Arsse are deduplicated, and have no owner
 - The `/feeds/all` route lists only feeds which should be checked for updates, and it also returns all `userId` attributes as empty strings: feeds in The Arsse are deduplicated, and have no owner
 - The API's "updater" routes do not require administrator priviledges as The Arsse has no concept of user classes
-- The "updater" console commands mentioned in the protocol specification are not implemented, as The Arsse does not implement the required NextCloud subsystems
+- The "updater" console commands mentioned in the protocol specification are not implemented, as The Arsse does not implement the required Nextcloud subsystems
 - The `lastLoginTimestamp` attribute of the user metadata is always the current time: The Arsse's implementation of the protocol is fully stateless
 - Syntactically invalid JSON input will yield a `400 Bad Request` response instead of falling back to GET parameters
 - Folder names consisting only of whitespace are rejected along with the empty string
@@ -36,4 +36,4 @@ It allows organizing newsfeeds into single-level folders, and supports a wide ra
 
 # Interaction with nested folders
 
-Tiny Tiny RSS is unique in allowing newsfeeds to be grouped into folders nested to arbitrary depth. When newsfeeds are placed into nested folders, they simply appear in the top-level folder when accessed via the NextCloud News protocol.
+Tiny Tiny RSS is unique in allowing newsfeeds to be grouped into folders nested to arbitrary depth. When newsfeeds are placed into nested folders, they simply appear in the top-level folder when accessed via the Nextcloud News protocol.

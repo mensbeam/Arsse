@@ -11,7 +11,7 @@ use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\REST;
 use JKingWeb\Arsse\REST\Handler;
 use JKingWeb\Arsse\REST\Exception501;
-use JKingWeb\Arsse\REST\NextCloudNews\V1_2 as NCN;
+use JKingWeb\Arsse\REST\NextcloudNews\V1_2 as NCN;
 use JKingWeb\Arsse\REST\TinyTinyRSS\API as TTRSS;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -41,10 +41,10 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
             'unstripped' => ['match' => "/full/url", 'strip' => "", 'class' => "UnstrippedProtocol"],
         ];
         return [
-            [$real, "/index.php/apps/news/api/v1-2/feeds", ["ncn_v1-2",    "/feeds",     \JKingWeb\Arsse\REST\NextCloudNews\V1_2::class]],
-            [$real, "/index.php/apps/news/api/v1-2",       ["ncn",         "/v1-2",      \JKingWeb\Arsse\REST\NextCloudNews\Versions::class]],
-            [$real, "/index.php/apps/news/api/",           ["ncn",         "/",          \JKingWeb\Arsse\REST\NextCloudNews\Versions::class]],
-            [$real, "/index%2Ephp/apps/news/api/",         ["ncn",         "/",          \JKingWeb\Arsse\REST\NextCloudNews\Versions::class]],
+            [$real, "/index.php/apps/news/api/v1-2/feeds", ["ncn_v1-2",    "/feeds",     \JKingWeb\Arsse\REST\NextcloudNews\V1_2::class]],
+            [$real, "/index.php/apps/news/api/v1-2",       ["ncn",         "/v1-2",      \JKingWeb\Arsse\REST\NextcloudNews\Versions::class]],
+            [$real, "/index.php/apps/news/api/",           ["ncn",         "/",          \JKingWeb\Arsse\REST\NextcloudNews\Versions::class]],
+            [$real, "/index%2Ephp/apps/news/api/",         ["ncn",         "/",          \JKingWeb\Arsse\REST\NextcloudNews\Versions::class]],
             [$real, "/index.php/apps/news/",               []],
             [$real, "/index!php/apps/news/api/",           []],
             [$real, "/tt-rss/api/index.php",               ["ttrss_api",   "/index.php", \JKingWeb\Arsse\REST\TinyTinyRSS\API::class]],

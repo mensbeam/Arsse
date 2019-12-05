@@ -34,7 +34,7 @@ server {
         fastcgi_param REMOTE_USER     $remote_user;
     }
 
-    # NextCloud News protocol
+    # Nextcloud News protocol
     location /index.php/apps/news/api {
         try_files $uri @arsse;
 
@@ -92,12 +92,12 @@ Afterward the follow virtual host configuration should work, after modifying pat
     ProxyFCGISetEnvIf "true" SCRIPT_FILENAME "/usr/share/arsse/arsse.php"
     ProxyPreserveHost On
 
-    # NextCloud News v1.2, Tiny Tiny RSS API, TT-RSS newsfeed icons
+    # Nextcloud News v1.2, Tiny Tiny RSS API, TT-RSS newsfeed icons
     <LocationMatch "(/index\.php/apps/news/api/?.+|/tt-rss/(api|feed-icons))">
         ProxyPass "unix:/var/run/php/php7.2-fpm.sock|fcgi://localhost/usr/share/arsse"
     </LocationMatch>
 
-    # NextCloud News API detection, Fever API
+    # Nextcloud News API detection, Fever API
     <LocationMatch "(/index\.php/apps/news/api/?$|/fever)">
         # these locations should not be behind HTTP authentication
         ProxyPass "unix:/var/run/php/php7.2-fpm.sock|fcgi://localhost/usr/share/arsse"

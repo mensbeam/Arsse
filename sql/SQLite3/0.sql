@@ -28,7 +28,7 @@ create table arsse_users_meta(
 );
 
 create table arsse_folders(
--- folders, used by NextCloud News and Tiny Tiny RSS
+-- folders, used by Nextcloud News and Tiny Tiny RSS
 -- feed subscriptions may belong to at most one folder;
 -- in Tiny Tiny RSS folders may nest
     id integer primary key,                                                                                 -- sequence number
@@ -69,9 +69,9 @@ create table arsse_subscriptions(
     added text not null default CURRENT_TIMESTAMP,                                                          -- time at which feed was added
     modified text not null default CURRENT_TIMESTAMP,                                                       -- time at which subscription properties were last modified
     title text,                                                                                             -- user-supplied title
-    order_type int not null default 0,                                                                      -- NextCloud sort order
+    order_type int not null default 0,                                                                      -- Nextcloud sort order
     pinned boolean not null default 0,                                                                      -- whether feed is pinned (always sorts at top)
-    folder integer references arsse_folders(id) on delete cascade,                                          -- TT-RSS category (nestable); the first-level category (which acts as NextCloud folder) is joined in when needed
+    folder integer references arsse_folders(id) on delete cascade,                                          -- TT-RSS category (nestable); the first-level category (which acts as Nextcloud folder) is joined in when needed
     unique(owner,feed)                                                                                      -- a given feed should only appear once for a given owner
 );
 
@@ -109,9 +109,9 @@ create table arsse_marks(
 );
 
 create table arsse_editions(
--- IDs for specific editions of articles (required for at least NextCloud News)
+-- IDs for specific editions of articles (required for at least Nextcloud News)
 -- every time an article is updated by its author, a new unique edition number is assigned
--- with NextCloud News this prevents users from marking as read an article which has been 
+-- with Nextcloud News this prevents users from marking as read an article which has been 
 -- updated since the client state was last refreshed
     id integer primary key,                                                                                 -- sequence number
     article integer not null references arsse_articles(id) on delete cascade,                               -- the article of which this is an edition

@@ -59,7 +59,7 @@ The Arsse does not currently support the entire protocol. Notably missing featur
 
 # Interaction with HTTP authentication
 
-Tiny Tiny RSS itself is unaware of HTTP authentication: if HTTP authentication is used in the server configuration, it has no effect on authentication in the API. The Arsse, however, makes use of HTTP authentication for NextCloud News, and can do so for TT-RSS as well. In a default configuration The Arsse functions in the same way as TT-RSS: HTTP authentication and API authentication are completely separate and independent. Alternative behaviour is summarized below:
+Tiny Tiny RSS itself is unaware of HTTP authentication: if HTTP authentication is used in the server configuration, it has no effect on authentication in the API. The Arsse, however, makes use of HTTP authentication for Nextcloud News, and can do so for TT-RSS as well. In a default configuration The Arsse functions in the same way as TT-RSS: HTTP authentication and API authentication are completely separate and independent. Alternative behaviour is summarized below:
 
 - With default settings:
     - Clients may optionally provide HTTP credentials

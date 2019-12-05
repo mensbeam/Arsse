@@ -4,7 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse\REST\NextCloudNews;
+namespace JKingWeb\Arsse\REST\NextcloudNews;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Service;
@@ -22,7 +22,7 @@ use Zend\Diactoros\Response\JsonResponse as Response;
 use Zend\Diactoros\Response\EmptyResponse;
 
 class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
-    const REALM = "NextCloud News API v1-2";
+    const REALM = "Nextcloud News API v1-2";
     const VERSION = "11.0.5";
     const ACCEPTED_TYPE = "application/json";
 

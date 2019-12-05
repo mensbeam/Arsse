@@ -99,11 +99,11 @@ Bug fixes:
 - Print command-line error messages more sensibly
 - Allow exporting default configuration to standard output
 - Fail correctly on authentication failure
-- Prefer JSON data over GET parameters in NextCloud News
+- Prefer JSON data over GET parameters in Nextcloud News
 
 Changes:
 - Simplify user management backend to minimize opportunity for bugs
-- Document previously unknown NextCloud News behaviour
+- Document previously unknown Nextcloud News behaviour
 
 Version 0.4.0 (2018-10-26)
 ==========================
@@ -120,7 +120,7 @@ Bug fixes:
 - Minor fixes to code and documentation
 
 Changes:
-- Disable memory and time limits to avoid deadlocks with NextCloud News
+- Disable memory and time limits to avoid deadlocks with Nextcloud News
 
 Version 0.3.0 (2018-01-12)
 ==========================
@@ -146,7 +146,7 @@ Bug fixes:
 - Rename feeds correctly via TTRSS protocol
 - Toggle marks correctly via TTRSS protocol
 - Sort everything case-insensitively
-- Be even stricter about output data types in NextCloud News
+- Be even stricter about output data types in Nextcloud News
 
 Changes:
 - Do not omit read feeds from TTRSS' getCounters, to fix some clients
@@ -160,8 +160,8 @@ New features:
 
 Bug fixes:
 - Perform feed discovery *correctly*
-- Expose the incorrectDbCharset boolean in the NextCloud News server status
-- Give NextCloud News articles' guidHash attribute the correct type (string)
+- Expose the incorrectDbCharset boolean in the Nextcloud News server status
+- Give Nextcloud News articles' guidHash attribute the correct type (string)
 
 Changes:
 - Overhaul input type normalization to minimize bug opportunities
@@ -170,7 +170,7 @@ Version 0.1.1 (2017-09-30)
 ==========================
 
 Bug fixes:
-- Perform feed discovery like NextCloud News does
+- Perform feed discovery like Nextcloud News does
 - Respond correctly to HEAD requests
 - Various minor fixes
 

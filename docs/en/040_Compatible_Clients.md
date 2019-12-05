@@ -127,13 +127,13 @@ The Arsse does not at this time have any first party clients. However, because T
    </td>
   </tr>
   <tr>
-   <td><a href="https://github.com/nextcloud/news-android/">NextCloud News</a></td>
+   <td><a href="https://github.com/nextcloud/news-android/">Nextcloud News</a></td>
    <td>Android</td>
    <td class="Y">✔</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td>
-    <p>Official Android client for NextCloud News.</p>
+    <p>Official Android client for Nextcloud News.</p>
    </td>
   </tr>
   <tr>
