@@ -17,15 +17,15 @@ use Zend\Diactoros\Response\EmptyResponse;
 
 class REST {
     const API_LIST = [
-        'ncn' => [ // NextCloud News version enumerator
-            'match' => "/index.php/apps/news/api",
-            'strip' => "/index.php/apps/news/api",
-            'class' => REST\NextCloudNews\Versions::class,
+        'ncn' => [ // Nextcloud News version enumerator
+            'match' => '/index.php/apps/news/api',
+            'strip' => '/index.php/apps/news/api',
+            'class' => REST\NextcloudNews\Versions::class,
         ],
-        'ncn_v1-2' => [ // NextCloud News v1-2  https://github.com/nextcloud/news/blob/master/docs/externalapi/Legacy.md
-            'match' => "/index.php/apps/news/api/v1-2/",
-            'strip' => "/index.php/apps/news/api/v1-2",
-            'class' => REST\NextCloudNews\V1_2::class,
+        'ncn_v1-2' => [ // Nextcloud News v1-2  https://github.com/nextcloud/news/blob/master/docs/externalapi/Legacy.md
+            'match' => '/index.php/apps/news/api/v1-2/',
+            'strip' => '/index.php/apps/news/api/v1-2',
+            'class' => REST\NextcloudNews\V1_2::class,
         ],
         'ttrss_api' => [ // Tiny Tiny RSS  https://git.tt-rss.org/git/tt-rss/wiki/ApiReference
             'match' => "/tt-rss/api",
@@ -60,7 +60,7 @@ class REST {
         // NewsBlur             http://www.newsblur.com/api
         // Unclear if clients exist:
         // Miniflux             https://docs.miniflux.app/en/latest/api.html#api-reference
-        // NextCloud News v2    https://github.com/nextcloud/news/blob/master/docs/externalapi/External-Api.md
+        // Nextcloud News v2    https://github.com/nextcloud/news/blob/master/docs/externalapi/External-Api.md
         // BirdReader           https://github.com/glynnbird/birdreader/blob/master/API.md
         // Feedbin v1           https://github.com/feedbin/feedbin-api/commit/86da10aac5f1a57531a6e17b08744e5f9e7db8a9
         // Proprietary (centralized) entities:

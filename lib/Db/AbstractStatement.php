@@ -71,7 +71,7 @@ abstract class AbstractStatement implements Statement {
     }
 
     protected function bindValues(array $values): bool {
-         // recursively flatten any arrays, which may be provided for SET or IN() clauses
+        // recursively flatten any arrays, which may be provided for SET or IN() clauses
         $values = ValueInfo::flatten($values);
         foreach ($values as $a => $value) {
             if (array_key_exists($a, $this->types)) {

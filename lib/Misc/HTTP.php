@@ -12,7 +12,7 @@ class HTTP {
     public static function matchType(MessageInterface $msg, string ...$type): bool {
         $header = $msg->getHeaderLine("Content-Type") ?? "";
         foreach ($type as $t) {
-            $pattern = "/^".preg_quote(trim($t), "/")."($|;|,)/i";
+            $pattern = "/^".preg_quote(trim($t), "/")."\s*($|;|,)/i";
             if (preg_match($pattern, $header)) {
                 return true;
             }

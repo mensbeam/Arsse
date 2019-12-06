@@ -152,7 +152,7 @@ class URL {
     }
 
     /** Appends data to a URL's query component
-     * 
+     *
      * @param string $url The input URL
      * @param string $data The data to append. This should already be escaped where necessary and not start with any delimiter
      * @param string $glue The query subcomponent delimiter, usually "&". If the URL has no query, "?" will be prepended instead

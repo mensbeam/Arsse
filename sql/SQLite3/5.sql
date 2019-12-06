@@ -2,8 +2,8 @@
 -- Copyright 2017 J. King, Dustin Wilson et al.
 -- See LICENSE and AUTHORS files for details
 
--- add a column to the token table to hold arbitrary class-specific data
-alter table arsse_tokens add column data text default null;
+-- This schema version strictly applies fixes for MySQL, 
+-- hence this file is functionally empty
 
 -- set version marker
 pragma user_version = 6;

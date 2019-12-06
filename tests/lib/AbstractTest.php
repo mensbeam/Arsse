@@ -73,7 +73,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         if (isset($params)) {
             if (is_array($params)) {
                 $params = implode("&", array_map(function($v, $k) {
-                    return rawurlencode($k).(isset($v) ? "=".rawurlencode($v) : ""); 
+                    return rawurlencode($k).(isset($v) ? "=".rawurlencode($v) : "");
                 }, $params, array_keys($params)));
             }
             $url = URL::queryAppend($url, (string) $params);
@@ -104,7 +104,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             if (is_string($body) && in_array(strtolower($type), ["", "application/x-www-form-urlencoded"])) {
                 parse_str($body, $parsedBody);
             } elseif (!is_string($body) && in_array(strtolower($type), ["application/json", "text/json"])) {
-                $body = json_encode($body, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);   
+                $body = json_encode($body, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
             } elseif (!is_string($body) && in_array(strtolower($type), ["", "application/x-www-form-urlencoded"])) {
                 $parsedBody = $body;
                 $body = http_build_query($body, "a", "&");

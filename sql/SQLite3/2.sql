@@ -20,7 +20,7 @@ drop table arsse_users;
 alter table arsse_users_new rename to arsse_users;
 
 create table arsse_folders_new(
--- folders, used by NextCloud News and Tiny Tiny RSS
+-- folders, used by Nextcloud News and Tiny Tiny RSS
 -- feed subscriptions may belong to at most one folder;
 -- in Tiny Tiny RSS folders may nest
     id integer primary key,                                                                                 -- sequence number
@@ -67,9 +67,9 @@ create table arsse_subscriptions_new(
     added text not null default CURRENT_TIMESTAMP,                                                          -- time at which feed was added
     modified text not null default CURRENT_TIMESTAMP,                                                       -- time at which subscription properties were last modified
     title text collate nocase,                                                                              -- user-supplied title
-    order_type int not null default 0,                                                                      -- NextCloud sort order
+    order_type int not null default 0,                                                                      -- Nextcloud sort order
     pinned boolean not null default 0,                                                                      -- whether feed is pinned (always sorts at top)
-    folder integer references arsse_folders(id) on delete cascade,                                          -- TT-RSS category (nestable); the first-level category (which acts as NextCloud folder) is joined in when needed
+    folder integer references arsse_folders(id) on delete cascade,                                          -- TT-RSS category (nestable); the first-level category (which acts as Nextcloud folder) is joined in when needed
     unique(owner,feed)                                                                                      -- a given feed should only appear once for a given owner
 );
 insert into arsse_subscriptions_new select * from arsse_subscriptions;

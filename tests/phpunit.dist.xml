@@ -112,9 +112,9 @@
         <file>cases/REST/TestREST.php</file>
     </testsuite>
     <testsuite name="NCNv1">
-        <file>cases/REST/NextCloudNews/TestVersions.php</file>
-        <file>cases/REST/NextCloudNews/TestV1_2.php</file>
-            <file>cases/REST/NextCloudNews/PDO/TestV1_2.php</file>
+        <file>cases/REST/NextcloudNews/TestVersions.php</file>
+        <file>cases/REST/NextcloudNews/TestV1_2.php</file>
+            <file>cases/REST/NextcloudNews/PDO/TestV1_2.php</file>
     </testsuite>
     <testsuite name="TTRSS">
         <file>cases/REST/TinyTinyRSS/TestSearch.php</file>

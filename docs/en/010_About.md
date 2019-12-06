@@ -1,6 +1,6 @@
 The Advanced RSS Environment (affectionately called "The Arsse") is a news aggregator server which implements multiple synchronization protocols. Unlike most other aggregator servers, The Arsse does not include a Web front-end (though one is planned as a separate project), and it relies on [existing protocols](Supported_Protocols) to maximize compatibility with [existing clients](Compatible_Clients). Supported protocols are:
 
-- NextCloud News
+- Nextcloud News
 - Tiny Tiny RSS
 - Fever
 
