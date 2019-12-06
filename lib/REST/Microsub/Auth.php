@@ -294,9 +294,9 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (\JKingWeb\Arsse\Db\ExceptionInput $e) {
             throw new ExceptionAuth("invalid_grant");
         }
-        $data = @json_decode($token['data'], true);
+        $data = @json_decode((string) $token['data'], true);
         // validate the auth code
-        if (!is_array($data)) {
+        if (!is_array($data) || !isset($data['redirect_uri']) || !isset($data['client_id'])) {
             throw new ExceptionAuth("invalid_grant");
         } elseif ($data['client_id'] !== $clientId || $data['redirect_uri'] !== $redirUrl) {
             throw new ExceptionAuth("invalid_client");

@@ -8,6 +8,7 @@ namespace JKingWeb\Arsse\TestCase\REST\Microsub;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
+use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Misc\Date;
 use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\Response\JsonResponse as Response;
@@ -126,6 +127,38 @@ class TestAuth extends \JKingWeb\Arsse\Test\AbstractTest {
             'Success 1'         => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect",    'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=ABCDEF&code=authCode"])],
             'Success 2'         => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/redirect",    'state' => "R&R",    'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/redirect?state=R%26R&code=authCode"])],
             'Success 3'         => [['me' => "https://example.com/u/john.doe",    'client_id' => "http://example.org/", 'redirect_uri' => "http://example.org/?p=redirect", 'state' => "ABCDEF", 'response_type' => "code"], "john.doe", new EmptyResponse(302, ['Location' => "http://example.org/?p=redirect&state=ABCDEF&code=authCode"])],
+        ];
+    }
+
+    /** @dataProvider provideAuthData */
+    public function testVerifyAnAuthenticationCode(array $params, string $user, $data, ResponseInterface $exp) {
+        if ($data instanceof \Exception) {
+            \Phake::when(Arsse::$db)->tokenLookup("microsub.auth", $params['code'] ?? "")->thenThrow($data);    
+        } else {
+            \Phake::when(Arsse::$db)->tokenLookup("microsub.auth", $params['code'] ?? "")->thenReturn(['user' => $user, 'data' => $data]);
+        }
+        $act = $this->req("http://example.com/u/?f=auth", "POST", [], [], $params);
+        $this->assertMessage($exp, $act);
+        \Phake::verify(Arsse::$db, \Phake::times($act->getStatusCode() == 200 ? 1 : 0))->tokenRevoke($user, "microsub.auth", $params['code'] ?? "");
+    }
+
+    public function provideAuthData() {
+        return [
+            'Missing code 1' => [[                        'redirect_uri' => "https://example.org/", 'client_id' => "https://example.net/"], "someone", '{"redirect_uri":"https://example.org/","client_id":"https://example.net/"}',                         new Response(['error' => "invalid_request"], 400)],
+            'Missing code 2' => [['code' => "",           'redirect_uri' => "https://example.org/", 'client_id' => "https://example.net/"], "someone", '{"redirect_uri":"https://example.org/","client_id":"https://example.net/"}',                         new Response(['error' => "invalid_request"], 400)],
+            'Missing URL 1'  => [['code' => "code",                                                 'client_id' => "https://example.net/"], "someone", '{"redirect_uri":"https://example.org/","client_id":"https://example.net/"}',                         new Response(['error' => "invalid_request"], 400)],
+            'Missing URL 2'  => [['code' => "code",       'redirect_uri' => "",                     'client_id' => "https://example.net/"], "someone", '{"redirect_uri":"https://example.org/","client_id":"https://example.net/"}',                         new Response(['error' => "invalid_request"], 400)],
+            'Missing ID 1'   => [['code' => "code",       'redirect_uri' => "https://example.org/",                                      ], "someone", '{"redirect_uri":"https://example.org/","client_id":"https://example.net/"}',                         new Response(['error' => "invalid_request"], 400)],
+            'Missing ID 2'   => [['code' => "code",       'redirect_uri' => "https://example.org/", 'client_id' => ""                    ], "someone", '{"redirect_uri":"https://example.org/","client_id":"https://example.net/"}',                         new Response(['error' => "invalid_request"], 400)],
+            'Mismatched URL' => [['code' => "code",       'redirect_uri' => "https://example.net/", 'client_id' => "https://example.net/"], "someone", '{"redirect_uri":"https://example.org/","client_id":"https://example.net/"}',                         new Response(['error' => "invalid_client" ], 400)],
+            'Mismatched ID'  => [['code' => "code",       'redirect_uri' => "https://example.org/", 'client_id' => "https://example.org/"], "someone", '{"redirect_uri":"https://example.org/","client_id":"https://example.net/"}',                         new Response(['error' => "invalid_client" ], 400)],
+            'Bad data 1'     => [['code' => "bad-data1",  'redirect_uri' => "https://example.org/", 'client_id' => "https://example.net/"], "someone", null,                                                                                                 new Response(['error' => "invalid_grant"  ], 400)],
+            'Bad data 2'     => [['code' => "bad-data2",  'redirect_uri' => "https://example.org/", 'client_id' => "https://example.net/"], "someone", '{client_id":"https://example.net/"}',                                                                new Response(['error' => "invalid_grant"  ], 400)],
+            'Bad data 3'     => [['code' => "bad-data3",  'redirect_uri' => "https://example.org/", 'client_id' => "https://example.net/"], "someone", '{"redirect_uri":"https://example.org/"}',                                                            new Response(['error' => "invalid_grant"  ], 400)],
+            'Bad user'       => [['code' => "bad-user",   'redirect_uri' => "https://example.org/", 'client_id' => "https://example.net/"], "someone", new ExceptionInput("subjectMissing"),                                                                 new Response(['error' => "invalid_grant"  ], 400)],
+            'Bad type'       => [['code' => "bad-type",   'redirect_uri' => "https://example.org/", 'client_id' => "https://example.net/"], "someone", '{"redirect_uri":"https://example.org/","client_id":"https://example.net/","response_type":"token"}', new Response(['error' => "invalid_grant"  ], 400)],
+            'Success 1'      => [['code' => "valid-code", 'redirect_uri' => "https://example.org/", 'client_id' => "https://example.net/"], "someone", '{"redirect_uri":"https://example.org/","client_id":"https://example.net/"}',                         new Response(['me' => "http://example.com/u/someone"], 200)],
+            'Success 2'      => [['code' => "good-code",  'redirect_uri' => "https://example.org/", 'client_id' => "https://example.net/"], "somehow", '{"redirect_uri":"https://example.org/","client_id":"https://example.net/","response_type":"id"}',    new Response(['me' => "http://example.com/u/somehow"], 200)],
         ];
     }
 }
