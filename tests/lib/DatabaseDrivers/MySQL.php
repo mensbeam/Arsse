@@ -48,6 +48,7 @@ trait MySQL {
             $db->query("UNLOCK TABLES; ROLLBACK");
         } catch (\Throwable $e) {
         }
+        $db->query("SET FOREIGN_KEY_CHECKS=0");
         foreach (self::dbTableList($db) as $table) {
             if ($table === "arsse_meta") {
                 $db->query("DELETE FROM $table where `key` <> 'schema_version'");
@@ -56,6 +57,7 @@ trait MySQL {
             }
             $db->query("ALTER TABLE $table auto_increment = 1");
         }
+        $db->query("SET FOREIGN_KEY_CHECKS=1");
         foreach ($afterStatements as $st) {
             $db->query($st);
         }
@@ -67,9 +69,11 @@ trait MySQL {
             $db->query("UNLOCK TABLES; ROLLBACK");
         } catch (\Throwable $e) {
         }
+        $db->query("SET FOREIGN_KEY_CHECKS=0");
         foreach (self::dbTableList($db) as $table) {
             $db->query("DROP TABLE IF EXISTS $table");
         }
+        $db->query("SET FOREIGN_KEY_CHECKS=1");
         foreach ($afterStatements as $st) {
             $db->query($st);
         }

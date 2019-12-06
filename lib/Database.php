@@ -39,7 +39,7 @@ use JKingWeb\Arsse\Misc\URL;
  */
 class Database {
     /** The version number of the latest schema the interface is aware of */
-    const SCHEMA_VERSION = 5;
+    const SCHEMA_VERSION = 6;
     /** The size of a set of values beyond which the set will be embedded into the query text */
     const LIMIT_SET_SIZE = 25;
     /** The length of a string in an embedded set beyond which a parameter placeholder will be used for the string */
@@ -50,7 +50,7 @@ class Database {
     const ASSOC_ADD = 1;
     /** Makes tag/label association change operations replace members */
     const ASSOC_REPLACE = 2;
-    /** A map database driver short-names and their associated class names */
+    /** A map of database driver short-names and their associated class names */
     const DRIVER_NAMES = [
         'sqlite3'    => \JKingWeb\Arsse\Db\SQLite3\Driver::class,
         'postgresql' => \JKingWeb\Arsse\Db\PostgreSQL\Driver::class,
@@ -520,7 +520,7 @@ class Database {
         if (!ValueInfo::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "folder", 'type' => "int > 0"]);
         }
-        $changes = $this->db->prepare("WITH RECURSIVE folders(folder) as (SELECT ? union select id from arsse_folders join folders on parent = folder) DELETE FROM arsse_folders where owner = ? and id in (select folder from folders)", "int", "str")->run($id, $user)->changes();
+        $changes = $this->db->prepare("DELETE FROM arsse_folders where owner = ? and id = ?", "str", "int")->run($user, $id)->changes();
         if (!$changes) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "folder", 'id' => $id]);
         }

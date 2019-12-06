@@ -185,7 +185,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $dsn = $this->makeconnectionString(false, $user, $pass, $db, $host, $port, $service);
         set_error_handler(function(int $code, string $msg) {
             $msg = substr($msg, 62);
-            throw new Exception("connectionFailure", ["PostgreSQL", $msg]);
+            throw new Exception("connectionFailure", ['engine' => "PostgreSQL", 'message' => $msg]);
         });
         try {
             $this->db = pg_connect($dsn, \PGSQL_CONNECT_FORCE_NEW);
