@@ -11,6 +11,7 @@ use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Db\ExceptionInput;
+use JKingWeb\Arsse\Misc\HTTP;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\Response\JsonResponse;
@@ -21,6 +22,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     const LEVEL = 3;
     const GENERIC_ICON_TYPE = "image/png;base64";
     const GENERIC_ICON_DATA = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMjHxIGmVAAAADUlEQVQYV2NgYGBgAAAABQABijPjAAAAAABJRU5ErkJggg==";
+    const ACCEPTED_TYPE = "application/x-www-form-urlencoded";
 
     // GET parameters for which we only check presence: these will be converted to booleans
     const PARAM_BOOL = ["groups", "feeds", "items", "favicons", "links", "unread_item_ids", "saved_item_ids"];
@@ -66,11 +68,11 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             case "OPTIONS":
                 return new EmptyResponse(204, [
                     'Allow' => "POST",
-                    'Accept' => "application/x-www-form-urlencoded",
+                    'Accept' => self::ACCEPTED_TYPE,
                 ]);
             case "POST":
-                if (strlen($req->getHeaderLine("Content-Type")) && $req->getHeaderLine("Content-Type") !== "application/x-www-form-urlencoded") {
-                    return new EmptyResponse(415, ['Accept' => "application/x-www-form-urlencoded"]);
+                if (!HTTP::matchType($req, self::ACCEPTED_TYPE, "")) {
+                    return new EmptyResponse(415, ['Accept' => self::ACCEPTED_TYPE]);
                 }
                 $out = [
                     'api_version' => self::LEVEL,

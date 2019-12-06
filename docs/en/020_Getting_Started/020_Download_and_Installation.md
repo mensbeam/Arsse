@@ -2,7 +2,7 @@
 
 # Downloading The Arse
 
-The latest version of The Arsse can be downloaded [from our releases page](https://code.mensbeam.com/MensBeam/arsse/releases). The attachments named _arsse-x.x.x.tar.gz_ should be used rather than those marked "Source Code".
+The latest version of The Arsse can be downloaded [from our Web site](https://thearsse.com/). If installing an older release from our archives, the attachments named _arsse-x.x.x.tar.gz_ should be used rather than those marked "Source Code".
 
 Installation from source code is also possible, but the release packages are recommended.
 

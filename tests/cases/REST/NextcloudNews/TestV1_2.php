@@ -4,7 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse\TestCase\REST\NextCloudNews;
+namespace JKingWeb\Arsse\TestCase\REST\NextcloudNews;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User;
@@ -14,13 +14,13 @@ use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
-use JKingWeb\Arsse\REST\NextCloudNews\V1_2;
+use JKingWeb\Arsse\REST\NextcloudNews\V1_2;
 use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\ServerRequest;
 use Zend\Diactoros\Response\JsonResponse as Response;
 use Zend\Diactoros\Response\EmptyResponse;
 
-/** @covers \JKingWeb\Arsse\REST\NextCloudNews\V1_2<extended> */
+/** @covers \JKingWeb\Arsse\REST\NextcloudNews\V1_2<extended> */
 class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $h;
     protected $feeds = [ // expected sample output of a feed list from the database, and the resultant expected transformation by the REST handler

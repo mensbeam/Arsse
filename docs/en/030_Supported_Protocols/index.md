@@ -1,6 +1,6 @@
 The Arsse was designed from the start as a server for multiple synchronization protocols which clients can make use of. Currently the following protocols are supported:
 
-- [NextCloud News](NextCloud_News)
+- [Nextcloud News](Nextcloud_News)
 - [Tiny Tiny RSS](Tiny_Tiny_RSS)
 - [Fever](Fever)
 

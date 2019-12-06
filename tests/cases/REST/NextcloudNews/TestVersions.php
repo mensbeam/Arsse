@@ -4,15 +4,15 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse\TestCase\REST\NextCloudNews;
+namespace JKingWeb\Arsse\TestCase\REST\NextcloudNews;
 
-use JKingWeb\Arsse\REST\NextCloudNews\Versions;
+use JKingWeb\Arsse\REST\NextcloudNews\Versions;
 use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\ServerRequest;
 use Zend\Diactoros\Response\JsonResponse as Response;
 use Zend\Diactoros\Response\EmptyResponse;
 
-/** @covers \JKingWeb\Arsse\REST\NextCloudNews\Versions */
+/** @covers \JKingWeb\Arsse\REST\NextcloudNews\Versions */
 class TestVersions extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         self::clearData();

@@ -4,7 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse\REST\NextCloudNews;
+namespace JKingWeb\Arsse\REST\NextcloudNews;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Service;
@@ -13,6 +13,7 @@ use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
+use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\REST\Exception404;
 use JKingWeb\Arsse\REST\Exception405;
 use Psr\Http\Message\ServerRequestInterface;
@@ -21,8 +22,9 @@ use Zend\Diactoros\Response\JsonResponse as Response;
 use Zend\Diactoros\Response\EmptyResponse;
 
 class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
-    const REALM = "NextCloud News API v1-2";
+    const REALM = "Nextcloud News API v1-2";
     const VERSION = "11.0.5";
+    const ACCEPTED_TYPE = "application/json";
 
     protected $dateFormat = "unix";
 
@@ -90,15 +92,10 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // normalize the input
         $data = (string) $req->getBody();
-        $type = "";
-        if ($req->hasHeader("Content-Type")) {
-            $type = $req->getHeader("Content-Type");
-            $type = array_pop($type);
-        }
         if ($data) {
             // if the entity body is not JSON according to content type, return "415 Unsupported Media Type"
-            if (!preg_match("<^application/json\b|^$>", $type)) {
-                return new EmptyResponse(415, ['Accept' => "application/json"]);
+            if (!HTTP::matchType($req, "", self::ACCEPTED_TYPE)) {
+                return new EmptyResponse(415, ['Accept' => self::ACCEPTED_TYPE]);
             }
             $data = @json_decode($data, true);
             if (json_last_error() !== \JSON_ERROR_NONE) {
@@ -269,7 +266,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
             return new EmptyResponse(204, [
                 'Allow'  => implode(",", $allowed),
-                'Accept' => "application/json",
+                'Accept' => self::ACCEPTED_TYPE,
             ]);
         } else {
             // if the path is not supported, return 404
