@@ -1,6 +1,6 @@
 {
     "require": {
-        "phpunit/phpunit": "8.*",
+        "phpunit/phpunit": "^8.0",
         "dms/phpunit-arraysubset-asserts": "^0.1",
         "phake/phake": "^3.0",
         "clue/arguments": "^2.0",
