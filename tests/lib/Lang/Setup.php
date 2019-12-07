@@ -12,7 +12,7 @@ use org\bovigo\vfs\vfsStream;
 use Webmozart\Glob\Glob;
 
 trait Setup {
-    public function setUp() {
+    public function setUp(): void {
         // test files
         $this->files = [
             'en.php'    => '<?php return ["Test.presentText" => "and the Philosopher\'s Stone"];',
@@ -51,7 +51,7 @@ trait Setup {
         }
     }
 
-    public function tearDown() {
+    public function tearDown(): void {
         // verify calls to the mock Lang object
         \Phake::verify(Arsse::$lang, \Phake::atLeast(0))->msg($this->isType("string"), $this->anything());
         \Phake::verifyNoOtherInteractions(Arsse::$lang);

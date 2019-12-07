@@ -12,7 +12,7 @@ use JKingWeb\Arsse\Test\Result;
 
 /** @covers \JKingWeb\Arsse\Misc\ValueInfo */
 class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
     }
 
@@ -424,7 +424,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideSimpleNormalizationValues() {
+    public function provideSimpleNormalizationValues(): iterable {
         $types = [
             "Mixed",
             "Null",
@@ -556,7 +556,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideDateNormalizationValues() {
+    public function provideDateNormalizationValues(): iterable {
         $formats = [
             "microtime",
             "iso8601",

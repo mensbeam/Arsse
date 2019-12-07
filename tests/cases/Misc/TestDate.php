@@ -10,7 +10,7 @@ use JKingWeb\Arsse\Misc\Date;
 
 /** @covers \JKingWeb\Arsse\Misc\Date */
 class TestDate extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
     }
 

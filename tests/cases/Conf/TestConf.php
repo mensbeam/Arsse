@@ -14,7 +14,7 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
     public static $vfs;
     public static $path;
 
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
         self::$vfs = vfsStream::setup("root", null, [
             'confGood'       => '<?php return Array("lang" => "xx");',
@@ -32,7 +32,7 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
         chmod(self::$path."confForbidden", 0000);
     }
 
-    public function tearDown() {
+    public function tearDown(): void {
         self::$path = null;
         self::$vfs = null;
         self::clearData();

@@ -11,7 +11,7 @@ use JKingWeb\Arsse\REST\TinyTinyRSS\Search;
 
 /** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Search */
 class TestSearch extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function provideSearchStrings() {
+    public function provideSearchStrings(): iterable {
         return [
             'Blank string' => ["", new Context],
             'Whitespace only' => [" \n  \t", new Context],

@@ -420,7 +420,7 @@ trait SeriesArticle {
         $this->assertEquals($exp, $ids);
     }
 
-    public function provideContextMatches() {
+    public function provideContextMatches(): iterable {
         return [
             'Blank context' => [new Context, [1,2,3,4,5,6,7,8,19,20]],
             'Folder tree' => [(new Context)->folder(1), [5,6,7,8]],
@@ -582,7 +582,7 @@ trait SeriesArticle {
         $this->assertSame($exp, $act);
     }
 
-    public function provideOrderedLists() {
+    public function provideOrderedLists(): iterable {
         return [
             [["id"], [1,2,3,4,5,6,7,8,19,20]],
             [["id asc"], [1,2,3,4,5,6,7,8,19,20]],
@@ -1058,7 +1058,7 @@ trait SeriesArticle {
         Arsse::$db->articleList($this->user, (new Context)->$option([]));
     }
 
-    public function provideArrayContextOptions() {
+    public function provideArrayContextOptions(): iterable {
         foreach ([
             "articles", "editions",
             "subscriptions", "foldersShallow", //"folders",

@@ -79,7 +79,7 @@ OPML_EXPORT_SERIALIZATION;
 </opml>
 OPML_EXPORT_SERIALIZATION;
 
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
         Arsse::$db = \Phake::mock(\JKingWeb\Arsse\Database::class);
         Arsse::$user = \Phake::mock(\JKingWeb\Arsse\User::class);
@@ -119,7 +119,7 @@ OPML_EXPORT_SERIALIZATION;
         }
     }
 
-    public function provideParserData() {
+    public function provideParserData(): iterable {
         return [
             ["BrokenXML.opml", false, new Exception("invalidSyntax")],
             ["BrokenOPML.1.opml", false, new Exception("invalidSemantics")],

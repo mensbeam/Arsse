@@ -15,7 +15,7 @@ use JKingWeb\Arsse\Misc\Date;
 class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $srv;
 
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
         self::setConf();
         Arsse::$db = \Phake::mock(Database::class);

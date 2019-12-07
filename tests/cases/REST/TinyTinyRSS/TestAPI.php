@@ -154,7 +154,7 @@ LONG_STRING;
         ]);
     }
 
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
         self::setConf();
         // create a mock user manager
@@ -174,7 +174,7 @@ LONG_STRING;
         $this->h = new API();
     }
 
-    public function tearDown() {
+    public function tearDown(): void {
         self::clearData();
     }
 
@@ -231,7 +231,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db, \Phake::times(0))->sessionResume($this->anything());
     }
 
-    public function provideLoginRequests() {
+    public function provideLoginRequests(): iterable {
         return $this->generateLoginRequests("login");
     }
 
@@ -269,7 +269,7 @@ LONG_STRING;
         $this->assertSame($exp2, Arsse::$user->id);
     }
 
-    public function provideResumeRequests() {
+    public function provideResumeRequests(): iterable {
         return $this->generateLoginRequests("isLoggedIn");
     }
 

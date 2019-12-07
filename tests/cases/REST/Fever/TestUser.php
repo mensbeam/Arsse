@@ -18,7 +18,7 @@ use JKingWeb\Arsse\REST\Fever\User as FeverUser;
 class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $u;
 
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
         self::setConf();
         // create a mock user manager
@@ -31,7 +31,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->u = new FeverUser();
     }
 
-    public function tearDown() {
+    public function tearDown(): void {
         self::clearData();
     }
 
@@ -55,7 +55,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function providePasswordCreations() {
+    public function providePasswordCreations(): iterable {
         return [
             ["jane.doe@example.com", "secret", "secret"],
             ["jane.doe@example.com", "superman", "superman"],
@@ -83,7 +83,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, $this->u->authenticate($user, $password));
     }
 
-    public function provideUserAuthenticationRequests() {
+    public function provideUserAuthenticationRequests(): iterable {
         return [
             ["jane.doe@example.com", "secret",   true],
             ["jane.doe@example.com", "superman", false],

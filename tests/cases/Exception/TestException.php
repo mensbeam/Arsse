@@ -13,14 +13,14 @@ use JKingWeb\Arsse\Lang\Exception as LangException;
 
 /** @covers \JKingWeb\Arsse\AbstractException */
 class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function setUp() {
+    public function setUp(): void {
         self::clearData(false);
         // create a mock Lang object so as not to create a dependency loop
         Arsse::$lang = \Phake::mock(Lang::class);
         \Phake::when(Arsse::$lang)->msg->thenReturn("");
     }
 
-    public function tearDown() {
+    public function tearDown(): void {
         // verify calls to the mock Lang object
         \Phake::verify(Arsse::$lang, \Phake::atLeast(0))->msg($this->isType("string"), $this->anything());
         \Phake::verifyNoOtherInteractions(Arsse::$lang);

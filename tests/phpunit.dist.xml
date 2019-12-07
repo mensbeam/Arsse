@@ -8,6 +8,7 @@
     beStrictAboutTestsThatDoNotTestAnything="true"
     beStrictAboutOutputDuringTests="true"
     forceCoversAnnotation="true"
+    executionOrder="defects"
 >
 
 <php>

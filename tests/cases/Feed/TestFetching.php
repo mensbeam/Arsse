@@ -16,7 +16,7 @@ class TestFetching extends \JKingWeb\Arsse\Test\AbstractTest {
     protected static $host = "http://localhost:8000/";
     protected $base = "";
 
-    public function setUp() {
+    public function setUp(): void {
         if (!extension_loaded('curl')) {
             $this->markTestSkipped("Feed fetching tests are only accurate with curl enabled.");
         } elseif (!@file_get_contents(self::$host."IsUp")) {

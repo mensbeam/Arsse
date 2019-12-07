@@ -10,7 +10,7 @@ use JKingWeb\Arsse\Misc\URL;
 
 /** @covers \JKingWeb\Arsse\Misc\URL */
 class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
     }
     
@@ -19,7 +19,7 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, URL::normalize($url, $user, $pass));
     }
 
-    public function provideNormalizations() {
+    public function provideNormalizations(): iterable {
         return [
             ["http://example.com/",           "http://example.com/"],
             ["HTTP://example.com/",           "http://example.com/"],
@@ -82,7 +82,7 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, URL::queryAppend($url, $query));
     }
 
-    public function provideQueries() {
+    public function provideQueries(): iterable {
         return [
             ["/", "ook=eek", "/?ook=eek"],
             ["/?", "ook=eek", "/?ook=eek"],

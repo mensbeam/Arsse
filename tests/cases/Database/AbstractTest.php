@@ -41,7 +41,7 @@ abstract class AbstractTest extends \JKingWeb\Arsse\Test\AbstractTest {
         return $class->getShortName();
     }
 
-    public static function setUpBeforeClass() {
+    public static function setUpBeforeClass(): void {
         // establish a clean baseline
         static::clearData();
         // perform an initial connection to the database to reset its version to zero
@@ -61,7 +61,7 @@ abstract class AbstractTest extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$db->driverSchemaUpdate();
     }
 
-    public function setUp() {
+    public function setUp(): void {
         // get the name of the test's test series
         $this->series = $this->findTraitofTest($this->getName(false));
         static::clearData();
@@ -83,7 +83,7 @@ abstract class AbstractTest extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function tearDown() {
+    public function tearDown(): void {
         // call the series-specific teardown method
         $this->series = $this->findTraitofTest($this->getName(false));
         $tearDown = "tearDown".$this->series;
@@ -96,7 +96,7 @@ abstract class AbstractTest extends \JKingWeb\Arsse\Test\AbstractTest {
         static::clearData();
     }
 
-    public static function tearDownAfterClass() {
+    public static function tearDownAfterClass(): void {
         if (static::$drv) {
             // wipe the database absolutely clean
             static::dbRaze(static::$drv);

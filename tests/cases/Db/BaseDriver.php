@@ -23,14 +23,14 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
       //'dbSQLite3File' => "(temporary file)",
     ];
 
-    public static function setUpBeforeClass() {
+    public static function setUpBeforeClass(): void {
         // establish a clean baseline
         static::clearData();
         static::setConf(static::$conf);
         static::$interface = static::dbInterface();
     }
     
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
         self::setConf(static::$conf);
         if (!static::$interface) {
@@ -45,13 +45,13 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv = new static::$dbDriverClass;
     }
 
-    public function tearDown() {
+    public function tearDown(): void {
         // deconstruct the driver
         unset($this->drv);
         self::clearData();
     }
 
-    public static function tearDownAfterClass() {
+    public static function tearDownAfterClass(): void {
         if (static::$interface) {
             // completely clear the database
             static::dbRaze(static::$interface);

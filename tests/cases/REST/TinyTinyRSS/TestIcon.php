@@ -19,7 +19,7 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $h;
     protected $user = "john.doe@example.com";
 
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
         self::setConf();
         // create a mock user manager
@@ -29,7 +29,7 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->h = new Icon();
     }
 
-    public function tearDown() {
+    public function tearDown(): void {
         self::clearData();
     }
 

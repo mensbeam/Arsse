@@ -9,7 +9,8 @@
 /arsse.db*
 /config.php
 /.php_cs.cache
-yarn-error.log
+/yarn-error.log
+/tests/.phpunit.result.cache
 
 
 # Windows files

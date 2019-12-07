@@ -14,7 +14,7 @@ use JKingWeb\Arsse\Db\Exception;
 class TestTransaction extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $drv;
 
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
         $drv = \Phake::mock(\JKingWeb\Arsse\Db\SQLite3\Driver::class);
         \Phake::when($drv)->savepointRelease->thenReturn(true);

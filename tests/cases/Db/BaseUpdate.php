@@ -18,14 +18,14 @@ class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $base;
     protected $path;
 
-    public static function setUpBeforeClass() {
+    public static function setUpBeforeClass(): void {
         // establish a clean baseline
         static::clearData();
         static::setConf();
         static::$interface = static::dbInterface();
     }
     
-    public function setUp() {
+    public function setUp(): void {
         if (!static::$interface) {
             $this->markTestSkipped(static::$implementation." database driver not available");
         }
@@ -42,14 +42,14 @@ class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         static::dbRaze(static::$interface);
     }
 
-    public function tearDown() {
+    public function tearDown(): void {
         // deconstruct the driver
         unset($this->drv);
         unset($this->path, $this->base, $this->vfs);
         self::clearData();
     }
 
-    public static function tearDownAfterClass() {
+    public static function tearDownAfterClass(): void {
         if (static::$interface) {
             // completely clear the database
             static::dbRaze(static::$interface);

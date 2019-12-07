@@ -14,7 +14,7 @@ use Zend\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST\NextcloudNews\Versions */
 class TestVersions extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
     }
 

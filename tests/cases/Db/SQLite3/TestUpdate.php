@@ -15,7 +15,7 @@ class TestUpdate extends \JKingWeb\Arsse\TestCase\Db\BaseUpdate {
     protected static $minimal1 = "create table arsse_meta(key text primary key not null, value text); pragma user_version=1";
     protected static $minimal2 = "pragma user_version=2";
 
-    public static function tearDownAfterClass() {
+    public static function tearDownAfterClass(): void {
         static::$interface->close();
         static::$interface = null;
         parent::tearDownAfterClass();

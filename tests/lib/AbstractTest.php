@@ -24,11 +24,13 @@ use Zend\Diactoros\Response\XmlResponse;
 
 /** @coversNothing */
 abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
-    public function setUp() {
+    use \DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
+
+    public function setUp(): void {
         self::clearData();
     }
 
-    public function tearDown() {
+    public function tearDown(): void {
         self::clearData();
     }
 

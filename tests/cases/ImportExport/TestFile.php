@@ -16,7 +16,7 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $path;
     protected $proc;
 
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
         // create a mock Import/Export processor with stubbed underlying import/export routines
         $this->proc = \Phake::partialMock(AbstractImportExport::class);
@@ -37,7 +37,7 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
         chmod($this->path."importBadFile", 0000);
     }
 
-    public function tearDown() {
+    public function tearDown(): void {
         $this->path = null;
         $this->vfs = null;
         $this->proc = null;
@@ -60,7 +60,7 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideFileExports() {
+    public function provideFileExports(): iterable {
         $createException = new Exception("fileUncreatable");
         $writeException = new Exception("fileUnwritable");
         return [
@@ -98,7 +98,7 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideFileImports() {
+    public function provideFileImports(): iterable {
         $missingException = new Exception("fileMissing");
         $permissionException = new Exception("fileUnreadable");
         return [

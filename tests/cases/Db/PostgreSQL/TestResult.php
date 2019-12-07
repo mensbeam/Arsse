@@ -21,7 +21,7 @@ class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
         return [static::$interface, $set];
     }
 
-    public static function tearDownAfterClass() {
+    public static function tearDownAfterClass(): void {
         if (static::$interface) {
             static::dbRaze(static::$interface);
             @pg_close(static::$interface);

@@ -19,7 +19,7 @@ class TestDriver extends \JKingWeb\Arsse\TestCase\Db\BaseDriver {
     protected $setVersion = "PRAGMA user_version=#";
     protected static $file;
 
-    public static function setUpBeforeClass() {
+    public static function setUpBeforeClass(): void {
         // create a temporary database file rather than using a memory database
         // some tests require one connection to block another, so a memory database is not suitable
         static::$file = tempnam(sys_get_temp_dir(), 'ook');
@@ -27,7 +27,7 @@ class TestDriver extends \JKingWeb\Arsse\TestCase\Db\BaseDriver {
         parent::setUpBeforeclass();
     }
 
-    public static function tearDownAfterClass() {
+    public static function tearDownAfterClass(): void {
         parent::tearDownAfterClass();
         @unlink(self::$file);
         self::$file = null;

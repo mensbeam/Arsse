@@ -14,3 +14,7 @@ ini_set("zend.assertions", "1");
 ini_set("assert.exception", "true");
 error_reporting(\E_ALL);
 require_once BASE."vendor".DIRECTORY_SEPARATOR."autoload.php";
+
+if (function_exists("xdebug_set_filter")) {
+    xdebug_set_filter(\XDEBUG_FILTER_CODE_COVERAGE, \XDEBUG_PATH_WHITELIST, [BASE."lib/"]);
+}

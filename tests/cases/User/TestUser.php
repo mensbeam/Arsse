@@ -14,7 +14,7 @@ use JKingWeb\Arsse\User\Driver;
 
 /** @covers \JKingWeb\Arsse\User */
 class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function setUp() {
+    public function setUp(): void {
         self::clearData();
         self::setConf();
         // create a mock database interface
@@ -53,7 +53,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db, \Phake::times($exp && $user === "jane.doe@example.com" ? 1 : 0))->userAdd($user, $password);
     }
 
-    public function provideAuthentication() {
+    public function provideAuthentication(): iterable {
         $john = "john.doe@example.com";
         $jane = "jane.doe@example.com";
         return [
@@ -79,7 +79,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, $u->list());
     }
 
-    public function provideUserList() {
+    public function provideUserList(): iterable {
         $john = "john.doe@example.com";
         $jane = "jane.doe@example.com";
         return [
@@ -100,7 +100,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, $u->exists($user));
     }
 
-    public function provideExistence() {
+    public function provideExistence(): iterable {
         $john = "john.doe@example.com";
         $jane = "jane.doe@example.com";
         return [
@@ -159,7 +159,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideAdditions() {
+    public function provideAdditions(): iterable {
         $john = "john.doe@example.com";
         $jane = "jane.doe@example.com";
         return [
@@ -194,7 +194,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideRemovals() {
+    public function provideRemovals(): iterable {
         $john = "john.doe@example.com";
         $jane = "jane.doe@example.com";
         return [
@@ -274,7 +274,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function providePasswordChanges() {
+    public function providePasswordChanges(): iterable {
         $john = "john.doe@example.com";
         $jane = "jane.doe@example.com";
         return [
@@ -307,7 +307,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function providePasswordClearings() {
+    public function providePasswordClearings(): iterable {
         $forbidden = new \JKingWeb\Arsse\User\ExceptionAuthz("notAuthorized");
         $missing = new \JKingWeb\Arsse\User\Exception("doesNotExist");
         return [
