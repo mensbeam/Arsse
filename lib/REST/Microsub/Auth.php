@@ -26,18 +26,21 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         'auth'  => ['GET' => "opLogin",             'POST' => "opCodeVerification"],
         'token' => ['GET' => "opTokenVerification", 'POST' => "opIssueAccessToken"],
     ];
-    /** The minimal set of reserved URL characters which mus t be escaped when comparing user ID URLs */
-    const USERNAME_ESCAPES = [
-        '#' => "%23",
-        '%' => "%25",
-        '/' => "%2F",
-        '?' => "%3F",
-    ];
-    /** The minimal set of reserved URL characters which must be escaped in query values */
-    const QUERY_ESCAPES = [
-        '#' => "%23",
-        '%' => "%25",
-        '&' => "%26",
+    /** The set of URL characters escaped by rawurlencode() which should be unescaped when constructing user ID URLs */
+    const USERNAME_UNESCAPES = [
+        '%21' => "!",
+        '%24' => "$",
+        '%26' => "&",
+        '%27' => "'",
+        '%28' => "(",
+        '%29' => ")",
+        '%2A' => "*",
+        '%2B' => "+",
+        '%2C' => ",",
+        '%3A' => ":",
+        '%3B' => ";",
+        '%3D' => "=",
+        '%40' => "@",
     ];
     /** The acceptable media type of input for POST requests */
     const ACCEPTED_TYPE = "application/x-www-form-urlencoded";
@@ -101,7 +104,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
      * variables; it may fail depending on server configuration
      */
     protected function buildIdentifier(ServerRequestInterface $req, string $user): string {
-        return $this->buildBaseURL($req)."u/".str_replace(array_keys(self::USERNAME_ESCAPES), array_values(self::USERNAME_ESCAPES), $user);
+        return $this->buildBaseURL($req)."u/".str_replace(array_keys(self::USERNAME_UNESCAPES), array_values(self::USERNAME_UNESCAPES), rawurlencode($user));
     }
 
     /** Matches an identity URL against its canoncial form
