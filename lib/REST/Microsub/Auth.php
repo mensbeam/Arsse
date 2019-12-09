@@ -250,14 +250,14 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function opIssueAccessToken(ServerRequestInterface $req): ResponseInterface {
         $post = $req->getParsedBody();
         // revocation is a special case of POSTing to the token URL
-        if ($post['action'] ?? "" === "revoke") {
+        if (($post['action'] ?? "") === "revoke") {
             return $this->opRevokeToken($req);
         }
         if (($post['grant_type'] ?? "") !== "authorization_code") {
             throw new ExceptionAuth("unsupported_grant_type");
         }
         $tr = Arsse::$db->begin();
-        list($user, $type) = $this->validateAuthCode($post['code'] ?? "", $post['client_id'] ?? "", $post['redirect_url'] ?? "", $post['me'] ?? "");
+        list($user, $type) = $this->validateAuthCode($post['code'] ?? "", $post['client_id'] ?? "", $post['redirect_uri'] ?? "", $post['me'] ?? "");
         if ($type !== "code") {
             throw new ExceptionAuth("invalid_grant");
         }
@@ -285,7 +285,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
      * It is the responsibility of the calling function to revoke the auth code if the code is ultimately accepted
      */
     protected function validateAuthCode(string $code, string $clientId, string $redirUrl, string $me = null): array {
-        if (!strlen($code) || !strlen($clientId) || !strlen($redirUrl)) {
+        if (!strlen($code) || !strlen($clientId) || !strlen($redirUrl) || (isset($me) && !strlen($me))) {
             throw new ExceptionAuth("invalid_request");
         }
         // check that the auth code exists
@@ -296,7 +296,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         $data = @json_decode((string) $token['data'], true);
         // validate the auth code
-        if (!is_array($data) || !isset($data['redirect_uri']) || !isset($data['client_id'])) {
+        if (!is_array($data) || !isset($data['redirect_uri']) || !isset($data['client_id']) || (isset($me) && !isset($data['me']))) {
             throw new ExceptionAuth("invalid_grant");
         } elseif ($data['client_id'] !== $clientId || $data['redirect_uri'] !== $redirUrl) {
             throw new ExceptionAuth("invalid_client");
