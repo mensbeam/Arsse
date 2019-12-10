@@ -85,7 +85,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     /** Produces the base URL of a server request
-     * 
+     *
      * This involves reconstructing the scheme and authority based on $_SERVER
      * variables; it may fail depending on server configuration
      */
@@ -99,7 +99,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     /** Produces a canoncial identity URL based on a server request and a user name
-     * 
+     *
      * This involves reconstructing the scheme and authority based on $_SERVER
      * variables; it may fail depending on server configuration
      */
@@ -108,9 +108,9 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     /** Matches an identity URL against its canoncial form
-     * 
+     *
      * The identifier matches if all of the following are true:
-     * 
+     *
      * 1. The scheme is http or https
      * 2. The normalized hostname matches
      * 3. The port matches after dropping default port numbers
@@ -118,7 +118,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
      * 5. The path is `/u/<username>`
      * 6. There is no query content
      * 7. The username, when URL-decoded, matches
-     * 
+     *
      * Though IndieAuth forbids port numbers and fragments in identifiers, we do not enforce this
      */
     protected function matchIdentifier(string $canonical, string $me): bool {
@@ -134,7 +134,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         $c['path'] = explode("/", $c['path']);
         $c['id'] = rawurldecode(array_pop($c['path']));
         if (
-            !in_array($me['scheme'] ?? "", ["http", "https"]) || 
+            !in_array($me['scheme'] ?? "", ["http", "https"]) ||
             ($me['host'] ?? "") !== $c['host'] ||
             $me['path'] != $c['path'] ||
             $me['id'] !== $c['id'] ||
@@ -149,15 +149,15 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     /** Presents a very basic user profile for discovery purposes
-     * 
-     * The HTML document itself consists only of link elements and an 
-     * encoding declaration; Link header-fields are also included for 
+     *
+     * The HTML document itself consists only of link elements and an
+     * encoding declaration; Link header-fields are also included for
      * HEAD requests
-     * 
+     *
      * Since discovery is publicly accessible, we produce a discovery
      * page for all potential user names so as not to facilitate user
      * enumeration
-     * 
+     *
      * @see https://indieweb.org/Microsub-spec#Discovery
      */
     protected function opDiscovery(ServerRequestInterface $req): ResponseInterface {
@@ -175,12 +175,12 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     /** Handles the authentication process
-     * 
+     *
      * Authentication is achieved via an HTTP Basic authentiation
-     * challenge; once the user successfully logs in a code is issued 
+     * challenge; once the user successfully logs in a code is issued
      * and redirection occurs. Scopes are for all intents and purposes
-     * ignored and client information is not presented. 
-     * 
+     * ignored and client information is not presented.
+     *
      * @see https://indieauth.spec.indieweb.org/#authentication-request
      * @see https://indieauth.spec.indieweb.org/#authorization-endpoint-0
      */
@@ -201,7 +201,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
                 // ensure the logged-in user matches the IndieAuth identifier URL
                 $user = $req->getAttribute("authenticatedUser");
                 if (!$this->matchIdentifier($this->buildIdentifier($req, $user), $query['me'])) {
-                        throw new ExceptionAuth("access_denied");
+                    throw new ExceptionAuth("access_denied");
                 }
                 $type = !strlen($query['response_type'] ?? "") ? "id" : $query['response_type'];
                 if (!in_array($type, ["code", "id"])) {
@@ -226,9 +226,9 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     /** Handles the auth code verification of the basic "Authentication" flow of IndieAuth
-     * 
+     *
      * This is not used by Microsub, but is part of the IndieAuth specification
-     * 
+     *
      * @see https://indieauth.spec.indieweb.org/#authorization-code-verification
      */
     protected function opCodeVerification(ServerRequestInterface $req): ResponseInterface {
@@ -247,7 +247,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     /** Handles the auth code verification and token issuance of the "Authorization" flow of IndieAuth
-     * 
+     *
      * @see https://indieauth.spec.indieweb.org/#token-endpoint-0
      */
     protected function opIssueAccessToken(ServerRequestInterface $req): ResponseInterface {
@@ -282,9 +282,9 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     /** Validates an auth code and throws appropriate exceptions otherwise
-     * 
+     *
      * Returns an indexed array containing the username and the grant type (either "id" or "code")
-     * 
+     *
      * It is the responsibility of the calling function to revoke the auth code if the code is ultimately accepted
      */
     protected function validateAuthCode(string $code, string $clientId, string $redirUrl, string $me = null): array {
@@ -311,9 +311,9 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     /** Handles token verification as an API call
-     * 
+     *
      * The static `validateBearer` method should be used to check the validity of a bearer token in normal use
-     * 
+     *
      * @see https://indieauth.spec.indieweb.org/#access-token-verification
      */
     protected function opTokenVerification(ServerRequestInterface $req): ResponseInterface {
@@ -337,12 +337,12 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new JsonResponse([
             'me' => $data['me'] ?? "",
             'client_id' => $data['client_id'] ?? "",
-            'scope' => $data['scope'] ?? self::SCOPES,
+            'scope' => implode(" ", ($data['scope'] ?? self::SCOPES)),
         ]);
     }
 
     /** Handles token revocation
-     * 
+     *
      * @see https://indieauth.spec.indieweb.org/#token-revocation
      */
     protected function opRevokeToken(ServerRequestInterface $req): ResponseInterface {
@@ -359,13 +359,13 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     /** Checks that the supplied bearer token is valid i.e. logs a bearer in
-     * 
-     * Returns an indexed array with the user associated with the token, as well as other data 
+     *
+     * Returns an indexed array with the user associated with the token, as well as other data
      *
      * @throws \JKingWeb\Arsse\REST\Microsub\ExceptionAuth
      */
     public static function validateBearer(string $authorization, array $scopes = []): array {
-        if (!preg_match("/^Bearer (.+)/", $authorization, $match)) {
+        if (!preg_match("<^Bearer ([a-z0-9\._~/+-]+=*)$>i", $authorization, $match)) {
             throw new ExceptionAuth("invalid_request");
         }
         $token = $match[1];
@@ -374,7 +374,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (\JKingWeb\Arsse\Db\ExceptionInput $e) {
             throw new ExceptionAuth("invalid_token");
         }
-        $data = @json_decode($token['data'], true) ?? [];
+        $data = @json_decode((string) $token['data'], true) ?? [];
         $data['scope'] = $data['scope'] ?? self::SCOPES;
         // scope is hard-coded for now
         if (array_diff($scopes, $data['scope'])) {

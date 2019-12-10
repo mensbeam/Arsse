@@ -6,6 +6,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test;
 
+use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Exception;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Conf;
@@ -152,9 +153,12 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
 
     public function assertException($msg = "", string $prefix = "", string $type = "Exception") {
         if (func_num_args()) {
-            if ($msg instanceof \JKingWeb\Arsse\AbstractException) {
+            if ($msg instanceof \Exception) {
                 $this->expectException(get_class($msg));
                 $this->expectExceptionCode($msg->getCode());
+                if (!$msg instanceof AbstractException && strlen($msg->getMessage())) {
+                    $this->expectExceptionMessage($msg->getMessage());
+                }
             } else {
                 $class = \JKingWeb\Arsse\NS_BASE . ($prefix !== "" ? str_replace("/", "\\", $prefix) . "\\" : "") . $type;
                 $msgID = ($prefix !== "" ? $prefix . "/" : "") . $type. ".$msg";

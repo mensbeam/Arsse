@@ -10,6 +10,7 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\REST\Microsub\Auth;
+use JKingWeb\Arsse\REST\Microsub\ExceptionAuth;
 use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\Response\JsonResponse as Response;
 use Zend\Diactoros\Response\EmptyResponse;
@@ -133,7 +134,7 @@ class TestAuth extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideAuthData */
     public function testVerifyAnAuthenticationCode(array $params, string $user, $data, ResponseInterface $exp) {
         if ($data instanceof \Exception) {
-            \Phake::when(Arsse::$db)->tokenLookup("microsub.auth", $params['code'] ?? "")->thenThrow($data);    
+            \Phake::when(Arsse::$db)->tokenLookup("microsub.auth", $params['code'] ?? "")->thenThrow($data);
         } else {
             \Phake::when(Arsse::$db)->tokenLookup("microsub.auth", $params['code'] ?? "")->thenReturn(['user' => $user, 'data' => $data]);
         }
@@ -165,7 +166,7 @@ class TestAuth extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideTokenRequests */
     public function testIssueAnAccessToken(array $params, string $user, $data, ResponseInterface $exp) {
         if ($data instanceof \Exception) {
-            \Phake::when(Arsse::$db)->tokenLookup("microsub.auth", $params['code'] ?? "")->thenThrow($data);    
+            \Phake::when(Arsse::$db)->tokenLookup("microsub.auth", $params['code'] ?? "")->thenThrow($data);
         } else {
             \Phake::when(Arsse::$db)->tokenLookup("microsub.auth", $params['code'] ?? "")->thenReturn(['user' => $user, 'data' => $data]);
         }
@@ -208,6 +209,44 @@ class TestAuth extends \JKingWeb\Arsse\Test\AbstractTest {
             'Bad user'         => [['code' => "bad-user",   'redirect_uri' => "https://example.org/", 'client_id' => "https://example.net/", 'grant_type' => "authorization_code", 'me' => "https://example.com/u/someone"], "someone", new ExceptionInput("subjectMissing"),                                                                                                     new Response(['error' => "invalid_grant"         ], 400)],
             'Success 1'        => [['code' => "valid-code", 'redirect_uri' => "https://example.org/", 'client_id' => "https://example.net/", 'grant_type' => "authorization_code", 'me' => "https://example.com/u/someone"], "someone", '{"me":"https://example.com/u/someone","redirect_uri":"https://example.org/","client_id":"https://example.net/","response_type":"code"}', new Response(['me' => "http://example.com/u/someone", 'token_type' => "Bearer", 'access_token' => "TOKEN", 'scope' => $scopes], 200)],
             'Success 2'        => [['code' => "good-code",  'redirect_uri' => "https://example.org/", 'client_id' => "https://example.net/", 'grant_type' => "authorization_code", 'me' => "https://example.com/u/somehow"], "somehow", '{"me":"https://example.com/u/somehow","redirect_uri":"https://example.org/","client_id":"https://example.net/","response_type":"code"}', new Response(['me' => "http://example.com/u/somehow", 'token_type' => "Bearer", 'access_token' => "TOKEN", 'scope' => $scopes], 200)],
+        ];
+    }
+
+    /** @dataProvider provideBearers */
+    public function testLogInABearer(string $authorization, array $scopes, string $token, string $user, $data, $exp) {
+        if ($data instanceof \Exception) {
+            \Phake::when(Arsse::$db)->tokenLookup("microsub.access", $this->anything())->thenThrow($data);
+        } else {
+            \Phake::when(Arsse::$db)->tokenLookup("microsub.access", $this->anything())->thenReturn(['user' => $user, 'data' => $data]);
+        }
+        if ($exp instanceof \Exception) {
+            $this->assertException($exp);
+        }
+        try {
+            $act = Auth::validateBearer($authorization, $scopes);
+            $this->assertSame($exp, $act);
+        } finally {
+            if (strlen($token)) {
+                \Phake::verify(Arsse::$db)->tokenLookup("microsub.access", $token);
+            } else {
+                \Phake::verify(Arsse::$db, \Phake::times(0))->tokenLookup;
+            }
+        }
+    }
+
+    public function provideBearers() {
+        return [
+            'Not a bearer'         => ["Beaver TOKEN", [],           "",      "",        "",                                   new ExceptionAuth("invalid_request")],
+            'Token missing 1'      => ["Bearer",       [],           "",      "",        "",                                   new ExceptionAuth("invalid_request")],
+            'Token missing 2'      => ["Bearer ",      [],           "",      "",        "",                                   new ExceptionAuth("invalid_request")],
+            'Not a token'          => ["Bearer !",     [],           "",      "",        "",                                   new ExceptionAuth("invalid_request")],
+            'Invalid token'        => ["Bearer TOKEN", [],           "TOKEN", "",        new ExceptionInput("subjectMissing"), new ExceptionAuth("invalid_token")],
+            'Insufficient scope 1' => ["Bearer TOKEN", ["missing"],  "TOKEN", "someone", null,                                 new ExceptionAuth("insufficient_scope")],
+            'Insufficient scope 2' => ["Bearer TOKEN", ["channels"], "TOKEN", "someone", '{"scope":["read","follow"]}',        new ExceptionAuth("insufficient_scope")],
+            'Success 1'            => ["Bearer TOKEN", [],           "TOKEN", "someone", null,                                 ["someone", ['scope' => Auth::SCOPES]]],
+            'Success 2'            => ["bearer TOKEN", [],           "TOKEN", "someone", null,                                 ["someone", ['scope' => Auth::SCOPES]]],
+            'Success 3'            => ["BEARER TOKEN", [],           "TOKEN", "someone", null,                                 ["someone", ['scope' => Auth::SCOPES]]],
+            'Broken data'          => ["Bearer TOKEN", [],           "TOKEN", "someone", '{',                                  ["someone", ['scope' => Auth::SCOPES]]],
         ];
     }
 }
