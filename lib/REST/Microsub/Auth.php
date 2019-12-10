@@ -310,7 +310,9 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         return [$token['user'], $data['response_type'] ?? "id"];
     }
 
-    /** Handles token verification as an API call
+    /** 
+     * Handles token verification as an API call; this will not normally be used since 
+     * the token and service endpoints are tightly coupled
      *
      * The static `validateBearer` method should be used to check the validity of a bearer token in normal use
      *
@@ -321,23 +323,27 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
             if (!$req->hasHeader("Authorization")) {
                 throw new ExceptionAuth("invalid_token");
             }
-            $authorization = $req->getHeader("Authorization")[0];
-            list($user, $data) = self::validateBearer($authorization);
+            $authorization = $req->getHeader("Authorization");
+            if (sizeof($authorization) > 1) {
+                throw new ExceptionAuth("invalid_request");
+            }
+            list($user, $data) = self::validateBearer($authorization[0]);
         } catch (ExceptionAuth $e) {
             $errCode = $e->getMessage();
             $httpCode = [
                 'invalid_request' => 400,
                 'invalid_token' => 401,
             ][$errCode] ?? 500;
-            return new EmptyResponse($httpCode, [
-                'WWW-Authenticate'              => "Bearer error=\"$errCode\"",
-                'X-Arsse-Suppress-General-Auth' => "1"
-            ]);
+            $out = new EmptyResponse($httpCode, ['WWW-Authenticate' => "Bearer error=\"$errCode\""]);
+            if ($httpCode == 401) {
+                $out = $out->withHeader("X-Arsse-Suppress-General-Auth", "1");
+            }
+            return $out;
         }
         return new JsonResponse([
             'me' => $data['me'] ?? "",
             'client_id' => $data['client_id'] ?? "",
-            'scope' => implode(" ", ($data['scope'] ?? self::SCOPES)),
+            'scope' => implode(" ", (array) ($data['scope'] ?? self::SCOPES)),
         ]);
     }
 
@@ -352,7 +358,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         try {
             $info = Arsse::$db->tokenLookup("microsub.access", $token);
-            Arsse::$db->tokenRevoke($info['user'], "mucrosub.access", $token);
+            Arsse::$db->tokenRevoke($info['user'], "microsub.access", $token);
         } catch (\JKingWeb\Arsse\Db\ExceptionInput $e) {
         }
         return new EmptyResponse(200);

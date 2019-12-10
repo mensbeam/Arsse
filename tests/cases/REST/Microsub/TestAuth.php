@@ -249,4 +249,59 @@ class TestAuth extends \JKingWeb\Arsse\Test\AbstractTest {
             'Broken data'          => ["Bearer TOKEN", [],           "TOKEN", "someone", '{',                                  ["someone", ['scope' => Auth::SCOPES]]],
         ];
     }
+
+    /** @dataProvider provideRevocations */
+    public function testRevokeAToken(array $params, $user, ResponseInterface $exp) {
+        \Phake::when(Arsse::$db)->tokenRevoke->thenReturn(true);
+        if ($user instanceof \Exception) {
+            \Phake::when(Arsse::$db)->tokenLookup->thenThrow($user);
+        } else {
+            \Phake::when(Arsse::$db)->tokenLookup->thenReturn(['user' => $user]);
+        }
+        $this->assertMessage($exp, $this->req("http://example.com/u/?f=token", "POST", [], [], array_merge(['action' => "revoke"], $params)));
+        $doLookup = strlen($params['token'] ?? "") > 0;
+        $doRevoke = ($doLookup && !$user instanceof \Exception);
+        if ($doLookup) {
+            \Phake::verify(Arsse::$db)->tokenLookup("microsub.access", $params['token'] ?? "");
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::times(0))->tokenLookup;
+        }
+        if ($doRevoke) {
+            \Phake::verify(Arsse::$db)->tokenRevoke($user, "microsub.access", $params['token'] ?? "");
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::times(0))->tokenRevoke;
+        }
+    }
+
+    public function provideRevocations() {
+        return [
+            'Missing token 1' => [[],                  "",                                   new EmptyResponse(422)],
+            'Missing token 2' => [['token' => ""],     "",                                   new EmptyResponse(422)],
+            'Bad Token'       => [['token' => "bad"],  new ExceptionInput("subjectMissing"), new EmptyResponse(200)],
+            'Success'         => [['token' => "good"], "someone",                            new EmptyResponse(200)],
+        ];
+    }
+
+    /** @dataProvider provideTokenVerifications */
+    public function testVerifyAToken(array $authorization, $output, ResponseInterface $exp) {
+        if ($output instanceof \Exception) {
+            \Phake::when(Arsse::$db)->tokenLookup->thenThrow($output);
+        } else {
+            \Phake::when(Arsse::$db)->tokenLookup->thenReturn(['user' => "someone", 'data' => $output]);
+        }
+        $this->assertMessage($exp, $this->req("http://example.com/u/?f=token", "GET", [], $authorization ? ['Authorization' => $authorization] : []));
+        \Phake::verify(Arsse::$db, \Phake::times(0))->tokenRevoke;
+    }
+
+    public function provideTokenVerifications() {
+        return [
+            'No credentials'       => [[],                               "",                                               new EmptyResponse(401, ['WWW-Authenticate' => 'Bearer error="invalid_token"', 'X-Arsse-Suppress-General-Auth' => "1"])],
+            'Too many credentials' => [["Bearer TOKEN", "Basic BASE64"], "",                                               new EmptyResponse(400, ['WWW-Authenticate' => 'Bearer error="invalid_request"'])],
+            'Invalid credentials'  => [["Bearer !"],                     "",                                               new EmptyResponse(400, ['WWW-Authenticate' => 'Bearer error="invalid_request"'])],
+            'Bad credentials'      => [["Bearer BAD"],                   new ExceptionInput("subjectMissing"),             new EmptyResponse(401, ['WWW-Authenticate' => 'Bearer error="invalid_token"', 'X-Arsse-Suppress-General-Auth' => "1"])],
+            'Success 1'            => [["Bearer GOOD"],                  '{"me":"ook","client_id":"eek","scope":["ack"]}', new Response(['me' => "ook", 'client_id' => "eek", 'scope' => "ack"])],
+            'Success 2'            => [["Bearer GOOD"],                  '{"scope":["ook","eek","ack"]}',                  new Response(['me' => "", 'client_id' => "", 'scope' => "ook eek ack"])],
+            'Success 3'            => [["Bearer GOOD"],                  '{}',                                             new Response(['me' => "", 'client_id' => "", 'scope' => "read follow channels"])],
+        ];
+    }
 }
