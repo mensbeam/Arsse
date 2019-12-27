@@ -147,6 +147,7 @@ USAGE_TEXT;
         return "";
     }
 
+    /** @codeCoverageIgnore */
     protected function loadConf(): bool {
         $conf = file_exists(BASE."config.php") ? new Conf(BASE."config.php") : new Conf;
         Arsse::load($conf);
@@ -219,7 +220,8 @@ USAGE_TEXT;
     }
 
     protected function userManage($args): int {
-        switch ($this->command(["add", "remove", "set-pass", "unset-pass", "list", "auth"], $args)) {
+        $cmd = $this->command(["add", "remove", "set-pass", "unset-pass", "list", "auth"], $args);
+        switch ($cmd) {
             case "add":
                 return $this->userAddOrSetPassword("add", $args["<username>"], $args["<password>"]);
             case "set-pass":
@@ -247,8 +249,10 @@ USAGE_TEXT;
             case "list":
             case "":
                 return $this->userList();
+            default:
+                throw new Exception("constantUnknown", $cmd); // @codeCoverageIgnore
         }
-    } // @codeCoverageIgnore
+    }
 
     protected function userAddOrSetPassword(string $method, string $user, string $password = null, string $oldpass = null): int {
         $passwd = Arsse::$user->$method(...array_slice(func_get_args(), 1));
