@@ -16,13 +16,13 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\NextcloudNews\V1_2;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\ServerRequest;
 use Zend\Diactoros\Response\JsonResponse as Response;
 use Zend\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST\NextcloudNews\V1_2<extended> */
 class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $h;
+    protected $transaction;
     protected $feeds = [ // expected sample output of a feed list from the database, and the resultant expected transformation by the REST handler
         'db' => [
             [
@@ -298,10 +298,16 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         ],
     ];
 
-    protected function req(string $method, string $target, string $data = "", array $headers = [], bool $authenticated = true): ResponseInterface {
+    protected function req(string $method, string $target, $data = "", array $headers = [], bool $authenticated = true, bool $body = true): ResponseInterface {
         $prefix = "/index.php/apps/news/api/v1-2";
         $url = $prefix.$target;
-        $req = $this->serverRequest($method, $url, $prefix, $headers, [], $data, "application/json", [], $authenticated ? "john.doe@example.com" : "");
+        if ($body) {
+            $params = [];
+        } else {
+            $params = $data;
+            $data = [];
+        }
+        $req = $this->serverRequest($method, $url, $prefix, $headers, [], $data, "application/json", $params, $authenticated ? "john.doe@example.com" : "");
         return $this->h->dispatch($req);
     }
 
@@ -313,7 +319,9 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user->id = "john.doe@example.com";
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
-        \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(Transaction::class));
+        $this->transaction = \Phake::mock(Transaction::class);
+        \Phake::when(Arsse::$db)->begin->thenReturn($this->transaction);
+        //initialize a handler
         $this->h = new V1_2();
     }
 
@@ -330,50 +338,37 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/", "", [], false));
     }
 
-    public function testRespondToInvalidPaths() {
-        $errs = [
-            404 => [
-                ['GET',    "/"],
-                ['PUT',    "/"],
-                ['POST',   "/"],
-                ['DELETE', "/"],
-                ['GET',    "/folders/1/invalid"],
-                ['PUT',    "/folders/1/invalid"],
-                ['POST',   "/folders/1/invalid"],
-                ['DELETE', "/folders/1/invalid"],
-                ['GET',    "/version/invalid"],
-                ['PUT',    "/version/invalid"],
-                ['POST',   "/version/invalid"],
-                ['DELETE', "/version/invalid"],
-            ],
-            405 => [
-                'GET' => [
-                    ['PUT',    "/version"],
-                    ['POST',   "/version"],
-                    ['DELETE', "/version"],
-                ],
-                'GET, POST' => [
-                    ['PUT',    "/folders"],
-                    ['DELETE', "/folders"],
-                ],
-                'PUT, DELETE' => [
-                    ['GET',    "/folders/1"],
-                    ['POST',   "/folders/1"],
-                ],
-            ],
+    /** @dataProvider provideInvalidPaths */
+    public function testRespondToInvalidPaths($path, $method, $code, $allow = null) {
+        $exp = new EmptyResponse($code, $allow ? ['Allow' => $allow] : []);
+        $this->assertMessage($exp, $this->req($method, $path));
+    }
+
+    public function provideInvalidPaths() {
+        return [
+            ["/",                  "GET",     404],
+            ["/",                  "POST",    404],
+            ["/",                  "PUT",     404],
+            ["/",                  "DELETE",  404],
+            ["/",                  "OPTIONS", 404],
+            ["/version/invalid",   "GET",     404],
+            ["/version/invalid",   "POST",    404],
+            ["/version/invalid",   "PUT",     404],
+            ["/version/invalid",   "DELETE",  404],
+            ["/version/invalid",   "OPTIONS", 404],
+            ["/folders/1/invalid", "GET",     404],
+            ["/folders/1/invalid", "POST",    404],
+            ["/folders/1/invalid", "PUT",     404],
+            ["/folders/1/invalid", "DELETE",  404],
+            ["/folders/1/invalid", "OPTIONS", 404],
+            ["/version",           "POST",    405, "GET"],
+            ["/version",           "PUT",     405, "GET"],
+            ["/version",           "DELETE",  405, "GET"],
+            ["/folders",           "PUT",     405, "GET, POST"],
+            ["/folders",           "DELETE",  405, "GET, POST"],
+            ["/folders/1",         "GET",     405, "PUT, DELETE"],
+            ["/folders/1",         "POST",    405, "PUT, DELETE"],
         ];
-        foreach ($errs[404] as $req) {
-            $exp = new EmptyResponse(404);
-            list($method, $path) = $req;
-            $this->assertMessage($exp, $this->req($method, $path), "$method call to $path did not return 404.");
-        }
-        foreach ($errs[405] as $allow => $cases) {
-            $exp = new EmptyResponse(405, ['Allow' => $allow]);
-            foreach ($cases as $req) {
-                list($method, $path) = $req;
-                $this->assertMessage($exp, $this->req($method, $path), "$method call to $path did not return 405.");
-            }
-        }
     }
 
     public function testRespondToInvalidInputTypes() {
@@ -384,24 +379,21 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("PUT", "/folders/1", '<data/>', ['Content-Type' => null]));
     }
 
-    public function testRespondToOptionsRequests() {
+    /** @dataProvider provideOptionsRequests */
+    public function testRespondToOptionsRequests(string $url, string $allow, string $accept) {
         $exp = new EmptyResponse(204, [
-            'Allow'  => "HEAD,GET,POST",
-            'Accept' => "application/json",
+            'Allow'  => $allow,
+            'Accept' => $accept,
         ]);
-        $this->assertMessage($exp, $this->req("OPTIONS", "/feeds"));
-        $exp = new EmptyResponse(204, [
-            'Allow'  => "DELETE",
-            'Accept' => "application/json",
-        ]);
-        $this->assertMessage($exp, $this->req("OPTIONS", "/feeds/2112"));
-        $exp = new EmptyResponse(204, [
-            'Allow'  => "HEAD,GET",
-            'Accept' => "application/json",
-        ]);
-        $this->assertMessage($exp, $this->req("OPTIONS", "/user"));
-        $exp = new EmptyResponse(404);
-        $this->assertMessage($exp, $this->req("OPTIONS", "/invalid/path"));
+        $this->assertMessage($exp, $this->req("OPTIONS", $url));
+    }
+
+    public function provideOptionsRequests() {
+        return [
+            ["/feeds",      "HEAD,GET,POST", "application/json"],
+            ["/feeds/2112", "DELETE",        "application/json"],
+            ["/user",       "HEAD,GET",      "application/json"],
+        ];
     }
 
     public function testListFolders() {
@@ -413,56 +405,40 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 1,  'name' => "Software"],
             ['id' => 12, 'name' => "Hardware"],
         ];
-        \Phake::when(Arsse::$db)->folderList(Arsse::$user->id, null, false)->thenReturn(new Result([]))->thenReturn(new Result($this->v($list)));
-        $exp = new Response(['folders' => []]);
-        $this->assertMessage($exp, $this->req("GET", "/folders"));
+        \Phake::when(Arsse::$db)->folderList(Arsse::$user->id, null, false)->thenReturn(new Result($this->v($list)));
         $exp = new Response(['folders' => $out]);
         $this->assertMessage($exp, $this->req("GET", "/folders"));
     }
 
-    public function testAddAFolder() {
-        $in = [
-            ["name" => "Software"],
-            ["name" => "Hardware"],
+    /** @dataProvider provideFolderCreations */
+    public function testAddAFolder(array $input, bool $body, $output, ResponseInterface $exp) {
+        if ($output instanceof ExceptionInput) {
+            \Phake::when(Arsse::$db)->folderAdd->thenThrow($output);    
+        } else {
+            \Phake::when(Arsse::$db)->folderAdd->thenReturn($output);
+            \Phake::when(Arsse::$db)->folderPropertiesGet->thenReturn($this->v(['id' => $output, 'name' => $input['name'], 'parent' => null]));
+        }
+        $act = $this->req("POST", "/folders", $input, [], true, $body);
+        $this->assertMessage($exp, $act);
+        \Phake::verify(Arsse::$db)->folderAdd(Arsse::$user->id, $input);
+        if ($output instanceof ExceptionInput) {
+            \Phake::verify(Arsse::$db, \Phake::times(0))->folderPropertiesGet;
+        } else {
+            \Phake::verify(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, $output);
+        }
+    }
+
+    public function provideFolderCreations() {
+        return [
+            [['name' => "Software"], true,  1,                                         new Response(['folders' => [['id'=> 1, 'name' => "Software"]]])],
+            [['name' => "Software"], false, 1,                                         new Response(['folders' => [['id'=> 1, 'name' => "Software"]]])],
+            [['name' => "Hardware"], true,  "2",                                       new Response(['folders' => [['id'=> 2, 'name' => "Hardware"]]])],
+            [['name' => "Hardware"], false, "2",                                       new Response(['folders' => [['id'=> 2, 'name' => "Hardware"]]])],
+            [['name' => "Software"], true,  new ExceptionInput("constraintViolation"), new EmptyResponse(409)],
+            [['name' => ""],         true,  new ExceptionInput("whitespace"),          new EmptyResponse(422)],
+            [['name' => " "],        true,  new ExceptionInput("whitespace"),          new EmptyResponse(422)],
+            [['name' => null],       true,  new ExceptionInput("missing"),             new EmptyResponse(422)],
         ];
-        $db = [
-            ['id' => 1,   'name' => "Software", 'parent' => null],
-            ['id' => "2", 'name' => "Hardware", 'parent' => null],
-        ];
-        $out = [
-            ['id' => 1, 'name' => "Software"],
-            ['id' => 2, 'name' => "Hardware"],
-        ];
-        // set of various mocks for testing
-        \Phake::when(Arsse::$db)->folderAdd($this->anything(), $this->anything())->thenThrow(new \Exception);
-        \Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $in[0])->thenReturn(1)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        \Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $in[1])->thenReturn(2)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        \Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 1)->thenReturn($this->v($db[0]));
-        \Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 2)->thenReturn($this->v($db[1]));
-        // set up mocks that produce errors
-        \Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, [])->thenThrow(new ExceptionInput("missing"));
-        \Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => ""])->thenThrow(new ExceptionInput("missing"));
-        \Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => " "])->thenThrow(new ExceptionInput("whitespace"));
-        // correctly add two folders, using different means
-        $exp = new Response(['folders' => [$out[0]]]);
-        $this->assertMessage($exp, $this->req("POST", "/folders", json_encode($in[0])));
-        $exp = new Response(['folders' => [$out[1]]]);
-        $this->assertMessage($exp, $this->req("POST", "/folders?name=Hardware"));
-        \Phake::verify(Arsse::$db)->folderAdd(Arsse::$user->id, $in[0]);
-        \Phake::verify(Arsse::$db)->folderAdd(Arsse::$user->id, $in[1]);
-        \Phake::verify(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 1);
-        \Phake::verify(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 2);
-        // test bad folder names
-        $exp = new EmptyResponse(422);
-        $this->assertMessage($exp, $this->req("POST", "/folders"));
-        $this->assertMessage($exp, $this->req("POST", "/folders", '{"name":""}'));
-        $this->assertMessage($exp, $this->req("POST", "/folders", '{"name":" "}'));
-        $this->assertMessage($exp, $this->req("POST", "/folders", '{"name":{}}'));
-        // try adding the same two folders again
-        $exp = new EmptyResponse(409);
-        $this->assertMessage($exp, $this->req("POST", "/folders?name=Software"));
-        $exp = new EmptyResponse(409);
-        $this->assertMessage($exp, $this->req("POST", "/folders", json_encode($in[1])));
     }
 
     public function testRemoveAFolder() {
@@ -475,32 +451,26 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db, \Phake::times(2))->folderRemove(Arsse::$user->id, 1);
     }
 
-    public function testRenameAFolder() {
-        $in = [
-            ["name" => "Software"],
-            ["name" => "Software"],
-            ["name" => ""],
-            ["name" => " "],
-            [],
+    /** @dataProvider provideFolderRenamings */
+    public function testRenameAFolder(array $input, int $id, $output, ResponseInterface $exp) {
+        if ($output instanceof ExceptionInput) {
+            \Phake::when(Arsse::$db)->folderPropertiesSet->thenThrow($output);
+        } else {
+            \Phake::when(Arsse::$db)->folderPropertiesSet->thenReturn($output);
+        }
+        $act = $this->req("PUT", "/folders/$id", $input);
+        $this->assertMessage($exp, $act);
+        \Phake::verify(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, $id, $input);
+    }
+    public function provideFolderRenamings() {
+        return [
+            [['name' => "Software"], 1, true,                                      new EmptyResponse(204)],
+            [['name' => "Software"], 2, new ExceptionInput("constraintViolation"), new EmptyResponse(409)],
+            [['name' => "Software"], 3, new ExceptionInput("subjectMissing"),      new EmptyResponse(404)],
+            [['name' => ""],         2, new ExceptionInput("whitespace"),          new EmptyResponse(422)],
+            [['name' => " "],        2, new ExceptionInput("whitespace"),          new EmptyResponse(422)],
+            [['name' => null],       2, new ExceptionInput("missing"),             new EmptyResponse(422)],
         ];
-        \Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[0])->thenReturn(true);
-        \Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 2, $in[1])->thenThrow(new ExceptionInput("constraintViolation"));
-        \Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[2])->thenThrow(new ExceptionInput("missing"));
-        \Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[3])->thenThrow(new ExceptionInput("whitespace"));
-        \Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[4])->thenReturn(true); // this should be stopped by the handler before the request gets to the database
-        \Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 3, $this->anything())->thenThrow(new ExceptionInput("subjectMissing")); // folder ID 3 does not exist
-        $exp = new EmptyResponse(204);
-        $this->assertMessage($exp, $this->req("PUT", "/folders/1", json_encode($in[0])));
-        $exp = new EmptyResponse(409);
-        $this->assertMessage($exp, $this->req("PUT", "/folders/2", json_encode($in[1])));
-        $exp = new EmptyResponse(422);
-        $this->assertMessage($exp, $this->req("PUT", "/folders/1", json_encode($in[2])));
-        $exp = new EmptyResponse(422);
-        $this->assertMessage($exp, $this->req("PUT", "/folders/1", json_encode($in[3])));
-        $exp = new EmptyResponse(422);
-        $this->assertMessage($exp, $this->req("PUT", "/folders/1", json_encode($in[4])));
-        $exp = new EmptyResponse(404);
-        $this->assertMessage($exp, $this->req("PUT", "/folders/3", json_encode($in[0])));
     }
 
     public function testRetrieveServerVersion() {
@@ -530,52 +500,48 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/feeds"));
     }
 
-    public function testAddASubscription() {
-        $in = [
-            ['url' => "http://example.com/news.atom", 'folderId' => 3],
-            ['url' => "http://example.org/news.atom", 'folderId' => 8],
-            ['url' => "http://example.net/news.atom", 'folderId' => 8],
-            ['url' => "http://example.net/news.atom", 'folderId' => -1],
-            [],
+    /** @dataProvider provideNewSubscriptions */
+    public function testAddASubscription(array $input, $id, int $latestEdition, array $output, $moveOutcome, ResponseInterface $exp) {
+        if ($id instanceof \Exception) {
+            \Phake::when(Arsse::$db)->subscriptionAdd->thenThrow($id);
+        } else {
+            \Phake::when(Arsse::$db)->subscriptionAdd->thenReturn($id);
+        }
+        if ($moveOutcome instanceof \Exception) {
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenThrow($moveOutcome);
+        } else {
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn($moveOutcome);
+        }
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn($this->v($output));
+        \Phake::when(Arsse::$db)->editionLatest->thenReturn($latestEdition);
+        $act = $this->req("POST", "/feeds", $input);
+        $this->assertMessage($exp, $act);
+        \Phake::verify(Arsse::$db)->subscriptionAdd(Arsse::$user->id, $input['url'] ?? "");
+        if ($id instanceof \Exception) {
+            \Phake::verify(Arsse::$db, \Phake::times(0))->subscriptionPropertiesSet;
+            \Phake::verify(Arsse::$db, \Phake::times(0))->subscriptionPropertiesGet;
+            \Phake::verify(Arsse::$db, \Phake::times(0))->editionLatest;
+        } else {
+            \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, $id);
+            \Phake::verify(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription($id));
+            if ($input['folderId'] ?? 0) {
+                \Phake::verify(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, $id, ['folder' => (int) $input['folderId']]);
+            } else {
+                \Phake::verify(Arsse::$db, \Phake::times(0))->subscriptionPropertiesSet;    
+            }
+        }
+    }
+
+    public function provideNewSubscriptions() {
+        $feedException = new \JKingWeb\Arsse\Feed\Exception("", new \PicoFeed\Reader\SubscriptionNotFoundException);
+        return [
+            [['url' => "http://example.com/news.atom", 'folderId' => 3],  2112,                                      0,       $this->feeds['db'][0], new ExceptionInput("idMissing"),     new Response(['feeds' => [$this->feeds['rest'][0]]])],
+            [['url' => "http://example.org/news.atom", 'folderId' => 8],  42,                                        4758915, $this->feeds['db'][1], true,                                new Response(['feeds' => [$this->feeds['rest'][1]], 'newestItemId' => 4758915])],
+            [['url' => "http://example.com/news.atom", 'folderId' => 3],  new ExceptionInput("constraintViolation"), 0,       $this->feeds['db'][0], new ExceptionInput("idMissing"),     new EmptyResponse(409)],
+            [['url' => "http://example.org/news.atom", 'folderId' => 8],  new ExceptionInput("constraintViolation"), 4758915, $this->feeds['db'][1], true,                                new EmptyResponse(409)],
+            [[],                                                          $feedException,                            0,       [],                    false,                               new EmptyResponse(422)],
+            [['url' => "http://example.net/news.atom", 'folderId' => -1], 47,                                        2112,    $this->feeds['db'][2], new ExceptionInput("typeViolation"), new Response(['feeds' => [$this->feeds['rest'][2]], 'newestItemId' => 2112])],
         ];
-        $out = [
-            ['feeds' => [$this->feeds['rest'][0]]],
-            ['feeds' => [$this->feeds['rest'][1]], 'newestItemId' => 4758915],
-            ['feeds' => [$this->feeds['rest'][2]], 'newestItemId' => 2112],
-        ];
-        // set up the necessary mocks
-        \Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.com/news.atom")->thenReturn(2112)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        \Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.org/news.atom")->thenReturn(42)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        \Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "")->thenThrow(new \JKingWeb\Arsse\Feed\Exception("", new \PicoFeed\Reader\SubscriptionNotFoundException));
-        \Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 2112)->thenReturn($this->v($this->feeds['db'][0]));
-        \Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 42)->thenReturn($this->v($this->feeds['db'][1]));
-        \Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 47)->thenReturn($this->v($this->feeds['db'][2]));
-        \Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription(2112))->thenReturn(0);
-        \Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription(42))->thenReturn(4758915);
-        \Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription(47))->thenReturn(2112);
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 2112, ['folder' =>  3])->thenThrow(new ExceptionInput("idMissing")); // folder ID 3 does not exist
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 42, ['folder' =>  8])->thenReturn(true);
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 47, ['folder' => -1])->thenThrow(new ExceptionInput("typeViolation")); // folder ID -1 is invalid
-        // set up a mock for a bad feed which succeeds the second time
-        \Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.net/news.atom")->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.net/news.atom", new \PicoFeed\Client\InvalidUrlException()))->thenReturn(47);
-        // add the subscriptions
-        $exp = new Response($out[0]);
-        $this->assertMessage($exp, $this->req("POST", "/feeds", json_encode($in[0])));
-        $exp = new Response($out[1]);
-        $this->assertMessage($exp, $this->req("POST", "/feeds", json_encode($in[1])));
-        // try to add them a second time
-        $exp = new EmptyResponse(409);
-        $this->assertMessage($exp, $this->req("POST", "/feeds", json_encode($in[0])));
-        $this->assertMessage($exp, $this->req("POST", "/feeds", json_encode($in[1])));
-        // try to add a bad feed
-        $exp = new EmptyResponse(422);
-        $this->assertMessage($exp, $this->req("POST", "/feeds", json_encode($in[2])));
-        // try again (this will succeed), with an invalid folder ID
-        $exp = new Response($out[2]);
-        $this->assertMessage($exp, $this->req("POST", "/feeds", json_encode($in[3])));
-        // try to add no feed
-        $exp = new EmptyResponse(422);
-        $this->assertMessage($exp, $this->req("POST", "/feeds", json_encode($in[4])));
     }
 
     public function testRemoveASubscription() {

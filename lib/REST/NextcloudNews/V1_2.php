@@ -14,6 +14,7 @@ use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\Misc\HTTP;
+use JKingWeb\Arsse\REST\Exception;
 use JKingWeb\Arsse\REST\Exception404;
 use JKingWeb\Arsse\REST\Exception405;
 use Psr\Http\Message\ServerRequestInterface;
