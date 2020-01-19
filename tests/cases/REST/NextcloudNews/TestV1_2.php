@@ -462,6 +462,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $act);
         \Phake::verify(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, $id, $input);
     }
+
     public function provideFolderRenamings() {
         return [
             [['name' => "Software"], 1, true,                                      new EmptyResponse(204)],
