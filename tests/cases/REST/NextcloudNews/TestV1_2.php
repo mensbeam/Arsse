@@ -333,13 +333,13 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         return $value;
     }
 
-    public function testSendAuthenticationChallenge():void {
+    public function testSendAuthenticationChallenge(): void {
         $exp = new EmptyResponse(401);
         $this->assertMessage($exp, $this->req("GET", "/", "", [], false));
     }
 
     /** @dataProvider provideInvalidPaths */
-    public function testRespondToInvalidPaths($path, $method, $code, $allow = null):void {
+    public function testRespondToInvalidPaths($path, $method, $code, $allow = null): void {
         $exp = new EmptyResponse($code, $allow ? ['Allow' => $allow] : []);
         $this->assertMessage($exp, $this->req($method, $path));
     }
@@ -371,7 +371,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    public function testRespondToInvalidInputTypes():void {
+    public function testRespondToInvalidInputTypes(): void {
         $exp = new EmptyResponse(415, ['Accept' => "application/json"]);
         $this->assertMessage($exp, $this->req("PUT", "/folders/1", '<data/>', ['Content-Type' => "application/xml"]));
         $exp = new EmptyResponse(400);
@@ -380,7 +380,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideOptionsRequests */
-    public function testRespondToOptionsRequests(string $url, string $allow, string $accept):void {
+    public function testRespondToOptionsRequests(string $url, string $allow, string $accept): void {
         $exp = new EmptyResponse(204, [
             'Allow'  => $allow,
             'Accept' => $accept,
@@ -396,7 +396,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    public function testListFolders():void {
+    public function testListFolders(): void {
         $list = [
             ['id' => 1,  'name' => "Software", 'parent' => null],
             ['id' => 12, 'name' => "Hardware", 'parent' => null],
@@ -411,9 +411,9 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideFolderCreations */
-    public function testAddAFolder(array $input, bool $body, $output, ResponseInterface $exp):void {
+    public function testAddAFolder(array $input, bool $body, $output, ResponseInterface $exp): void {
         if ($output instanceof ExceptionInput) {
-            \Phake::when(Arsse::$db)->folderAdd->thenThrow($output);    
+            \Phake::when(Arsse::$db)->folderAdd->thenThrow($output);
         } else {
             \Phake::when(Arsse::$db)->folderAdd->thenReturn($output);
             \Phake::when(Arsse::$db)->folderPropertiesGet->thenReturn($this->v(['id' => $output, 'name' => $input['name'], 'parent' => null]));
@@ -441,7 +441,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    public function testRemoveAFolder():void {
+    public function testRemoveAFolder(): void {
         \Phake::when(Arsse::$db)->folderRemove(Arsse::$user->id, 1)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("DELETE", "/folders/1"));
@@ -452,7 +452,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideFolderRenamings */
-    public function testRenameAFolder(array $input, int $id, $output, ResponseInterface $exp):void {
+    public function testRenameAFolder(array $input, int $id, $output, ResponseInterface $exp): void {
         if ($output instanceof ExceptionInput) {
             \Phake::when(Arsse::$db)->folderPropertiesSet->thenThrow($output);
         } else {
@@ -474,7 +474,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    public function testRetrieveServerVersion():void {
+    public function testRetrieveServerVersion(): void {
         $exp = new Response([
             'version' => V1_2::VERSION,
             'arsse_version' => Arsse::VERSION,
@@ -482,7 +482,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/version"));
     }
 
-    public function testListSubscriptions():void {
+    public function testListSubscriptions(): void {
         $exp1 = [
             'feeds' => [],
             'starredCount' => 0,
@@ -502,7 +502,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideNewSubscriptions */
-    public function testAddASubscription(array $input, $id, int $latestEdition, array $output, $moveOutcome, ResponseInterface $exp):void {
+    public function testAddASubscription(array $input, $id, int $latestEdition, array $output, $moveOutcome, ResponseInterface $exp): void {
         if ($id instanceof \Exception) {
             \Phake::when(Arsse::$db)->subscriptionAdd->thenThrow($id);
         } else {
@@ -528,7 +528,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             if ($input['folderId'] ?? 0) {
                 \Phake::verify(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, $id, ['folder' => (int) $input['folderId']]);
             } else {
-                \Phake::verify(Arsse::$db, \Phake::times(0))->subscriptionPropertiesSet;    
+                \Phake::verify(Arsse::$db, \Phake::times(0))->subscriptionPropertiesSet;
             }
         }
     }
@@ -545,7 +545,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    public function testRemoveASubscription():void {
+    public function testRemoveASubscription(): void {
         \Phake::when(Arsse::$db)->subscriptionRemove(Arsse::$user->id, 1)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("DELETE", "/feeds/1"));
@@ -555,7 +555,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db, \Phake::times(2))->subscriptionRemove(Arsse::$user->id, 1);
     }
 
-    public function testMoveASubscription():void {
+    public function testMoveASubscription(): void {
         $in = [
             ['folderId' =>    0],
             ['folderId' =>   42],
@@ -583,7 +583,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/move", json_encode($in[5])));
     }
 
-    public function testRenameASubscription():void {
+    public function testRenameASubscription(): void {
         $in = [
             ['feedTitle' => null],
             ['feedTitle' => "Ook"],
@@ -613,7 +613,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/rename", json_encode($in[6])));
     }
 
-    public function testListStaleFeeds():void {
+    public function testListStaleFeeds(): void {
         $out = [
             [
                 'id' => 42,
@@ -629,7 +629,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/feeds/all"));
     }
 
-    public function testUpdateAFeed():void {
+    public function testUpdateAFeed(): void {
         $in = [
             ['feedId' =>    42], // valid
             ['feedId' =>  2112], // feed does not exist
@@ -650,7 +650,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[4])));
     }
 
-    public function testListArticles():void {
+    public function testListArticles(): void {
         $t = new \DateTime;
         $in = [
             ['type' => 0, 'id' => 42],   // type=0 => subscription/feed
@@ -704,7 +704,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->limit(5), $this->anything(), ["edition desc"]);
     }
 
-    public function testMarkAFolderRead():void {
+    public function testMarkAFolderRead(): void {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
         \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->folder(1)->latestEdition(2112))->thenReturn(42);
@@ -719,7 +719,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("PUT", "/folders/42/read", $in));
     }
 
-    public function testMarkASubscriptionRead():void {
+    public function testMarkASubscriptionRead(): void {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
         \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->subscription(1)->latestEdition(2112))->thenReturn(42);
@@ -734,7 +734,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("PUT", "/feeds/42/read", $in));
     }
 
-    public function testMarkAllItemsRead():void {
+    public function testMarkAllItemsRead(): void {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
         \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->latestEdition(2112))->thenReturn(42);
@@ -746,7 +746,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("PUT", "/items/read?newestItemId=ook"));
     }
 
-    public function testChangeMarksOfASingleArticle():void {
+    public function testChangeMarksOfASingleArticle(): void {
         $read = ['read' => true];
         $unread = ['read' => false];
         $star = ['starred' => true];
@@ -772,7 +772,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db, \Phake::times(8))->articleMark(Arsse::$user->id, $this->anything(), $this->anything());
     }
 
-    public function testChangeMarksOfMultipleArticles():void {
+    public function testChangeMarksOfMultipleArticles(): void {
         $read = ['read' => true];
         $unread = ['read' => false];
         $star = ['starred' => true];
@@ -827,7 +827,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark(Arsse::$user->id, $unstar, (new Context)->articles($in[1]));
     }
 
-    public function testQueryTheServerStatus():void {
+    public function testQueryTheServerStatus(): void {
         $interval = Arsse::$conf->serviceFrequency;
         $valid = (new \DateTimeImmutable("now", new \DateTimezone("UTC")))->sub($interval);
         $invalid = $valid->sub($interval)->sub($interval);
@@ -847,21 +847,21 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/status"));
     }
 
-    public function testCleanUpBeforeUpdate():void {
+    public function testCleanUpBeforeUpdate(): void {
         \Phake::when(Arsse::$db)->feedCleanup()->thenReturn(true);
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("GET", "/cleanup/before-update"));
         \Phake::verify(Arsse::$db)->feedCleanup();
     }
 
-    public function testCleanUpAfterUpdate():void {
+    public function testCleanUpAfterUpdate(): void {
         \Phake::when(Arsse::$db)->articleCleanup()->thenReturn(true);
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("GET", "/cleanup/after-update"));
         \Phake::verify(Arsse::$db)->articleCleanup();
     }
 
-    public function testQueryTheUserStatus():void {
+    public function testQueryTheUserStatus(): void {
         $act = $this->req("GET", "/user");
         $exp = new Response([
             'userId' => Arsse::$user->id,
@@ -872,7 +872,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $act);
     }
     
-    public function testPreferJsonOverQueryParameters():void {
+    public function testPreferJsonOverQueryParameters(): void {
         $in = ['name' => "Software"];
         $url = "/folders?name=Hardware";
         $out1 = ['id' => 1, 'name' => "Software"];
@@ -885,7 +885,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("POST", "/folders?name=Hardware", json_encode($in)));
     }
     
-    public function testMeldJsonAndQueryParameters():void {
+    public function testMeldJsonAndQueryParameters(): void {
         $in = ['oldestFirst' => true];
         $url = "/items?type=2";
         \Phake::when(Arsse::$db)->articleList->thenReturn(new Result([]));

@@ -390,7 +390,7 @@ class Feed {
         return $offset;
     }
 
-    protected function computeLastModified(): ?\DateTimeInterface {
+    protected function computeLastModified(): ?\DateTimeImmutable {
         if (!$this->modified) {
             return $this->lastModified; // @codeCoverageIgnore
         }

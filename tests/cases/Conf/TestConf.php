@@ -38,12 +38,12 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
     }
 
-    public function testLoadDefaultValues():void {
+    public function testLoadDefaultValues(): void {
         $this->assertInstanceOf(Conf::class, new Conf);
     }
 
     /** @depends testLoadDefaultValues */
-    public function testImportFromArray():void {
+    public function testImportFromArray(): void {
         $arr = [
             'lang' => "xx",
             'purgeFeeds' => "P2D",
@@ -54,7 +54,7 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @depends testImportFromArray */
-    public function testImportFromFile():void {
+    public function testImportFromFile(): void {
         $conf = new Conf;
         $conf->importFile(self::$path."confGood");
         $this->assertEquals("xx", $conf->lang);
@@ -63,43 +63,43 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @depends testImportFromFile */
-    public function testImportFromMissingFile():void {
+    public function testImportFromMissingFile(): void {
         $this->assertException("fileMissing", "Conf");
         $conf = new Conf(self::$path."confMissing");
     }
 
     /** @depends testImportFromFile */
-    public function testImportFromEmptyFile():void {
+    public function testImportFromEmptyFile(): void {
         $this->assertException("fileCorrupt", "Conf");
         $conf = new Conf(self::$path."confEmpty");
     }
 
     /** @depends testImportFromFile */
-    public function testImportFromFileWithoutReadPermission():void {
+    public function testImportFromFileWithoutReadPermission(): void {
         $this->assertException("fileUnreadable", "Conf");
         $conf = new Conf(self::$path."confUnreadable");
     }
 
     /** @depends testImportFromFile */
-    public function testImportFromFileWhichIsNotAnArray():void {
+    public function testImportFromFileWhichIsNotAnArray(): void {
         $this->assertException("fileCorrupt", "Conf");
         $conf = new Conf(self::$path."confNotArray");
     }
 
     /** @depends testImportFromFile */
-    public function testImportFromFileWhichIsNotPhp():void {
+    public function testImportFromFileWhichIsNotPhp(): void {
         $this->assertException("fileCorrupt", "Conf");
         // this should not print the output of the non-PHP file
         $conf = new Conf(self::$path."confNotPHP");
     }
 
     /** @depends testImportFromFile */
-    public function testImportFromCorruptFile():void {
+    public function testImportFromCorruptFile(): void {
         $this->assertException("fileCorrupt", "Conf");
         $conf = new Conf(self::$path."confCorrupt");
     }
 
-    public function testImportBogusValue():void {
+    public function testImportBogusValue(): void {
         $arr = [
             'dbAutoUpdate' => "yes, please",
         ];
@@ -108,7 +108,7 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
         $conf->import($arr);
     }
 
-    public function testImportBogusDriver():void {
+    public function testImportBogusDriver(): void {
         $arr = [
             'dbDriver' => "this driver does not exist",
         ];
@@ -117,7 +117,7 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
         $conf->import($arr);
     }
 
-    public function testExportToArray():void {
+    public function testExportToArray(): void {
         $conf = new Conf;
         $conf->lang = ["en", "fr"]; // should not be exported: not scalar
         $conf->dbSQLite3File = "test.db"; // should be exported: value changed
@@ -138,7 +138,7 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @depends testExportToArray
      * @depends testImportFromFile */
-    public function testExportToFile():void {
+    public function testExportToFile(): void {
         $conf = new Conf;
         $conf->lang = ["en", "fr"]; // should not be exported: not scalar
         $conf->dbSQLite3File = "test.db"; // should be exported: value changed
@@ -159,19 +159,19 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @depends testExportToFile */
-    public function testExportToStdout():void {
+    public function testExportToStdout(): void {
         $conf = new Conf(self::$path."confGood");
         $conf->exportFile(self::$path."confGood");
         $this->expectOutputString(file_get_contents(self::$path."confGood"));
         $conf->exportFile("php://output");
     }
 
-    public function testExportToFileWithoutWritePermission():void {
+    public function testExportToFileWithoutWritePermission(): void {
         $this->assertException("fileUnwritable", "Conf");
         (new Conf)->exportFile(self::$path."confUnreadable");
     }
 
-    public function testExportToFileWithoutCreatePermission():void {
+    public function testExportToFileWithoutCreatePermission(): void {
         $this->assertException("fileUncreatable", "Conf");
         (new Conf)->exportFile(self::$path."confForbidden/conf");
     }

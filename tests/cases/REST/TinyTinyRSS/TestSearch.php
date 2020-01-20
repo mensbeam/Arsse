@@ -118,7 +118,7 @@ class TestSearch extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideSearchStrings */
-    public function testApplySearchToContext(string $search, $exp):void {
+    public function testApplySearchToContext(string $search, $exp): void {
         $act = Search::parse($search);
         $this->assertEquals($exp, $act);
     }

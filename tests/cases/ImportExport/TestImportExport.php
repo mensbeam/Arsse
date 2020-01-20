@@ -146,13 +146,13 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
     }
 
-    public function testImportForAMissingUser():void {
+    public function testImportForAMissingUser(): void {
         \Phake::when(Arsse::$user)->exists->thenReturn(false);
         $this->assertException("doesNotExist", "User");
         $this->proc->import("john.doe@example.com", "", false, false);
     }
 
-    public function testImportWithInvalidFolder():void {
+    public function testImportWithInvalidFolder(): void {
         $in = [[
         ], [1 =>
             ['id' => 1, 'name' => "", 'parent' => 0],
@@ -162,7 +162,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->proc->import("john.doe@example.com", "", false, false);
     }
 
-    public function testImportWithDuplicateFolder():void {
+    public function testImportWithDuplicateFolder(): void {
         $in = [[
         ], [1 =>
             ['id' => 1, 'name' => "New", 'parent' => 0],
@@ -173,7 +173,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->proc->import("john.doe@example.com", "", false, false);
     }
 
-    public function testMakeNoEffectiveChanges():void {
+    public function testMakeNoEffectiveChanges(): void {
         $in = [[
             ['url' => "http://localhost:8000/Import/nasa-jpl",  'title' => "NASA JPL",       'folder' => 3, 'tags' => ["tech"]],
             ['url' => "http://localhost:8000/Import/ars",       'title' => "Ars Technica",   'folder' => 2, 'tags' => ["frequent", "tech"]],
@@ -197,7 +197,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->compareExpectations($this->drv, $exp);
     }
 
-    public function testModifyASubscription():void {
+    public function testModifyASubscription(): void {
         $in = [[
             ['url' => "http://localhost:8000/Import/nasa-jpl",  'title' => "NASA JPL",       'folder' => 3, 'tags' => ["tech"]],
             ['url' => "http://localhost:8000/Import/ars",       'title' => "Ars Technica",   'folder' => 2, 'tags' => ["frequent", "tech"]],
@@ -222,7 +222,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->compareExpectations($this->drv, $exp);
     }
 
-    public function testImportAFeed():void {
+    public function testImportAFeed(): void {
         $in = [[
             ['url' => "http://localhost:8000/Import/some-feed", 'title' => "Some Feed", 'folder' => 0, 'tags' => ["frequent", "cryptic"]], //one existing tag and one new one
         ], []];
@@ -237,7 +237,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->compareExpectations($this->drv, $exp);
     }
 
-    public function testImportAFeedWithAnInvalidTag():void {
+    public function testImportAFeedWithAnInvalidTag(): void {
         $in = [[
             ['url' => "http://localhost:8000/Import/some-feed", 'title' => "Some Feed", 'folder' => 0, 'tags' => [""]],
         ], []];
@@ -246,7 +246,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->proc->import("john.doe@example.com", "", false, false);
     }
 
-    public function testReplaceData():void {
+    public function testReplaceData(): void {
         $in = [[
             ['url' => "http://localhost:8000/Import/some-feed", 'title' => "Some Feed", 'folder' => 1, 'tags' => ["frequent", "cryptic"]],
         ], [1 =>

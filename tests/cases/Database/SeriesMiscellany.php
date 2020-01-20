@@ -10,22 +10,22 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
 
 trait SeriesMiscellany {
-    protected function setUpSeriesMiscellany():void {
+    protected function setUpSeriesMiscellany(): void {
         static::setConf([
             'dbDriver' => static::$dbDriverClass,
         ]);
     }
 
-    protected function tearDownSeriesMiscellany():void {
+    protected function tearDownSeriesMiscellany(): void {
     }
 
-    public function testInitializeDatabase():void {
+    public function testInitializeDatabase(): void {
         static::dbRaze(static::$drv);
         $d = new Database(true);
         $this->assertSame(Database::SCHEMA_VERSION, $d->driverSchemaVersion());
     }
 
-    public function testManuallyInitializeDatabase():void {
+    public function testManuallyInitializeDatabase(): void {
         static::dbRaze(static::$drv);
         $d = new Database(false);
         $this->assertSame(0, $d->driverSchemaVersion());
@@ -34,11 +34,11 @@ trait SeriesMiscellany {
         $this->assertFalse($d->driverSchemaUpdate());
     }
 
-    public function testCheckCharacterSetAcceptability():void {
+    public function testCheckCharacterSetAcceptability(): void {
         $this->assertIsBool(Arsse::$db->driverCharsetAcceptable());
     }
 
-    public function testPerformMaintenance():void {
+    public function testPerformMaintenance(): void {
         $this->assertTrue(Arsse::$db->driverMaintenance());
     }
 }

@@ -9,7 +9,7 @@ namespace JKingWeb\Arsse\TestCase\Database;
 use JKingWeb\Arsse\Arsse;
 
 trait SeriesCleanup {
-    protected function setUpSeriesCleanup():void {
+    protected function setUpSeriesCleanup(): void {
         // set up the configuration
         Arsse::$conf->import([
             'userSessionTimeout'  => "PT1H",
@@ -147,11 +147,11 @@ trait SeriesCleanup {
         ];
     }
 
-    protected function tearDownSeriesCleanup():void {
+    protected function tearDownSeriesCleanup(): void {
         unset($this->data);
     }
 
-    public function testCleanUpOrphanedFeeds():void {
+    public function testCleanUpOrphanedFeeds(): void {
         Arsse::$db->feedCleanup();
         $now = gmdate("Y-m-d H:i:s");
         $state = $this->primeExpectations($this->data, [
@@ -163,7 +163,7 @@ trait SeriesCleanup {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testCleanUpOrphanedFeedsWithUnlimitedRetention():void {
+    public function testCleanUpOrphanedFeedsWithUnlimitedRetention(): void {
         Arsse::$conf->import([
             'purgeFeeds' => null,
         ]);
@@ -177,7 +177,7 @@ trait SeriesCleanup {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testCleanUpOldArticlesWithStandardRetention():void {
+    public function testCleanUpOldArticlesWithStandardRetention(): void {
         Arsse::$db->articleCleanup();
         $state = $this->primeExpectations($this->data, [
             'arsse_articles' => ["id"]
@@ -188,7 +188,7 @@ trait SeriesCleanup {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testCleanUpOldArticlesWithUnlimitedReadRetention():void {
+    public function testCleanUpOldArticlesWithUnlimitedReadRetention(): void {
         Arsse::$conf->import([
             'purgeArticlesRead' => null,
         ]);
@@ -202,7 +202,7 @@ trait SeriesCleanup {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testCleanUpOldArticlesWithUnlimitedUnreadRetention():void {
+    public function testCleanUpOldArticlesWithUnlimitedUnreadRetention(): void {
         Arsse::$conf->import([
             'purgeArticlesUnread' => null,
         ]);
@@ -216,7 +216,7 @@ trait SeriesCleanup {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testCleanUpOldArticlesWithUnlimitedRetention():void {
+    public function testCleanUpOldArticlesWithUnlimitedRetention(): void {
         Arsse::$conf->import([
             'purgeArticlesRead' => null,
             'purgeArticlesUnread' => null,
@@ -228,7 +228,7 @@ trait SeriesCleanup {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testCleanUpExpiredSessions():void {
+    public function testCleanUpExpiredSessions(): void {
         Arsse::$db->sessionCleanup();
         $state = $this->primeExpectations($this->data, [
             'arsse_sessions' => ["id"]
@@ -239,7 +239,7 @@ trait SeriesCleanup {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testCleanUpExpiredTokens():void {
+    public function testCleanUpExpiredTokens(): void {
         Arsse::$db->tokenCleanup();
         $state = $this->primeExpectations($this->data, [
             'arsse_tokens' => ["id", "class"]

@@ -18,16 +18,16 @@ class TestSubprocess extends \JKingWeb\Arsse\Test\AbstractTest {
         self::setConf();
     }
 
-    public function testConstruct():void {
+    public function testConstruct(): void {
         $this->assertTrue(Driver::requirementsMet());
         $this->assertInstanceOf(DriverInterface::class, new Driver);
     }
 
-    public function testFetchDriverName():void {
+    public function testFetchDriverName(): void {
         $this->assertTrue(strlen(Driver::driverName()) > 0);
     }
 
-    public function testEnqueueFeeds():void {
+    public function testEnqueueFeeds(): void {
         $d = new Driver;
         $this->assertSame(3, $d->queue(1, 2, 3));
         $this->assertSame(5, $d->queue(4, 5));
@@ -35,7 +35,7 @@ class TestSubprocess extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame(1, $d->queue(5));
     }
 
-    public function testRefreshFeeds():void {
+    public function testRefreshFeeds(): void {
         $d = \Phake::partialMock(Driver::class);
         \Phake::when($d)->execCmd->thenReturnCallback(function(string $cmd) {
             // FIXME: Does this work in Windows?

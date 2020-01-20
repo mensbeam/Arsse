@@ -36,7 +36,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider providePasswordCreations */
-    public function testRegisterAUserPassword(string $user, string $password = null, $exp):void {
+    public function testRegisterAUserPassword(string $user, string $password = null, $exp): void {
         \Phake::when(Arsse::$user)->generatePassword->thenReturn("RANDOM_PASSWORD");
         \Phake::when(Arsse::$db)->tokenCreate->thenReturnCallback(function($user, $class, $id = null) {
             return $id ?? "RANDOM_TOKEN";
@@ -66,7 +66,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    public function testUnregisterAUser():void {
+    public function testUnregisterAUser(): void {
         \Phake::when(Arsse::$db)->tokenRevoke->thenReturn(3);
         $this->assertTrue($this->u->unregister("jane.doe@example.com"));
         \Phake::verify(Arsse::$db)->tokenRevoke("jane.doe@example.com", "fever.login");
@@ -76,7 +76,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideUserAuthenticationRequests */
-    public function testAuthenticateAUserName(string $user, string $password, bool $exp):void {
+    public function testAuthenticateAUserName(string $user, string $password, bool $exp): void {
         \Phake::when(Arsse::$db)->tokenLookup->thenThrow(new ExceptionInput("constraintViolation"));
         \Phake::when(Arsse::$db)->tokenLookup("fever.login", md5("jane.doe@example.com:secret"))->thenReturn(['user' => "jane.doe@example.com"]);
         \Phake::when(Arsse::$db)->tokenLookup("fever.login", md5("john.doe@example.com:superman"))->thenReturn(['user' => "john.doe@example.com"]);

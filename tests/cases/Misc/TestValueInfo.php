@@ -16,7 +16,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
     }
 
-    public function testGetIntegerInfo():void {
+    public function testGetIntegerInfo(): void {
         $tests = [
             [null,          I::NULL],
             ["",            I::NULL],
@@ -91,7 +91,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             $this->assertSame($exp, I::int($value), "Test returned ".decbin(I::int($value))." for value: ".var_export($value, true));
         }
     }
-    public function testGetStringInfo():void {
+    public function testGetStringInfo(): void {
         $tests = [
             [null,          I::NULL],
             ["",            I::VALID | I::EMPTY],
@@ -162,7 +162,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function testValidateDatabaseIdentifier():void {
+    public function testValidateDatabaseIdentifier(): void {
         $tests = [
             [null,          false, true],
             ["",            false, true],
@@ -234,7 +234,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function testValidateBoolean():void {
+    public function testValidateBoolean(): void {
         $tests = [
             [null,          null],
             ["",            false],
@@ -310,7 +310,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideSimpleNormalizationValues */
-    public function testNormalizeSimpleValues($input, string $typeName, $exp, bool $pass, bool $strict, bool $drop):void {
+    public function testNormalizeSimpleValues($input, string $typeName, $exp, bool $pass, bool $strict, bool $drop): void {
         $assert = function($exp, $act, string $msg) {
             if (is_null($exp)) {
                 $this->assertNull($act, $msg);
@@ -366,7 +366,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideDateNormalizationValues */
-    public function testNormalizeDateValues($input, $format, $exp, bool $strict, bool $drop):void {
+    public function testNormalizeDateValues($input, $format, $exp, bool $strict, bool $drop): void {
         if ($strict && $drop) {
             $modeName = "strict drop";
             $modeConst = I::M_STRICT | I::M_DROP;
@@ -397,7 +397,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function testNormalizeComplexValues():void {
+    public function testNormalizeComplexValues(): void {
         // Array-mode tests
         $tests = [
             [I::T_INT    | I::M_DROP,   [1, 2, 2.2, 3],             [1,2,null,3]   ],
@@ -640,7 +640,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
         return $out;
     }
 
-    public function testFlattenArray():void {
+    public function testFlattenArray(): void {
         $arr = [1, [2, 3, [4, 5]], 6, [[7, 8], 9, 10]];
         $exp = range(1, 10);
         $this->assertSame($exp, I::flatten($arr));

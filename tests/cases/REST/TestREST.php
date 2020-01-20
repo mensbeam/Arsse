@@ -25,7 +25,7 @@ use Laminas\Diactoros\Response\EmptyResponse;
 class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideApiMatchData */
-    public function testMatchAUrlToAnApi($apiList, string $input, array $exp):void {
+    public function testMatchAUrlToAnApi($apiList, string $input, array $exp): void {
         $r = new REST($apiList);
         try {
             $out = $r->apiMatch($input);
@@ -61,7 +61,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideAuthenticableRequests */
-    public function testAuthenticateRequests(array $serverParams, array $expAttr):void {
+    public function testAuthenticateRequests(array $serverParams, array $expAttr): void {
         $r = new REST();
         // create a mock user manager
         Arsse::$user = \Phake::mock(User::class);
@@ -93,7 +93,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    public function testSendAuthenticationChallenges():void {
+    public function testSendAuthenticationChallenges(): void {
         self::setConf();
         $r = new REST();
         $in = new EmptyResponse(401);
@@ -106,7 +106,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideUnnormalizedOrigins */
-    public function testNormalizeOrigins(string $origin, string $exp, array $ports = null):void {
+    public function testNormalizeOrigins(string $origin, string $exp, array $ports = null): void {
         $r = new REST();
         $act = $r->corsNormalizeOrigin($origin, $ports);
         $this->assertSame($exp, $act);
@@ -149,7 +149,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideCorsNegotiations */
-    public function testNegotiateCors($origin, bool $exp, string $allowed = null, string $denied = null):void {
+    public function testNegotiateCors($origin, bool $exp, string $allowed = null, string $denied = null): void {
         self::setConf();
         $r = \Phake::partialMock(REST::class);
         \Phake::when($r)->corsNormalizeOrigin->thenReturnCallback(function($origin) {
@@ -187,7 +187,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideCorsHeaders */
-    public function testAddCorsHeaders(string $reqMethod, array $reqHeaders, array $resHeaders, array $expHeaders):void {
+    public function testAddCorsHeaders(string $reqMethod, array $reqHeaders, array $resHeaders, array $expHeaders): void {
         $r = new REST();
         $req = new Request("", $reqMethod, "php://memory", $reqHeaders);
         $res = new EmptyResponse(204, $resHeaders);
@@ -251,7 +251,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideUnnormalizedResponses */
-    public function testNormalizeHttpResponses(ResponseInterface $res, ResponseInterface $exp, RequestInterface $req = null):void {
+    public function testNormalizeHttpResponses(ResponseInterface $res, ResponseInterface $exp, RequestInterface $req = null): void {
         $r = \Phake::partialMock(REST::class);
         \Phake::when($r)->corsNegotiate->thenReturn(true);
         \Phake::when($r)->challenge->thenReturnCallback(function($res) {
@@ -286,7 +286,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    public function testCreateHandlers():void {
+    public function testCreateHandlers(): void {
         $r = new REST();
         foreach (REST::API_LIST as $api) {
             $class = $api['class'];
@@ -295,7 +295,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideMockRequests */
-    public function testDispatchRequests(ServerRequest $req, string $method, bool $called, string $class = "", string $target =""):void {
+    public function testDispatchRequests(ServerRequest $req, string $method, bool $called, string $class = "", string $target =""): void {
         $r = \Phake::partialMock(REST::class);
         \Phake::when($r)->normalizeResponse->thenReturnCallback(function($res) {
             return $res;

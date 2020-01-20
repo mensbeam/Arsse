@@ -19,7 +19,7 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function testFailToConnect():void {
+    public function testFailToConnect(): void {
         // for the sake of simplicity we don't distinguish between failure modes, but the MySQL-supplied error messages do
         self::setConf([
             'dbMySQLHost' => "example.invalid",

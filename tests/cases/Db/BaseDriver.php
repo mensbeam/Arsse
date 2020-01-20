@@ -76,112 +76,112 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
 
     # TESTS
     
-    public function testFetchDriverName():void {
+    public function testFetchDriverName(): void {
         $class = get_class($this->drv);
         $this->assertTrue(strlen($class::driverName()) > 0);
     }
     
-    public function testFetchSchemaId():void {
+    public function testFetchSchemaId(): void {
         $class = get_class($this->drv);
         $this->assertTrue(strlen($class::schemaID()) > 0);
     }
 
-    public function testCheckCharacterSetAcceptability():void {
+    public function testCheckCharacterSetAcceptability(): void {
         $this->assertTrue($this->drv->charsetAcceptable());
     }
 
-    public function testTranslateAToken():void {
+    public function testTranslateAToken(): void {
         $this->assertRegExp("/^[a-z][a-z0-9]*$/i", $this->drv->sqlToken("greatest"));
         $this->assertRegExp("/^\"?[a-z][a-z0-9_\-]*\"?$/i", $this->drv->sqlToken("nocase"));
         $this->assertRegExp("/^[a-z][a-z0-9]*$/i", $this->drv->sqlToken("like"));
         $this->assertSame("distinct", $this->drv->sqlToken("distinct"));
     }
 
-    public function testExecAValidStatement():void {
+    public function testExecAValidStatement(): void {
         $this->assertTrue($this->drv->exec($this->create));
     }
 
-    public function testExecAnInvalidStatement():void {
+    public function testExecAnInvalidStatement(): void {
         $this->assertException("engineErrorGeneral", "Db");
         $this->drv->exec("And the meek shall inherit the earth...");
     }
 
-    public function testExecMultipleStatements():void {
+    public function testExecMultipleStatements(): void {
         $this->assertTrue($this->drv->exec("$this->create; INSERT INTO arsse_test(id) values(2112)"));
         $this->assertEquals(2112, $this->query("SELECT id from arsse_test"));
     }
 
-    public function testExecTimeout():void {
+    public function testExecTimeout(): void {
         $this->exec($this->create);
         $this->exec($this->lock);
         $this->assertException("general", "Db", "ExceptionTimeout");
         $this->drv->exec("INSERT INTO arsse_meta(\"key\", value) values('lock', '1')");
     }
 
-    public function testExecConstraintViolation():void {
+    public function testExecConstraintViolation(): void {
         $this->drv->exec("CREATE TABLE arsse_test(id varchar(255) not null)");
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         $this->drv->exec(static::$insertDefaultValues);
     }
 
-    public function testExecTypeViolation():void {
+    public function testExecTypeViolation(): void {
         $this->drv->exec($this->create);
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         $this->drv->exec("INSERT INTO arsse_test(id) values('ook')");
     }
 
-    public function testMakeAValidQuery():void {
+    public function testMakeAValidQuery(): void {
         $this->assertInstanceOf(Result::class, $this->drv->query("SELECT 1"));
     }
 
-    public function testMakeAnInvalidQuery():void {
+    public function testMakeAnInvalidQuery(): void {
         $this->assertException("engineErrorGeneral", "Db");
         $this->drv->query("Apollo was astonished; Dionysus thought me mad");
     }
 
-    public function testQueryConstraintViolation():void {
+    public function testQueryConstraintViolation(): void {
         $this->drv->exec("CREATE TABLE arsse_test(id integer not null)");
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         $this->drv->query(static::$insertDefaultValues);
     }
 
-    public function testQueryTypeViolation():void {
+    public function testQueryTypeViolation(): void {
         $this->drv->exec($this->create);
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         $this->drv->query("INSERT INTO arsse_test(id) values('ook')");
     }
 
-    public function testPrepareAValidQuery():void {
+    public function testPrepareAValidQuery(): void {
         $s = $this->drv->prepare("SELECT ?, ?", "int", "int");
         $this->assertInstanceOf(Statement::class, $s);
     }
 
-    public function testPrepareAnInvalidQuery():void {
+    public function testPrepareAnInvalidQuery(): void {
         $this->assertException("engineErrorGeneral", "Db");
         $s = $this->drv->prepare("This is an invalid query", "int", "int")->run();
     }
 
-    public function testCreateASavepoint():void {
+    public function testCreateASavepoint(): void {
         $this->assertEquals(1, $this->drv->savepointCreate());
         $this->assertEquals(2, $this->drv->savepointCreate());
         $this->assertEquals(3, $this->drv->savepointCreate());
     }
 
-    public function testReleaseASavepoint():void {
+    public function testReleaseASavepoint(): void {
         $this->assertEquals(1, $this->drv->savepointCreate());
         $this->assertEquals(true, $this->drv->savepointRelease());
         $this->assertException("savepointInvalid", "Db");
         $this->drv->savepointRelease();
     }
 
-    public function testUndoASavepoint():void {
+    public function testUndoASavepoint(): void {
         $this->assertEquals(1, $this->drv->savepointCreate());
         $this->assertEquals(true, $this->drv->savepointUndo());
         $this->assertException("savepointInvalid", "Db");
         $this->drv->savepointUndo();
     }
 
-    public function testManipulateSavepoints():void {
+    public function testManipulateSavepoints(): void {
         $this->assertEquals(1, $this->drv->savepointCreate());
         $this->assertEquals(2, $this->drv->savepointCreate());
         $this->assertEquals(3, $this->drv->savepointCreate());
@@ -198,7 +198,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv->savepointRelease(2);
     }
 
-    public function testManipulateSavepointsSomeMore():void {
+    public function testManipulateSavepointsSomeMore(): void {
         $this->assertEquals(1, $this->drv->savepointCreate());
         $this->assertEquals(2, $this->drv->savepointCreate());
         $this->assertEquals(3, $this->drv->savepointCreate());
@@ -209,7 +209,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv->savepointUndo(2);
     }
 
-    public function testBeginATransaction():void {
+    public function testBeginATransaction(): void {
         $select = "SELECT count(*) FROM arsse_test";
         $this->drv->exec($this->create);
         $tr = $this->drv->begin();
@@ -221,7 +221,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertEquals(0, $this->query($select));
     }
 
-    public function testCommitATransaction():void {
+    public function testCommitATransaction(): void {
         $select = "SELECT count(*) FROM arsse_test";
         $this->drv->exec($this->create);
         $tr = $this->drv->begin();
@@ -233,7 +233,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertEquals(1, $this->query($select));
     }
 
-    public function testRollbackATransaction():void {
+    public function testRollbackATransaction(): void {
         $select = "SELECT count(*) FROM arsse_test";
         $this->drv->exec($this->create);
         $tr = $this->drv->begin();
@@ -245,7 +245,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertEquals(0, $this->query($select));
     }
 
-    public function testBeginChainedTransactions():void {
+    public function testBeginChainedTransactions(): void {
         $select = "SELECT count(*) FROM arsse_test";
         $this->drv->exec($this->create);
         $tr1 = $this->drv->begin();
@@ -258,7 +258,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertEquals(0, $this->query($select));
     }
 
-    public function testCommitChainedTransactions():void {
+    public function testCommitChainedTransactions(): void {
         $select = "SELECT count(*) FROM arsse_test";
         $this->drv->exec($this->create);
         $tr1 = $this->drv->begin();
@@ -275,7 +275,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertEquals(2, $this->query($select));
     }
 
-    public function testCommitChainedTransactionsOutOfOrder():void {
+    public function testCommitChainedTransactionsOutOfOrder(): void {
         $select = "SELECT count(*) FROM arsse_test";
         $this->drv->exec($this->create);
         $tr1 = $this->drv->begin();
@@ -291,7 +291,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $tr2->commit();
     }
 
-    public function testRollbackChainedTransactions():void {
+    public function testRollbackChainedTransactions(): void {
         $select = "SELECT count(*) FROM arsse_test";
         $this->drv->exec($this->create);
         $tr1 = $this->drv->begin();
@@ -310,7 +310,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertEquals(0, $this->query($select));
     }
 
-    public function testRollbackChainedTransactionsOutOfOrder():void {
+    public function testRollbackChainedTransactionsOutOfOrder(): void {
         $select = "SELECT count(*) FROM arsse_test";
         $this->drv->exec($this->create);
         $tr1 = $this->drv->begin();
@@ -329,7 +329,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertEquals(0, $this->query($select));
     }
 
-    public function testPartiallyRollbackChainedTransactions():void {
+    public function testPartiallyRollbackChainedTransactions(): void {
         $select = "SELECT count(*) FROM arsse_test";
         $this->drv->exec($this->create);
         $tr1 = $this->drv->begin();
@@ -348,7 +348,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertEquals(1, $this->query($select));
     }
 
-    public function testFetchSchemaVersion():void {
+    public function testFetchSchemaVersion(): void {
         $this->assertSame(0, $this->drv->schemaVersion());
         $this->drv->exec(str_replace("#", "1", $this->setVersion));
         $this->assertSame(1, $this->drv->schemaVersion());
@@ -361,7 +361,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, $this->drv->schemaVersion());
     }
 
-    public function testLockTheDatabase():void {
+    public function testLockTheDatabase(): void {
         // PostgreSQL doesn't actually lock the whole database, only the metadata table
         // normally the application will first query this table to ensure the schema version is correct,
         // so the effect is usually the same
@@ -370,7 +370,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->exec($this->lock);
     }
 
-    public function testUnlockTheDatabase():void {
+    public function testUnlockTheDatabase(): void {
         $this->drv->savepointCreate(true);
         $this->drv->savepointRelease();
         $this->drv->savepointCreate(true);
@@ -378,11 +378,11 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertTrue($this->exec(str_replace("#", "3", $this->setVersion)));
     }
 
-    public function testProduceAStringLiteral():void {
+    public function testProduceAStringLiteral(): void {
         $this->assertSame("'It''s a string!'", $this->drv->literalString("It's a string!"));
     }
 
-    public function testPerformMaintenance():void {
+    public function testPerformMaintenance(): void {
         // this performs maintenance in the absence of tables; see BaseUpdate.php for another test with tables
         $this->assertTrue($this->drv->maintenance());
     }

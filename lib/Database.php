@@ -932,7 +932,7 @@ class Database {
     }
 
     /** Returns the time at which any of a user's subscriptions (or a specific subscription) was last refreshed, as a DateTimeImmutable object */
-    public function subscriptionRefreshed(string $user, int $id = null): ?\DateTimeInterface {
+    public function subscriptionRefreshed(string $user, int $id = null): ?\DateTimeImmutable {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }

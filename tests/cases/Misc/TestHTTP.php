@@ -12,7 +12,7 @@ use Psr\Http\Message\ResponseInterface;
 /** @covers \JKingWeb\Arsse\Misc\HTTP */
 class TestHTTP extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideMediaTypes */
-    public function testMatchMediaType(string $header, array $types, bool $exp):void {
+    public function testMatchMediaType(string $header, array $types, bool $exp): void {
         $msg = (new \Laminas\Diactoros\Request)->withHeader("Content-Type", $header);
         $this->assertSame($exp, HTTP::matchType($msg, ...$types));
         $msg = (new \Laminas\Diactoros\Response)->withHeader("Content-Type", $header);

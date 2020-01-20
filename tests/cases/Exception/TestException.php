@@ -28,7 +28,7 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData(true);
     }
 
-    public function testBaseClass():void {
+    public function testBaseClass(): void {
         $this->assertException("unknown");
         throw new Exception("unknown");
     }
@@ -36,7 +36,7 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
     /**
      * @depends testBaseClass
      */
-    public function testBaseClassWithoutMessage():void {
+    public function testBaseClassWithoutMessage(): void {
         $this->assertException("unknown");
         throw new Exception();
     }
@@ -44,7 +44,7 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
     /**
      * @depends testBaseClass
      */
-    public function testDerivedClass():void {
+    public function testDerivedClass(): void {
         $this->assertException("fileMissing", "Lang");
         throw new LangException("fileMissing");
     }
@@ -52,7 +52,7 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
     /**
      * @depends testDerivedClass
      */
-    public function testDerivedClassWithMessageParameters():void {
+    public function testDerivedClassWithMessageParameters(): void {
         $this->assertException("fileMissing", "Lang");
         throw new LangException("fileMissing", "en");
     }
@@ -60,7 +60,7 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
     /**
      * @depends testBaseClass
      */
-    public function testBaseClassWithUnknownCode():void {
+    public function testBaseClassWithUnknownCode(): void {
         $this->assertException("uncoded");
         throw new Exception("testThisExceptionMessageDoesNotExist");
     }
@@ -68,13 +68,13 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
     /**
      * @depends testBaseClassWithUnknownCode
      */
-    public function testDerivedClassWithMissingMessage():void {
+    public function testDerivedClassWithMissingMessage(): void {
         $this->assertException("uncoded");
         throw new LangException("testThisExceptionMessageDoesNotExist");
     }
 
     /** @covers \JKingWeb\Arsse\ExceptionFatal */
-    public function testFatalException():void {
+    public function testFatalException(): void {
         $this->expectException('JKingWeb\Arsse\ExceptionFatal');
         throw new \JKingWeb\Arsse\ExceptionFatal("");
     }

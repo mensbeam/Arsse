@@ -16,65 +16,65 @@ class TestErrors extends \JKingWeb\Arsse\Test\AbstractTest {
     public $path;
     public $l;
 
-    public function setUpSeries():void {
+    public function setUpSeries(): void {
         $this->l->set("", true);
     }
 
-    public function testLoadEmptyFile():void {
+    public function testLoadEmptyFile(): void {
         $this->assertException("fileCorrupt", "Lang");
         $this->l->set("fr_ca", true);
     }
 
-    public function testLoadFileWhichDoesNotReturnAnArray():void {
+    public function testLoadFileWhichDoesNotReturnAnArray(): void {
         $this->assertException("fileCorrupt", "Lang");
         $this->l->set("it", true);
     }
 
-    public function testLoadFileWhichIsNotPhp():void {
+    public function testLoadFileWhichIsNotPhp(): void {
         $this->assertException("fileCorrupt", "Lang");
         $this->l->set("ko", true);
     }
 
-    public function testLoadFileWhichIsCorrupt():void {
+    public function testLoadFileWhichIsCorrupt(): void {
         $this->assertException("fileCorrupt", "Lang");
         $this->l->set("zh", true);
     }
 
-    public function testLoadFileWithooutReadPermission():void {
+    public function testLoadFileWithooutReadPermission(): void {
         $this->assertException("fileUnreadable", "Lang");
         $this->l->set("ru", true);
     }
 
-    public function testLoadSubtagOfMissingLanguage():void {
+    public function testLoadSubtagOfMissingLanguage(): void {
         $this->assertException("fileMissing", "Lang");
         $this->l->set("pt_br", true);
     }
 
-    public function testFetchInvalidMessage():void {
+    public function testFetchInvalidMessage(): void {
         $this->assertException("stringInvalid", "Lang");
         $this->l->set("vi", true);
         $txt = $this->l->msg('Test.presentText');
     }
 
-    public function testFetchMissingMessage():void {
+    public function testFetchMissingMessage(): void {
         $this->assertException("stringMissing", "Lang");
         $txt = $this->l->msg('Test.absentText');
     }
 
-    public function testLoadMissingDefaultLanguage():void {
+    public function testLoadMissingDefaultLanguage(): void {
         unlink($this->path.TestClass::DEFAULT.".php");
         $this->assertException("defaultFileMissing", "Lang");
         $this->l->set("fr", true);
     }
 
-    public function testLoadMissingLanguageWhenFetching():void {
+    public function testLoadMissingLanguageWhenFetching(): void {
         $this->l->set("en_ca");
         unlink($this->path.TestClass::DEFAULT.".php");
         $this->assertException("fileMissing", "Lang");
         $this->l->msg('Test.presentText');
     }
 
-    public function testLoadMissingDefaultLanguageWhenFetching():void {
+    public function testLoadMissingDefaultLanguageWhenFetching(): void {
         unlink($this->path.TestClass::DEFAULT.".php");
         $this->l = new TestClass($this->path);
         $this->assertException("stringMissing", "Lang");

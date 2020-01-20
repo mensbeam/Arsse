@@ -24,12 +24,12 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv = \Phake::mock(Driver::class);
     }
 
-    public function testConstruct():void {
+    public function testConstruct(): void {
         $this->assertInstanceOf(User::class, new User($this->drv));
         $this->assertInstanceOf(User::class, new User);
     }
 
-    public function testConversionToString():void {
+    public function testConversionToString(): void {
         $u = new User;
         $u->id = "john.doe@example.com";
         $this->assertSame("john.doe@example.com", (string) $u);
@@ -38,7 +38,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideAuthentication */
-    public function testAuthenticateAUser(bool $preAuth, string $user, string $password, bool $exp):void {
+    public function testAuthenticateAUser(bool $preAuth, string $user, string $password, bool $exp): void {
         Arsse::$conf->userPreAuth = $preAuth;
         \Phake::when($this->drv)->auth->thenReturn(false);
         \Phake::when($this->drv)->auth("john.doe@example.com", "secret")->thenReturn(true);
@@ -69,7 +69,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideUserList */
-    public function testListUsers(bool $authorized, $exp):void {
+    public function testListUsers(bool $authorized, $exp): void {
         $u = new User($this->drv);
         \Phake::when($this->drv)->authorize->thenReturn($authorized);
         \Phake::when($this->drv)->userList->thenReturn(["john.doe@example.com", "jane.doe@example.com"]);
@@ -89,7 +89,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideExistence */
-    public function testCheckThatAUserExists(bool $authorized, string $user, $exp):void {
+    public function testCheckThatAUserExists(bool $authorized, string $user, $exp): void {
         $u = new User($this->drv);
         \Phake::when($this->drv)->authorize->thenReturn($authorized);
         \Phake::when($this->drv)->userExists("john.doe@example.com")->thenReturn(true);
@@ -112,7 +112,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideAdditions */
-    public function testAddAUser(bool $authorized, string $user, $password, $exp):void {
+    public function testAddAUser(bool $authorized, string $user, $password, $exp): void {
         $u = new User($this->drv);
         \Phake::when($this->drv)->authorize->thenReturn($authorized);
         \Phake::when($this->drv)->userAdd("john.doe@example.com", $this->anything())->thenThrow(new \JKingWeb\Arsse\User\Exception("alreadyExists"));
@@ -130,7 +130,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideAdditions */
-    public function testAddAUserWithARandomPassword(bool $authorized, string $user, $password, $exp):void {
+    public function testAddAUserWithARandomPassword(bool $authorized, string $user, $password, $exp): void {
         $u = \Phake::partialMock(User::class, $this->drv);
         \Phake::when($this->drv)->authorize->thenReturn($authorized);
         \Phake::when($this->drv)->userAdd($this->anything(), $this->isNull())->thenReturn(null);
@@ -172,7 +172,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideRemovals */
-    public function testRemoveAUser(bool $authorized, string $user, bool $exists, $exp):void {
+    public function testRemoveAUser(bool $authorized, string $user, bool $exists, $exp): void {
         $u = new User($this->drv);
         \Phake::when($this->drv)->authorize->thenReturn($authorized);
         \Phake::when($this->drv)->userRemove("john.doe@example.com")->thenReturn(true);
@@ -210,7 +210,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider providePasswordChanges */
-    public function testChangeAPassword(bool $authorized, string $user, $password, bool $exists, $exp):void {
+    public function testChangeAPassword(bool $authorized, string $user, $password, bool $exists, $exp): void {
         $u = new User($this->drv);
         \Phake::when($this->drv)->authorize->thenReturn($authorized);
         \Phake::when($this->drv)->userPasswordSet("john.doe@example.com", $this->anything(), $this->anything())->thenReturnCallback(function($user, $pass, $old) {
@@ -237,7 +237,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider providePasswordChanges */
-    public function testChangeAPasswordToARandomPassword(bool $authorized, string $user, $password, bool $exists, $exp):void {
+    public function testChangeAPasswordToARandomPassword(bool $authorized, string $user, $password, bool $exists, $exp): void {
         $u = \Phake::partialMock(User::class, $this->drv);
         \Phake::when($this->drv)->authorize->thenReturn($authorized);
         \Phake::when($this->drv)->userPasswordSet($this->anything(), $this->isNull(), $this->anything())->thenReturn(null);
@@ -289,7 +289,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider providePasswordClearings */
-    public function testClearAPassword(bool $authorized, bool $exists, string $user, $exp):void {
+    public function testClearAPassword(bool $authorized, bool $exists, string $user, $exp): void {
         \Phake::when($this->drv)->authorize->thenReturn($authorized);
         \Phake::when($this->drv)->userPasswordUnset->thenReturn(true);
         \Phake::when($this->drv)->userPasswordUnset("jane.doe@example.net", null)->thenThrow(new \JKingWeb\Arsse\User\Exception("doesNotExist"));

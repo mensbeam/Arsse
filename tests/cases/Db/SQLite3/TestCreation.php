@@ -112,79 +112,79 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
     }
 
-    public function testFailToCreateDatabase():void {
+    public function testFailToCreateDatabase(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Cmain/arsse.db";
         $this->assertException("fileUncreatable", "Db");
         new Driver;
     }
 
-    public function testFailToCreateJournal():void {
+    public function testFailToCreateJournal(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Cwal/arsse.db";
         $this->assertException("fileUncreatable", "Db");
         new Driver;
     }
 
-    public function testFailToCreateSharedMmeory():void {
+    public function testFailToCreateSharedMmeory(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Cshm/arsse.db";
         $this->assertException("fileUncreatable", "Db");
         new Driver;
     }
 
-    public function testFailToReadDatabase():void {
+    public function testFailToReadDatabase(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Rmain/arsse.db";
         $this->assertException("fileUnreadable", "Db");
         new Driver;
     }
 
-    public function testFailToReadJournal():void {
+    public function testFailToReadJournal(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Rwal/arsse.db";
         $this->assertException("fileUnreadable", "Db");
         new Driver;
     }
 
-    public function testFailToReadSharedMmeory():void {
+    public function testFailToReadSharedMmeory(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Rshm/arsse.db";
         $this->assertException("fileUnreadable", "Db");
         new Driver;
     }
 
-    public function testFailToWriteToDatabase():void {
+    public function testFailToWriteToDatabase(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Wmain/arsse.db";
         $this->assertException("fileUnwritable", "Db");
         new Driver;
     }
 
-    public function testFailToWriteToJournal():void {
+    public function testFailToWriteToJournal(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Wwal/arsse.db";
         $this->assertException("fileUnwritable", "Db");
         new Driver;
     }
 
-    public function testFailToWriteToSharedMmeory():void {
+    public function testFailToWriteToSharedMmeory(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Wshm/arsse.db";
         $this->assertException("fileUnwritable", "Db");
         new Driver;
     }
 
-    public function testFailToAccessDatabase():void {
+    public function testFailToAccessDatabase(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Amain/arsse.db";
         $this->assertException("fileUnusable", "Db");
         new Driver;
     }
 
-    public function testFailToAccessJournal():void {
+    public function testFailToAccessJournal(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Awal/arsse.db";
         $this->assertException("fileUnusable", "Db");
         new Driver;
     }
 
-    public function testFailToAccessSharedMmeory():void {
+    public function testFailToAccessSharedMmeory(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Ashm/arsse.db";
         $this->assertException("fileUnusable", "Db");
         new Driver;
     }
 
-    public function testAssumeDatabaseCorruption():void {
+    public function testAssumeDatabaseCorruption(): void {
         Arsse::$conf->dbSQLite3File = $this->path."corrupt/arsse.db";
         $this->assertException("fileCorrupt", "Db");
         new Driver;

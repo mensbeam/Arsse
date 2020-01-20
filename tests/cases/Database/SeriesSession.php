@@ -10,7 +10,7 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Misc\Date;
 
 trait SeriesSession {
-    protected function setUpSeriesSession():void {
+    protected function setUpSeriesSession(): void {
         // set up the configuration
         static::setConf([
             'userSessionTimeout'  => "PT1H",
@@ -49,11 +49,11 @@ trait SeriesSession {
         ];
     }
 
-    protected function tearDownSeriesSession():void {
+    protected function tearDownSeriesSession(): void {
         unset($this->data);
     }
 
-    public function testResumeAValidSession():void {
+    public function testResumeAValidSession(): void {
         $exp1 = [
             'id' => "80fa94c1a11f11e78667001e673b2560",
             'user' => "jane.doe@example.com"
@@ -74,22 +74,22 @@ trait SeriesSession {
         $this->assertArraySubset($exp1, Arsse::$db->sessionResume("80fa94c1a11f11e78667001e673b2560"));
     }
 
-    public function testResumeAMissingSession():void {
+    public function testResumeAMissingSession(): void {
         $this->assertException("invalid", "User", "ExceptionSession");
         Arsse::$db->sessionResume("thisSessionDoesNotExist");
     }
 
-    public function testResumeAnExpiredSession():void {
+    public function testResumeAnExpiredSession(): void {
         $this->assertException("invalid", "User", "ExceptionSession");
         Arsse::$db->sessionResume("27c6de8da13311e78667001e673b2560");
     }
 
-    public function testResumeAStaleSession():void {
+    public function testResumeAStaleSession(): void {
         $this->assertException("invalid", "User", "ExceptionSession");
         Arsse::$db->sessionResume("ab3b3eb8a13311e78667001e673b2560");
     }
 
-    public function testCreateASession():void {
+    public function testCreateASession(): void {
         $user = "jane.doe@example.com";
         $id = Arsse::$db->sessionCreate($user);
         $now = time();
@@ -98,13 +98,13 @@ trait SeriesSession {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testCreateASessionWithoutAuthority():void {
+    public function testCreateASessionWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->sessionCreate("jane.doe@example.com");
     }
 
-    public function testDestroyASession():void {
+    public function testDestroyASession(): void {
         $user = "jane.doe@example.com";
         $id = "80fa94c1a11f11e78667001e673b2560";
         $this->assertTrue(Arsse::$db->sessionDestroy($user, $id));
@@ -115,7 +115,7 @@ trait SeriesSession {
         $this->assertFalse(Arsse::$db->sessionDestroy($user, $id));
     }
 
-    public function testDestroyAllSessions():void {
+    public function testDestroyAllSessions(): void {
         $user = "jane.doe@example.com";
         $this->assertTrue(Arsse::$db->sessionDestroy($user));
         $state = $this->primeExpectations($this->data, ['arsse_sessions' => ["id", "created", "expires", "user"]]);
@@ -125,13 +125,13 @@ trait SeriesSession {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testDestroyASessionForTheWrongUser():void {
+    public function testDestroyASessionForTheWrongUser(): void {
         $user = "john.doe@example.com";
         $id = "80fa94c1a11f11e78667001e673b2560";
         $this->assertFalse(Arsse::$db->sessionDestroy($user, $id));
     }
 
-    public function testDestroyASessionWithoutAuthority():void {
+    public function testDestroyASessionWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->sessionDestroy("jane.doe@example.com", "80fa94c1a11f11e78667001e673b2560");

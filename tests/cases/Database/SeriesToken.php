@@ -9,7 +9,7 @@ namespace JKingWeb\Arsse\TestCase\Database;
 use JKingWeb\Arsse\Arsse;
 
 trait SeriesToken {
-    protected function setUpSeriesToken():void {
+    protected function setUpSeriesToken(): void {
         // set up the test data
         $past  = gmdate("Y-m-d H:i:s", strtotime("now - 1 minute"));
         $future = gmdate("Y-m-d H:i:s", strtotime("now + 1 minute"));
@@ -43,11 +43,11 @@ trait SeriesToken {
         ];
     }
 
-    protected function tearDownSeriesToken():void {
+    protected function tearDownSeriesToken(): void {
         unset($this->data);
     }
 
-    public function testLookUpAValidToken():void {
+    public function testLookUpAValidToken(): void {
         $exp1 = [
             'id' => "80fa94c1a11f11e78667001e673b2560",
             'class' => "fever.login",
@@ -71,22 +71,22 @@ trait SeriesToken {
         $this->assertArraySubset($exp1, Arsse::$db->tokenLookup("fever.login", "80fa94c1a11f11e78667001e673b2560"));
     }
 
-    public function testLookUpAMissingToken():void {
+    public function testLookUpAMissingToken(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->tokenLookup("class", "thisTokenDoesNotExist");
     }
 
-    public function testLookUpAnExpiredToken():void {
+    public function testLookUpAnExpiredToken(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->tokenLookup("fever.login", "27c6de8da13311e78667001e673b2560");
     }
 
-    public function testLookUpATokenOfTheWrongClass():void {
+    public function testLookUpATokenOfTheWrongClass(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->tokenLookup("some.class", "80fa94c1a11f11e78667001e673b2560");
     }
 
-    public function testCreateAToken():void {
+    public function testCreateAToken(): void {
         $user = "jane.doe@example.com";
         $state = $this->primeExpectations($this->data, ['arsse_tokens' => ["id", "class", "expires", "user"]]);
         $id = Arsse::$db->tokenCreate($user, "fever.login");
@@ -100,18 +100,18 @@ trait SeriesToken {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testCreateATokenForAMissingUser():void {
+    public function testCreateATokenForAMissingUser(): void {
         $this->assertException("doesNotExist", "User");
         Arsse::$db->tokenCreate("fever.login", "jane.doe@example.biz");
     }
 
-    public function testCreateATokenWithoutAuthority():void {
+    public function testCreateATokenWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->tokenCreate("fever.login", "jane.doe@example.com");
     }
 
-    public function testRevokeAToken():void {
+    public function testRevokeAToken(): void {
         $user = "jane.doe@example.com";
         $id = "80fa94c1a11f11e78667001e673b2560";
         $this->assertTrue(Arsse::$db->tokenRevoke($user, "fever.login", $id));
@@ -122,7 +122,7 @@ trait SeriesToken {
         $this->assertFalse(Arsse::$db->tokenRevoke($user, "fever.login", $id));
     }
 
-    public function testRevokeAllTokens():void {
+    public function testRevokeAllTokens(): void {
         $user = "jane.doe@example.com";
         $state = $this->primeExpectations($this->data, ['arsse_tokens' => ["id", "expires", "user"]]);
         $this->assertTrue(Arsse::$db->tokenRevoke($user, "fever.login"));
@@ -136,7 +136,7 @@ trait SeriesToken {
         $this->assertFalse(Arsse::$db->tokenRevoke($user, "unknown.class"));
     }
 
-    public function testRevokeATokenWithoutAuthority():void {
+    public function testRevokeATokenWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->tokenRevoke("jane.doe@example.com", "fever.login");
