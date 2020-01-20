@@ -34,7 +34,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         self::clearData();
     }
 
-    public static function clearData(bool $loadLang = true) {
+    public static function clearData(bool $loadLang = true): void {
         date_default_timezone_set("America/Toronto");
         $r = new \ReflectionClass(\JKingWeb\Arsse\Arsse::class);
         $props = array_keys($r->getStaticProperties());
@@ -46,7 +46,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         }
     }
 
-    public static function setConf(array $conf = [], bool $force = true) {
+    public static function setConf(array $conf = [], bool $force = true): void {
         $defaults = [
             'dbSQLite3File'      => ":memory:",
             'dbSQLite3Timeout'   => 0,
@@ -127,7 +127,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         return $req;
     }
 
-    public function assertException($msg = "", string $prefix = "", string $type = "Exception") {
+    public function assertException($msg = "", string $prefix = "", string $type = "Exception"): void {
         if (func_num_args()) {
             if ($msg instanceof \JKingWeb\Arsse\AbstractException) {
                 $this->expectException(get_class($msg));
@@ -149,7 +149,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         }
     }
 
-    protected function assertMessage(MessageInterface $exp, MessageInterface $act, string $text = '') {
+    protected function assertMessage(MessageInterface $exp, MessageInterface $act, string $text = ''): void {
         if ($exp instanceof ResponseInterface) {
             $this->assertInstanceOf(ResponseInterface::class, $act, $text);
             $this->assertEquals($exp->getStatusCode(), $act->getStatusCode(), $text);
@@ -173,7 +173,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         $this->assertEquals($exp->getHeaders(), $act->getHeaders(), $text);
     }
 
-    public function assertTime($exp, $test, string $msg = '') {
+    public function assertTime($exp, $test, string $msg = ''): void {
         $test = $this->approximateTime($exp, $test);
         $exp  = Date::transform($exp, "iso8601");
         $test = Date::transform($test, "iso8601");
@@ -299,7 +299,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         return $out;
     }
 
-    public function assertResult(array $expected, Result $data) {
+    public function assertResult(array $expected, Result $data): void {
         $data = $data->getAll();
         $this->assertCount(sizeof($expected), $data, "Number of result rows (".sizeof($data).") differs from number of expected rows (".sizeof($expected).")");
         if (sizeof($expected)) {

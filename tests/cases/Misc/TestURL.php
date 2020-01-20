@@ -15,7 +15,7 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
     }
     
     /** @dataProvider provideNormalizations */
-    public function testNormalizeAUrl(string $url, string $exp, string $user = null, string $pass = null) {
+    public function testNormalizeAUrl(string $url, string $exp, string $user = null, string $pass = null):void {
         $this->assertSame($exp, URL::normalize($url, $user, $pass));
     }
 
@@ -77,7 +77,7 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideQueries */
-    public function testAppendQueryParameters(string $url, string $query, string $exp) {
+    public function testAppendQueryParameters(string $url, string $query, string $exp):void {
         $this->assertSame($exp, URL::queryAppend($url, $query));
     }
 
@@ -93,11 +93,11 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideAbsolutes */
-    public function testDetermineAbsoluteness(bool $exp, string $url) {
+    public function testDetermineAbsoluteness(bool $exp, string $url):void {
         $this->assertSame($exp, URL::absolute($url));
     }
 
-    public function provideAbsolutes() {
+    public function provideAbsolutes(): array {
         return [
             [true,  "http://example.com/"],
             [true,  "HTTP://example.com/"],

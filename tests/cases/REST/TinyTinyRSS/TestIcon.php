@@ -40,15 +40,15 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
         return $this->h->dispatch($req);
     }
 
-    protected function reqAuth(string $target, string $method = "GET") {
+    protected function reqAuth(string $target, string $method = "GET"): ResponseInterface {
         return $this->req($target, $method, $this->user);
     }
 
-    protected function reqAuthFailed(string $target, string $method = "GET") {
+    protected function reqAuthFailed(string $target, string $method = "GET"): ResponseInterface {
         return $this->req($target, $method, "");
     }
 
-    public function testRetrieveFavion() {
+    public function testRetrieveFavion():void {
         \Phake::when(Arsse::$db)->subscriptionFavicon->thenReturn("");
         \Phake::when(Arsse::$db)->subscriptionFavicon(42, $this->anything())->thenReturn("http://example.com/favicon.ico");
         \Phake::when(Arsse::$db)->subscriptionFavicon(2112, $this->anything())->thenReturn("http://example.net/logo.png");
@@ -71,7 +71,7 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("2112.ico", "PUT"));
     }
 
-    public function testRetrieveFavionWithHttpAuthentication() {
+    public function testRetrieveFavionWithHttpAuthentication():void {
         $url = "http://example.org/icon.gif\r\nLocation: http://bad.example.com/";
         \Phake::when(Arsse::$db)->subscriptionFavicon->thenReturn("");
         \Phake::when(Arsse::$db)->subscriptionFavicon(42, $this->user)->thenReturn($url);

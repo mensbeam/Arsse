@@ -30,11 +30,11 @@ trait SQLite3PDO {
         return SQLite3::dbTableList($db);
     }
 
-    public static function dbTruncate($db, array $afterStatements = []) {
+    public static function dbTruncate($db, array $afterStatements = []): void {
         SQLite3::dbTruncate($db, $afterStatements);
     }
 
-    public static function dbRaze($db, array $afterStatements = []) {
+    public static function dbRaze($db, array $afterStatements = []): void {
         SQLite3::dbRaze($db, $afterStatements);
     }
 }

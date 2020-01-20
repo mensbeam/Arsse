@@ -499,7 +499,7 @@ class ValueInfo {
         }
     }
 
-    public static function bool($value, bool $default = null) {
+    public static function bool($value, bool $default = null): ?bool {
         if (is_null($value) || ValueInfo::str($value) & ValueInfo::WHITE) {
             return $default;
         }

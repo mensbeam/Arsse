@@ -133,7 +133,7 @@ LONG_STRING;
         return $this->h->dispatch($req);
     }
 
-    protected function reqAuth($data, $user) {
+    protected function reqAuth($data, $user): ResponseInterface {
         return $this->req($data, "POST", "", null, $user);
     }
 
@@ -178,7 +178,7 @@ LONG_STRING;
         self::clearData();
     }
 
-    public function testHandleInvalidPaths() {
+    public function testHandleInvalidPaths():void {
         $exp = $this->respErr("MALFORMED_INPUT", [], null);
         $this->assertMessage($exp, $this->req(null, "POST", "", ""));
         $this->assertMessage($exp, $this->req(null, "POST", "/", ""));
@@ -187,7 +187,7 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req(null, "POST", "/bad/path", ""));
     }
 
-    public function testHandleOptionsRequest() {
+    public function testHandleOptionsRequest():void {
         $exp = new EmptyResponse(204, [
             'Allow'  => "POST",
             'Accept' => "application/json, text/json",
@@ -195,14 +195,14 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req(null, "OPTIONS", "", ""));
     }
 
-    public function testHandleInvalidData() {
+    public function testHandleInvalidData():void {
         $exp = $this->respErr("MALFORMED_INPUT", [], null);
         $this->assertMessage($exp, $this->req(null, "POST", "", "This is not valid JSON data"));
         $this->assertMessage($exp, $this->req(null, "POST", "", "")); // lack of data is also an error
     }
 
     /** @dataProvider provideLoginRequests */
-    public function testLogIn(array $conf, $httpUser, array $data, $sessions) {
+    public function testLogIn(array $conf, $httpUser, array $data, $sessions):void {
         Arsse::$user->id = null;
         self::setConf($conf);
         \Phake::when(Arsse::$user)->auth->thenReturn(false);
@@ -236,7 +236,7 @@ LONG_STRING;
     }
 
     /** @dataProvider provideResumeRequests */
-    public function testValidateASession(array $conf, $httpUser, string $data, $result) {
+    public function testValidateASession(array $conf, $httpUser, string $data, $result):void {
         Arsse::$user->id = null;
         self::setConf($conf);
         \Phake::when(Arsse::$db)->sessionResume("PriestsOfSyrinx")->thenReturn([
@@ -273,7 +273,7 @@ LONG_STRING;
         return $this->generateLoginRequests("isLoggedIn");
     }
 
-    public function generateLoginRequests(string $type) {
+    public function generateLoginRequests(string $type): array {
         $john = "john.doe@example.com";
         $johnGood = [
             'user' => $john,
@@ -520,7 +520,7 @@ LONG_STRING;
         }
     }
 
-    public function testHandleGenericError() {
+    public function testHandleGenericError():void {
         \Phake::when(Arsse::$user)->auth(Arsse::$user->id, $this->anything())->thenThrow(new \JKingWeb\Arsse\Db\ExceptionTimeout("general"));
         $data = [
             'op'       => "login",
@@ -531,7 +531,7 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($data));
     }
 
-    public function testLogOut() {
+    public function testLogOut():void {
         \Phake::when(Arsse::$db)->sessionDestroy->thenReturn(true);
         $data = [
             'op'       => "logout",
@@ -542,7 +542,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db)->sessionDestroy(Arsse::$user->id, "PriestsOfSyrinx");
     }
 
-    public function testHandleUnknownMethods() {
+    public function testHandleUnknownMethods():void {
         $exp = $this->respErr("UNKNOWN_METHOD", ['method' => "thisMethodDoesNotExist"]);
         $data = [
             'op'       => "thisMethodDoesNotExist",
@@ -551,7 +551,7 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($data));
     }
 
-    public function testHandleMixedCaseMethods() {
+    public function testHandleMixedCaseMethods():void {
         $data = [
             'op'       => "isLoggedIn",
             'sid'      => "PriestsOfSyrinx",
@@ -566,7 +566,7 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($data));
     }
 
-    public function testRetrieveServerVersion() {
+    public function testRetrieveServerVersion():void {
         $data = [
             'op'       => "getVersion",
             'sid'      => "PriestsOfSyrinx",
@@ -578,7 +578,7 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($data));
     }
 
-    public function testRetrieveProtocolLevel() {
+    public function testRetrieveProtocolLevel():void {
         $data = [
             'op'       => "getApiLevel",
             'sid'      => "PriestsOfSyrinx",
@@ -587,7 +587,7 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($data));
     }
 
-    public function testAddACategory() {
+    public function testAddACategory():void {
         $in = [
             ['op' => "addCategory", 'sid' => "PriestsOfSyrinx", 'caption' => "Software"],
             ['op' => "addCategory", 'sid' => "PriestsOfSyrinx", 'caption' => "Hardware", 'parent_id' => 1],
@@ -638,7 +638,7 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($in[5]));
     }
 
-    public function testRemoveACategory() {
+    public function testRemoveACategory():void {
         $in = [
             ['op' => "removeCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42],
             ['op' => "removeCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 2112],
@@ -661,7 +661,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db, \Phake::times(3))->folderRemove(Arsse::$user->id, $this->anything());
     }
 
-    public function testMoveACategory() {
+    public function testMoveACategory():void {
         $in = [
             ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42, 'parent_id' => 1],
             ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 2112, 'parent_id' => 2],
@@ -713,7 +713,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db, \Phake::times(5))->folderPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
     }
 
-    public function testRenameACategory() {
+    public function testRenameACategory():void {
         $in = [
             ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42, 'caption' => "Ook"],
             ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 2112, 'caption' => "Eek"],
@@ -753,7 +753,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db, \Phake::times(3))->folderPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
     }
 
-    public function testAddASubscription() {
+    public function testAddASubscription():void {
         $in = [
             ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/0"],
             ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/1", 'category_id' => 42],
@@ -828,7 +828,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db, \Phake::times(0))->subscriptionPropertiesSet(Arsse::$user->id, 4, ['folder' => 1]);
     }
 
-    public function testRemoveASubscription() {
+    public function testRemoveASubscription():void {
         $in = [
             ['op' => "unsubscribeFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42],
             ['op' => "unsubscribeFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2112],
@@ -850,7 +850,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db, \Phake::times(5))->subscriptionRemove(Arsse::$user->id, $this->anything());
     }
 
-    public function testMoveASubscription() {
+    public function testMoveASubscription():void {
         $in = [
             ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'category_id' => 1],
             ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2112, 'category_id' => 2],
@@ -892,7 +892,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db, \Phake::times(4))->subscriptionPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
     }
 
-    public function testRenameASubscription() {
+    public function testRenameASubscription():void {
         $in = [
             ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'caption' => "Ook"],
             ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2112, 'caption' => "Eek"],
@@ -934,7 +934,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db)->subscriptionPropertiesSet(...$db[2]);
     }
 
-    public function testRetrieveTheGlobalUnreadCount() {
+    public function testRetrieveTheGlobalUnreadCount():void {
         $in = ['op' => "getUnread", 'sid' => "PriestsOfSyrinx"];
         \Phake::when(Arsse::$db)->subscriptionList(Arsse::$user->id)->thenReturn(new Result($this->v([
             ['id' => 1, 'unread' => 2112],
@@ -945,7 +945,7 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($in));
     }
 
-    public function testRetrieveTheServerConfiguration() {
+    public function testRetrieveTheServerConfiguration():void {
         $in = ['op' => "getConfig", 'sid' => "PriestsOfSyrinx"];
         $interval = Arsse::$conf->serviceFrequency;
         $valid = (new \DateTimeImmutable("now", new \DateTimezone("UTC")))->sub($interval);
@@ -960,7 +960,7 @@ LONG_STRING;
         $this->assertMessage($this->respGood($exp[1]), $this->req($in));
     }
 
-    public function testUpdateAFeed() {
+    public function testUpdateAFeed():void {
         $in = [
             ['op' => "updateFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 1],
             ['op' => "updateFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2],
@@ -980,7 +980,7 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($in[3]));
     }
 
-    public function testAddALabel() {
+    public function testAddALabel():void {
         $in = [
             ['op' => "addLabel", 'sid' => "PriestsOfSyrinx", 'caption' => "Software"],
             ['op' => "addLabel", 'sid' => "PriestsOfSyrinx", 'caption' => "Hardware",],
@@ -1025,7 +1025,7 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($in[4]));
     }
 
-    public function testRemoveALabel() {
+    public function testRemoveALabel():void {
         $in = [
             ['op' => "removeLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -1042],
             ['op' => "removeLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -2112],
@@ -1053,7 +1053,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db)->labelRemove(Arsse::$user->id, 1088);
     }
 
-    public function testRenameALabel() {
+    public function testRenameALabel():void {
         $in = [
             ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -1042, 'caption' => "Ook"],
             ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -2112, 'caption' => "Eek"],
@@ -1099,7 +1099,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db, \Phake::times(6))->labelPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
     }
 
-    public function testRetrieveCategoryLists() {
+    public function testRetrieveCategoryLists():void {
         $in = [
             ['op' => "getCategories", 'sid' => "PriestsOfSyrinx", 'include_empty' => true],
             ['op' => "getCategories", 'sid' => "PriestsOfSyrinx"],
@@ -1171,7 +1171,7 @@ LONG_STRING;
         }
     }
 
-    public function testRetrieveCounterList() {
+    public function testRetrieveCounterList():void {
         $in = ['op' => "getCounters", 'sid' => "PriestsOfSyrinx"];
         \Phake::when(Arsse::$db)->folderList($this->anything())->thenReturn(new Result($this->v($this->folders)));
         \Phake::when(Arsse::$db)->subscriptionList($this->anything())->thenReturn(new Result($this->v($this->subscriptions)));
@@ -1206,7 +1206,7 @@ LONG_STRING;
         $this->assertMessage($this->respGood($exp), $this->req($in));
     }
 
-    public function testRetrieveTheLabelList() {
+    public function testRetrieveTheLabelList():void {
         $in = [
             ['op' => "getLabels", 'sid' => "PriestsOfSyrinx"],
             ['op' => "getLabels", 'sid' => "PriestsOfSyrinx", 'article_id' => 1],
@@ -1251,7 +1251,7 @@ LONG_STRING;
         }
     }
 
-    public function testAssignArticlesToALabel() {
+    public function testAssignArticlesToALabel():void {
         $list = [
             range(1, 100),
             range(1, 50),
@@ -1289,7 +1289,7 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($in[6]));
     }
 
-    public function testRetrieveFeedTree() {
+    public function testRetrieveFeedTree():void {
         $in = [
             ['op' => "getFeedTree", 'sid' => "PriestsOfSyrinx", 'include_empty' => true],
             ['op' => "getFeedTree", 'sid' => "PriestsOfSyrinx"],
@@ -1306,7 +1306,7 @@ LONG_STRING;
         $this->assertMessage($this->respGood($exp), $this->req($in[1]));
     }
 
-    public function testMarkFeedsAsRead() {
+    public function testMarkFeedsAsRead():void {
         $in1 = [
             // no-ops
             ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx"],
@@ -1357,7 +1357,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], $this->equalTo((new Context)->modifiedSince($t), 2)); // within two seconds
     }
 
-    public function testRetrieveFeedList() {
+    public function testRetrieveFeedList():void {
         $in1 = [
             ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx"],
             ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => -1],
@@ -1519,7 +1519,7 @@ LONG_STRING;
         return $out;
     }
 
-    public function testChangeArticles() {
+    public function testChangeArticles():void {
         $in = [
             ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx"],
             ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1"],
@@ -1604,7 +1604,7 @@ LONG_STRING;
         }
     }
 
-    public function testListArticles() {
+    public function testListArticles():void {
         $in = [
             // error conditions
             ['op' => "getArticle", 'sid' => "PriestsOfSyrinx"],
@@ -1693,7 +1693,7 @@ LONG_STRING;
         $this->assertMessage($this->respGood([$exp[0]]), $this->req($in[5]));
     }
 
-    public function testRetrieveCompactHeadlines() {
+    public function testRetrieveCompactHeadlines():void {
         $in1 = [
             // erroneous input
             ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx"],
@@ -1779,7 +1779,7 @@ LONG_STRING;
         }
     }
 
-    public function testRetrieveFullHeadlines() {
+    public function testRetrieveFullHeadlines():void {
         $in1 = [
             // empty results
             ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 0],
@@ -1895,7 +1895,7 @@ LONG_STRING;
         }
     }
 
-    public function testRetrieveFullHeadlinesCheckingExtraFields() {
+    public function testRetrieveFullHeadlinesCheckingExtraFields():void {
         $in = [
             // empty results
             ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4],

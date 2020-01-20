@@ -306,7 +306,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return $listSaved;
     }
 
-    protected function setUnread() {
+    protected function setUnread(): void {
         $lastUnread = Arsse::$db->articleList(Arsse::$user->id, (new Context)->limit(1), ["marked_date"], ["marked_date desc"])->getValue();
         if (!$lastUnread) {
             // there are no articles
@@ -322,7 +322,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         Arsse::$db->articleMark(Arsse::$user->id, ['read' => false], $c);
     }
 
-    protected function getRefreshTime() {
+    protected function getRefreshTime(): ?int {
         return Date::transform(Arsse::$db->subscriptionRefreshed(Arsse::$user->id), "unix");
     }
 

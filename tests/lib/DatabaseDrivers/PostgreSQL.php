@@ -29,7 +29,7 @@ trait PostgreSQL {
         }
     }
 
-    public static function dbExec($db, $q) {
+    public static function dbExec($db, $q): void {
         if ($db instanceof Driver) {
             $db->exec($q);
         } elseif ($db instanceof \PDO) {
@@ -52,7 +52,7 @@ trait PostgreSQL {
         }
     }
 
-    public static function dbTruncate($db, array $afterStatements = []) {
+    public static function dbTruncate($db, array $afterStatements = []): void {
         // rollback any pending transaction
         try {
             @self::dbExec($db, "ROLLBACK");
@@ -72,7 +72,7 @@ trait PostgreSQL {
         }
     }
 
-    public static function dbRaze($db, array $afterStatements = []) {
+    public static function dbRaze($db, array $afterStatements = []): void {
         // rollback any pending transaction
         try {
             @self::dbExec($db, "ROLLBACK");

@@ -24,7 +24,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when($this->cli)->loadConf->thenReturn(true);
     }
 
-    public function assertConsole(CLI $cli, string $command, int $exitStatus, string $output = "", bool $pattern = false) {
+    public function assertConsole(CLI $cli, string $command, int $exitStatus, string $output = "", bool $pattern = false): void {
         $argv = \Clue\Arguments\split($command);
         $output = strlen($output) ? $output.\PHP_EOL : "";
         if ($pattern) {
@@ -35,13 +35,13 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exitStatus, $cli->dispatch($argv));
     }
 
-    public function testPrintVersion() {
+    public function testPrintVersion():void {
         $this->assertConsole($this->cli, "arsse.php --version", 0, Arsse::VERSION);
         \Phake::verify($this->cli, \Phake::times(0))->loadConf;
     }
 
     /** @dataProvider provideHelpText */
-    public function testPrintHelp(string $cmd, string $name) {
+    public function testPrintHelp(string $cmd, string $name):void {
         $this->assertConsole($this->cli, $cmd, 0, str_replace("arsse.php", $name, CLI::USAGE));
         \Phake::verify($this->cli, \Phake::times(0))->loadConf;
     }
@@ -57,7 +57,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    public function testStartTheDaemon() {
+    public function testStartTheDaemon():void {
         $srv = \Phake::mock(Service::class);
         \Phake::when($srv)->watch->thenReturn(new \DateTimeImmutable);
         \Phake::when($this->cli)->getInstance(Service::class)->thenReturn($srv);
@@ -67,7 +67,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify($this->cli)->getInstance(Service::class);
     }
 
-    public function testRefreshAllFeeds() {
+    public function testRefreshAllFeeds():void {
         $srv = \Phake::mock(Service::class);
         \Phake::when($srv)->watch->thenReturn(new \DateTimeImmutable);
         \Phake::when($this->cli)->getInstance(Service::class)->thenReturn($srv);
@@ -78,7 +78,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideFeedUpdates */
-    public function testRefreshAFeed(string $cmd, int $exitStatus, string $output) {
+    public function testRefreshAFeed(string $cmd, int $exitStatus, string $output):void {
         Arsse::$db = \Phake::mock(Database::class);
         \Phake::when(Arsse::$db)->feedUpdate(1, true)->thenReturn(true);
         \Phake::when(Arsse::$db)->feedUpdate(2, true)->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.com/", new \PicoFeed\Client\InvalidUrlException));
@@ -95,7 +95,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideDefaultConfigurationSaves */
-    public function testSaveTheDefaultConfiguration(string $cmd, int $exitStatus, string $file) {
+    public function testSaveTheDefaultConfiguration(string $cmd, int $exitStatus, string $file):void {
         $conf = \Phake::mock(Conf::class);
         \Phake::when($conf)->exportFile("php://output", true)->thenReturn(true);
         \Phake::when($conf)->exportFile("good.conf", true)->thenReturn(true);
@@ -116,7 +116,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideUserList */
-    public function testListUsers(string $cmd, array $list, int $exitStatus, string $output) {
+    public function testListUsers(string $cmd, array $list, int $exitStatus, string $output):void {
         // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
         Arsse::$user = $this->createMock(User::class);
         Arsse::$user->method("list")->willReturn($list);
@@ -135,7 +135,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideUserAdditions */
-    public function testAddAUser(string $cmd, int $exitStatus, string $output) {
+    public function testAddAUser(string $cmd, int $exitStatus, string $output):void {
         // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
         Arsse::$user = $this->createMock(User::class);
         Arsse::$user->method("add")->will($this->returnCallback(function($user, $pass = null) {
@@ -158,7 +158,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideUserAuthentication */
-    public function testAuthenticateAUser(string $cmd, int $exitStatus, string $output) {
+    public function testAuthenticateAUser(string $cmd, int $exitStatus, string $output):void {
         // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
         Arsse::$user = $this->createMock(User::class);
         Arsse::$user->method("auth")->will($this->returnCallback(function($user, $pass) {
@@ -192,7 +192,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideUserRemovals */
-    public function testRemoveAUser(string $cmd, int $exitStatus, string $output) {
+    public function testRemoveAUser(string $cmd, int $exitStatus, string $output):void {
         // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
         Arsse::$user = $this->createMock(User::class);
         Arsse::$user->method("remove")->will($this->returnCallback(function($user) {
@@ -212,7 +212,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideUserPasswordChanges */
-    public function testChangeAUserPassword(string $cmd, int $exitStatus, string $output) {
+    public function testChangeAUserPassword(string $cmd, int $exitStatus, string $output):void {
         $passwordChange = function($user, $pass = null) {
             switch ($user) {
                 case "jane.doe@example.com":
@@ -242,7 +242,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideUserPasswordClearings */
-    public function testClearAUserPassword(string $cmd, int $exitStatus, string $output) {
+    public function testClearAUserPassword(string $cmd, int $exitStatus, string $output):void {
         $passwordClear = function($user) {
             switch ($user) {
                 case "jane.doe@example.com":
@@ -270,7 +270,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideOpmlExports */
-    public function testExportToOpml(string $cmd, int $exitStatus, string $file, string $user, bool $flat) {
+    public function testExportToOpml(string $cmd, int $exitStatus, string $file, string $user, bool $flat):void {
         $opml = \Phake::mock(OPML::class);
         \Phake::when($opml)->exportFile("php://output", $user, $flat)->thenReturn(true);
         \Phake::when($opml)->exportFile("good.opml", $user, $flat)->thenReturn(true);
@@ -311,7 +311,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideOpmlImports */
-    public function testImportFromOpml(string $cmd, int $exitStatus, string $file, string $user, bool $flat, bool $replace) {
+    public function testImportFromOpml(string $cmd, int $exitStatus, string $file, string $user, bool $flat, bool $replace):void {
         $opml = \Phake::mock(OPML::class);
         \Phake::when($opml)->importFile("php://input", $user, $flat, $replace)->thenReturn(true);
         \Phake::when($opml)->importFile("good.opml", $user, $flat, $replace)->thenReturn(true);

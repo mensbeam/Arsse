@@ -18,7 +18,7 @@ class PDODriver extends Driver {
         return class_exists("PDO") && in_array("mysql", \PDO::getAvailableDrivers());
     }
 
-    protected function makeConnection(string $db, string $user, string $password, string $host, int $port, string $socket) {
+    protected function makeConnection(string $db, string $user, string $password, string $host, int $port, string $socket): void {
         $dsn = "mysql:".implode(";", [
             "charset=utf8mb4",
             "dbname=$db",

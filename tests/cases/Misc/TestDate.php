@@ -14,7 +14,7 @@ class TestDate extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
     }
 
-    public function testNormalizeADate() {
+    public function testNormalizeADate():void {
         $exp = new \DateTimeImmutable("2018-01-01T00:00:00Z");
         $this->assertEquals($exp, Date::normalize(1514764800));
         $this->assertEquals($exp, Date::normalize("2018-01-01T00:00:00"));
@@ -26,7 +26,7 @@ class TestDate extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertNull(Date::normalize("2018-01-01T00:00:00Z", "http"));
     }
 
-    public function testFormatADate() {
+    public function testFormatADate():void {
         $test = new \DateTimeImmutable("2018-01-01T00:00:00Z");
         $this->assertNull(Date::transform(null, "http"));
         $this->assertNull(Date::transform("ook", "http"));
@@ -40,7 +40,7 @@ class TestDate extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame(1514764800.265579, Date::transform("2018-01-01T00:00:00.265579Z", "float", "iso8601m"));
     }
 
-    public function testMoveDateForward() {
+    public function testMoveDateForward():void {
         $test = new \DateTimeImmutable("2018-01-01T00:00:00Z");
         $this->assertNull(Date::add("P1D", null));
         $this->assertNull(Date::add("P1D", "ook"));
@@ -49,7 +49,7 @@ class TestDate extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertNull(Date::add("ook", $test));
     }
 
-    public function testMoveDateBack() {
+    public function testMoveDateBack():void {
         $test = new \DateTimeImmutable("2018-01-01T00:00:00Z");
         $this->assertNull(Date::sub("P1D", null));
         $this->assertNull(Date::sub("P1D", "ook"));

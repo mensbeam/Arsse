@@ -33,11 +33,11 @@ trait PostgreSQLPDO {
         return PostgreSQL::dbTableList($db);
     }
 
-    public static function dbTruncate($db, array $afterStatements = []) {
+    public static function dbTruncate($db, array $afterStatements = []): void {
         PostgreSQL::dbTruncate($db, $afterStatements);
     }
 
-    public static function dbRaze($db, array $afterStatements = []) {
+    public static function dbRaze($db, array $afterStatements = []): void {
         PostgreSQL::dbRaze($db, $afterStatements);
     }
 }

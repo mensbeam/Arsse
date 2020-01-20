@@ -9,7 +9,7 @@ namespace JKingWeb\Arsse\TestCase\Database;
 use JKingWeb\Arsse\Arsse;
 
 trait SeriesFolder {
-    protected function setUpSeriesFolder() {
+    protected function setUpSeriesFolder():void {
         $this->data = [
             'arsse_users' => [
                 'columns' => [
@@ -93,11 +93,11 @@ trait SeriesFolder {
         ];
     }
 
-    protected function tearDownSeriesFolder() {
+    protected function tearDownSeriesFolder():void {
         unset($this->data);
     }
 
-    public function testAddARootFolder() {
+    public function testAddARootFolder():void {
         $user = "john.doe@example.com";
         $folderID = $this->nextID("arsse_folders");
         $this->assertSame($folderID, Arsse::$db->folderAdd($user, ['name' => "Entertainment"]));
@@ -107,12 +107,12 @@ trait SeriesFolder {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testAddADuplicateRootFolder() {
+    public function testAddADuplicateRootFolder():void {
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         Arsse::$db->folderAdd("john.doe@example.com", ['name' => "Politics"]);
     }
 
-    public function testAddANestedFolder() {
+    public function testAddANestedFolder():void {
         $user = "john.doe@example.com";
         $folderID = $this->nextID("arsse_folders");
         $this->assertSame($folderID, Arsse::$db->folderAdd($user, ['name' => "GNOME", 'parent' => 2]));
@@ -122,43 +122,43 @@ trait SeriesFolder {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testAddANestedFolderToAMissingParent() {
+    public function testAddANestedFolderToAMissingParent():void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->folderAdd("john.doe@example.com", ['name' => "Sociology", 'parent' => 2112]);
     }
 
-    public function testAddANestedFolderToAnInvalidParent() {
+    public function testAddANestedFolderToAnInvalidParent():void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->folderAdd("john.doe@example.com", ['name' => "Sociology", 'parent' => "stringFolderId"]);
     }
 
-    public function testAddANestedFolderForTheWrongOwner() {
+    public function testAddANestedFolderForTheWrongOwner():void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->folderAdd("john.doe@example.com", ['name' => "Sociology", 'parent' => 4]); // folder ID 4 belongs to Jane
     }
 
-    public function testAddAFolderWithAMissingName() {
+    public function testAddAFolderWithAMissingName():void {
         $this->assertException("missing", "Db", "ExceptionInput");
         Arsse::$db->folderAdd("john.doe@example.com", []);
     }
 
-    public function testAddAFolderWithABlankName() {
+    public function testAddAFolderWithABlankName():void {
         $this->assertException("missing", "Db", "ExceptionInput");
         Arsse::$db->folderAdd("john.doe@example.com", ['name' => ""]);
     }
 
-    public function testAddAFolderWithAWhitespaceName() {
+    public function testAddAFolderWithAWhitespaceName():void {
         $this->assertException("whitespace", "Db", "ExceptionInput");
         Arsse::$db->folderAdd("john.doe@example.com", ['name' => " "]);
     }
 
-    public function testAddAFolderWithoutAuthority() {
+    public function testAddAFolderWithoutAuthority():void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->folderAdd("john.doe@example.com", ['name' => "Sociology"]);
     }
 
-    public function testListRootFolders() {
+    public function testListRootFolders():void {
         $exp = [
             ['id' => 5, 'name' => "Politics",   'parent' => null, 'children' => 0, 'feeds' => 2],
             ['id' => 1, 'name' => "Technology", 'parent' => null, 'children' => 2, 'feeds' => 1],
@@ -175,7 +175,7 @@ trait SeriesFolder {
         \Phake::verify(Arsse::$user)->authorize("admin@example.net", "folderList");
     }
 
-    public function testListFoldersRecursively() {
+    public function testListFoldersRecursively():void {
         $exp = [
             ['id' => 5, 'name' => "Politics",   'parent' => null, 'children' => 0, 'feeds' => 2],
             ['id' => 6, 'name' => "Politics",   'parent' => 2,    'children' => 0, 'feeds' => 1],
@@ -196,23 +196,23 @@ trait SeriesFolder {
         \Phake::verify(Arsse::$user)->authorize("jane.doe@example.com", "folderList");
     }
 
-    public function testListFoldersOfAMissingParent() {
+    public function testListFoldersOfAMissingParent():void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->folderList("john.doe@example.com", 2112);
     }
 
-    public function testListFoldersOfTheWrongOwner() {
+    public function testListFoldersOfTheWrongOwner():void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->folderList("john.doe@example.com", 4); // folder ID 4 belongs to Jane
     }
 
-    public function testListFoldersWithoutAuthority() {
+    public function testListFoldersWithoutAuthority():void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->folderList("john.doe@example.com");
     }
 
-    public function testRemoveAFolder() {
+    public function testRemoveAFolder():void {
         $this->assertTrue(Arsse::$db->folderRemove("john.doe@example.com", 6));
         \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderRemove");
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
@@ -220,7 +220,7 @@ trait SeriesFolder {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testRemoveAFolderTree() {
+    public function testRemoveAFolderTree():void {
         $this->assertTrue(Arsse::$db->folderRemove("john.doe@example.com", 1));
         \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderRemove");
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
@@ -230,28 +230,28 @@ trait SeriesFolder {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testRemoveAMissingFolder() {
+    public function testRemoveAMissingFolder():void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->folderRemove("john.doe@example.com", 2112);
     }
 
-    public function testRemoveAnInvalidFolder() {
+    public function testRemoveAnInvalidFolder():void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->folderRemove("john.doe@example.com", -1);
     }
 
-    public function testRemoveAFolderOfTheWrongOwner() {
+    public function testRemoveAFolderOfTheWrongOwner():void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->folderRemove("john.doe@example.com", 4); // folder ID 4 belongs to Jane
     }
 
-    public function testRemoveAFolderWithoutAuthority() {
+    public function testRemoveAFolderWithoutAuthority():void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->folderRemove("john.doe@example.com", 1);
     }
 
-    public function testGetThePropertiesOfAFolder() {
+    public function testGetThePropertiesOfAFolder():void {
         $exp = [
             'id'     => 6,
             'name'   => "Politics",
@@ -261,32 +261,32 @@ trait SeriesFolder {
         \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderPropertiesGet");
     }
 
-    public function testGetThePropertiesOfAMissingFolder() {
+    public function testGetThePropertiesOfAMissingFolder():void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesGet("john.doe@example.com", 2112);
     }
 
-    public function testGetThePropertiesOfAnInvalidFolder() {
+    public function testGetThePropertiesOfAnInvalidFolder():void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesGet("john.doe@example.com", -1);
     }
 
-    public function testGetThePropertiesOfAFolderOfTheWrongOwner() {
+    public function testGetThePropertiesOfAFolderOfTheWrongOwner():void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesGet("john.doe@example.com", 4); // folder ID 4 belongs to Jane
     }
 
-    public function testGetThePropertiesOfAFolderWithoutAuthority() {
+    public function testGetThePropertiesOfAFolderWithoutAuthority():void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->folderPropertiesGet("john.doe@example.com", 1);
     }
 
-    public function testMakeNoChangesToAFolder() {
+    public function testMakeNoChangesToAFolder():void {
         $this->assertFalse(Arsse::$db->folderPropertiesSet("john.doe@example.com", 6, []));
     }
 
-    public function testRenameAFolder() {
+    public function testRenameAFolder():void {
         $this->assertTrue(Arsse::$db->folderPropertiesSet("john.doe@example.com", 6, ['name' => "Opinion"]));
         \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderPropertiesSet");
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
@@ -294,26 +294,26 @@ trait SeriesFolder {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testRenameTheRootFolder() {
+    public function testRenameTheRootFolder():void {
         $this->assertFalse(Arsse::$db->folderPropertiesSet("john.doe@example.com", null, ['name' => "Opinion"]));
     }
 
-    public function testRenameAFolderToTheEmptyString() {
+    public function testRenameAFolderToTheEmptyString():void {
         $this->assertException("missing", "Db", "ExceptionInput");
         $this->assertTrue(Arsse::$db->folderPropertiesSet("john.doe@example.com", 6, ['name' => ""]));
     }
 
-    public function testRenameAFolderToWhitespaceOnly() {
+    public function testRenameAFolderToWhitespaceOnly():void {
         $this->assertException("whitespace", "Db", "ExceptionInput");
         $this->assertTrue(Arsse::$db->folderPropertiesSet("john.doe@example.com", 6, ['name' => "   "]));
     }
 
-    public function testRenameAFolderToAnInvalidValue() {
+    public function testRenameAFolderToAnInvalidValue():void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         $this->assertTrue(Arsse::$db->folderPropertiesSet("john.doe@example.com", 6, ['name' => []]));
     }
 
-    public function testMoveAFolder() {
+    public function testMoveAFolder():void {
         $this->assertTrue(Arsse::$db->folderPropertiesSet("john.doe@example.com", 6, ['parent' => 5]));
         \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "folderPropertiesSet");
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
@@ -321,57 +321,57 @@ trait SeriesFolder {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testMoveTheRootFolder() {
+    public function testMoveTheRootFolder():void {
         $this->assertException("circularDependence", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", 0, ['parent' => 1]);
     }
 
-    public function testMoveAFolderToItsDescendant() {
+    public function testMoveAFolderToItsDescendant():void {
         $this->assertException("circularDependence", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", 1, ['parent' => 3]);
     }
 
-    public function testMoveAFolderToItself() {
+    public function testMoveAFolderToItself():void {
         $this->assertException("circularDependence", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", 1, ['parent' => 1]);
     }
 
-    public function testMoveAFolderToAMissingParent() {
+    public function testMoveAFolderToAMissingParent():void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", 1, ['parent' => 2112]);
     }
 
-    public function testMoveAFolderToAnInvalidParent() {
+    public function testMoveAFolderToAnInvalidParent():void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", 1, ['parent' => "ThisFolderDoesNotExist"]);
     }
 
-    public function testCauseAFolderCollision() {
+    public function testCauseAFolderCollision():void {
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", 6, ['parent' => null]);
     }
 
-    public function testCauseACompoundFolderCollision() {
+    public function testCauseACompoundFolderCollision():void {
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", 3, ['parent' => null, 'name' => "Technology"]);
     }
 
-    public function testSetThePropertiesOfAMissingFolder() {
+    public function testSetThePropertiesOfAMissingFolder():void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", 2112, ['parent' => null]);
     }
 
-    public function testSetThePropertiesOfAnInvalidFolder() {
+    public function testSetThePropertiesOfAnInvalidFolder():void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", -1, ['parent' => null]);
     }
 
-    public function testSetThePropertiesOfAFolderForTheWrongOwner() {
+    public function testSetThePropertiesOfAFolderForTheWrongOwner():void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", 4, ['parent' => null]); // folder ID 4 belongs to Jane
     }
 
-    public function testSetThePropertiesOfAFolderWithoutAuthority() {
+    public function testSetThePropertiesOfAFolderWithoutAuthority():void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", 1, ['parent' => null]);

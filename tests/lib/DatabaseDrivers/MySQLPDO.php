@@ -47,11 +47,11 @@ trait MySQLPDO {
         return MySQL::dbTableList($db);
     }
 
-    public static function dbTruncate($db, array $afterStatements = []) {
+    public static function dbTruncate($db, array $afterStatements = []): void {
         MySQL::dbTruncate($db, $afterStatements);
     }
 
-    public static function dbRaze($db, array $afterStatements = []) {
+    public static function dbRaze($db, array $afterStatements = []): void {
         MySQL::dbRaze($db, $afterStatements);
     }
 }

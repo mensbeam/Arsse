@@ -181,7 +181,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         return \extension_loaded("pgsql");
     }
 
-    protected function makeConnection(string $user, string $pass, string $db, string $host, int $port, string $service) {
+    protected function makeConnection(string $user, string $pass, string $db, string $host, int $port, string $service): void {
         $dsn = $this->makeconnectionString(false, $user, $pass, $db, $host, $port, $service);
         set_error_handler(function(int $code, string $msg) {
             $msg = substr($msg, 62);

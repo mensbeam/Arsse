@@ -22,14 +22,14 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->srv = new Service();
     }
 
-    public function testCheckIn() {
+    public function testCheckIn():void {
         $now = time();
         $this->srv->checkIn();
         \Phake::verify(Arsse::$db)->metaSet("service_last_checkin", \Phake::capture($then), "datetime");
         $this->assertTime($now, $then);
     }
 
-    public function testReportHavingCheckedIn() {
+    public function testReportHavingCheckedIn():void {
         // the mock's metaGet() returns null by default
         $this->assertFalse(Service::hasCheckedIn());
         $interval = Arsse::$conf->serviceFrequency;
@@ -40,27 +40,27 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertFalse(Service::hasCheckedIn());
     }
 
-    public function testPerformPreCleanup() {
+    public function testPerformPreCleanup():void {
         $this->assertTrue(Service::cleanupPre());
         \Phake::verify(Arsse::$db)->feedCleanup();
         \Phake::verify(Arsse::$db)->sessionCleanup();
     }
 
-    public function testPerformShortPostCleanup() {
+    public function testPerformShortPostCleanup():void {
         \Phake::when(Arsse::$db)->articleCleanup()->thenReturn(0);
         $this->assertTrue(Service::cleanupPost());
         \Phake::verify(Arsse::$db)->articleCleanup();
         \Phake::verify(Arsse::$db, \Phake::times(0))->driverMaintenance();
     }
 
-    public function testPerformFullPostCleanup() {
+    public function testPerformFullPostCleanup():void {
         \Phake::when(Arsse::$db)->articleCleanup()->thenReturn(1);
         $this->assertTrue(Service::cleanupPost());
         \Phake::verify(Arsse::$db)->articleCleanup();
         \Phake::verify(Arsse::$db)->driverMaintenance();
     }
 
-    public function testRefreshFeeds() {
+    public function testRefreshFeeds():void {
         // set up mock database actions
         \Phake::when(Arsse::$db)->metaSet->thenReturn(true);
         \Phake::when(Arsse::$db)->feedCleanup->thenReturn(true);

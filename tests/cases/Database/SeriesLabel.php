@@ -11,7 +11,7 @@ use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Context\Context;
 
 trait SeriesLabel {
-    protected function setUpSeriesLabel() {
+    protected function setUpSeriesLabel():void {
         $this->data = [
             'arsse_users' => [
                 'columns' => [
@@ -244,11 +244,11 @@ trait SeriesLabel {
         $this->user = "john.doe@example.com";
     }
 
-    protected function tearDownSeriesLabel() {
+    protected function tearDownSeriesLabel():void {
         unset($this->data, $this->checkLabels, $this->checkMembers, $this->user);
     }
 
-    public function testAddALabel() {
+    public function testAddALabel():void {
         $user = "john.doe@example.com";
         $labelID = $this->nextID("arsse_labels");
         $this->assertSame($labelID, Arsse::$db->labelAdd($user, ['name' => "Entertaining"]));
@@ -258,33 +258,33 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testAddADuplicateLabel() {
+    public function testAddADuplicateLabel():void {
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         Arsse::$db->labelAdd("john.doe@example.com", ['name' => "Interesting"]);
     }
 
-    public function testAddALabelWithAMissingName() {
+    public function testAddALabelWithAMissingName():void {
         $this->assertException("missing", "Db", "ExceptionInput");
         Arsse::$db->labelAdd("john.doe@example.com", []);
     }
 
-    public function testAddALabelWithABlankName() {
+    public function testAddALabelWithABlankName():void {
         $this->assertException("missing", "Db", "ExceptionInput");
         Arsse::$db->labelAdd("john.doe@example.com", ['name' => ""]);
     }
 
-    public function testAddALabelWithAWhitespaceName() {
+    public function testAddALabelWithAWhitespaceName():void {
         $this->assertException("whitespace", "Db", "ExceptionInput");
         Arsse::$db->labelAdd("john.doe@example.com", ['name' => " "]);
     }
 
-    public function testAddALabelWithoutAuthority() {
+    public function testAddALabelWithoutAuthority():void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->labelAdd("john.doe@example.com", ['name' => "Boring"]);
     }
 
-    public function testListLabels() {
+    public function testListLabels():void {
         $exp = [
             ['id' => 2, 'name' => "Fascinating", 'articles' => 3, 'read' => 1],
             ['id' => 1, 'name' => "Interesting", 'articles' => 2, 'read' => 2],
@@ -300,13 +300,13 @@ trait SeriesLabel {
         \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "labelList");
     }
 
-    public function testListLabelsWithoutAuthority() {
+    public function testListLabelsWithoutAuthority():void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->labelList("john.doe@example.com");
     }
 
-    public function testRemoveALabel() {
+    public function testRemoveALabel():void {
         $this->assertTrue(Arsse::$db->labelRemove("john.doe@example.com", 1));
         \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "labelRemove");
         $state = $this->primeExpectations($this->data, $this->checkLabels);
@@ -314,7 +314,7 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testRemoveALabelByName() {
+    public function testRemoveALabelByName():void {
         $this->assertTrue(Arsse::$db->labelRemove("john.doe@example.com", "Interesting", true));
         \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "labelRemove");
         $state = $this->primeExpectations($this->data, $this->checkLabels);
@@ -322,33 +322,33 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testRemoveAMissingLabel() {
+    public function testRemoveAMissingLabel():void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->labelRemove("john.doe@example.com", 2112);
     }
 
-    public function testRemoveAnInvalidLabel() {
+    public function testRemoveAnInvalidLabel():void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelRemove("john.doe@example.com", -1);
     }
 
-    public function testRemoveAnInvalidLabelByName() {
+    public function testRemoveAnInvalidLabelByName():void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelRemove("john.doe@example.com", [], true);
     }
 
-    public function testRemoveALabelOfTheWrongOwner() {
+    public function testRemoveALabelOfTheWrongOwner():void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->labelRemove("john.doe@example.com", 3); // label ID 3 belongs to Jane
     }
 
-    public function testRemoveALabelWithoutAuthority() {
+    public function testRemoveALabelWithoutAuthority():void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->labelRemove("john.doe@example.com", 1);
     }
 
-    public function testGetThePropertiesOfALabel() {
+    public function testGetThePropertiesOfALabel():void {
         $exp = [
             'id'       => 2,
             'name'     => "Fascinating",
@@ -360,37 +360,37 @@ trait SeriesLabel {
         \Phake::verify(Arsse::$user, \Phake::times(2))->authorize("john.doe@example.com", "labelPropertiesGet");
     }
 
-    public function testGetThePropertiesOfAMissingLabel() {
+    public function testGetThePropertiesOfAMissingLabel():void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesGet("john.doe@example.com", 2112);
     }
 
-    public function testGetThePropertiesOfAnInvalidLabel() {
+    public function testGetThePropertiesOfAnInvalidLabel():void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesGet("john.doe@example.com", -1);
     }
 
-    public function testGetThePropertiesOfAnInvalidLabelByName() {
+    public function testGetThePropertiesOfAnInvalidLabelByName():void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesGet("john.doe@example.com", [], true);
     }
 
-    public function testGetThePropertiesOfALabelOfTheWrongOwner() {
+    public function testGetThePropertiesOfALabelOfTheWrongOwner():void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesGet("john.doe@example.com", 3); // label ID 3 belongs to Jane
     }
 
-    public function testGetThePropertiesOfALabelWithoutAuthority() {
+    public function testGetThePropertiesOfALabelWithoutAuthority():void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->labelPropertiesGet("john.doe@example.com", 1);
     }
 
-    public function testMakeNoChangesToALabel() {
+    public function testMakeNoChangesToALabel():void {
         $this->assertFalse(Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, []));
     }
 
-    public function testRenameALabel() {
+    public function testRenameALabel():void {
         $this->assertTrue(Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, ['name' => "Curious"]));
         \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "labelPropertiesSet");
         $state = $this->primeExpectations($this->data, $this->checkLabels);
@@ -398,7 +398,7 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testRenameALabelByName() {
+    public function testRenameALabelByName():void {
         $this->assertTrue(Arsse::$db->labelPropertiesSet("john.doe@example.com", "Interesting", ['name' => "Curious"], true));
         \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "labelPropertiesSet");
         $state = $this->primeExpectations($this->data, $this->checkLabels);
@@ -406,53 +406,53 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testRenameALabelToTheEmptyString() {
+    public function testRenameALabelToTheEmptyString():void {
         $this->assertException("missing", "Db", "ExceptionInput");
         $this->assertTrue(Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, ['name' => ""]));
     }
 
-    public function testRenameALabelToWhitespaceOnly() {
+    public function testRenameALabelToWhitespaceOnly():void {
         $this->assertException("whitespace", "Db", "ExceptionInput");
         $this->assertTrue(Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, ['name' => "   "]));
     }
 
-    public function testRenameALabelToAnInvalidValue() {
+    public function testRenameALabelToAnInvalidValue():void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         $this->assertTrue(Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, ['name' => []]));
     }
 
-    public function testCauseALabelCollision() {
+    public function testCauseALabelCollision():void {
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, ['name' => "Fascinating"]);
     }
 
-    public function testSetThePropertiesOfAMissingLabel() {
+    public function testSetThePropertiesOfAMissingLabel():void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesSet("john.doe@example.com", 2112, ['name' => "Exciting"]);
     }
 
-    public function testSetThePropertiesOfAnInvalidLabel() {
+    public function testSetThePropertiesOfAnInvalidLabel():void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesSet("john.doe@example.com", -1, ['name' => "Exciting"]);
     }
 
-    public function testSetThePropertiesOfAnInvalidLabelByName() {
+    public function testSetThePropertiesOfAnInvalidLabelByName():void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesSet("john.doe@example.com", [], ['name' => "Exciting"], true);
     }
 
-    public function testSetThePropertiesOfALabelForTheWrongOwner() {
+    public function testSetThePropertiesOfALabelForTheWrongOwner():void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesSet("john.doe@example.com", 3, ['name' => "Exciting"]); // label ID 3 belongs to Jane
     }
 
-    public function testSetThePropertiesOfALabelWithoutAuthority() {
+    public function testSetThePropertiesOfALabelWithoutAuthority():void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, ['name' => "Exciting"]);
     }
 
-    public function testListLabelledArticles() {
+    public function testListLabelledArticles():void {
         $exp = [1,19];
         $this->assertEquals($exp, Arsse::$db->labelArticlesGet("john.doe@example.com", 1));
         $this->assertEquals($exp, Arsse::$db->labelArticlesGet("john.doe@example.com", "Interesting", true));
@@ -464,23 +464,23 @@ trait SeriesLabel {
         $this->assertEquals($exp, Arsse::$db->labelArticlesGet("john.doe@example.com", "Lonely", true));
     }
 
-    public function testListLabelledArticlesForAMissingLabel() {
+    public function testListLabelledArticlesForAMissingLabel():void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->labelArticlesGet("john.doe@example.com", 3);
     }
 
-    public function testListLabelledArticlesForAnInvalidLabel() {
+    public function testListLabelledArticlesForAnInvalidLabel():void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelArticlesGet("john.doe@example.com", -1);
     }
 
-    public function testListLabelledArticlesWithoutAuthority() {
+    public function testListLabelledArticlesWithoutAuthority():void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->labelArticlesGet("john.doe@example.com", 1);
     }
 
-    public function testApplyALabelToArticles() {
+    public function testApplyALabelToArticles():void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([2,5]));
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $state['arsse_label_members']['rows'][4][3] = 1;
@@ -488,14 +488,14 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testClearALabelFromArticles() {
+    public function testClearALabelFromArticles():void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([1,5]), Database::ASSOC_REMOVE);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $state['arsse_label_members']['rows'][0][3] = 0;
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testApplyALabelToArticlesByName() {
+    public function testApplyALabelToArticlesByName():void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", "Interesting", (new Context)->articles([2,5]), Database::ASSOC_ADD, true);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $state['arsse_label_members']['rows'][4][3] = 1;
@@ -503,26 +503,26 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testClearALabelFromArticlesByName() {
+    public function testClearALabelFromArticlesByName():void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", "Interesting", (new Context)->articles([1,5]), Database::ASSOC_REMOVE, true);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $state['arsse_label_members']['rows'][0][3] = 0;
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testApplyALabelToNoArticles() {
+    public function testApplyALabelToNoArticles():void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([10000]));
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testClearALabelFromNoArticles() {
+    public function testClearALabelFromNoArticles():void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([10000]), Database::ASSOC_REMOVE);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testReplaceArticlesOfALabel() {
+    public function testReplaceArticlesOfALabel():void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([2,5]), Database::ASSOC_REPLACE);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $state['arsse_label_members']['rows'][0][3] = 0;
@@ -532,7 +532,7 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testPurgeArticlesOfALabel() {
+    public function testPurgeArticlesOfALabel():void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([10000]), Database::ASSOC_REPLACE);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $state['arsse_label_members']['rows'][0][3] = 0;
@@ -540,7 +540,7 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testApplyALabelToArticlesWithoutAuthority() {
+    public function testApplyALabelToArticlesWithoutAuthority():void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([2,5]));

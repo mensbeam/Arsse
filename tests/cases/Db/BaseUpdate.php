@@ -58,43 +58,43 @@ class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
     }
 
-    public function testLoadMissingFile() {
+    public function testLoadMissingFile():void {
         $this->assertException("updateFileMissing", "Db");
         $this->drv->schemaUpdate(1, $this->base);
     }
 
-    public function testLoadUnreadableFile() {
+    public function testLoadUnreadableFile():void {
         touch($this->path."0.sql");
         chmod($this->path."0.sql", 0000);
         $this->assertException("updateFileUnreadable", "Db");
         $this->drv->schemaUpdate(1, $this->base);
     }
 
-    public function testLoadCorruptFile() {
+    public function testLoadCorruptFile():void {
         file_put_contents($this->path."0.sql", "This is a corrupt file");
         $this->assertException("updateFileError", "Db");
         $this->drv->schemaUpdate(1, $this->base);
     }
 
-    public function testLoadIncompleteFile() {
+    public function testLoadIncompleteFile():void {
         file_put_contents($this->path."0.sql", "create table arsse_meta(\"key\" varchar(255) primary key not null, value text);");
         $this->assertException("updateFileIncomplete", "Db");
         $this->drv->schemaUpdate(1, $this->base);
     }
 
-    public function testLoadEmptyFile() {
+    public function testLoadEmptyFile():void {
         file_put_contents($this->path."0.sql", "");
         $this->assertException("updateFileIncomplete", "Db");
         $this->drv->schemaUpdate(1, $this->base);
     }
 
-    public function testLoadCorrectFile() {
+    public function testLoadCorrectFile():void {
         file_put_contents($this->path."0.sql", static::$minimal1);
         $this->drv->schemaUpdate(1, $this->base);
         $this->assertEquals(1, $this->drv->schemaVersion());
     }
 
-    public function testPerformPartialUpdate() {
+    public function testPerformPartialUpdate():void {
         file_put_contents($this->path."0.sql", static::$minimal1);
         file_put_contents($this->path."1.sql", "UPDATE arsse_meta set value = '1' where \"key\" = 'schema_version'");
         $this->assertException("updateFileIncomplete", "Db");
@@ -106,31 +106,31 @@ class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function testPerformSequentialUpdate() {
+    public function testPerformSequentialUpdate():void {
         file_put_contents($this->path."0.sql", static::$minimal1);
         file_put_contents($this->path."1.sql", static::$minimal2);
         $this->drv->schemaUpdate(2, $this->base);
         $this->assertEquals(2, $this->drv->schemaVersion());
     }
 
-    public function testPerformActualUpdate() {
+    public function testPerformActualUpdate():void {
         $this->drv->schemaUpdate(Database::SCHEMA_VERSION);
         $this->assertEquals(Database::SCHEMA_VERSION, $this->drv->schemaVersion());
     }
 
-    public function testDeclineManualUpdate() {
+    public function testDeclineManualUpdate():void {
         // turn auto-updating off
         Arsse::$conf->dbAutoUpdate = false;
         $this->assertException("updateManual", "Db");
         $this->drv->schemaUpdate(Database::SCHEMA_VERSION);
     }
 
-    public function testDeclineDowngrade() {
+    public function testDeclineDowngrade():void {
         $this->assertException("updateTooNew", "Db");
         $this->drv->schemaUpdate(-1, $this->base);
     }
 
-    public function testPerformMaintenance() {
+    public function testPerformMaintenance():void {
         $this->drv->schemaUpdate(Database::SCHEMA_VERSION);
         $this->assertTrue($this->drv->maintenance());
     }

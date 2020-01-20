@@ -34,7 +34,7 @@ class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
         }
     }
 
-    public function testBindLongString() {
+    public function testBindLongString():void {
         // this test requires some set-up to be effective
         static::$interface->query("CREATE TABLE arsse_test(`value` longtext not null) character set utf8mb4");
         // we'll use an unrealistic packet size of 1 byte to trigger special handling for strings which are too long for the maximum packet size

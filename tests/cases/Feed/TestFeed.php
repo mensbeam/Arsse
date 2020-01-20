@@ -98,7 +98,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$db = \Phake::mock(Database::class);
     }
 
-    public function testParseAFeed() {
+    public function testParseAFeed():void {
         // test that various properties are set on the feed and on items
         $f = new Feed(null, $this->base."Parsing/Valid");
         $this->assertTrue(isset($f->lastModified));
@@ -141,37 +141,37 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($categories, $f->data->items[5]->categories);
     }
 
-    public function testDiscoverAFeedSuccessfully() {
+    public function testDiscoverAFeedSuccessfully():void {
         $this->assertSame($this->base."Discovery/Feed", Feed::discover($this->base."Discovery/Valid"));
         $this->assertSame($this->base."Discovery/Feed", Feed::discover($this->base."Discovery/Feed"));
     }
 
-    public function testDiscoverAFeedUnsuccessfully() {
+    public function testDiscoverAFeedUnsuccessfully():void {
         $this->assertException("subscriptionNotFound", "Feed");
         Feed::discover($this->base."Discovery/Invalid");
     }
 
-    public function testParseEntityExpansionAttack() {
+    public function testParseEntityExpansionAttack():void {
         $this->assertException("xmlEntity", "Feed");
         new Feed(null, $this->base."Parsing/XEEAttack");
     }
 
-    public function testParseExternalEntityAttack() {
+    public function testParseExternalEntityAttack():void {
         $this->assertException("xmlEntity", "Feed");
         new Feed(null, $this->base."Parsing/XXEAttack");
     }
 
-    public function testParseAnUnsupportedFeed() {
+    public function testParseAnUnsupportedFeed():void {
         $this->assertException("unsupportedFeedFormat", "Feed");
         new Feed(null, $this->base."Parsing/Unsupported");
     }
 
-    public function testParseAMalformedFeed() {
+    public function testParseAMalformedFeed():void {
         $this->assertException("malformedXml", "Feed");
         new Feed(null, $this->base."Parsing/Malformed");
     }
 
-    public function testDeduplicateFeedItems() {
+    public function testDeduplicateFeedItems():void {
         // duplicates with dates lead to the newest match being kept
         $t = strtotime("2002-05-19T15:21:36Z");
         $f = new Feed(null, $this->base."Deduplication/Permalink-Dates");
@@ -198,7 +198,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame("http://example.com/1", $f->newItems[0]->url);
     }
 
-    public function testHandleCacheHeadersOn304() {
+    public function testHandleCacheHeadersOn304():void {
         // upon 304, the client should re-use the caching header values it supplied the server
         $t = time();
         $e = "78567a";
@@ -216,7 +216,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($e, $f->resource->getETag());
     }
 
-    public function testHandleCacheHeadersOn200() {
+    public function testHandleCacheHeadersOn200():void {
         // these tests should trust the server-returned time, even in cases of obviously incorrect results
         $t = time() - 2000;
         $f = new Feed(null, $this->base."Caching/200Past");
@@ -244,7 +244,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertTime($t, $f->lastModified);
     }
 
-    public function testComputeNextFetchOnError() {
+    public function testComputeNextFetchOnError():void {
         for ($a = 0; $a < 100; $a++) {
             if ($a < 3) {
                 $this->assertTime("now + 5 minutes", Feed::nextFetchOnError($a));
@@ -257,7 +257,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provide304Timestamps */
-    public function testComputeNextFetchFrom304(string $t, string $exp) {
+    public function testComputeNextFetchFrom304(string $t, string $exp):void {
         $t = $t ? strtotime($t) : "";
         $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
         $exp = strtotime($exp);
@@ -279,13 +279,13 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    public function testComputeNextFetchFrom304WithoutDate() {
+    public function testComputeNextFetchFrom304WithoutDate():void {
         $f = new Feed(null, $this->base."NextFetch/NotModifiedEtag");
         $exp = strtotime("now + 3 hours");
         $this->assertTime($exp, $f->nextFetch);
     }
 
-    public function testComputeNextFetchFrom200() {
+    public function testComputeNextFetchFrom200():void {
         // if less than half an hour, check in 15 minutes
         $f = new Feed(null, $this->base."NextFetch/30m");
         $exp = strtotime("now + 15 minutes");
@@ -312,7 +312,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertTime($exp, $f->nextFetch);
     }
 
-    public function testMatchLatestArticles() {
+    public function testMatchLatestArticles():void {
         \Phake::when(Arsse::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Result($this->latest));
         $f = new Feed(1, $this->base."Matching/1");
         $this->assertCount(0, $f->newItems);
@@ -328,7 +328,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertCount(2, $f->changedItems);
     }
 
-    public function testMatchHistoricalArticles() {
+    public function testMatchHistoricalArticles():void {
         \Phake::when(Arsse::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Result($this->latest));
         \Phake::when(Arsse::$db)->feedMatchIds(1, $this->anything(), $this->anything(), $this->anything(), $this->anything())->thenReturn(new Result($this->others));
         $f = new Feed(1, $this->base."Matching/5");
@@ -336,7 +336,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertCount(0, $f->changedItems);
     }
 
-    public function testScrapeFullContent() {
+    public function testScrapeFullContent():void {
         // first make sure that the absence of scraping works as expected
         $f = new Feed(null, $this->base."Scraping/Feed");
         $exp = "<p>Partial content</p>";

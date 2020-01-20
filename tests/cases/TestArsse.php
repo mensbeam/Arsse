@@ -22,7 +22,7 @@ class TestArsse extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
     }
 
-    public function testLoadExistingData() {
+    public function testLoadExistingData():void {
         $lang = Arsse::$lang = \Phake::mock(Lang::class);
         $db = Arsse::$db = \Phake::mock(Database::class);
         $user = Arsse::$user = \Phake::mock(User::class);
@@ -36,7 +36,7 @@ class TestArsse extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify($lang)->set("test");
     }
 
-    public function testLoadNewData() {
+    public function testLoadNewData():void {
         if (!\JKingWeb\Arsse\Db\SQLite3\Driver::requirementsMet() && !\JKingWeb\Arsse\Db\SQLite3\PDODriver::requirementsMet()) {
             $this->markTestSkipped("A functional SQLite interface is required for this test");
         }

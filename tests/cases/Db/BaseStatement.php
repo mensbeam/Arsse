@@ -46,12 +46,12 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
     }
 
-    public function testConstructStatement() {
+    public function testConstructStatement():void {
         $this->assertInstanceOf(Statement::class, new $this->statementClass(...$this->makeStatement("SELECT ? as value")));
     }
 
     /** @dataProvider provideBindings */
-    public function testBindATypedValue($value, string $type, string $exp) {
+    public function testBindATypedValue($value, string $type, string $exp):void {
         if ($exp === "null") {
             $query = "SELECT (? is null) as pass";
         } else {
@@ -65,7 +65,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideBinaryBindings */
-    public function testHandleBinaryData($value, string $type, string $exp) {
+    public function testHandleBinaryData($value, string $type, string $exp):void {
         if (in_array(static::$implementation, ["PostgreSQL", "PDO PostgreSQL"])) {
             $this->markTestIncomplete("Correct handling of binary data with PostgreSQL is not currently implemented");
         }
@@ -81,13 +81,13 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertTrue((bool) $act);
     }
 
-    public function testBindMissingValue() {
+    public function testBindMissingValue():void {
         $s = new $this->statementClass(...$this->makeStatement("SELECT ? as value", ["int"]));
         $val = $s->runArray()->getRow()['value'];
         $this->assertSame(null, $val);
     }
 
-    public function testBindMultipleValues() {
+    public function testBindMultipleValues():void {
         $exp = [
             'one' => "A",
             'two' => "B",
@@ -97,7 +97,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, $val);
     }
 
-    public function testBindRecursively() {
+    public function testBindRecursively():void {
         $exp = [
             'one'   => "A",
             'two'   => "B",
@@ -109,20 +109,20 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, $val);
     }
 
-    public function testBindWithoutType() {
+    public function testBindWithoutType():void {
         $this->assertException("paramTypeMissing", "Db");
         $s = new $this->statementClass(...$this->makeStatement("SELECT ? as value", []));
         $s->runArray([1]);
     }
 
-    public function testViolateConstraint() {
+    public function testViolateConstraint():void {
         (new $this->statementClass(...$this->makeStatement("CREATE TABLE if not exists arsse_meta(\"key\" varchar(255) primary key not null, value text)")))->run();
         $s = new $this->statementClass(...$this->makeStatement("INSERT INTO arsse_meta(\"key\") values(?)", ["str"]));
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         $s->runArray([null]);
     }
 
-    public function testMismatchTypes() {
+    public function testMismatchTypes():void {
         (new $this->statementClass(...$this->makeStatement("CREATE TABLE if not exists arsse_feeds(id integer primary key not null, url text not null)")))->run();
         $s = new $this->statementClass(...$this->makeStatement("INSERT INTO arsse_feeds(id,url) values(?,?)", ["str", "str"]));
         $this->assertException("typeViolation", "Db", "ExceptionInput");
