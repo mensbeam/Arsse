@@ -4,8 +4,9 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1b9c1eee014ebc012eb65b77de64c784",
-    "packages": [
+    "content-hash": "af132f4314b7e577912ffde57af60aab",
+    "packages": [],
+    "packages-dev": [
         {
             "name": "clue/arguments",
             "version": "v2.0.0",
@@ -1811,7 +1812,6 @@
             "time": "2015-12-17T08:42:14+00:00"
         }
     ],
-    "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": [],

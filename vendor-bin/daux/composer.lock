@@ -4,8 +4,9 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6d944ffdc165b3e6f14e71a82b67a57d",
-    "packages": [
+    "content-hash": "c1f427736a854f73400b9e527724a254",
+    "packages": [],
+    "packages-dev": [
         {
             "name": "daux/daux.io",
             "version": "0.11.1",
@@ -1557,7 +1558,6 @@
             "time": "2018-03-20T13:36:33+00:00"
         }
     ],
-    "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": [],

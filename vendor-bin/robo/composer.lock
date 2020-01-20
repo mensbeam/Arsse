@@ -4,8 +4,9 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d95cf402fed434140db8ae87c3c8bf32",
-    "packages": [
+    "content-hash": "a4e3a5e9da2703b2a1acc144e941a4ac",
+    "packages": [],
+    "packages-dev": [
         {
             "name": "consolidation/annotated-command",
             "version": "2.12.0",
@@ -1737,7 +1738,6 @@
             "time": "2019-12-10T10:33:21+00:00"
         }
     ],
-    "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": [],
