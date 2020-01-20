@@ -15,11 +15,11 @@ use JKingWeb\Arsse\REST\NextcloudNews\V1_2 as NCN;
 use JKingWeb\Arsse\REST\TinyTinyRSS\API as TTRSS;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\Request;
-use Zend\Diactoros\Response;
-use Zend\Diactoros\ServerRequest;
-use Zend\Diactoros\Response\TextResponse;
-use Zend\Diactoros\Response\EmptyResponse;
+use Laminas\Diactoros\Request;
+use Laminas\Diactoros\Response;
+use Laminas\Diactoros\ServerRequest;
+use Laminas\Diactoros\Response\TextResponse;
+use Laminas\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST */
 class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {

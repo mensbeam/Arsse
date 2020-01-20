@@ -16,8 +16,8 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\NextcloudNews\V1_2;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\Response\JsonResponse as Response;
-use Zend\Diactoros\Response\EmptyResponse;
+use Laminas\Diactoros\Response\JsonResponse as Response;
+use Laminas\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST\NextcloudNews\V1_2<extended> */
 class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {

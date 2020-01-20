@@ -11,8 +11,8 @@ use JKingWeb\Arsse\Misc\URL;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\ServerRequestFactory;
-use Zend\Diactoros\Response\EmptyResponse;
+use Laminas\Diactoros\ServerRequestFactory;
+use Laminas\Diactoros\Response\EmptyResponse;
 
 class REST {
     const API_LIST = [

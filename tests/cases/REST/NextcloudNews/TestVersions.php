@@ -8,9 +8,9 @@ namespace JKingWeb\Arsse\TestCase\REST\NextcloudNews;
 
 use JKingWeb\Arsse\REST\NextcloudNews\Versions;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\ServerRequest;
-use Zend\Diactoros\Response\JsonResponse as Response;
-use Zend\Diactoros\Response\EmptyResponse;
+use Laminas\Diactoros\ServerRequest;
+use Laminas\Diactoros\Response\JsonResponse as Response;
+use Laminas\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST\NextcloudNews\Versions */
 class TestVersions extends \JKingWeb\Arsse\Test\AbstractTest {

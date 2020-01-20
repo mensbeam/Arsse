@@ -20,8 +20,8 @@ use JKingWeb\Arsse\Db\ResultEmpty;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\Response\JsonResponse as Response;
-use Zend\Diactoros\Response\EmptyResponse;
+use Laminas\Diactoros\Response\JsonResponse as Response;
+use Laminas\Diactoros\Response\EmptyResponse;
 
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     const LEVEL = 14;           // emulated API level

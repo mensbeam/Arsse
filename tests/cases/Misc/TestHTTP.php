@@ -13,9 +13,9 @@ use Psr\Http\Message\ResponseInterface;
 class TestHTTP extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideMediaTypes */
     public function testMatchMediaType(string $header, array $types, bool $exp) {
-        $msg = (new \Zend\Diactoros\Request)->withHeader("Content-Type", $header);
+        $msg = (new \Laminas\Diactoros\Request)->withHeader("Content-Type", $header);
         $this->assertSame($exp, HTTP::matchType($msg, ...$types));
-        $msg = (new \Zend\Diactoros\Response)->withHeader("Content-Type", $header);
+        $msg = (new \Laminas\Diactoros\Response)->withHeader("Content-Type", $header);
         $this->assertSame($exp, HTTP::matchType($msg, ...$types));
     }
 

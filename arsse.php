@@ -25,7 +25,7 @@ if (\PHP_SAPI === "cli") {
     $conf = file_exists(BASE."config.php") ? new Conf(BASE."config.php") : new Conf;
     Arsse::load($conf);
     // handle Web requests
-    $emitter = new \Zend\HttpHandlerRunner\Emitter\SapiEmitter;
+    $emitter = new \Laminas\HttpHandlerRunner\Emitter\SapiEmitter;
     $response = (new REST)->dispatch();
     $emitter->emit($response);
 }
