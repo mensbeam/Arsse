@@ -17,13 +17,19 @@
         }
 
     ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/JKingweb/picoFeed-1"
+        }
+    ],
     "require": {
         "php": "^7.1",
         "ext-intl": "*",
         "ext-json": "*",
         "ext-hash": "*",
         "ext-dom": "*",
-        "p3k/picofeed": "0.1.*",
+        "nicolus/picofeed": "dev-fixed",
         "hosteurope/password-generator": "1.*",
         "docopt/docopt": "1.*",
         "jkingweb/druuid": "3.*",

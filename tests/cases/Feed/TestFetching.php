@@ -28,7 +28,7 @@ class TestFetching extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testHandle400(): void {
-        $this->assertException("unsupportedFeedFormat", "Feed");
+        $this->assertException("transmissionError", "Feed");
         new Feed(null, $this->base."Fetching/Error?code=400");
     }
 
@@ -48,12 +48,12 @@ class TestFetching extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testHandle500(): void {
-        $this->assertException("unsupportedFeedFormat", "Feed");
+        $this->assertException("transmissionError", "Feed");
         new Feed(null, $this->base."Fetching/Error?code=500");
     }
 
     public function testHandleARedirectLoop(): void {
-        $this->assertException("maxRedirect", "Feed");
+        $this->assertException("tooManyRedirects", "Feed");
         new Feed(null, $this->base."Fetching/EndlessLoop?i=0");
     }
 

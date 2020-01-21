@@ -101,6 +101,8 @@ class Feed {
             return $client;
         } catch (PicoFeedException $e) {
             throw new Feed\Exception($url, $e);
+        } catch (\GuzzleHttp\Exception\GuzzleException $e) {
+            throw new Feed\Exception($url, $e);
         }
     }
 
@@ -118,6 +120,10 @@ class Feed {
             // work around a PicoFeed memory leak
             libxml_use_internal_errors(false);
         } catch (PicoFeedException $e) {
+            // work around a PicoFeed memory leak
+            libxml_use_internal_errors(false);
+            throw new Feed\Exception($this->resource->getUrl(), $e);
+        } catch (\GuzzleHttp\Exception\GuzzleException $e) {
             // work around a PicoFeed memory leak
             libxml_use_internal_errors(false);
             throw new Feed\Exception($this->resource->getUrl(), $e);
