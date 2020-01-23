@@ -77,7 +77,7 @@ abstract class AbstractException extends \Exception {
         "User/ExceptionSession.invalid"               => 10431,
         "Feed/Exception.invalidCertificate"           => 10501,
         "Feed/Exception.invalidUrl"                   => 10502,
-        "Feed/Exception.tooManyRedirects"             => 10503,
+        "Feed/Exception.maxRedirect"                  => 10503,
         "Feed/Exception.maxSize"                      => 10504,
         "Feed/Exception.timeout"                      => 10505,
         "Feed/Exception.forbidden"                    => 10506,

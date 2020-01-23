@@ -198,22 +198,24 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame("http://example.com/1", $f->newItems[0]->url);
     }
 
-    public function testHandleCacheHeadersOn304(): void {
-        // upon 304, the client should re-use the caching header values it supplied the server
-        $t = time();
+    /** @dataProvider provide304ResponseURLs */
+    public function testHandleCacheHeadersOn304(string $url): void {
+        // upon 304, the client should re-use the caching header values it supplied to the server
+        $t = Date::transform("2010-01-01T00:00:00Z", "unix");
         $e = "78567a";
-        $f = new Feed(null, $this->base."Caching/304Random", Date::transform($t, "http"), $e);
+        $f = new Feed(null, $this->base.$url."?t=$t&e=$e", Date::transform($t, "http"), $e);
         $this->assertTime($t, $f->lastModified);
         $this->assertSame($e, $f->resource->getETag());
-        $f = new Feed(null, $this->base."Caching/304ETagOnly", Date::transform($t, "http"), $e);
-        $this->assertTime($t, $f->lastModified);
-        $this->assertSame($e, $f->resource->getETag());
-        $f = new Feed(null, $this->base."Caching/304LastModOnly", Date::transform($t, "http"), $e);
-        $this->assertTime($t, $f->lastModified);
-        $this->assertSame($e, $f->resource->getETag());
-        $f = new Feed(null, $this->base."Caching/304None", Date::transform($t, "http"), $e);
-        $this->assertTime($t, $f->lastModified);
-        $this->assertSame($e, $f->resource->getETag());
+    }
+
+    public function provide304ResponseURLs() {
+        return [
+            'Control' =>                   ["Caching/304Conditional"],
+            'Random last-mod and ETag' =>  ["Caching/304Random"],
+            'ETag only' =>                 ["Caching/304ETagOnly"],
+            'Last-mod only' =>             ["Caching/304LastModOnly"],
+            'Neither last-mod nor ETag' => ["Caching/304None"],
+        ];
     }
 
     public function testHandleCacheHeadersOn200(): void {

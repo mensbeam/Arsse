@@ -50,7 +50,7 @@ class Feed {
         $this->resource = self::download($url, $lastModified, $etag, $username, $password);
         // format the HTTP Last-Modified date returned
         $lastMod = $this->resource->getLastModified();
-        if (strlen($lastMod)) {
+        if (strlen($lastMod ?? "")) {
             $this->lastModified = Date::normalize($lastMod, "http");
         }
         $this->modified = $this->resource->isModified();

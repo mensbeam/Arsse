@@ -53,11 +53,12 @@ class TestFetching extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testHandleARedirectLoop(): void {
-        $this->assertException("tooManyRedirects", "Feed");
+        $this->assertException("maxRedirect", "Feed");
         new Feed(null, $this->base."Fetching/EndlessLoop?i=0");
     }
 
     public function testHandleAnOverlyLargeFeed(): void {
+        $this->markTestIncomplete();
         Arsse::$conf->fetchSizeLimit = 512;
         $this->assertException("maxSize", "Feed");
         new Feed(null, $this->base."Fetching/TooLarge");
