@@ -6,6 +6,8 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test;
 
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
 use JKingWeb\Arsse\Exception;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Conf;
@@ -323,6 +325,18 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                 unset($expected[$found]);
             }
             $this->assertArraySubset($expected, [], false, "Expectations not in result set.");
+        }
+    }
+
+    /** Guzzle's exception classes require some fairly complicated construction; this abstracts it all away so that only message and code need be supplied  */
+    protected function mockGuzzleException(string $class, ?string $message = null, ?int $code = null, ?\Throwable $e = null): GuzzleException {
+        if (is_a($class, RequestException::class, true)) {
+            $req = \Phake::mock(RequestInterface::class);
+            $res = \Phake::mock(ResponseInterface::class);
+            \Phake::when($res)->getStatusCode->thenReturn($code ?? 0);
+            return new $class($message ?? "", $req, $res, $e);
+        } else {
+            return new $class($message ?? "", $code ?? 0, $e);
         }
     }
 }

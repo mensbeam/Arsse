@@ -58,7 +58,7 @@ class TestFetching extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testHandleAnOverlyLargeFeed(): void {
-        $this->markTestIncomplete();
+        $this->markTestIncomplete("The nicolus/picofeed library does not implement miniflux/picofeed's max-size setting");
         Arsse::$conf->fetchSizeLimit = 512;
         $this->assertException("maxSize", "Feed");
         new Feed(null, $this->base."Fetching/TooLarge");

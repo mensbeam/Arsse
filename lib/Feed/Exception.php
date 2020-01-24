@@ -29,10 +29,7 @@ class Exception extends \JKingWeb\Arsse\AbstractException {
                     $msgID = "tooManyRedirects";
                     break;
                 default:
-                    $c = $e->getCode();
-                    if ($c >= 400 && $c < 600) {
-                        $msgID = "transmissionError";
-                    }
+                    $msgID = "transmissionError";
             }
         } elseif ($e instanceof TooManyRedirectsException) {
             $msgID = "maxRedirect";
