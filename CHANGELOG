@@ -2,7 +2,8 @@ Version 0.8.3 (2020-??-??)
 ==========================
 
 Changes:
-- Officially require PHP 7.1 (effectively required since version 0.8.0)
+- Officially require PHP 7.1 (accidentally required since version 0.8.0)
+- Various internal changes pursuant to use of PHP 7.1
 
 Version 0.8.2 (2019-12-07)
 ==========================

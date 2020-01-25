@@ -8,6 +8,7 @@ The Arsse has the following requirements:
         - [sqlite3](http://php.net/manual/en/book.sqlite3.php) or [pdo_sqlite](http://php.net/manual/en/ref.pdo-sqlite.php) for SQLite databases
         - [pgsql](http://php.net/manual/en/book.pgsql.php) or [pdo_pgsql](http://php.net/manual/en/ref.pdo-pgsql.php) for PostgreSQL 10 or later databases
         - [mysqli](http://php.net/manual/en/book.mysqli.php) or [pdo_mysql](http://php.net/manual/en/ref.pdo-mysql.php) for MySQL/Percona 8.0.11 or later databases
+    - [curl](http://php.net/manual/en/book.curl.php) (optional)
 - Privileges either to create and run systemd services, or to run cron jobs
 
 Instructions for how to satisfy the PHP extension requirements for Debian systems are included in the next section.
