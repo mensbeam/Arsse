@@ -88,7 +88,7 @@ There is also a `test:quick` Robo task which excludes slower tests, and a `test:
 
 ### Test coverage
 
-Computing the coverage of tests can be done by running `./robo coverage`, after which an HTML-format coverage report will be written to `/tests/coverage/`. Either [Xdebug](https://xdebug.org) or [phpdbg](https://php.net/manual/en/book.phpdbg.php) is required for this. Xdebug is generally recommended as it is better maintained, though phpdbg is significantly faster. If using Xdebug, the extension need not be enabled globally; PHPUnit will enable it when needed.
+Computing the coverage of tests can be done by running `./robo coverage`, after which an HTML-format coverage report will be written to `/tests/coverage/`. Either [PCOV](https://github.com/krakjoe/pcov), [Xdebug](https://xdebug.org), or [phpdbg](https://php.net/manual/en/book.phpdbg.php) is required for this. PCOV is generally recommended as it is faster than Xdebug; phpdbg is faster still, but less accurate. If using either PCOV or Xdebug, the extension need not be enabled globally; PHPUnit will enable it when needed.
 
 ## Enforcing coding style
 

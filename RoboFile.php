@@ -53,9 +53,9 @@ class RoboFile extends \Robo\Tasks {
      * tests/coverage/. Additional reports may be produced by passing
      * arguments to this task as one would to PHPUnit.
      *
-     * Robo first tries to use phpdbg and will fall back to Xdebug if available.
-     * Because Xdebug slows down non-coverage tasks, however, phpdbg is highly
-     * recommended if debugging facilities are not otherwise needed.
+     * Robo first tries to use pcov and will fall back first to xdebug then
+     * phpdbg. Neither pcov nor xdebug need to be enabled to be used; they 
+     * only need to be present in the extension load path to be used.
     */
     public function coverage(array $args): Result {
         // run tests with code coverage reporting enabled
@@ -89,17 +89,30 @@ class RoboFile extends \Robo\Tasks {
     }
 
     protected function findCoverageEngine(): string {
-        if (IS_WIN) {
-            $dbg = dirname(\PHP_BINARY)."\\phpdbg.exe";
-            $dbg = file_exists($dbg) ? $dbg : "";
+        $dir = rtrim(ini_get("extension_dir"), "/").\DIRECTORY_SEPARATOR;
+        $ext = IS_WIN ? "dll" : (IS_MAC ? "dylib" : "so");
+        $php = escapeshellarg(\PHP_BINARY);
+        $code = escapeshellarg(BASE."lib");
+        if (extension_loaded("pcov")) {
+            return "$php -d pcov.enabled=1 -d pcov.directory=$code";
+        } elseif (extension_loaded("xdebug")) {
+            return $php;
+        } elseif (file_exists($dir."pcov.$ext")) {
+            return "$php -d extension=pcov.$ext -d pcov.enabled=1 -d pcov.directory=$code";
+        } elseif (file_exists($dir."pcov.$ext")) {
+            return "$php -d zend_extension=xdebug.$ext";
         } else {
-            $dbg = trim(`which phpdbg 2>/dev/null`);
-        }
-        if ($dbg) {
-            return escapeshellarg($dbg)." -qrr";
-        } else {
-            $ext = IS_WIN ? "dll" : (IS_MAC ? "dylib" : "so");
-            return escapeshellarg(\PHP_BINARY)." -d zend_extension=xdebug.$ext";
+            if (IS_WIN) {
+                $dbg = dirname(\PHP_BINARY)."\\phpdbg.exe";
+                $dbg = file_exists($dbg) ? $dbg : "";
+            } else {
+                $dbg = trim(`which phpdbg 2>/dev/null`);
+            }
+            if ($dbg) {
+                return escapeshellarg($dbg)." -qrr";
+            } else {
+                return $php;
+            }
         }
     }
 
