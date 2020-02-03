@@ -12,48 +12,32 @@ use GuzzleHttp\Exception\TooManyRedirectsException;
 use PicoFeed\PicoFeedException;
 
 class Exception extends \JKingWeb\Arsse\AbstractException {
+    const CURL_ERROR_MAP = [1=>"invalidUrl",3=>"invalidUrl",5=>"transmissionError","connectionFailed","connectionFailed","transmissionError","forbidden","unauthorized","transmissionError","transmissionError","transmissionError","transmissionError","connectionFailed","connectionFailed","transmissionError","transmissionError","transmissionError","transmissionError","transmissionError","invalidUrl","transmissionError","transmissionError","transmissionError","transmissionError",28=>"timeout","transmissionError","transmissionError","transmissionError","transmissionError","transmissionError",35=>"invalidCertificate","transmissionError","transmissionError","transmissionError","transmissionError",45=>"transmissionError","unauthorized","maxRedirect",52=>"transmissionError","invalidCertificate","invalidCertificate","transmissionError","transmissionError",58=>"invalidCertificate","invalidCertificate","invalidCertificate","transmissionError","invalidUrl","transmissionError","invalidCertificate","transmissionError","invalidCertificate","forbidden","invalidUrl","forbidden","transmissionError",73=>"transmissionError","transmissionError",77=>"invalidCertificate","invalidUrl",90=>"invalidCertificate","invalidCertificate","transmissionError",94=>"unauthorized","transmissionError","connectionFailed"];
+    const HTTP_ERROR_MAP = [401=>"unauthorized",403=>"forbidden",404=>"invalidUrl",408=>"timeout",410=>"invalidUrl",414=>"invalidUrl",451=>"invalidUrl"];
+
     public function __construct($url, \Throwable $e) {
         if ($e instanceof BadResponseException) {
-            switch ($e->getCode()) {
-                case 401:
-                    $msgID = "unauthorized";
-                    break;
-                case 403:
-                    $msgID = "forbidden";
-                    break;
-                case 404:
-                case 410:
-                    $msgID = "invalidUrl";
-                    break;
-                case 508:
-                    $msgID = "tooManyRedirects";
-                    break;
-                default:
-                    $msgID = "transmissionError";
-            }
+            $msgID = self::HTTP_ERROR_MAP[$e->getCode()] ?? "transmissionError";
         } elseif ($e instanceof TooManyRedirectsException) {
             $msgID = "maxRedirect";
         } elseif ($e instanceof GuzzleException) {
-            $m = $e->getMessage();
-            if (preg_match("/^Error creating resource:/", $m)) {
+            $msg = $e->getMessage();
+            if (preg_match("/^Error creating resource:/", $msg)) {
                 // PHP stream error; the class of error is ambiguous
-                $msgID = "transmissionError"; // @codeCoverageIgnore
-            } elseif (preg_match("/^cURL error 35:/", $m)) {
-                $msgID = "invalidCertificate";
-            } elseif (preg_match("/^cURL error 28:/", $m)) {
-                $msgID = "timeout";
+                $msgID = "transmissionError";
+            } elseif (preg_match("/^cURL error (\d+):/", $msg, $match)) {
+                $msgID = self::CURL_ERROR_MAP[(int) $match[1]] ?? "internalError";
             } else {
-                var_export($m);
-                exit;
+                $msgID = "internalError";
             }
         } elseif ($e instanceof PicoFeedException) {
             $className = get_class($e);
             // Convert the exception thrown by PicoFeed to the one to be thrown here.
             $msgID = preg_replace('/^PicoFeed\\\(?:Client|Parser|Reader)\\\([A-Za-z]+)Exception$/', '$1', $className);
             // If the message ID doesn't change then it's unknown.
-            $msgID = ($msgID !== $className) ? lcfirst($msgID) : '';
+            $msgID = ($msgID !== $className) ? lcfirst($msgID) : "internalError";
         } else {
-            $msgID = get_class($e);
+            $msgID = "internalError";
         }
         parent::__construct($msgID, ['url' => $url], $e);
     }
