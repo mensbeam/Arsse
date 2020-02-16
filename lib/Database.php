@@ -218,7 +218,7 @@ class Database {
     }
 
     /** Retrieve a value from the metadata table. If the key is not set null is returned */
-    public function metaGet(string $key) {
+    public function metaGet(string $key): ?string {
         return $this->db->prepare("SELECT value from arsse_meta where \"key\" = ?", "str")->run($key)->getValue();
     }
 
@@ -284,7 +284,7 @@ class Database {
     }
 
     /** Retrieves the hashed password of a user */
-    public function userPasswordGet(string $user) {
+    public function userPasswordGet(string $user): ?string {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         } elseif (!$this->userExists($user)) {
@@ -617,7 +617,7 @@ class Database {
     }
 
     /** Ensures an operation to rename and/or move a folder does not result in a conflict or circular dependence, and raises an exception otherwise */
-    protected function folderValidateMove(string $user, $id = null, $parent = null, string $name = null) {
+    protected function folderValidateMove(string $user, $id = null, $parent = null, string $name = null): ?int {
         $errData = ["action" => $this->caller(), "field" => "parent", 'id' => $parent];
         if (!$id) {
             // the root cannot be moved
@@ -932,7 +932,7 @@ class Database {
     }
 
     /** Returns the time at which any of a user's subscriptions (or a specific subscription) was last refreshed, as a DateTimeImmutable object */
-    public function subscriptionRefreshed(string $user, int $id = null) {
+    public function subscriptionRefreshed(string $user, int $id = null): ?\DateTimeImmutable {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }

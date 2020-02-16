@@ -40,7 +40,7 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
         return Arsse::$db->userExists($user);
     }
 
-    public function userAdd(string $user, string $password = null) {
+    public function userAdd(string $user, string $password = null): ?string {
         if (isset($password)) {
             // only add the user if the password is not null; the user manager will retry with a generated password if null is returned
             Arsse::$db->userAdd($user, $password);
@@ -56,7 +56,7 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
         return Arsse::$db->userList();
     }
 
-    public function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null) {
+    public function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null): ?string {
         // do nothing: the internal database is updated regardless of what the driver does (assuming it does not throw an exception)
         return $newPassword;
     }
@@ -71,7 +71,7 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
         }
     }
 
-    protected function userPasswordGet(string $user) {
+    protected function userPasswordGet(string $user): ?string {
         return Arsse::$db->userPasswordGet($user);
     }
 }

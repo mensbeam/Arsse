@@ -11,6 +11,20 @@ usually prudent:
   `composer install -o --no-dev`
 
 
+Upgrading from 0.8.2 to 0.8.3
+=============================
+
+- PHP 7.1 is now required
+- The following Composer dependencies have been added:
+    - nicolus/picofeed
+    - laminas/laminas-diactoros
+    - laminas/laminas-httphandlerrunner
+- The following Composer dependencies have been removed:
+    - p3k/picofeed
+    - zendframework/zend-diactoros
+    - zendframework/zend-httphandlerrunner
+    
+
 Upgrading from 0.8.1 to 0.8.2
 =============================
 

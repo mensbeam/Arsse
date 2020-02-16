@@ -6,13 +6,13 @@ use JKingWeb\Arsse\Db\ResultEmpty;
 
 /** @covers \JKingWeb\Arsse\Db\ResultEmpty<extended> */
 class TestResultEmpty extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function testGetChangeCountAndLastInsertId() {
+    public function testGetChangeCountAndLastInsertId(): void {
         $r = new ResultEmpty;
         $this->assertEquals(0, $r->changes());
         $this->assertEquals(0, $r->lastId());
     }
 
-    public function testIterateOverResults() {
+    public function testIterateOverResults(): void {
         $rows = [];
         foreach (new ResultEmpty as $index => $row) {
             $rows[$index] = $row['col'];
@@ -20,17 +20,17 @@ class TestResultEmpty extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertEquals([], $rows);
     }
 
-    public function testGetSingleValues() {
+    public function testGetSingleValues(): void {
         $test = new ResultEmpty;
         $this->assertSame(null, $test->getValue());
     }
 
-    public function testGetRows() {
+    public function testGetRows(): void {
         $test = new ResultEmpty;
         $this->assertSame(null, $test->getRow());
     }
 
-    public function testGetAllRows() {
+    public function testGetAllRows(): void {
         $test = new ResultEmpty;
         $rows = [];
         $this->assertEquals($rows, $test->getAll());

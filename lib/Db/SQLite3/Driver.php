@@ -69,13 +69,13 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         return class_exists("SQLite3");
     }
 
-    protected function makeConnection(string $file, string $key) {
+    protected function makeConnection(string $file, string $key): void {
         $this->db = new \SQLite3($file, \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE, $key);
         // enable exceptions
         $this->db->enableExceptions(true);
     }
 
-    protected function setTimeout(int $msec) {
+    protected function setTimeout(int $msec): void {
         $this->exec("PRAGMA busy_timeout = $msec");
     }
 

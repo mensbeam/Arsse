@@ -9,7 +9,7 @@ namespace JKingWeb\Arsse\TestCase\Database;
 use JKingWeb\Arsse\Arsse;
 
 trait SeriesFeed {
-    protected function setUpSeriesFeed() {
+    protected function setUpSeriesFeed(): void {
         // set up the test data
         $past  = gmdate("Y-m-d H:i:s", strtotime("now - 1 minute"));
         $future = gmdate("Y-m-d H:i:s", strtotime("now + 1 minute"));
@@ -160,15 +160,15 @@ trait SeriesFeed {
         ];
     }
 
-    protected function tearDownSeriesFeed() {
+    protected function tearDownSeriesFeed(): void {
         unset($this->data, $this->matches);
     }
 
-    public function testListLatestItems() {
+    public function testListLatestItems(): void {
         $this->assertResult($this->matches, Arsse::$db->feedMatchLatest(1, 2));
     }
 
-    public function testMatchItemsById() {
+    public function testMatchItemsById(): void {
         $this->assertResult($this->matches, Arsse::$db->feedMatchIds(1, ['804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180','db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41']));
         foreach ($this->matches as $m) {
             $exp = [$m];
@@ -179,7 +179,7 @@ trait SeriesFeed {
         $this->assertResult([['id' => 1]], Arsse::$db->feedMatchIds(1, ['e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda'])); // this ID appears in both feed 1 and feed 2; only one result should be returned
     }
 
-    public function testUpdateAFeed() {
+    public function testUpdateAFeed(): void {
         // update a valid feed with both new and changed items
         Arsse::$db->feedUpdate(1);
         $now = gmdate("Y-m-d H:i:s");
@@ -219,22 +219,22 @@ trait SeriesFeed {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testUpdateAMissingFeed() {
+    public function testUpdateAMissingFeed(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->feedUpdate(2112);
     }
 
-    public function testUpdateAnInvalidFeed() {
+    public function testUpdateAnInvalidFeed(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->feedUpdate(-1);
     }
 
-    public function testUpdateAFeedThrowingExceptions() {
+    public function testUpdateAFeedThrowingExceptions(): void {
         $this->assertException("invalidUrl", "Feed");
         Arsse::$db->feedUpdate(3, true);
     }
 
-    public function testUpdateAFeedWithEnclosuresAndCategories() {
+    public function testUpdateAFeedWithEnclosuresAndCategories(): void {
         Arsse::$db->feedUpdate(5);
         $state = $this->primeExpectations($this->data, [
             'arsse_enclosures' => ["url","type"],
@@ -254,7 +254,7 @@ trait SeriesFeed {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testListStaleFeeds() {
+    public function testListStaleFeeds(): void {
         $this->assertEquals([1,3,4], Arsse::$db->feedListStale());
         Arsse::$db->feedUpdate(3);
         Arsse::$db->feedUpdate(4);

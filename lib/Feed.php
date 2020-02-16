@@ -50,7 +50,7 @@ class Feed {
         $this->resource = self::download($url, $lastModified, $etag, $username, $password);
         // format the HTTP Last-Modified date returned
         $lastMod = $this->resource->getLastModified();
-        if (strlen($lastMod)) {
+        if (strlen($lastMod ?? "")) {
             $this->lastModified = Date::normalize($lastMod, "http");
         }
         $this->modified = $this->resource->isModified();
@@ -100,6 +100,8 @@ class Feed {
             $client->reader = $reader;
             return $client;
         } catch (PicoFeedException $e) {
+            throw new Feed\Exception($url, $e); // @codeCoverageIgnore
+        } catch (\GuzzleHttp\Exception\GuzzleException $e) {
             throw new Feed\Exception($url, $e);
         }
     }
@@ -115,12 +117,10 @@ class Feed {
             // Some feeds might use a different domain (eg: feedburner), so the site url is
             // used instead of the feed's url.
             $this->favicon = (new Favicon)->find($feed->siteUrl);
-            // work around a PicoFeed memory leak
-            libxml_use_internal_errors(false);
         } catch (PicoFeedException $e) {
-            // work around a PicoFeed memory leak
-            libxml_use_internal_errors(false);
             throw new Feed\Exception($this->resource->getUrl(), $e);
+        } catch (\GuzzleHttp\Exception\GuzzleException $e) { // @codeCoverageIgnore
+            throw new Feed\Exception($this->resource->getUrl(), $e); // @codeCoverageIgnore
         }
 
         // PicoFeed does not provide valid ids when there is no id element. Its solution
@@ -390,7 +390,7 @@ class Feed {
         return $offset;
     }
 
-    protected function computeLastModified() {
+    protected function computeLastModified(): ?\DateTimeImmutable {
         if (!$this->modified) {
             return $this->lastModified; // @codeCoverageIgnore
         }

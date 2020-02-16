@@ -21,11 +21,11 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(\JKingWeb\Arsse\Db\Transaction::class));
     }
 
-    public function testConstruct() {
+    public function testConstruct(): void {
         $this->assertInstanceOf(DriverInterface::class, new Driver);
     }
 
-    public function testFetchDriverName() {
+    public function testFetchDriverName(): void {
         $this->assertTrue(strlen(Driver::driverName()) > 0);
     }
 
@@ -33,7 +33,7 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
      * @dataProvider provideAuthentication
      * @group slow
     */
-    public function testAuthenticateAUser(bool $authorized, string $user, $password, bool $exp) {
+    public function testAuthenticateAUser(bool $authorized, string $user, $password, bool $exp): void {
         if ($authorized) {
             \Phake::when(Arsse::$db)->userPasswordGet("john.doe@example.com")->thenReturn('$2y$10$1zbqRJhxM8uUjeSBPp4IhO90xrqK0XjEh9Z16iIYEFRV4U.zeAFom'); // hash of "secret"
             \Phake::when(Arsse::$db)->userPasswordGet("jane.doe@example.com")->thenReturn('$2y$10$bK1ljXfTSyc2D.NYvT.Eq..OpehLRXVbglW.23ihVuyhgwJCd.7Im'); // hash of "superman"
@@ -74,12 +74,12 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    public function testAuthorizeAnAction() {
+    public function testAuthorizeAnAction(): void {
         \Phake::verifyNoFurtherInteraction(Arsse::$db);
         $this->assertTrue((new Driver)->authorize("someone", "something"));
     }
 
-    public function testListUsers() {
+    public function testListUsers(): void {
         $john = "john.doe@example.com";
         $jane = "jane.doe@example.com";
         \Phake::when(Arsse::$db)->userList->thenReturn([$john, $jane])->thenReturn([$jane, $john]);
@@ -89,7 +89,7 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db, \Phake::times(2))->userList;
     }
 
-    public function testCheckThatAUserExists() {
+    public function testCheckThatAUserExists(): void {
         $john = "john.doe@example.com";
         $jane = "jane.doe@example.com";
         \Phake::when(Arsse::$db)->userExists($john)->thenReturn(true);
@@ -101,7 +101,7 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->userExists($jane);
     }
 
-    public function testAddAUser() {
+    public function testAddAUser(): void {
         $john = "john.doe@example.com";
         \Phake::when(Arsse::$db)->userAdd->thenReturnCallback(function($user, $pass) {
             return $pass;
@@ -114,7 +114,7 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->userAdd;
     }
 
-    public function testRemoveAUser() {
+    public function testRemoveAUser(): void {
         $john = "john.doe@example.com";
         \Phake::when(Arsse::$db)->userRemove->thenReturn(true)->thenThrow(new \JKingWeb\Arsse\User\Exception("doesNotExist"));
         $driver = new Driver;
@@ -128,21 +128,21 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function testSetAPassword() {
+    public function testSetAPassword(): void {
         $john = "john.doe@example.com";
         \Phake::verifyNoFurtherInteraction(Arsse::$db);
         $this->assertSame("superman", (new Driver)->userPasswordSet($john, "superman"));
         $this->assertSame(null, (new Driver)->userPasswordSet($john, null));
     }
 
-    public function testUnsetAPassword() {
+    public function testUnsetAPassword(): void {
         $drv = \Phake::partialMock(Driver::class);
         \Phake::when($drv)->userExists->thenReturn(true);
         \Phake::verifyNoFurtherInteraction(Arsse::$db);
         $this->assertTrue($drv->userPasswordUnset("john.doe@example.com"));
     }
 
-    public function testUnsetAPasswordForAMssingUser() {
+    public function testUnsetAPasswordForAMssingUser(): void {
         $drv = \Phake::partialMock(Driver::class);
         \Phake::when($drv)->userExists->thenReturn(false);
         \Phake::verifyNoFurtherInteraction(Arsse::$db);

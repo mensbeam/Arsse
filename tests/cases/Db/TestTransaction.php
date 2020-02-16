@@ -23,7 +23,7 @@ class TestTransaction extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv = $drv;
     }
 
-    public function testManipulateTransactions() {
+    public function testManipulateTransactions(): void {
         $tr1 = new Transaction($this->drv);
         $tr2 = new Transaction($this->drv);
         \Phake::verify($this->drv, \Phake::times(2))->savepointCreate;
@@ -35,7 +35,7 @@ class TestTransaction extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify($this->drv)->savepointUndo(2);
     }
 
-    public function testCloseTransactions() {
+    public function testCloseTransactions(): void {
         $tr1 = new Transaction($this->drv);
         $tr2 = new Transaction($this->drv);
         $this->assertTrue($tr1->isPending());
@@ -50,7 +50,7 @@ class TestTransaction extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify($this->drv)->savepointUndo(2);
     }
 
-    public function testIgnoreRollbackErrors() {
+    public function testIgnoreRollbackErrors(): void {
         \Phake::when($this->drv)->savepointUndo->thenThrow(new Exception("savepointStale"));
         $tr1 = new Transaction($this->drv);
         $tr2 = new Transaction($this->drv);

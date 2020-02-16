@@ -160,7 +160,7 @@ USAGE_TEXT;
         return ($file === "-" ? null : $file) ?? $stdinOrStdout;
     }
 
-    public function dispatch(array $argv = null) {
+    public function dispatch(array $argv = null): int {
         $argv = $argv ?? $_SERVER['argv'];
         $argv0 = array_shift($argv);
         $args = \Docopt::handle($this->usage($argv0), [
@@ -210,7 +210,7 @@ USAGE_TEXT;
     } // @codeCoverageIgnore
 
     /** @codeCoverageIgnore */
-    protected function logError(string $msg) {
+    protected function logError(string $msg): void {
         fwrite(STDERR, $msg.\PHP_EOL);
     }
 

@@ -42,7 +42,7 @@ trait MySQL {
         return $tables;
     }
 
-    public static function dbTruncate($db, array $afterStatements = []) {
+    public static function dbTruncate($db, array $afterStatements = []): void {
         // rollback any pending transaction
         try {
             $db->query("UNLOCK TABLES; ROLLBACK");
@@ -63,7 +63,7 @@ trait MySQL {
         }
     }
 
-    public static function dbRaze($db, array $afterStatements = []) {
+    public static function dbRaze($db, array $afterStatements = []): void {
         // rollback any pending transaction
         try {
             $db->query("UNLOCK TABLES; ROLLBACK");

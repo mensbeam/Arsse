@@ -27,48 +27,49 @@ class TestFetching extends \JKingWeb\Arsse\Test\AbstractTest {
         self::setConf();
     }
 
-    public function testHandle400() {
-        $this->assertException("unsupportedFeedFormat", "Feed");
+    public function testHandle400(): void {
+        $this->assertException("transmissionError", "Feed");
         new Feed(null, $this->base."Fetching/Error?code=400");
     }
 
-    public function testHandle401() {
+    public function testHandle401(): void {
         $this->assertException("unauthorized", "Feed");
         new Feed(null, $this->base."Fetching/Error?code=401");
     }
 
-    public function testHandle403() {
+    public function testHandle403(): void {
         $this->assertException("forbidden", "Feed");
         new Feed(null, $this->base."Fetching/Error?code=403");
     }
 
-    public function testHandle404() {
+    public function testHandle404(): void {
         $this->assertException("invalidUrl", "Feed");
         new Feed(null, $this->base."Fetching/Error?code=404");
     }
 
-    public function testHandle500() {
-        $this->assertException("unsupportedFeedFormat", "Feed");
+    public function testHandle500(): void {
+        $this->assertException("transmissionError", "Feed");
         new Feed(null, $this->base."Fetching/Error?code=500");
     }
 
-    public function testHandleARedirectLoop() {
+    public function testHandleARedirectLoop(): void {
         $this->assertException("maxRedirect", "Feed");
         new Feed(null, $this->base."Fetching/EndlessLoop?i=0");
     }
 
-    public function testHandleAnOverlyLargeFeed() {
+    public function testHandleAnOverlyLargeFeed(): void {
+        $this->markTestIncomplete("The nicolus/picofeed library does not implement miniflux/picofeed's max-size setting");
         Arsse::$conf->fetchSizeLimit = 512;
         $this->assertException("maxSize", "Feed");
         new Feed(null, $this->base."Fetching/TooLarge");
     }
 
-    public function testHandleACertificateError() {
+    public function testHandleACertificateError(): void {
         $this->assertException("invalidCertificate", "Feed");
         new Feed(null, "https://localhost:8000/");
     }
 
-    public function testHandleATimeout() {
+    public function testHandleATimeout(): void {
         Arsse::$conf->fetchTimeout = 1;
         $this->assertException("timeout", "Feed");
         new Feed(null, $this->base."Fetching/Timeout");

@@ -14,9 +14,9 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Misc\HTTP;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\Response\JsonResponse;
-use Zend\Diactoros\Response\XmlResponse;
-use Zend\Diactoros\Response\EmptyResponse;
+use Laminas\Diactoros\Response\JsonResponse;
+use Laminas\Diactoros\Response\XmlResponse;
+use Laminas\Diactoros\Response\EmptyResponse;
 
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     const LEVEL = 3;
@@ -306,7 +306,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return $listSaved;
     }
 
-    protected function setUnread() {
+    protected function setUnread(): void {
         $lastUnread = Arsse::$db->articleList(Arsse::$user->id, (new Context)->limit(1), ["marked_date"], ["marked_date desc"])->getValue();
         if (!$lastUnread) {
             // there are no articles
@@ -322,7 +322,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         Arsse::$db->articleMark(Arsse::$user->id, ['read' => false], $c);
     }
 
-    protected function getRefreshTime() {
+    protected function getRefreshTime(): ?int {
         return Date::transform(Arsse::$db->subscriptionRefreshed(Arsse::$user->id), "unix");
     }
 

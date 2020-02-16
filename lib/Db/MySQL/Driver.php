@@ -158,7 +158,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         return class_exists("mysqli");
     }
 
-    protected function makeConnection(string $db, string $user, string $password, string $host, int $port, string $socket) {
+    protected function makeConnection(string $db, string $user, string $password, string $host, int $port, string $socket): void {
         $this->db = mysqli_init();
         $this->db->options(\MYSQLI_OPT_CONNECT_TIMEOUT, ceil(Arsse::$conf->dbTimeoutConnect));
         @$this->db->real_connect($host, $user, $password, $db, $port, $socket);

@@ -19,8 +19,8 @@ use JKingWeb\Arsse\REST\Exception404;
 use JKingWeb\Arsse\REST\Exception405;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\Response\JsonResponse as Response;
-use Zend\Diactoros\Response\EmptyResponse;
+use Laminas\Diactoros\Response\JsonResponse as Response;
+use Laminas\Diactoros\Response\EmptyResponse;
 
 class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     const REALM = "Nextcloud News API v1-2";

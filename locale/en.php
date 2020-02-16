@@ -144,6 +144,7 @@ return [
             other {Authenticated user is not authorized to perform the action "{action}" on behalf of {user}}
         }',
     'Exception.JKingWeb/Arsse/User/ExceptionSession.invalid'               => 'Session with ID {0} does not exist',
+    'Exception.JKingWeb/Arsse/Feed/Exception.internalError'                => 'Could not download feed "{url}" because of an internal error which is probably a bug',
     'Exception.JKingWeb/Arsse/Feed/Exception.invalidCertificate'           => 'Could not download feed "{url}" because its server is serving an invalid SSL certificate',
     'Exception.JKingWeb/Arsse/Feed/Exception.invalidUrl'                   => 'Feed URL "{url}" is invalid',
     'Exception.JKingWeb/Arsse/Feed/Exception.maxRedirect'                  => 'Could not download feed "{url}" because its server reached its maximum number of HTTP redirections',
@@ -151,6 +152,8 @@ return [
     'Exception.JKingWeb/Arsse/Feed/Exception.timeout'                      => 'Could not download feed "{url}" because its server timed out',
     'Exception.JKingWeb/Arsse/Feed/Exception.forbidden'                    => 'Could not download feed "{url}" because you do not have permission to access it',
     'Exception.JKingWeb/Arsse/Feed/Exception.unauthorized'                 => 'Could not download feed "{url}" because you provided insufficient or invalid credentials',
+    'Exception.JKingWeb/Arsse/Feed/Exception.transmissionError'            => 'Could not download feed "{url}" because of a network error',
+    'Exception.JKingWeb/Arsse/Feed/Exception.connectionFailed'             => 'Could not download feed "{url}" because its server could not be reached',
     'Exception.JKingWeb/Arsse/Feed/Exception.malformedXml'                 => 'Could not parse feed "{url}" because it is malformed',
     'Exception.JKingWeb/Arsse/Feed/Exception.xmlEntity'                    => 'Refused to parse feed "{url}" because it contains an XXE attack',
     'Exception.JKingWeb/Arsse/Feed/Exception.subscriptionNotFound'         => 'Unable to find a feed at location "{url}"',

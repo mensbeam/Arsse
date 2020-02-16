@@ -45,7 +45,7 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideFileExports */
-    public function testExportToAFile(string $file, string $user, bool $flat, $exp) {
+    public function testExportToAFile(string $file, string $user, bool $flat, $exp): void {
         $path = $this->path.$file;
         try {
             if ($exp instanceof \JKingWeb\Arsse\AbstractException) {
@@ -84,7 +84,7 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideFileImports */
-    public function testImportFromAFile(string $file, string $user, bool $flat, bool $replace, $exp) {
+    public function testImportFromAFile(string $file, string $user, bool $flat, bool $replace, $exp): void {
         $path = $this->path.$file;
         try {
             if ($exp instanceof \JKingWeb\Arsse\AbstractException) {

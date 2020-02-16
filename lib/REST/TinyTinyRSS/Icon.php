@@ -9,7 +9,7 @@ namespace JKingWeb\Arsse\REST\TinyTinyRSS;
 use JKingWeb\Arsse\Arsse;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\Response\EmptyResponse as Response;
+use Laminas\Diactoros\Response\EmptyResponse as Response;
 
 class Icon extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function __construct() {

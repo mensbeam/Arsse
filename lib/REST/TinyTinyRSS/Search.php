@@ -32,7 +32,7 @@ class Search {
         ""       => "searchTerms",
     ];
 
-    public static function parse(string $search, Context $context = null) {
+    public static function parse(string $search, Context $context = null): ?Context {
         // normalize the input
         $search = strtolower(trim(preg_replace("<\s+>", " ", $search)));
         // set initial state

@@ -15,10 +15,10 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\Fever\API;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\ServerRequest;
-use Zend\Diactoros\Response\JsonResponse;
-use Zend\Diactoros\Response\XmlResponse;
-use Zend\Diactoros\Response\EmptyResponse;
+use Laminas\Diactoros\ServerRequest;
+use Laminas\Diactoros\Response\JsonResponse;
+use Laminas\Diactoros\Response\XmlResponse;
+use Laminas\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST\Fever\API<extended> */
 class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -173,7 +173,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideTokenAuthenticationRequests */
-    public function testAuthenticateAUserToken(bool $httpRequired, bool $tokenEnforced, string $httpUser = null, array $dataPost, array $dataGet, ResponseInterface $exp) {
+    public function testAuthenticateAUserToken(bool $httpRequired, bool $tokenEnforced, string $httpUser = null, array $dataPost, array $dataGet, ResponseInterface $exp): void {
         self::setConf([
             'userHTTPAuthRequired' => $httpRequired,
             'userSessionEnforced' => $tokenEnforced,
@@ -244,7 +244,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    public function testListGroups() {
+    public function testListGroups(): void {
         \Phake::when(Arsse::$db)->tagList(Arsse::$user->id)->thenReturn(new Result([
             ['id' => 1, 'name' => "Fascinating", 'subscriptions' => 2],
             ['id' => 2, 'name' => "Interesting", 'subscriptions' => 2],
@@ -271,7 +271,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $act);
     }
 
-    public function testListFeeds() {
+    public function testListFeeds(): void {
         \Phake::when(Arsse::$db)->subscriptionList(Arsse::$user->id)->thenReturn(new Result([
             ['id' => 1, 'feed' => 5, 'title' => "Ankh-Morpork News", 'url' => "http://example.com/feed", 'source' => "http://example.com/", 'edited' => "2019-01-01 21:12:00", 'favicon' => "http://example.com/favicon.ico"],
             ['id' => 2, 'feed' => 9, 'title' => "Ook, Ook Eek Ook!", 'url' => "http://example.net/feed", 'source' => "http://example.net/", 'edited' => "1988-06-24 12:21:00", 'favicon' => ""],
@@ -299,7 +299,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideItemListContexts */
-    public function testListItems(string $url, Context $c, bool $desc) {
+    public function testListItems(string $url, Context $c, bool $desc): void {
         $fields = ["id", "subscription", "title", "author", "content", "url", "starred", "unread", "published_date"];
         $order = [$desc ? "id desc" : "id"];
         \Phake::when(Arsse::$db)->articleList->thenReturn(new Result($this->articles['db']));
@@ -329,7 +329,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    public function testListItemIds() {
+    public function testListItemIds(): void {
         $saved = [['id' => 1],['id' => 2],['id' => 3]];
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
         \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true))->thenReturn(new Result($saved));
@@ -344,7 +344,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->h->dispatch($this->req("api&unread_item_ids")));
     }
 
-    public function testListHotLinks() {
+    public function testListHotLinks(): void {
         // hot links are not actually implemented, so an empty array should be all we get
         $exp = new JsonResponse([
             'links' => []
@@ -353,7 +353,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideMarkingContexts */
-    public function testSetMarks(string $post, Context $c, array $data, array $out) {
+    public function testSetMarks(string $post, Context $c, array $data, array $out): void {
         $saved = [['id' => 1],['id' => 2],['id' => 3]];
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
         \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true))->thenReturn(new Result($saved));
@@ -371,7 +371,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideMarkingContexts */
-    public function testSetMarksWithQuery(string $get, Context $c, array $data, array $out) {
+    public function testSetMarksWithQuery(string $get, Context $c, array $data, array $out): void {
         $saved = [['id' => 1],['id' => 2],['id' => 3]];
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
         \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true))->thenReturn(new Result($saved));
@@ -427,7 +427,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideInvalidRequests */
-    public function testSendInvalidRequests(ServerRequest $req, ResponseInterface $exp) {
+    public function testSendInvalidRequests(ServerRequest $req, ResponseInterface $exp): void {
         $this->assertMessage($exp, $this->h->dispatch($req));
     }
 
@@ -439,7 +439,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    public function testMakeABaseQuery() {
+    public function testMakeABaseQuery(): void {
         $this->h = \Phake::partialMock(API::class);
         \Phake::when($this->h)->logIn->thenReturn(true);
         \Phake::when(Arsse::$db)->subscriptionRefreshed(Arsse::$user->id)->thenReturn(new \DateTimeImmutable("2000-01-01T00:00:00Z"));
@@ -467,7 +467,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $act);
     }
 
-    public function testUndoReadMarks() {
+    public function testUndoReadMarks(): void {
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
         $out = ['unread_item_ids' => "4,5,6"];
         \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->limit(1), ["marked_date"], ["marked_date desc"])->thenReturn(new Result([['marked_date' => "2000-01-01 00:00:00"]]));
@@ -483,7 +483,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->articleMark; // only called one time, above
     }
 
-    public function testOutputToXml() {
+    public function testOutputToXml(): void {
         \Phake::when($this->h)->processRequest->thenReturn([
             'items' => $this->articles['rest'],
             'total_items' => 1024,
@@ -493,13 +493,13 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $act);
     }
 
-    public function testListFeedIcons() {
+    public function testListFeedIcons(): void {
         $act = $this->h->dispatch($this->req("api&favicons"));
         $exp = new JsonResponse(['favicons' => [['id' => 0, 'data' => API::GENERIC_ICON_TYPE.",".API::GENERIC_ICON_DATA]]]);
         $this->assertMessage($exp, $act);
     }
 
-    public function testAnswerOptionsRequest() {
+    public function testAnswerOptionsRequest(): void {
         $act = $this->h->dispatch($this->req("api", "", "OPTIONS"));
         $exp = new EmptyResponse(204, [
             'Allow' => "POST",

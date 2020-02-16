@@ -20,7 +20,7 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
     }
     
     /** @dataProvider provideConnectionStrings */
-    public function testGenerateConnectionString(bool $pdo, string $user, string $pass, string $db, string $host, int $port, string $service, string $exp) {
+    public function testGenerateConnectionString(bool $pdo, string $user, string $pass, string $db, string $host, int $port, string $service, string $exp): void {
         self::setConf();
         $timeout = (string) ceil(Arsse::$conf->dbTimeoutConnect ?? 0);
         $postfix = "application_name='arsse' client_encoding='UTF8' connect_timeout='$timeout'";
@@ -62,7 +62,7 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    public function testFailToConnect() {
+    public function testFailToConnect(): void {
         // we cannnot distinguish between different connection failure modes
         self::setConf([
             'dbPostgreSQLHost' => "example.invalid",
