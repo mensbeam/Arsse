@@ -2,6 +2,7 @@
 <phpunit
     colors="true"
     bootstrap="bootstrap.php"
+    cacheTokens="true"
     convertErrorsToExceptions="false"
     convertNoticesToExceptions="false"
     convertWarningsToExceptions="false"
