@@ -15,7 +15,7 @@ trait SQLite3PDO {
     protected static $dbStatementClass = \JKingWeb\Arsse\Db\SQLite3\PDOStatement::class;
     protected static $dbDriverClass = \JKingWeb\Arsse\Db\SQLite3\PDODriver::class;
     protected static $stringOutput = true;
-    
+
     public static function dbInterface() {
         try {
             $d = new \PDO("sqlite:".Arsse::$conf->dbSQLite3File, "", "", [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
@@ -25,7 +25,7 @@ trait SQLite3PDO {
             return;
         }
     }
-    
+
     public static function dbTableList($db): array {
         return SQLite3::dbTableList($db);
     }

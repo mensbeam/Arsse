@@ -152,7 +152,7 @@ OPML_EXPORT_SERIALIZATION;
                 ['url' => "https://www.thestar.com/content/thestar/feed.RSSManagerServlet.topstories.rss", 'title' => "Toronto Star",   'folder' => 5, 'tags' => ["news", "canada", "toronto"]],
                 ['url' => "http://rss.canada.com/get/?F239",                                               'title' => "Ottawa Citizen", 'folder' => 6, 'tags' => ["news", "canada"]],
                 ['url' => "https://www.eurogamer.net/?format=rss",                                         'title' => "Eurogamer",      'folder' => 0, 'tags' => ["gaming", "frequent"]],
-            ], [1 =>
+            ], [1      =>
                 ['id' => 1, 'name' => "Photography", 'parent' => 0],
                 ['id' => 2, 'name' => "Science",     'parent' => 0],
                 ['id' => 3, 'name' => "Rocketry",    'parent' => 2],

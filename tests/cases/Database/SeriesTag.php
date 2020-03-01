@@ -44,7 +44,7 @@ trait SeriesTag {
                     [11,"http://example.com/11",""],
                     [12,"http://example.com/12",""],
                     [13,"http://example.com/13",""],
-                ]
+                ],
             ],
             'arsse_subscriptions' => [
                 'columns' => [
@@ -68,7 +68,7 @@ trait SeriesTag {
                     [12,"john.doe@example.net", 2,null],
                     [13,"john.doe@example.net", 3,null],
                     [14,"john.doe@example.net", 4,null],
-                ]
+                ],
             ],
             'arsse_tags' => [
                 'columns' => [
@@ -85,9 +85,9 @@ trait SeriesTag {
             ],
             'arsse_tag_members' => [
                 'columns' => [
-                    'tag' => "int",
+                    'tag'          => "int",
                     'subscription' => "int",
-                    'assigned' => "bool",
+                    'assigned'     => "bool",
                 ],
                 'rows' => [
                     [1,1,1],

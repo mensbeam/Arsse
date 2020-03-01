@@ -7,7 +7,6 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Misc;
 
 use JKingWeb\Arsse\Misc\HTTP;
-use Psr\Http\Message\ResponseInterface;
 
 /** @covers \JKingWeb\Arsse\Misc\HTTP */
 class TestHTTP extends \JKingWeb\Arsse\Test\AbstractTest {

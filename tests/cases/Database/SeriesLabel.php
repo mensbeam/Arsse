@@ -42,7 +42,7 @@ trait SeriesLabel {
                     [7, "john.doe@example.net", null, "Technology"],
                     [8, "john.doe@example.net",    7, "Software"],
                     [9, "john.doe@example.net", null, "Politics"],
-                ]
+                ],
             ],
             'arsse_feeds' => [
                 'columns' => [
@@ -63,7 +63,7 @@ trait SeriesLabel {
                     [11,"http://example.com/11"],
                     [12,"http://example.com/12"],
                     [13,"http://example.com/13"],
-                ]
+                ],
             ],
             'arsse_subscriptions' => [
                 'columns' => [
@@ -87,7 +87,7 @@ trait SeriesLabel {
                     [12,"john.doe@example.net",2,9],
                     [13,"john.doe@example.net",3,8],
                     [14,"john.doe@example.net",4,7],
-                ]
+                ],
             ],
             'arsse_articles' => [
                 'columns' => [
@@ -131,7 +131,7 @@ trait SeriesLabel {
                     [103,12,'http://example.com/3','Article title 3','','2000-01-03 00:00:00','2000-01-03 00:00:03','<p>Article content 3</p>','31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92','f74b06b240bd08abf4d3fdfc20dba6a6f6eb8b4f1a00e9a617efd63a87180a4b','b278380e984cefe63f0e412b88ffc9cb0befdfa06fdc00bace1da99a8daff406','ad622b31e739cd3a3f3c788991082cf4d2f7a8773773008e75f0572e58cd373b','2000-01-03 03:00:00'],
                     [104,12,'http://example.com/4','Article title 4','','2000-01-04 00:00:00','2000-01-04 00:00:04','<p>Article content 4</p>','804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180','f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8','f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3','ab2da63276acce431250b18d3d49b988b226a99c7faadf275c90b751aee05be9','2000-01-04 04:00:00'],
                     [105,13,'http://example.com/5','Article title 5','','2000-01-05 00:00:00','2000-01-05 00:00:05','<p>Article content 5</p>','db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41','d40da96e39eea6c55948ccbe9b3d275b5f931298288dbe953990c5f496097022','834240f84501b5341d375414718204ec421561f3825d34c22bf9182203e42900','43b970ac6ec5f8a9647b2c7e4eed8b1d7f62e154a95eed748b0294c1256764ba','2000-01-05 05:00:00'],
-                ]
+                ],
             ],
             'arsse_enclosures' => [
                 'columns' => [
@@ -145,7 +145,7 @@ trait SeriesLabel {
                     [104,"http://example.com/image","image/svg+xml"],
                     [105,"http://example.com/audio","audio/ogg"],
 
-                ]
+                ],
             ],
             'arsse_editions' => [
                 'columns' => [
@@ -184,7 +184,7 @@ trait SeriesLabel {
                     [205,105],
                     [305,105],
                     [1001,20],
-                ]
+                ],
             ],
             'arsse_marks' => [
                 'columns' => [
@@ -192,7 +192,7 @@ trait SeriesLabel {
                     'article'      => "int",
                     'read'         => "bool",
                     'starred'      => "bool",
-                    'modified'     => "datetime"
+                    'modified'     => "datetime",
                 ],
                 'rows' => [
                     [1,   1,1,1,'2000-01-01 00:00:00'],
@@ -207,7 +207,7 @@ trait SeriesLabel {
                     [11, 20,1,0,'2017-01-01 00:00:00'],
                     [12,  3,0,1,'2017-01-01 00:00:00'],
                     [12,  4,1,1,'2017-01-01 00:00:00'],
-                ]
+                ],
             ],
             'arsse_labels' => [
                 'columns' => [
@@ -224,10 +224,10 @@ trait SeriesLabel {
             ],
             'arsse_label_members' => [
                 'columns' => [
-                    'label' => "int",
-                    'article' => "int",
+                    'label'        => "int",
+                    'article'      => "int",
                     'subscription' => "int",
-                    'assigned' => "bool",
+                    'assigned'     => "bool",
                 ],
                 'rows' => [
                     [1, 1,1,1],

@@ -6,10 +6,6 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Db;
 
-use JKingWeb\Arsse\Db\Exception;
-use JKingWeb\Arsse\Db\ExceptionInput;
-use JKingWeb\Arsse\Db\ExceptionTimeout;
-
 trait SQLState {
     protected static function buildStandardException(string $code, string $msg): array {
         switch ($code) {

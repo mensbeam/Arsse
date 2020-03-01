@@ -163,7 +163,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $this->db->options(\MYSQLI_OPT_CONNECT_TIMEOUT, ceil(Arsse::$conf->dbTimeoutConnect));
         @$this->db->real_connect($host, $user, $password, $db, $port, $socket);
         if ($this->db->connect_errno) {
-            list($excClass, $excMsg, $excData) = $this->buildConnectionException($this->db->connect_errno, $this->db->connect_error);
+            [$excClass, $excMsg, $excData] = $this->buildConnectionException($this->db->connect_errno, $this->db->connect_error);
             throw new $excClass($excMsg, $excData);
         }
         $this->db->set_charset("utf8mb4");
@@ -184,11 +184,11 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         do {
             if ($this->db->sqlstate !== "00000") {
                 if ($this->db->sqlstate === "HY000") {
-                    list($excClass, $excMsg, $excData) = $this->buildEngineException($this->db->errno, $this->db->error);
+                    [$excClass, $excMsg, $excData] = $this->buildEngineException($this->db->errno, $this->db->error);
                 } else {
-                    list($excClass, $excMsg, $excData) = $this->buildStandardException($this->db->sqlstate, $this->db->error);
+                    [$excClass, $excMsg, $excData] = $this->buildStandardException($this->db->sqlstate, $this->db->error);
                 }
-                $e =  new $excClass($excMsg, $excData, $e);
+                $e = new $excClass($excMsg, $excData, $e);
             }
             $r = $this->db->store_result();
         } while ($this->db->more_results() && $this->db->next_result());

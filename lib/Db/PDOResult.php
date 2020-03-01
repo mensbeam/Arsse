@@ -45,6 +45,6 @@ class PDOResult extends AbstractResult {
 
     public function valid() {
         $this->cur = $this->set->fetch(\PDO::FETCH_ASSOC);
-        return ($this->cur !== false);
+        return $this->cur !== false;
     }
 }

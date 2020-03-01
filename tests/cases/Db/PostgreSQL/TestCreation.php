@@ -18,7 +18,7 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
             $this->markTestSkipped("PostgreSQL extension not loaded");
         }
     }
-    
+
     /** @dataProvider provideConnectionStrings */
     public function testGenerateConnectionString(bool $pdo, string $user, string $pass, string $db, string $host, int $port, string $service, string $exp): void {
         self::setConf();

@@ -38,7 +38,7 @@ trait SeriesSubscription {
                     [4, "jane.doe@example.com", null, "Politics"],
                     [5, "john.doe@example.com", null, "Politics"],
                     [6, "john.doe@example.com",    2, "Politics"],
-                ]
+                ],
             ],
             'arsse_feeds' => [
                 'columns' => [
@@ -51,7 +51,7 @@ trait SeriesSubscription {
                     'next_fetch' => "datetime",
                     'favicon'    => "str",
                 ],
-                'rows' => [] // filled in the series setup
+                'rows' => [], // filled in the series setup
             ],
             'arsse_subscriptions' => [
                 'columns' => [
@@ -67,7 +67,7 @@ trait SeriesSubscription {
                     [1,"john.doe@example.com",2,null,null,1,2],
                     [2,"jane.doe@example.com",2,null,null,0,0],
                     [3,"john.doe@example.com",3,"Ook",2,0,1],
-                ]
+                ],
             ],
             'arsse_tags' => [
                 'columns' => [
@@ -84,9 +84,9 @@ trait SeriesSubscription {
             ],
             'arsse_tag_members' => [
                 'columns' => [
-                    'tag' => "int",
+                    'tag'          => "int",
                     'subscription' => "int",
-                    'assigned' => "bool",
+                    'assigned'     => "bool",
                 ],
                 'rows' => [
                     [1,1,1],
@@ -113,7 +113,7 @@ trait SeriesSubscription {
                     [6,3,"","",""],
                     [7,3,"","",""],
                     [8,3,"","",""],
-                ]
+                ],
             ],
             'arsse_marks' => [
                 'columns' => [
@@ -131,7 +131,7 @@ trait SeriesSubscription {
                     [1,1,1,0],
                     [7,3,1,0],
                     [8,3,0,0],
-                ]
+                ],
             ],
         ];
         $this->data['arsse_feeds']['rows'] = [
@@ -379,9 +379,9 @@ trait SeriesSubscription {
 
     public function testSetThePropertiesOfASubscription(): void {
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, [
-            'title' => "Ook Ook",
-            'folder' => 3,
-            'pinned' => false,
+            'title'      => "Ook Ook",
+            'folder'     => 3,
+            'pinned'     => false,
             'order_type' => 0,
         ]);
         \Phake::verify(Arsse::$user)->authorize($this->user, "subscriptionPropertiesSet");

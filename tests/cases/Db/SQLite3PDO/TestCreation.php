@@ -29,8 +29,8 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->files = [
             // cannot create files
             'Cmain' => [],
-            'Cshm' => [
-                'arsse.db' => "",
+            'Cshm'  => [
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
             ],
             'Cwal' => [
@@ -38,55 +38,55 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
             ],
             // cannot write to files
             'Wmain' => [
-                'arsse.db' => "",
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
                 'arsse.db-shm' => "",
             ],
             'Wwal' => [
-                'arsse.db' => "",
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
                 'arsse.db-shm' => "",
             ],
             'Wshm' => [
-                'arsse.db' => "",
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
                 'arsse.db-shm' => "",
             ],
             // cannot read from files
             'Rmain' => [
-                'arsse.db' => "",
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
                 'arsse.db-shm' => "",
             ],
             'Rwal' => [
-                'arsse.db' => "",
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
                 'arsse.db-shm' => "",
             ],
             'Rshm' => [
-                'arsse.db' => "",
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
                 'arsse.db-shm' => "",
             ],
             // can neither read from or write to files
             'Amain' => [
-                'arsse.db' => "",
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
                 'arsse.db-shm' => "",
             ],
             'Awal' => [
-                'arsse.db' => "",
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
                 'arsse.db-shm' => "",
             ],
             'Ashm' => [
-                'arsse.db' => "",
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
                 'arsse.db-shm' => "",
             ],
             // non-filesystem errors
             'corrupt' => [
-                'arsse.db' => "",
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
                 'arsse.db-shm' => "",
             ],

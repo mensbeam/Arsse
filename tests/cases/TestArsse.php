@@ -11,7 +11,6 @@ use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\Lang;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
-use JKingWeb\Arsse\Service;
 
 /** @covers \JKingWeb\Arsse\Arsse */
 class TestArsse extends \JKingWeb\Arsse\Test\AbstractTest {

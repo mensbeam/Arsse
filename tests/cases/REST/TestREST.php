@@ -199,53 +199,53 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideCorsHeaders(): iterable {
         return [
             ["GET", ['Origin' => "null"], [], [
-                'Access-Control-Allow-Origin' => "null",
+                'Access-Control-Allow-Origin'      => "null",
                 'Access-Control-Allow-Credentials' => "true",
-                'Vary' => "Origin",
+                'Vary'                             => "Origin",
             ]],
             ["GET", ['Origin' => "http://example"], [], [
-                'Access-Control-Allow-Origin' => "http://example",
+                'Access-Control-Allow-Origin'      => "http://example",
                 'Access-Control-Allow-Credentials' => "true",
-                'Vary' => "Origin",
+                'Vary'                             => "Origin",
             ]],
             ["GET", ['Origin' => "http://example"], ['Content-Type' => "text/plain; charset=utf-8"], [
-                'Access-Control-Allow-Origin' => "http://example",
+                'Access-Control-Allow-Origin'      => "http://example",
                 'Access-Control-Allow-Credentials' => "true",
-                'Vary' => "Origin",
-                'Content-Type' => "text/plain; charset=utf-8",
+                'Vary'                             => "Origin",
+                'Content-Type'                     => "text/plain; charset=utf-8",
             ]],
             ["GET", ['Origin' => "http://example"], ['Vary' => "Content-Type"], [
-                'Access-Control-Allow-Origin' => "http://example",
+                'Access-Control-Allow-Origin'      => "http://example",
                 'Access-Control-Allow-Credentials' => "true",
-                'Vary' => ["Content-Type", "Origin"],
+                'Vary'                             => ["Content-Type", "Origin"],
             ]],
             ["OPTIONS", ['Origin' => "http://example"], [], [
-                'Access-Control-Allow-Origin' => "http://example",
+                'Access-Control-Allow-Origin'      => "http://example",
                 'Access-Control-Allow-Credentials' => "true",
-                'Access-Control-Max-Age' => (string) (60 *60 *24),
-                'Vary' => "Origin",
+                'Access-Control-Max-Age'           => (string) (60 * 60 * 24),
+                'Vary'                             => "Origin",
             ]],
             ["OPTIONS", ['Origin' => "http://example"], ['Allow' => "GET, PUT, HEAD, OPTIONS"], [
-                'Allow' => "GET, PUT, HEAD, OPTIONS",
-                'Access-Control-Allow-Origin' => "http://example",
+                'Allow'                            => "GET, PUT, HEAD, OPTIONS",
+                'Access-Control-Allow-Origin'      => "http://example",
                 'Access-Control-Allow-Credentials' => "true",
-                'Access-Control-Allow-Methods' => "GET, PUT, HEAD, OPTIONS",
-                'Access-Control-Max-Age' => (string) (60 *60 *24),
-                'Vary' => "Origin",
+                'Access-Control-Allow-Methods'     => "GET, PUT, HEAD, OPTIONS",
+                'Access-Control-Max-Age'           => (string) (60 * 60 * 24),
+                'Vary'                             => "Origin",
             ]],
             ["OPTIONS", ['Origin' => "http://example", 'Access-Control-Request-Headers' => "Content-Type, If-None-Match"], [], [
-                'Access-Control-Allow-Origin' => "http://example",
+                'Access-Control-Allow-Origin'      => "http://example",
                 'Access-Control-Allow-Credentials' => "true",
-                'Access-Control-Allow-Headers' => "Content-Type, If-None-Match",
-                'Access-Control-Max-Age' => (string) (60 *60 *24),
-                'Vary' => "Origin",
+                'Access-Control-Allow-Headers'     => "Content-Type, If-None-Match",
+                'Access-Control-Max-Age'           => (string) (60 * 60 * 24),
+                'Vary'                             => "Origin",
             ]],
             ["OPTIONS", ['Origin' => "http://example", 'Access-Control-Request-Headers' => ["Content-Type", "If-None-Match"]], [], [
-                'Access-Control-Allow-Origin' => "http://example",
+                'Access-Control-Allow-Origin'      => "http://example",
                 'Access-Control-Allow-Credentials' => "true",
-                'Access-Control-Allow-Headers' => "Content-Type,If-None-Match",
-                'Access-Control-Max-Age' => (string) (60 *60 *24),
-                'Vary' => "Origin",
+                'Access-Control-Allow-Headers'     => "Content-Type,If-None-Match",
+                'Access-Control-Max-Age'           => (string) (60 * 60 * 24),
+                'Vary'                             => "Origin",
             ]],
         ];
     }
@@ -295,7 +295,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideMockRequests */
-    public function testDispatchRequests(ServerRequest $req, string $method, bool $called, string $class = "", string $target =""): void {
+    public function testDispatchRequests(ServerRequest $req, string $method, bool $called, string $class = "", string $target = ""): void {
         $r = \Phake::partialMock(REST::class);
         \Phake::when($r)->normalizeResponse->thenReturnCallback(function($res) {
             return $res;

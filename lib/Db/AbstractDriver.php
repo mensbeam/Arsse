@@ -40,9 +40,9 @@ abstract class AbstractDriver implements Driver {
                     throw new Exception("updateFileUnreadable", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]);
                 }
                 $sql = @file_get_contents($file);
-                if ($sql===false) {
+                if ($sql === false) {
                     throw new Exception("updateFileUnusable", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]); // @codeCoverageIgnore
-                } elseif ($sql==="") {
+                } elseif ($sql === "") {
                     throw new Exception("updateFileIncomplete", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]);
                 }
                 try {
@@ -50,7 +50,7 @@ abstract class AbstractDriver implements Driver {
                 } catch (\Throwable $e) {
                     throw new Exception("updateFileError", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a, 'message' => $e->getMessage()]);
                 }
-                if ($this->schemaVersion() != $a+1) {
+                if ($this->schemaVersion() != $a + 1) {
                     throw new Exception("updateFileIncomplete", ['file' => $file, 'driver_name' => $this->driverName(), 'current' => $a]);
                 }
             } catch (\Throwable $e) {

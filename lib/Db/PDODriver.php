@@ -14,7 +14,7 @@ trait PDODriver {
             $this->db->exec($query);
             return true;
         } catch (\PDOException $e) {
-            list($excClass, $excMsg, $excData) = $this->buildPDOException();
+            [$excClass, $excMsg, $excData] = $this->buildPDOException();
             throw new $excClass($excMsg, $excData);
         }
     }
@@ -23,7 +23,7 @@ trait PDODriver {
         try {
             $r = $this->db->query($query);
         } catch (\PDOException $e) {
-            list($excClass, $excMsg, $excData) = $this->buildPDOException();
+            [$excClass, $excMsg, $excData] = $this->buildPDOException();
             throw new $excClass($excMsg, $excData);
         }
         return new PDOResult($this->db, $r);

@@ -7,7 +7,6 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Misc;
 
 use JKingWeb\Arsse\Misc\Query;
-use JKingWeb\Arsse\Misc\ValueInfo;
 
 /** @covers \JKingWeb\Arsse\Misc\Query */
 class TestQuery extends \JKingWeb\Arsse\Test\AbstractTest {

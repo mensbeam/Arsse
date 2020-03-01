@@ -16,7 +16,7 @@ trait PostgreSQL {
     protected static $dbStatementClass = \JKingWeb\Arsse\Db\PostgreSQL\Statement::class;
     protected static $dbDriverClass = \JKingWeb\Arsse\Db\PostgreSQL\Driver::class;
     protected static $stringOutput = true;
-    
+
     public static function dbInterface() {
         $connString = \JKingWeb\Arsse\Db\PostgreSQL\Driver::makeConnectionString(false, Arsse::$conf->dbPostgreSQLUser, Arsse::$conf->dbPostgreSQLPass, Arsse::$conf->dbPostgreSQLDb, Arsse::$conf->dbPostgreSQLHost, Arsse::$conf->dbPostgreSQLPort, "");
         if ($d = @pg_connect($connString, \PGSQL_CONNECT_FORCE_NEW)) {
@@ -38,7 +38,7 @@ trait PostgreSQL {
             pg_query($db, $q);
         }
     }
-    
+
     public static function dbTableList($db): array {
         $listObjects = "SELECT table_name as name, 'TABLE' as type from information_schema.tables where table_schema = current_schema() and table_name like 'arsse_%' union SELECT collation_name as name, 'COLLATION' as type from information_schema.collations where collation_schema = current_schema()";
         if ($db instanceof Driver) {

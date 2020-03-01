@@ -215,7 +215,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return $feed;
     }
 
-    protected function articleTranslate(array $article) :array {
+    protected function articleTranslate(array $article): array {
         // map fields to proper names
         $article = $this->fieldMapNames($article, [
             'id'            => "edition",
@@ -616,7 +616,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $c = new Context;
         $c->article((int) $url[2]);
         // determine whether to mark read or unread
-        $set = ($url[3] ==="star");
+        $set = ($url[3] === "star");
         try {
             Arsse::$db->articleMark(Arsse::$user->id, ['starred' => $set], $c);
         } catch (ExceptionInput $e) {
@@ -629,7 +629,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     // mark an array of articles as read
     protected function articleMarkReadMulti(array $url, array $data): ResponseInterface {
         // determine whether to mark read or unread
-        $set = ($url[1] ==="read");
+        $set = ($url[1] === "read");
         // initialize the matching context
         $c = new Context;
         $c->editions($data['items'] ?? []);
@@ -643,7 +643,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     // mark an array of articles as starred
     protected function articleMarkStarredMulti(array $url, array $data): ResponseInterface {
         // determine whether to mark starred or unstarred
-        $set = ($url[1] ==="star");
+        $set = ($url[1] === "star");
         // initialize the matching context
         $c = new Context;
         $c->articles(array_column($data['items'] ?? [], "guidHash"));
@@ -656,10 +656,10 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function userStatus(array $url, array $data): ResponseInterface {
         return new Response([
-            'userId' => (string) Arsse::$user->id,
-            'displayName' => (string) Arsse::$user->id,
+            'userId'             => (string) Arsse::$user->id,
+            'displayName'        => (string) Arsse::$user->id,
             'lastLoginTimestamp' => time(),
-            'avatar' => null,
+            'avatar'             => null,
         ]);
     }
 
@@ -676,19 +676,19 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     // return the server version
     protected function serverVersion(array $url, array $data): ResponseInterface {
         return new Response([
-            'version' => self::VERSION,
+            'version'       => self::VERSION,
             'arsse_version' => Arsse::VERSION,
         ]);
     }
 
     protected function serverStatus(array $url, array $data): ResponseInterface {
         return new Response([
-            'version' => self::VERSION,
+            'version'       => self::VERSION,
             'arsse_version' => Arsse::VERSION,
-            'warnings' => [
+            'warnings'      => [
                 'improperlyConfiguredCron' => !Service::hasCheckedIn(),
-                'incorrectDbCharset' => !Arsse::$db->driverCharsetAcceptable(),
-            ]
+                'incorrectDbCharset'       => !Arsse::$db->driverCharsetAcceptable(),
+            ],
         ]);
     }
 }

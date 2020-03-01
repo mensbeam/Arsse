@@ -37,7 +37,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     protected function prepare(string $query): bool {
         $this->st = $this->db->prepare($query);
         if (!$this->st) { // @codeCoverageIgnore
-            list($excClass, $excMsg, $excData) = $this->buildEngineException($this->db->errno, $this->db->error); // @codeCoverageIgnore
+            [$excClass, $excMsg, $excData] = $this->buildEngineException($this->db->errno, $this->db->error); // @codeCoverageIgnore
             throw new $excClass($excMsg, $excData); // @codeCoverageIgnore
         }
         return true;
@@ -76,9 +76,9 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         // check for errors
         if ($this->st->sqlstate !== "00000") {
             if ($this->st->sqlstate === "HY000") {
-                list($excClass, $excMsg, $excData) = $this->buildEngineException($this->st->errno, $this->st->error);
+                [$excClass, $excMsg, $excData] = $this->buildEngineException($this->st->errno, $this->st->error);
             } else {
-                list($excClass, $excMsg, $excData) = $this->buildStandardException($this->st->sqlstate, $this->st->error);
+                [$excClass, $excMsg, $excData] = $this->buildStandardException($this->st->sqlstate, $this->st->error);
             }
             throw new $excClass($excMsg, $excData);
         }

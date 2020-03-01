@@ -77,7 +77,7 @@ class URL {
             $c = $part[$pos];
             if ($c === "%") {
                 // the % character signals an encoded character...
-                $d = substr($part, $pos+1, 2);
+                $d = substr($part, $pos + 1, 2);
                 if (!preg_match("/^[0-9a-fA-F]{2}$/", $d)) {
                     // unless there are fewer than two characters left in the string or the two characters are not hex digits
                     $d = ord($c);

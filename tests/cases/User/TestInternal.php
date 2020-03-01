@@ -32,7 +32,7 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
     /**
      * @dataProvider provideAuthentication
      * @group slow
-    */
+     */
     public function testAuthenticateAUser(bool $authorized, string $user, $password, bool $exp): void {
         if ($authorized) {
             \Phake::when(Arsse::$db)->userPasswordGet("john.doe@example.com")->thenReturn('$2y$10$1zbqRJhxM8uUjeSBPp4IhO90xrqK0XjEh9Z16iIYEFRV4U.zeAFom'); // hash of "secret"

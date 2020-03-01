@@ -98,7 +98,6 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         }
     }
 
-
     public static function driverName(): string {
         return Arsse::$lang->msg("Driver.Db.SQLite3.Name");
     }
@@ -146,7 +145,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         try {
             return (bool) $this->db->exec($query);
         } catch (\Exception $e) {
-            list($excClass, $excMsg, $excData) = $this->buildException();
+            [$excClass, $excMsg, $excData] = $this->buildException();
             throw new $excClass($excMsg, $excData);
         }
     }
@@ -155,7 +154,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         try {
             $r = $this->db->query($query);
         } catch (\Exception $e) {
-            list($excClass, $excMsg, $excData) = $this->buildException();
+            [$excClass, $excMsg, $excData] = $this->buildException();
             throw new $excClass($excMsg, $excData);
         }
         $changes = $this->db->changes();

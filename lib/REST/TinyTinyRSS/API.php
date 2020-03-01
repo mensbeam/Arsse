@@ -135,14 +135,14 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     throw new Exception("UNKNOWN_METHOD", ['method' => $data['op']]);
                 }
                 return new Response([
-                    'seq' => $data['seq'],
-                    'status' => 0,
+                    'seq'     => $data['seq'],
+                    'status'  => 0,
                     'content' => $this->$method($data),
                 ]);
             } catch (Exception $e) {
                 return new Response([
-                    'seq' => $data['seq'],
-                    'status' => 1,
+                    'seq'     => $data['seq'],
+                    'status'  => 1,
                     'content' => $e->getData(),
                 ]);
             } catch (AbstractException $e) {
@@ -190,7 +190,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             // are not enforced, create a session for the HTTP user regardless
             // of which user the API call mentions
             $id = Arsse::$db->sessionCreate(Arsse::$user->id);
-        } elseif ((!Arsse::$conf->userPreAuth && (Arsse::$user->auth($user, $pass) || Arsse::$user->auth($user, base64_decode($pass)))) || (Arsse::$conf->userPreAuth && Arsse::$user->id===$user)) {
+        } elseif ((!Arsse::$conf->userPreAuth && (Arsse::$user->auth($user, $pass) || Arsse::$user->auth($user, base64_decode($pass)))) || (Arsse::$conf->userPreAuth && Arsse::$user->id === $user)) {
             // otherwise both cleartext and base64 passwords are accepted
             // if pre-authentication is in use, just make sure the user names match
             $id = Arsse::$db->sessionCreate($user);
@@ -199,7 +199,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         return [
             'session_id' => $id,
-            'api_level'  => self::LEVEL
+            'api_level'  => self::LEVEL,
         ];
     }
 
@@ -215,10 +215,10 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     public function opGetConfig(array $data): array {
         return [
-            'icons_dir' => "feed-icons",
-            'icons_url' => "feed-icons",
+            'icons_dir'         => "feed-icons",
+            'icons_url'         => "feed-icons",
             'daemon_is_running' => Service::hasCheckedIn(),
-            'num_feeds' => Arsse::$db->subscriptionCount(Arsse::$user->id),
+            'num_feeds'         => Arsse::$db->subscriptionCount(Arsse::$user->id),
         ];
     }
 
@@ -304,7 +304,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return array_merge($special, $labels, $feeds, $cats);
     }
 
-    public function opGetFeedTree(array $data) : array {
+    public function opGetFeedTree(array $data): array {
         $all = $data['include_empty'] ?? false;
         $user = Arsse::$user->id;
         $tSpecial = [
@@ -319,55 +319,55 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $subs = Arsse::$db->subscriptionList($user)->getAll();
         // start with the special feeds
         $out[] = [
-            'name' => Arsse::$lang->msg("API.TTRSS.Category.Special"),
-            'id' => "CAT:".self::CAT_SPECIAL,
+            'name'    => Arsse::$lang->msg("API.TTRSS.Category.Special"),
+            'id'      => "CAT:".self::CAT_SPECIAL,
             'bare_id' => self::CAT_SPECIAL,
-            'type' => "category",
-            'unread' => 0,
-            'items' => [
+            'type'    => "category",
+            'unread'  => 0,
+            'items'   => [
                 array_merge([ // All articles
-                    'name' => Arsse::$lang->msg("API.TTRSS.Feed.All"),
-                    'id' => "FEED:".self::FEED_ALL,
+                    'name'    => Arsse::$lang->msg("API.TTRSS.Feed.All"),
+                    'id'      => "FEED:".self::FEED_ALL,
                     'bare_id' => self::FEED_ALL,
-                    'icon' => "images/folder.png",
-                    'unread' => array_reduce($subs, function($sum, $value) {
+                    'icon'    => "images/folder.png",
+                    'unread'  => array_reduce($subs, function($sum, $value) {
                         return $sum + $value['unread'];
                     }, 0), // the sum of all feeds' unread is the total unread
                 ], $tSpecial),
                 array_merge([ // Fresh articles
-                    'name' => Arsse::$lang->msg("API.TTRSS.Feed.Fresh"),
-                    'id' => "FEED:".self::FEED_FRESH,
+                    'name'    => Arsse::$lang->msg("API.TTRSS.Feed.Fresh"),
+                    'id'      => "FEED:".self::FEED_FRESH,
                     'bare_id' => self::FEED_FRESH,
-                    'icon' => "images/fresh.png",
-                    'unread' => Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H"))),
+                    'icon'    => "images/fresh.png",
+                    'unread'  => Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H"))),
                 ], $tSpecial),
                 array_merge([ // Starred articles
-                    'name' => Arsse::$lang->msg("API.TTRSS.Feed.Starred"),
-                    'id' => "FEED:".self::FEED_STARRED,
+                    'name'    => Arsse::$lang->msg("API.TTRSS.Feed.Starred"),
+                    'id'      => "FEED:".self::FEED_STARRED,
                     'bare_id' => self::FEED_STARRED,
-                    'icon' => "images/star.png",
-                    'unread' => (int) Arsse::$db->articleStarred($user)['unread'],
+                    'icon'    => "images/star.png",
+                    'unread'  => (int) Arsse::$db->articleStarred($user)['unread'],
                 ], $tSpecial),
                 array_merge([ // Published articles
-                    'name' => Arsse::$lang->msg("API.TTRSS.Feed.Published"),
-                    'id' => "FEED:".self::FEED_PUBLISHED,
+                    'name'    => Arsse::$lang->msg("API.TTRSS.Feed.Published"),
+                    'id'      => "FEED:".self::FEED_PUBLISHED,
                     'bare_id' => self::FEED_PUBLISHED,
-                    'icon' => "images/feed.png",
-                    'unread' => 0, // TODO: unread count should be populated if the Published feed is ever implemented
+                    'icon'    => "images/feed.png",
+                    'unread'  => 0, // TODO: unread count should be populated if the Published feed is ever implemented
                 ], $tSpecial),
                 array_merge([ // Archived articles
-                    'name' => Arsse::$lang->msg("API.TTRSS.Feed.Archived"),
-                    'id' => "FEED:".self::FEED_ARCHIVED,
+                    'name'    => Arsse::$lang->msg("API.TTRSS.Feed.Archived"),
+                    'id'      => "FEED:".self::FEED_ARCHIVED,
                     'bare_id' => self::FEED_ARCHIVED,
-                    'icon' => "images/archive.png",
-                    'unread' => 0, // Article archiving is not exposed by the API, so this is always zero
+                    'icon'    => "images/archive.png",
+                    'unread'  => 0, // Article archiving is not exposed by the API, so this is always zero
                 ], $tSpecial),
                 array_merge([ // Recently read
-                    'name' => Arsse::$lang->msg("API.TTRSS.Feed.Read"),
-                    'id' => "FEED:".self::FEED_READ,
+                    'name'    => Arsse::$lang->msg("API.TTRSS.Feed.Read"),
+                    'id'      => "FEED:".self::FEED_READ,
                     'bare_id' => self::FEED_READ,
-                    'icon' => "images/time.png",
-                    'unread' => 0, // this is by definition zero; unread articles do not appear in this feed
+                    'icon'    => "images/time.png",
+                    'unread'  => 0, // this is by definition zero; unread articles do not appear in this feed
                 ], $tSpecial),
             ],
         ];
@@ -394,12 +394,12 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         // if there are labels, all the label category,
         if ($items) {
             $out[] = [
-                'name' => Arsse::$lang->msg("API.TTRSS.Category.Labels"),
-                'id' => "CAT:".self::CAT_LABELS,
+                'name'    => Arsse::$lang->msg("API.TTRSS.Category.Labels"),
+                'id'      => "CAT:".self::CAT_LABELS,
                 'bare_id' => self::CAT_LABELS,
-                'type' => "category",
-                'unread' => $unread,
-                'items' => $items,
+                'type'    => "category",
+                'unread'  => $unread,
+                'items'   => $items,
             ];
         }
         // get the lists of categories and feeds
@@ -459,7 +459,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 // if the category is the wrong level, or if it's empty and we're not including empties, skip it
                 continue;
             }
-            $children  = $c['children'] ? $this->enumerateCategories($cats, $subs, $c['id'], $all) : ['list' => [], 'feeds' => 0];
+            $children = $c['children'] ? $this->enumerateCategories($cats, $subs, $c['id'], $all) : ['list' => [], 'feeds' => 0];
             $feeds = $c['feeds'] ? $this->enumerateFeeds($subs, $c['id']) : [];
             $count = sizeof($feeds) + (int) $children['feeds'];
             $out[] = [
@@ -843,7 +843,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 $subs = Arsse::$db->subscriptionList(Arsse::$user->id);
                 $id = false;
                 foreach ($subs as $sub) {
-                    if ($sub['url']===$url) {
+                    if ($sub['url'] === $url) {
                         $id = (int) $sub['id'];
                         break;
                     }
@@ -940,11 +940,11 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 return 0;
             }
         }
-        return (abs($id) - self::LABEL_OFFSET);
+        return abs($id) - self::LABEL_OFFSET;
     }
 
     protected function labelOut($id): int {
-        return ((int) $id * -1 - self::LABEL_OFFSET);
+        return (int) $id * -1 - self::LABEL_OFFSET;
     }
 
     public function opGetLabels(array $data): array {
@@ -1201,32 +1201,32 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         ];
         foreach (Arsse::$db->articleList(Arsse::$user->id, (new Context)->articles($articles), $columns) as $article) {
             $out[] = [
-                'id' => (string) $article['id'], // string cast to be consistent with TTRSS
-                'guid' => $article['guid'] ? "SHA256:".$article['guid'] : null,
-                'title' => $article['title'],
-                'link' => $article['url'],
-                'labels' => $this->articleLabelList($labels, $article['id']),
-                'unread' => (bool) $article['unread'],
-                'marked' => (bool) $article['starred'],
-                'published' => false, // TODO: if the Published feed is implemented, the getArticle operation should be amended accordingly
-                'comments' => "", // FIXME: What is this?
-                'author' => $article['author'],
-                'updated' => Date::transform($article['edited_date'], "unix", "sql"),
-                'feed_id' => (string) $article['subscription'], // string cast to be consistent with TTRSS
-                'feed_title' => $article['subscription_title'],
+                'id'          => (string) $article['id'], // string cast to be consistent with TTRSS
+                'guid'        => $article['guid'] ? "SHA256:".$article['guid'] : null,
+                'title'       => $article['title'],
+                'link'        => $article['url'],
+                'labels'      => $this->articleLabelList($labels, $article['id']),
+                'unread'      => (bool) $article['unread'],
+                'marked'      => (bool) $article['starred'],
+                'published'   => false, // TODO: if the Published feed is implemented, the getArticle operation should be amended accordingly
+                'comments'    => "", // FIXME: What is this?
+                'author'      => $article['author'],
+                'updated'     => Date::transform($article['edited_date'], "unix", "sql"),
+                'feed_id'     => (string) $article['subscription'], // string cast to be consistent with TTRSS
+                'feed_title'  => $article['subscription_title'],
                 'attachments' => $article['media_url'] ? [[
-                    'id' => (string) 0, // string cast to be consistent with TTRSS; nonsense ID because we don't use them for enclosures
-                    'content_url' => $article['media_url'],
+                    'id'           => (string) 0, // string cast to be consistent with TTRSS; nonsense ID because we don't use them for enclosures
+                    'content_url'  => $article['media_url'],
                     'content_type' => $article['media_type'],
-                    'title' => "",
-                    'duration' => "",
-                    'width' => "",
-                    'height' => "",
-                    'post_id' => (string) $article['id'], // string cast to be consistent with TTRSS
+                    'title'        => "",
+                    'duration'     => "",
+                    'width'        => "",
+                    'height'       => "",
+                    'post_id'      => (string) $article['id'], // string cast to be consistent with TTRSS
                 ]] : [], // TODO: We need to support multiple enclosures
-                'score' => 0, // score is not implemented as it is not modifiable from the TTRSS API
-                'note' => strlen((string) $article['note']) ? $article['note'] : null,
-                'lang' => "", // FIXME: picoFeed should be able to retrieve this information
+                'score'   => 0, // score is not implemented as it is not modifiable from the TTRSS API
+                'note'    => strlen((string) $article['note']) ? $article['note'] : null,
+                'lang'    => "", // FIXME: picoFeed should be able to retrieve this information
                 'content' => $article['content'],
             ];
         }
@@ -1302,25 +1302,25 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             ];
             foreach ($this->fetchArticles($data, $columns) as $article) {
                 $row = [
-                    'id' => (int) $article['id'],
-                    'guid' => $article['guid'] ? "SHA256:".$article['guid'] : "",
-                    'title' => $article['title'],
-                    'link' => $article['url'],
-                    'labels' => $this->articleLabelList($labels, $article['id']),
-                    'unread' => (bool) $article['unread'],
-                    'marked' => (bool) $article['starred'],
-                    'published' => false, // TODO: if the Published feed is implemented, the getHeadlines operation should be amended accordingly
-                    'author' => $article['author'],
-                    'updated' => Date::transform($article['edited_date'], "unix", "sql"),
-                    'is_updated' => ($article['published_date'] < $article['edited_date']),
-                    'feed_id' => (string) $article['subscription'], // string cast to be consistent with TTRSS
-                    'feed_title' => $article['subscription_title'],
-                    'score' => 0, // score is not implemented as it is not modifiable from the TTRSS API
-                    'note' => strlen((string) $article['note']) ? $article['note'] : null,
-                    'lang' => "", // FIXME: picoFeed should be able to retrieve this information
-                    'tags' => Arsse::$db->articleCategoriesGet(Arsse::$user->id, $article['id']),
-                    'comments_count' => 0,
-                    'comments_link' => "",
+                    'id'                         => (int) $article['id'],
+                    'guid'                       => $article['guid'] ? "SHA256:".$article['guid'] : "",
+                    'title'                      => $article['title'],
+                    'link'                       => $article['url'],
+                    'labels'                     => $this->articleLabelList($labels, $article['id']),
+                    'unread'                     => (bool) $article['unread'],
+                    'marked'                     => (bool) $article['starred'],
+                    'published'                  => false, // TODO: if the Published feed is implemented, the getHeadlines operation should be amended accordingly
+                    'author'                     => $article['author'],
+                    'updated'                    => Date::transform($article['edited_date'], "unix", "sql"),
+                    'is_updated'                 => ($article['published_date'] < $article['edited_date']),
+                    'feed_id'                    => (string) $article['subscription'], // string cast to be consistent with TTRSS
+                    'feed_title'                 => $article['subscription_title'],
+                    'score'                      => 0, // score is not implemented as it is not modifiable from the TTRSS API
+                    'note'                       => strlen((string) $article['note']) ? $article['note'] : null,
+                    'lang'                       => "", // FIXME: picoFeed should be able to retrieve this information
+                    'tags'                       => Arsse::$db->articleCategoriesGet(Arsse::$user->id, $article['id']),
+                    'comments_count'             => 0,
+                    'comments_link'              => "",
                     'always_display_attachments' => false,
                 ];
                 if ($data['show_content']) {
@@ -1336,14 +1336,14 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 }
                 if ($data['include_attachments']) {
                     $row['attachments'] = $article['media_url'] ? [[
-                        'id' => (string) 0, // string cast to be consistent with TTRSS; nonsense ID because we don't use them for enclosures
-                        'content_url' => $article['media_url'],
+                        'id'           => (string) 0, // string cast to be consistent with TTRSS; nonsense ID because we don't use them for enclosures
+                        'content_url'  => $article['media_url'],
                         'content_type' => $article['media_type'],
-                        'title' => "",
-                        'duration' => "",
-                        'width' => "",
-                        'height' => "",
-                        'post_id' => (string) $article['id'], // string cast to be consistent with TTRSS
+                        'title'        => "",
+                        'duration'     => "",
+                        'width'        => "",
+                        'height'       => "",
+                        'post_id'      => (string) $article['id'], // string cast to be consistent with TTRSS
                     ]] : []; // TODO: We need to support multiple enclosures
                 }
                 $out[] = $row;

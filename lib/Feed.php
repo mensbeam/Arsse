@@ -221,8 +221,8 @@ class Feed {
                 // if the two items have the same ID or any one hash matches, they are two versions of the same item
                 if (
                     ($item->id && $check->id && $item->id === $check->id) ||
-                    ($item->urlTitleHash     && $item->urlTitleHash     === $check->urlTitleHash)      ||
-                    ($item->urlContentHash   && $item->urlContentHash   === $check->urlContentHash)    ||
+                    ($item->urlTitleHash && $item->urlTitleHash === $check->urlTitleHash) ||
+                    ($item->urlContentHash && $item->urlContentHash === $check->urlContentHash) ||
                     ($item->titleContentHash && $item->titleContentHash === $check->titleContentHash)
                 ) {
                     if (// because newsfeeds are usually order newest-first, the later item should only be used if...
@@ -259,7 +259,7 @@ class Feed {
         // get as many of the latest articles in the database as there are in the feed
         $articles = Arsse::$db->feedMatchLatest($feedID, sizeof($items))->getAll();
         // perform a first pass matching the latest articles against items in the feed
-        list($this->newItems, $this->changedItems) = $this->matchItems($items, $articles);
+        [$this->newItems, $this->changedItems] = $this->matchItems($items, $articles);
         if (sizeof($this->newItems) && sizeof($items) <= sizeof($articles)) {
             // if we need to, perform a second pass on the database looking specifically for IDs and hashes of the new items
             $ids = $hashesUT = $hashesUC = $hashesTC = [];
@@ -278,7 +278,7 @@ class Feed {
                 }
             }
             $articles = Arsse::$db->feedMatchIds($feedID, $ids, $hashesUT, $hashesUC, $hashesTC)->getAll();
-            list($this->newItems, $changed) = $this->matchItems($this->newItems, $articles);
+            [$this->newItems, $changed] = $this->matchItems($this->newItems, $articles);
             // merge the two change-lists, preserving keys
             $this->changedItems = array_combine(array_merge(array_keys($this->changedItems), array_keys($changed)), array_merge($this->changedItems, $changed));
         }
@@ -286,7 +286,7 @@ class Feed {
     }
 
     protected function matchItems(array $items, array $articles): array {
-        $new =  $edited = [];
+        $new = $edited = [];
         // iterate through the articles and for each determine whether it is existing, edited, or entirely new
         foreach ($items as $i) {
             $found = false;
@@ -299,8 +299,8 @@ class Feed {
                     // the item matches if the GUID matches...
                     ($i->id && $i->id === $a['guid']) ||
                     // ... or if any one of the hashes match
-                    ($i->urlTitleHash     && $i->urlTitleHash     === $a['url_title_hash'])     ||
-                    ($i->urlContentHash   && $i->urlContentHash   === $a['url_content_hash'])   ||
+                    ($i->urlTitleHash && $i->urlTitleHash === $a['url_title_hash']) ||
+                    ($i->urlContentHash && $i->urlContentHash === $a['url_content_hash']) ||
                     ($i->titleContentHash && $i->titleContentHash === $a['title_content_hash'])
                 ) {
                     if ($i->updatedDate && Date::transform($i->updatedDate, "sql") !== $a['edited']) {
@@ -348,7 +348,7 @@ class Feed {
             $dates = $this->gatherDates();
             if (sizeof($dates) > 3) {
                 for ($a = 0; $a < 3; $a++) {
-                    $diff = $dates[$a] - $dates[$a+1];
+                    $diff = $dates[$a] - $dates[$a + 1];
                     $offsets[] = $this->normalizeDateDiff($diff);
                 }
                 if ($offsets[0] === $offsets[1] || $offsets[0] === $offsets[2]) {

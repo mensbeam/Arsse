@@ -117,9 +117,9 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
             ],
             'arsse_tag_members' => [
                 'columns' => [
-                    'tag' => "int",
+                    'tag'          => "int",
                     'subscription' => "int",
-                    'assigned' => "bool",
+                    'assigned'     => "bool",
                 ],
                 'rows' => [
                     [1, 2, 1],
@@ -181,7 +181,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
             ['url' => "http://localhost:8000/Import/citizen",   'title' => "Ottawa Citizen", 'folder' => 6, 'tags' => ["news", "canada"]],
             ['url' => "http://localhost:8000/Import/eurogamer", 'title' => "Eurogamer",      'folder' => 0, 'tags' => ["gaming", "frequent"]],
             ['url' => "http://localhost:8000/Import/cbc",       'title' => "CBC News",       'folder' => 6, 'tags' => ["news", "canada"]],
-        ], [1 =>
+        ], [1      =>
             ['id' => 1, 'name' => "Photography", 'parent' => 0],
             ['id' => 2, 'name' => "Science",     'parent' => 0],
             ['id' => 3, 'name' => "Rocketry",    'parent' => 2],
@@ -205,7 +205,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
             ['url' => "http://localhost:8000/Import/citizen",   'title' => "Ottawa Citizen", 'folder' => 6, 'tags' => ["news", "canada"]],
             ['url' => "http://localhost:8000/Import/eurogamer", 'title' => "Eurogamer",      'folder' => 0, 'tags' => ["gaming", "frequent"]],
             ['url' => "http://localhost:8000/Import/cbc",       'title' => "CBC",            'folder' => 0, 'tags' => ["news", "canada"]], // moved to root and renamed
-        ], [1 =>
+        ], [1      =>
             ['id' => 1, 'name' => "Photography", 'parent' => 0],
             ['id' => 2, 'name' => "Science",     'parent' => 0],
             ['id' => 3, 'name' => "Rocketry",    'parent' => 2],

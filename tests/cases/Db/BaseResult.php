@@ -21,7 +21,7 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
         static::setConf();
         static::$interface = static::dbInterface();
     }
-    
+
     public function setUp(): void {
         self::clearData();
         self::setConf();

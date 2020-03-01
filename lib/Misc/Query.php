@@ -24,7 +24,6 @@ class Query {
     protected $limit = 0;
     protected $offset = 0;
 
-
     public function __construct(string $body = "", $types = null, $values = null) {
         $this->setBody($body, $types, $values);
     }

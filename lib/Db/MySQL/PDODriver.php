@@ -34,7 +34,7 @@ class PDODriver extends Driver {
             $msg = $e->getMessage();
             $code = (int) substr($msg, 17, 4);
             $msg = substr($msg, 23);
-            list($excClass, $excMsg, $excData) = $this->buildConnectionException($code, $msg);
+            [$excClass, $excMsg, $excData] = $this->buildConnectionException($code, $msg);
             throw new $excClass($excMsg, $excData);
         }
     }

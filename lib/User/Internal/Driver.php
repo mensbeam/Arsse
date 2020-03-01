@@ -26,7 +26,7 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
         } catch (Exception $e) {
             return false;
         }
-        if ($password==="" && $hash==="") {
+        if ($password === "" && $hash === "") {
             return true;
         }
         return password_verify($password, $hash);

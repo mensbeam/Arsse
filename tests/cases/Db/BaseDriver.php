@@ -17,8 +17,8 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $lock;
     protected $setVersion;
     protected static $conf = [
-        'dbTimeoutExec' => 0.5,
-        'dbTimeoutLock' => 0.001,
+        'dbTimeoutExec'    => 0.5,
+        'dbTimeoutLock'    => 0.001,
         'dbSQLite3Timeout' => 0,
       //'dbSQLite3File' => "(temporary file)",
     ];
@@ -29,7 +29,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         static::setConf(static::$conf);
         static::$interface = static::dbInterface();
     }
-    
+
     public function setUp(): void {
         self::clearData();
         self::setConf(static::$conf);
@@ -75,12 +75,12 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     # TESTS
-    
+
     public function testFetchDriverName(): void {
         $class = get_class($this->drv);
         $this->assertTrue(strlen($class::driverName()) > 0);
     }
-    
+
     public function testFetchSchemaId(): void {
         $class = get_class($this->drv);
         $this->assertTrue(strlen($class::schemaID()) > 0);

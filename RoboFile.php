@@ -24,7 +24,7 @@ class RoboFile extends \Robo\Tasks {
      * ./robo test --testsuite TTRSS --exclude-group slow --testdox
      *
      * Please see the PHPUnit documentation for available options.
-    */
+     */
     public function test(array $args): Result {
         return $this->runTests(escapeshellarg(\PHP_BINARY), "typical", $args);
     }
@@ -33,7 +33,7 @@ class RoboFile extends \Robo\Tasks {
      *
      * This includes pedantic tests which may help to identify problems.
      * See help for the "test" task for more details.
-    */
+     */
     public function testFull(array $args): Result {
         return $this->runTests(escapeshellarg(\PHP_BINARY), "full", $args);
     }
@@ -42,7 +42,7 @@ class RoboFile extends \Robo\Tasks {
      * Runs a quick subset of the test suite
      *
      * See help for the "test" task for more details.
-    */
+     */
     public function testQuick(array $args): Result {
         return $this->runTests(escapeshellarg(\PHP_BINARY), "quick", $args);
     }
@@ -56,7 +56,7 @@ class RoboFile extends \Robo\Tasks {
      * Robo first tries to use pcov and will fall back first to xdebug then
      * phpdbg. Neither pcov nor xdebug need to be enabled to be used; they
      * only need to be present in the extension load path to be used.
-    */
+     */
     public function coverage(array $args): Result {
         // run tests with code coverage reporting enabled
         $exec = $this->findCoverageEngine();
@@ -71,7 +71,7 @@ class RoboFile extends \Robo\Tasks {
      * run all tests which may cover code.
      *
      * See also help for the "coverage" task for more details.
-    */
+     */
     public function coverageFull(array $args): Result {
         // run tests with code coverage reporting enabled
         $exec = $this->findCoverageEngine();
@@ -121,7 +121,7 @@ class RoboFile extends \Robo\Tasks {
         return $all ? ">$hole 2>&1" : "2>$hole";
     }
 
-    protected function runTests(string $executor, string $set, array $args) : Result {
+    protected function runTests(string $executor, string $set, array $args): Result {
         switch ($set) {
             case "typical":
                 $set = ["--exclude-group", "optional"];
@@ -153,7 +153,7 @@ class RoboFile extends \Robo\Tasks {
      * Note that while it is possible to re-package old versions, the resultant tarball
      * may not be equivalent due to subsequent changes in the exclude list, or because
      * of new tooling.
-    */
+     */
     public function package(string $version = null): Result {
         // establish which commit to package
         $version = $version ?? $this->askDefault("Commit to package:", "HEAD");

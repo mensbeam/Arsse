@@ -271,7 +271,7 @@ USAGE_TEXT;
     }
 
     protected function userAuthenticate(string $user, string $password, bool $fever = false): int {
-        $result  = $fever ? $this->getInstance(Fever::class)->authenticate($user, $password) : Arsse::$user->auth($user, $password);
+        $result = $fever ? $this->getInstance(Fever::class)->authenticate($user, $password) : Arsse::$user->auth($user, $password);
         if ($result) {
             echo Arsse::$lang->msg("CLI.Auth.Success").\PHP_EOL;
             return 0;

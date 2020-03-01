@@ -130,7 +130,7 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
             408 => "timeout",
             410 => "invalidUrl",
             414 => "invalidUrl",
-            451 => "invalidUrl"
+            451 => "invalidUrl",
         ];
         $out = array_fill(400, (600 - 400), "transmissionError");
         foreach ($specials as $k => $t) {

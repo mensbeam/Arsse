@@ -44,6 +44,6 @@ class Result extends \JKingWeb\Arsse\Db\AbstractResult {
 
     public function valid() {
         $this->cur = $this->set ? $this->set->fetch_assoc() : null;
-        return ($this->cur !== null);
+        return $this->cur !== null;
     }
 }

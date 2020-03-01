@@ -37,9 +37,9 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
 
     public static function makeConnectionString(bool $pdo, string $user, string $pass, string $db, string $host, int $port, string $service): string {
         $base = [
-            'client_encoding' => "UTF8",
+            'client_encoding'  => "UTF8",
             'application_name' => "arsse",
-            'connect_timeout' => (string) (int) ceil(Arsse::$conf->dbTimeoutConnect),
+            'connect_timeout'  => (string) (int) ceil(Arsse::$conf->dbTimeoutConnect),
         ];
         $out = [];
         if ($service != "") {
@@ -198,7 +198,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         pg_send_query($this->db, $query);
         while ($result = pg_get_result($this->db)) {
             if (($code = pg_result_error_field($result, \PGSQL_DIAG_SQLSTATE)) && isset($code) && $code) {
-                list($excClass, $excMsg, $excData) = $this->buildStandardException($code, pg_result_error($result));
+                [$excClass, $excMsg, $excData] = $this->buildStandardException($code, pg_result_error($result));
                 throw new $excClass($excMsg, $excData);
             }
         }
@@ -210,7 +210,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         if (is_resource($r)) {
             return new Result($this->db, $r);
         } else {
-            list($excClass, $excMsg, $excData) = $r;
+            [$excClass, $excMsg, $excData] = $r;
             throw new $excClass($excMsg, $excData);
         }
     }

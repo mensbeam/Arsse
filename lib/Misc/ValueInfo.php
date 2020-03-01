@@ -11,30 +11,30 @@ use JKingWeb\Arsse\ExceptionType;
 class ValueInfo {
     // universal
     const VALID = 1 << 0;
-    const NULL  = 1 << 1;
+    const NULL = 1 << 1;
     // integers
-    const ZERO  = 1 << 2;
-    const NEG   = 1 << 3;
+    const ZERO = 1 << 2;
+    const NEG = 1 << 3;
     const FLOAT = 1 << 4;
     // strings
     const EMPTY = 1 << 2;
     const WHITE = 1 << 3;
     // normalization types
-    const T_MIXED    = 0; // pass through unchanged
-    const T_NULL     = 1; // convert to null
-    const T_BOOL     = 2; // convert to boolean
-    const T_INT      = 3; // convert to integer
-    const T_FLOAT    = 4; // convert to floating point
-    const T_DATE     = 5; // convert to DateTimeInterface instance
-    const T_STRING   = 6; // convert to string
-    const T_ARRAY    = 7; // convert to array
+    const T_MIXED = 0; // pass through unchanged
+    const T_NULL = 1; // convert to null
+    const T_BOOL = 2; // convert to boolean
+    const T_INT = 3; // convert to integer
+    const T_FLOAT = 4; // convert to floating point
+    const T_DATE = 5; // convert to DateTimeInterface instance
+    const T_STRING = 6; // convert to string
+    const T_ARRAY = 7; // convert to array
     const T_INTERVAL = 8; // convert to time interval
     // normalization modes
-    const M_LOOSE    = 0;
-    const M_NULL     = 1 << 28; // pass nulls through regardless of target type
-    const M_DROP     = 1 << 29; // drop the value (return null) if the type doesn't match
-    const M_STRICT   = 1 << 30; // throw an exception if the type doesn't match
-    const M_ARRAY    = 1 << 31; // the value should be a flat array of values of the specified type; indexed and associative are both acceptable
+    const M_LOOSE = 0;
+    const M_NULL = 1 << 28; // pass nulls through regardless of target type
+    const M_DROP = 1 << 29; // drop the value (return null) if the type doesn't match
+    const M_STRICT = 1 << 30; // throw an exception if the type doesn't match
+    const M_ARRAY = 1 << 31; // the value should be a flat array of values of the specified type; indexed and associative are both acceptable
     // symbolic date and time formats
     const DATE_FORMATS = [ // in                  out
         'iso8601'   => ["!Y-m-d\TH:i:s",          "Y-m-d\TH:i:s\Z"       ], // NOTE: ISO 8601 dates require special input processing because of varying formats for timezone offsets
@@ -50,10 +50,10 @@ class ValueInfo {
 
     public static function normalize($value, int $type, string $dateInFormat = null, $dateOutFormat = null) {
         $allowNull = ($type & self::M_NULL);
-        $strict    = ($type & (self::M_STRICT | self::M_DROP));
-        $drop      = ($type & self::M_DROP);
-        $arrayVal  = ($type & self::M_ARRAY);
-        $type      = ($type & ~(self::M_NULL | self::M_DROP | self::M_STRICT | self::M_ARRAY));
+        $strict = ($type & (self::M_STRICT | self::M_DROP));
+        $drop = ($type & self::M_DROP);
+        $arrayVal = ($type & self::M_ARRAY);
+        $type = ($type & ~(self::M_NULL | self::M_DROP | self::M_STRICT | self::M_ARRAY));
         // if the value is null and this is allowed, simply return
         if ($allowNull && is_null($value)) {
             return null;
@@ -166,7 +166,7 @@ class ValueInfo {
                     throw new ExceptionType("strictFailure", $type);
                 }
                 $out = filter_var($value, \FILTER_VALIDATE_FLOAT);
-                if ($strict && $out===false) {
+                if ($strict && $out === false) {
                     // if strict and input is not a float, this is an error
                     if ($drop) {
                         return null;

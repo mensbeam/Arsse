@@ -11,7 +11,7 @@ use JKingWeb\Arsse\Arsse;
 trait SeriesToken {
     protected function setUpSeriesToken(): void {
         // set up the test data
-        $past  = gmdate("Y-m-d H:i:s", strtotime("now - 1 minute"));
+        $past = gmdate("Y-m-d H:i:s", strtotime("now - 1 minute"));
         $future = gmdate("Y-m-d H:i:s", strtotime("now + 1 minute"));
         $faroff = gmdate("Y-m-d H:i:s", strtotime("now + 1 hour"));
         $old = gmdate("Y-m-d H:i:s", strtotime("now - 2 days"));
@@ -30,7 +30,7 @@ trait SeriesToken {
                 'columns' => [
                     'id'      => "str",
                     'class'   => "str",
-                    'user'   => "str",
+                    'user'    => "str",
                     'expires' => "datetime",
                 ],
                 'rows' => [
@@ -49,19 +49,19 @@ trait SeriesToken {
 
     public function testLookUpAValidToken(): void {
         $exp1 = [
-            'id' => "80fa94c1a11f11e78667001e673b2560",
+            'id'    => "80fa94c1a11f11e78667001e673b2560",
             'class' => "fever.login",
-            'user' => "jane.doe@example.com"
+            'user'  => "jane.doe@example.com",
         ];
         $exp2 = [
-            'id' => "da772f8fa13c11e78667001e673b2560",
+            'id'    => "da772f8fa13c11e78667001e673b2560",
             'class' => "class.class",
-            'user' => "john.doe@example.com"
+            'user'  => "john.doe@example.com",
         ];
         $exp3 = [
-            'id' => "ab3b3eb8a13311e78667001e673b2560",
+            'id'    => "ab3b3eb8a13311e78667001e673b2560",
             'class' => "class.class",
-            'user' => "jane.doe@example.com"
+            'user'  => "jane.doe@example.com",
         ];
         $this->assertArraySubset($exp1, Arsse::$db->tokenLookup("fever.login", "80fa94c1a11f11e78667001e673b2560"));
         $this->assertArraySubset($exp2, Arsse::$db->tokenLookup("class.class", "da772f8fa13c11e78667001e673b2560"));

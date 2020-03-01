@@ -66,7 +66,7 @@ class Service {
         $limit->sub($int);
         $limit->sub($int);
         // return whether the check-in time is within the acceptable limit
-        return ($checkin >= $limit);
+        return $checkin >= $limit;
     }
 
     public static function cleanupPre(): bool {

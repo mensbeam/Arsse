@@ -11,7 +11,6 @@ use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\REST\TinyTinyRSS\Icon;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\ServerRequest;
 use Laminas\Diactoros\Response\EmptyResponse as Response;
 
 /** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Icon<extended> */

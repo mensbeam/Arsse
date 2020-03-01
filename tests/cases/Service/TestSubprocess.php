@@ -7,7 +7,6 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Service;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Service\Driver as DriverInterface;
 use JKingWeb\Arsse\Service\Subprocess\Driver;
 

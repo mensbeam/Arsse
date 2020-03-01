@@ -147,7 +147,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
                 $calls = 2;
             }
         } else {
-            $calls =  4;
+            $calls = 4;
         }
         try {
             $pass1 = $u->add($user, null);
@@ -255,7 +255,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
                 $calls = 2;
             }
         } else {
-            $calls =  4;
+            $calls = 4;
         }
         try {
             $pass1 = $u->passwordSet($user, null);

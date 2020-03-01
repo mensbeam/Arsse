@@ -38,7 +38,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         if (is_resource($r)) {
             return new Result($this->db, $r);
         } else {
-            list($excClass, $excMsg, $excData) = $r;
+            [$excClass, $excMsg, $excData] = $r;
             throw new $excClass($excMsg, $excData);
         }
     }

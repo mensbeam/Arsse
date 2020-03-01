@@ -17,7 +17,7 @@ trait SeriesSession {
             'userSessionLifetime' => "PT24H",
         ]);
         // set up the test data
-        $past  = gmdate("Y-m-d H:i:s", strtotime("now - 1 minute"));
+        $past = gmdate("Y-m-d H:i:s", strtotime("now - 1 minute"));
         $future = gmdate("Y-m-d H:i:s", strtotime("now + 1 minute"));
         $faroff = gmdate("Y-m-d H:i:s", strtotime("now + 1 hour"));
         $old = gmdate("Y-m-d H:i:s", strtotime("now - 2 days"));
@@ -55,12 +55,12 @@ trait SeriesSession {
 
     public function testResumeAValidSession(): void {
         $exp1 = [
-            'id' => "80fa94c1a11f11e78667001e673b2560",
-            'user' => "jane.doe@example.com"
+            'id'   => "80fa94c1a11f11e78667001e673b2560",
+            'user' => "jane.doe@example.com",
         ];
         $exp2 = [
-            'id' => "da772f8fa13c11e78667001e673b2560",
-            'user' => "john.doe@example.com"
+            'id'   => "da772f8fa13c11e78667001e673b2560",
+            'user' => "john.doe@example.com",
         ];
         $this->assertArraySubset($exp1, Arsse::$db->sessionResume("80fa94c1a11f11e78667001e673b2560"));
         $this->assertArraySubset($exp2, Arsse::$db->sessionResume("da772f8fa13c11e78667001e673b2560"));

@@ -87,7 +87,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [" 1 ",         I::VALID],
         ];
         foreach ($tests as $test) {
-            list($value, $exp) = $test;
+            [$value, $exp] = $test;
             $this->assertSame($exp, I::int($value), "Test returned ".decbin(I::int($value))." for value: ".var_export($value, true));
         }
     }
@@ -157,7 +157,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [new StrClass("   "), I::VALID | I::WHITE],
         ];
         foreach ($tests as $test) {
-            list($value, $exp) = $test;
+            [$value, $exp] = $test;
             $this->assertSame($exp, I::str($value), "Test returned ".decbin(I::str($value))." for value: ".var_export($value, true));
         }
     }
@@ -228,7 +228,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [new StrClass("   "), false, false],
         ];
         foreach ($tests as $test) {
-            list($value, $exp, $expNull) = $test;
+            [$value, $exp, $expNull] = $test;
             $this->assertSame($exp, I::id($value), "Non-null test failed for value: ".var_export($value, true));
             $this->assertSame($expNull, I::id($value, true), "Null test failed for value: ".var_export($value, true));
         }
@@ -300,7 +300,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [new StrClass("   "), null],
         ];
         foreach ($tests as $test) {
-            list($value, $exp) = $test;
+            [$value, $exp] = $test;
             $this->assertSame($exp, I::bool($value), "Null Test failed for value: ".var_export($value, true));
             if (is_null($exp)) {
                 $this->assertTrue(I::bool($value, true), "True Test failed for value: ".var_export($value, true));
@@ -400,14 +400,14 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testNormalizeComplexValues(): void {
         // Array-mode tests
         $tests = [
-            [I::T_INT    | I::M_DROP,   [1, 2, 2.2, 3],             [1,2,null,3]   ],
+            [I::T_INT | I::M_DROP,   [1, 2, 2.2, 3],             [1,2,null,3]   ],
             [I::T_INT,                  [1, 2, 2.2, 3],             [1,2,2,3]      ],
-            [I::T_INT    | I::M_DROP,   new Result([1, 2, 2.2, 3]), [1,2,null,3]   ],
+            [I::T_INT | I::M_DROP,   new Result([1, 2, 2.2, 3]), [1,2,null,3]   ],
             [I::T_INT,                  new Result([1, 2, 2.2, 3]), [1,2,2,3]      ],
             [I::T_STRING | I::M_STRICT, "Bare string",              ["Bare string"]],
         ];
         foreach ($tests as $index => $test) {
-            list($type, $value, $exp) = $test;
+            [$type, $value, $exp] = $test;
             $this->assertEquals($exp, I::normalize($value, $type | I::M_ARRAY, "iso8601"), "Failed test #$index");
         }
         // Date-to-string format tests
@@ -525,15 +525,15 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [$this->d("2010-01-01T00:00:00", 0, 1), [null,true], [true, false], [1262304000,     false], [1262304000.0,       false], ["2010-01-01T00:00:00Z",true],  [[$this->d("2010-01-01T00:00:00", 0, 1)],false], [null, false]],
             [$this->d("2010-01-01T00:00:00", 1, 0), [null,true], [true, false], [1262322000,     false], [1262322000.0,       false], ["2010-01-01T05:00:00Z",true],  [[$this->d("2010-01-01T00:00:00", 1, 0)],false], [null, false]],
             [$this->d("2010-01-01T00:00:00", 1, 1), [null,true], [true, false], [1262322000,     false], [1262322000.0,       false], ["2010-01-01T05:00:00Z",true],  [[$this->d("2010-01-01T00:00:00", 1, 1)],false], [null, false]],
-            [1e14,                                  [null,true], [true, false], [pow(10, 14),    true],  [1e14,               true],  ["100000000000000",     true],  [[1e14],                                 false], [$this->i("P1157407407DT9H46M40S"), false]],
+            [1e14,                                  [null,true], [true, false], [10 ** 14,       true],  [1e14,               true],  ["100000000000000",     true],  [[1e14],                                 false], [$this->i("P1157407407DT9H46M40S"), false]],
             [1e-6,                                  [null,true], [true, false], [0,              false], [1e-6,               true],  ["0.000001",            true],  [[1e-6],                                 false], [$this->i("PT0S", 1e-6), false]],
             [[1,2,3],                               [null,true], [true, false], [0,              false], [0.0,                false], ["",                    false], [[1,2,3],                                true],  [null, false]],
-            [['a'=>1,'b'=>2],                       [null,true], [true, false], [0,              false], [0.0,                false], ["",                    false], [['a'=>1,'b'=>2],                        true],  [null, false]],
-            [new Result([['a'=>1,'b'=>2]]),         [null,true], [true, false], [0,              false], [0.0,                false], ["",                    false], [[['a'=>1,'b'=>2]],                      true],  [null, false]],
-            [$this->i("PT1H"),                      [null,true], [true, false], [60*60,          false], [60.0*60.0,          false], ["PT1H",                true],  [[$this->i("PT1H")],                     false], [$this->i("PT1H"), true]],
-            [$this->i("P2DT1H"),                    [null,true], [true, false], [(48+1)*60*60,   false], [1.0*(48+1)*60*60,   false], ["P2DT1H",              true],  [[$this->i("P2DT1H")],                   false], [$this->i("P2DT1H"), true]],
+            [['a' => 1,'b' => 2],                       [null,true], [true, false], [0,              false], [0.0,                false], ["",                    false], [['a' => 1,'b' => 2],                        true],  [null, false]],
+            [new Result([['a' => 1,'b' => 2]]),         [null,true], [true, false], [0,              false], [0.0,                false], ["",                    false], [[['a' => 1,'b' => 2]],                      true],  [null, false]],
+            [$this->i("PT1H"),                      [null,true], [true, false], [60 * 60,          false], [60.0 * 60.0,          false], ["PT1H",                true],  [[$this->i("PT1H")],                     false], [$this->i("PT1H"), true]],
+            [$this->i("P2DT1H"),                    [null,true], [true, false], [(48 + 1) * 60 * 60,   false], [1.0 * (48 + 1) * 60 * 60,   false], ["P2DT1H",              true],  [[$this->i("P2DT1H")],                   false], [$this->i("P2DT1H"), true]],
             [$this->i("PT0H"),                      [null,true], [true, false], [0,              false], [0.0,                false], ["PT0S",                true],  [[$this->i("PT0H")],                     false], [$this->i("PT0H"), true]],
-            [$dateDiff,                             [null,true], [true, false], [366*24*60*60,   false], [1.0*366*24*60*60,   false], ["P366D",               true],  [[$dateDiff],                            false], [$dateNorm, true]],
+            [$dateDiff,                             [null,true], [true, false], [366 * 24 * 60 * 60,   false], [1.0 * 366 * 24 * 60 * 60,   false], ["P366D",               true],  [[$dateDiff],                            false], [$dateNorm, true]],
             ["1 year, 2 days",                      [null,true], [true, false], [0,              false], [0.0,                false], ["1 year, 2 days",      true],  [["1 year, 2 days"],                     false], [$this->i("P1Y2D"), false]],
             ["P1Y2D",                               [null,true], [true, false], [0,              false], [0.0,                false], ["P1Y2D",               true],  [["P1Y2D"],                              false], [$this->i("P1Y2D"), true]],
         ] as $set) {
@@ -542,14 +542,14 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             // shift a mixed-type passthrough test onto the set
             array_unshift($set, [$input, true]);
             // generate a set of tests for each target data type
-            foreach ($set as $type => list($exp, $pass)) {
+            foreach ($set as $type => [$exp, $pass]) {
                 // emit one test each for loose mode, strict mode, drop mode, and strict+drop mode
                 foreach ([
                     [false, false],
                     [true,  false],
                     [false, true],
                     [true,  true],
-                ] as list($strict, $drop)) {
+                ] as [$strict, $drop]) {
                     yield [$input, $types[$type], $exp, $pass, $strict, $drop];
                 }
             }
@@ -572,37 +572,37 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
         foreach ([
             /* Input value                          microtime                    iso8601                      iso8601m                     http                         sql                          date                         time                         unix                         float                        '!M j, Y (D)'                *strtotime* (null)                  */
-            [null,                                  null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                                   ],
-            [INF,                                   null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                                   ],
-            [NAN,                                   null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                                   ],
-            [$this->d("2010-01-01T00:00:00", 0, 0), $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),                   ],
-            [$this->d("2010-01-01T00:00:00", 0, 1), $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),                   ],
-            [$this->d("2010-01-01T00:00:00", 1, 0), $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),                   ],
-            [$this->d("2010-01-01T00:00:00", 1, 1), $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),                   ],
-            [1262304000,                            $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),                   ],
-            [1262304000.123456,                     $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456),            ],
-            [1262304000.42,                         $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),                ],
-            ["0.12345600 1262304000",               $this->t(1262304000.123456), null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                                   ],
-            ["0.42 1262304000",                     null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                                   ],
-            ["2010-01-01T00:00:00",                 null,                        $this->t(1262304000),        $this->t(1262304000),        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000),                   ],
-            ["2010-01-01T00:00:00Z",                null,                        $this->t(1262304000),        $this->t(1262304000),        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000),                   ],
-            ["2010-01-01T00:00:00+0000",            null,                        $this->t(1262304000),        $this->t(1262304000),        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000),                   ],
-            ["2010-01-01T00:00:00-0000",            null,                        $this->t(1262304000),        $this->t(1262304000),        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000),                   ],
-            ["2010-01-01T00:00:00+00:00",           null,                        $this->t(1262304000),        $this->t(1262304000),        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000),                   ],
-            ["2010-01-01T00:00:00-05:00",           null,                        $this->t(1262322000),        $this->t(1262322000),        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262322000),                   ],
-            ["2010-01-01T00:00:00.123456Z",         null,                        null,                        $this->t(1262304000.123456), null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000.123456),            ],
-            ["Fri, 01 Jan 2010 00:00:00 GMT",       null,                        null,                        null,                        $this->t(1262304000),        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000),                   ],
-            ["2010-01-01 00:00:00",                 null,                        null,                        null,                        null,                        $this->t(1262304000),        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000),                   ],
-            ["2010-01-01",                          null,                        null,                        null,                        null,                        null,                        $this->t(1262304000),        null,                        null,                        null,                        null,                        $this->t(1262304000),                   ],
-            ["12:34:56",                            null,                        null,                        null,                        null,                        null,                        null,                        $this->t(45296),             null,                        null,                        null,                        $this->t(date_create("today", new \DateTimezone("UTC"))->getTimestamp()+45296), ],
-            ["1262304000",                          null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000),        null,                        null,                        null,                                   ],
-            ["1262304000.123456",                   null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000.123456), null,                        null,                                   ],
-            ["1262304000.42",                       null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000.42),     null,                        null,                                   ],
-            ["Jan 1, 2010 (Fri)",                   null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000),        null,                                   ],
-            ["First day of Jan 2010 12AM",          null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000),                   ],
-            [[],                                    null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                                   ],
-            [$this->i("P1Y2D"),                     null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                                   ],
-            ["P1Y2D",                               null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                                   ],
+            [null,                                  null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
+            [INF,                                   null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
+            [NAN,                                   null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
+            [$this->d("2010-01-01T00:00:00", 0, 0), $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000)],
+            [$this->d("2010-01-01T00:00:00", 0, 1), $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000)],
+            [$this->d("2010-01-01T00:00:00", 1, 0), $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000)],
+            [$this->d("2010-01-01T00:00:00", 1, 1), $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000)],
+            [1262304000,                            $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000)],
+            [1262304000.123456,                     $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456)],
+            [1262304000.42,                         $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42)],
+            ["0.12345600 1262304000",               $this->t(1262304000.123456), null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
+            ["0.42 1262304000",                     null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
+            ["2010-01-01T00:00:00",                 null,                        $this->t(1262304000),        $this->t(1262304000),        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000)],
+            ["2010-01-01T00:00:00Z",                null,                        $this->t(1262304000),        $this->t(1262304000),        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000)],
+            ["2010-01-01T00:00:00+0000",            null,                        $this->t(1262304000),        $this->t(1262304000),        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000)],
+            ["2010-01-01T00:00:00-0000",            null,                        $this->t(1262304000),        $this->t(1262304000),        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000)],
+            ["2010-01-01T00:00:00+00:00",           null,                        $this->t(1262304000),        $this->t(1262304000),        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000)],
+            ["2010-01-01T00:00:00-05:00",           null,                        $this->t(1262322000),        $this->t(1262322000),        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262322000)],
+            ["2010-01-01T00:00:00.123456Z",         null,                        null,                        $this->t(1262304000.123456), null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000.123456)],
+            ["Fri, 01 Jan 2010 00:00:00 GMT",       null,                        null,                        null,                        $this->t(1262304000),        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000)],
+            ["2010-01-01 00:00:00",                 null,                        null,                        null,                        null,                        $this->t(1262304000),        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000)],
+            ["2010-01-01",                          null,                        null,                        null,                        null,                        null,                        $this->t(1262304000),        null,                        null,                        null,                        null,                        $this->t(1262304000)],
+            ["12:34:56",                            null,                        null,                        null,                        null,                        null,                        null,                        $this->t(45296),             null,                        null,                        null,                        $this->t(date_create("today", new \DateTimezone("UTC"))->getTimestamp() + 45296)],
+            ["1262304000",                          null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000),        null,                        null,                        null],
+            ["1262304000.123456",                   null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000.123456), null,                        null],
+            ["1262304000.42",                       null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000.42),     null,                        null],
+            ["Jan 1, 2010 (Fri)",                   null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000),        null],
+            ["First day of Jan 2010 12AM",          null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000)],
+            [[],                                    null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
+            [$this->i("P1Y2D"),                     null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
+            ["P1Y2D",                               null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
         ] as $set) {
             // shift the input value off the set
             $input = array_shift($set);
@@ -614,7 +614,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
                     [true,  false],
                     [false, true],
                     [true,  true],
-                ] as list($strict, $drop)) {
+                ] as [$strict, $drop]) {
                     yield [$input, $formats[$format], $exp, $strict, $drop];
                 }
             }

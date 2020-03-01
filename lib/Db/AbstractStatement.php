@@ -13,12 +13,12 @@ abstract class AbstractStatement implements Statement {
     use SQLState;
 
     const TYPE_NORM_MAP = [
-        self::T_INTEGER  => ValueInfo::M_NULL | ValueInfo::T_INT,
-        self::T_STRING   => ValueInfo::M_NULL | ValueInfo::T_STRING,
-        self::T_BOOLEAN  => ValueInfo::M_NULL | ValueInfo::T_BOOL,
-        self::T_DATETIME => ValueInfo::M_NULL | ValueInfo::T_DATE,
-        self::T_FLOAT    => ValueInfo::M_NULL | ValueInfo::T_FLOAT,
-        self::T_BINARY   => ValueInfo::M_NULL | ValueInfo::T_STRING,
+        self::T_INTEGER                     => ValueInfo::M_NULL | ValueInfo::T_INT,
+        self::T_STRING                      => ValueInfo::M_NULL | ValueInfo::T_STRING,
+        self::T_BOOLEAN                     => ValueInfo::M_NULL | ValueInfo::T_BOOL,
+        self::T_DATETIME                    => ValueInfo::M_NULL | ValueInfo::T_DATE,
+        self::T_FLOAT                       => ValueInfo::M_NULL | ValueInfo::T_FLOAT,
+        self::T_BINARY                      => ValueInfo::M_NULL | ValueInfo::T_STRING,
         self::T_NOT_NULL + self::T_INTEGER  => ValueInfo::T_INT,
         self::T_NOT_NULL + self::T_STRING   => ValueInfo::T_STRING,
         self::T_NOT_NULL + self::T_BOOLEAN  => ValueInfo::T_BOOL,
@@ -78,7 +78,7 @@ abstract class AbstractStatement implements Statement {
                 $value = $this->cast($value, $this->types[$a]);
                 $this->bindValue($value, $this->types[$a] % self::T_NOT_NULL, ++$a);
             } else {
-                throw new Exception("paramTypeMissing", $a+1);
+                throw new Exception("paramTypeMissing", $a + 1);
             }
         }
         // once all values are bound, check that all parameters have been supplied values and bind null for any missing ones

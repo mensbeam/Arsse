@@ -15,9 +15,7 @@ class User {
 
     public $id = null;
 
-    /**
-    * @var User\Driver
-    */
+    /** @var User\Driver */
     protected $u;
 
     public function __construct(\JKingWeb\Arsse\User\Driver $driver = null) {

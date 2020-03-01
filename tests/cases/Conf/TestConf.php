@@ -45,7 +45,7 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @depends testLoadDefaultValues */
     public function testImportFromArray(): void {
         $arr = [
-            'lang' => "xx",
+            'lang'       => "xx",
             'purgeFeeds' => "P2D",
         ];
         $conf = new Conf;
@@ -125,9 +125,9 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
         $conf->serviceFrequency = new \DateInterval("PT1H"); // should be exported (as string): value changed
         $conf->someCustomProperty = "Look at me!"; // should be exported: unknown property
         $exp = [
-            'dbSQLite3File' => "test.db",
-            'userDriver' => null,
-            'serviceFrequency' => "PT1H",
+            'dbSQLite3File'      => "test.db",
+            'userDriver'         => null,
+            'serviceFrequency'   => "PT1H",
             'someCustomProperty' => "Look at me!",
         ];
         $this->assertSame($exp, $conf->export());
@@ -147,8 +147,8 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
         $conf->exportFile(self::$path."confNotArray");
         $arr = (include self::$path."confNotArray");
         $exp = [
-            'dbSQLite3File' => "test.db",
-            'userDriver' => null,
+            'dbSQLite3File'      => "test.db",
+            'userDriver'         => null,
             'someCustomProperty' => "Look at me!",
         ];
         $this->assertSame($exp, $arr);

@@ -379,7 +379,7 @@ class Database {
         $max = Date::add(Arsse::$conf->userSessionTimeout, $now)->getTimestamp();
         $diff = intdiv($max - $now, 2);
         // determine if the expiry time is less than half the session timeout into the future
-        return (($now + $diff) >= $expiry->getTimestamp());
+        return ($now + $diff) >= $expiry->getTimestamp();
     }
 
     /** Creates a new token for the given user in the given class
@@ -388,7 +388,7 @@ class Database {
      * @param string $class The class of the token e.g. the protocol name
      * @param string|null $id The value of the token; if none is provided a UUID will be generated
      * @param \DateTimeInterface|null $expires An optional expiry date and time for the token
-    */
+     */
     public function tokenCreate(string $user, string $class, string $id = null, \DateTimeInterface $expires = null): string {
         // If the user isn't authorized to perform this action then throw an exception.
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
@@ -584,10 +584,10 @@ class Database {
             return false;
         }
         $valid = [
-            'name' => "str",
+            'name'   => "str",
             'parent' => "int",
         ];
-        list($setClause, $setTypes, $setValues) = $this->generateSet($in, $valid);
+        [$setClause, $setTypes, $setValues] = $this->generateSet($in, $valid);
         return (bool) $this->db->prepare("UPDATE arsse_folders set $setClause, modified = CURRENT_TIMESTAMP where owner = ? and id = ?", $setTypes, "str", "int")->run($setValues, $user, $id)->changes();
     }
 
@@ -881,7 +881,7 @@ class Database {
             'order_type' => "strict int",
             'pinned'     => "strict bool",
         ];
-        list($setClause, $setTypes, $setValues) = $this->generateSet($data, $valid);
+        [$setClause, $setTypes, $setValues] = $this->generateSet($data, $valid);
         if (!$setClause) {
             // if no changes would actually be applied, just return
             return false;
@@ -1220,10 +1220,10 @@ class Database {
      */
     public function feedMatchIds(int $feedID, array $ids = [], array $hashesUT = [], array $hashesUC = [], array $hashesTC = []): Db\Result {
         // compile SQL IN() clauses and necessary type bindings for the four identifier lists
-        list($cId, $tId, $vId)             = $this->generateIn($ids, "str");
-        list($cHashUT, $tHashUT, $vHashUT) = $this->generateIn($hashesUT, "str");
-        list($cHashUC, $tHashUC, $vHashUC) = $this->generateIn($hashesUC, "str");
-        list($cHashTC, $tHashTC, $vHashTC) = $this->generateIn($hashesTC, "str");
+        [$cId, $tId, $vId] = $this->generateIn($ids, "str");
+        [$cHashUT, $tHashUT, $vHashUT] = $this->generateIn($hashesUT, "str");
+        [$cHashUC, $tHashUC, $vHashUC] = $this->generateIn($hashesUC, "str");
+        [$cHashTC, $tHashTC, $vHashTC] = $this->generateIn($hashesTC, "str");
         // perform the query
         return $articles = $this->db->prepare(
             "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed = ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC))",
@@ -1242,27 +1242,27 @@ class Database {
     protected function articleColumns(): array {
         $greatest = $this->db->sqlToken("greatest");
         return [
-            'id' => "arsse_articles.id",
-            'edition' => "latest_editions.edition",
-            'url' => "arsse_articles.url",
-            'title' => "arsse_articles.title",
-            'author' => "arsse_articles.author",
-            'content' => "arsse_articles.content",
-            'guid' => "arsse_articles.guid",
-            'fingerprint' => "arsse_articles.url_title_hash || ':' || arsse_articles.url_content_hash || ':' || arsse_articles.title_content_hash",
-            'folder' => "coalesce(arsse_subscriptions.folder,0)",
-            'subscription' => "arsse_subscriptions.id",
-            'feed' => "arsse_subscriptions.feed",
-            'starred' => "coalesce(arsse_marks.starred,0)",
-            'unread' => "abs(coalesce(arsse_marks.read,0) - 1)",
-            'note' => "coalesce(arsse_marks.note,'')",
-            'published_date' => "arsse_articles.published",
-            'edited_date' => "arsse_articles.edited",
-            'modified_date' => "arsse_articles.modified",
-            'marked_date' => "$greatest(arsse_articles.modified, coalesce(arsse_marks.modified, '0001-01-01 00:00:00'), coalesce(label_stats.modified, '0001-01-01 00:00:00'))",
+            'id'                 => "arsse_articles.id",
+            'edition'            => "latest_editions.edition",
+            'url'                => "arsse_articles.url",
+            'title'              => "arsse_articles.title",
+            'author'             => "arsse_articles.author",
+            'content'            => "arsse_articles.content",
+            'guid'               => "arsse_articles.guid",
+            'fingerprint'        => "arsse_articles.url_title_hash || ':' || arsse_articles.url_content_hash || ':' || arsse_articles.title_content_hash",
+            'folder'             => "coalesce(arsse_subscriptions.folder,0)",
+            'subscription'       => "arsse_subscriptions.id",
+            'feed'               => "arsse_subscriptions.feed",
+            'starred'            => "coalesce(arsse_marks.starred,0)",
+            'unread'             => "abs(coalesce(arsse_marks.read,0) - 1)",
+            'note'               => "coalesce(arsse_marks.note,'')",
+            'published_date'     => "arsse_articles.published",
+            'edited_date'        => "arsse_articles.edited",
+            'modified_date'      => "arsse_articles.modified",
+            'marked_date'        => "$greatest(arsse_articles.modified, coalesce(arsse_marks.modified, '0001-01-01 00:00:00'), coalesce(label_stats.modified, '0001-01-01 00:00:00'))",
             'subscription_title' => "coalesce(arsse_subscriptions.title, arsse_feeds.title)",
-            'media_url' => "arsse_enclosures.url",
-            'media_type' => "arsse_enclosures.type",
+            'media_url'          => "arsse_enclosures.url",
+            'media_type'         => "arsse_enclosures.type",
         ];
     }
 
@@ -1359,7 +1359,7 @@ class Database {
             "unread"           => ["unread",        "=",  "bool",     ""],
             "starred"          => ["starred",       "=",  "bool",     ""],
         ];
-        foreach ($options as $m => list($col, $op, $type, $pair)) {
+        foreach ($options as $m => [$col, $op, $type, $pair]) {
             if (!$context->$m()) {
                 // context is not being used
                 continue;
@@ -1368,7 +1368,7 @@ class Database {
                 if (!$context->$m) {
                     throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
                 }
-                list($clause, $types, $values) = $this->generateIn($context->$m, $type);
+                [$clause, $types, $values] = $this->generateIn($context->$m, $type);
                 $q->setWhere("{$colDefs[$col]} $op ($clause)", $types, $values);
             } elseif ($pair && $context->$pair()) {
                 // option is paired with another which is also being used
@@ -1383,7 +1383,7 @@ class Database {
             }
         }
         // further handle exclusionary options if specified
-        foreach ($options as $m => list($col, $op, $type, $pair)) {
+        foreach ($options as $m => [$col, $op, $type, $pair]) {
             if (!method_exists($context->not, $m) || !$context->not->$m()) {
                 // context option is not being used
                 continue;
@@ -1392,7 +1392,7 @@ class Database {
                     // for exclusions we don't care if the array is empty
                     continue;
                 }
-                list($clause, $types, $values) = $this->generateIn($context->not->$m, $type);
+                [$clause, $types, $values] = $this->generateIn($context->not->$m, $type);
                 $q->setWhereNot("{$colDefs[$col]} $op ($clause)", $types, $values);
             } elseif ($pair && $context->not->$pair()) {
                 // option is paired with another which is also being used
@@ -1409,13 +1409,13 @@ class Database {
         // handle labels and tags
         $options = [
             'label' => [
-                'match_col' => "arsse_articles.id",
-                'cte_name' => "labelled",
-                'cte_cols' => ["article", "label_id", "label_name"],
-                'cte_body' => "SELECT m.article, l.id, l.name from arsse_label_members as m join arsse_labels as l on l.id = m.label where l.owner = ? and m.assigned = 1",
-                'cte_types' => ["str"],
+                'match_col'  => "arsse_articles.id",
+                'cte_name'   => "labelled",
+                'cte_cols'   => ["article", "label_id", "label_name"],
+                'cte_body'   => "SELECT m.article, l.id, l.name from arsse_label_members as m join arsse_labels as l on l.id = m.label where l.owner = ? and m.assigned = 1",
+                'cte_types'  => ["str"],
                 'cte_values' => [$user],
-                'options' => [
+                'options'    => [
                     'label'      => ['use_name' => false, 'multi' => false],
                     'labels'     => ['use_name' => false, 'multi' => true],
                     'labelName'  => ['use_name' => true,  'multi' => false],
@@ -1423,13 +1423,13 @@ class Database {
                 ],
             ],
             'tag' => [
-                'match_col' => "arsse_subscriptions.id",
-                'cte_name' => "tagged",
-                'cte_cols' => ["subscription", "tag_id", "tag_name"],
-                'cte_body' => "SELECT m.subscription, t.id, t.name from arsse_tag_members as m join arsse_tags as t on t.id = m.tag where t.owner = ? and m.assigned = 1",
-                'cte_types' => ["str"],
+                'match_col'  => "arsse_subscriptions.id",
+                'cte_name'   => "tagged",
+                'cte_cols'   => ["subscription", "tag_id", "tag_name"],
+                'cte_body'   => "SELECT m.subscription, t.id, t.name from arsse_tag_members as m join arsse_tags as t on t.id = m.tag where t.owner = ? and m.assigned = 1",
+                'cte_types'  => ["str"],
                 'cte_values' => [$user],
-                'options' => [
+                'options'    => [
                     'tag'      => ['use_name' => false, 'multi' => false],
                     'tags'     => ['use_name' => false, 'multi' => true],
                     'tagName'  => ['use_name' => true,  'multi' => false],
@@ -1452,7 +1452,7 @@ class Database {
                         throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
                     }
                     if ($multi) {
-                        list($test, $types, $values) = $this->generateIn($context->$m, $named ? "str" : "int");
+                        [$test, $types, $values] = $this->generateIn($context->$m, $named ? "str" : "int");
                         $test = "in ($test)";
                     } else {
                         $test = "= ?";
@@ -1464,7 +1464,7 @@ class Database {
                 if ($context->not->$m()) {
                     $seen = true;
                     if ($multi) {
-                        list($test, $types, $values) = $this->generateIn($context->not->$m, $named ? "str" : "int");
+                        [$test, $types, $values] = $this->generateIn($context->not->$m, $named ? "str" : "int");
                         $test = "in ($test)";
                     } else {
                         $test = "= ?";
@@ -1496,7 +1496,7 @@ class Database {
             $q->setWhere("coalesce(arsse_subscriptions.folder,0) in (select folder from folders)");
         }
         if ($context->folders()) {
-            list($inClause, $inTypes, $inValues) = $this->generateIn($context->folders, "int");
+            [$inClause, $inTypes, $inValues] = $this->generateIn($context->folders, "int");
             // add a common table expression to list the folders and their children so that we select from the entire subtree
             $q->setCTE("folders_multi(folder)", "SELECT id as folder from (select id from (select 0 as id union select id from arsse_folders where owner = ?) as f where id in ($inClause)) as folders_multi union select id from arsse_folders join folders_multi on coalesce(parent,0) = folder", ["str", $inTypes], [$user, $inValues]);
             // limit subscriptions to the listed folders
@@ -1509,7 +1509,7 @@ class Database {
             $q->setWhereNot("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_excluded)");
         }
         if ($context->not->folders()) {
-            list($inClause, $inTypes, $inValues) = $this->generateIn($context->not->folders, "int");
+            [$inClause, $inTypes, $inValues] = $this->generateIn($context->not->folders, "int");
             // add a common table expression to list the folders and their children so that we select from the entire subtree
             $q->setCTE("folders_multi_excluded(folder)", "SELECT id as folder from (select id from (select 0 as id union select id from arsse_folders where owner = ?) as f where id in ($inClause)) as folders_multi_excluded union select id from arsse_folders join folders_multi_excluded on coalesce(parent,0) = folder", ["str", $inTypes], [$user, $inValues]);
             // limit subscriptions to the listed folders
@@ -1623,9 +1623,9 @@ class Database {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         $data = [
-            'read' => $data['read'] ?? null,
+            'read'    => $data['read'] ?? null,
             'starred' => $data['starred'] ?? null,
-            'note' => $data['note'] ?? null,
+            'note'    => $data['note'] ?? null,
         ];
         if (!isset($data['read']) && !isset($data['starred']) && !isset($data['note'])) {
             return 0;
@@ -1664,7 +1664,7 @@ class Database {
                 $data = array_filter($data, function($v) {
                     return isset($v);
                 });
-                list($set, $setTypes, $setValues) = $this->generateSet($data, ['starred' => "bool", 'note' => "str"]);
+                [$set, $setTypes, $setValues] = $this->generateSet($data, ['starred' => "bool", 'note' => "str"]);
                 $q->setBody("UPDATE arsse_marks set touched = 1, $set where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", $setTypes, $setValues);
                 $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
             }
@@ -1688,7 +1688,7 @@ class Database {
             $data = array_filter($data, function($v) {
                 return isset($v);
             });
-            list($set, $setTypes, $setValues) = $this->generateSet($data, ['read' => "bool", 'starred' => "bool", 'note' => "str"]);
+            [$set, $setTypes, $setValues] = $this->generateSet($data, ['read' => "bool", 'starred' => "bool", 'note' => "str"]);
             $q->setBody("UPDATE arsse_marks set $set, modified = CURRENT_TIMESTAMP where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", $setTypes, $setValues);
             $out = $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
         }
@@ -1860,7 +1860,7 @@ class Database {
     public function editionArticle(int ...$edition): array {
         $out = [];
         $context = (new Context)->editions($edition);
-        list($in, $inTypes, $inValues) = $this->generateIn($context->editions, "int");
+        [$in, $inTypes, $inValues] = $this->generateIn($context->editions, "int");
         $out = $this->db->prepare("SELECT id as edition, article from arsse_editions where id in($in)", $inTypes)->run($inValues)->getAll();
         return $out ? array_combine(array_column($out, "edition"), array_column($out, "article")) : [];
     }
@@ -2018,7 +2018,7 @@ class Database {
         $valid = [
             'name'      => "str",
         ];
-        list($setClause, $setTypes, $setValues) = $this->generateSet($data, $valid);
+        [$setClause, $setTypes, $setValues] = $this->generateSet($data, $valid);
         if (!$setClause) {
             // if no changes would actually be applied, just return
             return false;
@@ -2086,7 +2086,7 @@ class Database {
             $articles = array_column($articles, "id");
         }
         // prepare up to three queries: removing requires one, adding two, and replacing three
-        list($inClause, $inTypes, $inValues) = $this->generateIn($articles, "int");
+        [$inClause, $inTypes, $inValues] = $this->generateIn($articles, "int");
         $updateQ = "UPDATE arsse_label_members set assigned = ?, modified = CURRENT_TIMESTAMP where label = ? and assigned <> ? and article %in% ($inClause)";
         $updateT = ["bool", "int", "bool", $inTypes];
         $insertQ = "INSERT INTO arsse_label_members(label,article,subscription) SELECT ?,a.id,s.id from arsse_articles as a join arsse_subscriptions as s on a.feed = s.feed where s.owner = ? and a.id not in (select article from arsse_label_members where label = ?) and a.id in ($inClause)";
@@ -2112,7 +2112,7 @@ class Database {
         // execute them in a transaction
         $out = 0;
         $tr = $this->begin();
-        foreach ($qList as list($q, $t, $v)) {
+        foreach ($qList as [$q, $t, $v]) {
             $out += $this->db->prepare($q, ...$t)->run(...$v)->changes();
         }
         $tr->commit();
@@ -2321,7 +2321,7 @@ class Database {
         $valid = [
             'name'      => "str",
         ];
-        list($setClause, $setTypes, $setValues) = $this->generateSet($data, $valid);
+        [$setClause, $setTypes, $setValues] = $this->generateSet($data, $valid);
         if (!$setClause) {
             // if no changes would actually be applied, just return
             return false;
@@ -2385,7 +2385,7 @@ class Database {
             }
         }
         // prepare up to three queries: removing requires one, adding two, and replacing three
-        list($inClause, $inTypes, $inValues) = $this->generateIn($subscriptions, "int");
+        [$inClause, $inTypes, $inValues] = $this->generateIn($subscriptions, "int");
         $updateQ = "UPDATE arsse_tag_members set assigned = ?, modified = CURRENT_TIMESTAMP where tag = ? and assigned <> ? and subscription in (select id from arsse_subscriptions where owner = ? and id %in% ($inClause))";
         $updateT = ["bool", "int", "bool", "str", $inTypes];
         $insertQ = "INSERT INTO arsse_tag_members(tag,subscription) SELECT ?,id from arsse_subscriptions where id not in (select subscription from arsse_tag_members where tag = ?) and owner = ? and id in ($inClause)";
@@ -2411,7 +2411,7 @@ class Database {
         // execute them in a transaction
         $out = 0;
         $tr = $this->begin();
-        foreach ($qList as list($q, $t, $v)) {
+        foreach ($qList as [$q, $t, $v]) {
             $out += $this->db->prepare($q, ...$t)->run(...$v)->changes();
         }
         $tr->commit();

@@ -8,7 +8,6 @@ namespace JKingWeb\Arsse\TestCase\REST\NextcloudNews;
 
 use JKingWeb\Arsse\REST\NextcloudNews\Versions;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\ServerRequest;
 use Laminas\Diactoros\Response\JsonResponse as Response;
 use Laminas\Diactoros\Response\EmptyResponse;
 

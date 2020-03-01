@@ -163,10 +163,10 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
         Arsse::$user = $this->createMock(User::class);
         Arsse::$user->method("auth")->will($this->returnCallback(function($user, $pass) {
-            return (
+            return
                 ($user === "john.doe@example.com" && $pass === "secret") ||
                 ($user === "jane.doe@example.com" && $pass === "superman")
-            );
+            ;
         }));
         $fever = \Phake::mock(FeverUser::class);
         \Phake::when($fever)->authenticate->thenReturn(false);

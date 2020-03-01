@@ -17,7 +17,7 @@ abstract class AbstractImportExport {
             throw new UserException("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
         // first extract useful information from the input
-        list($feeds, $folders) = $this->parse($data, $flat);
+        [$feeds, $folders] = $this->parse($data, $flat);
         $folderMap = [];
         foreach ($folders as $f) {
             // check to make sure folder names are all valid
@@ -42,7 +42,7 @@ abstract class AbstractImportExport {
         $tr = Arsse::$db->begin();
         // get current state of database
         $foldersDb = iterator_to_array(Arsse::$db->folderList($user));
-        $feedsDb =  iterator_to_array(Arsse::$db->subscriptionList($user));
+        $feedsDb = iterator_to_array(Arsse::$db->subscriptionList($user));
         $tagsDb = iterator_to_array(Arsse::$db->tagList($user));
         // reconcile folders
         $folderMap = [0 => 0];

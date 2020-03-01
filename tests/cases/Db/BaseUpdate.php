@@ -24,7 +24,7 @@ class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         static::setConf();
         static::$interface = static::dbInterface();
     }
-    
+
     public function setUp(): void {
         if (!static::$interface) {
             $this->markTestSkipped(static::$implementation." database driver not available");

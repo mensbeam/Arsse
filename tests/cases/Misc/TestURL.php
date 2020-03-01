@@ -13,7 +13,7 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         self::clearData();
     }
-    
+
     /** @dataProvider provideNormalizations */
     public function testNormalizeAUrl(string $url, string $exp, string $user = null, string $pass = null): void {
         $this->assertSame($exp, URL::normalize($url, $user, $pass));

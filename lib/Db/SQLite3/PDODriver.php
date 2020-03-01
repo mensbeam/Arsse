@@ -37,7 +37,6 @@ class PDODriver extends AbstractPDODriver {
         }
     }
 
-
     public static function driverName(): string {
         return Arsse::$lang->msg("Driver.Db.SQLite3PDO.Name");
     }

@@ -67,7 +67,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         switch ($req->getMethod()) {
             case "OPTIONS":
                 return new EmptyResponse(204, [
-                    'Allow' => "POST",
+                    'Allow'  => "POST",
                     'Accept' => self::ACCEPTED_TYPE,
                 ]);
             case "POST":
@@ -76,7 +76,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 }
                 $out = [
                     'api_version' => self::LEVEL,
-                    'auth' => 0,
+                    'auth'        => 0,
                 ];
                 if ($req->getAttribute("authenticated", false)) {
                     // if HTTP authentication was successfully used, set the expected user ID
@@ -153,7 +153,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             // we provide a single blank favicon for now
             $out['favicons'] = [
                 [
-                    'id' => 0,
+                    'id'   => 0,
                     'data' => self::GENERIC_ICON_TYPE.",".self::GENERIC_ICON_DATA,
                 ],
             ];
@@ -178,7 +178,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function baseResponse(bool $authenticated): array {
         $out = [
             'api_version' => self::LEVEL,
-            'auth' => (int) $authenticated,
+            'auth'        => (int) $authenticated,
         ];
         if ($authenticated) {
             // authenticated requests always include the most recent feed refresh
@@ -346,7 +346,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $out = [];
         foreach (Arsse::$db->tagList(Arsse::$user->id) as $member) {
             $out[] = [
-                'id' => (int) $member['id'],
+                'id'    => (int) $member['id'],
                 'title' => $member['name'],
             ];
         }

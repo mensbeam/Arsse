@@ -29,7 +29,6 @@ which include the following data:
 
 */
 
-
 ignore_user_abort(false);
 ob_start();
 $defaults = [ // default values for response

@@ -45,7 +45,7 @@ trait SeriesFolder {
                     [4, "jane.doe@example.com", null, "Politics"],
                     [5, "john.doe@example.com", null, "Politics"],
                     [6, "john.doe@example.com",    2, "Politics"],
-                ]
+                ],
             ],
             'arsse_feeds' => [
                 'columns' => [
@@ -67,7 +67,7 @@ trait SeriesFolder {
                     [11,"http://example.com/11", "Feed 11"],
                     [12,"http://example.com/12", "Feed 12"],
                     [13,"http://example.com/13", "Feed 13"],
-                ]
+                ],
             ],
             'arsse_subscriptions' => [
                 'columns' => [
@@ -88,7 +88,7 @@ trait SeriesFolder {
                     [9, "jane.doe@example.com",2,    4],
                     [10,"jane.doe@example.com",3,    4],
                     [11,"jane.doe@example.com",4,    4],
-                ]
+                ],
             ],
         ];
     }

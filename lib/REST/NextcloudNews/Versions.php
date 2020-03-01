@@ -29,7 +29,7 @@ class Versions implements \JKingWeb\Arsse\REST\Handler {
                 $out = [
                     'apiLevels' => [
                         'v1-2',
-                    ]
+                    ],
                 ];
                 return new Response($out);
             default:

@@ -70,7 +70,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     protected function serverRequest(string $method, string $url, string $urlPrefix, array $headers = [], array $vars = [], $body = null, string $type = "", $params = [], string $user = null): ServerRequestInterface {
         $server = [
             'REQUEST_METHOD' => $method,
-            'REQUEST_URI' => $url,
+            'REQUEST_URI'    => $url,
         ];
         if (strlen($type)) {
             $server['HTTP_CONTENT_TYPE'] = $type;
@@ -109,7 +109,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                 $req = $req->withAttribute("authenticationFailed", true);
             }
         }
-        if (strlen($type) &&strlen($body ?? "")) {
+        if (strlen($type) && strlen($body ?? "")) {
             $req = $req->withHeader("Content-Type", $type);
         }
         foreach ($headers as $key => $value) {
@@ -135,8 +135,8 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                 $this->expectException(get_class($msg));
                 $this->expectExceptionCode($msg->getCode());
             } else {
-                $class = \JKingWeb\Arsse\NS_BASE . ($prefix !== "" ? str_replace("/", "\\", $prefix) . "\\" : "") . $type;
-                $msgID = ($prefix !== "" ? $prefix . "/" : "") . $type. ".$msg";
+                $class = \JKingWeb\Arsse\NS_BASE.($prefix !== "" ? str_replace("/", "\\", $prefix)."\\" : "").$type;
+                $msgID = ($prefix !== "" ? $prefix."/" : "").$type.".$msg";
                 if (array_key_exists($msgID, Exception::CODES)) {
                     $code = Exception::CODES[$msgID];
                 } else {
@@ -177,7 +177,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
 
     public function assertTime($exp, $test, string $msg = ''): void {
         $test = $this->approximateTime($exp, $test);
-        $exp  = Date::transform($exp, "iso8601");
+        $exp = Date::transform($exp, "iso8601");
         $test = Date::transform($test, "iso8601");
         $this->assertSame($exp, $test, $msg);
     }
@@ -260,7 +260,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                                 break;
                         }
                     }
-                    if ($row===$test) {
+                    if ($row === $test) {
                         $data[$index] = $test;
                         break;
                     }
