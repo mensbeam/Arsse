@@ -10,7 +10,7 @@ use JKingWeb\Arsse\REST\Fever\User as Fever;
 use JKingWeb\Arsse\ImportExport\OPML;
 
 class CLI {
-    const USAGE = <<<USAGE_TEXT
+    public const USAGE = <<<USAGE_TEXT
 Usage:
     arsse.php daemon
     arsse.php feed refresh-all

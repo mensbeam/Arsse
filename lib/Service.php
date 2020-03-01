@@ -9,7 +9,7 @@ namespace JKingWeb\Arsse;
 use JKingWeb\Arsse\Misc\Date;
 
 class Service {
-    const DRIVER_NAMES = [
+    public const DRIVER_NAMES = [
         'serial'     => \JKingWeb\Arsse\Service\Serial\Driver::class,
         'subprocess' => \JKingWeb\Arsse\Service\Subprocess\Driver::class,
     ];

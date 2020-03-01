@@ -12,8 +12,8 @@ use JKingWeb\Arsse\Db\Exception;
 class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     use ExceptionBuilder;
 
-    const SQL_MODE = "ANSI_QUOTES,HIGH_NOT_PRECEDENCE,NO_BACKSLASH_ESCAPES,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT,STRICT_ALL_TABLES";
-    const TRANSACTIONAL_LOCKS = false;
+    protected const SQL_MODE = "ANSI_QUOTES,HIGH_NOT_PRECEDENCE,NO_BACKSLASH_ESCAPES,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT,STRICT_ALL_TABLES";
+    protected const TRANSACTIONAL_LOCKS = false;
 
     /** @var \mysqli */
     protected $db;

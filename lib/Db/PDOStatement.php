@@ -9,7 +9,7 @@ namespace JKingWeb\Arsse\Db;
 abstract class PDOStatement extends AbstractStatement {
     use PDOError;
 
-    const BINDINGS = [
+    protected const BINDINGS = [
         self::T_INTEGER  => \PDO::PARAM_INT,
         self::T_FLOAT    => \PDO::PARAM_STR,
         self::T_DATETIME => \PDO::PARAM_STR,

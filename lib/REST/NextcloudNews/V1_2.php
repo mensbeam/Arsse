@@ -23,9 +23,9 @@ use Laminas\Diactoros\Response\JsonResponse as Response;
 use Laminas\Diactoros\Response\EmptyResponse;
 
 class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
-    const REALM = "Nextcloud News API v1-2";
-    const VERSION = "11.0.5";
-    const ACCEPTED_TYPE = "application/json";
+    public const VERSION = "11.0.5";
+    protected const REALM = "Nextcloud News API v1-2";
+    protected const ACCEPTED_TYPE = "application/json";
 
     protected $dateFormat = "unix";
 

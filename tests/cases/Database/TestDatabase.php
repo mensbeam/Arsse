@@ -35,10 +35,10 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function provideInClauses(): iterable {
-        $l = Database::LIMIT_SET_SIZE + 1;
+        $l = (new \ReflectionClassConstant(Database::class, "LIMIT_SET_SIZE"))->getValue() + 1;
         $strings = array_fill(0, $l, "");
         $ints = range(1, $l);
-        $longString = str_repeat("0", Database::LIMIT_SET_STRING_LENGTH + 1);
+        $longString = str_repeat("0", (new \ReflectionClassConstant(Database::class, "LIMIT_SET_STRING_LENGTH"))->getValue() + 1);
         $params = implode(",", array_fill(0, $l, "?"));
         $intList = implode(",", $ints);
         $stringList = implode(",", array_fill(0, $l, "''"));
@@ -70,9 +70,10 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function provideSearchClauses(): iterable {
-        $terms = array_fill(0, Database::LIMIT_SET_SIZE + 1, "a");
-        $clause = array_fill(0, Database::LIMIT_SET_SIZE + 1, "test like '%a%' escape '^'");
-        $longString = str_repeat("0", Database::LIMIT_SET_STRING_LENGTH + 1);
+        $setSize = (new \ReflectionClassConstant(Database::class, "LIMIT_SET_SIZE"))->getValue();
+        $terms = array_fill(0, $setSize + 1, "a");
+        $clause = array_fill(0, $setSize + 1, "test like '%a%' escape '^'");
+        $longString = str_repeat("0", (new \ReflectionClassConstant(Database::class, "LIMIT_SET_STRING_LENGTH"))->getValue() + 1);
         return [
             ["test like ? escape '^'",                                    ["%a%"],           ["a"],                              ["test"],         true],
             ["(col1 like ? escape '^' or col2 like ? escape '^')",        ["%a%", "%a%"],    ["a"],                              ["col1", "col2"], true],

@@ -7,8 +7,8 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 class Lang {
-    const DEFAULT = "en"; // fallback locale
-    const REQUIRED = [    // collection of absolutely required strings to handle pathological errors
+    public const DEFAULT = "en"; // fallback locale
+    protected const REQUIRED = [ // collection of absolutely required strings to handle pathological errors
         'Exception.JKingWeb/Arsse/Exception.uncoded'                     => 'The specified exception symbol {0} has no code specified in AbstractException.php',
         'Exception.JKingWeb/Arsse/Exception.unknown'                     => 'An unknown error has occurred',
         'Exception.JKingWeb/Arsse/Lang/Exception.defaultFileMissing'     => 'Default language file "{0}" missing',

@@ -24,27 +24,27 @@ use Laminas\Diactoros\Response\JsonResponse as Response;
 use Laminas\Diactoros\Response\EmptyResponse;
 
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
-    const LEVEL = 14;           // emulated API level
-    const VERSION = "17.4";     // emulated TT-RSS version
-    const LABEL_OFFSET = 1024;  // offset below zero at which labels begin, counting down
-    const LIMIT_ARTICLES = 200; // maximum number of articles returned by getHeadlines
-    const LIMIT_EXCERPT = 100;  // maximum length of excerpts in getHeadlines, counted in grapheme units
+    public const LEVEL = 14;           // emulated API level
+    public const VERSION = "17.4";     // emulated TT-RSS version
+    protected const LABEL_OFFSET = 1024;  // offset below zero at which labels begin, counting down
+    protected const LIMIT_ARTICLES = 200; // maximum number of articles returned by getHeadlines
+    protected const LIMIT_EXCERPT = 100;  // maximum length of excerpts in getHeadlines, counted in grapheme units
     // special feeds
-    const FEED_ARCHIVED = 0;
-    const FEED_STARRED = -1;
-    const FEED_PUBLISHED = -2;
-    const FEED_FRESH = -3;
-    const FEED_ALL = -4;
-    const FEED_READ = -6;
+    protected const FEED_ARCHIVED = 0;
+    protected const FEED_STARRED = -1;
+    protected const FEED_PUBLISHED = -2;
+    protected const FEED_FRESH = -3;
+    protected const FEED_ALL = -4;
+    protected const FEED_READ = -6;
     // special categories
-    const CAT_UNCATEGORIZED = 0;
-    const CAT_SPECIAL = -1;
-    const CAT_LABELS = -2;
-    const CAT_NOT_SPECIAL = -3;
-    const CAT_ALL = -4;
+    protected const CAT_UNCATEGORIZED = 0;
+    protected const CAT_SPECIAL = -1;
+    protected const CAT_LABELS = -2;
+    protected const CAT_NOT_SPECIAL = -3;
+    protected const CAT_ALL = -4;
     // valid input
-    const ACCEPTED_TYPES = ["application/json", "text/json"];
-    const VALID_INPUT = [
+    protected const ACCEPTED_TYPES = ["application/json", "text/json"];
+    protected const VALID_INPUT = [
         'op'                  => ValueInfo::T_STRING,                           // the function ("operation") to perform
         'sid'                 => ValueInfo::T_STRING,                           // session ID
         'seq'                 => ValueInfo::T_INT,                              // request number from client
@@ -82,7 +82,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         'data'                => ValueInfo::T_STRING,                           // note text in `updateArticle` if setting a note
     ];
     // generic error construct
-    const FATAL_ERR = [
+    protected const FATAL_ERR = [
         'seq'     => null,
         'status'  => 1,
         'content' => ['error' => "MALFORMED_INPUT"],

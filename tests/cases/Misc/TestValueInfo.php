@@ -400,9 +400,9 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testNormalizeComplexValues(): void {
         // Array-mode tests
         $tests = [
-            [I::T_INT | I::M_DROP,   [1, 2, 2.2, 3],             [1,2,null,3]   ],
+            [I::T_INT | I::M_DROP,      [1, 2, 2.2, 3],             [1,2,null,3]   ],
             [I::T_INT,                  [1, 2, 2.2, 3],             [1,2,2,3]      ],
-            [I::T_INT | I::M_DROP,   new Result([1, 2, 2.2, 3]), [1,2,null,3]   ],
+            [I::T_INT | I::M_DROP,      new Result([1, 2, 2.2, 3]), [1,2,null,3]   ],
             [I::T_INT,                  new Result([1, 2, 2.2, 3]), [1,2,2,3]      ],
             [I::T_STRING | I::M_STRICT, "Bare string",              ["Bare string"]],
         ];
@@ -411,10 +411,11 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             $this->assertEquals($exp, I::normalize($value, $type | I::M_ARRAY, "iso8601"), "Failed test #$index");
         }
         // Date-to-string format tests
+        $dateFormats = (new \ReflectionClassConstant(I::class, "DATE_FORMATS"))->getValue();
         $test = new \DateTimeImmutable("now", new \DateTimezone("UTC"));
-        $exp = $test->format(I::DATE_FORMATS['iso8601'][1]);
+        $exp = $test->format($dateFormats['iso8601'][1]);
         $this->assertSame($exp, I::normalize($test, I::T_STRING, null), "Failed test for null output date format");
-        foreach (I::DATE_FORMATS as $name => $formats) {
+        foreach ($dateFormats as $name => $formats) {
             $exp = $test->format($formats[1]);
             $this->assertSame($exp, I::normalize($test, I::T_STRING, null, $name), "Failed test for output date format '$name'");
         }

@@ -9,7 +9,7 @@ namespace JKingWeb\Arsse\Db\MySQL;
 class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     use ExceptionBuilder;
 
-    const BINDINGS = [
+    protected const BINDINGS = [
         self::T_INTEGER  => "i",
         self::T_FLOAT    => "d",
         self::T_DATETIME => "s",

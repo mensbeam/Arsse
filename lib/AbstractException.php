@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 abstract class AbstractException extends \Exception {
-    const CODES = [
+    public const CODES = [
         "Exception.uncoded"                           => -1,
         "Exception.unknown"                           => 10000,
         "Exception.constantUnknown"                   => 10001,

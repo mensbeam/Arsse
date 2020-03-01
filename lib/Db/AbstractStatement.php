@@ -12,7 +12,7 @@ use JKingWeb\Arsse\Misc\ValueInfo;
 abstract class AbstractStatement implements Statement {
     use SQLState;
 
-    const TYPE_NORM_MAP = [
+    public const TYPE_NORM_MAP = [
         self::T_INTEGER                     => ValueInfo::M_NULL | ValueInfo::T_INT,
         self::T_STRING                      => ValueInfo::M_NULL | ValueInfo::T_STRING,
         self::T_BOOLEAN                     => ValueInfo::M_NULL | ValueInfo::T_BOOL,

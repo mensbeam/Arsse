@@ -37,8 +37,9 @@ class TestBasic extends \JKingWeb\Arsse\Test\AbstractTest {
      * @depends testSetLanguage
      */
     public function testLoadInternalStrings(): void {
+        $exp = (new \ReflectionClassConstant(TestClass::class, "REQUIRED"))->getValue();
         $this->assertEquals("", $this->l->set("", true));
-        $this->assertCount(sizeof(TestClass::REQUIRED), $this->l->dump());
+        $this->assertCount(sizeof($exp), $this->l->dump());
     }
 
     /**

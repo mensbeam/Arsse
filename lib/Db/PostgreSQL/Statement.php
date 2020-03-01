@@ -9,7 +9,7 @@ namespace JKingWeb\Arsse\Db\PostgreSQL;
 class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     use Dispatch;
 
-    const BINDINGS = [
+    protected const BINDINGS = [
         self::T_INTEGER  => "bigint",
         self::T_FLOAT    => "decimal",
         self::T_DATETIME => "timestamp(0) without time zone",

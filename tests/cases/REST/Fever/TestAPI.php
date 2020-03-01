@@ -488,8 +488,10 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testListFeedIcons(): void {
+        $iconType = (new \ReflectionClassConstant(API::class, "GENERIC_ICON_TYPE"))->getValue();
+        $iconData = (new \ReflectionClassConstant(API::class, "GENERIC_ICON_DATA"))->getValue();
         $act = $this->h->dispatch($this->req("api&favicons"));
-        $exp = new JsonResponse(['favicons' => [['id' => 0, 'data' => API::GENERIC_ICON_TYPE.",".API::GENERIC_ICON_DATA]]]);
+        $exp = new JsonResponse(['favicons' => [['id' => 0, 'data' => $iconType.",".$iconData]]]);
         $this->assertMessage($exp, $act);
     }
 

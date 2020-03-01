@@ -114,14 +114,14 @@ class Conf {
     /** @var \DateInterval|null (OBSOLETE) Number of seconds for SQLite to wait before returning a timeout error when trying to acquire a write lock on the database (zero does not wait) */
     public $dbSQLite3Timeout = null; // previously 60.0
 
-    const TYPE_NAMES = [
+    protected const TYPE_NAMES = [
         Value::T_BOOL     => "boolean",
         Value::T_STRING   => "string",
         Value::T_FLOAT    => "float",
         VALUE::T_INT      => "integer",
         Value::T_INTERVAL => "interval",
     ];
-    const EXPECTED_TYPES = [
+    protected const EXPECTED_TYPES = [
         'dbTimeoutExec'    => "double",
         'dbTimeoutLock'    => "double",
         'dbTimeoutConnect' => "double",

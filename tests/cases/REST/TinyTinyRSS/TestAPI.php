@@ -997,6 +997,7 @@ LONG_STRING;
             ['id' => 3, 'name' => "Hardware"],
             ['id' => 1, 'name' => "Politics"],
         ];
+        $labelOffset = (new \ReflectionClassConstant(API::class, "LABEL_OFFSET"))->getValue();
         // set of various mocks for testing
         \Phake::when(Arsse::$db)->labelAdd(Arsse::$user->id, $db[0])->thenReturn(2)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
         \Phake::when(Arsse::$db)->labelAdd(Arsse::$user->id, $db[1])->thenReturn(3)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
@@ -1007,14 +1008,14 @@ LONG_STRING;
         \Phake::when(Arsse::$db)->labelAdd(Arsse::$user->id, ['name' => ""])->thenThrow(new ExceptionInput("missing"));
         \Phake::when(Arsse::$db)->labelAdd(Arsse::$user->id, ['name' => "   "])->thenThrow(new ExceptionInput("whitespace"));
         // correctly add two labels
-        $exp = $this->respGood((-1 * API::LABEL_OFFSET) - 2);
+        $exp = $this->respGood((-1 * $labelOffset) - 2);
         $this->assertMessage($exp, $this->req($in[0]));
-        $exp = $this->respGood((-1 * API::LABEL_OFFSET) - 3);
+        $exp = $this->respGood((-1 * $labelOffset) - 3);
         $this->assertMessage($exp, $this->req($in[1]));
         // attempt to add the two labels again
-        $exp = $this->respGood((-1 * API::LABEL_OFFSET) - 2);
+        $exp = $this->respGood((-1 * $labelOffset) - 2);
         $this->assertMessage($exp, $this->req($in[0]));
-        $exp = $this->respGood((-1 * API::LABEL_OFFSET) - 3);
+        $exp = $this->respGood((-1 * $labelOffset) - 3);
         $this->assertMessage($exp, $this->req($in[1]));
         \Phake::verify(Arsse::$db)->labelPropertiesGet(Arsse::$user->id, "Software", true);
         \Phake::verify(Arsse::$db)->labelPropertiesGet(Arsse::$user->id, "Hardware", true);

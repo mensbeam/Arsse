@@ -12,12 +12,12 @@ use JKingWeb\Arsse\Db\Exception;
 class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     use ExceptionBuilder;
 
-    const TRANSACTIONAL_LOCKS = true;
+    protected const TRANSACTIONAL_LOCKS = true;
 
-    const SQLITE_BUSY = 5;
-    const SQLITE_SCHEMA = 17;
-    const SQLITE_CONSTRAINT = 19;
-    const SQLITE_MISMATCH = 20;
+    public const SQLITE_BUSY = 5;
+    public const SQLITE_SCHEMA = 17;
+    public const SQLITE_CONSTRAINT = 19;
+    public const SQLITE_MISMATCH = 20;
 
     protected $db;
 

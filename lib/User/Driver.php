@@ -7,9 +7,9 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\User;
 
 interface Driver {
-    const FUNC_NOT_IMPLEMENTED = 0;
-    const FUNC_INTERNAL = 1;
-    const FUNC_EXTERNAL = 2;
+    public const FUNC_NOT_IMPLEMENTED = 0;
+    public const FUNC_INTERNAL = 1;
+    public const FUNC_EXTERNAL = 2;
 
     // returns an instance of a class implementing this interface.
     public function __construct();

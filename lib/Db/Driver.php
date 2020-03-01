@@ -7,11 +7,11 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Db;
 
 interface Driver {
-    const TR_PEND = 0;
-    const TR_COMMIT = 1;
-    const TR_ROLLBACK = 2;
-    const TR_PEND_COMMIT = -1;
-    const TR_PEND_ROLLBACK = -2;
+    public const TR_PEND = 0;
+    public const TR_COMMIT = 1;
+    public const TR_ROLLBACK = 2;
+    public const TR_PEND_COMMIT = -1;
+    public const TR_PEND_ROLLBACK = -2;
 
     /** Creates and returns an instance of the class; this is so that either a native or PDO driver may be returned depending on what is available on the server */
     public static function create(): Driver;

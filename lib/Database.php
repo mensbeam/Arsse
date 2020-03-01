@@ -39,23 +39,23 @@ use JKingWeb\Arsse\Misc\URL;
  */
 class Database {
     /** The version number of the latest schema the interface is aware of */
-    const SCHEMA_VERSION = 6;
-    /** The size of a set of values beyond which the set will be embedded into the query text */
-    const LIMIT_SET_SIZE = 25;
-    /** The length of a string in an embedded set beyond which a parameter placeholder will be used for the string */
-    const LIMIT_SET_STRING_LENGTH = 200;
+    public const SCHEMA_VERSION = 6;
     /** Makes tag/label association change operations remove members */
-    const ASSOC_REMOVE = 0;
+    public const ASSOC_REMOVE = 0;
     /** Makes tag/label association change operations add members */
-    const ASSOC_ADD = 1;
+    public const ASSOC_ADD = 1;
     /** Makes tag/label association change operations replace members */
-    const ASSOC_REPLACE = 2;
+    public const ASSOC_REPLACE = 2;
     /** A map of database driver short-names and their associated class names */
-    const DRIVER_NAMES = [
+    public const DRIVER_NAMES = [
         'sqlite3'    => \JKingWeb\Arsse\Db\SQLite3\Driver::class,
         'postgresql' => \JKingWeb\Arsse\Db\PostgreSQL\Driver::class,
         'mysql'      => \JKingWeb\Arsse\Db\MySQL\Driver::class,
     ];
+    /** The size of a set of values beyond which the set will be embedded into the query text */
+    protected const LIMIT_SET_SIZE = 25;
+    /** The length of a string in an embedded set beyond which a parameter placeholder will be used for the string */
+    protected const LIMIT_SET_STRING_LENGTH = 200;
 
     /** @var Db\Driver */
     public $db;

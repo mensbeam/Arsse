@@ -14,7 +14,7 @@ use Laminas\Diactoros\ServerRequestFactory;
 use Laminas\Diactoros\Response\EmptyResponse;
 
 class REST {
-    const API_LIST = [
+    public const API_LIST = [
         'ncn' => [ // Nextcloud News version enumerator
             'match' => '/index.php/apps/news/api',
             'strip' => '/index.php/apps/news/api',
@@ -55,7 +55,7 @@ class REST {
         // Proprietary (centralized) entities:
         // Feedly               https://developer.feedly.com/
     ];
-    const DEFAULT_PORTS = [
+    protected const DEFAULT_PORTS = [
         'http'  => 80,
         'https' => 443,
     ];

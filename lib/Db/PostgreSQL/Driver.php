@@ -12,7 +12,7 @@ use JKingWeb\Arsse\Db\Exception;
 class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     use Dispatch;
 
-    const TRANSACTIONAL_LOCKS = true;
+    protected const TRANSACTIONAL_LOCKS = true;
 
     protected $db;
     protected $transStart = 0;

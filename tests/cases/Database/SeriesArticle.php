@@ -421,6 +421,7 @@ trait SeriesArticle {
     }
 
     public function provideContextMatches(): iterable {
+        $setSize = (new \ReflectionClassConstant(Database::class, "LIMIT_SET_SIZE"))->getValue();
         return [
             'Blank context'                                              => [new Context, [1,2,3,4,5,6,7,8,19,20]],
             'Folder tree'                                                => [(new Context)->folder(1), [5,6,7,8]],
@@ -473,7 +474,7 @@ trait SeriesArticle {
             'Multiple unstarred articles'                                => [(new Context)->articles([1,2,3])->starred(false), [2,3]],
             'Multiple articles'                                          => [(new Context)->articles([1,20,50]), [1,20]],
             'Multiple editions'                                          => [(new Context)->editions([1,1001,50]), [1,20]],
-            '150 articles'                                               => [(new Context)->articles(range(1, Database::LIMIT_SET_SIZE * 3)), [1,2,3,4,5,6,7,8,19,20]],
+            '150 articles'                                               => [(new Context)->articles(range(1, $setSize * 3)), [1,2,3,4,5,6,7,8,19,20]],
             'Search title or content 1'                                  => [(new Context)->searchTerms(["Article"]), [1,2,3]],
             'Search title or content 2'                                  => [(new Context)->searchTerms(["one", "first"]), [1]],
             'Search title or content 3'                                  => [(new Context)->searchTerms(["one first"]), []],
@@ -816,7 +817,8 @@ trait SeriesArticle {
     }
 
     public function testMarkTooManyMultipleArticles(): void {
-        $this->assertSame(7, Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->articles(range(1, Database::LIMIT_SET_SIZE * 3))));
+        $setSize = (new \ReflectionClassConstant(Database::class, "LIMIT_SET_SIZE"))->getValue();
+        $this->assertSame(7, Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->articles(range(1, $setSize * 3))));
     }
 
     public function testMarkAMissingArticle(): void {
@@ -971,10 +973,11 @@ trait SeriesArticle {
     }
 
     public function testCountArticles(): void {
+        $setSize = (new \ReflectionClassConstant(Database::class, "LIMIT_SET_SIZE"))->getValue();
         $this->assertSame(2, Arsse::$db->articleCount("john.doe@example.com", (new Context)->starred(true)));
         $this->assertSame(4, Arsse::$db->articleCount("john.doe@example.com", (new Context)->folder(1)));
         $this->assertSame(0, Arsse::$db->articleCount("jane.doe@example.com", (new Context)->starred(true)));
-        $this->assertSame(10, Arsse::$db->articleCount("john.doe@example.com", (new Context)->articles(range(1, Database::LIMIT_SET_SIZE * 3))));
+        $this->assertSame(10, Arsse::$db->articleCount("john.doe@example.com", (new Context)->articles(range(1, $setSize * 3))));
     }
 
     public function testCountArticlesWithoutAuthority(): void {
