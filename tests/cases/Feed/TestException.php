@@ -126,7 +126,7 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
         $specials = [
             401 => "unauthorized",
             403 => "forbidden",
-            404 => "invalidUrl", 
+            404 => "invalidUrl",
             408 => "timeout",
             410 => "invalidUrl",
             414 => "invalidUrl",

@@ -54,7 +54,7 @@ class RoboFile extends \Robo\Tasks {
      * arguments to this task as one would to PHPUnit.
      *
      * Robo first tries to use pcov and will fall back first to xdebug then
-     * phpdbg. Neither pcov nor xdebug need to be enabled to be used; they 
+     * phpdbg. Neither pcov nor xdebug need to be enabled to be used; they
      * only need to be present in the extension load path to be used.
     */
     public function coverage(array $args): Result {
