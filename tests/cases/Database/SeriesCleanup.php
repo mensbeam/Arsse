@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Database;
 
 use JKingWeb\Arsse\Arsse;
-use \DateTimeImmutable as Date;
+use DateTimeImmutable as Date;
 
 trait SeriesCleanup {
     protected function setUpSeriesCleanup(): void {
@@ -18,13 +18,13 @@ trait SeriesCleanup {
         ]);
         // set up the test data
         $tz = new \DateTimeZone("UTC");
-        $nowish = gmdate("Y-m-d H:i:s", (new Date("now - 1 minute", $tz))->getTimestamp());
-        $yesterday = gmdate("Y-m-d H:i:s", (new Date("now - 1 day", $tz))->getTimestamp());
-        $daybefore = gmdate("Y-m-d H:i:s", (new Date("now - 2 days", $tz))->getTimestamp());
-        $daysago = gmdate("Y-m-d H:i:s", (new Date("now - 7 days", $tz))->getTimestamp());
-        $weeksago = gmdate("Y-m-d H:i:s", (new Date("now - 21 days", $tz))->getTimestamp());
-        $soon = gmdate("Y-m-d H:i:s", (new Date("now + 1 minute", $tz))->getTimestamp());
-        $faroff = gmdate("Y-m-d H:i:s", (new Date("now + 1 hour", $tz))->getTimestamp());
+        $nowish = (new Date("now - 1 minute", $tz))->format("Y-m-d H:i:s");
+        $yesterday = (new Date("now - 1 day", $tz))->format("Y-m-d H:i:s");
+        $daybefore = (new Date("now - 2 days", $tz))->format("Y-m-d H:i:s");
+        $daysago = (new Date("now - 7 days", $tz))->format("Y-m-d H:i:s");
+        $weeksago = (new Date("now - 21 days", $tz))->format("Y-m-d H:i:s");
+        $soon = (new Date("now + 1 minute", $tz))->format("Y-m-d H:i:s");
+        $faroff = (new Date("now + 1 hour", $tz))->format("Y-m-d H:i:s");
         $this->data = [
             'arsse_users' => [
                 'columns' => [
