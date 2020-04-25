@@ -6,7 +6,7 @@ Information on how to install and use the software can be found in [the manual](
 
 # Installing from source
 
-The main repository for The Arsse can be found at [code.mensbeam.com](https://code.mensbeam.com/MensBeam/arsse/), with a mirror also available [at GitHub](https://github.com/mensbeam/arsse/). The main repository is preferred, as the GitHub mirror can sometimes be out of date.
+The main repository for The Arsse can be found at [code.mensbeam.com](https://code.mensbeam.com/MensBeam/arsse/), with a mirror also available [at GitHub](https://github.com/mensbeam/arsse/). The GitHub mirror does not accept bug reports, but the two should otherwise be equivalent.
 
 [Composer](https://getcomposer.org/) is required to manage PHP dependencies. After cloning the repository or downloading a source code tarball, running `composer install` will download all the required dependencies, and will advise if any PHP extensions need to be installed. If not installing as a programming environment, running `composer install --no-dev` is recommended.
 
