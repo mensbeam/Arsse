@@ -31,7 +31,7 @@ Version 0.8.0 (2019-07-26)
 ==========================
 
 New features:
-- Support for the Fever protocol (see README.md for details)
+- Support for the Fever protocol (see manual for details)
 - Command line functionality for clearing a password, disabling the account
 - Command line options for dealing with Fever passwords
 - Command line functionality for importing and exporting OPML
@@ -123,7 +123,7 @@ Version 0.4.0 (2018-10-26)
 ==========================
 
 New features:
-- Support for HTTP authentication in Tiny Tiny RSS (see README.md for details)
+- Support for HTTP authentication in Tiny Tiny RSS (see manual for details)
 - New userHTTPAuthRequired and userSessionEnforced settings
 
 Version 0.3.1 (2018-07-22)
@@ -169,7 +169,7 @@ Version 0.2.0 (2017-11-30)
 ==========================
 
 New features:
-- Support for the Tiny Tiny RSS protocol (see README.md for details)
+- Support for the Tiny Tiny RSS protocol (see manual for details)
 - Support for HTTP OPTIONS requests in all protocols
 
 Bug fixes:
