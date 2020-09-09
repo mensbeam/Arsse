@@ -1144,7 +1144,7 @@ class Database {
             'str',
             'str',
             'datetime',
-            'str',
+            'strict str',
             'datetime',
             'int',
             'int'
