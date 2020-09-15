@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1d03b34d159fbf69097aa783994f9cfa",
+    "content-hash": "9880398f241b2e782876bb510207cde7",
     "packages": [
         {
             "name": "docopt/docopt",
@@ -609,16 +609,16 @@
         },
         {
             "name": "laminas/laminas-zendframework-bridge",
-            "version": "1.1.0",
+            "version": "1.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laminas/laminas-zendframework-bridge.git",
-                "reference": "4939c81f63a8a4968c108c440275c94955753b19"
+                "reference": "6ede70583e101030bcace4dcddd648f760ddf642"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laminas/laminas-zendframework-bridge/zipball/4939c81f63a8a4968c108c440275c94955753b19",
-                "reference": "4939c81f63a8a4968c108c440275c94955753b19",
+                "url": "https://api.github.com/repos/laminas/laminas-zendframework-bridge/zipball/6ede70583e101030bcace4dcddd648f760ddf642",
+                "reference": "6ede70583e101030bcace4dcddd648f760ddf642",
                 "shasum": ""
             },
             "require": {
@@ -630,10 +630,6 @@
             },
             "type": "library",
             "extra": {
-                "branch-alias": {
-                    "dev-master": "1.0.x-dev",
-                    "dev-develop": "1.1.x-dev"
-                },
                 "laminas": {
                     "module": "Laminas\\ZendFrameworkBridge"
                 }
@@ -663,20 +659,20 @@
                     "type": "community_bridge"
                 }
             ],
-            "time": "2020-08-18T16:34:51+00:00"
+            "time": "2020-09-14T14:23:00+00:00"
         },
         {
             "name": "nicolus/picofeed",
-            "version": "dev-master",
+            "version": "0.1.43",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nicolus/picoFeed.git",
-                "reference": "0ebdf92852a4725f4807c200dd49bf9fff3905b7"
+                "reference": "e6bfe8d30009603702d1bff46a7abf8bfb25f8a8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nicolus/picoFeed/zipball/0ebdf92852a4725f4807c200dd49bf9fff3905b7",
-                "reference": "0ebdf92852a4725f4807c200dd49bf9fff3905b7",
+                "url": "https://api.github.com/repos/nicolus/picoFeed/zipball/e6bfe8d30009603702d1bff46a7abf8bfb25f8a8",
+                "reference": "e6bfe8d30009603702d1bff46a7abf8bfb25f8a8",
                 "shasum": ""
             },
             "require": {
@@ -725,7 +721,7 @@
             ],
             "description": "RSS/Atom parsing library",
             "homepage": "https://github.com/nicolus/picoFeed",
-            "time": "2020-02-13T06:43:47+00:00"
+            "time": "2020-09-15T07:28:23+00:00"
         },
         {
             "name": "paragonie/random_compat",
@@ -1381,9 +1377,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "nicolus/picofeed": 20
-    },
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
