@@ -499,7 +499,7 @@ class Database {
             $q->setWhere("owner = ?", "str", $user);
             $q->setWhere("coalesce(arsse_folders.parent,0) = ?", "strict int", $parent);
         } else {
-            $q->setCTE("folders", "SELECT id from arsse_folders where owner = ? and coalesce(parent,0) = ? union select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id", ["str", "strict int"], [$user, $parent]);
+            $q->setCTE("folders", "SELECT id from arsse_folders where owner = ? and coalesce(parent,0) = ? union all select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id", ["str", "strict int"], [$user, $parent]);
             $q->setWhere("id in (SELECT id from folders)");
         }
         $q->setOrder("name");
@@ -644,7 +644,7 @@ class Database {
         $p = $this->db->prepare(
             "WITH RECURSIVE
                 target as (select ? as userid, ? as source, ? as dest, ? as new_name),
-                folders as (SELECT id from arsse_folders join target on owner = userid and coalesce(parent,0) = source union select arsse_folders.id as id from arsse_folders join folders on arsse_folders.parent=folders.id)
+                folders as (SELECT id from arsse_folders join target on owner = userid and coalesce(parent,0) = source union all select arsse_folders.id as id from arsse_folders join folders on arsse_folders.parent=folders.id)
             ".
             "SELECT
                 case when ((select dest from target) is null or exists(select id from arsse_folders join target on owner = userid and coalesce(id,0) = coalesce(dest,0))) then 1 else 0 end as extant,
@@ -749,14 +749,14 @@ class Database {
         $nocase = $this->db->sqlToken("nocase");
         $q->setOrder("pinned desc, coalesce(arsse_subscriptions.title, arsse_feeds.title) collate $nocase");
         // topmost folders belonging to the user
-        $q->setCTE("topmost(f_id,top)", "SELECT id,id from arsse_folders where owner = ? and parent is null union select id,top from arsse_folders join topmost on parent=f_id", ["str"], [$user]);
+        $q->setCTE("topmost(f_id,top)", "SELECT id,id from arsse_folders where owner = ? and parent is null union all select id,top from arsse_folders join topmost on parent=f_id", ["str"], [$user]);
         if ($id) {
             // this condition facilitates the implementation of subscriptionPropertiesGet, which would otherwise have to duplicate the complex query; it takes precedence over a specified folder
             // if an ID is specified, add a suitable WHERE condition and bindings
             $q->setWhere("arsse_subscriptions.id = ?", "int", $id);
         } elseif ($folder && $recursive) {
             // if a folder is specified and we're listing recursively, add a common table expression to list it and its children so that we select from the entire subtree
-            $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on parent = folder", "int", $folder);
+            $q->setCTE("folders(folder)", "SELECT ? union all select id from arsse_folders join folders on parent = folder", "int", $folder);
             // add a suitable WHERE condition
             $q->setWhere("folder in (select folder from folders)");
         } elseif (!$recursive) {
@@ -778,7 +778,7 @@ class Database {
         $q->setWhere("owner = ?", "str", $user);
         if ($folder) {
             // if the specified folder exists, add a common table expression to list it and its children so that we select from the entire subtree
-            $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on parent = folder", "int", $folder);
+            $q->setCTE("folders(folder)", "SELECT ? union all select id from arsse_folders join folders on parent = folder", "int", $folder);
             // add a suitable WHERE condition
             $q->setWhere("folder in (select folder from folders)");
         }
@@ -1491,27 +1491,27 @@ class Database {
         }
         if ($context->folder()) {
             // add a common table expression to list the folder and its children so that we select from the entire subtree
-            $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on coalesce(parent,0) = folder", "int", $context->folder);
+            $q->setCTE("folders(folder)", "SELECT ? union all select id from arsse_folders join folders on coalesce(parent,0) = folder", "int", $context->folder);
             // limit subscriptions to the listed folders
             $q->setWhere("coalesce(arsse_subscriptions.folder,0) in (select folder from folders)");
         }
         if ($context->folders()) {
             [$inClause, $inTypes, $inValues] = $this->generateIn($context->folders, "int");
             // add a common table expression to list the folders and their children so that we select from the entire subtree
-            $q->setCTE("folders_multi(folder)", "SELECT id as folder from (select id from (select 0 as id union select id from arsse_folders where owner = ?) as f where id in ($inClause)) as folders_multi union select id from arsse_folders join folders_multi on coalesce(parent,0) = folder", ["str", $inTypes], [$user, $inValues]);
+            $q->setCTE("folders_multi(folder)", "SELECT id as folder from (select id from (select 0 as id union all select id from arsse_folders where owner = ?) as f where id in ($inClause)) as folders_multi union select id from arsse_folders join folders_multi on coalesce(parent,0) = folder", ["str", $inTypes], [$user, $inValues]);
             // limit subscriptions to the listed folders
             $q->setWhere("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_multi)");
         }
         if ($context->not->folder()) {
             // add a common table expression to list the folder and its children so that we exclude from the entire subtree
-            $q->setCTE("folders_excluded(folder)", "SELECT ? union select id from arsse_folders join folders_excluded on coalesce(parent,0) = folder", "int", $context->not->folder);
+            $q->setCTE("folders_excluded(folder)", "SELECT ? union all select id from arsse_folders join folders_excluded on coalesce(parent,0) = folder", "int", $context->not->folder);
             // excluded any subscriptions in the listed folders
             $q->setWhereNot("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_excluded)");
         }
         if ($context->not->folders()) {
             [$inClause, $inTypes, $inValues] = $this->generateIn($context->not->folders, "int");
             // add a common table expression to list the folders and their children so that we select from the entire subtree
-            $q->setCTE("folders_multi_excluded(folder)", "SELECT id as folder from (select id from (select 0 as id union select id from arsse_folders where owner = ?) as f where id in ($inClause)) as folders_multi_excluded union select id from arsse_folders join folders_multi_excluded on coalesce(parent,0) = folder", ["str", $inTypes], [$user, $inValues]);
+            $q->setCTE("folders_multi_excluded(folder)", "SELECT id as folder from (select id from (select 0 as id union all select id from arsse_folders where owner = ?) as f where id in ($inClause)) as folders_multi_excluded union select id from arsse_folders join folders_multi_excluded on coalesce(parent,0) = folder", ["str", $inTypes], [$user, $inValues]);
             // limit subscriptions to the listed folders
             $q->setWhereNot("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_multi_excluded)");
         }
