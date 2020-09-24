@@ -15,7 +15,7 @@ While MySQL can be used as a database for The Arsse, this is **not recommended**
 
 You are therefore strongly advised not to use MySQL. Though our MySQL test suite ensures functionally identical behaviour to SQLite and PostgreSQL for the supplied test data in a default MySQL configuration, there are [many other subtle ways in which it can fail](https://web.archive.org/web/20190929090114/https://grimoire.ca/mysql/choose-something-else), and we do not have the manpower to account for most of these with certainty.
 
-Also please note that as of this writing MariaDB cannot be used in place of MySQL as it lacks features of MySQL 8 which The Arsse requires. The awkwardly-named [_Percona Server for MySQL_](https://www.percona.com/software/mysql-database/percona-server), on the other hand, will work.
+Also please note that as of this writing MariaDB cannot be used in place of MySQL as it lacks features of MySQL 8 which The Arsse requires (see the [relevant MariaDB issue](https://jira.mariadb.org/browse/MDEV-18511) for details). The awkwardly-named [_Percona Server for MySQL_](https://www.percona.com/software/mysql-database/percona-server), on the other hand, will work.
 
 # Set-up
 
