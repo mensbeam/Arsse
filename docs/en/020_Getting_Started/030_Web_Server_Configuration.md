@@ -30,6 +30,7 @@ server {
         fastcgi_param CONTENT_TYPE    $content_type;
         fastcgi_param CONTENT_LENGTH  $content_length;
         fastcgi_param REQUEST_URI     $uri;
+        fastcgi_param QUERY_STRING    $query_string;
         fastcgi_param HTTPS           $https if_not_empty;
         fastcgi_param REMOTE_USER     $remote_user;
     }

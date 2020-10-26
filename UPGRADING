@@ -11,6 +11,17 @@ usually prudent:
   `composer install -o --no-dev`
 
 
+Upgrading from 0.8.4 to 0.8.5
+=============================
+
+- The sample configuration for Nginx has changed, to correct the omission of
+  the QUERY_STRING FastCGI parameter in those passed to PHP. The omission
+  affects the Fever protocol in particular (the parameter is required for 
+  Fever to function at all), though it could potentially affect some
+  Nextcloud News clients as well.
+- No significant code changes have been made in this version
+    
+
 Upgrading from 0.8.2 to 0.8.3
 =============================
 
