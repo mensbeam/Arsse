@@ -22,7 +22,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     public const LEVEL = 3;
     protected const GENERIC_ICON_TYPE = "image/png;base64";
     protected const GENERIC_ICON_DATA = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMjHxIGmVAAAADUlEQVQYV2NgYGBgAAAABQABijPjAAAAAABJRU5ErkJggg==";
-    protected const ACCEPTED_TYPE = "application/x-www-form-urlencoded";
+    protected const ACCEPTED_TYPES = ["application/x-www-form-urlencoded", "multipart/form-data"];
 
     // GET parameters for which we only check presence: these will be converted to booleans
     protected const PARAM_BOOL = ["groups", "feeds", "items", "favicons", "links", "unread_item_ids", "saved_item_ids"];
@@ -68,11 +68,12 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             case "OPTIONS":
                 return new EmptyResponse(204, [
                     'Allow'  => "POST",
-                    'Accept' => self::ACCEPTED_TYPE,
+                    'Accept' => implode(", ", self::ACCEPTED_TYPES),
                 ]);
+            case "GET": // HTTP violation required for client "Unread" on iOS
             case "POST":
-                if (!HTTP::matchType($req, self::ACCEPTED_TYPE, "")) {
-                    return new EmptyResponse(415, ['Accept' => self::ACCEPTED_TYPE]);
+                if (!HTTP::matchType($req, "", ...self::ACCEPTED_TYPES)) {
+                    return new EmptyResponse(415, ['Accept' => implode(", ", self::ACCEPTED_TYPES)]);
                 }
                 $out = [
                     'api_version' => self::LEVEL,

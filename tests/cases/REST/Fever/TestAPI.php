@@ -427,9 +427,11 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provideInvalidRequests(): iterable {
         return [
-            'Not an API request' => [$this->req(""), new EmptyResponse(404)],
-            'Wrong method'       => [$this->req("api", "", "GET"), new EmptyResponse(405, ['Allow' => "OPTIONS,POST"])],
-            'Wrong content type' => [$this->req("api", '{"api_key":"validToken"}', "POST", "application/json"), new EmptyResponse(415, ['Accept' => "application/x-www-form-urlencoded"])],
+            'Not an API request'        => [$this->req(""), new EmptyResponse(404)],
+            'Wrong method'              => [$this->req("api", "", "PUT"), new EmptyResponse(405, ['Allow' => "OPTIONS,POST"])],
+            'Non-standard method'       => [$this->req("api", "", "GET"), new JsonResponse([])],
+            'Wrong content type'        => [$this->req("api", '{"api_key":"validToken"}', "POST", "application/json"), new EmptyResponse(415, ['Accept' => "application/x-www-form-urlencoded, multipart/form-data"])],
+            'Non-standard content type' => [$this->req("api", '{"api_key":"validToken"}', "POST", "multipart/form-data; boundary=33b68964f0de4c1f-5144aa6caaa6e4a8-18bfaf416a1786c8-5c5053a45f221bc1"), new JsonResponse([])],
         ];
     }
 
@@ -499,7 +501,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $act = $this->h->dispatch($this->req("api", "", "OPTIONS"));
         $exp = new EmptyResponse(204, [
             'Allow'  => "POST",
-            'Accept' => "application/x-www-form-urlencoded",
+            'Accept' => "application/x-www-form-urlencoded, multipart/form-data",
         ]);
         $this->assertMessage($exp, $act);
     }
