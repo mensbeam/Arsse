@@ -50,6 +50,16 @@ The Arsse does not at this time have any first party clients. However, because T
    </td>
   </tr>
   <tr>
+   <td><a href="https://gitlab.com/news-flash/news_flash_gtk">NewsFlash</a></td>
+   <td>Linux</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td>
+    <p>Successor to FeedReader.</p>
+   </td>
+  </tr>
+  <tr>
    <td><a href="https://reeder.app/">Reeder</a></td>
    <td>macOS</td>
    <td class="N">✘</td>
