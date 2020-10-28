@@ -14,20 +14,20 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Misc\HTTP;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\Response\JsonResponse;
-use Zend\Diactoros\Response\XmlResponse;
-use Zend\Diactoros\Response\EmptyResponse;
+use Laminas\Diactoros\Response\JsonResponse;
+use Laminas\Diactoros\Response\XmlResponse;
+use Laminas\Diactoros\Response\EmptyResponse;
 
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
-    const LEVEL = 3;
-    const GENERIC_ICON_TYPE = "image/png;base64";
-    const GENERIC_ICON_DATA = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMjHxIGmVAAAADUlEQVQYV2NgYGBgAAAABQABijPjAAAAAABJRU5ErkJggg==";
-    const ACCEPTED_TYPE = "application/x-www-form-urlencoded";
+    public const LEVEL = 3;
+    protected const GENERIC_ICON_TYPE = "image/png;base64";
+    protected const GENERIC_ICON_DATA = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMjHxIGmVAAAADUlEQVQYV2NgYGBgAAAABQABijPjAAAAAABJRU5ErkJggg==";
+    protected const ACCEPTED_TYPES = ["application/x-www-form-urlencoded", "multipart/form-data"];
 
     // GET parameters for which we only check presence: these will be converted to booleans
-    const PARAM_BOOL = ["groups", "feeds", "items", "favicons", "links", "unread_item_ids", "saved_item_ids"];
+    protected const PARAM_BOOL = ["groups", "feeds", "items", "favicons", "links", "unread_item_ids", "saved_item_ids"];
     // GET parameters which contain meaningful values
-    const PARAM_GET = [
+    protected const PARAM_GET = [
         'api'                  => V::T_STRING, // this parameter requires special handling
         'page'                 => V::T_INT, // parameter for hot links
         'range'                => V::T_INT, // parameter for hot links
@@ -45,7 +45,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         'unread_recently_read' => V::T_BOOL,
     ];
     // POST parameters, all of which contain meaningful values
-    const PARAM_POST = [
+    protected const PARAM_POST = [
         'api_key'              => V::T_STRING,
         'mark'                 => V::T_STRING,
         'as'                   => V::T_STRING,
@@ -67,16 +67,17 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         switch ($req->getMethod()) {
             case "OPTIONS":
                 return new EmptyResponse(204, [
-                    'Allow' => "POST",
-                    'Accept' => self::ACCEPTED_TYPE,
+                    'Allow'  => "POST",
+                    'Accept' => implode(", ", self::ACCEPTED_TYPES),
                 ]);
+            case "GET": // HTTP violation required for client "Unread" on iOS
             case "POST":
-                if (!HTTP::matchType($req, self::ACCEPTED_TYPE, "")) {
-                    return new EmptyResponse(415, ['Accept' => self::ACCEPTED_TYPE]);
+                if (!HTTP::matchType($req, "", ...self::ACCEPTED_TYPES)) {
+                    return new EmptyResponse(415, ['Accept' => implode(", ", self::ACCEPTED_TYPES)]);
                 }
                 $out = [
                     'api_version' => self::LEVEL,
-                    'auth' => 0,
+                    'auth'        => 0,
                 ];
                 if ($req->getAttribute("authenticated", false)) {
                     // if HTTP authentication was successfully used, set the expected user ID
@@ -153,7 +154,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             // we provide a single blank favicon for now
             $out['favicons'] = [
                 [
-                    'id' => 0,
+                    'id'   => 0,
                     'data' => self::GENERIC_ICON_TYPE.",".self::GENERIC_ICON_DATA,
                 ],
             ];
@@ -178,7 +179,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function baseResponse(bool $authenticated): array {
         $out = [
             'api_version' => self::LEVEL,
-            'auth' => (int) $authenticated,
+            'auth'        => (int) $authenticated,
         ];
         if ($authenticated) {
             // authenticated requests always include the most recent feed refresh
@@ -306,7 +307,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return $listSaved;
     }
 
-    protected function setUnread() {
+    protected function setUnread(): void {
         $lastUnread = Arsse::$db->articleList(Arsse::$user->id, (new Context)->limit(1), ["marked_date"], ["marked_date desc"])->getValue();
         if (!$lastUnread) {
             // there are no articles
@@ -322,7 +323,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         Arsse::$db->articleMark(Arsse::$user->id, ['read' => false], $c);
     }
 
-    protected function getRefreshTime() {
+    protected function getRefreshTime(): ?int {
         return Date::transform(Arsse::$db->subscriptionRefreshed(Arsse::$user->id), "unix");
     }
 
@@ -346,7 +347,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $out = [];
         foreach (Arsse::$db->tagList(Arsse::$user->id) as $member) {
             $out[] = [
-                'id' => (int) $member['id'],
+                'id'    => (int) $member['id'],
                 'title' => $member['name'],
             ];
         }

@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 class Arsse {
-    const VERSION = "0.8.2";
+    public const VERSION = "0.8.5";
 
     /** @var Lang */
     public static $lang;
@@ -18,7 +18,7 @@ class Arsse {
     /** @var User */
     public static $user;
 
-    public static function load(Conf $conf) {
+    public static function load(Conf $conf): void {
         static::$lang = static::$lang ?? new Lang;
         static::$conf = $conf;
         static::$lang->set($conf->lang);

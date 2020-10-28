@@ -9,7 +9,7 @@ namespace JKingWeb\Arsse\TestCase\Database;
 use JKingWeb\Arsse\Arsse;
 
 trait SeriesUser {
-    protected function setUpSeriesUser() {
+    protected function setUpSeriesUser(): void {
         $this->data = [
             'arsse_users' => [
                 'columns' => [
@@ -25,11 +25,11 @@ trait SeriesUser {
         ];
     }
 
-    protected function tearDownSeriesUser() {
+    protected function tearDownSeriesUser(): void {
         unset($this->data);
     }
 
-    public function testCheckThatAUserExists() {
+    public function testCheckThatAUserExists(): void {
         $this->assertTrue(Arsse::$db->userExists("jane.doe@example.com"));
         $this->assertFalse(Arsse::$db->userExists("jane.doe@example.org"));
         \Phake::verify(Arsse::$user)->authorize("jane.doe@example.com", "userExists");
@@ -37,31 +37,31 @@ trait SeriesUser {
         $this->compareExpectations(static::$drv, $this->data);
     }
 
-    public function testCheckThatAUserExistsWithoutAuthority() {
+    public function testCheckThatAUserExistsWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->userExists("jane.doe@example.com");
     }
 
-    public function testGetAPassword() {
+    public function testGetAPassword(): void {
         $hash = Arsse::$db->userPasswordGet("admin@example.net");
         $this->assertSame('$2y$10$PbcG2ZR3Z8TuPzM7aHTF8.v61dtCjzjK78gdZJcp4UePE8T9jEgBW', $hash);
         \Phake::verify(Arsse::$user)->authorize("admin@example.net", "userPasswordGet");
         $this->assertTrue(password_verify("secret", $hash));
     }
 
-    public function testGetThePasswordOfAMissingUser() {
+    public function testGetThePasswordOfAMissingUser(): void {
         $this->assertException("doesNotExist", "User");
         Arsse::$db->userPasswordGet("john.doe@example.org");
     }
 
-    public function testGetAPasswordWithoutAuthority() {
+    public function testGetAPasswordWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->userPasswordGet("admin@example.net");
     }
 
-    public function testAddANewUser() {
+    public function testAddANewUser(): void {
         $this->assertTrue(Arsse::$db->userAdd("john.doe@example.org", ""));
         \Phake::verify(Arsse::$user)->authorize("john.doe@example.org", "userAdd");
         $state = $this->primeExpectations($this->data, ['arsse_users' => ['id']]);
@@ -69,18 +69,18 @@ trait SeriesUser {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testAddAnExistingUser() {
+    public function testAddAnExistingUser(): void {
         $this->assertException("alreadyExists", "User");
         Arsse::$db->userAdd("john.doe@example.com", "");
     }
 
-    public function testAddANewUserWithoutAuthority() {
+    public function testAddANewUserWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->userAdd("john.doe@example.org", "");
     }
 
-    public function testRemoveAUser() {
+    public function testRemoveAUser(): void {
         $this->assertTrue(Arsse::$db->userRemove("admin@example.net"));
         \Phake::verify(Arsse::$user)->authorize("admin@example.net", "userRemove");
         $state = $this->primeExpectations($this->data, ['arsse_users' => ['id']]);
@@ -88,24 +88,24 @@ trait SeriesUser {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testRemoveAMissingUser() {
+    public function testRemoveAMissingUser(): void {
         $this->assertException("doesNotExist", "User");
         Arsse::$db->userRemove("john.doe@example.org");
     }
 
-    public function testRemoveAUserWithoutAuthority() {
+    public function testRemoveAUserWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->userRemove("admin@example.net");
     }
 
-    public function testListAllUsers() {
+    public function testListAllUsers(): void {
         $users = ["admin@example.net", "jane.doe@example.com", "john.doe@example.com"];
         $this->assertSame($users, Arsse::$db->userList());
         \Phake::verify(Arsse::$user)->authorize("", "userList");
     }
 
-    public function testListAllUsersWithoutAuthority() {
+    public function testListAllUsersWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->userList();
@@ -114,7 +114,7 @@ trait SeriesUser {
     /**
      * @depends testGetAPassword
      */
-    public function testSetAPassword() {
+    public function testSetAPassword(): void {
         $user = "john.doe@example.com";
         $pass = "secret";
         $this->assertEquals("", Arsse::$db->userPasswordGet($user));
@@ -125,19 +125,19 @@ trait SeriesUser {
         $this->assertTrue(password_verify($pass, $hash), "Failed verifying password of $user '$pass' against hash '$hash'.");
     }
 
-    public function testUnsetAPassword() {
+    public function testUnsetAPassword(): void {
         $user = "john.doe@example.com";
         $this->assertEquals("", Arsse::$db->userPasswordGet($user));
         $this->assertTrue(Arsse::$db->userPasswordSet($user, null));
         $this->assertNull(Arsse::$db->userPasswordGet($user));
     }
 
-    public function testSetThePasswordOfAMissingUser() {
+    public function testSetThePasswordOfAMissingUser(): void {
         $this->assertException("doesNotExist", "User");
         Arsse::$db->userPasswordSet("john.doe@example.org", "secret");
     }
 
-    public function testSetAPasswordWithoutAuthority() {
+    public function testSetAPasswordWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->userPasswordSet("john.doe@example.com", "secret");

@@ -6,12 +6,13 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Database;
 
+use GuzzleHttp\Exception\ClientException;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Test\Database;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 
 trait SeriesSubscription {
-    public function setUpSeriesSubscription() {
+    public function setUpSeriesSubscription(): void {
         $this->data = [
             'arsse_users' => [
                 'columns' => [
@@ -37,7 +38,7 @@ trait SeriesSubscription {
                     [4, "jane.doe@example.com", null, "Politics"],
                     [5, "john.doe@example.com", null, "Politics"],
                     [6, "john.doe@example.com",    2, "Politics"],
-                ]
+                ],
             ],
             'arsse_feeds' => [
                 'columns' => [
@@ -50,7 +51,7 @@ trait SeriesSubscription {
                     'next_fetch' => "datetime",
                     'favicon'    => "str",
                 ],
-                'rows' => [] // filled in the series setup
+                'rows' => [], // filled in the series setup
             ],
             'arsse_subscriptions' => [
                 'columns' => [
@@ -66,7 +67,7 @@ trait SeriesSubscription {
                     [1,"john.doe@example.com",2,null,null,1,2],
                     [2,"jane.doe@example.com",2,null,null,0,0],
                     [3,"john.doe@example.com",3,"Ook",2,0,1],
-                ]
+                ],
             ],
             'arsse_tags' => [
                 'columns' => [
@@ -83,9 +84,9 @@ trait SeriesSubscription {
             ],
             'arsse_tag_members' => [
                 'columns' => [
-                    'tag' => "int",
+                    'tag'          => "int",
                     'subscription' => "int",
-                    'assigned' => "bool",
+                    'assigned'     => "bool",
                 ],
                 'rows' => [
                     [1,1,1],
@@ -112,7 +113,7 @@ trait SeriesSubscription {
                     [6,3,"","",""],
                     [7,3,"","",""],
                     [8,3,"","",""],
-                ]
+                ],
             ],
             'arsse_marks' => [
                 'columns' => [
@@ -130,7 +131,7 @@ trait SeriesSubscription {
                     [1,1,1,0],
                     [7,3,1,0],
                     [8,3,0,0],
-                ]
+                ],
             ],
         ];
         $this->data['arsse_feeds']['rows'] = [
@@ -143,11 +144,11 @@ trait SeriesSubscription {
         $this->user = "john.doe@example.com";
     }
 
-    protected function tearDownSeriesSubscription() {
+    protected function tearDownSeriesSubscription(): void {
         unset($this->data, $this->user);
     }
 
-    public function testAddASubscriptionToAnExistingFeed() {
+    public function testAddASubscriptionToAnExistingFeed(): void {
         $url = "http://example.com/feed1";
         $subID = $this->nextID("arsse_subscriptions");
         \Phake::when(Arsse::$db)->feedUpdate->thenReturn(true);
@@ -162,7 +163,7 @@ trait SeriesSubscription {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testAddASubscriptionToANewFeed() {
+    public function testAddASubscriptionToANewFeed(): void {
         $url = "http://example.org/feed1";
         $feedID = $this->nextID("arsse_feeds");
         $subID = $this->nextID("arsse_subscriptions");
@@ -179,7 +180,7 @@ trait SeriesSubscription {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testAddASubscriptionToANewFeedViaDiscovery() {
+    public function testAddASubscriptionToANewFeedViaDiscovery(): void {
         $url = "http://localhost:8000/Feed/Discovery/Valid";
         $discovered = "http://localhost:8000/Feed/Discovery/Feed";
         $feedID = $this->nextID("arsse_feeds");
@@ -197,10 +198,10 @@ trait SeriesSubscription {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testAddASubscriptionToAnInvalidFeed() {
+    public function testAddASubscriptionToAnInvalidFeed(): void {
         $url = "http://example.org/feed1";
         $feedID = $this->nextID("arsse_feeds");
-        \Phake::when(Arsse::$db)->feedUpdate->thenThrow(new FeedException($url, new \PicoFeed\Client\InvalidUrlException()));
+        \Phake::when(Arsse::$db)->feedUpdate->thenThrow(new FeedException($url, $this->mockGuzzleException(ClientException::class, "", 404)));
         $this->assertException("invalidUrl", "Feed");
         try {
             Arsse::$db->subscriptionAdd($this->user, $url, "", "", false);
@@ -215,19 +216,19 @@ trait SeriesSubscription {
         }
     }
 
-    public function testAddADuplicateSubscription() {
+    public function testAddADuplicateSubscription(): void {
         $url = "http://example.com/feed2";
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         Arsse::$db->subscriptionAdd($this->user, $url);
     }
 
-    public function testAddADuplicateSubscriptionWithEquivalentUrl() {
+    public function testAddADuplicateSubscriptionWithEquivalentUrl(): void {
         $url = "http://EXAMPLE.COM/feed2";
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         Arsse::$db->subscriptionAdd($this->user, $url);
     }
 
-    public function testAddADuplicateSubscriptionViaRedirection() {
+    public function testAddADuplicateSubscriptionViaRedirection(): void {
         $url = "http://localhost:8000/Feed/Parsing/Valid";
         Arsse::$db->subscriptionAdd($this->user, $url);
         $subID = $this->nextID("arsse_subscriptions");
@@ -235,14 +236,14 @@ trait SeriesSubscription {
         $this->assertSame($subID, Arsse::$db->subscriptionAdd($this->user, $url));
     }
 
-    public function testAddASubscriptionWithoutAuthority() {
+    public function testAddASubscriptionWithoutAuthority(): void {
         $url = "http://example.com/feed1";
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->subscriptionAdd($this->user, $url);
     }
 
-    public function testRemoveASubscription() {
+    public function testRemoveASubscription(): void {
         $this->assertTrue(Arsse::$db->subscriptionRemove($this->user, 1));
         \Phake::verify(Arsse::$user)->authorize($this->user, "subscriptionRemove");
         $state = $this->primeExpectations($this->data, [
@@ -253,29 +254,29 @@ trait SeriesSubscription {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testRemoveAMissingSubscription() {
+    public function testRemoveAMissingSubscription(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionRemove($this->user, 2112);
     }
 
-    public function testRemoveAnInvalidSubscription() {
+    public function testRemoveAnInvalidSubscription(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->subscriptionRemove($this->user, -1);
     }
 
-    public function testRemoveASubscriptionForTheWrongOwner() {
+    public function testRemoveASubscriptionForTheWrongOwner(): void {
         $this->user = "jane.doe@example.com";
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionRemove($this->user, 1);
     }
 
-    public function testRemoveASubscriptionWithoutAuthority() {
+    public function testRemoveASubscriptionWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->subscriptionRemove($this->user, 1);
     }
 
-    public function testListSubscriptions() {
+    public function testListSubscriptions(): void {
         $exp = [
             [
                 'url'        => "http://example.com/feed2",
@@ -303,7 +304,7 @@ trait SeriesSubscription {
         $this->assertArraySubset($exp[1], Arsse::$db->subscriptionPropertiesGet($this->user, 3));
     }
 
-    public function testListSubscriptionsInAFolder() {
+    public function testListSubscriptionsInAFolder(): void {
         $exp = [
             [
                 'url'        => "http://example.com/feed2",
@@ -318,7 +319,7 @@ trait SeriesSubscription {
         $this->assertResult($exp, Arsse::$db->subscriptionList($this->user, null, false));
     }
 
-    public function testListSubscriptionsWithoutRecursion() {
+    public function testListSubscriptionsWithoutRecursion(): void {
         $exp = [
             [
                 'url'        => "http://example.com/feed3",
@@ -333,54 +334,54 @@ trait SeriesSubscription {
         $this->assertResult($exp, Arsse::$db->subscriptionList($this->user, 2));
     }
 
-    public function testListSubscriptionsInAMissingFolder() {
+    public function testListSubscriptionsInAMissingFolder(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionList($this->user, 4);
     }
 
-    public function testListSubscriptionsWithoutAuthority() {
+    public function testListSubscriptionsWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->subscriptionList($this->user);
     }
 
-    public function testCountSubscriptions() {
+    public function testCountSubscriptions(): void {
         $this->assertSame(2, Arsse::$db->subscriptionCount($this->user));
         $this->assertSame(1, Arsse::$db->subscriptionCount($this->user, 2));
     }
 
-    public function testCountSubscriptionsInAMissingFolder() {
+    public function testCountSubscriptionsInAMissingFolder(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionCount($this->user, 4);
     }
 
-    public function testCountSubscriptionsWithoutAuthority() {
+    public function testCountSubscriptionsWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->subscriptionCount($this->user);
     }
 
-    public function testGetThePropertiesOfAMissingSubscription() {
+    public function testGetThePropertiesOfAMissingSubscription(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesGet($this->user, 2112);
     }
 
-    public function testGetThePropertiesOfAnInvalidSubscription() {
+    public function testGetThePropertiesOfAnInvalidSubscription(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesGet($this->user, -1);
     }
 
-    public function testGetThePropertiesOfASubscriptionWithoutAuthority() {
+    public function testGetThePropertiesOfASubscriptionWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->subscriptionPropertiesGet($this->user, 1);
     }
 
-    public function testSetThePropertiesOfASubscription() {
+    public function testSetThePropertiesOfASubscription(): void {
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, [
-            'title' => "Ook Ook",
-            'folder' => 3,
-            'pinned' => false,
+            'title'      => "Ook Ook",
+            'folder'     => 3,
+            'pinned'     => false,
             'order_type' => 0,
         ]);
         \Phake::verify(Arsse::$user)->authorize($this->user, "subscriptionPropertiesSet");
@@ -400,56 +401,56 @@ trait SeriesSubscription {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testMoveASubscriptionToAMissingFolder() {
+    public function testMoveASubscriptionToAMissingFolder(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['folder' => 4]);
     }
 
-    public function testMoveASubscriptionToTheRootFolder() {
+    public function testMoveASubscriptionToTheRootFolder(): void {
         $this->assertTrue(Arsse::$db->subscriptionPropertiesSet($this->user, 3, ['folder' => null]));
     }
 
-    public function testRenameASubscriptionToABlankTitle() {
+    public function testRenameASubscriptionToABlankTitle(): void {
         $this->assertException("missing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['title' => ""]);
     }
 
-    public function testRenameASubscriptionToAWhitespaceTitle() {
+    public function testRenameASubscriptionToAWhitespaceTitle(): void {
         $this->assertException("whitespace", "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['title' => "    "]);
     }
 
-    public function testRenameASubscriptionToFalse() {
+    public function testRenameASubscriptionToFalse(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['title' => false]);
     }
 
-    public function testRenameASubscriptionToZero() {
+    public function testRenameASubscriptionToZero(): void {
         $this->assertTrue(Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['title' => 0]));
     }
 
-    public function testRenameASubscriptionToAnArray() {
+    public function testRenameASubscriptionToAnArray(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['title' => []]);
     }
 
-    public function testSetThePropertiesOfAMissingSubscription() {
+    public function testSetThePropertiesOfAMissingSubscription(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesSet($this->user, 2112, ['folder' => null]);
     }
 
-    public function testSetThePropertiesOfAnInvalidSubscription() {
+    public function testSetThePropertiesOfAnInvalidSubscription(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesSet($this->user, -1, ['folder' => null]);
     }
 
-    public function testSetThePropertiesOfASubscriptionWithoutAuthority() {
+    public function testSetThePropertiesOfASubscriptionWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['folder' => null]);
     }
 
-    public function testRetrieveTheFaviconOfASubscription() {
+    public function testRetrieveTheFaviconOfASubscription(): void {
         $exp = "http://example.com/favicon.ico";
         $this->assertSame($exp, Arsse::$db->subscriptionFavicon(1));
         $this->assertSame($exp, Arsse::$db->subscriptionFavicon(2));
@@ -465,7 +466,7 @@ trait SeriesSubscription {
         $this->assertSame('', Arsse::$db->subscriptionFavicon(-2112));
     }
 
-    public function testRetrieveTheFaviconOfASubscriptionWithUser() {
+    public function testRetrieveTheFaviconOfASubscriptionWithUser(): void {
         $exp = "http://example.com/favicon.ico";
         $user = "john.doe@example.com";
         $this->assertSame($exp, Arsse::$db->subscriptionFavicon(1, $user));
@@ -479,7 +480,7 @@ trait SeriesSubscription {
         $this->assertSame('', Arsse::$db->subscriptionFavicon(4, $user));
     }
 
-    public function testRetrieveTheFaviconOfASubscriptionWithUserWithoutAuthority() {
+    public function testRetrieveTheFaviconOfASubscriptionWithUserWithoutAuthority(): void {
         $exp = "http://example.com/favicon.ico";
         $user = "john.doe@example.com";
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
@@ -487,36 +488,36 @@ trait SeriesSubscription {
         Arsse::$db->subscriptionFavicon(-2112, $user);
     }
 
-    public function testListTheTagsOfASubscription() {
+    public function testListTheTagsOfASubscription(): void {
         $this->assertEquals([1,2], Arsse::$db->subscriptionTagsGet("john.doe@example.com", 1));
         $this->assertEquals([2], Arsse::$db->subscriptionTagsGet("john.doe@example.com", 3));
         $this->assertEquals(["Fascinating","Interesting"], Arsse::$db->subscriptionTagsGet("john.doe@example.com", 1, true));
         $this->assertEquals(["Fascinating"], Arsse::$db->subscriptionTagsGet("john.doe@example.com", 3, true));
     }
 
-    public function testListTheTagsOfAMissingSubscription() {
+    public function testListTheTagsOfAMissingSubscription(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionTagsGet($this->user, 101);
     }
 
-    public function testListTheTagsOfASubscriptionWithoutAuthority() {
+    public function testListTheTagsOfASubscriptionWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         Arsse::$db->subscriptionTagsGet("john.doe@example.com", 1);
     }
 
-    public function testGetRefreshTimeOfASubscription() {
+    public function testGetRefreshTimeOfASubscription(): void {
         $user = "john.doe@example.com";
         $this->assertTime(strtotime("now + 1 hour"), Arsse::$db->subscriptionRefreshed($user));
         $this->assertTime(strtotime("now - 1 hour"), Arsse::$db->subscriptionRefreshed($user, 1));
     }
 
-    public function testGetRefreshTimeOfAMissingSubscription() {
+    public function testGetRefreshTimeOfAMissingSubscription(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         $this->assertTime(strtotime("now - 1 hour"), Arsse::$db->subscriptionRefreshed("john.doe@example.com", 2));
     }
 
-    public function testGetRefreshTimeOfASubscriptionWithoutAuthority() {
+    public function testGetRefreshTimeOfASubscriptionWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
         $this->assertTime(strtotime("now + 1 hour"), Arsse::$db->subscriptionRefreshed("john.doe@example.com"));

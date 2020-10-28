@@ -8,8 +8,8 @@ namespace JKingWeb\Arsse\REST\NextcloudNews;
 
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\Response\JsonResponse as Response;
-use Zend\Diactoros\Response\EmptyResponse;
+use Laminas\Diactoros\Response\JsonResponse as Response;
+use Laminas\Diactoros\Response\EmptyResponse;
 
 class Versions implements \JKingWeb\Arsse\REST\Handler {
     public function __construct() {
@@ -29,7 +29,7 @@ class Versions implements \JKingWeb\Arsse\REST\Handler {
                 $out = [
                     'apiLevels' => [
                         'v1-2',
-                    ]
+                    ],
                 ];
                 return new Response($out);
             default:

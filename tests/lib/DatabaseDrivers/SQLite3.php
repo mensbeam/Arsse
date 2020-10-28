@@ -16,7 +16,7 @@ trait SQLite3 {
     protected static $dbStatementClass = \JKingWeb\Arsse\Db\SQLite3\Statement::class;
     protected static $dbDriverClass = \JKingWeb\Arsse\Db\SQLite3\Driver::class;
     protected static $stringOutput = false;
-    
+
     protected static function dbInterface() {
         try {
             $d = new \SQLite3(Arsse::$conf->dbSQLite3File);
@@ -26,7 +26,7 @@ trait SQLite3 {
         $d->enableExceptions(true);
         return $d;
     }
-    
+
     public static function dbTableList($db): array {
         $listTables = "SELECT name from sqlite_master where type = 'table' and name like 'arsse^_%' escape '^'";
         if ($db instanceof Driver) {
@@ -51,7 +51,7 @@ trait SQLite3 {
         return $tables;
     }
 
-    public static function dbTruncate($db, array $afterStatements = []) {
+    public static function dbTruncate($db, array $afterStatements = []): void {
         // rollback any pending transaction
         try {
             $db->exec("ROLLBACK");
@@ -69,7 +69,7 @@ trait SQLite3 {
         }
     }
 
-    public static function dbRaze($db, array $afterStatements = []) {
+    public static function dbRaze($db, array $afterStatements = []): void {
         // rollback any pending transaction
         try {
             $db->exec("ROLLBACK");

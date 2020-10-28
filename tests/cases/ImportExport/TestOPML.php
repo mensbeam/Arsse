@@ -86,28 +86,28 @@ OPML_EXPORT_SERIALIZATION;
         \Phake::when(Arsse::$user)->exists->thenReturn(true);
     }
 
-    public function testExportToOpml() {
+    public function testExportToOpml(): void {
         \Phake::when(Arsse::$db)->folderList("john.doe@example.com")->thenReturn(new Result($this->folders));
         \Phake::when(Arsse::$db)->subscriptionList("john.doe@example.com")->thenReturn(new Result($this->subscriptions));
         \Phake::when(Arsse::$db)->tagSummarize("john.doe@example.com")->thenReturn(new Result($this->tags));
         $this->assertXmlStringEqualsXmlString($this->serialization, (new OPML)->export("john.doe@example.com"));
     }
 
-    public function testExportToFlatOpml() {
+    public function testExportToFlatOpml(): void {
         \Phake::when(Arsse::$db)->folderList("john.doe@example.com")->thenReturn(new Result($this->folders));
         \Phake::when(Arsse::$db)->subscriptionList("john.doe@example.com")->thenReturn(new Result($this->subscriptions));
         \Phake::when(Arsse::$db)->tagSummarize("john.doe@example.com")->thenReturn(new Result($this->tags));
         $this->assertXmlStringEqualsXmlString($this->serializationFlat, (new OPML)->export("john.doe@example.com", true));
     }
 
-    public function testExportToOpmlAMissingUser() {
+    public function testExportToOpmlAMissingUser(): void {
         \Phake::when(Arsse::$user)->exists->thenReturn(false);
         $this->assertException("doesNotExist", "User");
         (new OPML)->export("john.doe@example.com");
     }
 
     /** @dataProvider provideParserData */
-    public function testParseOpmlForImport(string $file, bool $flat, $exp) {
+    public function testParseOpmlForImport(string $file, bool $flat, $exp): void {
         $data = file_get_contents(\JKingWeb\Arsse\DOCROOT."Import/OPML/$file");
         // set up a partial mock to make the ImportExport::parse() method visible
         $parser = \Phake::makeVisible(\Phake::partialMock(OPML::class));
@@ -152,7 +152,7 @@ OPML_EXPORT_SERIALIZATION;
                 ['url' => "https://www.thestar.com/content/thestar/feed.RSSManagerServlet.topstories.rss", 'title' => "Toronto Star",   'folder' => 5, 'tags' => ["news", "canada", "toronto"]],
                 ['url' => "http://rss.canada.com/get/?F239",                                               'title' => "Ottawa Citizen", 'folder' => 6, 'tags' => ["news", "canada"]],
                 ['url' => "https://www.eurogamer.net/?format=rss",                                         'title' => "Eurogamer",      'folder' => 0, 'tags' => ["gaming", "frequent"]],
-            ], [1 =>
+            ], [1      =>
                 ['id' => 1, 'name' => "Photography", 'parent' => 0],
                 ['id' => 2, 'name' => "Science",     'parent' => 0],
                 ['id' => 3, 'name' => "Rocketry",    'parent' => 2],

@@ -2,6 +2,6 @@
     'code'    => 304,
     'cache'   => false,
     'fields'  => [
-        'Last-Modified: '.$_SERVER['HTTP_IF_MODIFIED_SINCE'],
+        'Last-Modified: '.($_SERVER['HTTP_IF_MODIFIED_SINCE'] ?? "No timestamp supplied"),
     ],
 ];

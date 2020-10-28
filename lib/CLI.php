@@ -10,7 +10,7 @@ use JKingWeb\Arsse\REST\Fever\User as Fever;
 use JKingWeb\Arsse\ImportExport\OPML;
 
 class CLI {
-    const USAGE = <<<USAGE_TEXT
+    public const USAGE = <<<USAGE_TEXT
 Usage:
     arsse.php daemon
     arsse.php feed refresh-all
@@ -147,6 +147,7 @@ USAGE_TEXT;
         return "";
     }
 
+    /** @codeCoverageIgnore */
     protected function loadConf(): bool {
         $conf = file_exists(BASE."config.php") ? new Conf(BASE."config.php") : new Conf;
         Arsse::load($conf);
@@ -159,7 +160,7 @@ USAGE_TEXT;
         return ($file === "-" ? null : $file) ?? $stdinOrStdout;
     }
 
-    public function dispatch(array $argv = null) {
+    public function dispatch(array $argv = null): int {
         $argv = $argv ?? $_SERVER['argv'];
         $argv0 = array_shift($argv);
         $args = \Docopt::handle($this->usage($argv0), [
@@ -209,7 +210,7 @@ USAGE_TEXT;
     } // @codeCoverageIgnore
 
     /** @codeCoverageIgnore */
-    protected function logError(string $msg) {
+    protected function logError(string $msg): void {
         fwrite(STDERR, $msg.\PHP_EOL);
     }
 
@@ -219,7 +220,8 @@ USAGE_TEXT;
     }
 
     protected function userManage($args): int {
-        switch ($this->command(["add", "remove", "set-pass", "unset-pass", "list", "auth"], $args)) {
+        $cmd = $this->command(["add", "remove", "set-pass", "unset-pass", "list", "auth"], $args);
+        switch ($cmd) {
             case "add":
                 return $this->userAddOrSetPassword("add", $args["<username>"], $args["<password>"]);
             case "set-pass":
@@ -247,8 +249,10 @@ USAGE_TEXT;
             case "list":
             case "":
                 return $this->userList();
+            default:
+                throw new Exception("constantUnknown", $cmd); // @codeCoverageIgnore
         }
-    } // @codeCoverageIgnore
+    }
 
     protected function userAddOrSetPassword(string $method, string $user, string $password = null, string $oldpass = null): int {
         $passwd = Arsse::$user->$method(...array_slice(func_get_args(), 1));
@@ -267,7 +271,7 @@ USAGE_TEXT;
     }
 
     protected function userAuthenticate(string $user, string $password, bool $fever = false): int {
-        $result  = $fever ? $this->getInstance(Fever::class)->authenticate($user, $password) : Arsse::$user->auth($user, $password);
+        $result = $fever ? $this->getInstance(Fever::class)->authenticate($user, $password) : Arsse::$user->auth($user, $password);
         if ($result) {
             echo Arsse::$lang->msg("CLI.Auth.Success").\PHP_EOL;
             return 0;

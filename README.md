@@ -6,7 +6,7 @@ Information on how to install and use the software can be found in [the manual](
 
 # Installing from source
 
-The main repository for The Arsse can be found at [code.mensbeam.com](https://code.mensbeam.com/MensBeam/arsse/), with a mirror also available [at GitHub](https://github.com/mensbeam/arsse/). The main repository is preferred, as the GitHub mirror can sometimes be out of date.
+The main repository for The Arsse can be found at [code.mensbeam.com](https://code.mensbeam.com/MensBeam/arsse/), with a mirror also available [at GitHub](https://github.com/mensbeam/arsse/). The GitHub mirror does not accept bug reports, but the two should otherwise be equivalent.
 
 [Composer](https://getcomposer.org/) is required to manage PHP dependencies. After cloning the repository or downloading a source code tarball, running `composer install` will download all the required dependencies, and will advise if any PHP extensions need to be installed. If not installing as a programming environment, running `composer install --no-dev` is recommended.
 
@@ -88,7 +88,7 @@ There is also a `test:quick` Robo task which excludes slower tests, and a `test:
 
 ### Test coverage
 
-Computing the coverage of tests can be done by running `./robo coverage`, after which an HTML-format coverage report will be written to `/tests/coverage/`. Either [Xdebug](https://xdebug.org) or [phpdbg](https://php.net/manual/en/book.phpdbg.php) is required for this. Xdebug is generally recommended as it is better maintained, though phpdbg is significantly faster. If using Xdebug, the extension need not be enabled globally; PHPUnit will enable it when needed.
+Computing the coverage of tests can be done by running `./robo coverage`, after which an HTML-format coverage report will be written to `/tests/coverage/`. Either [PCOV](https://github.com/krakjoe/pcov), [Xdebug](https://xdebug.org), or [phpdbg](https://php.net/manual/en/book.phpdbg.php) is required for this. PCOV is generally recommended as it is faster than Xdebug; phpdbg is faster still, but less accurate. If using either PCOV or Xdebug, the extension need not be enabled globally; PHPUnit will enable it when needed.
 
 ## Enforcing coding style
 

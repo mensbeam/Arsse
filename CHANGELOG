@@ -1,3 +1,23 @@
+Version 0.8.5 (2020-10-27)
+==========================
+
+Bug fixes:
+- Relax Fever HTTP correctness, to fix some clients
+- Add the QUERY_STRING FastCGI parameter to the sample Nginx configuration
+
+Version 0.8.4 (2020-09-09)
+==========================
+
+Bug fixes:
+- Don't crash updating feeds cached without ETag (regression since 0.8.3)
+
+Version 0.8.3 (2020-02-16)
+==========================
+
+Changes:
+- Officially require PHP 7.1 (accidentally required since version 0.8.0)
+- Various internal changes pursuant to use of PHP 7.1
+
 Version 0.8.2 (2019-12-07)
 ==========================
 
@@ -24,7 +44,7 @@ Version 0.8.0 (2019-07-26)
 ==========================
 
 New features:
-- Support for the Fever protocol (see README.md for details)
+- Support for the Fever protocol (see manual for details)
 - Command line functionality for clearing a password, disabling the account
 - Command line options for dealing with Fever passwords
 - Command line functionality for importing and exporting OPML
@@ -116,7 +136,7 @@ Version 0.4.0 (2018-10-26)
 ==========================
 
 New features:
-- Support for HTTP authentication in Tiny Tiny RSS (see README.md for details)
+- Support for HTTP authentication in Tiny Tiny RSS (see manual for details)
 - New userHTTPAuthRequired and userSessionEnforced settings
 
 Version 0.3.1 (2018-07-22)
@@ -162,7 +182,7 @@ Version 0.2.0 (2017-11-30)
 ==========================
 
 New features:
-- Support for the Tiny Tiny RSS protocol (see README.md for details)
+- Support for the Tiny Tiny RSS protocol (see manual for details)
 - Support for HTTP OPTIONS requests in all protocols
 
 Bug fixes:

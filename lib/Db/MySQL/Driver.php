@@ -12,8 +12,8 @@ use JKingWeb\Arsse\Db\Exception;
 class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     use ExceptionBuilder;
 
-    const SQL_MODE = "ANSI_QUOTES,HIGH_NOT_PRECEDENCE,NO_BACKSLASH_ESCAPES,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT,STRICT_ALL_TABLES";
-    const TRANSACTIONAL_LOCKS = false;
+    protected const SQL_MODE = "ANSI_QUOTES,HIGH_NOT_PRECEDENCE,NO_BACKSLASH_ESCAPES,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT,STRICT_ALL_TABLES";
+    protected const TRANSACTIONAL_LOCKS = false;
 
     /** @var \mysqli */
     protected $db;
@@ -158,12 +158,12 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         return class_exists("mysqli");
     }
 
-    protected function makeConnection(string $db, string $user, string $password, string $host, int $port, string $socket) {
+    protected function makeConnection(string $db, string $user, string $password, string $host, int $port, string $socket): void {
         $this->db = mysqli_init();
         $this->db->options(\MYSQLI_OPT_CONNECT_TIMEOUT, ceil(Arsse::$conf->dbTimeoutConnect));
         @$this->db->real_connect($host, $user, $password, $db, $port, $socket);
         if ($this->db->connect_errno) {
-            list($excClass, $excMsg, $excData) = $this->buildConnectionException($this->db->connect_errno, $this->db->connect_error);
+            [$excClass, $excMsg, $excData] = $this->buildConnectionException($this->db->connect_errno, $this->db->connect_error);
             throw new $excClass($excMsg, $excData);
         }
         $this->db->set_charset("utf8mb4");
@@ -184,11 +184,11 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         do {
             if ($this->db->sqlstate !== "00000") {
                 if ($this->db->sqlstate === "HY000") {
-                    list($excClass, $excMsg, $excData) = $this->buildEngineException($this->db->errno, $this->db->error);
+                    [$excClass, $excMsg, $excData] = $this->buildEngineException($this->db->errno, $this->db->error);
                 } else {
-                    list($excClass, $excMsg, $excData) = $this->buildStandardException($this->db->sqlstate, $this->db->error);
+                    [$excClass, $excMsg, $excData] = $this->buildStandardException($this->db->sqlstate, $this->db->error);
                 }
-                $e =  new $excClass($excMsg, $excData, $e);
+                $e = new $excClass($excMsg, $excData, $e);
             }
             $r = $this->db->store_result();
         } while ($this->db->more_results() && $this->db->next_result());

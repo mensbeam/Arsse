@@ -40,22 +40,22 @@ use JKingWeb\Arsse\Misc\URL;
 class Database {
     /** The version number of the latest schema the interface is aware of */
     const SCHEMA_VERSION = 7;
-    /** The size of a set of values beyond which the set will be embedded into the query text */
-    const LIMIT_SET_SIZE = 25;
-    /** The length of a string in an embedded set beyond which a parameter placeholder will be used for the string */
-    const LIMIT_SET_STRING_LENGTH = 200;
     /** Makes tag/label association change operations remove members */
-    const ASSOC_REMOVE = 0;
+    public const ASSOC_REMOVE = 0;
     /** Makes tag/label association change operations add members */
-    const ASSOC_ADD = 1;
+    public const ASSOC_ADD = 1;
     /** Makes tag/label association change operations replace members */
-    const ASSOC_REPLACE = 2;
+    public const ASSOC_REPLACE = 2;
     /** A map of database driver short-names and their associated class names */
-    const DRIVER_NAMES = [
+    public const DRIVER_NAMES = [
         'sqlite3'    => \JKingWeb\Arsse\Db\SQLite3\Driver::class,
         'postgresql' => \JKingWeb\Arsse\Db\PostgreSQL\Driver::class,
         'mysql'      => \JKingWeb\Arsse\Db\MySQL\Driver::class,
     ];
+    /** The size of a set of values beyond which the set will be embedded into the query text */
+    protected const LIMIT_SET_SIZE = 25;
+    /** The length of a string in an embedded set beyond which a parameter placeholder will be used for the string */
+    protected const LIMIT_SET_STRING_LENGTH = 200;
 
     /** @var Db\Driver */
     public $db;
@@ -218,7 +218,7 @@ class Database {
     }
 
     /** Retrieve a value from the metadata table. If the key is not set null is returned */
-    public function metaGet(string $key) {
+    public function metaGet(string $key): ?string {
         return $this->db->prepare("SELECT value from arsse_meta where \"key\" = ?", "str")->run($key)->getValue();
     }
 
@@ -284,7 +284,7 @@ class Database {
     }
 
     /** Retrieves the hashed password of a user */
-    public function userPasswordGet(string $user) {
+    public function userPasswordGet(string $user): ?string {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         } elseif (!$this->userExists($user)) {
@@ -379,7 +379,7 @@ class Database {
         $max = Date::add(Arsse::$conf->userSessionTimeout, $now)->getTimestamp();
         $diff = intdiv($max - $now, 2);
         // determine if the expiry time is less than half the session timeout into the future
-        return (($now + $diff) >= $expiry->getTimestamp());
+        return ($now + $diff) >= $expiry->getTimestamp();
     }
 
     /** Creates a new token for the given user in the given class
@@ -500,7 +500,7 @@ class Database {
             $q->setWhere("owner = ?", "str", $user);
             $q->setWhere("coalesce(arsse_folders.parent,0) = ?", "strict int", $parent);
         } else {
-            $q->setCTE("folders", "SELECT id from arsse_folders where owner = ? and coalesce(parent,0) = ? union select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id", ["str", "strict int"], [$user, $parent]);
+            $q->setCTE("folders", "SELECT id from arsse_folders where owner = ? and coalesce(parent,0) = ? union all select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id", ["str", "strict int"], [$user, $parent]);
             $q->setWhere("id in (SELECT id from folders)");
         }
         $q->setOrder("name");
@@ -585,10 +585,10 @@ class Database {
             return false;
         }
         $valid = [
-            'name' => "str",
+            'name'   => "str",
             'parent' => "int",
         ];
-        list($setClause, $setTypes, $setValues) = $this->generateSet($in, $valid);
+        [$setClause, $setTypes, $setValues] = $this->generateSet($in, $valid);
         return (bool) $this->db->prepare("UPDATE arsse_folders set $setClause, modified = CURRENT_TIMESTAMP where owner = ? and id = ?", $setTypes, "str", "int")->run($setValues, $user, $id)->changes();
     }
 
@@ -618,7 +618,7 @@ class Database {
     }
 
     /** Ensures an operation to rename and/or move a folder does not result in a conflict or circular dependence, and raises an exception otherwise */
-    protected function folderValidateMove(string $user, $id = null, $parent = null, string $name = null) {
+    protected function folderValidateMove(string $user, $id = null, $parent = null, string $name = null): ?int {
         $errData = ["action" => $this->caller(), "field" => "parent", 'id' => $parent];
         if (!$id) {
             // the root cannot be moved
@@ -645,7 +645,7 @@ class Database {
         $p = $this->db->prepare(
             "WITH RECURSIVE
                 target as (select ? as userid, ? as source, ? as dest, ? as new_name),
-                folders as (SELECT id from arsse_folders join target on owner = userid and coalesce(parent,0) = source union select arsse_folders.id as id from arsse_folders join folders on arsse_folders.parent=folders.id)
+                folders as (SELECT id from arsse_folders join target on owner = userid and coalesce(parent,0) = source union all select arsse_folders.id as id from arsse_folders join folders on arsse_folders.parent=folders.id)
             ".
             "SELECT
                 case when ((select dest from target) is null or exists(select id from arsse_folders join target on owner = userid and coalesce(id,0) = coalesce(dest,0))) then 1 else 0 end as extant,
@@ -750,14 +750,14 @@ class Database {
         $nocase = $this->db->sqlToken("nocase");
         $q->setOrder("pinned desc, coalesce(arsse_subscriptions.title, arsse_feeds.title) collate $nocase");
         // topmost folders belonging to the user
-        $q->setCTE("topmost(f_id,top)", "SELECT id,id from arsse_folders where owner = ? and parent is null union select id,top from arsse_folders join topmost on parent=f_id", ["str"], [$user]);
+        $q->setCTE("topmost(f_id,top)", "SELECT id,id from arsse_folders where owner = ? and parent is null union all select id,top from arsse_folders join topmost on parent=f_id", ["str"], [$user]);
         if ($id) {
             // this condition facilitates the implementation of subscriptionPropertiesGet, which would otherwise have to duplicate the complex query; it takes precedence over a specified folder
             // if an ID is specified, add a suitable WHERE condition and bindings
             $q->setWhere("arsse_subscriptions.id = ?", "int", $id);
         } elseif ($folder && $recursive) {
             // if a folder is specified and we're listing recursively, add a common table expression to list it and its children so that we select from the entire subtree
-            $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on parent = folder", "int", $folder);
+            $q->setCTE("folders(folder)", "SELECT ? union all select id from arsse_folders join folders on parent = folder", "int", $folder);
             // add a suitable WHERE condition
             $q->setWhere("folder in (select folder from folders)");
         } elseif (!$recursive) {
@@ -779,7 +779,7 @@ class Database {
         $q->setWhere("owner = ?", "str", $user);
         if ($folder) {
             // if the specified folder exists, add a common table expression to list it and its children so that we select from the entire subtree
-            $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on parent = folder", "int", $folder);
+            $q->setCTE("folders(folder)", "SELECT ? union all select id from arsse_folders join folders on parent = folder", "int", $folder);
             // add a suitable WHERE condition
             $q->setWhere("folder in (select folder from folders)");
         }
@@ -882,7 +882,7 @@ class Database {
             'order_type' => "strict int",
             'pinned'     => "strict bool",
         ];
-        list($setClause, $setTypes, $setValues) = $this->generateSet($data, $valid);
+        [$setClause, $setTypes, $setValues] = $this->generateSet($data, $valid);
         if (!$setClause) {
             // if no changes would actually be applied, just return
             return false;
@@ -933,7 +933,7 @@ class Database {
     }
 
     /** Returns the time at which any of a user's subscriptions (or a specific subscription) was last refreshed, as a DateTimeImmutable object */
-    public function subscriptionRefreshed(string $user, int $id = null) {
+    public function subscriptionRefreshed(string $user, int $id = null): ?\DateTimeImmutable {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
@@ -1145,7 +1145,7 @@ class Database {
             'str',
             'str',
             'datetime',
-            'str',
+            'strict str',
             'datetime',
             'int',
             'int'
@@ -1221,10 +1221,10 @@ class Database {
      */
     public function feedMatchIds(int $feedID, array $ids = [], array $hashesUT = [], array $hashesUC = [], array $hashesTC = []): Db\Result {
         // compile SQL IN() clauses and necessary type bindings for the four identifier lists
-        list($cId, $tId, $vId)             = $this->generateIn($ids, "str");
-        list($cHashUT, $tHashUT, $vHashUT) = $this->generateIn($hashesUT, "str");
-        list($cHashUC, $tHashUC, $vHashUC) = $this->generateIn($hashesUC, "str");
-        list($cHashTC, $tHashTC, $vHashTC) = $this->generateIn($hashesTC, "str");
+        [$cId, $tId, $vId] = $this->generateIn($ids, "str");
+        [$cHashUT, $tHashUT, $vHashUT] = $this->generateIn($hashesUT, "str");
+        [$cHashUC, $tHashUC, $vHashUC] = $this->generateIn($hashesUC, "str");
+        [$cHashTC, $tHashTC, $vHashTC] = $this->generateIn($hashesTC, "str");
         // perform the query
         return $articles = $this->db->prepare(
             "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed = ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC))",
@@ -1243,27 +1243,27 @@ class Database {
     protected function articleColumns(): array {
         $greatest = $this->db->sqlToken("greatest");
         return [
-            'id' => "arsse_articles.id",
-            'edition' => "latest_editions.edition",
-            'url' => "arsse_articles.url",
-            'title' => "arsse_articles.title",
-            'author' => "arsse_articles.author",
-            'content' => "arsse_articles.content",
-            'guid' => "arsse_articles.guid",
-            'fingerprint' => "arsse_articles.url_title_hash || ':' || arsse_articles.url_content_hash || ':' || arsse_articles.title_content_hash",
-            'folder' => "coalesce(arsse_subscriptions.folder,0)",
-            'subscription' => "arsse_subscriptions.id",
-            'feed' => "arsse_subscriptions.feed",
-            'starred' => "coalesce(arsse_marks.starred,0)",
-            'unread' => "abs(coalesce(arsse_marks.read,0) - 1)",
-            'note' => "coalesce(arsse_marks.note,'')",
-            'published_date' => "arsse_articles.published",
-            'edited_date' => "arsse_articles.edited",
-            'modified_date' => "arsse_articles.modified",
-            'marked_date' => "$greatest(arsse_articles.modified, coalesce(arsse_marks.modified, '0001-01-01 00:00:00'), coalesce(label_stats.modified, '0001-01-01 00:00:00'))",
+            'id'                 => "arsse_articles.id",
+            'edition'            => "latest_editions.edition",
+            'url'                => "arsse_articles.url",
+            'title'              => "arsse_articles.title",
+            'author'             => "arsse_articles.author",
+            'content'            => "arsse_articles.content",
+            'guid'               => "arsse_articles.guid",
+            'fingerprint'        => "arsse_articles.url_title_hash || ':' || arsse_articles.url_content_hash || ':' || arsse_articles.title_content_hash",
+            'folder'             => "coalesce(arsse_subscriptions.folder,0)",
+            'subscription'       => "arsse_subscriptions.id",
+            'feed'               => "arsse_subscriptions.feed",
+            'starred'            => "coalesce(arsse_marks.starred,0)",
+            'unread'             => "abs(coalesce(arsse_marks.read,0) - 1)",
+            'note'               => "coalesce(arsse_marks.note,'')",
+            'published_date'     => "arsse_articles.published",
+            'edited_date'        => "arsse_articles.edited",
+            'modified_date'      => "arsse_articles.modified",
+            'marked_date'        => "$greatest(arsse_articles.modified, coalesce(arsse_marks.modified, '0001-01-01 00:00:00'), coalesce(label_stats.modified, '0001-01-01 00:00:00'))",
             'subscription_title' => "coalesce(arsse_subscriptions.title, arsse_feeds.title)",
-            'media_url' => "arsse_enclosures.url",
-            'media_type' => "arsse_enclosures.type",
+            'media_url'          => "arsse_enclosures.url",
+            'media_type'         => "arsse_enclosures.type",
         ];
     }
 
@@ -1360,7 +1360,7 @@ class Database {
             "unread"           => ["unread",        "=",  "bool",     ""],
             "starred"          => ["starred",       "=",  "bool",     ""],
         ];
-        foreach ($options as $m => list($col, $op, $type, $pair)) {
+        foreach ($options as $m => [$col, $op, $type, $pair]) {
             if (!$context->$m()) {
                 // context is not being used
                 continue;
@@ -1369,7 +1369,7 @@ class Database {
                 if (!$context->$m) {
                     throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
                 }
-                list($clause, $types, $values) = $this->generateIn($context->$m, $type);
+                [$clause, $types, $values] = $this->generateIn($context->$m, $type);
                 $q->setWhere("{$colDefs[$col]} $op ($clause)", $types, $values);
             } elseif ($pair && $context->$pair()) {
                 // option is paired with another which is also being used
@@ -1384,7 +1384,7 @@ class Database {
             }
         }
         // further handle exclusionary options if specified
-        foreach ($options as $m => list($col, $op, $type, $pair)) {
+        foreach ($options as $m => [$col, $op, $type, $pair]) {
             if (!method_exists($context->not, $m) || !$context->not->$m()) {
                 // context option is not being used
                 continue;
@@ -1393,7 +1393,7 @@ class Database {
                     // for exclusions we don't care if the array is empty
                     continue;
                 }
-                list($clause, $types, $values) = $this->generateIn($context->not->$m, $type);
+                [$clause, $types, $values] = $this->generateIn($context->not->$m, $type);
                 $q->setWhereNot("{$colDefs[$col]} $op ($clause)", $types, $values);
             } elseif ($pair && $context->not->$pair()) {
                 // option is paired with another which is also being used
@@ -1410,13 +1410,13 @@ class Database {
         // handle labels and tags
         $options = [
             'label' => [
-                'match_col' => "arsse_articles.id",
-                'cte_name' => "labelled",
-                'cte_cols' => ["article", "label_id", "label_name"],
-                'cte_body' => "SELECT m.article, l.id, l.name from arsse_label_members as m join arsse_labels as l on l.id = m.label where l.owner = ? and m.assigned = 1",
-                'cte_types' => ["str"],
+                'match_col'  => "arsse_articles.id",
+                'cte_name'   => "labelled",
+                'cte_cols'   => ["article", "label_id", "label_name"],
+                'cte_body'   => "SELECT m.article, l.id, l.name from arsse_label_members as m join arsse_labels as l on l.id = m.label where l.owner = ? and m.assigned = 1",
+                'cte_types'  => ["str"],
                 'cte_values' => [$user],
-                'options' => [
+                'options'    => [
                     'label'      => ['use_name' => false, 'multi' => false],
                     'labels'     => ['use_name' => false, 'multi' => true],
                     'labelName'  => ['use_name' => true,  'multi' => false],
@@ -1424,13 +1424,13 @@ class Database {
                 ],
             ],
             'tag' => [
-                'match_col' => "arsse_subscriptions.id",
-                'cte_name' => "tagged",
-                'cte_cols' => ["subscription", "tag_id", "tag_name"],
-                'cte_body' => "SELECT m.subscription, t.id, t.name from arsse_tag_members as m join arsse_tags as t on t.id = m.tag where t.owner = ? and m.assigned = 1",
-                'cte_types' => ["str"],
+                'match_col'  => "arsse_subscriptions.id",
+                'cte_name'   => "tagged",
+                'cte_cols'   => ["subscription", "tag_id", "tag_name"],
+                'cte_body'   => "SELECT m.subscription, t.id, t.name from arsse_tag_members as m join arsse_tags as t on t.id = m.tag where t.owner = ? and m.assigned = 1",
+                'cte_types'  => ["str"],
                 'cte_values' => [$user],
-                'options' => [
+                'options'    => [
                     'tag'      => ['use_name' => false, 'multi' => false],
                     'tags'     => ['use_name' => false, 'multi' => true],
                     'tagName'  => ['use_name' => true,  'multi' => false],
@@ -1453,7 +1453,7 @@ class Database {
                         throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
                     }
                     if ($multi) {
-                        list($test, $types, $values) = $this->generateIn($context->$m, $named ? "str" : "int");
+                        [$test, $types, $values] = $this->generateIn($context->$m, $named ? "str" : "int");
                         $test = "in ($test)";
                     } else {
                         $test = "= ?";
@@ -1465,7 +1465,7 @@ class Database {
                 if ($context->not->$m()) {
                     $seen = true;
                     if ($multi) {
-                        list($test, $types, $values) = $this->generateIn($context->not->$m, $named ? "str" : "int");
+                        [$test, $types, $values] = $this->generateIn($context->not->$m, $named ? "str" : "int");
                         $test = "in ($test)";
                     } else {
                         $test = "= ?";
@@ -1492,27 +1492,27 @@ class Database {
         }
         if ($context->folder()) {
             // add a common table expression to list the folder and its children so that we select from the entire subtree
-            $q->setCTE("folders(folder)", "SELECT ? union select id from arsse_folders join folders on coalesce(parent,0) = folder", "int", $context->folder);
+            $q->setCTE("folders(folder)", "SELECT ? union all select id from arsse_folders join folders on coalesce(parent,0) = folder", "int", $context->folder);
             // limit subscriptions to the listed folders
             $q->setWhere("coalesce(arsse_subscriptions.folder,0) in (select folder from folders)");
         }
         if ($context->folders()) {
-            list($inClause, $inTypes, $inValues) = $this->generateIn($context->folders, "int");
+            [$inClause, $inTypes, $inValues] = $this->generateIn($context->folders, "int");
             // add a common table expression to list the folders and their children so that we select from the entire subtree
-            $q->setCTE("folders_multi(folder)", "SELECT id as folder from (select id from (select 0 as id union select id from arsse_folders where owner = ?) as f where id in ($inClause)) as folders_multi union select id from arsse_folders join folders_multi on coalesce(parent,0) = folder", ["str", $inTypes], [$user, $inValues]);
+            $q->setCTE("folders_multi(folder)", "SELECT id as folder from (select id from (select 0 as id union all select id from arsse_folders where owner = ?) as f where id in ($inClause)) as folders_multi union select id from arsse_folders join folders_multi on coalesce(parent,0) = folder", ["str", $inTypes], [$user, $inValues]);
             // limit subscriptions to the listed folders
             $q->setWhere("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_multi)");
         }
         if ($context->not->folder()) {
             // add a common table expression to list the folder and its children so that we exclude from the entire subtree
-            $q->setCTE("folders_excluded(folder)", "SELECT ? union select id from arsse_folders join folders_excluded on coalesce(parent,0) = folder", "int", $context->not->folder);
+            $q->setCTE("folders_excluded(folder)", "SELECT ? union all select id from arsse_folders join folders_excluded on coalesce(parent,0) = folder", "int", $context->not->folder);
             // excluded any subscriptions in the listed folders
             $q->setWhereNot("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_excluded)");
         }
         if ($context->not->folders()) {
-            list($inClause, $inTypes, $inValues) = $this->generateIn($context->not->folders, "int");
+            [$inClause, $inTypes, $inValues] = $this->generateIn($context->not->folders, "int");
             // add a common table expression to list the folders and their children so that we select from the entire subtree
-            $q->setCTE("folders_multi_excluded(folder)", "SELECT id as folder from (select id from (select 0 as id union select id from arsse_folders where owner = ?) as f where id in ($inClause)) as folders_multi_excluded union select id from arsse_folders join folders_multi_excluded on coalesce(parent,0) = folder", ["str", $inTypes], [$user, $inValues]);
+            $q->setCTE("folders_multi_excluded(folder)", "SELECT id as folder from (select id from (select 0 as id union all select id from arsse_folders where owner = ?) as f where id in ($inClause)) as folders_multi_excluded union select id from arsse_folders join folders_multi_excluded on coalesce(parent,0) = folder", ["str", $inTypes], [$user, $inValues]);
             // limit subscriptions to the listed folders
             $q->setWhereNot("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_multi_excluded)");
         }
@@ -1624,9 +1624,9 @@ class Database {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
         $data = [
-            'read' => $data['read'] ?? null,
+            'read'    => $data['read'] ?? null,
             'starred' => $data['starred'] ?? null,
-            'note' => $data['note'] ?? null,
+            'note'    => $data['note'] ?? null,
         ];
         if (!isset($data['read']) && !isset($data['starred']) && !isset($data['note'])) {
             return 0;
@@ -1665,7 +1665,7 @@ class Database {
                 $data = array_filter($data, function($v) {
                     return isset($v);
                 });
-                list($set, $setTypes, $setValues) = $this->generateSet($data, ['starred' => "bool", 'note' => "str"]);
+                [$set, $setTypes, $setValues] = $this->generateSet($data, ['starred' => "bool", 'note' => "str"]);
                 $q->setBody("UPDATE arsse_marks set touched = 1, $set where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", $setTypes, $setValues);
                 $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
             }
@@ -1689,7 +1689,7 @@ class Database {
             $data = array_filter($data, function($v) {
                 return isset($v);
             });
-            list($set, $setTypes, $setValues) = $this->generateSet($data, ['read' => "bool", 'starred' => "bool", 'note' => "str"]);
+            [$set, $setTypes, $setValues] = $this->generateSet($data, ['read' => "bool", 'starred' => "bool", 'note' => "str"]);
             $q->setBody("UPDATE arsse_marks set $set, modified = CURRENT_TIMESTAMP where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", $setTypes, $setValues);
             $out = $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
         }
@@ -1861,7 +1861,7 @@ class Database {
     public function editionArticle(int ...$edition): array {
         $out = [];
         $context = (new Context)->editions($edition);
-        list($in, $inTypes, $inValues) = $this->generateIn($context->editions, "int");
+        [$in, $inTypes, $inValues] = $this->generateIn($context->editions, "int");
         $out = $this->db->prepare("SELECT id as edition, article from arsse_editions where id in($in)", $inTypes)->run($inValues)->getAll();
         return $out ? array_combine(array_column($out, "edition"), array_column($out, "article")) : [];
     }
@@ -2019,7 +2019,7 @@ class Database {
         $valid = [
             'name'      => "str",
         ];
-        list($setClause, $setTypes, $setValues) = $this->generateSet($data, $valid);
+        [$setClause, $setTypes, $setValues] = $this->generateSet($data, $valid);
         if (!$setClause) {
             // if no changes would actually be applied, just return
             return false;
@@ -2087,7 +2087,7 @@ class Database {
             $articles = array_column($articles, "id");
         }
         // prepare up to three queries: removing requires one, adding two, and replacing three
-        list($inClause, $inTypes, $inValues) = $this->generateIn($articles, "int");
+        [$inClause, $inTypes, $inValues] = $this->generateIn($articles, "int");
         $updateQ = "UPDATE arsse_label_members set assigned = ?, modified = CURRENT_TIMESTAMP where label = ? and assigned <> ? and article %in% ($inClause)";
         $updateT = ["bool", "int", "bool", $inTypes];
         $insertQ = "INSERT INTO arsse_label_members(label,article,subscription) SELECT ?,a.id,s.id from arsse_articles as a join arsse_subscriptions as s on a.feed = s.feed where s.owner = ? and a.id not in (select article from arsse_label_members where label = ?) and a.id in ($inClause)";
@@ -2113,7 +2113,7 @@ class Database {
         // execute them in a transaction
         $out = 0;
         $tr = $this->begin();
-        foreach ($qList as list($q, $t, $v)) {
+        foreach ($qList as [$q, $t, $v]) {
             $out += $this->db->prepare($q, ...$t)->run(...$v)->changes();
         }
         $tr->commit();
@@ -2322,7 +2322,7 @@ class Database {
         $valid = [
             'name'      => "str",
         ];
-        list($setClause, $setTypes, $setValues) = $this->generateSet($data, $valid);
+        [$setClause, $setTypes, $setValues] = $this->generateSet($data, $valid);
         if (!$setClause) {
             // if no changes would actually be applied, just return
             return false;
@@ -2386,7 +2386,7 @@ class Database {
             }
         }
         // prepare up to three queries: removing requires one, adding two, and replacing three
-        list($inClause, $inTypes, $inValues) = $this->generateIn($subscriptions, "int");
+        [$inClause, $inTypes, $inValues] = $this->generateIn($subscriptions, "int");
         $updateQ = "UPDATE arsse_tag_members set assigned = ?, modified = CURRENT_TIMESTAMP where tag = ? and assigned <> ? and subscription in (select id from arsse_subscriptions where owner = ? and id %in% ($inClause))";
         $updateT = ["bool", "int", "bool", "str", $inTypes];
         $insertQ = "INSERT INTO arsse_tag_members(tag,subscription) SELECT ?,id from arsse_subscriptions where id not in (select subscription from arsse_tag_members where tag = ?) and owner = ? and id in ($inClause)";
@@ -2412,7 +2412,7 @@ class Database {
         // execute them in a transaction
         $out = 0;
         $tr = $this->begin();
-        foreach ($qList as list($q, $t, $v)) {
+        foreach ($qList as [$q, $t, $v]) {
             $out += $this->db->prepare($q, ...$t)->run(...$v)->changes();
         }
         $tr->commit();

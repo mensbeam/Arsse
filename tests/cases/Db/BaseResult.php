@@ -21,7 +21,7 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
         static::setConf();
         static::$interface = static::dbInterface();
     }
-    
+
     public function setUp(): void {
         self::clearData();
         self::setConf();
@@ -46,18 +46,18 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
     }
 
-    public function testConstructResult() {
+    public function testConstructResult(): void {
         $this->assertInstanceOf(Result::class, new $this->resultClass(...$this->makeResult("SELECT 1")));
     }
 
-    public function testGetChangeCountAndLastInsertId() {
+    public function testGetChangeCountAndLastInsertId(): void {
         $this->makeResult(static::$createMeta);
         $r = new $this->resultClass(...$this->makeResult("INSERT INTO arsse_meta(\"key\",value) values('test', 1)"));
         $this->assertSame(1, $r->changes());
         $this->assertSame(0, $r->lastId());
     }
 
-    public function testGetChangeCountAndLastInsertIdBis() {
+    public function testGetChangeCountAndLastInsertIdBis(): void {
         $this->makeResult(static::$createTest);
         $r = new $this->resultClass(...$this->makeResult(static::$insertDefault));
         $this->assertSame(1, $r->changes());
@@ -67,7 +67,7 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame(2, $r->lastId());
     }
 
-    public function testIterateOverResults() {
+    public function testIterateOverResults(): void {
         $exp = [0 => 1, 1 => 2, 2 => 3];
         $exp = static::$stringOutput ? $this->stringify($exp) : $exp;
         foreach (new $this->resultClass(...$this->makeResult("SELECT 1 as col union select 2 as col union select 3 as col")) as $index => $row) {
@@ -76,7 +76,7 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, $rows);
     }
 
-    public function testIterateOverResultsTwice() {
+    public function testIterateOverResultsTwice(): void {
         $exp = [0 => 1, 1 => 2, 2 => 3];
         $exp = static::$stringOutput ? $this->stringify($exp) : $exp;
         $result = new $this->resultClass(...$this->makeResult("SELECT 1 as col union select 2 as col union select 3 as col"));
@@ -90,7 +90,7 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function testGetSingleValues() {
+    public function testGetSingleValues(): void {
         $exp = [1867, 1970, 2112];
         $exp = static::$stringOutput ? $this->stringify($exp) : $exp;
         $test = new $this->resultClass(...$this->makeResult("SELECT 1867 as year union all select 1970 as year union all select 2112 as year"));
@@ -100,7 +100,7 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame(null, $test->getValue());
     }
 
-    public function testGetFirstValuesOnly() {
+    public function testGetFirstValuesOnly(): void {
         $exp = [1867, 1970, 2112];
         $exp = static::$stringOutput ? $this->stringify($exp) : $exp;
         $test = new $this->resultClass(...$this->makeResult("SELECT 1867 as year, 19 as century union all select 1970 as year, 20 as century union all select 2112 as year, 22 as century"));
@@ -110,7 +110,7 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame(null, $test->getValue());
     }
 
-    public function testGetRows() {
+    public function testGetRows(): void {
         $exp = [
             ['album' => '2112',             'track' => '2112'],
             ['album' => 'Clockwork Angels', 'track' => 'The Wreckers'],
@@ -121,7 +121,7 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame(null, $test->getRow());
     }
 
-    public function testGetAllRows() {
+    public function testGetAllRows(): void {
         $exp = [
             ['album' => '2112',             'track' => '2112'],
             ['album' => 'Clockwork Angels', 'track' => 'The Wreckers'],

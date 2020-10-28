@@ -15,17 +15,17 @@ use JKingWeb\Arsse\REST\NextcloudNews\V1_2 as NCN;
 use JKingWeb\Arsse\REST\TinyTinyRSS\API as TTRSS;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\Request;
-use Zend\Diactoros\Response;
-use Zend\Diactoros\ServerRequest;
-use Zend\Diactoros\Response\TextResponse;
-use Zend\Diactoros\Response\EmptyResponse;
+use Laminas\Diactoros\Request;
+use Laminas\Diactoros\Response;
+use Laminas\Diactoros\ServerRequest;
+use Laminas\Diactoros\Response\TextResponse;
+use Laminas\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST */
 class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideApiMatchData */
-    public function testMatchAUrlToAnApi($apiList, string $input, array $exp) {
+    public function testMatchAUrlToAnApi($apiList, string $input, array $exp): void {
         $r = new REST($apiList);
         try {
             $out = $r->apiMatch($input);
@@ -61,7 +61,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideAuthenticableRequests */
-    public function testAuthenticateRequests(array $serverParams, array $expAttr) {
+    public function testAuthenticateRequests(array $serverParams, array $expAttr): void {
         $r = new REST();
         // create a mock user manager
         Arsse::$user = \Phake::mock(User::class);
@@ -113,7 +113,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideUnnormalizedOrigins */
-    public function testNormalizeOrigins(string $origin, string $exp, array $ports = null) {
+    public function testNormalizeOrigins(string $origin, string $exp, array $ports = null): void {
         $r = new REST();
         $act = $r->corsNormalizeOrigin($origin, $ports);
         $this->assertSame($exp, $act);
@@ -156,7 +156,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideCorsNegotiations */
-    public function testNegotiateCors($origin, bool $exp, string $allowed = null, string $denied = null) {
+    public function testNegotiateCors($origin, bool $exp, string $allowed = null, string $denied = null): void {
         self::setConf();
         $r = \Phake::partialMock(REST::class);
         \Phake::when($r)->corsNormalizeOrigin->thenReturnCallback(function($origin) {
@@ -194,7 +194,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideCorsHeaders */
-    public function testAddCorsHeaders(string $reqMethod, array $reqHeaders, array $resHeaders, array $expHeaders) {
+    public function testAddCorsHeaders(string $reqMethod, array $reqHeaders, array $resHeaders, array $expHeaders): void {
         $r = new REST();
         $req = new Request("", $reqMethod, "php://memory", $reqHeaders);
         $res = new EmptyResponse(204, $resHeaders);
@@ -206,59 +206,59 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideCorsHeaders(): iterable {
         return [
             ["GET", ['Origin' => "null"], [], [
-                'Access-Control-Allow-Origin' => "null",
+                'Access-Control-Allow-Origin'      => "null",
                 'Access-Control-Allow-Credentials' => "true",
-                'Vary' => "Origin",
+                'Vary'                             => "Origin",
             ]],
             ["GET", ['Origin' => "http://example"], [], [
-                'Access-Control-Allow-Origin' => "http://example",
+                'Access-Control-Allow-Origin'      => "http://example",
                 'Access-Control-Allow-Credentials' => "true",
-                'Vary' => "Origin",
+                'Vary'                             => "Origin",
             ]],
             ["GET", ['Origin' => "http://example"], ['Content-Type' => "text/plain; charset=utf-8"], [
-                'Access-Control-Allow-Origin' => "http://example",
+                'Access-Control-Allow-Origin'      => "http://example",
                 'Access-Control-Allow-Credentials' => "true",
-                'Vary' => "Origin",
-                'Content-Type' => "text/plain; charset=utf-8",
+                'Vary'                             => "Origin",
+                'Content-Type'                     => "text/plain; charset=utf-8",
             ]],
             ["GET", ['Origin' => "http://example"], ['Vary' => "Content-Type"], [
-                'Access-Control-Allow-Origin' => "http://example",
+                'Access-Control-Allow-Origin'      => "http://example",
                 'Access-Control-Allow-Credentials' => "true",
-                'Vary' => ["Content-Type", "Origin"],
+                'Vary'                             => ["Content-Type", "Origin"],
             ]],
             ["OPTIONS", ['Origin' => "http://example"], [], [
-                'Access-Control-Allow-Origin' => "http://example",
+                'Access-Control-Allow-Origin'      => "http://example",
                 'Access-Control-Allow-Credentials' => "true",
-                'Access-Control-Max-Age' => (string) (60 *60 *24),
-                'Vary' => "Origin",
+                'Access-Control-Max-Age'           => (string) (60 * 60 * 24),
+                'Vary'                             => "Origin",
             ]],
             ["OPTIONS", ['Origin' => "http://example"], ['Allow' => "GET, PUT, HEAD, OPTIONS"], [
-                'Allow' => "GET, PUT, HEAD, OPTIONS",
-                'Access-Control-Allow-Origin' => "http://example",
+                'Allow'                            => "GET, PUT, HEAD, OPTIONS",
+                'Access-Control-Allow-Origin'      => "http://example",
                 'Access-Control-Allow-Credentials' => "true",
-                'Access-Control-Allow-Methods' => "GET, PUT, HEAD, OPTIONS",
-                'Access-Control-Max-Age' => (string) (60 *60 *24),
-                'Vary' => "Origin",
+                'Access-Control-Allow-Methods'     => "GET, PUT, HEAD, OPTIONS",
+                'Access-Control-Max-Age'           => (string) (60 * 60 * 24),
+                'Vary'                             => "Origin",
             ]],
             ["OPTIONS", ['Origin' => "http://example", 'Access-Control-Request-Headers' => "Content-Type, If-None-Match"], [], [
-                'Access-Control-Allow-Origin' => "http://example",
+                'Access-Control-Allow-Origin'      => "http://example",
                 'Access-Control-Allow-Credentials' => "true",
-                'Access-Control-Allow-Headers' => "Content-Type, If-None-Match",
-                'Access-Control-Max-Age' => (string) (60 *60 *24),
-                'Vary' => "Origin",
+                'Access-Control-Allow-Headers'     => "Content-Type, If-None-Match",
+                'Access-Control-Max-Age'           => (string) (60 * 60 * 24),
+                'Vary'                             => "Origin",
             ]],
             ["OPTIONS", ['Origin' => "http://example", 'Access-Control-Request-Headers' => ["Content-Type", "If-None-Match"]], [], [
-                'Access-Control-Allow-Origin' => "http://example",
+                'Access-Control-Allow-Origin'      => "http://example",
                 'Access-Control-Allow-Credentials' => "true",
-                'Access-Control-Allow-Headers' => "Content-Type,If-None-Match",
-                'Access-Control-Max-Age' => (string) (60 *60 *24),
-                'Vary' => "Origin",
+                'Access-Control-Allow-Headers'     => "Content-Type,If-None-Match",
+                'Access-Control-Max-Age'           => (string) (60 * 60 * 24),
+                'Vary'                             => "Origin",
             ]],
         ];
     }
 
     /** @dataProvider provideUnnormalizedResponses */
-    public function testNormalizeHttpResponses(ResponseInterface $res, ResponseInterface $exp, RequestInterface $req = null) {
+    public function testNormalizeHttpResponses(ResponseInterface $res, ResponseInterface $exp, RequestInterface $req = null): void {
         $r = \Phake::partialMock(REST::class);
         \Phake::when($r)->corsNegotiate->thenReturn(true);
         \Phake::when($r)->challenge->thenReturnCallback(function($res) {
@@ -293,7 +293,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    public function testCreateHandlers() {
+    public function testCreateHandlers(): void {
         $r = new REST();
         foreach (REST::API_LIST as $api) {
             $class = $api['class'];
@@ -302,7 +302,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideMockRequests */
-    public function testDispatchRequests(ServerRequest $req, string $method, bool $called, string $class = "", string $target ="") {
+    public function testDispatchRequests(ServerRequest $req, string $method, bool $called, string $class = "", string $target = ""): void {
         $r = \Phake::partialMock(REST::class);
         \Phake::when($r)->normalizeResponse->thenReturnCallback(function($res) {
             return $res;

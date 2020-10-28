@@ -9,7 +9,7 @@ namespace JKingWeb\Arsse;
 use JKingWeb\Arsse\Misc\Date;
 
 class Service {
-    const DRIVER_NAMES = [
+    public const DRIVER_NAMES = [
         'serial'     => \JKingWeb\Arsse\Service\Serial\Driver::class,
         'subprocess' => \JKingWeb\Arsse\Service\Subprocess\Driver::class,
     ];
@@ -66,7 +66,7 @@ class Service {
         $limit->sub($int);
         $limit->sub($int);
         // return whether the check-in time is within the acceptable limit
-        return ($checkin >= $limit);
+        return $checkin >= $limit;
     }
 
     public static function cleanupPre(): bool {

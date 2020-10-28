@@ -7,6 +7,8 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Test;
 
 use JKingWeb\Arsse\AbstractException;
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
 use JKingWeb\Arsse\Exception;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Conf;
@@ -19,9 +21,9 @@ use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\ServerRequest;
-use Zend\Diactoros\Response\JsonResponse;
-use Zend\Diactoros\Response\XmlResponse;
+use Laminas\Diactoros\ServerRequest;
+use Laminas\Diactoros\Response\JsonResponse;
+use Laminas\Diactoros\Response\XmlResponse;
 
 /** @coversNothing */
 abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
@@ -35,7 +37,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         self::clearData();
     }
 
-    public static function clearData(bool $loadLang = true) {
+    public static function clearData(bool $loadLang = true): void {
         date_default_timezone_set("America/Toronto");
         $r = new \ReflectionClass(\JKingWeb\Arsse\Arsse::class);
         $props = array_keys($r->getStaticProperties());
@@ -47,7 +49,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         }
     }
 
-    public static function setConf(array $conf = [], bool $force = true) {
+    public static function setConf(array $conf = [], bool $force = true): void {
         $defaults = [
             'dbSQLite3File'      => ":memory:",
             'dbSQLite3Timeout'   => 0,
@@ -67,8 +69,10 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     }
 
     protected function serverRequest(string $method, string $url, string $urlPrefix, array $headers = [], array $vars = [], $body = null, string $type = "", $params = [], string $user = null): ServerRequestInterface {
-        // build an initial $_SERVER array
-        $server = ['REQUEST_METHOD' => strtoupper($method)];
+        $server = [
+            'REQUEST_METHOD' => $method,
+            'REQUEST_URI'    => $url,
+        ];
         if (strlen($type)) {
             $server['HTTP_CONTENT_TYPE'] = $type;
         }
@@ -126,8 +130,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                 $req = $req->withAttribute("authenticationFailed", true);
             }
         }
-        // if a content type was specified, add it as a header
-        if (strlen($type)) {
+        if (strlen($type) && strlen($body ?? "")) {
             $req = $req->withHeader("Content-Type", $type);
         }
         // add any other headers
@@ -151,7 +154,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         return $req;
     }
 
-    public function assertException($msg = "", string $prefix = "", string $type = "Exception") {
+    public function assertException($msg = "", string $prefix = "", string $type = "Exception"): void {
         if (func_num_args()) {
             if ($msg instanceof \Exception) {
                 $this->expectException(get_class($msg));
@@ -160,8 +163,8 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                     $this->expectExceptionMessage($msg->getMessage());
                 }
             } else {
-                $class = \JKingWeb\Arsse\NS_BASE . ($prefix !== "" ? str_replace("/", "\\", $prefix) . "\\" : "") . $type;
-                $msgID = ($prefix !== "" ? $prefix . "/" : "") . $type. ".$msg";
+                $class = \JKingWeb\Arsse\NS_BASE.($prefix !== "" ? str_replace("/", "\\", $prefix)."\\" : "").$type;
+                $msgID = ($prefix !== "" ? $prefix."/" : "").$type.".$msg";
                 if (array_key_exists($msgID, Exception::CODES)) {
                     $code = Exception::CODES[$msgID];
                 } else {
@@ -176,7 +179,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         }
     }
 
-    protected function assertMessage(MessageInterface $exp, MessageInterface $act, string $text = '') {
+    protected function assertMessage(MessageInterface $exp, MessageInterface $act, string $text = ''): void {
         if ($exp instanceof ResponseInterface) {
             $this->assertInstanceOf(ResponseInterface::class, $act, $text);
             $this->assertEquals($exp->getStatusCode(), $act->getStatusCode(), $text);
@@ -200,9 +203,9 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         $this->assertEquals($exp->getHeaders(), $act->getHeaders(), $text);
     }
 
-    public function assertTime($exp, $test, string $msg = '') {
+    public function assertTime($exp, $test, string $msg = ''): void {
         $test = $this->approximateTime($exp, $test);
-        $exp  = Date::transform($exp, "iso8601");
+        $exp = Date::transform($exp, "iso8601");
         $test = Date::transform($test, "iso8601");
         $this->assertSame($exp, $test, $msg);
     }
@@ -285,7 +288,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                                 break;
                         }
                     }
-                    if ($row===$test) {
+                    if ($row === $test) {
                         $data[$index] = $test;
                         break;
                     }
@@ -326,7 +329,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         return $out;
     }
 
-    public function assertResult(array $expected, Result $data) {
+    public function assertResult(array $expected, Result $data): void {
         $data = $data->getAll();
         $this->assertCount(sizeof($expected), $data, "Number of result rows (".sizeof($data).") differs from number of expected rows (".sizeof($expected).")");
         if (sizeof($expected)) {
@@ -350,6 +353,18 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                 unset($expected[$found]);
             }
             $this->assertArraySubset($expected, [], false, "Expectations not in result set.");
+        }
+    }
+
+    /** Guzzle's exception classes require some fairly complicated construction; this abstracts it all away so that only message and code need be supplied  */
+    protected function mockGuzzleException(string $class, ?string $message = null, ?int $code = null, ?\Throwable $e = null): GuzzleException {
+        if (is_a($class, RequestException::class, true)) {
+            $req = \Phake::mock(RequestInterface::class);
+            $res = \Phake::mock(ResponseInterface::class);
+            \Phake::when($res)->getStatusCode->thenReturn($code ?? 0);
+            return new $class($message ?? "", $req, $res, $e);
+        } else {
+            return new $class($message ?? "", $code ?? 0, $e);
         }
     }
 }

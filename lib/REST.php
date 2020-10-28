@@ -6,17 +6,16 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
-use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\Misc\URL;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\ServerRequestFactory;
-use Zend\Diactoros\Response\EmptyResponse;
+use Laminas\Diactoros\ServerRequestFactory;
+use Laminas\Diactoros\Response\EmptyResponse;
 
 class REST {
-    const API_LIST = [
+    public const API_LIST = [
         'ncn' => [ // Nextcloud News version enumerator
             'match' => '/index.php/apps/news/api',
             'strip' => '/index.php/apps/news/api',
@@ -66,7 +65,7 @@ class REST {
         // Proprietary (centralized) entities:
         // Feedly               https://developer.feedly.com/
     ];
-    const DEFAULT_PORTS = [
+    protected const DEFAULT_PORTS = [
         'http'  => 80,
         'https' => 443,
     ];
@@ -81,7 +80,7 @@ class REST {
         $req = $req ?? ServerRequestFactory::fromGlobals();
         // find the API to handle
         try {
-            list($api, $target, $class) = $this->apiMatch($req->getRequestTarget(), $this->apis);
+            [$api, $target, $class] = $this->apiMatch($req->getRequestTarget(), $this->apis);
             // authenticate the request pre-emptively
             $req = $this->authenticateRequest($req);
             // modify the request to have an uppercase method and a stripped target
@@ -118,7 +117,7 @@ class REST {
         // find a match
         foreach ($map as $id => $api) {
             // first try a simple substring match
-            if (strpos($url, $api['match'])===0) {
+            if (strpos($url, $api['match']) === 0) {
                 // if it matches, perform a more rigorous match and then strip off any defined prefix
                 $pattern = "<^".preg_quote($api['match'])."([/\?#]|$)>";
                 if ($url === $api['match'] || in_array(substr($api['match'], -1, 1), ["/", "?", "#"]) || preg_match($pattern, $url)) {
@@ -213,7 +212,7 @@ class REST {
             if ($req->hasHeader("Access-Control-Request-Headers")) {
                 $res = $res->withHeader("Access-Control-Allow-Headers", $req->getHeaderLine("Access-Control-Request-Headers"));
             }
-            $res = $res->withHeader("Access-Control-Max-Age", (string) (60 *60 *24)); // one day
+            $res = $res->withHeader("Access-Control-Max-Age", (string) (60 * 60 * 24)); // one day
         }
         $res = $res->withHeader("Access-Control-Allow-Origin", $req->getHeaderLine("Origin"));
         $res = $res->withHeader("Access-Control-Allow-Credentials", "true");

@@ -2,6 +2,6 @@
     'code'    => 304,
     'cache'   => false,
     'fields'  => [
-        "ETag: ".$_SERVER['HTTP_IF_NONE_MATCH'],
+        "ETag: ".($_SERVER['HTTP_IF_NONE_MATCH'] ?? "No ETag supplied"),
     ],
 ];

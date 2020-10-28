@@ -16,14 +16,14 @@ class TestBasic extends \JKingWeb\Arsse\Test\AbstractTest {
     public $path;
     public $l;
 
-    public function testListLanguages() {
+    public function testListLanguages(): void {
         $this->assertCount(sizeof($this->files), $this->l->list("en"));
     }
 
     /**
      * @depends testListLanguages
      */
-    public function testSetLanguage() {
+    public function testSetLanguage(): void {
         $this->assertEquals("en", $this->l->set("en"));
         $this->assertEquals("en_ca", $this->l->set("en_ca"));
         $this->assertEquals("de", $this->l->set("de_ch"));
@@ -36,15 +36,16 @@ class TestBasic extends \JKingWeb\Arsse\Test\AbstractTest {
     /**
      * @depends testSetLanguage
      */
-    public function testLoadInternalStrings() {
+    public function testLoadInternalStrings(): void {
+        $exp = (new \ReflectionClassConstant(TestClass::class, "REQUIRED"))->getValue();
         $this->assertEquals("", $this->l->set("", true));
-        $this->assertCount(sizeof(TestClass::REQUIRED), $this->l->dump());
+        $this->assertCount(sizeof($exp), $this->l->dump());
     }
 
     /**
      * @depends testLoadInternalStrings
      */
-    public function testLoadDefaultLanguage() {
+    public function testLoadDefaultLanguage(): void {
         $this->assertEquals(TestClass::DEFAULT, $this->l->set(TestClass::DEFAULT, true));
         $str = $this->l->dump();
         $this->assertArrayHasKey('Exception.JKingWeb/Arsse/Exception.uncoded', $str);
@@ -54,7 +55,7 @@ class TestBasic extends \JKingWeb\Arsse\Test\AbstractTest {
     /**
      * @depends testLoadDefaultLanguage
      */
-    public function testLoadSupplementaryLanguage() {
+    public function testLoadSupplementaryLanguage(): void {
         $this->l->set(TestClass::DEFAULT, true);
         $this->assertEquals("ja", $this->l->set("ja", true));
         $str = $this->l->dump();

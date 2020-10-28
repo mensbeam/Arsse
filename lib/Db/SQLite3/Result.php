@@ -44,6 +44,6 @@ class Result extends \JKingWeb\Arsse\Db\AbstractResult {
 
     public function valid() {
         $this->cur = $this->set->fetchArray(\SQLITE3_ASSOC);
-        return ($this->cur !== false);
+        return $this->cur !== false;
     }
 }

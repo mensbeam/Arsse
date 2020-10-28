@@ -9,7 +9,7 @@ namespace JKingWeb\Arsse\Db;
 abstract class PDOStatement extends AbstractStatement {
     use PDOError;
 
-    const BINDINGS = [
+    protected const BINDINGS = [
         self::T_INTEGER  => \PDO::PARAM_INT,
         self::T_FLOAT    => \PDO::PARAM_STR,
         self::T_DATETIME => \PDO::PARAM_STR,
@@ -34,7 +34,7 @@ abstract class PDOStatement extends AbstractStatement {
             $this->st = $this->db->prepare($query);
             return true;
         } catch (\PDOException $e) { // @codeCoverageIgnore
-            list($excClass, $excMsg, $excData) = $this->buildPDOException(); // @codeCoverageIgnore
+            [$excClass, $excMsg, $excData] = $this->buildPDOException(); // @codeCoverageIgnore
             throw new $excClass($excMsg, $excData); // @codeCoverageIgnore
         }
     }
@@ -49,7 +49,7 @@ abstract class PDOStatement extends AbstractStatement {
         try {
             $this->st->execute();
         } catch (\PDOException $e) {
-            list($excClass, $excMsg, $excData) = $this->buildPDOException(true);
+            [$excClass, $excMsg, $excData] = $this->buildPDOException(true);
             throw new $excClass($excMsg, $excData);
         }
         return new PDOResult($this->db, $this->st);

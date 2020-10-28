@@ -22,7 +22,7 @@ abstract class AbstractResult implements Result {
         }
     }
 
-    public function getRow() {
+    public function getRow(): ?array {
         if ($this->valid()) {
             $out = $this->cur;
             $this->next();

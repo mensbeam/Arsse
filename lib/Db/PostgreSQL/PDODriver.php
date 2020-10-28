@@ -18,11 +18,11 @@ class PDODriver extends Driver {
         return class_exists("PDO") && in_array("pgsql", \PDO::getAvailableDrivers());
     }
 
-    protected function makeConnection(string $user, string $pass, string $db, string $host, int $port, string $service) {
+    protected function makeConnection(string $user, string $pass, string $db, string $host, int $port, string $service): void {
         $dsn = $this->makeconnectionString(true, $user, $pass, $db, $host, $port, $service);
         try {
             $this->db = new \PDO("pgsql:$dsn", $user, $pass, [
-                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_ERRMODE    => \PDO::ERRMODE_EXCEPTION,
                 \PDO::ATTR_PERSISTENT => true,
             ]);
         } catch (\PDOException $e) {
@@ -52,7 +52,6 @@ class PDODriver extends Driver {
             throw new Exception("extMissing", self::driverName());
         }
     }
-
 
     public static function driverName(): string {
         return Arsse::$lang->msg("Driver.Db.PostgreSQLPDO.Name");

@@ -16,292 +16,298 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\NextcloudNews\V1_2;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\ServerRequest;
-use Zend\Diactoros\Response\JsonResponse as Response;
-use Zend\Diactoros\Response\EmptyResponse;
+use Laminas\Diactoros\Response\JsonResponse as Response;
+use Laminas\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST\NextcloudNews\V1_2<extended> */
 class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $h;
+    protected $transaction;
     protected $feeds = [ // expected sample output of a feed list from the database, and the resultant expected transformation by the REST handler
         'db' => [
             [
-                'id' => 2112,
-                'url' => 'http://example.com/news.atom',
-                'favicon' => 'http://example.com/favicon.png',
-                'source' => 'http://example.com/',
-                'folder' => null,
+                'id'         => 2112,
+                'url'        => 'http://example.com/news.atom',
+                'favicon'    => 'http://example.com/favicon.png',
+                'source'     => 'http://example.com/',
+                'folder'     => null,
                 'top_folder' => null,
-                'pinned' => 0,
-                'err_count' => 0,
-                'err_msg' => '',
+                'pinned'     => 0,
+                'err_count'  => 0,
+                'err_msg'    => '',
                 'order_type' => 0,
-                'added' => '2017-05-20 13:35:54',
-                'title' => 'First example feed',
-                'unread' => 50048,
+                'added'      => '2017-05-20 13:35:54',
+                'title'      => 'First example feed',
+                'unread'     => 50048,
             ],
             [
-                'id' => 42,
-                'url' => 'http://example.org/news.atom',
-                'favicon' => 'http://example.org/favicon.png',
-                'source' => 'http://example.org/',
-                'folder' => 12,
+                'id'         => 42,
+                'url'        => 'http://example.org/news.atom',
+                'favicon'    => 'http://example.org/favicon.png',
+                'source'     => 'http://example.org/',
+                'folder'     => 12,
                 'top_folder' => 8,
-                'pinned' => 1,
-                'err_count' => 0,
-                'err_msg' => '',
+                'pinned'     => 1,
+                'err_count'  => 0,
+                'err_msg'    => '',
                 'order_type' => 2,
-                'added' => '2017-05-20 13:35:54',
-                'title' => 'Second example feed',
-                'unread' => 23,
+                'added'      => '2017-05-20 13:35:54',
+                'title'      => 'Second example feed',
+                'unread'     => 23,
             ],
             [
-                'id' => 47,
-                'url' => 'http://example.net/news.atom',
-                'favicon' => 'http://example.net/favicon.png',
-                'source' => 'http://example.net/',
-                'folder' => null,
+                'id'         => 47,
+                'url'        => 'http://example.net/news.atom',
+                'favicon'    => 'http://example.net/favicon.png',
+                'source'     => 'http://example.net/',
+                'folder'     => null,
                 'top_folder' => null,
-                'pinned' => 0,
-                'err_count' => 0,
-                'err_msg' => null,
+                'pinned'     => 0,
+                'err_count'  => 0,
+                'err_msg'    => null,
                 'order_type' => 1,
-                'added' => '2017-05-20 13:35:54',
-                'title' => 'Third example feed',
-                'unread' => 0,
+                'added'      => '2017-05-20 13:35:54',
+                'title'      => 'Third example feed',
+                'unread'     => 0,
             ],
         ],
         'rest' => [
             [
-                'id' => 2112,
-                'url' => 'http://example.com/news.atom',
-                'title' => 'First example feed',
-                'added' => 1495287354,
-                'pinned' => false,
-                'link' => 'http://example.com/',
-                'faviconLink' => 'http://example.com/favicon.png',
-                'folderId' => 0,
-                'unreadCount' => 50048,
-                'ordering' => 0,
+                'id'               => 2112,
+                'url'              => 'http://example.com/news.atom',
+                'title'            => 'First example feed',
+                'added'            => 1495287354,
+                'pinned'           => false,
+                'link'             => 'http://example.com/',
+                'faviconLink'      => 'http://example.com/favicon.png',
+                'folderId'         => 0,
+                'unreadCount'      => 50048,
+                'ordering'         => 0,
                 'updateErrorCount' => 0,
-                'lastUpdateError' => '',
+                'lastUpdateError'  => '',
             ],
             [
-                'id' => 42,
-                'url' => 'http://example.org/news.atom',
-                'title' => 'Second example feed',
-                'added' => 1495287354,
-                'pinned' => true,
-                'link' => 'http://example.org/',
-                'faviconLink' => 'http://example.org/favicon.png',
-                'folderId' => 8,
-                'unreadCount' => 23,
-                'ordering' => 2,
+                'id'               => 42,
+                'url'              => 'http://example.org/news.atom',
+                'title'            => 'Second example feed',
+                'added'            => 1495287354,
+                'pinned'           => true,
+                'link'             => 'http://example.org/',
+                'faviconLink'      => 'http://example.org/favicon.png',
+                'folderId'         => 8,
+                'unreadCount'      => 23,
+                'ordering'         => 2,
                 'updateErrorCount' => 0,
-                'lastUpdateError' => '',
+                'lastUpdateError'  => '',
             ],
             [
-                'id' => 47,
-                'url' => 'http://example.net/news.atom',
-                'title' => 'Third example feed',
-                'added' => 1495287354,
-                'pinned' => false,
-                'link' => 'http://example.net/',
-                'faviconLink' => 'http://example.net/favicon.png',
-                'folderId' => 0,
-                'unreadCount' => 0,
-                'ordering' => 1,
+                'id'               => 47,
+                'url'              => 'http://example.net/news.atom',
+                'title'            => 'Third example feed',
+                'added'            => 1495287354,
+                'pinned'           => false,
+                'link'             => 'http://example.net/',
+                'faviconLink'      => 'http://example.net/favicon.png',
+                'folderId'         => 0,
+                'unreadCount'      => 0,
+                'ordering'         => 1,
                 'updateErrorCount' => 0,
-                'lastUpdateError' => '',
+                'lastUpdateError'  => '',
             ],
         ],
     ];
     protected $articles = [
         'db' => [
             [
-                'id' => 101,
-                'url' => 'http://example.com/1',
-                'title' => 'Article title 1',
-                'author' => '',
-                'content' => '<p>Article content 1</p>',
-                'guid' => 'e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda',
+                'id'             => 101,
+                'url'            => 'http://example.com/1',
+                'title'          => 'Article title 1',
+                'author'         => '',
+                'content'        => '<p>Article content 1</p>',
+                'guid'           => 'e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda',
                 'published_date' => '2000-01-01 00:00:00',
-                'edited_date' => '2000-01-01 00:00:01',
-                'modified_date' => '2000-01-01 01:00:00',
-                'unread' => 1,
-                'starred' => 0,
-                'edition' => 101,
-                'subscription' => 8,
-                'fingerprint' => 'f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6:fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4:18fdd4fa93d693128c43b004399e5c9cea6c261ddfa002518d3669f55d8c2207',
-                'media_url' => null,
-                'media_type' => null,
+                'edited_date'    => '2000-01-01 00:00:01',
+                'modified_date'  => '2000-01-01 01:00:00',
+                'unread'         => 1,
+                'starred'        => 0,
+                'edition'        => 101,
+                'subscription'   => 8,
+                'fingerprint'    => 'f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6:fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4:18fdd4fa93d693128c43b004399e5c9cea6c261ddfa002518d3669f55d8c2207',
+                'media_url'      => null,
+                'media_type'     => null,
             ],
             [
-                'id' => 102,
-                'url' => 'http://example.com/2',
-                'title' => 'Article title 2',
-                'author' => '',
-                'content' => '<p>Article content 2</p>',
-                'guid' => '5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7',
+                'id'             => 102,
+                'url'            => 'http://example.com/2',
+                'title'          => 'Article title 2',
+                'author'         => '',
+                'content'        => '<p>Article content 2</p>',
+                'guid'           => '5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7',
                 'published_date' => '2000-01-02 00:00:00',
-                'edited_date' => '2000-01-02 00:00:02',
-                'modified_date' => '2000-01-02 02:00:00',
-                'unread' => 0,
-                'starred' => 0,
-                'edition' => 202,
-                'subscription' => 8,
-                'fingerprint' => '0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153:13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9:2abd0a8cba83b8214a66c8f0293ba63e467d720540e29ff8ddcdab069d4f1c9e',
-                'media_url' => "http://example.com/text",
-                'media_type' => "text/plain",
+                'edited_date'    => '2000-01-02 00:00:02',
+                'modified_date'  => '2000-01-02 02:00:00',
+                'unread'         => 0,
+                'starred'        => 0,
+                'edition'        => 202,
+                'subscription'   => 8,
+                'fingerprint'    => '0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153:13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9:2abd0a8cba83b8214a66c8f0293ba63e467d720540e29ff8ddcdab069d4f1c9e',
+                'media_url'      => "http://example.com/text",
+                'media_type'     => "text/plain",
             ],
             [
-                'id' => 103,
-                'url' => 'http://example.com/3',
-                'title' => 'Article title 3',
-                'author' => '',
-                'content' => '<p>Article content 3</p>',
-                'guid' => '31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92',
+                'id'             => 103,
+                'url'            => 'http://example.com/3',
+                'title'          => 'Article title 3',
+                'author'         => '',
+                'content'        => '<p>Article content 3</p>',
+                'guid'           => '31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92',
                 'published_date' => '2000-01-03 00:00:00',
-                'edited_date' => '2000-01-03 00:00:03',
-                'modified_date' => '2000-01-03 03:00:00',
-                'unread' => 1,
-                'starred' => 1,
-                'edition' => 203,
-                'subscription' => 9,
-                'fingerprint' => 'f74b06b240bd08abf4d3fdfc20dba6a6f6eb8b4f1a00e9a617efd63a87180a4b:b278380e984cefe63f0e412b88ffc9cb0befdfa06fdc00bace1da99a8daff406:ad622b31e739cd3a3f3c788991082cf4d2f7a8773773008e75f0572e58cd373b',
-                'media_url' => "http://example.com/video",
-                'media_type' => "video/webm",
+                'edited_date'    => '2000-01-03 00:00:03',
+                'modified_date'  => '2000-01-03 03:00:00',
+                'unread'         => 1,
+                'starred'        => 1,
+                'edition'        => 203,
+                'subscription'   => 9,
+                'fingerprint'    => 'f74b06b240bd08abf4d3fdfc20dba6a6f6eb8b4f1a00e9a617efd63a87180a4b:b278380e984cefe63f0e412b88ffc9cb0befdfa06fdc00bace1da99a8daff406:ad622b31e739cd3a3f3c788991082cf4d2f7a8773773008e75f0572e58cd373b',
+                'media_url'      => "http://example.com/video",
+                'media_type'     => "video/webm",
             ],
             [
-                'id' => 104,
-                'url' => 'http://example.com/4',
-                'title' => 'Article title 4',
-                'author' => '',
-                'content' => '<p>Article content 4</p>',
-                'guid' => '804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180',
+                'id'             => 104,
+                'url'            => 'http://example.com/4',
+                'title'          => 'Article title 4',
+                'author'         => '',
+                'content'        => '<p>Article content 4</p>',
+                'guid'           => '804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180',
                 'published_date' => '2000-01-04 00:00:00',
-                'edited_date' => '2000-01-04 00:00:04',
-                'modified_date' => '2000-01-04 04:00:00',
-                'unread' => 0,
-                'starred' => 1,
-                'edition' => 204,
-                'subscription' => 9,
-                'fingerprint' => 'f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8:f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3:ab2da63276acce431250b18d3d49b988b226a99c7faadf275c90b751aee05be9',
-                'media_url' => "http://example.com/image",
-                'media_type' => "image/svg+xml",
+                'edited_date'    => '2000-01-04 00:00:04',
+                'modified_date'  => '2000-01-04 04:00:00',
+                'unread'         => 0,
+                'starred'        => 1,
+                'edition'        => 204,
+                'subscription'   => 9,
+                'fingerprint'    => 'f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8:f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3:ab2da63276acce431250b18d3d49b988b226a99c7faadf275c90b751aee05be9',
+                'media_url'      => "http://example.com/image",
+                'media_type'     => "image/svg+xml",
             ],
             [
-                'id' => 105,
-                'url' => 'http://example.com/5',
-                'title' => 'Article title 5',
-                'author' => '',
-                'content' => '<p>Article content 5</p>',
-                'guid' => 'db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41',
+                'id'             => 105,
+                'url'            => 'http://example.com/5',
+                'title'          => 'Article title 5',
+                'author'         => '',
+                'content'        => '<p>Article content 5</p>',
+                'guid'           => 'db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41',
                 'published_date' => '2000-01-05 00:00:00',
-                'edited_date' => '2000-01-05 00:00:05',
-                'modified_date' => '2000-01-05 05:00:00',
-                'unread' => 1,
-                'starred' => 0,
-                'edition' => 305,
-                'subscription' => 10,
-                'fingerprint' => 'd40da96e39eea6c55948ccbe9b3d275b5f931298288dbe953990c5f496097022:834240f84501b5341d375414718204ec421561f3825d34c22bf9182203e42900:43b970ac6ec5f8a9647b2c7e4eed8b1d7f62e154a95eed748b0294c1256764ba',
-                'media_url' => "http://example.com/audio",
-                'media_type' => "audio/ogg",
+                'edited_date'    => '2000-01-05 00:00:05',
+                'modified_date'  => '2000-01-05 05:00:00',
+                'unread'         => 1,
+                'starred'        => 0,
+                'edition'        => 305,
+                'subscription'   => 10,
+                'fingerprint'    => 'd40da96e39eea6c55948ccbe9b3d275b5f931298288dbe953990c5f496097022:834240f84501b5341d375414718204ec421561f3825d34c22bf9182203e42900:43b970ac6ec5f8a9647b2c7e4eed8b1d7f62e154a95eed748b0294c1256764ba',
+                'media_url'      => "http://example.com/audio",
+                'media_type'     => "audio/ogg",
             ],
         ],
         'rest' => [
             [
-                'id' => 101,
-                'guid' => 'e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda',
-                'guidHash' => "101",
-                'url' => 'http://example.com/1',
-                'title' => 'Article title 1',
-                'author' => '',
-                'pubDate' => 946684801,
-                'body' => '<p>Article content 1</p>',
+                'id'            => 101,
+                'guid'          => 'e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda',
+                'guidHash'      => "101",
+                'url'           => 'http://example.com/1',
+                'title'         => 'Article title 1',
+                'author'        => '',
+                'pubDate'       => 946684801,
+                'body'          => '<p>Article content 1</p>',
                 'enclosureMime' => "",
                 'enclosureLink' => "",
-                'feedId' => 8,
-                'unread' => true,
-                'starred' => false,
-                'lastModified' => 946688400,
-                'fingerprint' => 'f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6:fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4:18fdd4fa93d693128c43b004399e5c9cea6c261ddfa002518d3669f55d8c2207',
+                'feedId'        => 8,
+                'unread'        => true,
+                'starred'       => false,
+                'lastModified'  => 946688400,
+                'fingerprint'   => 'f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6:fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4:18fdd4fa93d693128c43b004399e5c9cea6c261ddfa002518d3669f55d8c2207',
             ],
             [
-                'id' => 202,
-                'guid' => '5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7',
-                'guidHash' => "102",
-                'url' => 'http://example.com/2',
-                'title' => 'Article title 2',
-                'author' => '',
-                'pubDate' => 946771202,
-                'body' => '<p>Article content 2</p>',
+                'id'            => 202,
+                'guid'          => '5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7',
+                'guidHash'      => "102",
+                'url'           => 'http://example.com/2',
+                'title'         => 'Article title 2',
+                'author'        => '',
+                'pubDate'       => 946771202,
+                'body'          => '<p>Article content 2</p>',
                 'enclosureMime' => "text/plain",
                 'enclosureLink' => "http://example.com/text",
-                'feedId' => 8,
-                'unread' => false,
-                'starred' => false,
-                'lastModified' => 946778400,
-                'fingerprint' => '0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153:13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9:2abd0a8cba83b8214a66c8f0293ba63e467d720540e29ff8ddcdab069d4f1c9e',
+                'feedId'        => 8,
+                'unread'        => false,
+                'starred'       => false,
+                'lastModified'  => 946778400,
+                'fingerprint'   => '0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153:13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9:2abd0a8cba83b8214a66c8f0293ba63e467d720540e29ff8ddcdab069d4f1c9e',
             ],
             [
-                'id' => 203,
-                'guid' => '31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92',
-                'guidHash' => "103",
-                'url' => 'http://example.com/3',
-                'title' => 'Article title 3',
-                'author' => '',
-                'pubDate' => 946857603,
-                'body' => '<p>Article content 3</p>',
+                'id'            => 203,
+                'guid'          => '31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92',
+                'guidHash'      => "103",
+                'url'           => 'http://example.com/3',
+                'title'         => 'Article title 3',
+                'author'        => '',
+                'pubDate'       => 946857603,
+                'body'          => '<p>Article content 3</p>',
                 'enclosureMime' => "video/webm",
                 'enclosureLink' => "http://example.com/video",
-                'feedId' => 9,
-                'unread' => true,
-                'starred' => true,
-                'lastModified' => 946868400,
-                'fingerprint' => 'f74b06b240bd08abf4d3fdfc20dba6a6f6eb8b4f1a00e9a617efd63a87180a4b:b278380e984cefe63f0e412b88ffc9cb0befdfa06fdc00bace1da99a8daff406:ad622b31e739cd3a3f3c788991082cf4d2f7a8773773008e75f0572e58cd373b',
+                'feedId'        => 9,
+                'unread'        => true,
+                'starred'       => true,
+                'lastModified'  => 946868400,
+                'fingerprint'   => 'f74b06b240bd08abf4d3fdfc20dba6a6f6eb8b4f1a00e9a617efd63a87180a4b:b278380e984cefe63f0e412b88ffc9cb0befdfa06fdc00bace1da99a8daff406:ad622b31e739cd3a3f3c788991082cf4d2f7a8773773008e75f0572e58cd373b',
             ],
             [
-                'id' => 204,
-                'guid' => '804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180',
-                'guidHash' => "104",
-                'url' => 'http://example.com/4',
-                'title' => 'Article title 4',
-                'author' => '',
-                'pubDate' => 946944004,
-                'body' => '<p>Article content 4</p>',
+                'id'            => 204,
+                'guid'          => '804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180',
+                'guidHash'      => "104",
+                'url'           => 'http://example.com/4',
+                'title'         => 'Article title 4',
+                'author'        => '',
+                'pubDate'       => 946944004,
+                'body'          => '<p>Article content 4</p>',
                 'enclosureMime' => "image/svg+xml",
                 'enclosureLink' => "http://example.com/image",
-                'feedId' => 9,
-                'unread' => false,
-                'starred' => true,
-                'lastModified' => 946958400,
-                'fingerprint' => 'f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8:f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3:ab2da63276acce431250b18d3d49b988b226a99c7faadf275c90b751aee05be9',
+                'feedId'        => 9,
+                'unread'        => false,
+                'starred'       => true,
+                'lastModified'  => 946958400,
+                'fingerprint'   => 'f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8:f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3:ab2da63276acce431250b18d3d49b988b226a99c7faadf275c90b751aee05be9',
             ],
             [
-                'id' => 305,
-                'guid' => 'db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41',
-                'guidHash' => "105",
-                'url' => 'http://example.com/5',
-                'title' => 'Article title 5',
-                'author' => '',
-                'pubDate' => 947030405,
-                'body' => '<p>Article content 5</p>',
+                'id'            => 305,
+                'guid'          => 'db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41',
+                'guidHash'      => "105",
+                'url'           => 'http://example.com/5',
+                'title'         => 'Article title 5',
+                'author'        => '',
+                'pubDate'       => 947030405,
+                'body'          => '<p>Article content 5</p>',
                 'enclosureMime' => "audio/ogg",
                 'enclosureLink' => "http://example.com/audio",
-                'feedId' => 10,
-                'unread' => true,
-                'starred' => false,
-                'lastModified' => 947048400,
-                'fingerprint' => 'd40da96e39eea6c55948ccbe9b3d275b5f931298288dbe953990c5f496097022:834240f84501b5341d375414718204ec421561f3825d34c22bf9182203e42900:43b970ac6ec5f8a9647b2c7e4eed8b1d7f62e154a95eed748b0294c1256764ba',
+                'feedId'        => 10,
+                'unread'        => true,
+                'starred'       => false,
+                'lastModified'  => 947048400,
+                'fingerprint'   => 'd40da96e39eea6c55948ccbe9b3d275b5f931298288dbe953990c5f496097022:834240f84501b5341d375414718204ec421561f3825d34c22bf9182203e42900:43b970ac6ec5f8a9647b2c7e4eed8b1d7f62e154a95eed748b0294c1256764ba',
             ],
         ],
     ];
 
-    protected function req(string $method, string $target, string $data = "", array $headers = [], bool $authenticated = true): ResponseInterface {
+    protected function req(string $method, string $target, $data = "", array $headers = [], bool $authenticated = true, bool $body = true): ResponseInterface {
         $prefix = "/index.php/apps/news/api/v1-2";
         $url = $prefix.$target;
-        $req = $this->serverRequest($method, $url, $prefix, $headers, [], $data, "application/json", [], $authenticated ? "john.doe@example.com" : "");
+        if ($body) {
+            $params = [];
+        } else {
+            $params = $data;
+            $data = [];
+        }
+        $req = $this->serverRequest($method, $url, $prefix, $headers, [], $data, "application/json", $params, $authenticated ? "john.doe@example.com" : "");
         return $this->h->dispatch($req);
     }
 
@@ -313,7 +319,9 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user->id = "john.doe@example.com";
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
-        \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(Transaction::class));
+        $this->transaction = \Phake::mock(Transaction::class);
+        \Phake::when(Arsse::$db)->begin->thenReturn($this->transaction);
+        //initialize a handler
         $this->h = new V1_2();
     }
 
@@ -325,58 +333,45 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         return $value;
     }
 
-    public function testSendAuthenticationChallenge() {
+    public function testSendAuthenticationChallenge(): void {
         $exp = new EmptyResponse(401);
         $this->assertMessage($exp, $this->req("GET", "/", "", [], false));
     }
 
-    public function testRespondToInvalidPaths() {
-        $errs = [
-            404 => [
-                ['GET',    "/"],
-                ['PUT',    "/"],
-                ['POST',   "/"],
-                ['DELETE', "/"],
-                ['GET',    "/folders/1/invalid"],
-                ['PUT',    "/folders/1/invalid"],
-                ['POST',   "/folders/1/invalid"],
-                ['DELETE', "/folders/1/invalid"],
-                ['GET',    "/version/invalid"],
-                ['PUT',    "/version/invalid"],
-                ['POST',   "/version/invalid"],
-                ['DELETE', "/version/invalid"],
-            ],
-            405 => [
-                'GET' => [
-                    ['PUT',    "/version"],
-                    ['POST',   "/version"],
-                    ['DELETE', "/version"],
-                ],
-                'GET, POST' => [
-                    ['PUT',    "/folders"],
-                    ['DELETE', "/folders"],
-                ],
-                'PUT, DELETE' => [
-                    ['GET',    "/folders/1"],
-                    ['POST',   "/folders/1"],
-                ],
-            ],
-        ];
-        foreach ($errs[404] as $req) {
-            $exp = new EmptyResponse(404);
-            list($method, $path) = $req;
-            $this->assertMessage($exp, $this->req($method, $path), "$method call to $path did not return 404.");
-        }
-        foreach ($errs[405] as $allow => $cases) {
-            $exp = new EmptyResponse(405, ['Allow' => $allow]);
-            foreach ($cases as $req) {
-                list($method, $path) = $req;
-                $this->assertMessage($exp, $this->req($method, $path), "$method call to $path did not return 405.");
-            }
-        }
+    /** @dataProvider provideInvalidPaths */
+    public function testRespondToInvalidPaths($path, $method, $code, $allow = null): void {
+        $exp = new EmptyResponse($code, $allow ? ['Allow' => $allow] : []);
+        $this->assertMessage($exp, $this->req($method, $path));
     }
 
-    public function testRespondToInvalidInputTypes() {
+    public function provideInvalidPaths(): array {
+        return [
+            ["/",                  "GET",     404],
+            ["/",                  "POST",    404],
+            ["/",                  "PUT",     404],
+            ["/",                  "DELETE",  404],
+            ["/",                  "OPTIONS", 404],
+            ["/version/invalid",   "GET",     404],
+            ["/version/invalid",   "POST",    404],
+            ["/version/invalid",   "PUT",     404],
+            ["/version/invalid",   "DELETE",  404],
+            ["/version/invalid",   "OPTIONS", 404],
+            ["/folders/1/invalid", "GET",     404],
+            ["/folders/1/invalid", "POST",    404],
+            ["/folders/1/invalid", "PUT",     404],
+            ["/folders/1/invalid", "DELETE",  404],
+            ["/folders/1/invalid", "OPTIONS", 404],
+            ["/version",           "POST",    405, "GET"],
+            ["/version",           "PUT",     405, "GET"],
+            ["/version",           "DELETE",  405, "GET"],
+            ["/folders",           "PUT",     405, "GET, POST"],
+            ["/folders",           "DELETE",  405, "GET, POST"],
+            ["/folders/1",         "GET",     405, "PUT, DELETE"],
+            ["/folders/1",         "POST",    405, "PUT, DELETE"],
+        ];
+    }
+
+    public function testRespondToInvalidInputTypes(): void {
         $exp = new EmptyResponse(415, ['Accept' => "application/json"]);
         $this->assertMessage($exp, $this->req("PUT", "/folders/1", '<data/>', ['Content-Type' => "application/xml"]));
         $exp = new EmptyResponse(400);
@@ -384,27 +379,24 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("PUT", "/folders/1", '<data/>', ['Content-Type' => null]));
     }
 
-    public function testRespondToOptionsRequests() {
+    /** @dataProvider provideOptionsRequests */
+    public function testRespondToOptionsRequests(string $url, string $allow, string $accept): void {
         $exp = new EmptyResponse(204, [
-            'Allow'  => "HEAD,GET,POST",
-            'Accept' => "application/json",
+            'Allow'  => $allow,
+            'Accept' => $accept,
         ]);
-        $this->assertMessage($exp, $this->req("OPTIONS", "/feeds"));
-        $exp = new EmptyResponse(204, [
-            'Allow'  => "DELETE",
-            'Accept' => "application/json",
-        ]);
-        $this->assertMessage($exp, $this->req("OPTIONS", "/feeds/2112"));
-        $exp = new EmptyResponse(204, [
-            'Allow'  => "HEAD,GET",
-            'Accept' => "application/json",
-        ]);
-        $this->assertMessage($exp, $this->req("OPTIONS", "/user"));
-        $exp = new EmptyResponse(404);
-        $this->assertMessage($exp, $this->req("OPTIONS", "/invalid/path"));
+        $this->assertMessage($exp, $this->req("OPTIONS", $url));
     }
 
-    public function testListFolders() {
+    public function provideOptionsRequests(): array {
+        return [
+            ["/feeds",      "HEAD,GET,POST", "application/json"],
+            ["/feeds/2112", "DELETE",        "application/json"],
+            ["/user",       "HEAD,GET",      "application/json"],
+        ];
+    }
+
+    public function testListFolders(): void {
         $list = [
             ['id' => 1,  'name' => "Software", 'parent' => null],
             ['id' => 12, 'name' => "Hardware", 'parent' => null],
@@ -413,59 +405,43 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 1,  'name' => "Software"],
             ['id' => 12, 'name' => "Hardware"],
         ];
-        \Phake::when(Arsse::$db)->folderList(Arsse::$user->id, null, false)->thenReturn(new Result([]))->thenReturn(new Result($this->v($list)));
-        $exp = new Response(['folders' => []]);
-        $this->assertMessage($exp, $this->req("GET", "/folders"));
+        \Phake::when(Arsse::$db)->folderList(Arsse::$user->id, null, false)->thenReturn(new Result($this->v($list)));
         $exp = new Response(['folders' => $out]);
         $this->assertMessage($exp, $this->req("GET", "/folders"));
     }
 
-    public function testAddAFolder() {
-        $in = [
-            ["name" => "Software"],
-            ["name" => "Hardware"],
-        ];
-        $db = [
-            ['id' => 1,   'name' => "Software", 'parent' => null],
-            ['id' => "2", 'name' => "Hardware", 'parent' => null],
-        ];
-        $out = [
-            ['id' => 1, 'name' => "Software"],
-            ['id' => 2, 'name' => "Hardware"],
-        ];
-        // set of various mocks for testing
-        \Phake::when(Arsse::$db)->folderAdd($this->anything(), $this->anything())->thenThrow(new \Exception);
-        \Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $in[0])->thenReturn(1)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        \Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $in[1])->thenReturn(2)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        \Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 1)->thenReturn($this->v($db[0]));
-        \Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 2)->thenReturn($this->v($db[1]));
-        // set up mocks that produce errors
-        \Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, [])->thenThrow(new ExceptionInput("missing"));
-        \Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => ""])->thenThrow(new ExceptionInput("missing"));
-        \Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => " "])->thenThrow(new ExceptionInput("whitespace"));
-        // correctly add two folders, using different means
-        $exp = new Response(['folders' => [$out[0]]]);
-        $this->assertMessage($exp, $this->req("POST", "/folders", json_encode($in[0])));
-        $exp = new Response(['folders' => [$out[1]]]);
-        $this->assertMessage($exp, $this->req("POST", "/folders?name=Hardware"));
-        \Phake::verify(Arsse::$db)->folderAdd(Arsse::$user->id, $in[0]);
-        \Phake::verify(Arsse::$db)->folderAdd(Arsse::$user->id, $in[1]);
-        \Phake::verify(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 1);
-        \Phake::verify(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 2);
-        // test bad folder names
-        $exp = new EmptyResponse(422);
-        $this->assertMessage($exp, $this->req("POST", "/folders"));
-        $this->assertMessage($exp, $this->req("POST", "/folders", '{"name":""}'));
-        $this->assertMessage($exp, $this->req("POST", "/folders", '{"name":" "}'));
-        $this->assertMessage($exp, $this->req("POST", "/folders", '{"name":{}}'));
-        // try adding the same two folders again
-        $exp = new EmptyResponse(409);
-        $this->assertMessage($exp, $this->req("POST", "/folders?name=Software"));
-        $exp = new EmptyResponse(409);
-        $this->assertMessage($exp, $this->req("POST", "/folders", json_encode($in[1])));
+    /** @dataProvider provideFolderCreations */
+    public function testAddAFolder(array $input, bool $body, $output, ResponseInterface $exp): void {
+        if ($output instanceof ExceptionInput) {
+            \Phake::when(Arsse::$db)->folderAdd->thenThrow($output);
+        } else {
+            \Phake::when(Arsse::$db)->folderAdd->thenReturn($output);
+            \Phake::when(Arsse::$db)->folderPropertiesGet->thenReturn($this->v(['id' => $output, 'name' => $input['name'], 'parent' => null]));
+        }
+        $act = $this->req("POST", "/folders", $input, [], true, $body);
+        $this->assertMessage($exp, $act);
+        \Phake::verify(Arsse::$db)->folderAdd(Arsse::$user->id, $input);
+        if ($output instanceof ExceptionInput) {
+            \Phake::verify(Arsse::$db, \Phake::times(0))->folderPropertiesGet;
+        } else {
+            \Phake::verify(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, $output);
+        }
     }
 
-    public function testRemoveAFolder() {
+    public function provideFolderCreations(): array {
+        return [
+            [['name' => "Software"], true,  1,                                         new Response(['folders' => [['id' => 1, 'name' => "Software"]]])],
+            [['name' => "Software"], false, 1,                                         new Response(['folders' => [['id' => 1, 'name' => "Software"]]])],
+            [['name' => "Hardware"], true,  "2",                                       new Response(['folders' => [['id' => 2, 'name' => "Hardware"]]])],
+            [['name' => "Hardware"], false, "2",                                       new Response(['folders' => [['id' => 2, 'name' => "Hardware"]]])],
+            [['name' => "Software"], true,  new ExceptionInput("constraintViolation"), new EmptyResponse(409)],
+            [['name' => ""],         true,  new ExceptionInput("whitespace"),          new EmptyResponse(422)],
+            [['name' => " "],        true,  new ExceptionInput("whitespace"),          new EmptyResponse(422)],
+            [['name' => null],       true,  new ExceptionInput("missing"),             new EmptyResponse(422)],
+        ];
+    }
+
+    public function testRemoveAFolder(): void {
         \Phake::when(Arsse::$db)->folderRemove(Arsse::$user->id, 1)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("DELETE", "/folders/1"));
@@ -475,45 +451,40 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db, \Phake::times(2))->folderRemove(Arsse::$user->id, 1);
     }
 
-    public function testRenameAFolder() {
-        $in = [
-            ["name" => "Software"],
-            ["name" => "Software"],
-            ["name" => ""],
-            ["name" => " "],
-            [],
-        ];
-        \Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[0])->thenReturn(true);
-        \Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 2, $in[1])->thenThrow(new ExceptionInput("constraintViolation"));
-        \Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[2])->thenThrow(new ExceptionInput("missing"));
-        \Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[3])->thenThrow(new ExceptionInput("whitespace"));
-        \Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 1, $in[4])->thenReturn(true); // this should be stopped by the handler before the request gets to the database
-        \Phake::when(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, 3, $this->anything())->thenThrow(new ExceptionInput("subjectMissing")); // folder ID 3 does not exist
-        $exp = new EmptyResponse(204);
-        $this->assertMessage($exp, $this->req("PUT", "/folders/1", json_encode($in[0])));
-        $exp = new EmptyResponse(409);
-        $this->assertMessage($exp, $this->req("PUT", "/folders/2", json_encode($in[1])));
-        $exp = new EmptyResponse(422);
-        $this->assertMessage($exp, $this->req("PUT", "/folders/1", json_encode($in[2])));
-        $exp = new EmptyResponse(422);
-        $this->assertMessage($exp, $this->req("PUT", "/folders/1", json_encode($in[3])));
-        $exp = new EmptyResponse(422);
-        $this->assertMessage($exp, $this->req("PUT", "/folders/1", json_encode($in[4])));
-        $exp = new EmptyResponse(404);
-        $this->assertMessage($exp, $this->req("PUT", "/folders/3", json_encode($in[0])));
+    /** @dataProvider provideFolderRenamings */
+    public function testRenameAFolder(array $input, int $id, $output, ResponseInterface $exp): void {
+        if ($output instanceof ExceptionInput) {
+            \Phake::when(Arsse::$db)->folderPropertiesSet->thenThrow($output);
+        } else {
+            \Phake::when(Arsse::$db)->folderPropertiesSet->thenReturn($output);
+        }
+        $act = $this->req("PUT", "/folders/$id", $input);
+        $this->assertMessage($exp, $act);
+        \Phake::verify(Arsse::$db)->folderPropertiesSet(Arsse::$user->id, $id, $input);
     }
 
-    public function testRetrieveServerVersion() {
+    public function provideFolderRenamings(): array {
+        return [
+            [['name' => "Software"], 1, true,                                      new EmptyResponse(204)],
+            [['name' => "Software"], 2, new ExceptionInput("constraintViolation"), new EmptyResponse(409)],
+            [['name' => "Software"], 3, new ExceptionInput("subjectMissing"),      new EmptyResponse(404)],
+            [['name' => ""],         2, new ExceptionInput("whitespace"),          new EmptyResponse(422)],
+            [['name' => " "],        2, new ExceptionInput("whitespace"),          new EmptyResponse(422)],
+            [['name' => null],       2, new ExceptionInput("missing"),             new EmptyResponse(422)],
+        ];
+    }
+
+    public function testRetrieveServerVersion(): void {
         $exp = new Response([
-            'version' => V1_2::VERSION,
+            'version'       => V1_2::VERSION,
             'arsse_version' => Arsse::VERSION,
             ]);
         $this->assertMessage($exp, $this->req("GET", "/version"));
     }
 
-    public function testListSubscriptions() {
+    public function testListSubscriptions(): void {
         $exp1 = [
-            'feeds' => [],
+            'feeds'        => [],
             'starredCount' => 0,
         ];
         $exp2 = [
@@ -530,55 +501,51 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/feeds"));
     }
 
-    public function testAddASubscription() {
-        $in = [
-            ['url' => "http://example.com/news.atom", 'folderId' => 3],
-            ['url' => "http://example.org/news.atom", 'folderId' => 8],
-            ['url' => "http://example.net/news.atom", 'folderId' => 8],
-            ['url' => "http://example.net/news.atom", 'folderId' => -1],
-            [],
-        ];
-        $out = [
-            ['feeds' => [$this->feeds['rest'][0]]],
-            ['feeds' => [$this->feeds['rest'][1]], 'newestItemId' => 4758915],
-            ['feeds' => [$this->feeds['rest'][2]], 'newestItemId' => 2112],
-        ];
-        // set up the necessary mocks
-        \Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.com/news.atom")->thenReturn(2112)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        \Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.org/news.atom")->thenReturn(42)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        \Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "")->thenThrow(new \JKingWeb\Arsse\Feed\Exception("", new \PicoFeed\Reader\SubscriptionNotFoundException));
-        \Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 2112)->thenReturn($this->v($this->feeds['db'][0]));
-        \Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 42)->thenReturn($this->v($this->feeds['db'][1]));
-        \Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 47)->thenReturn($this->v($this->feeds['db'][2]));
-        \Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription(2112))->thenReturn(0);
-        \Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription(42))->thenReturn(4758915);
-        \Phake::when(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription(47))->thenReturn(2112);
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 2112, ['folder' =>  3])->thenThrow(new ExceptionInput("idMissing")); // folder ID 3 does not exist
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 42, ['folder' =>  8])->thenReturn(true);
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 47, ['folder' => -1])->thenThrow(new ExceptionInput("typeViolation")); // folder ID -1 is invalid
-        // set up a mock for a bad feed which succeeds the second time
-        \Phake::when(Arsse::$db)->subscriptionAdd(Arsse::$user->id, "http://example.net/news.atom")->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.net/news.atom", new \PicoFeed\Client\InvalidUrlException()))->thenReturn(47);
-        // add the subscriptions
-        $exp = new Response($out[0]);
-        $this->assertMessage($exp, $this->req("POST", "/feeds", json_encode($in[0])));
-        $exp = new Response($out[1]);
-        $this->assertMessage($exp, $this->req("POST", "/feeds", json_encode($in[1])));
-        // try to add them a second time
-        $exp = new EmptyResponse(409);
-        $this->assertMessage($exp, $this->req("POST", "/feeds", json_encode($in[0])));
-        $this->assertMessage($exp, $this->req("POST", "/feeds", json_encode($in[1])));
-        // try to add a bad feed
-        $exp = new EmptyResponse(422);
-        $this->assertMessage($exp, $this->req("POST", "/feeds", json_encode($in[2])));
-        // try again (this will succeed), with an invalid folder ID
-        $exp = new Response($out[2]);
-        $this->assertMessage($exp, $this->req("POST", "/feeds", json_encode($in[3])));
-        // try to add no feed
-        $exp = new EmptyResponse(422);
-        $this->assertMessage($exp, $this->req("POST", "/feeds", json_encode($in[4])));
+    /** @dataProvider provideNewSubscriptions */
+    public function testAddASubscription(array $input, $id, int $latestEdition, array $output, $moveOutcome, ResponseInterface $exp): void {
+        if ($id instanceof \Exception) {
+            \Phake::when(Arsse::$db)->subscriptionAdd->thenThrow($id);
+        } else {
+            \Phake::when(Arsse::$db)->subscriptionAdd->thenReturn($id);
+        }
+        if ($moveOutcome instanceof \Exception) {
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenThrow($moveOutcome);
+        } else {
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn($moveOutcome);
+        }
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn($this->v($output));
+        \Phake::when(Arsse::$db)->editionLatest->thenReturn($latestEdition);
+        $act = $this->req("POST", "/feeds", $input);
+        $this->assertMessage($exp, $act);
+        \Phake::verify(Arsse::$db)->subscriptionAdd(Arsse::$user->id, $input['url'] ?? "");
+        if ($id instanceof \Exception) {
+            \Phake::verify(Arsse::$db, \Phake::times(0))->subscriptionPropertiesSet;
+            \Phake::verify(Arsse::$db, \Phake::times(0))->subscriptionPropertiesGet;
+            \Phake::verify(Arsse::$db, \Phake::times(0))->editionLatest;
+        } else {
+            \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, $id);
+            \Phake::verify(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription($id));
+            if ($input['folderId'] ?? 0) {
+                \Phake::verify(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, $id, ['folder' => (int) $input['folderId']]);
+            } else {
+                \Phake::verify(Arsse::$db, \Phake::times(0))->subscriptionPropertiesSet;
+            }
+        }
     }
 
-    public function testRemoveASubscription() {
+    public function provideNewSubscriptions(): array {
+        $feedException = new \JKingWeb\Arsse\Feed\Exception("", new \PicoFeed\Reader\SubscriptionNotFoundException);
+        return [
+            [['url' => "http://example.com/news.atom", 'folderId' => 3],  2112,                                      0,       $this->feeds['db'][0], new ExceptionInput("idMissing"),     new Response(['feeds' => [$this->feeds['rest'][0]]])],
+            [['url' => "http://example.org/news.atom", 'folderId' => 8],  42,                                        4758915, $this->feeds['db'][1], true,                                new Response(['feeds' => [$this->feeds['rest'][1]], 'newestItemId' => 4758915])],
+            [['url' => "http://example.com/news.atom", 'folderId' => 3],  new ExceptionInput("constraintViolation"), 0,       $this->feeds['db'][0], new ExceptionInput("idMissing"),     new EmptyResponse(409)],
+            [['url' => "http://example.org/news.atom", 'folderId' => 8],  new ExceptionInput("constraintViolation"), 4758915, $this->feeds['db'][1], true,                                new EmptyResponse(409)],
+            [[],                                                          $feedException,                            0,       [],                    false,                               new EmptyResponse(422)],
+            [['url' => "http://example.net/news.atom", 'folderId' => -1], 47,                                        2112,    $this->feeds['db'][2], new ExceptionInput("typeViolation"), new Response(['feeds' => [$this->feeds['rest'][2]], 'newestItemId' => 2112])],
+        ];
+    }
+
+    public function testRemoveASubscription(): void {
         \Phake::when(Arsse::$db)->subscriptionRemove(Arsse::$user->id, 1)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("DELETE", "/feeds/1"));
@@ -588,13 +555,13 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db, \Phake::times(2))->subscriptionRemove(Arsse::$user->id, 1);
     }
 
-    public function testMoveASubscription() {
+    public function testMoveASubscription(): void {
         $in = [
             ['folderId' =>    0],
-            ['folderId' =>   42],
+            ['folderId' => 42],
             ['folderId' => 2112],
-            ['folderId' =>   42],
-            ['folderId' =>   -1],
+            ['folderId' => 42],
+            ['folderId' => -1],
             [],
         ];
         \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 1, ['folder' =>   42])->thenReturn(true);
@@ -616,7 +583,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/move", json_encode($in[5])));
     }
 
-    public function testRenameASubscription() {
+    public function testRenameASubscription(): void {
         $in = [
             ['feedTitle' => null],
             ['feedTitle' => "Ook"],
@@ -646,14 +613,14 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/rename", json_encode($in[6])));
     }
 
-    public function testListStaleFeeds() {
+    public function testListStaleFeeds(): void {
         $out = [
             [
-                'id' => 42,
+                'id'     => 42,
                 'userId' => "",
             ],
             [
-                'id' => 2112,
+                'id'     => 2112,
                 'userId' => "",
             ],
         ];
@@ -662,13 +629,13 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/feeds/all"));
     }
 
-    public function testUpdateAFeed() {
+    public function testUpdateAFeed(): void {
         $in = [
             ['feedId' =>    42], // valid
-            ['feedId' =>  2112], // feed does not exist
+            ['feedId' => 2112], // feed does not exist
             ['feedId' => "ook"], // invalid ID
-            ['feedId' =>    -1], // invalid ID
-            ['feed'   =>    42], // invalid input
+            ['feedId' => -1], // invalid ID
+            ['feed'   => 42], // invalid input
         ];
         \Phake::when(Arsse::$db)->feedUpdate(42)->thenReturn(true);
         \Phake::when(Arsse::$db)->feedUpdate(2112)->thenThrow(new ExceptionInput("subjectMissing"));
@@ -683,21 +650,21 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[4])));
     }
 
-    public function testListArticles() {
+    public function testListArticles(): void {
         $t = new \DateTime;
         $in = [
             ['type' => 0, 'id' => 42],   // type=0 => subscription/feed
-            ['type' => 1, 'id' => 2112], // type=1 => folder
-            ['type' => 0, 'id' => -1],   // type=0 => subscription/feed; invalid ID
-            ['type' => 1, 'id' => -1],   // type=1 => folder; invalid ID
-            ['type' => 2, 'id' => 0],    // type=2 => starred
-            ['type' => 3, 'id' => 0],    // type=3 => all (default); base context
-            ['oldestFirst' => true, 'batchSize' => 10, 'offset' => 5],
-            ['oldestFirst' => false, 'batchSize' => 5, 'offset' => 5],
-            ['getRead' => true], // base context
-            ['getRead' => false],
+            ['type'         => 1, 'id' => 2112], // type=1 => folder
+            ['type'         => 0, 'id' => -1],   // type=0 => subscription/feed; invalid ID
+            ['type'         => 1, 'id' => -1],   // type=1 => folder; invalid ID
+            ['type'         => 2, 'id' => 0],    // type=2 => starred
+            ['type'         => 3, 'id' => 0],    // type=3 => all (default); base context
+            ['oldestFirst'  => true, 'batchSize' => 10, 'offset' => 5],
+            ['oldestFirst'  => false, 'batchSize' => 5, 'offset' => 5],
+            ['getRead'      => true], // base context
+            ['getRead'      => false],
             ['lastModified' => $t->getTimestamp()],
-            ['oldestFirst' => false, 'batchSize' => 5, 'offset' => 0], // offset=0 should not set the latestEdition context
+            ['oldestFirst'  => false, 'batchSize' => 5, 'offset' => 0], // offset=0 should not set the latestEdition context
         ];
         \Phake::when(Arsse::$db)->articleList->thenReturn(new Result($this->v($this->articles['db'])));
         \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->subscription(42), $this->anything(), ["edition desc"])->thenThrow(new ExceptionInput("idMissing"));
@@ -737,7 +704,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->limit(5), $this->anything(), ["edition desc"]);
     }
 
-    public function testMarkAFolderRead() {
+    public function testMarkAFolderRead(): void {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
         \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->folder(1)->latestEdition(2112))->thenReturn(42);
@@ -752,7 +719,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("PUT", "/folders/42/read", $in));
     }
 
-    public function testMarkASubscriptionRead() {
+    public function testMarkASubscriptionRead(): void {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
         \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->subscription(1)->latestEdition(2112))->thenReturn(42);
@@ -767,7 +734,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("PUT", "/feeds/42/read", $in));
     }
 
-    public function testMarkAllItemsRead() {
+    public function testMarkAllItemsRead(): void {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
         \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->latestEdition(2112))->thenReturn(42);
@@ -779,7 +746,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("PUT", "/items/read?newestItemId=ook"));
     }
 
-    public function testChangeMarksOfASingleArticle() {
+    public function testChangeMarksOfASingleArticle(): void {
         $read = ['read' => true];
         $unread = ['read' => false];
         $star = ['starred' => true];
@@ -805,7 +772,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db, \Phake::times(8))->articleMark(Arsse::$user->id, $this->anything(), $this->anything());
     }
 
-    public function testChangeMarksOfMultipleArticles() {
+    public function testChangeMarksOfMultipleArticles(): void {
         $read = ['read' => true];
         $unread = ['read' => false];
         $star = ['starred' => true];
@@ -860,19 +827,19 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark(Arsse::$user->id, $unstar, (new Context)->articles($in[1]));
     }
 
-    public function testQueryTheServerStatus() {
+    public function testQueryTheServerStatus(): void {
         $interval = Arsse::$conf->serviceFrequency;
         $valid = (new \DateTimeImmutable("now", new \DateTimezone("UTC")))->sub($interval);
         $invalid = $valid->sub($interval)->sub($interval);
         \Phake::when(Arsse::$db)->metaGet("service_last_checkin")->thenReturn(Date::transform($valid, "sql"))->thenReturn(Date::transform($invalid, "sql"));
         \Phake::when(Arsse::$db)->driverCharsetAcceptable->thenReturn(true)->thenReturn(false);
         $arr1 = $arr2 = [
-            'version' => V1_2::VERSION,
+            'version'       => V1_2::VERSION,
             'arsse_version' => Arsse::VERSION,
-            'warnings' => [
+            'warnings'      => [
                 'improperlyConfiguredCron' => false,
-                'incorrectDbCharset' => false,
-            ]
+                'incorrectDbCharset'       => false,
+            ],
         ];
         $arr2['warnings']['improperlyConfiguredCron'] = true;
         $arr2['warnings']['incorrectDbCharset'] = true;
@@ -880,32 +847,32 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/status"));
     }
 
-    public function testCleanUpBeforeUpdate() {
+    public function testCleanUpBeforeUpdate(): void {
         \Phake::when(Arsse::$db)->feedCleanup()->thenReturn(true);
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("GET", "/cleanup/before-update"));
         \Phake::verify(Arsse::$db)->feedCleanup();
     }
 
-    public function testCleanUpAfterUpdate() {
+    public function testCleanUpAfterUpdate(): void {
         \Phake::when(Arsse::$db)->articleCleanup()->thenReturn(true);
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("GET", "/cleanup/after-update"));
         \Phake::verify(Arsse::$db)->articleCleanup();
     }
 
-    public function testQueryTheUserStatus() {
+    public function testQueryTheUserStatus(): void {
         $act = $this->req("GET", "/user");
         $exp = new Response([
-            'userId' => Arsse::$user->id,
-            'displayName' => Arsse::$user->id,
+            'userId'             => Arsse::$user->id,
+            'displayName'        => Arsse::$user->id,
             'lastLoginTimestamp' => $this->approximateTime($act->getPayload()['lastLoginTimestamp'], new \DateTimeImmutable),
-            'avatar' => null,
+            'avatar'             => null,
         ]);
         $this->assertMessage($exp, $act);
     }
-    
-    public function testPreferJsonOverQueryParameters() {
+
+    public function testPreferJsonOverQueryParameters(): void {
         $in = ['name' => "Software"];
         $url = "/folders?name=Hardware";
         $out1 = ['id' => 1, 'name' => "Software"];
@@ -917,8 +884,8 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $exp = new Response(['folders' => [$out1]]);
         $this->assertMessage($exp, $this->req("POST", "/folders?name=Hardware", json_encode($in)));
     }
-    
-    public function testMeldJsonAndQueryParameters() {
+
+    public function testMeldJsonAndQueryParameters(): void {
         $in = ['oldestFirst' => true];
         $url = "/items?type=2";
         \Phake::when(Arsse::$db)->articleList->thenReturn(new Result([]));

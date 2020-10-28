@@ -9,7 +9,7 @@ namespace JKingWeb\Arsse\Db\PostgreSQL;
 class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     use Dispatch;
 
-    const BINDINGS = [
+    protected const BINDINGS = [
         self::T_INTEGER  => "bigint",
         self::T_FLOAT    => "decimal",
         self::T_DATETIME => "timestamp(0) without time zone",
@@ -38,7 +38,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         if (is_resource($r)) {
             return new Result($this->db, $r);
         } else {
-            list($excClass, $excMsg, $excData) = $r;
+            [$excClass, $excMsg, $excData] = $r;
             throw new $excClass($excMsg, $excData);
         }
     }

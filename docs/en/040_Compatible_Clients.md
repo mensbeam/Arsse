@@ -50,7 +50,17 @@ The Arsse does not at this time have any first party clients. However, because T
    </td>
   </tr>
   <tr>
-   <td><a href="https://apps.apple.com/app/id1449412482">Reeder</a></td>
+   <td><a href="https://gitlab.com/news-flash/news_flash_gtk">NewsFlash</a></td>
+   <td>Linux</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td>
+    <p>Successor to FeedReader.</p>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://reeder.app/">Reeder</a></td>
    <td>macOS</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
@@ -155,7 +165,7 @@ The Arsse does not at this time have any first party clients. However, because T
    </td>
   </tr>
   <tr>
-   <td><a href="https://apps.apple.com/app/id1449412357">Reeder</a></td>
+   <td><a href="https://reeder.app/">Reeder</a></td>
    <td>iOS</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
@@ -185,7 +195,7 @@ The Arsse does not at this time have any first party clients. However, because T
    </td>
   </tr>
   <tr>
-   <td><a href="https://apps.apple.com/app/id1252376153">Unread</a></td>
+   <td><a href="https://www.goldenhillsoftware.com/unread/">Unread</a></td>
    <td>iOS</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
@@ -225,7 +235,17 @@ The Arsse does not at this time have any first party clients. However, because T
    </td>
   </tr>
   <tr>
-   <td><a href="https://apps.apple.com/app/id588726889">ReadKit</a></td>
+   <td><a href="https://open-store.io/app/newsie.martinferretti">Newsie</a></td>
+   <td>Ubuntu Touch</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td>
+    <p>Does not support HTTP authentication.</p>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://readkitapp.com/">ReadKit</a></td>
    <td>macOS</td>
    <td class="N">✘</td>
    <td class="N">✘</td>

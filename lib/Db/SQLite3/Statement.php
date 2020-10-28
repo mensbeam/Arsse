@@ -9,10 +9,10 @@ namespace JKingWeb\Arsse\Db\SQLite3;
 class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     use ExceptionBuilder;
 
-    const SQLITE_BUSY = 5;
-    const SQLITE_CONSTRAINT = 19;
-    const SQLITE_MISMATCH = 20;
-    const BINDINGS = [
+    public const SQLITE_BUSY = 5;
+    public const SQLITE_CONSTRAINT = 19;
+    public const SQLITE_MISMATCH = 20;
+    protected const BINDINGS = [
         self::T_INTEGER  => \SQLITE3_INTEGER,
         self::T_FLOAT    => \SQLITE3_FLOAT,
         self::T_DATETIME => \SQLITE3_TEXT,
@@ -37,7 +37,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
             $this->st = $this->db->prepare($query);
             return true;
         } catch (\Exception $e) { // @codeCoverageIgnore
-            list($excClass, $excMsg, $excData) = $this->buildException(); // @codeCoverageIgnore
+            [$excClass, $excMsg, $excData] = $this->buildException(); // @codeCoverageIgnore
             throw new $excClass($excMsg, $excData); // @codeCoverageIgnore
         }
     }
@@ -56,7 +56,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         try {
             $r = $this->st->execute();
         } catch (\Exception $e) {
-            list($excClass, $excMsg, $excData) = $this->buildException();
+            [$excClass, $excMsg, $excData] = $this->buildException();
             throw new $excClass($excMsg, $excData);
         }
         $changes = $this->db->changes();

@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 abstract class AbstractException extends \Exception {
-    const CODES = [
+    public const CODES = [
         "Exception.uncoded"                           => -1,
         "Exception.unknown"                           => 10000,
         "Exception.constantUnknown"                   => 10001,
@@ -75,6 +75,7 @@ abstract class AbstractException extends \Exception {
         "User/Exception.authFailed"                   => 10412,
         "User/ExceptionAuthz.notAuthorized"           => 10421,
         "User/ExceptionSession.invalid"               => 10431,
+        "Feed/Exception.internalError"                => 10500,
         "Feed/Exception.invalidCertificate"           => 10501,
         "Feed/Exception.invalidUrl"                   => 10502,
         "Feed/Exception.maxRedirect"                  => 10503,
@@ -82,6 +83,8 @@ abstract class AbstractException extends \Exception {
         "Feed/Exception.timeout"                      => 10505,
         "Feed/Exception.forbidden"                    => 10506,
         "Feed/Exception.unauthorized"                 => 10507,
+        "Feed/Exception.transmissionError"            => 10508,
+        "Feed/Exception.connectionFailed"             => 10509,
         "Feed/Exception.malformedXml"                 => 10511,
         "Feed/Exception.xmlEntity"                    => 10512,
         "Feed/Exception.subscriptionNotFound"         => 10521,

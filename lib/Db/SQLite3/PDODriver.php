@@ -16,7 +16,7 @@ class PDODriver extends AbstractPDODriver {
         return class_exists("PDO") && in_array("sqlite", \PDO::getAvailableDrivers());
     }
 
-    protected function makeConnection(string $file, string $key) {
+    protected function makeConnection(string $file, string $key): void {
         $this->db = new \PDO("sqlite:".$file, "", "", [
             \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
         ]);
@@ -36,7 +36,6 @@ class PDODriver extends AbstractPDODriver {
             throw new Exception("extMissing", self::driverName());
         }
     }
-
 
     public static function driverName(): string {
         return Arsse::$lang->msg("Driver.Db.SQLite3PDO.Name");

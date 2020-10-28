@@ -15,113 +15,113 @@ use JKingWeb\Arsse\Misc\ValueInfo as Value;
  * All public properties are configuration parameters that may be set by the server administrator. */
 class Conf {
     /** @var string Default language to use for logging and errors */
-    public $lang                    = "en";
+    public $lang = "en";
 
     /** @var string The database driver to use, one of "sqlite3", "postgresql", or "mysql". A fully-qualified class name may also be used for custom drivers */
-    public $dbDriver                = "sqlite3";
+    public $dbDriver = "sqlite3";
     /** @var boolean Whether to attempt to automatically update the database when upgrading to a new version with schema changes */
-    public $dbAutoUpdate            = true;
+    public $dbAutoUpdate = true;
     /** @var \DateInterval|null Number of seconds to wait before returning a timeout error when connecting to a database (null waits forever; not applicable to SQLite) */
-    public $dbTimeoutConnect        = 5.0;
+    public $dbTimeoutConnect = 5.0;
     /** @var \DateInterval|null Number of seconds to wait before returning a timeout error when executing a database operation (null waits forever; not applicable to SQLite) */
-    public $dbTimeoutExec           = null;
+    public $dbTimeoutExec = null;
     /** @var \DateInterval|null Number of seconds to wait before returning a timeout error when acquiring a database lock (null waits forever) */
-    public $dbTimeoutLock           = 60.0;
+    public $dbTimeoutLock = 60.0;
     /** @var string|null Full path and file name of SQLite database (if using SQLite) */
-    public $dbSQLite3File           = null;
+    public $dbSQLite3File = null;
     /** @var string Encryption key to use for SQLite database (if using a version of SQLite with SEE) */
-    public $dbSQLite3Key            = "";
+    public $dbSQLite3Key = "";
     /** @var string Host name, address, or socket path of PostgreSQL database server (if using PostgreSQL) */
-    public $dbPostgreSQLHost        = "";
+    public $dbPostgreSQLHost = "";
     /** @var string Log-in user name for PostgreSQL database server (if using PostgreSQL) */
-    public $dbPostgreSQLUser        = "arsse";
+    public $dbPostgreSQLUser = "arsse";
     /** @var string Log-in password for PostgreSQL database server (if using PostgreSQL) */
-    public $dbPostgreSQLPass        = "";
+    public $dbPostgreSQLPass = "";
     /** @var integer Listening port for PostgreSQL database server (if using PostgreSQL over TCP) */
-    public $dbPostgreSQLPort        = 5432;
+    public $dbPostgreSQLPort = 5432;
     /** @var string Database name on PostgreSQL database server (if using PostgreSQL) */
-    public $dbPostgreSQLDb          = "arsse";
+    public $dbPostgreSQLDb = "arsse";
     /** @var string Schema name in PostgreSQL database (if using PostgreSQL) */
-    public $dbPostgreSQLSchema      = "";
+    public $dbPostgreSQLSchema = "";
     /** @var string Service file entry to use (if using PostgreSQL); if using a service entry all above parameters except schema are ignored */
-    public $dbPostgreSQLService     = "";
+    public $dbPostgreSQLService = "";
     /** @var string Host name or address of MySQL database server (if using MySQL) */
-    public $dbMySQLHost             = "localhost";
+    public $dbMySQLHost = "localhost";
     /** @var string Log-in user name for MySQL database server (if using MySQL) */
-    public $dbMySQLUser             = "arsse";
+    public $dbMySQLUser = "arsse";
     /** @var string Log-in password for MySQL database server (if using MySQL) */
-    public $dbMySQLPass             = "";
+    public $dbMySQLPass = "";
     /** @var integer Listening port for MySQL database server (if using MySQL over TCP) */
-    public $dbMySQLPort             = 3306;
+    public $dbMySQLPort = 3306;
     /** @var string Database name on MySQL database server (if using MySQL) */
-    public $dbMySQLDb               = "arsse";
+    public $dbMySQLDb = "arsse";
     /** @var string Unix domain socket or named pipe to use for MySQL when not connecting over TCP */
-    public $dbMySQLSocket           = "";
+    public $dbMySQLSocket = "";
 
     /** @var string The user management driver to use, currently only "internal". A fully-qualified class name may also be used for custom drivers */
-    public $userDriver              = "internal";
+    public $userDriver = "internal";
     /** @var boolean Whether users are already authenticated by the Web server before the application is executed */
-    public $userPreAuth             = false;
+    public $userPreAuth = false;
     /** @var boolean Whether to require successful HTTP authentication before processing API-level authentication for protocols which have any. Normally the Tiny Tiny RSS relies on its own session-token authentication scheme, for example */
-    public $userHTTPAuthRequired    = false;
+    public $userHTTPAuthRequired = false;
     /** @var integer Desired length of temporary user passwords */
-    public $userTempPasswordLength  = 20;
+    public $userTempPasswordLength = 20;
     /** @var boolean Whether invalid or expired API session tokens should prevent logging in when HTTP authentication is used, for protocol which implement their own authentication */
-    public $userSessionEnforced     = true;
+    public $userSessionEnforced = true;
     /** @var \DateInterval Period of inactivity after which log-in sessions should be considered invalid, as an ISO 8601 duration (default: 24 hours)
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
-    public $userSessionTimeout      = "PT24H";
+    public $userSessionTimeout = "PT24H";
     /** @var \DateInterval Maximum lifetime of log-in sessions regardless of activity, as an ISO 8601 duration (default: 7 days);
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
-    public $userSessionLifetime     = "P7D";
+    public $userSessionLifetime = "P7D";
 
     /** @var string Feed update service driver to use, one of "serial" or "subprocess". A fully-qualified class name may also be used for custom drivers */
-    public $serviceDriver           = "subprocess";
+    public $serviceDriver = "subprocess";
     /** @var \DateInterval The interval between checks for new articles, as an ISO 8601 duration
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
-    public $serviceFrequency        = "PT2M";
+    public $serviceFrequency = "PT2M";
     /** @var integer Number of concurrent feed updates to perform */
-    public $serviceQueueWidth       = 5;
+    public $serviceQueueWidth = 5;
 
     /** @var \DateInterval Number of seconds to wait for data when fetching feeds from foreign servers */
-    public $fetchTimeout            = 10.0;
+    public $fetchTimeout = 10.0;
     /** @var integer Maximum size, in bytes, of data when fetching feeds from foreign servers */
-    public $fetchSizeLimit          = 2 * 1024 * 1024;
+    public $fetchSizeLimit = 2 * 1024 * 1024;
     /** @var boolean Whether to allow the possibility of fetching full article contents using an item's URL. Whether fetching will actually happen is also governed by a per-feed setting */
-    public $fetchEnableScraping     = true;
+    public $fetchEnableScraping = true;
     /** @var string|null User-Agent string to use when fetching feeds from foreign servers */
-    public $fetchUserAgentString    = null;
+    public $fetchUserAgentString = null;
 
     /** @var \DateInterval|null When to delete a feed from the database after all its subscriptions have been deleted, as an ISO 8601 duration (default: 24 hours; null for never)
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
-    public $purgeFeeds              = "PT24H";
+    public $purgeFeeds = "PT24H";
     /** @var \DateInterval|null When to delete an unstarred article in the database after it has been marked read by all users, as an ISO 8601 duration (default: 7 days; null for never)
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
-    public $purgeArticlesRead       = "P7D";
+    public $purgeArticlesRead = "P7D";
     /** @var \DateInterval|null When to delete an unstarred article in the database regardless of its read state, as an ISO 8601 duration (default: 21 days; null for never)
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
-    public $purgeArticlesUnread     = "P21D";
+    public $purgeArticlesUnread = "P21D";
 
     /** @var string Application name to present to clients during authentication */
-    public $httpRealm               = "The Advanced RSS Environment";
+    public $httpRealm = "The Advanced RSS Environment";
     /** @var string Space-separated list of origins from which to allow cross-origin resource sharing */
-    public $httpOriginsAllowed      = "*";
+    public $httpOriginsAllowed = "*";
     /** @var string Space-separated list of origins from which to deny cross-origin resource sharing */
-    public $httpOriginsDenied       = "";
+    public $httpOriginsDenied = "";
 
     ### OBSOLETE SETTINGS
 
     /** @var \DateInterval|null (OBSOLETE) Number of seconds for SQLite to wait before returning a timeout error when trying to acquire a write lock on the database (zero does not wait) */
-    public $dbSQLite3Timeout        = null; // previously 60.0
+    public $dbSQLite3Timeout = null; // previously 60.0
 
-    const TYPE_NAMES = [
+    protected const TYPE_NAMES = [
         Value::T_BOOL     => "boolean",
         Value::T_STRING   => "string",
         Value::T_FLOAT    => "float",
         VALUE::T_INT      => "integer",
         Value::T_INTERVAL => "interval",
     ];
-    const EXPECTED_TYPES = [
+    protected const EXPECTED_TYPES = [
         'dbTimeoutExec'    => "double",
         'dbTimeoutLock'    => "double",
         'dbTimeoutConnect' => "double",
@@ -254,10 +254,10 @@ class Conf {
                 $match = explode("|", $match[1]);
                 $nullable = (sizeof($match) > 1);
                 $type = [
-                    'string'         => Value::T_STRING   | Value::M_STRICT,
-                    'integer'        => Value::T_INT      | Value::M_STRICT,
-                    'boolean'        => Value::T_BOOL     | Value::M_STRICT,
-                    'float'          => Value::T_FLOAT    | Value::M_STRICT,
+                    'string'         => Value::T_STRING | Value::M_STRICT,
+                    'integer'        => Value::T_INT | Value::M_STRICT,
+                    'boolean'        => Value::T_BOOL | Value::M_STRICT,
+                    'float'          => Value::T_FLOAT | Value::M_STRICT,
                     '\\DateInterval' => Value::T_INTERVAL | Value::M_LOOSE,
                 ][$match[0]];
                 if ($nullable) {
@@ -283,7 +283,7 @@ class Conf {
                 // it is first converted to an interval and then converted to the numeric type if necessary
                 $mode = $nullable ? Value::M_STRICT | Value::M_NULL : Value::M_STRICT;
                 if (is_string($value)) {
-                    $value =  Value::normalize($value, Value::T_INTERVAL | $mode);
+                    $value = Value::normalize($value, Value::T_INTERVAL | $mode);
                 }
                 switch (self::EXPECTED_TYPES[$key] ?? gettype($this->$key)) {
                     case "integer":
@@ -299,7 +299,7 @@ class Conf {
                         throw new Conf\Exception("ambiguousDefault", ['param' => $key]); // @codeCoverageIgnore
                 }
             }
-            $value =  Value::normalize($value, $typeConst);
+            $value = Value::normalize($value, $typeConst);
             switch ($key) {
                 case "dbDriver":
                     $driver = $driver ?? Database::DRIVER_NAMES[strtolower($value)] ?? $value;
@@ -319,7 +319,7 @@ class Conf {
             }
             return $value;
         } catch (ExceptionType $e) {
-            $type =  static::$types[$key]['const'] & ~(Value::M_STRICT | Value::M_DROP | Value::M_NULL | Value::M_ARRAY);
+            $type = static::$types[$key]['const'] & ~(Value::M_STRICT | Value::M_DROP | Value::M_NULL | Value::M_ARRAY);
             throw new Conf\Exception("typeMismatch", ['param' => $key, 'type' => self::TYPE_NAMES[$type], 'file' => $file, 'nullable' => $nullable]);
         }
     }

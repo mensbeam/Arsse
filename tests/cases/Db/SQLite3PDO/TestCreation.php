@@ -29,8 +29,8 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->files = [
             // cannot create files
             'Cmain' => [],
-            'Cshm' => [
-                'arsse.db' => "",
+            'Cshm'  => [
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
             ],
             'Cwal' => [
@@ -38,55 +38,55 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
             ],
             // cannot write to files
             'Wmain' => [
-                'arsse.db' => "",
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
                 'arsse.db-shm' => "",
             ],
             'Wwal' => [
-                'arsse.db' => "",
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
                 'arsse.db-shm' => "",
             ],
             'Wshm' => [
-                'arsse.db' => "",
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
                 'arsse.db-shm' => "",
             ],
             // cannot read from files
             'Rmain' => [
-                'arsse.db' => "",
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
                 'arsse.db-shm' => "",
             ],
             'Rwal' => [
-                'arsse.db' => "",
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
                 'arsse.db-shm' => "",
             ],
             'Rshm' => [
-                'arsse.db' => "",
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
                 'arsse.db-shm' => "",
             ],
             // can neither read from or write to files
             'Amain' => [
-                'arsse.db' => "",
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
                 'arsse.db-shm' => "",
             ],
             'Awal' => [
-                'arsse.db' => "",
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
                 'arsse.db-shm' => "",
             ],
             'Ashm' => [
-                'arsse.db' => "",
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
                 'arsse.db-shm' => "",
             ],
             // non-filesystem errors
             'corrupt' => [
-                'arsse.db' => "",
+                'arsse.db'     => "",
                 'arsse.db-wal' => "",
                 'arsse.db-shm' => "",
             ],
@@ -114,79 +114,79 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
     }
 
-    public function testFailToCreateDatabase() {
+    public function testFailToCreateDatabase(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Cmain/arsse.db";
         $this->assertException("fileUncreatable", "Db");
         new Driver;
     }
 
-    public function testFailToCreateJournal() {
+    public function testFailToCreateJournal(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Cwal/arsse.db";
         $this->assertException("fileUncreatable", "Db");
         new Driver;
     }
 
-    public function testFailToCreateSharedMmeory() {
+    public function testFailToCreateSharedMmeory(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Cshm/arsse.db";
         $this->assertException("fileUncreatable", "Db");
         new Driver;
     }
 
-    public function testFailToReadDatabase() {
+    public function testFailToReadDatabase(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Rmain/arsse.db";
         $this->assertException("fileUnreadable", "Db");
         new Driver;
     }
 
-    public function testFailToReadJournal() {
+    public function testFailToReadJournal(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Rwal/arsse.db";
         $this->assertException("fileUnreadable", "Db");
         new Driver;
     }
 
-    public function testFailToReadSharedMmeory() {
+    public function testFailToReadSharedMmeory(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Rshm/arsse.db";
         $this->assertException("fileUnreadable", "Db");
         new Driver;
     }
 
-    public function testFailToWriteToDatabase() {
+    public function testFailToWriteToDatabase(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Wmain/arsse.db";
         $this->assertException("fileUnwritable", "Db");
         new Driver;
     }
 
-    public function testFailToWriteToJournal() {
+    public function testFailToWriteToJournal(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Wwal/arsse.db";
         $this->assertException("fileUnwritable", "Db");
         new Driver;
     }
 
-    public function testFailToWriteToSharedMmeory() {
+    public function testFailToWriteToSharedMmeory(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Wshm/arsse.db";
         $this->assertException("fileUnwritable", "Db");
         new Driver;
     }
 
-    public function testFailToAccessDatabase() {
+    public function testFailToAccessDatabase(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Amain/arsse.db";
         $this->assertException("fileUnusable", "Db");
         new Driver;
     }
 
-    public function testFailToAccessJournal() {
+    public function testFailToAccessJournal(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Awal/arsse.db";
         $this->assertException("fileUnusable", "Db");
         new Driver;
     }
 
-    public function testFailToAccessSharedMmeory() {
+    public function testFailToAccessSharedMmeory(): void {
         Arsse::$conf->dbSQLite3File = $this->path."Ashm/arsse.db";
         $this->assertException("fileUnusable", "Db");
         new Driver;
     }
 
-    public function testAssumeDatabaseCorruption() {
+    public function testAssumeDatabaseCorruption(): void {
         Arsse::$conf->dbSQLite3File = $this->path."corrupt/arsse.db";
         $this->assertException("fileCorrupt", "Db");
         new Driver;

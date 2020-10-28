@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Db;
 
 interface Statement {
-    const TYPES = [
+    public const TYPES = [
         'int'              => self::T_INTEGER,
         'integer'          => self::T_INTEGER,
         'float'            => self::T_FLOAT,
@@ -43,13 +43,13 @@ interface Statement {
         'strict boolean'   => self::T_NOT_NULL + self::T_BOOLEAN,
         'strict bit'       => self::T_NOT_NULL + self::T_BOOLEAN,
     ];
-    const T_INTEGER = 1;
-    const T_STRING = 2;
-    const T_BOOLEAN = 3;
-    const T_DATETIME = 4;
-    const T_FLOAT = 5;
-    const T_BINARY = 6;
-    const T_NOT_NULL = 100;
+    public const T_INTEGER = 1;
+    public const T_STRING = 2;
+    public const T_BOOLEAN = 3;
+    public const T_DATETIME = 4;
+    public const T_FLOAT = 5;
+    public const T_BINARY = 6;
+    public const T_NOT_NULL = 100;
 
     public function run(...$values): Result;
     public function runArray(array $values = []): Result;

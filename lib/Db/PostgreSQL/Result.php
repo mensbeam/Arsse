@@ -41,6 +41,6 @@ class Result extends \JKingWeb\Arsse\Db\AbstractResult {
 
     public function valid() {
         $this->cur = pg_fetch_row($this->r, null, \PGSQL_ASSOC);
-        return ($this->cur !== false);
+        return $this->cur !== false;
     }
 }

@@ -11,7 +11,7 @@ use JKingWeb\Arsse\Misc\ValueInfo;
 
 /** @covers \JKingWeb\Arsse\Context\Context<extended> */
 class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function testVerifyInitialState() {
+    public function testVerifyInitialState(): void {
         $c = new Context;
         foreach ((new \ReflectionObject($c))->getMethods(\ReflectionMethod::IS_PUBLIC) as $m) {
             if ($m->isStatic() || strpos($m->name, "__") === 0) {
@@ -23,46 +23,46 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function testSetContextOptions() {
+    public function testSetContextOptions(): void {
         $v = [
-            'reverse' => true,
-            'limit' => 10,
-            'offset' => 5,
-            'folder' => 42,
-            'folders' => [12,22],
-            'folderShallow' => 42,
-            'foldersShallow' => [0,1],
-            'tag' => 44,
-            'tags' => [44, 2112],
-            'tagName' => "XLIV",
-            'tagNames' => ["XLIV", "MMCXII"],
-            'subscription' => 2112,
-            'subscriptions' => [44, 2112],
-            'article' => 255,
-            'edition' => 65535,
-            'latestArticle' => 47,
-            'oldestArticle' => 1337,
-            'latestEdition' => 47,
-            'oldestEdition' => 1337,
-            'unread' => true,
-            'starred' => true,
-            'modifiedSince' => new \DateTime(),
+            'reverse'          => true,
+            'limit'            => 10,
+            'offset'           => 5,
+            'folder'           => 42,
+            'folders'          => [12,22],
+            'folderShallow'    => 42,
+            'foldersShallow'   => [0,1],
+            'tag'              => 44,
+            'tags'             => [44, 2112],
+            'tagName'          => "XLIV",
+            'tagNames'         => ["XLIV", "MMCXII"],
+            'subscription'     => 2112,
+            'subscriptions'    => [44, 2112],
+            'article'          => 255,
+            'edition'          => 65535,
+            'latestArticle'    => 47,
+            'oldestArticle'    => 1337,
+            'latestEdition'    => 47,
+            'oldestEdition'    => 1337,
+            'unread'           => true,
+            'starred'          => true,
+            'modifiedSince'    => new \DateTime(),
             'notModifiedSince' => new \DateTime(),
-            'markedSince' => new \DateTime(),
-            'notMarkedSince' => new \DateTime(),
-            'editions' => [1,2],
-            'articles' => [1,2],
-            'label' => 2112,
-            'labels' => [2112, 1984],
-            'labelName' => "Rush",
-            'labelNames' => ["Rush", "Orwell"],
-            'labelled' => true,
-            'annotated' => true,
-            'searchTerms' => ["foo", "bar"],
-            'annotationTerms' => ["foo", "bar"],
-            'titleTerms' => ["foo", "bar"],
-            'authorTerms' => ["foo", "bar"],
-            'not' => (new Context)->subscription(5),
+            'markedSince'      => new \DateTime(),
+            'notMarkedSince'   => new \DateTime(),
+            'editions'         => [1,2],
+            'articles'         => [1,2],
+            'label'            => 2112,
+            'labels'           => [2112, 1984],
+            'labelName'        => "Rush",
+            'labelNames'       => ["Rush", "Orwell"],
+            'labelled'         => true,
+            'annotated'        => true,
+            'searchTerms'      => ["foo", "bar"],
+            'annotationTerms'  => ["foo", "bar"],
+            'titleTerms'       => ["foo", "bar"],
+            'authorTerms'      => ["foo", "bar"],
+            'not'              => (new Context)->subscription(5),
         ];
         $times = ['modifiedSince','notModifiedSince','markedSince','notMarkedSince'];
         $c = new Context;
@@ -85,7 +85,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function testCleanIdArrayValues() {
+    public function testCleanIdArrayValues(): void {
         $methods = ["articles", "editions", "tags", "labels", "subscriptions"];
         $in = [1, "2", 3.5, 4.0, 4, "ook", 0, -20, true, false, null, new \DateTime(), -1.0];
         $out = [1, 2, 4];
@@ -95,7 +95,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function testCleanFolderIdArrayValues() {
+    public function testCleanFolderIdArrayValues(): void {
         $methods = ["folders", "foldersShallow"];
         $in = [1, "2", 3.5, 4.0, 4, "ook", 0, -20, true, false, null, new \DateTime(), -1.0];
         $out = [1, 2, 4, 0];
@@ -105,7 +105,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function testCleanStringArrayValues() {
+    public function testCleanStringArrayValues(): void {
         $methods = ["searchTerms", "annotationTerms", "titleTerms", "authorTerms", "tagNames", "labelNames"];
         $now = new \DateTime;
         $in = [1, 3.0, "ook", 0, true, false, null, $now, ""];
@@ -116,7 +116,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function testCloneAContext() {
+    public function testCloneAContext(): void {
         $c1 = new Context;
         $c2 = clone $c1;
         $this->assertEquals($c1, $c2);

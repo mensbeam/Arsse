@@ -16,7 +16,7 @@ trait MySQL {
     protected static $dbStatementClass = \JKingWeb\Arsse\Db\MySQL\Statement::class;
     protected static $dbDriverClass = \JKingWeb\Arsse\Db\MySQL\Driver::class;
     protected static $stringOutput = true;
-    
+
     public static function dbInterface() {
         $d = @new \mysqli(Arsse::$conf->dbMySQLHost, Arsse::$conf->dbMySQLUser, Arsse::$conf->dbMySQLPass, Arsse::$conf->dbMySQLDb, Arsse::$conf->dbMySQLPort);
         if ($d->connect_errno) {
@@ -28,7 +28,7 @@ trait MySQL {
         }
         return $d;
     }
-    
+
     public static function dbTableList($db): array {
         $listTables = "SELECT table_name as name from information_schema.tables where table_schema = database() and table_name like 'arsse_%'";
         if ($db instanceof Driver) {
@@ -42,7 +42,7 @@ trait MySQL {
         return $tables;
     }
 
-    public static function dbTruncate($db, array $afterStatements = []) {
+    public static function dbTruncate($db, array $afterStatements = []): void {
         // rollback any pending transaction
         try {
             $db->query("UNLOCK TABLES; ROLLBACK");
@@ -63,7 +63,7 @@ trait MySQL {
         }
     }
 
-    public static function dbRaze($db, array $afterStatements = []) {
+    public static function dbRaze($db, array $afterStatements = []): void {
         // rollback any pending transaction
         try {
             $db->query("UNLOCK TABLES; ROLLBACK");

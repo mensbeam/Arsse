@@ -7,7 +7,7 @@ use JKingWeb\Arsse\Test\Result;
 
 /** @covers \JKingWeb\Arsse\Db\ResultAggregate<extended> */
 class TestResultAggregate extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function testGetChangeCountAndLastInsertId() {
+    public function testGetChangeCountAndLastInsertId(): void {
         $in = [
             new Result([], 3, 4),
             new Result([], 27, 10),
@@ -18,7 +18,7 @@ class TestResultAggregate extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertEquals(2112, $r->lastId());
     }
 
-    public function testIterateOverResults() {
+    public function testIterateOverResults(): void {
         $in = [
             new Result([['col' => 1]]),
             new Result([['col' => 2]]),
@@ -31,7 +31,7 @@ class TestResultAggregate extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertEquals([0 => 1, 1 => 2, 2 => 3], $rows);
     }
 
-    public function testIterateOverResultsTwice() {
+    public function testIterateOverResultsTwice(): void {
         $in = [
             new Result([['col' => 1]]),
             new Result([['col' => 2]]),
@@ -49,7 +49,7 @@ class TestResultAggregate extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function testGetSingleValues() {
+    public function testGetSingleValues(): void {
         $test = new ResultAggregate(...[
             new Result([['year' => 1867]]),
             new Result([['year' => 1970]]),
@@ -61,7 +61,7 @@ class TestResultAggregate extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame(null, $test->getValue());
     }
 
-    public function testGetFirstValuesOnly() {
+    public function testGetFirstValuesOnly(): void {
         $test = new ResultAggregate(...[
             new Result([['year' => 1867, 'century' => 19]]),
             new Result([['year' => 1970, 'century' => 20]]),
@@ -73,7 +73,7 @@ class TestResultAggregate extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame(null, $test->getValue());
     }
 
-    public function testGetRows() {
+    public function testGetRows(): void {
         $test = new ResultAggregate(...[
             new Result([['album' => '2112',             'track' => '2112']]),
             new Result([['album' => 'Clockwork Angels', 'track' => 'The Wreckers']]),
@@ -87,7 +87,7 @@ class TestResultAggregate extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame(null, $test->getRow());
     }
 
-    public function testGetAllRows() {
+    public function testGetAllRows(): void {
         $test = new ResultAggregate(...[
             new Result([['album' => '2112',             'track' => '2112']]),
             new Result([['album' => 'Clockwork Angels', 'track' => 'The Wreckers']]),

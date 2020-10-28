@@ -29,8 +29,8 @@ which include the following data:
 
 */
 
-
 ignore_user_abort(false);
+ob_start();
 $defaults = [ // default values for response
     'code'    => 200,
     'content' => "",
@@ -74,3 +74,4 @@ foreach ($response['fields'] as $h) {
 }
 // send the content
 echo $response['content'];
+ob_end_flush();

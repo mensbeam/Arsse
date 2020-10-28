@@ -16,11 +16,11 @@ class TestComplex extends \JKingWeb\Arsse\Test\AbstractTest {
     public $path;
     public $l;
 
-    public function setUpSeries() {
+    public function setUpSeries(): void {
         $this->l->set(TestClass::DEFAULT, true);
     }
 
-    public function testLazyLoad() {
+    public function testLazyLoad(): void {
         $this->l->set("ja");
         $this->assertArrayNotHasKey('Test.absentText', $this->l->dump());
     }
@@ -28,14 +28,14 @@ class TestComplex extends \JKingWeb\Arsse\Test\AbstractTest {
     /**
      * @depends testLazyLoad
      */
-    public function testGetWantedAndLoadedLocale() {
+    public function testGetWantedAndLoadedLocale(): void {
         $this->l->set("en", true);
         $this->l->set("ja");
         $this->assertEquals("ja", $this->l->get());
         $this->assertEquals("en", $this->l->get(true));
     }
 
-    public function testLoadCascadeOfFiles() {
+    public function testLoadCascadeOfFiles(): void {
         $this->l->set("ja", true);
         $this->assertEquals("de", $this->l->set("de", true));
         $str = $this->l->dump();
@@ -46,11 +46,11 @@ class TestComplex extends \JKingWeb\Arsse\Test\AbstractTest {
     /**
      * @depends testLoadCascadeOfFiles
      */
-    public function testLoadSubtag() {
+    public function testLoadSubtag(): void {
         $this->assertEquals("en_ca", $this->l->set("en_ca", true));
     }
 
-    public function testFetchAMessage() {
+    public function testFetchAMessage(): void {
         $this->l->set("de");
         $this->assertEquals('und der Stein der Weisen', $this->l->msg('Test.presentText'));
     }
@@ -58,7 +58,7 @@ class TestComplex extends \JKingWeb\Arsse\Test\AbstractTest {
     /**
      * @depends testFetchAMessage
      */
-    public function testFetchAMessageWithMissingParameters() {
+    public function testFetchAMessageWithMissingParameters(): void {
         $this->l->set("en_ca", true);
         $this->assertEquals('{0} and {1}', $this->l->msg('Test.presentText'));
     }
@@ -66,7 +66,7 @@ class TestComplex extends \JKingWeb\Arsse\Test\AbstractTest {
     /**
      * @depends testFetchAMessage
      */
-    public function testFetchAMessageWithSingleNumericParameter() {
+    public function testFetchAMessageWithSingleNumericParameter(): void {
         $this->l->set("en_ca", true);
         $this->assertEquals('Default language file "en" missing', $this->l->msg('Exception.JKingWeb/Arsse/Lang/Exception.defaultFileMissing', TestClass::DEFAULT));
     }
@@ -74,7 +74,7 @@ class TestComplex extends \JKingWeb\Arsse\Test\AbstractTest {
     /**
      * @depends testFetchAMessage
      */
-    public function testFetchAMessageWithMultipleNumericParameters() {
+    public function testFetchAMessageWithMultipleNumericParameters(): void {
         $this->l->set("en_ca", true);
         $this->assertEquals('Happy Rotter and the Philosopher\'s Stone', $this->l->msg('Test.presentText', ['Happy Rotter', 'the Philosopher\'s Stone']));
     }
@@ -82,14 +82,14 @@ class TestComplex extends \JKingWeb\Arsse\Test\AbstractTest {
     /**
      * @depends testFetchAMessage
      */
-    public function testFetchAMessageWithNamedParameters() {
+    public function testFetchAMessageWithNamedParameters(): void {
         $this->assertEquals('Message string "Test.absentText" missing from all loaded language files (en)', $this->l->msg('Exception.JKingWeb/Arsse/Lang/Exception.stringMissing', ['msgID' => 'Test.absentText', 'fileList' => 'en']));
     }
 
     /**
      * @depends testFetchAMessage
      */
-    public function testReloadDefaultStrings() {
+    public function testReloadDefaultStrings(): void {
         $this->l->set("de", true);
         $this->l->set("en", true);
         $this->assertEquals('and the Philosopher\'s Stone', $this->l->msg('Test.presentText'));
@@ -98,7 +98,7 @@ class TestComplex extends \JKingWeb\Arsse\Test\AbstractTest {
     /**
      * @depends testFetchAMessage
      */
-    public function testReloadGeneralTagAfterSubtag() {
+    public function testReloadGeneralTagAfterSubtag(): void {
         $this->l->set("en", true);
         $this->l->set("en_us", true);
         $this->assertEquals('and the Sorcerer\'s Stone', $this->l->msg('Test.presentText'));

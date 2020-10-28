@@ -18,20 +18,25 @@
 
     ],
     "require": {
-        "php": "7.*",
+        "php": "^7.1",
         "ext-intl": "*",
         "ext-json": "*",
         "ext-hash": "*",
         "ext-dom": "*",
-        "p3k/picofeed": "0.1.*",
+        "nicolus/picofeed": "^0.1.43",
         "hosteurope/password-generator": "1.*",
         "docopt/docopt": "1.*",
         "jkingweb/druuid": "3.*",
-        "zendframework/zend-diactoros": "2.*",
-        "zendframework/zend-httphandlerrunner": "1.*"
+        "laminas/laminas-diactoros": "2.*",
+        "laminas/laminas-httphandlerrunner": "1.*"
     },
     "require-dev": {
         "bamarni/composer-bin-plugin": "*"
+    },
+    "config": {
+        "platform": {
+            "php": "7.1.33"
+        }
     },
     "scripts": {
         "post-install-cmd": ["@composer bin all install"],

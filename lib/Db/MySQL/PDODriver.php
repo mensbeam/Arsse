@@ -18,7 +18,7 @@ class PDODriver extends Driver {
         return class_exists("PDO") && in_array("mysql", \PDO::getAvailableDrivers());
     }
 
-    protected function makeConnection(string $db, string $user, string $password, string $host, int $port, string $socket) {
+    protected function makeConnection(string $db, string $user, string $password, string $host, int $port, string $socket): void {
         $dsn = "mysql:".implode(";", [
             "charset=utf8mb4",
             "dbname=$db",
@@ -34,7 +34,7 @@ class PDODriver extends Driver {
             $msg = $e->getMessage();
             $code = (int) substr($msg, 17, 4);
             $msg = substr($msg, 23);
-            list($excClass, $excMsg, $excData) = $this->buildConnectionException($code, $msg);
+            [$excClass, $excMsg, $excData] = $this->buildConnectionException($code, $msg);
             throw new $excClass($excMsg, $excData);
         }
     }

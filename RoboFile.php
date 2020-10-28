@@ -24,7 +24,7 @@ class RoboFile extends \Robo\Tasks {
      * ./robo test --testsuite TTRSS --exclude-group slow --testdox
      *
      * Please see the PHPUnit documentation for available options.
-    */
+     */
     public function test(array $args): Result {
         return $this->runTests(escapeshellarg(\PHP_BINARY), "typical", $args);
     }
@@ -33,7 +33,7 @@ class RoboFile extends \Robo\Tasks {
      *
      * This includes pedantic tests which may help to identify problems.
      * See help for the "test" task for more details.
-    */
+     */
     public function testFull(array $args): Result {
         return $this->runTests(escapeshellarg(\PHP_BINARY), "full", $args);
     }
@@ -42,7 +42,7 @@ class RoboFile extends \Robo\Tasks {
      * Runs a quick subset of the test suite
      *
      * See help for the "test" task for more details.
-    */
+     */
     public function testQuick(array $args): Result {
         return $this->runTests(escapeshellarg(\PHP_BINARY), "quick", $args);
     }
@@ -53,10 +53,10 @@ class RoboFile extends \Robo\Tasks {
      * tests/coverage/. Additional reports may be produced by passing
      * arguments to this task as one would to PHPUnit.
      *
-     * Robo first tries to use phpdbg and will fall back to Xdebug if available.
-     * Because Xdebug slows down non-coverage tasks, however, phpdbg is highly
-     * recommended if debugging facilities are not otherwise needed.
-    */
+     * Robo first tries to use pcov and will fall back first to xdebug then
+     * phpdbg. Neither pcov nor xdebug need to be enabled to be used; they
+     * only need to be present in the extension load path to be used.
+     */
     public function coverage(array $args): Result {
         // run tests with code coverage reporting enabled
         $exec = $this->findCoverageEngine();
@@ -71,7 +71,7 @@ class RoboFile extends \Robo\Tasks {
      * run all tests which may cover code.
      *
      * See also help for the "coverage" task for more details.
-    */
+     */
     public function coverageFull(array $args): Result {
         // run tests with code coverage reporting enabled
         $exec = $this->findCoverageEngine();
@@ -89,17 +89,30 @@ class RoboFile extends \Robo\Tasks {
     }
 
     protected function findCoverageEngine(): string {
-        if (IS_WIN) {
-            $dbg = dirname(\PHP_BINARY)."\\phpdbg.exe";
-            $dbg = file_exists($dbg) ? $dbg : "";
+        $dir = rtrim(ini_get("extension_dir"), "/").\DIRECTORY_SEPARATOR;
+        $ext = IS_WIN ? "dll" : (IS_MAC ? "dylib" : "so");
+        $php = escapeshellarg(\PHP_BINARY);
+        $code = escapeshellarg(BASE."lib");
+        if (extension_loaded("pcov")) {
+            return "$php -d pcov.enabled=1 -d pcov.directory=$code";
+        } elseif (extension_loaded("xdebug")) {
+            return $php;
+        } elseif (file_exists($dir."pcov.$ext")) {
+            return "$php -d extension=pcov.$ext -d pcov.enabled=1 -d pcov.directory=$code";
+        } elseif (file_exists($dir."pcov.$ext")) {
+            return "$php -d zend_extension=xdebug.$ext";
         } else {
-            $dbg = trim(`which phpdbg 2>/dev/null`);
-        }
-        if ($dbg) {
-            return escapeshellarg($dbg)." -qrr";
-        } else {
-            $ext = IS_WIN ? "dll" : (IS_MAC ? "dylib" : "so");
-            return escapeshellarg(\PHP_BINARY)." -d zend_extension=xdebug.$ext";
+            if (IS_WIN) {
+                $dbg = dirname(\PHP_BINARY)."\\phpdbg.exe";
+                $dbg = file_exists($dbg) ? $dbg : "";
+            } else {
+                $dbg = trim(`which phpdbg 2>/dev/null`);
+            }
+            if ($dbg) {
+                return escapeshellarg($dbg)." -qrr";
+            } else {
+                return $php;
+            }
         }
     }
 
@@ -108,7 +121,7 @@ class RoboFile extends \Robo\Tasks {
         return $all ? ">$hole 2>&1" : "2>$hole";
     }
 
-    protected function runTests(string $executor, string $set, array $args) : Result {
+    protected function runTests(string $executor, string $set, array $args): Result {
         switch ($set) {
             case "typical":
                 $set = ["--exclude-group", "optional"];
@@ -140,7 +153,7 @@ class RoboFile extends \Robo\Tasks {
      * Note that while it is possible to re-package old versions, the resultant tarball
      * may not be equivalent due to subsequent changes in the exclude list, or because
      * of new tooling.
-    */
+     */
     public function package(string $version = null): Result {
         // establish which commit to package
         $version = $version ?? $this->askDefault("Commit to package:", "HEAD");

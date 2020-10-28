@@ -7,8 +7,8 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 class Lang {
-    const DEFAULT = "en"; // fallback locale
-    const REQUIRED = [    // collection of absolutely required strings to handle pathological errors
+    public const DEFAULT = "en"; // fallback locale
+    protected const REQUIRED = [ // collection of absolutely required strings to handle pathological errors
         'Exception.JKingWeb/Arsse/Exception.uncoded'                     => 'The specified exception symbol {0} has no code specified in AbstractException.php',
         'Exception.JKingWeb/Arsse/Exception.unknown'                     => 'An unknown error has occurred',
         'Exception.JKingWeb/Arsse/Lang/Exception.defaultFileMissing'     => 'Default language file "{0}" missing',
@@ -97,7 +97,7 @@ class Lang {
         }
         $msg = $this->strings[$msgID];
         // variables fed to MessageFormatter must be contained in an array
-        if ($vars===null) {
+        if ($vars === null) {
             // even though strings not given parameters will not get formatted, we do not optimize this case away: we still want to catch invalid strings
             $vars = [];
         } elseif (!is_array($vars)) {
@@ -108,7 +108,7 @@ class Lang {
             throw new Lang\Exception("stringInvalid", ['error' => $this->formatter->getErrorMessage(), 'msgID' => $msgID, 'fileList' => implode(", ", $this->loaded)]);
         }
         $msg = $this->formatter->format($vars);
-        if ($msg===false) {
+        if ($msg === false) {
             throw new Lang\Exception("dataInvalid", ['error' => $this->formatter->getErrorMessage(), 'msgID' => $msgID, 'fileList' => implode(", ", $this->loaded)]); // @codeCoverageIgnore
         }
         return $msg;
@@ -148,7 +148,7 @@ class Lang {
         // trim the returned file paths to return just the language tag
         $out = array_map(function($file) {
             $file = str_replace(DIRECTORY_SEPARATOR, "/", $file); // we replace the directory separator because we don't use native paths in testing
-            $file = substr($file, strrpos($file, "/")+1);
+            $file = substr($file, strrpos($file, "/") + 1);
             return strtolower(substr($file, 0, strrpos($file, ".")));
         }, $out);
         // sort the results

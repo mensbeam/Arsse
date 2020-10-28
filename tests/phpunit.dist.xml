@@ -2,6 +2,7 @@
 <phpunit
     colors="true"
     bootstrap="bootstrap.php"
+    cacheTokens="true"
     convertErrorsToExceptions="false"
     convertNoticesToExceptions="false"
     convertWarningsToExceptions="false"
@@ -56,57 +57,56 @@
         <file>cases/User/TestUser.php</file>
     </testsuite>
     <testsuite name="Feed parser">
+        <file>cases/Feed/TestException.php</file>
         <file>cases/Feed/TestFetching.php</file>
         <file>cases/Feed/TestFeed.php</file>
     </testsuite>
-    <testsuite name="Database drivers">
+    <testsuite name="Database interface">
         <file>cases/Db/TestTransaction.php</file>
         <file>cases/Db/TestResultAggregate.php</file>
         <file>cases/Db/TestResultEmpty.php</file>
-
+        <file>cases/Database/TestDatabase.php</file>
+    </testsuite>
+    <testsuite name="SQLite">
         <file>cases/Db/SQLite3/TestResult.php</file>
         <file>cases/Db/SQLite3/TestStatement.php</file>
         <file>cases/Db/SQLite3/TestCreation.php</file>
         <file>cases/Db/SQLite3/TestDriver.php</file>
         <file>cases/Db/SQLite3/TestUpdate.php</file>
-
+        <file>cases/Db/SQLite3/TestDatabase.php</file>
         <file>cases/Db/SQLite3PDO/TestResult.php</file>
         <file>cases/Db/SQLite3PDO/TestStatement.php</file>
         <file>cases/Db/SQLite3PDO/TestCreation.php</file>
         <file>cases/Db/SQLite3PDO/TestDriver.php</file>
         <file>cases/Db/SQLite3PDO/TestUpdate.php</file>
-
+        <file>cases/Db/SQLite3PDO/TestDatabase.php</file>
+    </testsuite>
+    <testsuite name="PostgreSQL">
         <file>cases/Db/PostgreSQL/TestResult.php</file>
         <file>cases/Db/PostgreSQL/TestStatement.php</file>
         <file>cases/Db/PostgreSQL/TestCreation.php</file>
         <file>cases/Db/PostgreSQL/TestDriver.php</file>
         <file>cases/Db/PostgreSQL/TestUpdate.php</file>
-
+        <file>cases/Db/PostgreSQL/TestDatabase.php</file>
         <file>cases/Db/PostgreSQLPDO/TestResult.php</file>
         <file>cases/Db/PostgreSQLPDO/TestStatement.php</file>
         <file>cases/Db/PostgreSQLPDO/TestCreation.php</file>
         <file>cases/Db/PostgreSQLPDO/TestDriver.php</file>
         <file>cases/Db/PostgreSQLPDO/TestUpdate.php</file>
-
+        <file>cases/Db/PostgreSQLPDO/TestDatabase.php</file>
+    </testsuite>
+    <testsuite name="MySQL">
         <file>cases/Db/MySQL/TestResult.php</file>
         <file>cases/Db/MySQL/TestStatement.php</file>
         <file>cases/Db/MySQL/TestCreation.php</file>
         <file>cases/Db/MySQL/TestDriver.php</file>
         <file>cases/Db/MySQL/TestUpdate.php</file>
-
+        <file>cases/Db/MySQL/TestDatabase.php</file>
         <file>cases/Db/MySQLPDO/TestResult.php</file>
         <file>cases/Db/MySQLPDO/TestStatement.php</file>
         <file>cases/Db/MySQLPDO/TestCreation.php</file>
         <file>cases/Db/MySQLPDO/TestDriver.php</file>
         <file>cases/Db/MySQLPDO/TestUpdate.php</file>
-    </testsuite>
-    <testsuite name="Database functions">
-        <file>cases/Database/TestDatabase.php</file>
-        <file>cases/Db/SQLite3/TestDatabase.php</file>
-        <file>cases/Db/SQLite3PDO/TestDatabase.php</file>
-        <file>cases/Db/PostgreSQL/TestDatabase.php</file>
-        <file>cases/Db/PostgreSQLPDO/TestDatabase.php</file>
-        <file>cases/Db/MySQL/TestDatabase.php</file>
         <file>cases/Db/MySQLPDO/TestDatabase.php</file>
     </testsuite>
     <testsuite name="REST">

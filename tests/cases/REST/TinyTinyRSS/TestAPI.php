@@ -6,6 +6,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\REST\TinyTinyRSS;
 
+use GuzzleHttp\Exception\ClientException;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
@@ -16,9 +17,8 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\TinyTinyRSS\API;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\ServerRequest;
-use Zend\Diactoros\Response\JsonResponse as Response;
-use Zend\Diactoros\Response\EmptyResponse;
+use Laminas\Diactoros\Response\JsonResponse as Response;
+use Laminas\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\API<extended>
  *  @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Exception */
@@ -57,44 +57,44 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $starred = ['total' => 10, 'unread' => 4, 'read' => 6];
     protected $articles = [
         [
-            'id' => 101,
-            'url' => 'http://example.com/1',
-            'title' => 'Article title 1',
+            'id'                 => 101,
+            'url'                => 'http://example.com/1',
+            'title'              => 'Article title 1',
             'subscription_title' => "Feed 11",
-            'author' => '',
-            'content' => '<p>Article content 1</p>',
-            'guid' => '',
-            'published_date' => '2000-01-01 00:00:00',
-            'edited_date' => '2000-01-01 00:00:01',
-            'modified_date' => '2000-01-01 01:00:00',
-            'unread' => 1,
-            'starred' => 0,
-            'edition' => 101,
-            'subscription' => 8,
-            'fingerprint' => 'f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6:fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4:18fdd4fa93d693128c43b004399e5c9cea6c261ddfa002518d3669f55d8c2207',
-            'media_url' => null,
-            'media_type' => null,
-            'note' => "",
+            'author'             => '',
+            'content'            => '<p>Article content 1</p>',
+            'guid'               => '',
+            'published_date'     => '2000-01-01 00:00:00',
+            'edited_date'        => '2000-01-01 00:00:01',
+            'modified_date'      => '2000-01-01 01:00:00',
+            'unread'             => 1,
+            'starred'            => 0,
+            'edition'            => 101,
+            'subscription'       => 8,
+            'fingerprint'        => 'f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6:fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4:18fdd4fa93d693128c43b004399e5c9cea6c261ddfa002518d3669f55d8c2207',
+            'media_url'          => null,
+            'media_type'         => null,
+            'note'               => "",
         ],
         [
-            'id' => 102,
-            'url' => 'http://example.com/2',
-            'title' => 'Article title 2',
+            'id'                 => 102,
+            'url'                => 'http://example.com/2',
+            'title'              => 'Article title 2',
             'subscription_title' => "Feed 11",
-            'author' => 'J. King',
-            'content' => '<p>Article content 2</p>',
-            'guid' => '5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7',
-            'published_date' => '2000-01-02 00:00:00',
-            'edited_date' => '2000-01-02 00:00:02',
-            'modified_date' => '2000-01-02 02:00:00',
-            'unread' => 0,
-            'starred' => 0,
-            'edition' => 202,
-            'subscription' => 8,
-            'fingerprint' => '0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153:13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9:2abd0a8cba83b8214a66c8f0293ba63e467d720540e29ff8ddcdab069d4f1c9e',
-            'media_url' => "http://example.com/text",
-            'media_type' => "text/plain",
-            'note' => "Note 2",
+            'author'             => 'J. King',
+            'content'            => '<p>Article content 2</p>',
+            'guid'               => '5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7',
+            'published_date'     => '2000-01-02 00:00:00',
+            'edited_date'        => '2000-01-02 00:00:02',
+            'modified_date'      => '2000-01-02 02:00:00',
+            'unread'             => 0,
+            'starred'            => 0,
+            'edition'            => 202,
+            'subscription'       => 8,
+            'fingerprint'        => '0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153:13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9:2abd0a8cba83b8214a66c8f0293ba63e467d720540e29ff8ddcdab069d4f1c9e',
+            'media_url'          => "http://example.com/text",
+            'media_type'         => "text/plain",
+            'note'               => "Note 2",
         ],
     ];
     // text from https://corrigeur.fr/lorem-ipsum-traduction-origine.php
@@ -133,14 +133,14 @@ LONG_STRING;
         return $this->h->dispatch($req);
     }
 
-    protected function reqAuth($data, $user) {
+    protected function reqAuth($data, $user): ResponseInterface {
         return $this->req($data, "POST", "", null, $user);
     }
 
     protected function respGood($content = null, $seq = 0): Response {
         return new Response([
-            'seq' => $seq,
-            'status' => 0,
+            'seq'     => $seq,
+            'status'  => 0,
             'content' => $content,
         ]);
     }
@@ -148,8 +148,8 @@ LONG_STRING;
     protected function respErr(string $msg, $content = [], $seq = 0): Response {
         $err = ['error' => $msg];
         return new Response([
-            'seq' => $seq,
-            'status' => 1,
+            'seq'     => $seq,
+            'status'  => 1,
             'content' => array_merge($err, $content, $err),
         ]);
     }
@@ -166,7 +166,7 @@ LONG_STRING;
         \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(Transaction::class));
         \Phake::when(Arsse::$db)->sessionResume->thenThrow(new \JKingWeb\Arsse\User\ExceptionSession("invalid"));
         \Phake::when(Arsse::$db)->sessionResume("PriestsOfSyrinx")->thenReturn([
-            'id' => "PriestsOfSyrinx",
+            'id'      => "PriestsOfSyrinx",
             'created' => "2000-01-01 00:00:00",
             'expires' => "2112-12-21 21:12:00",
             'user'    => Arsse::$user->id,
@@ -178,7 +178,7 @@ LONG_STRING;
         self::clearData();
     }
 
-    public function testHandleInvalidPaths() {
+    public function testHandleInvalidPaths(): void {
         $exp = $this->respErr("MALFORMED_INPUT", [], null);
         $this->assertMessage($exp, $this->req(null, "POST", "", ""));
         $this->assertMessage($exp, $this->req(null, "POST", "/", ""));
@@ -187,7 +187,7 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req(null, "POST", "/bad/path", ""));
     }
 
-    public function testHandleOptionsRequest() {
+    public function testHandleOptionsRequest(): void {
         $exp = new EmptyResponse(204, [
             'Allow'  => "POST",
             'Accept' => "application/json, text/json",
@@ -195,14 +195,14 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req(null, "OPTIONS", "", ""));
     }
 
-    public function testHandleInvalidData() {
+    public function testHandleInvalidData(): void {
         $exp = $this->respErr("MALFORMED_INPUT", [], null);
         $this->assertMessage($exp, $this->req(null, "POST", "", "This is not valid JSON data"));
         $this->assertMessage($exp, $this->req(null, "POST", "", "")); // lack of data is also an error
     }
 
     /** @dataProvider provideLoginRequests */
-    public function testLogIn(array $conf, $httpUser, array $data, $sessions) {
+    public function testLogIn(array $conf, $httpUser, array $data, $sessions): void {
         Arsse::$user->id = null;
         self::setConf($conf);
         \Phake::when(Arsse::$user)->auth->thenReturn(false);
@@ -236,17 +236,17 @@ LONG_STRING;
     }
 
     /** @dataProvider provideResumeRequests */
-    public function testValidateASession(array $conf, $httpUser, string $data, $result) {
+    public function testValidateASession(array $conf, $httpUser, string $data, $result): void {
         Arsse::$user->id = null;
         self::setConf($conf);
         \Phake::when(Arsse::$db)->sessionResume("PriestsOfSyrinx")->thenReturn([
-            'id' => "PriestsOfSyrinx",
+            'id'      => "PriestsOfSyrinx",
             'created' => "2000-01-01 00:00:00",
             'expires' => "2112-12-21 21:12:00",
             'user'    => "john.doe@example.com",
         ]);
         \Phake::when(Arsse::$db)->sessionResume("ClockworkAngels")->thenReturn([
-            'id' => "ClockworkAngels",
+            'id'      => "ClockworkAngels",
             'created' => "2000-01-01 00:00:00",
             'expires' => "2112-12-21 21:12:00",
             'user'    => "jane.doe@example.com",
@@ -273,24 +273,24 @@ LONG_STRING;
         return $this->generateLoginRequests("isLoggedIn");
     }
 
-    public function generateLoginRequests(string $type) {
+    public function generateLoginRequests(string $type): array {
         $john = "john.doe@example.com";
         $johnGood = [
-            'user' => $john,
+            'user'     => $john,
             'password' => "secret",
         ];
         $johnBad = [
-            'user' => $john,
+            'user'     => $john,
             'password' => "superman",
         ];
         $johnSess = ["PriestsOfSyrinx", "SolarFederation"];
         $jane = "jane.doe@example.com";
         $janeGood = [
-            'user' => $jane,
+            'user'     => $jane,
             'password' => "superman",
         ];
         $janeBad = [
-            'user' => $jane,
+            'user'     => $jane,
             'password' => "secret",
         ];
         $janeSess = ["ClockworkAngels", "SevenCitiesOfGold"];
@@ -304,29 +304,29 @@ LONG_STRING;
         $sidJane = "ClockworkAngels";
         $sidBad = "TheWatchmaker";
         $defaults = [
-            'userPreAuth' => false,
+            'userPreAuth'          => false,
             'userHTTPAuthRequired' => false,
-            'userSessionEnforced' => true,
+            'userSessionEnforced'  => true,
         ];
         $preAuth = [
-            'userPreAuth' => true,
+            'userPreAuth'          => true,
             'userHTTPAuthRequired' => false, // implied true by pre-auth
-            'userSessionEnforced' => true,
+            'userSessionEnforced'  => true,
         ];
         $httpReq = [
-            'userPreAuth' => false,
+            'userPreAuth'          => false,
             'userHTTPAuthRequired' => true,
-            'userSessionEnforced' => true,
+            'userSessionEnforced'  => true,
         ];
         $noSess = [
-            'userPreAuth' => false,
+            'userPreAuth'          => false,
             'userHTTPAuthRequired' => false,
-            'userSessionEnforced' => false,
+            'userSessionEnforced'  => false,
         ];
         $fullHttp = [
-            'userPreAuth' => false,
+            'userPreAuth'          => false,
             'userHTTPAuthRequired' => true,
-            'userSessionEnforced' => false,
+            'userSessionEnforced'  => false,
         ];
         $http401 = new EmptyResponse(401);
         if ($type === "login") {
@@ -520,7 +520,7 @@ LONG_STRING;
         }
     }
 
-    public function testHandleGenericError() {
+    public function testHandleGenericError(): void {
         \Phake::when(Arsse::$user)->auth(Arsse::$user->id, $this->anything())->thenThrow(new \JKingWeb\Arsse\Db\ExceptionTimeout("general"));
         $data = [
             'op'       => "login",
@@ -531,7 +531,7 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($data));
     }
 
-    public function testLogOut() {
+    public function testLogOut(): void {
         \Phake::when(Arsse::$db)->sessionDestroy->thenReturn(true);
         $data = [
             'op'       => "logout",
@@ -542,7 +542,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db)->sessionDestroy(Arsse::$user->id, "PriestsOfSyrinx");
     }
 
-    public function testHandleUnknownMethods() {
+    public function testHandleUnknownMethods(): void {
         $exp = $this->respErr("UNKNOWN_METHOD", ['method' => "thisMethodDoesNotExist"]);
         $data = [
             'op'       => "thisMethodDoesNotExist",
@@ -551,7 +551,7 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($data));
     }
 
-    public function testHandleMixedCaseMethods() {
+    public function testHandleMixedCaseMethods(): void {
         $data = [
             'op'       => "isLoggedIn",
             'sid'      => "PriestsOfSyrinx",
@@ -566,19 +566,19 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($data));
     }
 
-    public function testRetrieveServerVersion() {
+    public function testRetrieveServerVersion(): void {
         $data = [
             'op'       => "getVersion",
             'sid'      => "PriestsOfSyrinx",
         ];
         $exp = $this->respGood([
-            'version' => \JKingWeb\Arsse\REST\TinyTinyRSS\API::VERSION,
+            'version'       => \JKingWeb\Arsse\REST\TinyTinyRSS\API::VERSION,
             'arsse_version' => Arsse::VERSION,
         ]);
         $this->assertMessage($exp, $this->req($data));
     }
 
-    public function testRetrieveProtocolLevel() {
+    public function testRetrieveProtocolLevel(): void {
         $data = [
             'op'       => "getApiLevel",
             'sid'      => "PriestsOfSyrinx",
@@ -587,7 +587,7 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($data));
     }
 
-    public function testAddACategory() {
+    public function testAddACategory(): void {
         $in = [
             ['op' => "addCategory", 'sid' => "PriestsOfSyrinx", 'caption' => "Software"],
             ['op' => "addCategory", 'sid' => "PriestsOfSyrinx", 'caption' => "Hardware", 'parent_id' => 1],
@@ -638,7 +638,7 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($in[5]));
     }
 
-    public function testRemoveACategory() {
+    public function testRemoveACategory(): void {
         $in = [
             ['op' => "removeCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42],
             ['op' => "removeCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 2112],
@@ -661,7 +661,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db, \Phake::times(3))->folderRemove(Arsse::$user->id, $this->anything());
     }
 
-    public function testMoveACategory() {
+    public function testMoveACategory(): void {
         $in = [
             ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42, 'parent_id' => 1],
             ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 2112, 'parent_id' => 2],
@@ -713,7 +713,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db, \Phake::times(5))->folderPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
     }
 
-    public function testRenameACategory() {
+    public function testRenameACategory(): void {
         $in = [
             ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42, 'caption' => "Ook"],
             ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 2112, 'caption' => "Eek"],
@@ -753,7 +753,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db, \Phake::times(3))->folderPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
     }
 
-    public function testAddASubscription() {
+    public function testAddASubscription(): void {
         $in = [
             ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/0"],
             ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/1", 'category_id' => 42],
@@ -785,12 +785,12 @@ LONG_STRING;
         ];
         $out = [
             ['code' => 1, 'feed_id' => 2],
-            ['code' => 5, 'message' => (new \JKingWeb\Arsse\Feed\Exception("http://example.com/1", new \PicoFeed\Client\UnauthorizedException()))->getMessage()],
+            ['code' => 5, 'message' => (new \JKingWeb\Arsse\Feed\Exception("http://example.com/1", $this->mockGuzzleException(ClientException::class, "", 401)))->getMessage()],
             ['code' => 1, 'feed_id' => 0],
             ['code' => 0, 'feed_id' => 3],
             ['code' => 0, 'feed_id' => 1],
             ['code' => 3, 'message' => (new \JKingWeb\Arsse\Feed\Exception("http://localhost:8000/Feed/Discovery/Invalid", new \PicoFeed\Reader\SubscriptionNotFoundException()))->getMessage()],
-            ['code' => 2, 'message' => (new \JKingWeb\Arsse\Feed\Exception("http://example.com/6", new \PicoFeed\Client\InvalidUrlException()))->getMessage()],
+            ['code' => 2, 'message' => (new \JKingWeb\Arsse\Feed\Exception("http://example.com/6", $this->mockGuzzleException(ClientException::class, "", 404)))->getMessage()],
             ['code' => 6, 'message' => (new \JKingWeb\Arsse\Feed\Exception("http://example.com/7", new \PicoFeed\Parser\MalformedXmlException()))->getMessage()],
             ['code' => 1, 'feed_id' => 4],
             ['code' => 0, 'feed_id' => 4],
@@ -802,12 +802,12 @@ LONG_STRING;
             ['id' => 4, 'url' => "http://example.com/9"],
         ];
         \Phake::when(Arsse::$db)->subscriptionAdd(...$db[0])->thenReturn(2);
-        \Phake::when(Arsse::$db)->subscriptionAdd(...$db[1])->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.com/1", new \PicoFeed\Client\UnauthorizedException()));
+        \Phake::when(Arsse::$db)->subscriptionAdd(...$db[1])->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.com/1", $this->mockGuzzleException(ClientException::class, "", 401)));
         \Phake::when(Arsse::$db)->subscriptionAdd(...$db[2])->thenReturn(2);
         \Phake::when(Arsse::$db)->subscriptionAdd(...$db[3])->thenThrow(new ExceptionInput("constraintViolation"));
         \Phake::when(Arsse::$db)->subscriptionAdd(...$db[4])->thenThrow(new ExceptionInput("constraintViolation"));
         \Phake::when(Arsse::$db)->subscriptionAdd(...$db[5])->thenThrow(new ExceptionInput("constraintViolation"));
-        \Phake::when(Arsse::$db)->subscriptionAdd(...$db[6])->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.com/6", new \PicoFeed\Client\InvalidUrlException()));
+        \Phake::when(Arsse::$db)->subscriptionAdd(...$db[6])->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.com/6", $this->mockGuzzleException(ClientException::class, "", 404)));
         \Phake::when(Arsse::$db)->subscriptionAdd(...$db[7])->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.com/7", new \PicoFeed\Parser\MalformedXmlException()));
         \Phake::when(Arsse::$db)->subscriptionAdd(...$db[8])->thenReturn(4);
         \Phake::when(Arsse::$db)->subscriptionAdd(...$db[9])->thenThrow(new ExceptionInput("constraintViolation"));
@@ -828,7 +828,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db, \Phake::times(0))->subscriptionPropertiesSet(Arsse::$user->id, 4, ['folder' => 1]);
     }
 
-    public function testRemoveASubscription() {
+    public function testRemoveASubscription(): void {
         $in = [
             ['op' => "unsubscribeFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42],
             ['op' => "unsubscribeFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2112],
@@ -850,7 +850,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db, \Phake::times(5))->subscriptionRemove(Arsse::$user->id, $this->anything());
     }
 
-    public function testMoveASubscription() {
+    public function testMoveASubscription(): void {
         $in = [
             ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'category_id' => 1],
             ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2112, 'category_id' => 2],
@@ -892,7 +892,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db, \Phake::times(4))->subscriptionPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
     }
 
-    public function testRenameASubscription() {
+    public function testRenameASubscription(): void {
         $in = [
             ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'caption' => "Ook"],
             ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2112, 'caption' => "Eek"],
@@ -934,7 +934,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db)->subscriptionPropertiesSet(...$db[2]);
     }
 
-    public function testRetrieveTheGlobalUnreadCount() {
+    public function testRetrieveTheGlobalUnreadCount(): void {
         $in = ['op' => "getUnread", 'sid' => "PriestsOfSyrinx"];
         \Phake::when(Arsse::$db)->subscriptionList(Arsse::$user->id)->thenReturn(new Result($this->v([
             ['id' => 1, 'unread' => 2112],
@@ -945,7 +945,7 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($in));
     }
 
-    public function testRetrieveTheServerConfiguration() {
+    public function testRetrieveTheServerConfiguration(): void {
         $in = ['op' => "getConfig", 'sid' => "PriestsOfSyrinx"];
         $interval = Arsse::$conf->serviceFrequency;
         $valid = (new \DateTimeImmutable("now", new \DateTimezone("UTC")))->sub($interval);
@@ -960,7 +960,7 @@ LONG_STRING;
         $this->assertMessage($this->respGood($exp[1]), $this->req($in));
     }
 
-    public function testUpdateAFeed() {
+    public function testUpdateAFeed(): void {
         $in = [
             ['op' => "updateFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 1],
             ['op' => "updateFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2],
@@ -980,10 +980,10 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($in[3]));
     }
 
-    public function testAddALabel() {
+    public function testAddALabel(): void {
         $in = [
             ['op' => "addLabel", 'sid' => "PriestsOfSyrinx", 'caption' => "Software"],
-            ['op' => "addLabel", 'sid' => "PriestsOfSyrinx", 'caption' => "Hardware",],
+            ['op' => "addLabel", 'sid' => "PriestsOfSyrinx", 'caption' => "Hardware"],
             ['op' => "addLabel", 'sid' => "PriestsOfSyrinx"],
             ['op' => "addLabel", 'sid' => "PriestsOfSyrinx", 'caption' => ""],
             ['op' => "addLabel", 'sid' => "PriestsOfSyrinx", 'caption' => "   "],
@@ -997,6 +997,7 @@ LONG_STRING;
             ['id' => 3, 'name' => "Hardware"],
             ['id' => 1, 'name' => "Politics"],
         ];
+        $labelOffset = (new \ReflectionClassConstant(API::class, "LABEL_OFFSET"))->getValue();
         // set of various mocks for testing
         \Phake::when(Arsse::$db)->labelAdd(Arsse::$user->id, $db[0])->thenReturn(2)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
         \Phake::when(Arsse::$db)->labelAdd(Arsse::$user->id, $db[1])->thenReturn(3)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
@@ -1007,14 +1008,14 @@ LONG_STRING;
         \Phake::when(Arsse::$db)->labelAdd(Arsse::$user->id, ['name' => ""])->thenThrow(new ExceptionInput("missing"));
         \Phake::when(Arsse::$db)->labelAdd(Arsse::$user->id, ['name' => "   "])->thenThrow(new ExceptionInput("whitespace"));
         // correctly add two labels
-        $exp = $this->respGood((-1 * API::LABEL_OFFSET) - 2);
+        $exp = $this->respGood((-1 * $labelOffset) - 2);
         $this->assertMessage($exp, $this->req($in[0]));
-        $exp = $this->respGood((-1 * API::LABEL_OFFSET) - 3);
+        $exp = $this->respGood((-1 * $labelOffset) - 3);
         $this->assertMessage($exp, $this->req($in[1]));
         // attempt to add the two labels again
-        $exp = $this->respGood((-1 * API::LABEL_OFFSET) - 2);
+        $exp = $this->respGood((-1 * $labelOffset) - 2);
         $this->assertMessage($exp, $this->req($in[0]));
-        $exp = $this->respGood((-1 * API::LABEL_OFFSET) - 3);
+        $exp = $this->respGood((-1 * $labelOffset) - 3);
         $this->assertMessage($exp, $this->req($in[1]));
         \Phake::verify(Arsse::$db)->labelPropertiesGet(Arsse::$user->id, "Software", true);
         \Phake::verify(Arsse::$db)->labelPropertiesGet(Arsse::$user->id, "Hardware", true);
@@ -1025,7 +1026,7 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($in[4]));
     }
 
-    public function testRemoveALabel() {
+    public function testRemoveALabel(): void {
         $in = [
             ['op' => "removeLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -1042],
             ['op' => "removeLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -2112],
@@ -1053,7 +1054,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db)->labelRemove(Arsse::$user->id, 1088);
     }
 
-    public function testRenameALabel() {
+    public function testRenameALabel(): void {
         $in = [
             ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -1042, 'caption' => "Ook"],
             ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -2112, 'caption' => "Eek"],
@@ -1099,7 +1100,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db, \Phake::times(6))->labelPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
     }
 
-    public function testRetrieveCategoryLists() {
+    public function testRetrieveCategoryLists(): void {
         $in = [
             ['op' => "getCategories", 'sid' => "PriestsOfSyrinx", 'include_empty' => true],
             ['op' => "getCategories", 'sid' => "PriestsOfSyrinx"],
@@ -1171,7 +1172,7 @@ LONG_STRING;
         }
     }
 
-    public function testRetrieveCounterList() {
+    public function testRetrieveCounterList(): void {
         $in = ['op' => "getCounters", 'sid' => "PriestsOfSyrinx"];
         \Phake::when(Arsse::$db)->folderList($this->anything())->thenReturn(new Result($this->v($this->folders)));
         \Phake::when(Arsse::$db)->subscriptionList($this->anything())->thenReturn(new Result($this->v($this->subscriptions)));
@@ -1206,7 +1207,7 @@ LONG_STRING;
         $this->assertMessage($this->respGood($exp), $this->req($in));
     }
 
-    public function testRetrieveTheLabelList() {
+    public function testRetrieveTheLabelList(): void {
         $in = [
             ['op' => "getLabels", 'sid' => "PriestsOfSyrinx"],
             ['op' => "getLabels", 'sid' => "PriestsOfSyrinx", 'article_id' => 1],
@@ -1251,7 +1252,7 @@ LONG_STRING;
         }
     }
 
-    public function testAssignArticlesToALabel() {
+    public function testAssignArticlesToALabel(): void {
         $list = [
             range(1, 100),
             range(1, 50),
@@ -1289,7 +1290,7 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($in[6]));
     }
 
-    public function testRetrieveFeedTree() {
+    public function testRetrieveFeedTree(): void {
         $in = [
             ['op' => "getFeedTree", 'sid' => "PriestsOfSyrinx", 'include_empty' => true],
             ['op' => "getFeedTree", 'sid' => "PriestsOfSyrinx"],
@@ -1300,13 +1301,13 @@ LONG_STRING;
         \Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->unread(true)->modifiedSince(Date::sub("PT24H")), 2))->thenReturn(7);
         \Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn($this->v($this->starred));
         // the expectations are packed tightly since they're very verbose; one can use var_export() (or convert to JSON) to pretty-print them
-        $exp = ['categories'=>['identifier'=>'id','label'=>'name','items'=>[['name'=>'Special','id'=>'CAT:-1','bare_id'=>-1,'type'=>'category','unread'=>0,'items'=>[['name'=>'All articles','id'=>'FEED:-4','bare_id'=>-4,'icon'=>'images/folder.png','unread'=>35,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Fresh articles','id'=>'FEED:-3','bare_id'=>-3,'icon'=>'images/fresh.png','unread'=>7,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Starred articles','id'=>'FEED:-1','bare_id'=>-1,'icon'=>'images/star.png','unread'=>4,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Published articles','id'=>'FEED:-2','bare_id'=>-2,'icon'=>'images/feed.png','unread'=>0,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Archived articles','id'=>'FEED:0','bare_id'=>0,'icon'=>'images/archive.png','unread'=>0,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Recently read','id'=>'FEED:-6','bare_id'=>-6,'icon'=>'images/time.png','unread'=>0,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],],],['name'=>'Labels','id'=>'CAT:-2','bare_id'=>-2,'type'=>'category','unread'=>6,'items'=>[['name'=>'Fascinating','id'=>'FEED:-1027','bare_id'=>-1027,'unread'=>0,'icon'=>'images/label.png','type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'','fg_color'=>'','bg_color'=>'',],['name'=>'Interesting','id'=>'FEED:-1029','bare_id'=>-1029,'unread'=>0,'icon'=>'images/label.png','type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'','fg_color'=>'','bg_color'=>'',],['name'=>'Logical','id'=>'FEED:-1025','bare_id'=>-1025,'unread'=>0,'icon'=>'images/label.png','type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'','fg_color'=>'','bg_color'=>'',],],],['name'=>'Photography','id'=>'CAT:4','bare_id'=>4,'parent_id'=>null,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(0 feeds)','items'=>[],],['name'=>'Politics','id'=>'CAT:3','bare_id'=>3,'parent_id'=>null,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(3 feeds)','items'=>[['name'=>'Local','id'=>'CAT:5','bare_id'=>5,'parent_id'=>3,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(1 feed)','items'=>[['name'=>'Toronto Star','id'=>'FEED:2','bare_id'=>2,'icon'=>'feed-icons/2.ico','error'=>'oops','param'=>'2011-11-11T11:11:11Z','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],['name'=>'National','id'=>'CAT:6','bare_id'=>6,'parent_id'=>3,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(2 feeds)','items'=>[['name'=>'CBC News','id'=>'FEED:4','bare_id'=>4,'icon'=>'feed-icons/4.ico','error'=>'','param'=>'2017-10-09T15:58:34Z','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],['name'=>'Ottawa Citizen','id'=>'FEED:5','bare_id'=>5,'icon'=>false,'error'=>'','param'=>'2017-07-07T17:07:17Z','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],],],['name'=>'Science','id'=>'CAT:1','bare_id'=>1,'parent_id'=>null,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(2 feeds)','items'=>[['name'=>'Rocketry','id'=>'CAT:2','bare_id'=>2,'parent_id'=>1,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(1 feed)','items'=>[['name'=>'NASA JPL','id'=>'FEED:1','bare_id'=>1,'icon'=>false,'error'=>'','param'=>'2017-09-15T22:54:16Z','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],['name'=>'Ars Technica','id'=>'FEED:3','bare_id'=>3,'icon'=>'feed-icons/3.ico','error'=>'argh','param'=>'2016-05-23T06:40:02Z','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],['name'=>'Uncategorized','id'=>'CAT:0','bare_id'=>0,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'parent_id'=>null,'param'=>'(1 feed)','items'=>[['name'=>'Eurogamer','id'=>'FEED:6','bare_id'=>6,'icon'=>'feed-icons/6.ico','error'=>'','param'=>'2010-02-12T20:08:47Z','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],],],];
+        $exp = ['categories' => ['identifier' => 'id','label' => 'name','items' => [['name' => 'Special','id' => 'CAT:-1','bare_id' => -1,'type' => 'category','unread' => 0,'items' => [['name' => 'All articles','id' => 'FEED:-4','bare_id' => -4,'icon' => 'images/folder.png','unread' => 35,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Fresh articles','id' => 'FEED:-3','bare_id' => -3,'icon' => 'images/fresh.png','unread' => 7,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Starred articles','id' => 'FEED:-1','bare_id' => -1,'icon' => 'images/star.png','unread' => 4,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Published articles','id' => 'FEED:-2','bare_id' => -2,'icon' => 'images/feed.png','unread' => 0,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Archived articles','id' => 'FEED:0','bare_id' => 0,'icon' => 'images/archive.png','unread' => 0,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Recently read','id' => 'FEED:-6','bare_id' => -6,'icon' => 'images/time.png','unread' => 0,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => '']]],['name' => 'Labels','id' => 'CAT:-2','bare_id' => -2,'type' => 'category','unread' => 6,'items' => [['name' => 'Fascinating','id' => 'FEED:-1027','bare_id' => -1027,'unread' => 0,'icon' => 'images/label.png','type' => 'feed','auxcounter' => 0,'error' => '','updated' => '','fg_color' => '','bg_color' => ''],['name' => 'Interesting','id' => 'FEED:-1029','bare_id' => -1029,'unread' => 0,'icon' => 'images/label.png','type' => 'feed','auxcounter' => 0,'error' => '','updated' => '','fg_color' => '','bg_color' => ''],['name' => 'Logical','id' => 'FEED:-1025','bare_id' => -1025,'unread' => 0,'icon' => 'images/label.png','type' => 'feed','auxcounter' => 0,'error' => '','updated' => '','fg_color' => '','bg_color' => '']]],['name' => 'Photography','id' => 'CAT:4','bare_id' => 4,'parent_id' => null,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(0 feeds)','items' => []],['name' => 'Politics','id' => 'CAT:3','bare_id' => 3,'parent_id' => null,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(3 feeds)','items' => [['name' => 'Local','id' => 'CAT:5','bare_id' => 5,'parent_id' => 3,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(1 feed)','items' => [['name' => 'Toronto Star','id' => 'FEED:2','bare_id' => 2,'icon' => 'feed-icons/2.ico','error' => 'oops','param' => '2011-11-11T11:11:11Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]],['name' => 'National','id' => 'CAT:6','bare_id' => 6,'parent_id' => 3,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(2 feeds)','items' => [['name' => 'CBC News','id' => 'FEED:4','bare_id' => 4,'icon' => 'feed-icons/4.ico','error' => '','param' => '2017-10-09T15:58:34Z','unread' => 0,'auxcounter' => 0,'checkbox' => false],['name' => 'Ottawa Citizen','id' => 'FEED:5','bare_id' => 5,'icon' => false,'error' => '','param' => '2017-07-07T17:07:17Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]]]],['name' => 'Science','id' => 'CAT:1','bare_id' => 1,'parent_id' => null,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(2 feeds)','items' => [['name' => 'Rocketry','id' => 'CAT:2','bare_id' => 2,'parent_id' => 1,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(1 feed)','items' => [['name' => 'NASA JPL','id' => 'FEED:1','bare_id' => 1,'icon' => false,'error' => '','param' => '2017-09-15T22:54:16Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]],['name' => 'Ars Technica','id' => 'FEED:3','bare_id' => 3,'icon' => 'feed-icons/3.ico','error' => 'argh','param' => '2016-05-23T06:40:02Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]],['name' => 'Uncategorized','id' => 'CAT:0','bare_id' => 0,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'parent_id' => null,'param' => '(1 feed)','items' => [['name' => 'Eurogamer','id' => 'FEED:6','bare_id' => 6,'icon' => 'feed-icons/6.ico','error' => '','param' => '2010-02-12T20:08:47Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]]]]];
         $this->assertMessage($this->respGood($exp), $this->req($in[0]));
-        $exp = ['categories'=>['identifier'=>'id','label'=>'name','items'=>[['name'=>'Special','id'=>'CAT:-1','bare_id'=>-1,'type'=>'category','unread'=>0,'items'=>[['name'=>'All articles','id'=>'FEED:-4','bare_id'=>-4,'icon'=>'images/folder.png','unread'=>35,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Fresh articles','id'=>'FEED:-3','bare_id'=>-3,'icon'=>'images/fresh.png','unread'=>7,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Starred articles','id'=>'FEED:-1','bare_id'=>-1,'icon'=>'images/star.png','unread'=>4,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Published articles','id'=>'FEED:-2','bare_id'=>-2,'icon'=>'images/feed.png','unread'=>0,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Archived articles','id'=>'FEED:0','bare_id'=>0,'icon'=>'images/archive.png','unread'=>0,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],['name'=>'Recently read','id'=>'FEED:-6','bare_id'=>-6,'icon'=>'images/time.png','unread'=>0,'type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'',],],],['name'=>'Labels','id'=>'CAT:-2','bare_id'=>-2,'type'=>'category','unread'=>6,'items'=>[['name'=>'Fascinating','id'=>'FEED:-1027','bare_id'=>-1027,'unread'=>0,'icon'=>'images/label.png','type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'','fg_color'=>'','bg_color'=>'',],['name'=>'Interesting','id'=>'FEED:-1029','bare_id'=>-1029,'unread'=>0,'icon'=>'images/label.png','type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'','fg_color'=>'','bg_color'=>'',],['name'=>'Logical','id'=>'FEED:-1025','bare_id'=>-1025,'unread'=>0,'icon'=>'images/label.png','type'=>'feed','auxcounter'=>0,'error'=>'','updated'=>'','fg_color'=>'','bg_color'=>'',],],],['name'=>'Politics','id'=>'CAT:3','bare_id'=>3,'parent_id'=>null,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(3 feeds)','items'=>[['name'=>'Local','id'=>'CAT:5','bare_id'=>5,'parent_id'=>3,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(1 feed)','items'=>[['name'=>'Toronto Star','id'=>'FEED:2','bare_id'=>2,'icon'=>'feed-icons/2.ico','error'=>'oops','param'=>'2011-11-11T11:11:11Z','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],['name'=>'National','id'=>'CAT:6','bare_id'=>6,'parent_id'=>3,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(2 feeds)','items'=>[['name'=>'CBC News','id'=>'FEED:4','bare_id'=>4,'icon'=>'feed-icons/4.ico','error'=>'','param'=>'2017-10-09T15:58:34Z','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],['name'=>'Ottawa Citizen','id'=>'FEED:5','bare_id'=>5,'icon'=>false,'error'=>'','param'=>'2017-07-07T17:07:17Z','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],],],['name'=>'Science','id'=>'CAT:1','bare_id'=>1,'parent_id'=>null,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(2 feeds)','items'=>[['name'=>'Rocketry','id'=>'CAT:2','bare_id'=>2,'parent_id'=>1,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'param'=>'(1 feed)','items'=>[['name'=>'NASA JPL','id'=>'FEED:1','bare_id'=>1,'icon'=>false,'error'=>'','param'=>'2017-09-15T22:54:16Z','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],['name'=>'Ars Technica','id'=>'FEED:3','bare_id'=>3,'icon'=>'feed-icons/3.ico','error'=>'argh','param'=>'2016-05-23T06:40:02Z','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],['name'=>'Uncategorized','id'=>'CAT:0','bare_id'=>0,'type'=>'category','auxcounter'=>0,'unread'=>0,'child_unread'=>0,'checkbox'=>false,'parent_id'=>null,'param'=>'(1 feed)','items'=>[['name'=>'Eurogamer','id'=>'FEED:6','bare_id'=>6,'icon'=>'feed-icons/6.ico','error'=>'','param'=>'2010-02-12T20:08:47Z','unread'=>0,'auxcounter'=>0,'checkbox'=>false,],],],],],];
+        $exp = ['categories' => ['identifier' => 'id','label' => 'name','items' => [['name' => 'Special','id' => 'CAT:-1','bare_id' => -1,'type' => 'category','unread' => 0,'items' => [['name' => 'All articles','id' => 'FEED:-4','bare_id' => -4,'icon' => 'images/folder.png','unread' => 35,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Fresh articles','id' => 'FEED:-3','bare_id' => -3,'icon' => 'images/fresh.png','unread' => 7,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Starred articles','id' => 'FEED:-1','bare_id' => -1,'icon' => 'images/star.png','unread' => 4,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Published articles','id' => 'FEED:-2','bare_id' => -2,'icon' => 'images/feed.png','unread' => 0,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Archived articles','id' => 'FEED:0','bare_id' => 0,'icon' => 'images/archive.png','unread' => 0,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Recently read','id' => 'FEED:-6','bare_id' => -6,'icon' => 'images/time.png','unread' => 0,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => '']]],['name' => 'Labels','id' => 'CAT:-2','bare_id' => -2,'type' => 'category','unread' => 6,'items' => [['name' => 'Fascinating','id' => 'FEED:-1027','bare_id' => -1027,'unread' => 0,'icon' => 'images/label.png','type' => 'feed','auxcounter' => 0,'error' => '','updated' => '','fg_color' => '','bg_color' => ''],['name' => 'Interesting','id' => 'FEED:-1029','bare_id' => -1029,'unread' => 0,'icon' => 'images/label.png','type' => 'feed','auxcounter' => 0,'error' => '','updated' => '','fg_color' => '','bg_color' => ''],['name' => 'Logical','id' => 'FEED:-1025','bare_id' => -1025,'unread' => 0,'icon' => 'images/label.png','type' => 'feed','auxcounter' => 0,'error' => '','updated' => '','fg_color' => '','bg_color' => '']]],['name' => 'Politics','id' => 'CAT:3','bare_id' => 3,'parent_id' => null,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(3 feeds)','items' => [['name' => 'Local','id' => 'CAT:5','bare_id' => 5,'parent_id' => 3,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(1 feed)','items' => [['name' => 'Toronto Star','id' => 'FEED:2','bare_id' => 2,'icon' => 'feed-icons/2.ico','error' => 'oops','param' => '2011-11-11T11:11:11Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]],['name' => 'National','id' => 'CAT:6','bare_id' => 6,'parent_id' => 3,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(2 feeds)','items' => [['name' => 'CBC News','id' => 'FEED:4','bare_id' => 4,'icon' => 'feed-icons/4.ico','error' => '','param' => '2017-10-09T15:58:34Z','unread' => 0,'auxcounter' => 0,'checkbox' => false],['name' => 'Ottawa Citizen','id' => 'FEED:5','bare_id' => 5,'icon' => false,'error' => '','param' => '2017-07-07T17:07:17Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]]]],['name' => 'Science','id' => 'CAT:1','bare_id' => 1,'parent_id' => null,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(2 feeds)','items' => [['name' => 'Rocketry','id' => 'CAT:2','bare_id' => 2,'parent_id' => 1,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(1 feed)','items' => [['name' => 'NASA JPL','id' => 'FEED:1','bare_id' => 1,'icon' => false,'error' => '','param' => '2017-09-15T22:54:16Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]],['name' => 'Ars Technica','id' => 'FEED:3','bare_id' => 3,'icon' => 'feed-icons/3.ico','error' => 'argh','param' => '2016-05-23T06:40:02Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]],['name' => 'Uncategorized','id' => 'CAT:0','bare_id' => 0,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'parent_id' => null,'param' => '(1 feed)','items' => [['name' => 'Eurogamer','id' => 'FEED:6','bare_id' => 6,'icon' => 'feed-icons/6.ico','error' => '','param' => '2010-02-12T20:08:47Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]]]]];
         $this->assertMessage($this->respGood($exp), $this->req($in[1]));
     }
 
-    public function testMarkFeedsAsRead() {
+    public function testMarkFeedsAsRead(): void {
         $in1 = [
             // no-ops
             ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx"],
@@ -1357,7 +1358,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], $this->equalTo((new Context)->modifiedSince($t), 2)); // within two seconds
     }
 
-    public function testRetrieveFeedList() {
+    public function testRetrieveFeedList(): void {
         $in1 = [
             ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx"],
             ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => -1],
@@ -1412,7 +1413,7 @@ LONG_STRING;
                 ['id' => -3, 'title' => "Fresh articles",     'unread' => "7",  'cat_id' => -1],
                 ['id' => -4, 'title' => "All articles",       'unread' => "35", 'cat_id' => -1],
                 ['id' => -6, 'title' => "Recently read",      'unread' => 0,    'cat_id' => -1],
-                ['id' =>  0, 'title' => "Archived articles",  'unread' => "0",  'cat_id' => -1],
+                ['id' => 0, 'title' => "Archived articles",  'unread' => "0",  'cat_id' => -1],
             ],
             [
                 ['id' => -1, 'title' => "Starred articles",   'unread' => "4",  'cat_id' => -1],
@@ -1449,7 +1450,7 @@ LONG_STRING;
                 ['id' => -3, 'title' => "Fresh articles",     'unread' => "7",  'cat_id' => -1],
                 ['id' => -4, 'title' => "All articles",       'unread' => "35", 'cat_id' => -1],
                 ['id' => -6, 'title' => "Recently read",      'unread' => 0,    'cat_id' => -1],
-                ['id' =>  0, 'title' => "Archived articles",  'unread' => "0",  'cat_id' => -1],
+                ['id' => 0, 'title' => "Archived articles",  'unread' => "0",  'cat_id' => -1],
                 ['id' => 3, 'title' => 'Ars Technica',   'unread' => 2,  'cat_id' => 1, 'feed_url' => " http://example.com/3", 'has_icon' => true,  'last_updated' => 1463985602, 'order_id' => 1],
                 ['id' => 4, 'title' => 'CBC News',       'unread' => 6,  'cat_id' => 6, 'feed_url' => " http://example.com/4", 'has_icon' => true,  'last_updated' => 1507564714, 'order_id' => 2],
                 ['id' => 6, 'title' => 'Eurogamer',      'unread' => 0,  'cat_id' => 0, 'feed_url' => " http://example.com/6", 'has_icon' => true,  'last_updated' => 1266005327, 'order_id' => 3],
@@ -1506,7 +1507,7 @@ LONG_STRING;
         });
     }
 
-    protected function reduceFolders(int $id = null) : int {
+    protected function reduceFolders(int $id = null): int {
         $out = 0;
         foreach ($this->filterFolders($id) as $f) {
             $out += $this->reduceFolders($f['id']);
@@ -1519,7 +1520,7 @@ LONG_STRING;
         return $out;
     }
 
-    public function testChangeArticles() {
+    public function testChangeArticles(): void {
         $in = [
             ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx"],
             ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1"],
@@ -1604,7 +1605,7 @@ LONG_STRING;
         }
     }
 
-    public function testListArticles() {
+    public function testListArticles(): void {
         $in = [
             // error conditions
             ['op' => "getArticle", 'sid' => "PriestsOfSyrinx"],
@@ -1630,42 +1631,42 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($in[3]));
         $exp = [
             [
-                'id' => "101",
-                'guid' => null,
-                'title' => 'Article title 1',
-                'link' => 'http://example.com/1',
-                'labels' => [],
-                'unread' => true,
-                'marked' => false,
-                'published' => false,
-                'comments' => "",
-                'author' => '',
-                'updated' => strtotime('2000-01-01T00:00:01Z'),
-                'feed_id' => "8",
-                'feed_title' => "Feed 11",
+                'id'          => "101",
+                'guid'        => null,
+                'title'       => 'Article title 1',
+                'link'        => 'http://example.com/1',
+                'labels'      => [],
+                'unread'      => true,
+                'marked'      => false,
+                'published'   => false,
+                'comments'    => "",
+                'author'      => '',
+                'updated'     => strtotime('2000-01-01T00:00:01Z'),
+                'feed_id'     => "8",
+                'feed_title'  => "Feed 11",
                 'attachments' => [],
-                'score' => 0,
-                'note' => null,
-                'lang' => "",
-                'content' => '<p>Article content 1</p>',
+                'score'       => 0,
+                'note'        => null,
+                'lang'        => "",
+                'content'     => '<p>Article content 1</p>',
             ],
             [
-                'id' => "102",
-                'guid' => "SHA256:5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7",
-                'title' => 'Article title 2',
-                'link' => 'http://example.com/2',
+                'id'     => "102",
+                'guid'   => "SHA256:5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7",
+                'title'  => 'Article title 2',
+                'link'   => 'http://example.com/2',
                 'labels' => [
                     [-1025, "Logical", "", ""],
                     [-1027, "Fascinating", "", ""],
                 ],
-                'unread' => false,
-                'marked' => false,
-                'published' => false,
-                'comments' => "",
-                'author' => "J. King",
-                'updated' => strtotime('2000-01-02T00:00:02Z'),
-                'feed_id' => "8",
-                'feed_title' => "Feed 11",
+                'unread'      => false,
+                'marked'      => false,
+                'published'   => false,
+                'comments'    => "",
+                'author'      => "J. King",
+                'updated'     => strtotime('2000-01-02T00:00:02Z'),
+                'feed_id'     => "8",
+                'feed_title'  => "Feed 11",
                 'attachments' => [
                     [
                         'id'           => "0",
@@ -1678,9 +1679,9 @@ LONG_STRING;
                         'post_id'      => "102",
                     ],
                 ],
-                'score' => 0,
-                'note' => "Note 2",
-                'lang' => "",
+                'score'   => 0,
+                'note'    => "Note 2",
+                'lang'    => "",
                 'content' => '<p>Article content 2</p>',
             ],
         ];
@@ -1693,7 +1694,7 @@ LONG_STRING;
         $this->assertMessage($this->respGood([$exp[0]]), $this->req($in[5]));
     }
 
-    public function testRetrieveCompactHeadlines() {
+    public function testRetrieveCompactHeadlines(): void {
         $in1 = [
             // erroneous input
             ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx"],
@@ -1779,7 +1780,7 @@ LONG_STRING;
         }
     }
 
-    public function testRetrieveFullHeadlines() {
+    public function testRetrieveFullHeadlines(): void {
         $in1 = [
             // empty results
             ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 0],
@@ -1895,7 +1896,7 @@ LONG_STRING;
         }
     }
 
-    public function testRetrieveFullHeadlinesCheckingExtraFields() {
+    public function testRetrieveFullHeadlinesCheckingExtraFields(): void {
         $in = [
             // empty results
             ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4],
@@ -2011,44 +2012,44 @@ LONG_STRING;
     protected function generateHeadlines(int $id): Result {
         return new Result($this->v([
             [
-                'id' => $id,
-                'url' => 'http://example.com/1',
-                'title' => 'Article title 1',
+                'id'                 => $id,
+                'url'                => 'http://example.com/1',
+                'title'              => 'Article title 1',
                 'subscription_title' => "Feed 2112",
-                'author' => '',
-                'content' => '<p>&ldquo;This &amp; that, you know&#8253;&rdquo;</p>',
-                'guid' => null,
-                'published_date' => '2000-01-01 00:00:00',
-                'edited_date' => '2000-01-01 00:00:00',
-                'modified_date' => '2000-01-01 01:00:00',
-                'unread' => 0,
-                'starred' => 0,
-                'edition' => 101,
-                'subscription' => 12,
-                'fingerprint' => 'f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6:fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4:18fdd4fa93d693128c43b004399e5c9cea6c261ddfa002518d3669f55d8c2207',
-                'media_url' => null,
-                'media_type' => null,
-                'note' => "",
+                'author'             => '',
+                'content'            => '<p>&ldquo;This &amp; that, you know&#8253;&rdquo;</p>',
+                'guid'               => null,
+                'published_date'     => '2000-01-01 00:00:00',
+                'edited_date'        => '2000-01-01 00:00:00',
+                'modified_date'      => '2000-01-01 01:00:00',
+                'unread'             => 0,
+                'starred'            => 0,
+                'edition'            => 101,
+                'subscription'       => 12,
+                'fingerprint'        => 'f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6:fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4:18fdd4fa93d693128c43b004399e5c9cea6c261ddfa002518d3669f55d8c2207',
+                'media_url'          => null,
+                'media_type'         => null,
+                'note'               => "",
             ],
             [
-                'id' => 2112,
-                'url' => 'http://example.com/2',
-                'title' => 'Article title 2',
+                'id'                 => 2112,
+                'url'                => 'http://example.com/2',
+                'title'              => 'Article title 2',
                 'subscription_title' => "Feed 11",
-                'author' => 'J. King',
-                'content' => $this->richContent,
-                'guid' => '5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7',
-                'published_date' => '2000-01-02 00:00:00',
-                'edited_date' => '2000-01-02 00:00:02',
-                'modified_date' => '2000-01-02 02:00:00',
-                'unread' => 1,
-                'starred' => 1,
-                'edition' => 202,
-                'subscription' => 8,
-                'fingerprint' => '0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153:13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9:2abd0a8cba83b8214a66c8f0293ba63e467d720540e29ff8ddcdab069d4f1c9e',
-                'media_url' => "http://example.com/text",
-                'media_type' => "text/plain",
-                'note' => "Note 2",
+                'author'             => 'J. King',
+                'content'            => $this->richContent,
+                'guid'               => '5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7',
+                'published_date'     => '2000-01-02 00:00:00',
+                'edited_date'        => '2000-01-02 00:00:02',
+                'modified_date'      => '2000-01-02 02:00:00',
+                'unread'             => 1,
+                'starred'            => 1,
+                'edition'            => 202,
+                'subscription'       => 8,
+                'fingerprint'        => '0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153:13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9:2abd0a8cba83b8214a66c8f0293ba63e467d720540e29ff8ddcdab069d4f1c9e',
+                'media_url'          => "http://example.com/text",
+                'media_type'         => "text/plain",
+                'note'               => "Note 2",
             ],
         ]));
     }
@@ -2056,50 +2057,50 @@ LONG_STRING;
     protected function outputHeadlines(int $id): Response {
         return $this->respGood([
             [
-                'id' => $id,
-                'guid' => '',
-                'title' => 'Article title 1',
-                'link' => 'http://example.com/1',
-                'labels' => [],
-                'unread' => false,
-                'marked' => false,
-                'published' => false,
-                'author' => '',
-                'updated' => strtotime('2000-01-01T00:00:00Z'),
-                'is_updated' => false,
-                'feed_id' => "12",
-                'feed_title' => "Feed 2112",
-                'score' => 0,
-                'note' => null,
-                'lang' => "",
-                'tags' => [],
-                'comments_count' => 0,
-                'comments_link' => "",
+                'id'                         => $id,
+                'guid'                       => '',
+                'title'                      => 'Article title 1',
+                'link'                       => 'http://example.com/1',
+                'labels'                     => [],
+                'unread'                     => false,
+                'marked'                     => false,
+                'published'                  => false,
+                'author'                     => '',
+                'updated'                    => strtotime('2000-01-01T00:00:00Z'),
+                'is_updated'                 => false,
+                'feed_id'                    => "12",
+                'feed_title'                 => "Feed 2112",
+                'score'                      => 0,
+                'note'                       => null,
+                'lang'                       => "",
+                'tags'                       => [],
+                'comments_count'             => 0,
+                'comments_link'              => "",
                 'always_display_attachments' => false,
             ],
             [
-                'id' => 2112,
-                'guid' => "SHA256:5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7",
-                'title' => 'Article title 2',
-                'link' => 'http://example.com/2',
+                'id'     => 2112,
+                'guid'   => "SHA256:5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7",
+                'title'  => 'Article title 2',
+                'link'   => 'http://example.com/2',
                 'labels' => [
                     [-1025, "Logical", "", ""],
                     [-1027, "Fascinating", "", ""],
                 ],
-                'unread' => true,
-                'marked' => true,
-                'published' => false,
-                'author' => "J. King",
-                'updated' => strtotime('2000-01-02T00:00:02Z'),
-                'is_updated' => true,
-                'feed_id' => "8",
-                'feed_title' => "Feed 11",
-                'score' => 0,
-                'note' => "Note 2",
-                'lang' => "",
-                'tags' => ["Boring", "Illogical"],
-                'comments_count' => 0,
-                'comments_link' => "",
+                'unread'                     => true,
+                'marked'                     => true,
+                'published'                  => false,
+                'author'                     => "J. King",
+                'updated'                    => strtotime('2000-01-02T00:00:02Z'),
+                'is_updated'                 => true,
+                'feed_id'                    => "8",
+                'feed_title'                 => "Feed 11",
+                'score'                      => 0,
+                'note'                       => "Note 2",
+                'lang'                       => "",
+                'tags'                       => ["Boring", "Illogical"],
+                'comments_count'             => 0,
+                'comments_link'              => "",
                 'always_display_attachments' => false,
             ],
         ]);

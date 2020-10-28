@@ -10,33 +10,32 @@ use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\Date;
 
 class Search {
-    const STATE_BEFORE_TOKEN = 0;
-    const STATE_BEFORE_TOKEN_QUOTED = 1;
-    const STATE_IN_DATE = 2;
-    const STATE_IN_DATE_QUOTED = 3;
-    const STATE_IN_TOKEN_OR_TAG = 4;
-    const STATE_IN_TOKEN_OR_TAG_QUOTED = 5;
-    const STATE_IN_TOKEN = 6;
-    const STATE_IN_TOKEN_QUOTED = 7;
+    protected const STATE_BEFORE_TOKEN = 0;
+    protected const STATE_BEFORE_TOKEN_QUOTED = 1;
+    protected const STATE_IN_DATE = 2;
+    protected const STATE_IN_DATE_QUOTED = 3;
+    protected const STATE_IN_TOKEN_OR_TAG = 4;
+    protected const STATE_IN_TOKEN_OR_TAG_QUOTED = 5;
+    protected const STATE_IN_TOKEN = 6;
+    protected const STATE_IN_TOKEN_QUOTED = 7;
 
-    const FIELDS_BOOLEAN = [
+    protected const FIELDS_BOOLEAN = [
         "unread" => "unread",
         "star"   => "starred",
         "note"   => "annotated",
         "pub"    => "published", // TODO: not implemented
     ];
-    const FIELDS_TEXT = [
+    protected const FIELDS_TEXT = [
         "title"  => "titleTerms",
         "author" => "authorTerms",
         "note"   => "annotationTerms",
         ""       => "searchTerms",
     ];
 
-    public static function parse(string $search, Context $context = null) {
+    public static function parse(string $search, Context $context = null): ?Context {
         // normalize the input
         $search = strtolower(trim(preg_replace("<\s+>", " ", $search)));
         // set initial state
-        $tokens = [];
         $pos = -1;
         $stop = strlen($search);
         $state = self::STATE_BEFORE_TOKEN;

@@ -15,10 +15,10 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\Fever\API;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\ServerRequest;
-use Zend\Diactoros\Response\JsonResponse;
-use Zend\Diactoros\Response\XmlResponse;
-use Zend\Diactoros\Response\EmptyResponse;
+use Laminas\Diactoros\ServerRequest;
+use Laminas\Diactoros\Response\JsonResponse;
+use Laminas\Diactoros\Response\XmlResponse;
+use Laminas\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST\Fever\API<extended> */
 class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -28,115 +28,115 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $articles = [
         'db' => [
             [
-                'id' => 101,
-                'url' => 'http://example.com/1',
-                'title' => 'Article title 1',
-                'author' => '',
-                'content' => '<p>Article content 1</p>',
+                'id'             => 101,
+                'url'            => 'http://example.com/1',
+                'title'          => 'Article title 1',
+                'author'         => '',
+                'content'        => '<p>Article content 1</p>',
                 'published_date' => '2000-01-01 00:00:00',
-                'unread' => 1,
-                'starred' => 0,
-                'subscription' => 8,
+                'unread'         => 1,
+                'starred'        => 0,
+                'subscription'   => 8,
             ],
             [
-                'id' => 102,
-                'url' => 'http://example.com/2',
-                'title' => 'Article title 2',
-                'author' => '',
-                'content' => '<p>Article content 2</p>',
+                'id'             => 102,
+                'url'            => 'http://example.com/2',
+                'title'          => 'Article title 2',
+                'author'         => '',
+                'content'        => '<p>Article content 2</p>',
                 'published_date' => '2000-01-02 00:00:00',
-                'unread' => 0,
-                'starred' => 0,
-                'subscription' => 8,
+                'unread'         => 0,
+                'starred'        => 0,
+                'subscription'   => 8,
             ],
             [
-                'id' => 103,
-                'url' => 'http://example.com/3',
-                'title' => 'Article title 3',
-                'author' => '',
-                'content' => '<p>Article content 3</p>',
+                'id'             => 103,
+                'url'            => 'http://example.com/3',
+                'title'          => 'Article title 3',
+                'author'         => '',
+                'content'        => '<p>Article content 3</p>',
                 'published_date' => '2000-01-03 00:00:00',
-                'unread' => 1,
-                'starred' => 1,
-                'subscription' => 9,
+                'unread'         => 1,
+                'starred'        => 1,
+                'subscription'   => 9,
             ],
             [
-                'id' => 104,
-                'url' => 'http://example.com/4',
-                'title' => 'Article title 4',
-                'author' => '',
-                'content' => '<p>Article content 4</p>',
+                'id'             => 104,
+                'url'            => 'http://example.com/4',
+                'title'          => 'Article title 4',
+                'author'         => '',
+                'content'        => '<p>Article content 4</p>',
                 'published_date' => '2000-01-04 00:00:00',
-                'unread' => 0,
-                'starred' => 1,
-                'subscription' => 9,
+                'unread'         => 0,
+                'starred'        => 1,
+                'subscription'   => 9,
             ],
             [
-                'id' => 105,
-                'url' => 'http://example.com/5',
-                'title' => 'Article title 5',
-                'author' => '',
-                'content' => '<p>Article content 5</p>',
+                'id'             => 105,
+                'url'            => 'http://example.com/5',
+                'title'          => 'Article title 5',
+                'author'         => '',
+                'content'        => '<p>Article content 5</p>',
                 'published_date' => '2000-01-05 00:00:00',
-                'unread' => 1,
-                'starred' => 0,
-                'subscription' => 10,
+                'unread'         => 1,
+                'starred'        => 0,
+                'subscription'   => 10,
             ],
         ],
         'rest' => [
             [
-                'id' => 101,
-                'feed_id' => 8,
-                'title' => 'Article title 1',
-                'author' => '',
-                'html' => '<p>Article content 1</p>',
-                'url' => 'http://example.com/1',
-                'is_saved' => 0,
-                'is_read' => 0,
+                'id'              => 101,
+                'feed_id'         => 8,
+                'title'           => 'Article title 1',
+                'author'          => '',
+                'html'            => '<p>Article content 1</p>',
+                'url'             => 'http://example.com/1',
+                'is_saved'        => 0,
+                'is_read'         => 0,
                 'created_on_time' => 946684800,
             ],
             [
-                'id' => 102,
-                'feed_id' => 8,
-                'title' => 'Article title 2',
-                'author' => '',
-                'html' => '<p>Article content 2</p>',
-                'url' => 'http://example.com/2',
-                'is_saved' => 0,
-                'is_read' => 1,
+                'id'              => 102,
+                'feed_id'         => 8,
+                'title'           => 'Article title 2',
+                'author'          => '',
+                'html'            => '<p>Article content 2</p>',
+                'url'             => 'http://example.com/2',
+                'is_saved'        => 0,
+                'is_read'         => 1,
                 'created_on_time' => 946771200,
             ],
             [
-                'id' => 103,
-                'feed_id' => 9,
-                'title' => 'Article title 3',
-                'author' => '',
-                'html' => '<p>Article content 3</p>',
-                'url' => 'http://example.com/3',
-                'is_saved' => 1,
-                'is_read' => 0,
+                'id'              => 103,
+                'feed_id'         => 9,
+                'title'           => 'Article title 3',
+                'author'          => '',
+                'html'            => '<p>Article content 3</p>',
+                'url'             => 'http://example.com/3',
+                'is_saved'        => 1,
+                'is_read'         => 0,
                 'created_on_time' => 946857600,
             ],
             [
-                'id' => 104,
-                'feed_id' => 9,
-                'title' => 'Article title 4',
-                'author' => '',
-                'html' => '<p>Article content 4</p>',
-                'url' => 'http://example.com/4',
-                'is_saved' => 1,
-                'is_read' => 1,
+                'id'              => 104,
+                'feed_id'         => 9,
+                'title'           => 'Article title 4',
+                'author'          => '',
+                'html'            => '<p>Article content 4</p>',
+                'url'             => 'http://example.com/4',
+                'is_saved'        => 1,
+                'is_read'         => 1,
                 'created_on_time' => 946944000,
             ],
             [
-                'id' => 105,
-                'feed_id' => 10,
-                'title' => 'Article title 5',
-                'author' => '',
-                'html' => '<p>Article content 5</p>',
-                'url' => 'http://example.com/5',
-                'is_saved' => 0,
-                'is_read' => 0,
+                'id'              => 105,
+                'feed_id'         => 10,
+                'title'           => 'Article title 5',
+                'author'          => '',
+                'html'            => '<p>Article content 5</p>',
+                'url'             => 'http://example.com/5',
+                'is_saved'        => 0,
+                'is_read'         => 0,
                 'created_on_time' => 947030400,
             ],
         ],
@@ -173,10 +173,10 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideTokenAuthenticationRequests */
-    public function testAuthenticateAUserToken(bool $httpRequired, bool $tokenEnforced, string $httpUser = null, array $dataPost, array $dataGet, ResponseInterface $exp) {
+    public function testAuthenticateAUserToken(bool $httpRequired, bool $tokenEnforced, string $httpUser = null, array $dataPost, array $dataGet, ResponseInterface $exp): void {
         self::setConf([
             'userHTTPAuthRequired' => $httpRequired,
-            'userSessionEnforced' => $tokenEnforced,
+            'userSessionEnforced'  => $tokenEnforced,
         ], true);
         Arsse::$user->id = null;
         \Phake::when(Arsse::$db)->tokenLookup->thenThrow(new ExceptionInput("subjectMissing"));
@@ -244,7 +244,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    public function testListGroups() {
+    public function testListGroups(): void {
         \Phake::when(Arsse::$db)->tagList(Arsse::$user->id)->thenReturn(new Result([
             ['id' => 1, 'name' => "Fascinating", 'subscriptions' => 2],
             ['id' => 2, 'name' => "Interesting", 'subscriptions' => 2],
@@ -271,7 +271,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $act);
     }
 
-    public function testListFeeds() {
+    public function testListFeeds(): void {
         \Phake::when(Arsse::$db)->subscriptionList(Arsse::$user->id)->thenReturn(new Result([
             ['id' => 1, 'feed' => 5, 'title' => "Ankh-Morpork News", 'url' => "http://example.com/feed", 'source' => "http://example.com/", 'edited' => "2019-01-01 21:12:00", 'favicon' => "http://example.com/favicon.ico"],
             ['id' => 2, 'feed' => 9, 'title' => "Ook, Ook Eek Ook!", 'url' => "http://example.net/feed", 'source' => "http://example.net/", 'edited' => "1988-06-24 12:21:00", 'favicon' => ""],
@@ -299,13 +299,13 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideItemListContexts */
-    public function testListItems(string $url, Context $c, bool $desc) {
+    public function testListItems(string $url, Context $c, bool $desc): void {
         $fields = ["id", "subscription", "title", "author", "content", "url", "starred", "unread", "published_date"];
         $order = [$desc ? "id desc" : "id"];
         \Phake::when(Arsse::$db)->articleList->thenReturn(new Result($this->articles['db']));
         \Phake::when(Arsse::$db)->articleCount(Arsse::$user->id)->thenReturn(1024);
         $exp = new JsonResponse([
-            'items' => $this->articles['rest'],
+            'items'       => $this->articles['rest'],
             'total_items' => 1024,
         ]);
         $act = $this->h->dispatch($this->req("api&$url"));
@@ -329,31 +329,25 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    public function testListItemIds() {
+    public function testListItemIds(): void {
         $saved = [['id' => 1],['id' => 2],['id' => 3]];
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
         \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true))->thenReturn(new Result($saved));
         \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->unread(true))->thenReturn(new Result($unread));
-        $exp = new JsonResponse([
-            'saved_item_ids' => "1,2,3"
-        ]);
+        $exp = new JsonResponse(['saved_item_ids' => "1,2,3"]);
         $this->assertMessage($exp, $this->h->dispatch($this->req("api&saved_item_ids")));
-        $exp = new JsonResponse([
-            'unread_item_ids' => "4,5,6"
-        ]);
+        $exp = new JsonResponse(['unread_item_ids' => "4,5,6"]);
         $this->assertMessage($exp, $this->h->dispatch($this->req("api&unread_item_ids")));
     }
 
-    public function testListHotLinks() {
+    public function testListHotLinks(): void {
         // hot links are not actually implemented, so an empty array should be all we get
-        $exp = new JsonResponse([
-            'links' => []
-        ]);
+        $exp = new JsonResponse(['links' => []]);
         $this->assertMessage($exp, $this->h->dispatch($this->req("api&links")));
     }
 
     /** @dataProvider provideMarkingContexts */
-    public function testSetMarks(string $post, Context $c, array $data, array $out) {
+    public function testSetMarks(string $post, Context $c, array $data, array $out): void {
         $saved = [['id' => 1],['id' => 2],['id' => 3]];
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
         \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true))->thenReturn(new Result($saved));
@@ -371,7 +365,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideMarkingContexts */
-    public function testSetMarksWithQuery(string $get, Context $c, array $data, array $out) {
+    public function testSetMarksWithQuery(string $get, Context $c, array $data, array $out): void {
         $saved = [['id' => 1],['id' => 2],['id' => 3]];
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
         \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true))->thenReturn(new Result($saved));
@@ -427,33 +421,35 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideInvalidRequests */
-    public function testSendInvalidRequests(ServerRequest $req, ResponseInterface $exp) {
+    public function testSendInvalidRequests(ServerRequest $req, ResponseInterface $exp): void {
         $this->assertMessage($exp, $this->h->dispatch($req));
     }
 
     public function provideInvalidRequests(): iterable {
         return [
-            'Not an API request' => [$this->req(""), new EmptyResponse(404)],
-            'Wrong method'       => [$this->req("api", "", "GET"), new EmptyResponse(405, ['Allow' => "OPTIONS,POST"])],
-            'Wrong content type' => [$this->req("api", '{"api_key":"validToken"}', "POST", "application/json"), new EmptyResponse(415, ['Accept' => "application/x-www-form-urlencoded"])],
+            'Not an API request'        => [$this->req(""), new EmptyResponse(404)],
+            'Wrong method'              => [$this->req("api", "", "PUT"), new EmptyResponse(405, ['Allow' => "OPTIONS,POST"])],
+            'Non-standard method'       => [$this->req("api", "", "GET"), new JsonResponse([])],
+            'Wrong content type'        => [$this->req("api", '{"api_key":"validToken"}', "POST", "application/json"), new EmptyResponse(415, ['Accept' => "application/x-www-form-urlencoded, multipart/form-data"])],
+            'Non-standard content type' => [$this->req("api", '{"api_key":"validToken"}', "POST", "multipart/form-data; boundary=33b68964f0de4c1f-5144aa6caaa6e4a8-18bfaf416a1786c8-5c5053a45f221bc1"), new JsonResponse([])],
         ];
     }
 
-    public function testMakeABaseQuery() {
+    public function testMakeABaseQuery(): void {
         $this->h = \Phake::partialMock(API::class);
         \Phake::when($this->h)->logIn->thenReturn(true);
         \Phake::when(Arsse::$db)->subscriptionRefreshed(Arsse::$user->id)->thenReturn(new \DateTimeImmutable("2000-01-01T00:00:00Z"));
         $exp = new JsonResponse([
-            'api_version' => API::LEVEL,
-            'auth' => 1,
+            'api_version'            => API::LEVEL,
+            'auth'                   => 1,
             'last_refreshed_on_time' => 946684800,
         ]);
         $act = $this->h->dispatch($this->req("api"));
         $this->assertMessage($exp, $act);
         \Phake::when(Arsse::$db)->subscriptionRefreshed(Arsse::$user->id)->thenReturn(null); // no subscriptions
         $exp = new JsonResponse([
-            'api_version' => API::LEVEL,
-            'auth' => 1,
+            'api_version'            => API::LEVEL,
+            'auth'                   => 1,
             'last_refreshed_on_time' => null,
         ]);
         $act = $this->h->dispatch($this->req("api"));
@@ -461,13 +457,13 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when($this->h)->logIn->thenReturn(false);
         $exp = new JsonResponse([
             'api_version' => API::LEVEL,
-            'auth' => 0,
+            'auth'        => 0,
         ]);
         $act = $this->h->dispatch($this->req("api"));
         $this->assertMessage($exp, $act);
     }
 
-    public function testUndoReadMarks() {
+    public function testUndoReadMarks(): void {
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
         $out = ['unread_item_ids' => "4,5,6"];
         \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->limit(1), ["marked_date"], ["marked_date desc"])->thenReturn(new Result([['marked_date' => "2000-01-01 00:00:00"]]));
@@ -483,9 +479,9 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->articleMark; // only called one time, above
     }
 
-    public function testOutputToXml() {
+    public function testOutputToXml(): void {
         \Phake::when($this->h)->processRequest->thenReturn([
-            'items' => $this->articles['rest'],
+            'items'       => $this->articles['rest'],
             'total_items' => 1024,
         ]);
         $exp = new XmlResponse("<response><items><item><id>101</id><feed_id>8</feed_id><title>Article title 1</title><author></author><html>&lt;p&gt;Article content 1&lt;/p&gt;</html><url>http://example.com/1</url><is_saved>0</is_saved><is_read>0</is_read><created_on_time>946684800</created_on_time></item><item><id>102</id><feed_id>8</feed_id><title>Article title 2</title><author></author><html>&lt;p&gt;Article content 2&lt;/p&gt;</html><url>http://example.com/2</url><is_saved>0</is_saved><is_read>1</is_read><created_on_time>946771200</created_on_time></item><item><id>103</id><feed_id>9</feed_id><title>Article title 3</title><author></author><html>&lt;p&gt;Article content 3&lt;/p&gt;</html><url>http://example.com/3</url><is_saved>1</is_saved><is_read>0</is_read><created_on_time>946857600</created_on_time></item><item><id>104</id><feed_id>9</feed_id><title>Article title 4</title><author></author><html>&lt;p&gt;Article content 4&lt;/p&gt;</html><url>http://example.com/4</url><is_saved>1</is_saved><is_read>1</is_read><created_on_time>946944000</created_on_time></item><item><id>105</id><feed_id>10</feed_id><title>Article title 5</title><author></author><html>&lt;p&gt;Article content 5&lt;/p&gt;</html><url>http://example.com/5</url><is_saved>0</is_saved><is_read>0</is_read><created_on_time>947030400</created_on_time></item></items><total_items>1024</total_items></response>");
@@ -493,17 +489,19 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $act);
     }
 
-    public function testListFeedIcons() {
+    public function testListFeedIcons(): void {
+        $iconType = (new \ReflectionClassConstant(API::class, "GENERIC_ICON_TYPE"))->getValue();
+        $iconData = (new \ReflectionClassConstant(API::class, "GENERIC_ICON_DATA"))->getValue();
         $act = $this->h->dispatch($this->req("api&favicons"));
-        $exp = new JsonResponse(['favicons' => [['id' => 0, 'data' => API::GENERIC_ICON_TYPE.",".API::GENERIC_ICON_DATA]]]);
+        $exp = new JsonResponse(['favicons' => [['id' => 0, 'data' => $iconType.",".$iconData]]]);
         $this->assertMessage($exp, $act);
     }
 
-    public function testAnswerOptionsRequest() {
+    public function testAnswerOptionsRequest(): void {
         $act = $this->h->dispatch($this->req("api", "", "OPTIONS"));
         $exp = new EmptyResponse(204, [
-            'Allow' => "POST",
-            'Accept' => "application/x-www-form-urlencoded",
+            'Allow'  => "POST",
+            'Accept' => "application/x-www-form-urlencoded, multipart/form-data",
         ]);
         $this->assertMessage($exp, $act);
     }

@@ -14,76 +14,75 @@ use JKingWeb\Arsse\Test\Result;
 
 /**
  * @covers \JKingWeb\Arsse\Feed
- * @covers \JKingWeb\Arsse\Feed\Exception
  * @group slow */
 class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
     protected static $host = "http://localhost:8000/";
     protected $base = "";
     protected $latest = [
         [
-            'id' => 1,
-            'edited' => '2000-01-01 00:00:00',
-            'guid' => 'e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda',
-            'url_title_hash' => 'f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6',
-            'url_content_hash' => 'fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4',
+            'id'                 => 1,
+            'edited'             => '2000-01-01 00:00:00',
+            'guid'               => 'e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda',
+            'url_title_hash'     => 'f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6',
+            'url_content_hash'   => 'fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4',
             'title_content_hash' => '18fdd4fa93d693128c43b004399e5c9cea6c261ddfa002518d3669f55d8c2207',
         ],
         [
-            'id' => 2,
-            'edited' => '2000-01-02 00:00:00',
-            'guid' => '5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7',
-            'url_title_hash' => '0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153',
-            'url_content_hash' => '13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9',
+            'id'                 => 2,
+            'edited'             => '2000-01-02 00:00:00',
+            'guid'               => '5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7',
+            'url_title_hash'     => '0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153',
+            'url_content_hash'   => '13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9',
             'title_content_hash' => '2abd0a8cba83b8214a66c8f0293ba63e467d720540e29ff8ddcdab069d4f1c9e',
         ],
         [
-            'id' => 3,
-            'edited' => '2000-01-03 00:00:00',
-            'guid' => '31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92',
-            'url_title_hash' => 'f74b06b240bd08abf4d3fdfc20dba6a6f6eb8b4f1a00e9a617efd63a87180a4b',
-            'url_content_hash' => 'b278380e984cefe63f0e412b88ffc9cb0befdfa06fdc00bace1da99a8daff406',
+            'id'                 => 3,
+            'edited'             => '2000-01-03 00:00:00',
+            'guid'               => '31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92',
+            'url_title_hash'     => 'f74b06b240bd08abf4d3fdfc20dba6a6f6eb8b4f1a00e9a617efd63a87180a4b',
+            'url_content_hash'   => 'b278380e984cefe63f0e412b88ffc9cb0befdfa06fdc00bace1da99a8daff406',
             'title_content_hash' => 'ad622b31e739cd3a3f3c788991082cf4d2f7a8773773008e75f0572e58cd373b',
         ],
         [
-            'id' => 4,
-            'edited' => '2000-01-04 00:00:00',
-            'guid' => '804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180',
-            'url_title_hash' => 'f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8',
-            'url_content_hash' => 'f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3',
+            'id'                 => 4,
+            'edited'             => '2000-01-04 00:00:00',
+            'guid'               => '804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180',
+            'url_title_hash'     => 'f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8',
+            'url_content_hash'   => 'f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3',
             'title_content_hash' => 'ab2da63276acce431250b18d3d49b988b226a99c7faadf275c90b751aee05be9',
         ],
         [
-            'id' => 5,
-            'edited' => '2000-01-05 00:00:00',
-            'guid' => 'db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41',
-            'url_title_hash' => 'd40da96e39eea6c55948ccbe9b3d275b5f931298288dbe953990c5f496097022',
-            'url_content_hash' => '834240f84501b5341d375414718204ec421561f3825d34c22bf9182203e42900',
+            'id'                 => 5,
+            'edited'             => '2000-01-05 00:00:00',
+            'guid'               => 'db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41',
+            'url_title_hash'     => 'd40da96e39eea6c55948ccbe9b3d275b5f931298288dbe953990c5f496097022',
+            'url_content_hash'   => '834240f84501b5341d375414718204ec421561f3825d34c22bf9182203e42900',
             'title_content_hash' => '43b970ac6ec5f8a9647b2c7e4eed8b1d7f62e154a95eed748b0294c1256764ba',
         ],
     ];
     protected $others = [
         [
-            'id' => 6,
-            'edited' => '2000-01-06 00:00:00',
-            'guid' => 'b3461ab8e8759eeb1d65a818c65051ec00c1dfbbb32a3c8f6999434e3e3b76ab',
-            'url_title_hash' => '91d051a8e6749d014506848acd45e959af50bf876427c4f0e3a1ec0f04777b51',
-            'url_content_hash' => '211d78b1a040d40d17e747a363cc283f58767b2e502630d8de9b8f1d5e941d18',
+            'id'                 => 6,
+            'edited'             => '2000-01-06 00:00:00',
+            'guid'               => 'b3461ab8e8759eeb1d65a818c65051ec00c1dfbbb32a3c8f6999434e3e3b76ab',
+            'url_title_hash'     => '91d051a8e6749d014506848acd45e959af50bf876427c4f0e3a1ec0f04777b51',
+            'url_content_hash'   => '211d78b1a040d40d17e747a363cc283f58767b2e502630d8de9b8f1d5e941d18',
             'title_content_hash' => '5ed68ccb64243b8c1931241d2c9276274c3b1d87f223634aa7a1ab0141292ca7',
         ],
         [
-            'id' => 7,
-            'edited' => '2000-01-07 00:00:00',
-            'guid' => 'f4fae999d6531747523f4ff0c74f3f0c7c588b67e4f32d8f7dba5f6f36e8a45d',
-            'url_title_hash' => 'b92f805f0d0643dad1d6c0bb5cbaec24729f5f71b37b831cf7ad31f6c9403ac8',
-            'url_content_hash' => '4fc8789b787246e9be08ca1bac0d4a1ac4db1984f0db07f7142417598cf7211f',
+            'id'                 => 7,
+            'edited'             => '2000-01-07 00:00:00',
+            'guid'               => 'f4fae999d6531747523f4ff0c74f3f0c7c588b67e4f32d8f7dba5f6f36e8a45d',
+            'url_title_hash'     => 'b92f805f0d0643dad1d6c0bb5cbaec24729f5f71b37b831cf7ad31f6c9403ac8',
+            'url_content_hash'   => '4fc8789b787246e9be08ca1bac0d4a1ac4db1984f0db07f7142417598cf7211f',
             'title_content_hash' => '491df9338740b5297b3a3e8292be992ac112eb676c34595f7a38f3ee646ffe84',
         ],
         [
-            'id' => 8,
-            'edited' => '2000-01-08 00:00:00',
-            'guid' => 'b9d2d58e3172096b1d23b42a59961fabc89962836c3cd5de54f3d3a98ff08e6c',
-            'url_title_hash' => '53a6cbcfeb66b46d09cbb7b25035df0562da35786933319c83b04be29acfb6f4',
-            'url_content_hash' => 'c6f3722b4445b49d19d39c3bf5b11a7cf23dd69873e2a0a458aab662f1cd9438',
+            'id'                 => 8,
+            'edited'             => '2000-01-08 00:00:00',
+            'guid'               => 'b9d2d58e3172096b1d23b42a59961fabc89962836c3cd5de54f3d3a98ff08e6c',
+            'url_title_hash'     => '53a6cbcfeb66b46d09cbb7b25035df0562da35786933319c83b04be29acfb6f4',
+            'url_content_hash'   => 'c6f3722b4445b49d19d39c3bf5b11a7cf23dd69873e2a0a458aab662f1cd9438',
             'title_content_hash' => '607d2da48807ca984ce2a9faa1d291bd9e3de9e912f83306167f4f5cd3c23bbd',
         ],
     ];
@@ -98,7 +97,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$db = \Phake::mock(Database::class);
     }
 
-    public function testParseAFeed() {
+    public function testParseAFeed(): void {
         // test that various properties are set on the feed and on items
         $f = new Feed(null, $this->base."Parsing/Valid");
         $this->assertTrue(isset($f->lastModified));
@@ -141,37 +140,37 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($categories, $f->data->items[5]->categories);
     }
 
-    public function testDiscoverAFeedSuccessfully() {
+    public function testDiscoverAFeedSuccessfully(): void {
         $this->assertSame($this->base."Discovery/Feed", Feed::discover($this->base."Discovery/Valid"));
         $this->assertSame($this->base."Discovery/Feed", Feed::discover($this->base."Discovery/Feed"));
     }
 
-    public function testDiscoverAFeedUnsuccessfully() {
+    public function testDiscoverAFeedUnsuccessfully(): void {
         $this->assertException("subscriptionNotFound", "Feed");
         Feed::discover($this->base."Discovery/Invalid");
     }
 
-    public function testParseEntityExpansionAttack() {
+    public function testParseEntityExpansionAttack(): void {
         $this->assertException("xmlEntity", "Feed");
         new Feed(null, $this->base."Parsing/XEEAttack");
     }
 
-    public function testParseExternalEntityAttack() {
+    public function testParseExternalEntityAttack(): void {
         $this->assertException("xmlEntity", "Feed");
         new Feed(null, $this->base."Parsing/XXEAttack");
     }
 
-    public function testParseAnUnsupportedFeed() {
+    public function testParseAnUnsupportedFeed(): void {
         $this->assertException("unsupportedFeedFormat", "Feed");
         new Feed(null, $this->base."Parsing/Unsupported");
     }
 
-    public function testParseAMalformedFeed() {
+    public function testParseAMalformedFeed(): void {
         $this->assertException("malformedXml", "Feed");
         new Feed(null, $this->base."Parsing/Malformed");
     }
 
-    public function testDeduplicateFeedItems() {
+    public function testDeduplicateFeedItems(): void {
         // duplicates with dates lead to the newest match being kept
         $t = strtotime("2002-05-19T15:21:36Z");
         $f = new Feed(null, $this->base."Deduplication/Permalink-Dates");
@@ -198,25 +197,27 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame("http://example.com/1", $f->newItems[0]->url);
     }
 
-    public function testHandleCacheHeadersOn304() {
-        // upon 304, the client should re-use the caching header values it supplied the server
-        $t = time();
+    /** @dataProvider provide304ResponseURLs */
+    public function testHandleCacheHeadersOn304(string $url): void {
+        // upon 304, the client should re-use the caching header values it supplied to the server
+        $t = Date::transform("2010-01-01T00:00:00Z", "unix");
         $e = "78567a";
-        $f = new Feed(null, $this->base."Caching/304Random", Date::transform($t, "http"), $e);
-        $this->assertTime($t, $f->lastModified);
-        $this->assertSame($e, $f->resource->getETag());
-        $f = new Feed(null, $this->base."Caching/304ETagOnly", Date::transform($t, "http"), $e);
-        $this->assertTime($t, $f->lastModified);
-        $this->assertSame($e, $f->resource->getETag());
-        $f = new Feed(null, $this->base."Caching/304LastModOnly", Date::transform($t, "http"), $e);
-        $this->assertTime($t, $f->lastModified);
-        $this->assertSame($e, $f->resource->getETag());
-        $f = new Feed(null, $this->base."Caching/304None", Date::transform($t, "http"), $e);
+        $f = new Feed(null, $this->base.$url."?t=$t&e=$e", Date::transform($t, "http"), $e);
         $this->assertTime($t, $f->lastModified);
         $this->assertSame($e, $f->resource->getETag());
     }
 
-    public function testHandleCacheHeadersOn200() {
+    public function provide304ResponseURLs() {
+        return [
+            'Control'                   => ["Caching/304Conditional"],
+            'Random last-mod and ETag'  => ["Caching/304Random"],
+            'ETag only'                 => ["Caching/304ETagOnly"],
+            'Last-mod only'             => ["Caching/304LastModOnly"],
+            'Neither last-mod nor ETag' => ["Caching/304None"],
+        ];
+    }
+
+    public function testHandleCacheHeadersOn200(): void {
         // these tests should trust the server-returned time, even in cases of obviously incorrect results
         $t = time() - 2000;
         $f = new Feed(null, $this->base."Caching/200Past");
@@ -244,7 +245,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertTime($t, $f->lastModified);
     }
 
-    public function testComputeNextFetchOnError() {
+    public function testComputeNextFetchOnError(): void {
         for ($a = 0; $a < 100; $a++) {
             if ($a < 3) {
                 $this->assertTime("now + 5 minutes", Feed::nextFetchOnError($a));
@@ -257,7 +258,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provide304Timestamps */
-    public function testComputeNextFetchFrom304(string $t, string $exp) {
+    public function testComputeNextFetchFrom304(string $t, string $exp): void {
         $t = $t ? strtotime($t) : "";
         $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
         $exp = strtotime($exp);
@@ -266,26 +267,26 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provide304Timestamps(): iterable {
         return [
-            'less than half an hour 1' =>     ["now",                      "now + 15 minutes"],
-            'less than half an hour 2' =>     ["now - 29 minutes",         "now + 15 minutes"],
-            'less than one hour 1' =>         ["now - 30 minutes",         "now + 30 minutes"],
-            'less than one hour 2' =>         ["now - 59 minutes",         "now + 30 minutes"],
-            'less than three hours 1' =>      ["now - 1 hour",             "now + 1 hour"],
-            'less than three hours 2' =>      ["now - 2 hours 59 minutes", "now + 1 hour"],
+            'less than half an hour 1'     => ["now",                      "now + 15 minutes"],
+            'less than half an hour 2'     => ["now - 29 minutes",         "now + 15 minutes"],
+            'less than one hour 1'         => ["now - 30 minutes",         "now + 30 minutes"],
+            'less than one hour 2'         => ["now - 59 minutes",         "now + 30 minutes"],
+            'less than three hours 1'      => ["now - 1 hour",             "now + 1 hour"],
+            'less than three hours 2'      => ["now - 2 hours 59 minutes", "now + 1 hour"],
             'more than thirty-six hours 1' => ["now - 36 hours",           "now + 1 day"],
             'more than thirty-six hours 2' => ["now - 2 years",            "now + 1 day"],
-            'fallback 1' =>                   ["now - 3 hours",            "now + 3 hours"],
-            'fallback 2' =>                   ["now - 35 hours",           "now + 3 hours"],
+            'fallback 1'                   => ["now - 3 hours",            "now + 3 hours"],
+            'fallback 2'                   => ["now - 35 hours",           "now + 3 hours"],
         ];
     }
 
-    public function testComputeNextFetchFrom304WithoutDate() {
+    public function testComputeNextFetchFrom304WithoutDate(): void {
         $f = new Feed(null, $this->base."NextFetch/NotModifiedEtag");
         $exp = strtotime("now + 3 hours");
         $this->assertTime($exp, $f->nextFetch);
     }
 
-    public function testComputeNextFetchFrom200() {
+    public function testComputeNextFetchFrom200(): void {
         // if less than half an hour, check in 15 minutes
         $f = new Feed(null, $this->base."NextFetch/30m");
         $exp = strtotime("now + 15 minutes");
@@ -312,7 +313,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertTime($exp, $f->nextFetch);
     }
 
-    public function testMatchLatestArticles() {
+    public function testMatchLatestArticles(): void {
         \Phake::when(Arsse::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Result($this->latest));
         $f = new Feed(1, $this->base."Matching/1");
         $this->assertCount(0, $f->newItems);
@@ -328,7 +329,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertCount(2, $f->changedItems);
     }
 
-    public function testMatchHistoricalArticles() {
+    public function testMatchHistoricalArticles(): void {
         \Phake::when(Arsse::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Result($this->latest));
         \Phake::when(Arsse::$db)->feedMatchIds(1, $this->anything(), $this->anything(), $this->anything(), $this->anything())->thenReturn(new Result($this->others));
         $f = new Feed(1, $this->base."Matching/5");
@@ -336,7 +337,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertCount(0, $f->changedItems);
     }
 
-    public function testScrapeFullContent() {
+    public function testScrapeFullContent(): void {
         // first make sure that the absence of scraping works as expected
         $f = new Feed(null, $this->base."Scraping/Feed");
         $exp = "<p>Partial content</p>";

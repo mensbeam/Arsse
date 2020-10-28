@@ -12,12 +12,12 @@ use JKingWeb\Arsse\Db\Exception;
 class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     use ExceptionBuilder;
 
-    const TRANSACTIONAL_LOCKS = true;
+    protected const TRANSACTIONAL_LOCKS = true;
 
-    const SQLITE_BUSY = 5;
-    const SQLITE_SCHEMA = 17;
-    const SQLITE_CONSTRAINT = 19;
-    const SQLITE_MISMATCH = 20;
+    public const SQLITE_BUSY = 5;
+    public const SQLITE_SCHEMA = 17;
+    public const SQLITE_CONSTRAINT = 19;
+    public const SQLITE_MISMATCH = 20;
 
     protected $db;
 
@@ -69,13 +69,13 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         return class_exists("SQLite3");
     }
 
-    protected function makeConnection(string $file, string $key) {
+    protected function makeConnection(string $file, string $key): void {
         $this->db = new \SQLite3($file, \SQLITE3_OPEN_READWRITE | \SQLITE3_OPEN_CREATE, $key);
         // enable exceptions
         $this->db->enableExceptions(true);
     }
 
-    protected function setTimeout(int $msec) {
+    protected function setTimeout(int $msec): void {
         $this->exec("PRAGMA busy_timeout = $msec");
     }
 
@@ -97,7 +97,6 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
             throw new Exception("extMissing", self::driverName());
         }
     }
-
 
     public static function driverName(): string {
         return Arsse::$lang->msg("Driver.Db.SQLite3.Name");
@@ -146,7 +145,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         try {
             return (bool) $this->db->exec($query);
         } catch (\Exception $e) {
-            list($excClass, $excMsg, $excData) = $this->buildException();
+            [$excClass, $excMsg, $excData] = $this->buildException();
             throw new $excClass($excMsg, $excData);
         }
     }
@@ -155,7 +154,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         try {
             $r = $this->db->query($query);
         } catch (\Exception $e) {
-            list($excClass, $excMsg, $excData) = $this->buildException();
+            [$excClass, $excMsg, $excData] = $this->buildException();
             throw new $excClass($excMsg, $excData);
         }
         $changes = $this->db->changes();
