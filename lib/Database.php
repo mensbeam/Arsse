@@ -39,7 +39,7 @@ use JKingWeb\Arsse\Misc\URL;
  */
 class Database {
     /** The version number of the latest schema the interface is aware of */
-    public const SCHEMA_VERSION = 6;
+    public const SCHEMA_VERSION = 7;
     /** Makes tag/label association change operations remove members */
     public const ASSOC_REMOVE = 0;
     /** Makes tag/label association change operations add members */
