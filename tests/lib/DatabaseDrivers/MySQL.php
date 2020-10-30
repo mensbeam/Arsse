@@ -18,9 +18,12 @@ trait MySQL {
     protected static $stringOutput = true;
 
     public static function dbInterface() {
+        if (!class_exists("mysqli")) {
+            return null;
+        }
         $d = @new \mysqli(Arsse::$conf->dbMySQLHost, Arsse::$conf->dbMySQLUser, Arsse::$conf->dbMySQLPass, Arsse::$conf->dbMySQLDb, Arsse::$conf->dbMySQLPort);
         if ($d->connect_errno) {
-            return;
+            return null;
         }
         $d->set_charset("utf8mb4");
         foreach (\JKingWeb\Arsse\Db\MySQL\PDODriver::makeSetupQueries() as $q) {

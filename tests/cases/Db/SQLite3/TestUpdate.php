@@ -16,8 +16,10 @@ class TestUpdate extends \JKingWeb\Arsse\TestCase\Db\BaseUpdate {
     protected static $minimal2 = "pragma user_version=2";
 
     public static function tearDownAfterClass(): void {
-        static::$interface->close();
-        static::$interface = null;
+        if (static::$interface) {
+            static::$interface->close();
+            static::$interface = null;
+        }
         parent::tearDownAfterClass();
     }
 }

@@ -19,7 +19,7 @@ trait PostgreSQL {
 
     public static function dbInterface() {
         $connString = \JKingWeb\Arsse\Db\PostgreSQL\Driver::makeConnectionString(false, Arsse::$conf->dbPostgreSQLUser, Arsse::$conf->dbPostgreSQLPass, Arsse::$conf->dbPostgreSQLDb, Arsse::$conf->dbPostgreSQLHost, Arsse::$conf->dbPostgreSQLPort, "");
-        if ($d = @pg_connect($connString, \PGSQL_CONNECT_FORCE_NEW)) {
+        if (function_exists("pg_connect") && $d = @pg_connect($connString, \PGSQL_CONNECT_FORCE_NEW)) {
             foreach (\JKingWeb\Arsse\Db\PostgreSQL\Driver::makeSetupQueries(Arsse::$conf->dbPostgreSQLSchema) as $q) {
                 pg_query($d, $q);
             }

@@ -13,8 +13,10 @@ class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\SQLite3;
 
     public static function tearDownAfterClass(): void {
-        static::$interface->close();
-        static::$interface = null;
+        if (static::$interface) {
+            static::$interface->close();
+            static::$interface = null;
+        }
         parent::tearDownAfterClass();
     }
 

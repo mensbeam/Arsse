@@ -26,8 +26,10 @@ class TestDriver extends \JKingWeb\Arsse\TestCase\Db\BaseDriver {
     }
 
     public static function tearDownAfterClass(): void {
-        static::$interface->close();
-        static::$interface = null;
+        if (static::$interface) {
+            static::$interface->close();
+            static::$interface = null;
+        }
         parent::tearDownAfterClass();
         @unlink(static::$file);
         static::$file = null;
