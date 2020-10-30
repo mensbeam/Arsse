@@ -19,12 +19,13 @@ trait SeriesArticle {
                 'columns' => [
                     'id'       => 'str',
                     'password' => 'str',
+                    'num'      => 'int',
                 ],
                 'rows' => [
-                    ["jane.doe@example.com", ""],
-                    ["john.doe@example.com", ""],
-                    ["john.doe@example.org", ""],
-                    ["john.doe@example.net", ""],
+                    ["jane.doe@example.com", "",1],
+                    ["john.doe@example.com", "",2],
+                    ["john.doe@example.org", "",3],
+                    ["john.doe@example.net", "",4],
                 ],
             ],
             'arsse_feeds' => [

@@ -46,10 +46,11 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
                 'columns' => [
                     'id'       => 'str',
                     'password' => 'str',
+                    'num'      => 'int',
                 ],
                 'rows' => [
-                    ["john.doe@example.com", ""],
-                    ["jane.doe@example.com", ""],
+                    ["john.doe@example.com", "", 1],
+                    ["jane.doe@example.com", "", 2],
                 ],
             ],
             'arsse_folders' => [

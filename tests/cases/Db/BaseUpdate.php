@@ -134,4 +134,22 @@ class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv->schemaUpdate(Database::SCHEMA_VERSION);
         $this->assertTrue($this->drv->maintenance());
     }
+    
+    public function testUpdateTo7(): void {
+        $this->drv->schemaUpdate(6);
+        $this->drv->exec(<<<QUERY_TEXT
+            INSERT INTO arsse_users values('a', 'xyz');
+            INSERT INTO arsse_users values('b', 'abc');
+            INSERT INTO arsse_folders(owner,name) values('a', '1');
+            INSERT INTO arsse_folders(owner,name) values('b', '2');
+QUERY_TEXT
+        );
+        $this->drv->schemaUpdate(7);
+        $exp = [
+            ['id' => "a", 'password' => "xyz", 'num' => 1],
+            ['id' => "b", 'password' => "abc", 'num' => 2],
+        ];
+        $this->assertEquals($exp, $this->drv->query("SELECT id, password, num from arsse_users")->getAll());
+        $this->assertSame(2, (int) $this->drv->query("SELECT count(*) from arsse_folders")->getValue());
+    }
 }

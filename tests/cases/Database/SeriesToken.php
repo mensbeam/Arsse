@@ -20,10 +20,11 @@ trait SeriesToken {
                 'columns' => [
                     'id'       => 'str',
                     'password' => 'str',
+                    'num'      => 'int',
                 ],
                 'rows' => [
-                    ["jane.doe@example.com", ""],
-                    ["john.doe@example.com", ""],
+                    ["jane.doe@example.com", "",1],
+                    ["john.doe@example.com", "",2],
                 ],
             ],
             'arsse_tokens' => [

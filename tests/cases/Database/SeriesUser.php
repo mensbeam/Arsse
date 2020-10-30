@@ -15,11 +15,12 @@ trait SeriesUser {
                 'columns' => [
                     'id'       => 'str',
                     'password' => 'str',
+                    'num'      => 'int',
                 ],
                 'rows' => [
-                    ["admin@example.net", '$2y$10$PbcG2ZR3Z8TuPzM7aHTF8.v61dtCjzjK78gdZJcp4UePE8T9jEgBW'], // password is hash of "secret"
-                    ["jane.doe@example.com", ""],
-                    ["john.doe@example.com", ""],
+                    ["admin@example.net", '$2y$10$PbcG2ZR3Z8TuPzM7aHTF8.v61dtCjzjK78gdZJcp4UePE8T9jEgBW',1], // password is hash of "secret"
+                    ["jane.doe@example.com", "",2],
+                    ["john.doe@example.com", "",3],
                 ],
             ],
         ];

@@ -35,7 +35,7 @@ use JKingWeb\Arsse\Misc\URL;
  * deletes a user from the database, and labelArticlesSet() changes a label's
  * associations with articles. There has been an effort to keep public method
  * names consistent throughout, but protected methods, having different
- * concerns, will typicsally follow different conventions.
+ * concerns, will typically follow different conventions.
  */
 class Database {
     /** The version number of the latest schema the interface is aware of */
@@ -256,7 +256,7 @@ class Database {
             throw new User\Exception("alreadyExists", ["action" => __FUNCTION__, "user" => $user]);
         }
         $hash = (strlen($password) > 0) ? password_hash($password, \PASSWORD_DEFAULT) : "";
-        $this->db->prepare("INSERT INTO arsse_users(id,password) values(?,?)", "str", "str")->runArray([$user,$hash]);
+        $this->db->prepare("INSERT INTO arsse_users(id,password,num) values(?, ?, coalesce((select max(num) from arsse_users), 0) + 1)", "str", "str")->runArray([$user,$hash]);
         return true;
     }
 
