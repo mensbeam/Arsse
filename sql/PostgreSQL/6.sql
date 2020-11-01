@@ -6,7 +6,7 @@ alter table arsse_users add column num bigint unique;
 alter table arsse_users add column admin smallint not null default 0;
 alter table arsse_users add column lang text;
 alter table arsse_users add column tz text not null default 'Etc/UTC';
-alter table arsse_users add column soort_asc smallint not null default 0;
+alter table arsse_users add column sort_asc smallint not null default 0;
 create temp table arsse_users_existing(
     id text not null,
     num bigserial
