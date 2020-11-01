@@ -40,6 +40,11 @@ class REST {
             'strip' => '/fever/',
             'class' => REST\Fever\API::class,
         ],
+        'miniflux' => [ // Miniflux  https://miniflux.app/docs/api.html
+            'match' => '/v1/',
+            'strip' => '/v1',
+            'class' => REST\Miniflux\API::class,
+        ],
         // Other candidates:
         // Microsub             https://indieweb.org/Microsub
         // Google Reader        http://feedhq.readthedocs.io/en/latest/api/index.html
@@ -48,7 +53,6 @@ class REST {
         // Selfoss              https://github.com/SSilence/selfoss/wiki/Restful-API-for-Apps-or-any-other-external-access
         // NewsBlur             http://www.newsblur.com/api
         // Unclear if clients exist:
-        // Miniflux             https://docs.miniflux.app/en/latest/api.html#api-reference
         // Nextcloud News v2    https://github.com/nextcloud/news/blob/master/docs/externalapi/External-Api.md
         // BirdReader           https://github.com/glynnbird/birdreader/blob/master/API.md
         // Feedbin v1           https://github.com/feedbin/feedbin-api/commit/86da10aac5f1a57531a6e17b08744e5f9e7db8a9
