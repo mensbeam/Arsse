@@ -43,7 +43,7 @@ class REST {
         'miniflux' => [ // Miniflux  https://miniflux.app/docs/api.html
             'match' => '/v1/',
             'strip' => '/v1',
-            'class' => REST\Miniflux\API::class,
+            'class' => REST\Miniflux\V1::class,
         ],
         // Other candidates:
         // Microsub             https://indieweb.org/Microsub

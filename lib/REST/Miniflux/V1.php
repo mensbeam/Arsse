@@ -23,6 +23,8 @@ use Laminas\Diactoros\Response\JsonResponse as Response;
 use Laminas\Diactoros\Response\EmptyResponse;
 
 class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
+    protected const ACCEPTED_TYPES_OPML = ["text/xml", "application/xml", "text/x-opml"];
+    protected const ACCEPTED_TYPES_JSON = ["application/json", "text/json"];
     protected $paths = [
         '/categories'         => ['GET'  => "getCategories",  'POST'   => "createCategory"],
         '/categories/1'       => ['PUT'  => "updateCategory", 'DELETE' => "deleteCategory"],
@@ -55,14 +57,46 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($req->getAttribute("authenticated", false)) {
             Arsse::$user->id = $req->getAttribute("authenticatedUser");
         } else {
+            // TODO: Handle X-Auth-Token authentication
             return new EmptyResponse(401);
         }
         // get the request path only; this is assumed to already be normalized
         $target = parse_url($req->getRequestTarget())['path'] ?? "";
+        $method = $req->getMethod();
         // handle HTTP OPTIONS requests
-        if ($req->getMethod() === "OPTIONS") {
+        if ($method === "OPTIONS") {
             return $this->handleHTTPOptions($target);
         }
+        $func = $this->chooseCall($target, $method);
+        if ($func === "opmlImport") {
+            if (!HTTP::matchType($req, "", ...[self::ACCEPTED_TYPES_OPML])) {
+                return new EmptyResponse(415, ['Accept' => implode(", ", self::ACCEPTED_TYPES_OPML)]);
+            }
+            $data = (string) $req->getBody();
+        } elseif ($method === "POST" || $method === "PUT") {
+            if (!HTTP::matchType($req, "", ...[self::ACCEPTED_TYPES_JSON])) {
+                return new EmptyResponse(415, ['Accept' => implode(", ", self::ACCEPTED_TYPES_JSON)]);
+            }
+            $data = @json_decode($data, true);
+            if (json_last_error() !== \JSON_ERROR_NONE) {
+                // if the body could not be parsed as JSON, return "400 Bad Request"
+                return new EmptyResponse(400);
+            }
+        } else {
+            $data = null;
+        }
+        try {
+            $path = explode("/", ltrim($target, "/"));
+            return $this->$func($path, $req->getQueryParams(), $data);
+            // @codeCoverageIgnoreStart
+        } catch (Exception $e) {
+            // if there was a REST exception return 400
+            return new EmptyResponse(400);
+        } catch (AbstractException $e) {
+            // if there was any other Arsse exception return 500
+            return new EmptyResponse(500);
+        }
+        // @codeCoverageIgnoreEnd
     }
 
     protected function normalizePathIds(string $url): string {
@@ -72,6 +106,10 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             if (ValueInfo::id($path[$a])) {
                 $path[$a] = "1";
             }
+        }
+        // handle special case "Get User By User Name", which can have any non-numeric string, non-empty as the last component
+        if (sizeof($path) === 3 && $path[0] === "" && $path[1] === "users" && !preg_match("/^(?:\d+)?$/", $path[2])) {
+            $path[2] = "*";
         }
         return implode("/", $path);
     }
@@ -88,7 +126,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
             return new EmptyResponse(204, [
                 'Allow'  => implode(",", $allowed),
-                'Accept' => self::ACCEPTED_TYPE,
+                'Accept' => implode(", ", $url === "/import" ? self::ACCEPTED_TYPES_OPML : self::ACCEPTED_TYPES_JSON),
             ]);
         } else {
             // if the path is not supported, return 404
@@ -106,8 +144,12 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if (isset($this->paths[$url])) {
             // if the path is supported, make sure the method is allowed
             if (isset($this->paths[$url][$method])) {
-                // if it is allowed, return the object method to run
-                return $this->paths[$url][$method];
+                // if it is allowed, return the object method to run, assuming the method exists
+                if (method_exists($this, $this->paths[$url][$method])) {
+                    return $this->paths[$url][$method];
+                } else {
+                    throw new Exception501(); // @codeCoverageIgnore
+                }
             } else {
                 // otherwise return 405
                 throw new Exception405(implode(", ", array_keys($this->paths[$url])));

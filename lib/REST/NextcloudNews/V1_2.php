@@ -17,6 +17,7 @@ use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\REST\Exception;
 use JKingWeb\Arsse\REST\Exception404;
 use JKingWeb\Arsse\REST\Exception405;
+use JKingWeb\Arsse\REST\Exception501;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\JsonResponse as Response;
@@ -109,20 +110,15 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // merge GET and POST data, and normalize it. POST parameters are preferred over GET parameters
         $data = $this->normalizeInput(array_merge($req->getQueryParams(), $data), $this->validInput, "unix");
         // check to make sure the requested function is implemented
+        // dispatch
         try {
             $func = $this->chooseCall($target, $req->getMethod());
+            $path = explode("/", ltrim($target, "/"));
+            return $this->$func($path, $data);
         } catch (Exception404 $e) {
             return new EmptyResponse(404);
         } catch (Exception405 $e) {
             return new EmptyResponse(405, ['Allow' => $e->getMessage()]);
-        }
-        if (!method_exists($this, $func)) {
-            return new EmptyResponse(501); // @codeCoverageIgnore
-        }
-        // dispatch
-        try {
-            $path = explode("/", ltrim($target, "/"));
-            return $this->$func($path, $data);
             // @codeCoverageIgnoreStart
         } catch (Exception $e) {
             // if there was a REST exception return 400
@@ -155,8 +151,12 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if (isset($this->paths[$url])) {
             // if the path is supported, make sure the method is allowed
             if (isset($this->paths[$url][$method])) {
-                // if it is allowed, return the object method to run
-                return $this->paths[$url][$method];
+                // if it is allowed, return the object method to run, assuming the method exists
+                if (method_exists($this, $this->paths[$url][$method])) {
+                    return $this->paths[$url][$method];
+                } else {
+                    throw new Exception501(); // @codeCoverageIgnore
+                }
             } else {
                 // otherwise return 405
                 throw new Exception405(implode(", ", array_keys($this->paths[$url])));
