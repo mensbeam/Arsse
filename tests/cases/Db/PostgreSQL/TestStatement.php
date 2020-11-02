@@ -27,6 +27,11 @@ class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
                     return "U&'\\+".str_pad(dechex((int) $match[1]), 6, "0", \STR_PAD_LEFT)."'";
                 }
                 return $value;
+            case "binary":
+                if ($value[0] === "x") {
+                    return "'\\x".substr($value, 2)."::bytea";
+                }
+                // no break;
             default:
                 return $value;
         }
