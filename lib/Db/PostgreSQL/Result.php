@@ -10,6 +10,7 @@ class Result extends \JKingWeb\Arsse\Db\AbstractResult {
     protected $db;
     protected $r;
     protected $cur;
+    protected $blobs = [];
 
     // actual public methods
 
@@ -30,6 +31,11 @@ class Result extends \JKingWeb\Arsse\Db\AbstractResult {
     public function __construct($db, $result) {
         $this->db = $db;
         $this->r = $result;
+        for ($a = 0, $stop = pg_num_fields($result); $a < $stop; $a++) {
+            if (pg_field_type($result, $a) === "bytea") {
+                $this->blobs[$a] = pg_field_name($result, $a);
+            }
+        }
     }
 
     public function __destruct() {
@@ -41,6 +47,12 @@ class Result extends \JKingWeb\Arsse\Db\AbstractResult {
 
     public function valid() {
         $this->cur = pg_fetch_row($this->r, null, \PGSQL_ASSOC);
-        return $this->cur !== false;
+        if ($this->cur !== false) {
+            foreach($this->blobs as $f) {
+                $this->cur[$f] = hex2bin(substr($this->cur[$f], 2));
+            }
+            return true;
+        }
+        return false;
     }
 }

@@ -10,6 +10,7 @@ use JKingWeb\Arsse\Db\Result;
 
 abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
     protected static $insertDefault = "INSERT INTO arsse_test default values";
+    protected static $selectBlob = "SELECT x'DEADBEEF' as \"blob\"";
     protected static $interface;
     protected $resultClass;
 
@@ -128,5 +129,17 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
         $test = new $this->resultClass(...$this->makeResult("SELECT '2112' as album, '2112' as track union select 'Clockwork Angels' as album, 'The Wreckers' as track"));
         $this->assertEquals($exp, $test->getAll());
+    }
+
+    public function testGetBlobRow(): void {
+        $exp = ['blob' => hex2bin("DEADBEEF")];
+        $test = new $this->resultClass(...$this->makeResult(self::$selectBlob));
+        $this->assertEquals($exp, $test->getRow());
+    }
+
+    public function testGetBlobValue(): void {
+        $exp = hex2bin("DEADBEEF");
+        $test = new $this->resultClass(...$this->makeResult(self::$selectBlob));
+        $this->assertEquals($exp, $test->getValue());
     }
 }

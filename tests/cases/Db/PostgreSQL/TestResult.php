@@ -15,6 +15,7 @@ class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
 
     protected static $createMeta = "CREATE TABLE arsse_meta(key text primary key not null, value text)";
     protected static $createTest = "CREATE TABLE arsse_test(id bigserial primary key)";
+    protected static $selectBlob = "SELECT '\\xDEADBEEF'::bytea as blob";
 
     protected function makeResult(string $q): array {
         $set = pg_query(static::$interface, $q);
@@ -28,5 +29,17 @@ class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
             static::$interface = null;
         }
         parent::tearDownAfterClass();
+    }
+
+    public function testGetBlobRow(): void {
+        $exp = ['blob' => hex2bin("DEADBEEF")];
+        $test = new $this->resultClass(...$this->makeResult(self::$selectBlob));
+        $this->assertEquals($exp, $test->getRow());
+    }
+
+    public function testGetBlobValue(): void {
+        $exp = hex2bin("DEADBEEF");
+        $test = new $this->resultClass(...$this->makeResult(self::$selectBlob));
+        $this->assertEquals($exp, $test->getValue());
     }
 }
