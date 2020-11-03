@@ -44,6 +44,9 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
     }
 
     protected function bindValue($value, int $type, int $position): bool {
+        if ($value !== null && ($this->types[$position - 1] % self::T_NOT_NULL) === self::T_BINARY) {
+            $value = "\\x".bin2hex($value);
+        }
         $this->in[] = $value;
         return true;
     }

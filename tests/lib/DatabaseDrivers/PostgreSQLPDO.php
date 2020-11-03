@@ -11,7 +11,7 @@ use JKingWeb\Arsse\Arsse;
 trait PostgreSQLPDO {
     protected static $implementation = "PDO PostgreSQL";
     protected static $backend = "PostgreSQL";
-    protected static $dbResultClass = \JKingWeb\Arsse\Db\PDOResult::class;
+    protected static $dbResultClass = \JKingWeb\Arsse\Db\PostgreSQL\PDOResult::class;
     protected static $dbStatementClass = \JKingWeb\Arsse\Db\PostgreSQL\PDOStatement::class;
     protected static $dbDriverClass = \JKingWeb\Arsse\Db\PostgreSQL\PDODriver::class;
     protected static $stringOutput = false;

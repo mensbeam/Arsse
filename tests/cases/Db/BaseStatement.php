@@ -57,7 +57,6 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         } else {
             $query = "SELECT ($exp = ?) as pass";
         }
-        $typeStr = "'".str_replace("'", "''", $type)."'";
         $s = new $this->statementClass(...$this->makeStatement($query));
         $s->retype(...[$type]);
         $act = $s->run(...[$value])->getValue();
@@ -66,15 +65,11 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideBinaryBindings */
     public function testHandleBinaryData($value, string $type, string $exp): void {
-        if (in_array(static::$implementation, ["PostgreSQL", "PDO PostgreSQL"])) {
-            $this->markTestIncomplete("Correct handling of binary data with PostgreSQL is not currently implemented");
-        }
         if ($exp === "null") {
             $query = "SELECT (? is null) as pass";
         } else {
             $query = "SELECT ($exp = ?) as pass";
         }
-        $typeStr = "'".str_replace("'", "''", $type)."'";
         $s = new $this->statementClass(...$this->makeStatement($query));
         $s->retype(...[$type]);
         $act = $s->run(...[$value])->getValue();
@@ -297,13 +292,11 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
             'UTF-8 string as strict binary'          => ["\u{e9}", "strict binary", "x'c3a9'"],
             'Binary string as integer'               => [chr(233).chr(233), "integer", "0"],
             'Binary string as float'                 => [chr(233).chr(233), "float", "0.0"],
-            'Binary string as string'                => [chr(233).chr(233), "string", "'".chr(233).chr(233)."'"],
             'Binary string as binary'                => [chr(233).chr(233), "binary", "x'e9e9'"],
             'Binary string as datetime'              => [chr(233).chr(233), "datetime", "null"],
             'Binary string as boolean'               => [chr(233).chr(233), "boolean", "1"],
             'Binary string as strict integer'        => [chr(233).chr(233), "strict integer", "0"],
             'Binary string as strict float'          => [chr(233).chr(233), "strict float", "0.0"],
-            'Binary string as strict string'         => [chr(233).chr(233), "strict string", "'".chr(233).chr(233)."'"],
             'Binary string as strict binary'         => [chr(233).chr(233), "strict binary", "x'e9e9'"],
             'Binary string as strict datetime'       => [chr(233).chr(233), "strict datetime", "'0001-01-01 00:00:00'"],
             'Binary string as strict boolean'        => [chr(233).chr(233), "strict boolean", "1"],
