@@ -21,16 +21,4 @@ class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
         $set = static::$interface->query($q);
         return [static::$interface, $set];
     }
-
-    public function testGetBlobRow(): void {
-        $exp = ['blob' => hex2bin("DEADBEEF")];
-        $test = new $this->resultClass(...$this->makeResult(self::$selectBlob));
-        $this->assertEquals($exp, $test->getRow());
-    }
-
-    public function testGetBlobValue(): void {
-        $exp = hex2bin("DEADBEEF");
-        $test = new $this->resultClass(...$this->makeResult(self::$selectBlob));
-        $this->assertSame($exp, $test->getValue());
-    }
 }

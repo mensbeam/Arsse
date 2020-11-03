@@ -133,13 +133,13 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testGetBlobRow(): void {
         $exp = ['blob' => hex2bin("DEADBEEF")];
-        $test = new $this->resultClass(...$this->makeResult(self::$selectBlob));
+        $test = new $this->resultClass(...$this->makeResult(static::$selectBlob));
         $this->assertEquals($exp, $test->getRow());
     }
 
     public function testGetBlobValue(): void {
         $exp = hex2bin("DEADBEEF");
-        $test = new $this->resultClass(...$this->makeResult(self::$selectBlob));
+        $test = new $this->resultClass(...$this->makeResult(static::$selectBlob));
         $this->assertEquals($exp, $test->getValue());
     }
 }
