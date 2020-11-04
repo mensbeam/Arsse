@@ -68,23 +68,6 @@ insert into arsse_feeds_new
 drop table arsse_feeds;
 alter table arsse_feeds_new rename to arsse_feeds;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 -- set version marker
 pragma user_version = 7;
 update arsse_meta set value = '7' where "key" = 'schema_version';
