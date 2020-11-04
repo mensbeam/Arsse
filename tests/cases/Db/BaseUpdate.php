@@ -142,14 +142,34 @@ class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
             INSERT INTO arsse_users values('b', 'abc');
             INSERT INTO arsse_folders(owner,name) values('a', '1');
             INSERT INTO arsse_folders(owner,name) values('b', '2');
+            INSERT INTO arsse_feeds(url,favicon) values('http://example.com/', 'http://example.com/icon');
+            INSERT INTO arsse_feeds(url,favicon) values('http://example.org/', 'http://example.org/icon');
+            INSERT INTO arsse_feeds(url,favicon) values('https://example.com/', 'http://example.com/icon');
+            INSERT INTO arsse_feeds(url,favicon) values('http://example.net/', null);
 QUERY_TEXT
         );
         $this->drv->schemaUpdate(7);
-        $exp = [
+        $users = [
             ['id' => "a", 'password' => "xyz", 'num' => 1],
             ['id' => "b", 'password' => "abc", 'num' => 2],
         ];
-        $this->assertEquals($exp, $this->drv->query("SELECT id, password, num from arsse_users")->getAll());
-        $this->assertSame(2, (int) $this->drv->query("SELECT count(*) from arsse_folders")->getValue());
+        $folders = [
+            ['owner' => "a", 'name' => "1"],
+            ['owner' => "b", 'name' => "2"],
+        ];
+        $icons = [
+            ['id' => 1, 'url' => "http://example.com/icon"],
+            ['id' => 2, 'url' => "http://example.org/icon"],
+        ];
+        $feeds = [
+            ['url' => 'http://example.com/', 'icon' => 1],
+            ['url' => 'http://example.org/', 'icon' => 2],
+            ['url' => 'https://example.com/', 'icon' => 1],
+            ['url' => 'http://example.net/', 'icon' => null],
+        ];
+        $this->assertEquals($users, $this->drv->query("SELECT id, password, num from arsse_users order by id")->getAll());
+        $this->assertEquals($folders, $this->drv->query("SELECT owner, name from arsse_folders order by owner")->getAll());
+        $this->assertEquals($icons, $this->drv->query("SELECT id, url from arsse_icons order by id")->getAll());
+        $this->assertEquals($feeds, $this->drv->query("SELECT url, icon from arsse_feeds order by id")->getAll());
     }
 }

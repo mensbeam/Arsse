@@ -731,30 +731,32 @@ class Database {
         // create a complex query
         $q = new Query(
             "SELECT
-                arsse_subscriptions.id as id,
-                arsse_subscriptions.feed as feed,
-                url,favicon,source,folder,pinned,err_count,err_msg,order_type,added,
-                arsse_feeds.updated as updated,
-                arsse_feeds.modified as edited,
-                arsse_subscriptions.modified as modified,
-                topmost.top as top_folder,
-                coalesce(arsse_subscriptions.title, arsse_feeds.title) as title,
+                s.id as id,
+                s.feed as feed,
+                f.url,source,folder,pinned,err_count,err_msg,order_type,added,
+                f.updated as updated,
+                f.modified as edited,
+                s.modified as modified,
+                i.url as favicon,
+                t.top as top_folder,
+                coalesce(s.title, f.title) as title,
                 (articles - marked) as unread
-            FROM arsse_subscriptions
-                left join topmost on topmost.f_id = arsse_subscriptions.folder
-                join arsse_feeds on arsse_feeds.id = arsse_subscriptions.feed
-                left join (select feed, count(*) as articles from arsse_articles group by feed) as article_stats on article_stats.feed = arsse_subscriptions.feed
-                left join (select subscription, sum(\"read\") as marked from arsse_marks group by subscription) as mark_stats on mark_stats.subscription = arsse_subscriptions.id"
+            FROM arsse_subscriptions as s
+                left join topmost as t on t.f_id = s.folder
+                join arsse_feeds as f on f.id = s.feed
+                left join arsse_icons as i on i.id = f.icon
+                left join (select feed, count(*) as articles from arsse_articles group by feed) as article_stats on article_stats.feed = s.feed
+                left join (select subscription, sum(\"read\") as marked from arsse_marks group by subscription) as mark_stats on mark_stats.subscription = s.id"
         );
-        $q->setWhere("arsse_subscriptions.owner = ?", ["str"], [$user]);
+        $q->setWhere("s.owner = ?", ["str"], [$user]);
         $nocase = $this->db->sqlToken("nocase");
-        $q->setOrder("pinned desc, coalesce(arsse_subscriptions.title, arsse_feeds.title) collate $nocase");
+        $q->setOrder("pinned desc, coalesce(s.title, f.title) collate $nocase");
         // topmost folders belonging to the user
         $q->setCTE("topmost(f_id,top)", "SELECT id,id from arsse_folders where owner = ? and parent is null union all select id,top from arsse_folders join topmost on parent=f_id", ["str"], [$user]);
         if ($id) {
             // this condition facilitates the implementation of subscriptionPropertiesGet, which would otherwise have to duplicate the complex query; it takes precedence over a specified folder
             // if an ID is specified, add a suitable WHERE condition and bindings
-            $q->setWhere("arsse_subscriptions.id = ?", "int", $id);
+            $q->setWhere("s.id = ?", "int", $id);
         } elseif ($folder && $recursive) {
             // if a folder is specified and we're listing recursively, add a common table expression to list it and its children so that we select from the entire subtree
             $q->setCTE("folders(folder)", "SELECT ? union all select id from arsse_folders join folders on parent = folder", "int", $folder);
@@ -921,13 +923,13 @@ class Database {
      * @param string|null $user The user who owns the subscription being queried
      */
     public function subscriptionFavicon(int $id, string $user = null): string {
-        $q = new Query("SELECT favicon from arsse_feeds join arsse_subscriptions on feed = arsse_feeds.id");
-        $q->setWhere("arsse_subscriptions.id = ?", "int", $id);
+        $q = new Query("SELECT i.url as favicon from arsse_feeds as f left join arsse_icons as i on i.id = f.icon join arsse_subscriptions as s on s.feed = f.id");
+        $q->setWhere("s.id = ?", "int", $id);
         if (isset($user)) {
             if (!Arsse::$user->authorize($user, __FUNCTION__)) {
                 throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
             }
-            $q->setWhere("arsse_subscriptions.owner = ?", "str", $user);
+            $q->setWhere("s.owner = ?", "str", $user);
         }
         return (string) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
     }
@@ -1140,8 +1142,7 @@ class Database {
         }
         // lastly update the feed database itself with updated information.
         $this->db->prepare(
-            "UPDATE arsse_feeds SET title = ?, favicon = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = '', next_fetch = ?, size = ? WHERE id = ?",
-            'str',
+            "UPDATE arsse_feeds SET title = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = '', next_fetch = ?, size = ? WHERE id = ?",
             'str',
             'str',
             'datetime',
@@ -1151,7 +1152,6 @@ class Database {
             'int'
         )->run(
             $feed->data->title,
-            $feed->favicon,
             $feed->data->siteUrl,
             $feed->lastModified,
             $feed->resource->getEtag(),

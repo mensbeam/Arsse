@@ -41,6 +41,15 @@ trait SeriesSubscription {
                     [6, "john.doe@example.com",    2, "Politics"],
                 ],
             ],
+            'arsse_icons' => [
+                'columns' => [
+                    'id'  => "int",
+                    'url' => "str",
+                ],
+                'rows' => [
+                    [1,"http://example.com/favicon.ico"],
+                ],
+            ],
             'arsse_feeds' => [
                 'columns' => [
                     'id'         => "int",
@@ -50,7 +59,7 @@ trait SeriesSubscription {
                     'password'   => "str",
                     'updated'    => "datetime",
                     'next_fetch' => "datetime",
-                    'favicon'    => "str",
+                    'icon'       => "int",
                 ],
                 'rows' => [], // filled in the series setup
             ],
@@ -136,9 +145,9 @@ trait SeriesSubscription {
             ],
         ];
         $this->data['arsse_feeds']['rows'] = [
-            [1,"http://example.com/feed1", "Ook", "", "",strtotime("now"),strtotime("now"),''],
-            [2,"http://example.com/feed2", "eek", "", "",strtotime("now - 1 hour"),strtotime("now - 1 hour"),'http://example.com/favicon.ico'],
-            [3,"http://example.com/feed3", "Ack", "", "",strtotime("now + 1 hour"),strtotime("now + 1 hour"),''],
+            [1,"http://example.com/feed1", "Ook", "", "",strtotime("now"),strtotime("now"),null],
+            [2,"http://example.com/feed2", "eek", "", "",strtotime("now - 1 hour"),strtotime("now - 1 hour"),1],
+            [3,"http://example.com/feed3", "Ack", "", "",strtotime("now + 1 hour"),strtotime("now + 1 hour"),null],
         ];
         // initialize a partial mock of the Database object to later manipulate the feedUpdate method
         Arsse::$db = \Phake::partialMock(Database::class, static::$drv);
