@@ -23,6 +23,7 @@ use JKingWeb\Arsse\Misc\URL;
  * - Folders, which belong to users and contain subscriptions
  * - Tags, which belong to users and can be assigned to multiple subscriptions
  * - Feeds to which users are subscribed
+ * - Icons, which are associated with feeds
  * - Articles, which belong to feeds and for which users can only affect metadata
  * - Editions, identifying authorial modifications to articles
  * - Labels, which belong to users and can be assigned to multiple articles
@@ -933,6 +934,29 @@ class Database {
         }
         return (string) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
     }
+   
+    /** Retrieves detailed information about the icon for a subscription.
+     * 
+     * The returned information is:
+     * 
+     * - "id": The umeric identifier of the icon (not the subscription)
+     * - "url": The URL of the icon
+     * - "type": The Content-Type of the icon e.g. "image/png"
+     * - "data": The icon itself, as a binary sring; if $withData is false this will be null
+     * 
+     * @param string $user The user whose subscription icon is to be retrieved
+     * @param int $subscription The numeric identifier of the subscription
+     */
+    public function subscriptionIcon(string $user, int $subscription): array {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        $out = $this->db->prepare("SELECT i.id, i.url, i.type, i.data from arsse_icons as i join arsse_feeds as f on i.id = f.icon join arsse_subscriptions as s on s.feed = f.id where s.owner = ? and s.id = ?", "str", "int")->run($user, $subscription)->getRow();
+        if (!$out) {
+            throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "subscription", 'id' => $subscription]);
+        }
+        return $out;
+    }
 
     /** Returns the time at which any of a user's subscriptions (or a specific subscription) was last refreshed, as a DateTimeImmutable object */
     public function subscriptionRefreshed(string $user, int $id = null): ?\DateTimeImmutable {
@@ -1255,16 +1279,13 @@ class Database {
 
     /** Retrieve a feed icon by URL, for use during feed refreshing
      * 
-     * @param string $url The URL of the icon to Retrieve
-     * @param bool $withData Whether to return the icon content along with the metadata
+     * @param string $url The URL of the icon to retrieve
      */
-    protected function iconGetByUrl(string $url, bool $withData =  true): ?array {
-        $data = $withData ? "data" : "null as data";
-        return $this->db->prepare("SELECT id, url, type, $data, next_fetch from arsse_icons where url = ?", "str")->run($url)->getRow();
+    protected function iconGetByUrl(string $url): ?array {
+        return $this->db->prepare("SELECT id, url, type, data from arsse_icons where url = ?", "str")->run($url)->getRow();
     }
-
-    
-    /** Returns information about an icon for a feed to which a user is subscribed, with or without the binary content of the icon itself
+   
+    /** Retrieves information about an icon
      * 
      * The returned information is:
      * 
@@ -1273,18 +1294,16 @@ class Database {
      * - "type": The Content-Type of the icon e.g. "image/png"
      * - "data": The icon itself, as a binary sring; if $withData is false this will be null
      * 
-     * @param string $user The user whose subscription icon is to be retrieved
-     * @param int $subscription The numeric identifier of the subscription with which the icon is associated
-     * @param bool $withData Whether to retrireve the icon content in addition to its metadata
+     * @param string $user The user whose icon is to be retrieved
+     * @param int $subscription The numeric identifier of the icon
      */
-    public function iconGet(string $user, int $subscrption, bool $withData =  true): array {
+    public function iconGet(string $user, int $id): array {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
-        $data = $withData ? "data" : "null as data";
-        $out = $this->db->prepare("SELECT i.id, i.url, i.type, $data from arsse_icons as i join arsse_feeds as f on i.id = f.icon join arsse_subscriptions as s on s.feed = f.id where s.owner = ? and s.id = ?", "str", "int")->run($user, $subscription)->getRow();
+        $out = $this->db->prepare("SELECT i.id, i.url, i.type, i.data from arsse_icons as i join arsse_feeds as f on i.id = f.icon join arsse_subscriptions as s on s.feed = f.id where s.owner = ? and i.id = ?", "str", "int")->run($user, $id)->getRow();
         if (!$out) {
-            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "subscription", 'id' => $subscription]);
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "subscription", 'id' => $id]);
         }
         return $out;
     }
@@ -1292,14 +1311,32 @@ class Database {
     /** Lists icons for feeds to which a user is subscribed, with or without the binary content of the icon itself
      * 
      * @param string $user The user whose subscription icons are to be retrieved
-     * @param bool $withData Whether to retrireve the icon content in addition to its metadata
      */
-    public function iconList(string $user, bool $withData =  true): Db\Result {
+    public function iconList(string $user): Db\Result {
         if (!Arsse::$user->authorize($user, __FUNCTION__)) {
             throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
         }
-        $data = $withData ? "i.data" : "null as data";
-        return $this->db->prepare("SELECT i.id, i.url, i.type, $data from arsse_icons as i join arsse_feeds as f on i.id = f.icon join arsse_subscriptions as s on s.feed = f.id where s.owner = ?", "str")->run($user);
+        return $this->db->prepare("SELECT i.id, i.url, i.type, i.data from arsse_icons as i join arsse_feeds as f on i.id = f.icon join arsse_subscriptions as s on s.feed = f.id where s.owner = ?", "str")->run($user);
+    }
+
+    /** Deletes orphaned icons from the database
+     *
+     * Icons are orphaned if no subscribed newsfeed uses them.
+     */
+    public function iconCleanup(): int {
+        $tr = $this->begin();
+        // first unmark any icons which are no longer orphaned; an icon is considered orphaned if it is not used or only used by feeds which are themselves orphaned
+        $this->db->query("UPDATE arsse_icons set orphaned = null where id in (select distinct icon from arsse_feeds where icon is not null and orphaned is null)");
+        // next mark any newly orphaned icons with the current date and time
+        $this->db->query("UPDATE arsse_icons set orphaned = CURRENT_TIMESTAMP where id not in (select distinct icon from arsse_feeds where icon is not null and orphaned is null)");
+        // finally delete icons that have been orphaned longer than the feed retention period, if a a purge threshold has been specified
+        $out = 0;
+        if (Arsse::$conf->purgeFeeds) {
+            $limit = Date::sub(Arsse::$conf->purgeFeeds);
+            $out += $this->db->prepare("DELETE from arsse_icons where orphaned <= ?", "datetime")->run($limit)->changes();
+        }
+        $tr->commit();
+        return $out;
     }
 
     /** Returns an associative array of result column names and their SQL computations for article queries
