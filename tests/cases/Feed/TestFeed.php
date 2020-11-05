@@ -347,4 +347,12 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $exp = "<p>Partial content, followed by more content</p>";
         $this->assertSame($exp, $f->newItems[0]->content);
     }
+
+    public function testFetchWithIcon(): void {
+        $d = base64_decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMjHxIGmVAAAADUlEQVQYV2NgYGBgAAAABQABijPjAAAAAABJRU5ErkJggg==");
+        $f = new Feed(null, $this->base."Parsing/WithIcon");
+        $this->assertSame(self::$host."Icon", $f->iconUrl);
+        $this->assertSame("image/png", $f->iconType);
+        $this->assertSame($d, $f->iconData);
+    }
 }

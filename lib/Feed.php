@@ -125,7 +125,7 @@ class Feed {
         // Some feeds might use a different domain (eg: feedburner), so the site url is
         // used instead of the feed's url.
         $icon = new Favicon;
-        $this->iconUrl = $icon->find($feed->siteUrl);
+        $this->iconUrl = $icon->find($feed->siteUrl, $feed->getIcon());
         $this->iconData = $icon->getContent();
         if (strlen($this->iconData)) {
             $this->iconType = $icon->getType();
