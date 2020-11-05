@@ -910,30 +910,6 @@ class Database {
         $out = $this->db->prepare("SELECT $field from arsse_tags where id in (select tag from arsse_tag_members where subscription = ? and assigned = 1) order by $field", "int")->run($id)->getAll();
         return $out ? array_column($out, $field) : [];
     }
-
-    /** Retrieves the URL of the icon for a subscription.
-     *
-     * Note that while the $user parameter is optional, it
-     * is NOT recommended to omit it, as this can lead to
-     * leaks of private information. The parameter is only
-     * optional because this is required for Tiny Tiny RSS,
-     * the original implementation of which leaks private
-     * information due to a design flaw.
-     *
-     * @param integer $id The numeric identifier of the subscription
-     * @param string|null $user The user who owns the subscription being queried
-     */
-    public function subscriptionFavicon(int $id, string $user = null): string {
-        $q = new Query("SELECT i.url as favicon from arsse_feeds as f left join arsse_icons as i on i.id = f.icon join arsse_subscriptions as s on s.feed = f.id");
-        $q->setWhere("s.id = ?", "int", $id);
-        if (isset($user)) {
-            if (!Arsse::$user->authorize($user, __FUNCTION__)) {
-                throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-            }
-            $q->setWhere("s.owner = ?", "str", $user);
-        }
-        return (string) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
-    }
    
     /** Retrieves detailed information about the icon for a subscription.
      * 
@@ -944,16 +920,23 @@ class Database {
      * - "type": The Content-Type of the icon e.g. "image/png"
      * - "data": The icon itself, as a binary sring; if $withData is false this will be null
      * 
-     * @param string $user The user whose subscription icon is to be retrieved
+     * @param string|null $user The user who owns the subscription being queried; using null here is supported for TT-RSS and SHOULD NOT be used elsewhere as it leaks information
      * @param int $subscription The numeric identifier of the subscription
+     * @param bool $includeData Whether to include the binary data of the icon itself in the result
      */
-    public function subscriptionIcon(string $user, int $subscription): array {
-        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
-            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+    public function subscriptionIcon(?string $user, int $id, bool $includeData = true): array {
+        $data = $includeData ? "i.data" : "null as data";
+        $q = new Query("SELECT i.id, i.url, i.type, $data from arsse_icons as i join arsse_feeds as f on i.id = f.icon join arsse_subscriptions as s on s.feed = f.id");
+        $q->setWhere("s.id = ?", "int", $id);
+        if (isset($user)) {
+            if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+                throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+            }
+            $q->setWhere("s.owner = ?", "str", $user);
         }
-        $out = $this->db->prepare("SELECT i.id, i.url, i.type, i.data from arsse_icons as i join arsse_feeds as f on i.id = f.icon join arsse_subscriptions as s on s.feed = f.id where s.owner = ? and s.id = ?", "str", "int")->run($user, $subscription)->getRow();
+        $out = $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getRow();
         if (!$out) {
-            throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "subscription", 'id' => $subscription]);
+            throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "subscription", 'id' => $id]);
         }
         return $out;
     }
