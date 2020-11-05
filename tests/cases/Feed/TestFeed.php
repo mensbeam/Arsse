@@ -349,10 +349,10 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testFetchWithIcon(): void {
-        $d = base64_decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMjHxIGmVAAAADUlEQVQYV2NgYGBgAAAABQABijPjAAAAAABJRU5ErkJggg==");
-        $f = new Feed(null, $this->base."Parsing/WithIcon");
-        $this->assertSame(self::$host."Icon", $f->iconUrl);
-        $this->assertSame("image/png", $f->iconType);
+        $d = base64_decode("R0lGODlhAQABAIABAAAAAP///yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==");
+        $f = new Feed(null, $this->base."WithIcon/GIF");
+        $this->assertSame(self::$host."Icon/GIF", $f->iconUrl);
+        $this->assertSame("image/gif", $f->iconType);
         $this->assertSame($d, $f->iconData);
     }
 }
