@@ -16,7 +16,9 @@ use PicoFeed\Scraper\Scraper;
 
 class Feed {
     public $data = null;
-    public $favicon;
+    public $iconUrl;
+    public $iconType;
+    public $iconData;
     public $resource;
     public $modified = false;
     public $lastModified;
@@ -113,14 +115,22 @@ class Feed {
                 $this->resource->getContent(),
                 $this->resource->getEncoding()
             )->execute();
-            // Grab the favicon for the feed; returns an empty string if it cannot find one.
-            // Some feeds might use a different domain (eg: feedburner), so the site url is
-            // used instead of the feed's url.
-            $this->favicon = (new Favicon)->find($feed->siteUrl);
         } catch (PicoFeedException $e) {
             throw new Feed\Exception($this->resource->getUrl(), $e);
         } catch (\GuzzleHttp\Exception\GuzzleException $e) { // @codeCoverageIgnore
             throw new Feed\Exception($this->resource->getUrl(), $e); // @codeCoverageIgnore
+        }
+
+        // Grab the favicon for the feed, or null if no valid icon is found
+        // Some feeds might use a different domain (eg: feedburner), so the site url is
+        // used instead of the feed's url.
+        $icon = new Favicon;
+        $this->iconUrl = $icon->find($feed->siteUrl);
+        $this->iconData = $icon->getContent();
+        if (strlen($this->iconData)) {
+            $this->iconType = $icon->getType();
+        } else {
+            $this->iconUrl = $this->iconData = null;
         }
 
         // PicoFeed does not provide valid ids when there is no id element. Its solution

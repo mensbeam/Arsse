@@ -1226,7 +1226,7 @@ class Database {
         [$cHashUC, $tHashUC, $vHashUC] = $this->generateIn($hashesUC, "str");
         [$cHashTC, $tHashTC, $vHashTC] = $this->generateIn($hashesTC, "str");
         // perform the query
-        return $articles = $this->db->prepare(
+        return $this->db->prepare(
             "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed = ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC))",
             'int',
             $tId,
@@ -1234,6 +1234,22 @@ class Database {
             $tHashUC,
             $tHashTC
         )->run($feedID, $vId, $vHashUT, $vHashUC, $vHashTC);
+    }
+
+    protected function iconList(string $user, bool $withData =  true): Db\Result {
+        $data = $withData ? "data" : "null as data";
+        $out = $this->db->prepare("SELECT id, url, type, $data, next_fetch from arsse_icons")->run()->getRow();
+        if (!$out) {}
+        return $out;
+    }
+
+    protected function iconGet($id, bool $withData =  true, bool $byUrl = false): array {
+        $field = $byUrl ? "url" : "id";
+        $type = $byUrl ? "str" : "int";
+        $data = $withData ? "data" : "null as data";
+        $out = $this->db->prepare("SELECT id, url, type, $data, next_fetch from arsse_icons where $field = ?", $type)->run($id)->getRow();
+        if (!$out) {}
+        return $out;
     }
 
     /** Returns an associative array of result column names and their SQL computations for article queries
