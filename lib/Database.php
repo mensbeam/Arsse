@@ -1104,7 +1104,7 @@ class Database {
                 $icon = $icon['id'];
             } else {
                 // add the new icon to the cache
-                $icon = $this->db->prepare("INSERT INTO arsee_icons(url, type, data) values(?, ?, ?", "str", "str", "blob")->run($feed->iconUrl, $feed->iconType, $feed->iconData)->lastId();
+                $icon = $this->db->prepare("INSERT INTO arsse_icons(url, type, data) values(?, ?, ?)", "str", "str", "blob")->run($feed->iconUrl, $feed->iconType, $feed->iconData)->lastId();
             }
         }
         // actually perform updates
@@ -1258,9 +1258,9 @@ class Database {
      * @param string $url The URL of the icon to Retrieve
      * @param bool $withData Whether to return the icon content along with the metadata
      */
-    protected function iconGetByUrl(string $url, bool $withData =  true): array {
+    protected function iconGetByUrl(string $url, bool $withData =  true): ?array {
         $data = $withData ? "data" : "null as data";
-        return $this->db->prepare("SELECT id, url, type, $data, next_fetch from arsse_icons where url = ?", "str")->run($id)->getRow();
+        return $this->db->prepare("SELECT id, url, type, $data, next_fetch from arsse_icons where url = ?", "str")->run($url)->getRow();
     }
 
     

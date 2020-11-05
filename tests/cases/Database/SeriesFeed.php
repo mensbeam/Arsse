@@ -26,6 +26,20 @@ trait SeriesFeed {
                     ["john.doe@example.com", "",2],
                 ],
             ],
+            'arsse_icons' => [
+                'columns' => [
+                    'id'   => "int",
+                    'url'  => "str",
+                    'type' => "str",
+                    'data' => "blob",
+                ],
+                'rows' => [
+                    [1,'http://localhost:8000/Icon/PNG','image/png',base64_decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMjHxIGmVAAAADUlEQVQYV2NgYGBgAAAABQABijPjAAAAAABJRU5ErkJggg==")],
+                    [2,'http://localhost:8000/Icon/GIF','image/gif',base64_decode("R0lGODlhAQABAIABAAAAAP///yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==")],
+                    // this actually contains the data of SVG2, which will lead to a row update when retieved
+                    [3,'http://localhost:8000/Icon/SVG1','image/svg+xml','<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><rect width="900" height="600" fill="#ED2939"/><rect width="600" height="600" fill="#fff"/><rect width="300" height="600" fill="#002395"/></svg>'],
+                ],
+            ],
             'arsse_feeds' => [
                 'columns' => [
                     'id'         => "int",
@@ -36,13 +50,19 @@ trait SeriesFeed {
                     'modified'   => "datetime",
                     'next_fetch' => "datetime",
                     'size'       => "int",
+                    'icon'       => "int",
                 ],
                 'rows' => [
-                    [1,"http://localhost:8000/Feed/Matching/3","Ook",0,"",$past,$past,0],
-                    [2,"http://localhost:8000/Feed/Matching/1","Eek",5,"There was an error last time",$past,$future,0],
-                    [3,"http://localhost:8000/Feed/Fetching/Error?code=404","Ack",0,"",$past,$now,0],
-                    [4,"http://localhost:8000/Feed/NextFetch/NotModified?t=".time(),"Ooook",0,"",$past,$past,0],
-                    [5,"http://localhost:8000/Feed/Parsing/Valid","Ooook",0,"",$past,$future,0],
+                    [1,"http://localhost:8000/Feed/Matching/3","Ook",0,"",$past,$past,0,null],
+                    [2,"http://localhost:8000/Feed/Matching/1","Eek",5,"There was an error last time",$past,$future,0,null],
+                    [3,"http://localhost:8000/Feed/Fetching/Error?code=404","Ack",0,"",$past,$now,0,null],
+                    [4,"http://localhost:8000/Feed/NextFetch/NotModified?t=".time(),"Ooook",0,"",$past,$past,0,null],
+                    [5,"http://localhost:8000/Feed/Parsing/Valid","Ooook",0,"",$past,$future,0,null],
+                    // these feeds all test icon caching
+                    [6,"http://localhost:8000/Feed/WithIcon/PNG",null,0,"",$past,$future,0,1], // no change when updated
+                    [7,"http://localhost:8000/Feed/WithIcon/GIF",null,0,"",$past,$future,0,1], // icon ID 2 will be assigned to feed when updated
+                    [8,"http://localhost:8000/Feed/WithIcon/SVG1",null,0,"",$past,$future,0,3], // icon ID 3 will be modified when updated
+                    [9,"http://localhost:8000/Feed/WithIcon/SVG2",null,0,"",$past,$future,0,null], // icon ID 4 will be created and assigned to feed when updated
                 ],
             ],
             'arsse_subscriptions' => [
@@ -260,5 +280,45 @@ trait SeriesFeed {
         Arsse::$db->feedUpdate(3);
         Arsse::$db->feedUpdate(4);
         $this->assertEquals([1], Arsse::$db->feedListStale());
+    }
+
+    public function testCheckIconDuringFeedUpdate(): void {
+        Arsse::$db->feedUpdate(6);
+        $state = $this->primeExpectations($this->data, [
+            'arsse_icons' => ["id","url","type","data"],
+            'arsse_feeds' => ["id", "icon"],
+        ]);
+        $this->compareExpectations(static::$drv, $state);
+    }
+
+    public function testAssignIconDuringFeedUpdate(): void {
+        Arsse::$db->feedUpdate(7);
+        $state = $this->primeExpectations($this->data, [
+            'arsse_icons' => ["id","url","type","data"],
+            'arsse_feeds' => ["id", "icon"],
+        ]);
+        $state['arsse_feeds']['rows'][6][1] = 2;
+        $this->compareExpectations(static::$drv, $state);
+    }
+
+    public function testChangeIconDuringFeedUpdate(): void {
+        Arsse::$db->feedUpdate(8);
+        $state = $this->primeExpectations($this->data, [
+            'arsse_icons' => ["id","url","type","data"],
+            'arsse_feeds' => ["id", "icon"],
+        ]);
+        $state['arsse_icons']['rows'][2][3] = '<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><rect fill="#fff" height="600" width="900"/><circle fill="#bc002d" cx="450" cy="300" r="180"/></svg>';
+        $this->compareExpectations(static::$drv, $state);
+    }
+
+    public function testAddIconDuringFeedUpdate(): void {
+        Arsse::$db->feedUpdate(9);
+        $state = $this->primeExpectations($this->data, [
+            'arsse_icons' => ["id","url","type","data"],
+            'arsse_feeds' => ["id", "icon"],
+        ]);
+        $state['arsse_feeds']['rows'][8][1] = 4;
+        $state['arsse_icons']['rows'][] = [4,'http://localhost:8000/Icon/SVG2','image/svg+xml','<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><rect width="900" height="600" fill="#ED2939"/><rect width="600" height="600" fill="#fff"/><rect width="300" height="600" fill="#002395"/></svg>'];
+        $this->compareExpectations(static::$drv, $state);
     }
 }
