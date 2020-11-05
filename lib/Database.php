@@ -1091,8 +1091,23 @@ class Database {
                 'int'
             );
         }
-        // actually perform updates
+        // determine if the feed icon needs to be updated, and update it if appropriate
         $tr = $this->db->begin();
+        $icon = null;
+        if ($feed->iconUrl) {
+            $icon = $this->iconGetByUrl($feed->iconUrl);
+            if ($icon) {
+                // update the existing icon if necessary
+                if ($feed->iconType !== $icon['type'] || $feed->iconData !== $icon['data']) {
+                    $this->db->prepare("UPDATE arsse_icons set type = ?, data = ? where id = ?", "str", "blob", "int")->run($feed->iconType, $feed->iconData, $icon['id']);
+                }
+                $icon = $icon['id'];
+            } else {
+                // add the new icon to the cache
+                $icon = $this->db->prepare("INSERT INTO arsee_icons(url, type, data) values(?, ?, ?", "str", "str", "blob")->run($feed->iconUrl, $feed->iconType, $feed->iconData)->lastId();
+            }
+        }
+        // actually perform updates
         foreach ($feed->newItems as $article) {
             $articleID = $qInsertArticle->run(
                 $article->url,
@@ -1142,12 +1157,13 @@ class Database {
         }
         // lastly update the feed database itself with updated information.
         $this->db->prepare(
-            "UPDATE arsse_feeds SET title = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = '', next_fetch = ?, size = ? WHERE id = ?",
+            "UPDATE arsse_feeds SET title = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = '', next_fetch = ?, size = ?, icon = ? WHERE id = ?",
             'str',
             'str',
             'datetime',
             'strict str',
             'datetime',
+            'int',
             'int',
             'int'
         )->run(
@@ -1157,6 +1173,7 @@ class Database {
             $feed->resource->getEtag(),
             $feed->nextFetch,
             sizeof($feed->data->items),
+            $icon,
             $feedID
         );
         $tr->commit();
@@ -1236,20 +1253,53 @@ class Database {
         )->run($feedID, $vId, $vHashUT, $vHashUC, $vHashTC);
     }
 
-    protected function iconList(string $user, bool $withData =  true): Db\Result {
+    /** Retrieve a feed icon by URL, for use during feed refreshing
+     * 
+     * @param string $url The URL of the icon to Retrieve
+     * @param bool $withData Whether to return the icon content along with the metadata
+     */
+    protected function iconGetByUrl(string $url, bool $withData =  true): array {
         $data = $withData ? "data" : "null as data";
-        $out = $this->db->prepare("SELECT id, url, type, $data, next_fetch from arsse_icons")->run()->getRow();
-        if (!$out) {}
+        return $this->db->prepare("SELECT id, url, type, $data, next_fetch from arsse_icons where url = ?", "str")->run($id)->getRow();
+    }
+
+    
+    /** Returns information about an icon for a feed to which a user is subscribed, with or without the binary content of the icon itself
+     * 
+     * The returned information is:
+     * 
+     * - "id": The umeric identifier of the icon (not the subscription)
+     * - "url": The URL of the icon
+     * - "type": The Content-Type of the icon e.g. "image/png"
+     * - "data": The icon itself, as a binary sring; if $withData is false this will be null
+     * 
+     * @param string $user The user whose subscription icon is to be retrieved
+     * @param int $subscription The numeric identifier of the subscription with which the icon is associated
+     * @param bool $withData Whether to retrireve the icon content in addition to its metadata
+     */
+    public function iconGet(string $user, int $subscrption, bool $withData =  true): array {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        $data = $withData ? "data" : "null as data";
+        $out = $this->db->prepare("SELECT i.id, i.url, i.type, $data from arsse_icons as i join arsse_feeds as f on i.id = f.icon join arsse_subscriptions as s on s.feed = f.id where s.owner = ? and s.id = ?", "str", "int")->run($user, $subscription)->getRow();
+        if (!$out) {
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "subscription", 'id' => $subscription]);
+        }
         return $out;
     }
 
-    protected function iconGet($id, bool $withData =  true, bool $byUrl = false): array {
-        $field = $byUrl ? "url" : "id";
-        $type = $byUrl ? "str" : "int";
-        $data = $withData ? "data" : "null as data";
-        $out = $this->db->prepare("SELECT id, url, type, $data, next_fetch from arsse_icons where $field = ?", $type)->run($id)->getRow();
-        if (!$out) {}
-        return $out;
+    /** Lists icons for feeds to which a user is subscribed, with or without the binary content of the icon itself
+     * 
+     * @param string $user The user whose subscription icons are to be retrieved
+     * @param bool $withData Whether to retrireve the icon content in addition to its metadata
+     */
+    public function iconList(string $user, bool $withData =  true): Db\Result {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        $data = $withData ? "i.data" : "null as data";
+        return $this->db->prepare("SELECT i.id, i.url, i.type, $data from arsse_icons as i join arsse_feeds as f on i.id = f.icon join arsse_subscriptions as s on s.feed = f.id where s.owner = ?", "str")->run($user);
     }
 
     /** Returns an associative array of result column names and their SQL computations for article queries
