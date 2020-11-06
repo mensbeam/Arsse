@@ -2,6 +2,10 @@
 -- Copyright 2017 J. King, Dustin Wilson et al.
 -- See LICENSE and AUTHORS files for details
 
+-- Add a column to the token table to hold arbitrary class-specific data
+-- This is a speculative addition to support OAuth login in the future
+alter table arsse_tokens add column data text default null;
+
 -- Add multiple columns to the users table
 -- In particular this adds a numeric identifier for each user, which Miniflux requires
 create table arsse_users_new(

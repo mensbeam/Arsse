@@ -4,6 +4,8 @@
 
 -- Please consult the SQLite 3 schemata for commented version
 
+alter table arsse_tokens add column data longtext default null;
+
 alter table arsse_users add column num bigint unsigned unique;
 alter table arsse_users add column admin boolean not null default 0;
 alter table arsse_users add column lang longtext;
