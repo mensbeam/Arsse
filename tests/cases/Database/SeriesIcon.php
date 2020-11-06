@@ -53,16 +53,11 @@ trait SeriesIcon {
                     'icon'       => "int",
                 ],
                 'rows' => [
-                    [1,"http://localhost:8000/Feed/Matching/3","Ook",0,"",$past,$past,0,null],
-                    [2,"http://localhost:8000/Feed/Matching/1","Eek",5,"There was an error last time",$past,$future,0,null],
-                    [3,"http://localhost:8000/Feed/Fetching/Error?code=404","Ack",0,"",$past,$now,0,null],
+                    [1,"http://localhost:8000/Feed/Matching/3","Ook",0,"",$past,$past,0,1],
+                    [2,"http://localhost:8000/Feed/Matching/1","Eek",5,"There was an error last time",$past,$future,0,2],
+                    [3,"http://localhost:8000/Feed/Fetching/Error?code=404","Ack",0,"",$past,$now,0,3],
                     [4,"http://localhost:8000/Feed/NextFetch/NotModified?t=".time(),"Ooook",0,"",$past,$past,0,null],
-                    [5,"http://localhost:8000/Feed/Parsing/Valid","Ooook",0,"",$past,$future,0,null],
-                    // these feeds all test icon caching
-                    [6,"http://localhost:8000/Feed/WithIcon/PNG",null,0,"",$past,$future,0,1], // no change when updated
-                    [7,"http://localhost:8000/Feed/WithIcon/GIF",null,0,"",$past,$future,0,1], // icon ID 2 will be assigned to feed when updated
-                    [8,"http://localhost:8000/Feed/WithIcon/SVG1",null,0,"",$past,$future,0,3], // icon ID 3 will be modified when updated
-                    [9,"http://localhost:8000/Feed/WithIcon/SVG2",null,0,"",$past,$future,0,null], // icon ID 4 will be created and assigned to feed when updated
+                    [5,"http://localhost:8000/Feed/Parsing/Valid","Ooook",0,"",$past,$future,0,2],
                 ],
             ],
             'arsse_subscriptions' => [
@@ -77,7 +72,7 @@ trait SeriesIcon {
                     [3,'john.doe@example.com',3],
                     [4,'john.doe@example.com',4],
                     [5,'john.doe@example.com',5],
-                    [6,'jane.doe@example.com',1],
+                    [6,'jane.doe@example.com',5],
                 ],
             ],
         ];
@@ -85,5 +80,24 @@ trait SeriesIcon {
 
     protected function tearDownSeriesIcon(): void {
         unset($this->data);
+    }
+
+    public function testListTheIconsOfAUser() {
+        $exp = [
+            ['id' => 1,'url' => 'http://localhost:8000/Icon/PNG',  'type' => 'image/png',     'data' => base64_decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMjHxIGmVAAAADUlEQVQYV2NgYGBgAAAABQABijPjAAAAAABJRU5ErkJggg==")],
+            ['id' => 2,'url' => 'http://localhost:8000/Icon/GIF',  'type' => 'image/gif',     'data' => base64_decode("R0lGODlhAQABAIABAAAAAP///yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==")],
+            ['id' => 3,'url' => 'http://localhost:8000/Icon/SVG1', 'type' => 'image/svg+xml', 'data' => '<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><rect fill="#fff" height="600" width="900"/><circle fill="#bc002d" cx="450" cy="300" r="180"/></svg>'],
+        ];
+        $this->assertResult($exp, Arsse::$db->iconList("john.doe@example.com"));
+        $exp = [
+            ['id' => 2,'url' => 'http://localhost:8000/Icon/GIF',  'type' => 'image/gif',     'data' => base64_decode("R0lGODlhAQABAIABAAAAAP///yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==")],
+        ];
+        $this->assertResult($exp, Arsse::$db->iconList("jane.doe@example.com"));
+    }
+
+    public function testListTheIconsOfAUserWithoutAuthority() {
+        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
+        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
+        Arsse::$db->iconList("jane.doe@example.com");
     }
 }

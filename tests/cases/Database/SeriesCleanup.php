@@ -66,6 +66,19 @@ trait SeriesCleanup {
                     ["da772f8fa13c11e78667001e673b2560", "class.class", "john.doe@example.com", $soon],
                 ],
             ],
+            'arsse_icons' => [
+                'columns' => [
+                    'id'   => "int",
+                    'url'  => "str",
+                    'orphaned' => "datetime",
+                ],
+                'rows' => [
+                    [1,'http://localhost:8000/Icon/PNG',null],
+                    [2,'http://localhost:8000/Icon/GIF',null],
+                    [3,'http://localhost:8000/Icon/SVG1',null],
+                    [4,'http://localhost:8000/Icon/SVG2',null],
+                ],
+            ],
             'arsse_feeds' => [
                 'columns' => [
                     'id'         => "int",

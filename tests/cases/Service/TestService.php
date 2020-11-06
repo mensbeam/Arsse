@@ -43,6 +43,7 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testPerformPreCleanup(): void {
         $this->assertTrue(Service::cleanupPre());
         \Phake::verify(Arsse::$db)->feedCleanup();
+        \Phake::verify(Arsse::$db)->iconCleanup();
         \Phake::verify(Arsse::$db)->sessionCleanup();
     }
 
@@ -76,6 +77,7 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify($d)->exec();
         \Phake::verify($d)->clean();
         \Phake::verify(Arsse::$db)->feedCleanup();
+        \Phake::verify(Arsse::$db)->iconCleanup();
         \Phake::verify(Arsse::$db)->sessionCleanup();
         \Phake::verify(Arsse::$db)->articleCleanup();
         \Phake::verify(Arsse::$db)->metaSet("service_last_checkin", $this->anything(), "datetime");
