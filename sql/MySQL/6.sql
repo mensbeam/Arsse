@@ -30,7 +30,7 @@ create table arsse_icons(
     type text,
     data longblob
 ) character set utf8mb4 collate utf8mb4_unicode_ci;
-insert into arsse_icons(url) select distinct favicon from arsse_feeds where favicon is not null;
+insert into arsse_icons(url) select distinct favicon from arsse_feeds where favicon is not null and favicon <> '';
 alter table arsse_feeds add column icon bigint unsigned;
 alter table arsse_feeds add constraint foreign key (icon) references arsse_icons(id) on delete set null;
 update arsse_feeds as f, arsse_icons as i set f.icon = i.id where f.favicon = i.url;

@@ -31,7 +31,7 @@ create table arsse_icons(
     type text,
     data bytea
 );
-insert into arsse_icons(url) select distinct favicon from arsse_feeds where favicon is not null;
+insert into arsse_icons(url) select distinct favicon from arsse_feeds where favicon is not null and favicon <> '';
 alter table arsse_feeds add column icon bigint references arsse_icons(id) on delete set null;
 update arsse_feeds as f set icon = i.id from arsse_icons as i where f.favicon = i.url;
 alter table arsse_feeds drop column favicon;

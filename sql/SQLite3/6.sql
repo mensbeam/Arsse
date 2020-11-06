@@ -40,7 +40,7 @@ create table arsse_icons(
     type text,                      -- the Content-Type of the icon, if known
     data blob                       -- the binary data of the icon itself
 );
-insert into arsse_icons(url) select distinct favicon from arsse_feeds where favicon is not null;
+insert into arsse_icons(url) select distinct favicon from arsse_feeds where favicon is not null and favicon <> '';
 create table arsse_feeds_new(
 -- newsfeeds, deduplicated
 -- users have subscriptions to these feeds in another table
