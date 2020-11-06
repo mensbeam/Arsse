@@ -926,7 +926,7 @@ class Database {
      */
     public function subscriptionIcon(?string $user, int $id, bool $includeData = true): array {
         $data = $includeData ? "i.data" : "null as data";
-        $q = new Query("SELECT i.id, i.url, i.type, $data from arsse_icons as i join arsse_feeds as f on i.id = f.icon join arsse_subscriptions as s on s.feed = f.id");
+        $q = new Query("SELECT i.id, i.url, i.type, $data from arsse_subscriptions as s join arsse_feeds as f on s.feed = f.id left join arsse_icons as i on f.icon = i.id");
         $q->setWhere("s.id = ?", "int", $id);
         if (isset($user)) {
             if (!Arsse::$user->authorize($user, __FUNCTION__)) {
@@ -936,7 +936,7 @@ class Database {
         }
         $out = $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getRow();
         if (!$out) {
-            throw new Db\ExceptionInput("idMissing", ["action" => __FUNCTION__, "field" => "subscription", 'id' => $id]);
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "subscription", 'id' => $id]);
         }
         return $out;
     }

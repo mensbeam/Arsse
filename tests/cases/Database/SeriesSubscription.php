@@ -462,32 +462,35 @@ trait SeriesSubscription {
 
     public function testRetrieveTheFaviconOfASubscription(): void {
         $exp = "http://example.com/favicon.ico";
-        $this->assertSame($exp, Arsse::$db->subscriptionFavicon(1));
-        $this->assertSame($exp, Arsse::$db->subscriptionFavicon(2));
-        $this->assertSame('', Arsse::$db->subscriptionFavicon(3));
-        $this->assertSame('', Arsse::$db->subscriptionFavicon(4));
+        $this->assertSame($exp, Arsse::$db->subscriptionIcon(null, 1)['url']);
+        $this->assertSame($exp, Arsse::$db->subscriptionIcon(null, 2)['url']);
+        $this->assertSame(null, Arsse::$db->subscriptionIcon(null, 3)['url']);
         // authorization shouldn't have any bearing on this function
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
-        $this->assertSame($exp, Arsse::$db->subscriptionFavicon(1));
-        $this->assertSame($exp, Arsse::$db->subscriptionFavicon(2));
-        $this->assertSame('', Arsse::$db->subscriptionFavicon(3));
-        $this->assertSame('', Arsse::$db->subscriptionFavicon(4));
-        // invalid IDs should simply return an empty string
-        $this->assertSame('', Arsse::$db->subscriptionFavicon(-2112));
+        $this->assertSame($exp, Arsse::$db->subscriptionIcon(null, 1)['url']);
+        $this->assertSame($exp, Arsse::$db->subscriptionIcon(null, 2)['url']);
+        $this->assertSame(null, Arsse::$db->subscriptionIcon(null, 3)['url']);
+    }
+
+    public function testRetrieveTheFaviconOfAMissingSubscription(): void {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        Arsse::$db->subscriptionIcon(null, -2112);
     }
 
     public function testRetrieveTheFaviconOfASubscriptionWithUser(): void {
         $exp = "http://example.com/favicon.ico";
         $user = "john.doe@example.com";
-        $this->assertSame($exp, Arsse::$db->subscriptionFavicon(1, $user));
-        $this->assertSame('', Arsse::$db->subscriptionFavicon(2, $user));
-        $this->assertSame('', Arsse::$db->subscriptionFavicon(3, $user));
-        $this->assertSame('', Arsse::$db->subscriptionFavicon(4, $user));
+        $this->assertSame($exp, Arsse::$db->subscriptionIcon($user, 1)['url']);
+        $this->assertSame(null, Arsse::$db->subscriptionIcon($user, 3)['url']);
         $user = "jane.doe@example.com";
-        $this->assertSame('', Arsse::$db->subscriptionFavicon(1, $user));
-        $this->assertSame($exp, Arsse::$db->subscriptionFavicon(2, $user));
-        $this->assertSame('', Arsse::$db->subscriptionFavicon(3, $user));
-        $this->assertSame('', Arsse::$db->subscriptionFavicon(4, $user));
+        $this->assertSame($exp, Arsse::$db->subscriptionIcon($user, 2)['url']);
+    }
+
+    public function testRetrieveTheFaviconOfASubscriptionOfTheWrongUser(): void {
+        $exp = "http://example.com/favicon.ico";
+        $user = "john.doe@example.com";
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        $this->assertSame(null, Arsse::$db->subscriptionIcon($user, 2)['url']);
     }
 
     public function testRetrieveTheFaviconOfASubscriptionWithUserWithoutAuthority(): void {
@@ -495,7 +498,7 @@ trait SeriesSubscription {
         $user = "john.doe@example.com";
         \Phake::when(Arsse::$user)->authorize->thenReturn(false);
         $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Arsse::$db->subscriptionFavicon(-2112, $user);
+        Arsse::$db->subscriptionIcon($user, -2112);
     }
 
     public function testListTheTagsOfASubscription(): void {
