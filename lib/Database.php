@@ -1102,7 +1102,7 @@ class Database {
         $tr = $this->db->begin();
         $icon = null;
         if ($feed->iconUrl) {
-            $icon = $this->iconGetByUrl($feed->iconUrl);
+            $icon = $this->db->prepare("SELECT id, url, type, data from arsse_icons where url = ?", "str")->run($feed->iconUrl)->getRow();
             if ($icon) {
                 // update the existing icon if necessary
                 if ($feed->iconType !== $icon['type'] || $feed->iconData !== $icon['data']) {
@@ -1260,38 +1260,14 @@ class Database {
         )->run($feedID, $vId, $vHashUT, $vHashUC, $vHashTC);
     }
 
-    /** Retrieve a feed icon by URL, for use during feed refreshing
+    /** Lists icons for feeds to which a user is subscribed
      * 
-     * @param string $url The URL of the icon to retrieve
-     */
-    protected function iconGetByUrl(string $url): ?array {
-        return $this->db->prepare("SELECT id, url, type, data from arsse_icons where url = ?", "str")->run($url)->getRow();
-    }
-   
-    /** Retrieves information about an icon
+     * The returned information for each icon is:
      * 
-     * The returned information is:
-     * 
-     * - "id": The umeric identifier of the icon (not the subscription)
+     * - "id": The umeric identifier of the icon
      * - "url": The URL of the icon
      * - "type": The Content-Type of the icon e.g. "image/png"
-     * - "data": The icon itself, as a binary sring; if $withData is false this will be null
-     * 
-     * @param string $user The user whose icon is to be retrieved
-     * @param int $subscription The numeric identifier of the icon
-     */
-    public function iconGet(string $user, int $id): array {
-        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
-            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
-        }
-        $out = $this->db->prepare("SELECT i.id, i.url, i.type, i.data from arsse_icons as i join arsse_feeds as f on i.id = f.icon join arsse_subscriptions as s on s.feed = f.id where s.owner = ? and i.id = ?", "str", "int")->run($user, $id)->getRow();
-        if (!$out) {
-            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "subscription", 'id' => $id]);
-        }
-        return $out;
-    }
-
-    /** Lists icons for feeds to which a user is subscribed, with or without the binary content of the icon itself
+     * - "data": The icon itself, as a binary sring
      * 
      * @param string $user The user whose subscription icons are to be retrieved
      */
