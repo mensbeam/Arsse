@@ -183,6 +183,15 @@ The Arsse does not at this time have any first party clients. However, because T
    <td></td>
   </tr>
   <tr>
+   <td><a href="https://play.google.com/store/apps/details?id=mobi.newsjet.rss">NewsJet RSS</a></td>
+   <td>Android</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td></td>
+  </tr>
+  <tr>
    <td><a href="https://github.com/SimonSchubert/NewsOut">Newsout</a></td>
    <td>Android, iOS</td>
    <td class="N">✘</td>
@@ -223,6 +232,15 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>
     <p>Fetches favicons independently.</p>
    </td>
+  </tr>
+  <tr>
+   <td><a href="https://github.com/readrops/Readrops">Readrops</a></td>
+   <td>Android</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td></td>
   </tr>
   <tr>
    <td><a href="https://github.com/ali322/reed">Reed</a></td>
