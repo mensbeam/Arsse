@@ -73,10 +73,9 @@ trait SeriesCleanup {
                     'orphaned' => "datetime",
                 ],
                 'rows' => [
-                    [1,'http://localhost:8000/Icon/PNG',null],
-                    [2,'http://localhost:8000/Icon/GIF',null],
+                    [1,'http://localhost:8000/Icon/PNG',$daybefore],
+                    [2,'http://localhost:8000/Icon/GIF',$daybefore],
                     [3,'http://localhost:8000/Icon/SVG1',null],
-                    [4,'http://localhost:8000/Icon/SVG2',null],
                 ],
             ],
             'arsse_feeds' => [
@@ -86,12 +85,13 @@ trait SeriesCleanup {
                     'title'      => "str",
                     'orphaned'   => "datetime",
                     'size'       => "int",
+                    'icon'       => "int",
                 ],
                 'rows' => [
-                    [1,"http://example.com/1","",$daybefore,2],  //latest two articles should be kept
-                    [2,"http://example.com/2","",$yesterday,0],
-                    [3,"http://example.com/3","",null,0],
-                    [4,"http://example.com/4","",$nowish,0],
+                    [1,"http://example.com/1","",$daybefore,2,null],  //latest two articles should be kept
+                    [2,"http://example.com/2","",$yesterday,0,2],
+                    [3,"http://example.com/3","",null,0,1],
+                    [4,"http://example.com/4","",$nowish,0,null],
                 ],
             ],
             'arsse_subscriptions' => [
@@ -190,6 +190,32 @@ trait SeriesCleanup {
         ]);
         $state['arsse_feeds']['rows'][0][1] = null;
         $state['arsse_feeds']['rows'][2][1] = $now;
+        $this->compareExpectations(static::$drv, $state);
+    }
+
+    public function testCleanUpOrphanedIcons(): void {
+        Arsse::$db->iconCleanup();
+        $now = gmdate("Y-m-d H:i:s");
+        $state = $this->primeExpectations($this->data, [
+            'arsse_icons' => ["id","orphaned"],
+        ]);
+        $state['arsse_icons']['rows'][0][1] = null;
+        unset($state['arsse_icons']['rows'][1]);
+        $state['arsse_icons']['rows'][2][1] = $now;
+        $this->compareExpectations(static::$drv, $state);
+    }
+
+    public function testCleanUpOrphanedIconsWithUnlimitedRetention(): void {
+        Arsse::$conf->import([
+            'purgeFeeds' => null,
+        ]);
+        Arsse::$db->iconCleanup();
+        $now = gmdate("Y-m-d H:i:s");
+        $state = $this->primeExpectations($this->data, [
+            'arsse_icons' => ["id","orphaned"],
+        ]);
+        $state['arsse_icons']['rows'][0][1] = null;
+        $state['arsse_icons']['rows'][2][1] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
