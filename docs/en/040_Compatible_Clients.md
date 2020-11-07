@@ -30,6 +30,17 @@ The Arsse does not at this time have any first party clients. However, because T
     <p>Three-pane alternative front-end for Minflux.</p>
    </td>
   </tr>
+  <tr>
+   <td><a href="https://github.com/TheScientist/ttrss-pwa">Tiny Tiny RSS Progressive Web App</a></td>
+   <td></td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td>
+    <p>Does not (<a href="https://github.com/TheScientist/ttrss-pwa/issues/7">yet</a>) support HTTP authentication.</p>
+   </td>
+  </tr>
  </tbody>
  <tbody>
   <tr>
