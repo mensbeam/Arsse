@@ -99,7 +99,7 @@ class RoboFile extends \Robo\Tasks {
             return $php;
         } elseif (file_exists($dir."pcov.$ext")) {
             return "$php -d extension=pcov.$ext -d pcov.enabled=1 -d pcov.directory=$code";
-        } elseif (file_exists($dir."pcov.$ext")) {
+        } elseif (file_exists($dir."xdebug.$ext")) {
             return "$php -d zend_extension=xdebug.$ext";
         } else {
             if (IS_WIN) {
