@@ -16,6 +16,7 @@ class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
     protected static $createMeta = "CREATE TABLE arsse_meta(key text primary key not null, value text)";
     protected static $createTest = "CREATE TABLE arsse_test(id bigserial primary key)";
     protected static $selectBlob = "SELECT '\\xDEADBEEF'::bytea as blob";
+    protected static $selectNullBlob = "SELECT null::bytea as blob";
 
     protected function makeResult(string $q): array {
         $set = pg_query(static::$interface, $q);

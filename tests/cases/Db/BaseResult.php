@@ -11,6 +11,7 @@ use JKingWeb\Arsse\Db\Result;
 abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
     protected static $insertDefault = "INSERT INTO arsse_test default values";
     protected static $selectBlob = "SELECT x'DEADBEEF' as \"blob\"";
+    protected static $selectNullBlob = "SELECT null as \"blob\"";
     protected static $interface;
     protected $resultClass;
 
@@ -141,5 +142,16 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
         $exp = hex2bin("DEADBEEF");
         $test = new $this->resultClass(...$this->makeResult(static::$selectBlob));
         $this->assertEquals($exp, $test->getValue());
+    }
+
+    public function testGetNullBlobRow(): void {
+        $exp = ['blob' => null];
+        $test = new $this->resultClass(...$this->makeResult(static::$selectNullBlob));
+        $this->assertEquals($exp, $test->getRow());
+    }
+
+    public function testGetNullBlobValue(): void {
+        $test = new $this->resultClass(...$this->makeResult(static::$selectNullBlob));
+        $this->assertNull($test->getValue());
     }
 }
