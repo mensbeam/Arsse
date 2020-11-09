@@ -94,10 +94,4 @@ trait SeriesIcon {
         ];
         $this->assertResult($exp, Arsse::$db->iconList("jane.doe@example.com"));
     }
-
-    public function testListTheIconsOfAUserWithoutAuthority() {
-        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
-        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Arsse::$db->iconList("jane.doe@example.com");
-    }
 }

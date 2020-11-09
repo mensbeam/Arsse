@@ -28,7 +28,6 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         // create a mock user manager
         Arsse::$user = \Phake::mock(\JKingWeb\Arsse\User::class);
         \Phake::when(Arsse::$user)->exists->thenReturn(true);
-        \Phake::when(Arsse::$user)->authorize->thenReturn(true);
         // create a mock Import/Export processor
         $this->proc = \Phake::partialMock(AbstractImportExport::class);
         // initialize an SQLite memeory database

@@ -73,7 +73,6 @@ abstract class AbstractException extends \Exception {
         "User/Exception.alreadyExists"                => 10403,
         "User/Exception.authMissing"                  => 10411,
         "User/Exception.authFailed"                   => 10412,
-        "User/ExceptionAuthz.notAuthorized"           => 10421,
         "User/ExceptionSession.invalid"               => 10431,
         "User/ExceptionInput.invalidTimezone"         => 10441,
         "User/ExceptionInput.invalidBoolean"          => 10442,

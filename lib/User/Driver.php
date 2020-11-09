@@ -17,8 +17,6 @@ interface Driver {
     public static function driverName(): string;
     // authenticates a user against their name and password
     public function auth(string $user, string $password): bool;
-    // check whether a user is authorized to perform a certain action; not currently used and subject to change
-    public function authorize(string $affectedUser, string $action): bool;
     // checks whether a user exists
     public function userExists(string $user): bool;
     // adds a user

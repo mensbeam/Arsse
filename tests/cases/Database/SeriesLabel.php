@@ -253,7 +253,6 @@ trait SeriesLabel {
         $user = "john.doe@example.com";
         $labelID = $this->nextID("arsse_labels");
         $this->assertSame($labelID, Arsse::$db->labelAdd($user, ['name' => "Entertaining"]));
-        \Phake::verify(Arsse::$user)->authorize($user, "labelAdd");
         $state = $this->primeExpectations($this->data, $this->checkLabels);
         $state['arsse_labels']['rows'][] = [$labelID, $user, "Entertaining"];
         $this->compareExpectations(static::$drv, $state);
@@ -279,12 +278,6 @@ trait SeriesLabel {
         Arsse::$db->labelAdd("john.doe@example.com", ['name' => " "]);
     }
 
-    public function testAddALabelWithoutAuthority(): void {
-        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
-        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Arsse::$db->labelAdd("john.doe@example.com", ['name' => "Boring"]);
-    }
-
     public function testListLabels(): void {
         $exp = [
             ['id' => 2, 'name' => "Fascinating", 'articles' => 3, 'read' => 1],
@@ -298,18 +291,10 @@ trait SeriesLabel {
         $this->assertResult($exp, Arsse::$db->labelList("jane.doe@example.com"));
         $exp = [];
         $this->assertResult($exp, Arsse::$db->labelList("jane.doe@example.com", false));
-        \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "labelList");
-    }
-
-    public function testListLabelsWithoutAuthority(): void {
-        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
-        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Arsse::$db->labelList("john.doe@example.com");
     }
 
     public function testRemoveALabel(): void {
         $this->assertTrue(Arsse::$db->labelRemove("john.doe@example.com", 1));
-        \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "labelRemove");
         $state = $this->primeExpectations($this->data, $this->checkLabels);
         array_shift($state['arsse_labels']['rows']);
         $this->compareExpectations(static::$drv, $state);
@@ -317,7 +302,6 @@ trait SeriesLabel {
 
     public function testRemoveALabelByName(): void {
         $this->assertTrue(Arsse::$db->labelRemove("john.doe@example.com", "Interesting", true));
-        \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "labelRemove");
         $state = $this->primeExpectations($this->data, $this->checkLabels);
         array_shift($state['arsse_labels']['rows']);
         $this->compareExpectations(static::$drv, $state);
@@ -343,12 +327,6 @@ trait SeriesLabel {
         Arsse::$db->labelRemove("john.doe@example.com", 3); // label ID 3 belongs to Jane
     }
 
-    public function testRemoveALabelWithoutAuthority(): void {
-        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
-        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Arsse::$db->labelRemove("john.doe@example.com", 1);
-    }
-
     public function testGetThePropertiesOfALabel(): void {
         $exp = [
             'id'       => 2,
@@ -358,7 +336,6 @@ trait SeriesLabel {
         ];
         $this->assertArraySubset($exp, Arsse::$db->labelPropertiesGet("john.doe@example.com", 2));
         $this->assertArraySubset($exp, Arsse::$db->labelPropertiesGet("john.doe@example.com", "Fascinating", true));
-        \Phake::verify(Arsse::$user, \Phake::times(2))->authorize("john.doe@example.com", "labelPropertiesGet");
     }
 
     public function testGetThePropertiesOfAMissingLabel(): void {
@@ -381,19 +358,12 @@ trait SeriesLabel {
         Arsse::$db->labelPropertiesGet("john.doe@example.com", 3); // label ID 3 belongs to Jane
     }
 
-    public function testGetThePropertiesOfALabelWithoutAuthority(): void {
-        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
-        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Arsse::$db->labelPropertiesGet("john.doe@example.com", 1);
-    }
-
     public function testMakeNoChangesToALabel(): void {
         $this->assertFalse(Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, []));
     }
 
     public function testRenameALabel(): void {
         $this->assertTrue(Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, ['name' => "Curious"]));
-        \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "labelPropertiesSet");
         $state = $this->primeExpectations($this->data, $this->checkLabels);
         $state['arsse_labels']['rows'][0][2] = "Curious";
         $this->compareExpectations(static::$drv, $state);
@@ -401,7 +371,6 @@ trait SeriesLabel {
 
     public function testRenameALabelByName(): void {
         $this->assertTrue(Arsse::$db->labelPropertiesSet("john.doe@example.com", "Interesting", ['name' => "Curious"], true));
-        \Phake::verify(Arsse::$user)->authorize("john.doe@example.com", "labelPropertiesSet");
         $state = $this->primeExpectations($this->data, $this->checkLabels);
         $state['arsse_labels']['rows'][0][2] = "Curious";
         $this->compareExpectations(static::$drv, $state);
@@ -447,12 +416,6 @@ trait SeriesLabel {
         Arsse::$db->labelPropertiesSet("john.doe@example.com", 3, ['name' => "Exciting"]); // label ID 3 belongs to Jane
     }
 
-    public function testSetThePropertiesOfALabelWithoutAuthority(): void {
-        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
-        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, ['name' => "Exciting"]);
-    }
-
     public function testListLabelledArticles(): void {
         $exp = [1,19];
         $this->assertEquals($exp, Arsse::$db->labelArticlesGet("john.doe@example.com", 1));
@@ -473,12 +436,6 @@ trait SeriesLabel {
     public function testListLabelledArticlesForAnInvalidLabel(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelArticlesGet("john.doe@example.com", -1);
-    }
-
-    public function testListLabelledArticlesWithoutAuthority(): void {
-        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
-        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Arsse::$db->labelArticlesGet("john.doe@example.com", 1);
     }
 
     public function testApplyALabelToArticles(): void {
@@ -539,11 +496,5 @@ trait SeriesLabel {
         $state['arsse_label_members']['rows'][0][3] = 0;
         $state['arsse_label_members']['rows'][2][3] = 0;
         $this->compareExpectations(static::$drv, $state);
-    }
-
-    public function testApplyALabelToArticlesWithoutAuthority(): void {
-        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
-        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([2,5]));
     }
 }

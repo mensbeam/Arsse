@@ -27,11 +27,6 @@ class User {
         return (string) $this->id;
     }
 
-    public function authorize(string $affectedUser, string $action): bool {
-        // at one time there was a complicated authorization system; it exists vestigially to support a later revival if desired
-        return $this->u->authorize($affectedUser, $action);
-    }
-
     public function auth(string $user, string $password): bool {
         $prevUser = $this->id;
         $this->id = $user;
@@ -50,34 +45,18 @@ class User {
     }
 
     public function list(): array {
-        $func = "userList";
-        if (!$this->authorize("", $func)) {
-            throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => ""]);
-        }
         return $this->u->userList();
     }
 
     public function exists(string $user): bool {
-        $func = "userExists";
-        if (!$this->authorize($user, $func)) {
-            throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
-        }
         return $this->u->userExists($user);
     }
 
     public function add($user, $password = null): string {
-        $func = "userAdd";
-        if (!$this->authorize($user, $func)) {
-            throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
-        }
         return $this->u->userAdd($user, $password) ?? $this->u->userAdd($user, $this->generatePassword());
     }
 
     public function remove(string $user): bool {
-        $func = "userRemove";
-        if (!$this->authorize($user, $func)) {
-            throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
-        }
         try {
             return $this->u->userRemove($user);
         } finally { // @codeCoverageIgnore
@@ -89,10 +68,6 @@ class User {
     }
 
     public function passwordSet(string $user, string $newPassword = null, $oldPassword = null): string {
-        $func = "userPasswordSet";
-        if (!$this->authorize($user, $func)) {
-            throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
-        }
         $out = $this->u->userPasswordSet($user, $newPassword, $oldPassword) ?? $this->u->userPasswordSet($user, $this->generatePassword(), $oldPassword);
         if (Arsse::$db->userExists($user)) {
             // if the password change was successful and the user exists, set the internal password to the same value
@@ -104,10 +79,6 @@ class User {
     }
 
     public function passwordUnset(string $user, $oldPassword = null): bool {
-        $func = "userPasswordUnset";
-        if (!$this->authorize($user, $func)) {
-            throw new User\ExceptionAuthz("notAuthorized", ["action" => $func, "user" => $user]);
-        }
         $out = $this->u->userPasswordUnset($user, $oldPassword);
         if (Arsse::$db->userExists($user)) {
             // if the password change was successful and the user exists, set the internal password to the same value
@@ -154,7 +125,7 @@ class User {
             }
         }
         if (array_key_exists("lang", $data)) {
-            $in['lang'] = V::normalize($data['lang'], V::T_STRING | M_NULL);
+            $in['lang'] = V::normalize($data['lang'], V::T_STRING | V::M_NULL);
         }
         $out = $this->u->userPropertiesSet($user, $in);
         // synchronize the internal database

@@ -74,7 +74,6 @@ abstract class AbstractTest extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$db->driverSchemaUpdate();
         // create a mock user manager
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->authorize->thenReturn(true);
         // call the series-specific setup method
         $setUp = "setUp".$this->series;
         $this->$setUp();

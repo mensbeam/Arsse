@@ -597,12 +597,6 @@ trait SeriesArticle {
         ];
     }
 
-    public function testListArticlesWithoutAuthority(): void {
-        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
-        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Arsse::$db->articleList($this->user);
-    }
-
     public function testMarkNothing(): void {
         $this->assertSame(0, Arsse::$db->articleMark($this->user, []));
     }
@@ -967,12 +961,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testMarkArticlesWithoutAuthority(): void {
-        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
-        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Arsse::$db->articleMark($this->user, ['read' => false]);
-    }
-
     public function testCountArticles(): void {
         $setSize = (new \ReflectionClassConstant(Database::class, "LIMIT_SET_SIZE"))->getValue();
         $this->assertSame(2, Arsse::$db->articleCount("john.doe@example.com", (new Context)->starred(true)));
@@ -981,23 +969,11 @@ trait SeriesArticle {
         $this->assertSame(10, Arsse::$db->articleCount("john.doe@example.com", (new Context)->articles(range(1, $setSize * 3))));
     }
 
-    public function testCountArticlesWithoutAuthority(): void {
-        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
-        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Arsse::$db->articleCount($this->user);
-    }
-
     public function testFetchStarredCounts(): void {
         $exp1 = ['total' => 2, 'unread' => 1, 'read' => 1];
         $exp2 = ['total' => 0, 'unread' => 0, 'read' => 0];
         $this->assertEquals($exp1, Arsse::$db->articleStarred("john.doe@example.com"));
         $this->assertEquals($exp2, Arsse::$db->articleStarred("jane.doe@example.com"));
-    }
-
-    public function testFetchStarredCountsWithoutAuthority(): void {
-        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
-        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Arsse::$db->articleStarred($this->user);
     }
 
     public function testFetchLatestEdition(): void {
@@ -1008,12 +984,6 @@ trait SeriesArticle {
     public function testFetchLatestEditionOfMissingSubscription(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->editionLatest($this->user, (new Context)->subscription(1));
-    }
-
-    public function testFetchLatestEditionWithoutAuthority(): void {
-        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
-        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Arsse::$db->editionLatest($this->user);
     }
 
     public function testListTheLabelsOfAnArticle(): void {
@@ -1030,12 +1000,6 @@ trait SeriesArticle {
         Arsse::$db->articleLabelsGet($this->user, 101);
     }
 
-    public function testListTheLabelsOfAnArticleWithoutAuthority(): void {
-        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
-        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Arsse::$db->articleLabelsGet("john.doe@example.com", 1);
-    }
-
     public function testListTheCategoriesOfAnArticle(): void {
         $exp = ["Fascinating", "Logical"];
         $this->assertSame($exp, Arsse::$db->articleCategoriesGet($this->user, 19));
@@ -1048,12 +1012,6 @@ trait SeriesArticle {
     public function testListTheCategoriesOfAMissingArticle(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->articleCategoriesGet($this->user, 101);
-    }
-
-    public function testListTheCategoriesOfAnArticleWithoutAuthority(): void {
-        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
-        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Arsse::$db->articleCategoriesGet($this->user, 19);
     }
 
     /** @dataProvider provideArrayContextOptions */

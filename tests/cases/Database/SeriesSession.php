@@ -70,9 +70,6 @@ trait SeriesSession {
         $state = $this->primeExpectations($this->data, ['arsse_sessions' => ["id", "created", "expires", "user"]]);
         $state['arsse_sessions']['rows'][3][2] = Date::transform(Date::add(Arsse::$conf->userSessionTimeout, $now), "sql");
         $this->compareExpectations(static::$drv, $state);
-        // session resumption should not check authorization
-        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
-        $this->assertArraySubset($exp1, Arsse::$db->sessionResume("80fa94c1a11f11e78667001e673b2560"));
     }
 
     public function testResumeAMissingSession(): void {
@@ -97,12 +94,6 @@ trait SeriesSession {
         $state = $this->primeExpectations($this->data, ['arsse_sessions' => ["id", "created", "expires", "user"]]);
         $state['arsse_sessions']['rows'][] = [$id, Date::transform($now, "sql"), Date::transform(Date::add(Arsse::$conf->userSessionTimeout, $now), "sql"), $user];
         $this->compareExpectations(static::$drv, $state);
-    }
-
-    public function testCreateASessionWithoutAuthority(): void {
-        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
-        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Arsse::$db->sessionCreate("jane.doe@example.com");
     }
 
     public function testDestroyASession(): void {
@@ -130,11 +121,5 @@ trait SeriesSession {
         $user = "john.doe@example.com";
         $id = "80fa94c1a11f11e78667001e673b2560";
         $this->assertFalse(Arsse::$db->sessionDestroy($user, $id));
-    }
-
-    public function testDestroyASessionWithoutAuthority(): void {
-        \Phake::when(Arsse::$user)->authorize->thenReturn(false);
-        $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        Arsse::$db->sessionDestroy("jane.doe@example.com", "80fa94c1a11f11e78667001e673b2560");
     }
 }

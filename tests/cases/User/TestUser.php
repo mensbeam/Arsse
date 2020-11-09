@@ -69,13 +69,9 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideUserList */
-    public function testListUsers(bool $authorized, $exp): void {
+    public function testListUsers($exp): void {
         $u = new User($this->drv);
-        \Phake::when($this->drv)->authorize->thenReturn($authorized);
         \Phake::when($this->drv)->userList->thenReturn(["john.doe@example.com", "jane.doe@example.com"]);
-        if ($exp instanceof Exception) {
-            $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        }
         $this->assertSame($exp, $u->list());
     }
 
@@ -83,20 +79,15 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $john = "john.doe@example.com";
         $jane = "jane.doe@example.com";
         return [
-            [false, new \JKingWeb\Arsse\User\ExceptionAuthz("notAuthorized")],
-            [true,  [$john, $jane]],
+            [[$john, $jane]],
         ];
     }
 
     /** @dataProvider provideExistence */
-    public function testCheckThatAUserExists(bool $authorized, string $user, $exp): void {
+    public function testCheckThatAUserExists(string $user, $exp): void {
         $u = new User($this->drv);
-        \Phake::when($this->drv)->authorize->thenReturn($authorized);
         \Phake::when($this->drv)->userExists("john.doe@example.com")->thenReturn(true);
         \Phake::when($this->drv)->userExists("jane.doe@example.com")->thenReturn(false);
-        if ($exp instanceof Exception) {
-            $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-        }
         $this->assertSame($exp, $u->exists($user));
     }
 
@@ -104,48 +95,35 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $john = "john.doe@example.com";
         $jane = "jane.doe@example.com";
         return [
-            [false, $john, new \JKingWeb\Arsse\User\ExceptionAuthz("notAuthorized")],
-            [false, $jane, new \JKingWeb\Arsse\User\ExceptionAuthz("notAuthorized")],
-            [true,  $john, true],
-            [true,  $jane, false],
+            [$john, true],
+            [$jane, false],
         ];
     }
 
     /** @dataProvider provideAdditions */
-    public function testAddAUser(bool $authorized, string $user, $password, $exp): void {
+    public function testAddAUser(string $user, $password, $exp): void {
         $u = new User($this->drv);
-        \Phake::when($this->drv)->authorize->thenReturn($authorized);
         \Phake::when($this->drv)->userAdd("john.doe@example.com", $this->anything())->thenThrow(new \JKingWeb\Arsse\User\Exception("alreadyExists"));
         \Phake::when($this->drv)->userAdd("jane.doe@example.com", $this->anything())->thenReturnCallback(function($user, $pass) {
             return $pass ?? "random password";
         });
         if ($exp instanceof Exception) {
-            if ($exp instanceof \JKingWeb\Arsse\User\ExceptionAuthz) {
-                $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-            } else {
-                $this->assertException("alreadyExists", "User");
-            }
+            $this->assertException("alreadyExists", "User");
         }
         $this->assertSame($exp, $u->add($user, $password));
     }
 
     /** @dataProvider provideAdditions */
-    public function testAddAUserWithARandomPassword(bool $authorized, string $user, $password, $exp): void {
+    public function testAddAUserWithARandomPassword(string $user, $password, $exp): void {
         $u = \Phake::partialMock(User::class, $this->drv);
-        \Phake::when($this->drv)->authorize->thenReturn($authorized);
         \Phake::when($this->drv)->userAdd($this->anything(), $this->isNull())->thenReturn(null);
         \Phake::when($this->drv)->userAdd("john.doe@example.com", $this->logicalNot($this->isNull()))->thenThrow(new \JKingWeb\Arsse\User\Exception("alreadyExists"));
         \Phake::when($this->drv)->userAdd("jane.doe@example.com", $this->logicalNot($this->isNull()))->thenReturnCallback(function($user, $pass) {
             return $pass;
         });
         if ($exp instanceof Exception) {
-            if ($exp instanceof \JKingWeb\Arsse\User\ExceptionAuthz) {
-                $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-                $calls = 0;
-            } else {
-                $this->assertException("alreadyExists", "User");
-                $calls = 2;
-            }
+            $this->assertException("alreadyExists", "User");
+            $calls = 2;
         } else {
             $calls = 4;
         }
@@ -163,34 +141,27 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $john = "john.doe@example.com";
         $jane = "jane.doe@example.com";
         return [
-            [false, $john, "secret",   new \JKingWeb\Arsse\User\ExceptionAuthz("notAuthorized")],
-            [false, $jane, "superman", new \JKingWeb\Arsse\User\ExceptionAuthz("notAuthorized")],
-            [true,  $john, "secret",   new \JKingWeb\Arsse\User\Exception("alreadyExists")],
-            [true,  $jane, "superman", "superman"],
-            [true,  $jane, null,       "random password"],
+            [$john, "secret",   new \JKingWeb\Arsse\User\Exception("alreadyExists")],
+            [$jane, "superman", "superman"],
+            [$jane, null,       "random password"],
         ];
     }
 
     /** @dataProvider provideRemovals */
-    public function testRemoveAUser(bool $authorized, string $user, bool $exists, $exp): void {
+    public function testRemoveAUser(string $user, bool $exists, $exp): void {
         $u = new User($this->drv);
-        \Phake::when($this->drv)->authorize->thenReturn($authorized);
         \Phake::when($this->drv)->userRemove("john.doe@example.com")->thenReturn(true);
         \Phake::when($this->drv)->userRemove("jane.doe@example.com")->thenThrow(new \JKingWeb\Arsse\User\Exception("doesNotExist"));
         \Phake::when(Arsse::$db)->userExists->thenReturn($exists);
         \Phake::when(Arsse::$db)->userRemove->thenReturn(true);
         if ($exp instanceof Exception) {
-            if ($exp instanceof \JKingWeb\Arsse\User\ExceptionAuthz) {
-                $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-            } else {
-                $this->assertException("doesNotExist", "User");
-            }
+            $this->assertException("doesNotExist", "User");
         }
         try {
             $this->assertSame($exp, $u->remove($user));
         } finally {
-            \Phake::verify(Arsse::$db, \Phake::times((int) $authorized))->userExists($user);
-            \Phake::verify(Arsse::$db, \Phake::times((int) ($authorized && $exists)))->userRemove($user);
+            \Phake::verify(Arsse::$db, \Phake::times(1))->userExists($user);
+            \Phake::verify(Arsse::$db, \Phake::times((int) $exists))->userRemove($user);
         }
     }
 
@@ -198,32 +169,23 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $john = "john.doe@example.com";
         $jane = "jane.doe@example.com";
         return [
-            [false, $john, true,  new \JKingWeb\Arsse\User\ExceptionAuthz("notAuthorized")],
-            [false, $john, false, new \JKingWeb\Arsse\User\ExceptionAuthz("notAuthorized")],
-            [false, $jane, true,  new \JKingWeb\Arsse\User\ExceptionAuthz("notAuthorized")],
-            [false, $jane, false, new \JKingWeb\Arsse\User\ExceptionAuthz("notAuthorized")],
-            [true,  $john, true,  true],
-            [true,  $john, false, true],
-            [true,  $jane, true,  new \JKingWeb\Arsse\User\Exception("doesNotExist")],
-            [true,  $jane, false, new \JKingWeb\Arsse\User\Exception("doesNotExist")],
+            [$john, true,  true],
+            [$john, false, true],
+            [$jane, true,  new \JKingWeb\Arsse\User\Exception("doesNotExist")],
+            [$jane, false, new \JKingWeb\Arsse\User\Exception("doesNotExist")],
         ];
     }
 
     /** @dataProvider providePasswordChanges */
-    public function testChangeAPassword(bool $authorized, string $user, $password, bool $exists, $exp): void {
+    public function testChangeAPassword(string $user, $password, bool $exists, $exp): void {
         $u = new User($this->drv);
-        \Phake::when($this->drv)->authorize->thenReturn($authorized);
         \Phake::when($this->drv)->userPasswordSet("john.doe@example.com", $this->anything(), $this->anything())->thenReturnCallback(function($user, $pass, $old) {
             return $pass ?? "random password";
         });
         \Phake::when($this->drv)->userPasswordSet("jane.doe@example.com", $this->anything(), $this->anything())->thenThrow(new \JKingWeb\Arsse\User\Exception("doesNotExist"));
         \Phake::when(Arsse::$db)->userExists->thenReturn($exists);
         if ($exp instanceof Exception) {
-            if ($exp instanceof \JKingWeb\Arsse\User\ExceptionAuthz) {
-                $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-            } else {
-                $this->assertException("doesNotExist", "User");
-            }
+            $this->assertException("doesNotExist", "User");
             $calls = 0;
         } else {
             $calls = 1;
@@ -237,9 +199,8 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider providePasswordChanges */
-    public function testChangeAPasswordToARandomPassword(bool $authorized, string $user, $password, bool $exists, $exp): void {
+    public function testChangeAPasswordToARandomPassword(string $user, $password, bool $exists, $exp): void {
         $u = \Phake::partialMock(User::class, $this->drv);
-        \Phake::when($this->drv)->authorize->thenReturn($authorized);
         \Phake::when($this->drv)->userPasswordSet($this->anything(), $this->isNull(), $this->anything())->thenReturn(null);
         \Phake::when($this->drv)->userPasswordSet("john.doe@example.com", $this->logicalNot($this->isNull()), $this->anything())->thenReturnCallback(function($user, $pass, $old) {
             return $pass ?? "random password";
@@ -247,13 +208,8 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when($this->drv)->userPasswordSet("jane.doe@example.com", $this->logicalNot($this->isNull()), $this->anything())->thenThrow(new \JKingWeb\Arsse\User\Exception("doesNotExist"));
         \Phake::when(Arsse::$db)->userExists->thenReturn($exists);
         if ($exp instanceof Exception) {
-            if ($exp instanceof \JKingWeb\Arsse\User\ExceptionAuthz) {
-                $this->assertException("notAuthorized", "User", "ExceptionAuthz");
-                $calls = 0;
-            } else {
-                $this->assertException("doesNotExist", "User");
-                $calls = 2;
-            }
+            $this->assertException("doesNotExist", "User");
+            $calls = 2;
         } else {
             $calls = 4;
         }
@@ -278,19 +234,16 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $john = "john.doe@example.com";
         $jane = "jane.doe@example.com";
         return [
-            [false, $john, "secret",   true,  new \JKingWeb\Arsse\User\ExceptionAuthz("notAuthorized")],
-            [false, $jane, "superman", false, new \JKingWeb\Arsse\User\ExceptionAuthz("notAuthorized")],
-            [true,  $john, "superman", true,  "superman"],
-            [true,  $john, null,       true,  "random password"],
-            [true,  $john, "superman", false, "superman"],
-            [true,  $john, null,       false, "random password"],
-            [true,  $jane, "secret",   true,  new \JKingWeb\Arsse\User\Exception("doesNotExist")],
+            [$john, "superman", true,  "superman"],
+            [$john, null,       true,  "random password"],
+            [$john, "superman", false, "superman"],
+            [$john, null,       false, "random password"],
+            [$jane, "secret",   true,  new \JKingWeb\Arsse\User\Exception("doesNotExist")],
         ];
     }
 
     /** @dataProvider providePasswordClearings */
-    public function testClearAPassword(bool $authorized, bool $exists, string $user, $exp): void {
-        \Phake::when($this->drv)->authorize->thenReturn($authorized);
+    public function testClearAPassword(bool $exists, string $user, $exp): void {
         \Phake::when($this->drv)->userPasswordUnset->thenReturn(true);
         \Phake::when($this->drv)->userPasswordUnset("jane.doe@example.net", null)->thenThrow(new \JKingWeb\Arsse\User\Exception("doesNotExist"));
         \Phake::when(Arsse::$db)->userExists->thenReturn($exists);
@@ -303,26 +256,19 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
                 $this->assertSame($exp, $u->passwordUnset($user));
             }
         } finally {
-            \Phake::verify(Arsse::$db, \Phake::times((int) ($authorized && $exists && is_bool($exp))))->userPasswordSet($user, null);
+            \Phake::verify(Arsse::$db, \Phake::times((int) ($exists && is_bool($exp))))->userPasswordSet($user, null);
         }
     }
 
     public function providePasswordClearings(): iterable {
-        $forbidden = new \JKingWeb\Arsse\User\ExceptionAuthz("notAuthorized");
         $missing = new \JKingWeb\Arsse\User\Exception("doesNotExist");
         return [
-            [false, true,  "jane.doe@example.com", $forbidden],
-            [false, true,  "john.doe@example.com", $forbidden],
-            [false, true,  "jane.doe@example.net", $forbidden],
-            [false, false, "jane.doe@example.com", $forbidden],
-            [false, false, "john.doe@example.com", $forbidden],
-            [false, false, "jane.doe@example.net", $forbidden],
-            [true,  true,  "jane.doe@example.com", true],
-            [true,  true,  "john.doe@example.com", true],
-            [true,  true,  "jane.doe@example.net", $missing],
-            [true,  false, "jane.doe@example.com", true],
-            [true,  false, "john.doe@example.com", true],
-            [true,  false, "jane.doe@example.net", $missing],
+            [true,  "jane.doe@example.com", true],
+            [true,  "john.doe@example.com", true],
+            [true,  "jane.doe@example.net", $missing],
+            [false, "jane.doe@example.com", true],
+            [false, "john.doe@example.com", true],
+            [false, "jane.doe@example.net", $missing],
         ];
     }
 }

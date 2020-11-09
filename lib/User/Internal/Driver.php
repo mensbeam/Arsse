@@ -32,10 +32,6 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
         return password_verify($password, $hash);
     }
 
-    public function authorize(string $affectedUser, string $action): bool {
-        return true;
-    }
-
     public function userExists(string $user): bool {
         return Arsse::$db->userExists($user);
     }

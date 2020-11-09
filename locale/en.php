@@ -138,11 +138,6 @@ return [
     'Exception.JKingWeb/Arsse/User/Exception.doesNotExist'                 => 'Could not perform action "{action}" because the user {user} does not exist',
     'Exception.JKingWeb/Arsse/User/Exception.authMissing'                  => 'Please log in to proceed',
     'Exception.JKingWeb/Arsse/User/Exception.authFailed'                   => 'Authentication failed',
-    'Exception.JKingWeb/Arsse/User/ExceptionAuthz.notAuthorized'           =>
-        '{action, select,
-            userList {Authenticated user is not authorized to view the user list}
-            other {Authenticated user is not authorized to perform the action "{action}" on behalf of {user}}
-        }',
     'Exception.JKingWeb/Arsse/User/ExceptionSession.invalid'               => 'Session with ID {0} does not exist',
     'Exception.JKingWeb/Arsse/Feed/Exception.internalError'                => 'Could not download feed "{url}" because of an internal error which is probably a bug',
     'Exception.JKingWeb/Arsse/Feed/Exception.invalidCertificate'           => 'Could not download feed "{url}" because its server is serving an invalid SSL certificate',
