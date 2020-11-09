@@ -115,7 +115,7 @@ The Arsse does not at this time have any first party clients. However, because T
   </tr>
   </tr>
   <tr>
-   <td><a href="https://www.microsoft.com/store/apps/9wzdncrdmbn3">Tiny Tiny RSS Reader</td>
+   <td><a href="https://bitbucket.org/thescientist/tiny-tiny-rss-wp8-client/src/master/">Tiny Tiny RSS Reader</td>
    <td>Windows</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
@@ -350,7 +350,6 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td>
-    <p>Does not support HTTP authentication.</p>
    </td>
   </tr>
   <tr>
