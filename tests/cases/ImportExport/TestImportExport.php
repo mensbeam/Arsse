@@ -27,7 +27,6 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
         // create a mock user manager
         Arsse::$user = \Phake::mock(\JKingWeb\Arsse\User::class);
-        \Phake::when(Arsse::$user)->exists->thenReturn(true);
         // create a mock Import/Export processor
         $this->proc = \Phake::partialMock(AbstractImportExport::class);
         // initialize an SQLite memeory database
@@ -147,9 +146,8 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testImportForAMissingUser(): void {
-        \Phake::when(Arsse::$user)->exists->thenReturn(false);
         $this->assertException("doesNotExist", "User");
-        $this->proc->import("john.doe@example.com", "", false, false);
+        $this->proc->import("no.one@example.com", "", false, false);
     }
 
     public function testImportWithInvalidFolder(): void {

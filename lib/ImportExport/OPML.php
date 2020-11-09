@@ -91,7 +91,7 @@ class OPML extends AbstractImportExport {
     }
 
     public function export(string $user, bool $flat = false): string {
-        if (!Arsse::$user->exists($user)) {
+        if (!Arsse::$db->userExists($user)) {
             throw new UserException("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
         $tags = [];

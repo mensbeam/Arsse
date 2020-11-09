@@ -13,7 +13,7 @@ use JKingWeb\Arsse\User\Exception as UserException;
 
 abstract class AbstractImportExport {
     public function import(string $user, string $data, bool $flat = false, bool $replace = false): bool {
-        if (!Arsse::$user->exists($user)) {
+        if (!Arsse::$db->userExists($user)) {
             throw new UserException("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
         // first extract useful information from the input

@@ -48,10 +48,6 @@ class User {
         return $this->u->userList();
     }
 
-    public function exists(string $user): bool {
-        return $this->u->userExists($user);
-    }
-
     public function add($user, $password = null): string {
         return $this->u->userAdd($user, $password) ?? $this->u->userAdd($user, $this->generatePassword());
     }

@@ -75,18 +75,6 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db, \Phake::times(2))->userList;
     }
 
-    public function testCheckThatAUserExists(): void {
-        $john = "john.doe@example.com";
-        $jane = "jane.doe@example.com";
-        \Phake::when(Arsse::$db)->userExists($john)->thenReturn(true);
-        \Phake::when(Arsse::$db)->userExists($jane)->thenReturn(false);
-        $driver = new Driver;
-        $this->assertTrue($driver->userExists($john));
-        \Phake::verify(Arsse::$db)->userExists($john);
-        $this->assertFalse($driver->userExists($jane));
-        \Phake::verify(Arsse::$db)->userExists($jane);
-    }
-
     public function testAddAUser(): void {
         $john = "john.doe@example.com";
         \Phake::when(Arsse::$db)->userAdd->thenReturnCallback(function($user, $pass) {
@@ -119,20 +107,18 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verifyNoFurtherInteraction(Arsse::$db);
         $this->assertSame("superman", (new Driver)->userPasswordSet($john, "superman"));
         $this->assertSame(null, (new Driver)->userPasswordSet($john, null));
+        \Phake::verify(Arsse::$db, \Phake::times(0))->userPasswordSet;
     }
 
     public function testUnsetAPassword(): void {
-        $drv = \Phake::partialMock(Driver::class);
-        \Phake::when($drv)->userExists->thenReturn(true);
-        \Phake::verifyNoFurtherInteraction(Arsse::$db);
-        $this->assertTrue($drv->userPasswordUnset("john.doe@example.com"));
+        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        $this->assertTrue((new Driver)->userPasswordUnset("john.doe@example.com"));
+        \Phake::verify(Arsse::$db, \Phake::times(0))->userPasswordUnset;
     }
 
     public function testUnsetAPasswordForAMssingUser(): void {
-        $drv = \Phake::partialMock(Driver::class);
-        \Phake::when($drv)->userExists->thenReturn(false);
-        \Phake::verifyNoFurtherInteraction(Arsse::$db);
+        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
         $this->assertException("doesNotExist", "User");
-        $drv->userPasswordUnset("john.doe@example.com");
+        (new Driver)->userPasswordUnset("john.doe@example.com");
     }
 }

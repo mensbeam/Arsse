@@ -82,8 +82,7 @@ OPML_EXPORT_SERIALIZATION;
     public function setUp(): void {
         self::clearData();
         Arsse::$db = \Phake::mock(\JKingWeb\Arsse\Database::class);
-        Arsse::$user = \Phake::mock(\JKingWeb\Arsse\User::class);
-        \Phake::when(Arsse::$user)->exists->thenReturn(true);
+        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
     }
 
     public function testExportToOpml(): void {
@@ -101,7 +100,7 @@ OPML_EXPORT_SERIALIZATION;
     }
 
     public function testExportToOpmlAMissingUser(): void {
-        \Phake::when(Arsse::$user)->exists->thenReturn(false);
+        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
         $this->assertException("doesNotExist", "User");
         (new OPML)->export("john.doe@example.com");
     }

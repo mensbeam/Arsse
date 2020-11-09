@@ -83,23 +83,6 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideExistence */
-    public function testCheckThatAUserExists(string $user, $exp): void {
-        $u = new User($this->drv);
-        \Phake::when($this->drv)->userExists("john.doe@example.com")->thenReturn(true);
-        \Phake::when($this->drv)->userExists("jane.doe@example.com")->thenReturn(false);
-        $this->assertSame($exp, $u->exists($user));
-    }
-
-    public function provideExistence(): iterable {
-        $john = "john.doe@example.com";
-        $jane = "jane.doe@example.com";
-        return [
-            [$john, true],
-            [$jane, false],
-        ];
-    }
-
     /** @dataProvider provideAdditions */
     public function testAddAUser(string $user, $password, $exp): void {
         $u = new User($this->drv);

@@ -7,26 +7,49 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\User;
 
 interface Driver {
-    public const FUNC_NOT_IMPLEMENTED = 0;
-    public const FUNC_INTERNAL = 1;
-    public const FUNC_EXTERNAL = 2;
-
-    // returns an instance of a class implementing this interface.
     public function __construct();
-    // returns a human-friendly name for the driver (for display in installer, for example)
+
+    /** Returns a human-friendly name for the driver (for display in installer, for example) */
     public static function driverName(): string;
-    // authenticates a user against their name and password
+
+    /** Authenticates a user against their name and password */
     public function auth(string $user, string $password): bool;
-    // checks whether a user exists
-    public function userExists(string $user): bool;
-    // adds a user
-    public function userAdd(string $user, string $password = null);
-    // removes a user
+
+    /** Adds a new user and returns their password
+     * 
+     * When given no password the implementation may return null; the user
+     * manager will then generate a random password and try again with that
+     * password. Alternatively the implementation may generate its own 
+     * password if desired
+     * 
+     * @param string $user The username to create
+     * @param string|null $password The cleartext password to assign to the user, or null to generate a random password
+     */
+    public function userAdd(string $user, string $password = null): ?string;
+
+    /** Removes a user */
     public function userRemove(string $user): bool;
-    // lists all users
+
+    /** Lists all users */
     public function userList(): array;
-    // sets a user's password; if the driver does not require the old password, it may be ignored
-    public function userPasswordSet(string $user, string $newPassword = null, string $oldPassword = null);
-    // removes a user's password; this makes authentication fail unconditionally
+
+    /** sets a user's password
+     * 
+     * When given no password the implementation may return null; the user
+     * manager will then generate a random password and try again with that
+     * password. Alternatively the implementation may generate its own 
+     * password if desired
+     * 
+     * @param string $user The user for whom to change the password
+     * @param string|null $password The cleartext password to assign to the user, or null to generate a random password
+     * @param string|null $oldPassword The user's previous password, if known
+     */
+    public function userPasswordSet(string $user, ?string $newPassword, string $oldPassword = null);
+
+    /** removes a user's password; this makes authentication fail unconditionally 
+     * 
+     * @param string $user The user for whom to change the password
+     * @param string|null $oldPassword The user's previous password, if known
+     */
     public function userPasswordUnset(string $user, string $oldPassword = null): bool;
 }
