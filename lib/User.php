@@ -6,6 +6,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
+use JKingWeb\Arsse\Misc\ValueInfo as V;
 use PasswordGenerator\Generator as PassGen;
 
 class User {
@@ -119,5 +120,45 @@ class User {
 
     public function generatePassword(): string {
         return (new PassGen)->length(Arsse::$conf->userTempPasswordLength)->get();
+    }
+    
+    public function propertiesGet(string $user): array {
+        // unconditionally retrieve from the database to get at least the user number, and anything else the driver does not provide
+        $out = Arsse::$db->userPropertiesGet($user);
+        // layer on the driver's data
+        $extra = $this->u->userPropertiesGet($user);
+        foreach (["lang", "tz", "admin", "sort_asc"] as $k) {
+            if (array_key_exists($k, $extra)) {
+                $out[$k] = $extra[$k] ?? $out[$k];
+            }
+        }
+        return $out;
+    }
+    
+    public function propertiesSet(string $user, array $data): bool {
+        $in = [];
+        if (array_key_exists("tz", $data)) {
+            if (!is_string($data['tz'])) {
+                throw new User\ExceptionInput("invalidTimezone");
+            } elseif (!in_array($data['tz'], \DateTimeZone::listIdentifiers())) {
+                throw new User\ExceptionInput("invalidTimezone", $data['tz']);
+            }
+            $in['tz'] = $data['tz'];
+        }
+        foreach (["admin", "sort_asc"] as $k) {
+            if (array_key_exists($k, $data)) {
+                if (($v = V::normalize($data[$k], V::T_BOOL)) === null) {
+                    throw new User\ExceptionInput("invalidBoolean", $k);
+                }
+                $in[$k] = $v;
+            }
+        }
+        if (array_key_exists("lang", $data)) {
+            $in['lang'] = V::normalize($data['lang'], V::T_STRING | M_NULL);
+        }
+        $out = $this->u->userPropertiesSet($user, $in);
+        // synchronize the internal database
+        Arsse::$db->userPropertiesSet($user, $in);
+        return $out;
     }
 }

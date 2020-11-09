@@ -37,6 +37,9 @@ use JKingWeb\Arsse\Misc\URL;
  * associations with articles. There has been an effort to keep public method
  * names consistent throughout, but protected methods, having different
  * concerns, will typically follow different conventions.
+ * 
+ * Note that operations on users should be performed with the User class rather
+ * than the Database class directly. This is to allow for alternate user sources.
  */
 class Database {
     /** The version number of the latest schema the interface is aware of */
@@ -309,6 +312,35 @@ class Database {
         $hash = (strlen($password ?? "") > 0) ? password_hash($password, \PASSWORD_DEFAULT) : $password;
         $this->db->prepare("UPDATE arsse_users set password = ? where id = ?", "str", "str")->run($hash, $user);
         return true;
+    }
+    
+    public function userPropertiesGet(string $user): array {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        } elseif (!$this->userExists($user)) {
+            throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        $out = $this->db->prepare("SELECT num, admin, lang, tz, sort_asc from arsse_users where id = ?", "str")->run($user)->getRow();
+        settype($out['admin'], "bool");
+        settype($out['sort_asc'], "bool");
+        return $out;
+    }
+    
+    public function userPropertiesSet(string $user, array $data): bool {
+        if (!Arsse::$user->authorize($user, __FUNCTION__)) {
+            throw new User\ExceptionAuthz("notAuthorized", ["action" => __FUNCTION__, "user" => $user]);
+        } elseif (!$this->userExists($user)) {
+            throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        $allowed = [
+            'admin'    => "strict bool",
+            'lang'     => "str",
+            'tz'       => "strict str",
+            'sort_asc' => "strict bool",
+        ];
+        [$setClause, $setTypes, $setValues] = $this->generateSet($data, $allowed);
+        return (bool) $this->$db->prepare("UPDATE arsse_users set $setClause where user = ?", $setTypes, "str")->run($setValues, $user)->changes();
+        
     }
 
     /** Creates a new session for the given user and returns the session identifier */
