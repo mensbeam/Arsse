@@ -90,10 +90,10 @@ class User {
     }
     
     public function propertiesGet(string $user): array {
+        $extra = $this->u->userPropertiesGet($user);
         // unconditionally retrieve from the database to get at least the user number, and anything else the driver does not provide
         $out = Arsse::$db->userPropertiesGet($user);
         // layer on the driver's data
-        $extra = $this->u->userPropertiesGet($user);
         foreach (["lang", "tz", "admin", "sort_asc"] as $k) {
             if (array_key_exists($k, $extra)) {
                 $out[$k] = $extra[$k] ?? $out[$k];
@@ -102,7 +102,7 @@ class User {
         return $out;
     }
     
-    public function propertiesSet(string $user, array $data): bool {
+    public function propertiesSet(string $user, array $data): array {
         $in = [];
         if (array_key_exists("tz", $data)) {
             if (!is_string($data['tz'])) {
@@ -125,7 +125,7 @@ class User {
         }
         $out = $this->u->userPropertiesSet($user, $in);
         // synchronize the internal database
-        Arsse::$db->userPropertiesSet($user, $in);
+        Arsse::$db->userPropertiesSet($user, $out);
         return $out;
     }
 }
