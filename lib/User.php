@@ -49,7 +49,12 @@ class User {
     }
 
     public function add($user, $password = null): string {
-        return $this->u->userAdd($user, $password) ?? $this->u->userAdd($user, $this->generatePassword());
+        $out = $this->u->userAdd($user, $password) ?? $this->u->userAdd($user, $this->generatePassword());
+        // synchronize the internal database
+        if (!Arsse::$db->userExists($user)) {
+            Arsse::$db->userAdd($user, $out);
+        }
+        return $out;
     }
 
     public function remove(string $user): bool {
@@ -70,6 +75,9 @@ class User {
             Arsse::$db->userPasswordSet($user, $out);
             // also invalidate any current sessions for the user
             Arsse::$db->sessionDestroy($user);
+        } else {
+            // if the user does not exist, add it with the new password
+            Arsse::$db->userAdd($user, $out);
         }
         return $out;
     }
@@ -81,6 +89,10 @@ class User {
             Arsse::$db->userPasswordSet($user, null);
             // also invalidate any current sessions for the user
             Arsse::$db->sessionDestroy($user);
+        } else {
+            // if the user does not exist
+            Arsse::$db->userAdd($user, "");
+            Arsse::$db->userPasswordSet($user, null);
         }
         return $out;
     }
@@ -91,6 +103,10 @@ class User {
     
     public function propertiesGet(string $user): array {
         $extra = $this->u->userPropertiesGet($user);
+        // synchronize the internal database
+        if (!Arsse::$db->userExists($user)) {
+            Arsse::$db->userAdd($user, $this->generatePassword());
+        }
         // unconditionally retrieve from the database to get at least the user number, and anything else the driver does not provide
         $out = Arsse::$db->userPropertiesGet($user);
         // layer on the driver's data
@@ -125,6 +141,9 @@ class User {
         }
         $out = $this->u->userPropertiesSet($user, $in);
         // synchronize the internal database
+        if (!Arsse::$db->userExists($user)) {
+            Arsse::$db->userAdd($user, $this->generatePassword());
+        }
         Arsse::$db->userPropertiesSet($user, $out);
         return $out;
     }
