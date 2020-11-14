@@ -300,10 +300,11 @@ class Database {
     }
     
     public function userPropertiesGet(string $user): array {
-        if (!$this->userExists($user)) {
+        $out = $this->db->prepare("SELECT num, admin, lang, tz, sort_asc from arsse_users where id = ?", "str")->run($user)->getRow();
+        if (!$out) {
             throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
-        $out = $this->db->prepare("SELECT num, admin, lang, tz, sort_asc from arsse_users where id = ?", "str")->run($user)->getRow();
+        settype($out['num'], "int");
         settype($out['admin'], "bool");
         settype($out['sort_asc'], "bool");
         return $out;
@@ -320,7 +321,10 @@ class Database {
             'sort_asc' => "strict bool",
         ];
         [$setClause, $setTypes, $setValues] = $this->generateSet($data, $allowed);
-        return (bool) $this->db->prepare("UPDATE arsse_users set $setClause where user = ?", $setTypes, "str")->run($setValues, $user)->changes();
+        if (!$setClause) {
+            return false;
+        }
+        return (bool) $this->db->prepare("UPDATE arsse_users set $setClause where id = ?", $setTypes, "str")->run($setValues, $user)->changes();
         
     }
 

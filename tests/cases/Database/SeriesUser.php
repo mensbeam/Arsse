@@ -16,11 +16,15 @@ trait SeriesUser {
                     'id'       => 'str',
                     'password' => 'str',
                     'num'      => 'int',
+                    'admin'    => 'bool',
+                    'lang'     => 'str',
+                    'tz'       => 'str',
+                    'sort_asc' => 'bool',
                 ],
                 'rows' => [
-                    ["admin@example.net", '$2y$10$PbcG2ZR3Z8TuPzM7aHTF8.v61dtCjzjK78gdZJcp4UePE8T9jEgBW',1], // password is hash of "secret"
-                    ["jane.doe@example.com", "",2],
-                    ["john.doe@example.com", "",3],
+                    ["admin@example.net", '$2y$10$PbcG2ZR3Z8TuPzM7aHTF8.v61dtCjzjK78gdZJcp4UePE8T9jEgBW',1, 1, "en", "America/Toronto", 0], // password is hash of "secret"
+                    ["jane.doe@example.com", "",2, 0, "fr", "Asia/Kuala_Lumpur", 1],
+                    ["john.doe@example.com", "",3, 0, null, "Etc/UTC", 0],
                 ],
             ],
         ];
@@ -99,5 +103,51 @@ trait SeriesUser {
     public function testSetThePasswordOfAMissingUser(): void {
         $this->assertException("doesNotExist", "User");
         Arsse::$db->userPasswordSet("john.doe@example.org", "secret");
+    }
+    
+    /** @dataProvider provideMetaData */
+    public function testGetMetadata(string $user, array $exp): void {
+        $this->assertSame($exp, Arsse::$db->userPropertiesGet($user));
+    }
+    
+    public function provideMetadata() {
+        return [
+            ["admin@example.net",    ['num' => 1, 'admin' => true,  'lang' => "en", 'tz' => "America/Toronto",   'sort_asc' => false]],
+            ["jane.doe@example.com", ['num' => 2, 'admin' => false, 'lang' => "fr", 'tz' => "Asia/Kuala_Lumpur", 'sort_asc' => true]],
+            ["john.doe@example.com", ['num' => 3, 'admin' => false, 'lang' => null, 'tz' => "Etc/UTC",           'sort_asc' => false]],
+        ];
+    }
+
+    public function testGetTheMetadataOfAMissingUser(): void {
+        $this->assertException("doesNotExist", "User");
+        Arsse::$db->userPropertiesGet("john.doe@example.org");
+    }
+    
+    public function testSetMetadata(): void {
+        $in = [
+            'admin' => true, 
+            'lang' => "en-ca", 
+            'tz' => "Atlantic/Reykjavik", 
+            'sort_asc' => true,
+        ];
+        $this->assertTrue(Arsse::$db->userPropertiesSet("john.doe@example.com", $in));
+        $state = $this->primeExpectations($this->data, ['arsse_users' => ['id', 'num', 'admin', 'lang', 'tz', 'sort_asc']]);
+        $state['arsse_users']['rows'][2] = ["john.doe@example.com", 3, 1, "en-ca", "Atlantic/Reykjavik", 1];
+        $this->compareExpectations(static::$drv, $state);
+    }
+    
+    public function testSetNoMetadata(): void {
+        $in = [
+            'num' => 2112, 
+            'blah' => "bloo"
+        ];
+        $this->assertFalse(Arsse::$db->userPropertiesSet("john.doe@example.com", $in));
+        $state = $this->primeExpectations($this->data, ['arsse_users' => ['id', 'num', 'admin', 'lang', 'tz', 'sort_asc']]);
+        $this->compareExpectations(static::$drv, $state);
+    }
+
+    public function testSetTheMetadataOfAMissingUser(): void {
+        $this->assertException("doesNotExist", "User");
+        Arsse::$db->userPropertiesSet("john.doe@example.org", ['admin' => true]);
     }
 }
