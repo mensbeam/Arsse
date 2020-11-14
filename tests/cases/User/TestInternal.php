@@ -121,4 +121,41 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertException("doesNotExist", "User");
         (new Driver)->userPasswordUnset("john.doe@example.com");
     }
+    
+    public function testGetUserProperties(): void {
+        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        $this->assertSame([], (new Driver)->userPropertiesGet("john.doe@example.com"));
+        \Phake::verify(Arsse::$db)->userExists("john.doe@example.com");
+        \Phake::verifyNoFurtherInteraction(Arsse::$db);
+    }
+    
+    public function testGetPropertiesForAMissingUser(): void {
+        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
+        $this->assertException("doesNotExist", "User");
+        try {
+            (new Driver)->userPropertiesGet("john.doe@example.com");
+        } finally {
+            \Phake::verify(Arsse::$db)->userExists("john.doe@example.com");
+            \Phake::verifyNoFurtherInteraction(Arsse::$db);
+        }
+    }
+    
+    public function testSetUserProperties(): void {
+        $in = ['admin' => true];
+        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        $this->assertSame($in, (new Driver)->userPropertiesSet("john.doe@example.com", $in));
+        \Phake::verify(Arsse::$db)->userExists("john.doe@example.com");
+        \Phake::verifyNoFurtherInteraction(Arsse::$db);
+    }
+    
+    public function testSetPropertiesForAMissingUser(): void {
+        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
+        $this->assertException("doesNotExist", "User");
+        try {
+            (new Driver)->userPropertiesSet("john.doe@example.com", ['admin' => true]);
+        } finally {
+            \Phake::verify(Arsse::$db)->userExists("john.doe@example.com");
+            \Phake::verifyNoFurtherInteraction(Arsse::$db);
+        }
+    }
 }
