@@ -10,7 +10,7 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\ExceptionInput;
-use JKingWeb\Arsse\User\Exception as UserException;
+use JKingWeb\Arsse\User\ExceptionConflict as UserException;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\Fever\User as FeverUser;
 

@@ -37,7 +37,7 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$db)->userPasswordGet("john.doe@example.com")->thenReturn('$2y$10$1zbqRJhxM8uUjeSBPp4IhO90xrqK0XjEh9Z16iIYEFRV4U.zeAFom'); // hash of "secret"
         \Phake::when(Arsse::$db)->userPasswordGet("jane.doe@example.com")->thenReturn('$2y$10$bK1ljXfTSyc2D.NYvT.Eq..OpehLRXVbglW.23ihVuyhgwJCd.7Im'); // hash of "superman"
         \Phake::when(Arsse::$db)->userPasswordGet("owen.hardy@example.com")->thenReturn("");
-        \Phake::when(Arsse::$db)->userPasswordGet("kira.nerys@example.com")->thenThrow(new \JKingWeb\Arsse\User\Exception("doesNotExist"));
+        \Phake::when(Arsse::$db)->userPasswordGet("kira.nerys@example.com")->thenThrow(new \JKingWeb\Arsse\User\ExceptionConflict("doesNotExist"));
         \Phake::when(Arsse::$db)->userPasswordGet("007@example.com")->thenReturn(null);
         $this->assertSame($exp, (new Driver)->auth($user, $password));
     }
@@ -90,11 +90,11 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testRemoveAUser(): void {
         $john = "john.doe@example.com";
-        \Phake::when(Arsse::$db)->userRemove->thenReturn(true)->thenThrow(new \JKingWeb\Arsse\User\Exception("doesNotExist"));
+        \Phake::when(Arsse::$db)->userRemove->thenReturn(true)->thenThrow(new \JKingWeb\Arsse\User\ExceptionConflict("doesNotExist"));
         $driver = new Driver;
         $this->assertTrue($driver->userRemove($john));
         \Phake::verify(Arsse::$db, \Phake::times(1))->userRemove($john);
-        $this->assertException("doesNotExist", "User");
+        $this->assertException("doesNotExist", "User", "ExceptionConflict");
         try {
             $this->assertFalse($driver->userRemove($john));
         } finally {
@@ -118,7 +118,7 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testUnsetAPasswordForAMssingUser(): void {
         \Phake::when(Arsse::$db)->userExists->thenReturn(false);
-        $this->assertException("doesNotExist", "User");
+        $this->assertException("doesNotExist", "User", "ExceptionConflict");
         (new Driver)->userPasswordUnset("john.doe@example.com");
     }
     
@@ -131,7 +131,7 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
     
     public function testGetPropertiesForAMissingUser(): void {
         \Phake::when(Arsse::$db)->userExists->thenReturn(false);
-        $this->assertException("doesNotExist", "User");
+        $this->assertException("doesNotExist", "User", "ExceptionConflict");
         try {
             (new Driver)->userPropertiesGet("john.doe@example.com");
         } finally {
@@ -150,7 +150,7 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
     
     public function testSetPropertiesForAMissingUser(): void {
         \Phake::when(Arsse::$db)->userExists->thenReturn(false);
-        $this->assertException("doesNotExist", "User");
+        $this->assertException("doesNotExist", "User", "ExceptionConflict");
         try {
             (new Driver)->userPropertiesSet("john.doe@example.com", ['admin' => true]);
         } finally {

@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\User\Internal;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\User\Exception;
+use JKingWeb\Arsse\User\ExceptionConflict;
 
 class Driver implements \JKingWeb\Arsse\User\Driver {
     public function __construct() {
@@ -23,7 +23,7 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
             if (is_null($hash)) {
                 return false;
             }
-        } catch (Exception $e) {
+        } catch (ExceptionConflict $e) {
             return false;
         }
         if ($password === "" && $hash === "") {
@@ -57,7 +57,7 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
         // do nothing: the internal database is updated regardless of what the driver does (assuming it does not throw an exception)
         // throw an exception if the user does not exist
         if (!$this->userExists($user)) {
-            throw new Exception("doesNotExist", ['action' => "userPasswordUnset", 'user' => $user]);
+            throw new ExceptionConflict("doesNotExist", ['action' => "userPasswordUnset", 'user' => $user]);
         } else {
             return true;
         }
@@ -74,7 +74,7 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
     public function userPropertiesGet(string $user): array {
         // do nothing: the internal database will retrieve everything for us
         if (!$this->userExists($user)) {
-            throw new Exception("doesNotExist", ['action' => "userPasswordUnset", 'user' => $user]);
+            throw new ExceptionConflict("doesNotExist", ['action' => "userPasswordUnset", 'user' => $user]);
         } else {
             return [];
         }
@@ -83,7 +83,7 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
     public function userPropertiesSet(string $user, array $data): array {
         // do nothing: the internal database will set everything for us
         if (!$this->userExists($user)) {
-            throw new Exception("doesNotExist", ['action' => "userPasswordUnset", 'user' => $user]);
+            throw new ExceptionConflict("doesNotExist", ['action' => "userPasswordUnset", 'user' => $user]);
         } else {
             return $data;
         }

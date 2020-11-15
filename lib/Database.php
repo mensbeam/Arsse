@@ -248,11 +248,11 @@ class Database {
     /** Adds a user to the database
      *
      * @param string $user The user to add
-     * @param string $passwordThe user's password in cleartext. It will be stored hashed
+     * @param string|null $passwordThe user's password in cleartext. It will be stored hashed
      */
-    public function userAdd(string $user, string $password): bool {
+    public function userAdd(string $user, ?string $password): bool {
         if ($this->userExists($user)) {
-            throw new User\Exception("alreadyExists", ["action" => __FUNCTION__, "user" => $user]);
+            throw new User\ExceptionConflict("alreadyExists", ["action" => __FUNCTION__, "user" => $user]);
         }
         $hash = (strlen($password) > 0) ? password_hash($password, \PASSWORD_DEFAULT) : "";
         // NOTE: This roundabout construction (with 'select' rather than 'values') is required by MySQL, because MySQL is riddled with pitfalls and exceptions
@@ -263,7 +263,7 @@ class Database {
     /** Removes a user from the database */
     public function userRemove(string $user): bool {
         if ($this->db->prepare("DELETE from arsse_users where id = ?", "str")->run($user)->changes() < 1) {
-            throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+            throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
         return true;
     }
@@ -280,7 +280,7 @@ class Database {
     /** Retrieves the hashed password of a user */
     public function userPasswordGet(string $user): ?string {
         if (!$this->userExists($user)) {
-            throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+            throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
         return $this->db->prepare("SELECT password from arsse_users where id = ?", "str")->run($user)->getValue();
     }
@@ -288,11 +288,11 @@ class Database {
     /** Sets the password of an existing user
      *
      * @param string $user The user for whom to set the password
-     * @param string $password The new password, in cleartext. The password will be stored hashed. If null is passed, the password is unset and authentication not possible
+     * @param string|null $password The new password, in cleartext. The password will be stored hashed. If null is passed, the password is unset and authentication not possible
      */
-    public function userPasswordSet(string $user, string $password = null): bool {
+    public function userPasswordSet(string $user, ?string $password): bool {
         if (!$this->userExists($user)) {
-            throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+            throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
         $hash = (strlen($password ?? "") > 0) ? password_hash($password, \PASSWORD_DEFAULT) : $password;
         $this->db->prepare("UPDATE arsse_users set password = ? where id = ?", "str", "str")->run($hash, $user);
@@ -302,7 +302,7 @@ class Database {
     public function userPropertiesGet(string $user): array {
         $out = $this->db->prepare("SELECT num, admin, lang, tz, sort_asc from arsse_users where id = ?", "str")->run($user)->getRow();
         if (!$out) {
-            throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+            throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
         settype($out['num'], "int");
         settype($out['admin'], "bool");
@@ -312,7 +312,7 @@ class Database {
     
     public function userPropertiesSet(string $user, array $data): bool {
         if (!$this->userExists($user)) {
-            throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+            throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
         $allowed = [
             'admin'    => "strict bool",
@@ -402,7 +402,7 @@ class Database {
      */
     public function tokenCreate(string $user, string $class, string $id = null, \DateTimeInterface $expires = null): string {
         if (!$this->userExists($user)) {
-            throw new User\Exception("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+            throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
         // generate a token if it's not provided
         $id = $id ?? UUID::mint()->hex;

@@ -142,7 +142,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user->method("add")->will($this->returnCallback(function($user, $pass = null) {
             switch ($user) {
                 case "john.doe@example.com":
-                    throw new \JKingWeb\Arsse\User\Exception("alreadyExists");
+                    throw new \JKingWeb\Arsse\User\ExceptionConflict("alreadyExists");
                 case "jane.doe@example.com":
                     return is_null($pass) ? "random password" : $pass;
             }
@@ -200,7 +200,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             if ($user === "john.doe@example.com") {
                 return true;
             }
-            throw new \JKingWeb\Arsse\User\Exception("doesNotExist");
+            throw new \JKingWeb\Arsse\User\ExceptionConflict("doesNotExist");
         }));
         $this->assertConsole($this->cli, $cmd, $exitStatus, $output);
     }
@@ -217,7 +217,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         $passwordChange = function($user, $pass = null) {
             switch ($user) {
                 case "jane.doe@example.com":
-                    throw new \JKingWeb\Arsse\User\Exception("doesNotExist");
+                    throw new \JKingWeb\Arsse\User\ExceptionConflict("doesNotExist");
                 case "john.doe@example.com":
                     return is_null($pass) ? "random password" : $pass;
             }
@@ -247,7 +247,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         $passwordClear = function($user) {
             switch ($user) {
                 case "jane.doe@example.com":
-                    throw new \JKingWeb\Arsse\User\Exception("doesNotExist");
+                    throw new \JKingWeb\Arsse\User\ExceptionConflict("doesNotExist");
                 case "john.doe@example.com":
                     return true;
             }

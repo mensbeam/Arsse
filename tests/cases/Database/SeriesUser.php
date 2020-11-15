@@ -47,7 +47,7 @@ trait SeriesUser {
     }
 
     public function testGetThePasswordOfAMissingUser(): void {
-        $this->assertException("doesNotExist", "User");
+        $this->assertException("doesNotExist", "User", "ExceptionConflict");
         Arsse::$db->userPasswordGet("john.doe@example.org");
     }
 
@@ -59,7 +59,7 @@ trait SeriesUser {
     }
 
     public function testAddAnExistingUser(): void {
-        $this->assertException("alreadyExists", "User");
+        $this->assertException("alreadyExists", "User", "ExceptionConflict");
         Arsse::$db->userAdd("john.doe@example.com", "");
     }
 
@@ -71,7 +71,7 @@ trait SeriesUser {
     }
 
     public function testRemoveAMissingUser(): void {
-        $this->assertException("doesNotExist", "User");
+        $this->assertException("doesNotExist", "User", "ExceptionConflict");
         Arsse::$db->userRemove("john.doe@example.org");
     }
 
@@ -101,7 +101,7 @@ trait SeriesUser {
     }
 
     public function testSetThePasswordOfAMissingUser(): void {
-        $this->assertException("doesNotExist", "User");
+        $this->assertException("doesNotExist", "User", "ExceptionConflict");
         Arsse::$db->userPasswordSet("john.doe@example.org", "secret");
     }
     
@@ -110,7 +110,7 @@ trait SeriesUser {
         $this->assertSame($exp, Arsse::$db->userPropertiesGet($user));
     }
     
-    public function provideMetadata() {
+    public function provideMetadata(): iterable {
         return [
             ["admin@example.net",    ['num' => 1, 'admin' => true,  'lang' => "en", 'tz' => "America/Toronto",   'sort_asc' => false]],
             ["jane.doe@example.com", ['num' => 2, 'admin' => false, 'lang' => "fr", 'tz' => "Asia/Kuala_Lumpur", 'sort_asc' => true]],
@@ -119,7 +119,7 @@ trait SeriesUser {
     }
 
     public function testGetTheMetadataOfAMissingUser(): void {
-        $this->assertException("doesNotExist", "User");
+        $this->assertException("doesNotExist", "User", "ExceptionConflict");
         Arsse::$db->userPropertiesGet("john.doe@example.org");
     }
     
@@ -147,7 +147,7 @@ trait SeriesUser {
     }
 
     public function testSetTheMetadataOfAMissingUser(): void {
-        $this->assertException("doesNotExist", "User");
+        $this->assertException("doesNotExist", "User", "ExceptionConflict");
         Arsse::$db->userPropertiesSet("john.doe@example.org", ['admin' => true]);
     }
 }

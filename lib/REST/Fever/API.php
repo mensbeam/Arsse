@@ -241,7 +241,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             // verify the supplied hash is valid
             $s = Arsse::$db->TokenLookup("fever.login", $hash);
-        } catch (\JKingWeb\Arsse\Db\ExceptionInput $e) {
+        } catch (ExceptionInput $e) {
             return false;
         }
         // set the user name

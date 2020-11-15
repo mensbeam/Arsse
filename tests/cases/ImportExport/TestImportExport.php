@@ -146,7 +146,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testImportForAMissingUser(): void {
-        $this->assertException("doesNotExist", "User");
+        $this->assertException("doesNotExist", "User", "ExceptionConflict");
         $this->proc->import("no.one@example.com", "", false, false);
     }
 

@@ -10,6 +10,7 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\AbstractException as Exception;
+use JKingWeb\Arsse\User\ExceptionConflict;
 use JKingWeb\Arsse\User\Driver;
 
 /** @covers \JKingWeb\Arsse\User */
@@ -22,6 +23,11 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(\JKingWeb\Arsse\Db\Transaction::class));
         // create a mock user driver
         $this->drv = \Phake::mock(Driver::class);
+    }
+    
+    public function tearDown(): void {
+        \Phake::verifyNoOtherInteractions($this->drv);
+        \Phake::verifyNoOtherInteractions(Arsse::$db);
     }
 
     public function testConstruct(): void {
@@ -49,6 +55,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $u = new User($this->drv);
         $this->assertSame($exp, $u->auth($user, $password));
         $this->assertNull($u->id);
+        \Phake::verify($this->drv, \Phake::times((int) !$preAuth))->auth($user, $password);
         \Phake::verify(Arsse::$db, \Phake::times($exp ? 1 : 0))->userExists($user);
         \Phake::verify(Arsse::$db, \Phake::times($exp && $user === "jane.doe@example.com" ? 1 : 0))->userAdd($user, $password);
     }
@@ -68,190 +75,65 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideUserList */
-    public function testListUsers($exp): void {
+    public function testListUsers(): void {
+        $exp = ["john.doe@example.com", "jane.doe@example.com"];
         $u = new User($this->drv);
         \Phake::when($this->drv)->userList->thenReturn(["john.doe@example.com", "jane.doe@example.com"]);
         $this->assertSame($exp, $u->list());
+        \Phake::verify($this->drv)->userList();
     }
 
-    public function provideUserList(): iterable {
-        $john = "john.doe@example.com";
-        $jane = "jane.doe@example.com";
-        return [
-            [[$john, $jane]],
-        ];
-    }
-
-    /** @dataProvider provideAdditions */
-    public function testAddAUser(string $user, $password, $exp): void {
+    public function testAddAUser(): void {
+        $user = "ohn.doe@example.com";
+        $pass = "secret";
         $u = new User($this->drv);
-        \Phake::when($this->drv)->userAdd("john.doe@example.com", $this->anything())->thenThrow(new \JKingWeb\Arsse\User\Exception("alreadyExists"));
-        \Phake::when($this->drv)->userAdd("jane.doe@example.com", $this->anything())->thenReturnCallback(function($user, $pass) {
-            return $pass ?? "random password";
-        });
-        if ($exp instanceof Exception) {
-            $this->assertException("alreadyExists", "User");
-        }
-        $this->assertSame($exp, $u->add($user, $password));
+        \Phake::when($this->drv)->userAdd->thenReturn($pass);
+        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        $this->assertSame($pass, $u->add($user, $pass));
+        \Phake::verify($this->drv)->userAdd($user, $pass);
+        \Phake::verify(Arsse::$db)->userExists($user);
     }
 
-    /** @dataProvider provideAdditions */
-    public function testAddAUserWithARandomPassword(string $user, $password, $exp): void {
-        $u = \Phake::partialMock(User::class, $this->drv);
-        \Phake::when($this->drv)->userAdd($this->anything(), $this->isNull())->thenReturn(null);
-        \Phake::when($this->drv)->userAdd("john.doe@example.com", $this->logicalNot($this->isNull()))->thenThrow(new \JKingWeb\Arsse\User\Exception("alreadyExists"));
-        \Phake::when($this->drv)->userAdd("jane.doe@example.com", $this->logicalNot($this->isNull()))->thenReturnCallback(function($user, $pass) {
-            return $pass;
-        });
-        if ($exp instanceof Exception) {
-            $this->assertException("alreadyExists", "User");
-            $calls = 2;
-        } else {
-            $calls = 4;
-        }
-        try {
-            $pass1 = $u->add($user, null);
-            $pass2 = $u->add($user, null);
-            $this->assertNotEquals($pass1, $pass2);
-        } finally {
-            \Phake::verify($this->drv, \Phake::times($calls))->userAdd;
-            \Phake::verify($u, \Phake::times($calls / 2))->generatePassword;
-        }
-    }
-
-    public function provideAdditions(): iterable {
-        $john = "john.doe@example.com";
-        $jane = "jane.doe@example.com";
-        return [
-            [$john, "secret",   new \JKingWeb\Arsse\User\Exception("alreadyExists")],
-            [$jane, "superman", "superman"],
-            [$jane, null,       "random password"],
-        ];
-    }
-
-    /** @dataProvider provideRemovals */
-    public function testRemoveAUser(string $user, bool $exists, $exp): void {
+    public function testAddAUserWeDoNotKnow(): void {
+        $user = "ohn.doe@example.com";
+        $pass = "secret";
         $u = new User($this->drv);
-        \Phake::when($this->drv)->userRemove("john.doe@example.com")->thenReturn(true);
-        \Phake::when($this->drv)->userRemove("jane.doe@example.com")->thenThrow(new \JKingWeb\Arsse\User\Exception("doesNotExist"));
-        \Phake::when(Arsse::$db)->userExists->thenReturn($exists);
-        \Phake::when(Arsse::$db)->userRemove->thenReturn(true);
-        if ($exp instanceof Exception) {
-            $this->assertException("doesNotExist", "User");
-        }
-        try {
-            $this->assertSame($exp, $u->remove($user));
-        } finally {
-            \Phake::verify(Arsse::$db, \Phake::times(1))->userExists($user);
-            \Phake::verify(Arsse::$db, \Phake::times((int) $exists))->userRemove($user);
-        }
+        \Phake::when($this->drv)->userAdd->thenReturn($pass);
+        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
+        $this->assertSame($pass, $u->add($user, $pass));
+        \Phake::verify($this->drv)->userAdd($user, $pass);
+        \Phake::verify(Arsse::$db)->userExists($user);
+        \Phake::verify(Arsse::$db)->userAdd($user, $pass);
     }
 
-    public function provideRemovals(): iterable {
-        $john = "john.doe@example.com";
-        $jane = "jane.doe@example.com";
-        return [
-            [$john, true,  true],
-            [$john, false, true],
-            [$jane, true,  new \JKingWeb\Arsse\User\Exception("doesNotExist")],
-            [$jane, false, new \JKingWeb\Arsse\User\Exception("doesNotExist")],
-        ];
-    }
-
-    /** @dataProvider providePasswordChanges */
-    public function testChangeAPassword(string $user, $password, bool $exists, $exp): void {
+    public function testAddADuplicateUser(): void {
+        $user = "ohn.doe@example.com";
+        $pass = "secret";
         $u = new User($this->drv);
-        \Phake::when($this->drv)->userPasswordSet("john.doe@example.com", $this->anything(), $this->anything())->thenReturnCallback(function($user, $pass, $old) {
-            return $pass ?? "random password";
-        });
-        \Phake::when($this->drv)->userPasswordSet("jane.doe@example.com", $this->anything(), $this->anything())->thenThrow(new \JKingWeb\Arsse\User\Exception("doesNotExist"));
-        \Phake::when(Arsse::$db)->userExists->thenReturn($exists);
-        if ($exp instanceof Exception) {
-            $this->assertException("doesNotExist", "User");
-            $calls = 0;
-        } else {
-            $calls = 1;
-        }
+        \Phake::when($this->drv)->userAdd->thenThrow(new ExceptionConflict("alreadyExists"));
+        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        $this->assertException("alreadyExists", "User", "ExceptionConflict");
         try {
-            $this->assertSame($exp, $u->passwordSet($user, $password));
+            $u->add($user, $pass);
         } finally {
-            \Phake::verify(Arsse::$db, \Phake::times($calls))->userExists($user);
-            \Phake::verify(Arsse::$db, \Phake::times($exists ? $calls : 0))->userPasswordSet($user, $password ?? "random password", null);
+            \Phake::verify(Arsse::$db)->userExists($user);
+            \Phake::verify($this->drv)->userAdd($user, $pass);
         }
     }
 
-    /** @dataProvider providePasswordChanges */
-    public function testChangeAPasswordToARandomPassword(string $user, $password, bool $exists, $exp): void {
-        $u = \Phake::partialMock(User::class, $this->drv);
-        \Phake::when($this->drv)->userPasswordSet($this->anything(), $this->isNull(), $this->anything())->thenReturn(null);
-        \Phake::when($this->drv)->userPasswordSet("john.doe@example.com", $this->logicalNot($this->isNull()), $this->anything())->thenReturnCallback(function($user, $pass, $old) {
-            return $pass ?? "random password";
-        });
-        \Phake::when($this->drv)->userPasswordSet("jane.doe@example.com", $this->logicalNot($this->isNull()), $this->anything())->thenThrow(new \JKingWeb\Arsse\User\Exception("doesNotExist"));
-        \Phake::when(Arsse::$db)->userExists->thenReturn($exists);
-        if ($exp instanceof Exception) {
-            $this->assertException("doesNotExist", "User");
-            $calls = 2;
-        } else {
-            $calls = 4;
-        }
-        try {
-            $pass1 = $u->passwordSet($user, null);
-            $pass2 = $u->passwordSet($user, null);
-            $this->assertNotEquals($pass1, $pass2);
-        } finally {
-            \Phake::verify($this->drv, \Phake::times($calls))->userPasswordSet;
-            \Phake::verify($u, \Phake::times($calls / 2))->generatePassword;
-            \Phake::verify(Arsse::$db, \Phake::times($calls == 4 ? 2 : 0))->userExists($user);
-            if ($calls == 4) {
-                \Phake::verify(Arsse::$db, \Phake::times($exists ? 1 : 0))->userPasswordSet($user, $pass1, null);
-                \Phake::verify(Arsse::$db, \Phake::times($exists ? 1 : 0))->userPasswordSet($user, $pass2, null);
-            } else {
-                \Phake::verify(Arsse::$db, \Phake::times(0))->userPasswordSet;
-            }
-        }
-    }
-
-    public function providePasswordChanges(): iterable {
-        $john = "john.doe@example.com";
-        $jane = "jane.doe@example.com";
-        return [
-            [$john, "superman", true,  "superman"],
-            [$john, null,       true,  "random password"],
-            [$john, "superman", false, "superman"],
-            [$john, null,       false, "random password"],
-            [$jane, "secret",   true,  new \JKingWeb\Arsse\User\Exception("doesNotExist")],
-        ];
-    }
-
-    /** @dataProvider providePasswordClearings */
-    public function testClearAPassword(bool $exists, string $user, $exp): void {
-        \Phake::when($this->drv)->userPasswordUnset->thenReturn(true);
-        \Phake::when($this->drv)->userPasswordUnset("jane.doe@example.net", null)->thenThrow(new \JKingWeb\Arsse\User\Exception("doesNotExist"));
-        \Phake::when(Arsse::$db)->userExists->thenReturn($exists);
+    public function testAddADuplicateUserWeDoNotKnow(): void {
+        $user = "ohn.doe@example.com";
+        $pass = "secret";
         $u = new User($this->drv);
+        \Phake::when($this->drv)->userAdd->thenThrow(new ExceptionConflict("alreadyExists"));
+        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
+        $this->assertException("alreadyExists", "User", "ExceptionConflict");
         try {
-            if ($exp instanceof \JKingWeb\Arsse\AbstractException) {
-                $this->assertException($exp);
-                $u->passwordUnset($user);
-            } else {
-                $this->assertSame($exp, $u->passwordUnset($user));
-            }
+            $u->add($user, $pass);
         } finally {
-            \Phake::verify(Arsse::$db, \Phake::times((int) ($exists && is_bool($exp))))->userPasswordSet($user, null);
+            \Phake::verify(Arsse::$db)->userExists($user);
+            \Phake::verify(Arsse::$db)->userAdd($user, null);
+            \Phake::verify($this->drv)->userAdd($user, $pass);
         }
-    }
-
-    public function providePasswordClearings(): iterable {
-        $missing = new \JKingWeb\Arsse\User\Exception("doesNotExist");
-        return [
-            [true,  "jane.doe@example.com", true],
-            [true,  "john.doe@example.com", true],
-            [true,  "jane.doe@example.net", $missing],
-            [false, "jane.doe@example.com", true],
-            [false, "john.doe@example.com", true],
-            [false, "jane.doe@example.net", $missing],
-        ];
     }
 }

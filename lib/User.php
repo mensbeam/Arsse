@@ -48,11 +48,14 @@ class User {
         return $this->u->userList();
     }
 
-    public function add($user, $password = null): string {
-        $out = $this->u->userAdd($user, $password) ?? $this->u->userAdd($user, $this->generatePassword());
-        // synchronize the internal database
-        if (!Arsse::$db->userExists($user)) {
-            Arsse::$db->userAdd($user, $out);
+    public function add(string $user, ?string $password = null): string {
+        try {
+            $out = $this->u->userAdd($user, $password) ?? $this->u->userAdd($user, $this->generatePassword());
+        } finally {
+            // synchronize the internal database
+            if (!Arsse::$db->userExists($user)) {
+                Arsse::$db->userAdd($user, $out ?? null);
+            }
         }
         return $out;
     }
@@ -68,7 +71,7 @@ class User {
         }
     }
 
-    public function passwordSet(string $user, string $newPassword = null, $oldPassword = null): string {
+    public function passwordSet(string $user, ?string $newPassword, $oldPassword = null): string {
         $out = $this->u->userPasswordSet($user, $newPassword, $oldPassword) ?? $this->u->userPasswordSet($user, $this->generatePassword(), $oldPassword);
         if (Arsse::$db->userExists($user)) {
             // if the password change was successful and the user exists, set the internal password to the same value

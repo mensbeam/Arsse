@@ -101,7 +101,7 @@ OPML_EXPORT_SERIALIZATION;
 
     public function testExportToOpmlAMissingUser(): void {
         \Phake::when(Arsse::$db)->userExists->thenReturn(false);
-        $this->assertException("doesNotExist", "User");
+        $this->assertException("doesNotExist", "User", "ExceptionConflict");
         (new OPML)->export("john.doe@example.com");
     }
 

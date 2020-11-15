@@ -99,7 +99,7 @@ trait SeriesToken {
     }
 
     public function testCreateATokenForAMissingUser(): void {
-        $this->assertException("doesNotExist", "User");
+        $this->assertException("doesNotExist", "User", "ExceptionConflict");
         Arsse::$db->tokenCreate("fever.login", "jane.doe@example.biz");
     }
 

@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\ImportExport;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\User\Exception as UserException;
+use JKingWeb\Arsse\User\ExceptionConflict as UserException;
 
 class OPML extends AbstractImportExport {
     protected function parse(string $opml, bool $flat): array {

@@ -9,7 +9,7 @@ namespace JKingWeb\Arsse\ImportExport;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\ExceptionInput as InputException;
-use JKingWeb\Arsse\User\Exception as UserException;
+use JKingWeb\Arsse\User\ExceptionConflict as UserException;
 
 abstract class AbstractImportExport {
     public function import(string $user, string $data, bool $flat = false, bool $replace = false): bool {
