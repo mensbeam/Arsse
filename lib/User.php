@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 use JKingWeb\Arsse\Misc\ValueInfo as V;
+use JKingWeb\Arsse\User\ExceptionConflict as Conflict;
 use PasswordGenerator\Generator as PassGen;
 
 class User {
@@ -49,26 +50,41 @@ class User {
     }
 
     public function add(string $user, ?string $password = null): string {
+        // ensure the user name does not contain any U+003A COLON characters, as
+        // this is incompatible with HTTP Basic authentication
+        if (strpos($user, ":") !== false) {
+            throw new User\ExceptionInput("invalidUsername", "U+003A COLON");
+        }
         try {
             $out = $this->u->userAdd($user, $password) ?? $this->u->userAdd($user, $this->generatePassword());
-        } finally {
-            // synchronize the internal database
+        } catch (Conflict $e) {
             if (!Arsse::$db->userExists($user)) {
-                Arsse::$db->userAdd($user, $out ?? null);
+                Arsse::$db->userAdd($user, null);
             }
+            throw $e;
+        }
+        // synchronize the internal database
+        if (!Arsse::$db->userExists($user)) {
+            Arsse::$db->userAdd($user, $out);
         }
         return $out;
     }
+    
 
     public function remove(string $user): bool {
         try {
-            return $this->u->userRemove($user);
-        } finally { // @codeCoverageIgnore
+            $out = $this->u->userRemove($user);
+        } catch (Conflict $e) {
             if (Arsse::$db->userExists($user)) {
-                // if the user was removed and we (still) have it in the internal database, remove it there
                 Arsse::$db->userRemove($user);
             }
+            throw $e;
         }
+        if (Arsse::$db->userExists($user)) {
+            // if the user was removed and we (still) have it in the internal database, remove it there
+            Arsse::$db->userRemove($user);
+        }
+        return $out;
     }
 
     public function passwordSet(string $user, ?string $newPassword, $oldPassword = null): string {

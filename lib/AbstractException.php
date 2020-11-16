@@ -75,6 +75,7 @@ abstract class AbstractException extends \Exception {
         "User/ExceptionSession.invalid"               => 10431,
         "User/ExceptionInput.invalidTimezone"         => 10441,
         "User/ExceptionInput.invalidBoolean"          => 10442,
+        "User/ExceptionInput.invalidUsername"         => 10443,
         "Feed/Exception.internalError"                => 10500,
         "Feed/Exception.invalidCertificate"           => 10501,
         "Feed/Exception.invalidUrl"                   => 10502,
