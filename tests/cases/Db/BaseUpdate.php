@@ -134,10 +134,11 @@ class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv->schemaUpdate(Database::SCHEMA_VERSION);
         $this->assertTrue($this->drv->maintenance());
     }
-    
+
     public function testUpdateTo7(): void {
         $this->drv->schemaUpdate(6);
-        $this->drv->exec(<<<QUERY_TEXT
+        $this->drv->exec(
+            <<<QUERY_TEXT
             INSERT INTO arsse_users values('a', 'xyz');
             INSERT INTO arsse_users values('b', 'abc');
             INSERT INTO arsse_folders(owner,name) values('a', '1');

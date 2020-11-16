@@ -104,12 +104,12 @@ trait SeriesUser {
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         Arsse::$db->userPasswordSet("john.doe@example.org", "secret");
     }
-    
+
     /** @dataProvider provideMetaData */
     public function testGetMetadata(string $user, array $exp): void {
         $this->assertSame($exp, Arsse::$db->userPropertiesGet($user));
     }
-    
+
     public function provideMetadata(): iterable {
         return [
             ["admin@example.net",    ['num' => 1, 'admin' => true,  'lang' => "en", 'tz' => "America/Toronto",   'sort_asc' => false]],
@@ -122,12 +122,12 @@ trait SeriesUser {
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         Arsse::$db->userPropertiesGet("john.doe@example.org");
     }
-    
+
     public function testSetMetadata(): void {
         $in = [
-            'admin' => true, 
-            'lang' => "en-ca", 
-            'tz' => "Atlantic/Reykjavik", 
+            'admin'    => true,
+            'lang'     => "en-ca",
+            'tz'       => "Atlantic/Reykjavik",
             'sort_asc' => true,
         ];
         $this->assertTrue(Arsse::$db->userPropertiesSet("john.doe@example.com", $in));
@@ -135,11 +135,11 @@ trait SeriesUser {
         $state['arsse_users']['rows'][2] = ["john.doe@example.com", 3, 1, "en-ca", "Atlantic/Reykjavik", 1];
         $this->compareExpectations(static::$drv, $state);
     }
-    
+
     public function testSetNoMetadata(): void {
         $in = [
-            'num' => 2112, 
-            'blah' => "bloo"
+            'num'  => 2112,
+            'blah' => "bloo",
         ];
         $this->assertFalse(Arsse::$db->userPropertiesSet("john.doe@example.com", $in));
         $state = $this->primeExpectations($this->data, ['arsse_users' => ['id', 'num', 'admin', 'lang', 'tz', 'sort_asc']]);

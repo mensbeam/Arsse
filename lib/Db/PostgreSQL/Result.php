@@ -48,7 +48,7 @@ class Result extends \JKingWeb\Arsse\Db\AbstractResult {
     public function valid() {
         $this->cur = pg_fetch_row($this->r, null, \PGSQL_ASSOC);
         if ($this->cur !== false) {
-            foreach($this->blobs as $f) {
+            foreach ($this->blobs as $f) {
                 if ($this->cur[$f]) {
                     $this->cur[$f] = hex2bin(substr($this->cur[$f], 2));
                 }

@@ -121,14 +121,14 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         (new Driver)->userPasswordUnset("john.doe@example.com");
     }
-    
+
     public function testGetUserProperties(): void {
         \Phake::when(Arsse::$db)->userExists->thenReturn(true);
         $this->assertSame([], (new Driver)->userPropertiesGet("john.doe@example.com"));
         \Phake::verify(Arsse::$db)->userExists("john.doe@example.com");
         \Phake::verifyNoFurtherInteraction(Arsse::$db);
     }
-    
+
     public function testGetPropertiesForAMissingUser(): void {
         \Phake::when(Arsse::$db)->userExists->thenReturn(false);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
@@ -139,7 +139,7 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
             \Phake::verifyNoFurtherInteraction(Arsse::$db);
         }
     }
-    
+
     public function testSetUserProperties(): void {
         $in = ['admin' => true];
         \Phake::when(Arsse::$db)->userExists->thenReturn(true);
@@ -147,7 +147,7 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->userExists("john.doe@example.com");
         \Phake::verifyNoFurtherInteraction(Arsse::$db);
     }
-    
+
     public function testSetPropertiesForAMissingUser(): void {
         \Phake::when(Arsse::$db)->userExists->thenReturn(false);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");

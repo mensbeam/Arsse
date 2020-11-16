@@ -13,7 +13,7 @@ class PDOResult extends \JKingWeb\Arsse\Db\PDOResult {
     public function valid() {
         $this->cur = $this->set->fetch(\PDO::FETCH_ASSOC);
         if ($this->cur !== false) {
-            foreach($this->cur as $k => $v) {
+            foreach ($this->cur as $k => $v) {
                 if (is_resource($v)) {
                     $this->cur[$k] = stream_get_contents($v);
                     fclose($v);

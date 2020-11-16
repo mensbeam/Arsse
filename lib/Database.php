@@ -37,7 +37,7 @@ use JKingWeb\Arsse\Misc\URL;
  * associations with articles. There has been an effort to keep public method
  * names consistent throughout, but protected methods, having different
  * concerns, will typically follow different conventions.
- * 
+ *
  * Note that operations on users should be performed with the User class rather
  * than the Database class directly. This is to allow for alternate user sources.
  */
@@ -298,7 +298,7 @@ class Database {
         $this->db->prepare("UPDATE arsse_users set password = ? where id = ?", "str", "str")->run($hash, $user);
         return true;
     }
-    
+
     public function userPropertiesGet(string $user): array {
         $out = $this->db->prepare("SELECT num, admin, lang, tz, sort_asc from arsse_users where id = ?", "str")->run($user)->getRow();
         if (!$out) {
@@ -309,7 +309,7 @@ class Database {
         settype($out['sort_asc'], "bool");
         return $out;
     }
-    
+
     public function userPropertiesSet(string $user, array $data): bool {
         if (!$this->userExists($user)) {
             throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
@@ -325,7 +325,6 @@ class Database {
             return false;
         }
         return (bool) $this->db->prepare("UPDATE arsse_users set $setClause where id = ?", $setTypes, "str")->run($setValues, $user)->changes();
-        
     }
 
     /** Creates a new session for the given user and returns the session identifier */
@@ -874,16 +873,16 @@ class Database {
         $out = $this->db->prepare("SELECT $field from arsse_tags where id in (select tag from arsse_tag_members where subscription = ? and assigned = 1) order by $field", "int")->run($id)->getAll();
         return $out ? array_column($out, $field) : [];
     }
-   
+
     /** Retrieves detailed information about the icon for a subscription.
-     * 
+     *
      * The returned information is:
-     * 
+     *
      * - "id": The umeric identifier of the icon (not the subscription)
      * - "url": The URL of the icon
      * - "type": The Content-Type of the icon e.g. "image/png"
      * - "data": The icon itself, as a binary sring; if $withData is false this will be null
-     * 
+     *
      * @param string|null $user The user who owns the subscription being queried; using null here is supported for TT-RSS and SHOULD NOT be used elsewhere as it leaks information
      * @param int $subscription The numeric identifier of the subscription
      * @param bool $includeData Whether to include the binary data of the icon itself in the result
@@ -1219,14 +1218,14 @@ class Database {
     }
 
     /** Lists icons for feeds to which a user is subscribed
-     * 
+     *
      * The returned information for each icon is:
-     * 
+     *
      * - "id": The umeric identifier of the icon
      * - "url": The URL of the icon
      * - "type": The Content-Type of the icon e.g. "image/png"
      * - "data": The icon itself, as a binary sring
-     * 
+     *
      * @param string $user The user whose subscription icons are to be retrieved
      */
     public function iconList(string $user): Db\Result {

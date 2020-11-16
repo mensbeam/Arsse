@@ -69,7 +69,6 @@ class User {
         }
         return $out;
     }
-    
 
     public function remove(string $user): bool {
         try {

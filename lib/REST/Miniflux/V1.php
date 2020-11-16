@@ -7,19 +7,14 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\REST\Miniflux;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Service;
-use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\AbstractException;
-use JKingWeb\Arsse\Db\ExceptionInput;
-use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\REST\Exception;
 use JKingWeb\Arsse\REST\Exception404;
 use JKingWeb\Arsse\REST\Exception405;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\Response\JsonResponse as Response;
 use Laminas\Diactoros\Response\EmptyResponse;
 
 class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
