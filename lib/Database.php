@@ -248,7 +248,7 @@ class Database {
     /** Adds a user to the database
      *
      * @param string $user The user to add
-     * @param string|null $passwordThe user's password in cleartext. It will be stored hashed
+     * @param string|null $passwordThe user's password in cleartext. It will be stored hashed. If null is provided the user will not be able to log in
      */
     public function userAdd(string $user, ?string $password): bool {
         if ($this->userExists($user)) {

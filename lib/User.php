@@ -108,10 +108,6 @@ class User {
             Arsse::$db->userPasswordSet($user, null);
             // also invalidate any current sessions for the user
             Arsse::$db->sessionDestroy($user);
-        } else {
-            // if the user does not exist
-            Arsse::$db->userAdd($user, "");
-            Arsse::$db->userPasswordSet($user, null);
         }
         return $out;
     }
@@ -119,24 +115,29 @@ class User {
     public function generatePassword(): string {
         return (new PassGen)->length(Arsse::$conf->userTempPasswordLength)->get();
     }
-    
+
     public function propertiesGet(string $user): array {
         $extra = $this->u->userPropertiesGet($user);
         // synchronize the internal database
         if (!Arsse::$db->userExists($user)) {
-            Arsse::$db->userAdd($user, $this->generatePassword());
+            Arsse::$db->userAdd($user, null);
+            Arsse::$db->userPropertiesSet($user, $extra);
         }
-        // unconditionally retrieve from the database to get at least the user number, and anything else the driver does not provide
+        // retrieve from the database to get at least the user number, and anything else the driver does not provide
         $out = Arsse::$db->userPropertiesGet($user);
         // layer on the driver's data
-        foreach (["lang", "tz", "admin", "sort_asc"] as $k) {
+        foreach (["tz", "admin", "sort_asc"] as $k) {
             if (array_key_exists($k, $extra)) {
                 $out[$k] = $extra[$k] ?? $out[$k];
             }
         }
+        // treat language specially since it may legitimately be null
+        if (array_key_exists("lang", $extra)) {
+            $out['lang'] = $extra['lang'];
+        }
         return $out;
     }
-    
+
     public function propertiesSet(string $user, array $data): array {
         $in = [];
         if (array_key_exists("tz", $data)) {

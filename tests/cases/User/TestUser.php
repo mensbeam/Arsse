@@ -243,4 +243,105 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->sessionDestroy($user);
         \Phake::verify(Arsse::$db)->userExists($user);
     }
+
+    public function testSetAPasswordForAUserWeDoNotKnow(): void {
+        $user = "john.doe@example.com";
+        $pass = "secret";
+        $u = new User($this->drv);
+        \Phake::when($this->drv)->userPasswordSet->thenReturn($pass);
+        \Phake::when(Arsse::$db)->userPasswordSet->thenReturn($pass);
+        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
+        $this->assertSame($pass, $u->passwordSet($user, $pass));
+        \Phake::verify($this->drv)->userPasswordSet($user, $pass, null);
+        \Phake::verify(Arsse::$db)->userAdd($user, $pass);
+        \Phake::verify(Arsse::$db)->userExists($user);
+    }
+
+    public function testSetARandomPasswordForAUserWeDoNotKnow(): void {
+        $user = "john.doe@example.com";
+        $pass = "random password";
+        $u = \Phake::partialMock(User::class, $this->drv);
+        \Phake::when($u)->generatePassword->thenReturn($pass);
+        \Phake::when($this->drv)->userPasswordSet->thenReturn(null)->thenReturn($pass);
+        \Phake::when(Arsse::$db)->userPasswordSet->thenReturn($pass);
+        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
+        $this->assertSame($pass, $u->passwordSet($user, null));
+        \Phake::verify($this->drv)->userPasswordSet($user, null, null);
+        \Phake::verify($this->drv)->userPasswordSet($user, $pass, null);
+        \Phake::verify(Arsse::$db)->userAdd($user, $pass);
+        \Phake::verify(Arsse::$db)->userExists($user);
+    }
+
+    public function testSetARandomPasswordForAMissingUser(): void {
+        $user = "john.doe@example.com";
+        $pass = "random password";
+        $u = \Phake::partialMock(User::class, $this->drv);
+        \Phake::when($u)->generatePassword->thenReturn($pass);
+        \Phake::when($this->drv)->userPasswordSet->thenThrow(new ExceptionConflict("doesNotExist"));
+        $this->assertException("doesNotExist", "User", "ExceptionConflict");
+        try {
+            $u->passwordSet($user, null);
+        } finally {
+            \Phake::verify($this->drv)->userPasswordSet($user, null, null);
+        }
+    }
+
+    public function testUnsetAPassword(): void {
+        $user = "john.doe@example.com";
+        $u = new User($this->drv);
+        \Phake::when($this->drv)->userPasswordUnset->thenReturn(true);
+        \Phake::when(Arsse::$db)->userPasswordUnset->thenReturn(true);
+        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        $this->assertTrue($u->passwordUnset($user));
+        \Phake::verify($this->drv)->userPasswordUnset($user, null);
+        \Phake::verify(Arsse::$db)->userPasswordSet($user, null);
+        \Phake::verify(Arsse::$db)->sessionDestroy($user);
+        \Phake::verify(Arsse::$db)->userExists($user);
+    }
+
+    public function testUnsetAPasswordForAUserWeDoNotKnow(): void {
+        $user = "john.doe@example.com";
+        $u = new User($this->drv);
+        \Phake::when($this->drv)->userPasswordUnset->thenReturn(true);
+        \Phake::when(Arsse::$db)->userPasswordUnset->thenReturn(true);
+        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
+        $this->assertTrue($u->passwordUnset($user));
+        \Phake::verify($this->drv)->userPasswordUnset($user, null);
+        \Phake::verify(Arsse::$db)->userExists($user);
+    }
+
+    public function testUnsetAPasswordForAMissingUser(): void {
+        $user = "john.doe@example.com";
+        $u = new User($this->drv);
+        \Phake::when($this->drv)->userPasswordUnset->thenThrow(new ExceptionConflict("doesNotExist"));
+        $this->assertException("doesNotExist", "User", "ExceptionConflict");
+        try {
+            $u->passwordUnset($user);
+        } finally {
+            \Phake::verify($this->drv)->userPasswordUnset($user, null);
+        }
+    }
+
+    /** @dataProvider provideProperties */
+    public function testGetThePropertiesOfAUser(array $exp, array $base, array $extra): void {
+        $user = "john.doe@example.com";
+        $u = new User($this->drv);
+        \Phake::when($this->drv)->userPropertiesGet->thenReturn($extra);
+        \Phake::when(Arsse::$db)->userPropertiesGet->thenReturn($base);
+        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        $this->assertSame($exp, $u->propertiesGet($user));
+        \Phake::verify($this->drv)->userPropertiesGet($user);
+        \Phake::verify(Arsse::$db)->userPropertiesGet($user);
+        \Phake::verify(Arsse::$db)->userExists($user);
+    }
+
+    public function provideProperties(): iterable {
+        $defaults = ['num' => 1, 'admin' => false, 'lang' => null, 'tz' => "Etc/UTC", 'sort_asc' => false];
+        return [
+            [$defaults, $defaults, []],
+            [$defaults, $defaults, ['num' => 2112, 'blah' => "bloo"]],
+            [['num' => 1, 'admin' => true, 'lang' => "fr", 'tz' => "America/Toronto", 'sort_asc' => true], $defaults, ['admin' => true, 'lang' => "fr", 'tz' => "America/Toronto", 'sort_asc' => true]],
+            [['num' => 1, 'admin' => true, 'lang' => null, 'tz' => "America/Toronto", 'sort_asc' => true], ['num' => 1, 'admin' => true, 'lang' => "fr", 'tz' => "America/Toronto", 'sort_asc' => true], ['lang' => null]],
+        ];
+    }
 }
