@@ -69,6 +69,7 @@ class User {
         }
         return $out;
     }
+    
 
     public function remove(string $user): bool {
         try {
@@ -141,15 +142,15 @@ class User {
         $in = [];
         if (array_key_exists("tz", $data)) {
             if (!is_string($data['tz'])) {
-                throw new User\ExceptionInput("invalidTimezone");
-            } elseif (!in_array($data['tz'], \DateTimeZone::listIdentifiers())) {
-                throw new User\ExceptionInput("invalidTimezone", $data['tz']);
+                throw new User\ExceptionInput("invalidTimezone", ['field' => "tz", 'value' => ""]);
+            } elseif(!@timezone_open($data['tz'])) {
+                throw new User\ExceptionInput("invalidTimezone", ['field' => "tz", 'value' => $data['tz']]);
             }
             $in['tz'] = $data['tz'];
         }
         foreach (["admin", "sort_asc"] as $k) {
             if (array_key_exists($k, $data)) {
-                if (($v = V::normalize($data[$k], V::T_BOOL)) === null) {
+                if (($v = V::normalize($data[$k], V::T_BOOL | V::M_DROP)) === null) {
                     throw new User\ExceptionInput("invalidBoolean", $k);
                 }
                 $in[$k] = $v;
@@ -161,7 +162,7 @@ class User {
         $out = $this->u->userPropertiesSet($user, $in);
         // synchronize the internal database
         if (!Arsse::$db->userExists($user)) {
-            Arsse::$db->userAdd($user, $this->generatePassword());
+            Arsse::$db->userAdd($user, null);
         }
         Arsse::$db->userPropertiesSet($user, $out);
         return $out;

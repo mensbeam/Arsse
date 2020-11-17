@@ -140,6 +140,8 @@ return [
     'Exception.JKingWeb/Arsse/User/Exception.authFailed'                   => 'Authentication failed',
     'Exception.JKingWeb/Arsse/User/ExceptionSession.invalid'               => 'Session with ID {0} does not exist',
     'Exception.JKingWeb/Arsse/User/ExceptionInput.invalidUsername'         => 'User names may not contain the Unicode character {0}',
+    'Exception.JKingWeb/Arsse/User/ExceptionInput.invalidBoolean'          => 'User property "{0}" must be a boolean value (true or false)',
+    'Exception.JKingWeb/Arsse/User/ExceptionInput.invalidTimezone'         => 'User property "{field}" must be a valid zoneinfo timezone',
     'Exception.JKingWeb/Arsse/Feed/Exception.internalError'                => 'Could not download feed "{url}" because of an internal error which is probably a bug',
     'Exception.JKingWeb/Arsse/Feed/Exception.invalidCertificate'           => 'Could not download feed "{url}" because its server is serving an invalid SSL certificate',
     'Exception.JKingWeb/Arsse/Feed/Exception.invalidUrl'                   => 'Feed URL "{url}" is invalid',
