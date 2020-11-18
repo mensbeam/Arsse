@@ -9,6 +9,7 @@ namespace JKingWeb\Arsse\TestCase\REST\TinyTinyRSS;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
+use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\REST\TinyTinyRSS\Icon;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\EmptyResponse as Response;
@@ -49,6 +50,7 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testRetrieveFavion(): void {
         \Phake::when(Arsse::$db)->subscriptionIcon->thenReturn(['url' => null]);
+        \Phake::when(Arsse::$db)->subscriptionIcon($this->anything(), 1123, false)->thenThrow(new ExceptionInput("subjectMissing"));
         \Phake::when(Arsse::$db)->subscriptionIcon($this->anything(), 42, false)->thenReturn(['url' => "http://example.com/favicon.ico"]);
         \Phake::when(Arsse::$db)->subscriptionIcon($this->anything(), 2112, false)->thenReturn(['url' => "http://example.net/logo.png"]);
         \Phake::when(Arsse::$db)->subscriptionIcon($this->anything(), 1337, false)->thenReturn(['url' => "http://example.org/icon.gif\r\nLocation: http://bad.example.com/"]);
@@ -65,6 +67,7 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("ook"));
         $this->assertMessage($exp, $this->req("47.ico"));
         $this->assertMessage($exp, $this->req("2112.png"));
+        $this->assertMessage($exp, $this->req("1123.ico"));
         // only GET is allowed
         $exp = new Response(405, ['Allow' => "GET"]);
         $this->assertMessage($exp, $this->req("2112.ico", "PUT"));
