@@ -400,7 +400,7 @@ class Database {
      * @param \DateTimeInterface|null $expires An optional expiry date and time for the token
      * @param string $data Application-specific data associated with a token
      */
-    public function tokenCreate(string $user, string $class, string $id = null, \DateTimeInterface $expires = null, string $data = null): string {
+    public function tokenCreate(string $user, string $class, string $id = null, ?\DateTimeInterface $expires = null, string $data = null): string {
         if (!$this->userExists($user)) {
             throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
@@ -418,7 +418,7 @@ class Database {
      * @param string $class The class of the token e.g. the protocol name
      * @param string|null $id The ID of a specific token, or null for all tokens in the class
      */
-    public function tokenRevoke(string $user, string $class, string $id = null): bool {
+    public function tokenRevoke(string $user, string $class, ?string $id = null): bool {
         if (is_null($id)) {
             $out = $this->db->prepare("DELETE FROM arsse_tokens where \"user\" = ? and class = ?", "str", "str")->run($user, $class)->changes();
         } else {
@@ -434,6 +434,11 @@ class Database {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "token", 'id' => $id]);
         }
         return $out;
+    }
+
+    /** List tokens associated with a user */
+    public function tokenList(string $user, string $class): Db\Result {
+        return $this->db->prepare("SELECT id,created,expires,data from arsse_tokens where class = ? and user = ? and (expires is null or expires > CURRENT_TIMESTAMP)", "str", "str")->run($class, $user);
     }
 
     /** Deletes expires tokens from the database, returning the number of deleted tokens */

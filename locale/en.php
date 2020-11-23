@@ -7,6 +7,9 @@ return [
     'CLI.Auth.Success'                                                     => 'Authentication successful',
     'CLI.Auth.Failure'                                                     => 'Authentication failed',
 
+    'API.Miniflux.Error.401'                                               => 'Access Unauthorized',
+    'API.Miniflux.Error.invalidBodyJSON'                                   => 'Invalid JSON payload: {0}',
+    
     'API.TTRSS.Category.Uncategorized'                                     => 'Uncategorized',
     'API.TTRSS.Category.Special'                                           => 'Special',
     'API.TTRSS.Category.Labels'                                            => 'Labels',

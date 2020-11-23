@@ -9,7 +9,6 @@ namespace JKingWeb\Arsse\TestCase\User;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\User;
-use JKingWeb\Arsse\AbstractException as Exception;
 use JKingWeb\Arsse\User\ExceptionConflict;
 use JKingWeb\Arsse\User\ExceptionInput;
 use JKingWeb\Arsse\User\Driver;
@@ -25,7 +24,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         // create a mock user driver
         $this->drv = \Phake::mock(Driver::class);
     }
-    
+
     public function tearDown(): void {
         \Phake::verifyNoOtherInteractions($this->drv);
         \Phake::verifyNoOtherInteractions(Arsse::$db);
@@ -43,7 +42,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $u->id = null;
         $this->assertSame("", (string) $u);
     }
-    
+
     public function testGeneratePasswords(): void {
         $u = new User($this->drv);
         $pass1 = $u->generatePassword();
@@ -166,7 +165,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify($this->drv)->userAdd($user, $pass);
         \Phake::verify(Arsse::$db)->userExists($user);
     }
-    
+
     public function testRemoveAUser(): void {
         $user = "john.doe@example.com";
         $pass = "secret";
@@ -178,7 +177,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->userRemove($user);
         \Phake::verify($this->drv)->userRemove($user);
     }
-    
+
     public function testRemoveAUserWeDoNotKnow(): void {
         $user = "john.doe@example.com";
         $pass = "secret";
@@ -189,7 +188,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->userExists($user);
         \Phake::verify($this->drv)->userRemove($user);
     }
-    
+
     public function testRemoveAMissingUser(): void {
         $user = "john.doe@example.com";
         $pass = "secret";
@@ -205,7 +204,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
             \Phake::verify($this->drv)->userRemove($user);
         }
     }
-    
+
     public function testRemoveAMissingUserWeDoNotKnow(): void {
         $user = "john.doe@example.com";
         $pass = "secret";
@@ -381,7 +380,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
             \Phake::verify($this->drv)->userPropertiesGet($user);
         }
     }
-    
+
     /** @dataProvider providePropertyChanges */
     public function testSetThePropertiesOfAUser(array $in, $out): void {
         $user = "john.doe@example.com";
@@ -399,7 +398,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
             \Phake::verify(Arsse::$db)->userExists($user);
         }
     }
-    
+
     /** @dataProvider providePropertyChanges */
     public function testSetThePropertiesOfAUserWeDoNotKnow(array $in, $out): void {
         $user = "john.doe@example.com";
@@ -418,7 +417,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
             \Phake::verify(Arsse::$db)->userAdd($user, null);
         }
     }
-    
+
     public function providePropertyChanges(): iterable {
         return [
             [['admin' => true],    ['admin' => true]],
@@ -431,7 +430,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
             [['lang' => null],     ['lang' => null]],
         ];
     }
-    
+
     public function testSetThePropertiesOfAMissingUser(): void {
         $user = "john.doe@example.com";
         $in = ['admin' => true];

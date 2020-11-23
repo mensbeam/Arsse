@@ -69,7 +69,6 @@ class User {
         }
         return $out;
     }
-    
 
     public function remove(string $user): bool {
         try {
@@ -143,7 +142,7 @@ class User {
         if (array_key_exists("tz", $data)) {
             if (!is_string($data['tz'])) {
                 throw new User\ExceptionInput("invalidTimezone", ['field' => "tz", 'value' => ""]);
-            } elseif(!@timezone_open($data['tz'])) {
+            } elseif (!@timezone_open($data['tz'])) {
                 throw new User\ExceptionInput("invalidTimezone", ['field' => "tz", 'value' => $data['tz']]);
             }
             $in['tz'] = $data['tz'];

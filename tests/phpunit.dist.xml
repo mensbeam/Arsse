@@ -112,10 +112,14 @@
     <testsuite name="REST">
         <file>cases/REST/TestREST.php</file>
     </testsuite>
+    <testsuite name="Miniflux">
+        <file>cases/REST/Miniflux/TestErrorResponse.php</file>
+        <file>cases/REST/Miniflux/TestStatus.php</file>
+    </testsuite>
     <testsuite name="NCNv1">
         <file>cases/REST/NextcloudNews/TestVersions.php</file>
         <file>cases/REST/NextcloudNews/TestV1_2.php</file>
-            <file>cases/REST/NextcloudNews/PDO/TestV1_2.php</file>
+        <file>cases/REST/NextcloudNews/PDO/TestV1_2.php</file>
     </testsuite>
     <testsuite name="TTRSS">
         <file>cases/REST/TinyTinyRSS/TestSearch.php</file>

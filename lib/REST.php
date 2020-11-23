@@ -42,8 +42,18 @@ class REST {
         ],
         'miniflux' => [ // Miniflux  https://miniflux.app/docs/api.html
             'match' => '/v1/',
-            'strip' => '/v1',
+            'strip' => '',
             'class' => REST\Miniflux\V1::class,
+        ],
+        'miniflux-version' => [ // Miniflux version report
+            'match' => '/version',
+            'strip' => '',
+            'class' => REST\Miniflux\Status::class,
+        ],
+        'miniflux-healthcheck' => [ // Miniflux health check
+            'match' => '/healthcheck',
+            'strip' => '',
+            'class' => REST\Miniflux\Status::class,
         ],
         // Other candidates:
         // Microsub             https://indieweb.org/Microsub

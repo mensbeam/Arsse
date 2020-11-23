@@ -33,12 +33,16 @@ trait SeriesToken {
                     'class'   => "str",
                     'user'    => "str",
                     'expires' => "datetime",
+                    'data'    => "str",
                 ],
                 'rows' => [
-                    ["80fa94c1a11f11e78667001e673b2560", "fever.login", "jane.doe@example.com", $faroff],
-                    ["27c6de8da13311e78667001e673b2560", "fever.login", "jane.doe@example.com", $past], // expired
-                    ["ab3b3eb8a13311e78667001e673b2560", "class.class", "jane.doe@example.com", null],
-                    ["da772f8fa13c11e78667001e673b2560", "class.class", "john.doe@example.com", $future],
+                    ["80fa94c1a11f11e78667001e673b2560", "fever.login",    "jane.doe@example.com", $faroff, null],
+                    ["27c6de8da13311e78667001e673b2560", "fever.login",    "jane.doe@example.com", $past, null], // expired
+                    ["ab3b3eb8a13311e78667001e673b2560", "class.class",    "jane.doe@example.com", null, null],
+                    ["da772f8fa13c11e78667001e673b2560", "class.class",    "john.doe@example.com", $future, null],
+                    ["A",                                "miniflux.login", "jane.doe@example.com", null, "Label 1"],
+                    ["B",                                "miniflux.login", "jane.doe@example.com", null, "Label 2"],
+                    ["C",                                "miniflux.login", "john.doe@example.com", null, "Label 1"],
                 ],
             ],
         ];
@@ -126,5 +130,14 @@ trait SeriesToken {
         $this->compareExpectations(static::$drv, $state);
         // revoking tokens which do not exist is not an error
         $this->assertFalse(Arsse::$db->tokenRevoke($user, "unknown.class"));
+    }
+
+    public function testListTokens(): void {
+        $user = "jane.doe@example.com";
+        $exp = [
+            ['id' => "A", 'data' => "Label 1"],
+            ['id' => "B", 'data' => "Label 2"],
+        ];
+        $this->assertResult($exp, Arsse::$db->tokenList($user, "miniflux.login"));
     }
 }

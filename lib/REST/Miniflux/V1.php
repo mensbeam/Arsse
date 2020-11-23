@@ -13,6 +13,7 @@ use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\REST\Exception;
 use JKingWeb\Arsse\REST\Exception404;
 use JKingWeb\Arsse\REST\Exception405;
+use JKingWeb\Arsse\User\ExceptionConflict as UserException;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\EmptyResponse;
@@ -20,6 +21,8 @@ use Laminas\Diactoros\Response\EmptyResponse;
 class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const ACCEPTED_TYPES_OPML = ["text/xml", "application/xml", "text/x-opml"];
     protected const ACCEPTED_TYPES_JSON = ["application/json", "text/json"];
+    public const VERSION = "2.0.25";
+
     protected $paths = [
         '/categories'         => ['GET'  => "getCategories",  'POST'   => "createCategory"],
         '/categories/1'       => ['PUT'  => "updateCategory", 'DELETE' => "deleteCategory"],
@@ -35,25 +38,41 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         '/feeds/1/icon'       => ['GET'  => "getFeedIcon"],
         '/feeds/1/refresh'    => ['PUT'  => "refreshFeed"],
         '/feeds/refresh'      => ['PUT'  => "refreshAllFeeds"],
-        '/healthcheck'        => ['GET'  => "healthCheck"],
         '/import'             => ['POST' => "opmlImport"],
         '/me'                 => ['GET'  => "getCurrentUser"],
         '/users'              => ['GET'  => "getUsers",       'POST' => "createUser"],
         '/users/1'            => ['GET'  => "getUser",        'PUT'  => "updateUser",   'DELETE' => "deleteUser"],
         '/users/*'            => ['GET'  => "getUser"],
-        '/version'            => ['GET'  => "getVersion"],
     ];
 
     public function __construct() {
     }
 
-    public function dispatch(ServerRequestInterface $req): ResponseInterface {
-        // try to authenticate
+    protected function authenticate(ServerRequestInterface $req): bool {
+        // first check any tokens; this is what Miniflux does
+        foreach ($req->getHeader("X-Auth-Token") as $t) {
+            if (strlen($t)) {
+                // a non-empty header is authoritative, so we'll stop here one way or the other
+                try {
+                    $d = Arsse::$db->tokenLookup("miniflux.login", $t);
+                } catch (ExceptionInput $e) {
+                    return false;
+                }
+                Arsse::$user->id = $d->user;
+                return true;
+            }
+        }
+        // next check HTTP auth
         if ($req->getAttribute("authenticated", false)) {
             Arsse::$user->id = $req->getAttribute("authenticatedUser");
-        } else {
-            // TODO: Handle X-Auth-Token authentication
-            return new EmptyResponse(401);
+        }
+        return false;
+    }
+
+    public function dispatch(ServerRequestInterface $req): ResponseInterface {
+        // try to authenticate
+        if (!$this->authenticate($req)) {
+            return new ErrorResponse("401", 401);
         }
         // get the request path only; this is assumed to already be normalized
         $target = parse_url($req->getRequestTarget())['path'] ?? "";
@@ -65,17 +84,14 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $func = $this->chooseCall($target, $method);
         if ($func === "opmlImport") {
             if (!HTTP::matchType($req, "", ...[self::ACCEPTED_TYPES_OPML])) {
-                return new EmptyResponse(415, ['Accept' => implode(", ", self::ACCEPTED_TYPES_OPML)]);
+                return new ErrorResponse(415, ['Accept' => implode(", ", self::ACCEPTED_TYPES_OPML)]);
             }
             $data = (string) $req->getBody();
         } elseif ($method === "POST" || $method === "PUT") {
-            if (!HTTP::matchType($req, "", ...[self::ACCEPTED_TYPES_JSON])) {
-                return new EmptyResponse(415, ['Accept' => implode(", ", self::ACCEPTED_TYPES_JSON)]);
-            }
             $data = @json_decode($data, true);
             if (json_last_error() !== \JSON_ERROR_NONE) {
                 // if the body could not be parsed as JSON, return "400 Bad Request"
-                return new EmptyResponse(400);
+                return new ErrorResponse(["invalidBodyJSON", json_last_error_msg()], 400);
             }
         } else {
             $data = null;
@@ -153,5 +169,21 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             // if the path is not supported, return 404
             throw new Exception404();
         }
+    }
+
+    public static function tokenGenerate(string $user, string $label): string {
+        $t = base64_encode(random_bytes(24));
+        return Arsse::$db->tokenCreate($user, "miniflux.login", $t, null, $label);
+    }
+
+    public static function tokenList(string $user): array {
+        if (!Arsse::$db->userExists($user)) {
+            throw new UserException("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        }
+        $out = [];
+        foreach (Arsse::$db->tokenList($user, "miniflux.login") as $r) {
+            $out[] = ['label' => $r['data'], 'id' => $r['id']];
+        }
+        return $out;
     }
 }
