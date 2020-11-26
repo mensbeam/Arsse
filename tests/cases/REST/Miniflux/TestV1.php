@@ -53,7 +53,8 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         return $value;
     }
 
-    public function testSendAuthenticationChallenge(): void {
+    /** @dataProvider provideAuthResponses */
+    public function testAuthenticateAUser(): void {
         $exp = new EmptyResponse(401);
         $this->assertMessage($exp, $this->req("GET", "/", "", [], false));
     }
@@ -67,27 +68,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideInvalidPaths(): array {
         return [
             ["/",                  "GET",     404],
-            ["/",                  "POST",    404],
-            ["/",                  "PUT",     404],
-            ["/",                  "DELETE",  404],
-            ["/",                  "OPTIONS", 404],
-            ["/version/invalid",   "GET",     404],
-            ["/version/invalid",   "POST",    404],
-            ["/version/invalid",   "PUT",     404],
-            ["/version/invalid",   "DELETE",  404],
-            ["/version/invalid",   "OPTIONS", 404],
-            ["/folders/1/invalid", "GET",     404],
-            ["/folders/1/invalid", "POST",    404],
-            ["/folders/1/invalid", "PUT",     404],
-            ["/folders/1/invalid", "DELETE",  404],
-            ["/folders/1/invalid", "OPTIONS", 404],
             ["/version",           "POST",    405, "GET"],
-            ["/version",           "PUT",     405, "GET"],
-            ["/version",           "DELETE",  405, "GET"],
-            ["/folders",           "PUT",     405, "GET, POST"],
-            ["/folders",           "DELETE",  405, "GET, POST"],
-            ["/folders/1",         "GET",     405, "PUT, DELETE"],
-            ["/folders/1",         "POST",    405, "PUT, DELETE"],
         ];
     }
 

@@ -42,7 +42,7 @@ class REST {
         ],
         'miniflux' => [ // Miniflux  https://miniflux.app/docs/api.html
             'match' => '/v1/',
-            'strip' => '',
+            'strip' => '/v1',
             'class' => REST\Miniflux\V1::class,
         ],
         'miniflux-version' => [ // Miniflux version report
