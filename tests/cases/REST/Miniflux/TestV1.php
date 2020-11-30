@@ -10,13 +10,19 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\Transaction;
+use JKingWeb\Arsse\Db\ExceptionInput;
+use JKingWeb\Arsse\REST\Exception404;
 use JKingWeb\Arsse\REST\Miniflux\V1;
+use JKingWeb\Arsse\REST\Miniflux\ErrorResponse;
 use Psr\Http\Message\ResponseInterface;
+use Laminas\Diactoros\Response\JsonResponse as Response;
+use Laminas\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST\Miniflux\V1<extended> */
 class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $h;
     protected $transaction;
+    protected $token = "Tk2o9YubmZIL2fm2w8Z4KlDEQJz532fNSOcTG0s2_xc=";
 
     protected function req(string $method, string $target, $data = "", array $headers = [], bool $authenticated = true, bool $body = true): ResponseInterface {
         $prefix = "/v1";
@@ -54,13 +60,47 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideAuthResponses */
-    public function testAuthenticateAUser(): void {
-        $exp = new EmptyResponse(401);
-        $this->assertMessage($exp, $this->req("GET", "/", "", [], false));
+    public function testAuthenticateAUser($token, bool $auth, bool $success): void {
+        $exp = new ErrorResponse("401", 401);
+        $user = "john.doe@example.com";
+        if ($token !== null) {
+            $headers = ['X-Auth-Token' => $token];
+        } else {
+            $headers = [];
+        }
+        Arsse::$user->id = null;
+        \Phake::when(Arsse::$db)->tokenLookup->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->tokenLookup("miniflux.login", $this->token)->thenReturn(['user' => $user]);
+        if ($success) {
+            $this->expectExceptionObject(new Exception404);
+            try {
+                $this->req("GET", "/", "", $headers, $auth);
+            } finally {
+                $this->assertSame($user, Arsse::$user->id);
+            }
+        } else {
+            $this->assertMessage($exp, $this->req("GET", "/", "", $headers, $auth));
+            $this->assertNull(Arsse::$user->id);
+        }
+    }
+
+    public function provideAuthResponses(): iterable {
+        return [
+            [null,                     false, false],
+            [null,                     true,  true],
+            [$this->token,             false, true],
+            [[$this->token, "BOGUS"],  false, true],
+            ["",                       true,  true],
+            [["", "BOGUS"],            true,  true],
+            ["NOT A TOKEN",            false, false],
+            ["NOT A TOKEN",            true,  false],
+            [["BOGUS", $this->token],  false, false],
+            [["", $this->token],       false, false],
+        ];
     }
 
     /** @dataProvider provideInvalidPaths */
-    public function testRespondToInvalidPaths($path, $method, $code, $allow = null): void {
+    public function xtestRespondToInvalidPaths($path, $method, $code, $allow = null): void {
         $exp = new EmptyResponse($code, $allow ? ['Allow' => $allow] : []);
         $this->assertMessage($exp, $this->req($method, $path));
     }
@@ -72,7 +112,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    public function testRespondToInvalidInputTypes(): void {
+    public function xtestRespondToInvalidInputTypes(): void {
         $exp = new EmptyResponse(415, ['Accept' => "application/json"]);
         $this->assertMessage($exp, $this->req("PUT", "/folders/1", '<data/>', ['Content-Type' => "application/xml"]));
         $exp = new EmptyResponse(400);
@@ -81,7 +121,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideOptionsRequests */
-    public function testRespondToOptionsRequests(string $url, string $allow, string $accept): void {
+    public function xtestRespondToOptionsRequests(string $url, string $allow, string $accept): void {
         $exp = new EmptyResponse(204, [
             'Allow'  => $allow,
             'Accept' => $accept,

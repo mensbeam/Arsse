@@ -7,12 +7,14 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\REST\Miniflux;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\AbstractException;
+use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Misc\HTTP;
+use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\REST\Exception;
 use JKingWeb\Arsse\REST\Exception404;
 use JKingWeb\Arsse\REST\Exception405;
+use JKingWeb\Arsse\REST\Exception501;
 use JKingWeb\Arsse\User\ExceptionConflict as UserException;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -21,6 +23,7 @@ use Laminas\Diactoros\Response\EmptyResponse;
 class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const ACCEPTED_TYPES_OPML = ["text/xml", "application/xml", "text/x-opml"];
     protected const ACCEPTED_TYPES_JSON = ["application/json", "text/json"];
+    protected const TOKEN_LENGTH = 32;
     public const VERSION = "2.0.25";
 
     protected $paths = [
@@ -50,21 +53,22 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function authenticate(ServerRequestInterface $req): bool {
         // first check any tokens; this is what Miniflux does
-        foreach ($req->getHeader("X-Auth-Token") as $t) {
-            if (strlen($t)) {
-                // a non-empty header is authoritative, so we'll stop here one way or the other
+        if ($req->hasHeader("X-Auth-Token")) {
+            $t = $req->getHeader("X-Auth-Token")[0]; // consider only the first token
+            if (strlen($t)) { // and only if it is not blank
                 try {
                     $d = Arsse::$db->tokenLookup("miniflux.login", $t);
                 } catch (ExceptionInput $e) {
                     return false;
                 }
-                Arsse::$user->id = $d->user;
+                Arsse::$user->id = $d['user'];
                 return true;
             }
         }
         // next check HTTP auth
         if ($req->getAttribute("authenticated", false)) {
             Arsse::$user->id = $req->getAttribute("authenticatedUser");
+            return true;
         }
         return false;
     }
@@ -84,11 +88,11 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $func = $this->chooseCall($target, $method);
         if ($func === "opmlImport") {
             if (!HTTP::matchType($req, "", ...[self::ACCEPTED_TYPES_OPML])) {
-                return new ErrorResponse(415, ['Accept' => implode(", ", self::ACCEPTED_TYPES_OPML)]);
+                return new ErrorResponse("", 415, ['Accept' => implode(", ", self::ACCEPTED_TYPES_OPML)]);
             }
             $data = (string) $req->getBody();
         } elseif ($method === "POST" || $method === "PUT") {
-            $data = @json_decode($data, true);
+            $data = @json_decode((string) $req->getBody(), true);
             if (json_last_error() !== \JSON_ERROR_NONE) {
                 // if the body could not be parsed as JSON, return "400 Bad Request"
                 return new ErrorResponse(["invalidBodyJSON", json_last_error_msg()], 400);
@@ -172,7 +176,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public static function tokenGenerate(string $user, string $label): string {
-        $t = base64_encode(random_bytes(24));
+        // Miniflux produces tokens in base64url alphabet
+        $t = str_replace(["+", "/"], ["-", "_"], base64_encode(random_bytes(self::TOKEN_LENGTH)));
         return Arsse::$db->tokenCreate($user, "miniflux.login", $t, null, $label);
     }
 
