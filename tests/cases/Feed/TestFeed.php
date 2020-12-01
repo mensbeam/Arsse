@@ -150,6 +150,27 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         Feed::discover($this->base."Discovery/Invalid");
     }
 
+    public function testDiscoverAMissingFeed(): void {
+        $this->assertException("invalidUrl", "Feed");
+        Feed::discover($this->base."Discovery/Missing");
+    }
+
+    public function testDiscoverMultipleFeedsSuccessfully(): void {
+        $exp1 = [$this->base."Discovery/Feed", $this->base."Discovery/Missing"];
+        $exp2 = [$this->base."Discovery/Feed"];
+        $this->assertSame($exp1, Feed::discoverAll($this->base."Discovery/Valid"));
+        $this->assertSame($exp2, Feed::discoverAll($this->base."Discovery/Feed"));
+    }
+
+    public function testDiscoverMultipleFeedsUnsuccessfully(): void {
+        $this->assertSame([], Feed::discoverAll($this->base."Discovery/Invalid"));
+    }
+
+    public function testDiscoverMultipleMissingFeeds(): void {
+        $this->assertException("invalidUrl", "Feed");
+        Feed::discoverAll($this->base."Discovery/Missing");
+    }
+
     public function testParseEntityExpansionAttack(): void {
         $this->assertException("xmlEntity", "Feed");
         new Feed(null, $this->base."Parsing/XEEAttack");

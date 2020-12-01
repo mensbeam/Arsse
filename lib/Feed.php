@@ -47,6 +47,17 @@ class Feed {
         return $out;
     }
 
+    public static function discoverAll(string $url, string $username = '', string $password = ''): array {
+        // fetch the candidate feed
+        $f = self::download($url, "", "", $username, $password);
+        if ($f->reader->detectFormat($f->getContent())) {
+            // if the prospective URL is a feed, use it
+            return [$url];
+        } else {
+            return $f->reader->find($f->getUrl(), $f->getContent());
+        }
+    }
+
     public function __construct(int $feedID = null, string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = '', bool $scrape = false) {
         // fetch the feed
         $this->resource = self::download($url, $lastModified, $etag, $username, $password);
