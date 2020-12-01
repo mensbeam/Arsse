@@ -12,9 +12,6 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\REST\Exception;
-use JKingWeb\Arsse\REST\Exception404;
-use JKingWeb\Arsse\REST\Exception405;
-use JKingWeb\Arsse\REST\Exception501;
 use JKingWeb\Arsse\User\ExceptionConflict as UserException;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -86,6 +83,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return $this->handleHTTPOptions($target);
         }
         $func = $this->chooseCall($target, $method);
+        if ($func instanceof ResponseInterface) {
+            return $func;
+        }
         if ($func === "opmlImport") {
             if (!HTTP::matchType($req, "", ...[self::ACCEPTED_TYPES_OPML])) {
                 return new ErrorResponse("", 415, ['Accept' => implode(", ", self::ACCEPTED_TYPES_OPML)]);
@@ -149,7 +149,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
     }
 
-    protected function chooseCall(string $url, string $method): string {
+    protected function chooseCall(string $url, string $method) {
         // // normalize the URL path: change any IDs to 1 for easier comparison
         $url = $this->normalizePathIds($url);
         // normalize the HTTP method to uppercase
@@ -160,18 +160,15 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             // if the path is supported, make sure the method is allowed
             if (isset($this->paths[$url][$method])) {
                 // if it is allowed, return the object method to run, assuming the method exists
-                if (method_exists($this, $this->paths[$url][$method])) {
-                    return $this->paths[$url][$method];
-                } else {
-                    throw new Exception501(); // @codeCoverageIgnore
-                }
+                assert(method_exists($this, $this->paths[$url][$method]), new \Exception("Method is not implemented"));
+                return $this->paths[$url][$method];
             } else {
                 // otherwise return 405
-                throw new Exception405(implode(", ", array_keys($this->paths[$url])));
+                return new EmptyResponse(405, ['Allow' => implode(", ", array_keys($this->paths[$url]))]);
             }
         } else {
             // if the path is not supported, return 404
-            throw new Exception404();
+            return new EmptyResponse(404);
         }
     }
 

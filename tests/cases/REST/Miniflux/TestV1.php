@@ -11,7 +11,6 @@ use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\Db\ExceptionInput;
-use JKingWeb\Arsse\REST\Exception404;
 use JKingWeb\Arsse\REST\Miniflux\V1;
 use JKingWeb\Arsse\REST\Miniflux\ErrorResponse;
 use Psr\Http\Message\ResponseInterface;
@@ -61,7 +60,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideAuthResponses */
     public function testAuthenticateAUser($token, bool $auth, bool $success): void {
-        $exp = new ErrorResponse("401", 401);
+        $exp = $success ? new EmptyResponse(404) : new ErrorResponse("401", 401);
         $user = "john.doe@example.com";
         if ($token !== null) {
             $headers = ['X-Auth-Token' => $token];
@@ -71,17 +70,8 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user->id = null;
         \Phake::when(Arsse::$db)->tokenLookup->thenThrow(new ExceptionInput("subjectMissing"));
         \Phake::when(Arsse::$db)->tokenLookup("miniflux.login", $this->token)->thenReturn(['user' => $user]);
-        if ($success) {
-            $this->expectExceptionObject(new Exception404);
-            try {
-                $this->req("GET", "/", "", $headers, $auth);
-            } finally {
-                $this->assertSame($user, Arsse::$user->id);
-            }
-        } else {
-            $this->assertMessage($exp, $this->req("GET", "/", "", $headers, $auth));
-            $this->assertNull(Arsse::$user->id);
-        }
+        $this->assertMessage($exp, $this->req("GET", "/", "", $headers, $auth));
+        $this->assertSame($success ? $user : null, Arsse::$user->id);
     }
 
     public function provideAuthResponses(): iterable {
@@ -100,7 +90,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideInvalidPaths */
-    public function xtestRespondToInvalidPaths($path, $method, $code, $allow = null): void {
+    public function testRespondToInvalidPaths($path, $method, $code, $allow = null): void {
         $exp = new EmptyResponse($code, $allow ? ['Allow' => $allow] : []);
         $this->assertMessage($exp, $this->req($method, $path));
     }
@@ -108,7 +98,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideInvalidPaths(): array {
         return [
             ["/",                  "GET",     404],
-            ["/version",           "POST",    405, "GET"],
+            ["/me",                "POST",    405, "GET"],
         ];
     }
 

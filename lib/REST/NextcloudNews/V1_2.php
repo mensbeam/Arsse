@@ -15,9 +15,6 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\REST\Exception;
-use JKingWeb\Arsse\REST\Exception404;
-use JKingWeb\Arsse\REST\Exception405;
-use JKingWeb\Arsse\REST\Exception501;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\JsonResponse as Response;
@@ -110,15 +107,14 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // merge GET and POST data, and normalize it. POST parameters are preferred over GET parameters
         $data = $this->normalizeInput(array_merge($req->getQueryParams(), $data), $this->validInput, "unix");
         // check to make sure the requested function is implemented
+        $func = $this->chooseCall($target, $req->getMethod());
+        if ($func instanceof ResponseInterface) {
+            return $func;
+        }
         // dispatch
         try {
-            $func = $this->chooseCall($target, $req->getMethod());
             $path = explode("/", ltrim($target, "/"));
             return $this->$func($path, $data);
-        } catch (Exception404 $e) {
-            return new EmptyResponse(404);
-        } catch (Exception405 $e) {
-            return new EmptyResponse(405, ['Allow' => $e->getMessage()]);
             // @codeCoverageIgnoreStart
         } catch (Exception $e) {
             // if there was a REST exception return 400
@@ -141,7 +137,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return implode("/", $path);
     }
 
-    protected function chooseCall(string $url, string $method): string {
+    protected function chooseCall(string $url, string $method) {
         // // normalize the URL path: change any IDs to 1 for easier comparison
         $url = $this->normalizePathIds($url);
         // normalize the HTTP method to uppercase
@@ -152,18 +148,15 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             // if the path is supported, make sure the method is allowed
             if (isset($this->paths[$url][$method])) {
                 // if it is allowed, return the object method to run, assuming the method exists
-                if (method_exists($this, $this->paths[$url][$method])) {
-                    return $this->paths[$url][$method];
-                } else {
-                    throw new Exception501(); // @codeCoverageIgnore
-                }
+                assert(method_exists($this, $this->paths[$url][$method]), new \Exception("Method is not implemented"));
+                return $this->paths[$url][$method];
             } else {
                 // otherwise return 405
-                throw new Exception405(implode(", ", array_keys($this->paths[$url])));
+                return new EmptyResponse(405, ['Allow' => implode(", ", array_keys($this->paths[$url]))]);
             }
         } else {
             // if the path is not supported, return 404
-            throw new Exception404();
+            return new EmptyResponse(404);
         }
     }
 
