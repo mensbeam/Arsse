@@ -4,7 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
-namespace JKingWeb\Arsse\TestCase\REST\NextcloudNews;
+namespace JKingWeb\Arsse\TestCase\REST\Miniflux;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User;
@@ -98,20 +98,14 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideInvalidPaths(): array {
         return [
             ["/",                  "GET",     404],
+            ["/",                  "OPTIONS", 404],
             ["/me",                "POST",    405, "GET"],
+            ["/me/",               "GET",     404],
         ];
     }
 
-    public function xtestRespondToInvalidInputTypes(): void {
-        $exp = new EmptyResponse(415, ['Accept' => "application/json"]);
-        $this->assertMessage($exp, $this->req("PUT", "/folders/1", '<data/>', ['Content-Type' => "application/xml"]));
-        $exp = new EmptyResponse(400);
-        $this->assertMessage($exp, $this->req("PUT", "/folders/1", '<data/>'));
-        $this->assertMessage($exp, $this->req("PUT", "/folders/1", '<data/>', ['Content-Type' => null]));
-    }
-
     /** @dataProvider provideOptionsRequests */
-    public function xtestRespondToOptionsRequests(string $url, string $allow, string $accept): void {
+    public function testRespondToOptionsRequests(string $url, string $allow, string $accept): void {
         $exp = new EmptyResponse(204, [
             'Allow'  => $allow,
             'Accept' => $accept,
@@ -121,9 +115,11 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provideOptionsRequests(): array {
         return [
-            ["/feeds",      "HEAD,GET,POST", "application/json"],
-            ["/feeds/2112", "DELETE",        "application/json"],
-            ["/user",       "HEAD,GET",      "application/json"],
+            ["/feeds",          "HEAD, GET, POST",          "application/json"],
+            ["/feeds/2112",     "HEAD, GET, PUT, DELETE",   "application/json"],
+            ["/me",             "HEAD, GET",                "application/json"],
+            ["/users/someone",  "HEAD, GET",                "application/json"],
+            ["/import",         "POST",                     "application/xml, text/xml, text/x-opml"],
         ];
     }
 }

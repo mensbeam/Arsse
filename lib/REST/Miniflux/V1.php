@@ -18,8 +18,8 @@ use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\EmptyResponse;
 
 class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
-    protected const ACCEPTED_TYPES_OPML = ["text/xml", "application/xml", "text/x-opml"];
-    protected const ACCEPTED_TYPES_JSON = ["application/json", "text/json"];
+    protected const ACCEPTED_TYPES_OPML = ["application/xml", "text/xml", "text/x-opml"];
+    protected const ACCEPTED_TYPES_JSON = ["application/json"];
     protected const TOKEN_LENGTH = 32;
     public const VERSION = "2.0.25";
 
@@ -140,7 +140,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 array_unshift($allowed, "HEAD");
             }
             return new EmptyResponse(204, [
-                'Allow'  => implode(",", $allowed),
+                'Allow'  => implode(", ", $allowed),
                 'Accept' => implode(", ", $url === "/import" ? self::ACCEPTED_TYPES_OPML : self::ACCEPTED_TYPES_JSON),
             ]);
         } else {
