@@ -9,6 +9,11 @@ return [
 
     'API.Miniflux.Error.401'                                               => 'Access Unauthorized',
     'API.Miniflux.Error.invalidBodyJSON'                                   => 'Invalid JSON payload: {0}',
+    'API.Miniflux.Error.invalidInputType'                                  => 'Input key "{field}" of type {actual} was expected as {expected}',
+    'API.Miniflux.Error.fetch404'                                          => 'Resource not found (404), this feed doesn\'t exists anymore, check the feed URL',
+    'API.Miniflux.Error.fetch401'                                          => 'You are not authorized to access this resource (invalid username/password)',
+    'API.Miniflux.Error.fetch403'                                          => 'Unable to fetch this resource (Status Code = 403)',
+    'API.Miniflux.Error.fetchOther'                                        => 'Unable to fetch this resource',
     
     'API.TTRSS.Category.Uncategorized'                                     => 'Uncategorized',
     'API.TTRSS.Category.Special'                                           => 'Special',

@@ -7,21 +7,31 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\REST\Miniflux;
 
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Feed;
+use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Misc\HTTP;
-use JKingWeb\Arsse\Misc\ValueInfo;
+use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\REST\Exception;
 use JKingWeb\Arsse\User\ExceptionConflict as UserException;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\EmptyResponse;
+use Laminas\Diactoros\Response\JsonResponse as Response;
 
 class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
+    public const VERSION = "2.0.25";
+
     protected const ACCEPTED_TYPES_OPML = ["application/xml", "text/xml", "text/x-opml"];
     protected const ACCEPTED_TYPES_JSON = ["application/json"];
     protected const TOKEN_LENGTH = 32;
-    public const VERSION = "2.0.25";
+    protected const VALID_JSON = [
+        'url'        => "string",
+        'username'   => "string",
+        'password'   => "string",
+        'user_agent' => "string",
+    ];
 
     protected $paths = [
         '/categories'         => ['GET'  => "getCategories",  'POST'   => "createCategory"],
@@ -86,6 +96,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($func instanceof ResponseInterface) {
             return $func;
         }
+        $data = [];
+        $query = [];
         if ($func === "opmlImport") {
             if (!HTTP::matchType($req, "", ...[self::ACCEPTED_TYPES_OPML])) {
                 return new ErrorResponse("", 415, ['Accept' => implode(", ", self::ACCEPTED_TYPES_OPML)]);
@@ -97,12 +109,16 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 // if the body could not be parsed as JSON, return "400 Bad Request"
                 return new ErrorResponse(["invalidBodyJSON", json_last_error_msg()], 400);
             }
-        } else {
-            $data = null;
+            $data = $this->normalizeBody((array) $data);
+            if ($data instanceof ResponseInterface) {
+                return $data;
+            }
+        } elseif ($method === "GET") {
+            $query = $req->getQueryParams();
         }
         try {
             $path = explode("/", ltrim($target, "/"));
-            return $this->$func($path, $req->getQueryParams(), $data);
+            return $this->$func($path, $query, $data);
             // @codeCoverageIgnoreStart
         } catch (Exception $e) {
             // if there was a REST exception return 400
@@ -118,7 +134,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $path = explode("/", $url);
         // any path components which are database IDs (integers greater than zero) should be replaced with "1", for easier comparison (we don't care about the specific ID)
         for ($a = 0; $a < sizeof($path); $a++) {
-            if (ValueInfo::id($path[$a])) {
+            if (V::id($path[$a])) {
                 $path[$a] = "1";
             }
         }
@@ -170,6 +186,37 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             // if the path is not supported, return 404
             return new EmptyResponse(404);
         }
+    }
+
+    protected function normalizeBody(array $body) {
+        // Miniflux does not attempt to coerce values into different types
+        foreach (self::VALID_JSON as $k => $t) {
+            if (!isset($body[$k])) {
+                $body[$k] = null;
+            } elseif (gettype($body[$k]) !== $t) {
+                return new ErrorResponse(["invalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])]);
+            }
+        }
+        return $body;
+    }
+
+    protected function discoverSubscriptions(array $path, array $query, array $data) {
+        try {
+            $list = Feed::discoverAll((string) $data['url'], (string) $data['username'], (string) $data['password']);
+        } catch (FeedException $e) {
+            $msg = [
+                10502 => "fetch404",
+                10506 => "fetch403",
+                10507 => "fetch401",
+            ][$e->getCode()] ?? "fetchOther";
+            return new ErrorResponse($msg, 500);
+        }
+        $out = [];
+        foreach($list as $url) {
+            // TODO: This needs to be refined once PicoFeed is replaced
+            $out[] = ['title' => "Feed", 'type' => "rss", 'url' => $url];
+        }
+        return new Response($out);
     }
 
     public static function tokenGenerate(string $user, string $label): string {

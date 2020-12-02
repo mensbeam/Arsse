@@ -122,4 +122,21 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             ["/import",         "POST",                     "application/xml, text/xml, text/x-opml"],
         ];
     }
+
+    public function testRejectBadlyTypedData(): void {
+        $exp = new ErrorResponse(["invalidInputType", 'field' => "url", 'expected' => "string", 'actual' => "integer"], 400);
+        $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => 2112]));
+    }
+
+    public function testDiscoverFeeds(): void {
+        $exp = new Response([
+            ['title' => "Feed", 'type' => "rss", 'url' => "http://localhost:8000/Feed/Discovery/Feed"],
+            ['title' => "Feed", 'type' => "rss", 'url' => "http://localhost:8000/Feed/Discovery/Missing"],
+        ]);
+        $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => "http://localhost:8000/Feed/Discovery/Valid"]));
+        $exp = new Response([]);
+        $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => "http://localhost:8000/Feed/Discovery/Invalid"]));
+        $exp = new ErrorResponse("fetch404", 500);
+        $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => "http://localhost:8000/Feed/Discovery/Missing"]));
+    }
 }
