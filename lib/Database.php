@@ -11,7 +11,7 @@ use JKingWeb\Arsse\Db\Statement;
 use JKingWeb\Arsse\Misc\Query;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\Date;
-use JKingWeb\Arsse\Misc\ValueInfo;
+use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\Misc\URL;
 
 /** The high-level interface with the database
@@ -149,7 +149,7 @@ class Database {
             $count = 0;
             $convType = Db\AbstractStatement::TYPE_NORM_MAP[Statement::TYPES[$type]];
             foreach ($values as $v) {
-                $v = ValueInfo::normalize($v, $convType, null, "sql");
+                $v = V::normalize($v, $convType, null, "sql");
                 if (is_null($v)) {
                     // nulls are pointless to have
                     continue;
@@ -161,7 +161,7 @@ class Database {
                         $clause[] = $this->db->literalString($v);
                     }
                 } else {
-                    $clause[] = ValueInfo::normalize($v, ValueInfo::T_STRING, null, "sql");
+                    $clause[] = V::normalize($v, V::T_STRING, null, "sql");
                 }
                 $count++;
             }
@@ -299,32 +299,43 @@ class Database {
         return true;
     }
 
-    public function userPropertiesGet(string $user): array {
-        $out = $this->db->prepare("SELECT num, admin, lang, tz, sort_asc from arsse_users where id = ?", "str")->run($user)->getRow();
-        if (!$out) {
+    public function userPropertiesGet(string $user, bool $includeLarge = true): array {
+        $meta = $this->db->prepareArray(
+            "SELECT \"key\", value from arsse_user_meta where owner = ? and \"key\" not in ('num', 'admin')
+             union all select 'num', num from arsse_users where id = ? 
+             union all select 'admin', admin from arsse_users where id = ?",
+            ["str", "str", "str"]
+        )->run($user)->getRow();
+        if (!$meta) {
             throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
-        settype($out['num'], "int");
-        settype($out['admin'], "bool");
-        settype($out['sort_asc'], "bool");
-        return $out;
+        $meta = array_combine(array_column($meta, "key"), array_column($meta, "value"));
+        settype($meta['num'], "integer");
+        return $meta;
     }
 
     public function userPropertiesSet(string $user, array $data): bool {
         if (!$this->userExists($user)) {
             throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
-        $allowed = [
-            'admin'    => "strict bool",
-            'lang'     => "str",
-            'tz'       => "strict str",
-            'sort_asc' => "strict bool",
-        ];
-        [$setClause, $setTypes, $setValues] = $this->generateSet($data, $allowed);
-        if (!$setClause) {
-            return false;
+        $update = $this->db->prepare("UPDATE arsse_user_meta set value = ? where owner = ? and \"key\" = ?", "str", "str", "str");
+        $insert = ["INSERT INTO arsse_user_meta values(?, ?, ?)", "str", "strict str", "str"];
+        foreach ($data as $k => $v) {
+            if ($k === "admin") {
+                $this->db->prepare("UPDATE arsse_users SET admin = ? where user = ?", "bool", "str")->run($v, $user);
+            } elseif ($k === "num") {
+                continue;
+            } else {
+                $success = $update->run($v, $user, $k)->changes();
+                if (!$success) {
+                    if (!$insert instanceof Db\Statement) {
+                        $insert = $this->db->prepare(...$insert);
+                    }
+                    $insert->run($user, $k, $v);
+                }
+            }
         }
-        return (bool) $this->db->prepare("UPDATE arsse_users set $setClause where id = ?", $setTypes, "str")->run($setValues, $user)->changes();
+        return true;
     }
 
     /** Creates a new session for the given user and returns the session identifier */
@@ -515,7 +526,7 @@ class Database {
      * @param integer $id The identifier of the folder to delete
      */
     public function folderRemove(string $user, $id): bool {
-        if (!ValueInfo::id($id)) {
+        if (!V::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "folder", 'type' => "int > 0"]);
         }
         $changes = $this->db->prepare("DELETE FROM arsse_folders where owner = ? and id = ?", "str", "int")->run($user, $id)->changes();
@@ -527,7 +538,7 @@ class Database {
 
     /** Returns the identifier, name, and parent of the given folder as an associative array */
     public function folderPropertiesGet(string $user, $id): array {
-        if (!ValueInfo::id($id)) {
+        if (!V::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "folder", 'type' => "int > 0"]);
         }
         $props = $this->db->prepare("SELECT id,name,parent from arsse_folders where owner = ? and id = ?", "str", "int")->run($user, $id)->getRow();
@@ -593,7 +604,7 @@ class Database {
      */
     protected function folderValidateId(string $user, $id = null, bool $subject = false): array {
         // if the specified ID is not a non-negative integer (or null), this will always fail
-        if (!ValueInfo::id($id, true)) {
+        if (!V::id($id, true)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "folder", 'type' => "int >= 0"]);
         }
         // if a null or zero ID is specified this is a no-op
@@ -615,13 +626,13 @@ class Database {
             // the root cannot be moved
             throw new Db\ExceptionInput("circularDependence", $errData);
         }
-        $info = ValueInfo::int($parent);
+        $info = V::int($parent);
         // the root is always a valid parent
-        if ($info & (ValueInfo::NULL | ValueInfo::ZERO)) {
+        if ($info & (V::NULL | V::ZERO)) {
             $parent = null;
         } else {
             // if a negative integer or non-integer is specified this will always fail
-            if (!($info & ValueInfo::VALID) || (($info & ValueInfo::NEG))) {
+            if (!($info & V::VALID) || (($info & V::NEG))) {
                 throw new Db\ExceptionInput("idMissing", $errData);
             }
             $parent = (int) $parent;
@@ -668,12 +679,12 @@ class Database {
      * @param integer|null $parent The parent folder context in which to check for duplication
      */
     protected function folderValidateName($name, bool $checkDuplicates = false, $parent = null): bool {
-        $info = ValueInfo::str($name);
-        if ($info & (ValueInfo::NULL | ValueInfo::EMPTY)) {
+        $info = V::str($name);
+        if ($info & (V::NULL | V::EMPTY)) {
             throw new Db\ExceptionInput("missing", ["action" => $this->caller(), "field" => "name"]);
-        } elseif ($info & ValueInfo::WHITE) {
+        } elseif ($info & V::WHITE) {
             throw new Db\ExceptionInput("whitespace", ["action" => $this->caller(), "field" => "name"]);
-        } elseif (!($info & ValueInfo::VALID)) {
+        } elseif (!($info & V::VALID)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "name", 'type' => "string"]);
         } elseif ($checkDuplicates) {
             // make sure that a folder with the same prospective name and parent does not already exist: if the parent is null,
@@ -778,7 +789,7 @@ class Database {
      * configurable retention period for newsfeeds
      */
     public function subscriptionRemove(string $user, $id): bool {
-        if (!ValueInfo::id($id)) {
+        if (!V::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'type' => "int > 0"]);
         }
         $changes = $this->db->prepare("DELETE from arsse_subscriptions where owner = ? and id = ?", "str", "int")->run($user, $id)->changes();
@@ -807,7 +818,7 @@ class Database {
      * - "unread": The number of unread articles associated with the subscription
      */
     public function subscriptionPropertiesGet(string $user, $id): array {
-        if (!ValueInfo::id($id)) {
+        if (!V::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'type' => "int > 0"]);
         }
         $sub = $this->subscriptionList($user, null, true, (int) $id)->getRow();
@@ -841,12 +852,12 @@ class Database {
         if (array_key_exists("title", $data)) {
             // if the title is null, this signals intended use of the default title; otherwise make sure it's not effectively an empty string
             if (!is_null($data['title'])) {
-                $info = ValueInfo::str($data['title']);
-                if ($info & ValueInfo::EMPTY) {
+                $info = V::str($data['title']);
+                if ($info & V::EMPTY) {
                     throw new Db\ExceptionInput("missing", ["action" => __FUNCTION__, "field" => "title"]);
-                } elseif ($info & ValueInfo::WHITE) {
+                } elseif ($info & V::WHITE) {
                     throw new Db\ExceptionInput("whitespace", ["action" => __FUNCTION__, "field" => "title"]);
-                } elseif (!($info & ValueInfo::VALID)) {
+                } elseif (!($info & V::VALID)) {
                     throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "title", 'type' => "string"]);
                 }
             }
@@ -918,7 +929,7 @@ class Database {
         if (!$out && $id) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
         }
-        return ValueInfo::normalize($out, ValueInfo::T_DATE | ValueInfo::M_NULL, "sql");
+        return V::normalize($out, V::T_DATE | V::M_NULL, "sql");
     }
 
     /** Ensures the specified subscription exists and raises an exception otherwise
@@ -930,7 +941,7 @@ class Database {
      * @param boolean $subject Whether the subscription is the subject (true) rather than the object (false) of the operation being performed; this only affects the semantics of the error message if validation fails
      */
     protected function subscriptionValidateId(string $user, $id, bool $subject = false): array {
-        if (!ValueInfo::id($id)) {
+        if (!V::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "feed", 'type' => "int > 0"]);
         }
         $out = $this->db->prepare("SELECT id,feed from arsse_subscriptions where id = ? and owner = ?", "int", "str")->run($id, $user)->getRow();
@@ -988,7 +999,7 @@ class Database {
      */
     public function feedUpdate($feedID, bool $throwError = false): bool {
         // check to make sure the feed exists
-        if (!ValueInfo::id($feedID)) {
+        if (!V::id($feedID)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID, 'type' => "int > 0"]);
         }
         $f = $this->db->prepare("SELECT url, username, password, modified, etag, err_count, scrape FROM arsse_feeds where id = ?", "int")->run($feedID)->getRow();
@@ -1328,7 +1339,7 @@ class Database {
         } else {
             // normalize requested output and sorting columns
             $norm = function($v) {
-                return trim(strtolower(ValueInfo::normalize($v, ValueInfo::T_STRING)));
+                return trim(strtolower(V::normalize($v, V::T_STRING)));
             };
             $cols = array_map($norm, $cols);
             // make an output column list
@@ -1798,7 +1809,7 @@ class Database {
      * @param integer $id The identifier of the article to validate
      */
     protected function articleValidateId(string $user, $id): array {
-        if (!ValueInfo::id($id)) {
+        if (!V::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "article", 'type' => "int > 0"]); // @codeCoverageIgnore
         }
         $out = $this->db->prepare(
@@ -1825,7 +1836,7 @@ class Database {
      * @param integer $id The identifier of the edition to validate
      */
     protected function articleValidateEdition(string $user, int $id): array {
-        if (!ValueInfo::id($id)) {
+        if (!V::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "edition", 'type' => "int > 0"]); // @codeCoverageIgnore
         }
         $out = $this->db->prepare(
@@ -2109,10 +2120,10 @@ class Database {
      * @param boolean $subject Whether the label is the subject (true) rather than the object (false) of the operation being performed; this only affects the semantics of the error message if validation fails
      */
     protected function labelValidateId(string $user, $id, bool $byName, bool $checkDb = true, bool $subject = false): array {
-        if (!$byName && !ValueInfo::id($id)) {
+        if (!$byName && !V::id($id)) {
             // if we're not referring to a label by name and the ID is invalid, throw an exception
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "label", 'type' => "int > 0"]);
-        } elseif ($byName && !(ValueInfo::str($id) & ValueInfo::VALID)) {
+        } elseif ($byName && !(V::str($id) & V::VALID)) {
             // otherwise if we are referring to a label by name but the ID is not a string, also throw an exception
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "label", 'type' => "string"]);
         } elseif ($checkDb) {
@@ -2133,12 +2144,12 @@ class Database {
 
     /** Ensures a prospective label name is syntactically valid and raises an exception otherwise */
     protected function labelValidateName($name): bool {
-        $info = ValueInfo::str($name);
-        if ($info & (ValueInfo::NULL | ValueInfo::EMPTY)) {
+        $info = V::str($name);
+        if ($info & (V::NULL | V::EMPTY)) {
             throw new Db\ExceptionInput("missing", ["action" => $this->caller(), "field" => "name"]);
-        } elseif ($info & ValueInfo::WHITE) {
+        } elseif ($info & V::WHITE) {
             throw new Db\ExceptionInput("whitespace", ["action" => $this->caller(), "field" => "name"]);
-        } elseif (!($info & ValueInfo::VALID)) {
+        } elseif (!($info & V::VALID)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "name", 'type' => "string"]);
         } else {
             return true;
@@ -2381,10 +2392,10 @@ class Database {
      * @param boolean $subject Whether the tag is the subject (true) rather than the object (false) of the operation being performed; this only affects the semantics of the error message if validation fails
      */
     protected function tagValidateId(string $user, $id, bool $byName, bool $checkDb = true, bool $subject = false): array {
-        if (!$byName && !ValueInfo::id($id)) {
+        if (!$byName && !V::id($id)) {
             // if we're not referring to a tag by name and the ID is invalid, throw an exception
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "tag", 'type' => "int > 0"]);
-        } elseif ($byName && !(ValueInfo::str($id) & ValueInfo::VALID)) {
+        } elseif ($byName && !(V::str($id) & V::VALID)) {
             // otherwise if we are referring to a tag by name but the ID is not a string, also throw an exception
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "tag", 'type' => "string"]);
         } elseif ($checkDb) {
@@ -2405,12 +2416,12 @@ class Database {
 
     /** Ensures a prospective tag name is syntactically valid and raises an exception otherwise */
     protected function tagValidateName($name): bool {
-        $info = ValueInfo::str($name);
-        if ($info & (ValueInfo::NULL | ValueInfo::EMPTY)) {
+        $info = V::str($name);
+        if ($info & (V::NULL | V::EMPTY)) {
             throw new Db\ExceptionInput("missing", ["action" => $this->caller(), "field" => "name"]);
-        } elseif ($info & ValueInfo::WHITE) {
+        } elseif ($info & V::WHITE) {
             throw new Db\ExceptionInput("whitespace", ["action" => $this->caller(), "field" => "name"]);
-        } elseif (!($info & ValueInfo::VALID)) {
+        } elseif (!($info & V::VALID)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "name", 'type' => "string"]);
         } else {
             return true;

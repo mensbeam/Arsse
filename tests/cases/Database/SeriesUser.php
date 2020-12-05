@@ -17,14 +17,26 @@ trait SeriesUser {
                     'password' => 'str',
                     'num'      => 'int',
                     'admin'    => 'bool',
-                    'lang'     => 'str',
-                    'tz'       => 'str',
-                    'sort_asc' => 'bool',
                 ],
                 'rows' => [
-                    ["admin@example.net", '$2y$10$PbcG2ZR3Z8TuPzM7aHTF8.v61dtCjzjK78gdZJcp4UePE8T9jEgBW',1, 1, "en", "America/Toronto", 0], // password is hash of "secret"
-                    ["jane.doe@example.com", "",2, 0, "fr", "Asia/Kuala_Lumpur", 1],
-                    ["john.doe@example.com", "",3, 0, null, "Etc/UTC", 0],
+                    ["admin@example.net", '$2y$10$PbcG2ZR3Z8TuPzM7aHTF8.v61dtCjzjK78gdZJcp4UePE8T9jEgBW', 1, 1], // password is hash of "secret"
+                    ["jane.doe@example.com", "", 2, 0],
+                    ["john.doe@example.com", "", 3, 0],
+                ],
+            ],
+            'arsse_user_meta' => [
+                'columns' => [
+                    'owner' => "str",
+                    'key'   => "str",
+                    'value' => "str",
+                ],
+                'rows' => [
+                    ["admin@example.net", "lang", "en"],
+                    ["admin@example.net", "tz", "America/Toronto"],
+                    ["admin@example.net", "sort", "desc"],
+                    ["jane.doe@example.com", "lang", "fr"],
+                    ["jane.doe@example.com", "tz", "Asia/Kuala_Lumpur"],
+                    ["jane.doe@example.com", "sort", "asc"],
                 ],
             ],
         ];

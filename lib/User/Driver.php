@@ -65,7 +65,7 @@ interface Driver {
      *
      * Any other keys will be ignored.
      */
-    public function userPropertiesGet(string $user): array;
+    public function userPropertiesGet(string $user, bool $includeLarge = true): array;
 
     /** Sets metadata about a user
      *

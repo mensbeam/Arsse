@@ -14,6 +14,18 @@ class User {
     public const DRIVER_NAMES = [
         'internal' => \JKingWeb\Arsse\User\Internal\Driver::class,
     ];
+    public const PROPERTIES = [
+        'admin'        => V::T_BOOL,
+        'lang'         => V::T_STRING,
+        'tz'           => V::T_STRING,
+        'sort_asc'     => V::T_BOOL,
+        'theme'        => V::T_STRING,
+        'page_size'    => V::T_INT, // greater than zero
+        'shortcuts'    => V::T_BOOL,
+        'gestures'     => V::T_BOOL,
+        'stylesheet'   => V::T_STRING,
+        'reading_time' => V::T_BOOL,
+    ];
 
     public $id = null;
 
@@ -115,48 +127,42 @@ class User {
         return (new PassGen)->length(Arsse::$conf->userTempPasswordLength)->get();
     }
 
-    public function propertiesGet(string $user): array {
-        $extra = $this->u->userPropertiesGet($user);
+    public function propertiesGet(string $user, bool $includeLarge = true): array {
+        $extra = $this->u->userPropertiesGet($user, $includeLarge);
         // synchronize the internal database
         if (!Arsse::$db->userExists($user)) {
             Arsse::$db->userAdd($user, null);
             Arsse::$db->userPropertiesSet($user, $extra);
         }
         // retrieve from the database to get at least the user number, and anything else the driver does not provide
-        $out = Arsse::$db->userPropertiesGet($user);
-        // layer on the driver's data
-        foreach (["tz", "admin", "sort_asc"] as $k) {
+        $meta = Arsse::$db->userPropertiesGet($user);
+        // combine all the data
+        $out = ['num' => $meta['num']];
+        foreach (self::PROPERTIES as $k => $t) {
             if (array_key_exists($k, $extra)) {
-                $out[$k] = $extra[$k] ?? $out[$k];
+                $v = $extra[$k];
+            } elseif (array_key_exists($k, $meta)) {
+                $v = $meta[$k];
+            } else {
+                $v = null;
             }
-        }
-        // treat language specially since it may legitimately be null
-        if (array_key_exists("lang", $extra)) {
-            $out['lang'] = $extra['lang'];
+            $out[$k] = V::normalize($v, $t | V::M_NULL);
         }
         return $out;
     }
 
     public function propertiesSet(string $user, array $data): array {
         $in = [];
-        if (array_key_exists("tz", $data)) {
-            if (!is_string($data['tz'])) {
-                throw new User\ExceptionInput("invalidTimezone", ['field' => "tz", 'value' => ""]);
-            } elseif (!@timezone_open($data['tz'])) {
-                throw new User\ExceptionInput("invalidTimezone", ['field' => "tz", 'value' => $data['tz']]);
-            }
-            $in['tz'] = $data['tz'];
-        }
-        foreach (["admin", "sort_asc"] as $k) {
+        foreach (self::PROPERTIES as $k => $t) {
             if (array_key_exists($k, $data)) {
-                if (($v = V::normalize($data[$k], V::T_BOOL | V::M_DROP)) === null) {
-                    throw new User\ExceptionInput("invalidBoolean", $k);
-                }
-                $in[$k] = $v;
+                // TODO: handle type mistmatch exception
+                $in[$k] = V::normalize($data[$k], $t | V::M_NULL | V::M_STRICT);
             }
         }
-        if (array_key_exists("lang", $data)) {
-            $in['lang'] = V::normalize($data['lang'], V::T_STRING | V::M_NULL);
+        if (isset($in['tz']) && !@timezone_open($in['tz'])) {
+            throw new User\ExceptionInput("invalidTimezone", ['field' => "tz", 'value' => $in['tz']]);
+        } elseif (isset($in['page_size']) && $in['page_size'] < 1) {
+            throw new User\ExceptionInput("invalidNonZeroInteger", ['field' => "page_size"]);
         }
         $out = $this->u->userPropertiesSet($user, $in);
         // synchronize the internal database

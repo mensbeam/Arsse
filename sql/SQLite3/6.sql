@@ -6,7 +6,7 @@
 -- This is a speculative addition to support OAuth login in the future
 alter table arsse_tokens add column data text default null;
 
--- Add multiple columns to the users table
+-- Add num and admin columns to the users table
 -- In particular this adds a numeric identifier for each user, which Miniflux requires
 create table arsse_users_new(
 -- users
@@ -14,9 +14,6 @@ create table arsse_users_new(
     password text,                                  -- password, salted and hashed; if using external authentication this would be blank
     num integer unique not null,                    -- numeric identfier used by Miniflux
     admin boolean not null default 0,               -- Whether the user is an administrator
-    lang text,                                      -- The user's chosen language code e.g. 'en', 'fr-ca'; null uses the system default
-    tz text not null default 'Etc/UTC',             -- The user's chosen time zone, in zoneinfo format
-    sort_asc boolean not null default 0             -- Whether the user prefers to sort articles in ascending order
 ) without rowid;
 create temp table arsse_users_existing(
     id text not null,
@@ -30,6 +27,17 @@ insert into arsse_users_new(id, password, num)
 drop table arsse_users;
 drop table arsse_users_existing;
 alter table arsse_users_new rename to arsse_users;
+
+-- Add a table for other user metadata
+create table arsse_user_meta(
+    -- Metadata for users
+    -- It is up to individual applications (i.e. the client protocols) to cooperate with names and types
+    owner text not null references arsse_users(id) on delete cascade on update cascade,     -- the user to whom the metadata belongs
+    key text not null,                                                                      -- metadata key
+    value text,                                                                             -- metadata value
+    primary key(owner,key)
+) without rowid;
+
 
 -- Add a separate table for feed icons and replace their URLs in the feeds table with their IDs
 create table arsse_icons(

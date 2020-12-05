@@ -8,9 +8,6 @@ alter table arsse_tokens add column data longtext default null;
 
 alter table arsse_users add column num bigint unsigned unique;
 alter table arsse_users add column admin boolean not null default 0;
-alter table arsse_users add column lang longtext;
-alter table arsse_users add column tz varchar(44) not null default 'Etc/UTC';
-alter table arsse_users add column sort_asc boolean not null default 0;
 create temporary table arsse_users_existing(
     id text not null,
     num serial primary key
@@ -21,6 +18,14 @@ update arsse_users as u, arsse_users_existing as n
 where u.id = n.id;
 drop table arsse_users_existing;
 alter table arsse_users modify num bigint unsigned not null;
+
+create table arsse_user_meta(
+    owner varchar(255) not null,
+    "key" varchar(255) not null,
+    value longtext,
+    foreign key(owner) references arsse_users(id) on delete cascade on update cascade,
+    primary key(owner,key)
+);
 
 create table arsse_icons(
     id serial primary key,

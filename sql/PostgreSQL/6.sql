@@ -8,9 +8,6 @@ alter table arsse_tokens add column data text default null;
 
 alter table arsse_users add column num bigint unique;
 alter table arsse_users add column admin smallint not null default 0;
-alter table arsse_users add column lang text;
-alter table arsse_users add column tz text not null default 'Etc/UTC';
-alter table arsse_users add column sort_asc smallint not null default 0;
 create temp table arsse_users_existing(
     id text not null,
     num bigserial
@@ -22,6 +19,13 @@ from arsse_users_existing as e
 where u.id = e.id;
 drop table arsse_users_existing;
 alter table arsse_users alter column num set not null;
+
+create table arsse_user_meta(
+    owner text not null references arsse_users(id) on delete cascade on update cascade,
+    key text not null,
+    value text,
+    primary key(owner,key)
+);
 
 create table arsse_icons(
     id bigserial primary key,
