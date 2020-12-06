@@ -125,12 +125,12 @@ trait SeriesUser {
 
     public function provideMetadata(): iterable {
         return [
-            ["admin@example.net",    true,  ['lang' => "en", 'sort_asc' => "0", 'tz' => "America/Toronto",   'num' => 1, 'admin' => '1']],
-            ["jane.doe@example.com", true,  ['lang' => "fr", 'sort_asc' => "1", 'tz' => "Asia/Kuala_Lumpur", 'num' => 2, 'admin' => '0']],
-            ["john.doe@example.com", true,  ['stylesheet' => "body {background:lightgray}", 'num' => 3, 'admin' => '0']],
-            ["admin@example.net",    false, ['lang' => "en", 'sort_asc' => "0", 'tz' => "America/Toronto",   'num' => 1, 'admin' => '1']],
-            ["jane.doe@example.com", false, ['lang' => "fr", 'sort_asc' => "1", 'tz' => "Asia/Kuala_Lumpur", 'num' => 2, 'admin' => '0']],
-            ["john.doe@example.com", false, ['num' => 3, 'admin' => '0']],
+            ["admin@example.net",    true,  ['num' => 1, 'admin' => 1, 'lang' => "en", 'sort_asc' => "0", 'tz' => "America/Toronto"]],
+            ["jane.doe@example.com", true,  ['num' => 2, 'admin' => 0, 'lang' => "fr", 'sort_asc' => "1", 'tz' => "Asia/Kuala_Lumpur"]],
+            ["john.doe@example.com", true,  ['num' => 3, 'admin' => 0, 'stylesheet' => "body {background:lightgray}"]],
+            ["admin@example.net",    false, ['num' => 1, 'admin' => 1, 'lang' => "en", 'sort_asc' => "0", 'tz' => "America/Toronto"]],
+            ["jane.doe@example.com", false, ['num' => 2, 'admin' => 0, 'lang' => "fr", 'sort_asc' => "1", 'tz' => "Asia/Kuala_Lumpur"]],
+            ["john.doe@example.com", false, ['num' => 3, 'admin' => 0]],
         ];
     }
 

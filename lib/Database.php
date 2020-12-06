@@ -300,24 +300,21 @@ class Database {
     }
 
     public function userPropertiesGet(string $user, bool $includeLarge = true): array {
+        $basic = $this->db->prepare("SELECT num, admin from arsse_users where id = ?", "str")->run($user)->getRow();
+        if (!$basic) {
+            throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+        }
         $exclude = ["num", "admin"];
         if (!$includeLarge) {
             $exclude = array_merge($exclude, User::PROPERTIES_LARGE);
         }
         [$inClause, $inTypes, $inValues] = $this->generateIn($exclude, "str");
-        $meta = $this->db->prepareArray(
-            "SELECT \"key\", value from arsse_user_meta where owner = ? and \"key\" not in ($inClause)
-             union all select 'num', num from arsse_users where id = ? 
-             union all select 'admin', admin from arsse_users where id = ?",
-            ["str", $inTypes, "str", "str"]
-        )->run($user, $inValues, $user, $user)->getAll();
-        if (!$meta) {
-            throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
-        }
-        $meta = array_combine(array_column($meta, "key"), array_column($meta, "value"));
+        $meta = $this->db->prepare("SELECT \"key\", value from arsse_user_meta where owner = ? and \"key\" not in ($inClause) order by \"key\"", "str", $inTypes)->run($user, $inValues)->getAll();
+        $meta = array_merge($basic, array_combine(array_column($meta, "key"), array_column($meta, "value")));
         settype($meta['num'], "integer");
+        settype($meta['admin'], "integer");
         return $meta;
-    }
+    }	   		
 
     public function userPropertiesSet(string $user, array $data): bool {
         if (!$this->userExists($user)) {
@@ -454,7 +451,7 @@ class Database {
 
     /** List tokens associated with a user */
     public function tokenList(string $user, string $class): Db\Result {
-        return $this->db->prepare("SELECT id,created,expires,data from arsse_tokens where class = ? and user = ? and (expires is null or expires > CURRENT_TIMESTAMP)", "str", "str")->run($class, $user);
+        return $this->db->prepare("SELECT id,created,expires,data from arsse_tokens where class = ? and \"user\" = ? and (expires is null or expires > CURRENT_TIMESTAMP)", "str", "str")->run($class, $user);
     }
 
     /** Deletes expires tokens from the database, returning the number of deleted tokens */

@@ -24,8 +24,8 @@ create table arsse_user_meta(
     "key" varchar(255) not null,
     value longtext,
     foreign key(owner) references arsse_users(id) on delete cascade on update cascade,
-    primary key(owner,key)
-);
+    primary key(owner,"key")
+) character set utf8mb4 collate utf8mb4_unicode_ci;
 
 create table arsse_icons(
     id serial primary key,
