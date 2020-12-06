@@ -26,6 +26,7 @@ class User {
         'stylesheet'   => V::T_STRING,
         'reading_time' => V::T_BOOL,
     ];
+    public const PROPERTIES_LARGE = ["stylesheet"];
 
     public $id = null;
 

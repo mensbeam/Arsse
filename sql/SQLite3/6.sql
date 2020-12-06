@@ -13,7 +13,7 @@ create table arsse_users_new(
     id text primary key not null collate nocase,    -- user id
     password text,                                  -- password, salted and hashed; if using external authentication this would be blank
     num integer unique not null,                    -- numeric identfier used by Miniflux
-    admin boolean not null default 0,               -- Whether the user is an administrator
+    admin boolean not null default 0                -- Whether the user is an administrator
 ) without rowid;
 create temp table arsse_users_existing(
     id text not null,

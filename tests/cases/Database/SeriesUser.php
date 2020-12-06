@@ -33,10 +33,11 @@ trait SeriesUser {
                 'rows' => [
                     ["admin@example.net", "lang", "en"],
                     ["admin@example.net", "tz", "America/Toronto"],
-                    ["admin@example.net", "sort", "desc"],
+                    ["admin@example.net", "sort_asc", "0"],
                     ["jane.doe@example.com", "lang", "fr"],
                     ["jane.doe@example.com", "tz", "Asia/Kuala_Lumpur"],
-                    ["jane.doe@example.com", "sort", "asc"],
+                    ["jane.doe@example.com", "sort_asc", "1"],
+                    ["john.doe@example.com", "stylesheet", "body {background:lightgray}"],
                 ],
             ],
         ];
@@ -118,15 +119,18 @@ trait SeriesUser {
     }
 
     /** @dataProvider provideMetaData */
-    public function testGetMetadata(string $user, array $exp): void {
-        $this->assertSame($exp, Arsse::$db->userPropertiesGet($user));
+    public function testGetMetadata(string $user, bool $includeLarge, array $exp): void {
+        $this->assertSame($exp, Arsse::$db->userPropertiesGet($user, $includeLarge));
     }
 
     public function provideMetadata(): iterable {
         return [
-            ["admin@example.net",    ['num' => 1, 'admin' => true,  'lang' => "en", 'tz' => "America/Toronto",   'sort_asc' => false]],
-            ["jane.doe@example.com", ['num' => 2, 'admin' => false, 'lang' => "fr", 'tz' => "Asia/Kuala_Lumpur", 'sort_asc' => true]],
-            ["john.doe@example.com", ['num' => 3, 'admin' => false, 'lang' => null, 'tz' => "Etc/UTC",           'sort_asc' => false]],
+            ["admin@example.net",    true,  ['lang' => "en", 'sort_asc' => "0", 'tz' => "America/Toronto",   'num' => 1, 'admin' => '1']],
+            ["jane.doe@example.com", true,  ['lang' => "fr", 'sort_asc' => "1", 'tz' => "Asia/Kuala_Lumpur", 'num' => 2, 'admin' => '0']],
+            ["john.doe@example.com", true,  ['stylesheet' => "body {background:lightgray}", 'num' => 3, 'admin' => '0']],
+            ["admin@example.net",    false, ['lang' => "en", 'sort_asc' => "0", 'tz' => "America/Toronto",   'num' => 1, 'admin' => '1']],
+            ["jane.doe@example.com", false, ['lang' => "fr", 'sort_asc' => "1", 'tz' => "Asia/Kuala_Lumpur", 'num' => 2, 'admin' => '0']],
+            ["john.doe@example.com", false, ['num' => 3, 'admin' => '0']],
         ];
     }
 
@@ -143,18 +147,21 @@ trait SeriesUser {
             'sort_asc' => true,
         ];
         $this->assertTrue(Arsse::$db->userPropertiesSet("john.doe@example.com", $in));
-        $state = $this->primeExpectations($this->data, ['arsse_users' => ['id', 'num', 'admin', 'lang', 'tz', 'sort_asc']]);
-        $state['arsse_users']['rows'][2] = ["john.doe@example.com", 3, 1, "en-ca", "Atlantic/Reykjavik", 1];
+        $state = $this->primeExpectations($this->data, ['arsse_users' => ['id', 'num', 'admin'], 'arsse_user_meta' => ["owner", "key", "value"]]);
+        $state['arsse_users']['rows'][2][2] = 1;
+        $state['arsse_user_meta']['rows'][] = ["john.doe@example.com", "lang", "en-ca"];
+        $state['arsse_user_meta']['rows'][] = ["john.doe@example.com", "tz", "Atlantic/Reykjavik"];
+        $state['arsse_user_meta']['rows'][] = ["john.doe@example.com", "sort_asc", "1"];
         $this->compareExpectations(static::$drv, $state);
     }
 
     public function testSetNoMetadata(): void {
         $in = [
             'num'  => 2112,
-            'blah' => "bloo",
+            'stylesheet' => "body {background:lightgray}",
         ];
-        $this->assertFalse(Arsse::$db->userPropertiesSet("john.doe@example.com", $in));
-        $state = $this->primeExpectations($this->data, ['arsse_users' => ['id', 'num', 'admin', 'lang', 'tz', 'sort_asc']]);
+        $this->assertTrue(Arsse::$db->userPropertiesSet("john.doe@example.com", $in));
+        $state = $this->primeExpectations($this->data, ['arsse_users' => ['id', 'num', 'admin'], 'arsse_user_meta' => ["owner", "key", "value"]]);
         $this->compareExpectations(static::$drv, $state);
     }
 

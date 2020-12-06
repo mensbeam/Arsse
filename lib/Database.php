@@ -300,12 +300,17 @@ class Database {
     }
 
     public function userPropertiesGet(string $user, bool $includeLarge = true): array {
+        $exclude = ["num", "admin"];
+        if (!$includeLarge) {
+            $exclude = array_merge($exclude, User::PROPERTIES_LARGE);
+        }
+        [$inClause, $inTypes, $inValues] = $this->generateIn($exclude, "str");
         $meta = $this->db->prepareArray(
-            "SELECT \"key\", value from arsse_user_meta where owner = ? and \"key\" not in ('num', 'admin')
+            "SELECT \"key\", value from arsse_user_meta where owner = ? and \"key\" not in ($inClause)
              union all select 'num', num from arsse_users where id = ? 
              union all select 'admin', admin from arsse_users where id = ?",
-            ["str", "str", "str"]
-        )->run($user)->getRow();
+            ["str", $inTypes, "str", "str"]
+        )->run($user, $inValues, $user, $user)->getAll();
         if (!$meta) {
             throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
@@ -322,7 +327,7 @@ class Database {
         $insert = ["INSERT INTO arsse_user_meta values(?, ?, ?)", "str", "strict str", "str"];
         foreach ($data as $k => $v) {
             if ($k === "admin") {
-                $this->db->prepare("UPDATE arsse_users SET admin = ? where user = ?", "bool", "str")->run($v, $user);
+                $this->db->prepare("UPDATE arsse_users SET admin = ? where id = ?", "bool", "str")->run($v, $user);
             } elseif ($k === "num") {
                 continue;
             } else {

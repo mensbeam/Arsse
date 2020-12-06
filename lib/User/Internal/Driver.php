@@ -71,7 +71,7 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
         return Arsse::$db->userExists($user);
     }
 
-    public function userPropertiesGet(string $user): array {
+    public function userPropertiesGet(string $user, bool $includeLarge = true): array {
         // do nothing: the internal database will retrieve everything for us
         if (!$this->userExists($user)) {
             throw new ExceptionConflict("doesNotExist", ['action' => "userPasswordUnset", 'user' => $user]);
