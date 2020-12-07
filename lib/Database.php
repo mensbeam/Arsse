@@ -320,23 +320,24 @@ class Database {
         if (!$this->userExists($user)) {
             throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
+        $tr = $this->begin();
+        $find = $this->db->prepare("SELECT count(*) from arsse_user_meta where owner = ? and \"key\" = ?", "str", "strict str");
         $update = $this->db->prepare("UPDATE arsse_user_meta set value = ? where owner = ? and \"key\" = ?", "str", "str", "str");
-        $insert = ["INSERT INTO arsse_user_meta select ?, ?, ? where not exists(select 1 from arsse_user_meta where owner = ? and \"key\" = ?)", "str", "strict str", "str", "str", "strict str"];
+        $insert = $this->db->prepare("INSERT INTO arsse_user_meta values(?, ?, ?)", "str", "strict str", "str");
         foreach ($data as $k => $v) {
             if ($k === "admin") {
                 $this->db->prepare("UPDATE arsse_users SET admin = ? where id = ?", "bool", "str")->run($v, $user);
             } elseif ($k === "num") {
                 continue;
             } else {
-                $success = $update->run($v, $user, $k)->changes();
-                if (!$success) {
-                    if (!$insert instanceof Db\Statement) {
-                        $insert = $this->db->prepare(...$insert);
-                    }
+                if ($find->run($user, $k)->getValue()) {
+                    $update->run($v, $user, $k);
+                } else {
                     $insert->run($user, $k, $v);
                 }
             }
         }
+        $tr->commit();
         return true;
     }
 
