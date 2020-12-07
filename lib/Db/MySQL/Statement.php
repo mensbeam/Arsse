@@ -84,11 +84,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         }
         // create a result-set instance
         $r = $this->st->get_result();
-        if (preg_match("\d+", mysqli_info($this->db), $m)) {
-            $changes = (int) $m[0];
-        } else {
-            $changes = 0;
-        }
+        $changes = $this->st->affected_rows;
         $lastId = $this->st->insert_id;
         return new Result($r, [$changes, $lastId], $this);
     }

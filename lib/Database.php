@@ -321,7 +321,7 @@ class Database {
             throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
         $update = $this->db->prepare("UPDATE arsse_user_meta set value = ? where owner = ? and \"key\" = ?", "str", "str", "str");
-        $insert = ["INSERT INTO arsse_user_meta values(?, ?, ?)", "str", "strict str", "str"];
+        $insert = ["INSERT INTO arsse_user_meta select ?, ?, ? where not exists(select 1 from arsse_user_meta where owner = ? and \"key\" = ?)", "str", "strict str", "str", "str", "strict str"];
         foreach ($data as $k => $v) {
             if ($k === "admin") {
                 $this->db->prepare("UPDATE arsse_users SET admin = ? where id = ?", "bool", "str")->run($v, $user);
