@@ -136,7 +136,7 @@ class User {
             Arsse::$db->userPropertiesSet($user, $extra);
         }
         // retrieve from the database to get at least the user number, and anything else the driver does not provide
-        $meta = Arsse::$db->userPropertiesGet($user);
+        $meta = Arsse::$db->userPropertiesGet($user, $includeLarge);
         // combine all the data
         $out = ['num' => $meta['num']];
         foreach (self::PROPERTIES as $k => $t) {
@@ -156,8 +156,11 @@ class User {
         $in = [];
         foreach (self::PROPERTIES as $k => $t) {
             if (array_key_exists($k, $data)) {
-                // TODO: handle type mistmatch exception
-                $in[$k] = V::normalize($data[$k], $t | V::M_NULL | V::M_STRICT);
+                try {
+                    $in[$k] = V::normalize($data[$k], $t | V::M_NULL | V::M_STRICT);
+                } catch (\JKingWeb\Arsse\ExceptionType $e) {
+                    throw new User\ExceptionInput("invalidValue", ['field' => $k, 'type' => $t], $e);
+                }
             }
         }
         if (isset($in['tz']) && !@timezone_open($in['tz'])) {

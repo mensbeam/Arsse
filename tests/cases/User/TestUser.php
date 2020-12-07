@@ -331,13 +331,14 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideProperties */
     public function testGetThePropertiesOfAUser(array $exp, array $base, array $extra): void {
         $user = "john.doe@example.com";
+        $exp = array_merge(['num' => null], array_combine(array_keys(User::PROPERTIES), array_fill(0, sizeof(User::PROPERTIES), null)), $exp);
         $u = new User($this->drv);
         \Phake::when($this->drv)->userPropertiesGet->thenReturn($extra);
         \Phake::when(Arsse::$db)->userPropertiesGet->thenReturn($base);
         \Phake::when(Arsse::$db)->userExists->thenReturn(true);
         $this->assertSame($exp, $u->propertiesGet($user));
-        \Phake::verify($this->drv)->userPropertiesGet($user);
-        \Phake::verify(Arsse::$db)->userPropertiesGet($user);
+        \Phake::verify($this->drv)->userPropertiesGet($user, true);
+        \Phake::verify(Arsse::$db)->userPropertiesGet($user, true);
         \Phake::verify(Arsse::$db)->userExists($user);
     }
 
@@ -356,14 +357,15 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $extra = ['tz' => "Europe/Istanbul"];
         $base = ['num' => 47, 'admin' => false, 'lang' => null, 'tz' => "Etc/UTC", 'sort_asc' => false];
         $exp = ['num' => 47, 'admin' => false, 'lang' => null, 'tz' => "Europe/Istanbul", 'sort_asc' => false];
+        $exp = array_merge(['num' => null], array_combine(array_keys(User::PROPERTIES), array_fill(0, sizeof(User::PROPERTIES), null)), $exp);
         $u = new User($this->drv);
         \Phake::when($this->drv)->userPropertiesGet->thenReturn($extra);
         \Phake::when(Arsse::$db)->userPropertiesGet->thenReturn($base);
         \Phake::when(Arsse::$db)->userAdd->thenReturn(true);
         \Phake::when(Arsse::$db)->userExists->thenReturn(false);
         $this->assertSame($exp, $u->propertiesGet($user));
-        \Phake::verify($this->drv)->userPropertiesGet($user);
-        \Phake::verify(Arsse::$db)->userPropertiesGet($user);
+        \Phake::verify($this->drv)->userPropertiesGet($user, true);
+        \Phake::verify(Arsse::$db)->userPropertiesGet($user, true);
         \Phake::verify(Arsse::$db)->userPropertiesSet($user, $extra);
         \Phake::verify(Arsse::$db)->userAdd($user, null);
         \Phake::verify(Arsse::$db)->userExists($user);
@@ -377,7 +379,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         try {
             $u->propertiesGet($user);
         } finally {
-            \Phake::verify($this->drv)->userPropertiesGet($user);
+            \Phake::verify($this->drv)->userPropertiesGet($user, true);
         }
     }
 
@@ -421,13 +423,14 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     public function providePropertyChanges(): iterable {
         return [
             [['admin' => true],    ['admin' => true]],
-            [['admin' => 2],       new ExceptionInput("invalidBoolean")],
-            [['sort_asc' => 2],    new ExceptionInput("invalidBoolean")],
+            [['admin' => 2],       new ExceptionInput("invalidValue")],
+            [['sort_asc' => 2],    new ExceptionInput("invalidValue")],
             [['tz' => "Etc/UTC"],  ['tz' => "Etc/UTC"]],
             [['tz' => "Etc/blah"], new ExceptionInput("invalidTimezone")],
-            [['tz' => false],      new ExceptionInput("invalidTimezone")],
+            [['tz' => false],      new ExceptionInput("invalidValue")],
             [['lang' => "en-ca"],  ['lang' => "en-CA"]],
             [['lang' => null],     ['lang' => null]],
+            [['page_size' => 0],   new ExceptionInput("invalidNonZeroInteger")]
         ];
     }
 
