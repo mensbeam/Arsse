@@ -34,6 +34,7 @@ create table arsse_user_meta(
     -- It is up to individual applications (i.e. the client protocols) to cooperate with names and types
     owner text not null references arsse_users(id) on delete cascade on update cascade,     -- the user to whom the metadata belongs
     key text not null,                                                                      -- metadata key
+    modified text not null default CURRENT_TIMESTAMP,                                       -- time at which the metadata was last changed
     value text,                                                                             -- metadata value
     primary key(owner,key)
 ) without rowid;

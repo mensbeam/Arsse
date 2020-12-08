@@ -322,8 +322,8 @@ class Database {
         }
         $tr = $this->begin();
         $find = $this->db->prepare("SELECT count(*) from arsse_user_meta where owner = ? and \"key\" = ?", "str", "strict str");
-        $update = $this->db->prepare("UPDATE arsse_user_meta set value = ? where owner = ? and \"key\" = ?", "str", "str", "str");
-        $insert = $this->db->prepare("INSERT INTO arsse_user_meta values(?, ?, ?)", "str", "strict str", "str");
+        $update = $this->db->prepare("UPDATE arsse_user_meta set value = ?, modified = CURRENT_TIMESTAMP where owner = ? and \"key\" = ?", "str", "str", "str");
+        $insert = $this->db->prepare("INSERT INTO arsse_user_meta(owner, \"key\", value) values(?, ?, ?)", "str", "strict str", "str");
         foreach ($data as $k => $v) {
             if ($k === "admin") {
                 $this->db->prepare("UPDATE arsse_users SET admin = ? where id = ?", "bool", "str")->run($v, $user);

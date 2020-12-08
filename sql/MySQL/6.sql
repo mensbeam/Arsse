@@ -22,6 +22,7 @@ alter table arsse_users modify num bigint unsigned not null;
 create table arsse_user_meta(
     owner varchar(255) not null,
     "key" varchar(255) not null,
+    modified datetime(0) not null default CURRENT_TIMESTAMP,
     value longtext,
     foreign key(owner) references arsse_users(id) on delete cascade on update cascade,
     primary key(owner,"key")

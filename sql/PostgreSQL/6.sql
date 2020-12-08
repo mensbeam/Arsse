@@ -23,6 +23,7 @@ alter table arsse_users alter column num set not null;
 create table arsse_user_meta(
     owner text not null references arsse_users(id) on delete cascade on update cascade,
     key text not null,
+    modified timestamp(0) without time zone not null default CURRENT_TIMESTAMP,
     value text,
     primary key(owner,key)
 );
