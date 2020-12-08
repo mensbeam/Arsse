@@ -8,6 +8,8 @@ return [
     'CLI.Auth.Failure'                                                     => 'Authentication failed',
 
     'API.Miniflux.Error.401'                                               => 'Access Unauthorized',
+    'API.Miniflux.Error.403'                                               => 'Access Forbidden',
+    'API.Miniflux.Error.404'                                               => 'Resource Not Found',
     'API.Miniflux.Error.invalidBodyJSON'                                   => 'Invalid JSON payload: {0}',
     'API.Miniflux.Error.invalidInputType'                                  => 'Input key "{field}" of type {actual} was expected as {expected}',
     'API.Miniflux.Error.fetch404'                                          => 'Resource not found (404), this feed doesn\'t exists anymore, check the feed URL',

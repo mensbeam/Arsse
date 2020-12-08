@@ -12,6 +12,7 @@ use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Misc\HTTP;
+use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\REST\Exception;
 use JKingWeb\Arsse\User\ExceptionConflict as UserException;
@@ -32,8 +33,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'password'   => "string",
         'user_agent' => "string",
     ];
-
-    protected $paths = [
+    protected const PATHS = [
         '/categories'         => ['GET'  => "getCategories",  'POST'   => "createCategory"],
         '/categories/1'       => ['PUT'  => "updateCategory", 'DELETE' => "deleteCategory"],
         '/discover'           => ['POST' => "discoverSubscriptions"],
@@ -42,7 +42,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         '/entries/1/bookmark' => ['PUT'  => "toggleEntryBookmark"],
         '/export'             => ['GET'  => "opmlExport"],
         '/feeds'              => ['GET'  => "getFeeds",       'POST'   => "createFeed"],
-        '/feeds/1'            => ['GET'  => "getFeed",        'PUT'    => "updateFeed", 'DELETE' => "removeFeed"],
+        '/feeds/1'            => ['GET'  => "getFeed",        'PUT'    => "updateFeed",    'DELETE' => "removeFeed"],
         '/feeds/1/entries/1'  => ['GET'  => "getFeedEntry"],
         '/feeds/1/entries'    => ['GET'  => "getFeedEntries"],
         '/feeds/1/icon'       => ['GET'  => "getFeedIcon"],
@@ -51,8 +51,16 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         '/import'             => ['POST' => "opmlImport"],
         '/me'                 => ['GET'  => "getCurrentUser"],
         '/users'              => ['GET'  => "getUsers",       'POST' => "createUser"],
-        '/users/1'            => ['GET'  => "getUser",        'PUT'  => "updateUser",   'DELETE' => "deleteUser"],
-        '/users/*'            => ['GET'  => "getUser"],
+        '/users/1'            => ['GET'  => "getUserByNum",   'PUT'  => "updateUserByNum", 'DELETE' => "deleteUser"],
+        '/users/*'            => ['GET'  => "getUserById"],
+    ];
+    protected const ADMIN_FUNCTIONS = [
+        'getUsers'        => true, 
+        'getUserByNum'    => true, 
+        'getUserById'     => true, 
+        'createUser'      => true, 
+        'updateUserByNum' => true, 
+        'deleteUser'      => true,
     ];
 
     public function __construct() {
@@ -80,6 +88,11 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return false;
     }
 
+    protected function isAdmin(): bool {
+        return (bool) Arsse::$user->propertiesGet(Arsse::$user->id, false)['admin'];
+    }
+
+
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
         // try to authenticate
         if (!$this->authenticate($req)) {
@@ -95,6 +108,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $func = $this->chooseCall($target, $method);
         if ($func instanceof ResponseInterface) {
             return $func;
+        }
+        if ((self::ADMIN_FUNCTIONS[$func] ?? false) && !$this->isAdmin()) {
+            return new ErrorResponse("403", 403);
         }
         $data = [];
         $query = [];
@@ -148,9 +164,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function handleHTTPOptions(string $url): ResponseInterface {
         // normalize the URL path: change any IDs to 1 for easier comparison
         $url = $this->normalizePathIDs($url);
-        if (isset($this->paths[$url])) {
+        if (isset(self::PATHS[$url])) {
             // if the path is supported, respond with the allowed methods and other metadata
-            $allowed = array_keys($this->paths[$url]);
+            $allowed = array_keys(self::PATHS[$url]);
             // if GET is allowed, so is HEAD
             if (in_array("GET", $allowed)) {
                 array_unshift($allowed, "HEAD");
@@ -172,15 +188,15 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $method = strtoupper($method);
         // we now evaluate the supplied URL against every supported path for the selected scope
         // the URL is evaluated as an array so as to avoid decoded escapes turning invalid URLs into valid ones
-        if (isset($this->paths[$url])) {
+        if (isset(self::PATHS[$url])) {
             // if the path is supported, make sure the method is allowed
-            if (isset($this->paths[$url][$method])) {
+            if (isset(self::PATHS[$url][$method])) {
                 // if it is allowed, return the object method to run, assuming the method exists
-                assert(method_exists($this, $this->paths[$url][$method]), new \Exception("Method is not implemented"));
-                return $this->paths[$url][$method];
+                assert(method_exists($this, self::PATHS[$url][$method]), new \Exception("Method is not implemented"));
+                return self::PATHS[$url][$method];
             } else {
                 // otherwise return 405
-                return new EmptyResponse(405, ['Allow' => implode(", ", array_keys($this->paths[$url]))]);
+                return new EmptyResponse(405, ['Allow' => implode(", ", array_keys(self::PATHS[$url]))]);
             }
         } else {
             // if the path is not supported, return 404
@@ -200,6 +216,40 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return $body;
     }
 
+    protected function listUsers(array $users, bool $reportMissing): array {
+        $out = [];
+        $now = Date::transform("now", "iso8601m");
+        foreach ($users as $u) {
+            try {
+                $info = Arsse::$user->propertiesGet($u, true);
+            } catch (UserException $e) {
+                if ($reportMissing) {
+                    throw $e;
+                } else {
+                    continue;
+                }
+            }
+            $out[] = [
+                'id'                      => $info['num'],
+                'username'                => $u,
+                'is_admin'                => $info['admin'] ?? false,
+                'theme'                   => $info['theme'] ?? "light_serif",
+                'language'                => $info['lang'] ?? "en_US",
+                'timezone'                => $info['tz'] ?? "UTC",
+                'entry_sorting_direction' => ($info['sort_asc'] ?? false) ? "asc" : "desc",
+                'entries_per_page'        => $info['page_size'] ?? 100,
+                'keyboard_shortcuts'      => $info['shortcuts'] ?? true,
+                'show_reading_time'       => $info['reading_time'] ?? true,
+                'last_login_at'           => $now,
+                'entry_swipe'             => $info['swipe'] ?? true,
+                'extra'                   => [
+                    'custom_css' => $info['stylesheet'] ?? "",
+                ],
+            ];
+        }
+        return $out;
+    }
+
     protected function discoverSubscriptions(array $path, array $query, array $data) {
         try {
             $list = Feed::discoverAll((string) $data['url'], (string) $data['username'], (string) $data['password']);
@@ -217,6 +267,26 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $out[] = ['title' => "Feed", 'type' => "rss", 'url' => $url];
         }
         return new Response($out);
+    }
+
+    protected function getUsers(array $path, array $query, array $data) {
+        return new Response($this->listUsers(Arsse::$user->list(), false));
+    }
+
+    protected function getUserById(array $path, array $query, array $data) {
+        try {
+            return $this->listUsers([$path[1]], true)[0] ?? [];
+        } catch (UserException $e) {
+            return new ErrorResponse("404", 404);
+        }
+    }
+
+    protected function getUserByNum(array $path, array $query, array $data) {
+        return $this->listUsers([Arsse::$user->id], false)[0] ?? [];
+    }
+    
+    protected function getCurrentUser(array $path, array $query, array $data) {
+        return new Response($this->listUsers([Arsse::$user->id], false)[0] ?? new \stdClass);
     }
 
     public static function tokenGenerate(string $user, string $label): string {

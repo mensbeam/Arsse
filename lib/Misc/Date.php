@@ -6,7 +6,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Misc;
 
-class Date {
+abstract class Date {
     public static function transform($date, string $outFormat = null, string $inFormat = null) {
         $date = ValueInfo::normalize($date, ValueInfo::T_DATE, $inFormat);
         if (!$date) {
