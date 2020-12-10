@@ -66,6 +66,11 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function __construct() {
     }
 
+    /** @codeCoverageIgnore */
+    protected function now(): \DateTimeImmutable {
+        return Date::normalize("now");
+    }
+
     protected function authenticate(ServerRequestInterface $req): bool {
         // first check any tokens; this is what Miniflux does
         if ($req->hasHeader("X-Auth-Token")) {
@@ -218,7 +223,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function listUsers(array $users, bool $reportMissing): array {
         $out = [];
-        $now = Date::transform("now", "iso8601m");
+        $now = Date::transform($this->now(), "iso8601m");
         foreach ($users as $u) {
             try {
                 $info = Arsse::$user->propertiesGet($u, true);
@@ -275,7 +280,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function getUserById(array $path, array $query, array $data) {
         try {
-            return $this->listUsers([$path[1]], true)[0] ?? [];
+            return new Response($this->listUsers([$path[1]], true)[0] ?? new \stdClass);
         } catch (UserException $e) {
             return new ErrorResponse("404", 404);
         }

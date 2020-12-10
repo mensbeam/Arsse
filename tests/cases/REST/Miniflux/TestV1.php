@@ -11,8 +11,10 @@ use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\Db\ExceptionInput;
+use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\REST\Miniflux\V1;
 use JKingWeb\Arsse\REST\Miniflux\ErrorResponse;
+use JKingWeb\Arsse\User\ExceptionConflict;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\JsonResponse as Response;
 use Laminas\Diactoros\Response\EmptyResponse;
@@ -41,7 +43,6 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         self::setConf();
         // create a mock user manager
         Arsse::$user = \Phake::mock(User::class);
-        Arsse::$user->id = "john.doe@example.com";
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
         $this->transaction = \Phake::mock(Transaction::class);
@@ -138,5 +139,65 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => "http://localhost:8000/Feed/Discovery/Invalid"]));
         $exp = new ErrorResponse("fetch404", 500);
         $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => "http://localhost:8000/Feed/Discovery/Missing"]));
+    }
+
+    public function testQueryUsers(): void {
+        $now = Date::normalize("now");
+        $u = [
+            ['num'=> 1, 'admin' => true,  'theme' => "custom", 'lang' => "fr_CA", 'tz' => "Asia/Gaza", 'sort_asc' => true, 'page_size' => 200,  'shortcuts' => false, 'reading_time' => false, 'swipe' => false, 'stylesheet' => "p {}"],
+            ['num'=> 2, 'admin' => false, 'theme' => null,     'lang' => null,    'tz' => null,        'sort_asc' => null, 'page_size' => null, 'shortcuts' => null,  'reading_time' => null,  'swipe' => null,  'stylesheet' => null],
+            new ExceptionConflict("doesNotExist"),
+        ];
+        $exp = [
+            [
+                'id'                      => 1,
+                'username'                => "john.doe@example.com",
+                'is_admin'                => true,
+                'theme'                   => "custom",
+                'language'                => "fr_CA",
+                'timezone'                => "Asia/Gaza",
+                'entry_sorting_direction' => "asc",
+                'entries_per_page'        => 200,
+                'keyboard_shortcuts'      => false,
+                'show_reading_time'       => false,
+                'last_login_at'           => Date::transform($now, "iso8601m"),
+                'entry_swipe'             => false,
+                'extra'                   => [
+                    'custom_css' => "p {}",
+                ],
+            ],
+            [
+                'id'                      => 2,
+                'username'                => "jane.doe@example.com",
+                'is_admin'                => false,
+                'theme'                   => "light_serif",
+                'language'                => "en_US",
+                'timezone'                => "UTC",
+                'entry_sorting_direction' => "desc",
+                'entries_per_page'        => 100,
+                'keyboard_shortcuts'      => true,
+                'show_reading_time'       => true,
+                'last_login_at'           => Date::transform($now, "iso8601m"),
+                'entry_swipe'             => true,
+                'extra'                   => [
+                    'custom_css' => "",
+                ],
+            ]
+        ];
+        // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
+        Arsse::$user = $this->createMock(User::class);
+        Arsse::$user->method("list")->willReturn(["john.doe@example.com", "jane.doe@example.com", "admin@example.com"]);
+        Arsse::$user->method("propertiesGet")->willReturnCallback(function(string $user, bool $includeLerge = true) use ($u) {
+            if ($user === "john.doe@example.com") {
+                return $u[0];
+            } elseif ($user === "jane.doe@example.com") {
+                return $u[1];
+            }else {
+                throw $u[2];
+            }
+        });
+        $this->h = $this->createPartialMock(V1::class, ["now"]);
+        $this->h->method("now")->willReturn($now);
+        $this->assertMessage(new Response($exp), $this->req("GET", "/users"));
     }
 }
