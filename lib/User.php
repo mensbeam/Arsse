@@ -15,16 +15,17 @@ class User {
         'internal' => \JKingWeb\Arsse\User\Internal\Driver::class,
     ];
     public const PROPERTIES = [
-        'admin'        => V::T_BOOL,
-        'lang'         => V::T_STRING,
-        'tz'           => V::T_STRING,
-        'sort_asc'     => V::T_BOOL,
-        'theme'        => V::T_STRING,
-        'page_size'    => V::T_INT, // greater than zero
-        'shortcuts'    => V::T_BOOL,
-        'gestures'     => V::T_BOOL,
-        'stylesheet'   => V::T_STRING,
-        'reading_time' => V::T_BOOL,
+        'admin'            => V::T_BOOL,
+        'lang'             => V::T_STRING,
+        'tz'               => V::T_STRING,
+        'sort_asc'         => V::T_BOOL,
+        'theme'            => V::T_STRING,
+        'page_size'        => V::T_INT, // greater than zero
+        'shortcuts'        => V::T_BOOL,
+        'gestures'         => V::T_BOOL,
+        'stylesheet'       => V::T_STRING,
+        'reading_time'     => V::T_BOOL,
+        'root_folder_name' => V::T_STRING,
     ];
     public const PROPERTIES_LARGE = ["stylesheet"];
 

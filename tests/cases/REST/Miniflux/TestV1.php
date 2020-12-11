@@ -163,7 +163,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testRejectBadlyTypedData(): void {
-        $exp = new ErrorResponse(["invalidInputType", 'field' => "url", 'expected' => "string", 'actual' => "integer"], 400);
+        $exp = new ErrorResponse(["InvalidInputType", 'field' => "url", 'expected' => "string", 'actual' => "integer"], 400);
         $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => 2112]));
     }
 
@@ -175,7 +175,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => "http://localhost:8000/Feed/Discovery/Valid"]));
         $exp = new Response([]);
         $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => "http://localhost:8000/Feed/Discovery/Invalid"]));
-        $exp = new ErrorResponse("fetch404", 500);
+        $exp = new ErrorResponse("Fetch404", 500);
         $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => "http://localhost:8000/Feed/Discovery/Missing"]));
     }
 

@@ -128,7 +128,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $data = @json_decode((string) $req->getBody(), true);
             if (json_last_error() !== \JSON_ERROR_NONE) {
                 // if the body could not be parsed as JSON, return "400 Bad Request"
-                return new ErrorResponse(["invalidBodyJSON", json_last_error_msg()], 400);
+                return new ErrorResponse(["InvalidBodyJSON", json_last_error_msg()], 400);
             }
             $data = $this->normalizeBody((array) $data);
             if ($data instanceof ResponseInterface) {
@@ -215,7 +215,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             if (!isset($body[$k])) {
                 $body[$k] = null;
             } elseif (gettype($body[$k]) !== $t) {
-                return new ErrorResponse(["invalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])]);
+                return new ErrorResponse(["InvalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])]);
             }
         }
         return $body;
@@ -260,10 +260,10 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $list = Feed::discoverAll((string) $data['url'], (string) $data['username'], (string) $data['password']);
         } catch (FeedException $e) {
             $msg = [
-                10502 => "fetch404",
-                10506 => "fetch403",
-                10507 => "fetch401",
-            ][$e->getCode()] ?? "fetchOther";
+                10502 => "Fetch404",
+                10506 => "Fetch403",
+                10507 => "Fetch401",
+            ][$e->getCode()] ?? "FetchOther";
             return new ErrorResponse($msg, 500);
         }
         $out = [];
@@ -297,6 +297,19 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     
     protected function getCurrentUser(array $path, array $query, array $data) {
         return new Response($this->listUsers([Arsse::$user->id], false)[0] ?? new \stdClass);
+    }
+
+    protected function getCategories(array $path, array $query, array $data) {
+        $out = [];
+        $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
+        // add the root folder as a category
+        $out[] = ['id' => 1, 'title' => $meta['root_folder_name'] ?? Arsse::$lang->msg("API.Miniflux.DefaultCategoryName"), 'user_id' => $meta['num']];
+        // add other top folders as categories
+        foreach (Arsse::$db->folderList(Arsse::$user->id, null, false) as $f) {
+            // always add 1 to the ID since the root folder will always be 1 instead of 0.
+            $out[] = ['id' => $f['id'] + 1, 'title' => $f['name'], 'user_id' => $meta['num']];
+        }
+        return new Response($out);
     }
 
     public static function tokenGenerate(string $user, string $label): string {
