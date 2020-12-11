@@ -192,12 +192,32 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
                 return $u[0];
             } elseif ($user === "jane.doe@example.com") {
                 return $u[1];
-            }else {
+            } else {
+                throw $u[2];
+            }
+        });
+        Arsse::$user->method("lookup")->willReturnCallback(function(int $num) use ($u) {
+            if ($num === 1) {
+                return "john.doe@example.com";
+            } elseif ($num === 2) {
+                return "jane.doe@example.com";
+            } else {
                 throw $u[2];
             }
         });
         $this->h = $this->createPartialMock(V1::class, ["now"]);
         $this->h->method("now")->willReturn($now);
+        // list all users
         $this->assertMessage(new Response($exp), $this->req("GET", "/users"));
+        // fetch John
+        $this->assertMessage(new Response($exp[0]), $this->req("GET", "/me"));
+        $this->assertMessage(new Response($exp[0]), $this->req("GET", "/users/john.doe@example.com"));
+        $this->assertMessage(new Response($exp[0]), $this->req("GET", "/users/1"));
+        // fetch Jane
+        $this->assertMessage(new Response($exp[1]), $this->req("GET", "/users/jane.doe@example.com"));
+        $this->assertMessage(new Response($exp[1]), $this->req("GET", "/users/2"));
+        // fetch no one
+        $this->assertMessage(new ErrorResponse("404", 404), $this->req("GET", "/users/jack.doe@example.com"));
+        $this->assertMessage(new ErrorResponse("404", 404), $this->req("GET", "/users/47"));
     }
 }

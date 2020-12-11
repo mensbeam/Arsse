@@ -62,6 +62,11 @@ class User {
         return $this->u->userList();
     }
 
+    public function lookup(int $num): string {
+        // the user number is always stored in the internal database, so the user driver is not called here
+        return Arsse::$db->userLookup($num);
+    }
+
     public function add(string $user, ?string $password = null): string {
         // ensure the user name does not contain any U+003A COLON characters, as
         // this is incompatible with HTTP Basic authentication

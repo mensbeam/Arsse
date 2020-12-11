@@ -245,6 +245,15 @@ class Database {
         return (bool) $this->db->prepare("SELECT count(*) from arsse_users where id = ?", "str")->run($user)->getValue();
     }
 
+    /** Returns the username associated with a user number */
+    public function userLookup(int $num): string {
+        $out = $this->db->prepare("SELECT id from arsse_users where num = ?", "int")->run($num)->getValue();
+        if ($out === null) {
+            throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $num]);
+        }
+        return $out;
+    }
+
     /** Adds a user to the database
      *
      * @param string $user The user to add

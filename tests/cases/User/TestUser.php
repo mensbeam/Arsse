@@ -90,6 +90,15 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify($this->drv)->userList();
     }
 
+    public function testLookUpAUserByNumber(): void {
+        $exp = "john.doe@example.com";
+        $u = new User($this->drv);
+        \Phake::when(Arsse::$db)->userLookup->thenReturn($exp);
+        $this->assertSame($exp, $u->lookup(2112));
+        \Phake::verify(Arsse::$db)->userLookup(2112);
+    }
+
+
     public function testAddAUser(): void {
         $user = "john.doe@example.com";
         $pass = "secret";

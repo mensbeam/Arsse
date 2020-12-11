@@ -169,4 +169,15 @@ trait SeriesUser {
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         Arsse::$db->userPropertiesSet("john.doe@example.org", ['admin' => true]);
     }
+
+    public function testLookUpAUserByNumber(): void {
+        $this->assertSame("admin@example.net", Arsse::$db->userLookup(1));
+        $this->assertSame("jane.doe@example.com", Arsse::$db->userLookup(2));
+        $this->assertSame("john.doe@example.com", Arsse::$db->userLookup(3));
+    }
+
+    public function testLookUpAMissingUserByNumber(): void {
+        $this->assertException("doesNotExist", "User", "ExceptionConflict");
+        Arsse::$db->userLookup(2112);
+    }
 }

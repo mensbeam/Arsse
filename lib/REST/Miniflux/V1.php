@@ -287,7 +287,12 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function getUserByNum(array $path, array $query, array $data) {
-        return $this->listUsers([Arsse::$user->id], false)[0] ?? [];
+        try {
+            $user = Arsse::$user->lookup((int) $path[1]);
+            return new Response($this->listUsers([$user], true)[0] ?? new \stdClass);
+        } catch (UserException $e) {
+            return new ErrorResponse("404", 404);
+        }
     }
     
     protected function getCurrentUser(array $path, array $query, array $data) {
