@@ -21,11 +21,49 @@ use Laminas\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST\Miniflux\V1<extended> */
 class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
+    protected const NOW = "2020-12-09T22:35:10.023419Z";
+
     protected $h;
     protected $transaction;
     protected $token = "Tk2o9YubmZIL2fm2w8Z4KlDEQJz532fNSOcTG0s2_xc=";
+    protected $users = [
+        [
+            'id'                      => 1,
+            'username'                => "john.doe@example.com",
+            'is_admin'                => true,
+            'theme'                   => "custom",
+            'language'                => "fr_CA",
+            'timezone'                => "Asia/Gaza",
+            'entry_sorting_direction' => "asc",
+            'entries_per_page'        => 200,
+            'keyboard_shortcuts'      => false,
+            'show_reading_time'       => false,
+            'last_login_at'           => self::NOW,
+            'entry_swipe'             => false,
+            'extra'                   => [
+                'custom_css' => "p {}",
+            ],
+        ],
+        [
+            'id'                      => 2,
+            'username'                => "jane.doe@example.com",
+            'is_admin'                => false,
+            'theme'                   => "light_serif",
+            'language'                => "en_US",
+            'timezone'                => "UTC",
+            'entry_sorting_direction' => "desc",
+            'entries_per_page'        => 100,
+            'keyboard_shortcuts'      => true,
+            'show_reading_time'       => true,
+            'last_login_at'           => self::NOW,
+            'entry_swipe'             => true,
+            'extra'                   => [
+                'custom_css' => "",
+            ],
+        ]
+    ];
 
-    protected function req(string $method, string $target, $data = "", array $headers = [], bool $authenticated = true, bool $body = true): ResponseInterface {
+    protected function req(string $method, string $target, $data = "", array $headers = [], ?string $user = "john.doe@example.com", bool $body = true): ResponseInterface {
         $prefix = "/v1";
         $url = $prefix.$target;
         if ($body) {
@@ -34,7 +72,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             $params = $data;
             $data = [];
         }
-        $req = $this->serverRequest($method, $url, $prefix, $headers, [], $data, "application/json", $params, $authenticated ? "john.doe@example.com" : "");
+        $req = $this->serverRequest($method, $url, $prefix, $headers, [], $data, "application/json", $params, $user);
         return $this->h->dispatch($req);
     }
 
@@ -71,7 +109,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user->id = null;
         \Phake::when(Arsse::$db)->tokenLookup->thenThrow(new ExceptionInput("subjectMissing"));
         \Phake::when(Arsse::$db)->tokenLookup("miniflux.login", $this->token)->thenReturn(['user' => $user]);
-        $this->assertMessage($exp, $this->req("GET", "/", "", $headers, $auth));
+        $this->assertMessage($exp, $this->req("GET", "/", "", $headers, $auth ? "john.doe@example.com" : null));
         $this->assertSame($success ? $user : null, Arsse::$user->id);
     }
 
@@ -141,49 +179,14 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => "http://localhost:8000/Feed/Discovery/Missing"]));
     }
 
-    public function testQueryUsers(): void {
-        $now = Date::normalize("now");
+    /** @dataProvider provideUserQueries */
+    public function testQueryUsers(bool $admin, string $route, ResponseInterface $exp): void {
         $u = [
             ['num'=> 1, 'admin' => true,  'theme' => "custom", 'lang' => "fr_CA", 'tz' => "Asia/Gaza", 'sort_asc' => true, 'page_size' => 200,  'shortcuts' => false, 'reading_time' => false, 'swipe' => false, 'stylesheet' => "p {}"],
             ['num'=> 2, 'admin' => false, 'theme' => null,     'lang' => null,    'tz' => null,        'sort_asc' => null, 'page_size' => null, 'shortcuts' => null,  'reading_time' => null,  'swipe' => null,  'stylesheet' => null],
             new ExceptionConflict("doesNotExist"),
         ];
-        $exp = [
-            [
-                'id'                      => 1,
-                'username'                => "john.doe@example.com",
-                'is_admin'                => true,
-                'theme'                   => "custom",
-                'language'                => "fr_CA",
-                'timezone'                => "Asia/Gaza",
-                'entry_sorting_direction' => "asc",
-                'entries_per_page'        => 200,
-                'keyboard_shortcuts'      => false,
-                'show_reading_time'       => false,
-                'last_login_at'           => Date::transform($now, "iso8601m"),
-                'entry_swipe'             => false,
-                'extra'                   => [
-                    'custom_css' => "p {}",
-                ],
-            ],
-            [
-                'id'                      => 2,
-                'username'                => "jane.doe@example.com",
-                'is_admin'                => false,
-                'theme'                   => "light_serif",
-                'language'                => "en_US",
-                'timezone'                => "UTC",
-                'entry_sorting_direction' => "desc",
-                'entries_per_page'        => 100,
-                'keyboard_shortcuts'      => true,
-                'show_reading_time'       => true,
-                'last_login_at'           => Date::transform($now, "iso8601m"),
-                'entry_swipe'             => true,
-                'extra'                   => [
-                    'custom_css' => "",
-                ],
-            ]
-        ];
+        $user = $admin ? "john.doe@example.com" : "jane.doe@example.com";
         // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
         Arsse::$user = $this->createMock(User::class);
         Arsse::$user->method("list")->willReturn(["john.doe@example.com", "jane.doe@example.com", "admin@example.com"]);
@@ -206,18 +209,29 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             }
         });
         $this->h = $this->createPartialMock(V1::class, ["now"]);
-        $this->h->method("now")->willReturn($now);
-        // list all users
-        $this->assertMessage(new Response($exp), $this->req("GET", "/users"));
-        // fetch John
-        $this->assertMessage(new Response($exp[0]), $this->req("GET", "/me"));
-        $this->assertMessage(new Response($exp[0]), $this->req("GET", "/users/john.doe@example.com"));
-        $this->assertMessage(new Response($exp[0]), $this->req("GET", "/users/1"));
-        // fetch Jane
-        $this->assertMessage(new Response($exp[1]), $this->req("GET", "/users/jane.doe@example.com"));
-        $this->assertMessage(new Response($exp[1]), $this->req("GET", "/users/2"));
-        // fetch no one
-        $this->assertMessage(new ErrorResponse("404", 404), $this->req("GET", "/users/jack.doe@example.com"));
-        $this->assertMessage(new ErrorResponse("404", 404), $this->req("GET", "/users/47"));
+        $this->h->method("now")->willReturn(Date::normalize(self::NOW));
+        $this->assertMessage($exp, $this->req("GET", $route, "", [], $user));
+    }
+
+    public function provideUserQueries(): iterable {
+        self::clearData();
+        return [
+            [true,  "/users",                      new Response($this->users)],
+            [true,  "/me",                         new Response($this->users[0])],
+            [true,  "/users/john.doe@example.com", new Response($this->users[0])],
+            [true,  "/users/1",                    new Response($this->users[0])],
+            [true,  "/users/jane.doe@example.com", new Response($this->users[1])],
+            [true,  "/users/2",                    new Response($this->users[1])],
+            [true,  "/users/jack.doe@example.com", new ErrorResponse("404", 404)],
+            [true,  "/users/47",                   new ErrorResponse("404", 404)],
+            [false, "/users",                      new ErrorResponse("403", 403)],
+            [false, "/me",                         new Response($this->users[1])],
+            [false, "/users/john.doe@example.com", new ErrorResponse("403", 403)],
+            [false, "/users/1",                    new ErrorResponse("403", 403)],
+            [false, "/users/jane.doe@example.com", new ErrorResponse("403", 403)],
+            [false, "/users/2",                    new ErrorResponse("403", 403)],
+            [false, "/users/jack.doe@example.com", new ErrorResponse("403", 403)],
+            [false, "/users/47",                   new ErrorResponse("403", 403)],
+        ];
     }
 }
