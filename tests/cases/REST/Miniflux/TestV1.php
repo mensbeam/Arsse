@@ -18,6 +18,7 @@ use JKingWeb\Arsse\User\ExceptionConflict;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\JsonResponse as Response;
 use Laminas\Diactoros\Response\EmptyResponse;
+use JKingWeb\Arsse\Test\Result;
 
 /** @covers \JKingWeb\Arsse\REST\Miniflux\V1<extended> */
 class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -79,8 +80,9 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         self::clearData();
         self::setConf();
-        // create a mock user manager
-        Arsse::$user = \Phake::mock(User::class);
+        // create a mock user manager; we use a PHPUnitmock because Phake for reasons unknown is unable to mock the User class correctly, sometimes
+        Arsse::$user = $this->createMock(User::class);
+        Arsse::$user->method("propertiesGet")->willReturn(['num' => 42, 'admin' => false, 'root_folder_name' => null]);
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
         $this->transaction = \Phake::mock(Transaction::class);
@@ -232,6 +234,53 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             [false, "/users/2",                    new ErrorResponse("403", 403)],
             [false, "/users/jack.doe@example.com", new ErrorResponse("403", 403)],
             [false, "/users/47",                   new ErrorResponse("403", 403)],
+        ];
+    }
+
+    public function testListCategories(): void {
+        \Phake::when(Arsse::$db)->folderList->thenReturn(new Result($this->v([
+            ['id' => 1,  'name' => "Science"],
+            ['id' => 20, 'name' => "Technology"],
+        ])));
+        $exp = new Response([
+            ['id' => 1,  'title' => "All",        'user_id' => 42],
+            ['id' => 2,  'title' => "Science",    'user_id' => 42],
+            ['id' => 21, 'title' => "Technology", 'user_id' => 42],
+        ]);
+        $this->assertMessage($exp, $this->req("GET", "/categories"));
+        \Phake::verify(Arsse::$db)->folderList("john.doe@example.com", null, false);
+        // run test again with a renamed root folder
+        Arsse::$user = $this->createMock(User::class);
+        Arsse::$user->method("propertiesGet")->willReturn(['num' => 47, 'admin' => false, 'root_folder_name' => "Uncategorized"]);
+        $exp = new Response([
+            ['id' => 1,  'title' => "Uncategorized", 'user_id' => 47],
+            ['id' => 2,  'title' => "Science",       'user_id' => 47],
+            ['id' => 21, 'title' => "Technology",    'user_id' => 47],
+        ]);
+        $this->assertMessage($exp, $this->req("GET", "/categories"));
+    }
+
+    /** @dataProvider provideCategoryAdditions */
+    public function testAddACategory($title, ResponseInterface $exp): void {
+        if (!strlen((string) $title)) {
+            \Phake::when(Arsse::$db)->folderAdd->thenThrow(new ExceptionInput("missing"));
+        } elseif (!strlen(trim((string) $title))) {
+            \Phake::when(Arsse::$db)->folderAdd->thenThrow(new ExceptionInput("whitespace"));
+        } elseif ($title === "Duplicate") {
+            \Phake::when(Arsse::$db)->folderAdd->thenThrow(new ExceptionInput("constraintViolation"));
+        } else {
+            \Phake::when(Arsse::$db)->folderAdd->thenReturn(2111);
+        }
+        $this->assertMessage($exp, $this->req("POST", "/categories", ['title' => $title]));
+    }
+
+    public function provideCategoryAdditions(): iterable {
+        return [
+            ["New",       new Response(['id' => 2112, 'title' => "New", 'user_id' => 42])],
+            ["Duplicate", new ErrorResponse(["DuplicateCategory", 'title' => "Duplicate"], 500)],
+            ["",          new ErrorResponse(["InvalidCategory", 'title' => ""], 500)],
+            [" ",         new ErrorResponse(["InvalidCategory", 'title' => " "], 500)],
+            [false,       new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 400)],
         ];
     }
 }

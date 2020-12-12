@@ -32,27 +32,31 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'username'   => "string",
         'password'   => "string",
         'user_agent' => "string",
+        'title'      => "string",
     ];
     protected const PATHS = [
-        '/categories'         => ['GET'  => "getCategories",  'POST'   => "createCategory"],
-        '/categories/1'       => ['PUT'  => "updateCategory", 'DELETE' => "deleteCategory"],
-        '/discover'           => ['POST' => "discoverSubscriptions"],
-        '/entries'            => ['GET'  => "getEntries",     'PUT'    => "updateEntries"],
-        '/entries/1'          => ['GET'  => "getEntry"],
-        '/entries/1/bookmark' => ['PUT'  => "toggleEntryBookmark"],
-        '/export'             => ['GET'  => "opmlExport"],
-        '/feeds'              => ['GET'  => "getFeeds",       'POST'   => "createFeed"],
-        '/feeds/1'            => ['GET'  => "getFeed",        'PUT'    => "updateFeed",    'DELETE' => "removeFeed"],
-        '/feeds/1/entries/1'  => ['GET'  => "getFeedEntry"],
-        '/feeds/1/entries'    => ['GET'  => "getFeedEntries"],
-        '/feeds/1/icon'       => ['GET'  => "getFeedIcon"],
-        '/feeds/1/refresh'    => ['PUT'  => "refreshFeed"],
-        '/feeds/refresh'      => ['PUT'  => "refreshAllFeeds"],
-        '/import'             => ['POST' => "opmlImport"],
-        '/me'                 => ['GET'  => "getCurrentUser"],
-        '/users'              => ['GET'  => "getUsers",       'POST' => "createUser"],
-        '/users/1'            => ['GET'  => "getUserByNum",   'PUT'  => "updateUserByNum", 'DELETE' => "deleteUser"],
-        '/users/*'            => ['GET'  => "getUserById"],
+        '/categories'                    => ['GET'  => "getCategories",  'POST'   => "createCategory"],
+        '/categories/1'                  => ['PUT'  => "updateCategory", 'DELETE' => "deleteCategory"],
+        '/categories/1/mark-all-as-read' => ['PUT'  => "markCategory"],
+        '/discover'                      => ['POST' => "discoverSubscriptions"],
+        '/entries'                       => ['GET'  => "getEntries",     'PUT'    => "updateEntries"],
+        '/entries/1'                     => ['GET'  => "getEntry"],
+        '/entries/1/bookmark'            => ['PUT'  => "toggleEntryBookmark"],
+        '/export'                        => ['GET'  => "opmlExport"],
+        '/feeds'                         => ['GET'  => "getFeeds",       'POST'   => "createFeed"],
+        '/feeds/1'                       => ['GET'  => "getFeed",        'PUT'    => "updateFeed",    'DELETE' => "removeFeed"],
+        '/feeds/1/mark-all-as-read'      => ['PUT'  => "markFeed"],
+        '/feeds/1/entries/1'             => ['GET'  => "getFeedEntry"],
+        '/feeds/1/entries'               => ['GET'  => "getFeedEntries"],
+        '/feeds/1/icon'                  => ['GET'  => "getFeedIcon"],
+        '/feeds/1/refresh'               => ['PUT'  => "refreshFeed"],
+        '/feeds/refresh'                 => ['PUT'  => "refreshAllFeeds"],
+        '/import'                        => ['POST' => "opmlImport"],
+        '/me'                            => ['GET'  => "getCurrentUser"],
+        '/users'                         => ['GET'  => "getUsers",       'POST' => "createUser"],
+        '/users/1'                       => ['GET'  => "getUserByNum",   'PUT'  => "updateUserByNum", 'DELETE' => "deleteUser"],
+        '/users/1/mark-all-as-read'      => ['PUT'  => "markAll"],
+        '/users/*'                       => ['GET'  => "getUserById"],
     ];
     protected const ADMIN_FUNCTIONS = [
         'getUsers'        => true, 
@@ -85,7 +89,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 return true;
             }
         }
-        // next check HTTP auth
+        // next check HTTP auth 
         if ($req->getAttribute("authenticated", false)) {
             Arsse::$user->id = $req->getAttribute("authenticatedUser");
             return true;
@@ -255,7 +259,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return $out;
     }
 
-    protected function discoverSubscriptions(array $path, array $query, array $data) {
+    protected function discoverSubscriptions(array $path, array $query, array $data): ResponseInterface {
         try {
             $list = Feed::discoverAll((string) $data['url'], (string) $data['username'], (string) $data['password']);
         } catch (FeedException $e) {
@@ -274,11 +278,11 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new Response($out);
     }
 
-    protected function getUsers(array $path, array $query, array $data) {
+    protected function getUsers(array $path, array $query, array $data): ResponseInterface {
         return new Response($this->listUsers(Arsse::$user->list(), false));
     }
 
-    protected function getUserById(array $path, array $query, array $data) {
+    protected function getUserById(array $path, array $query, array $data): ResponseInterface {
         try {
             return new Response($this->listUsers([$path[1]], true)[0] ?? new \stdClass);
         } catch (UserException $e) {
@@ -286,7 +290,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
     }
 
-    protected function getUserByNum(array $path, array $query, array $data) {
+    protected function getUserByNum(array $path, array $query, array $data): ResponseInterface {
         try {
             $user = Arsse::$user->lookup((int) $path[1]);
             return new Response($this->listUsers([$user], true)[0] ?? new \stdClass);
@@ -295,11 +299,11 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
     }
     
-    protected function getCurrentUser(array $path, array $query, array $data) {
+    protected function getCurrentUser(array $path, array $query, array $data): ResponseInterface {
         return new Response($this->listUsers([Arsse::$user->id], false)[0] ?? new \stdClass);
     }
 
-    protected function getCategories(array $path, array $query, array $data) {
+    protected function getCategories(array $path, array $query, array $data): ResponseInterface {
         $out = [];
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
         // add the root folder as a category
@@ -310,6 +314,45 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $out[] = ['id' => $f['id'] + 1, 'title' => $f['name'], 'user_id' => $meta['num']];
         }
         return new Response($out);
+    }
+
+    protected function createCategory(array $path, array $query, array $data): ResponseInterface {
+        try {
+            $id = Arsse::$db->folderAdd(Arsse::$user->id, ['name' => (string) $data['title']]);
+        } catch (ExceptionInput $e) {
+            if ($e->getCode() === 10236) {
+                return new ErrorResponse(["DuplicateCategory", 'title' => $data['title']], 500);
+            } else {
+                return new ErrorResponse(["InvalidCategory", 'title' => $data['title']], 500);
+            }
+        }
+        $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
+        return new Response(['id' => $id + 1, 'title' => $data['title'], 'user_id' => $meta['num']]);
+    }
+
+    protected function updateCategory(array $path, array $query, array $data): ResponseInterface {
+        $folder = $path[1] - 1;
+        $title = $data['title'] ?? "";
+        try {
+            if ($folder === 0) {
+                if (!strlen(trim($title))) {
+                    throw new ExceptionInput("whitespace");
+                }
+                $title = Arsse::$user->propertiesSet(Arsse::$user->id, ['root_folder_name' => $title])['root_folder_name'];
+            } else {
+                Arsse::$db->folderPropertiesSet(Arsse::$user->id, $folder, ['name' => $title]);
+            }
+        } catch (ExceptionInput $e) {
+            if ($e->getCode() === 10236) {
+                return new ErrorResponse(["DuplicateCategory", 'title' => $title], 500);
+            } elseif ($e->getCode === 10239) {
+                return new ErrorResponse("404", 404);
+            } else {
+                return new ErrorResponse(["InvalidCategory", 'title' => $title], 500);
+            }
+        }
+        $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
+        return new Response(['id' => (int) $path[1], 'title' => $title, 'user_id' => $meta['num']]);
     }
 
     public static function tokenGenerate(string $user, string $label): string {

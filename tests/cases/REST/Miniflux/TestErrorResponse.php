@@ -16,7 +16,7 @@ class TestErrorResponse extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testCreateVariableResponse(): void {
-        $act = new ErrorResponse(["invalidBodyJSON", "Doh!"], 401);
+        $act = new ErrorResponse(["InvalidBodyJSON", "Doh!"], 401);
         $this->assertSame('{"error_message":"Invalid JSON payload: Doh!"}', (string) $act->getBody());
     }
 }

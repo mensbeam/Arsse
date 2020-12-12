@@ -17,7 +17,9 @@ return [
     'API.Miniflux.Error.Fetch401'                                          => 'You are not authorized to access this resource (invalid username/password)',
     'API.Miniflux.Error.Fetch403'                                          => 'Unable to fetch this resource (Status Code = 403)',
     'API.Miniflux.Error.FetchOther'                                        => 'Unable to fetch this resource',
-    
+    'API.Miniflux.Error.DuplicateCategory'                                 => 'Category "{title}" already exists',
+    'API.Miniflux.Error.InvalidCategory'                                   => 'Invalid category title "{title}"',
+
     'API.TTRSS.Category.Uncategorized'                                     => 'Uncategorized',
     'API.TTRSS.Category.Special'                                           => 'Special',
     'API.TTRSS.Category.Labels'                                            => 'Labels',

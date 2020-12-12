@@ -13,9 +13,9 @@
         <dd><a href="https://miniflux.app/docs/api.html">API Reference</a></dd>
 </dl>
 
-The Miniflux protocol is a well-designed protocol supporting a wide variety of operations on newsfeeds, folders (termed "categories"), and articles; it also allows for user administration, and native OPML importing and exporting. Architecturally it is similar to the Nextcloud News protocol, but is generally more efficient.
+The Miniflux protocol is a fairly well-designed protocol supporting a wide variety of operations on newsfeeds, folders (termed "categories"), and articles; it also allows for user administration, and native OPML importing and exporting. Architecturally it is similar to the Nextcloud News protocol, but is generally more efficient and has more capabilities.
 
-Miniflux version 2.0.25 is emulated, though not all features are implemented
+Miniflux version 2.0.26 is emulated, though not all features are implemented
 
 # Missing features
 
@@ -28,8 +28,15 @@ Miniflux version 2.0.25 is emulated, though not all features are implemented
 
 # Differences
 
+- Various error messages differ due to significant implementation differences
 - Only the URL should be considered reliable in feed discovery results
+- The "All" category is treated specially (see below for details)
+- Category names consisting only of whitespace are rejected along with the empty string
 
-# Interaction with nested folders
+# Special handling of the "All" category
 
-Tiny Tiny RSS is unique in allowing newsfeeds to be grouped into folders nested to arbitrary depth. When newsfeeds are placed into nested folders, they simply appear in the top-level folder when accessed via the Miniflux protocol. This does not affect OPML exports, where full nesting is preserved.
+Nextcloud News' root folder and Tiny Tiny RSS' "Uncategorized" catgory are mapped to Miniflux's initial "All" category. This Miniflux category can be renamed, but it cannot be deleted. Attempting to do so will delete the child feeds it contains, but not the category itself.
+
+# Interaction with nested categories
+
+Tiny Tiny RSS is unique in allowing newsfeeds to be grouped into categories nested to arbitrary depth. When newsfeeds are placed into nested categories, they simply appear in the top-level category when accessed via the Miniflux protocol. This does not affect OPML exports, where full nesting is preserved.
