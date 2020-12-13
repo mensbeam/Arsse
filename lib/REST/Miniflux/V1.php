@@ -331,10 +331,12 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function updateCategory(array $path, array $query, array $data): ResponseInterface {
+        // category IDs in Miniflux are always greater than 1; we have folder 0, so we decrement category IDs by 1 to get the folder ID
         $folder = $path[1] - 1;
         $title = $data['title'] ?? "";
         try {
             if ($folder === 0) {
+                // folder 0 doesn't actually exist in the database, so its name is kept as user metadata
                 if (!strlen(trim($title))) {
                     throw new ExceptionInput("whitespace");
                 }
@@ -345,7 +347,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionInput $e) {
             if ($e->getCode() === 10236) {
                 return new ErrorResponse(["DuplicateCategory", 'title' => $title], 500);
-            } elseif ($e->getCode === 10239) {
+            } elseif ($e->getCode() === 10239) {
                 return new ErrorResponse("404", 404);
             } else {
                 return new ErrorResponse(["InvalidCategory", 'title' => $title], 500);

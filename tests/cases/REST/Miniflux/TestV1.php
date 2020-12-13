@@ -283,4 +283,44 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             [false,       new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 400)],
         ];
     }
+
+    /** @dataProvider provideCategoryUpdates */
+    public function testRenameACategory(int $id, $title, ResponseInterface $exp): void {
+        Arsse::$user->method("propertiesSet")->willReturn(['root_folder_name' => $title]);
+        if (!in_array($id, [1,2])) {
+            \Phake::when(Arsse::$db)->folderPropertiesSet->thenThrow(new ExceptionInput("subjectMissing"));
+        } elseif (!strlen((string) $title)) {
+            \Phake::when(Arsse::$db)->folderPropertiesSet->thenThrow(new ExceptionInput("missing"));
+        } elseif (!strlen(trim((string) $title))) {
+            \Phake::when(Arsse::$db)->folderPropertiesSet->thenThrow(new ExceptionInput("whitespace"));
+        } elseif ($title === "Duplicate") {
+            \Phake::when(Arsse::$db)->folderPropertiesSet->thenThrow(new ExceptionInput("constraintViolation"));
+        } else {
+            \Phake::when(Arsse::$db)->folderPropertiesSet->thenReturn(true);
+        }
+        if ($id === 1) {
+            $times = (int) (is_string($title) && strlen(trim($title)));
+            Arsse::$user->expects($this->exactly($times))->method("propertiesSet")->with("john.doe@example.com", ['root_folder_name' => $title]);
+        }
+        $this->assertMessage($exp, $this->req("PUT", "/categories/$id", ['title' => $title]));
+        if ($id !== 1 && is_string($title)) {
+            \Phake::verify(Arsse::$db)->folderPropertiesSet("john.doe@example.com", $id - 1, ['name' => $title]);
+        }
+    }
+
+    public function provideCategoryUpdates(): iterable {
+        return [
+            [3, "New",       new ErrorResponse("404", 404)],
+            [2, "New",       new Response(['id' => 2, 'title' => "New", 'user_id' => 42])],
+            [2, "Duplicate", new ErrorResponse(["DuplicateCategory", 'title' => "Duplicate"], 500)],
+            [2, "",          new ErrorResponse(["InvalidCategory", 'title' => ""], 500)],
+            [2, " ",         new ErrorResponse(["InvalidCategory", 'title' => " "], 500)],
+            [2, false,       new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 400)],
+            [1, "New",       new Response(['id' => 1, 'title' => "New", 'user_id' => 42])],
+            [1, "Duplicate", new Response(['id' => 1, 'title' => "Duplicate", 'user_id' => 42])], // This is allowed because the name of the root folder is only a duplicate in circumstances where it is used
+            [1, "",          new ErrorResponse(["InvalidCategory", 'title' => ""], 500)],
+            [1, " ",         new ErrorResponse(["InvalidCategory", 'title' => " "], 500)],
+            [1, false,       new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 400)],
+        ];
+    }
 }

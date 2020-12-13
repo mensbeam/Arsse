@@ -29,6 +29,7 @@ Miniflux version 2.0.26 is emulated, though not all features are implemented
 # Differences
 
 - Various error messages differ due to significant implementation differences
+- `PUT` requests which return a body respond with `200 OK` rather than `201 Created`
 - Only the URL should be considered reliable in feed discovery results
 - The "All" category is treated specially (see below for details)
 - Category names consisting only of whitespace are rejected along with the empty string
