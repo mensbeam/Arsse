@@ -154,7 +154,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     protected function assertMessage(MessageInterface $exp, MessageInterface $act, string $text = ''): void {
         if ($exp instanceof ResponseInterface) {
             $this->assertInstanceOf(ResponseInterface::class, $act, $text);
-            $this->assertEquals($exp->getStatusCode(), $act->getStatusCode(), $text);
+            $this->assertSame($exp->getStatusCode(), $act->getStatusCode(), $text);
         } elseif ($exp instanceof RequestInterface) {
             if ($exp instanceof ServerRequestInterface) {
                 $this->assertInstanceOf(ServerRequestInterface::class, $act, $text);
@@ -165,12 +165,14 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             $this->assertSame($exp->getRequestTarget(), $act->getRequestTarget(), $text);
         }
         if ($exp instanceof JsonResponse) {
+            $this->assertInstanceOf(JsonResponse::class, $act, $text);
             $this->assertEquals($exp->getPayload(), $act->getPayload(), $text);
             $this->assertSame($exp->getPayload(), $act->getPayload(), $text);
         } elseif ($exp instanceof XmlResponse) {
+            $this->assertInstanceOf(XmlResponse::class, $act, $text);
             $this->assertXmlStringEqualsXmlString((string) $exp->getBody(), (string) $act->getBody(), $text);
         } else {
-            $this->assertEquals((string) $exp->getBody(), (string) $act->getBody(), $text);
+            $this->assertSame((string) $exp->getBody(), (string) $act->getBody(), $text);
         }
         $this->assertEquals($exp->getHeaders(), $act->getHeaders(), $text);
     }

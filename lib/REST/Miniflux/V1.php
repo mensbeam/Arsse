@@ -347,7 +347,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionInput $e) {
             if ($e->getCode() === 10236) {
                 return new ErrorResponse(["DuplicateCategory", 'title' => $title], 500);
-            } elseif ($e->getCode() === 10239) {
+            } elseif (in_array($e->getCode(), [10237, 10239])) {
                 return new ErrorResponse("404", 404);
             } else {
                 return new ErrorResponse(["InvalidCategory", 'title' => $title], 500);
@@ -355,6 +355,26 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
         return new Response(['id' => (int) $path[1], 'title' => $title, 'user_id' => $meta['num']]);
+    }
+
+    protected function deleteCategory(array $path, array $query, array $data): ResponseInterface {
+        try {
+            $folder = $path[1] - 1;
+            if ($folder !== 0) {
+                Arsse::$db->folderRemove(Arsse::$user->id, $folder);
+            } else {
+                // if we're deleting from the root folder, delete each child subscription individually
+                // otherwise we'd be deleting the entire tree 
+                $tr = Arsse::$db->begin();
+                foreach (Arsse::$db->subscriptionList(Arsse::$user->id, null, false) as $sub) {
+                    Arsse::$db->subscriptionRemove(Arsse::$user->id, $sub['id']);
+                }
+                $tr->commit();
+            }
+        } catch (ExceptionInput $e) {
+            return new ErrorResponse("404", 404);
+        }
+        return new EmptyResponse(204);
     }
 
     public static function tokenGenerate(string $user, string $label): string {

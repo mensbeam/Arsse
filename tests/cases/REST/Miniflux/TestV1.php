@@ -285,42 +285,59 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideCategoryUpdates */
-    public function testRenameACategory(int $id, $title, ResponseInterface $exp): void {
+    public function testRenameACategory(int $id, $title, $out, ResponseInterface $exp): void {
         Arsse::$user->method("propertiesSet")->willReturn(['root_folder_name' => $title]);
-        if (!in_array($id, [1,2])) {
-            \Phake::when(Arsse::$db)->folderPropertiesSet->thenThrow(new ExceptionInput("subjectMissing"));
-        } elseif (!strlen((string) $title)) {
-            \Phake::when(Arsse::$db)->folderPropertiesSet->thenThrow(new ExceptionInput("missing"));
-        } elseif (!strlen(trim((string) $title))) {
-            \Phake::when(Arsse::$db)->folderPropertiesSet->thenThrow(new ExceptionInput("whitespace"));
-        } elseif ($title === "Duplicate") {
-            \Phake::when(Arsse::$db)->folderPropertiesSet->thenThrow(new ExceptionInput("constraintViolation"));
+        if (is_string($out)) {
+            \Phake::when(Arsse::$db)->folderPropertiesSet->thenThrow(new ExceptionInput($out));
         } else {
-            \Phake::when(Arsse::$db)->folderPropertiesSet->thenReturn(true);
+            \Phake::when(Arsse::$db)->folderPropertiesSet->thenReturn($out);
         }
-        if ($id === 1) {
-            $times = (int) (is_string($title) && strlen(trim($title)));
-            Arsse::$user->expects($this->exactly($times))->method("propertiesSet")->with("john.doe@example.com", ['root_folder_name' => $title]);
-        }
+        $times = (int) ($id === 1 && is_string($title) && strlen(trim($title)));
+        Arsse::$user->expects($this->exactly($times))->method("propertiesSet")->with("john.doe@example.com", ['root_folder_name' => $title]);
         $this->assertMessage($exp, $this->req("PUT", "/categories/$id", ['title' => $title]));
-        if ($id !== 1 && is_string($title)) {
-            \Phake::verify(Arsse::$db)->folderPropertiesSet("john.doe@example.com", $id - 1, ['name' => $title]);
-        }
+        $times = (int) ($id !== 1 && is_string($title));
+        \Phake::verify(Arsse::$db, \Phake::times($times))->folderPropertiesSet("john.doe@example.com", $id - 1, ['name' => $title]);
     }
 
     public function provideCategoryUpdates(): iterable {
         return [
-            [3, "New",       new ErrorResponse("404", 404)],
-            [2, "New",       new Response(['id' => 2, 'title' => "New", 'user_id' => 42])],
-            [2, "Duplicate", new ErrorResponse(["DuplicateCategory", 'title' => "Duplicate"], 500)],
-            [2, "",          new ErrorResponse(["InvalidCategory", 'title' => ""], 500)],
-            [2, " ",         new ErrorResponse(["InvalidCategory", 'title' => " "], 500)],
-            [2, false,       new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 400)],
-            [1, "New",       new Response(['id' => 1, 'title' => "New", 'user_id' => 42])],
-            [1, "Duplicate", new Response(['id' => 1, 'title' => "Duplicate", 'user_id' => 42])], // This is allowed because the name of the root folder is only a duplicate in circumstances where it is used
-            [1, "",          new ErrorResponse(["InvalidCategory", 'title' => ""], 500)],
-            [1, " ",         new ErrorResponse(["InvalidCategory", 'title' => " "], 500)],
-            [1, false,       new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 400)],
+            [3, "New",       "subjectMissing",      new ErrorResponse("404", 404)],
+            [2, "New",       true,                  new Response(['id' => 2, 'title' => "New", 'user_id' => 42])],
+            [2, "Duplicate", "constraintViolation", new ErrorResponse(["DuplicateCategory", 'title' => "Duplicate"], 500)],
+            [2, "",          "missing",             new ErrorResponse(["InvalidCategory", 'title' => ""], 500)],
+            [2, " ",         "whitespace",          new ErrorResponse(["InvalidCategory", 'title' => " "], 500)],
+            [2, false,       "subjectMissing",      new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 400)],
+            [1, "New",       true,                  new Response(['id' => 1, 'title' => "New", 'user_id' => 42])],
+            [1, "Duplicate", "constraintViolation", new Response(['id' => 1, 'title' => "Duplicate", 'user_id' => 42])], // This is allowed because the name of the root folder is only a duplicate in circumstances where it is used
+            [1, "",          "missing",             new ErrorResponse(["InvalidCategory", 'title' => ""], 500)],
+            [1, " ",         "whitespace",          new ErrorResponse(["InvalidCategory", 'title' => " "], 500)],
+            [1, false,       false,                 new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 400)],
         ];
+    }
+
+    public function testDeleteARealCategory(): void {
+        \Phake::when(Arsse::$db)->folderRemove->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
+        $this->assertMessage(new EmptyResponse(204), $this->req("DELETE", "/categories/2112"));
+        \Phake::verify(Arsse::$db)->folderRemove("john.doe@example.com", 2111);
+        $this->assertMessage(new ErrorResponse("404", 404), $this->req("DELETE", "/categories/47"));
+        \Phake::verify(Arsse::$db)->folderRemove("john.doe@example.com", 46);
+    }
+
+    public function testDeleteTheSpecialCategory(): void {
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v([
+            ['id' => 1],
+            ['id' => 47],
+            ['id' => 2112],
+        ])));
+        \Phake::when(Arsse::$db)->subscriptionRemove->thenReturn(true);
+        $this->assertMessage(new EmptyResponse(204), $this->req("DELETE", "/categories/1"));
+        \Phake::inOrder(
+            \Phake::verify(Arsse::$db)->begin(),
+            \Phake::verify(Arsse::$db)->subscriptionList("john.doe@example.com", null, false),
+            \Phake::verify(Arsse::$db)->subscriptionRemove("john.doe@example.com", 1),
+            \Phake::verify(Arsse::$db)->subscriptionRemove("john.doe@example.com", 47),
+            \Phake::verify(Arsse::$db)->subscriptionRemove("john.doe@example.com", 2112),
+            \Phake::verify($this->transaction)->commit()
+        );
     }
 }
