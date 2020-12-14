@@ -10,6 +10,7 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Feed;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\AbstractException;
+use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Misc\Date;
@@ -34,37 +35,82 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'user_agent' => "string",
         'title'      => "string",
     ];
-    protected const PATHS = [
-        '/categories'                    => ['GET'  => "getCategories",  'POST'   => "createCategory"],
-        '/categories/1'                  => ['PUT'  => "updateCategory", 'DELETE' => "deleteCategory"],
-        '/categories/1/mark-all-as-read' => ['PUT'  => "markCategory"],
-        '/discover'                      => ['POST' => "discoverSubscriptions"],
-        '/entries'                       => ['GET'  => "getEntries",     'PUT'    => "updateEntries"],
-        '/entries/1'                     => ['GET'  => "getEntry"],
-        '/entries/1/bookmark'            => ['PUT'  => "toggleEntryBookmark"],
-        '/export'                        => ['GET'  => "opmlExport"],
-        '/feeds'                         => ['GET'  => "getFeeds",       'POST'   => "createFeed"],
-        '/feeds/1'                       => ['GET'  => "getFeed",        'PUT'    => "updateFeed",    'DELETE' => "removeFeed"],
-        '/feeds/1/mark-all-as-read'      => ['PUT'  => "markFeed"],
-        '/feeds/1/entries/1'             => ['GET'  => "getFeedEntry"],
-        '/feeds/1/entries'               => ['GET'  => "getFeedEntries"],
-        '/feeds/1/icon'                  => ['GET'  => "getFeedIcon"],
-        '/feeds/1/refresh'               => ['PUT'  => "refreshFeed"],
-        '/feeds/refresh'                 => ['PUT'  => "refreshAllFeeds"],
-        '/import'                        => ['POST' => "opmlImport"],
-        '/me'                            => ['GET'  => "getCurrentUser"],
-        '/users'                         => ['GET'  => "getUsers",       'POST' => "createUser"],
-        '/users/1'                       => ['GET'  => "getUserByNum",   'PUT'  => "updateUserByNum", 'DELETE' => "deleteUser"],
-        '/users/1/mark-all-as-read'      => ['PUT'  => "markAll"],
-        '/users/*'                       => ['GET'  => "getUserById"],
-    ];
-    protected const ADMIN_FUNCTIONS = [
-        'getUsers'        => true, 
-        'getUserByNum'    => true, 
-        'getUserById'     => true, 
-        'createUser'      => true, 
-        'updateUserByNum' => true, 
-        'deleteUser'      => true,
+    protected const CALLS = [                // handler method        Admin  Path   Body   Query
+        '/categories'                    => [
+            'GET'                        => ["getCategories",         false, false, false, false],
+            'POST'                       => ["createCategory",        false, false, true,  false],
+        ],
+        '/categories/1'                  => [
+            'PUT'                        => ["updateCategory",        false, true,  true,  false],
+            'DELETE'                     => ["deleteCategory",        false, true,  false, false],
+        ],
+        '/categories/1/mark-all-as-read' => [
+            'PUT'                        => ["markCategory",          false, true,  false, false],
+        ],
+        '/discover'                      => [
+            'POST'                       => ["discoverSubscriptions", false, false, true,  false],
+        ],
+        '/entries'                       => [
+            'GET'                        => ["getEntries",            false, false, false, true],
+            'PUT'                        => ["updateEntries",         false, false, true,  false],
+        ],
+        '/entries/1'                     => [
+            'GET'                        => ["getEntry",              false, true,  false, false],
+        ],
+        '/entries/1/bookmark'            => [
+            'PUT'                        => ["toggleEntryBookmark",   false, true,  false, false],
+        ],
+        '/export'                        => [
+            'GET'                        => ["opmlExport",            false, false, false, false],
+        ],
+        '/feeds'                         => [
+            'GET'                        => ["getFeeds",              false, false, false, false],
+            'POST'                       => ["createFeed",            false, false, true,  false],
+        ],
+        '/feeds/1'                       => [
+            'GET'                        => ["getFeed",               false, true,  false, false],
+            'PUT'                        => ["updateFeed",            false, true,  true,  false],
+            'DELETE'                     => ["deleteFeed",            false, true,  false, false],
+        ],
+        '/feeds/1/entries'               => [
+            'GET'                        => ["getFeedEntries",        false, true,  false, false],
+        ],
+        '/feeds/1/entries/1'             => [
+            'GET'                        => ["getFeedEntry",          false, true,  false, false],
+        ],
+        '/feeds/1/icon'                  => [
+            'GET'                        => ["getFeedIcon",           false, true,  false, false],
+        ],
+        '/feeds/1/mark-all-as-read'      => [
+            'PUT'                        => ["markFeed",              false, true,  false, false],
+        ],
+        '/feeds/1/refresh'               => [
+            'PUT'                        => ["refreshFeed",           false, true,  false, false],
+        ],
+        '/feeds/refresh'                 => [
+            'PUT'                        => ["refreshAllFeeds",       false, false, false, false],
+        ],
+        '/import'                        => [
+            'POST'                       => ["opmlImport",            false, false, true,  false],
+        ],
+        '/me'                            => [
+            'GET'                        => ["getCurrentUser",        false, false, false, false],
+        ],
+        '/users'                         => [
+            'GET'                        => ["getUsers",              true,  false, false, false],
+            'POST'                       => ["createUser",            true,  false, true,  false],
+        ],
+        '/users/1'                       => [
+            'GET'                        => ["getUserByNum",          true,  true,  false, false],
+            'PUT'                        => ["updateUserByNum",       true,  true,  true,  false],
+            'DELETE'                     => ["deleteUserByNum",       true,  true,  false, false],
+        ],
+        '/users/1/mark-all-as-read'      => [
+            'PUT'                        => ["markUserByNum",         false, true,  false, false],
+        ],
+        '/users/*'                       => [
+            'GET'                        => ["getUserById",           true,  true,  false, false],
+        ],
     ];
 
     public function __construct() {
@@ -117,33 +163,45 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $func = $this->chooseCall($target, $method);
         if ($func instanceof ResponseInterface) {
             return $func;
+        } else {
+            [$func, $reqAdmin, $reqPath, $reqBody, $reqQuery] = $func;
         }
-        if ((self::ADMIN_FUNCTIONS[$func] ?? false) && !$this->isAdmin()) {
+        if ($reqAdmin && !$this->isAdmin()) {
             return new ErrorResponse("403", 403);
         }
-        $data = [];
-        $query = [];
-        if ($func === "opmlImport") {
-            if (!HTTP::matchType($req, "", ...[self::ACCEPTED_TYPES_OPML])) {
-                return new ErrorResponse("", 415, ['Accept' => implode(", ", self::ACCEPTED_TYPES_OPML)]);
+        $args = [];
+        if ($reqPath) {
+            $args[] = explode("/", ltrim($target, "/"));
+        }
+        if ($reqBody) {
+            if ($func === "opmlImport") {
+                if (!HTTP::matchType($req, "", ...[self::ACCEPTED_TYPES_OPML])) {
+                    return new ErrorResponse("", 415, ['Accept' => implode(", ", self::ACCEPTED_TYPES_OPML)]);
+                }
+                $args[] = (string) $req->getBody();
+            } else {
+                $data = (string) $req->getBody();
+                if (strlen($data)) {
+                    $data = @json_decode($data, true);
+                    if (json_last_error() !== \JSON_ERROR_NONE) {
+                        // if the body could not be parsed as JSON, return "400 Bad Request"
+                        return new ErrorResponse(["InvalidBodyJSON", json_last_error_msg()], 400);
+                    }
+                } else {
+                    $data = [];
+                }
+                $data = $this->normalizeBody((array) $data);
+                if ($data instanceof ResponseInterface) {
+                    return $data;
+                }
             }
-            $data = (string) $req->getBody();
-        } elseif ($method === "POST" || $method === "PUT") {
-            $data = @json_decode((string) $req->getBody(), true);
-            if (json_last_error() !== \JSON_ERROR_NONE) {
-                // if the body could not be parsed as JSON, return "400 Bad Request"
-                return new ErrorResponse(["InvalidBodyJSON", json_last_error_msg()], 400);
-            }
-            $data = $this->normalizeBody((array) $data);
-            if ($data instanceof ResponseInterface) {
-                return $data;
-            }
-        } elseif ($method === "GET") {
-            $query = $req->getQueryParams();
+            $args[] = $data;
+        }
+        if ($reqQuery) {
+            $args[] = $req->getQueryParams();
         }
         try {
-            $path = explode("/", ltrim($target, "/"));
-            return $this->$func($path, $query, $data);
+            return $this->$func(...$args);
             // @codeCoverageIgnoreStart
         } catch (Exception $e) {
             // if there was a REST exception return 400
@@ -153,6 +211,28 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new EmptyResponse(500);
         }
         // @codeCoverageIgnoreEnd
+    }
+
+    protected function chooseCall(string $url, string $method) {
+        // // normalize the URL path: change any IDs to 1 for easier comparison
+        $url = $this->normalizePathIds($url);
+        // normalize the HTTP method to uppercase
+        $method = strtoupper($method);
+        // we now evaluate the supplied URL against every supported path for the selected scope
+        if (isset(self::CALLS[$url])) {
+            // if the path is supported, make sure the method is allowed
+            if (isset(self::CALLS[$url][$method])) {
+                // if it is allowed, return the object method to run, assuming the method exists
+                assert(method_exists($this, self::CALLS[$url][$method][0]), new \Exception("Method is not implemented"));
+                return self::CALLS[$url][$method];
+            } else {
+                // otherwise return 405
+                return new EmptyResponse(405, ['Allow' => implode(", ", array_keys(self::CALLS[$url]))]);
+            }
+        } else {
+            // if the path is not supported, return 404
+            return new EmptyResponse(404);
+        }
     }
 
     protected function normalizePathIds(string $url): string {
@@ -170,12 +250,24 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return implode("/", $path);
     }
 
+    protected function normalizeBody(array $body) {
+        // Miniflux does not attempt to coerce values into different types
+        foreach (self::VALID_JSON as $k => $t) {
+            if (!isset($body[$k])) {
+                $body[$k] = null;
+            } elseif (gettype($body[$k]) !== $t) {
+                return new ErrorResponse(["InvalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])]);
+            }
+        }
+        return $body;
+    }
+
     protected function handleHTTPOptions(string $url): ResponseInterface {
         // normalize the URL path: change any IDs to 1 for easier comparison
         $url = $this->normalizePathIDs($url);
-        if (isset(self::PATHS[$url])) {
+        if (isset(self::CALLS[$url])) {
             // if the path is supported, respond with the allowed methods and other metadata
-            $allowed = array_keys(self::PATHS[$url]);
+            $allowed = array_keys(self::CALLS[$url]);
             // if GET is allowed, so is HEAD
             if (in_array("GET", $allowed)) {
                 array_unshift($allowed, "HEAD");
@@ -188,41 +280,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             // if the path is not supported, return 404
             return new EmptyResponse(404);
         }
-    }
-
-    protected function chooseCall(string $url, string $method) {
-        // // normalize the URL path: change any IDs to 1 for easier comparison
-        $url = $this->normalizePathIds($url);
-        // normalize the HTTP method to uppercase
-        $method = strtoupper($method);
-        // we now evaluate the supplied URL against every supported path for the selected scope
-        // the URL is evaluated as an array so as to avoid decoded escapes turning invalid URLs into valid ones
-        if (isset(self::PATHS[$url])) {
-            // if the path is supported, make sure the method is allowed
-            if (isset(self::PATHS[$url][$method])) {
-                // if it is allowed, return the object method to run, assuming the method exists
-                assert(method_exists($this, self::PATHS[$url][$method]), new \Exception("Method is not implemented"));
-                return self::PATHS[$url][$method];
-            } else {
-                // otherwise return 405
-                return new EmptyResponse(405, ['Allow' => implode(", ", array_keys(self::PATHS[$url]))]);
-            }
-        } else {
-            // if the path is not supported, return 404
-            return new EmptyResponse(404);
-        }
-    }
-
-    protected function normalizeBody(array $body) {
-        // Miniflux does not attempt to coerce values into different types
-        foreach (self::VALID_JSON as $k => $t) {
-            if (!isset($body[$k])) {
-                $body[$k] = null;
-            } elseif (gettype($body[$k]) !== $t) {
-                return new ErrorResponse(["InvalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])]);
-            }
-        }
-        return $body;
     }
 
     protected function listUsers(array $users, bool $reportMissing): array {
@@ -259,7 +316,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return $out;
     }
 
-    protected function discoverSubscriptions(array $path, array $query, array $data): ResponseInterface {
+    protected function discoverSubscriptions(array $data): ResponseInterface {
         try {
             $list = Feed::discoverAll((string) $data['url'], (string) $data['username'], (string) $data['password']);
         } catch (FeedException $e) {
@@ -278,11 +335,11 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new Response($out);
     }
 
-    protected function getUsers(array $path, array $query, array $data): ResponseInterface {
+    protected function getUsers(): ResponseInterface {
         return new Response($this->listUsers(Arsse::$user->list(), false));
     }
 
-    protected function getUserById(array $path, array $query, array $data): ResponseInterface {
+    protected function getUserById(array $path): ResponseInterface {
         try {
             return new Response($this->listUsers([$path[1]], true)[0] ?? new \stdClass);
         } catch (UserException $e) {
@@ -290,7 +347,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
     }
 
-    protected function getUserByNum(array $path, array $query, array $data): ResponseInterface {
+    protected function getUserByNum(array $path): ResponseInterface {
         try {
             $user = Arsse::$user->lookup((int) $path[1]);
             return new Response($this->listUsers([$user], true)[0] ?? new \stdClass);
@@ -299,11 +356,11 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
     }
     
-    protected function getCurrentUser(array $path, array $query, array $data): ResponseInterface {
+    protected function getCurrentUser(): ResponseInterface {
         return new Response($this->listUsers([Arsse::$user->id], false)[0] ?? new \stdClass);
     }
 
-    protected function getCategories(array $path, array $query, array $data): ResponseInterface {
+    protected function getCategories(): ResponseInterface {
         $out = [];
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
         // add the root folder as a category
@@ -316,7 +373,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new Response($out);
     }
 
-    protected function createCategory(array $path, array $query, array $data): ResponseInterface {
+    protected function createCategory(array $data): ResponseInterface {
         try {
             $id = Arsse::$db->folderAdd(Arsse::$user->id, ['name' => (string) $data['title']]);
         } catch (ExceptionInput $e) {
@@ -330,7 +387,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new Response(['id' => $id + 1, 'title' => $data['title'], 'user_id' => $meta['num']]);
     }
 
-    protected function updateCategory(array $path, array $query, array $data): ResponseInterface {
+    protected function updateCategory(array $path, array $data): ResponseInterface {
         // category IDs in Miniflux are always greater than 1; we have folder 0, so we decrement category IDs by 1 to get the folder ID
         $folder = $path[1] - 1;
         $title = $data['title'] ?? "";
@@ -357,7 +414,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new Response(['id' => (int) $path[1], 'title' => $title, 'user_id' => $meta['num']]);
     }
 
-    protected function deleteCategory(array $path, array $query, array $data): ResponseInterface {
+    protected function deleteCategory(array $path): ResponseInterface {
         try {
             $folder = $path[1] - 1;
             if ($folder !== 0) {
@@ -371,6 +428,23 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 }
                 $tr->commit();
             }
+        } catch (ExceptionInput $e) {
+            return new ErrorResponse("404", 404);
+        }
+        return new EmptyResponse(204);
+    }
+
+    protected function markCategory(array $path): ResponseInterface {
+        $folder = $path[1] - 1;
+        $c = new Context;
+        if ($folder === 0) {
+            // if we're marking the root folder don't also mark its child folders, since Miniflux organizes it as a peer of other folders
+            $c = $c->folderShallow($folder);
+        } else {
+            $c = $c->folder($folder);
+        }
+        try {
+            Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], $c);
         } catch (ExceptionInput $e) {
             return new ErrorResponse("404", 404);
         }

@@ -142,7 +142,6 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // normalize the HTTP method to uppercase
         $method = strtoupper($method);
         // we now evaluate the supplied URL against every supported path for the selected scope
-        // the URL is evaluated as an array so as to avoid decoded escapes turning invalid URLs into valid ones
         if (isset($this->paths[$url])) {
             // if the path is supported, make sure the method is allowed
             if (isset($this->paths[$url][$method])) {

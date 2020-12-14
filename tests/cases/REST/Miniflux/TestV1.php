@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\REST\Miniflux;
 
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\Transaction;
@@ -338,6 +339,18 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             \Phake::verify(Arsse::$db)->subscriptionRemove("john.doe@example.com", 47),
             \Phake::verify(Arsse::$db)->subscriptionRemove("john.doe@example.com", 2112),
             \Phake::verify($this->transaction)->commit()
+        );
+    }
+
+    public function testMarkACategoryAsRead(): void {
+        \Phake::when(Arsse::$db)->articleMark->thenReturn(1)->thenReturn(1)->thenThrow(new ExceptionInput("idMissing"));
+        $this->assertMessage(new EmptyResponse(204), $this->req("PUT", "/categories/2/mark-all-as-read"));
+        $this->assertMessage(new EmptyResponse(204), $this->req("PUT", "/categories/1/mark-all-as-read"));
+        $this->assertMessage(new ErrorResponse("404", 404), $this->req("PUT", "/categories/2112/mark-all-as-read"));
+        \Phake::inOrder(
+            \Phake::verify(Arsse::$db)->articleMark("john.doe@example.com", ['read' => true], (new Context)->folder(1)),
+            \Phake::verify(Arsse::$db)->articleMark("john.doe@example.com", ['read' => true], (new Context)->folderShallow(0)),
+            \Phake::verify(Arsse::$db)->articleMark("john.doe@example.com", ['read' => true], (new Context)->folder(2111))
         );
     }
 }
