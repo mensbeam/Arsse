@@ -8,6 +8,7 @@ alter table arsse_tokens add column data text default null;
 
 alter table arsse_subscriptions add column keep_rule text default null;
 alter table arsse_subscriptions add column block_rule text default null;
+alter table arsse_marks add column hidden smallint not null default 0;
 
 alter table arsse_users add column num bigint unique;
 alter table arsse_users add column admin smallint not null default 0;

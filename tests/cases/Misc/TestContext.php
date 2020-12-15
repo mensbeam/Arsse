@@ -46,6 +46,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             'oldestEdition'    => 1337,
             'unread'           => true,
             'starred'          => true,
+            'hidden'           => true,
             'modifiedSince'    => new \DateTime(),
             'notModifiedSince' => new \DateTime(),
             'markedSince'      => new \DateTime(),

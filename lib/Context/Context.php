@@ -13,6 +13,7 @@ class Context extends ExclusionContext {
     public $offset = 0;
     public $unread;
     public $starred;
+    public $hidden;
     public $labelled;
     public $annotated;
 
@@ -43,6 +44,10 @@ class Context extends ExclusionContext {
     }
 
     public function starred(bool $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function hidden(bool $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 

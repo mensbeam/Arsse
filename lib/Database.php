@@ -741,7 +741,7 @@ class Database {
             "SELECT
                 s.id as id,
                 s.feed as feed,
-                f.url,source,folder,pinned,err_count,err_msg,order_type,added,
+                f.url,source,folder,pinned,err_count,err_msg,order_type,added,keep_rule,block_rule,
                 f.updated as updated,
                 f.modified as edited,
                 s.modified as modified,
@@ -762,8 +762,8 @@ class Database {
         // topmost folders belonging to the user
         $q->setCTE("topmost(f_id,top)", "SELECT id,id from arsse_folders where owner = ? and parent is null union all select id,top from arsse_folders join topmost on parent=f_id", ["str"], [$user]);
         if ($id) {
-            // this condition facilitates the implementation of subscriptionPropertiesGet, which would otherwise have to duplicate the complex query; it takes precedence over a specified folder
             // if an ID is specified, add a suitable WHERE condition and bindings
+            // this condition facilitates the implementation of subscriptionPropertiesGet, which would otherwise have to duplicate the complex query; it takes precedence over a specified folder
             $q->setWhere("s.id = ?", "int", $id);
         } elseif ($folder && $recursive) {
             // if a folder is specified and we're listing recursively, add a common table expression to list it and its children so that we select from the entire subtree
@@ -1192,6 +1192,19 @@ class Database {
         }
         $tr->commit();
         return $out;
+    }
+
+    /** Retrieves the set of filters users have applied to a given feed
+     * 
+     * Each record includes the following keys:
+     * 
+     * - "owner": The user for whom to apply the filters
+     * - "sub": The subscription ID which ties the user to the feed
+     * - "keep": The "keep" rule; any articles which fail to match this rule are hidden
+     * - "block": The block rule; any article which matches this rule are hidden
+     */
+    public function feedRulesGet(int $feedID): Db\Result {
+        return $this->db->prepare("SELECT owner, id as sub, keep_rule as keep, block_rule as block from arsse_subscriptions where feed = ? and (coalesce(keep_rule, '') || coalesce(block_rule, '')) <> ''", "int")->run($feedID);
     }
 
     /** Retrieves various identifiers for the latest $count articles in the given newsfeed. The identifiers are:
@@ -1652,6 +1665,7 @@ class Database {
      *
      * - "read":    Whether the article should be marked as read (true) or unread (false)
      * - "starred": Whether the article should (true) or should not (false) be marked as starred/favourite
+     * - "hidden":  Whether the article should (true) or should not (false) be suppressed from normal listings; this is normally set by the system rather than the user directly
      * - "note":    A string containing a freeform plain-text note for the article
      *
      * @param string $user The user who owns the articles to be modified
@@ -1662,22 +1676,23 @@ class Database {
         $data = [
             'read'    => $data['read'] ?? null,
             'starred' => $data['starred'] ?? null,
+            'hidden'  => $data['hidden'] ?? null,
             'note'    => $data['note'] ?? null,
         ];
-        if (!isset($data['read']) && !isset($data['starred']) && !isset($data['note'])) {
+        if (!isset($data['read']) && !isset($data['starred']) && !isset($data['hidden']) && !isset($data['note'])) {
             return 0;
         }
         $context = $context ?? new Context;
         $tr = $this->begin();
         $out = 0;
-        if ($data['read'] || $data['starred'] || strlen($data['note'] ?? "")) {
+        if ($data['read'] || $data['starred'] || $data['hidden'] || strlen($data['note'] ?? "")) {
             // first prepare a query to insert any missing marks rows for the articles we want to mark
             // but only insert new mark records if we're setting at least one "positive" mark
             $q = $this->articleQuery($user, $context, ["id", "subscription", "note"]);
-            $q->setWhere("arsse_marks.starred is null"); // null means there is no marks row for the article
+            $q->setWhere("arsse_marks.starred is null"); // null means there is no marks row for the article, because the column is defined not-null
             $this->db->prepare("INSERT INTO arsse_marks(article,subscription,note) ".$q->getQuery(), $q->getTypes())->run($q->getValues());
         }
-        if (isset($data['read']) && (isset($data['starred']) || isset($data['note'])) && ($context->edition() || $context->editions())) {
+        if (isset($data['read']) && (isset($data['starred']) || isset($data['hidden']) || isset($data['note'])) && ($context->edition() || $context->editions())) {
             // if marking by edition both read and something else, do separate marks for starred and note than for read
             // marking as read is ignored if the edition is not the latest, but the same is not true of the other two marks
             $this->db->query("UPDATE arsse_marks set touched = 0 where touched <> 0");
@@ -1693,7 +1708,7 @@ class Database {
             } else {
                 $context->articles($this->editionArticle(...$context->editions))->editions(null);
             }
-            // set starred and/or note marks (unless all requested editions actually do not exist)
+            // set starred, hidden, and/or note marks (unless all requested editions actually do not exist)
             if ($context->article || $context->articles) {
                 $q = $this->articleQuery($user, $context, ["id", "subscription"]);
                 $q->setWhere("(arsse_marks.note <> coalesce(?,arsse_marks.note) or arsse_marks.starred <> coalesce(?,arsse_marks.starred))", ["str", "bool"], [$data['note'], $data['starred']]);
@@ -1701,7 +1716,7 @@ class Database {
                 $data = array_filter($data, function($v) {
                     return isset($v);
                 });
-                [$set, $setTypes, $setValues] = $this->generateSet($data, ['starred' => "bool", 'note' => "str"]);
+                [$set, $setTypes, $setValues] = $this->generateSet($data, ['starred' => "bool", 'hidden' => "bool", 'note' => "str"]);
                 $q->setBody("UPDATE arsse_marks set touched = 1, $set where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", $setTypes, $setValues);
                 $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
             }
@@ -1725,7 +1740,7 @@ class Database {
             $data = array_filter($data, function($v) {
                 return isset($v);
             });
-            [$set, $setTypes, $setValues] = $this->generateSet($data, ['read' => "bool", 'starred' => "bool", 'note' => "str"]);
+            [$set, $setTypes, $setValues] = $this->generateSet($data, ['read' => "bool", 'starred' => "bool", 'hidden' => "bool", 'note' => "str"]);
             $q->setBody("UPDATE arsse_marks set $set, modified = CURRENT_TIMESTAMP where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", $setTypes, $setValues);
             $out = $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
         }

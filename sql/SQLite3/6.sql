@@ -6,9 +6,11 @@
 -- This is a speculative addition to support OAuth login in the future
 alter table arsse_tokens add column data text default null;
 
--- Add columns to subscriptions to store "keep" and "block" filtering rules from Miniflux
+-- Add columns to subscriptions to store "keep" and "block" filtering rules from Miniflux, 
+-- as well as a column to mark articles as hidden for users
 alter table arsse_subscriptions add column keep_rule text default null;
 alter table arsse_subscriptions add column block_rule text default null;
+alter table arsse_marks add column hidden boolean not null default 0;
 
 -- Add numeric identifier and admin columns to the users table
 create table arsse_users_new(
