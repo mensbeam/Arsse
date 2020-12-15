@@ -6,8 +6,11 @@
 -- This is a speculative addition to support OAuth login in the future
 alter table arsse_tokens add column data text default null;
 
--- Add num and admin columns to the users table
--- In particular this adds a numeric identifier for each user, which Miniflux requires
+-- Add columns to subscriptions to store "keep" and "block" filtering rules from Miniflux
+alter table arsse_subscriptions add column keep_rule text default null;
+alter table arsse_subscriptions add column block_rule text default null;
+
+-- Add numeric identifier and admin columns to the users table
 create table arsse_users_new(
 -- users
     id text primary key not null collate nocase,    -- user id

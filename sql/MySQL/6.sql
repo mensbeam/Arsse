@@ -6,6 +6,9 @@
 
 alter table arsse_tokens add column data longtext default null;
 
+alter table arsse_subscriptions add column keep_rule longtext default null;
+alter table arsse_subscriptions add column block_rule longtext default null;
+
 alter table arsse_users add column num bigint unsigned unique;
 alter table arsse_users add column admin boolean not null default 0;
 create temporary table arsse_users_existing(

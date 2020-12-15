@@ -10,7 +10,7 @@
     <dt>API endpoint</dt>
         <dd>/v1/</dd>
     <dt>Specifications</dt>
-        <dd><a href="https://miniflux.app/docs/api.html">API Reference</a></dd>
+        <dd><a href="https://miniflux.app/docs/api.html">API Reference</a>, <a href="https://miniflux.app/docs/rules.html#filtering-rules">Filtering Rules</a></dd>
 </dl>
 
 The Miniflux protocol is a fairly well-designed protocol supporting a wide variety of operations on newsfeeds, folders (termed "categories"), and articles; it also allows for user administration, and native OPML importing and exporting. Architecturally it is similar to the Nextcloud News protocol, but is generally more efficient and has more capabilities.
@@ -33,6 +33,13 @@ Miniflux version 2.0.26 is emulated, though not all features are implemented
 - Only the URL should be considered reliable in feed discovery results
 - The "All" category is treated specially (see below for details)
 - Category names consisting only of whitespace are rejected along with the empty string
+- Filtering rules may not function identically (see below for details)
+
+# Behaviour of filtering (block and keep) rules
+
+The Miniflux documentation gives only a brief example of a pattern for its filtering rules; the allowed syntax is described in full [in Google's documentation for RE2](https://github.com/google/re2/wiki/Syntax). Being a PHP application, The Arsse instead accepts [PCRE syntax](http://www.pcre.org/original/doc/html/pcresyntax.html) (or since PHP 7.3 [PCRE2 syntax](https://www.pcre.org/current/doc/html/pcre2syntax.html)), specifically in UTF-8 mode. Delimiters should not be included, and slashes should not be escaped; anchors may be used if desired. For example `^(?i)RE/MAX$` is a valid pattern.
+
+For convenience the patterns are tested after collapsing whitespace. Unlike Miniflux, The Arsse tests the patterns against an article's author-supplied categories if they do not match its title.
 
 # Special handling of the "All" category
 
