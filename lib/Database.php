@@ -1312,6 +1312,7 @@ class Database {
             'folder'             => "coalesce(arsse_subscriptions.folder,0)",
             'subscription'       => "arsse_subscriptions.id",
             'feed'               => "arsse_subscriptions.feed",
+            'hidden'             => "coalesce(arsse_marks.hidden,0)",
             'starred'            => "coalesce(arsse_marks.starred,0)",
             'unread'             => "abs(coalesce(arsse_marks.read,0) - 1)",
             'note'               => "coalesce(arsse_marks.note,'')",
@@ -1417,6 +1418,7 @@ class Database {
             "subscriptions"    => ["subscription",  "in", "int",      ""],
             "unread"           => ["unread",        "=",  "bool",     ""],
             "starred"          => ["starred",       "=",  "bool",     ""],
+            "hidden"           => ["hidden",        "=",  "bool",     ""],
         ];
         foreach ($options as $m => [$col, $op, $type, $pair]) {
             if (!$context->$m()) {
