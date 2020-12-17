@@ -252,6 +252,7 @@ trait SeriesArticle {
                     [12,  4,1,1,'2017-01-01 00:00:00','ach',0],
                     [1,   2,0,0,'2010-01-01 00:00:00','Some Note',0],
                     [3,   5,0,0,'2000-01-01 00:00:00','',1],
+                    [6,   1,0,1,'2010-01-01 00:00:00','',1],
                 ],
             ],
             'arsse_categories' => [ // author-supplied categories
@@ -969,7 +970,7 @@ trait SeriesArticle {
         $setSize = (new \ReflectionClassConstant(Database::class, "LIMIT_SET_SIZE"))->getValue();
         $this->assertSame(2, Arsse::$db->articleCount("john.doe@example.com", (new Context)->starred(true)));
         $this->assertSame(4, Arsse::$db->articleCount("john.doe@example.com", (new Context)->folder(1)));
-        $this->assertSame(0, Arsse::$db->articleCount("jane.doe@example.com", (new Context)->starred(true)));
+        $this->assertSame(1, Arsse::$db->articleCount("jane.doe@example.com", (new Context)->starred(true)));
         $this->assertSame(10, Arsse::$db->articleCount("john.doe@example.com", (new Context)->articles(range(1, $setSize * 3))));
     }
 

@@ -1750,7 +1750,7 @@ class Database {
         return $out;
     }
 
-    /** Returns statistics about the articles starred by the given user
+    /** Returns statistics about the articles starred by the given user. Hidden articles are excluded
      *
      * The associative array returned has the following keys:
      *
@@ -1765,7 +1765,7 @@ class Database {
                 coalesce(sum(abs(\"read\" - 1)),0) as unread,
                 coalesce(sum(\"read\"),0) as \"read\"
             FROM (
-                select \"read\" from arsse_marks where starred = 1 and subscription in (select id from arsse_subscriptions where owner = ?)
+                select \"read\" from arsse_marks where starred = 1 and hidden <> 1 and subscription in (select id from arsse_subscriptions where owner = ?)
             ) as starred_data",
             "str"
         )->run($user)->getRow();
