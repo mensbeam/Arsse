@@ -1713,7 +1713,7 @@ class Database {
             // set starred, hidden, and/or note marks (unless all requested editions actually do not exist)
             if ($context->article || $context->articles) {
                 $q = $this->articleQuery($user, $context, ["id", "subscription"]);
-                $q->setWhere("(arsse_marks.note <> coalesce(?,arsse_marks.note) or arsse_marks.starred <> coalesce(?,arsse_marks.starred))", ["str", "bool"], [$data['note'], $data['starred']]);
+                $q->setWhere("(arsse_marks.note <> coalesce(?,arsse_marks.note) or arsse_marks.starred <> coalesce(?,arsse_marks.starred) or arsse_marks.hidden <> coalesce(?,arsse_marks.hidden))", ["str", "bool", "bool"], [$data['note'], $data['starred'], $data['hidden']]);
                 $q->pushCTE("target_articles(article,subscription)");
                 $data = array_filter($data, function($v) {
                     return isset($v);
@@ -1737,7 +1737,7 @@ class Database {
                 }
             }
             $q = $this->articleQuery($user, $context, ["id", "subscription"]);
-            $q->setWhere("(arsse_marks.note <> coalesce(?,arsse_marks.note) or arsse_marks.starred <> coalesce(?,arsse_marks.starred) or arsse_marks.read <> coalesce(?,arsse_marks.read))", ["str", "bool", "bool"], [$data['note'], $data['starred'], $data['read']]);
+            $q->setWhere("(arsse_marks.note <> coalesce(?,arsse_marks.note) or arsse_marks.starred <> coalesce(?,arsse_marks.starred) or arsse_marks.read <> coalesce(?,arsse_marks.read) or arsse_marks.hidden <> coalesce(?,arsse_marks.hidden))", ["str", "bool", "bool", "bool"], [$data['note'], $data['starred'], $data['read'], $data['hidden']]);
             $q->pushCTE("target_articles(article,subscription)");
             $data = array_filter($data, function($v) {
                 return isset($v);
