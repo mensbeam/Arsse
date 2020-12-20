@@ -524,7 +524,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             \Phake::verify(Arsse::$db, \Phake::times(0))->editionLatest;
         } else {
             \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, $id);
-            \Phake::verify(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription($id));
+            \Phake::verify(Arsse::$db)->editionLatest(Arsse::$user->id, (new Context)->subscription($id)->hidden(false));
             if ($input['folderId'] ?? 0) {
                 \Phake::verify(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, $id, ['folder' => (int) $input['folderId']]);
             } else {
@@ -650,65 +650,60 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[4])));
     }
 
-    public function testListArticles(): void {
-        $t = new \DateTime;
-        $in = [
-            ['type' => 0, 'id' => 42],   // type=0 => subscription/feed
-            ['type'         => 1, 'id' => 2112], // type=1 => folder
-            ['type'         => 0, 'id' => -1],   // type=0 => subscription/feed; invalid ID
-            ['type'         => 1, 'id' => -1],   // type=1 => folder; invalid ID
-            ['type'         => 2, 'id' => 0],    // type=2 => starred
-            ['type'         => 3, 'id' => 0],    // type=3 => all (default); base context
-            ['oldestFirst'  => true, 'batchSize' => 10, 'offset' => 5],
-            ['oldestFirst'  => false, 'batchSize' => 5, 'offset' => 5],
-            ['getRead'      => true], // base context
-            ['getRead'      => false],
-            ['lastModified' => $t->getTimestamp()],
-            ['oldestFirst'  => false, 'batchSize' => 5, 'offset' => 0], // offset=0 should not set the latestEdition context
+    /** @dataProvider provideArticleQueries */
+    public function testListArticles(string $url, array $in, Context $c, $out, ResponseInterface $exp): void {
+        if ($out instanceof \Exception) {
+            \Phake::when(Arsse::$db)->articleList->thenThrow($out);
+        } else {
+            \Phake::when(Arsse::$db)->articleList->thenReturn($out);
+        }
+        $this->assertMessage($exp, $this->req("GET", $url, $in));
+        $columns = ["edition", "guid", "id", "url", "title", "author", "edited_date", "content", "media_type", "media_url", "subscription", "unread", "starred", "modified_date", "fingerprint"];
+        $order = ($in['oldestFirst'] ?? false) ? "edition" : "edition desc";
+        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, $c, $columns, [$order]);
+    }
+
+    public function provideArticleQueries(): iterable {
+        $c = (new Context)->hidden(false);
+        $t = Date::normalize(time());
+        $out = new Result($this->v($this->articles['db']));
+        $r200 = new Response(['items' => $this->articles['rest']]);
+        $r422 = new EmptyResponse(422);
+        return [
+            ["/items",         [],                                                         clone $c,                                $out,                                $r200],
+            ["/items",         ['type' => 0, 'id' => 42],                                  (clone $c)->subscription(42),            new ExceptionInput("idMissing"),     $r422],
+            ["/items",         ['type' => 1, 'id' => 2112],                                (clone $c)->folder(2112),                new ExceptionInput("idMissing"),     $r422],
+            ["/items",         ['type' => 0, 'id' => -1],                                  (clone $c)->subscription(-1),            new ExceptionInput("typeViolation"), $r422],
+            ["/items",         ['type' => 1, 'id' => -1],                                  (clone $c)->folder(-1),                  new ExceptionInput("typeViolation"), $r422],
+            ["/items",         ['type' => 2, 'id' => 0],                                   (clone $c)->starred(true),               $out,                                $r200],
+            ["/items",         ['type' => 3, 'id' => 0],                                   clone $c,                                $out,                                $r200],
+            ["/items",         ['getRead' => true],                                        clone $c,                                $out,                                $r200],
+            ["/items",         ['getRead' => false],                                       (clone $c)->unread(true),                $out,                                $r200],
+            ["/items",         ['lastModified' => $t->getTimestamp()],                     (clone $c)->markedSince($t),             $out,                                $r200],
+            ["/items",         ['oldestFirst' => true,  'batchSize' => 10, 'offset' => 5], (clone $c)->oldestEdition(6)->limit(10), $out,                                $r200],
+            ["/items",         ['oldestFirst' => false, 'batchSize' => 5,  'offset' => 5], (clone $c)->latestEdition(4)->limit(5),  $out,                                $r200],
+            ["/items",         ['oldestFirst' => false, 'batchSize' => 5,  'offset' => 0], (clone $c)->limit(5),                    $out,                                $r200],
+            ["/items/updated", [],                                                         clone $c,                                $out,                                $r200],
+            ["/items/updated", ['type' => 0, 'id' => 42],                                  (clone $c)->subscription(42),            new ExceptionInput("idMissing"),     $r422],
+            ["/items/updated", ['type' => 1, 'id' => 2112],                                (clone $c)->folder(2112),                new ExceptionInput("idMissing"),     $r422],
+            ["/items/updated", ['type' => 0, 'id' => -1],                                  (clone $c)->subscription(-1),            new ExceptionInput("typeViolation"), $r422],
+            ["/items/updated", ['type' => 1, 'id' => -1],                                  (clone $c)->folder(-1),                  new ExceptionInput("typeViolation"), $r422],
+            ["/items/updated", ['type' => 2, 'id' => 0],                                   (clone $c)->starred(true),               $out,                                $r200],
+            ["/items/updated", ['type' => 3, 'id' => 0],                                   clone $c,                                $out,                                $r200],
+            ["/items/updated", ['getRead' => true],                                        clone $c,                                $out,                                $r200],
+            ["/items/updated", ['getRead' => false],                                       (clone $c)->unread(true),                $out,                                $r200],
+            ["/items/updated", ['lastModified' => $t->getTimestamp()],                     (clone $c)->markedSince($t),             $out,                                $r200],
+            ["/items/updated", ['oldestFirst' => true,  'batchSize' => 10, 'offset' => 5], (clone $c)->oldestEdition(6)->limit(10), $out,                                $r200],
+            ["/items/updated", ['oldestFirst' => false, 'batchSize' => 5,  'offset' => 5], (clone $c)->latestEdition(4)->limit(5),  $out,                                $r200],
+            ["/items/updated", ['oldestFirst' => false, 'batchSize' => 5,  'offset' => 0], (clone $c)->limit(5),                    $out,                                $r200],
         ];
-        \Phake::when(Arsse::$db)->articleList->thenReturn(new Result($this->v($this->articles['db'])));
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->subscription(42), $this->anything(), ["edition desc"])->thenThrow(new ExceptionInput("idMissing"));
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->folder(2112), $this->anything(), ["edition desc"])->thenThrow(new ExceptionInput("idMissing"));
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->subscription(-1), $this->anything(), ["edition desc"])->thenThrow(new ExceptionInput("typeViolation"));
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->folder(-1), $this->anything(), ["edition desc"])->thenThrow(new ExceptionInput("typeViolation"));
-        $exp = new Response(['items' => $this->articles['rest']]);
-        // check the contents of the response
-        $this->assertMessage($exp, $this->req("GET", "/items")); // first instance of base context
-        $this->assertMessage($exp, $this->req("GET", "/items/updated")); // second instance of base context
-        // check error conditions
-        $exp = new EmptyResponse(422);
-        $this->assertMessage($exp, $this->req("GET", "/items", json_encode($in[0])));
-        $this->assertMessage($exp, $this->req("GET", "/items", json_encode($in[1])));
-        $this->assertMessage($exp, $this->req("GET", "/items", json_encode($in[2])));
-        $this->assertMessage($exp, $this->req("GET", "/items", json_encode($in[3])));
-        // simply run through the remainder of the input for later method verification
-        $this->req("GET", "/items", json_encode($in[4]));
-        $this->req("GET", "/items", json_encode($in[5])); // third instance of base context
-        $this->req("GET", "/items", json_encode($in[6]));
-        $this->req("GET", "/items", json_encode($in[7]));
-        $this->req("GET", "/items", json_encode($in[8])); // fourth instance of base context
-        $this->req("GET", "/items", json_encode($in[9]));
-        $this->req("GET", "/items", json_encode($in[10]));
-        $this->req("GET", "/items", json_encode($in[11]));
-        // perform method verifications
-        \Phake::verify(Arsse::$db, \Phake::times(4))->articleList(Arsse::$user->id, new Context, $this->anything(), ["edition desc"]);
-        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->subscription(42), $this->anything(), ["edition desc"]);
-        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->folder(2112), $this->anything(), ["edition desc"]);
-        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->subscription(-1), $this->anything(), ["edition desc"]);
-        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->folder(-1), $this->anything(), ["edition desc"]);
-        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true), $this->anything(), ["edition desc"]);
-        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->limit(10)->oldestEdition(6), $this->anything(), ["edition"]); // offset is one more than specified
-        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->limit(5)->latestEdition(4), $this->anything(), ["edition desc"]);   // offset is one less than specified
-        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->unread(true), $this->anything(), ["edition desc"]);
-        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, $this->equalTo((new Context)->markedSince($t), 2), $this->anything(), ["edition desc"]);
-        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->limit(5), $this->anything(), ["edition desc"]);
     }
 
     public function testMarkAFolderRead(): void {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
-        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->folder(1)->latestEdition(2112))->thenReturn(42);
-        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->folder(42)->latestEdition(2112))->thenThrow(new ExceptionInput("idMissing")); // folder doesn't exist
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->folder(1)->latestEdition(2112)->hidden(false))->thenReturn(42);
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->folder(42)->latestEdition(2112)->hidden(false))->thenThrow(new ExceptionInput("idMissing")); // folder doesn't exist
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("PUT", "/folders/1/read", $in));
         $this->assertMessage($exp, $this->req("PUT", "/folders/1/read?newestItemId=2112"));
@@ -722,8 +717,8 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testMarkASubscriptionRead(): void {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
-        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->subscription(1)->latestEdition(2112))->thenReturn(42);
-        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->subscription(42)->latestEdition(2112))->thenThrow(new ExceptionInput("idMissing")); // subscription doesn't exist
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->subscription(1)->latestEdition(2112)->hidden(false))->thenReturn(42);
+        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $read, (new Context)->subscription(42)->latestEdition(2112)->hidden(false))->thenThrow(new ExceptionInput("idMissing")); // subscription doesn't exist
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/read", $in));
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/read?newestItemId=2112"));
@@ -890,6 +885,6 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $url = "/items?type=2";
         \Phake::when(Arsse::$db)->articleList->thenReturn(new Result([]));
         $this->req("GET", $url, json_encode($in));
-        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true), $this->anything(), ["edition"]);
+        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true)->hidden(false), $this->anything(), ["edition"]);
     }
 }

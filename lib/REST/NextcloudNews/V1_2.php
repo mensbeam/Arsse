@@ -333,7 +333,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new EmptyResponse(422);
         }
         // build the context
-        $c = new Context;
+        $c = (new Context)->hidden(false);
         $c->latestEdition((int) $data['newestItemId']);
         $c->folder((int) $url[1]);
         // perform the operation
@@ -400,7 +400,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $feed = Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, $id);
         $feed = $this->feedTranslate($feed);
         $out = ['feeds' => [$feed]];
-        $newest = Arsse::$db->editionLatest(Arsse::$user->id, (new Context)->subscription($id));
+        $newest = Arsse::$db->editionLatest(Arsse::$user->id, (new Context)->subscription($id)->hidden(false));
         if ($newest) {
             $out['newestItemId'] = $newest;
         }
@@ -482,7 +482,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new EmptyResponse(422);
         }
         // build the context
-        $c = new Context;
+        $c = (new Context)->hidden(false);
         $c->latestEdition((int) $data['newestItemId']);
         $c->subscription((int) $url[1]);
         // perform the operation
@@ -498,7 +498,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     // list articles and their properties
     protected function articleList(array $url, array $data): ResponseInterface {
         // set the context options supplied by the client
-        $c = new Context;
+        $c = (new Context)->hidden(false);
         // set the batch size
         if ($data['batchSize'] > 0) {
             $c->limit($data['batchSize']);
@@ -578,7 +578,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new EmptyResponse(422);
         }
         // build the context
-        $c = new Context;
+        $c = (new Context)->hidden(false);
         $c->latestEdition((int) $data['newestItemId']);
         // perform the operation
         Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], $c);
