@@ -251,7 +251,7 @@ trait SeriesArticle {
                     [12,  3,0,1,'2017-01-01 00:00:00','ack',0],
                     [12,  4,1,1,'2017-01-01 00:00:00','ach',0],
                     [1,   2,0,0,'2010-01-01 00:00:00','Some Note',0],
-                    [3,   5,0,0,'2000-01-01 00:00:00','',1],
+                    [3,   6,0,0,'2000-01-01 00:00:00','',1],
                     [6,   1,0,1,'2010-01-01 00:00:00','',1],
                     [6,   2,1,0,'2010-01-01 00:00:00','',1],
                 ],
@@ -447,8 +447,8 @@ trait SeriesArticle {
             'Starred and Read in subscription'                           => [(new Context)->starred(true)->unread(false)->subscription(5), []],
             'Annotated'                                                  => [(new Context)->annotated(true), [2]],
             'Not annotated'                                              => [(new Context)->annotated(false), [1,3,4,5,6,7,8,19,20]],
-            'Hidden'                                                     => [(new Context)->hidden(true), [5]],
-            'Not hidden'                                                 => [(new Context)->hidden(false), [1,2,3,4,6,7,8,19,20]],
+            'Hidden'                                                     => [(new Context)->hidden(true), [6]],
+            'Not hidden'                                                 => [(new Context)->hidden(false), [1,2,3,4,5,7,8,19,20]],
             'Labelled'                                                   => [(new Context)->labelled(true), [1,5,8,19,20]],
             'Not labelled'                                               => [(new Context)->labelled(false), [2,3,4,6,7]],
             'Not after edition 999'                                      => [(new Context)->subscription(5)->latestEdition(999), [19]],
@@ -985,6 +985,7 @@ trait SeriesArticle {
     public function testFetchLatestEdition(): void {
         $this->assertSame(1001, Arsse::$db->editionLatest($this->user));
         $this->assertSame(4, Arsse::$db->editionLatest($this->user, (new Context)->subscription(12)));
+        $this->assertSame(5, Arsse::$db->editionLatest("john.doe@example.com", (new Context)->subscription(3)->hidden(false)));
     }
 
     public function testFetchLatestEditionOfMissingSubscription(): void {

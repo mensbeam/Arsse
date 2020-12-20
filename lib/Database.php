@@ -79,7 +79,11 @@ class Database {
 
     /** Returns the bare name of the calling context's calling method, when __FUNCTION__ is not appropriate */
     protected function caller(): string {
-        return debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3)[2]['function'];
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
+        if ($trace[2]['function'] === "articleQuery") {
+            return $trace[3]['function'];
+        }
+        return $trace[2]['function'];
     }
 
     /** Returns the current (actual) schema version of the database; compared against self::SCHEMA_VERSION to know when an upgrade is required */
@@ -748,7 +752,7 @@ class Database {
                 i.url as favicon,
                 t.top as top_folder,
                 coalesce(s.title, f.title) as title,
-                coalesce((articles - hidden - marked + hidden_marked), articles) as unread
+                coalesce((articles - hidden - marked), articles) as unread
             FROM arsse_subscriptions as s
                 left join topmost as t on t.f_id = s.folder
                 join arsse_feeds as f on f.id = s.feed
@@ -757,9 +761,8 @@ class Database {
                 left join (
                     select 
                         subscription, 
-                        sum(cast((\"read\" = 1 and hidden = 0) as integer)) as marked,
-                        sum(cast((\"read\" = 0 and hidden = 1) as integer)) as hidden,
-                        sum(cast((\"read\" = 1 and hidden = 1) as integer)) as hidden_marked
+                        sum(hidden) as hidden,
+                        sum(cast((\"read\" = 1 and hidden = 0) as integer)) as marked
                     from arsse_marks group by subscription
                 ) as mark_stats on mark_stats.subscription = s.id"
         );
@@ -1206,12 +1209,11 @@ class Database {
      * Each record includes the following keys:
      * 
      * - "owner": The user for whom to apply the filters
-     * - "sub": The subscription ID which ties the user to the feed
      * - "keep": The "keep" rule; any articles which fail to match this rule are hidden
      * - "block": The block rule; any article which matches this rule are hidden
      */
     public function feedRulesGet(int $feedID): Db\Result {
-        return $this->db->prepare("SELECT owner, id as sub, keep_rule as keep, block_rule as block from arsse_subscriptions where feed = ? and (coalesce(keep_rule, '') || coalesce(block_rule, '')) <> ''", "int")->run($feedID);
+        return $this->db->prepare("SELECT owner, keep_rule as keep, block_rule as block from arsse_subscriptions where feed = ? and (coalesce(keep_rule, '') || coalesce(block_rule, '')) <> ''", "int")->run($feedID);
     }
 
     /** Retrieves various identifiers for the latest $count articles in the given newsfeed. The identifiers are:
@@ -1310,6 +1312,7 @@ class Database {
         return [
             'id'                 => "arsse_articles.id",
             'edition'            => "latest_editions.edition",
+            'latest_edition'     => "max(latest_editions.edition)",
             'url'                => "arsse_articles.url",
             'title'              => "arsse_articles.title",
             'author'             => "arsse_articles.author",
@@ -1385,6 +1388,7 @@ class Database {
             }
             $outColumns = implode(",", $outColumns);
         }
+        assert(strlen($outColumns) > 0, new \Exception("No input columns matched whitelist"));
         // define the basic query, to which we add lots of stuff where necessary
         $q = new Query(
             "SELECT 
@@ -1895,14 +1899,8 @@ class Database {
     /** Returns the numeric identifier of the most recent edition of an article matching the given context */
     public function editionLatest(string $user, Context $context = null): int {
         $context = $context ?? new Context;
-        $q = new Query("SELECT max(arsse_editions.id) from arsse_editions left join arsse_articles on article = arsse_articles.id join arsse_subscriptions on arsse_articles.feed = arsse_subscriptions.feed and arsse_subscriptions.owner = ?", "str", $user);
-        if ($context->subscription()) {
-            // if a subscription is specified, make sure it exists
-            $this->subscriptionValidateId($user, $context->subscription);
-            // a simple WHERE clause is required here
-            $q->setWhere("arsse_subscriptions.id = ?", "int", $context->subscription);
-        }
-        return (int) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
+        $q = $this->articleQuery($user, $context, ["latest_edition"]);
+        return (int) $this->db->prepare((string) $q, $q->getTypes())->run($q->getValues())->getValue();
     }
 
     /** Returns a map between all the given edition identifiers and their associated article identifiers */
@@ -1945,14 +1943,19 @@ class Database {
         return $this->db->prepare(
             "SELECT * FROM (
                 SELECT
-                    id,name,coalesce(articles,0) as articles,coalesce(marked,0) as \"read\"
+                    id,
+                    name,
+                    coalesce(articles - coalesce(hidden, 0), 0) as articles,
+                    coalesce(marked, 0) as \"read\"
                 from arsse_labels
                     left join (
                         SELECT label, sum(assigned) as articles from arsse_label_members group by label
                     ) as label_stats on label_stats.label = arsse_labels.id
                     left join (
-                        SELECT 
-                            label, sum(\"read\") as marked
+                        SELECT
+                            label,
+                            sum(hidden) as hidden,
+                            sum(cast((\"read\" = 1 and hidden = 0) as integer)) as marked
                         from arsse_marks
                             join arsse_subscriptions on arsse_subscriptions.id = arsse_marks.subscription
                             join arsse_label_members on arsse_label_members.article = arsse_marks.article
@@ -2007,14 +2010,19 @@ class Database {
         $type = $byName ? "str" : "int";
         $out = $this->db->prepare(
             "SELECT
-                id,name,coalesce(articles,0) as articles,coalesce(marked,0) as \"read\"
+                id,
+                name,
+                coalesce(articles - coalesce(hidden, 0), 0) as articles,
+                coalesce(marked, 0) as \"read\"
             FROM arsse_labels
                 left join (
                     SELECT label, sum(assigned) as articles from arsse_label_members group by label
                 ) as label_stats on label_stats.label = arsse_labels.id
                 left join (
-                    SELECT 
-                        label, sum(\"read\") as marked
+                    SELECT
+                        label,
+                        sum(hidden) as hidden,
+                        sum(cast((\"read\" = 1 and hidden = 0) as integer)) as marked
                     from arsse_marks
                     join arsse_subscriptions on arsse_subscriptions.id = arsse_marks.subscription
                     join arsse_label_members on arsse_label_members.article = arsse_marks.article
@@ -2069,19 +2077,25 @@ class Database {
      * @param boolean $byName Whether to interpret the $id parameter as the label's name (true) or identifier (false)
      */
     public function labelArticlesGet(string $user, $id, bool $byName = false): array {
-        // just do a syntactic check on the label ID
-        $this->labelValidateId($user, $id, $byName, false);
-        $field = !$byName ? "id" : "name";
-        $type = !$byName ? "int" : "str";
-        $out = $this->db->prepare("SELECT article from arsse_label_members join arsse_labels on label = id where assigned = 1 and $field = ? and owner = ? order by article", $type, "str")->run($id, $user)->getAll();
+        $c = (new Context)->hidden(false);
+        if ($byName) {
+            $c->labelName($id);
+        } else {
+            $c->label($id);
+        }
+        try {
+            $q = $this->articleQuery($user, $c);
+            $out = $this->db->prepare((string) $q, $q->getTypes())->run($q->getValues())->getAll();
+        } catch (Db\ExceptionInput $e) {
+            if ($e->getCode() === 10235) {
+                throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "label", 'id' => $id]);
+            }
+            throw $e;
+        }
         if (!$out) {
-            // if no results were returned, do a full validation on the label ID
-            $this->labelValidateId($user, $id, $byName, true, true);
-            // if the validation passes, return the empty result
             return $out;
         } else {
-            // flatten the result to return just the article IDs in a simple array
-            return array_column($out, "article");
+            return array_column($out, "id");
         }
     }
 
