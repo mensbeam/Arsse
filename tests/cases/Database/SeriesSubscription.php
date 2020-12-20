@@ -21,8 +21,9 @@ trait SeriesSubscription {
                     'num'      => 'int',
                 ],
                 'rows' => [
-                    ["jane.doe@example.com", "",1],
-                    ["john.doe@example.com", "",2],
+                    ["jane.doe@example.com", "", 1],
+                    ["john.doe@example.com", "", 2],
+                    ["jill.doe@example.com", "", 3]
                 ],
             ],
             'arsse_folders' => [
@@ -81,6 +82,7 @@ trait SeriesSubscription {
                     [1,"john.doe@example.com",2,null,null,1,2],
                     [2,"jane.doe@example.com",2,null,null,0,0],
                     [3,"john.doe@example.com",3,"Ook",2,0,1],
+                    [4,"jill.doe@example.com",2,null,null,0,0],
                 ],
             ],
             'arsse_tags' => [
@@ -291,6 +293,19 @@ trait SeriesSubscription {
         $this->assertResult($exp, Arsse::$db->subscriptionList($this->user));
         $this->assertArraySubset($exp[0], Arsse::$db->subscriptionPropertiesGet($this->user, 1));
         $this->assertArraySubset($exp[1], Arsse::$db->subscriptionPropertiesGet($this->user, 3));
+        // test that an absence of marks does not corrupt unread count
+        $exp = [
+            [
+                'url'        => "http://example.com/feed2",
+                'title'      => "eek",
+                'folder'     => null,
+                'top_folder' => null,
+                'unread'     => 5,
+                'pinned'     => 0,
+                'order_type' => 0,
+            ],
+        ];
+        $this->assertResult($exp, Arsse::$db->subscriptionList("jill.doe@example.com"));
     }
 
     public function testListSubscriptionsInAFolder(): void {

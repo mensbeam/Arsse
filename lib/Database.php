@@ -748,13 +748,20 @@ class Database {
                 i.url as favicon,
                 t.top as top_folder,
                 coalesce(s.title, f.title) as title,
-                (articles - marked) as unread
+                coalesce((articles - hidden - marked + hidden_marked), articles) as unread
             FROM arsse_subscriptions as s
                 left join topmost as t on t.f_id = s.folder
                 join arsse_feeds as f on f.id = s.feed
                 left join arsse_icons as i on i.id = f.icon
                 left join (select feed, count(*) as articles from arsse_articles group by feed) as article_stats on article_stats.feed = s.feed
-                left join (select subscription, sum(\"read\") as marked from arsse_marks group by subscription) as mark_stats on mark_stats.subscription = s.id"
+                left join (
+                    select 
+                        subscription, 
+                        sum(cast((\"read\" = 1 and hidden = 0) as integer)) as marked,
+                        sum(cast((\"read\" = 0 and hidden = 1) as integer)) as hidden,
+                        sum(cast((\"read\" = 1 and hidden = 1) as integer)) as hidden_marked
+                    from arsse_marks group by subscription
+                ) as mark_stats on mark_stats.subscription = s.id"
         );
         $q->setWhere("s.owner = ?", ["str"], [$user]);
         $nocase = $this->db->sqlToken("nocase");

@@ -3,6 +3,7 @@ Version 0.9.0 (????-??-??)
 
 Bug fixes:
 - Use icons specified in Atom feeds when available
+- Do not return null as subscription unread count
 
 Changes:
 - Explicitly forbid U+003A COLON in usernames, for compatibility with HTTP
