@@ -6,6 +6,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\REST;
 
+use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 use Psr\Http\Message\ServerRequestInterface;
@@ -14,6 +15,15 @@ use Psr\Http\Message\ResponseInterface;
 abstract class AbstractHandler implements Handler {
     abstract public function __construct();
     abstract public function dispatch(ServerRequestInterface $req): ResponseInterface;
+
+    /** @codeCoverageIgnore */
+    protected function now(): \DateTimeImmutable {
+        return Date::normalize("now");
+    }
+
+    protected function isAdmin(): bool {
+        return (bool) Arsse::$user->propertiesGet(Arsse::$user->id, false)['admin'];
+    }
 
     protected function fieldMapNames(array $data, array $map): array {
         $out = [];

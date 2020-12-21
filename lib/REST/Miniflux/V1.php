@@ -116,11 +116,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function __construct() {
     }
 
-    /** @codeCoverageIgnore */
-    protected function now(): \DateTimeImmutable {
-        return Date::normalize("now");
-    }
-
     protected function authenticate(ServerRequestInterface $req): bool {
         // first check any tokens; this is what Miniflux does
         if ($req->hasHeader("X-Auth-Token")) {
@@ -142,11 +137,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         return false;
     }
-
-    protected function isAdmin(): bool {
-        return (bool) Arsse::$user->propertiesGet(Arsse::$user->id, false)['admin'];
-    }
-
 
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
         // try to authenticate
