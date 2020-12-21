@@ -161,17 +161,17 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         if ($G['items']) {
             $out['items'] = $this->getItems($G);
-            $out['total_items'] = Arsse::$db->articleCount(Arsse::$user->id);
+            $out['total_items'] = Arsse::$db->articleCount(Arsse::$user->id, (new Context)->hidden(false));
         }
         if ($G['links']) {
             // TODO: implement hot links
             $out['links'] = [];
         }
         if ($G['unread_item_ids'] || $listUnread) {
-            $out['unread_item_ids'] = $this->getItemIds((new Context)->unread(true));
+            $out['unread_item_ids'] = $this->getItemIds((new Context)->unread(true)->hidden(false));
         }
         if ($G['saved_item_ids'] || $listSaved) {
-            $out['saved_item_ids'] = $this->getItemIds((new Context)->starred(true));
+            $out['saved_item_ids'] = $this->getItemIds((new Context)->starred(true)->hidden(false));
         }
         return $out;
     }
@@ -263,17 +263,18 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             case "group":
                 if ($id > 0) {
                     // concrete groups
-                    $c->tag($id);
+                    $c->tag($id)->hidden(false);
                 } elseif ($id < 0) {
                     // group negative-one is the "Sparks" supergroup i.e. no feeds
                     $c->not->folder(0);
                 } else {
                     // group zero is the "Kindling" supergroup i.e. all feeds
-                    // nothing need to be done for this
+                    // only exclude hidden articles
+                    $c->hidden(false); 
                 }
                 break;
             case "feed":
-                $c->subscription($id);
+                $c->subscription($id)->hidden(false);
                 break;
             default:
                 return $listSaved;
@@ -308,7 +309,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function setUnread(): void {
-        $lastUnread = Arsse::$db->articleList(Arsse::$user->id, (new Context)->limit(1), ["marked_date"], ["marked_date desc"])->getValue();
+        $lastUnread = Arsse::$db->articleList(Arsse::$user->id, (new Context)->hidden(false)->limit(1), ["marked_date"], ["marked_date desc"])->getValue();
         if (!$lastUnread) {
             // there are no articles
             return;
@@ -316,7 +317,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         // Fever takes the date of the last read article less fifteen seconds as a cut-off.
         // We take the date of last mark (whether it be read, unread, saved, unsaved), which
         // may not actually signify a mark, but we'll otherwise also count back fifteen seconds
-        $c = new Context;
+        $c = (new Context)->hidden(false);
         $lastUnread = Date::normalize($lastUnread, "sql");
         $since = Date::sub("PT15S", $lastUnread);
         $c->unread(false)->markedSince($since);
@@ -373,11 +374,11 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function getItems(array $G): array {
-        $c = (new Context)->limit(50);
+        $c = (new Context)->hidden(false)->limit(50);
         $reverse = false;
         // handle the standard options
         if ($G['with_ids']) {
-            $c->articles(explode(",", $G['with_ids']));
+            $c->articles(explode(",", $G['with_ids']))->hidden(null);
         } elseif ($G['max_id']) {
             $c->latestArticle($G['max_id'] - 1);
             $reverse = true;
@@ -410,7 +411,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return $out;
     }
 
-    protected function getItemIds(Context $c = null): string {
+    protected function getItemIds(Context $c): string {
         $out = [];
         foreach (Arsse::$db->articleList(Arsse::$user->id, $c) as $r) {
             $out[] = (int) $r['id'];

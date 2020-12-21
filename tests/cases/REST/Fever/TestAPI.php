@@ -303,7 +303,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $fields = ["id", "subscription", "title", "author", "content", "url", "starred", "unread", "published_date"];
         $order = [$desc ? "id desc" : "id"];
         \Phake::when(Arsse::$db)->articleList->thenReturn(new Result($this->articles['db']));
-        \Phake::when(Arsse::$db)->articleCount(Arsse::$user->id)->thenReturn(1024);
+        \Phake::when(Arsse::$db)->articleCount(Arsse::$user->id, (new Context)->hidden(false))->thenReturn(1024);
         $exp = new JsonResponse([
             'items'       => $this->articles['rest'],
             'total_items' => 1024,
@@ -316,24 +316,24 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideItemListContexts(): iterable {
         $c = (new Context)->limit(50);
         return [
-            ["items", (clone $c), false],
-            ["items&group_ids=1,2,3,4", (clone $c)->tags([1,2,3,4]), false],
-            ["items&feed_ids=1,2,3,4", (clone $c)->subscriptions([1,2,3,4]), false],
+            ["items", (clone $c)->hidden(false), false],
+            ["items&group_ids=1,2,3,4", (clone $c)->tags([1,2,3,4])->hidden(false), false],
+            ["items&feed_ids=1,2,3,4", (clone $c)->subscriptions([1,2,3,4])->hidden(false), false],
             ["items&with_ids=1,2,3,4", (clone $c)->articles([1,2,3,4]), false],
-            ["items&since_id=1", (clone $c)->oldestArticle(2), false],
-            ["items&max_id=2", (clone $c)->latestArticle(1), true],
+            ["items&since_id=1", (clone $c)->oldestArticle(2)->hidden(false), false],
+            ["items&max_id=2", (clone $c)->latestArticle(1)->hidden(false), true],
             ["items&with_ids=1,2,3,4&max_id=6", (clone $c)->articles([1,2,3,4]), false],
             ["items&with_ids=1,2,3,4&since_id=6", (clone $c)->articles([1,2,3,4]), false],
-            ["items&max_id=3&since_id=6", (clone $c)->latestArticle(2), true],
-            ["items&feed_ids=1,2,3,4&since_id=6", (clone $c)->subscriptions([1,2,3,4])->oldestArticle(7), false],
+            ["items&max_id=3&since_id=6", (clone $c)->latestArticle(2)->hidden(false), true],
+            ["items&feed_ids=1,2,3,4&since_id=6", (clone $c)->subscriptions([1,2,3,4])->oldestArticle(7)->hidden(false), false],
         ];
     }
 
     public function testListItemIds(): void {
         $saved = [['id' => 1],['id' => 2],['id' => 3]];
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true))->thenReturn(new Result($saved));
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->unread(true))->thenReturn(new Result($unread));
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true)->hidden(false))->thenReturn(new Result($saved));
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->unread(true)->hidden(false))->thenReturn(new Result($unread));
         $exp = new JsonResponse(['saved_item_ids' => "1,2,3"]);
         $this->assertMessage($exp, $this->h->dispatch($this->req("api&saved_item_ids")));
         $exp = new JsonResponse(['unread_item_ids' => "4,5,6"]);
@@ -350,8 +350,8 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testSetMarks(string $post, Context $c, array $data, array $out): void {
         $saved = [['id' => 1],['id' => 2],['id' => 3]];
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true))->thenReturn(new Result($saved));
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->unread(true))->thenReturn(new Result($unread));
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true)->hidden(false))->thenReturn(new Result($saved));
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->unread(true)->hidden(false))->thenReturn(new Result($unread));
         \Phake::when(Arsse::$db)->articleMark->thenReturn(0);
         \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->article(2112))->thenThrow(new \JKingWeb\Arsse\Db\ExceptionInput("subjectMissing"));
         $exp = new JsonResponse($out);
@@ -368,8 +368,8 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testSetMarksWithQuery(string $get, Context $c, array $data, array $out): void {
         $saved = [['id' => 1],['id' => 2],['id' => 3]];
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true))->thenReturn(new Result($saved));
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->unread(true))->thenReturn(new Result($unread));
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true)->hidden(false))->thenReturn(new Result($saved));
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->unread(true)->hidden(false))->thenReturn(new Result($unread));
         \Phake::when(Arsse::$db)->articleMark->thenReturn(0);
         \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->article(2112))->thenThrow(new \JKingWeb\Arsse\Db\ExceptionInput("subjectMissing"));
         $exp = new JsonResponse($out);
@@ -395,20 +395,20 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             ["mark=item&as=read&id=2112", (new Context)->article(2112), $markRead, $listUnread], // article doesn't exist
             ["mark=item&as=saved&id=5", (new Context)->article(5), $markSaved, $listSaved],
             ["mark=item&as=unsaved&id=42", (new Context)->article(42), $markUnsaved, $listSaved],
-            ["mark=feed&as=read&id=5", (new Context)->subscription(5), $markRead, $listUnread],
-            ["mark=feed&as=unread&id=42", (new Context)->subscription(42), $markUnread, $listUnread],
-            ["mark=feed&as=saved&id=5", (new Context)->subscription(5), $markSaved, $listSaved],
-            ["mark=feed&as=unsaved&id=42", (new Context)->subscription(42), $markUnsaved, $listSaved],
-            ["mark=group&as=read&id=5", (new Context)->tag(5), $markRead, $listUnread],
-            ["mark=group&as=unread&id=42", (new Context)->tag(42), $markUnread, $listUnread],
-            ["mark=group&as=saved&id=5", (new Context)->tag(5), $markSaved, $listSaved],
-            ["mark=group&as=unsaved&id=42", (new Context)->tag(42), $markUnsaved, $listSaved],
+            ["mark=feed&as=read&id=5", (new Context)->subscription(5)->hidden(false), $markRead, $listUnread],
+            ["mark=feed&as=unread&id=42", (new Context)->subscription(42)->hidden(false), $markUnread, $listUnread],
+            ["mark=feed&as=saved&id=5", (new Context)->subscription(5)->hidden(false), $markSaved, $listSaved],
+            ["mark=feed&as=unsaved&id=42", (new Context)->subscription(42)->hidden(false), $markUnsaved, $listSaved],
+            ["mark=group&as=read&id=5", (new Context)->tag(5)->hidden(false), $markRead, $listUnread],
+            ["mark=group&as=unread&id=42", (new Context)->tag(42)->hidden(false), $markUnread, $listUnread],
+            ["mark=group&as=saved&id=5", (new Context)->tag(5)->hidden(false), $markSaved, $listSaved],
+            ["mark=group&as=unsaved&id=42", (new Context)->tag(42)->hidden(false), $markUnsaved, $listSaved],
             ["mark=item&as=invalid&id=42", new Context, [], []],
             ["mark=invalid&as=unread&id=42", new Context, [], []],
-            ["mark=group&as=read&id=0", (new Context), $markRead, $listUnread],
-            ["mark=group&as=unread&id=0", (new Context), $markUnread, $listUnread],
-            ["mark=group&as=saved&id=0", (new Context), $markSaved, $listSaved],
-            ["mark=group&as=unsaved&id=0", (new Context), $markUnsaved, $listSaved],
+            ["mark=group&as=read&id=0", (new Context)->hidden(false), $markRead, $listUnread],
+            ["mark=group&as=unread&id=0", (new Context)->hidden(false), $markUnread, $listUnread],
+            ["mark=group&as=saved&id=0", (new Context)->hidden(false), $markSaved, $listSaved],
+            ["mark=group&as=unsaved&id=0", (new Context)->hidden(false), $markUnsaved, $listSaved],
             ["mark=group&as=read&id=-1", (new Context)->not->folder(0), $markRead, $listUnread],
             ["mark=group&as=unread&id=-1", (new Context)->not->folder(0), $markUnread, $listUnread],
             ["mark=group&as=saved&id=-1", (new Context)->not->folder(0), $markSaved, $listSaved],
@@ -466,14 +466,14 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testUndoReadMarks(): void {
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
         $out = ['unread_item_ids' => "4,5,6"];
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->limit(1), ["marked_date"], ["marked_date desc"])->thenReturn(new Result([['marked_date' => "2000-01-01 00:00:00"]]));
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->unread(true))->thenReturn(new Result($unread));
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->limit(1)->hidden(false), ["marked_date"], ["marked_date desc"])->thenReturn(new Result([['marked_date' => "2000-01-01 00:00:00"]]));
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->unread(true)->hidden(false))->thenReturn(new Result($unread));
         \Phake::when(Arsse::$db)->articleMark->thenReturn(0);
         $exp = new JsonResponse($out);
         $act = $this->h->dispatch($this->req("api", ['unread_recently_read' => 1]));
         $this->assertMessage($exp, $act);
-        \Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, ['read' => false], (new Context)->unread(false)->markedSince("1999-12-31T23:59:45Z"));
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->limit(1), ["marked_date"], ["marked_date desc"])->thenReturn(new Result([]));
+        \Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, ['read' => false], (new Context)->unread(false)->markedSince("1999-12-31T23:59:45Z")->hidden(false));
+        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->limit(1)->hidden(false), ["marked_date"], ["marked_date desc"])->thenReturn(new Result([]));
         $act = $this->h->dispatch($this->req("api", ['unread_recently_read' => 1]));
         $this->assertMessage($exp, $act);
         \Phake::verify(Arsse::$db)->articleMark; // only called one time, above
