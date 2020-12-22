@@ -327,7 +327,7 @@ class Database {
         settype($meta['num'], "integer");
         settype($meta['admin'], "integer");
         return $meta;
-    }	   		
+    }
 
     public function userPropertiesSet(string $user, array $data): bool {
         if (!$this->userExists($user)) {
@@ -660,20 +660,27 @@ class Database {
         // make sure both that the prospective parent exists, and that the it is not one of its children (a circular dependence);
         // also make sure that a folder with the same prospective name and parent does not already exist: if the parent is null,
         // SQL will happily accept duplicates (null is not unique), so we must do this check ourselves
-        $p = $this->db->prepare(
+        $p = $this->db->prepareArray(
             "WITH RECURSIVE
-                target as (select ? as userid, ? as source, ? as dest, ? as new_name),
-                folders as (SELECT id from arsse_folders join target on owner = userid and coalesce(parent,0) = source union all select arsse_folders.id as id from arsse_folders join folders on arsse_folders.parent=folders.id)
-            ".
-            "SELECT
-                case when ((select dest from target) is null or exists(select id from arsse_folders join target on owner = userid and coalesce(id,0) = coalesce(dest,0))) then 1 else 0 end as extant,
-                case when not exists(select id from folders where id = coalesce((select dest from target),0)) then 1 else 0 end as valid,
-                case when not exists(select id from arsse_folders join target on coalesce(parent,0) = coalesce(dest,0) and name = coalesce((select new_name from target),(select name from arsse_folders join target on id = source))) then 1 else 0 end as available
-            ",
-            "str",
-            "strict int",
-            "int",
-            "str"
+            target as (
+                SELECT ? as userid, ? as source, ? as dest, ? as new_name
+            ),
+            folders as (
+                SELECT id from arsse_folders join target on owner = userid and coalesce(parent,0) = source 
+                union all 
+                select arsse_folders.id as id from arsse_folders join folders on arsse_folders.parent=folders.id
+            )
+            SELECT
+                case when 
+                    ((select dest from target) is null or exists(select id from arsse_folders join target on owner = userid and coalesce(id,0) = coalesce(dest,0))) 
+                then 1 else 0 end as extant,
+                case when 
+                    not exists(select id from folders where id = coalesce((select dest from target),0)) 
+                then 1 else 0 end as valid,
+                case when 
+                    not exists(select id from arsse_folders join target on coalesce(parent,0) = coalesce(dest,0) and name = coalesce((select new_name from target),(select name from arsse_folders join target on id = source))) 
+                then 1 else 0 end as available",
+            ["str", "strict int", "int", "str"]
         )->run($user, $id, $parent, $name)->getRow();
         if (!$p['extant']) {
             // if the parent doesn't exist or doesn't below to the user, throw an exception
@@ -757,7 +764,13 @@ class Database {
                 left join topmost as t on t.f_id = s.folder
                 join arsse_feeds as f on f.id = s.feed
                 left join arsse_icons as i on i.id = f.icon
-                left join (select feed, count(*) as articles from arsse_articles group by feed) as article_stats on article_stats.feed = s.feed
+                left join (
+                    select 
+                        feed, 
+                        count(*) as articles 
+                    from arsse_articles 
+                    group by feed
+                ) as article_stats on article_stats.feed = s.feed
                 left join (
                     select 
                         subscription, 
@@ -1042,11 +1055,9 @@ class Database {
             }
         } catch (Feed\Exception $e) {
             // update the database with the resultant error and the next fetch time, incrementing the error count
-            $this->db->prepare(
+            $this->db->prepareArray(
                 "UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ?, err_count = err_count + 1, err_msg = ? WHERE id = ?",
-                'datetime',
-                'str',
-                'int'
+                ['datetime', 'str', 'int']
             )->run(Feed::nextFetchOnError($f['err_count']), $e->getMessage(), $feedID);
             if ($throwError) {
                 throw $e;
@@ -1060,38 +1071,18 @@ class Database {
             $qInsertEdition = $this->db->prepare("INSERT INTO arsse_editions(article) values(?)", 'int');
         }
         if (sizeof($feed->newItems)) {
-            $qInsertArticle = $this->db->prepare(
+            $qInsertArticle = $this->db->prepareArray(
                 "INSERT INTO arsse_articles(url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash,feed) values(?,?,?,?,?,?,?,?,?,?,?)",
-                'str',
-                'str',
-                'str',
-                'datetime',
-                'datetime',
-                'str',
-                'str',
-                'str',
-                'str',
-                'str',
-                'int'
+                ['str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int']
             );
         }
         if (sizeof($feed->changedItems)) {
             $qDeleteEnclosures = $this->db->prepare("DELETE FROM arsse_enclosures WHERE article = ?", 'int');
             $qDeleteCategories = $this->db->prepare("DELETE FROM arsse_categories WHERE article = ?", 'int');
             $qClearReadMarks = $this->db->prepare("UPDATE arsse_marks SET \"read\" = 0, modified = CURRENT_TIMESTAMP WHERE article = ? and \"read\" = 1", 'int');
-            $qUpdateArticle = $this->db->prepare(
+            $qUpdateArticle = $this->db->prepareArray(
                 "UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id = ?",
-                'str',
-                'str',
-                'str',
-                'datetime',
-                'datetime',
-                'str',
-                'str',
-                'str',
-                'str',
-                'str',
-                'int'
+                ['str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int']
             );
         }
         // determine if the feed icon needs to be updated, and update it if appropriate
@@ -1159,16 +1150,9 @@ class Database {
             $qClearReadMarks->run($articleID);
         }
         // lastly update the feed database itself with updated information.
-        $this->db->prepare(
+        $this->db->prepareArray(
             "UPDATE arsse_feeds SET title = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = '', next_fetch = ?, size = ?, icon = ? WHERE id = ?",
-            'str',
-            'str',
-            'datetime',
-            'strict str',
-            'datetime',
-            'int',
-            'int',
-            'int'
+            ['str', 'str', 'datetime', 'strict str', 'datetime', 'int', 'int', 'int']
         )->run(
             $feed->data->title,
             $feed->data->siteUrl,
@@ -1205,9 +1189,9 @@ class Database {
     }
 
     /** Retrieves the set of filters users have applied to a given feed
-     * 
+     *
      * Each record includes the following keys:
-     * 
+     *
      * - "owner": The user for whom to apply the filters
      * - "keep": The "keep" rule; any articles which fail to match this rule are hidden
      * - "block": The block rule; any article which matches this rule are hidden
@@ -1258,13 +1242,9 @@ class Database {
         [$cHashUC, $tHashUC, $vHashUC] = $this->generateIn($hashesUC, "str");
         [$cHashTC, $tHashTC, $vHashTC] = $this->generateIn($hashesTC, "str");
         // perform the query
-        return $this->db->prepare(
+        return $this->db->prepareArray(
             "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed = ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC))",
-            'int',
-            $tId,
-            $tHashUT,
-            $tHashUC,
-            $tHashTC
+            ['int', $tId, $tHashUT, $tHashUC, $tHashTC]
         )->run($feedID, $vId, $vHashUT, $vHashUC, $vHashTC);
     }
 
@@ -1880,15 +1860,14 @@ class Database {
         if (!V::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "article", 'type' => "int > 0"]); // @codeCoverageIgnore
         }
-        $out = $this->db->prepare(
+        $out = $this->db->prepareArray(
             "SELECT articles.article as article, max(arsse_editions.id)  as edition from (
                 select arsse_articles.id as article
                 FROM arsse_articles
                     join arsse_subscriptions on arsse_subscriptions.feed = arsse_articles.feed
                 WHERE arsse_articles.id = ? and arsse_subscriptions.owner = ?
             ) as articles join arsse_editions on arsse_editions.article = articles.article group by articles.article",
-            "int",
-            "str"
+            ["int", "str"]
         )->run($id, $user)->getRow();
         if (!$out) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => $this->caller(), "field" => "article", 'id' => $id]);
@@ -1907,7 +1886,7 @@ class Database {
         if (!V::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "edition", 'type' => "int > 0"]); // @codeCoverageIgnore
         }
-        $out = $this->db->prepare(
+        $out = $this->db->prepareArray(
             "SELECT
                 arsse_editions.id, arsse_editions.article, edition_stats.edition as current
             from arsse_editions 
@@ -1915,8 +1894,7 @@ class Database {
                 join arsse_subscriptions on arsse_subscriptions.feed = arsse_articles.feed
                 join (select article, max(id) as edition from arsse_editions group by article) as edition_stats on edition_stats.article = arsse_editions.article
             where arsse_editions.id = ? and arsse_subscriptions.owner = ?",
-            "int",
-            "str"
+            ["int", "str"]
         )->run($id, $user)->getRow();
         if (!$out) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => $this->caller(), "field" => "edition", 'id' => $id]);
@@ -1968,7 +1946,7 @@ class Database {
      * @param boolean $includeEmpty Whether to include (true) or supress (false) labels which have no articles assigned to them
      */
     public function labelList(string $user, bool $includeEmpty = true): Db\Result {
-        return $this->db->prepare(
+        return $this->db->prepareArray(
             "SELECT * FROM (
                 SELECT
                     id,
@@ -1992,11 +1970,8 @@ class Database {
                     ) as mark_stats on mark_stats.label = arsse_labels.id
                 WHERE owner = ?
             ) as label_data
-            where articles >= ? order by name
-            ",
-            "str",
-            "str",
-            "int"
+            where articles >= ? order by name",
+            ["str", "str", "int"]
         )->run($user, $user, !$includeEmpty);
     }
 
@@ -2036,7 +2011,7 @@ class Database {
         $this->labelValidateId($user, $id, $byName, false);
         $field = $byName ? "name" : "id";
         $type = $byName ? "str" : "int";
-        $out = $this->db->prepare(
+        $out = $this->db->prepareArray(
             "SELECT
                 id,
                 name,
@@ -2057,11 +2032,8 @@ class Database {
                     where arsse_subscriptions.owner = ?
                     group by label
                 ) as mark_stats on mark_stats.label = arsse_labels.id
-            WHERE $field = ? and owner = ?
-            ",
-            "str",
-            $type,
-            "str"
+            WHERE $field = ? and owner = ?",
+            ["str", $type, "str"]
         )->run($user, $id, $user)->getRow();
         if (!$out) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "label", 'id' => $id]);
@@ -2113,6 +2085,7 @@ class Database {
         }
         try {
             $q = $this->articleQuery($user, $c);
+            $q->setOrder("id");
             $out = $this->db->prepare((string) $q, $q->getTypes())->run($q->getValues())->getAll();
         } catch (Db\ExceptionInput $e) {
             if ($e->getCode() === 10235) {
@@ -2261,7 +2234,7 @@ class Database {
      * @param boolean $includeEmpty Whether to include (true) or supress (false) tags which have no subscriptions assigned to them
      */
     public function tagList(string $user, bool $includeEmpty = true): Db\Result {
-        return $this->db->prepare(
+        return $this->db->prepareArray(
             "SELECT * FROM (
                 SELECT
                     id,name,coalesce(subscriptions,0) as subscriptions
@@ -2269,10 +2242,8 @@ class Database {
                     left join (SELECT tag, sum(assigned) as subscriptions from arsse_tag_members group by tag) as tag_stats on tag_stats.tag = arsse_tags.id
                 WHERE owner = ?
             ) as tag_data
-            where subscriptions >= ? order by name
-            ",
-            "str",
-            "int"
+            where subscriptions >= ? order by name",
+            ["str", "int"]
         )->run($user, !$includeEmpty);
     }
 
@@ -2288,7 +2259,7 @@ class Database {
      * @param string $user The user whose tags are to be listed
      */
     public function tagSummarize(string $user): Db\Result {
-        return $this->db->prepare(
+        return $this->db->prepareArray(
             "SELECT
                 arsse_tags.id as id,
                 arsse_tags.name as name,
@@ -2296,7 +2267,7 @@ class Database {
             FROM arsse_tag_members
                 join arsse_tags on arsse_tags.id = arsse_tag_members.tag
             WHERE arsse_tags.owner = ? and assigned = 1",
-            "str"
+            ["str"]
         )->run($user);
     }
 
@@ -2335,15 +2306,13 @@ class Database {
         $this->tagValidateId($user, $id, $byName, false);
         $field = $byName ? "name" : "id";
         $type = $byName ? "str" : "int";
-        $out = $this->db->prepare(
+        $out = $this->db->prepareArray(
             "SELECT
                 id,name,coalesce(subscriptions,0) as subscriptions
             FROM arsse_tags
                 left join (SELECT tag, sum(assigned) as subscriptions from arsse_tag_members group by tag) as tag_stats on tag_stats.tag = arsse_tags.id
-            WHERE $field = ? and owner = ?
-            ",
-            $type,
-            "str"
+            WHERE $field = ? and owner = ?",
+            [$type, "str"]
         )->run($id, $user)->getRow();
         if (!$out) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "tag", 'id' => $id]);

@@ -130,7 +130,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 return true;
             }
         }
-        // next check HTTP auth 
+        // next check HTTP auth
         if ($req->getAttribute("authenticated", false)) {
             Arsse::$user->id = $req->getAttribute("authenticatedUser");
             return true;
@@ -318,7 +318,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new ErrorResponse($msg, 500);
         }
         $out = [];
-        foreach($list as $url) {
+        foreach ($list as $url) {
             // TODO: This needs to be refined once PicoFeed is replaced
             $out[] = ['title' => "Feed", 'type' => "rss", 'url' => $url];
         }
@@ -345,7 +345,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new ErrorResponse("404", 404);
         }
     }
-    
+
     protected function getCurrentUser(): ResponseInterface {
         return new Response($this->listUsers([Arsse::$user->id], false)[0] ?? new \stdClass);
     }
@@ -411,7 +411,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 Arsse::$db->folderRemove(Arsse::$user->id, $folder);
             } else {
                 // if we're deleting from the root folder, delete each child subscription individually
-                // otherwise we'd be deleting the entire tree 
+                // otherwise we'd be deleting the entire tree
                 $tr = Arsse::$db->begin();
                 foreach (Arsse::$db->subscriptionList(Arsse::$user->id, null, false) as $sub) {
                     Arsse::$db->subscriptionRemove(Arsse::$user->id, $sub['id']);

@@ -1716,7 +1716,7 @@ LONG_STRING;
         }
         $this->assertMessage($exp, $this->req($in));
         if ($out) {
-            \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, $c, $fields, $order);    
+            \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, $c, $fields, $order);
         } else {
             \Phake::verify(Arsse::$db, \Phake::times(0))->articleList;
         }

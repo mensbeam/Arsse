@@ -157,7 +157,7 @@ trait SeriesUser {
 
     public function testSetNoMetadata(): void {
         $in = [
-            'num'  => 2112,
+            'num'        => 2112,
             'stylesheet' => "body {background:lightgray}",
         ];
         $this->assertTrue(Arsse::$db->userPropertiesSet("john.doe@example.com", $in));

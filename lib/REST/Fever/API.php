@@ -270,7 +270,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 } else {
                     // group zero is the "Kindling" supergroup i.e. all feeds
                     // only exclude hidden articles
-                    $c->hidden(false); 
+                    $c->hidden(false);
                 }
                 break;
             case "feed":

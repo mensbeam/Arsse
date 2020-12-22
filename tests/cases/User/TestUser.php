@@ -98,7 +98,6 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->userLookup(2112);
     }
 
-
     public function testAddAUser(): void {
         $user = "john.doe@example.com";
         $pass = "secret";
@@ -439,7 +438,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
             [['tz' => false],      new ExceptionInput("invalidValue")],
             [['lang' => "en-ca"],  ['lang' => "en-CA"]],
             [['lang' => null],     ['lang' => null]],
-            [['page_size' => 0],   new ExceptionInput("invalidNonZeroInteger")]
+            [['page_size' => 0],   new ExceptionInput("invalidNonZeroInteger")],
         ];
     }
 

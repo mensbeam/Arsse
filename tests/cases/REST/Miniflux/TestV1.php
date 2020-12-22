@@ -62,7 +62,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             'extra'                   => [
                 'custom_css' => "",
             ],
-        ]
+        ],
     ];
 
     protected function req(string $method, string $target, $data = "", array $headers = [], ?string $user = "john.doe@example.com", bool $body = true): ResponseInterface {
@@ -185,8 +185,8 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideUserQueries */
     public function testQueryUsers(bool $admin, string $route, ResponseInterface $exp): void {
         $u = [
-            ['num'=> 1, 'admin' => true,  'theme' => "custom", 'lang' => "fr_CA", 'tz' => "Asia/Gaza", 'sort_asc' => true, 'page_size' => 200,  'shortcuts' => false, 'reading_time' => false, 'swipe' => false, 'stylesheet' => "p {}"],
-            ['num'=> 2, 'admin' => false, 'theme' => null,     'lang' => null,    'tz' => null,        'sort_asc' => null, 'page_size' => null, 'shortcuts' => null,  'reading_time' => null,  'swipe' => null,  'stylesheet' => null],
+            ['num' => 1, 'admin' => true,  'theme' => "custom", 'lang' => "fr_CA", 'tz' => "Asia/Gaza", 'sort_asc' => true, 'page_size' => 200,  'shortcuts' => false, 'reading_time' => false, 'swipe' => false, 'stylesheet' => "p {}"],
+            ['num' => 2, 'admin' => false, 'theme' => null,     'lang' => null,    'tz' => null,        'sort_asc' => null, 'page_size' => null, 'shortcuts' => null,  'reading_time' => null,  'swipe' => null,  'stylesheet' => null],
             new ExceptionConflict("doesNotExist"),
         ];
         $user = $admin ? "john.doe@example.com" : "jane.doe@example.com";

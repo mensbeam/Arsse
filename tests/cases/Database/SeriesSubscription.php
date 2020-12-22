@@ -23,7 +23,7 @@ trait SeriesSubscription {
                 'rows' => [
                     ["jane.doe@example.com", "", 1],
                     ["john.doe@example.com", "", 2],
-                    ["jill.doe@example.com", "", 3]
+                    ["jill.doe@example.com", "", 3],
                 ],
             ],
             'arsse_folders' => [
