@@ -23,6 +23,8 @@ use Laminas\Diactoros\Response\EmptyResponse;
 /** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\API<extended>
  *  @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Exception */
 class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
+    protected const NOW = "2020-12-21T23:09:17.189065Z";
+
     protected $h;
     protected $folders = [
         ['id' => 5, 'parent' => 3,    'children' => 0, 'feeds' => 1, 'name' => "Local"],
@@ -1113,7 +1115,7 @@ LONG_STRING;
         \Phake::when(Arsse::$db)->folderList($this->anything(), null, false)->thenReturn(new Result($this->v($this->topFolders)));
         \Phake::when(Arsse::$db)->subscriptionList($this->anything())->thenReturn(new Result($this->v($this->subscriptions)));
         \Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result($this->v($this->labels)));
-        \Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->unread(true)->modifiedSince(Date::sub("PT24H")), 2))->thenReturn(7);
+        \Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->hidden(false)->unread(true)->modifiedSince(Date::sub("PT24H")), 2))->thenReturn(7);
         \Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn($this->v($this->starred));
         $exp = [
             [
@@ -1177,7 +1179,7 @@ LONG_STRING;
         \Phake::when(Arsse::$db)->folderList($this->anything())->thenReturn(new Result($this->v($this->folders)));
         \Phake::when(Arsse::$db)->subscriptionList($this->anything())->thenReturn(new Result($this->v($this->subscriptions)));
         \Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result($this->v($this->usedLabels)));
-        \Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->unread(true)->modifiedSince(Date::sub("PT24H")), 2))->thenReturn(7);
+        \Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->hidden(false)->unread(true)->modifiedSince(Date::sub("PT24H")), 2))->thenReturn(7);
         \Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn($this->v($this->starred));
         $exp = [
             ['id' => "global-unread", 'counter' => 35],
@@ -1298,7 +1300,7 @@ LONG_STRING;
         \Phake::when(Arsse::$db)->folderList($this->anything(), null, true)->thenReturn(new Result($this->v($this->folders)));
         \Phake::when(Arsse::$db)->subscriptionList($this->anything())->thenReturn(new Result($this->v($this->subscriptions)));
         \Phake::when(Arsse::$db)->labelList($this->anything(), true)->thenReturn(new Result($this->v($this->labels)));
-        \Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->unread(true)->modifiedSince(Date::sub("PT24H")), 2))->thenReturn(7);
+        \Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->hidden(false)->unread(true)->modifiedSince(Date::sub("PT24H")), 2))->thenReturn(7);
         \Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn($this->v($this->starred));
         // the expectations are packed tightly since they're very verbose; one can use var_export() (or convert to JSON) to pretty-print them
         $exp = ['categories' => ['identifier' => 'id','label' => 'name','items' => [['name' => 'Special','id' => 'CAT:-1','bare_id' => -1,'type' => 'category','unread' => 0,'items' => [['name' => 'All articles','id' => 'FEED:-4','bare_id' => -4,'icon' => 'images/folder.png','unread' => 35,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Fresh articles','id' => 'FEED:-3','bare_id' => -3,'icon' => 'images/fresh.png','unread' => 7,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Starred articles','id' => 'FEED:-1','bare_id' => -1,'icon' => 'images/star.png','unread' => 4,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Published articles','id' => 'FEED:-2','bare_id' => -2,'icon' => 'images/feed.png','unread' => 0,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Archived articles','id' => 'FEED:0','bare_id' => 0,'icon' => 'images/archive.png','unread' => 0,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Recently read','id' => 'FEED:-6','bare_id' => -6,'icon' => 'images/time.png','unread' => 0,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => '']]],['name' => 'Labels','id' => 'CAT:-2','bare_id' => -2,'type' => 'category','unread' => 6,'items' => [['name' => 'Fascinating','id' => 'FEED:-1027','bare_id' => -1027,'unread' => 0,'icon' => 'images/label.png','type' => 'feed','auxcounter' => 0,'error' => '','updated' => '','fg_color' => '','bg_color' => ''],['name' => 'Interesting','id' => 'FEED:-1029','bare_id' => -1029,'unread' => 0,'icon' => 'images/label.png','type' => 'feed','auxcounter' => 0,'error' => '','updated' => '','fg_color' => '','bg_color' => ''],['name' => 'Logical','id' => 'FEED:-1025','bare_id' => -1025,'unread' => 0,'icon' => 'images/label.png','type' => 'feed','auxcounter' => 0,'error' => '','updated' => '','fg_color' => '','bg_color' => '']]],['name' => 'Photography','id' => 'CAT:4','bare_id' => 4,'parent_id' => null,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(0 feeds)','items' => []],['name' => 'Politics','id' => 'CAT:3','bare_id' => 3,'parent_id' => null,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(3 feeds)','items' => [['name' => 'Local','id' => 'CAT:5','bare_id' => 5,'parent_id' => 3,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(1 feed)','items' => [['name' => 'Toronto Star','id' => 'FEED:2','bare_id' => 2,'icon' => 'feed-icons/2.ico','error' => 'oops','param' => '2011-11-11T11:11:11Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]],['name' => 'National','id' => 'CAT:6','bare_id' => 6,'parent_id' => 3,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(2 feeds)','items' => [['name' => 'CBC News','id' => 'FEED:4','bare_id' => 4,'icon' => 'feed-icons/4.ico','error' => '','param' => '2017-10-09T15:58:34Z','unread' => 0,'auxcounter' => 0,'checkbox' => false],['name' => 'Ottawa Citizen','id' => 'FEED:5','bare_id' => 5,'icon' => false,'error' => '','param' => '2017-07-07T17:07:17Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]]]],['name' => 'Science','id' => 'CAT:1','bare_id' => 1,'parent_id' => null,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(2 feeds)','items' => [['name' => 'Rocketry','id' => 'CAT:2','bare_id' => 2,'parent_id' => 1,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(1 feed)','items' => [['name' => 'NASA JPL','id' => 'FEED:1','bare_id' => 1,'icon' => false,'error' => '','param' => '2017-09-15T22:54:16Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]],['name' => 'Ars Technica','id' => 'FEED:3','bare_id' => 3,'icon' => 'feed-icons/3.ico','error' => 'argh','param' => '2016-05-23T06:40:02Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]],['name' => 'Uncategorized','id' => 'CAT:0','bare_id' => 0,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'parent_id' => null,'param' => '(1 feed)','items' => [['name' => 'Eurogamer','id' => 'FEED:6','bare_id' => 6,'icon' => 'feed-icons/6.ico','error' => '','param' => '2010-02-12T20:08:47Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]]]]];
@@ -1343,19 +1345,19 @@ LONG_STRING;
         for ($a = 0; $a < sizeof($in2); $a++) {
             $this->assertMessage($exp, $this->req($in2[$a]), "Test $a failed");
         }
-        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], new Context);
-        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->starred(true));
-        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->label(1088));
-        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->subscription(2112));
-        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->folder(42));
-        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->folderShallow(0));
-        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->labelled(true));
+        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->hidden(false));
+        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->starred(true)->hidden(false));
+        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->label(1088)->hidden(false));
+        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->subscription(2112)->hidden(false));
+        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->folder(42)->hidden(false));
+        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->folderShallow(0)->hidden(false));
+        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->labelled(true)->hidden(false));
         // verify the time-based mock
         $t = Date::sub("PT24H");
         for ($a = 0; $a < sizeof($in3); $a++) {
             $this->assertMessage($exp, $this->req($in3[$a]), "Test $a failed");
         }
-        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], $this->equalTo((new Context)->modifiedSince($t), 2)); // within two seconds
+        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], $this->equalTo((new Context)->hidden(false)->modifiedSince($t), 2)); // within two seconds
     }
 
     public function testRetrieveFeedList(): void {
@@ -1385,8 +1387,8 @@ LONG_STRING;
         ];
         // statistical mocks
         \Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn($this->v($this->starred));
-        \Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->unread(true)->modifiedSince(Date::sub("PT24H")), 2))->thenReturn(7);
-        \Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true))->thenReturn(35);
+        \Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->unread(true)->hidden(false)->modifiedSince(Date::sub("PT24H")), 2))->thenReturn(7);
+        \Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true)->hidden(false))->thenReturn(35);
         // label mocks
         \Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result($this->v($this->labels)));
         \Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result($this->v($this->usedLabels)));
@@ -1400,7 +1402,7 @@ LONG_STRING;
         \Phake::when(Arsse::$db)->folderList($this->anything(), null, false)->thenReturn(new Result($this->v($this->filterFolders(null))));
         foreach ($this->folders as $f) {
             \Phake::when(Arsse::$db)->folderList($this->anything(), $f['id'], false)->thenReturn(new Result($this->v($this->filterFolders($f['id']))));
-            \Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true)->folder($f['id']))->thenReturn($this->reduceFolders($f['id']));
+            \Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true)->hidden(false)->folder($f['id']))->thenReturn($this->reduceFolders($f['id']));
             \Phake::when(Arsse::$db)->subscriptionList($this->anything(), $f['id'], false)->thenReturn(new Result($this->v($this->filterSubs($f['id']))));
         }
         $exp = [
@@ -1694,206 +1696,99 @@ LONG_STRING;
         $this->assertMessage($this->respGood([$exp[0]]), $this->req($in[5]));
     }
 
-    public function testRetrieveCompactHeadlines(): void {
-        $in1 = [
-            // erroneous input
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx"],
-            // empty results
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 0],
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2],
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2, 'is_cat' => true], // is_cat is not used in getCompactHeadlines
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2112],
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'view_mode' => "published"],
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -6, 'view_mode' => "unread"],
-            // non-empty results
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4],
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -1],
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2112],
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'view_mode' => "adaptive"],
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2112, 'view_mode' => "adaptive"],
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2112, 'view_mode' => "unread"],
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'view_mode' => "marked"],
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'view_mode' => "has_note"],
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'limit' => 5],
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'skip' => 2],
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'limit' => 5, 'skip' => 2],
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'since_id' => 47],
-        ];
-        $in2 = [
-            // time-based contexts, handled separately
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -6],
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -6, 'view_mode' => "adaptive"],
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -3],
-            ['op' => "getCompactHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -3, 'view_mode' => "marked"],
-        ];
-        \Phake::when(Arsse::$db)->articleList->thenReturn(new Result($this->v([['id' => 0]])));
-        \Phake::when(Arsse::$db)->articleCount->thenReturn(0);
-        \Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true))->thenReturn(1);
-        $c = (new Context);
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(2112), ["id"], ["edited_date desc"])->thenThrow(new ExceptionInput("subjectMissing"));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), $c, ["id"], ["edited_date desc"])->thenReturn(new Result($this->v($this->articles)));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->starred(true), ["id"], ["marked_date desc"])->thenReturn(new Result($this->v([['id' => 1]])));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->label(1088), ["id"], ["edited_date desc"])->thenReturn(new Result($this->v([['id' => 2]])));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(true), ["id"], ["edited_date desc"])->thenReturn(new Result($this->v([['id' => 3]])));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->label(1088)->unread(true), ["id"], ["edited_date desc"])->thenReturn(new Result($this->v([['id' => 4]])));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(42)->starred(true), ["id"], ["edited_date desc"])->thenReturn(new Result($this->v([['id' => 5]])));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(42)->annotated(true), ["id"], ["edited_date desc"])->thenReturn(new Result($this->v([['id' => 6]])));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->limit(5), ["id"], ["edited_date desc"])->thenReturn(new Result($this->v([['id' => 7]])));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->offset(2), ["id"], ["edited_date desc"])->thenReturn(new Result($this->v([['id' => 8]])));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->limit(5)->offset(2), ["id"], ["edited_date desc"])->thenReturn(new Result($this->v([['id' => 9]])));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->oldestArticle(48), ["id"], ["edited_date desc"])->thenReturn(new Result($this->v([['id' => 10]])));
-        $out1 = [
-            $this->respErr("INCORRECT_USAGE"),
-            $this->respGood([]),
-            $this->respGood([]),
-            $this->respGood([]),
-            $this->respGood([]),
-            $this->respGood([]),
-            $this->respGood([]),
-            $this->respGood([['id' => 101],['id' => 102]]),
-            $this->respGood([['id' => 1]]),
-            $this->respGood([['id' => 2]]),
-            $this->respGood([['id' => 3]]),
-            $this->respGood([['id' => 2]]), // the result is 2 rather than 4 because there are no unread, so the unread context is not used
-            $this->respGood([['id' => 4]]),
-            $this->respGood([['id' => 5]]),
-            $this->respGood([['id' => 6]]),
-            $this->respGood([['id' => 7]]),
-            $this->respGood([['id' => 8]]),
-            $this->respGood([['id' => 9]]),
-            $this->respGood([['id' => 10]]),
-        ];
-        $out2 = [
-            $this->respGood([['id' => 1001]]),
-            $this->respGood([['id' => 1001]]),
-            $this->respGood([['id' => 1002]]),
-            $this->respGood([['id' => 1003]]),
-        ];
-        for ($a = 0; $a < sizeof($in1); $a++) {
-            $this->assertMessage($out1[$a], $this->req($in1[$a]), "Test $a failed");
-        }
-        for ($a = 0; $a < sizeof($in2); $a++) {
-            \Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(false)->markedSince(Date::sub("PT24H")), 2), ["id"], ["marked_date desc"])->thenReturn(new Result($this->v([['id' => 1001]])));
-            \Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(true)->modifiedSince(Date::sub("PT24H")), 2), ["id"], ["edited_date desc"])->thenReturn(new Result($this->v([['id' => 1002]])));
-            \Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(true)->modifiedSince(Date::sub("PT24H"))->starred(true), 2), ["id"], ["edited_date desc"])->thenReturn(new Result($this->v([['id' => 1003]])));
-            $this->assertMessage($out2[$a], $this->req($in2[$a]), "Test $a failed");
-        }
-    }
-
-    public function testRetrieveFullHeadlines(): void {
-        $in1 = [
-            // empty results
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 0],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -1, 'is_cat' => true],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'view_mode' => "published"],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -6, 'view_mode' => "unread"],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2112],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'view_mode' => "unread", 'search' => "unread:false"],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'search' => "pub:true"],
-        ];
-        $in2 = [
-            // simple context tests
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx"],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -1],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2112],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'view_mode' => "adaptive"],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2112, 'view_mode' => "adaptive"],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2112, 'view_mode' => "unread"],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'view_mode' => "marked"],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'view_mode' => "has_note"],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'limit' => 5],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'skip' => 2],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'limit' => 5, 'skip' => 2],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'since_id' => 47],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -3, 'is_cat' => true],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'is_cat' => true],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2, 'is_cat' => true],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 0, 'is_cat' => true],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'is_cat' => true],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'is_cat' => true, 'include_nested' => true],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'order_by' => "feed_dates"],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'order_by' => "date_reverse"],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'search' => "interesting"],
-        ];
-        $in3 = [
-            // time-based context tests
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -6],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -6, 'view_mode' => "adaptive"],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -3],
-            ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -3, 'view_mode' => "marked"],
-        ];
-        \Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result($this->v($this->labels)));
+    /** @dataProvider provideHeadlines */
+    public function testRetrieveHeadlines(bool $full, array $in, $out, Context $c, array $fields, array $order, ResponseInterface $exp): void {
+        $base = ['op' => $full ? "getHeadlines" : "getCompactHeadlines", 'sid' => "PriestsOfSyrinx"];
+        $in = array_merge($base, $in);
+        $this->h = \Phake::partialMock(API::class);
+        \Phake::when($this->h)->now->thenReturn(Date::normalize(self::NOW));
+        \Phake::when(Arsse::$db)->labelList->thenReturn(new Result($this->v($this->labels)));
         \Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result($this->v($this->usedLabels)));
         \Phake::when(Arsse::$db)->articleLabelsGet->thenReturn([]);
         \Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 2112)->thenReturn($this->v([1,3]));
         \Phake::when(Arsse::$db)->articleCategoriesGet->thenReturn([]);
         \Phake::when(Arsse::$db)->articleCategoriesGet($this->anything(), 2112)->thenReturn(["Boring","Illogical"]);
-        \Phake::when(Arsse::$db)->articleList->thenReturn($this->generateHeadlines(0));
-        \Phake::when(Arsse::$db)->articleCount->thenReturn(0);
-        \Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true))->thenReturn(1);
-        $c = (new Context)->limit(200);
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(2112), $this->anything(), ["edited_date desc"])->thenThrow(new ExceptionInput("subjectMissing"));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->starred(true), $this->anything(), ["marked_date desc"])->thenReturn($this->generateHeadlines(1));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->label(1088), $this->anything(), ["edited_date desc"])->thenReturn($this->generateHeadlines(2));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->unread(true), $this->anything(), ["edited_date desc"])->thenReturn($this->generateHeadlines(3));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->label(1088)->unread(true), $this->anything(), ["edited_date desc"])->thenReturn($this->generateHeadlines(4));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(42)->starred(true), $this->anything(), ["edited_date desc"])->thenReturn($this->generateHeadlines(5));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(42)->annotated(true), $this->anything(), ["edited_date desc"])->thenReturn($this->generateHeadlines(6));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->limit(5), $this->anything(), ["edited_date desc"])->thenReturn($this->generateHeadlines(7));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->offset(2), $this->anything(), ["edited_date desc"])->thenReturn($this->generateHeadlines(8));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->limit(5)->offset(2), $this->anything(), ["edited_date desc"])->thenReturn($this->generateHeadlines(9));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->oldestArticle(48), $this->anything(), ["edited_date desc"])->thenReturn($this->generateHeadlines(10));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c), $this->anything(), ["edited_date desc"])->thenReturn($this->generateHeadlines(11));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->labelled(true), $this->anything(), ["edited_date desc"])->thenReturn($this->generateHeadlines(12));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->folderShallow(0), $this->anything(), ["edited_date desc"])->thenReturn($this->generateHeadlines(13));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->folderShallow(42), $this->anything(), ["edited_date desc"])->thenReturn($this->generateHeadlines(14));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->folder(42), $this->anything(), ["edited_date desc"])->thenReturn($this->generateHeadlines(15));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c), $this->anything(), ["edited_date"])->thenReturn($this->generateHeadlines(16));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (clone $c)->subscription(42)->searchTerms(["interesting"]), $this->anything(), ["edited_date desc"])->thenReturn($this->generateHeadlines(17));
-        $out2 = [
-            $this->respErr("INCORRECT_USAGE"),
-            $this->outputHeadlines(11),
-            $this->outputHeadlines(1),
-            $this->outputHeadlines(2),
-            $this->outputHeadlines(3),
-            $this->outputHeadlines(2), // the result is 2 rather than 4 because there are no unread, so the unread context is not used
-            $this->outputHeadlines(4),
-            $this->outputHeadlines(5),
-            $this->outputHeadlines(6),
-            $this->outputHeadlines(7),
-            $this->outputHeadlines(8),
-            $this->outputHeadlines(9),
-            $this->outputHeadlines(10),
-            $this->outputHeadlines(11),
-            $this->outputHeadlines(11),
-            $this->outputHeadlines(12),
-            $this->outputHeadlines(13),
-            $this->outputHeadlines(14),
-            $this->outputHeadlines(15),
-            $this->outputHeadlines(11), // defaulting sorting is not fully implemented
-            $this->outputHeadlines(16),
-            $this->outputHeadlines(17),
+        \Phake::when(Arsse::$db)->articleCount->thenReturn(2);
+        if ($out instanceof \Exception) {
+            \Phake::when(Arsse::$db)->articleList->thenThrow($out);
+        } else {
+            \Phake::when(Arsse::$db)->articleList->thenReturn($out);
+        }
+        $this->assertMessage($exp, $this->req($in));
+        if ($out) {
+            \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, $c, $fields, $order);    
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::times(0))->articleList;
+        }
+    }
+
+    public function provideHeadlines(): iterable {
+        $t = Date::normalize(self::NOW);
+        $c = (new Context)->hidden(false)->limit(200);
+        $out = $this->generateHeadlines(47);
+        $gone = new ExceptionInput("idMissing");
+        $comp = new Result($this->v([['id' => 47], ['id' => 2112]]));
+        $expFull = $this->outputHeadlines(47);
+        $expComp = $this->respGood([['id' => 47], ['id' => 2112]]);
+        $fields = ["id", "guid", "title", "author", "url", "unread", "starred", "edited_date", "published_date", "subscription", "subscription_title", "note"];
+        $sort = ["edited_date desc"];
+        return [
+            [true,  [],                                                                     null,  $c,                                                                                          [],      [],                   $this->respErr("INCORRECT_USAGE")],
+            [true,  ['feed_id' => 0],                                                       null,  $c,                                                                                          [],      [],                   $this->respGood([])],
+            [true,  ['feed_id' => -1],                                                      $out,  (clone $c)->starred(true),                                                                   $fields, ["marked_date desc"], $expFull],
+            [true,  ['feed_id' => -2],                                                      null,  $c,                                                                                          [],      [],                   $this->respGood([])],
+            [true,  ['feed_id' => -4],                                                      $out,  $c,                                                                                          $fields, $sort,                $expFull],
+            [true,  ['feed_id' => 2112],                                                    $gone, (clone $c)->subscription(2112),                                                              $fields, $sort,                $this->respGood([])],
+            [true,  ['feed_id' => -2112],                                                   $out,  (clone $c)->label(1088),                                                                     $fields, $sort,                $expFull],
+            [true,  ['feed_id' => -4, 'view_mode' => "adaptive"],                           $out,  (clone $c)->unread(true),                                                                    $fields, $sort,                $expFull],
+            [true,  ['feed_id' => -4, 'view_mode' => "published"],                          null,  $c,                                                                                          [],      [],                   $this->respGood([])],
+            [true,  ['feed_id' => -2112, 'view_mode' => "adaptive"],                        $out,  (clone $c)->label(1088)->unread(true),                                                       $fields, $sort,                $expFull],
+            [true,  ['feed_id' => -2112, 'view_mode' => "unread"],                          $out,  (clone $c)->label(1088)->unread(true),                                                       $fields, $sort,                $expFull],
+            [true,  ['feed_id' => 42, 'view_mode' => "marked"],                             $out,  (clone $c)->subscription(42)->starred(true),                                                 $fields, $sort,                $expFull],
+            [true,  ['feed_id' => 42, 'view_mode' => "has_note"],                           $out,  (clone $c)->subscription(42)->annotated(true),                                               $fields, $sort,                $expFull],
+            [true,  ['feed_id' => 42, 'view_mode' => "unread", 'search' => "unread:false"], null,  $c,                                                                                          [],      [],                   $this->respGood([])],
+            [true,  ['feed_id' => 42, 'search' => "pub:true"],                              null,  $c,                                                                                          [],      [],                   $this->respGood([])],
+            [true,  ['feed_id' => -4, 'limit' => 5],                                        $out,  (clone $c)->limit(5),                                                                        $fields, $sort,                $expFull],
+            [true,  ['feed_id' => -4, 'skip' => 2],                                         $out,  (clone $c)->offset(2),                                                                       $fields, $sort,                $expFull],
+            [true,  ['feed_id' => -4, 'limit' => 5, 'skip' => 2],                           $out,  (clone $c)->limit(5)->offset(2),                                                             $fields, $sort,                $expFull],
+            [true,  ['feed_id' => -4, 'since_id' => 47],                                    $out,  (clone $c)->oldestArticle(48),                                                               $fields, $sort,                $expFull],
+            [true,  ['feed_id' => -3, 'is_cat' => true],                                    $out,  $c,                                                                                          $fields, $sort,                $expFull],
+            [true,  ['feed_id' => -4, 'is_cat' => true],                                    $out,  $c,                                                                                          $fields, $sort,                $expFull],
+            [true,  ['feed_id' => -2, 'is_cat' => true],                                    $out,  (clone $c)->labelled(true),                                                                  $fields, $sort,                $expFull],
+            [true,  ['feed_id' => -1, 'is_cat' => true],                                    null,  $c,                                                                                          [],      [],                   $this->respGood([])],
+            [true,  ['feed_id' => 0, 'is_cat' => true],                                     $out,  (clone $c)->folderShallow(0),                                                                $fields, $sort,                $expFull],
+            [true,  ['feed_id' => 0, 'is_cat' => true, 'include_nested' => true],           $out,  (clone $c)->folderShallow(0),                                                                $fields, $sort,                $expFull],
+            [true,  ['feed_id' => 42, 'is_cat' => true],                                    $out,  (clone $c)->folderShallow(42),                                                               $fields, $sort,                $expFull],
+            [true,  ['feed_id' => 42, 'is_cat' => true, 'include_nested' => true],          $out,  (clone $c)->folder(42),                                                                      $fields, $sort,                $expFull],
+            [true,  ['feed_id' => -4, 'order_by' => "feed_dates"],                          $out,  $c,                                                                                          $fields, $sort,                $expFull],
+            [true,  ['feed_id' => -4, 'order_by' => "date_reverse"],                        $out,  $c,                                                                                          $fields, ["edited_date"],      $expFull],
+            [true,  ['feed_id' => 42, 'search' => "interesting"],                           $out,  (clone $c)->subscription(42)->searchTerms(["interesting"]),                                  $fields, $sort,                $expFull],
+            [true,  ['feed_id' => -6],                                                      $out,  (clone $c)->unread(false)->markedSince(Date::sub("PT24H", $t)),                              $fields, ["marked_date desc"], $expFull],
+            [true,  ['feed_id' => -6, 'view_mode' => "unread"],                             null,  $c,                                                                                          $fields, $sort,                $this->respGood([])],
+            [true,  ['feed_id' => -3],                                                      $out,  (clone $c)->unread(true)->modifiedSince(Date::sub("PT24H", $t)),                             $fields, $sort,                $expFull],
+            [true,  ['feed_id' => -3, 'view_mode' => "marked"],                             $out,  (clone $c)->unread(true)->starred(true)->modifiedSince(Date::sub("PT24H", $t)),              $fields, $sort,                $expFull],
+            [false, [],                                                                     null,  (clone $c)->limit(null),                                                                     [],      [],                   $this->respErr("INCORRECT_USAGE")],
+            [false, ['feed_id' => 0],                                                       null,  (clone $c)->limit(null),                                                                     [],      [],                   $this->respGood([])],
+            [false, ['feed_id' => -1],                                                      $comp, (clone $c)->limit(null)->starred(true),                                                      ["id"],  ["marked_date desc"], $expComp],
+            [false, ['feed_id' => -2],                                                      null,  (clone $c)->limit(null),                                                                     [],      [],                   $this->respGood([])],
+            [false, ['feed_id' => -4],                                                      $comp, (clone $c)->limit(null),                                                                     ["id"],  $sort,                $expComp],
+            [false, ['feed_id' => 2112],                                                    $gone, (clone $c)->limit(null)->subscription(2112),                                                 ["id"],  $sort,                $this->respGood([])],
+            [false, ['feed_id' => -2112],                                                   $comp, (clone $c)->limit(null)->label(1088),                                                        ["id"],  $sort,                $expComp],
+            [false, ['feed_id' => -4, 'view_mode' => "adaptive"],                           $comp, (clone $c)->limit(null)->unread(true),                                                       ["id"],  $sort,                $expComp],
+            [false, ['feed_id' => -4, 'view_mode' => "published"],                          null,  (clone $c)->limit(null),                                                                     [],      [],                   $this->respGood([])],
+            [false, ['feed_id' => -2112, 'view_mode' => "adaptive"],                        $comp, (clone $c)->limit(null)->label(1088)->unread(true),                                          ["id"],  $sort,                $expComp],
+            [false, ['feed_id' => -2112, 'view_mode' => "unread"],                          $comp, (clone $c)->limit(null)->label(1088)->unread(true),                                          ["id"],  $sort,                $expComp],
+            [false, ['feed_id' => 42, 'view_mode' => "marked"],                             $comp, (clone $c)->limit(null)->subscription(42)->starred(true),                                    ["id"],  $sort,                $expComp],
+            [false, ['feed_id' => 42, 'view_mode' => "has_note"],                           $comp, (clone $c)->limit(null)->subscription(42)->annotated(true),                                  ["id"],  $sort,                $expComp],
+            [false, ['feed_id' => -4, 'limit' => 5],                                        $comp, (clone $c)->limit(5),                                                                        ["id"],  $sort,                $expComp],
+            [false, ['feed_id' => -4, 'skip' => 2],                                         $comp, (clone $c)->limit(null)->offset(2),                                                          ["id"],  $sort,                $expComp],
+            [false, ['feed_id' => -4, 'limit' => 5, 'skip' => 2],                           $comp, (clone $c)->limit(5)->offset(2),                                                             ["id"],  $sort,                $expComp],
+            [false, ['feed_id' => -4, 'since_id' => 47],                                    $comp, (clone $c)->limit(null)->oldestArticle(48),                                                  ["id"],  $sort,                $expComp],
+            [false, ['feed_id' => -6],                                                      $comp, (clone $c)->limit(null)->unread(false)->markedSince(Date::sub("PT24H", $t)),                 ["id"],  ["marked_date desc"], $expComp],
+            [false, ['feed_id' => -6, 'view_mode' => "unread"],                             null,  (clone $c)->limit(null),                                                                     ["id"],  $sort,                $this->respGood([])],
+            [false, ['feed_id' => -3],                                                      $comp, (clone $c)->limit(null)->unread(true)->modifiedSince(Date::sub("PT24H", $t)),                ["id"],  $sort,                $expComp],
+            [false, ['feed_id' => -3, 'view_mode' => "marked"],                             $comp, (clone $c)->limit(null)->unread(true)->starred(true)->modifiedSince(Date::sub("PT24H", $t)), ["id"],  $sort,                $expComp],
         ];
-        $out3 = [
-            $this->outputHeadlines(1001),
-            $this->outputHeadlines(1001),
-            $this->outputHeadlines(1002),
-            $this->outputHeadlines(1003),
-        ];
-        for ($a = 0; $a < sizeof($in1); $a++) {
-            $this->assertMessage($this->respGood([]), $this->req($in1[$a]), "Test $a failed");
-        }
-        for ($a = 0; $a < sizeof($in2); $a++) {
-            $this->assertMessage($out2[$a], $this->req($in2[$a]), "Test $a failed");
-        }
-        for ($a = 0; $a < sizeof($in3); $a++) {
-            \Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(false)->markedSince(Date::sub("PT24H")), 2), $this->anything(), ["marked_date desc"])->thenReturn($this->generateHeadlines(1001));
-            \Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(true)->modifiedSince(Date::sub("PT24H")), 2), $this->anything(), ["edited_date desc"])->thenReturn($this->generateHeadlines(1002));
-            \Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((clone $c)->unread(true)->modifiedSince(Date::sub("PT24H"))->starred(true), 2), $this->anything(), ["edited_date desc"])->thenReturn($this->generateHeadlines(1003));
-            $this->assertMessage($out3[$a], $this->req($in3[$a]), "Test $a failed");
-        }
     }
 
     public function testRetrieveFullHeadlinesCheckingExtraFields(): void {
@@ -1919,7 +1814,7 @@ LONG_STRING;
         \Phake::when(Arsse::$db)->articleCategoriesGet($this->anything(), 2112)->thenReturn(["Boring","Illogical"]);
         \Phake::when(Arsse::$db)->articleList->thenReturn($this->generateHeadlines(1));
         \Phake::when(Arsse::$db)->articleCount->thenReturn(0);
-        \Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true))->thenReturn(1);
+        \Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true)->hidden(false))->thenReturn(1);
         // sanity check; this makes sure extra fields are not included in default situations
         $test = $this->req($in[0]);
         $this->assertMessage($this->outputHeadlines(1), $test);
@@ -1970,7 +1865,7 @@ LONG_STRING;
         ]);
         $this->assertMessage($exp, $test);
         // test 'include_header' with an erroneous result
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->limit(200)->subscription(2112), $this->anything(), ["edited_date desc"])->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->limit(200)->subscription(2112)->hidden(false), $this->anything(), ["edited_date desc"])->thenThrow(new ExceptionInput("subjectMissing"));
         $test = $this->req($in[6]);
         $exp = $this->respGood([
             ['id' => 2112, 'is_cat' => false, 'first_id' => 0],
@@ -1985,7 +1880,7 @@ LONG_STRING;
         ]);
         $this->assertMessage($exp, $test);
         // test 'include_header' with skip
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->limit(1)->subscription(42), $this->anything(), ["edited_date desc"])->thenReturn($this->generateHeadlines(1867));
+        \Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->limit(1)->subscription(42)->hidden(false), $this->anything(), ["edited_date desc"])->thenReturn($this->generateHeadlines(1867));
         $test = $this->req($in[8]);
         $exp = $this->respGood([
             ['id' => 42, 'is_cat' => false, 'first_id' => 1867],

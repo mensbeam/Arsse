@@ -26,6 +26,7 @@ use Laminas\Diactoros\Response\EmptyResponse;
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     public const LEVEL = 14;           // emulated API level
     public const VERSION = "17.4";     // emulated TT-RSS version
+
     protected const LABEL_OFFSET = 1024;  // offset below zero at which labels begin, counting down
     protected const LIMIT_ARTICLES = 200; // maximum number of articles returned by getHeadlines
     protected const LIMIT_EXCERPT = 100;  // maximum length of excerpts in getHeadlines, counted in grapheme units
@@ -81,6 +82,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         'mode'                => ValueInfo::T_INT,                              // whether to set, clear, or toggle the selected state in `updateArticle`
         'data'                => ValueInfo::T_STRING,                           // note text in `updateArticle` if setting a note
     ];
+    protected const VIEW_MODES = ["all_articles", "adaptive", "unread", "marked", "has_note", "published"];
     // generic error construct
     protected const FATAL_ERR = [
         'seq'     => null,
@@ -234,7 +236,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function opGetCounters(array $data): array {
         $user = Arsse::$user->id;
         $starred = Arsse::$db->articleStarred($user);
-        $fresh = Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H")));
+        $fresh = Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H", $this->now()))->hidden(false));
         $countAll = 0;
         $countSubs = 0;
         $feeds = [];
@@ -339,7 +341,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     'id'      => "FEED:".self::FEED_FRESH,
                     'bare_id' => self::FEED_FRESH,
                     'icon'    => "images/fresh.png",
-                    'unread'  => Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H"))),
+                    'unread'  => Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H", $this->now()))->hidden(false)),
                 ], $tSpecial),
                 array_merge([ // Starred articles
                     'name'    => Arsse::$lang->msg("API.TTRSS.Feed.Starred"),
@@ -391,7 +393,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             ];
             $unread += ($l['articles'] - $l['read']);
         }
-        // if there are labels, all the label category,
+        // if there are labels, add the "Labels" category,
         if ($items) {
             $out[] = [
                 'name'    => Arsse::$lang->msg("API.TTRSS.Category.Labels"),
@@ -523,7 +525,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         // FIXME: this is pretty inefficient
         $f = $map[self::CAT_SPECIAL];
         $cats[$f]['unread'] += Arsse::$db->articleStarred($user)['unread']; // starred
-        $cats[$f]['unread'] += Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H"))); // fresh
+        $cats[$f]['unread'] += Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H", $this->now()))->hidden(false)); // fresh
         if (!$read) {
             // if we're only including unread entries, remove any categories with zero unread items (this will by definition also exclude empties)
             $count = sizeof($cats);
@@ -675,8 +677,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($cat == self::CAT_ALL || $cat == self::CAT_SPECIAL) {
             // gather some statistics
             $starred = Arsse::$db->articleStarred($user)['unread'];
-            $fresh = Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H")));
-            $global = Arsse::$db->articleCount($user, (new Context)->unread(true));
+            $fresh = Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H", $this->now()))->hidden(false));
+            $global = Arsse::$db->articleCount($user, (new Context)->unread(true)->hidden(false));
             $published = 0; // TODO: if the Published feed is implemented, the getFeeds method needs to be adjusted accordingly
             $archived = 0; // the archived feed is non-functional in the TT-RSS protocol itself
             // build the list; exclude anything with zero unread if requested
@@ -737,7 +739,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 // NOTE: the list is a flat one: it includes children, but not other descendents
                 foreach (Arsse::$db->folderList($user, $cat, false) as $c) {
                     // get the number of unread for the category and its descendents; those with zero unread are excluded in "unread-only" mode
-                    $count = Arsse::$db->articleCount($user, (new Context)->unread(true)->folder((int) $c['id']));
+                    $count = Arsse::$db->articleCount($user, (new Context)->unread(true)->folder((int) $c['id'])->hidden(false));
                     if (!$unread || $count) {
                         $out[] = [
                             'id'       => (int) $c['id'],
@@ -1037,7 +1039,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $cat = $data['is_cat'] ?? false;
         $out = ['status' => "OK"];
         // first prepare the context; unsupported contexts simply return early
-        $c = new Context;
+        $c = (new Context)->hidden(false);
         if ($cat) { // categories
             switch ($id) {
                 case self::CAT_SPECIAL:
@@ -1073,7 +1075,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                         // TODO: if the Published feed is implemented, the catchup function needs to be modified accordingly
                         return $out;
                     case self::FEED_FRESH:
-                        $c->modifiedSince(Date::sub("PT24H"));
+                        $c->modifiedSince(Date::sub("PT24H", $this->now()));
                         break;
                     case self::FEED_ALL:
                         // no context needed here
@@ -1188,6 +1190,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             "id",
             "guid",
             "title",
+            "author",
             "url",
             "unread",
             "starred",
@@ -1296,10 +1299,14 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 "subscription",
                 "subscription_title",
                 "note",
-                ($data['show_content'] || $data['show_excerpt']) ? "content" : "",
-                ($data['include_attachments']) ? "media_url": "",
-                ($data['include_attachments']) ? "media_type": "",
             ];
+            if ($data['show_content'] || $data['show_excerpt']) {
+                $columns[] = "content";
+            }
+            if ($data['include_attachments']) {
+                $columns[] = "media_url";
+                $columns[] = "media_type";
+            }
             foreach ($this->fetchArticles($data, $columns) as $article) {
                 $row = [
                     'id'                         => (int) $article['id'],
@@ -1387,9 +1394,10 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $id = $data['feed_id'];
         $cat = $data['is_cat'] ?? false;
         $shallow = !($data['include_nested'] ?? false);
-        $viewMode = in_array($data['view_mode'], ["all_articles", "adaptive", "unread", "marked", "has_note", "published"]) ? $data['view_mode'] : "all_articles";
+        $viewMode = in_array($data['view_mode'], self::VIEW_MODES) ? $data['view_mode'] : "all_articles";
+        assert(in_array($viewMode, self::VIEW_MODES), new \JKingWeb\Arsse\Exception("constantUnknown", $viewMode));
         // prepare the context; unsupported, invalid, or inherently empty contexts return synthetic empty result sets
-        $c = new Context;
+        $c = (new Context)->hidden(false);
         $tr = Arsse::$db->begin();
         // start with the feed or category ID
         if ($cat) { // categories
@@ -1433,13 +1441,13 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                         // TODO: if the Published feed is implemented, the headline function needs to be modified accordingly
                         return new ResultEmpty;
                     case self::FEED_FRESH:
-                        $c->modifiedSince(Date::sub("PT24H"))->unread(true);
+                        $c->modifiedSince(Date::sub("PT24H", $this->now()))->unread(true);
                         break;
                     case self::FEED_ALL:
                         // no context needed here
                         break;
                     case self::FEED_READ:
-                        $c->markedSince(Date::sub("PT24H"))->unread(false); // FIXME: this selects any recently touched (read, starred, annotated) article which is read, not necessarily a recently read one
+                        $c->markedSince(Date::sub("PT24H", $this->now()))->unread(false); // FIXME: this selects any recently touched (read, starred, annotated) article which is read, not necessarily a recently read one
                         break;
                     default:
                         // any actual feed
@@ -1477,8 +1485,6 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 // not implemented
                 // TODO: if the Published feed is implemented, the headline function needs to be modified accordingly
                 return new ResultEmpty;
-            default:
-                throw new \JKingWeb\Arsse\Exception("constantUnknown", $viewMode); // @codeCoverageIgnore
         }
         // handle the search string, if any
         if (isset($data['search'])) {
