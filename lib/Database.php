@@ -1809,21 +1809,49 @@ class Database {
 
     /** Deletes from the database articles which are beyond the configured clean-up threshold */
     public function articleCleanup(): bool {
-        $query = $this->db->prepare(
+        $query = $this->db->prepareArray(
             "WITH RECURSIVE
-                exempt_articles as (SELECT id from arsse_articles join (SELECT article, max(id) as edition from arsse_editions group by article) as latest_editions on arsse_articles.id = latest_editions.article where feed = ? order by edition desc limit ?),
-                target_articles as (
-                    select id from arsse_articles
-                        left join (select article, sum(starred) as starred, sum(\"read\") as \"read\", max(arsse_marks.modified) as marked_date from arsse_marks join arsse_subscriptions on arsse_subscriptions.id = arsse_marks.subscription group by article) as mark_stats on mark_stats.article = arsse_articles.id
-                        left join (select feed, count(*) as subs from arsse_subscriptions group by feed) as feed_stats on feed_stats.feed = arsse_articles.feed
-                    where arsse_articles.feed = ? and coalesce(starred,0) = 0 and (coalesce(marked_date,modified) <= ? or (coalesce(\"read\",0) = coalesce(subs,0) and coalesce(marked_date,modified) <= ?))
-                )
+            exempt_articles as (
+                SELECT 
+                    id 
+                from arsse_articles join (
+                    SELECT article, max(id) as edition from arsse_editions group by article
+                ) as latest_editions on arsse_articles.id = latest_editions.article 
+                where feed = ? order by edition desc limit ?
+            ),
+            target_articles as (
+                SELECT 
+                    id 
+                from arsse_articles
+                join (
+                    select 
+                        feed, 
+                        count(*) as subs 
+                    from arsse_subscriptions
+                    where feed = ?
+                    group by feed
+                ) as feed_stats on feed_stats.feed = arsse_articles.feed
+                left join (
+                    select 
+                        article, 
+                        sum(cast((starred = 1 and hidden = 0) as integer)) as starred, 
+                        sum(cast((\"read\" = 1 or hidden = 1) as integer)) as \"read\", 
+                        max(arsse_marks.modified) as marked_date 
+                    from arsse_marks 
+                    group by article
+                ) as mark_stats on mark_stats.article = arsse_articles.id
+                where
+                    coalesce(starred,0) = 0 
+                    and (
+                        coalesce(marked_date,modified) <= ? 
+                        or (
+                            coalesce(\"read\",0) = coalesce(subs,0) 
+                            and coalesce(marked_date,modified) <= ?
+                        )
+                    )
+            )
             DELETE FROM arsse_articles WHERE id not in (select id from exempt_articles) and id in (select id from target_articles)",
-            "int",
-            "int",
-            "int",
-            "datetime",
-            "datetime"
+            ["int", "int", "int", "datetime", "datetime"]
         );
         $limitRead = null;
         $limitUnread = null;

@@ -148,16 +148,18 @@ trait SeriesCleanup {
                     'subscription' => "int",
                     'read'         => "bool",
                     'starred'      => "bool",
+                    'hidden'       => "bool",
                     'modified'     => "datetime",
                 ],
                 'rows' => [
-                    [3,1,0,1,$weeksago],
-                    [4,1,1,0,$daysago],
-                    [6,1,1,0,$nowish],
-                    [6,2,1,0,$weeksago],
-                    [8,1,1,0,$weeksago],
-                    [9,1,1,0,$daysago],
-                    [9,2,1,0,$daysago],
+                    [3,1,0,1,0,$weeksago],
+                    [4,1,1,0,0,$daysago],
+                    [6,1,1,0,0,$nowish],
+                    [6,2,1,0,0,$weeksago],
+                    [7,2,0,1,1,$weeksago], // hidden takes precedence over starred
+                    [8,1,1,0,0,$weeksago],
+                    [9,1,1,0,0,$daysago],
+                    [9,2,0,0,1,$daysago], // hidden is the same as read for the purposes of cleanup
                 ],
             ],
         ];
