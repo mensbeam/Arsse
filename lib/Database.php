@@ -1197,7 +1197,7 @@ class Database {
      * - "block": The block rule; any article which matches this rule are hidden
      */
     public function feedRulesGet(int $feedID): Db\Result {
-        return $this->db->prepare("SELECT owner, keep_rule as keep, block_rule as block from arsse_subscriptions where feed = ? and (coalesce(keep_rule, '') || coalesce(block_rule, '')) <> ''", "int")->run($feedID);
+        return $this->db->prepare("SELECT owner, coalesce(keep_rule, '') as keep, coalesce(block_rule, '') as block from arsse_subscriptions where feed = ? and (keep || block) <> '' order by owner", "int")->run($feedID);
     }
 
     /** Retrieves various identifiers for the latest $count articles in the given newsfeed. The identifiers are:

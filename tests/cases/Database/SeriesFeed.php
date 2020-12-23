@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Database;
 
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Test\Result;
 
 trait SeriesFeed {
     protected function setUpSeriesFeed(): void {
@@ -67,17 +68,19 @@ trait SeriesFeed {
             ],
             'arsse_subscriptions' => [
                 'columns' => [
-                    'id'    => "int",
-                    'owner' => "str",
-                    'feed'  => "int",
+                    'id'         => "int",
+                    'owner'      => "str",
+                    'feed'       => "int",
+                    'keep_rule'  => "str",
+                    'block_rule' => "str",
                 ],
                 'rows' => [
-                    [1,'john.doe@example.com',1],
-                    [2,'john.doe@example.com',2],
-                    [3,'john.doe@example.com',3],
-                    [4,'john.doe@example.com',4],
-                    [5,'john.doe@example.com',5],
-                    [6,'jane.doe@example.com',1],
+                    [1,'john.doe@example.com',1,null,'^Sport$'],
+                    [2,'john.doe@example.com',2,null,null],
+                    [3,'john.doe@example.com',3,'\w+',null],
+                    [4,'john.doe@example.com',4,null,null],
+                    [5,'john.doe@example.com',5,null,'and/or'],
+                    [6,'jane.doe@example.com',1,'^(?i)[a-z]+','bluberry'],
                 ],
             ],
             'arsse_articles' => [
@@ -198,6 +201,21 @@ trait SeriesFeed {
             $this->assertResult($exp, Arsse::$db->feedMatchIds(1, [], [], [], [$m['title_content_hash']]));
         }
         $this->assertResult([['id' => 1]], Arsse::$db->feedMatchIds(1, ['e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda'])); // this ID appears in both feed 1 and feed 2; only one result should be returned
+    }
+
+    /** @dataProvider provideFilterRules */
+    public function testGetRules(int $in, array $exp): void {
+        $this->assertResult($exp, Arsse::$db->feedRulesGet($in));
+    }
+
+    public function provideFilterRules(): iterable {
+        return [
+            [1, [['owner' => "john.doe@example.com", 'keep' => "",    'block' => "^Sport$"], ['owner' => "jane.doe@example.com", 'keep' => "^(?i)[a-z]+", 'block' => "bluberry"]]],
+            [2, []],
+            [3, [['owner' => "john.doe@example.com", 'keep' => '\w+', 'block' => ""]]],
+            [4, []],
+            [5, [['owner' => "john.doe@example.com", 'keep' => "",    'block' => "and/or"]]],
+        ];
     }
 
     public function testUpdateAFeed(): void {
