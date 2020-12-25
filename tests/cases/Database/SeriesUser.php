@@ -180,4 +180,29 @@ trait SeriesUser {
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         Arsse::$db->userLookup(2112);
     }
+
+    public function testRenameAUser(): void {
+        $this->assertTrue(Arsse::$db->userRename("john.doe@example.com", "juan.doe@example.com"));
+        $state = $this->primeExpectations($this->data, [
+            'arsse_users'     => ['id', 'num'], 
+            'arsse_user_meta' => ["owner", "key", "value"]
+        ]);
+        $state['arsse_users']['rows'][2][0] = "juan.doe@example.com";
+        $state['arsse_user_meta']['rows'][6][0] = "juan.doe@example.com";
+        $this->compareExpectations(static::$drv, $state);
+    }
+
+    public function testRenameAUserToTheSameName(): void {
+        $this->assertFalse(Arsse::$db->userRename("john.doe@example.com", "john.doe@example.com"));
+    }
+
+    public function testRenameAMissingUser(): void {
+        $this->assertException("doesNotExist", "User", "ExceptionConflict");
+        Arsse::$db->userRename("juan.doe@example.com", "john.doe@example.com");
+    }
+
+    public function testRenameAUserToADuplicateName(): void {
+        $this->assertException("alreadyExists", "User", "ExceptionConflict");
+        Arsse::$db->userRename("john.doe@example.com", "jane.doe@example.com");
+    }
 }

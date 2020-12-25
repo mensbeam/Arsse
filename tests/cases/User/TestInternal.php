@@ -9,6 +9,7 @@ namespace JKingWeb\Arsse\TestCase\User;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\User\Driver as DriverInterface;
+use JKingWeb\Arsse\User\ExceptionConflict;
 use JKingWeb\Arsse\User\Internal\Driver;
 
 /** @covers \JKingWeb\Arsse\User\Internal\Driver */
@@ -88,6 +89,21 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->userAdd;
     }
 
+    public function testRenameAUser(): void {
+        $john = "john.doe@example.com";
+        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        $this->assertTrue((new Driver)->userRename($john, "jane.doe@example.com"));
+        $this->assertFalse((new Driver)->userRename($john, $john));
+        \Phake::verify(Arsse::$db, \Phake::times(2))->userExists($john);
+    }
+
+    public function testRenameAMissingUser(): void {
+        $john = "john.doe@example.com";
+        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
+        $this->assertException("doesNotExist", "User", "ExceptionConflict");
+        (new Driver)->userRename($john, "jane.doe@example.com");
+    }
+
     public function testRemoveAUser(): void {
         $john = "john.doe@example.com";
         \Phake::when(Arsse::$db)->userRemove->thenReturn(true)->thenThrow(new \JKingWeb\Arsse\User\ExceptionConflict("doesNotExist"));
@@ -104,10 +120,16 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testSetAPassword(): void {
         $john = "john.doe@example.com";
-        \Phake::verifyNoFurtherInteraction(Arsse::$db);
+        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
         $this->assertSame("superman", (new Driver)->userPasswordSet($john, "superman"));
         $this->assertSame(null, (new Driver)->userPasswordSet($john, null));
         \Phake::verify(Arsse::$db, \Phake::times(0))->userPasswordSet;
+    }
+
+    public function testSetAPasswordForAMssingUser(): void {
+        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
+        $this->assertException("doesNotExist", "User", "ExceptionConflict");
+        (new Driver)->userPasswordSet("john.doe@example.com", "secret");
     }
 
     public function testUnsetAPassword(): void {

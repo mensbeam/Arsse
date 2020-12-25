@@ -27,6 +27,13 @@ interface Driver {
      */
     public function userAdd(string $user, string $password = null): ?string;
 
+    /** Renames a user
+     * 
+     * The implementation must retain all user metadata as well as the 
+     * user's password
+    */
+    public function userRename(string $user, string $newName): bool;
+
     /** Removes a user */
     public function userRemove(string $user): bool;
 
@@ -44,7 +51,7 @@ interface Driver {
      * @param string|null $password The cleartext password to assign to the user, or null to generate a random password
      * @param string|null $oldPassword The user's previous password, if known
      */
-    public function userPasswordSet(string $user, ?string $newPassword, string $oldPassword = null);
+    public function userPasswordSet(string $user, ?string $newPassword, string $oldPassword = null): ?string;
 
     /** Removes a user's password; this makes authentication fail unconditionally
      *

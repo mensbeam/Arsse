@@ -40,6 +40,16 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
         return $password;
     }
 
+    public function userRename(string $user, string $newName): bool {
+        // do nothing: the internal database is updated regardless of what the driver does (assuming it does not throw an exception)
+        // throw an exception if the user does not exist
+        if (!$this->userExists($user)) {
+            throw new ExceptionConflict("doesNotExist", ['action' => __FUNCTION__, 'user' => $user]);
+        } else {
+            return !($user === $newName);
+        }
+    }
+
     public function userRemove(string $user): bool {
         return Arsse::$db->userRemove($user);
     }
@@ -50,14 +60,19 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
 
     public function userPasswordSet(string $user, ?string $newPassword, string $oldPassword = null): ?string {
         // do nothing: the internal database is updated regardless of what the driver does (assuming it does not throw an exception)
-        return $newPassword;
+        // throw an exception if the user does not exist
+        if (!$this->userExists($user)) {
+            throw new ExceptionConflict("doesNotExist", ['action' => __FUNCTION__, 'user' => $user]);
+        } else {
+            return $newPassword;
+        }
     }
 
     public function userPasswordUnset(string $user, string $oldPassword = null): bool {
         // do nothing: the internal database is updated regardless of what the driver does (assuming it does not throw an exception)
         // throw an exception if the user does not exist
         if (!$this->userExists($user)) {
-            throw new ExceptionConflict("doesNotExist", ['action' => "userPasswordUnset", 'user' => $user]);
+            throw new ExceptionConflict("doesNotExist", ['action' => __FUNCTION__, 'user' => $user]);
         } else {
             return true;
         }
@@ -74,7 +89,7 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
     public function userPropertiesGet(string $user, bool $includeLarge = true): array {
         // do nothing: the internal database will retrieve everything for us
         if (!$this->userExists($user)) {
-            throw new ExceptionConflict("doesNotExist", ['action' => "userPasswordUnset", 'user' => $user]);
+            throw new ExceptionConflict("doesNotExist", ['action' => __FUNCTION__, 'user' => $user]);
         } else {
             return [];
         }
@@ -83,7 +98,7 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
     public function userPropertiesSet(string $user, array $data): array {
         // do nothing: the internal database will set everything for us
         if (!$this->userExists($user)) {
-            throw new ExceptionConflict("doesNotExist", ['action' => "userPasswordUnset", 'user' => $user]);
+            throw new ExceptionConflict("doesNotExist", ['action' => __FUNCTION__, 'user' => $user]);
         } else {
             return $data;
         }

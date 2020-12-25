@@ -9,6 +9,7 @@ namespace JKingWeb\Arsse\TestCase\User;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\User;
+use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\User\ExceptionConflict;
 use JKingWeb\Arsse\User\ExceptionInput;
 use JKingWeb\Arsse\User\Driver;
@@ -41,6 +42,13 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame("john.doe@example.com", (string) $u);
         $u->id = null;
         $this->assertSame("", (string) $u);
+    }
+
+    public function testStartATransaction(): void {
+        \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(Transaction::class));
+        $u = new User($this->drv);
+        $this->assertInstanceOf(Transaction::class, $u->begin());
+        \Phake::verify(Arsse::$db)->begin();
     }
 
     public function testGeneratePasswords(): void {
@@ -174,9 +182,48 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->userExists($user);
     }
 
+    public function testRenameAUser(): void {
+        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        \Phake::when(Arsse::$db)->userAdd->thenReturn(true);
+        \Phake::when(Arsse::$db)->userRename->thenReturn(true);
+        \Phake::when($this->drv)->userRename->thenReturn(true);
+        $u = new User($this->drv);
+        $old = "john.doe@example.com";
+        $new  = "jane.doe@example.com";
+        $this->assertTrue($u->rename($old, $new));
+        \Phake::verify($this->drv)->userRename($old, $new);
+        \Phake::verify(Arsse::$db)->userExists($old);
+        \Phake::verify(Arsse::$db)->userRename($old, $new);
+    }
+
+    public function testRenameAUserWeDoNotKnow(): void {
+        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
+        \Phake::when(Arsse::$db)->userAdd->thenReturn(true);
+        \Phake::when(Arsse::$db)->userRename->thenReturn(true);
+        \Phake::when($this->drv)->userRename->thenReturn(true);
+        $u = new User($this->drv);
+        $old = "john.doe@example.com";
+        $new  = "jane.doe@example.com";
+        $this->assertTrue($u->rename($old, $new));
+        \Phake::verify($this->drv)->userRename($old, $new);
+        \Phake::verify(Arsse::$db)->userExists($old);
+        \Phake::verify(Arsse::$db)->userAdd($new, null);
+    }
+
+    public function testRenameAUserWithoutEffect(): void {
+        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
+        \Phake::when(Arsse::$db)->userAdd->thenReturn(true);
+        \Phake::when(Arsse::$db)->userRename->thenReturn(true);
+        \Phake::when($this->drv)->userRename->thenReturn(false);
+        $u = new User($this->drv);
+        $old = "john.doe@example.com";
+        $new  = "jane.doe@example.com";
+        $this->assertFalse($u->rename($old, $old));
+        \Phake::verify($this->drv)->userRename($old, $old);
+    }
+
     public function testRemoveAUser(): void {
         $user = "john.doe@example.com";
-        $pass = "secret";
         $u = new User($this->drv);
         \Phake::when($this->drv)->userRemove->thenReturn(true);
         \Phake::when(Arsse::$db)->userExists->thenReturn(true);
@@ -188,7 +235,6 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testRemoveAUserWeDoNotKnow(): void {
         $user = "john.doe@example.com";
-        $pass = "secret";
         $u = new User($this->drv);
         \Phake::when($this->drv)->userRemove->thenReturn(true);
         \Phake::when(Arsse::$db)->userExists->thenReturn(false);

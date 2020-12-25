@@ -273,6 +273,20 @@ class Database {
         return true;
     }
 
+    public function userRename(string $user, string $name): bool {
+        if ($user === $name) {
+            return false;
+        }
+        try {
+            if (!$this->db->prepare("UPDATE arsse_users set id = ? where id = ?", "str", "str")->run($name, $user)->changes()) {
+                throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+            }
+        } catch (Db\ExceptionInput $e) {
+            throw new User\ExceptionConflict("alreadyExists", ["action" => __FUNCTION__, "user" => $name], $e);
+        }
+        return true;
+    }
+
     /** Removes a user from the database */
     public function userRemove(string $user): bool {
         if ($this->db->prepare("DELETE from arsse_users where id = ?", "str")->run($user)->changes() < 1) {
