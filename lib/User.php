@@ -106,12 +106,17 @@ class User {
 
     public function rename(string $user, string $newName): bool {
         if ($this->u->userRename($user, $newName)) {
+            $tr = Arsse::$db->begin();
             if (!Arsse::$db->userExists($user)) {
                 Arsse::$db->userAdd($newName, null);
-                return true;
             } else {
-                return Arsse::$db->userRename($user, $newName);
+                Arsse::$db->userRename($user, $newName);
+                // invalidate any sessions and Fever passwords
+                Arsse::$db->sessionDestroy($newName);
+                Arsse::$db->tokenRevoke($newName, "fever.login");
             }
+            $tr->commit();
+            return true;
         }
         return false;
     }

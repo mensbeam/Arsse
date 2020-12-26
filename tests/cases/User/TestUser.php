@@ -183,6 +183,8 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testRenameAUser(): void {
+        $tr = \Phake::mock(Transaction::class);
+        \Phake::when(Arsse::$db)->begin->thenReturn($tr);
         \Phake::when(Arsse::$db)->userExists->thenReturn(true);
         \Phake::when(Arsse::$db)->userAdd->thenReturn(true);
         \Phake::when(Arsse::$db)->userRename->thenReturn(true);
@@ -191,12 +193,20 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $old = "john.doe@example.com";
         $new  = "jane.doe@example.com";
         $this->assertTrue($u->rename($old, $new));
-        \Phake::verify($this->drv)->userRename($old, $new);
-        \Phake::verify(Arsse::$db)->userExists($old);
-        \Phake::verify(Arsse::$db)->userRename($old, $new);
+        \Phake::inOrder(
+            \Phake::verify($this->drv)->userRename($old, $new),
+            \Phake::verify(Arsse::$db)->begin(),
+            \Phake::verify(Arsse::$db)->userExists($old),
+            \Phake::verify(Arsse::$db)->userRename($old, $new),
+            \Phake::verify(Arsse::$db)->sessionDestroy($new),
+            \Phake::verify(Arsse::$db)->tokenRevoke($new, "fever.login"),
+            \Phake::verify($tr)->commit()
+        );
     }
 
     public function testRenameAUserWeDoNotKnow(): void {
+        $tr = \Phake::mock(Transaction::class);
+        \Phake::when(Arsse::$db)->begin->thenReturn($tr);
         \Phake::when(Arsse::$db)->userExists->thenReturn(false);
         \Phake::when(Arsse::$db)->userAdd->thenReturn(true);
         \Phake::when(Arsse::$db)->userRename->thenReturn(true);
@@ -205,9 +215,13 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $old = "john.doe@example.com";
         $new  = "jane.doe@example.com";
         $this->assertTrue($u->rename($old, $new));
-        \Phake::verify($this->drv)->userRename($old, $new);
-        \Phake::verify(Arsse::$db)->userExists($old);
-        \Phake::verify(Arsse::$db)->userAdd($new, null);
+        \Phake::inOrder(
+            \Phake::verify($this->drv)->userRename($old, $new),
+            \Phake::verify(Arsse::$db)->begin(),
+            \Phake::verify(Arsse::$db)->userExists($old),
+            \Phake::verify(Arsse::$db)->userAdd($new, null),
+            \Phake::verify($tr)->commit()
+        );
     }
 
     public function testRenameAUserWithoutEffect(): void {
