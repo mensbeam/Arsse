@@ -84,10 +84,11 @@ class User {
     }
 
     public function add(string $user, ?string $password = null): string {
-        // ensure the user name does not contain any U+003A COLON characters, as
+        // ensure the user name does not contain any U+003A COLON or control characters, as
         // this is incompatible with HTTP Basic authentication
-        if (strpos($user, ":") !== false) {
-            throw new User\ExceptionInput("invalidUsername", "U+003A COLON");
+        if (preg_match("/[\x{00}-\x{1F}\x{7F}:]/", $user, $m)) {
+            $c = ord($m[0]);
+            throw new User\ExceptionInput("invalidUsername", "U+".str_pad((string) $c, 4, "0", \STR_PAD_LEFT)." ".\IntlChar::charName($c, \IntlChar::EXTENDED_CHAR_NAME));
         }
         try {
             $out = $this->u->userAdd($user, $password) ?? $this->u->userAdd($user, $this->generatePassword());
@@ -105,6 +106,12 @@ class User {
     }
 
     public function rename(string $user, string $newName): bool {
+        // ensure the new user name does not contain any U+003A COLON or 
+        // control characters, as this is incompatible with HTTP Basic authentication
+        if (preg_match("/[\x{00}-\x{1F}\x{7F}:]/", $newName, $m)) {
+            $c = ord($m[0]);
+            throw new User\ExceptionInput("invalidUsername", "U+".str_pad((string) $c, 4, "0", \STR_PAD_LEFT)." ".\IntlChar::charName($c, \IntlChar::EXTENDED_CHAR_NAME));
+        }
         if ($this->u->userRename($user, $newName)) {
             $tr = Arsse::$db->begin();
             if (!Arsse::$db->userExists($user)) {

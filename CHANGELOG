@@ -1,13 +1,14 @@
 Version 0.9.0 (????-??-??)
 ==========================
 
+New features:
+- Support for the Miniflux protocol (see manual for details)
+
 Bug fixes:
 - Use icons specified in Atom feeds when available
 - Do not return null as subscription unread count
-
-Changes:
-- Explicitly forbid U+003A COLON in usernames, for compatibility with HTTP
-  Basic authentication
+- Explicitly forbid U+003A COLON and control characters in usernames, for 
+  compatibility with RFC 7617
 
 Version 0.8.5 (2020-10-27)
 ==========================

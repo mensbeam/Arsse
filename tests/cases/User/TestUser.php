@@ -160,13 +160,22 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function testAddAnInvalidUser(): void {
-        $user = "john:doe@example.com";
-        $pass = "secret";
+    /** @dataProvider provideInvalidUserNames */
+    public function testAddAnInvalidUser(string $user): void {
         $u = new User($this->drv);
-        \Phake::when($this->drv)->userAdd->thenThrow(new ExceptionInput("invalidUsername"));
         $this->assertException("invalidUsername", "User", "ExceptionInput");
-        $u->add($user, $pass);
+        $u->add($user, "secret");
+    }
+
+    public function provideInvalidUserNames(): iterable {
+        // output names with control characters
+        foreach (array_merge(range(0x00, 0x1F), [0x7F]) as $ord) {
+            yield [chr($ord)];
+            yield ["john".chr($ord)."doe@example.com"];
+        }
+        // also handle colons
+        yield [":"];
+        yield ["john:doe@example.com"];
     }
 
     public function testAddAUserWithARandomPassword(): void {
@@ -231,9 +240,15 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when($this->drv)->userRename->thenReturn(false);
         $u = new User($this->drv);
         $old = "john.doe@example.com";
-        $new  = "jane.doe@example.com";
         $this->assertFalse($u->rename($old, $old));
         \Phake::verify($this->drv)->userRename($old, $old);
+    }
+
+    /** @dataProvider provideInvalidUserNames */
+    public function testRenameAUserToAnInvalidName(string $new): void {
+        $u = new User($this->drv);
+        $this->assertException("invalidUsername", "User", "ExceptionInput");
+        $u->rename("john.doe@example.com", $new);
     }
 
     public function testRemoveAUser(): void {
