@@ -16,6 +16,7 @@ use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\REST\Miniflux\V1;
 use JKingWeb\Arsse\REST\Miniflux\ErrorResponse;
 use JKingWeb\Arsse\User\ExceptionConflict;
+use JKingWeb\Arsse\User\Exception;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\JsonResponse as Response;
 use Laminas\Diactoros\Response\EmptyResponse;
@@ -32,6 +33,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         [
             'id'                      => 1,
             'username'                => "john.doe@example.com",
+            'last_login_at'           => self::NOW,
             'is_admin'                => true,
             'theme'                   => "custom",
             'language'                => "fr_CA",
@@ -40,7 +42,6 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             'entries_per_page'        => 200,
             'keyboard_shortcuts'      => false,
             'show_reading_time'       => false,
-            'last_login_at'           => self::NOW,
             'entry_swipe'             => false,
             'extra'                   => [
                 'custom_css' => "p {}",
@@ -49,6 +50,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         [
             'id'                      => 2,
             'username'                => "jane.doe@example.com",
+            'last_login_at'           => self::NOW,
             'is_admin'                => false,
             'theme'                   => "light_serif",
             'language'                => "en_US",
@@ -57,7 +59,6 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             'entries_per_page'        => 100,
             'keyboard_shortcuts'      => true,
             'show_reading_time'       => true,
-            'last_login_at'           => self::NOW,
             'entry_swipe'             => true,
             'extra'                   => [
                 'custom_css' => "",
@@ -166,7 +167,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testRejectBadlyTypedData(): void {
-        $exp = new ErrorResponse(["InvalidInputType", 'field' => "url", 'expected' => "string", 'actual' => "integer"], 400);
+        $exp = new ErrorResponse(["InvalidInputType", 'field' => "url", 'expected' => "string", 'actual' => "integer"], 422);
         $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => 2112]));
     }
 
@@ -277,11 +278,11 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provideCategoryAdditions(): iterable {
         return [
-            ["New",       new Response(['id' => 2112, 'title' => "New", 'user_id' => 42])],
+            ["New",       new Response(['id' => 2112, 'title' => "New", 'user_id' => 42], 201)],
             ["Duplicate", new ErrorResponse(["DuplicateCategory", 'title' => "Duplicate"], 500)],
             ["",          new ErrorResponse(["InvalidCategory", 'title' => ""], 500)],
             [" ",         new ErrorResponse(["InvalidCategory", 'title' => " "], 500)],
-            [false,       new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 400)],
+            [false,       new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"],422)],
         ];
     }
 
@@ -307,12 +308,12 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             [2, "Duplicate", "constraintViolation", new ErrorResponse(["DuplicateCategory", 'title' => "Duplicate"], 500)],
             [2, "",          "missing",             new ErrorResponse(["InvalidCategory", 'title' => ""], 500)],
             [2, " ",         "whitespace",          new ErrorResponse(["InvalidCategory", 'title' => " "], 500)],
-            [2, false,       "subjectMissing",      new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 400)],
+            [2, false,       "subjectMissing",      new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"],422)],
             [1, "New",       true,                  new Response(['id' => 1, 'title' => "New", 'user_id' => 42])],
             [1, "Duplicate", "constraintViolation", new Response(['id' => 1, 'title' => "Duplicate", 'user_id' => 42])], // This is allowed because the name of the root folder is only a duplicate in circumstances where it is used
             [1, "",          "missing",             new ErrorResponse(["InvalidCategory", 'title' => ""], 500)],
             [1, " ",         "whitespace",          new ErrorResponse(["InvalidCategory", 'title' => " "], 500)],
-            [1, false,       false,                 new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 400)],
+            [1, false,       false,                 new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 422)],
         ];
     }
 

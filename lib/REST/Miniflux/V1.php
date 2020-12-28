@@ -16,7 +16,8 @@ use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\REST\Exception;
-use JKingWeb\Arsse\User\ExceptionConflict as UserException;
+use JKingWeb\Arsse\User\ExceptionConflict;
+use JKingWeb\Arsse\User\Exception as UserException;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\EmptyResponse;
@@ -29,11 +30,25 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const ACCEPTED_TYPES_JSON = ["application/json"];
     protected const TOKEN_LENGTH = 32;
     protected const VALID_JSON = [
+        // user properties which map directly to Arsse user metadata are listed separately
         'url'        => "string",
         'username'   => "string",
         'password'   => "string",
         'user_agent' => "string",
         'title'      => "string",
+    ];
+    protected const USER_META_MAP = [
+        // Miniflux ID             // Arsse ID        Default value  Extra
+        'is_admin'                => ["admin",        false,         false],
+        'theme'                   => ["theme",        "light_serif", false],
+        'language'                => ["lang",         "en_US",       false],
+        'timezone'                => ["tz",           "UTC",         false],
+        'entry_sorting_direction' => ["sort_asc",     false,         false],
+        'entries_per_page'        => ["page_size",    100,           false],
+        'keyboard_shortcuts'      => ["shortcuts",    true,          false],
+        'show_reading_time'       => ["reading_time", true,          false],
+        'entry_swipe'             => ["swipe",        true,          false],
+        'custom_css'              => ["stylesheet",   "",            true],
     ];
     protected const CALLS = [                // handler method        Admin  Path   Body   Query
         '/categories'                    => [
@@ -102,7 +117,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         ],
         '/users/1'                       => [
             'GET'                        => ["getUserByNum",          true,  true,  false, false],
-            'PUT'                        => ["updateUserByNum",       true,  true,  true,  false],
+            'PUT'                        => ["updateUserByNum",       false, true,  true,  false], // requires admin for users other than self
             'DELETE'                     => ["deleteUserByNum",       true,  true,  false, false],
         ],
         '/users/1/mark-all-as-read'      => [
@@ -246,7 +261,17 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             if (!isset($body[$k])) {
                 $body[$k] = null;
             } elseif (gettype($body[$k]) !== $t) {
-                return new ErrorResponse(["InvalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])]);
+                return new ErrorResponse(["InvalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])], 422);
+            }
+        }
+        foreach (self::USER_META_MAP as $k => [,$d,]) {
+            $t = gettype($d);
+            if (!isset($body[$k])) {
+                $body[$k] = null;
+            } elseif (gettype($body[$k]) !== $t) {
+                return new ErrorResponse(["InvalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])], 422);
+            } elseif ($k === "entry_sorting_direction" && !in_array($body[$k], ["asc", "desc"])) {
+                return new ErrorResponse(["InvalidInputValue", 'field' => $k], 422);
             }
         }
         return $body;
@@ -285,23 +310,23 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                     continue;
                 }
             }
-            $out[] = [
+            $entry = [
                 'id'                      => $info['num'],
                 'username'                => $u,
-                'is_admin'                => $info['admin'] ?? false,
-                'theme'                   => $info['theme'] ?? "light_serif",
-                'language'                => $info['lang'] ?? "en_US",
-                'timezone'                => $info['tz'] ?? "UTC",
-                'entry_sorting_direction' => ($info['sort_asc'] ?? false) ? "asc" : "desc",
-                'entries_per_page'        => $info['page_size'] ?? 100,
-                'keyboard_shortcuts'      => $info['shortcuts'] ?? true,
-                'show_reading_time'       => $info['reading_time'] ?? true,
                 'last_login_at'           => $now,
-                'entry_swipe'             => $info['swipe'] ?? true,
-                'extra'                   => [
-                    'custom_css' => $info['stylesheet'] ?? "",
-                ],
             ];
+            foreach (self::USER_META_MAP as $ext => [$int, $default, $extra]) {
+                if (!$extra) {
+                    $entry[$ext] = $info[$int] ?? $default;
+                } else {
+                    if (!isset($entry['extra'])) {
+                        $entry['extra'] = [];
+                    }
+                    $entry['extra'][$ext] = $info[$int] ?? $default;
+                }
+            }
+            $entry['entry_sorting_direction'] = ($entry['entry_sorting_direction']) ? "asc" : "desc";
+            $out[] = $entry;
         }
         return $out;
     }
@@ -326,6 +351,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function getUsers(): ResponseInterface {
+        $tr = Arsse::$user->begin();
         return new Response($this->listUsers(Arsse::$user->list(), false));
     }
 
@@ -348,6 +374,70 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function getCurrentUser(): ResponseInterface {
         return new Response($this->listUsers([Arsse::$user->id], false)[0] ?? new \stdClass);
+    }
+
+    protected function updateUserByNum(array $data, array $path): ResponseInterface {
+        try {
+            if (!$this->isAdmin()) {
+                // this function is restricted to admins unless the affected user and calling user are the same
+                if (Arsse::$db->userLookup((int) $path[1]) !== Arsse::$user->id) {
+                    return new ErrorResponse("403", 403);
+                } elseif ($data['is_admin']) {
+                    // non-admins should not be able to set themselves as admin
+                    return new ErrorResponse("InvalidElevation");
+                }
+                $user = Arsse::$user->id;
+            } else {
+                $user = Arsse::$db->userLookup((int) $path[1]);
+            }
+        } catch (ExceptionConflict $e) {
+            return new ErrorResponse("404", 404);
+        }
+        // map Miniflux properties to internal metadata properties
+        $in = [];
+        foreach (self::USER_META_MAP as $i => [$o,,]) {
+            if (isset($data[$i])) {
+                if ($i === "entry_sorting_direction") {
+                    $in[$o] = $data[$i] === "asc";
+                } else {
+                    $in[$o] = $data[$i];
+                }
+            }
+        }
+        // make any requested changes
+        try {
+            $tr = Arsse::$user->begin();
+            if (isset($data['username'])) {
+                Arsse::$user->rename($user, $data['username']);
+                $user = $data['username'];
+            }
+            if (isset($data['password'])) {
+                Arsse::$user->passwordSet($user, $data['password']);
+            }
+            if ($in) {
+                Arsse::$user->propertiesSet($user, $in);
+            }
+            // read out the newly-modified user and commit the changes
+            $out = $this->listUsers([$user], true)[0];
+            $tr->commit();
+        } catch (UserException $e) {
+            switch ($e->getCode()) {
+                case 10403:
+                    return new ErrorResponse(["DuplicateUser", 'user' => $data['username']], 409);
+                case 20441:
+                    return new ErrorResponse(["InvalidTimeone", 'tz' => $data['timezone']], 422);
+                case 10443:
+                    return new ErrorResponse("InvalidPageSize", 422);
+                case 10444:
+                    return new ErrorResponse(["InvalidUsername", $e->getMessage()], 422);
+            }
+            throw $e; // @codeCoverageIgnore
+        }
+        // add the input password if a password change was requested
+        if (isset($data['password'])) {
+            $out['password'] = $data['password'];
+        }
+        return new Response($out);
     }
 
     protected function getCategories(): ResponseInterface {
@@ -374,7 +464,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
-        return new Response(['id' => $id + 1, 'title' => $data['title'], 'user_id' => $meta['num']]);
+        return new Response(['id' => $id + 1, 'title' => $data['title'], 'user_id' => $meta['num']], 201);
     }
 
     protected function updateCategory(array $path, array $data): ResponseInterface {
@@ -449,7 +539,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     public static function tokenList(string $user): array {
         if (!Arsse::$db->userExists($user)) {
-            throw new UserException("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
+            throw new ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
         $out = [];
         foreach (Arsse::$db->tokenList($user, "miniflux.login") as $r) {
