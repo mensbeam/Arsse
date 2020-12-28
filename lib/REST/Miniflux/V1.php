@@ -24,7 +24,7 @@ use Laminas\Diactoros\Response\EmptyResponse;
 use Laminas\Diactoros\Response\JsonResponse as Response;
 
 class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
-    public const VERSION = "2.0.25";
+    public const VERSION = "2.0.26";
 
     protected const ACCEPTED_TYPES_OPML = ["application/xml", "text/xml", "text/x-opml"];
     protected const ACCEPTED_TYPES_JSON = ["application/json"];
