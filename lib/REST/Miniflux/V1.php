@@ -268,10 +268,12 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $t = gettype($d);
             if (!isset($body[$k])) {
                 $body[$k] = null;
+            } elseif ($k === "entry_sorting_direction") {
+                if (!in_array($body[$k], ["asc", "desc"])) {
+                    return new ErrorResponse(["InvalidInputValue", 'field' => $k], 422);
+                }
             } elseif (gettype($body[$k]) !== $t) {
                 return new ErrorResponse(["InvalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])], 422);
-            } elseif ($k === "entry_sorting_direction" && !in_array($body[$k], ["asc", "desc"])) {
-                return new ErrorResponse(["InvalidInputValue", 'field' => $k], 422);
             }
         }
         return $body;
@@ -376,22 +378,23 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new Response($this->listUsers([Arsse::$user->id], false)[0] ?? new \stdClass);
     }
 
-    protected function updateUserByNum(array $data, array $path): ResponseInterface {
-        try {
-            if (!$this->isAdmin()) {
-                // this function is restricted to admins unless the affected user and calling user are the same
-                if (Arsse::$db->userLookup((int) $path[1]) !== Arsse::$user->id) {
-                    return new ErrorResponse("403", 403);
-                } elseif ($data['is_admin']) {
-                    // non-admins should not be able to set themselves as admin
-                    return new ErrorResponse("InvalidElevation");
-                }
-                $user = Arsse::$user->id;
-            } else {
-                $user = Arsse::$db->userLookup((int) $path[1]);
+    protected function updateUserByNum(array $path, array $data): ResponseInterface {
+        // this function is restricted to admins unless the affected user and calling user are the same
+        $user = Arsse::$user->propertiesGet(Arsse::$user->id, false);
+        if (((int) $path[1]) === $user['num']) {
+            if ($data['is_admin'] && !$user['admin']) {
+                // non-admins should not be able to set themselves as admin
+                return new ErrorResponse("InvalidElevation", 403);
             }
-        } catch (ExceptionConflict $e) {
-            return new ErrorResponse("404", 404);
+            $user = Arsse::$user->id;
+        } elseif (!$user['admin']) {
+            return new ErrorResponse("403", 403);
+        } else {
+            try {
+                $user = Arsse::$user->lookup((int) $path[1]);
+            } catch (ExceptionConflict $e) {
+                return new ErrorResponse("404", 404);
+            }
         }
         // map Miniflux properties to internal metadata properties
         $in = [];
@@ -424,12 +427,12 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             switch ($e->getCode()) {
                 case 10403:
                     return new ErrorResponse(["DuplicateUser", 'user' => $data['username']], 409);
-                case 20441:
-                    return new ErrorResponse(["InvalidTimeone", 'tz' => $data['timezone']], 422);
+                case 10441:
+                    return new ErrorResponse(["InvalidInputValue", 'field' => "timezone"], 422);
                 case 10443:
-                    return new ErrorResponse("InvalidPageSize", 422);
+                    return new ErrorResponse(["InvalidInputValue", 'field' => "entries_per_page"], 422);
                 case 10444:
-                    return new ErrorResponse(["InvalidUsername", $e->getMessage()], 422);
+                    return new ErrorResponse(["InvalidInputValue", 'field' => "username"], 422);
             }
             throw $e; // @codeCoverageIgnore
         }

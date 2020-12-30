@@ -16,7 +16,7 @@ use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\REST\Miniflux\V1;
 use JKingWeb\Arsse\REST\Miniflux\ErrorResponse;
 use JKingWeb\Arsse\User\ExceptionConflict;
-use JKingWeb\Arsse\User\Exception;
+use JKingWeb\Arsse\User\ExceptionInput as UserExceptionInput;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\JsonResponse as Response;
 use Laminas\Diactoros\Response\EmptyResponse;
@@ -82,13 +82,14 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         self::clearData();
         self::setConf();
-        // create a mock user manager; we use a PHPUnitmock because Phake for reasons unknown is unable to mock the User class correctly, sometimes
-        Arsse::$user = $this->createMock(User::class);
-        Arsse::$user->method("propertiesGet")->willReturn(['num' => 42, 'admin' => false, 'root_folder_name' => null]);
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
         $this->transaction = \Phake::mock(Transaction::class);
         \Phake::when(Arsse::$db)->begin->thenReturn($this->transaction);
+        // create a mock user manager; we use a PHPUnitmock because Phake for reasons unknown is unable to mock the User class correctly, sometimes
+        Arsse::$user = $this->createMock(User::class);
+        Arsse::$user->method("propertiesGet")->willReturn(['num' => 42, 'admin' => false, 'root_folder_name' => null]);
+        Arsse::$user->method("begin")->willReturn($this->transaction);
         //initialize a handler
         $this->h = new V1();
     }
@@ -236,6 +237,87 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             [false, "/users/2",                    new ErrorResponse("403", 403)],
             [false, "/users/jack.doe@example.com", new ErrorResponse("403", 403)],
             [false, "/users/47",                   new ErrorResponse("403", 403)],
+        ];
+    }
+
+    /** @dataProvider provideUserModifications */
+    public function testModifyAUser(bool $admin, string $url, array $body, $in1, $out1, $in2, $out2, $in3, $out3, ResponseInterface $exp): void {
+        $this->h = $this->createPartialMock(V1::class, ["now"]);
+        $this->h->method("now")->willReturn(Date::normalize(self::NOW));
+        Arsse::$user = $this->createMock(User::class);
+        Arsse::$user->method("begin")->willReturn($this->transaction);
+        Arsse::$user->method("propertiesGet")->willReturnCallback(function(string $u, bool $includeLarge) use ($admin) {
+            if ($u === "john.doe@example.com" || $u === "ook") {
+                return ['num' => 2, 'admin' => $admin];
+            } else {
+                return ['num' => 1, 'admin' => true];
+            }
+        });
+        Arsse::$user->method("lookup")->willReturnCallback(function(int $u) {
+            if ($u === 1) {
+                return "jane.doe@example.com";
+            } elseif ($u === 2) {
+                return "john.doe@example.com";
+            } else {
+                throw new ExceptionConflict("doesNotExist");
+            }
+        });
+        if ($out1 instanceof \Exception) {
+            Arsse::$user->method("rename")->willThrowException($out1);
+        } else {
+            Arsse::$user->method("rename")->willReturn($out1 ?? false);
+        }
+        if ($out2 instanceof \Exception) {
+            Arsse::$user->method("passwordSet")->willThrowException($out2);
+        } else {
+            Arsse::$user->method("passwordSet")->willReturn($out2 ?? "");
+        }
+        if ($out3 instanceof \Exception) {
+            Arsse::$user->method("propertiesSet")->willThrowException($out3);
+        } else {
+            Arsse::$user->method("propertiesSet")->willReturn($out3 ?? []);
+        }
+        $user = $url === "/users/1" ? "jane.doe@example.com" : "john.doe@example.com";
+        if ($in1 === null) {
+            Arsse::$user->expects($this->exactly(0))->method("rename");
+        } else {
+            Arsse::$user->expects($this->exactly(1))->method("rename")->with($user, $in1);
+            $user = $in1;
+        }
+        if ($in2 === null) {
+            Arsse::$user->expects($this->exactly(0))->method("passwordSet");
+        } else {
+            Arsse::$user->expects($this->exactly(1))->method("passwordSet")->with($user, $in2);
+        }
+        if ($in3 === null) {
+            Arsse::$user->expects($this->exactly(0))->method("propertiesSet");
+        } else {
+            Arsse::$user->expects($this->exactly(1))->method("propertiesSet")->with($user, $in3);
+        }
+        $this->assertMessage($exp, $this->req("PUT", $url, $body));
+    }
+
+    public function provideUserModifications(): iterable {
+        $out1 = ['num' => 2, 'admin' => false];
+        $out2 = ['num' => 1, 'admin' => false];
+        $resp1 = array_merge($this->users[1], ['username' => "john.doe@example.com"]);
+        $resp2 = array_merge($this->users[1], ['id' => 1, 'is_admin' => true]);
+        return [
+            [false, "/users/1", ['is_admin' => 0],                          null,  null,                                      null,  null,  null,                  null,                                            new ErrorResponse(["InvalidInputType", 'field' => "is_admin", 'expected' => "boolean", 'actual' => "integer"], 422)],
+            [false, "/users/1", ['entry_sorting_direction' => "bad"],       null,  null,                                      null,  null,  null,                  null,                                            new ErrorResponse(["InvalidInputValue", 'field' => "entry_sorting_direction"], 422)],
+            [false, "/users/1", ['theme' => "stark"],                       null,  null,                                      null,  null,  null,                  null,                                            new ErrorResponse("403", 403)],
+            [false, "/users/2", ['is_admin' => true],                       null,  null,                                      null,  null,  null,                  null,                                            new ErrorResponse("InvalidElevation", 403)],
+            [false, "/users/2", ['language' => "fr_CA"],                    null,  null,                                      null,  null,  ['lang' => "fr_CA"],   $out1,                                           new Response($resp1)],
+            [false, "/users/2", ['entry_sorting_direction' => "asc"],       null,  null,                                      null,  null,  ['sort_asc' => true],  $out1,                                           new Response($resp1)],
+            [false, "/users/2", ['entry_sorting_direction' => "desc"],      null,  null,                                      null,  null,  ['sort_asc' => false], $out1,                                           new Response($resp1)],
+            [false, "/users/2", ['entries_per_page' => -1],                 null,  null,                                      null,  null,  ['page_size' => -1],   new UserExceptionInput("invalidNonZeroInteger"), new ErrorResponse(["InvalidInputValue", 'field' => "entries_per_page"], 422)],
+            [false, "/users/2", ['timezone' => "Ook"],                      null,  null,                                      null,  null,  ['tz' => "Ook"],       new UserExceptionInput("invalidTimezone"),       new ErrorResponse(["InvalidInputValue", 'field' => "timezone"], 422)],
+            [false, "/users/2", ['username' => "j:k"],                      "j:k", new UserExceptionInput("invalidUsername"), null,  null,  null,                  null,                                            new ErrorResponse(["InvalidInputValue", 'field' => "username"], 422)],
+            [false, "/users/2", ['username' => "ook"],                      "ook", new ExceptionConflict("alreadyExists"),    null,  null,  null,                  null,                                            new ErrorResponse(["DuplicateUser", 'user' => "ook"], 409)],
+            [false, "/users/2", ['password' => "ook"],                      null,  null,                                      "ook", "ook", null,                  null,                                            new Response(array_merge($resp1, ['password' => "ook"]))],
+            [false, "/users/2", ['username' => "ook", 'password' => "ook"], "ook", true,                                      "ook", "ook", null,                  null,                                            new Response(array_merge($resp1, ['username' => "ook", 'password' => "ook"]))],
+            [true,  "/users/1", ['theme' => "stark"],                       null,  null,                                      null,  null,  ['theme' => "stark"],  $out2,                                           new Response($resp2)],
+            [true,  "/users/3", ['theme' => "stark"],                       null,  null,                                      null,  null,  null,                  null,                                            new ErrorResponse("404", 404)],
         ];
     }
 

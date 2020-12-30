@@ -22,9 +22,6 @@ return [
     'API.Miniflux.Error.InvalidCategory'                                   => 'Invalid category title "{title}"',
     'API.Miniflux.Error.InvalidElevation'                                  => 'Only administrators can change permissions of standard users',
     'API.Miniflux.Error.DuplicateUser'                                     => 'The user name "{user}" already exists',
-    'API.Miniflux.Error.InvalidUser'                                       => '{0}',
-    'API.Miniflux.Error.InvalidTimezone'                                   => 'Specified time zone "{tz}" is invalid',
-    'API.Miniflux.Error.InvalidPageSize'                                   => 'Page size must be greater than zero',
 
     'API.TTRSS.Category.Uncategorized'                                     => 'Uncategorized',
     'API.TTRSS.Category.Special'                                           => 'Special',
