@@ -400,6 +400,13 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage(new ErrorResponse("403", 403), $this->req("DELETE", "/users/2112"));
     }
 
+    public function testMarkAllArticlesAsRead(): void {
+        \Phake::when(Arsse::$db)->articleMark->thenReturn(true);
+        $this->assertMessage(new ErrorResponse("403", 403), $this->req("PUT", "/users/1/mark-all-as-read"));
+        $this->assertMessage(new EmptyResponse(204), $this->req("PUT", "/users/42/mark-all-as-read"));
+        \Phake::verify(Arsse::$db)->articleMark("john.doe@example.com", ['read' => true], (new Context)->hidden(false));
+    }
+
     public function testListCategories(): void {
         \Phake::when(Arsse::$db)->folderList->thenReturn(new Result($this->v([
             ['id' => 1,  'name' => "Science"],

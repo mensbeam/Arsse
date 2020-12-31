@@ -489,6 +489,16 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new EmptyResponse(204);
     }
 
+    protected function markUserByNum(array $path): ResponseInterface {
+        // this function is restricted to the logged-in user
+        $user = Arsse::$user->propertiesGet(Arsse::$user->id, false);
+        if (((int) $path[1]) !== $user['num']) {
+            return new ErrorResponse("403", 403);
+        }
+        Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], (new Context)->hidden(false));
+        return new EmptyResponse(204);
+    }
+
     protected function getCategories(): ResponseInterface {
         $out = [];
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
