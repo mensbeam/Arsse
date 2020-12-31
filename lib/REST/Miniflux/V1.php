@@ -480,6 +480,15 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new Response($out);
     }
 
+    protected function deleteUserByNum(array $path): ResponseInterface {
+        try {
+            Arsse::$user->remove(Arsse::$user->lookup((int) $path[1]));
+        } catch (ExceptionConflict $e) {
+            return new ErrorResponse("404", 404);
+        }
+        return new EmptyResponse(204);
+    }
+
     protected function getCategories(): ResponseInterface {
         $out = [];
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);

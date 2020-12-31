@@ -371,9 +371,33 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testAddAUserWithoutAuthority(): void {
-        Arsse::$user = $this->createMock(User::class);
-        Arsse::$user->method("propertiesGet")->willReturn(['num' => 1, 'admin' => false]);
         $this->assertMessage(new ErrorResponse("403", 403), $this->req("POST", "/users", []));
+    }
+
+    public function testDeleteAUser(): void {
+        Arsse::$user = $this->createMock(User::class);
+        Arsse::$user->method("propertiesGet")->willReturn(['admin' => true]);
+        Arsse::$user->method("lookup")->willReturn("john.doe@example.com");
+        Arsse::$user->method("remove")->willReturn(true);
+        Arsse::$user->expects($this->exactly(1))->method("lookup")->with(2112);
+        Arsse::$user->expects($this->exactly(1))->method("remove")->with("john.doe@example.com");
+        $this->assertMessage(new EmptyResponse(204), $this->req("DELETE", "/users/2112"));
+    }
+
+    public function testDeleteAMissingUser(): void {
+        Arsse::$user = $this->createMock(User::class);
+        Arsse::$user->method("propertiesGet")->willReturn(['admin' => true]);
+        Arsse::$user->method("lookup")->willThrowException(new ExceptionConflict("doesNotExist"));
+        Arsse::$user->method("remove")->willReturn(true);
+        Arsse::$user->expects($this->exactly(1))->method("lookup")->with(2112);
+        Arsse::$user->expects($this->exactly(0))->method("remove");
+        $this->assertMessage(new ErrorResponse("404", 404), $this->req("DELETE", "/users/2112"));
+    }
+
+    public function testDeleteAUserWithoutAuthority(): void {
+        Arsse::$user->expects($this->exactly(0))->method("lookup");
+        Arsse::$user->expects($this->exactly(0))->method("remove");
+        $this->assertMessage(new ErrorResponse("403", 403), $this->req("DELETE", "/users/2112"));
     }
 
     public function testListCategories(): void {
