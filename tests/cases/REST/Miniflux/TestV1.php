@@ -416,9 +416,10 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideCategoryAdditions(): iterable {
         return [
             ["New",       new Response(['id' => 2112, 'title' => "New", 'user_id' => 42], 201)],
-            ["Duplicate", new ErrorResponse(["DuplicateCategory", 'title' => "Duplicate"], 500)],
-            ["",          new ErrorResponse(["InvalidCategory", 'title' => ""], 500)],
-            [" ",         new ErrorResponse(["InvalidCategory", 'title' => " "], 500)],
+            ["Duplicate", new ErrorResponse(["DuplicateCategory", 'title' => "Duplicate"], 409)],
+            ["",          new ErrorResponse(["InvalidCategory", 'title' => ""], 422)],
+            [" ",         new ErrorResponse(["InvalidCategory", 'title' => " "], 422)],
+            [null,        new ErrorResponse(["MissingInputValue", 'field' => "title"], 422)],
             [false,       new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"],422)],
         ];
     }
@@ -442,14 +443,16 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         return [
             [3, "New",       "subjectMissing",      new ErrorResponse("404", 404)],
             [2, "New",       true,                  new Response(['id' => 2, 'title' => "New", 'user_id' => 42])],
-            [2, "Duplicate", "constraintViolation", new ErrorResponse(["DuplicateCategory", 'title' => "Duplicate"], 500)],
-            [2, "",          "missing",             new ErrorResponse(["InvalidCategory", 'title' => ""], 500)],
-            [2, " ",         "whitespace",          new ErrorResponse(["InvalidCategory", 'title' => " "], 500)],
-            [2, false,       "subjectMissing",      new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"],422)],
+            [2, "Duplicate", "constraintViolation", new ErrorResponse(["DuplicateCategory", 'title' => "Duplicate"], 409)],
+            [2, "",          "missing",             new ErrorResponse(["InvalidCategory", 'title' => ""], 422)],
+            [2, " ",         "whitespace",          new ErrorResponse(["InvalidCategory", 'title' => " "], 422)],
+            [2, null,        "missing",             new ErrorResponse(["MissingInputValue", 'field' => "title"], 422)],
+            [2, false,       "subjectMissing",      new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 422)],
             [1, "New",       true,                  new Response(['id' => 1, 'title' => "New", 'user_id' => 42])],
             [1, "Duplicate", "constraintViolation", new Response(['id' => 1, 'title' => "Duplicate", 'user_id' => 42])], // This is allowed because the name of the root folder is only a duplicate in circumstances where it is used
-            [1, "",          "missing",             new ErrorResponse(["InvalidCategory", 'title' => ""], 500)],
-            [1, " ",         "whitespace",          new ErrorResponse(["InvalidCategory", 'title' => " "], 500)],
+            [1, "",          "missing",             new ErrorResponse(["InvalidCategory", 'title' => ""], 422)],
+            [1, " ",         "whitespace",          new ErrorResponse(["InvalidCategory", 'title' => " "], 422)],
+            [1, null,        "missing",             new ErrorResponse(["MissingInputValue", 'field' => "title"], 422)],
             [1, false,       false,                 new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 422)],
         ];
     }

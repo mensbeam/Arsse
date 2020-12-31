@@ -50,81 +50,81 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'entry_swipe'             => ["swipe",        true,          false],
         'custom_css'              => ["stylesheet",   "",            true],
     ];
-    protected const CALLS = [                // handler method        Admin  Path   Body   Query
+    protected const CALLS = [                // handler method        Admin  Path   Body   Query  Required fields
         '/categories'                    => [
-            'GET'                        => ["getCategories",         false, false, false, false],
-            'POST'                       => ["createCategory",        false, false, true,  false],
+            'GET'                        => ["getCategories",         false, false, false, false, []],
+            'POST'                       => ["createCategory",        false, false, true,  false, ["title"]],
         ],
         '/categories/1'                  => [
-            'PUT'                        => ["updateCategory",        false, true,  true,  false],
-            'DELETE'                     => ["deleteCategory",        false, true,  false, false],
+            'PUT'                        => ["updateCategory",        false, true,  true,  false, ["title"]], // title is effectively required since no other field can be changed
+            'DELETE'                     => ["deleteCategory",        false, true,  false, false, []],
         ],
         '/categories/1/mark-all-as-read' => [
-            'PUT'                        => ["markCategory",          false, true,  false, false],
+            'PUT'                        => ["markCategory",          false, true,  false, false, []],
         ],
         '/discover'                      => [
-            'POST'                       => ["discoverSubscriptions", false, false, true,  false],
+            'POST'                       => ["discoverSubscriptions", false, false, true,  false, ["url"]],
         ],
         '/entries'                       => [
-            'GET'                        => ["getEntries",            false, false, false, true],
-            'PUT'                        => ["updateEntries",         false, false, true,  false],
+            'GET'                        => ["getEntries",            false, false, false, true,  []],
+            'PUT'                        => ["updateEntries",         false, false, true,  false, []],
         ],
         '/entries/1'                     => [
-            'GET'                        => ["getEntry",              false, true,  false, false],
+            'GET'                        => ["getEntry",              false, true,  false, false, []],
         ],
         '/entries/1/bookmark'            => [
-            'PUT'                        => ["toggleEntryBookmark",   false, true,  false, false],
+            'PUT'                        => ["toggleEntryBookmark",   false, true,  false, false, []],
         ],
         '/export'                        => [
-            'GET'                        => ["opmlExport",            false, false, false, false],
+            'GET'                        => ["opmlExport",            false, false, false, false, []],
         ],
         '/feeds'                         => [
-            'GET'                        => ["getFeeds",              false, false, false, false],
-            'POST'                       => ["createFeed",            false, false, true,  false],
+            'GET'                        => ["getFeeds",              false, false, false, false, []],
+            'POST'                       => ["createFeed",            false, false, true,  false, []],
         ],
         '/feeds/1'                       => [
-            'GET'                        => ["getFeed",               false, true,  false, false],
-            'PUT'                        => ["updateFeed",            false, true,  true,  false],
-            'DELETE'                     => ["deleteFeed",            false, true,  false, false],
+            'GET'                        => ["getFeed",               false, true,  false, false, []],
+            'PUT'                        => ["updateFeed",            false, true,  true,  false, []],
+            'DELETE'                     => ["deleteFeed",            false, true,  false, false, []],
         ],
         '/feeds/1/entries'               => [
-            'GET'                        => ["getFeedEntries",        false, true,  false, false],
+            'GET'                        => ["getFeedEntries",        false, true,  false, false, []],
         ],
         '/feeds/1/entries/1'             => [
-            'GET'                        => ["getFeedEntry",          false, true,  false, false],
+            'GET'                        => ["getFeedEntry",          false, true,  false, false, []],
         ],
         '/feeds/1/icon'                  => [
-            'GET'                        => ["getFeedIcon",           false, true,  false, false],
+            'GET'                        => ["getFeedIcon",           false, true,  false, false, []],
         ],
         '/feeds/1/mark-all-as-read'      => [
-            'PUT'                        => ["markFeed",              false, true,  false, false],
+            'PUT'                        => ["markFeed",              false, true,  false, false, []],
         ],
         '/feeds/1/refresh'               => [
-            'PUT'                        => ["refreshFeed",           false, true,  false, false],
+            'PUT'                        => ["refreshFeed",           false, true,  false, false, []],
         ],
         '/feeds/refresh'                 => [
-            'PUT'                        => ["refreshAllFeeds",       false, false, false, false],
+            'PUT'                        => ["refreshAllFeeds",       false, false, false, false, []],
         ],
         '/import'                        => [
-            'POST'                       => ["opmlImport",            false, false, true,  false],
+            'POST'                       => ["opmlImport",            false, false, true,  false, []],
         ],
         '/me'                            => [
-            'GET'                        => ["getCurrentUser",        false, false, false, false],
+            'GET'                        => ["getCurrentUser",        false, false, false, false, []],
         ],
         '/users'                         => [
-            'GET'                        => ["getUsers",              true,  false, false, false],
-            'POST'                       => ["createUser",            true,  false, true,  false],
+            'GET'                        => ["getUsers",              true,  false, false, false, []],
+            'POST'                       => ["createUser",            true,  false, true,  false, ["username", "password"]],
         ],
         '/users/1'                       => [
-            'GET'                        => ["getUserByNum",          true,  true,  false, false],
-            'PUT'                        => ["updateUserByNum",       false, true,  true,  false], // requires admin for users other than self
-            'DELETE'                     => ["deleteUserByNum",       true,  true,  false, false],
+            'GET'                        => ["getUserByNum",          true,  true,  false, false, []],
+            'PUT'                        => ["updateUserByNum",       false, true,  true,  false, []], // requires admin for users other than self
+            'DELETE'                     => ["deleteUserByNum",       true,  true,  false, false, []],
         ],
         '/users/1/mark-all-as-read'      => [
-            'PUT'                        => ["markUserByNum",         false, true,  false, false],
+            'PUT'                        => ["markUserByNum",         false, true,  false, false, []],
         ],
         '/users/*'                       => [
-            'GET'                        => ["getUserById",           true,  true,  false, false],
+            'GET'                        => ["getUserById",           true,  true,  false, false, []],
         ],
     ];
 
@@ -169,7 +169,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($func instanceof ResponseInterface) {
             return $func;
         } else {
-            [$func, $reqAdmin, $reqPath, $reqBody, $reqQuery] = $func;
+            [$func, $reqAdmin, $reqPath, $reqBody, $reqQuery, $reqFields] = $func;
         }
         if ($reqAdmin && !$this->isAdmin()) {
             return new ErrorResponse("403", 403);
@@ -195,7 +195,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 } else {
                     $data = [];
                 }
-                $data = $this->normalizeBody((array) $data);
+                $data = $this->normalizeBody((array) $data, $reqFields);
                 if ($data instanceof ResponseInterface) {
                     return $data;
                 }
@@ -255,7 +255,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return implode("/", $path);
     }
 
-    protected function normalizeBody(array $body) {
+    protected function normalizeBody(array $body, array $req) {
         // Miniflux does not attempt to coerce values into different types
         foreach (self::VALID_JSON as $k => $t) {
             if (!isset($body[$k])) {
@@ -264,6 +264,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 return new ErrorResponse(["InvalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])], 422);
             }
         }
+        //normalize user-specific input
         foreach (self::USER_META_MAP as $k => [,$d,]) {
             $t = gettype($d);
             if (!isset($body[$k])) {
@@ -274,6 +275,12 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 }
             } elseif (gettype($body[$k]) !== $t) {
                 return new ErrorResponse(["InvalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])], 422);
+            }
+        }
+        // check for any missing required values
+        foreach ($req as $k) {
+            if (!isset($body[$k])) {
+                return new ErrorResponse(["MissingInputValue", 'field' => $k], 422);
             }
         }
         return $body;
@@ -406,11 +413,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function createUser(array $data): ResponseInterface {
-        if ($data['username'] === null) {
-            return new ErrorResponse(["MissingInputValue", 'field' => "username"], 422);
-        } elseif ($data['password'] === null) {
-            return new ErrorResponse(["MissingInputValue", 'field' => "password"], 422);
-        }
         try {
             $tr = Arsse::$user->begin();
             $data['password'] = Arsse::$user->add($data['username'], $data['password']);
@@ -496,9 +498,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $id = Arsse::$db->folderAdd(Arsse::$user->id, ['name' => (string) $data['title']]);
         } catch (ExceptionInput $e) {
             if ($e->getCode() === 10236) {
-                return new ErrorResponse(["DuplicateCategory", 'title' => $data['title']], 500);
+                return new ErrorResponse(["DuplicateCategory", 'title' => $data['title']], 409);
             } else {
-                return new ErrorResponse(["InvalidCategory", 'title' => $data['title']], 500);
+                return new ErrorResponse(["InvalidCategory", 'title' => $data['title']], 422);
             }
         }
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
@@ -521,11 +523,11 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         } catch (ExceptionInput $e) {
             if ($e->getCode() === 10236) {
-                return new ErrorResponse(["DuplicateCategory", 'title' => $title], 500);
+                return new ErrorResponse(["DuplicateCategory", 'title' => $title], 409);
             } elseif (in_array($e->getCode(), [10237, 10239])) {
                 return new ErrorResponse("404", 404);
             } else {
-                return new ErrorResponse(["InvalidCategory", 'title' => $title], 500);
+                return new ErrorResponse(["InvalidCategory", 'title' => $title], 422);
             }
         }
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
