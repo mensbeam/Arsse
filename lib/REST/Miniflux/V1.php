@@ -333,6 +333,33 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return $out;
     }
 
+    protected function editUser(string $user, array $data): array {
+        // map Miniflux properties to internal metadata properties
+        $in = [];
+        foreach (self::USER_META_MAP as $i => [$o,,]) {
+            if (isset($data[$i])) {
+                if ($i === "entry_sorting_direction") {
+                    $in[$o] = $data[$i] === "asc";
+                } else {
+                    $in[$o] = $data[$i];
+                }
+            }
+        }
+        // make any requested changes
+        $tr = Arsse::$user->begin();
+        if ($in) {
+            Arsse::$user->propertiesSet($user, $in);
+        }
+        // read out the newly-modified user and commit the changes
+        $out = $this->listUsers([$user], true)[0];
+        $tr->commit();
+        // add the input password if a password change was requested
+        if (isset($data['password'])) {
+            $out['password'] = $data['password'];
+        }
+        return $out;
+    }
+
     protected function discoverSubscriptions(array $data): ResponseInterface {
         try {
             $list = Feed::discoverAll((string) $data['url'], (string) $data['username'], (string) $data['password']);
@@ -378,6 +405,33 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new Response($this->listUsers([Arsse::$user->id], false)[0] ?? new \stdClass);
     }
 
+    protected function createUser(array $data): ResponseInterface {
+        if ($data['username'] === null) {
+            return new ErrorResponse(["MissingInputValue", 'field' => "username"], 422);
+        } elseif ($data['password'] === null) {
+            return new ErrorResponse(["MissingInputValue", 'field' => "password"], 422);
+        }
+        try {
+            $tr = Arsse::$user->begin();
+            $data['password'] = Arsse::$user->add($data['username'], $data['password']);
+            $out = $this->editUser($data['username'], $data);
+            $tr->commit();
+        } catch (UserException $e) {
+            switch ($e->getCode()) {
+                case 10403:
+                    return new ErrorResponse(["DuplicateUser", 'user' => $data['username']], 409);
+                case 10441:
+                    return new ErrorResponse(["InvalidInputValue", 'field' => "timezone"], 422);
+                case 10443:
+                    return new ErrorResponse(["InvalidInputValue", 'field' => "entries_per_page"], 422);
+                case 10444:
+                    return new ErrorResponse(["InvalidInputValue", 'field' => "username"], 422);
+            }
+            throw $e; // @codeCoverageIgnore
+        }
+        return new Response($out, 201);
+    }
+
     protected function updateUserByNum(array $path, array $data): ResponseInterface {
         // this function is restricted to admins unless the affected user and calling user are the same
         $user = Arsse::$user->propertiesGet(Arsse::$user->id, false);
@@ -396,17 +450,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 return new ErrorResponse("404", 404);
             }
         }
-        // map Miniflux properties to internal metadata properties
-        $in = [];
-        foreach (self::USER_META_MAP as $i => [$o,,]) {
-            if (isset($data[$i])) {
-                if ($i === "entry_sorting_direction") {
-                    $in[$o] = $data[$i] === "asc";
-                } else {
-                    $in[$o] = $data[$i];
-                }
-            }
-        }
         // make any requested changes
         try {
             $tr = Arsse::$user->begin();
@@ -417,11 +460,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             if (isset($data['password'])) {
                 Arsse::$user->passwordSet($user, $data['password']);
             }
-            if ($in) {
-                Arsse::$user->propertiesSet($user, $in);
-            }
-            // read out the newly-modified user and commit the changes
-            $out = $this->listUsers([$user], true)[0];
+            $out = $this->editUser($user, $data);
             $tr->commit();
         } catch (UserException $e) {
             switch ($e->getCode()) {
@@ -435,10 +474,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                     return new ErrorResponse(["InvalidInputValue", 'field' => "username"], 422);
             }
             throw $e; // @codeCoverageIgnore
-        }
-        // add the input password if a password change was requested
-        if (isset($data['password'])) {
-            $out['password'] = $data['password'];
         }
         return new Response($out);
     }

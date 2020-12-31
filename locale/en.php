@@ -11,6 +11,7 @@ return [
     'API.Miniflux.Error.401'                                               => 'Access Unauthorized',
     'API.Miniflux.Error.403'                                               => 'Access Forbidden',
     'API.Miniflux.Error.404'                                               => 'Resource Not Found',
+    'API.Miniflux.Error.MissingInputValue'                                 => 'Required key "{field}" was not present in input',
     'API.Miniflux.Error.InvalidBodyJSON'                                   => 'Invalid JSON payload: {0}',
     'API.Miniflux.Error.InvalidInputType'                                  => 'Input key "{field}" of type {actual} was expected as {expected}',
     'API.Miniflux.Error.InvalidInputValue'                                 => 'Supplied value is not valid for input key "{field}"',

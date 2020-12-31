@@ -321,6 +321,61 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
+    /** @dataProvider provideUserAdditions */
+    public function testAddAUser(array $body, $in1, $out1, $in2, $out2, ResponseInterface $exp): void {
+        $this->h = $this->createPartialMock(V1::class, ["now"]);
+        $this->h->method("now")->willReturn(Date::normalize(self::NOW));
+        Arsse::$user = $this->createMock(User::class);
+        Arsse::$user->method("begin")->willReturn($this->transaction);
+        Arsse::$user->method("propertiesGet")->willReturnCallback(function(string $u, bool $includeLarge) {
+            if ($u === "john.doe@example.com") {
+                return ['num' => 1, 'admin' => true];
+            } else {
+                return ['num' => 2, 'admin' => false];
+            }
+        });
+        if ($out1 instanceof \Exception) {
+            Arsse::$user->method("add")->willThrowException($out1);
+        } else {
+            Arsse::$user->method("add")->willReturn($in1[1] ?? "");
+        }
+        if ($out2 instanceof \Exception) {
+            Arsse::$user->method("propertiesSet")->willThrowException($out2);
+        } else {
+            Arsse::$user->method("propertiesSet")->willReturn($out2 ?? []);
+        }
+        if ($in1 === null) {
+            Arsse::$user->expects($this->exactly(0))->method("add");
+        } else {
+            Arsse::$user->expects($this->exactly(1))->method("add")->with(...($in1 ?? []));
+        }
+        if ($in2 === null) {
+            Arsse::$user->expects($this->exactly(0))->method("propertiesSet");
+        } else {
+            Arsse::$user->expects($this->exactly(1))->method("propertiesSet")->with($body['username'], $in2);
+        }
+        $this->assertMessage($exp, $this->req("POST", "/users", $body));
+    }
+
+    public function provideUserAdditions(): iterable {
+        $resp1 = array_merge($this->users[1], ['username' => "ook", 'password' => "eek"]);
+        return [
+            [[],                                                                   null,           null,                                      null,                   null,                                            new ErrorResponse(["MissingInputValue", 'field' => "username"], 422)],
+            [['username' => "ook"],                                                null,           null,                                      null,                   null,                                            new ErrorResponse(["MissingInputValue", 'field' => "password"], 422)],
+            [['username' => "ook", 'password' => "eek"],                           ["ook", "eek"], new ExceptionConflict("alreadyExists"),    null,                   null,                                            new ErrorResponse(["DuplicateUser", 'user' => "ook"], 409)],
+            [['username' => "j:k", 'password' => "eek"],                           ["j:k", "eek"], new UserExceptionInput("invalidUsername"), null,                   null,                                            new ErrorResponse(["InvalidInputValue", 'field' => "username"], 422)],
+            [['username' => "ook", 'password' => "eek", 'timezone' => "ook"],      ["ook", "eek"], "eek",                                     ['tz' => "ook"],        new UserExceptionInput("invalidTimezone"),       new ErrorResponse(["InvalidInputValue", 'field' => "timezone"], 422)],
+            [['username' => "ook", 'password' => "eek", 'entries_per_page' => -1], ["ook", "eek"], "eek",                                     ['page_size' => -1],    new UserExceptionInput("invalidNonZeroInteger"), new ErrorResponse(["InvalidInputValue", 'field' => "entries_per_page"], 422)],
+            [['username' => "ook", 'password' => "eek", 'theme' => "default"],     ["ook", "eek"], "eek",                                     ['theme' => "default"], ['theme' => "default"],                          new Response($resp1, 201)],
+        ];
+    }
+
+    public function testAddAUserWithoutAuthority(): void {
+        Arsse::$user = $this->createMock(User::class);
+        Arsse::$user->method("propertiesGet")->willReturn(['num' => 1, 'admin' => false]);
+        $this->assertMessage(new ErrorResponse("403", 403), $this->req("POST", "/users", []));
+    }
+
     public function testListCategories(): void {
         \Phake::when(Arsse::$db)->folderList->thenReturn(new Result($this->v([
             ['id' => 1,  'name' => "Science"],
