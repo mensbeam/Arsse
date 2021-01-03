@@ -96,11 +96,11 @@ class RoboFile extends \Robo\Tasks {
         if (extension_loaded("pcov")) {
             return "$php -d pcov.enabled=1 -d pcov.directory=$code";
         } elseif (extension_loaded("xdebug")) {
-            return $php;
+            return "$php -d xdebug.mode=coverage";
         } elseif (file_exists($dir."pcov.$ext")) {
             return "$php -d extension=pcov.$ext -d pcov.enabled=1 -d pcov.directory=$code";
         } elseif (file_exists($dir."xdebug.$ext")) {
-            return "$php -d zend_extension=xdebug.$ext";
+            return "$php -d zend_extension=xdebug.$ext -d xdebug.mode=coverage";
         } else {
             if (IS_WIN) {
                 $dbg = dirname(\PHP_BINARY)."\\phpdbg.exe";
