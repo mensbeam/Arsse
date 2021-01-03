@@ -100,6 +100,7 @@ abstract class AbstractException extends \Exception {
         "ImportExport/Exception.invalidFolderName"    => 10613,
         "ImportExport/Exception.invalidFolderCopy"    => 10614,
         "ImportExport/Exception.invalidTagName"       => 10615,
+        "Rule/Exception.invalidPattern"               => 10701,
     ];
 
     public function __construct(string $msgID = "", $vars = null, \Throwable $e = null) {

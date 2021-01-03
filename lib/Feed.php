@@ -79,10 +79,14 @@ class Feed {
             // we only really care if articles have been modified; if there are no new articles, act as if the feed is unchanged
             if (!sizeof($this->newItems) && !sizeof($this->changedItems)) {
                 $this->modified = false;
-            }
-            // if requested, scrape full content for any new and changed items
-            if ($scrape) {
-                $this->scrape();
+            } else {
+                if ($feedID) {
+                    $this->computeFilterRules($feedID);
+                }
+                // if requested, scrape full content for any new and changed items
+                if ($scrape) {
+                    $this->scrape();
+                }
             }
         }
         // compute the time at which the feed should next be fetched
@@ -119,7 +123,7 @@ class Feed {
         }
     }
 
-    protected function parse(): bool {
+    protected function parse(): void {
         try {
             $feed = $this->resource->reader->getParser(
                 $this->resource->getUrl(),
@@ -222,7 +226,6 @@ class Feed {
             sort($f->categories);
         }
         $this->data = $feed;
-        return true;
     }
 
     protected function deduplicateItems(array $items): array {
@@ -269,13 +272,13 @@ class Feed {
         return $out;
     }
 
-    protected function matchToDatabase(int $feedID = null): bool {
+    protected function matchToDatabase(int $feedID = null): void {
         // first perform deduplication on items
         $items = $this->deduplicateItems($this->data->items);
         // if we haven't been given a database feed ID to check against, all items are new
         if (is_null($feedID)) {
             $this->newItems = $items;
-            return true;
+            return;
         }
         // get as many of the latest articles in the database as there are in the feed
         $articles = Arsse::$db->feedMatchLatest($feedID, sizeof($items))->getAll();
@@ -303,7 +306,6 @@ class Feed {
             // merge the two change-lists, preserving keys
             $this->changedItems = array_combine(array_merge(array_keys($this->changedItems), array_keys($changed)), array_merge($this->changedItems, $changed));
         }
-        return true;
     }
 
     protected function matchItems(array $items, array $articles): array {
@@ -438,7 +440,7 @@ class Feed {
         return $dates;
     }
 
-    protected function scrape(): bool {
+    protected function scrape(): void {
         $scraper = new Scraper(self::configure());
         foreach (array_merge($this->newItems, $this->changedItems) as $item) {
             $scraper->setUrl($item->url);
@@ -447,6 +449,17 @@ class Feed {
                 $item->content = $scraper->getFilteredContent();
             }
         }
-        return true;
+    }
+
+    protected function computeFilterRules(int $feedID): void {
+        return;
+        $rules = Arsse::$db->feedRulesGet($feedID);
+        foreach ($rules as $r) {
+            $keep = "";
+            $block = "";
+            if (strlen($r['keep'])) {
+                
+            }
+        }
     }
 }

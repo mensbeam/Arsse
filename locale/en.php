@@ -194,4 +194,5 @@ return [
     'Exception.JKingWeb/Arsse/ImportExport/Exception.invalidFolderName'    => 'Input data contains an invalid folder name',
     'Exception.JKingWeb/Arsse/ImportExport/Exception.invalidFolderCopy'    => 'Input data contains multiple folders of the same name under the same parent',
     'Exception.JKingWeb/Arsse/ImportExport/Exception.invalidTagName'       => 'Input data contains an invalid tag name',
+    'Exception.JKingWeb/Arsse/Rule/Exception.invalidPattern'               => 'Specified rule pattern is invalid'
 ];
