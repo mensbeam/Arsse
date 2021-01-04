@@ -28,4 +28,61 @@ abstract class Rule {
         }
         return $pattern;
     }
+
+    public static function validate(string $pattern): bool {
+        try {
+            static::prep($pattern);
+        } catch (Exception $e) {
+            return false;
+        }
+        return true;
+    }
+
+    /** applies keep and block rules against the title and categories of an article
+     * 
+     * Returns true if the article is to be kept, and false if it is to be suppressed
+     */
+    public static function apply(string $keepRule, string $blockRule, string $title, array $categories = []): bool {
+        // if neither rule is processed we should keep
+        $keep = true;
+        // add the title to the front of the category array
+        array_unshift($categories, $title);
+        // process the keep rule if it exists
+        if (strlen($keepRule)) {
+            try {
+                $rule = static::prep($keepRule);
+            } catch (Exception $e) {
+                return true;
+            }
+            // if a keep rule is specified the default state is now not to keep
+            $keep = false;
+            foreach ($categories as $str) {
+                if (is_string($str)) {
+                    if (preg_match($rule, $str)) {
+                        // keep if the keep-rule matches one of the strings
+                        $keep = true;
+                        break;
+                    }
+                }
+            }
+        }
+        // process the block rule if the keep rule was matched
+        if ($keep && strlen($blockRule)) {
+            try {
+                $rule = static::prep($blockRule);
+            } catch (Exception $e) {
+                return true;
+            }
+            foreach ($categories as $str) {
+                if (is_string($str)) {
+                    if (preg_match($rule, $str)) {
+                        // do not keep if the block-rule matches one of the strings
+                        $keep = false;
+                        break;
+                    }
+                }
+            }
+        }
+        return $keep;
+    }
 }
