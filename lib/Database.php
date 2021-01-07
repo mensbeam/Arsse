@@ -762,6 +762,7 @@ class Database {
         // validate inputs
         $folder = $this->folderValidateId($user, $folder)['id'];
         // create a complex query
+        $integer = $this->db->sqlToken("integer");
         $q = new Query(
             "SELECT
                 s.id as id,
@@ -789,7 +790,7 @@ class Database {
                     select 
                         subscription, 
                         sum(hidden) as hidden,
-                        sum(cast((\"read\" = 1 and hidden = 0) as integer)) as marked
+                        sum(cast((\"read\" = 1 and hidden = 0) as $integer)) as marked
                     from arsse_marks group by subscription
                 ) as mark_stats on mark_stats.subscription = s.id"
         );
@@ -1211,7 +1212,7 @@ class Database {
      * - "block": The block rule; any article which matches this rule are hidden
      */
     public function feedRulesGet(int $feedID): Db\Result {
-        return $this->db->prepare("SELECT owner, coalesce(keep_rule, '') as keep, coalesce(block_rule, '') as block from arsse_subscriptions where feed = ? and (keep || block) <> '' order by owner", "int")->run($feedID);
+        return $this->db->prepare("SELECT owner, coalesce(keep_rule, '') as keep, coalesce(block_rule, '') as block from arsse_subscriptions where feed = ? and (coalesce(keep_rule, '') || coalesce(block_rule, '')) <> '' order by owner", "int")->run($feedID);
     }
 
     /** Retrieves various identifiers for the latest $count articles in the given newsfeed. The identifiers are:
@@ -1803,6 +1804,7 @@ class Database {
 
     /** Deletes from the database articles which are beyond the configured clean-up threshold */
     public function articleCleanup(): bool {
+        $integer = $this->db->sqlToken("integer");
         $query = $this->db->prepareArray(
             "WITH RECURSIVE
             exempt_articles as (
@@ -1828,8 +1830,8 @@ class Database {
                 left join (
                     select 
                         article, 
-                        sum(cast((starred = 1 and hidden = 0) as integer)) as starred, 
-                        sum(cast((\"read\" = 1 or hidden = 1) as integer)) as \"read\", 
+                        sum(cast((starred = 1 and hidden = 0) as $integer)) as starred, 
+                        sum(cast((\"read\" = 1 or hidden = 1) as $integer)) as \"read\", 
                         max(arsse_marks.modified) as marked_date 
                     from arsse_marks 
                     group by article
@@ -1960,6 +1962,7 @@ class Database {
      * @param boolean $includeEmpty Whether to include (true) or supress (false) labels which have no articles assigned to them
      */
     public function labelList(string $user, bool $includeEmpty = true): Db\Result {
+        $integer = $this->db->sqlToken("integer");
         return $this->db->prepareArray(
             "SELECT * FROM (
                 SELECT
@@ -1975,7 +1978,7 @@ class Database {
                         SELECT
                             label,
                             sum(hidden) as hidden,
-                            sum(cast((\"read\" = 1 and hidden = 0) as integer)) as marked
+                            sum(cast((\"read\" = 1 and hidden = 0) as $integer)) as marked
                         from arsse_marks
                             join arsse_subscriptions on arsse_subscriptions.id = arsse_marks.subscription
                             join arsse_label_members on arsse_label_members.article = arsse_marks.article
@@ -2025,6 +2028,7 @@ class Database {
         $this->labelValidateId($user, $id, $byName, false);
         $field = $byName ? "name" : "id";
         $type = $byName ? "str" : "int";
+        $integer = $this->db->sqlToken("integer");
         $out = $this->db->prepareArray(
             "SELECT
                 id,
@@ -2039,7 +2043,7 @@ class Database {
                     SELECT
                         label,
                         sum(hidden) as hidden,
-                        sum(cast((\"read\" = 1 and hidden = 0) as integer)) as marked
+                        sum(cast((\"read\" = 1 and hidden = 0) as $integer)) as marked
                     from arsse_marks
                     join arsse_subscriptions on arsse_subscriptions.id = arsse_marks.subscription
                     join arsse_label_members on arsse_label_members.article = arsse_marks.article

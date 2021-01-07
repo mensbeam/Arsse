@@ -90,13 +90,6 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertTrue($this->drv->charsetAcceptable());
     }
 
-    public function testTranslateAToken(): void {
-        $this->assertRegExp("/^[a-z][a-z0-9]*$/i", $this->drv->sqlToken("greatest"));
-        $this->assertRegExp("/^\"?[a-z][a-z0-9_\-]*\"?$/i", $this->drv->sqlToken("nocase"));
-        $this->assertRegExp("/^[a-z][a-z0-9]*$/i", $this->drv->sqlToken("like"));
-        $this->assertSame("distinct", $this->drv->sqlToken("distinct"));
-    }
-
     public function testExecAValidStatement(): void {
         $this->assertTrue($this->drv->exec($this->create));
     }
@@ -385,5 +378,19 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testPerformMaintenance(): void {
         // this performs maintenance in the absence of tables; see BaseUpdate.php for another test with tables
         $this->assertTrue($this->drv->maintenance());
+    }
+
+    public function testTranslateTokens(): void {
+        $greatest = $this->drv->sqlToken("GrEatESt");
+        $nocase = $this->drv->sqlToken("noCASE");
+        $like = $this->drv->sqlToken("liKe");
+        $integer = $this->drv->sqlToken("InTEGer");
+
+        $this->assertSame("NOT_A_TOKEN", $this->drv->sqlToken("NOT_A_TOKEN"));
+
+        $this->assertSame("Z", $this->drv->query("SELECT $greatest('Z', 'A')")->getValue());
+        $this->assertSame("Z", $this->drv->query("SELECT 'Z' collate $nocase")->getValue());
+        $this->assertSame("Z", $this->drv->query("SELECT 'Z' where 'Z' $like 'z'")->getValue());
+        $this->assertEquals(1, $this->drv->query("SELECT CAST((1=1) as $integer)")->getValue());
     }
 }

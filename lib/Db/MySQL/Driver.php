@@ -81,6 +81,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         switch (strtolower($token)) {
             case "nocase":
                 return '"utf8mb4_unicode_ci"';
+            case "integer":
+                return "signed integer";
             default:
                 return $token;
         }

@@ -74,6 +74,7 @@ interface Driver {
      * - "greatest": the GREATEST function implemented by PostgreSQL and MySQL
      * - "nocase": the name of a general-purpose case-insensitive collation sequence
      * - "like": the case-insensitive LIKE operator
+     * - "integer": the integer type to use for explicit casts
      */
     public function sqlToken(string $token): string;
 
