@@ -35,16 +35,18 @@ class TestRule extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provideApplications(): iterable {
         return [
-            ["",           "",           "Title", ["Dummy", "Category"], true],
-            ["^Title$",    "",           "Title", ["Dummy", "Category"], true],
-            ["^Category$", "",           "Title", ["Dummy", "Category"], true],
-            ["^Naught$",   "",           "Title", ["Dummy", "Category"], false],
-            ["",           "^Title$",    "Title", ["Dummy", "Category"], false],
-            ["",           "^Category$", "Title", ["Dummy", "Category"], false],
-            ["",           "^Naught$",   "Title", ["Dummy", "Category"], true],
-            ["^Category$", "^Category$", "Title", ["Dummy", "Category"], false],
-            ["[",          "",           "Title", ["Dummy", "Category"], true],
-            ["",           "[",          "Title", ["Dummy", "Category"], true],
+            ["",           "",           "Title",   ["Dummy", "Category"], true],
+            ["^Title$",    "",           "Title",   ["Dummy", "Category"], true],
+            ["^Category$", "",           "Title",   ["Dummy", "Category"], true],
+            ["^Naught$",   "",           "Title",   ["Dummy", "Category"], false],
+            ["",           "^Title$",    "Title",   ["Dummy", "Category"], false],
+            ["",           "^Category$", "Title",   ["Dummy", "Category"], false],
+            ["",           "^Naught$",   "Title",   ["Dummy", "Category"], true],
+            ["^Category$", "^Category$", "Title",   ["Dummy", "Category"], false],
+            ["[",          "",           "Title",   ["Dummy", "Category"], true],
+            ["",           "[",          "Title",   ["Dummy", "Category"], true],
+            ["",           "^A B C$",    "A  B\nC", ["X\n   Y  \t  \r Z"], false],
+            ["",           "^X Y Z$",    "A  B\nC", ["X\n   Y  \t  \r Z"], false],
         ];
     }
 }

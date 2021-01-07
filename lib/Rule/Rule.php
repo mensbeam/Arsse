@@ -45,8 +45,10 @@ abstract class Rule {
     public static function apply(string $keepRule, string $blockRule, string $title, array $categories = []): bool {
         // if neither rule is processed we should keep
         $keep = true;
-        // add the title to the front of the category array
-        array_unshift($categories, $title);
+        // merge and clean the data to match
+        $data = array_map(function($str) {
+            return preg_replace('/\s+/', " ", $str);
+        }, array_merge([$title], $categories));
         // process the keep rule if it exists
         if (strlen($keepRule)) {
             try {
@@ -56,7 +58,7 @@ abstract class Rule {
             }
             // if a keep rule is specified the default state is now not to keep
             $keep = false;
-            foreach ($categories as $str) {
+            foreach ($data as $str) {
                 if (is_string($str)) {
                     if (preg_match($rule, $str)) {
                         // keep if the keep-rule matches one of the strings
@@ -73,7 +75,7 @@ abstract class Rule {
             } catch (Exception $e) {
                 return true;
             }
-            foreach ($categories as $str) {
+            foreach ($data as $str) {
                 if (is_string($str)) {
                     if (preg_match($rule, $str)) {
                         // do not keep if the block-rule matches one of the strings

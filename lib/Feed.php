@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Rule\Rule;
 use PicoFeed\PicoFeedException;
 use PicoFeed\Config\Config;
 use PicoFeed\Client\Client;
@@ -25,6 +26,7 @@ class Feed {
     public $nextFetch;
     public $newItems = [];
     public $changedItems = [];
+    public $filteredItems = [];
 
     public static function discover(string $url, string $username = '', string $password = ''): string {
         // fetch the candidate feed
@@ -452,14 +454,16 @@ class Feed {
     }
 
     protected function computeFilterRules(int $feedID): void {
-        return;
         $rules = Arsse::$db->feedRulesGet($feedID);
         foreach ($rules as $r) {
-            $keep = "";
-            $block = "";
-            if (strlen($r['keep'])) {
-                
+            $stats = ['new' => [], 'changed' => []];
+            foreach ($this->newItems as $index => $item) {
+                $stats['new'][$index] = Rule::apply($r['keep'], $r['block'], $item->title, $item->categories);
             }
+            foreach ($this->changedItems as $index => $item) {
+                $stats['changed'][$index] = Rule::apply($r['keep'], $r['block'], $item->title, $item->categories);
+            }
+            $this->filteredItems[$r['owner']] = $stats;
         }
     }
 }

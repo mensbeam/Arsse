@@ -95,6 +95,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
         self::setConf();
         Arsse::$db = \Phake::mock(Database::class);
+        \Phake::when(Arsse::$db)->feedRulesGet->thenReturn(new Result([]));
     }
 
     public function testParseAFeed(): void {
