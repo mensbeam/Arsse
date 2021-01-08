@@ -4,7 +4,7 @@
 <rss version="2.0">
 <channel>
     <title>Some feed</title>
-    <link>http://example.com/</link>
+    <link>http://localhost:8000/</link>
     <description>Just a generic feed</description>
 
     <item>

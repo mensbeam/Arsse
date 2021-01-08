@@ -41,6 +41,9 @@ $defaults = [ // default values for response
 ];
 
 $url = explode("?", $_SERVER['REQUEST_URI'])[0];
+if ($url === "/") {
+    $url = "/index";
+}
 $base = BASE."tests".\DIRECTORY_SEPARATOR."docroot";
 $test = $base.str_replace("/", \DIRECTORY_SEPARATOR, $url).".php";
 if (!file_exists($test)) {

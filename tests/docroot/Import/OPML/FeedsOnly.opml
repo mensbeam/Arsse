@@ -1,10 +1,10 @@
 <opml>
     <body>
-        <outline type="rss" xmlUrl="http://example.com/1" text="Feed 1"/>
-        <outline type="rss" xmlUrl="http://example.com/2" text=""/>
-        <outline type="rss" xmlUrl="http://example.com/3"/>
-        <outline type="rss" xmlUrl="http://example.com/4" title="Feed 4"> <!-- Only the "text" attribute is used -->
-            <outline type="rss" xmlUrl="http://example.com/!" title="Not a feed"/> <!-- Any descendants of a feed are skipped -->
+        <outline type="rss" xmlUrl="http://localhost:8000/1" text="Feed 1"/>
+        <outline type="rss" xmlUrl="http://localhost:8000/2" text=""/>
+        <outline type="rss" xmlUrl="http://localhost:8000/3"/>
+        <outline type="rss" xmlUrl="http://localhost:8000/4" title="Feed 4"> <!-- Only the "text" attribute is used -->
+            <outline type="rss" xmlUrl="http://localhost:8000/!" title="Not a feed"/> <!-- Any descendants of a feed are skipped -->
         </outline>
         <outline type="rss" xmlUrl="" category="whee"/>
         <outline type="rss" category="whee,whoo,"/>

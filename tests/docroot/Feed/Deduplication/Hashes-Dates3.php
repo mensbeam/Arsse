@@ -4,7 +4,7 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
 <channel>
     <title>Test feed</title>
-    <link>http://example.com/</link>
+    <link>http://localhost:8000/</link>
     <description>A basic feed for testing</description>
 
     <item>

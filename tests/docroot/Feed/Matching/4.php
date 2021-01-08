@@ -4,7 +4,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <title>Example feed title</title>
     <id>urn:uuid:0fd8f6d8-43df-11e7-8511-9b59a0324eb8</id>
-    <link rel="alternate" type="text/html" href="http://example.com/"/>
+    <link rel="alternate" type="text/html" href="http://localhost:8000/"/>
 
     <entry>
         <id>urn:uuid:df329114-43df-11e7-9f23-a938604d62f8</id>

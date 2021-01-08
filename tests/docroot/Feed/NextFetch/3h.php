@@ -4,7 +4,7 @@
 <rss version="2.0">
 <channel>
     <title>Example title</title>
-    <link>http://example.com</link>
+    <link>http://localhost:8000/</link>
     <description>Example description</description>
 
     <item>
