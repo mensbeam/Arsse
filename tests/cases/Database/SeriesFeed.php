@@ -76,9 +76,9 @@ trait SeriesFeed {
                 ],
                 'rows' => [
                     [1,'john.doe@example.com',1,null,'^Sport$'],
-                    [2,'john.doe@example.com',2,null,null],
+                    [2,'john.doe@example.com',2,"",null],
                     [3,'john.doe@example.com',3,'\w+',null],
-                    [4,'john.doe@example.com',4,null,null],
+                    [4,'john.doe@example.com',4,'\w+',"["], // invalid rule leads to both rules being ignored
                     [5,'john.doe@example.com',5,null,'and/or'],
                     [6,'jane.doe@example.com',1,'^(?i)[a-z]+','bluberry'],
                 ],
@@ -205,16 +205,16 @@ trait SeriesFeed {
 
     /** @dataProvider provideFilterRules */
     public function testGetRules(int $in, array $exp): void {
-        $this->assertResult($exp, Arsse::$db->feedRulesGet($in));
+        $this->assertSame($exp, Arsse::$db->feedRulesGet($in));
     }
 
     public function provideFilterRules(): iterable {
         return [
-            [1, [['owner' => "john.doe@example.com", 'keep' => "",    'block' => "^Sport$"], ['owner' => "jane.doe@example.com", 'keep' => "^(?i)[a-z]+", 'block' => "bluberry"]]],
+            [1, ['jane.doe@example.com' => ['keep' => "`^(?i)[a-z]+`u", 'block' => "`bluberry`u"], 'john.doe@example.com' => ['keep' => "", 'block' => "`^Sport$`u"]]],
             [2, []],
-            [3, [['owner' => "john.doe@example.com", 'keep' => '\w+', 'block' => ""]]],
+            [3, ['john.doe@example.com' => ['keep' => '`\w+`u', 'block' => ""]]],
             [4, []],
-            [5, [['owner' => "john.doe@example.com", 'keep' => "",    'block' => "and/or"]]],
+            [5, ['john.doe@example.com' => ['keep' => "", 'block' => "`and/or`u"]]],
         ];
     }
 

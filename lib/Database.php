@@ -13,6 +13,8 @@ use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\Misc\URL;
+use JKingWeb\Arsse\Rule\Rule;
+use JKingWeb\Arsse\Rule\Exception as RuleException;
 
 /** The high-level interface with the database
  *
@@ -1205,14 +1207,26 @@ class Database {
 
     /** Retrieves the set of filters users have applied to a given feed
      *
-     * Each record includes the following keys:
-     *
-     * - "owner": The user for whom to apply the filters
-     * - "keep": The "keep" rule; any articles which fail to match this rule are hidden
-     * - "block": The block rule; any article which matches this rule are hidden
+     * The result is an associative array whose keys are usernames, values
+     * being an array in turn with the following keys:
+     * 
+     * - "keep": The "keep" rule as a prepared pattern; any articles which fail to match this rule are hidden
+     * - "block": The block rule as a prepared pattern; any articles which match this rule are hidden
      */
-    public function feedRulesGet(int $feedID): Db\Result {
-        return $this->db->prepare("SELECT owner, coalesce(keep_rule, '') as keep, coalesce(block_rule, '') as block from arsse_subscriptions where feed = ? and (coalesce(keep_rule, '') || coalesce(block_rule, '')) <> '' order by owner", "int")->run($feedID);
+    public function feedRulesGet(int $feedID): array {
+        $out = [];
+        $result = $this->db->prepare("SELECT owner, coalesce(keep_rule, '') as keep, coalesce(block_rule, '') as block from arsse_subscriptions where feed = ? and (coalesce(keep_rule, '') || coalesce(block_rule, '')) <> '' order by owner", "int")->run($feedID);
+        foreach ($result as $row) {
+            try {
+                $keep = Rule::prep($row['keep']);
+                $block = Rule::prep($row['block']);
+            } catch (RuleException $e) {
+                // invalid rules should not normally appear in the database, but it's possible
+                continue;
+            }
+            $out[$row['owner']] = ['keep' => $keep, 'block' => $block];
+        }
+        return $out;
     }
 
     /** Retrieves various identifiers for the latest $count articles in the given newsfeed. The identifiers are:

@@ -23,8 +23,15 @@ class TestRule extends \JKingWeb\Arsse\Test\AbstractTest {
         Rule::prep("[");
     }
 
+    public function testPrepareAnEmptyPattern(): void {
+        $this->assertTrue(Rule::validate(""));
+        $this->assertSame("", Rule::prep(""));
+    }
+
     /** @dataProvider provideApplications */
     public function testApplyRules(string $keepRule, string $blockRule, string $title, array $categories, $exp): void {
+        $keepRule = Rule::prep($keepRule);
+        $blockRule = Rule::prep($blockRule);
         if ($exp instanceof \Exception) {
             $this->assertException($exp);
             Rule::apply($keepRule, $blockRule, $title, $categories);
@@ -43,8 +50,6 @@ class TestRule extends \JKingWeb\Arsse\Test\AbstractTest {
             ["",           "^Category$", "Title",   ["Dummy", "Category"], false],
             ["",           "^Naught$",   "Title",   ["Dummy", "Category"], true],
             ["^Category$", "^Category$", "Title",   ["Dummy", "Category"], false],
-            ["[",          "",           "Title",   ["Dummy", "Category"], true],
-            ["",           "[",          "Title",   ["Dummy", "Category"], true],
             ["",           "^A B C$",    "A  B\nC", ["X\n   Y  \t  \r Z"], false],
             ["",           "^X Y Z$",    "A  B\nC", ["X\n   Y  \t  \r Z"], false],
         ];

@@ -455,7 +455,7 @@ class Feed {
 
     protected function computeFilterRules(int $feedID): void {
         $rules = Arsse::$db->feedRulesGet($feedID);
-        foreach ($rules as $r) {
+        foreach ($rules as $user => $r) {
             $stats = ['new' => [], 'changed' => []];
             foreach ($this->newItems as $index => $item) {
                 $stats['new'][$index] = Rule::apply($r['keep'], $r['block'], $item->title, $item->categories);
@@ -463,7 +463,7 @@ class Feed {
             foreach ($this->changedItems as $index => $item) {
                 $stats['changed'][$index] = Rule::apply($r['keep'], $r['block'], $item->title, $item->categories);
             }
-            $this->filteredItems[$r['owner']] = $stats;
+            $this->filteredItems[$user] = $stats;
         }
     }
 }
