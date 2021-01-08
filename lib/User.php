@@ -44,12 +44,12 @@ class User {
 
     public function begin(): Db\Transaction {
         /* TODO: A proper implementation of this would return a meta-transaction
-           object which would contain both a user-manager transaction (when 
+           object which would contain both a user-manager transaction (when
            applicable) and a database transaction, and commit or roll back both
-           as the situation calls. 
+           as the situation calls.
 
            In theory, an external user driver would probably have to implement its
-           own approximation of atomic transactions and rollback. In practice the 
+           own approximation of atomic transactions and rollback. In practice the
            only driver is the internal one, which is always backed by an ACID
            database; the added complexity is thus being deferred until such time
            as it is actually needed for a concrete implementation.
@@ -106,7 +106,7 @@ class User {
     }
 
     public function rename(string $user, string $newName): bool {
-        // ensure the new user name does not contain any U+003A COLON or 
+        // ensure the new user name does not contain any U+003A COLON or
         // control characters, as this is incompatible with HTTP Basic authentication
         if (preg_match("/[\x{00}-\x{1F}\x{7F}:]/", $newName, $m)) {
             $c = ord($m[0]);

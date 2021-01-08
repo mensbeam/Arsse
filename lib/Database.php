@@ -1209,7 +1209,7 @@ class Database {
      *
      * The result is an associative array whose keys are usernames, values
      * being an array in turn with the following keys:
-     * 
+     *
      * - "keep": The "keep" rule as a prepared pattern; any articles which fail to match this rule are hidden
      * - "block": The block rule as a prepared pattern; any articles which match this rule are hidden
      */

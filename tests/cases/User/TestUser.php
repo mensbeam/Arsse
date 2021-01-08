@@ -200,7 +200,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when($this->drv)->userRename->thenReturn(true);
         $u = new User($this->drv);
         $old = "john.doe@example.com";
-        $new  = "jane.doe@example.com";
+        $new = "jane.doe@example.com";
         $this->assertTrue($u->rename($old, $new));
         \Phake::inOrder(
             \Phake::verify($this->drv)->userRename($old, $new),
@@ -222,7 +222,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when($this->drv)->userRename->thenReturn(true);
         $u = new User($this->drv);
         $old = "john.doe@example.com";
-        $new  = "jane.doe@example.com";
+        $new = "jane.doe@example.com";
         $this->assertTrue($u->rename($old, $new));
         \Phake::inOrder(
             \Phake::verify($this->drv)->userRename($old, $new),

@@ -7,7 +7,6 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Misc;
 
 use JKingWeb\Arsse\Rule\Rule;
-use JKingWeb\Arsse\Rule\Exception;
 
 /** @covers \JKingWeb\Arsse\Rule\Rule */
 class TestRule extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -32,12 +31,7 @@ class TestRule extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testApplyRules(string $keepRule, string $blockRule, string $title, array $categories, $exp): void {
         $keepRule = Rule::prep($keepRule);
         $blockRule = Rule::prep($blockRule);
-        if ($exp instanceof \Exception) {
-            $this->assertException($exp);
-            Rule::apply($keepRule, $blockRule, $title, $categories);
-        } else {
-            $this->assertSame($exp, Rule::apply($keepRule, $blockRule, $title, $categories));
-        }
+        $this->assertSame($exp, Rule::apply($keepRule, $blockRule, $title, $categories));
     }
 
     public function provideApplications(): iterable {

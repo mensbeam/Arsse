@@ -42,7 +42,7 @@ abstract class Rule {
     }
 
     /** applies keep and block rules against the title and categories of an article
-     * 
+     *
      * Returns true if the article is to be kept, and false if it is to be suppressed
      */
     public static function apply(string $keepPattern, string $blockPattern, string $title, array $categories = []): bool {

@@ -451,7 +451,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             ["",          new ErrorResponse(["InvalidCategory", 'title' => ""], 422)],
             [" ",         new ErrorResponse(["InvalidCategory", 'title' => " "], 422)],
             [null,        new ErrorResponse(["MissingInputValue", 'field' => "title"], 422)],
-            [false,       new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"],422)],
+            [false,       new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 422)],
         ];
     }
 

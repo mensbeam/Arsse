@@ -265,7 +265,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         //normalize user-specific input
-        foreach (self::USER_META_MAP as $k => [,$d,]) {
+        foreach (self::USER_META_MAP as $k => [,$d]) {
             $t = gettype($d);
             if (!isset($body[$k])) {
                 $body[$k] = null;
@@ -343,7 +343,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function editUser(string $user, array $data): array {
         // map Miniflux properties to internal metadata properties
         $in = [];
-        foreach (self::USER_META_MAP as $i => [$o,,]) {
+        foreach (self::USER_META_MAP as $i => [$o,]) {
             if (isset($data[$i])) {
                 if ($i === "entry_sorting_direction") {
                     $in[$o] = $data[$i] === "asc";

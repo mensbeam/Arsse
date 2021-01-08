@@ -28,10 +28,10 @@ interface Driver {
     public function userAdd(string $user, string $password = null): ?string;
 
     /** Renames a user
-     * 
-     * The implementation must retain all user metadata as well as the 
+     *
+     * The implementation must retain all user metadata as well as the
      * user's password
-    */
+     */
     public function userRename(string $user, string $newName): bool;
 
     /** Removes a user */

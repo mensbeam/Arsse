@@ -9,7 +9,6 @@ namespace JKingWeb\Arsse\TestCase\User;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\User\Driver as DriverInterface;
-use JKingWeb\Arsse\User\ExceptionConflict;
 use JKingWeb\Arsse\User\Internal\Driver;
 
 /** @covers \JKingWeb\Arsse\User\Internal\Driver */

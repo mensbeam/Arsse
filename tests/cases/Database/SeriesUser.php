@@ -184,8 +184,8 @@ trait SeriesUser {
     public function testRenameAUser(): void {
         $this->assertTrue(Arsse::$db->userRename("john.doe@example.com", "juan.doe@example.com"));
         $state = $this->primeExpectations($this->data, [
-            'arsse_users'     => ['id', 'num'], 
-            'arsse_user_meta' => ["owner", "key", "value"]
+            'arsse_users'     => ['id', 'num'],
+            'arsse_user_meta' => ["owner", "key", "value"],
         ]);
         $state['arsse_users']['rows'][2][0] = "juan.doe@example.com";
         $state['arsse_user_meta']['rows'][6][0] = "juan.doe@example.com";
