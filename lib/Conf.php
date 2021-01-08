@@ -128,16 +128,14 @@ class Conf {
         'dbSQLite3Timeout' => "double",
     ];
 
-    protected static $types = [];
+    protected $types = [];
 
     /** Creates a new configuration object
      * @param string $import_file Optional file to read configuration data from
      * @see self::importFile() */
     public function __construct(string $import_file = "") {
-        if (!static::$types) {
-            static::$types = $this->propertyDiscover();
-        }
-        foreach (array_keys(static::$types) as $prop) {
+        $this->types = $this->propertyDiscover();
+        foreach (array_keys($this->types) as $prop) {
             $this->$prop = $this->propertyImport($prop, $this->$prop);
         }
         if ($import_file !== "") {
@@ -273,9 +271,9 @@ class Conf {
     }
 
     protected function propertyImport(string $key, $value, string $file = "") {
-        $typeName = static::$types[$key]['name'] ?? "mixed";
-        $typeConst = static::$types[$key]['const'] ?? Value::T_MIXED;
-        $nullable = (int) (bool) (static::$types[$key]['const'] & Value::M_NULL);
+        $typeName = $this->types[$key]['name'] ?? "mixed";
+        $typeConst = $this->types[$key]['const'] ?? Value::T_MIXED;
+        $nullable = (int) (bool) ($this->types[$key]['const'] & Value::M_NULL);
         try {
             if ($typeName === "\\DateInterval") {
                 // date intervals have special handling: if the existing value (ultimately, the default value)
@@ -319,7 +317,7 @@ class Conf {
             }
             return $value;
         } catch (ExceptionType $e) {
-            $type = static::$types[$key]['const'] & ~(Value::M_STRICT | Value::M_DROP | Value::M_NULL | Value::M_ARRAY);
+            $type = $this->types[$key]['const'] & ~(Value::M_STRICT | Value::M_DROP | Value::M_NULL | Value::M_ARRAY);
             throw new Conf\Exception("typeMismatch", ['param' => $key, 'type' => self::TYPE_NAMES[$type], 'file' => $file, 'nullable' => $nullable]);
         }
     }
