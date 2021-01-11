@@ -95,6 +95,8 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
         self::setConf();
         Arsse::$db = \Phake::mock(Database::class);
+        \Phake::when(Arsse::$db)->feedMatchLatest->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->feedMatchIds->thenReturn(new Result([]));
         \Phake::when(Arsse::$db)->feedRulesGet->thenReturn([]);
     }
 
@@ -376,5 +378,17 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame(self::$host."Icon/GIF", $f->iconUrl);
         $this->assertSame("image/gif", $f->iconType);
         $this->assertSame($d, $f->iconData);
+    }
+
+    public function testApplyFilterRules(): void {
+        \Phake::when(Arsse::$db)->feedMatchIds->thenReturn(new Result([
+            ['id' => 7,    'guid' => '0f2a218c311e3d8105f1b075142a5d26dabf056ffc61abe77e96c8f071bbf4a7', 'url_title_hash' => "", 'url_content_hash' => '', 'title_content_hash' => ''],
+            ['id' => 47,   'guid' => '1c19e3b9018bc246b7414ae919ddebc88d0c575129e8c4a57b84b826c00f6db5', 'url_title_hash' => "", 'url_content_hash' => '', 'title_content_hash' => ''],
+            ['id' => 2112, 'guid' => '964db0b9292ad0c7a6c225f2e0966f3bda53486fae65db0310c97409974e65b8', 'url_title_hash' => "", 'url_content_hash' => '', 'title_content_hash' => ''],
+            ['id' => 1,    'guid' => '436070cda5713a0d9a8fdc8652c7ab142f0550697acfd5206a16c18aee355039', 'url_title_hash' => "", 'url_content_hash' => '', 'title_content_hash' => ''],
+            ['id' => 42,   'guid' => '1a731433a1904220ef26e731ada7262e1d5bcecae53e7b5df9e1f5713af6e5d3', 'url_title_hash' => "", 'url_content_hash' => '', 'title_content_hash' => ''],
+        ]));
+        $f = new Feed(null, $this->base."Filtering/1");
+        $this->markTestIncomplete();
     }
 }
