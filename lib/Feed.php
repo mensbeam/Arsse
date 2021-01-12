@@ -286,7 +286,7 @@ class Feed {
         $articles = Arsse::$db->feedMatchLatest($feedID, sizeof($items))->getAll();
         // perform a first pass matching the latest articles against items in the feed
         [$this->newItems, $this->changedItems] = $this->matchItems($items, $articles);
-        if (sizeof($this->newItems) && sizeof($items) <= sizeof($articles)) {
+        if (sizeof($this->newItems)) {
             // if we need to, perform a second pass on the database looking specifically for IDs and hashes of the new items
             $ids = $hashesUT = $hashesUC = $hashesTC = [];
             foreach ($this->newItems as $i) {
