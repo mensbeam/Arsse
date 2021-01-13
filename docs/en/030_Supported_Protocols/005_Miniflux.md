@@ -15,7 +15,7 @@
 
 The Miniflux protocol is a fairly well-designed protocol supporting a wide variety of operations on newsfeeds, folders (termed "categories"), and articles; it also allows for user administration, and native OPML importing and exporting. Architecturally it is similar to the Nextcloud News protocol, but is generally more efficient and has more capabilities.
 
-Miniflux version 2.0.26 is emulated, though not all features are implemented
+Miniflux version 2.0.27 is emulated, though not all features are implemented
 
 # Missing features
 
@@ -39,7 +39,7 @@ Miniflux version 2.0.26 is emulated, though not all features are implemented
 
 The Miniflux documentation gives only a brief example of a pattern for its filtering rules; the allowed syntax is described in full [in Google's documentation for RE2](https://github.com/google/re2/wiki/Syntax). Being a PHP application, The Arsse instead accepts [PCRE syntax](http://www.pcre.org/original/doc/html/pcresyntax.html) (or since PHP 7.3 [PCRE2 syntax](https://www.pcre.org/current/doc/html/pcre2syntax.html)), specifically in UTF-8 mode. Delimiters should not be included, and slashes should not be escaped; anchors may be used if desired. For example `^(?i)RE/MAX$` is a valid pattern.
 
-For convenience the patterns are tested after collapsing whitespace. Unlike Miniflux, The Arsse tests the patterns against an article's author-supplied categories if they do not match its title.
+For convenience the patterns are tested after collapsing whitespace. Unlike Miniflux, The Arsse tests the patterns against an article's author-supplied categories if they do not match its title. Also unlike Miniflux, when filter rules are modified they are re-evaluated against all applicable articles immediately.
 
 # Special handling of the "All" category
 
