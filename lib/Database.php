@@ -1118,8 +1118,9 @@ class Database {
                 $icon = $this->db->prepare("INSERT INTO arsse_icons(url, type, data) values(?, ?, ?)", "str", "str", "blob")->run($feed->iconUrl, $feed->iconType, $feed->iconData)->lastId();
             }
         }
-        // actually perform updates
-        foreach ($feed->newItems as $article) {
+        $articleMap = [];
+        // actually perform updates, starting with inserting new articles
+        foreach ($feed->newItems as $k => $article) {
             $articleID = $qInsertArticle->run(
                 $article->url,
                 $article->title,
@@ -1133,14 +1134,20 @@ class Database {
                 $article->titleContentHash,
                 $feedID
             )->lastId();
+            // note the new ID for later use
+            $articleMap[$k] = $articleID;
+            // insert any enclosures
             if ($article->enclosureUrl) {
                 $qInsertEnclosure->run($articleID, $article->enclosureUrl, $article->enclosureType);
             }
+            // insert any categories
             foreach ($article->categories as $c) {
                 $qInsertCategory->run($articleID, $c);
             }
+            // assign a new edition ID to the article
             $qInsertEdition->run($articleID);
         }
+        // next update existing artricles which have been edited
         foreach ($feed->changedItems as $articleID => $article) {
             $qUpdateArticle->run(
                 $article->url,
@@ -1155,6 +1162,7 @@ class Database {
                 $article->titleContentHash,
                 $articleID
             );
+            // delete all enclosures and categories and re-insert them
             $qDeleteEnclosures->run($articleID);
             $qDeleteCategories->run($articleID);
             if ($article->enclosureUrl) {
@@ -1163,8 +1171,32 @@ class Database {
             foreach ($article->categories as $c) {
                 $qInsertCategory->run($articleID, $c);
             }
+            // assign a new edition ID to this version of the article
             $qInsertEdition->run($articleID);
             $qClearReadMarks->run($articleID);
+        }
+        // hide or unhide any filtered articles
+        foreach ($feed->filteredItems as $user => $filterData) {
+            $hide = [];
+            $unhide = [];
+            foreach ($filterData['new'] as $index => $keep) {
+                if (!$keep) {
+                    $hide[] = $articleMap[$index];
+                }
+            }
+            foreach ($filterData['changed'] as $article => $keep) {
+                if (!$keep) {
+                    $hide[] = $article;
+                } else {
+                    $unhide[] = $article;
+                }
+            }
+            if ($hide) {
+                $this->articleMark($user, ['hidden' => true], (new Context)->articles($hide), false);
+            }
+            if ($unhide) {
+                $this->articleMark($user, ['hidden' => false], (new Context)->articles($unhide), false);
+            }
         }
         // lastly update the feed database itself with updated information.
         $this->db->prepareArray(
@@ -1693,8 +1725,9 @@ class Database {
      * @param string $user The user who owns the articles to be modified
      * @param array $data An associative array of properties to modify. Anything not specified will remain unchanged
      * @param Context $context The query context to match articles against
+     * @param bool $updateTimestamp Whether to also update the timestamp. This should only be false if a mark is changed as a result of an automated action not taken by the user
      */
-    public function articleMark(string $user, array $data, Context $context = null): int {
+    public function articleMark(string $user, array $data, Context $context = null, bool $updateTimestamp = true): int {
         $data = [
             'read'    => $data['read'] ?? null,
             'starred' => $data['starred'] ?? null,
@@ -1743,7 +1776,11 @@ class Database {
                 $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
             }
             // finally set the modification date for all touched marks and return the number of affected marks
-            $out = $this->db->query("UPDATE arsse_marks set modified = CURRENT_TIMESTAMP, touched = 0 where touched = 1")->changes();
+            if ($updateTimestamp) {
+                $out = $this->db->query("UPDATE arsse_marks set modified = CURRENT_TIMESTAMP, touched = 0 where touched = 1")->changes();
+            } else {
+                $out = $this->db->query("UPDATE arsse_marks set touched = 0 where touched = 1")->changes();
+            }
         } else {
             if (!isset($data['read']) && ($context->edition() || $context->editions())) {
                 // get the articles associated with the requested editions
@@ -1763,7 +1800,10 @@ class Database {
                 return isset($v);
             });
             [$set, $setTypes, $setValues] = $this->generateSet($data, ['read' => "bool", 'starred' => "bool", 'hidden' => "bool", 'note' => "str"]);
-            $q->setBody("UPDATE arsse_marks set $set, modified = CURRENT_TIMESTAMP where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", $setTypes, $setValues);
+            if ($updateTimestamp) {
+                $set .= ", modified = CURRENT_TIMESTAMP";
+            }
+            $q->setBody("UPDATE arsse_marks set $set where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", $setTypes, $setValues);
             $out = $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
         }
         $tr->commit();

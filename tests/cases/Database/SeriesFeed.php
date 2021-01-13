@@ -80,7 +80,7 @@ trait SeriesFeed {
                     [3,'john.doe@example.com',3,'\w+',null],
                     [4,'john.doe@example.com',4,'\w+',"["], // invalid rule leads to both rules being ignored
                     [5,'john.doe@example.com',5,null,'and/or'],
-                    [6,'jane.doe@example.com',1,'^(?i)[a-z]+','bluberry'],
+                    [6,'jane.doe@example.com',1,'^(?i)[a-z]+','3|6'],
                 ],
             ],
             'arsse_articles' => [
@@ -129,19 +129,20 @@ trait SeriesFeed {
                     'subscription' => "int",
                     'read'         => "bool",
                     'starred'      => "bool",
+                    'hidden'       => "bool",
                     'modified'     => "datetime",
                 ],
                 'rows' => [
                     // Jane's marks
-                    [1,6,1,0,$past],
-                    [2,6,1,0,$past],
-                    [3,6,1,1,$past],
-                    [4,6,1,0,$past],
-                    [5,6,1,1,$past],
+                    [1,6,1,0,0,$past],
+                    [2,6,1,0,0,$past],
+                    [3,6,1,1,0,$past],
+                    [4,6,1,0,1,$past],
+                    [5,6,1,1,0,$past],
                     // John's marks
-                    [1,1,1,0,$past],
-                    [3,1,1,0,$past],
-                    [4,1,0,1,$past],
+                    [1,1,1,0,0,$past],
+                    [3,1,1,0,0,$past],
+                    [4,1,0,1,0,$past],
                 ],
             ],
             'arsse_enclosures' => [
@@ -210,7 +211,7 @@ trait SeriesFeed {
 
     public function provideFilterRules(): iterable {
         return [
-            [1, ['jane.doe@example.com' => ['keep' => "`^(?i)[a-z]+`u", 'block' => "`bluberry`u"], 'john.doe@example.com' => ['keep' => "", 'block' => "`^Sport$`u"]]],
+            [1, ['jane.doe@example.com' => ['keep' => "`^(?i)[a-z]+`u", 'block' => "`3|6`u"], 'john.doe@example.com' => ['keep' => "", 'block' => "`^Sport$`u"]]],
             [2, []],
             [3, ['john.doe@example.com' => ['keep' => '`\w+`u', 'block' => ""]]],
             [4, []],
@@ -225,7 +226,7 @@ trait SeriesFeed {
         $state = $this->primeExpectations($this->data, [
             'arsse_articles' => ["id", "feed","url","title","author","published","edited","content","guid","url_title_hash","url_content_hash","title_content_hash","modified"],
             'arsse_editions' => ["id","article","modified"],
-            'arsse_marks'    => ["subscription","article","read","starred","modified"],
+            'arsse_marks'    => ["subscription","article","read","starred","hidden","modified"],
             'arsse_feeds'    => ["id","size"],
         ]);
         $state['arsse_articles']['rows'][2] = [3,1,'http://example.com/3','Article title 3 (updated)','','2000-01-03 00:00:00','2000-01-03 00:00:00','<p>Article content 3</p>','31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92','6cc99be662ef3486fef35a890123f18d74c29a32d714802d743c5b4ef713315a','b278380e984cefe63f0e412b88ffc9cb0befdfa06fdc00bace1da99a8daff406','d5faccc13bf8267850a1e8e61f95950a0f34167df2c8c58011c0aaa6367026ac',$now];
@@ -236,9 +237,10 @@ trait SeriesFeed {
             [7,3,$now],
             [8,4,$now],
         ]);
-        $state['arsse_marks']['rows'][2] = [6,3,0,1,$now];
-        $state['arsse_marks']['rows'][3] = [6,4,0,0,$now];
-        $state['arsse_marks']['rows'][6] = [1,3,0,0,$now];
+        $state['arsse_marks']['rows'][2] = [6,3,0,1,1,$now];
+        $state['arsse_marks']['rows'][3] = [6,4,0,0,0,$now];
+        $state['arsse_marks']['rows'][6] = [1,3,0,0,0,$now];
+        $state['arsse_marks']['rows'][] = [6,8,0,0,1,null];
         $state['arsse_feeds']['rows'][0] = [1,6];
         $this->compareExpectations(static::$drv, $state);
         // update a valid feed which previously had an error
