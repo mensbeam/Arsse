@@ -77,12 +77,14 @@ trait SeriesSubscription {
                     'folder'     => "int",
                     'pinned'     => "bool",
                     'order_type' => "int",
+                    'keep_rule'  => "str",
+                    'block_rule' => "str",
                 ],
                 'rows' => [
-                    [1,"john.doe@example.com",2,null,null,1,2],
-                    [2,"jane.doe@example.com",2,null,null,0,0],
-                    [3,"john.doe@example.com",3,"Ook",2,0,1],
-                    [4,"jill.doe@example.com",2,null,null,0,0],
+                    [1,"john.doe@example.com",2,null,null,1,2,null,null],
+                    [2,"jane.doe@example.com",2,null,null,0,0,null,null],
+                    [3,"john.doe@example.com",3,"Ook",2,0,1,null,null],
+                    [4,"jill.doe@example.com",2,null,null,0,0,null,null],
                 ],
             ],
             'arsse_tags' => [
@@ -369,17 +371,21 @@ trait SeriesSubscription {
             'folder'     => 3,
             'pinned'     => false,
             'order_type' => 0,
+            'keep_rule'  => "ook",
+            'block_rule' => "eek",
         ]);
         $state = $this->primeExpectations($this->data, [
             'arsse_feeds'         => ['id','url','username','password','title'],
-            'arsse_subscriptions' => ['id','owner','feed','title','folder','pinned','order_type'],
+            'arsse_subscriptions' => ['id','owner','feed','title','folder','pinned','order_type','keep_rule','block_rule'],
         ]);
-        $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com",2,"Ook Ook",3,0,0];
+        $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com",2,"Ook Ook",3,0,0,"ook","eek"];
         $this->compareExpectations(static::$drv, $state);
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, [
-            'title' => null,
+            'title'      => null,
+            'keep_rule'  => null,
+            'block_rule' => null,
         ]);
-        $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com",2,null,3,0,0];
+        $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com",2,null,3,0,0,null,null];
         $this->compareExpectations(static::$drv, $state);
         // making no changes is a valid result
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['unhinged' => true]);
@@ -395,28 +401,26 @@ trait SeriesSubscription {
         $this->assertTrue(Arsse::$db->subscriptionPropertiesSet($this->user, 3, ['folder' => null]));
     }
 
-    public function testRenameASubscriptionToABlankTitle(): void {
-        $this->assertException("missing", "Db", "ExceptionInput");
-        Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['title' => ""]);
+    /** @dataProvider provideInvalidSubscriptionProperties */
+    public function testSetThePropertiesOfASubscriptionToInvalidValues(array $data, string $exp): void {
+        $this->assertException($exp, "Db", "ExceptionInput");
+        Arsse::$db->subscriptionPropertiesSet($this->user, 1, $data);
     }
 
-    public function testRenameASubscriptionToAWhitespaceTitle(): void {
-        $this->assertException("whitespace", "Db", "ExceptionInput");
-        Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['title' => "    "]);
-    }
-
-    public function testRenameASubscriptionToFalse(): void {
-        $this->assertException("typeViolation", "Db", "ExceptionInput");
-        Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['title' => false]);
+    public function provideInvalidSubscriptionProperties(): iterable {
+        return [
+            'Empty title'           => [['title' => ""],       "missing"],
+            'Whitespace title'      => [['title' => "    "],   "whitespace"],
+            'Non-string title'      => [['title' => []],       "typeViolation"],
+            'Non-string keep rule'  => [['keep_rule' => 0],    "typeViolation"],
+            'Invalid keep rule'     => [['keep_rule' => "*"],  "invalidValue"],
+            'Non-string block rule' => [['block_rule' => 0],   "typeViolation"],
+            'Invalid block rule'    => [['block_rule' => "*"], "invalidValue"],
+        ];
     }
 
     public function testRenameASubscriptionToZero(): void {
         $this->assertTrue(Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['title' => 0]));
-    }
-
-    public function testRenameASubscriptionToAnArray(): void {
-        $this->assertException("typeViolation", "Db", "ExceptionInput");
-        Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['title' => []]);
     }
 
     public function testSetThePropertiesOfAMissingSubscription(): void {

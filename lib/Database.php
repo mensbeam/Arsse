@@ -754,6 +754,28 @@ class Database {
     }
 
     /** Lists a user's subscriptions, returning various data
+     * 
+     * Each record has the following keys:
+     *
+     * - "id": The numeric identifier of the subscription
+     * - "feed": The numeric identifier of the underlying newsfeed
+     * - "url": The URL of the newsfeed, after discovery and HTTP redirects
+     * - "title": The title of the newsfeed
+     * - "source": The URL of the source of the newsfeed i.e. its parent Web site
+     * - "favicon": The URL of an icon representing the newsfeed or its source
+     * - "folder": The numeric identifier (or null) of the subscription's folder
+     * - "top_folder": The numeric identifier (or null) of the top-level folder for the subscription
+     * - "pinned": Whether the subscription is pinned
+     * - "err_count": The count of times attempting to refresh the newsfeed has resulted in an error since the last successful retrieval
+     * - "err_msg": The error message of the last unsuccessful retrieval
+     * - "order_type": Whether articles should be sorted in reverse cronological order (2), chronological order (1), or the default (0)
+     * - "keep_rule": The subscription's "keep" filter rule; articles which do not match this are hidden
+     * - "block_rule": The subscription's "block" filter rule; articles which match this are hidden
+     * - "added": The date and time at which the subscription was added
+     * - "updated": The date and time at which the newsfeed was last updated in the database
+     * - "edited": The date and time at which the newsfeed was last modified by its authors
+     * - "modified": The date and time at which the subscription properties were last changed by the user
+     * - "unread": The number of unread articles associated with the subscription
      *
      * @param string $user The user whose subscriptions are to be listed
      * @param integer|null $folder The identifier of the folder under which to list subscriptions; by default the root folder is used
@@ -817,7 +839,11 @@ class Database {
         return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
     }
 
-    /** Returns the number of subscriptions in a folder, counting recursively */
+    /** Returns the number of subscriptions in a folder, counting recursively
+     *
+     * @param string $user The user whose subscriptions are to be counted
+     * @param integer|null $folder The identifier of the folder under which to count subscriptions; by default the root folder is used
+     */
     public function subscriptionCount(string $user, $folder = null): int {
         // validate inputs
         $folder = $this->folderValidateId($user, $folder)['id'];
@@ -851,24 +877,7 @@ class Database {
         return true;
     }
 
-    /** Retrieves data about a particular subscription, as an associative array with the following keys:
-     *
-     * - "id": The numeric identifier of the subscription
-     * - "feed": The numeric identifier of the underlying newsfeed
-     * - "url": The URL of the newsfeed, after discovery and HTTP redirects
-     * - "title": The title of the newsfeed
-     * - "favicon": The URL of an icon representing the newsfeed or its source
-     * - "source": The URL of the source of the newsfeed i.e. its parent Web site
-     * - "folder": The numeric identifier (or null) of the subscription's folder
-     * - "top_folder": The numeric identifier (or null) of the top-level folder for the subscription
-     * - "pinned": Whether the subscription is pinned
-     * - "err_count": The count of times attempting to refresh the newsfeed has resulted in an error since the last successful retrieval
-     * - "err_msg": The error message of the last unsuccessful retrieval
-     * - "order_type": Whether articles should be sorted in reverse cronological order (2), chronological order (1), or the default (0)
-     * - "added": The date and time at which the subscription was added
-     * - "updated": The date and time at which the newsfeed was last updated (not when it was last refreshed)
-     * - "unread": The number of unread articles associated with the subscription
-     */
+    /** Retrieves data about a particular subscription, as an associative array; see subscriptionList for details */
     public function subscriptionPropertiesGet(string $user, $id): array {
         if (!V::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'type' => "int > 0"]);
@@ -884,10 +893,12 @@ class Database {
      *
      * The $data array must contain one or more of the following keys:
      *
-     * - "title": The title of the newsfeed
+     * - "title": The title of the subscription
      * - "folder": The numeric identifier (or null) of the subscription's folder
      * - "pinned": Whether the subscription is pinned
      * - "order_type": Whether articles should be sorted in reverse cronological order (2), chronological order (1), or the default (0)
+     * - "keep_rule": The subscription's "keep" filter rule; articles which do not match this are hidden
+     * - "block_rule": The subscription's "block" filter rule; articles which match this are hidden
      *
      * @param string $user The user whose subscription is to be modified
      * @param integer $id the numeric identifier of the subscription to modfify
@@ -896,29 +907,45 @@ class Database {
     public function subscriptionPropertiesSet(string $user, $id, array $data): bool {
         $tr = $this->db->begin();
         // validate the ID
-        $id = $this->subscriptionValidateId($user, $id, true)['id'];
+        $id = (int) $this->subscriptionValidateId($user, $id, true)['id'];
         if (array_key_exists("folder", $data)) {
             // ensure the target folder exists and belong to the user
             $data['folder'] = $this->folderValidateId($user, $data['folder'])['id'];
         }
-        if (array_key_exists("title", $data)) {
+        if (isset($data['title'])) {
             // if the title is null, this signals intended use of the default title; otherwise make sure it's not effectively an empty string
-            if (!is_null($data['title'])) {
-                $info = V::str($data['title']);
-                if ($info & V::EMPTY) {
-                    throw new Db\ExceptionInput("missing", ["action" => __FUNCTION__, "field" => "title"]);
-                } elseif ($info & V::WHITE) {
-                    throw new Db\ExceptionInput("whitespace", ["action" => __FUNCTION__, "field" => "title"]);
-                } elseif (!($info & V::VALID)) {
-                    throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "title", 'type' => "string"]);
-                }
+            $info = V::str($data['title']);
+            if ($info & V::EMPTY) {
+                throw new Db\ExceptionInput("missing", ["action" => __FUNCTION__, "field" => "title"]);
+            } elseif ($info & V::WHITE) {
+                throw new Db\ExceptionInput("whitespace", ["action" => __FUNCTION__, "field" => "title"]);
+            } elseif (!($info & V::VALID)) {
+                throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "title", 'type' => "string"]);
             }
         }
+        // validate any filter rules
+        if (isset($data['keep_rule'])) {
+            if (!is_string($data['keep_rule'])) {
+                throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "keep_rule", 'type' => "string"]);
+            } elseif (!Rule::validate($data['keep_rule'])) {
+                throw new Db\ExceptionInput("invalidValue", ["action" => __FUNCTION__, "field" => "keep_rule"]);
+            }
+        }
+        if (isset($data['block_rule'])) {
+            if (!is_string($data['block_rule'])) {
+                throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "block_rule", 'type' => "string"]);
+            } elseif (!Rule::validate($data['block_rule'])) {
+                throw new Db\ExceptionInput("invalidValue", ["action" => __FUNCTION__, "field" => "block_rule"]);
+            }
+        }
+        // perform the update
         $valid = [
             'title'      => "str",
             'folder'     => "int",
             'order_type' => "strict int",
             'pinned'     => "strict bool",
+            'keep_rule'  => "str",
+            'block_rule' => "str",
         ];
         [$setClause, $setTypes, $setValues] = $this->generateSet($data, $valid);
         if (!$setClause) {
@@ -927,6 +954,10 @@ class Database {
         }
         $out = (bool) $this->db->prepare("UPDATE arsse_subscriptions set $setClause, modified = CURRENT_TIMESTAMP where owner = ? and id = ?", $setTypes, "str", "int")->run($setValues, $user, $id)->changes();
         $tr->commit();
+        // if filter rules were changed, apply them
+        if (array_key_exists("keep_rule", $data) || array_key_exists("block_rule", $data)) {
+            $this->subscriptionRulesApply($user, $id);
+        }
         return $out;
     }
 
@@ -983,6 +1014,45 @@ class Database {
         }
         return V::normalize($out, V::T_DATE | V::M_NULL, "sql");
     }
+
+    /** Evalutes the filter rules specified for a subscription against every article associated with the subscription's feed
+     * 
+     * @param string $user The user who owns the subscription
+     * @param integer $id The identifier of the subscription whose rules are to be evaluated
+     */
+    protected function subscriptionRulesApply(string $user, int $id): void {
+        $sub = $this->db->prepare("SELECT feed, coalesce(keep_rule, '') as keep, coalesce(block_rule, '') as block from arsse_subscriptions where owner = ? and id = ?", "str", "int")->run($user, $id)->getRow();
+        try {
+            $keep = Rule::prep($sub['keep']);
+            $block = Rule::prep($sub['block']);
+            $feed = $sub['feed'];
+        } catch (RuleException $e) {
+            // invalid rules should not normally appear in the database, but it's possible
+            // in this case we should halt evaluation and just leave things as they are
+            return;
+        }
+        $articles = $this->db->prepare("SELECT id, title, coalesce(categories, 0) as categories from arsse_articles as a join (select article, count(*) as categories from arsse_categories group by article) as c on a.id = c.article where a.feed = ?", "int")->run($feed)->getAll();
+        $hide = [];
+        $unhide = [];
+        foreach ($articles as $r) {
+            // retrieve the list of categories if the article has any
+            $categories = $r['categories'] ? $this->articleCategoriesGet($user, $r['id']) : [];
+            // evaluate the rule for the article
+            if (Rule::apply($keep, $block, $r['title'], $categories)) {
+                $unhide[] = $r['id'];
+            } else {
+                $hide[] = $r['id'];
+            }
+        }
+        // apply any marks
+        if ($hide) {
+            $this->articleMark($user, ['hidden' => true], (new Context)->articles($hide), false);
+        }
+        if ($unhide) {
+            $this->articleMark($user, ['hidden' => false], (new Context)->articles($unhide), false);
+        }
+    }
+
 
     /** Ensures the specified subscription exists and raises an exception otherwise
      *

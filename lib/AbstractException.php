@@ -46,6 +46,7 @@ abstract class AbstractException extends \Exception {
         "Db/Exception.savepointStale"                 => 10227,
         "Db/Exception.resultReused"                   => 10228,
         "Db/ExceptionRetry.schemaChange"              => 10229,
+        "Db/ExceptionInput.invalidValue"              => 10230,
         "Db/ExceptionInput.missing"                   => 10231,
         "Db/ExceptionInput.whitespace"                => 10232,
         "Db/ExceptionInput.tooLong"                   => 10233,
