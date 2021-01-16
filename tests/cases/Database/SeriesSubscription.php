@@ -24,6 +24,7 @@ trait SeriesSubscription {
                     ["jane.doe@example.com", "", 1],
                     ["john.doe@example.com", "", 2],
                     ["jill.doe@example.com", "", 3],
+                    ["jack.doe@example.com", "", 4],
                 ],
             ],
             'arsse_folders' => [
@@ -85,6 +86,7 @@ trait SeriesSubscription {
                     [2,"jane.doe@example.com",2,null,null,0,0,null,null],
                     [3,"john.doe@example.com",3,"Ook",2,0,1,null,null],
                     [4,"jill.doe@example.com",2,null,null,0,0,null,null],
+                    [5,"jack.doe@example.com",2,null,null,1,2,"","3|E"],
                 ],
             ],
             'arsse_tags' => [
@@ -121,16 +123,48 @@ trait SeriesSubscription {
                     'url_title_hash'     => "str",
                     'url_content_hash'   => "str",
                     'title_content_hash' => "str",
+                    'title'              => "str",
                 ],
                 'rows' => [
-                    [1,2,"","",""],
-                    [2,2,"","",""],
-                    [3,2,"","",""],
-                    [4,2,"","",""],
-                    [5,2,"","",""],
-                    [6,3,"","",""],
-                    [7,3,"","",""],
-                    [8,3,"","",""],
+                    [1,2,"","","","Title 1"],
+                    [2,2,"","","","Title 2"],
+                    [3,2,"","","","Title 3"],
+                    [4,2,"","","","Title 4"],
+                    [5,2,"","","","Title 5"],
+                    [6,3,"","","","Title 6"],
+                    [7,3,"","","","Title 7"],
+                    [8,3,"","","","Title 8"],
+                ],
+            ],
+            'arsse_editions' => [
+                'columns' => [
+                    'id'      => "int",
+                    'article' => "int",
+                ],
+                'rows' => [
+                    [1,1],
+                    [2,2],
+                    [3,3],
+                    [4,4],
+                    [5,5],
+                    [6,6],
+                    [7,7],
+                    [8,8],
+                ],
+            ],
+            'arsse_categories' => [
+                'columns' => [
+                    'article' => "int",
+                    'name'    => "str",
+                ],
+                'rows' => [
+                    [1,"A"],
+                    [2,"B"],
+                    [4,"D"],
+                    [5,"E"],
+                    [6,"F"],
+                    [7,"G"],
+                    [8,"H"],
                 ],
             ],
             'arsse_marks' => [
@@ -139,16 +173,21 @@ trait SeriesSubscription {
                     'subscription' => "int",
                     'read'         => "bool",
                     'starred'      => "bool",
+                    'hidden'       => "bool",
                 ],
                 'rows' => [
-                    [1,2,1,0],
-                    [2,2,1,0],
-                    [3,2,1,0],
-                    [4,2,1,0],
-                    [5,2,1,0],
-                    [1,1,1,0],
-                    [7,3,1,0],
-                    [8,3,0,0],
+                    [1,2,1,0,0],
+                    [2,2,1,0,0],
+                    [3,2,1,0,0],
+                    [4,2,1,0,0],
+                    [5,2,1,0,0],
+                    [1,1,1,0,0],
+                    [7,3,1,0,0],
+                    [8,3,0,0,0],
+                    [1,5,1,0,0],
+                    [3,5,1,0,1],
+                    [4,5,0,0,0],
+                    [5,5,0,0,1],
                 ],
             ],
         ];
@@ -482,5 +521,13 @@ trait SeriesSubscription {
     public function testGetRefreshTimeOfAMissingSubscription(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         $this->assertTime(strtotime("now - 1 hour"), Arsse::$db->subscriptionRefreshed("john.doe@example.com", 2));
+    }
+
+    public function testSetTheFilterRulesOfASubscriptionCheckingMarks(): void {
+        Arsse::$db->subscriptionPropertiesSet("jack.doe@example.com", 5, ['keep_rule' => "1|B|3|D", 'block_rule' => "4"]);
+        $state = $this->primeExpectations($this->data, ['arsse_marks' => ['article', 'subscription', 'hidden']]);
+        $state['arsse_marks']['rows'][9][2] = 0;
+        $state['arsse_marks']['rows'][10][2] = 1;
+        $this->compareExpectations(static::$drv, $state);
     }
 }

@@ -1026,17 +1026,17 @@ class Database {
             $keep = Rule::prep($sub['keep']);
             $block = Rule::prep($sub['block']);
             $feed = $sub['feed'];
-        } catch (RuleException $e) {
+        } catch (RuleException $e) { // @codeCoverageIgnore
             // invalid rules should not normally appear in the database, but it's possible
             // in this case we should halt evaluation and just leave things as they are
-            return;
+            return; // @codeCoverageIgnore
         }
-        $articles = $this->db->prepare("SELECT id, title, coalesce(categories, 0) as categories from arsse_articles as a join (select article, count(*) as categories from arsse_categories group by article) as c on a.id = c.article where a.feed = ?", "int")->run($feed)->getAll();
+        $articles = $this->db->prepare("SELECT id, title, coalesce(categories, 0) as categories from arsse_articles as a left join (select article, count(*) as categories from arsse_categories group by article) as c on a.id = c.article where a.feed = ?", "int")->run($feed)->getAll();
         $hide = [];
         $unhide = [];
         foreach ($articles as $r) {
             // retrieve the list of categories if the article has any
-            $categories = $r['categories'] ? $this->articleCategoriesGet($user, $r['id']) : [];
+            $categories = $r['categories'] ? $this->articleCategoriesGet($user, (int) $r['id']) : [];
             // evaluate the rule for the article
             if (Rule::apply($keep, $block, $r['title'], $categories)) {
                 $unhide[] = $r['id'];
@@ -2006,7 +2006,7 @@ class Database {
                 FROM arsse_articles
                     join arsse_subscriptions on arsse_subscriptions.feed = arsse_articles.feed
                 WHERE arsse_articles.id = ? and arsse_subscriptions.owner = ?
-            ) as articles join arsse_editions on arsse_editions.article = articles.article group by articles.article",
+            ) as articles left join arsse_editions on arsse_editions.article = articles.article group by articles.article",
             ["int", "str"]
         )->run($id, $user)->getRow();
         if (!$out) {
