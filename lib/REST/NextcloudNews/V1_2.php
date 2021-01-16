@@ -181,7 +181,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'added'            => "added",
             'pinned'           => "pinned",
             'link'             => "source",
-            'faviconLink'      => "favicon",
+            'faviconLink'      => "icon_url",
             'folderId'         => "top_folder",
             'unreadCount'      => "unread",
             'ordering'         => "order_type",

@@ -28,7 +28,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             [
                 'id'         => 2112,
                 'url'        => 'http://example.com/news.atom',
-                'favicon'    => 'http://example.com/favicon.png',
+                'icon_url'   => 'http://example.com/favicon.png',
                 'source'     => 'http://example.com/',
                 'folder'     => null,
                 'top_folder' => null,
@@ -43,7 +43,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             [
                 'id'         => 42,
                 'url'        => 'http://example.org/news.atom',
-                'favicon'    => 'http://example.org/favicon.png',
+                'icon_url'   => 'http://example.org/favicon.png',
                 'source'     => 'http://example.org/',
                 'folder'     => 12,
                 'top_folder' => 8,
@@ -58,7 +58,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             [
                 'id'         => 47,
                 'url'        => 'http://example.net/news.atom',
-                'favicon'    => 'http://example.net/favicon.png',
+                'icon_url'   => 'http://example.net/favicon.png',
                 'source'     => 'http://example.net/',
                 'folder'     => null,
                 'top_folder' => null,

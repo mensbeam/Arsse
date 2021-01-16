@@ -22,12 +22,12 @@ class TestOPML extends \JKingWeb\Arsse\Test\AbstractTest {
         ['id' => 1, 'parent' => null, 'children' => 1, 'feeds' => 1, 'name' => "Science"],
     ];
     protected $subscriptions = [
-        ['id' => 3, 'folder' => 1,    'top_folder' => 1,    'unread' => 2,  'updated' => "2016-05-23 06:40:02", 'err_msg' => 'argh', 'title' => 'Ars Technica',   'url' => "http://localhost:8000/3", 'favicon' => 'http://localhost:8000/3.png'],
-        ['id' => 4, 'folder' => 6,    'top_folder' => 3,    'unread' => 6,  'updated' => "2017-10-09 15:58:34", 'err_msg' => '',     'title' => 'CBC News',       'url' => "http://localhost:8000/4", 'favicon' => 'http://localhost:8000/4.png'],
-        ['id' => 6, 'folder' => null, 'top_folder' => null, 'unread' => 0,  'updated' => "2010-02-12 20:08:47", 'err_msg' => '',     'title' => 'Eurogamer',      'url' => "http://localhost:8000/6", 'favicon' => 'http://localhost:8000/6.png'],
-        ['id' => 1, 'folder' => 2,    'top_folder' => 1,    'unread' => 5,  'updated' => "2017-09-15 22:54:16", 'err_msg' => '',     'title' => 'NASA JPL',       'url' => "http://localhost:8000/1", 'favicon' => null],
-        ['id' => 5, 'folder' => 6,    'top_folder' => 3,    'unread' => 12, 'updated' => "2017-07-07 17:07:17", 'err_msg' => '',     'title' => 'Ottawa Citizen', 'url' => "http://localhost:8000/5", 'favicon' => ''],
-        ['id' => 2, 'folder' => 5,    'top_folder' => 3,    'unread' => 10, 'updated' => "2011-11-11 11:11:11", 'err_msg' => 'oops', 'title' => 'Toronto Star',   'url' => "http://localhost:8000/2", 'favicon' => 'http://localhost:8000/2.png'],
+        ['id' => 3, 'folder' => 1,    'top_folder' => 1,    'unread' => 2,  'updated' => "2016-05-23 06:40:02", 'err_msg' => 'argh', 'title' => 'Ars Technica',   'url' => "http://localhost:8000/3", 'icon_url' => 'http://localhost:8000/3.png'],
+        ['id' => 4, 'folder' => 6,    'top_folder' => 3,    'unread' => 6,  'updated' => "2017-10-09 15:58:34", 'err_msg' => '',     'title' => 'CBC News',       'url' => "http://localhost:8000/4", 'icon_url' => 'http://localhost:8000/4.png'],
+        ['id' => 6, 'folder' => null, 'top_folder' => null, 'unread' => 0,  'updated' => "2010-02-12 20:08:47", 'err_msg' => '',     'title' => 'Eurogamer',      'url' => "http://localhost:8000/6", 'icon_url' => 'http://localhost:8000/6.png'],
+        ['id' => 1, 'folder' => 2,    'top_folder' => 1,    'unread' => 5,  'updated' => "2017-09-15 22:54:16", 'err_msg' => '',     'title' => 'NASA JPL',       'url' => "http://localhost:8000/1", 'icon_url' => null],
+        ['id' => 5, 'folder' => 6,    'top_folder' => 3,    'unread' => 12, 'updated' => "2017-07-07 17:07:17", 'err_msg' => '',     'title' => 'Ottawa Citizen', 'url' => "http://localhost:8000/5", 'icon_url' => ''],
+        ['id' => 2, 'folder' => 5,    'top_folder' => 3,    'unread' => 10, 'updated' => "2011-11-11 11:11:11", 'err_msg' => 'oops', 'title' => 'Toronto Star',   'url' => "http://localhost:8000/2", 'icon_url' => 'http://localhost:8000/2.png'],
     ];
     protected $tags = [
         ['id' => 1, 'name' => "Canada", 'subscription' => 2],

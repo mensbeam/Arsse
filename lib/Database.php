@@ -762,7 +762,8 @@ class Database {
      * - "url": The URL of the newsfeed, after discovery and HTTP redirects
      * - "title": The title of the newsfeed
      * - "source": The URL of the source of the newsfeed i.e. its parent Web site
-     * - "favicon": The URL of an icon representing the newsfeed or its source
+     * - "icon_id": The numeric identifier of an icon representing the newsfeed or its source
+     * - "icon_url": The URL of an icon representing the newsfeed or its source
      * - "folder": The numeric identifier (or null) of the subscription's folder
      * - "top_folder": The numeric identifier (or null) of the top-level folder for the subscription
      * - "pinned": Whether the subscription is pinned
@@ -795,7 +796,8 @@ class Database {
                 f.updated as updated,
                 f.modified as edited,
                 s.modified as modified,
-                i.url as favicon,
+                i.id as icon_id,
+                i.url as icon_url,
                 t.top as top_folder,
                 coalesce(s.title, f.title) as title,
                 coalesce((articles - hidden - marked), articles) as unread

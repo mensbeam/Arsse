@@ -256,7 +256,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         // prepare data for each subscription; we also add unread counts for their host categories
         foreach (Arsse::$db->subscriptionList($user) as $f) {
             // add the feed to the list of feeds
-            $feeds[] = ['id' => (string) $f['id'], 'updated' => Date::transform($f['updated'], "iso8601", "sql"),'counter' => (int) $f['unread'], 'has_img' => (int) (strlen((string) $f['favicon']) > 0)]; // ID is cast to string for consistency with TTRSS
+            $feeds[] = ['id' => (string) $f['id'], 'updated' => Date::transform($f['updated'], "iso8601", "sql"),'counter' => (int) $f['unread'], 'has_img' => (int) (strlen((string) $f['icon_url']) > 0)]; // ID is cast to string for consistency with TTRSS
             // add the feed's unread count to the global unread count
             $countAll += $f['unread'];
             // add the feed's unread count to its category unread count
@@ -441,7 +441,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'name'       => $s['title'],
                 'id'         => "FEED:".$s['id'],
                 'bare_id'    => (int) $s['id'],
-                'icon'       => $s['favicon'] ? "feed-icons/".$s['id'].".ico" : false,
+                'icon'       => $s['icon_url'] ? "feed-icons/".$s['id'].".ico" : false,
                 'error'      => (string) $s['err_msg'],
                 'param'      => Date::transform($s['updated'], "iso8601", "sql"),
                 'unread'     => 0,
@@ -794,7 +794,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'unread'       => (int) $s['unread'],
                 'cat_id'       => (int) $s['folder'],
                 'feed_url'     => $s['url'],
-                'has_icon'     => (bool) $s['favicon'],
+                'has_icon'     => (bool) $s['icon_url'],
                 'last_updated' => (int) Date::transform($s['updated'], "unix", "sql"),
                 'order_id'     => $order,
             ];
