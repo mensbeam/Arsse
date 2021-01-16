@@ -1711,10 +1711,10 @@ class Database {
         }
         // handle text-matching context options
         $options = [
-            "titleTerms"      => ["arsse_articles.title"],
-            "searchTerms"     => ["arsse_articles.title", "arsse_articles.content"],
-            "authorTerms"     => ["arsse_articles.author"],
-            "annotationTerms" => ["arsse_marks.note"],
+            "titleTerms"      => ["title"],
+            "searchTerms"     => ["title", "content"],
+            "authorTerms"     => ["author"],
+            "annotationTerms" => ["note"],
         ];
         foreach ($options as $m => $columns) {
             if (!$context->$m()) {
@@ -1722,6 +1722,10 @@ class Database {
             } elseif (!$context->$m) {
                 throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
             }
+            $columns = array_map(function ($c) use ($colDefs) {
+                assert(isset($colDefs[$c]), new Exception("constantUnknown", $c));
+                return $colDefs[$c];
+            }, $columns);
             $q->setWhere(...$this->generateSearch($context->$m, $columns));
         }
         // further handle exclusionary text-matching context options
@@ -1729,6 +1733,10 @@ class Database {
             if (!$context->not->$m() || !$context->not->$m) {
                 continue;
             }
+            $columns = array_map(function ($c) use ($colDefs) {
+                assert(isset($colDefs[$c]), new Exception("constantUnknown", $c));
+                return $colDefs[$c];
+            }, $columns);
             $q->setWhereNot(...$this->generateSearch($context->not->$m, $columns, true));
         }
         // return the query

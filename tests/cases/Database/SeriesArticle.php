@@ -22,10 +22,11 @@ trait SeriesArticle {
                     'num'      => 'int',
                 ],
                 'rows' => [
-                    ["jane.doe@example.com", "",1],
-                    ["john.doe@example.com", "",2],
-                    ["john.doe@example.org", "",3],
-                    ["john.doe@example.net", "",4],
+                    ["jane.doe@example.com", "", 1],
+                    ["john.doe@example.com", "", 2],
+                    ["john.doe@example.org", "", 3],
+                    ["john.doe@example.net", "", 4],
+                    ["jill.doe@example.com", "", 5],
                 ],
             ],
             'arsse_feeds' => [
@@ -110,6 +111,7 @@ trait SeriesArticle {
                     [12,"john.doe@example.net",2,    9,null,0],
                     [13,"john.doe@example.net",3,    8,"Subscription 13",0],
                     [14,"john.doe@example.net",4,    7,null,0],
+                    [15,"jill.doe@example.com",11,null,null,1],
                 ],
             ],
             'arsse_tag_members' => [
@@ -1148,5 +1150,30 @@ trait SeriesArticle {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => false,'hidden' => false], (new Context)->edition(20)); // no changes occur
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $this->compareExpectations(static::$drv, $state);
+    }
+
+    public function testSelectScrapedContent(): void {
+        $exp = [
+            ['id' => 101, 'content' => "<p>Article content 1</p>"],
+            ['id' => 102, 'content' => "<p>Article content 2</p>"],
+        ];
+        $this->assertResult($exp, Arsse::$db->articleList("john.doe@example.org", (new Context)->subscription(8), ["id", "content"]));
+        $exp = [
+            ['id' => 101, 'content' => "<p>Scraped content 1</p>"],
+            ['id' => 102, 'content' => "<p>Article content 2</p>"],
+        ];
+        $this->assertResult($exp, Arsse::$db->articleList("jill.doe@example.com", (new Context)->subscription(15), ["id", "content"]));
+    }
+
+    public function testSearchScrapedContent(): void {
+        $exp = [
+            ['id' => 101, 'content' => "<p>Scraped content 1</p>"],
+            ['id' => 102, 'content' => "<p>Article content 2</p>"],
+        ];
+        $this->assertResult($exp, Arsse::$db->articleList("jill.doe@example.com", (new Context)->subscription(15)->searchTerms(["article"]), ["id", "content"]));
+        $exp = [
+            ['id' => 101, 'content' => "<p>Scraped content 1</p>"],
+        ];
+        $this->assertResult($exp, Arsse::$db->articleList("jill.doe@example.com", (new Context)->subscription(15)->searchTerms(["scraped"]), ["id", "content"]));
     }
 }
