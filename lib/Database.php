@@ -1126,12 +1126,19 @@ class Database {
         if (!V::id($feedID)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID, 'type' => "int > 0"]);
         }
-        $f = $this->db->prepare("SELECT url, username, password, modified, etag, err_count, scrape FROM arsse_feeds where id = ?", "int")->run($feedID)->getRow();
+        $f = $this->db->prepareArray(
+            "SELECT 
+                url, username, password, modified, etag, err_count, scrapers 
+            FROM arsse_feeds as f
+            left join (select feed, count(*) as scrapers from arsse_subscriptions where scrape = 1 group by feed) as s on f.id = s.feed
+            where id = ?",
+            ["int"]
+        )->run($feedID)->getRow();
         if (!$f) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID]);
         }
         // determine whether the feed's items should be scraped for full content from the source Web site
-        $scrape = (Arsse::$conf->fetchEnableScraping && $f['scrape']);
+        $scrape = (Arsse::$conf->fetchEnableScraping && $f['scrapers']);
         // the Feed object throws an exception when there are problems, but that isn't ideal
         // here. When an exception is thrown it should update the database with the
         // error instead of failing; if other exceptions are thrown, we should simply roll back
@@ -1161,8 +1168,8 @@ class Database {
         }
         if (sizeof($feed->newItems)) {
             $qInsertArticle = $this->db->prepareArray(
-                "INSERT INTO arsse_articles(url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash,feed) values(?,?,?,?,?,?,?,?,?,?,?)",
-                ['str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int']
+                "INSERT INTO arsse_articles(url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash,feed,content_scraped) values(?,?,?,?,?,?,?,?,?,?,?,?)",
+                ["str", "str", "str", "datetime", "datetime", "str", "str", "str", "str", "str", "int", "str"]
             );
         }
         if (sizeof($feed->changedItems)) {
@@ -1170,8 +1177,8 @@ class Database {
             $qDeleteCategories = $this->db->prepare("DELETE FROM arsse_categories WHERE article = ?", 'int');
             $qClearReadMarks = $this->db->prepare("UPDATE arsse_marks SET \"read\" = 0, modified = CURRENT_TIMESTAMP WHERE article = ? and \"read\" = 1", 'int');
             $qUpdateArticle = $this->db->prepareArray(
-                "UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id = ?",
-                ['str', 'str', 'str', 'datetime', 'datetime', 'str', 'str', 'str', 'str', 'str', 'int']
+                "UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ?, content_scraped = ? WHERE id = ?",
+                ["str", "str", "str", "datetime", "datetime", "str", "str", "str", "str", "str", "str", "int"]
             );
         }
         // determine if the feed icon needs to be updated, and update it if appropriate
@@ -1204,7 +1211,8 @@ class Database {
                 $article->urlTitleHash,
                 $article->urlContentHash,
                 $article->titleContentHash,
-                $feedID
+                $feedID,
+                $article->scrapedContent ?? null
             )->lastId();
             // note the new ID for later use
             $articleMap[$k] = $articleID;
@@ -1232,6 +1240,7 @@ class Database {
                 $article->urlTitleHash,
                 $article->urlContentHash,
                 $article->titleContentHash,
+                $article->scrapedContent ?? null,
                 $articleID
             );
             // delete all enclosures and categories and re-insert them
@@ -1273,7 +1282,7 @@ class Database {
         // lastly update the feed database itself with updated information.
         $this->db->prepareArray(
             "UPDATE arsse_feeds SET title = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = '', next_fetch = ?, size = ?, icon = ? WHERE id = ?",
-            ['str', 'str', 'datetime', 'strict str', 'datetime', 'int', 'int', 'int']
+            ["str", "str", "datetime", "strict str", "datetime", "int", "int", "int"]
         )->run(
             $feed->data->title,
             $feed->data->siteUrl,
@@ -1429,7 +1438,7 @@ class Database {
             'url'                => "arsse_articles.url",
             'title'              => "arsse_articles.title",
             'author'             => "arsse_articles.author",
-            'content'            => "arsse_articles.content",
+            'content'            => "coalesce(case when arsse_subscriptions.scrape = 1 then arsse_articles.content_scraped end, arsse_articles.content)",
             'guid'               => "arsse_articles.guid",
             'fingerprint'        => "arsse_articles.url_title_hash || ':' || arsse_articles.url_content_hash || ':' || arsse_articles.title_content_hash",
             'folder'             => "coalesce(arsse_subscriptions.folder,0)",

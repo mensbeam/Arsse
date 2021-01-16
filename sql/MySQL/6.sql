@@ -32,6 +32,10 @@ create table arsse_user_meta(
     primary key(owner,"key")
 ) character set utf8mb4 collate utf8mb4_unicode_ci;
 
+alter table arsse_subscriptions add column scrape boolean not null default 0;
+alter table arsse_feeds drop column scrape;
+alter table arsse_articles add column content_scraped longtext;
+
 create table arsse_icons(
     id serial primary key,
     url varchar(767) unique not null,

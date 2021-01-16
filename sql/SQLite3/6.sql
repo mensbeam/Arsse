@@ -44,8 +44,11 @@ create table arsse_user_meta(
     primary key(owner,key)
 ) without rowid;
 
+-- Add a "scrape" column for subscriptions
+alter table arsse_subscriptions add column scrape boolean not null default 0;
 
 -- Add a separate table for feed icons and replace their URLs in the feeds table with their IDs
+-- Also remove the "scrape" column of the feeds table, which was never an advertised feature
 create table arsse_icons(
     -- Icons associated with feeds
     -- At a minimum the URL of the icon must be known, but its content may be missing
@@ -76,15 +79,36 @@ create table arsse_feeds_new(
     username text not null default '',                             -- HTTP authentication username
     password text not null default '',                             -- HTTP authentication password (this is stored in plain text)
     size integer not null default 0,                               -- number of articles in the feed at last fetch
-    scrape boolean not null default 0,                             -- whether to use picoFeed's content scraper with this feed
     icon integer references arsse_icons(id) on delete set null,    -- numeric identifier of any associated icon
     unique(url,username,password)                                  -- a URL with particular credentials should only appear once
 );
 insert into arsse_feeds_new 
-    select f.id, f.url, title, source, updated, f.modified, f.next_fetch, f.orphaned, f.etag, err_count, err_msg, username, password, size, scrape, i.id
+    select f.id, f.url, title, source, updated, f.modified, f.next_fetch, f.orphaned, f.etag, err_count, err_msg, username, password, size, i.id
     from arsse_feeds as f left join arsse_icons as i on f.favicon = i.url;
 drop table arsse_feeds;
 alter table arsse_feeds_new rename to arsse_feeds;
+
+-- Add a column for scraped article content, and re-order some column
+create table arsse_articles_new(
+-- entries in newsfeeds
+    id integer primary key,                                                 -- sequence number
+    feed integer not null references arsse_feeds(id) on delete cascade,     -- feed for the subscription
+    url text,                                                               -- URL of article
+    title text collate nocase,                                              -- article title
+    author text collate nocase,                                             -- author's name
+    published text,                                                         -- time of original publication
+    edited text,                                                            -- time of last edit by author
+    modified text not null default CURRENT_TIMESTAMP,                       -- time when article was last modified in database
+    guid text,                                                              -- GUID
+    url_title_hash text not null,                                           -- hash of URL + title; used when checking for updates and for identification if there is no guid.
+    url_content_hash text not null,                                         -- hash of URL + content, enclosure URL, & content type; used when checking for updates and for identification if there is no guid.
+    title_content_hash text not null,                                       -- hash of title + content, enclosure URL, & content type; used when checking for updates and for identification if there is no guid.
+    content_scraped text,                                                   -- scraped content, as HTML
+    content text                                                            -- content, as HTML
+);
+insert into arsse_articles_new select id, feed, url, title, author, published, edited, modified, guid, url_title_hash, url_content_hash, title_content_hash, null, content from arsse_articles;
+drop table arsse_articles;
+alter table arsse_articles_new rename to arsse_articles;
 
 -- set version marker
 pragma user_version = 7;

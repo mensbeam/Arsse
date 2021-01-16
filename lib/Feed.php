@@ -448,7 +448,7 @@ class Feed {
             $scraper->setUrl($item->url);
             $scraper->execute();
             if ($scraper->hasRelevantContent()) {
-                $item->content = $scraper->getFilteredContent();
+                $item->scrapedContent = $scraper->getFilteredContent();
             }
         }
     }

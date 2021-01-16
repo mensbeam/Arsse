@@ -32,6 +32,10 @@ create table arsse_user_meta(
     primary key(owner,key)
 );
 
+alter table arsse_subscriptions add column scrape smallint not null default 0;
+alter table arsse_feeds drop column scrape;
+alter table arsse_articles add column content_scraped text;
+
 create table arsse_icons(
     id bigserial primary key,
     url text unique not null,
