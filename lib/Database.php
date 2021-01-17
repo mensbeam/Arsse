@@ -776,7 +776,9 @@ class Database {
      * - "updated": The date and time at which the newsfeed was last updated in the database
      * - "edited": The date and time at which the newsfeed was last modified by its authors
      * - "modified": The date and time at which the subscription properties were last changed by the user
+     * - "next_fetch": The date and time and which the feed will next be fetched
      * - "unread": The number of unread articles associated with the subscription
+     * - "etag": The ETag header-field in the last fetch response
      *
      * @param string $user The user whose subscriptions are to be listed
      * @param integer|null $folder The identifier of the folder under which to list subscriptions; by default the root folder is used
@@ -792,10 +794,11 @@ class Database {
             "SELECT
                 s.id as id,
                 s.feed as feed,
-                f.url,source,folder,pinned,err_count,err_msg,order_type,added,keep_rule,block_rule,
+                f.url,source,folder,pinned,err_count,err_msg,order_type,added,keep_rule,block_rule,f.etag,s.scrape,
                 f.updated as updated,
                 f.modified as edited,
                 s.modified as modified,
+                f.next_fetch,
                 i.id as icon_id,
                 i.url as icon_url,
                 t.top as top_folder,
