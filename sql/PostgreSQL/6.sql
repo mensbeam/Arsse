@@ -33,6 +33,7 @@ create table arsse_user_meta(
 );
 
 alter table arsse_subscriptions add column scrape smallint not null default 0;
+update arsse_subscriptions set scrape = 1 where feed in (select id from arsse_feeds where scrape = 1);
 alter table arsse_feeds drop column scrape;
 alter table arsse_articles add column content_scraped text;
 

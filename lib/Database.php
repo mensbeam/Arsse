@@ -898,6 +898,7 @@ class Database {
      * - "title": The title of the subscription
      * - "folder": The numeric identifier (or null) of the subscription's folder
      * - "pinned": Whether the subscription is pinned
+     * - "scrape": Whether to scrape full article contents from the HTML article
      * - "order_type": Whether articles should be sorted in reverse cronological order (2), chronological order (1), or the default (0)
      * - "keep_rule": The subscription's "keep" filter rule; articles which do not match this are hidden
      * - "block_rule": The subscription's "block" filter rule; articles which match this are hidden
@@ -948,6 +949,7 @@ class Database {
             'pinned'     => "strict bool",
             'keep_rule'  => "str",
             'block_rule' => "str",
+            'scrape'     => "bool",
         ];
         [$setClause, $setTypes, $setValues] = $this->generateSet($data, $valid);
         if (!$setClause) {

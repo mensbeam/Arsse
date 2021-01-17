@@ -139,14 +139,22 @@ class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv->schemaUpdate(6);
         $this->drv->exec(
             <<<QUERY_TEXT
-            INSERT INTO arsse_users values('a', 'xyz');
-            INSERT INTO arsse_users values('b', 'abc');
-            INSERT INTO arsse_folders(owner,name) values('a', '1');
-            INSERT INTO arsse_folders(owner,name) values('b', '2');
-            INSERT INTO arsse_feeds(url,favicon) values('http://example.com/', 'http://example.com/icon');
-            INSERT INTO arsse_feeds(url,favicon) values('http://example.org/', 'http://example.org/icon');
-            INSERT INTO arsse_feeds(url,favicon) values('https://example.com/', 'http://example.com/icon');
-            INSERT INTO arsse_feeds(url,favicon) values('http://example.net/', null);
+            INSERT INTO arsse_users values
+                ('a', 'xyz'), 
+                ('b', 'abc');
+            INSERT INTO arsse_folders(owner,name) values
+                ('a', '1'), 
+                ('b', '2');
+            INSERT INTO arsse_feeds(id,scrape,url,favicon) values
+                (1, 1, 'http://example.com/', 'http://example.com/icon'), 
+                (2, 0, 'http://example.org/', 'http://example.org/icon'), 
+                (3, 0, 'https://example.com/', 'http://example.com/icon'), 
+                (4, 0, 'http://example.net/', null);
+            INSERT INTO arsse_subscriptions(id,owner,feed) values
+                (1, 'a', 1),
+                (2, 'b', 1),
+                (3, 'a', 2),
+                (4, 'b', 2);
 QUERY_TEXT
         );
         $this->drv->schemaUpdate(7);
@@ -168,9 +176,16 @@ QUERY_TEXT
             ['url' => 'https://example.com/', 'icon' => 1],
             ['url' => 'http://example.net/', 'icon' => null],
         ];
+        $subs = [
+            ['id' => 1, 'scrape' => 1],
+            ['id' => 2, 'scrape' => 1],
+            ['id' => 3, 'scrape' => 0],
+            ['id' => 4, 'scrape' => 0],
+        ];
         $this->assertEquals($users, $this->drv->query("SELECT id, password, num from arsse_users order by id")->getAll());
         $this->assertEquals($folders, $this->drv->query("SELECT owner, name from arsse_folders order by owner")->getAll());
         $this->assertEquals($icons, $this->drv->query("SELECT id, url from arsse_icons order by id")->getAll());
         $this->assertEquals($feeds, $this->drv->query("SELECT url, icon from arsse_feeds order by id")->getAll());
+        $this->assertEquals($subs, $this->drv->query("SELECT id, scrape from arsse_subscriptions order by id")->getAll());
     }
 }

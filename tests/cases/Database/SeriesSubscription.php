@@ -80,13 +80,14 @@ trait SeriesSubscription {
                     'order_type' => "int",
                     'keep_rule'  => "str",
                     'block_rule' => "str",
+                    'scrape'     => "bool",
                 ],
                 'rows' => [
-                    [1,"john.doe@example.com",2,null,null,1,2,null,null],
-                    [2,"jane.doe@example.com",2,null,null,0,0,null,null],
-                    [3,"john.doe@example.com",3,"Ook",2,0,1,null,null],
-                    [4,"jill.doe@example.com",2,null,null,0,0,null,null],
-                    [5,"jack.doe@example.com",2,null,null,1,2,"","3|E"],
+                    [1,"john.doe@example.com",2,null,null,1,2,null,null,0],
+                    [2,"jane.doe@example.com",2,null,null,0,0,null,null,0],
+                    [3,"john.doe@example.com",3,"Ook",2,0,1,null,null,0],
+                    [4,"jill.doe@example.com",2,null,null,0,0,null,null,0],
+                    [5,"jack.doe@example.com",2,null,null,1,2,"","3|E",0],
                 ],
             ],
             'arsse_tags' => [
@@ -409,22 +410,23 @@ trait SeriesSubscription {
             'title'      => "Ook Ook",
             'folder'     => 3,
             'pinned'     => false,
+            'scrape'     => true,
             'order_type' => 0,
             'keep_rule'  => "ook",
             'block_rule' => "eek",
         ]);
         $state = $this->primeExpectations($this->data, [
             'arsse_feeds'         => ['id','url','username','password','title'],
-            'arsse_subscriptions' => ['id','owner','feed','title','folder','pinned','order_type','keep_rule','block_rule'],
+            'arsse_subscriptions' => ['id','owner','feed','title','folder','pinned','order_type','keep_rule','block_rule','scrape'],
         ]);
-        $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com",2,"Ook Ook",3,0,0,"ook","eek"];
+        $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com",2,"Ook Ook",3,0,0,"ook","eek",1];
         $this->compareExpectations(static::$drv, $state);
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, [
             'title'      => null,
             'keep_rule'  => null,
             'block_rule' => null,
         ]);
-        $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com",2,null,3,0,0,null,null];
+        $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com",2,null,3,0,0,null,null,1];
         $this->compareExpectations(static::$drv, $state);
         // making no changes is a valid result
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['unhinged' => true]);

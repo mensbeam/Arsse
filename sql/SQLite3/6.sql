@@ -44,8 +44,31 @@ create table arsse_user_meta(
     primary key(owner,key)
 ) without rowid;
 
--- Add a "scrape" column for subscriptions
+-- Add a "scrape" column for subscriptions and copy any existing scraping
 alter table arsse_subscriptions add column scrape boolean not null default 0;
+update arsse_subscriptions set scrape = 1 where feed in (select id from arsse_feeds where scrape = 1);
+
+-- Add a column for scraped article content, and re-order some columns
+create table arsse_articles_new(
+-- entries in newsfeeds
+    id integer primary key,                                                 -- sequence number
+    feed integer not null references arsse_feeds(id) on delete cascade,     -- feed for the subscription
+    url text,                                                               -- URL of article
+    title text collate nocase,                                              -- article title
+    author text collate nocase,                                             -- author's name
+    published text,                                                         -- time of original publication
+    edited text,                                                            -- time of last edit by author
+    modified text not null default CURRENT_TIMESTAMP,                       -- time when article was last modified in database
+    guid text,                                                              -- GUID
+    url_title_hash text not null,                                           -- hash of URL + title; used when checking for updates and for identification if there is no guid.
+    url_content_hash text not null,                                         -- hash of URL + content, enclosure URL, & content type; used when checking for updates and for identification if there is no guid.
+    title_content_hash text not null,                                       -- hash of title + content, enclosure URL, & content type; used when checking for updates and for identification if there is no guid.
+    content_scraped text,                                                   -- scraped content, as HTML
+    content text                                                            -- content, as HTML
+);
+insert into arsse_articles_new select id, feed, url, title, author, published, edited, modified, guid, url_title_hash, url_content_hash, title_content_hash, null, content from arsse_articles;
+drop table arsse_articles;
+alter table arsse_articles_new rename to arsse_articles;
 
 -- Add a separate table for feed icons and replace their URLs in the feeds table with their IDs
 -- Also remove the "scrape" column of the feeds table, which was never an advertised feature
@@ -87,28 +110,6 @@ insert into arsse_feeds_new
     from arsse_feeds as f left join arsse_icons as i on f.favicon = i.url;
 drop table arsse_feeds;
 alter table arsse_feeds_new rename to arsse_feeds;
-
--- Add a column for scraped article content, and re-order some column
-create table arsse_articles_new(
--- entries in newsfeeds
-    id integer primary key,                                                 -- sequence number
-    feed integer not null references arsse_feeds(id) on delete cascade,     -- feed for the subscription
-    url text,                                                               -- URL of article
-    title text collate nocase,                                              -- article title
-    author text collate nocase,                                             -- author's name
-    published text,                                                         -- time of original publication
-    edited text,                                                            -- time of last edit by author
-    modified text not null default CURRENT_TIMESTAMP,                       -- time when article was last modified in database
-    guid text,                                                              -- GUID
-    url_title_hash text not null,                                           -- hash of URL + title; used when checking for updates and for identification if there is no guid.
-    url_content_hash text not null,                                         -- hash of URL + content, enclosure URL, & content type; used when checking for updates and for identification if there is no guid.
-    title_content_hash text not null,                                       -- hash of title + content, enclosure URL, & content type; used when checking for updates and for identification if there is no guid.
-    content_scraped text,                                                   -- scraped content, as HTML
-    content text                                                            -- content, as HTML
-);
-insert into arsse_articles_new select id, feed, url, title, author, published, edited, modified, guid, url_title_hash, url_content_hash, title_content_hash, null, content from arsse_articles;
-drop table arsse_articles;
-alter table arsse_articles_new rename to arsse_articles;
 
 -- set version marker
 pragma user_version = 7;
