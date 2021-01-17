@@ -591,50 +591,59 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new EmptyResponse(204);
     }
 
-    protected function getFeeds(): ResponseInterface {
+    protected function mapFolders(): array {
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
-        $tr = Arsse::$db->begin();
-        $out = [];
-        // compile the list of folders; the feed list includes folder names
         $folders = [0 => ['id' => 1, 'title' => $meta['root_folder_name'] ?? Arsse::$lang->msg("API.Miniflux.DefaultCategoryName"), 'user_id' => $meta['num']]];
-        foreach(Arsse::$db->folderList(Arsse::$user->id, null, false) as $r) {
+        foreach (Arsse::$db->folderList(Arsse::$user->id, null, false) as $r) {
             $folders[(int) $r['id']] = [
                 'id'      => ((int) $r['id']) + 1,
                 'title'   => $r['name'],
                 'user_id' => $meta['num'],
             ];
         }
+        return $folders;
+    }
+
+    protected function transformFeed(array $sub, array $folders): array {
+        $url = new Uri($sub['url']);
+        return [
+            'id'                    => (int) $sub['id'],
+            'user_id'               => $folders[0]['user_id'],
+            'feed_url'              => (string) $url->withUserInfo(""),
+            'site_url'              => (string) $sub['source'],
+            'title'                 => (string) $sub['title'],
+            'checked_at'            => Date::transform($sub['updated'], "iso8601m", "sql"),
+            'next_check_at'         => Date::transform($sub['next_fetch'], "iso8601m", "sql") ?? "0001-01-01T00:00:00.000000Z",
+            'etag_header'           => (string) $sub['etag'],
+            'last_modified_header'  => (string) Date::transform($sub['edited'], "http", "sql"),
+            'parsing_error_message' => (string) $sub['err_msg'],
+            'parsing_error_count'   => (int) $sub['err_count'],
+            'scraper_rules'         => "",
+            'rewrite_rules'         => "",
+            'crawler'               => (bool) $sub['scrape'],
+            'blocklist_rules'       => (string) $sub['block_rule'],
+            'keeplist_rules'        => (string) $sub['keep_rule'],
+            'user_agent'            => "",
+            'username'              => rawurldecode(explode(":", $url->getUserInfo(), 2)[0] ?? ""),
+            'password'              => rawurldecode(explode(":", $url->getUserInfo(), 2)[1] ?? ""),
+            'disabled'              => false,
+            'ignore_http_cache'     => false,
+            'fetch_via_proxy'       => false,
+            'category'              => $folders[(int) $sub['top_folder']],
+            'icon'                  => $sub['icon_id'] ? ['feed_id' => (int) $sub['id'], 'icon_id' => (int) $sub['icon_id']] : null,
+        ];
+    }
+
+    protected function getFeeds(): ResponseInterface {
+        $tr = Arsse::$db->begin();
+        // compile the list of folders; the feed list includes folder names
+        $folders = $this->mapFolders();
         // next compile the list of feeds
+        $out = [];
         foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $r) {
-            $url = new Uri($r['url']);
-            $out = [
-                'id'                    => (int) $r['id'],
-                'user_id'               => $meta['num'],
-                'feed_url'              => $url->withUserInfo(""),
-                'site_url'              => $r['source'],
-                'title'                 => $r['title'],
-                'checked_at'            => Date::transform($r['updated'], "iso8601", "sql"),
-                'next_check_at'         => Date::transform($r['next_fetch'], "iso8601", "sql") ?? "0001-01-01T00:00:00Z",
-                'etag_header'           => $r['etag'] ?? "",
-                'last_modified_header'  => (string) Date::transform($r['edited'], "http", "sql"),
-                'parsing_error_message' => (string) $r['err_msg'],
-                'parsing_error_count'   => (int) $r['err_count'],
-                'scraper_rules'         => "",
-                'rewrite_rules'         => "",
-                'crawler'               => (bool) $r['scrape'],
-                'blocklist_rules'       => (string) $r['block_rule'],
-                'keeplist_rules'        => (string) $r['keep_rule'],
-                'user_agent'            => "",
-                'username'              => explode(":", $url->getUserInfo(), 2)[0] ?? "",
-                'password'              => explode(":", $url->getUserInfo(), 2)[1] ?? "",
-                'disabled'              => false,
-                'ignore_http_cache'     => false,
-                'fetch_via_proxy'       => false,
-                'category'              => $folders[$r['top_folder']],
-                'icon'                  => $r['icon_id'] ? ['feed_id' => (int) $r['id'], 'icon_id' => (int) $r['icon_id']] : null,
-            ];
-            return new Response($out);
+            $out[] = $this->transformFeed($r, $folders);
         }
+        return new Response($out);
     }
 
     public static function tokenGenerate(string $user, string $label): string {

@@ -777,8 +777,9 @@ class Database {
      * - "edited": The date and time at which the newsfeed was last modified by its authors
      * - "modified": The date and time at which the subscription properties were last changed by the user
      * - "next_fetch": The date and time and which the feed will next be fetched
-     * - "unread": The number of unread articles associated with the subscription
      * - "etag": The ETag header-field in the last fetch response
+     * - "scrape": Whether the user wants scrape full-article content
+     * - "unread": The number of unread articles associated with the subscription
      *
      * @param string $user The user whose subscriptions are to be listed
      * @param integer|null $folder The identifier of the folder under which to list subscriptions; by default the root folder is used

@@ -34,6 +34,7 @@ Miniflux version 2.0.27 is emulated, though not all features are implemented
 - The "All" category is treated specially (see below for details)
 - Category names consisting only of whitespace are rejected along with the empty string
 - Filtering rules may not function identically (see below for details)
+- The `checked_at` field of feeds indicates when the feed was last updated rather than when it was last checked
 
 # Behaviour of filtering (block and keep) rules
 
