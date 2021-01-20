@@ -278,9 +278,11 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 $body[$k] = null;
             } elseif (gettype($body[$k]) !== $t) {
                 return new ErrorResponse(["InvalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])], 422);
-            } elseif (in_array($k, ["keeplist_rules", "blocklist_rules"]) && !Rule::validate($body[$k])) {
-                return new ErrorResponse(["InvalidInputValue", 'field' => $k], 422);
-            } elseif (in_array($k, ["url", "feed_url"]) && !URL::absolute($body[$k])) {
+            } elseif (
+                (in_array($k, ["keeplist_rules", "blocklist_rules"]) && !Rule::validate($body[$k])) ||
+                (in_array($k, ["url", "feed_url"]) && !URL::absolute($body[$k])) || 
+                ($k === "category_id" && $body[$k] < 1)
+            ) {
                 return new ErrorResponse(["InvalidInputValue", 'field' => $k], 422);
             }
         }

@@ -184,9 +184,12 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['title' => "Feed", 'type' => "rss", 'url' => "http://localhost:8000/Feed/Discovery/Missing"],
         ];
         return [
-            ["http://localhost:8000/Feed/Discovery/Valid", new Response($discovered)],
+            ["http://localhost:8000/Feed/Discovery/Valid",   new Response($discovered)],
             ["http://localhost:8000/Feed/Discovery/Invalid", new Response([])],
             ["http://localhost:8000/Feed/Discovery/Missing", new ErrorResponse("Fetch404", 502)],
+            [1,                                              new ErrorResponse(["InvalidInputType", 'field' => "url", 'expected' => "string", 'actual' => "integer"], 422)],
+            ["Not a URL",                                    new ErrorResponse(["InvalidInputValue", 'field' => "url"], 422)],
+            [null,                                           new ErrorResponse(["MissingInputValue", 'field' => "url"], 422)],
         ];
     }
 
@@ -606,5 +609,62 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             ],
         ]);
         $this->assertMessage($exp, $this->req("GET", "/feeds"));
+    }
+
+    /** @dataProvider provideFeedCreations */
+    public function testCreateAFeed(array $in, $out1, $out2, $out3, ResponseInterface $exp): void {
+        if ($out1 instanceof \Exception) {
+            \Phake::when(Arsse::$db)->feedAdd->thenThrow($out1);
+        } else {
+            \Phake::when(Arsse::$db)->feedAdd->thenReturn($out1);
+        }
+        if ($out2 instanceof \Exception) {
+            \Phake::when(Arsse::$db)->subscriptionAdd->thenThrow($out2);
+        } else {
+            \Phake::when(Arsse::$db)->subscriptionAdd->thenReturn($out2);
+        }
+        if ($out3 instanceof \Exception) {
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenThrow($out3);
+        } else {
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn($out3);
+        }
+        $this->assertMessage($exp, $this->req("POST", "/feeds", $in));
+        $in1 = $out1 !== null;
+        $in2 = $out2 !== null;
+        $in3 = $out3 !== null;
+        if ($in1) {
+            \Phake::verify(Arsse::$db)->feedAdd($in['feed_url'], $in['username'] ?? "", $in['password'] ?? "", true, $in['crawler'] ?? false);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::times(0))->feedAdd;
+        }
+        if ($in2) {
+            \Phake::verify(Arsse::$db)->subscriptionAdd("john.doe@example.com", $in['feed_url'], $in['username'] ?? "", $in['password'] ?? "", true, $in['crawler'] ?? false);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::times(0))->subscriptionAdd;
+        }
+        if ($in3) {
+            $props = [
+                'keep_rule'  => $in['keeplist_rules'],
+                'block_rule' => $in['blocklist_rules'],
+                'folder'     => $in['category_id'] - 1,
+                'scrape'     => $in['crawler'] ?? false,
+            ];
+            \Phake::verify(Arsse::$db)->subscriptionPropertiesSet("john.doe@example.com", $out2, $props);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::times(0))->subscriptionPropertiesSet;
+        }
+    }
+
+    public function provideFeedCreations(): iterable {
+        self::clearData();
+        return [
+            [['category_id' => 1],                                                                null, null, null, new ErrorResponse(["MissingInputValue", 'field' => "feed_url"], 422)],
+            [['feed_url' => "http://example.com/"],                                               null, null, null, new ErrorResponse(["MissingInputValue", 'field' => "category_id"], 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => "1"],                         null, null, null, new ErrorResponse(["InvalidInputType", 'field' => "category_id", 'expected' => "integer", 'actual' => "string"], 422)],
+            [['feed_url' => "Not a URL", 'category_id' => 1],                                     null, null, null, new ErrorResponse(["InvalidInputValue", 'field' => "feed_url"], 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => 0],                           null, null, null, new ErrorResponse(["InvalidInputValue", 'field' => "category_id"], 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1, 'keeplist_rules' => "["],  null, null, null, new ErrorResponse(["InvalidInputValue", 'field' => "keeplist_rules"], 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1, 'blocklist_rules' => "["], null, null, null, new ErrorResponse(["InvalidInputValue", 'field' => "blocklist_rules"], 422)],
+        ];
     }
 }
