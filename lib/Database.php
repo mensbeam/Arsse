@@ -745,10 +745,11 @@ class Database {
      * @param string $fetchUser The user name required to access the newsfeed, if applicable
      * @param string $fetchPassword The password required to fetch the newsfeed, if applicable; this will be stored in cleartext
      * @param boolean $discover Whether to perform newsfeed discovery if $url points to an HTML document
+     * @param boolean $scrape Whether the initial synchronization should scrape full-article content
      */
-    public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = "", bool $discover = true): int {
+    public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = "", bool $discover = true, bool $scrape = false): int {
         // get the ID of the underlying feed, or add it if it's not yet in the database
-        $feedID = $this->feedAdd($url, $fetchUser, $fetchPassword, $discover);
+        $feedID = $this->feedAdd($url, $fetchUser, $fetchPassword, $discover, $scrape);
         // Add the feed to the user's subscriptions and return the new subscription's ID.
         return $this->db->prepare('INSERT INTO arsse_subscriptions(owner,feed) values(?,?)', 'str', 'int')->run($user, $feedID)->lastId();
     }
@@ -1089,8 +1090,9 @@ class Database {
      * @param string $fetchUser The user name required to access the newsfeed, if applicable
      * @param string $fetchPassword The password required to fetch the newsfeed, if applicable; this will be stored in cleartext
      * @param boolean $discover Whether to perform newsfeed discovery if $url points to an HTML document
+     * @param boolean $scrape Whether the initial synchronization should scrape full-article content
      */
-    public function feedAdd(string $url, string $fetchUser = "", string $fetchPassword = "", bool $discover = true): int {
+    public function feedAdd(string $url, string $fetchUser = "", string $fetchPassword = "", bool $discover = true, bool $scrape = false): int {
         // normalize the input URL
         $url = URL::normalize($url);
         // check to see if the feed already exists
@@ -1106,7 +1108,7 @@ class Database {
             $feedID = $this->db->prepare('INSERT INTO arsse_feeds(url,username,password) values(?,?,?)', 'str', 'str', 'str')->run($url, $fetchUser, $fetchPassword)->lastId();
             try {
                 // perform an initial update on the newly added feed
-                $this->feedUpdate($feedID, true);
+                $this->feedUpdate($feedID, true, $scrape);
             } catch (\Throwable $e) {
                 // if the update fails, delete the feed we just added
                 $this->db->prepare('DELETE from arsse_feeds where id = ?', 'int')->run($feedID);
@@ -1126,8 +1128,9 @@ class Database {
      *
      * @param integer $feedID The numerical identifier of the newsfeed to refresh
      * @param boolean $throwError Whether to throw an exception on failure in addition to storing error information in the database
+     * @param boolean|null $scrapeOverride If not null, overrides information in the database signaling whether or not to scrape full-article content. This is intended for when there are no subscriptions for the feed in the database yet
      */
-    public function feedUpdate($feedID, bool $throwError = false): bool {
+    public function feedUpdate($feedID, bool $throwError = false, ?bool $scrapeOverride = null): bool {
         // check to make sure the feed exists
         if (!V::id($feedID)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID, 'type' => "int > 0"]);
@@ -1144,7 +1147,7 @@ class Database {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID]);
         }
         // determine whether the feed's items should be scraped for full content from the source Web site
-        $scrape = (Arsse::$conf->fetchEnableScraping && $f['scrapers']);
+        $scrape = (Arsse::$conf->fetchEnableScraping && ($scrapeOverride ?? $f['scrapers']));
         // the Feed object throws an exception when there are problems, but that isn't ideal
         // here. When an exception is thrown it should update the database with the
         // error instead of failing; if other exceptions are thrown, we should simply roll back

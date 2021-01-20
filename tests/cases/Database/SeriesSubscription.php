@@ -221,7 +221,7 @@ trait SeriesSubscription {
         $subID = $this->nextID("arsse_subscriptions");
         \Phake::when(Arsse::$db)->feedUpdate->thenReturn(true);
         $this->assertSame($subID, Arsse::$db->subscriptionAdd($this->user, $url, "", "", false));
-        \Phake::verify(Arsse::$db)->feedUpdate($feedID, true);
+        \Phake::verify(Arsse::$db)->feedUpdate($feedID, true, false);
         $state = $this->primeExpectations($this->data, [
             'arsse_feeds'         => ['id','url','username','password'],
             'arsse_subscriptions' => ['id','owner','feed'],
@@ -238,7 +238,7 @@ trait SeriesSubscription {
         $subID = $this->nextID("arsse_subscriptions");
         \Phake::when(Arsse::$db)->feedUpdate->thenReturn(true);
         $this->assertSame($subID, Arsse::$db->subscriptionAdd($this->user, $url, "", "", true));
-        \Phake::verify(Arsse::$db)->feedUpdate($feedID, true);
+        \Phake::verify(Arsse::$db)->feedUpdate($feedID, true, false);
         $state = $this->primeExpectations($this->data, [
             'arsse_feeds'         => ['id','url','username','password'],
             'arsse_subscriptions' => ['id','owner','feed'],
@@ -256,7 +256,7 @@ trait SeriesSubscription {
         try {
             Arsse::$db->subscriptionAdd($this->user, $url, "", "", false);
         } finally {
-            \Phake::verify(Arsse::$db)->feedUpdate($feedID, true);
+            \Phake::verify(Arsse::$db)->feedUpdate($feedID, true, false);
             $state = $this->primeExpectations($this->data, [
                 'arsse_feeds'         => ['id','url','username','password'],
                 'arsse_subscriptions' => ['id','owner','feed'],

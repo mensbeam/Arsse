@@ -172,16 +172,22 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => 2112]));
     }
 
-    public function testDiscoverFeeds(): void {
-        $exp = new Response([
+    /** @dataProvider provideDiscoveries */
+    public function testDiscoverFeeds($in, ResponseInterface $exp): void {
+        $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => $in]));
+    }
+
+    public function provideDiscoveries(): iterable {
+        self::clearData();
+        $discovered = [
             ['title' => "Feed", 'type' => "rss", 'url' => "http://localhost:8000/Feed/Discovery/Feed"],
             ['title' => "Feed", 'type' => "rss", 'url' => "http://localhost:8000/Feed/Discovery/Missing"],
-        ]);
-        $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => "http://localhost:8000/Feed/Discovery/Valid"]));
-        $exp = new Response([]);
-        $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => "http://localhost:8000/Feed/Discovery/Invalid"]));
-        $exp = new ErrorResponse("Fetch404", 500);
-        $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => "http://localhost:8000/Feed/Discovery/Missing"]));
+        ];
+        return [
+            ["http://localhost:8000/Feed/Discovery/Valid", new Response($discovered)],
+            ["http://localhost:8000/Feed/Discovery/Invalid", new Response([])],
+            ["http://localhost:8000/Feed/Discovery/Missing", new ErrorResponse("Fetch404", 502)],
+        ];
     }
 
     /** @dataProvider provideUserQueries */

@@ -14,8 +14,10 @@ use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Misc\URL;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\REST\Exception;
+use JKingWeb\Arsse\Rule\Rule;
 use JKingWeb\Arsse\User\ExceptionConflict;
 use JKingWeb\Arsse\User\Exception as UserException;
 use Psr\Http\Message\ServerRequestInterface;
@@ -31,12 +33,25 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const ACCEPTED_TYPES_JSON = ["application/json"];
     protected const TOKEN_LENGTH = 32;
     protected const VALID_JSON = [
-        // user properties which map directly to Arsse user metadata are listed separately
-        'url'        => "string",
-        'username'   => "string",
-        'password'   => "string",
-        'user_agent' => "string",
-        'title'      => "string",
+        // user properties which map directly to Arsse user metadata are listed separately;
+        // not all these properties are used by our implementation, but they are treated 
+        // with the same strictness as in Miniflux to ease cross-compatibility
+        'url'               => "string",
+        'username'          => "string",
+        'password'          => "string",
+        'user_agent'        => "string",
+        'title'             => "string",
+        'feed_url'          => "string",
+        'category_id'       => "integer",
+        'crawler'           => "boolean",
+        'user_agent'        => "string",
+        'scraper_rules'     => "string",
+        'rewrite_rules'     => "string",
+        'keeplist_rules'    => "string",
+        'blocklist_rules'   => "string",
+        'disabled'          => "boolean",
+        'ignore_http_cache' => "boolean",
+        'fetch_via_proxy'   => "boolean",
     ];
     protected const USER_META_MAP = [
         // Miniflux ID             // Arsse ID        Default value  Extra
@@ -81,7 +96,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         ],
         '/feeds'                         => [
             'GET'                        => ["getFeeds",              false, false, false, false, []],
-            'POST'                       => ["createFeed",            false, false, true,  false, []],
+            'POST'                       => ["createFeed",            false, false, true,  false, ["feed_url", "category_id"]],
         ],
         '/feeds/1'                       => [
             'GET'                        => ["getFeed",               false, true,  false, false, []],
@@ -263,6 +278,10 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 $body[$k] = null;
             } elseif (gettype($body[$k]) !== $t) {
                 return new ErrorResponse(["InvalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])], 422);
+            } elseif (in_array($k, ["keeplist_rules", "blocklist_rules"]) && !Rule::validate($body[$k])) {
+                return new ErrorResponse(["InvalidInputValue", 'field' => $k], 422);
+            } elseif (in_array($k, ["url", "feed_url"]) && !URL::absolute($body[$k])) {
+                return new ErrorResponse(["InvalidInputValue", 'field' => $k], 422);
             }
         }
         //normalize user-specific input
@@ -377,7 +396,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 10506 => "Fetch403",
                 10507 => "Fetch401",
             ][$e->getCode()] ?? "FetchOther";
-            return new ErrorResponse($msg, 500);
+            return new ErrorResponse($msg, 502);
         }
         $out = [];
         foreach ($list as $url) {
@@ -644,6 +663,37 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $out[] = $this->transformFeed($r, $folders);
         }
         return new Response($out);
+    }
+
+    protected function createFeed(array $data): ResponseInterface {
+        $props = [
+            'keep_rule'  => $data['keeplist_rules'],
+            'block_rule' => $data['blocklist_rules'],
+            'folder'     => $data['category_id'] - 1,
+            'scrape'     => (bool) $data['crawler'],
+        ];
+        try {
+            Arsse::$db->feedAdd($data['feed_url'], (string) $data['username'], (string) $data['password'], false, (bool) $data['crawler']);
+            $tr = Arsse::$db->begin();
+            $id = Arsse::$db->subscriptionAdd(Arsse::$user->id, $data['feed_url'], (string) $data['username'], (string) $data['password'], false, (bool) $data['crawler']);
+            Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, $id, $props);
+            $tr->commit();
+        } catch (FeedException $e) {
+            $msg = [
+                10502 => "Fetch404",
+                10506 => "Fetch403",
+                10507 => "Fetch401",
+            ][$e->getCode()] ?? "FetchOther";
+            return new ErrorResponse($msg, 502);
+        } catch (ExceptionInput $e) {
+            switch ($e->getCode()) {
+                case 10235:
+                    return new ErrorResponse("MissingCategory", 422);
+                case 10236:
+                    return new ErrorResponse("DuplicateFeed", 409);
+            }
+        }
+        return new Response(['feed_id' => $id], 201);
     }
 
     public static function tokenGenerate(string $user, string $label): string {

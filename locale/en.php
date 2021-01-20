@@ -19,10 +19,12 @@ return [
     'API.Miniflux.Error.Fetch401'                                          => 'You are not authorized to access this resource (invalid username/password)',
     'API.Miniflux.Error.Fetch403'                                          => 'Unable to fetch this resource (Status Code = 403)',
     'API.Miniflux.Error.FetchOther'                                        => 'Unable to fetch this resource',
-    'API.Miniflux.Error.DuplicateCategory'                                 => 'Category "{title}" already exists',
+    'API.Miniflux.Error.DuplicateCategory'                                 => 'This category already exists.',
     'API.Miniflux.Error.InvalidCategory'                                   => 'Invalid category title "{title}"',
+    'API.Miniflux.Error.MissingCategory'                                   => 'This category does not exist or does not belong to this user.',
     'API.Miniflux.Error.InvalidElevation'                                  => 'Only administrators can change permissions of standard users',
     'API.Miniflux.Error.DuplicateUser'                                     => 'The user name "{user}" already exists',
+    'API.Miniflux.Error.DuplicateFeed'                                     => 'This feed already exists.',
 
     'API.TTRSS.Category.Uncategorized'                                     => 'Uncategorized',
     'API.TTRSS.Category.Special'                                           => 'Special',

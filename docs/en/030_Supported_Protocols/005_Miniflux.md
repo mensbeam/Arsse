@@ -25,16 +25,17 @@ Miniflux version 2.0.27 is emulated, though not all features are implemented
     - Custom User-Agent strings
     - The `disabled`, `ignore_http_cache`, and `fetch_via_proxy` flags
     - Changing the URL, username, or password of a feed
+- Titles and types are not available during feed discovery and are filled with generic data
 
 # Differences
 
-- Various error messages differ due to significant implementation differences
+- Various error codes and messages differ due to significant implementation differences
 - `PUT` requests which return a body respond with `200 OK` rather than `201 Created`
-- Only the URL should be considered reliable in feed discovery results
 - The "All" category is treated specially (see below for details)
 - Category names consisting only of whitespace are rejected along with the empty string
 - Filtering rules may not function identically (see below for details)
 - The `checked_at` field of feeds indicates when the feed was last updated rather than when it was last checked
+- Creating a feed with the `scrape` property set to `true` might not return scraped content for the initial synchronization
 
 # Behaviour of filtering (block and keep) rules
 
