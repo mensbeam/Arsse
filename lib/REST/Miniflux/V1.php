@@ -75,6 +75,15 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'PUT'                        => ["updateCategory",        false, true,  true,  false, ["title"]], // title is effectively required since no other field can be changed
             'DELETE'                     => ["deleteCategory",        false, true,  false, false, []],
         ],
+        '/categories/1/entries'          => [
+            'GET'                        => ["getCategoryEntries",    false, false, false, true,  []],
+        ],
+        '/categories/1/entries/1'        => [
+            'GET'                        => ["getCategoryEntry",      false, false, false, true,  []],
+        ],
+        '/categories/1/feeds'            => [
+            'GET'                        => ["getCategoryFeeds",      false, false, false, true,  []],
+        ],
         '/categories/1/mark-all-as-read' => [
             'PUT'                        => ["markCategory",          false, true,  false, false, []],
         ],
