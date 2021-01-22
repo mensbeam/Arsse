@@ -20,7 +20,7 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testHandleCurlErrors(int $code, string $message): void {
         $e = $this->mockGuzzleException(TransferException::class, "cURL error $code: Some message", 0);
         $this->assertException($message, "Feed");
-        throw new FeedException("https://example.com/", $e);
+        throw new FeedException("", ['url' => "https://example.com/"], $e);
     }
 
     public function provideCurlErrors() {
@@ -119,7 +119,7 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testHandleHttpErrors(int $code, string $message): void {
         $e = $this->mockGuzzleException(BadResponseException::class, "Irrelevant message", $code);
         $this->assertException($message, "Feed");
-        throw new FeedException("https://example.com/", $e);
+        throw new FeedException("", ['url' => "https://example.com/"], $e);
     }
 
     public function provideHTTPErrors() {
@@ -145,7 +145,7 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider providePicoFeedException */
     public function testHandlePicofeedException(PicoFeedException $e, string $message) {
         $this->assertException($message, "Feed");
-        throw new FeedException("https://example.com/", $e);
+        throw new FeedException("", ['url' => "https://example.com/"], $e);
     }
 
     public function providePicoFeedException() {
@@ -160,18 +160,18 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testHandleExcessRedirections() {
         $e = $this->mockGuzzleException(TooManyRedirectsException::class, "Irrelevant message", 404);
         $this->assertException("maxRedirect", "Feed");
-        throw new FeedException("https://example.com/", $e);
+        throw new FeedException("", ['url' => "https://example.com/"], $e);
     }
 
     public function testHandleGenericStreamErrors() {
         $e = $this->mockGuzzleException(TransferException::class, "Error creating resource: Irrelevant message", 403);
         $this->assertException("transmissionError", "Feed");
-        throw new FeedException("https://example.com/", $e);
+        throw new FeedException("", ['url' => "https://example.com/"], $e);
     }
 
     public function testHandleUnexpectedError() {
         $e = new \Exception;
         $this->assertException("internalError", "Feed");
-        throw new FeedException("https://example.com/", $e);
+        throw new FeedException("", ['url' => "https://example.com/"], $e);
     }
 }

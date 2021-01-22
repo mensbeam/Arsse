@@ -251,7 +251,7 @@ trait SeriesSubscription {
     public function testAddASubscriptionToAnInvalidFeed(): void {
         $url = "http://example.org/feed1";
         $feedID = $this->nextID("arsse_feeds");
-        \Phake::when(Arsse::$db)->feedUpdate->thenThrow(new FeedException($url, $this->mockGuzzleException(ClientException::class, "", 404)));
+        \Phake::when(Arsse::$db)->feedUpdate->thenThrow(new FeedException("", ['url' => $url], $this->mockGuzzleException(ClientException::class, "", 404)));
         $this->assertException("invalidUrl", "Feed");
         try {
             Arsse::$db->subscriptionAdd($this->user, $url, "", "", false);

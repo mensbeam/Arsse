@@ -82,7 +82,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testRefreshAFeed(string $cmd, int $exitStatus, string $output): void {
         Arsse::$db = \Phake::mock(Database::class);
         \Phake::when(Arsse::$db)->feedUpdate(1, true)->thenReturn(true);
-        \Phake::when(Arsse::$db)->feedUpdate(2, true)->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.com/", $this->mockGuzzleException(ClientException::class, "", 404)));
+        \Phake::when(Arsse::$db)->feedUpdate(2, true)->thenThrow(new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://example.com/"], $this->mockGuzzleException(ClientException::class, "", 404)));
         $this->assertConsole($this->cli, $cmd, $exitStatus, $output);
         \Phake::verify($this->cli)->loadConf;
         \Phake::verify(Arsse::$db)->feedUpdate;

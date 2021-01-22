@@ -787,13 +787,13 @@ LONG_STRING;
         ];
         $out = [
             ['code' => 1, 'feed_id' => 2],
-            ['code' => 5, 'message' => (new \JKingWeb\Arsse\Feed\Exception("http://example.com/1", $this->mockGuzzleException(ClientException::class, "", 401)))->getMessage()],
+            ['code' => 5, 'message' => (new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://example.com/1"], $this->mockGuzzleException(ClientException::class, "", 401)))->getMessage()],
             ['code' => 1, 'feed_id' => 0],
             ['code' => 0, 'feed_id' => 3],
             ['code' => 0, 'feed_id' => 1],
-            ['code' => 3, 'message' => (new \JKingWeb\Arsse\Feed\Exception("http://localhost:8000/Feed/Discovery/Invalid", new \PicoFeed\Reader\SubscriptionNotFoundException()))->getMessage()],
-            ['code' => 2, 'message' => (new \JKingWeb\Arsse\Feed\Exception("http://example.com/6", $this->mockGuzzleException(ClientException::class, "", 404)))->getMessage()],
-            ['code' => 6, 'message' => (new \JKingWeb\Arsse\Feed\Exception("http://example.com/7", new \PicoFeed\Parser\MalformedXmlException()))->getMessage()],
+            ['code' => 3, 'message' => (new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://localhost:8000/Feed/Discovery/Invalid"], new \PicoFeed\Reader\SubscriptionNotFoundException()))->getMessage()],
+            ['code' => 2, 'message' => (new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://example.com/6"], $this->mockGuzzleException(ClientException::class, "", 404)))->getMessage()],
+            ['code' => 6, 'message' => (new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://example.com/7"], new \PicoFeed\Parser\MalformedXmlException()))->getMessage()],
             ['code' => 1, 'feed_id' => 4],
             ['code' => 0, 'feed_id' => 4],
         ];
@@ -804,13 +804,13 @@ LONG_STRING;
             ['id' => 4, 'url' => "http://example.com/9"],
         ];
         \Phake::when(Arsse::$db)->subscriptionAdd(...$db[0])->thenReturn(2);
-        \Phake::when(Arsse::$db)->subscriptionAdd(...$db[1])->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.com/1", $this->mockGuzzleException(ClientException::class, "", 401)));
+        \Phake::when(Arsse::$db)->subscriptionAdd(...$db[1])->thenThrow(new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://example.com/1"], $this->mockGuzzleException(ClientException::class, "", 401)));
         \Phake::when(Arsse::$db)->subscriptionAdd(...$db[2])->thenReturn(2);
         \Phake::when(Arsse::$db)->subscriptionAdd(...$db[3])->thenThrow(new ExceptionInput("constraintViolation"));
         \Phake::when(Arsse::$db)->subscriptionAdd(...$db[4])->thenThrow(new ExceptionInput("constraintViolation"));
         \Phake::when(Arsse::$db)->subscriptionAdd(...$db[5])->thenThrow(new ExceptionInput("constraintViolation"));
-        \Phake::when(Arsse::$db)->subscriptionAdd(...$db[6])->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.com/6", $this->mockGuzzleException(ClientException::class, "", 404)));
-        \Phake::when(Arsse::$db)->subscriptionAdd(...$db[7])->thenThrow(new \JKingWeb\Arsse\Feed\Exception("http://example.com/7", new \PicoFeed\Parser\MalformedXmlException()));
+        \Phake::when(Arsse::$db)->subscriptionAdd(...$db[6])->thenThrow(new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://example.com/6"], $this->mockGuzzleException(ClientException::class, "", 404)));
+        \Phake::when(Arsse::$db)->subscriptionAdd(...$db[7])->thenThrow(new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://example.com/7"], new \PicoFeed\Parser\MalformedXmlException()));
         \Phake::when(Arsse::$db)->subscriptionAdd(...$db[8])->thenReturn(4);
         \Phake::when(Arsse::$db)->subscriptionAdd(...$db[9])->thenThrow(new ExceptionInput("constraintViolation"));
         \Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 42)->thenReturn($this->v(['id' => 42]));

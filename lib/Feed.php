@@ -39,7 +39,7 @@ class Feed {
             if (!$links) {
                 // work around a PicoFeed memory leak
                 libxml_use_internal_errors(false);
-                throw new Feed\Exception($url, new \PicoFeed\Reader\SubscriptionNotFoundException('Unable to find a subscription'));
+                throw new Feed\Exception("", ['url' => $url], new \PicoFeed\Reader\SubscriptionNotFoundException('Unable to find a subscription'));
             } else {
                 $out = $links[0];
             }
@@ -119,9 +119,9 @@ class Feed {
             $client->reader = $reader;
             return $client;
         } catch (PicoFeedException $e) {
-            throw new Feed\Exception($url, $e); // @codeCoverageIgnore
+            throw new Feed\Exception("", ['url' => $url], $e); // @codeCoverageIgnore
         } catch (\GuzzleHttp\Exception\GuzzleException $e) {
-            throw new Feed\Exception($url, $e);
+            throw new Feed\Exception("", ['url' => $url], $e);
         }
     }
 
@@ -133,9 +133,9 @@ class Feed {
                 $this->resource->getEncoding()
             )->execute();
         } catch (PicoFeedException $e) {
-            throw new Feed\Exception($this->resource->getUrl(), $e);
+            throw new Feed\Exception("", ['url' => $this->resource->getUrl()], $e);
         } catch (\GuzzleHttp\Exception\GuzzleException $e) { // @codeCoverageIgnore
-            throw new Feed\Exception($this->resource->getUrl(), $e); // @codeCoverageIgnore
+            throw new Feed\Exception("", ['url' => $this->resource->getUrl()], $e); // @codeCoverageIgnore
         }
 
         // Grab the favicon for the feed, or null if no valid icon is found
