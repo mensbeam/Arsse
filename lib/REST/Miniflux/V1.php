@@ -54,17 +54,17 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'fetch_via_proxy'   => "boolean",
     ];
     protected const USER_META_MAP = [
-        // Miniflux ID             // Arsse ID        Default value  Extra
-        'is_admin'                => ["admin",        false,         false],
-        'theme'                   => ["theme",        "light_serif", false],
-        'language'                => ["lang",         "en_US",       false],
-        'timezone'                => ["tz",           "UTC",         false],
-        'entry_sorting_direction' => ["sort_asc",     false,         false],
-        'entries_per_page'        => ["page_size",    100,           false],
-        'keyboard_shortcuts'      => ["shortcuts",    true,          false],
-        'show_reading_time'       => ["reading_time", true,          false],
-        'entry_swipe'             => ["swipe",        true,          false],
-        'custom_css'              => ["stylesheet",   "",            true],
+        // Miniflux ID             // Arsse ID        Default value
+        'is_admin'                => ["admin",        false],
+        'theme'                   => ["theme",        "light_serif"],
+        'language'                => ["lang",         "en_US"],
+        'timezone'                => ["tz",           "UTC"],
+        'entry_sorting_direction' => ["sort_asc",     false],
+        'entries_per_page'        => ["page_size",    100],
+        'keyboard_shortcuts'      => ["shortcuts",    true],
+        'show_reading_time'       => ["reading_time", true],
+        'entry_swipe'             => ["swipe",        true],
+        'stylesheet'              => ["stylesheet",   ""],
     ];
     protected const CALLS = [                // handler method        Admin  Path   Body   Query  Required fields
         '/categories'                    => [
@@ -76,13 +76,13 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'DELETE'                     => ["deleteCategory",        false, true,  false, false, []],
         ],
         '/categories/1/entries'          => [
-            'GET'                        => ["getCategoryEntries",    false, false, false, true,  []],
+            'GET'                        => ["getCategoryEntries",    false, true,  false, false, []],
         ],
         '/categories/1/entries/1'        => [
-            'GET'                        => ["getCategoryEntry",      false, false, false, true,  []],
+            'GET'                        => ["getCategoryEntry",      false, true,  false, false, []],
         ],
         '/categories/1/feeds'            => [
-            'GET'                        => ["getCategoryFeeds",      false, false, false, true,  []],
+            'GET'                        => ["getCategoryFeeds",      false, true,  false, false, []],
         ],
         '/categories/1/mark-all-as-read' => [
             'PUT'                        => ["markCategory",          false, true,  false, false, []],
@@ -354,16 +354,11 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'id'                      => $info['num'],
                 'username'                => $u,
                 'last_login_at'           => $now,
+                'google_id'               => "",
+                'openid_connect_id'       => "",
             ];
-            foreach (self::USER_META_MAP as $ext => [$int, $default, $extra]) {
-                if (!$extra) {
-                    $entry[$ext] = $info[$int] ?? $default;
-                } else {
-                    if (!isset($entry['extra'])) {
-                        $entry['extra'] = [];
-                    }
-                    $entry['extra'][$ext] = $info[$int] ?? $default;
-                }
+            foreach (self::USER_META_MAP as $ext => [$int, $default]) {
+                $entry[$ext] = $info[$int] ?? $default;
             }
             $entry['entry_sorting_direction'] = ($entry['entry_sorting_direction']) ? "asc" : "desc";
             $out[] = $entry;
@@ -530,15 +525,21 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new EmptyResponse(204);
     }
 
-    protected function getCategories(): ResponseInterface {
-        $out = [];
+    protected function baseCategory(): array {
+        // the root folder is always a category and is always ID 1
+        // the specific formulation is verbose, so a function makes sense
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
+        return ['id' => 1, 'title' => $meta['root_folder_name'] ?? Arsse::$lang->msg("API.Miniflux.DefaultCategoryName"), 'user_id' => $meta['num']];
+    }
+
+    protected function getCategories(): ResponseInterface {
         // add the root folder as a category
-        $out[] = ['id' => 1, 'title' => $meta['root_folder_name'] ?? Arsse::$lang->msg("API.Miniflux.DefaultCategoryName"), 'user_id' => $meta['num']];
+        $out = [$this->baseCategory()];
+        $num = $out[0]['user_id'];
         // add other top folders as categories
         foreach (Arsse::$db->folderList(Arsse::$user->id, null, false) as $f) {
             // always add 1 to the ID since the root folder will always be 1 instead of 0.
-            $out[] = ['id' => $f['id'] + 1, 'title' => $f['name'], 'user_id' => $meta['num']];
+            $out[] = ['id' => $f['id'] + 1, 'title' => $f['name'], 'user_id' => $num];
         }
         return new Response($out);
     }
@@ -622,13 +623,13 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function mapFolders(): array {
-        $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
-        $folders = [0 => ['id' => 1, 'title' => $meta['root_folder_name'] ?? Arsse::$lang->msg("API.Miniflux.DefaultCategoryName"), 'user_id' => $meta['num']]];
+        $folders = [0 => $this->baseCategory()];
+        $num = $folders[0]['user_id'];
         foreach (Arsse::$db->folderList(Arsse::$user->id, null, false) as $r) {
             $folders[(int) $r['id']] = [
                 'id'      => ((int) $r['id']) + 1,
                 'title'   => $r['name'],
-                'user_id' => $meta['num'],
+                'user_id' => $num,
             ];
         }
         return $folders;
@@ -671,6 +672,30 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // next compile the list of feeds
         $out = [];
         foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $r) {
+            $out[] = $this->transformFeed($r, $folders);
+        }
+        return new Response($out);
+    }
+
+    protected function getCategoryFeeds(array $path): ResponseInterface {
+        // transform the category number into a folder number by subtracting one
+        $folder = ((int) $path[1]) - 1;
+        // unless the folder is root, list recursive
+        $recursive = $folder > 0;
+        $tr = Arsse::$db->begin();
+        // get the list of subscriptions, or bail\
+        try {
+            $subs = Arsse::$db->subscriptionList(Arsse::$user->id, $folder, $recursive)->getAll();
+        } catch (ExceptionInput $e) {
+            // the folder does not exist
+            return new EmptyResponse(404);
+        }
+        // compile the list of folders; the feed list includes folder names
+        // NOTE: We compile the full list of folders in case someone has manually selected a non-top folder
+        $folders = $this->mapFolders();
+        // next compile the list of feeds
+        $out = [];
+        foreach ($subs as $r) {
             $out[] = $this->transformFeed($r, $folders);
         }
         return new Response($out);

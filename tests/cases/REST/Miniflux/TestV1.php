@@ -15,6 +15,7 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\REST\Miniflux\V1;
 use JKingWeb\Arsse\REST\Miniflux\ErrorResponse;
+use JKingWeb\Arsse\Test\FeedException;
 use JKingWeb\Arsse\User\ExceptionConflict;
 use JKingWeb\Arsse\User\ExceptionInput as UserExceptionInput;
 use Psr\Http\Message\ResponseInterface;
@@ -34,6 +35,8 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             'id'                      => 1,
             'username'                => "john.doe@example.com",
             'last_login_at'           => self::NOW,
+            'google_id'               => "",
+            'openid_connect_id'       => "",
             'is_admin'                => true,
             'theme'                   => "custom",
             'language'                => "fr_CA",
@@ -43,14 +46,14 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             'keyboard_shortcuts'      => false,
             'show_reading_time'       => false,
             'entry_swipe'             => false,
-            'extra'                   => [
-                'custom_css' => "p {}",
-            ],
+            'stylesheet'              => "p {}",
         ],
         [
             'id'                      => 2,
             'username'                => "jane.doe@example.com",
             'last_login_at'           => self::NOW,
+            'google_id'               => "",
+            'openid_connect_id'       => "",
             'is_admin'                => false,
             'theme'                   => "light_serif",
             'language'                => "en_US",
@@ -60,10 +63,16 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             'keyboard_shortcuts'      => true,
             'show_reading_time'       => true,
             'entry_swipe'             => true,
-            'extra'                   => [
-                'custom_css' => "",
-            ],
+            'stylesheet'              => "",
         ],
+    ];
+    protected $feeds = [
+        ['id' => 1,  'feed' => 12, 'url' => "http://example.com/ook",                      'title' => "Ook", 'source' => "http://example.com/", 'icon_id' => 47,   'icon_url' => "http://example.com/icon", 'folder' => 2112, 'top_folder' => 5,    'pinned' => 0, 'err_count' => 1, 'err_msg' => "Oopsie", 'order_type' => 0, 'keep_rule' => "this|that", 'block_rule' => "both", 'added' => "2020-12-21 21:12:00", 'updated' => "2021-01-05 13:51:32", 'edited' => "2021-01-01 00:00:00", 'modified' => "2020-11-30 04:08:52", 'next_fetch' => "2021-01-20 00:00:00", 'etag' => "OOKEEK", 'scrape' => 0, 'unread' => 42],
+        ['id' => 55, 'feed' => 12, 'url' => "http://j%20k:super%20secret@example.com/eek", 'title' => "Eek", 'source' => "http://example.com/", 'icon_id' => null, 'icon_url' => null,                      'folder' => null, 'top_folder' => null, 'pinned' => 0, 'err_count' => 0, 'err_msg' => null,     'order_type' => 0, 'keep_rule' => null,        'block_rule' => null,   'added' => "2020-12-21 21:12:00", 'updated' => "2021-01-05 13:51:32", 'edited' => null,                  'modified' => "2020-11-30 04:08:52", 'next_fetch' => null,                  'etag' => null,     'scrape' => 1, 'unread' => 0],
+    ];
+    protected $feedsOut = [
+        ['id' => 1,  'user_id' => 42, 'feed_url' => "http://example.com/ook", 'site_url' => "http://example.com/", 'title' => "Ook", 'checked_at' => "2021-01-05T13:51:32.000000Z", 'next_check_at' => "2021-01-20T00:00:00.000000Z", 'etag_header' => "OOKEEK", 'last_modified_header' => "Fri, 01 Jan 2021 00:00:00 GMT", 'parsing_error_message' => "Oopsie", 'parsing_error_count' => 1, 'scraper_rules' => "", 'rewrite_rules' => "", 'crawler' => false, 'blocklist_rules' => "both", 'keeplist_rules' => "this|that", 'user_agent' => "", 'username' => "",    'password' => "",             'disabled' => false, 'ignore_http_cache' => false, 'fetch_via_proxy' => false, 'category' => ['id' => 6, 'title' => "Cat Ook", 'user_id' => 42], 'icon' => ['feed_id' => 1,'icon_id' => 47]],
+        ['id' => 55, 'user_id' => 42, 'feed_url' => "http://example.com/eek", 'site_url' => "http://example.com/", 'title' => "Eek", 'checked_at' => "2021-01-05T13:51:32.000000Z", 'next_check_at' => "0001-01-01T00:00:00.000000Z", 'etag_header' => "",       'last_modified_header' => "",                              'parsing_error_message' => "",       'parsing_error_count' => 0, 'scraper_rules' => "", 'rewrite_rules' => "", 'crawler' => true,  'blocklist_rules' => "",     'keeplist_rules' => "",          'user_agent' => "", 'username' => "j k", 'password' => "super secret", 'disabled' => false, 'ignore_http_cache' => false, 'fetch_via_proxy' => false, 'category' => ['id' => 1,'title'  => "All",     'user_id' => 42], 'icon' => null],
     ];
 
     protected function req(string $method, string $target, $data = "", array $headers = [], ?string $user = "john.doe@example.com", bool $body = true): ResponseInterface {
@@ -535,80 +544,40 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         );
     }
 
-    public function testListReeds(): void {
-        \Phake::when(Arsse::$db)->folderList->thenReturn(new Result([
+    public function testListFeeds(): void {
+        \Phake::when(Arsse::$db)->folderList->thenReturn(new Result($this->v([
             ['id' => 5, 'name' => "Cat Ook"],
-        ]));
-        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result([
-            ['id' => 1,  'feed' => 12, 'url' => "http://example.com/ook",                      'title' => "Ook", 'source' => "http://example.com/", 'icon_id' => 47,   'icon_url' => "http://example.com/icon", 'folder' => 2112, 'top_folder' => 5,    'pinned' => 0, 'err_count' => 1, 'err_msg' => "Oopsie", 'order_type' => 0, 'keep_rule' => "this|that", 'block_rule' => "both", 'added' => "2020-12-21 21:12:00", 'updated' => "2021-01-05 13:51:32", 'edited' => "2021-01-01 00:00:00", 'modified' => "2020-11-30 04:08:52", 'next_fetch' => "2021-01-20 00:00:00", 'etag' => "OOKEEK", 'scrape' => 0, 'unread' => 42],
-            ['id' => 55, 'feed' => 12, 'url' => "http://j%20k:super%20secret@example.com/eek", 'title' => "Eek", 'source' => "http://example.com/", 'icon_id' => null, 'icon_url' => null,                      'folder' => null, 'top_folder' => null, 'pinned' => 0, 'err_count' => 0, 'err_msg' => null,     'order_type' => 0, 'keep_rule' => null,        'block_rule' => null,   'added' => "2020-12-21 21:12:00", 'updated' => "2021-01-05 13:51:32", 'edited' => null,                  'modified' => "2020-11-30 04:08:52", 'next_fetch' => null,                  'etag' => null,     'scrape' => 1, 'unread' => 0],
-        ]));
-        $exp = new Response([
-            [
-                'id' => 1,
-                'user_id' => 42,
-                'feed_url' => "http://example.com/ook",
-                'site_url' => "http://example.com/",
-                'title' => "Ook",
-                'checked_at' => "2021-01-05T13:51:32.000000Z",
-                'next_check_at' => "2021-01-20T00:00:00.000000Z",
-                'etag_header' => "OOKEEK",
-                'last_modified_header' => "Fri, 01 Jan 2021 00:00:00 GMT",
-                'parsing_error_message' => "Oopsie",
-                'parsing_error_count' => 1,
-                'scraper_rules' => "",
-                'rewrite_rules' => "",
-                'crawler' => false,
-                'blocklist_rules' => "both",
-                'keeplist_rules' => "this|that",
-                'user_agent' => "",
-                'username' => "",
-                'password' => "",
-                'disabled' => false,
-                'ignore_http_cache' => false,
-                'fetch_via_proxy' => false,
-                'category' => [
-                    'id' => 6,
-                    'title' => "Cat Ook",
-                    'user_id' => 42
-                ],
-                'icon' => [
-                    'feed_id' => 1,
-                    'icon_id' => 47            
-                ],
-            ],
-            [
-                'id' => 55,
-                'user_id' => 42,
-                'feed_url' => "http://example.com/eek",
-                'site_url' => "http://example.com/",
-                'title' => "Eek",
-                'checked_at' => "2021-01-05T13:51:32.000000Z",
-                'next_check_at' => "0001-01-01T00:00:00.000000Z",
-                'etag_header' => "",
-                'last_modified_header' => "",
-                'parsing_error_message' => "",
-                'parsing_error_count' => 0,
-                'scraper_rules' => "",
-                'rewrite_rules' => "",
-                'crawler' => true,
-                'blocklist_rules' => "",
-                'keeplist_rules' => "",
-                'user_agent' => "",
-                'username' => "j k",
-                'password' => "super secret",
-                'disabled' => false,
-                'ignore_http_cache' => false,
-                'fetch_via_proxy' => false,
-                'category' => [
-                    'id' => 1,
-                    'title' => "All",
-                    'user_id' => 42
-                ],
-                'icon' => null,
-            ],
-        ]);
+        ])));
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v($this->feeds)));
+        $exp = new Response($this->feedsOut);
         $this->assertMessage($exp, $this->req("GET", "/feeds"));
+    }
+
+    public function testListFeedsOfACategory(): void {
+        \Phake::when(Arsse::$db)->folderList->thenReturn(new Result($this->v([
+            ['id' => 5, 'name' => "Cat Ook"],
+        ])));
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v($this->feeds)));
+        $exp = new Response($this->feedsOut);
+        $this->assertMessage($exp, $this->req("GET", "/categories/2112/feeds"));
+        \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id, 2111, true);
+    }
+
+    public function testListFeedsOfTheRootCategory(): void {
+        \Phake::when(Arsse::$db)->folderList->thenReturn(new Result($this->v([
+            ['id' => 5, 'name' => "Cat Ook"],
+        ])));
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v($this->feeds)));
+        $exp = new Response($this->feedsOut);
+        $this->assertMessage($exp, $this->req("GET", "/categories/1/feeds"));
+        \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id, 0, false);
+    }
+
+    public function testListFeedsOfAMissingCategory(): void {
+        \Phake::when(Arsse::$db)->subscriptionList->thenThrow(new ExceptionInput("idMissing"));
+        $exp = new EmptyResponse(404);
+        $this->assertMessage($exp, $this->req("GET", "/categories/2112/feeds"));
+        \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id, 2111, true);
     }
 
     /** @dataProvider provideFeedCreations */
