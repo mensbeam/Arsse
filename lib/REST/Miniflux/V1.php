@@ -401,6 +401,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 10502 => "Fetch404",
                 10506 => "Fetch403",
                 10507 => "Fetch401",
+                10521 => "Fetch404",
             ][$e->getCode()] ?? "FetchOther";
             return new ErrorResponse($msg, 502);
         }
@@ -719,6 +720,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 10502 => "Fetch404",
                 10506 => "Fetch403",
                 10507 => "Fetch401",
+                10521 => "Fetch404",
+                10522 => "FetchFormat",
             ][$e->getCode()] ?? "FetchOther";
             return new ErrorResponse($msg, 502);
         } catch (ExceptionInput $e) {
