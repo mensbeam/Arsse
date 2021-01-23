@@ -232,7 +232,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         try {
             return $this->$func(...$args);
-            // @codeCoverageIgnoreStart
+        // @codeCoverageIgnoreStart
         } catch (Exception $e) {
             // if there was a REST exception return 400
             return new EmptyResponse(400);
@@ -703,18 +703,16 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function createFeed(array $data): ResponseInterface {
-        $props = [
-            'keep_rule'  => $data['keeplist_rules'],
-            'block_rule' => $data['blocklist_rules'],
-            'folder'     => $data['category_id'] - 1,
-            'scrape'     => (bool) $data['crawler'],
-        ];
         try {
             Arsse::$db->feedAdd($data['feed_url'], (string) $data['username'], (string) $data['password'], false, (bool) $data['crawler']);
             $tr = Arsse::$db->begin();
             $id = Arsse::$db->subscriptionAdd(Arsse::$user->id, $data['feed_url'], (string) $data['username'], (string) $data['password'], false, (bool) $data['crawler']);
-            Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, $id, $props);
+            Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, $id, ['folder' => $data['category_id'] - 1, 'scrape' => (bool) $data['crawler']]);
             $tr->commit();
+            if (strlen($data['keeplist_rules'] ?? "") || strlen($data['blocklist_rules'] ?? "")) {
+                // we do rules separately so as not to tie up the database
+                Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, $id, ['keep_rule' => $data['keeplist_rules'], 'block_rule' => $data['blocklist_rules']]);
+            }
         } catch (FeedException $e) {
             $msg = [
                 10502 => "Fetch404",

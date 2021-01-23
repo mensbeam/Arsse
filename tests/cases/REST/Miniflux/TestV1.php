@@ -613,11 +613,13 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         }
         if ($in3) {
             $props = [
-                'keep_rule'  => $in['keeplist_rules'],
-                'block_rule' => $in['blocklist_rules'],
                 'folder'     => $in['category_id'] - 1,
                 'scrape'     => $in['crawler'] ?? false,
             ];
+            $rules = (strlen($in['keeplist_rules'] ?? "") || strlen($in['blocklist_rules'] ?? "")) ? [
+                'keep_rule'  => $in['keeplist_rules'],
+                'block_rule' => $in['blocklist_rules'],
+            ] : [];
             \Phake::verify(Arsse::$db)->subscriptionPropertiesSet("john.doe@example.com", $out2, $props);
         } else {
             \Phake::verify(Arsse::$db, \Phake::times(0))->subscriptionPropertiesSet;
@@ -627,27 +629,28 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideFeedCreations(): iterable {
         self::clearData();
         return [
-            [['category_id' => 1],                                                                null,                                       null, null, new ErrorResponse(["MissingInputValue", 'field' => "feed_url"], 422)],
-            [['feed_url' => "http://example.com/"],                                               null,                                       null, null, new ErrorResponse(["MissingInputValue", 'field' => "category_id"], 422)],
-            [['feed_url' => "http://example.com/", 'category_id' => "1"],                         null,                                       null, null, new ErrorResponse(["InvalidInputType", 'field' => "category_id", 'expected' => "integer", 'actual' => "string"], 422)],
-            [['feed_url' => "Not a URL", 'category_id' => 1],                                     null,                                       null, null, new ErrorResponse(["InvalidInputValue", 'field' => "feed_url"], 422)],
-            [['feed_url' => "http://example.com/", 'category_id' => 0],                           null,                                       null, null, new ErrorResponse(["InvalidInputValue", 'field' => "category_id"], 422)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1, 'keeplist_rules' => "["],  null,                                       null, null, new ErrorResponse(["InvalidInputValue", 'field' => "keeplist_rules"], 422)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1, 'blocklist_rules' => "["], null,                                       null, null, new ErrorResponse(["InvalidInputValue", 'field' => "blocklist_rules"], 422)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("internalError"),         null, null, new ErrorResponse("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("invalidCertificate"),    null, null, new ErrorResponse("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("invalidUrl"),            null, null, new ErrorResponse("Fetch404", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("maxRedirect"),           null, null, new ErrorResponse("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("maxSize"),               null, null, new ErrorResponse("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("timeout"),               null, null, new ErrorResponse("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("forbidden"),             null, null, new ErrorResponse("Fetch403", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("unauthorized"),          null, null, new ErrorResponse("Fetch401", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("transmissionError"),     null, null, new ErrorResponse("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("connectionFailed"),      null, null, new ErrorResponse("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("malformedXml"),          null, null, new ErrorResponse("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("xmlEntity"),             null, null, new ErrorResponse("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("subscriptionNotFound"),  null, null, new ErrorResponse("Fetch404", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("unsupportedFeedFormat"), null, null, new ErrorResponse("FetchFormat", 502)],
+            [['category_id' => 1],                                                                null,                                       null,                                      null, new ErrorResponse(["MissingInputValue", 'field' => "feed_url"], 422)],
+            [['feed_url' => "http://example.com/"],                                               null,                                       null,                                      null, new ErrorResponse(["MissingInputValue", 'field' => "category_id"], 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => "1"],                         null,                                       null,                                      null, new ErrorResponse(["InvalidInputType", 'field' => "category_id", 'expected' => "integer", 'actual' => "string"], 422)],
+            [['feed_url' => "Not a URL", 'category_id' => 1],                                     null,                                       null,                                      null, new ErrorResponse(["InvalidInputValue", 'field' => "feed_url"], 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => 0],                           null,                                       null,                                      null, new ErrorResponse(["InvalidInputValue", 'field' => "category_id"], 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1, 'keeplist_rules' => "["],  null,                                       null,                                      null, new ErrorResponse(["InvalidInputValue", 'field' => "keeplist_rules"], 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1, 'blocklist_rules' => "["], null,                                       null,                                      null, new ErrorResponse(["InvalidInputValue", 'field' => "blocklist_rules"], 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("internalError"),         null,                                      null, new ErrorResponse("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("invalidCertificate"),    null,                                      null, new ErrorResponse("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("invalidUrl"),            null,                                      null, new ErrorResponse("Fetch404", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("maxRedirect"),           null,                                      null, new ErrorResponse("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("maxSize"),               null,                                      null, new ErrorResponse("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("timeout"),               null,                                      null, new ErrorResponse("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("forbidden"),             null,                                      null, new ErrorResponse("Fetch403", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("unauthorized"),          null,                                      null, new ErrorResponse("Fetch401", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("transmissionError"),     null,                                      null, new ErrorResponse("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("connectionFailed"),      null,                                      null, new ErrorResponse("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("malformedXml"),          null,                                      null, new ErrorResponse("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("xmlEntity"),             null,                                      null, new ErrorResponse("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("subscriptionNotFound"),  null,                                      null, new ErrorResponse("Fetch404", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("unsupportedFeedFormat"), null,                                      null, new ErrorResponse("FetchFormat", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           2112,                                       new ExceptionInput("constraintViolation"), null, new ErrorResponse("DuplicateFeed", 409)],
         ];
     }
 }
