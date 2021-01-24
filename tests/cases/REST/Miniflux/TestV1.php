@@ -564,9 +564,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testListFeedsOfTheRootCategory(): void {
-        \Phake::when(Arsse::$db)->folderList->thenReturn(new Result($this->v([
-            ['id' => 5, 'name' => "Cat Ook"],
-        ])));
+        \Phake::when(Arsse::$db)->folderList->thenReturn(new Result($this->v([['id' => 5, 'name' => "Cat Ook"],])));
         \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v($this->feeds)));
         $exp = new Response($this->feedsOut);
         $this->assertMessage($exp, $this->req("GET", "/categories/1/feeds"));
@@ -578,6 +576,21 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $exp = new ErrorResponse("404", 404);
         $this->assertMessage($exp, $this->req("GET", "/categories/2112/feeds"));
         \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id, 2111, true);
+    }
+
+    public function testGetAFeed(): void {
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn($this->v($this->feeds[0]))->thenReturn($this->v($this->feeds[1]));
+        \Phake::when(Arsse::$db)->folderList->thenReturn(new Result($this->v([['id' => 5, 'name' => "Cat Ook"],])));
+        $this->assertMessage(new Response($this->feedsOut[0]), $this->req("GET", "/feeds/1"));
+        \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 1);
+        $this->assertMessage(new Response($this->feedsOut[1]), $this->req("GET", "/feeds/55"));
+        \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 55);
+    }
+
+    public function testGetAMissingFeed(): void {
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenThrow(new ExceptionInput("subjectMissing"));
+        $this->assertMessage(new ErrorResponse("404", 404), $this->req("GET", "/feeds/1"));
+        \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 1);
     }
 
     /** @dataProvider provideFeedCreations */

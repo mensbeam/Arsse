@@ -702,6 +702,18 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new Response($out);
     }
 
+    protected function getFeed(array $path): ResponseInterface {
+        $tr = Arsse::$db->begin();
+        try {
+            $sub = Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, (int) $path[1]);
+        } catch (ExceptionInput $e) {
+            return new ErrorResponse("404", 404);
+        }
+        // compile the list of folders; the feed list includes folder names
+        $folders = $this->mapFolders();
+        return new Response($this->transformFeed($sub, $folders));
+    }
+
     protected function createFeed(array $data): ResponseInterface {
         try {
             Arsse::$db->feedAdd($data['feed_url'], (string) $data['username'], (string) $data['password'], false, (bool) $data['crawler']);
