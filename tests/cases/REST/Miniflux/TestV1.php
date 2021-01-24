@@ -575,7 +575,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testListFeedsOfAMissingCategory(): void {
         \Phake::when(Arsse::$db)->subscriptionList->thenThrow(new ExceptionInput("idMissing"));
-        $exp = new EmptyResponse(404);
+        $exp = new ErrorResponse("404", 404);
         $this->assertMessage($exp, $this->req("GET", "/categories/2112/feeds"));
         \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id, 2111, true);
     }

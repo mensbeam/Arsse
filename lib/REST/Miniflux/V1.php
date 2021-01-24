@@ -689,7 +689,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $subs = Arsse::$db->subscriptionList(Arsse::$user->id, $folder, $recursive)->getAll();
         } catch (ExceptionInput $e) {
             // the folder does not exist
-            return new EmptyResponse(404);
+            return new ErrorResponse("404", 404);
         }
         // compile the list of folders; the feed list includes folder names
         // NOTE: We compile the full list of folders in case someone has manually selected a non-top folder
