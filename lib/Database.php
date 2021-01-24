@@ -963,7 +963,7 @@ class Database {
         }
         $out = (bool) $this->db->prepare("UPDATE arsse_subscriptions set $setClause, modified = CURRENT_TIMESTAMP where owner = ? and id = ?", $setTypes, "str", "int")->run($setValues, $user, $id)->changes();
         $tr->commit();
-        // if filter rules were changed, apply them
+        // if filter rules were changed, apply them; this is done outside the transaction because it may take some time
         if (array_key_exists("keep_rule", $data) || array_key_exists("block_rule", $data)) {
             $this->subscriptionRulesApply($user, $id);
         }
@@ -1030,6 +1030,8 @@ class Database {
      * @param integer $id The identifier of the subscription whose rules are to be evaluated
      */
     protected function subscriptionRulesApply(string $user, int $id): void {
+        // start a transaction for read isolation
+        $tr = $this->begin();
         $sub = $this->db->prepare("SELECT feed, coalesce(keep_rule, '') as keep, coalesce(block_rule, '') as block from arsse_subscriptions where owner = ? and id = ?", "str", "int")->run($user, $id)->getRow();
         try {
             $keep = Rule::prep($sub['keep']);
@@ -1053,6 +1055,8 @@ class Database {
                 $hide[] = $r['id'];
             }
         }
+        // roll back the read transation
+        $tr->rollback();
         // apply any marks
         if ($hide) {
             $this->articleMark($user, ['hidden' => true], (new Context)->articles($hide), false);
