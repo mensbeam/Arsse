@@ -814,7 +814,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionInput $e) {
             return new ErrorResponse("404", 404);
         }
-        if (!$icon['id']) {
+        if (!$icon['data']) {
             return new ErrorResponse("404", 404);
         }
         return new Response([
