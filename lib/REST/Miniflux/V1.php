@@ -808,6 +808,22 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
     }
 
+    protected function getFeedIcon(array $path): ResponseInterface {
+        try {
+            $icon = Arsse::$db->subscriptionIcon(Arsse::$user->id, (int) $path[1]);
+        } catch (ExceptionInput $e) {
+            return new ErrorResponse("404", 404);
+        }
+        if (!$icon['id']) {
+            return new ErrorResponse("404", 404);
+        }
+        return new Response([
+            'id' => $icon['id'],
+            'data' => ($icon['type'] ?? "application/octet-stream").";base64,".base64_encode($icon['data']),
+            'mime_type' => $icon['type'],
+        ]);
+    }
+
     public static function tokenGenerate(string $user, string $label): string {
         // Miniflux produces tokens in base64url alphabet
         $t = str_replace(["+", "/"], ["-", "_"], base64_encode(random_bytes(self::TOKEN_LENGTH)));
