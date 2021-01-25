@@ -66,6 +66,34 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'entry_swipe'             => ["swipe",        true],
         'stylesheet'              => ["stylesheet",   ""],
     ];
+    /** A map between Miniflux's input properties and our input properties when modifiying feeds
+     * 
+     * Miniflux also allows changing the following properties:
+     *
+     *  - feed_url
+     *  - username
+     *  - password
+     *  - user_agent
+     *  - scraper_rules
+     *  - rewrite_rules
+     *  - disabled
+     *  - ignore_http_cache
+     *  - fetch_via_proxy
+     *
+     *  These either do not apply because we have no cache or proxy,
+     *  or cannot be changed because feeds are deduplicated and changing
+     *  how they are fetched is not practical with our implementation.
+     *  The properties are still checked for type and syntactic validity
+     *  where practical, on the assumption Miniflux would also reject 
+     *  invalid values.
+     */
+    protected const FEED_META_MAP = [
+        'title'           => "title",
+        'category_id'     => "folder",
+        'crawler'         => "scrape",
+        'keeplist_rules'  => "keep_rule",
+        'blocklist_rules' => "block_rule",
+    ];
     protected const CALLS = [                // handler method        Admin  Path   Body   Query  Required fields
         '/categories'                    => [
             'GET'                        => ["getCategories",         false, false, false, false, []],
@@ -743,6 +771,32 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         return new Response(['feed_id' => $id], 201);
+    }
+
+    protected function updateFeed(array $path, array $data): ResponseInterface {
+        $in = [];
+        foreach (self::FEED_META_MAP as $from => $to) {
+            if (isset($data[$from])) {
+                $in[$to] = $data[$from];
+            }
+        }
+        if (isset($in['folder'])) {
+            $in['folder'] -= 1;
+        }
+        try {
+            Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, (int) $path[1], $in);
+            return $this->getFeed($path);
+        } catch (ExceptionInput $e) {
+            switch ($e->getCode()) {
+                case 10231:
+                case 10232:
+                    return new ErrorResponse("InvalidTitle", 422);
+                case 10235:
+                    return new ErrorResponse("MissingCategory", 422);
+                case 10239:
+                    return new ErrorResponse("404", 404);
+            }
+        }
     }
 
     public static function tokenGenerate(string $user, string $label): string {

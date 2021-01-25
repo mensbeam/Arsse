@@ -32,7 +32,7 @@ Miniflux version 2.0.27 is emulated, though not all features are implemented
 - Various error codes and messages differ due to significant implementation differences
 - `PUT` requests which return a body respond with `200 OK` rather than `201 Created`
 - The "All" category is treated specially (see below for details)
-- Category names consisting only of whitespace are rejected along with the empty string
+- Feed and category titles consisting only of whitespace are rejected along with the empty string
 - Filtering rules may not function identically (see below for details)
 - The `checked_at` field of feeds indicates when the feed was last updated rather than when it was last checked
 - Creating a feed with the `scrape` property set to `true` might not return scraped content for the initial synchronization

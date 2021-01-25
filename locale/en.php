@@ -21,11 +21,12 @@ return [
     'API.Miniflux.Error.FetchOther'                                        => 'Unable to fetch this resource',
     'API.Miniflux.Error.FetchFormat'                                       => 'Unsupported feed format',
     'API.Miniflux.Error.DuplicateCategory'                                 => 'This category already exists.',
-    'API.Miniflux.Error.InvalidCategory'                                   => 'Invalid category title "{title}"',
+    'API.Miniflux.Error.InvalidCategory'                                   => 'Invalid category title',
     'API.Miniflux.Error.MissingCategory'                                   => 'This category does not exist or does not belong to this user.',
     'API.Miniflux.Error.InvalidElevation'                                  => 'Only administrators can change permissions of standard users',
     'API.Miniflux.Error.DuplicateUser'                                     => 'The user name "{user}" already exists',
     'API.Miniflux.Error.DuplicateFeed'                                     => 'This feed already exists.',
+    'API.Miniflux.Error.InvalidTitle'                                      => 'Invalid feed title',
 
     'API.TTRSS.Category.Uncategorized'                                     => 'Uncategorized',
     'API.TTRSS.Category.Special'                                           => 'Special',

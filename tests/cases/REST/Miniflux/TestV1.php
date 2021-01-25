@@ -683,4 +683,33 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             [['feed_url' => "http://example.com/", 'category_id' => 1, 'blocklist_rules' => "A"], 2112,                                       44,                                        true,                            true, new Response(['feed_id' => 44], 201)],
         ];
     }
+
+    /** @dataProvider provideFeedModifications */
+    public function testModifyAFeed(array $in, array $data, $out, ResponseInterface $exp): void {
+        $this->h = \Phake::partialMock(V1::class);
+        \Phake::when($this->h)->getFeed->thenReturn(new Response($this->feedsOut[0]));
+        if ($out instanceof \Exception) {
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenThrow($out);
+        } else {
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn($out);
+        }
+        $this->assertMessage($exp, $this->req("PUT", "/feeds/2112"));
+    }
+
+    public function provideFeedModifications(): iterable {
+        self::clearData();
+        $success = new Response($this->feedsOut[0]);
+        return [
+            [[],                                     [],                                    true,                                 $success],
+            [[],                                     [],                                    new ExceptionInput("subjectMissing"), new ErrorResponse("404", 404)],
+            [['title' => ""],                        ['title' => ""],                       new ExceptionInput("missing"),        new ErrorResponse("InvalidTitle", 422)],
+            [['title' => " "],                       ['title' => " "],                      new ExceptionInput("whitespace"),     new ErrorResponse("InvalidTitle", 422)],
+            [['title' => " "],                       ['title' => " "],                      new ExceptionInput("whitespace"),     new ErrorResponse("InvalidTitle", 422)],
+            [['category_id' => 47],                  ['folder' => 46],                      new ExceptionInput("idMissing"),      new ErrorResponse("MissingCategory", 422)],
+            [['crawler' => false],                   ['scrape' => false],                   true,                                 $success],
+            [['keeplist_rules' => ""],               ['keep_rule' => ""],                   true,                                 $success],
+            [['blocklist_rules' => "ook"],           ['block_rule' => "ook"],               true,                                 $success],
+            [['title' => "Ook!", 'crawler' => true], ['title' => "Ook!", 'scrape' => true], true,                                 $success]
+        ];
+    }
 }
