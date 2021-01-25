@@ -785,7 +785,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         try {
             Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, (int) $path[1], $in);
-            return $this->getFeed($path);
         } catch (ExceptionInput $e) {
             switch ($e->getCode()) {
                 case 10231:
@@ -796,6 +795,16 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 case 10239:
                     return new ErrorResponse("404", 404);
             }
+        }
+        return $this->getFeed($path);
+    }
+
+    protected function deleteFeed(array $path): ResponseInterface {
+        try {
+            Arsse::$db->subscriptionRemove(Arsse::$user->id, (int) $path[1]);
+            return new EmptyResponse(204);
+        } catch (ExceptionInput $e) {
+            return new ErrorResponse("404", 404);
         }
     }
 

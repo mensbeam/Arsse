@@ -712,4 +712,16 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             [['title' => "Ook!", 'crawler' => true], ['title' => "Ook!", 'scrape' => true], true,                                 $success]
         ];
     }
+
+    public function testDeleteAFeed(): void {
+        \Phake::when(Arsse::$db)->subscriptionRemove->thenReturn(true);
+        $this->assertMessage(new EmptyResponse(204), $this->req("DELETE", "/feeds/2112"));
+        \Phake::verify(Arsse::$db)->subscriptionRemove(Arsse::$user->id, 2112);
+    }
+
+    public function testDeleteAMissingFeed(): void {
+        \Phake::when(Arsse::$db)->subscriptionRemove->thenThrow(new ExceptionInput("subjectMissing"));
+        $this->assertMessage(new ErrorResponse("404", 404), $this->req("DELETE", "/feeds/2112"));
+        \Phake::verify(Arsse::$db)->subscriptionRemove(Arsse::$user->id, 2112);
+    }
 }
