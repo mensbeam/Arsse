@@ -31,7 +31,7 @@ class Icon extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new Response(404);
         }
         try {
-            $url = Arsse::$db->subscriptionIcon(Arsse::$user->id ?? null, (int) $match[1], false)['url'];
+            $url = Arsse::$db->subscriptionIcon(Arsse::$user->id ?? null, (int) $match[1], false)['url'] ?? null;
             if (!$url) {
                 return new Response(404);
             }

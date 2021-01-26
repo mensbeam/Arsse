@@ -814,12 +814,12 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionInput $e) {
             return new ErrorResponse("404", 404);
         }
-        if (!$icon['data']) {
+        if (!$icon || !$icon['data']) {
             return new ErrorResponse("404", 404);
         }
         return new Response([
             'id' => $icon['id'],
-            'data' => ($icon['type'] ?? "application/octet-stream").";base64,".base64_encode($icon['data']),
+            'data' => ($icon['type'] ?: "application/octet-stream").";base64,".base64_encode($icon['data']),
             'mime_type' => $icon['type'],
         ]);
     }
