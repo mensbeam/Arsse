@@ -991,12 +991,14 @@ class Database {
      * - "url": The URL of the icon
      * - "type": The Content-Type of the icon e.g. "image/png"
      * - "data": The icon itself, as a binary sring; if $withData is false this will be null
+     * 
+     * If the subscription has no icon null is returned instead of an array
      *
      * @param string|null $user The user who owns the subscription being queried; using null here is supported for TT-RSS and SHOULD NOT be used elsewhere as it leaks information
      * @param int $subscription The numeric identifier of the subscription
      * @param bool $includeData Whether to include the binary data of the icon itself in the result
      */
-    public function subscriptionIcon(?string $user, int $id, bool $includeData = true): array {
+    public function subscriptionIcon(?string $user, int $id, bool $includeData = true): ?array {
         $data = $includeData ? "i.data" : "null as data";
         $q = new Query("SELECT i.id, i.url, i.type, $data from arsse_subscriptions as s join arsse_feeds as f on s.feed = f.id left join arsse_icons as i on f.icon = i.id");
         $q->setWhere("s.id = ?", "int", $id);
@@ -1006,6 +1008,8 @@ class Database {
         $out = $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getRow();
         if (!$out) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "subscription", 'id' => $id]);
+        } elseif (!$out['id']) {
+            return null;
         }
         return $out;
     }

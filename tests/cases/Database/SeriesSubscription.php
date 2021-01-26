@@ -478,7 +478,7 @@ trait SeriesSubscription {
         $exp = "http://example.com/favicon.ico";
         $this->assertSame($exp, Arsse::$db->subscriptionIcon(null, 1)['url']);
         $this->assertSame($exp, Arsse::$db->subscriptionIcon(null, 2)['url']);
-        $this->assertSame(null, Arsse::$db->subscriptionIcon(null, 3)['url']);
+        $this->assertSame(null, Arsse::$db->subscriptionIcon(null, 3));
     }
 
     public function testRetrieveTheFaviconOfAMissingSubscription(): void {
@@ -490,16 +490,15 @@ trait SeriesSubscription {
         $exp = "http://example.com/favicon.ico";
         $user = "john.doe@example.com";
         $this->assertSame($exp, Arsse::$db->subscriptionIcon($user, 1)['url']);
-        $this->assertSame(null, Arsse::$db->subscriptionIcon($user, 3)['url']);
+        $this->assertSame(null, Arsse::$db->subscriptionIcon($user, 3));
         $user = "jane.doe@example.com";
         $this->assertSame($exp, Arsse::$db->subscriptionIcon($user, 2)['url']);
     }
 
     public function testRetrieveTheFaviconOfASubscriptionOfTheWrongUser(): void {
-        $exp = "http://example.com/favicon.ico";
         $user = "john.doe@example.com";
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
-        $this->assertSame(null, Arsse::$db->subscriptionIcon($user, 2)['url']);
+        Arsse::$db->subscriptionIcon($user, 2);
     }
 
     public function testListTheTagsOfASubscription(): void {
