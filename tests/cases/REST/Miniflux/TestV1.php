@@ -693,7 +693,8 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         } else {
             \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn($out);
         }
-        $this->assertMessage($exp, $this->req("PUT", "/feeds/2112"));
+        $this->assertMessage($exp, $this->req("PUT", "/feeds/2112", $in));
+        \Phake::verify(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 2112, $data);
     }
 
     public function provideFeedModifications(): iterable {
