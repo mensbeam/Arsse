@@ -725,4 +725,27 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage(new ErrorResponse("404", 404), $this->req("DELETE", "/feeds/2112"));
         \Phake::verify(Arsse::$db)->subscriptionRemove(Arsse::$user->id, 2112);
     }
+
+    /** @dataProvider provideIcons */
+    public function testGetTheIconOfASubscription($out, ResponseInterface $exp): void {
+        if ($out instanceof \Exception) {
+            \Phake::when(Arsse::$db)->subscriptionIcon->thenThrow($out);
+        } else {
+            \Phake::when(Arsse::$db)->subscriptionIcon->thenReturn($this->v($out));
+        }
+        $this->assertMessage($exp, $this->req("GET", "/feeds/2112/icon"));
+        \Phake::verify(Arsse::$db)->subscriptionIcon(Arsse::$user->id, 2112);
+    }
+
+    public function provideIcons(): iterable {
+        self::clearData();
+        return [
+            [['id' => 44, 'type' => "image/svg+xml", 'data' => "<svg/>"], new Response(['id' => 44, 'data' => "image/svg+xml;base64,PHN2Zy8+", 'mime_type' => "image/svg+xml"])],
+            [['id' => 47, 'type' => "",              'data' => "<svg/>"], new Response(['id' => 47, 'data' => "application/octet-stream;base64,PHN2Zy8+", 'mime_type' => "application/octet-stream"])],
+            [['id' => 47, 'type' => null,            'data' => "<svg/>"], new Response(['id' => 47, 'data' => "application/octet-stream;base64,PHN2Zy8+", 'mime_type' => "application/octet-stream"])],
+            [['id' => 47, 'type' => null,            'data' => null],     new ErrorResponse("404", 404)],
+            [null,                                                        new ErrorResponse("404", 404)],
+            [new ExceptionInput("subjectMissing"),                        new ErrorResponse("404", 404)],
+        ];
+    }
 }
