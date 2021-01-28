@@ -67,8 +67,8 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ],
     ];
     protected $feeds = [
-        ['id' => 1,  'feed' => 12, 'url' => "http://example.com/ook",                      'title' => "Ook", 'source' => "http://example.com/", 'icon_id' => 47,   'icon_url' => "http://example.com/icon", 'folder' => 2112, 'top_folder' => 5,    'pinned' => 0, 'err_count' => 1, 'err_msg' => "Oopsie", 'order_type' => 0, 'keep_rule' => "this|that", 'block_rule' => "both", 'added' => "2020-12-21 21:12:00", 'updated' => "2021-01-05 13:51:32", 'edited' => "2021-01-01 00:00:00", 'modified' => "2020-11-30 04:08:52", 'next_fetch' => "2021-01-20 00:00:00", 'etag' => "OOKEEK", 'scrape' => 0, 'unread' => 42],
-        ['id' => 55, 'feed' => 12, 'url' => "http://j%20k:super%20secret@example.com/eek", 'title' => "Eek", 'source' => "http://example.com/", 'icon_id' => null, 'icon_url' => null,                      'folder' => null, 'top_folder' => null, 'pinned' => 0, 'err_count' => 0, 'err_msg' => null,     'order_type' => 0, 'keep_rule' => null,        'block_rule' => null,   'added' => "2020-12-21 21:12:00", 'updated' => "2021-01-05 13:51:32", 'edited' => null,                  'modified' => "2020-11-30 04:08:52", 'next_fetch' => null,                  'etag' => null,     'scrape' => 1, 'unread' => 0],
+        ['id' => 1,  'feed' => 12, 'url' => "http://example.com/ook",                      'title' => "Ook", 'source' => "http://example.com/", 'icon_id' => 47,   'icon_url' => "http://example.com/icon", 'folder' => 2112, 'top_folder' => 5,    'folder_name' => "Cat Eek", 'top_folder_name' => "Cat Ook", 'pinned' => 0, 'err_count' => 1, 'err_msg' => "Oopsie", 'order_type' => 0, 'keep_rule' => "this|that", 'block_rule' => "both", 'added' => "2020-12-21 21:12:00", 'updated' => "2021-01-05 13:51:32", 'edited' => "2021-01-01 00:00:00", 'modified' => "2020-11-30 04:08:52", 'next_fetch' => "2021-01-20 00:00:00", 'etag' => "OOKEEK", 'scrape' => 0, 'unread' => 42],
+        ['id' => 55, 'feed' => 12, 'url' => "http://j%20k:super%20secret@example.com/eek", 'title' => "Eek", 'source' => "http://example.com/", 'icon_id' => null, 'icon_url' => null,                      'folder' => null, 'top_folder' => null, 'folder_name' => null,      'top_folder_name' => null,      'pinned' => 0, 'err_count' => 0, 'err_msg' => null,     'order_type' => 0, 'keep_rule' => null,        'block_rule' => null,   'added' => "2020-12-21 21:12:00", 'updated' => "2021-01-05 13:51:32", 'edited' => null,                  'modified' => "2020-11-30 04:08:52", 'next_fetch' => null,                  'etag' => null,     'scrape' => 1, 'unread' => 0],
     ];
     protected $feedsOut = [
         ['id' => 1,  'user_id' => 42, 'feed_url' => "http://example.com/ook", 'site_url' => "http://example.com/", 'title' => "Ook", 'checked_at' => "2021-01-05T13:51:32.000000Z", 'next_check_at' => "2021-01-20T00:00:00.000000Z", 'etag_header' => "OOKEEK", 'last_modified_header' => "Fri, 01 Jan 2021 00:00:00 GMT", 'parsing_error_message' => "Oopsie", 'parsing_error_count' => 1, 'scraper_rules' => "", 'rewrite_rules' => "", 'crawler' => false, 'blocklist_rules' => "both", 'keeplist_rules' => "this|that", 'user_agent' => "", 'username' => "",    'password' => "",             'disabled' => false, 'ignore_http_cache' => false, 'fetch_via_proxy' => false, 'category' => ['id' => 6, 'title' => "Cat Ook", 'user_id' => 42], 'icon' => ['feed_id' => 1,'icon_id' => 47]],
@@ -545,18 +545,12 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testListFeeds(): void {
-        \Phake::when(Arsse::$db)->folderList->thenReturn(new Result($this->v([
-            ['id' => 5, 'name' => "Cat Ook"],
-        ])));
         \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v($this->feeds)));
         $exp = new Response($this->feedsOut);
         $this->assertMessage($exp, $this->req("GET", "/feeds"));
     }
 
     public function testListFeedsOfACategory(): void {
-        \Phake::when(Arsse::$db)->folderList->thenReturn(new Result($this->v([
-            ['id' => 5, 'name' => "Cat Ook"],
-        ])));
         \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v($this->feeds)));
         $exp = new Response($this->feedsOut);
         $this->assertMessage($exp, $this->req("GET", "/categories/2112/feeds"));
@@ -564,7 +558,6 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testListFeedsOfTheRootCategory(): void {
-        \Phake::when(Arsse::$db)->folderList->thenReturn(new Result($this->v([['id' => 5, 'name' => "Cat Ook"],])));
         \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v($this->feeds)));
         $exp = new Response($this->feedsOut);
         $this->assertMessage($exp, $this->req("GET", "/categories/1/feeds"));
@@ -580,7 +573,6 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testGetAFeed(): void {
         \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn($this->v($this->feeds[0]))->thenReturn($this->v($this->feeds[1]));
-        \Phake::when(Arsse::$db)->folderList->thenReturn(new Result($this->v([['id' => 5, 'name' => "Cat Ook"],])));
         $this->assertMessage(new Response($this->feedsOut[0]), $this->req("GET", "/feeds/1"));
         \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 1);
         $this->assertMessage(new Response($this->feedsOut[1]), $this->req("GET", "/feeds/55"));

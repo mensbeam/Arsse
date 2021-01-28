@@ -554,21 +554,30 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new EmptyResponse(204);
     }
 
-    protected function baseCategory(): array {
-        // the root folder is always a category and is always ID 1
-        // the specific formulation is verbose, so a function makes sense
+    /** Returns a useful subset of user metadata
+     * 
+     * The following keys are included:
+     * 
+     * - "num": The user's numeric ID,
+     * - "root": The effective name of the root folder
+     */
+    protected function userMeta(string $user): array {
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
-        return ['id' => 1, 'title' => $meta['root_folder_name'] ?? Arsse::$lang->msg("API.Miniflux.DefaultCategoryName"), 'user_id' => $meta['num']];
+        return [
+            'num'  => $meta['num'],
+            'root' => $meta['root_folder_name'] ?? Arsse::$lang->msg("API.Miniflux.DefaultCategoryName")
+        ];
     }
 
     protected function getCategories(): ResponseInterface {
+        $out = [];
         // add the root folder as a category
-        $out = [$this->baseCategory()];
-        $num = $out[0]['user_id'];
+        $meta = $this->userMeta(Arsse::$user->id);
+        $out[] = ['id' => 1, 'title' => $meta['root'], 'user_id' => $meta['num']];
         // add other top folders as categories
         foreach (Arsse::$db->folderList(Arsse::$user->id, null, false) as $f) {
             // always add 1 to the ID since the root folder will always be 1 instead of 0.
-            $out[] = ['id' => $f['id'] + 1, 'title' => $f['name'], 'user_id' => $num];
+            $out[] = ['id' => $f['id'] + 1, 'title' => $f['name'], 'user_id' => $meta['num']];
         }
         return new Response($out);
     }
@@ -651,24 +660,11 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new EmptyResponse(204);
     }
 
-    protected function mapFolders(): array {
-        $folders = [0 => $this->baseCategory()];
-        $num = $folders[0]['user_id'];
-        foreach (Arsse::$db->folderList(Arsse::$user->id, null, false) as $r) {
-            $folders[(int) $r['id']] = [
-                'id'      => ((int) $r['id']) + 1,
-                'title'   => $r['name'],
-                'user_id' => $num,
-            ];
-        }
-        return $folders;
-    }
-
-    protected function transformFeed(array $sub, array $folders): array {
+    protected function transformFeed(array $sub, int $uid, string $rootName): array {
         $url = new Uri($sub['url']);
         return [
             'id'                    => (int) $sub['id'],
-            'user_id'               => $folders[0]['user_id'],
+            'user_id'               => $uid,
             'feed_url'              => (string) $url->withUserInfo(""),
             'site_url'              => (string) $sub['source'],
             'title'                 => (string) $sub['title'],
@@ -689,19 +685,21 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'disabled'              => false,
             'ignore_http_cache'     => false,
             'fetch_via_proxy'       => false,
-            'category'              => $folders[(int) $sub['top_folder']],
+            'category'              => [
+                'id'      => (int) $sub['top_folder'] + 1,
+                'title'   => $sub['top_folder_name'] ?? $rootName,
+                'user_id' => $uid,
+            ],
             'icon'                  => $sub['icon_id'] ? ['feed_id' => (int) $sub['id'], 'icon_id' => (int) $sub['icon_id']] : null,
         ];
     }
 
     protected function getFeeds(): ResponseInterface {
-        $tr = Arsse::$db->begin();
-        // compile the list of folders; the feed list includes folder names
-        $folders = $this->mapFolders();
-        // next compile the list of feeds
         $out = [];
+        $tr = Arsse::$db->begin();
+        $meta = $this->userMeta(Arsse::$user->id);
         foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $r) {
-            $out[] = $this->transformFeed($r, $folders);
+            $out[] = $this->transformFeed($r, $meta['num'], $meta['root']);
         }
         return new Response($out);
     }
@@ -711,35 +709,30 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $folder = ((int) $path[1]) - 1;
         // unless the folder is root, list recursive
         $recursive = $folder > 0;
+        $out = [];
         $tr = Arsse::$db->begin();
-        // get the list of subscriptions, or bail\
+        // get the list of subscriptions, or bail
         try {
-            $subs = Arsse::$db->subscriptionList(Arsse::$user->id, $folder, $recursive)->getAll();
+            $meta = $this->userMeta(Arsse::$user->id);
+            foreach (Arsse::$db->subscriptionList(Arsse::$user->id, $folder, $recursive) as $r) {
+                $out[] = $this->transformFeed($r, $meta['num'], $meta['root']);
+            }
         } catch (ExceptionInput $e) {
             // the folder does not exist
             return new ErrorResponse("404", 404);
-        }
-        // compile the list of folders; the feed list includes folder names
-        // NOTE: We compile the full list of folders in case someone has manually selected a non-top folder
-        $folders = $this->mapFolders();
-        // next compile the list of feeds
-        $out = [];
-        foreach ($subs as $r) {
-            $out[] = $this->transformFeed($r, $folders);
         }
         return new Response($out);
     }
 
     protected function getFeed(array $path): ResponseInterface {
         $tr = Arsse::$db->begin();
+        $meta = $this->userMeta(Arsse::$user->id);
         try {
             $sub = Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, (int) $path[1]);
+            return new Response($this->transformFeed($sub, $meta['num'], $meta['root']));
         } catch (ExceptionInput $e) {
             return new ErrorResponse("404", 404);
         }
-        // compile the list of folders; the feed list includes folder names
-        $folders = $this->mapFolders();
-        return new Response($this->transformFeed($sub, $folders));
     }
 
     protected function createFeed(array $data): ResponseInterface {

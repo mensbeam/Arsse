@@ -796,19 +796,21 @@ class Database {
             "SELECT
                 s.id as id,
                 s.feed as feed,
-                f.url,source,folder,pinned,err_count,err_msg,order_type,added,keep_rule,block_rule,f.etag,s.scrape,
+                f.url,source,pinned,err_count,err_msg,order_type,added,keep_rule,block_rule,f.etag,s.scrape,
                 f.updated as updated,
                 f.modified as edited,
                 s.modified as modified,
                 f.next_fetch,
                 i.id as icon_id,
                 i.url as icon_url,
-                t.top as top_folder,
+                folder, t.top as top_folder, d.name as folder_name, dt.name as top_folder_name,
                 coalesce(s.title, f.title) as title,
                 coalesce((articles - hidden - marked), articles) as unread
             FROM arsse_subscriptions as s
-                left join topmost as t on t.f_id = s.folder
                 join arsse_feeds as f on f.id = s.feed
+                left join topmost as t on t.f_id = s.folder
+                left join arsse_folders as d on s.folder = d.id
+                left join arsse_folders as dt on t.top = dt.id
                 left join arsse_icons as i on i.id = f.icon
                 left join (
                     select 
