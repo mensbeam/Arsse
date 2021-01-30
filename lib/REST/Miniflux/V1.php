@@ -32,6 +32,20 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const ACCEPTED_TYPES_OPML = ["application/xml", "text/xml", "text/x-opml"];
     protected const ACCEPTED_TYPES_JSON = ["application/json"];
     protected const TOKEN_LENGTH = 32;
+    protected const VALID_QUERY = [
+        'status'          => V::T_STRING + V::M_ARRAY,
+        'offset'          => V::T_INT,
+        'limit'           => V::T_INT,
+        'order'           => V::T_STRING,
+        'direction'       => V::T_STRING,
+        'before'          => V::T_DATE, // Unix timestamp
+        'after'           => V::T_DATE, // Unix timestamp
+        'before_entry_id' => V::T_INT,
+        'after_entry_id'  => V::T_INT,
+        'starred'         => V::T_BOOL,
+        'search'          => V::T_STRING,
+        'category_id'     => V::T_INT,
+    ];
     protected const VALID_JSON = [
         // user properties which map directly to Arsse user metadata are listed separately;
         // not all these properties are used by our implementation, but they are treated 
@@ -343,6 +357,32 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         return $body;
+    }
+
+    protected function normalizeQuery(string $query): array {
+        // fill an array with all valid keys
+        $out = [];
+        foreach (self::VALID_QUERY as $k => $t) {
+            $out[$k] = ($t >= V::M_ARRAY) ? [] : null;
+        }
+        // split the query string and normalize the values to their correct types
+        foreach (explode("&", $query) as $parts) {
+            $parts = explode("=", $parts, 2);
+            $k = rawurldecode($parts[0]);
+            $v = (isset($parts[1])) ? rawurldecode($parts[1]) : null;
+            if (!isset(self::VALID_QUERY[$k]) || !isset($v)) {
+                // ignore unknown keys and missing values
+                continue;
+            }
+            $t = self::VALID_QUERY[$k] & ~V::M_ARRAY;
+            $a = self::VALID_QUERY[$k] >= V::M_ARRAY;
+            if ($a) {
+                $out[$k][] = V::normalize($v, $t + V::M_DROP, "unix");
+            } elseif (!isset($out[$k])) {
+                $out[$k] = V::normalize($v, $t + V::M_DROP, "unix");
+            }
+        }
+        return $out;
     }
 
     protected function handleHTTPOptions(string $url): ResponseInterface {
