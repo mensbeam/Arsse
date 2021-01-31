@@ -43,7 +43,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'after'           => V::T_DATE, // Unix timestamp
         'before_entry_id' => V::T_INT,
         'after_entry_id'  => V::T_INT,
-        'starred'         => V::T_BOOL,
+        'starred'         => V::T_MIXED, // the presence of the starred key is the only thing considered by Miniflux
         'search'          => V::T_STRING,
         'category_id'     => V::T_INT,
     ];
@@ -271,7 +271,11 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $args[] = $data;
         }
         if ($reqQuery) {
-            $args[] = $this->normalizeQuery(parse_url($req->getRequestTarget(), \PHP_URL_QUERY) ?? "");
+            $query = $this->normalizeQuery(parse_url($req->getRequestTarget(), \PHP_URL_QUERY) ?? "");
+            if ($query instanceof ResponseInterface) {
+                return $query;
+            }
+            $args[] = $query;
         }
         try {
             return $this->$func(...$args);
@@ -363,33 +367,46 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function normalizeQuery(string $query) {
         // fill an array with all valid keys
         $out = [];
+        $seen = [];
         foreach (self::VALID_QUERY as $k => $t) {
             $out[$k] = ($t >= V::M_ARRAY) ? [] : null;
+            $seen[$k] = false;
         }
         // split the query string and normalize the values to their correct types
         foreach (explode("&", $query) as $parts) {
             $parts = explode("=", $parts, 2);
             $k = rawurldecode($parts[0]);
-            $v = (isset($parts[1])) ? rawurldecode($parts[1]) : null;
-            if (!isset(self::VALID_QUERY[$k]) || !isset($v)) {
-                // ignore unknown keys and missing values
+            $v = (isset($parts[1])) ? rawurldecode($parts[1]) : "";
+            if (!isset(self::VALID_QUERY[$k])) {
+                // ignore unknown keys
                 continue;
             }
             $t = self::VALID_QUERY[$k] & ~V::M_ARRAY;
             $a = self::VALID_QUERY[$k] >= V::M_ARRAY;
             try {
-                if ($a) {
-                    $out[$k][] = V::normalize($v, $t + V::M_STRICT, "unix");
-                } elseif (!isset($out[$k])) {
-                    $out[$k] = V::normalize($v, $t + V::M_STRICT, "unix");
-                } else {
+                if ($seen[$k] && !$a) {
+                    // if the key has already been seen and it's not an array field, bail
+                    // NOTE: Miniflux itself simply ignores duplicates entirely
                     return new ErrorResponse(["DuplicateInputValue", 'field' => $k], 400);
+                }
+                $seen[$k] = true;
+                if ($k === "starred") {
+                    // the starred key is a special case in that Miniflux only considers the presence of the key
+                    $out[$k] = true;
+                    continue;
+                } elseif ($v === "") {
+                    // if the value is empty we can discard the value, but subsequent values for the same non-array key are still considered duplicates
+                    continue;
+                } elseif ($a) {
+                    $out[$k][] = V::normalize($v, $t + V::M_STRICT, "unix");
+                } else {
+                    $out[$k] = V::normalize($v, $t + V::M_STRICT, "unix");
                 }
             } catch (ExceptionType $e) {
                 return new ErrorResponse(["InvalidInputValue", 'field' => $k], 400);
             }
+            // perform additional validation
             if (
-                // TODO: does the "starred" param accept 0/1, or just true/false?
                 (in_array($k, ["category_id", "before_entry_id", "after_entry_id"]) && $v < 1)
                 || (in_array($k, ["limit", "offset"]) && $v < 0)
                 || ($k === "direction" && !in_array($v, ["asc", "desc"]))
