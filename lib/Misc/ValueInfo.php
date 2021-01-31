@@ -35,6 +35,17 @@ class ValueInfo {
     public const M_DROP = 1 << 29; // drop the value (return null) if the type doesn't match
     public const M_STRICT = 1 << 30; // throw an exception if the type doesn't match
     public const M_ARRAY = 1 << 31; // the value should be a flat array of values of the specified type; indexed and associative are both acceptable
+    public const TYPE_NAMES = [
+        self::T_MIXED    => "mixed",
+        self::T_NULL     => "null",
+        self::T_BOOL     => "boolean",
+        self::T_INT      => "integer",
+        self::T_FLOAT    => "float",
+        self::T_DATE     => "date",
+        self::T_STRING   => "string",
+        self::T_ARRAY    => "array",
+        self::T_INTERVAL => "interval",
+    ];
     // symbolic date and time formats
     protected const DATE_FORMATS = [ // in            out
         'iso8601'   => ["!Y-m-d\TH:i:s",          "Y-m-d\TH:i:s\Z"       ], // NOTE: ISO 8601 dates require special input processing because of varying formats for timezone offsets
@@ -47,6 +58,7 @@ class ValueInfo {
         'unix'      => ["U",                      "U"                    ],
         'float'     => ["U.u",                    "U.u"                  ],
     ];
+
 
     public static function normalize($value, int $type, string $dateInFormat = null, $dateOutFormat = null) {
         $allowNull = ($type & self::M_NULL);

@@ -113,14 +113,6 @@ class Conf {
 
     /** @var \DateInterval|null (OBSOLETE) Number of seconds for SQLite to wait before returning a timeout error when trying to acquire a write lock on the database (zero does not wait) */
     public $dbSQLite3Timeout = null; // previously 60.0
-
-    protected const TYPE_NAMES = [
-        Value::T_BOOL     => "boolean",
-        Value::T_STRING   => "string",
-        Value::T_FLOAT    => "float",
-        VALUE::T_INT      => "integer",
-        Value::T_INTERVAL => "interval",
-    ];
     protected const EXPECTED_TYPES = [
         'dbTimeoutExec'    => "double",
         'dbTimeoutLock'    => "double",
@@ -318,7 +310,7 @@ class Conf {
             return $value;
         } catch (ExceptionType $e) {
             $type = $this->types[$key]['const'] & ~(Value::M_STRICT | Value::M_DROP | Value::M_NULL | Value::M_ARRAY);
-            throw new Conf\Exception("typeMismatch", ['param' => $key, 'type' => self::TYPE_NAMES[$type], 'file' => $file, 'nullable' => $nullable]);
+            throw new Conf\Exception("typeMismatch", ['param' => $key, 'type' => Value::TYPE_NAMES[$type], 'file' => $file, 'nullable' => $nullable]);
         }
     }
 

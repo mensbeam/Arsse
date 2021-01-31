@@ -8,6 +8,7 @@ namespace JKingWeb\Arsse\REST\Miniflux;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Feed;
+use JKingWeb\Arsse\ExceptionType;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Context\Context;
@@ -118,7 +119,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'DELETE'                     => ["deleteCategory",        false, true,  false, false, []],
         ],
         '/categories/1/entries'          => [
-            'GET'                        => ["getCategoryEntries",    false, true,  false, false, []],
+            'GET'                        => ["getCategoryEntries",    false, true,  false, true,  []],
         ],
         '/categories/1/entries/1'        => [
             'GET'                        => ["getCategoryEntry",      false, true,  false, false, []],
@@ -155,7 +156,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'DELETE'                     => ["deleteFeed",            false, true,  false, false, []],
         ],
         '/feeds/1/entries'               => [
-            'GET'                        => ["getFeedEntries",        false, true,  false, false, []],
+            'GET'                        => ["getFeedEntries",        false, true,  false, true,  []],
         ],
         '/feeds/1/entries/1'             => [
             'GET'                        => ["getFeedEntry",          false, true,  false, false, []],
@@ -226,7 +227,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new ErrorResponse("401", 401);
         }
         // get the request path only; this is assumed to already be normalized
-        $target = parse_url($req->getRequestTarget())['path'] ?? "";
+        $target = parse_url($req->getRequestTarget(), \PHP_URL_PATH) ?? "";
         $method = $req->getMethod();
         // handle HTTP OPTIONS requests
         if ($method === "OPTIONS") {
@@ -270,7 +271,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $args[] = $data;
         }
         if ($reqQuery) {
-            $args[] = $req->getQueryParams();
+            $args[] = $this->normalizeQuery(parse_url($req->getRequestTarget(), \PHP_URL_QUERY) ?? "");
         }
         try {
             return $this->$func(...$args);
@@ -330,9 +331,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             } elseif (gettype($body[$k]) !== $t) {
                 return new ErrorResponse(["InvalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])], 422);
             } elseif (
-                (in_array($k, ["keeplist_rules", "blocklist_rules"]) && !Rule::validate($body[$k])) ||
-                (in_array($k, ["url", "feed_url"]) && !URL::absolute($body[$k])) || 
-                ($k === "category_id" && $body[$k] < 1)
+                (in_array($k, ["keeplist_rules", "blocklist_rules"]) && !Rule::validate($body[$k]))
+                || (in_array($k, ["url", "feed_url"]) && !URL::absolute($body[$k])) 
+                || ($k === "category_id" && $body[$k] < 1)
             ) {
                 return new ErrorResponse(["InvalidInputValue", 'field' => $k], 422);
             }
@@ -359,7 +360,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return $body;
     }
 
-    protected function normalizeQuery(string $query): array {
+    protected function normalizeQuery(string $query) {
         // fill an array with all valid keys
         $out = [];
         foreach (self::VALID_QUERY as $k => $t) {
@@ -376,10 +377,26 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
             $t = self::VALID_QUERY[$k] & ~V::M_ARRAY;
             $a = self::VALID_QUERY[$k] >= V::M_ARRAY;
-            if ($a) {
-                $out[$k][] = V::normalize($v, $t + V::M_DROP, "unix");
-            } elseif (!isset($out[$k])) {
-                $out[$k] = V::normalize($v, $t + V::M_DROP, "unix");
+            try {
+                if ($a) {
+                    $out[$k][] = V::normalize($v, $t + V::M_STRICT, "unix");
+                } elseif (!isset($out[$k])) {
+                    $out[$k] = V::normalize($v, $t + V::M_STRICT, "unix");
+                } else {
+                    return new ErrorResponse(["DuplicateInputValue", 'field' => $k], 400);
+                }
+            } catch (ExceptionType $e) {
+                return new ErrorResponse(["InvalidInputValue", 'field' => $k], 400);
+            }
+            if (
+                // TODO: does the "starred" param accept 0/1, or just true/false?
+                (in_array($k, ["category_id", "before_entry_id", "after_entry_id"]) && $v < 1)
+                || (in_array($k, ["limit", "offset"]) && $v < 0)
+                || ($k === "direction" && !in_array($v, ["asc", "desc"]))
+                || ($k === "order" && !in_array($v, ["id", "status", "published_at", "category_title", "category_id"]))
+                || ($k === "status" && !in_array($v, ["read", "unread", "removed"]))
+            ) {
+                return new ErrorResponse(["InvalidInputValue", 'field' => $k], 400);
             }
         }
         return $out;
