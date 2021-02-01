@@ -1451,29 +1451,29 @@ class Database {
     protected function articleColumns(): array {
         $greatest = $this->db->sqlToken("greatest");
         return [
-            'id'                 => "arsse_articles.id",
-            'edition'            => "latest_editions.edition",
-            'latest_edition'     => "max(latest_editions.edition)",
-            'url'                => "arsse_articles.url",
-            'title'              => "arsse_articles.title",
-            'author'             => "arsse_articles.author",
-            'content'            => "coalesce(case when arsse_subscriptions.scrape = 1 then arsse_articles.content_scraped end, arsse_articles.content)",
-            'guid'               => "arsse_articles.guid",
-            'fingerprint'        => "arsse_articles.url_title_hash || ':' || arsse_articles.url_content_hash || ':' || arsse_articles.title_content_hash",
-            'folder'             => "coalesce(arsse_subscriptions.folder,0)",
-            'subscription'       => "arsse_subscriptions.id",
-            'feed'               => "arsse_subscriptions.feed",
-            'hidden'             => "coalesce(arsse_marks.hidden,0)",
-            'starred'            => "coalesce(arsse_marks.starred,0)",
-            'unread'             => "abs(coalesce(arsse_marks.read,0) - 1)",
-            'note'               => "coalesce(arsse_marks.note,'')",
-            'published_date'     => "arsse_articles.published",
-            'edited_date'        => "arsse_articles.edited",
-            'modified_date'      => "arsse_articles.modified",
-            'marked_date'        => "$greatest(arsse_articles.modified, coalesce(arsse_marks.modified, '0001-01-01 00:00:00'), coalesce(label_stats.modified, '0001-01-01 00:00:00'))",
-            'subscription_title' => "coalesce(arsse_subscriptions.title, arsse_feeds.title)",
-            'media_url'          => "arsse_enclosures.url",
-            'media_type'         => "arsse_enclosures.type",
+            'id'                 => "arsse_articles.id",                                                                                                                                // The article's unchanging numeric ID
+            'edition'            => "latest_editions.edition",                                                                                                                          // The article's numeric ID which increases each time it is modified in the feed
+            'latest_edition'     => "max(latest_editions.edition)",                                                                                                                     // The most recent of all editions
+            'url'                => "arsse_articles.url",                                                                                                                               // The URL of the article's full content
+            'title'              => "arsse_articles.title",                                                                                                                             // The title
+            'author'             => "arsse_articles.author",                                                                                                                            // The name of the author
+            'content'            => "coalesce(case when arsse_subscriptions.scrape = 1 then arsse_articles.content_scraped end, arsse_articles.content)",                               // The article content
+            'guid'               => "arsse_articles.guid",                                                                                                                              // The GUID of the article, as presented in the feed (NOTE: Picofeed actually provides a hash of the ID)
+            'fingerprint'        => "arsse_articles.url_title_hash || ':' || arsse_articles.url_content_hash || ':' || arsse_articles.title_content_hash",                              // A combination of three hashes
+            'folder'             => "coalesce(arsse_subscriptions.folder,0)",                                                                                                           // The folder of the article's feed. This is mainly for use in WHERE clauses
+            'subscription'       => "arsse_subscriptions.id",                                                                                                                           // The article's parent subscription
+            'feed'               => "arsse_subscriptions.feed",                                                                                                                         // The article's parent feed
+            'hidden'             => "coalesce(arsse_marks.hidden,0)",                                                                                                                   // Whether the article is hidden
+            'starred'            => "coalesce(arsse_marks.starred,0)",                                                                                                                  // Whether the article is starred
+            'unread'             => "abs(coalesce(arsse_marks.read,0) - 1)",                                                                                                            // Whether the article is unread
+            'note'               => "coalesce(arsse_marks.note,'')",                                                                                                                    // The article's note, if any
+            'published_date'     => "arsse_articles.published",                                                                                                                         // The date at which the article was first published i.e. its creation date
+            'edited_date'        => "arsse_articles.edited",                                                                                                                            // The date at which the article was last edited according to the feed
+            'modified_date'      => "arsse_articles.modified",                                                                                                                          // The date at which the article was last updated in our database
+            'marked_date'        => "$greatest(arsse_articles.modified, coalesce(arsse_marks.modified, '0001-01-01 00:00:00'), coalesce(label_stats.modified, '0001-01-01 00:00:00'))", // The date at which the article metadata was last modified by the user
+            'subscription_title' => "coalesce(arsse_subscriptions.title, arsse_feeds.title)",                                                                                           // The parent subscription's title
+            'media_url'          => "arsse_enclosures.url",                                                                                                                             // The URL of the article's enclosure, if any (NOTE: Picofeed only exposes one enclosure)
+            'media_type'         => "arsse_enclosures.type",                                                                                                                            // The Content-Type of the article's enclosure, if any
         ];
     }
 
