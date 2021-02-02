@@ -924,7 +924,25 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } elseif ($status === ["unread"]) {
             $c->hidden(false)->unread(true);
         }
-        $articles = Arsse::$db->articleList(Arsse::$user->id, $c, self::ARTICLE_COLUMNS);
+        $desc = $query['direction'] === "desc" ? " desc" : "";
+        if ($query['order'] === "id") {
+            $order = ["id".$desc];
+        } elseif ($query['order'] === "status") {
+            if (!$desc) {
+                $order = ["hidden", "unread desc"];
+            } else {
+                $order = ["hidden desc", "unread"];
+            }
+        } elseif ($query['order'] === "published_at") {
+            $order = ["modified_date".$desc];
+        } elseif ($query['order'] === "category_title") {
+            $order = []; // TODO
+        } elseif ($query['order'] === "catgory_id") {
+            $order = []; //TODO
+        } else {
+            $order = [];
+        }
+        $articles = Arsse::$db->articleList(Arsse::$user->id, $c, self::ARTICLE_COLUMNS, $order);
     }
 
     public static function tokenGenerate(string $user, string $label): string {
