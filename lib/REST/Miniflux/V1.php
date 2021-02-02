@@ -1024,7 +1024,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // finally compute the total number of entries match the query, if the query hs a limit or offset
         if ($c->limit || $c->offset) {
-            $count = Arsse::$db->articleCount(Arsse::$user->id, $c);
+            $count = Arsse::$db->articleCount(Arsse::$user->id, (clone $c)->limit(0)->offset(0));
         } else {
             $count = sizeof($out);
         }
@@ -1032,7 +1032,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public static function tokenGenerate(string $user, string $label): string {
-        // Miniflux produces tokens in base64url alphabet
+        // Miniflux produces tokenss in base64url alphabet
         $t = str_replace(["+", "/"], ["-", "_"], base64_encode(random_bytes(self::TOKEN_LENGTH)));
         return Arsse::$db->tokenCreate($user, "miniflux.login", $t, null, $label);
     }
