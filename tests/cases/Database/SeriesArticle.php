@@ -408,8 +408,9 @@ trait SeriesArticle {
             ],
         ];
         $this->fields = [
-            "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "edition", "edited_date",
+            "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "hidden", "edition", "edited_date",
             "url", "title", "subscription_title", "author", "guid", "published_date", "fingerprint",
+            "folder", "top_folder", "folder_name", "top_folder_name",
             "content", "media_url", "media_type",
             "note",
         ];

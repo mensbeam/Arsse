@@ -936,9 +936,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } elseif ($query['order'] === "published_at") {
             $order = ["modified_date".$desc];
         } elseif ($query['order'] === "category_title") {
-            $order = []; // TODO
+            $order = ["top_folder_name".$desc];
         } elseif ($query['order'] === "catgory_id") {
-            $order = []; //TODO
+            $order = ["top_folder".$desc];
         } else {
             $order = [];
         }

@@ -49,6 +49,8 @@ For convenience the patterns are tested after collapsing whitespace. Unlike Mini
 
 Nextcloud News' root folder and Tiny Tiny RSS' "Uncategorized" catgory are mapped to Miniflux's initial "All" category. This Miniflux category can be renamed, but it cannot be deleted. Attempting to do so will delete the child feeds it contains, but not the category itself.
 
+Because the root folder does not existing in the database as a separate entity, it will always sort first when ordering by `category_id` or `category_title`.
+
 # Interaction with nested categories
 
 Tiny Tiny RSS is unique in allowing newsfeeds to be grouped into categories nested to arbitrary depth. When newsfeeds are placed into nested categories, they simply appear in the top-level category when accessed via the Miniflux protocol. This does not affect OPML exports, where full nesting is preserved.

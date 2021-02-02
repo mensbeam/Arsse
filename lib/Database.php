@@ -1461,6 +1461,9 @@ class Database {
             'guid'               => "arsse_articles.guid",                                                                                                                              // The GUID of the article, as presented in the feed (NOTE: Picofeed actually provides a hash of the ID)
             'fingerprint'        => "arsse_articles.url_title_hash || ':' || arsse_articles.url_content_hash || ':' || arsse_articles.title_content_hash",                              // A combination of three hashes
             'folder'             => "coalesce(arsse_subscriptions.folder,0)",                                                                                                           // The folder of the article's feed. This is mainly for use in WHERE clauses
+            'top_folder'         => "coalesce(folder_data.top,0)",                                                                                                                      // The top-most folder of the article's feed. This is mainly for use in WHERE clauses
+            'folder_name'        => "folder_data.name",                                                                                                                                 // The name of the folder of the article's feed. This is mainly for use in WHERE clauses
+            'top_folder_name'    => "folder_data.top_name",                                                                                                                             // The name of the top-most folder of the article's feed. This is mainly for use in WHERE clauses
             'subscription'       => "arsse_subscriptions.id",                                                                                                                           // The article's parent subscription
             'feed'               => "arsse_subscriptions.feed",                                                                                                                         // The article's parent feed
             'hidden'             => "coalesce(arsse_marks.hidden,0)",                                                                                                                   // Whether the article is hidden
@@ -1537,6 +1540,7 @@ class Database {
             from arsse_articles
             join arsse_subscriptions on arsse_subscriptions.feed = arsse_articles.feed and arsse_subscriptions.owner = ?
             join arsse_feeds on arsse_subscriptions.feed = arsse_feeds.id
+            left join folder_data on arsse_subscriptions.folder = folder_data.id
             left join arsse_marks on arsse_marks.subscription = arsse_subscriptions.id and arsse_marks.article = arsse_articles.id
             left join arsse_enclosures on arsse_enclosures.article = arsse_articles.id
             join (
@@ -1548,6 +1552,8 @@ class Database {
             ["str", "str"],
             [$user, $user]
         );
+        $q->setCTE("topmost(f_id,top)", "SELECT id,id from arsse_folders where owner = ? and parent is null union all select id,top from arsse_folders join topmost on parent=f_id", ["str"], [$user]);
+        $q->setCTE("folder_data(id,name,top,top_name)", "SELECT f1.id, f1.name, top, f2.name from arsse_folders as f1 join topmost on f1.id = f_id join arsse_folders as f2 on f2.id = top");
         $q->setLimit($context->limit, $context->offset);
         // handle the simple context options
         $options = [
@@ -1788,9 +1794,9 @@ class Database {
             $order = $col[1] ?? "";
             $col = $col[0];
             if ($order === "desc") {
-                $order = " desc";
+                $order = " ".$this->db->sqlToken("desc");
             } elseif ($order === "asc" || $order === "") {
-                $order = "";
+                $order = " ".$this->db->sqlToken("asc");
             } else {
                 // column direction spec is bogus
                 continue;
