@@ -36,6 +36,8 @@ Miniflux version 2.0.27 is emulated, though not all features are implemented
 - Filtering rules may not function identically (see below for details)
 - The `checked_at` field of feeds indicates when the feed was last updated rather than when it was last checked
 - Creating a feed with the `scrape` property set to `true` might not return scraped content for the initial synchronization
+- Querying articles for both read/unread and removed statuses will not return all removed articles
+- Search strings will match partial words
 
 # Behaviour of filtering (block and keep) rules
 

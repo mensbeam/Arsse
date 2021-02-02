@@ -109,6 +109,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'keeplist_rules'  => "keep_rule",
         'blocklist_rules' => "block_rule",
     ];
+    protected const ARTICLE_COLUMNS = ["id", "url", "title", "author", "fingerprint", "subscription", "published_date", "modified_date", "starred", "unread", "content", "media_url", "media_type"];
     protected const CALLS = [                // handler method        Admin  Path   Body   Query  Required fields
         '/categories'                    => [
             'GET'                        => ["getCategories",         false, false, false, false, []],
@@ -889,6 +890,41 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'data' => $icon['type'].";base64,".base64_encode($icon['data']),
             'mime_type' => $icon['type'],
         ]);
+    }
+
+    protected function getEntries(array $query): ResponseInterface {
+        $c = (new Context)
+            ->limit($query['limit'])
+            ->offset($query['offset'])
+            ->starred($query['starred'])
+            ->modifiedSince($query['after']) // FIXME: This may not be the correct date field
+            ->notModifiedSince($query['before'])
+            ->oldestArticle($query['after_entry_id'] ? $query['after_entry_id'] + 1 : null) // FIXME: This might be edition
+            ->latestArticle($query['before_entry_id'] ? $query['before_entry_id'] - 1 : null)
+            ->searchTerms(strlen($query['search'] ?? "") ? preg_split("/\s+/", $query['search']) : null); // NOTE: Miniflux matches only whole words; we match simple substrings
+        if ($query['category_id']) {
+            if ($query['category_id'] === 1) {
+                $c->folderShallow(0);
+            } else {
+                $c->folder($query['category_id'] - 1);
+            }
+        }
+        // FIXME: specifying e.g. ?status=read&status=removed should yield all hidden articles and all read articles, but the best we can do is all read articles which are or are not hidden
+        sort($status = array_unique($query['status']));
+        if ($status === ["read", "removed"]) {
+            $c->unread(false);
+        } elseif ($status === ["read", "unread"]) {
+            $c->hidden(false);
+        } elseif ($status === ["read"]) {
+            $c->hidden(false)->unread(false);
+        } elseif ($status === ["removed", "unread"]) {
+            $c->unread(true);
+        } elseif ($status === ["removed"]) {
+            $c->hidden(true);
+        } elseif ($status === ["unread"]) {
+            $c->hidden(false)->unread(true);
+        }
+        $articles = Arsse::$db->articleList(Arsse::$user->id, $c, self::ARTICLE_COLUMNS);
     }
 
     public static function tokenGenerate(string $user, string $label): string {
