@@ -109,7 +109,12 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'keeplist_rules'  => "keep_rule",
         'blocklist_rules' => "block_rule",
     ];
-    protected const ARTICLE_COLUMNS = ["id", "url", "title", "author", "fingerprint", "subscription", "published_date", "modified_date", "starred", "unread", "content", "media_url", "media_type"];
+    protected const ARTICLE_COLUMNS = [
+        "id", "url", "title", "author", "fingerprint", "subscription", 
+        "published_date", "modified_date", 
+        "starred", "unread", 
+        "content", "media_url", "media_type"
+    ];
     protected const CALLS = [                // handler method        Admin  Path   Body   Query  Required fields
         '/categories'                    => [
             'GET'                        => ["getCategories",         false, false, false, false, []],
@@ -640,7 +645,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
         return [
             'num'  => $meta['num'],
-            'root' => $meta['root_folder_name'] ?? Arsse::$lang->msg("API.Miniflux.DefaultCategoryName")
+            'root' => $meta['root_folder_name'] ?? Arsse::$lang->msg("API.Miniflux.DefaultCategoryName"),
+            'tz'   => new \DateTimeZone($meta['tz'] ?? "UTC"),
         ];
     }
 
@@ -892,8 +898,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         ]);
     }
 
-    protected function getEntries(array $query): ResponseInterface {
-        $c = (new Context)
+    protected function computeContext(array $query, Context $c = null): Context {
+        $c = ($c ?? new Context)
             ->limit($query['limit'])
             ->offset($query['offset'])
             ->starred($query['starred'])
@@ -924,25 +930,105 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } elseif ($status === ["unread"]) {
             $c->hidden(false)->unread(true);
         }
+        return $c;
+    }
+
+    protected function computeOrder(array $query): array {
         $desc = $query['direction'] === "desc" ? " desc" : "";
         if ($query['order'] === "id") {
-            $order = ["id".$desc];
+            return ["id".$desc];
         } elseif ($query['order'] === "status") {
             if (!$desc) {
-                $order = ["hidden", "unread desc"];
+                return ["hidden", "unread desc"];
             } else {
-                $order = ["hidden desc", "unread"];
+                return ["hidden desc", "unread"];
             }
         } elseif ($query['order'] === "published_at") {
-            $order = ["modified_date".$desc];
+            return ["modified_date".$desc];
         } elseif ($query['order'] === "category_title") {
-            $order = ["top_folder_name".$desc];
+            return ["top_folder_name".$desc];
         } elseif ($query['order'] === "catgory_id") {
-            $order = ["top_folder".$desc];
+            return ["top_folder".$desc];
         } else {
-            $order = [];
+            return [];
         }
-        $articles = Arsse::$db->articleList(Arsse::$user->id, $c, self::ARTICLE_COLUMNS, $order);
+    }
+
+    protected function transformEntry(array $entry, int $uid, \DateTimeZone $tz): array {
+        if ($entry['hidden']) {
+            $status = "removed";
+        } elseif ($entry['unread']) {
+            $status = "unread";
+        } else {
+            $status = "read";
+        }
+        if ($entry['media_url']) {
+            $enclosures = [
+                [
+                    'id'        => $entry['id'], // NOTE: We don't have IDs for enclosures, but we also only have one enclosure per entry, so we can just re-use the same ID
+                    'user_id'   => $uid,
+                    'entry_id'  => $entry['id'],
+                    'url'       => $entry['media_url'],
+                    'mime_type' => $entry['media_type'] ?: "application/octet-stream",
+                    'size'      => 0,
+                ]
+            ];
+        } else {
+            $enclosures = null;
+        }
+        return [
+            'id'           => (int) $entry['id'],
+            'user_id'      => $uid,
+            'feed_id'      => (int) $entry['subscription'],
+            'status'       => $status,
+            'hash'         => $entry['fingerprint'],
+            'title'        => $entry['title'],
+            'url'          => $entry['url'],
+            'comments_url' => "",
+            'published_at' => Date::transform(Date::normalize($entry['published_date'], "sql")->setTimezone($tz), "iso8601"),
+            'created_at'   => Date::transform(Date::normalize($entry['modified_date'], "sql")->setTimezone($tz), "iso8601m"),
+            'content'      => $entry['content'],
+            'author'       => (string) $entry['author'],
+            'share_code'   => "",
+            'starred'      => (bool) $entry['starred'],
+            'reading_time' => 0,
+            'enclosures'   => $enclosures,
+            'feed'         => null,
+        ];
+    }
+
+    protected function getEntries(array $query): ResponseInterface {
+        $c = $this->computeContext($query);
+        $order = $this->computeOrder($query);
+        $tr = Arsse::$db->begin();
+        $meta = $this->userMeta(Arsse::$user->id);
+        // compile the list of entries
+        try {
+            $entries = Arsse::$db->articleList(Arsse::$user->id, $c, self::ARTICLE_COLUMNS, $order);
+        } catch (ExceptionInput $e) {
+            return new ErrorResponse("MissingCategory", 400);
+        }
+        $out = [];
+        foreach ($entries as $entry) {
+            $out[] = $this->transformEntry($entry, $meta['num'], $meta['tz']);
+        }
+        // next compile a map of feeds to add to the entries
+        $feeds = [];
+        foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $r) {
+            $feeds[(int) $r['id']] = $this->transformFeed($r, $meta['num'], $meta['root']);
+        }
+        // add the feed objects to each entry
+        // NOTE: If ever we implement multiple enclosure, this would be the right place to add them
+        for ($a = 0; $a < sizeof($out); $a++) {
+            $out[$a]['feed'] = $feeds[$out[$a]['feed_id']];
+        }
+        // finally compute the total number of entries match the query, if the query hs a limit or offset
+        if ($c->limit || $c->offset) {
+            $count = Arsse::$db->articleCount(Arsse::$user->id, $c);
+        } else {
+            $count = sizeof($out);
+        }
+        return new Response(['total' => $count, 'entries' => $out]);
     }
 
     public static function tokenGenerate(string $user, string $label): string {
