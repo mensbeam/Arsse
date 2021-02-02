@@ -385,6 +385,8 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $nocase = $this->drv->sqlToken("noCASE");
         $like = $this->drv->sqlToken("liKe");
         $integer = $this->drv->sqlToken("InTEGer");
+        $asc = $this->drv->sqlToken("asc");
+        $desc = $this->drv->sqlToken("desc");
 
         $this->assertSame("NOT_A_TOKEN", $this->drv->sqlToken("NOT_A_TOKEN"));
 
@@ -392,5 +394,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame("Z", $this->drv->query("SELECT 'Z' collate $nocase")->getValue());
         $this->assertSame("Z", $this->drv->query("SELECT 'Z' where 'Z' $like 'z'")->getValue());
         $this->assertEquals(1, $this->drv->query("SELECT CAST((1=1) as $integer)")->getValue());
+        $this->assertEquals([null, 1], array_column($this->drv->query("SELECT 1 as t union select null as t order by t $asc")->getAll(), "t"));
+        $this->assertEquals([1, null], array_column($this->drv->query("SELECT 1 as t union select null as t order by t $desc")->getAll(), "t"));
     }
 }

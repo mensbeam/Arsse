@@ -83,6 +83,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
                 return '"utf8mb4_unicode_ci"';
             case "integer":
                 return "signed integer";
+            case "asc":
+                return "";
             default:
                 return $token;
         }

@@ -75,6 +75,8 @@ interface Driver {
      * - "nocase": the name of a general-purpose case-insensitive collation sequence
      * - "like": the case-insensitive LIKE operator
      * - "integer": the integer type to use for explicit casts
+     * - "asc": ascending sort order
+     * - "desc": descending sort order
      */
     public function sqlToken(string $token): string;
 

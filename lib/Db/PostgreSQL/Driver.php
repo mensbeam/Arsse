@@ -119,6 +119,10 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
                 return '"und-x-icu"';
             case "like":
                 return "ilike";
+            case "asc":
+                return "nulls first";
+            case "desc":
+                return "desc nulls last";
             default:
                 return $token;
         }

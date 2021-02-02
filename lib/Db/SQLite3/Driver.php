@@ -114,6 +114,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         switch (strtolower($token)) {
             case "greatest":
                 return "max";
+            case "asc":
+                return "";
             default:
                 return $token;
         }
