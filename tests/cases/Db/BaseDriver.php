@@ -394,7 +394,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame("Z", $this->drv->query("SELECT 'Z' collate $nocase")->getValue());
         $this->assertSame("Z", $this->drv->query("SELECT 'Z' where 'Z' $like 'z'")->getValue());
         $this->assertEquals(1, $this->drv->query("SELECT CAST((1=1) as $integer)")->getValue());
-        $this->assertEquals([null, 1], array_column($this->drv->query("SELECT 1 as t union select null as t order by t $asc")->getAll(), "t"));
-        $this->assertEquals([1, null], array_column($this->drv->query("SELECT 1 as t union select null as t order by t $desc")->getAll(), "t"));
+        $this->assertEquals([null, 1, 2], array_column($this->drv->query("SELECT 1 as t union select null as t union select 2 as t order by t $asc")->getAll(), "t"));
+        $this->assertEquals([2, 1, null], array_column($this->drv->query("SELECT 1 as t union select null as t union select 2 as t order by t $desc")->getAll(), "t"));
     }
 }
