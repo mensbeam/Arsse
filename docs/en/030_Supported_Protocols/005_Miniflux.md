@@ -26,6 +26,9 @@ Miniflux version 2.0.27 is emulated, though not all features are implemented
     - The `disabled`, `ignore_http_cache`, and `fetch_via_proxy` flags
     - Changing the URL, username, or password of a feed
 - Titles and types are not available during feed discovery and are filled with generic data
+- Reading time is not calculated and will always be zero
+- Only the first enclosure of an article is retained
+- Comment URLs of articles are not exposed
 
 # Differences
 

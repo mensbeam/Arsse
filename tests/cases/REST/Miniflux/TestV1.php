@@ -26,54 +26,61 @@ use JKingWeb\Arsse\Test\Result;
 /** @covers \JKingWeb\Arsse\REST\Miniflux\V1<extended> */
 class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     protected const NOW = "2020-12-09T22:35:10.023419Z";
-
-    protected $h;
-    protected $transaction;
-    protected $token = "Tk2o9YubmZIL2fm2w8Z4KlDEQJz532fNSOcTG0s2_xc=";
-    protected $users = [
-        [
-            'id'                      => 1,
-            'username'                => "john.doe@example.com",
-            'last_login_at'           => self::NOW,
-            'google_id'               => "",
-            'openid_connect_id'       => "",
-            'is_admin'                => true,
-            'theme'                   => "custom",
-            'language'                => "fr_CA",
-            'timezone'                => "Asia/Gaza",
-            'entry_sorting_direction' => "asc",
-            'entries_per_page'        => 200,
-            'keyboard_shortcuts'      => false,
-            'show_reading_time'       => false,
-            'entry_swipe'             => false,
-            'stylesheet'              => "p {}",
-        ],
-        [
-            'id'                      => 2,
-            'username'                => "jane.doe@example.com",
-            'last_login_at'           => self::NOW,
-            'google_id'               => "",
-            'openid_connect_id'       => "",
-            'is_admin'                => false,
-            'theme'                   => "light_serif",
-            'language'                => "en_US",
-            'timezone'                => "UTC",
-            'entry_sorting_direction' => "desc",
-            'entries_per_page'        => 100,
-            'keyboard_shortcuts'      => true,
-            'show_reading_time'       => true,
-            'entry_swipe'             => true,
-            'stylesheet'              => "",
-        ],
+    protected const TOKEN = "Tk2o9YubmZIL2fm2w8Z4KlDEQJz532fNSOcTG0s2_xc=";
+    protected const USERS = [
+        ['id' => 1, 'username' => "john.doe@example.com", 'last_login_at' => self::NOW, 'google_id' => "", 'openid_connect_id' => "", 'is_admin' => true,  'theme' => "custom",      'language' => "fr_CA", 'timezone' => "Asia/Gaza", 'entry_sorting_direction' => "asc",  'entries_per_page' => 200, 'keyboard_shortcuts' => false, 'show_reading_time' => false, 'entry_swipe' => false, 'stylesheet' => "p {}"],
+        ['id' => 2, 'username' => "jane.doe@example.com", 'last_login_at' => self::NOW, 'google_id' => "", 'openid_connect_id' => "", 'is_admin' => false, 'theme' => "light_serif", 'language' => "en_US", 'timezone' => "UTC",       'entry_sorting_direction' => "desc", 'entries_per_page' => 100, 'keyboard_shortcuts' => true,  'show_reading_time' => true,  'entry_swipe' => true,  'stylesheet' => ""],
     ];
-    protected $feeds = [
+    protected const FEEDS = [
         ['id' => 1,  'feed' => 12, 'url' => "http://example.com/ook",                      'title' => "Ook", 'source' => "http://example.com/", 'icon_id' => 47,   'icon_url' => "http://example.com/icon", 'folder' => 2112, 'top_folder' => 5,    'folder_name' => "Cat Eek", 'top_folder_name' => "Cat Ook", 'pinned' => 0, 'err_count' => 1, 'err_msg' => "Oopsie", 'order_type' => 0, 'keep_rule' => "this|that", 'block_rule' => "both", 'added' => "2020-12-21 21:12:00", 'updated' => "2021-01-05 13:51:32", 'edited' => "2021-01-01 00:00:00", 'modified' => "2020-11-30 04:08:52", 'next_fetch' => "2021-01-20 00:00:00", 'etag' => "OOKEEK", 'scrape' => 0, 'unread' => 42],
         ['id' => 55, 'feed' => 12, 'url' => "http://j%20k:super%20secret@example.com/eek", 'title' => "Eek", 'source' => "http://example.com/", 'icon_id' => null, 'icon_url' => null,                      'folder' => null, 'top_folder' => null, 'folder_name' => null,      'top_folder_name' => null,      'pinned' => 0, 'err_count' => 0, 'err_msg' => null,     'order_type' => 0, 'keep_rule' => null,        'block_rule' => null,   'added' => "2020-12-21 21:12:00", 'updated' => "2021-01-05 13:51:32", 'edited' => null,                  'modified' => "2020-11-30 04:08:52", 'next_fetch' => null,                  'etag' => null,     'scrape' => 1, 'unread' => 0],
     ];
-    protected $feedsOut = [
+    protected const FEEDS_OUT = [
         ['id' => 1,  'user_id' => 42, 'feed_url' => "http://example.com/ook", 'site_url' => "http://example.com/", 'title' => "Ook", 'checked_at' => "2021-01-05T13:51:32.000000Z", 'next_check_at' => "2021-01-20T00:00:00.000000Z", 'etag_header' => "OOKEEK", 'last_modified_header' => "Fri, 01 Jan 2021 00:00:00 GMT", 'parsing_error_message' => "Oopsie", 'parsing_error_count' => 1, 'scraper_rules' => "", 'rewrite_rules' => "", 'crawler' => false, 'blocklist_rules' => "both", 'keeplist_rules' => "this|that", 'user_agent' => "", 'username' => "",    'password' => "",             'disabled' => false, 'ignore_http_cache' => false, 'fetch_via_proxy' => false, 'category' => ['id' => 6, 'title' => "Cat Ook", 'user_id' => 42], 'icon' => ['feed_id' => 1,'icon_id' => 47]],
         ['id' => 55, 'user_id' => 42, 'feed_url' => "http://example.com/eek", 'site_url' => "http://example.com/", 'title' => "Eek", 'checked_at' => "2021-01-05T13:51:32.000000Z", 'next_check_at' => "0001-01-01T00:00:00.000000Z", 'etag_header' => "",       'last_modified_header' => "",                              'parsing_error_message' => "",       'parsing_error_count' => 0, 'scraper_rules' => "", 'rewrite_rules' => "", 'crawler' => true,  'blocklist_rules' => "",     'keeplist_rules' => "",          'user_agent' => "", 'username' => "j k", 'password' => "super secret", 'disabled' => false, 'ignore_http_cache' => false, 'fetch_via_proxy' => false, 'category' => ['id' => 1,'title'  => "All",     'user_id' => 42], 'icon' => null],
     ];
+    protected const ENTRIES = [
+        [
+            'id' => 42,
+            'url' => "http://example.com/42",
+            'title' => "Title 42",
+            'subscription' => 2112,
+            'author' => "Thomas Costain",
+            'fingerprint' => "FINGERPRINT",
+            'published_date' => "2021-01-22 02:21:12",
+            'modified_date' => "2021-01-22 13:44:47",
+            'starred' => 0,
+            'unread' => 0,
+            'hidden' => 0,
+            'content' => "Content 42",
+            'media_url' => null,
+            'media_type' => null,
+        ],
+    ];
+    protected const ENTRIES_OUT = [
+        [
+            'id' => 42,
+            'user_id' => 42,
+            'feed_id' => 55,
+            'status' => "read",
+            'hash' => "FINGERPRINT",
+            'title' => "Title 42",
+            'url' => "http://example.com/42",
+            'comments_url' => "",
+            'published_at' => "2021-01-22T02:21:12+00:00",
+            'created_at' => "2021-01-22T13:44:47.000000+00:00",
+            'content' => "Content 42",
+            'author' => "Thomas Costain",
+            'share_code' => "",
+            'starred' => false,
+            'reading_time' => 0,
+            'enclosures' => null,
+            'feed' => self::FEEDS_OUT[1],
+        ],
+    ];
+
+    protected $h;
+    protected $transaction;
 
     protected function req(string $method, string $target, $data = "", array $headers = [], ?string $user = "john.doe@example.com", bool $body = true): ResponseInterface {
         $prefix = "/v1";
@@ -122,23 +129,23 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         }
         Arsse::$user->id = null;
         \Phake::when(Arsse::$db)->tokenLookup->thenThrow(new ExceptionInput("subjectMissing"));
-        \Phake::when(Arsse::$db)->tokenLookup("miniflux.login", $this->token)->thenReturn(['user' => $user]);
+        \Phake::when(Arsse::$db)->tokenLookup("miniflux.login", self::TOKEN)->thenReturn(['user' => $user]);
         $this->assertMessage($exp, $this->req("GET", "/", "", $headers, $auth ? "john.doe@example.com" : null));
         $this->assertSame($success ? $user : null, Arsse::$user->id);
     }
 
     public function provideAuthResponses(): iterable {
         return [
-            [null,                     false, false],
-            [null,                     true,  true],
-            [$this->token,             false, true],
-            [[$this->token, "BOGUS"],  false, true],
-            ["",                       true,  true],
-            [["", "BOGUS"],            true,  true],
-            ["NOT A TOKEN",            false, false],
-            ["NOT A TOKEN",            true,  false],
-            [["BOGUS", $this->token],  false, false],
-            [["", $this->token],       false, false],
+            [null,                   false, false],
+            [null,                   true,  true],
+            [self::TOKEN,            false, true],
+            [[self::TOKEN, "BOGUS"], false, true],
+            ["",                     true,  true],
+            [["", "BOGUS"],          true,  true],
+            ["NOT A TOKEN",          false, false],
+            ["NOT A TOKEN",          true,  false],
+            [["BOGUS", self::TOKEN], false, false],
+            [["", self::TOKEN],      false, false],
         ];
     }
 
@@ -239,16 +246,16 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideUserQueries(): iterable {
         self::clearData();
         return [
-            [true,  "/users",                      new Response($this->users)],
-            [true,  "/me",                         new Response($this->users[0])],
-            [true,  "/users/john.doe@example.com", new Response($this->users[0])],
-            [true,  "/users/1",                    new Response($this->users[0])],
-            [true,  "/users/jane.doe@example.com", new Response($this->users[1])],
-            [true,  "/users/2",                    new Response($this->users[1])],
+            [true,  "/users",                      new Response(self::USERS)],
+            [true,  "/me",                         new Response(self::USERS[0])],
+            [true,  "/users/john.doe@example.com", new Response(self::USERS[0])],
+            [true,  "/users/1",                    new Response(self::USERS[0])],
+            [true,  "/users/jane.doe@example.com", new Response(self::USERS[1])],
+            [true,  "/users/2",                    new Response(self::USERS[1])],
             [true,  "/users/jack.doe@example.com", new ErrorResponse("404", 404)],
             [true,  "/users/47",                   new ErrorResponse("404", 404)],
             [false, "/users",                      new ErrorResponse("403", 403)],
-            [false, "/me",                         new Response($this->users[1])],
+            [false, "/me",                         new Response(self::USERS[1])],
             [false, "/users/john.doe@example.com", new ErrorResponse("403", 403)],
             [false, "/users/1",                    new ErrorResponse("403", 403)],
             [false, "/users/jane.doe@example.com", new ErrorResponse("403", 403)],
@@ -318,8 +325,8 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideUserModifications(): iterable {
         $out1 = ['num' => 2, 'admin' => false];
         $out2 = ['num' => 1, 'admin' => false];
-        $resp1 = array_merge($this->users[1], ['username' => "john.doe@example.com"]);
-        $resp2 = array_merge($this->users[1], ['id' => 1, 'is_admin' => true]);
+        $resp1 = array_merge(self::USERS[1], ['username' => "john.doe@example.com"]);
+        $resp2 = array_merge(self::USERS[1], ['id' => 1, 'is_admin' => true]);
         return [
             [false, "/users/1", ['is_admin' => 0],                          null,  null,                                      null,  null,  null,                  null,                                            new ErrorResponse(["InvalidInputType", 'field' => "is_admin", 'expected' => "boolean", 'actual' => "integer"], 422)],
             [false, "/users/1", ['entry_sorting_direction' => "bad"],       null,  null,                                      null,  null,  null,                  null,                                            new ErrorResponse(["InvalidInputValue", 'field' => "entry_sorting_direction"], 422)],
@@ -376,7 +383,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function provideUserAdditions(): iterable {
-        $resp1 = array_merge($this->users[1], ['username' => "ook", 'password' => "eek"]);
+        $resp1 = array_merge(self::USERS[1], ['username' => "ook", 'password' => "eek"]);
         return [
             [[],                                                                   null,           null,                                      null,                   null,                                            new ErrorResponse(["MissingInputValue", 'field' => "username"], 422)],
             [['username' => "ook"],                                                null,           null,                                      null,                   null,                                            new ErrorResponse(["MissingInputValue", 'field' => "password"], 422)],
@@ -545,21 +552,21 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testListFeeds(): void {
-        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v($this->feeds)));
-        $exp = new Response($this->feedsOut);
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v(self::FEEDS)));
+        $exp = new Response(self::FEEDS_OUT);
         $this->assertMessage($exp, $this->req("GET", "/feeds"));
     }
 
     public function testListFeedsOfACategory(): void {
-        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v($this->feeds)));
-        $exp = new Response($this->feedsOut);
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v(self::FEEDS)));
+        $exp = new Response(self::FEEDS_OUT);
         $this->assertMessage($exp, $this->req("GET", "/categories/2112/feeds"));
         \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id, 2111, true);
     }
 
     public function testListFeedsOfTheRootCategory(): void {
-        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v($this->feeds)));
-        $exp = new Response($this->feedsOut);
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v(self::FEEDS)));
+        $exp = new Response(self::FEEDS_OUT);
         $this->assertMessage($exp, $this->req("GET", "/categories/1/feeds"));
         \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id, 0, false);
     }
@@ -572,10 +579,10 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testGetAFeed(): void {
-        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn($this->v($this->feeds[0]))->thenReturn($this->v($this->feeds[1]));
-        $this->assertMessage(new Response($this->feedsOut[0]), $this->req("GET", "/feeds/1"));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn($this->v(self::FEEDS[0]))->thenReturn($this->v(self::FEEDS[1]));
+        $this->assertMessage(new Response(self::FEEDS_OUT[0]), $this->req("GET", "/feeds/1"));
         \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 1);
-        $this->assertMessage(new Response($this->feedsOut[1]), $this->req("GET", "/feeds/55"));
+        $this->assertMessage(new Response(self::FEEDS_OUT[1]), $this->req("GET", "/feeds/55"));
         \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 55);
     }
 
@@ -679,7 +686,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideFeedModifications */
     public function testModifyAFeed(array $in, array $data, $out, ResponseInterface $exp): void {
         $this->h = \Phake::partialMock(V1::class);
-        \Phake::when($this->h)->getFeed->thenReturn(new Response($this->feedsOut[0]));
+        \Phake::when($this->h)->getFeed->thenReturn(new Response(self::FEEDS_OUT[0]));
         if ($out instanceof \Exception) {
             \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenThrow($out);
         } else {
@@ -691,7 +698,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provideFeedModifications(): iterable {
         self::clearData();
-        $success = new Response($this->feedsOut[0]);
+        $success = new Response(self::FEEDS_OUT[0]);
         return [
             [[],                                     [],                                    true,                                 $success],
             [[],                                     [],                                    new ExceptionInput("subjectMissing"), new ErrorResponse("404", 404)],
@@ -730,7 +737,6 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function provideIcons(): iterable {
-        self::clearData();
         return [
             [['id' => 44, 'type' => "image/svg+xml", 'data' => "<svg/>"], new Response(['id' => 44, 'data' => "image/svg+xml;base64,PHN2Zy8+", 'mime_type' => "image/svg+xml"])],
             [['id' => 47, 'type' => "",              'data' => "<svg/>"], new ErrorResponse("404", 404)],
@@ -738,6 +744,40 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             [['id' => 47, 'type' => null,            'data' => null],     new ErrorResponse("404", 404)],
             [null,                                                        new ErrorResponse("404", 404)],
             [new ExceptionInput("subjectMissing"),                        new ErrorResponse("404", 404)],
+        ];
+    }
+
+    /** @dataProvider provideEntryQueries */
+    public function testGetEntries(string $url, ?Context $c, ?array $order, $out, bool $getFeeds, ResponseInterface $exp) {
+        if ($out instanceof \Exception) {
+            \Phake::when(Arsse::$db)->articleList->thenThrow($out);
+        } else {
+            \Phake::when(Arsse::$db)->articleList->thenReturn(new Result($this->v($out)));
+        }
+        $this->assertMessage($exp, $this->req("GET", $url));
+        if ($c) {
+            \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, $c, array_keys(self::ENTRIES[0]), $order);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::times(0))->articleList;
+        }
+    }
+
+    public function provideEntryQueries(): iterable {
+        self::clearData();
+        $c = new Context;
+        return [
+            ["/entries?after=A",            null, null, [], false, new ErrorResponse(["InvalidInputValue", 'field' => "after"], 400)],
+            ["/entries?before=B",           null, null, [], false, new ErrorResponse(["InvalidInputValue", 'field' => "before"], 400)],
+            ["/entries?category_id=0",      null, null, [], false, new ErrorResponse(["InvalidInputValue", 'field' => "category_id"], 400)],
+            ["/entries?after_entry_id=0",   null, null, [], false, new ErrorResponse(["InvalidInputValue", 'field' => "after_entry_id"], 400)],
+            ["/entries?before_entry_id=0",  null, null, [], false, new ErrorResponse(["InvalidInputValue", 'field' => "before_entry_id"], 400)],
+            ["/entries?limit=-1",           null, null, [], false, new ErrorResponse(["InvalidInputValue", 'field' => "limit"], 400)],
+            ["/entries?offset=-1",          null, null, [], false, new ErrorResponse(["InvalidInputValue", 'field' => "offset"], 400)],
+            ["/entries?direction=sideways", null, null, [], false, new ErrorResponse(["InvalidInputValue", 'field' => "direction"], 400)],
+            ["/entries?order=false",        null, null, [], false, new ErrorResponse(["InvalidInputValue", 'field' => "order"], 400)],
+            ["/entries?starred&starred",    null, null, [], false, new ErrorResponse(["DuplicateInputValue", 'field' => "starred"], 400)],
+            ["/entries?after&after=0",      null, null, [], false, new ErrorResponse(["DuplicateInputValue", 'field' => "after"], 400)],
+            ["/entries",                    $c,   [],   [], false, new Response(['total' => 0, 'entries' => []])],
         ];
     }
 }

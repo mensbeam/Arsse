@@ -110,9 +110,10 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'blocklist_rules' => "block_rule",
     ];
     protected const ARTICLE_COLUMNS = [
-        "id", "url", "title", "author", "fingerprint", "subscription", 
+        "id", "url", "title", "subscription", 
+        "author", "fingerprint",
         "published_date", "modified_date", 
-        "starred", "unread", 
+        "starred", "unread", "hidden",
         "content", "media_url", "media_type"
     ];
     protected const CALLS = [                // handler method        Admin  Path   Body   Query  Required fields
@@ -916,7 +917,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         // FIXME: specifying e.g. ?status=read&status=removed should yield all hidden articles and all read articles, but the best we can do is all read articles which are or are not hidden
-        sort($status = array_unique($query['status']));
+        $status = array_unique($query['status']);
+        sort($status);
         if ($status === ["read", "removed"]) {
             $c->unread(false);
         } elseif ($status === ["read", "unread"]) {
@@ -1013,14 +1015,16 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $out[] = $this->transformEntry($entry, $meta['num'], $meta['tz']);
         }
         // next compile a map of feeds to add to the entries
-        $feeds = [];
-        foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $r) {
-            $feeds[(int) $r['id']] = $this->transformFeed($r, $meta['num'], $meta['root']);
-        }
-        // add the feed objects to each entry
-        // NOTE: If ever we implement multiple enclosure, this would be the right place to add them
-        for ($a = 0; $a < sizeof($out); $a++) {
-            $out[$a]['feed'] = $feeds[$out[$a]['feed_id']];
+        if ($out) {
+            $feeds = [];
+            foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $r) {
+                $feeds[(int) $r['id']] = $this->transformFeed($r, $meta['num'], $meta['root']);
+            }
+            // add the feed objects to each entry
+            // NOTE: If ever we implement multiple enclosure, this would be the right place to add them
+            for ($a = 0; $a < sizeof($out); $a++) {
+                $out[$a]['feed'] = $feeds[$out[$a]['feed_id']];
+            }
         }
         // finally compute the total number of entries match the query, if the query hs a limit or offset
         if ($c->limit || $c->offset) {
