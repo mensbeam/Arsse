@@ -33,6 +33,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const ACCEPTED_TYPES_OPML = ["application/xml", "text/xml", "text/x-opml"];
     protected const ACCEPTED_TYPES_JSON = ["application/json"];
     protected const TOKEN_LENGTH = 32;
+    protected const DATE_FORMAT_SEC = "Y-m-d\TH:i:sP";
+    protected const DATE_FORMAT_MICRO = "Y-m-d\TH:i:s.uP";
     protected const VALID_QUERY = [
         'status'          => V::T_STRING + V::M_ARRAY,
         'offset'          => V::T_INT,
@@ -742,7 +744,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new EmptyResponse(204);
     }
 
-    protected function transformFeed(array $sub, int $uid, string $rootName): array {
+    protected function transformFeed(array $sub, int $uid, string $rootName, \DateTimeZone $tz): array {
         $url = new Uri($sub['url']);
         return [
             'id'                    => (int) $sub['id'],
@@ -750,8 +752,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'feed_url'              => (string) $url->withUserInfo(""),
             'site_url'              => (string) $sub['source'],
             'title'                 => (string) $sub['title'],
-            'checked_at'            => Date::transform($sub['updated'], "iso8601m", "sql"),
-            'next_check_at'         => Date::transform($sub['next_fetch'], "iso8601m", "sql") ?? "0001-01-01T00:00:00.000000Z",
+            'checked_at'            => Date::normalize($sub['updated'], "sql")->setTimezone($tz)->format(self::DATE_FORMAT_MICRO),
+            'next_check_at'         => $sub['next_fetch'] ? Date::normalize($sub['next_fetch'], "sql")->setTimezone($tz)->format(self::DATE_FORMAT_MICRO) : "0001-01-01T00:00:00Z",
             'etag_header'           => (string) $sub['etag'],
             'last_modified_header'  => (string) Date::transform($sub['edited'], "http", "sql"),
             'parsing_error_message' => (string) $sub['err_msg'],
@@ -781,7 +783,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $tr = Arsse::$db->begin();
         $meta = $this->userMeta(Arsse::$user->id);
         foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $r) {
-            $out[] = $this->transformFeed($r, $meta['num'], $meta['root']);
+            $out[] = $this->transformFeed($r, $meta['num'], $meta['root'], $meta['tz']);
         }
         return new Response($out);
     }
@@ -797,7 +799,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             $meta = $this->userMeta(Arsse::$user->id);
             foreach (Arsse::$db->subscriptionList(Arsse::$user->id, $folder, $recursive) as $r) {
-                $out[] = $this->transformFeed($r, $meta['num'], $meta['root']);
+                $out[] = $this->transformFeed($r, $meta['num'], $meta['root'], $meta['tz']);
             }
         } catch (ExceptionInput $e) {
             // the folder does not exist
@@ -811,7 +813,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $meta = $this->userMeta(Arsse::$user->id);
         try {
             $sub = Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, (int) $path[1]);
-            return new Response($this->transformFeed($sub, $meta['num'], $meta['root']));
+            return new Response($this->transformFeed($sub, $meta['num'], $meta['root'], $meta['tz']));
         } catch (ExceptionInput $e) {
             return new ErrorResponse("404", 404);
         }
@@ -987,8 +989,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'title'        => $entry['title'],
             'url'          => $entry['url'],
             'comments_url' => "",
-            'published_at' => Date::transform(Date::normalize($entry['published_date'], "sql")->setTimezone($tz), "iso8601"),
-            'created_at'   => Date::transform(Date::normalize($entry['modified_date'], "sql")->setTimezone($tz), "iso8601m"),
+            'published_at' => Date::normalize($entry['published_date'], "sql")->setTimezone($tz)->format(self::DATE_FORMAT_SEC),
+            'created_at'   => Date::normalize($entry['modified_date'], "sql")->setTimezone($tz)->format(self::DATE_FORMAT_MICRO),
             'content'      => $entry['content'],
             'author'       => (string) $entry['author'],
             'share_code'   => "",
@@ -1018,7 +1020,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($out) {
             $feeds = [];
             foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $r) {
-                $feeds[(int) $r['id']] = $this->transformFeed($r, $meta['num'], $meta['root']);
+                $feeds[(int) $r['id']] = $this->transformFeed($r, $meta['num'], $meta['root'], $meta['tz']);
             }
             // add the feed objects to each entry
             // NOTE: If ever we implement multiple enclosure, this would be the right place to add them

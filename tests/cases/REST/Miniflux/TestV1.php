@@ -36,47 +36,20 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ['id' => 55, 'feed' => 12, 'url' => "http://j%20k:super%20secret@example.com/eek", 'title' => "Eek", 'source' => "http://example.com/", 'icon_id' => null, 'icon_url' => null,                      'folder' => null, 'top_folder' => null, 'folder_name' => null,      'top_folder_name' => null,      'pinned' => 0, 'err_count' => 0, 'err_msg' => null,     'order_type' => 0, 'keep_rule' => null,        'block_rule' => null,   'added' => "2020-12-21 21:12:00", 'updated' => "2021-01-05 13:51:32", 'edited' => null,                  'modified' => "2020-11-30 04:08:52", 'next_fetch' => null,                  'etag' => null,     'scrape' => 1, 'unread' => 0],
     ];
     protected const FEEDS_OUT = [
-        ['id' => 1,  'user_id' => 42, 'feed_url' => "http://example.com/ook", 'site_url' => "http://example.com/", 'title' => "Ook", 'checked_at' => "2021-01-05T13:51:32.000000Z", 'next_check_at' => "2021-01-20T00:00:00.000000Z", 'etag_header' => "OOKEEK", 'last_modified_header' => "Fri, 01 Jan 2021 00:00:00 GMT", 'parsing_error_message' => "Oopsie", 'parsing_error_count' => 1, 'scraper_rules' => "", 'rewrite_rules' => "", 'crawler' => false, 'blocklist_rules' => "both", 'keeplist_rules' => "this|that", 'user_agent' => "", 'username' => "",    'password' => "",             'disabled' => false, 'ignore_http_cache' => false, 'fetch_via_proxy' => false, 'category' => ['id' => 6, 'title' => "Cat Ook", 'user_id' => 42], 'icon' => ['feed_id' => 1,'icon_id' => 47]],
-        ['id' => 55, 'user_id' => 42, 'feed_url' => "http://example.com/eek", 'site_url' => "http://example.com/", 'title' => "Eek", 'checked_at' => "2021-01-05T13:51:32.000000Z", 'next_check_at' => "0001-01-01T00:00:00.000000Z", 'etag_header' => "",       'last_modified_header' => "",                              'parsing_error_message' => "",       'parsing_error_count' => 0, 'scraper_rules' => "", 'rewrite_rules' => "", 'crawler' => true,  'blocklist_rules' => "",     'keeplist_rules' => "",          'user_agent' => "", 'username' => "j k", 'password' => "super secret", 'disabled' => false, 'ignore_http_cache' => false, 'fetch_via_proxy' => false, 'category' => ['id' => 1,'title'  => "All",     'user_id' => 42], 'icon' => null],
+        ['id' => 1,  'user_id' => 42, 'feed_url' => "http://example.com/ook", 'site_url' => "http://example.com/", 'title' => "Ook", 'checked_at' => "2021-01-05T15:51:32.000000+02:00", 'next_check_at' => "2021-01-20T02:00:00.000000+02:00", 'etag_header' => "OOKEEK", 'last_modified_header' => "Fri, 01 Jan 2021 00:00:00 GMT", 'parsing_error_message' => "Oopsie", 'parsing_error_count' => 1, 'scraper_rules' => "", 'rewrite_rules' => "", 'crawler' => false, 'blocklist_rules' => "both", 'keeplist_rules' => "this|that", 'user_agent' => "", 'username' => "",    'password' => "",             'disabled' => false, 'ignore_http_cache' => false, 'fetch_via_proxy' => false, 'category' => ['id' => 6, 'title' => "Cat Ook", 'user_id' => 42], 'icon' => ['feed_id' => 1,'icon_id' => 47]],
+        ['id' => 55, 'user_id' => 42, 'feed_url' => "http://example.com/eek", 'site_url' => "http://example.com/", 'title' => "Eek", 'checked_at' => "2021-01-05T15:51:32.000000+02:00", 'next_check_at' => "0001-01-01T00:00:00Z",             'etag_header' => "",       'last_modified_header' => "",                              'parsing_error_message' => "",       'parsing_error_count' => 0, 'scraper_rules' => "", 'rewrite_rules' => "", 'crawler' => true,  'blocklist_rules' => "",     'keeplist_rules' => "",          'user_agent' => "", 'username' => "j k", 'password' => "super secret", 'disabled' => false, 'ignore_http_cache' => false, 'fetch_via_proxy' => false, 'category' => ['id' => 1,'title'  => "All",     'user_id' => 42], 'icon' => null],
     ];
     protected const ENTRIES = [
-        [
-            'id' => 42,
-            'url' => "http://example.com/42",
-            'title' => "Title 42",
-            'subscription' => 2112,
-            'author' => "Thomas Costain",
-            'fingerprint' => "FINGERPRINT",
-            'published_date' => "2021-01-22 02:21:12",
-            'modified_date' => "2021-01-22 13:44:47",
-            'starred' => 0,
-            'unread' => 0,
-            'hidden' => 0,
-            'content' => "Content 42",
-            'media_url' => null,
-            'media_type' => null,
-        ],
+        ['id' => 42,   'url' => "http://example.com/42",   'title' => "Title 42",   'subscription' => 55, 'author' => "Thomas Costain", 'fingerprint' => "FINGERPRINT", 'published_date' => "2021-01-22 02:21:12", 'modified_date' => "2021-01-22 13:44:47", 'starred' => 0, 'unread' => 0, 'hidden' => 0, 'content' => "Content 42",   'media_url' => null,                                'media_type' => null],
+        ['id' => 44,   'url' => "http://example.com/44",   'title' => "Title 44",   'subscription' => 55, 'author' => null,             'fingerprint' => "FINGERPRINT", 'published_date' => "2021-01-22 02:21:12", 'modified_date' => "2021-01-22 13:44:47", 'starred' => 1, 'unread' => 1, 'hidden' => 0, 'content' => "Content 44",   'media_url' => "http://example.com/44/enclosure",   'media_type' => null],
+        ['id' => 47,   'url' => "http://example.com/47",   'title' => "Title 47",   'subscription' => 55, 'author' => null,             'fingerprint' => "FINGERPRINT", 'published_date' => "2021-01-22 02:21:12", 'modified_date' => "2021-01-22 13:44:47", 'starred' => 0, 'unread' => 1, 'hidden' => 1, 'content' => "Content 47",   'media_url' => "http://example.com/47/enclosure",   'media_type' => ""],
+        ['id' => 2112, 'url' => "http://example.com/2112", 'title' => "Title 2112", 'subscription' => 55, 'author' => null,             'fingerprint' => "FINGERPRINT", 'published_date' => "2021-01-22 02:21:12", 'modified_date' => "2021-01-22 13:44:47", 'starred' => 0, 'unread' => 0, 'hidden' => 1, 'content' => "Content 2112", 'media_url' => "http://example.com/2112/enclosure", 'media_type' => "image/png"]
     ];
     protected const ENTRIES_OUT = [
-        [
-            'id' => 42,
-            'user_id' => 42,
-            'feed_id' => 55,
-            'status' => "read",
-            'hash' => "FINGERPRINT",
-            'title' => "Title 42",
-            'url' => "http://example.com/42",
-            'comments_url' => "",
-            'published_at' => "2021-01-22T02:21:12+00:00",
-            'created_at' => "2021-01-22T13:44:47.000000+00:00",
-            'content' => "Content 42",
-            'author' => "Thomas Costain",
-            'share_code' => "",
-            'starred' => false,
-            'reading_time' => 0,
-            'enclosures' => null,
-            'feed' => self::FEEDS_OUT[1],
-        ],
+        ['id' => 42,   'user_id' => 42, 'feed_id' => 55, 'status' => "read",    'hash' => "FINGERPRINT", 'title' => "Title 42",   'url' => "http://example.com/42",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 42",   'author' => "Thomas Costain", 'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => null, 'feed' => self::FEEDS_OUT[1]],
+        ['id' => 44,   'user_id' => 42, 'feed_id' => 55, 'status' => "unread",  'hash' => "FINGERPRINT", 'title' => "Title 44",   'url' => "http://example.com/44",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 44",   'author' => "",               'share_code' => "", 'starred' => true,  'reading_time' => 0, 'enclosures' => [['id' => 44,   'user_id' => 42, 'entry_id' => 44,   'url' => "http://example.com/44/enclosure",   'mime_type' => "application/octet-stream", 'size' => 0]], 'feed' => self::FEEDS_OUT[1]],
+        ['id' => 47,   'user_id' => 42, 'feed_id' => 55, 'status' => "removed", 'hash' => "FINGERPRINT", 'title' => "Title 47",   'url' => "http://example.com/47",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 47",   'author' => "",               'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => [['id' => 47,   'user_id' => 42, 'entry_id' => 47,   'url' => "http://example.com/47/enclosure",   'mime_type' => "application/octet-stream", 'size' => 0]], 'feed' => self::FEEDS_OUT[1]],
+        ['id' => 2112, 'user_id' => 42, 'feed_id' => 55, 'status' => "removed", 'hash' => "FINGERPRINT", 'title' => "Title 2112", 'url' => "http://example.com/2112", 'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 2112", 'author' => "",               'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => [['id' => 2112, 'user_id' => 42, 'entry_id' => 2112, 'url' => "http://example.com/2112/enclosure", 'mime_type' => "image/png",                'size' => 0]], 'feed' => self::FEEDS_OUT[1]],
     ];
 
     protected $h;
@@ -104,7 +77,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$db)->begin->thenReturn($this->transaction);
         // create a mock user manager; we use a PHPUnitmock because Phake for reasons unknown is unable to mock the User class correctly, sometimes
         Arsse::$user = $this->createMock(User::class);
-        Arsse::$user->method("propertiesGet")->willReturn(['num' => 42, 'admin' => false, 'root_folder_name' => null]);
+        Arsse::$user->method("propertiesGet")->willReturn(['num' => 42, 'admin' => false, 'root_folder_name' => null, 'tz' => "Asia/Gaza"]);
         Arsse::$user->method("begin")->willReturn($this->transaction);
         //initialize a handler
         $this->h = new V1();
@@ -748,7 +721,8 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideEntryQueries */
-    public function testGetEntries(string $url, ?Context $c, ?array $order, $out, bool $getFeeds, ResponseInterface $exp) {
+    public function testGetEntries(string $url, ?Context $c, ?array $order, $out, ResponseInterface $exp) {
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v(self::FEEDS)));
         if ($out instanceof \Exception) {
             \Phake::when(Arsse::$db)->articleList->thenThrow($out);
         } else {
@@ -760,24 +734,44 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         } else {
             \Phake::verify(Arsse::$db, \Phake::times(0))->articleList;
         }
+        if ($out) {
+            \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::times(0))->subscriptionList;
+        }
     }
 
     public function provideEntryQueries(): iterable {
         self::clearData();
         $c = new Context;
         return [
-            ["/entries?after=A",            null, null, [], false, new ErrorResponse(["InvalidInputValue", 'field' => "after"], 400)],
-            ["/entries?before=B",           null, null, [], false, new ErrorResponse(["InvalidInputValue", 'field' => "before"], 400)],
-            ["/entries?category_id=0",      null, null, [], false, new ErrorResponse(["InvalidInputValue", 'field' => "category_id"], 400)],
-            ["/entries?after_entry_id=0",   null, null, [], false, new ErrorResponse(["InvalidInputValue", 'field' => "after_entry_id"], 400)],
-            ["/entries?before_entry_id=0",  null, null, [], false, new ErrorResponse(["InvalidInputValue", 'field' => "before_entry_id"], 400)],
-            ["/entries?limit=-1",           null, null, [], false, new ErrorResponse(["InvalidInputValue", 'field' => "limit"], 400)],
-            ["/entries?offset=-1",          null, null, [], false, new ErrorResponse(["InvalidInputValue", 'field' => "offset"], 400)],
-            ["/entries?direction=sideways", null, null, [], false, new ErrorResponse(["InvalidInputValue", 'field' => "direction"], 400)],
-            ["/entries?order=false",        null, null, [], false, new ErrorResponse(["InvalidInputValue", 'field' => "order"], 400)],
-            ["/entries?starred&starred",    null, null, [], false, new ErrorResponse(["DuplicateInputValue", 'field' => "starred"], 400)],
-            ["/entries?after&after=0",      null, null, [], false, new ErrorResponse(["DuplicateInputValue", 'field' => "after"], 400)],
-            ["/entries",                    $c,   [],   [], false, new Response(['total' => 0, 'entries' => []])],
+            ["/entries?after=A",                                   null,                                     null, [],            new ErrorResponse(["InvalidInputValue", 'field' => "after"], 400)],
+            ["/entries?before=B",                                  null,                                     null, [],            new ErrorResponse(["InvalidInputValue", 'field' => "before"], 400)],
+            ["/entries?category_id=0",                             null,                                     null, [],            new ErrorResponse(["InvalidInputValue", 'field' => "category_id"], 400)],
+            ["/entries?after_entry_id=0",                          null,                                     null, [],            new ErrorResponse(["InvalidInputValue", 'field' => "after_entry_id"], 400)],
+            ["/entries?before_entry_id=0",                         null,                                     null, [],            new ErrorResponse(["InvalidInputValue", 'field' => "before_entry_id"], 400)],
+            ["/entries?limit=-1",                                  null,                                     null, [],            new ErrorResponse(["InvalidInputValue", 'field' => "limit"], 400)],
+            ["/entries?offset=-1",                                 null,                                     null, [],            new ErrorResponse(["InvalidInputValue", 'field' => "offset"], 400)],
+            ["/entries?direction=sideways",                        null,                                     null, [],            new ErrorResponse(["InvalidInputValue", 'field' => "direction"], 400)],
+            ["/entries?order=false",                               null,                                     null, [],            new ErrorResponse(["InvalidInputValue", 'field' => "order"], 400)],
+            ["/entries?starred&starred",                           null,                                     null, [],            new ErrorResponse(["DuplicateInputValue", 'field' => "starred"], 400)],
+            ["/entries?after&after=0",                             null,                                     null, [],            new ErrorResponse(["DuplicateInputValue", 'field' => "after"], 400)],
+            ["/entries",                                           $c,                                       [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?category_id=47",                            (clone $c)->folder(46),                   [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?category_id=1",                             (clone $c)->folderShallow(0),             [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=unread",                             (clone $c)->unread(true)->hidden(false),  [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=read",                               (clone $c)->unread(false)->hidden(false), [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=removed",                            (clone $c)->hidden(true),                 [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=unread&status=read",                 (clone $c)->hidden(false),                [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=unread&status=removed",              (clone $c)->unread(true),                 [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=removed&status=read",                (clone $c)->unread(false),                [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=removed&status=read&status=removed", (clone $c)->unread(false),                [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=removed&status=read&status=unread",  $c,                                       [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?starred",                                   (clone $c)->starred(true),                [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?starred=",                                  (clone $c)->starred(true),                [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?starred=true",                              (clone $c)->starred(true),                [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?starred=false",                             (clone $c)->starred(true),                [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            
         ];
     }
 }
