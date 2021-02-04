@@ -771,7 +771,10 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             ["/entries?starred=",                                  (clone $c)->starred(true),                [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
             ["/entries?starred=true",                              (clone $c)->starred(true),                [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
             ["/entries?starred=false",                             (clone $c)->starred(true),                [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            
+            ["/entries?after=0",                                   (clone $c)->modifiedSince(0),             [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?before=0",                                  (clone $c)->notModifiedSince(0),          [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?after_entry_id=42",                         (clone $c)->oldestArticle(43),            [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?before_entry_id=47",                        (clone $c)->latestArticle(46),            [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
         ];
     }
 }
