@@ -798,6 +798,14 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             ["/entries?order=category_title&direction=desc",       $c,                                         ["top_folder_name desc"],  self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
             ["/entries?order=status&direction=desc",               $c,                                         ["hidden desc", "unread"], self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
             ["/entries?category_id=2112",                          (clone $c)->folder(2111),                   $o,                        new ExceptionInput("idMissing"), false, new ErrorResponse("MissingCategory")],
+            ["/feeds/42/entries",                                  (clone $c)->subscription(42),               $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/feeds/42/entries?category_id=47",                   (clone $c)->subscription(42)->folder(46),   $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/feeds/2112/entries",                                (clone $c)->subscription(2112),             $o,                        new ExceptionInput("idMissing"), false, new ErrorResponse("404", 404)],
+            ["/categories/42/entries",                             (clone $c)->folder(41),                     $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/categories/42/entries?category_id=47",              (clone $c)->folder(41),                     $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/categories/42/entries?starred",                     (clone $c)->folder(41)->starred(true),      $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/categories/1/entries",                              (clone $c)->folderShallow(0),               $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/categories/2112/entries",                           (clone $c)->folder(2111),                   $o,                        new ExceptionInput("idMissing"), false, new ErrorResponse("404", 404)],
         ];
     }
 }

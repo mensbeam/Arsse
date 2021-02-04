@@ -1003,19 +1003,14 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         ];
     }
 
-    protected function getEntries(array $query): ResponseInterface {
-        $c = $this->computeContext($query);
+    protected function listEntries(array $query, Context $c): array {
+        $c = $this->computeContext($query, $c);
         $order = $this->computeOrder($query);
         $tr = Arsse::$db->begin();
         $meta = $this->userMeta(Arsse::$user->id);
         // compile the list of entries
-        try {
-            $entries = Arsse::$db->articleList(Arsse::$user->id, $c, self::ARTICLE_COLUMNS, $order);
-        } catch (ExceptionInput $e) {
-            return new ErrorResponse("MissingCategory", 400);
-        }
         $out = [];
-        foreach ($entries as $entry) {
+        foreach (Arsse::$db->articleList(Arsse::$user->id, $c, self::ARTICLE_COLUMNS, $order) as $entry) {
             $out[] = $this->transformEntry($entry, $meta['num'], $meta['tz']);
         }
         // next compile a map of feeds to add to the entries
@@ -1035,7 +1030,34 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($c->offset || ($c->limit && $count >= $c->limit)) {
             $count = Arsse::$db->articleCount(Arsse::$user->id, (clone $c)->limit(0)->offset(0));
         }
-        return new Response(['total' => $count, 'entries' => $out]);
+        return ['total' => $count, 'entries' => $out];
+    }
+    
+    protected function getEntries(array $query): ResponseInterface {
+        try {
+            return new Response($this->listEntries($query, new Context));
+        } catch (ExceptionInput $e) {
+            return new ErrorResponse("MissingCategory", 400);
+        }
+    }
+    
+    protected function getFeedEntries(array $path, array $query): ResponseInterface {
+        $c = (new Context)->subscription((int) $path[1]);
+        try {
+            return new Response($this->listEntries($query, $c));
+        } catch (ExceptionInput $e) {
+            // FIXME: this should differentiate between a missing feed and a missing category, but doesn't
+            return new ErrorResponse("404", 404);
+        }
+    }
+    
+    protected function getCategoryEntries(array $path, array $query): ResponseInterface {
+        $query['category_id'] = (int) $path[1];
+        try {
+            return new Response($this->listEntries($query, new Context));
+        } catch (ExceptionInput $e) {
+            return new ErrorResponse("404", 404);
+        }
     }
 
     public static function tokenGenerate(string $user, string $label): string {
