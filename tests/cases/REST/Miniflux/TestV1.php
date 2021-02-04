@@ -721,8 +721,9 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideEntryQueries */
-    public function testGetEntries(string $url, ?Context $c, ?array $order, $out, ResponseInterface $exp) {
+    public function testGetEntries(string $url, ?Context $c, ?array $order, $out, bool $count, ResponseInterface $exp) {
         \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v(self::FEEDS)));
+        \Phake::when(Arsse::$db)->articleCount->thenReturn(2112);
         if ($out instanceof \Exception) {
             \Phake::when(Arsse::$db)->articleList->thenThrow($out);
         } else {
@@ -734,47 +735,69 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         } else {
             \Phake::verify(Arsse::$db, \Phake::times(0))->articleList;
         }
-        if ($out) {
+        if ($out && !$out instanceof \Exception) {
             \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id);
         } else {
             \Phake::verify(Arsse::$db, \Phake::times(0))->subscriptionList;
+        }
+        if ($count) {
+            \Phake::verify(Arsse::$db)->articleCount(Arsse::$user->id, (clone $c)->limit(0)->offset(0));
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::times(0))->articleCount;
         }
     }
 
     public function provideEntryQueries(): iterable {
         self::clearData();
-        $c = new Context;
+        $c = (new Context)->limit(100);
+        $o = ["modified_date"]; // the default sort order
         return [
-            ["/entries?after=A",                                   null,                                     null, [],            new ErrorResponse(["InvalidInputValue", 'field' => "after"], 400)],
-            ["/entries?before=B",                                  null,                                     null, [],            new ErrorResponse(["InvalidInputValue", 'field' => "before"], 400)],
-            ["/entries?category_id=0",                             null,                                     null, [],            new ErrorResponse(["InvalidInputValue", 'field' => "category_id"], 400)],
-            ["/entries?after_entry_id=0",                          null,                                     null, [],            new ErrorResponse(["InvalidInputValue", 'field' => "after_entry_id"], 400)],
-            ["/entries?before_entry_id=0",                         null,                                     null, [],            new ErrorResponse(["InvalidInputValue", 'field' => "before_entry_id"], 400)],
-            ["/entries?limit=-1",                                  null,                                     null, [],            new ErrorResponse(["InvalidInputValue", 'field' => "limit"], 400)],
-            ["/entries?offset=-1",                                 null,                                     null, [],            new ErrorResponse(["InvalidInputValue", 'field' => "offset"], 400)],
-            ["/entries?direction=sideways",                        null,                                     null, [],            new ErrorResponse(["InvalidInputValue", 'field' => "direction"], 400)],
-            ["/entries?order=false",                               null,                                     null, [],            new ErrorResponse(["InvalidInputValue", 'field' => "order"], 400)],
-            ["/entries?starred&starred",                           null,                                     null, [],            new ErrorResponse(["DuplicateInputValue", 'field' => "starred"], 400)],
-            ["/entries?after&after=0",                             null,                                     null, [],            new ErrorResponse(["DuplicateInputValue", 'field' => "after"], 400)],
-            ["/entries",                                           $c,                                       [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?category_id=47",                            (clone $c)->folder(46),                   [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?category_id=1",                             (clone $c)->folderShallow(0),             [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=unread",                             (clone $c)->unread(true)->hidden(false),  [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=read",                               (clone $c)->unread(false)->hidden(false), [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=removed",                            (clone $c)->hidden(true),                 [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=unread&status=read",                 (clone $c)->hidden(false),                [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=unread&status=removed",              (clone $c)->unread(true),                 [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=removed&status=read",                (clone $c)->unread(false),                [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=removed&status=read&status=removed", (clone $c)->unread(false),                [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=removed&status=read&status=unread",  $c,                                       [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?starred",                                   (clone $c)->starred(true),                [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?starred=",                                  (clone $c)->starred(true),                [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?starred=true",                              (clone $c)->starred(true),                [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?starred=false",                             (clone $c)->starred(true),                [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?after=0",                                   (clone $c)->modifiedSince(0),             [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?before=0",                                  (clone $c)->notModifiedSince(0),          [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?after_entry_id=42",                         (clone $c)->oldestArticle(43),            [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?before_entry_id=47",                        (clone $c)->latestArticle(46),            [],   self::ENTRIES, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?after=A",                                   null,                                       null,                      [],                              false, new ErrorResponse(["InvalidInputValue", 'field' => "after"], 400)],
+            ["/entries?before=B",                                  null,                                       null,                      [],                              false, new ErrorResponse(["InvalidInputValue", 'field' => "before"], 400)],
+            ["/entries?category_id=0",                             null,                                       null,                      [],                              false, new ErrorResponse(["InvalidInputValue", 'field' => "category_id"], 400)],
+            ["/entries?after_entry_id=0",                          null,                                       null,                      [],                              false, new ErrorResponse(["InvalidInputValue", 'field' => "after_entry_id"], 400)],
+            ["/entries?before_entry_id=0",                         null,                                       null,                      [],                              false, new ErrorResponse(["InvalidInputValue", 'field' => "before_entry_id"], 400)],
+            ["/entries?limit=-1",                                  null,                                       null,                      [],                              false, new ErrorResponse(["InvalidInputValue", 'field' => "limit"], 400)],
+            ["/entries?offset=-1",                                 null,                                       null,                      [],                              false, new ErrorResponse(["InvalidInputValue", 'field' => "offset"], 400)],
+            ["/entries?direction=sideways",                        null,                                       null,                      [],                              false, new ErrorResponse(["InvalidInputValue", 'field' => "direction"], 400)],
+            ["/entries?order=false",                               null,                                       null,                      [],                              false, new ErrorResponse(["InvalidInputValue", 'field' => "order"], 400)],
+            ["/entries?starred&starred",                           null,                                       null,                      [],                              false, new ErrorResponse(["DuplicateInputValue", 'field' => "starred"], 400)],
+            ["/entries?after&after=0",                             null,                                       null,                      [],                              false, new ErrorResponse(["DuplicateInputValue", 'field' => "after"], 400)],
+            ["/entries",                                           $c,                                         $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?category_id=47",                            (clone $c)->folder(46),                     $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?category_id=1",                             (clone $c)->folderShallow(0),               $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=unread",                             (clone $c)->unread(true)->hidden(false),    $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=read",                               (clone $c)->unread(false)->hidden(false),   $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=removed",                            (clone $c)->hidden(true),                   $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=unread&status=read",                 (clone $c)->hidden(false),                  $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=unread&status=removed",              (clone $c)->unread(true),                   $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=removed&status=read",                (clone $c)->unread(false),                  $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=removed&status=read&status=removed", (clone $c)->unread(false),                  $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=removed&status=read&status=unread",  $c,                                         $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?starred",                                   (clone $c)->starred(true),                  $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?starred=",                                  (clone $c)->starred(true),                  $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?starred=true",                              (clone $c)->starred(true),                  $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?starred=false",                             (clone $c)->starred(true),                  $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?after=0",                                   (clone $c)->modifiedSince(0),               $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?before=0",                                  (clone $c)->notModifiedSince(0),            $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?after_entry_id=42",                         (clone $c)->oldestArticle(43),              $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?before_entry_id=47",                        (clone $c)->latestArticle(46),              $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?search=alpha%20beta",                       (clone $c)->searchTerms(["alpha", "beta"]), $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?limit=4",                                   (clone $c)->limit(4),                       $o,                        self::ENTRIES,                   true,  new Response(['total' => 2112, 'entries' => self::ENTRIES_OUT])],
+            ["/entries?offset=20",                                 (clone $c)->offset(20),                     $o,                        [],                              true,  new Response(['total' => 2112, 'entries' => []])],
+            ["/entries?direction=asc",                             $c,                                         $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?order=id",                                  $c,                                         ["id"],                    self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?order=published_at",                        $c,                                         ["modified_date"],         self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?order=category_id",                         $c,                                         ["top_folder"],            self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?order=category_title",                      $c,                                         ["top_folder_name"],       self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?order=status",                              $c,                                         ["hidden", "unread desc"], self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?direction=desc",                            $c,                                         ["modified_date desc"],    self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?order=id&direction=desc",                   $c,                                         ["id desc"],               self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?order=published_at&direction=desc",         $c,                                         ["modified_date desc"],    self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?order=category_id&direction=desc",          $c,                                         ["top_folder desc"],       self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?order=category_title&direction=desc",       $c,                                         ["top_folder_name desc"],  self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?order=status&direction=desc",               $c,                                         ["hidden desc", "unread"], self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?category_id=2112",                          (clone $c)->folder(2111),                   $o,                        new ExceptionInput("idMissing"), false, new ErrorResponse("MissingCategory")],
         ];
     }
 }

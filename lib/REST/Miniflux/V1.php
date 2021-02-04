@@ -33,6 +33,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const ACCEPTED_TYPES_OPML = ["application/xml", "text/xml", "text/x-opml"];
     protected const ACCEPTED_TYPES_JSON = ["application/json"];
     protected const TOKEN_LENGTH = 32;
+    protected const DEFAULT_ENTRY_LIMIT = 100;
+    protected const DEFAULT_ORDER_COL = "modified_date";
     protected const DATE_FORMAT_SEC = "Y-m-d\TH:i:sP";
     protected const DATE_FORMAT_MICRO = "Y-m-d\TH:i:s.uP";
     protected const VALID_QUERY = [
@@ -903,7 +905,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function computeContext(array $query, Context $c = null): Context {
         $c = ($c ?? new Context)
-            ->limit($query['limit'])
+            ->limit($query['limit'] ?? self::DEFAULT_ENTRY_LIMIT) // NOTE: This does not honour user preferences
             ->offset($query['offset'])
             ->starred($query['starred'])
             ->modifiedSince($query['after']) // FIXME: This may not be the correct date field
@@ -951,10 +953,10 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return ["modified_date".$desc];
         } elseif ($query['order'] === "category_title") {
             return ["top_folder_name".$desc];
-        } elseif ($query['order'] === "catgory_id") {
+        } elseif ($query['order'] === "category_id") {
             return ["top_folder".$desc];
         } else {
-            return [];
+            return [self::DEFAULT_ORDER_COL.$desc];
         }
     }
 
@@ -1028,11 +1030,10 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 $out[$a]['feed'] = $feeds[$out[$a]['feed_id']];
             }
         }
-        // finally compute the total number of entries match the query, if the query hs a limit or offset
-        if ($c->limit || $c->offset) {
+        // finally compute the total number of entries match the query, where necessary
+        $count = sizeof($out);
+        if ($c->offset || ($c->limit && $count >= $c->limit)) {
             $count = Arsse::$db->articleCount(Arsse::$user->id, (clone $c)->limit(0)->offset(0));
-        } else {
-            $count = sizeof($out);
         }
         return new Response(['total' => $count, 'entries' => $out]);
     }
