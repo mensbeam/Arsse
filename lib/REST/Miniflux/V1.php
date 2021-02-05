@@ -1161,6 +1161,22 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new EmptyResponse(204);
     }
 
+    protected function refreshFeed(array $path): ResponseInterface {
+        // NOTE: This is a no-op; we simply check that the feed exists
+        try {
+            Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, (int) $path[1]);
+        } catch (ExceptionInput $e) {
+            return new ErrorResponse("404", 404);
+        }
+        return new EmptyResponse(204);
+    }
+
+    protected function refreshAllFeeds(): ResponseInterface {
+        // NOTE: This is a no-op
+        // It could be implemented, but the need is considered low since we use a dynamic schedule always
+        return new EmptyResponse(204);
+    }
+
     public static function tokenGenerate(string $user, string $label): string {
         // Miniflux produces tokenss in base64url alphabet
         $t = str_replace(["+", "/"], ["-", "_"], base64_encode(random_bytes(self::TOKEN_LENGTH)));

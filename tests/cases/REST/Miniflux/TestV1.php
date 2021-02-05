@@ -921,4 +921,20 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             [new ExceptionInput("subjectMissing"), null,  new ErrorResponse("404", 404)],
         ];
     }
+
+    public function testRefreshAFeed(): void {
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn([]);
+        $this->assertMessage(new EmptyResponse(204), $this->req("PUT", "/feeds/47/refresh"));
+        \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 47);
+    }
+
+    public function testRefreshAMissingFeed(): void {
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenThrow(new ExceptionInput("subjectMissing"));
+        $this->assertMessage(new ErrorResponse("404", 404), $this->req("PUT", "/feeds/2112/refresh"));
+        \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 2112);
+    }
+
+    public function testRefreshAllFeeds(): void {
+        $this->assertMessage(new EmptyResponse(204), $this->req("PUT", "/feeds/refresh"));
+    }
 }
