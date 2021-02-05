@@ -13,9 +13,9 @@
         <dd><a href="https://miniflux.app/docs/api.html">API Reference</a>, <a href="https://miniflux.app/docs/rules.html#filtering-rules">Filtering Rules</a></dd>
 </dl>
 
-The Miniflux protocol is a fairly well-designed protocol supporting a wide variety of operations on newsfeeds, folders (termed "categories"), and articles; it also allows for user administration, and native OPML importing and exporting. Architecturally it is similar to the Nextcloud News protocol, but is generally more efficient and has more capabilities.
+The Miniflux protocol is a fairly well-designed protocol supporting a wide variety of operations on newsfeeds, folders (termed "categories"), and articles; it also allows for user administration, and native OPML importing and exporting. Architecturally it is similar to the Nextcloud News protocol, but has more capabilities.
 
-Miniflux version 2.0.27 is emulated, though not all features are implemented
+Miniflux version 2.0.28 is emulated, though not all features are implemented
 
 # Missing features
 
@@ -25,6 +25,7 @@ Miniflux version 2.0.27 is emulated, though not all features are implemented
     - Custom User-Agent strings
     - The `disabled`, `ignore_http_cache`, and `fetch_via_proxy` flags
     - Changing the URL, username, or password of a feed
+    - Manually refreshing feeds
 - Titles and types are not available during feed discovery and are filled with generic data
 - Reading time is not calculated and will always be zero
 - Only the first enclosure of an article is retained
