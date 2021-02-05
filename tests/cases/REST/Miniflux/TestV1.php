@@ -721,7 +721,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideEntryQueries */
-    public function testGetEntries(string $url, ?Context $c, ?array $order, $out, bool $count, ResponseInterface $exp) {
+    public function testGetEntries(string $url, ?Context $c, ?array $order, $out, bool $count, ResponseInterface $exp): void {
         \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v(self::FEEDS)));
         \Phake::when(Arsse::$db)->articleCount->thenReturn(2112);
         if ($out instanceof \Exception) {
@@ -806,6 +806,44 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             ["/categories/42/entries?starred",                     (clone $c)->folder(41)->starred(true),      $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
             ["/categories/1/entries",                              (clone $c)->folderShallow(0),               $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
             ["/categories/2112/entries",                           (clone $c)->folder(2111),                   $o,                        new ExceptionInput("idMissing"), false, new ErrorResponse("404", 404)],
+        ];
+    }
+
+    /** @dataProvider provideSingleEntryQueries */
+    public function testGetASingleEntry(string $url, Context $c, $out, ResponseInterface $exp): void {
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn($this->v(self::FEEDS[1]));
+        if ($out instanceof \Exception) {
+            \Phake::when(Arsse::$db)->articleList->thenThrow($out);
+        } else {
+            \Phake::when(Arsse::$db)->articleList->thenReturn(new Result($this->v($out)));
+        }
+        $this->assertMessage($exp, $this->req("GET", $url));
+        if ($c) {
+            \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, $c, array_keys(self::ENTRIES[0]));
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::times(0))->articleList;
+        }
+        if ($out && is_array($out)) {
+            \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 55);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::times(0))->subscriptionList;
+        }
+    }
+
+    public function provideSingleEntryQueries(): iterable {
+        $c = new Context;
+        return [
+            ["/entries/42",                 (clone $c)->article(42),                     [self::ENTRIES[1]],                   new Response(self::ENTRIES_OUT[1])],
+            ["/entries/2112",               (clone $c)->article(2112),                   new ExceptionInput("subjectMissing"), new ErrorResponse("404", 404)],
+            ["/feeds/47/entries/42",        (clone $c)->subscription(47)->article(42),   [self::ENTRIES[1]],                   new Response(self::ENTRIES_OUT[1])],
+            ["/feeds/47/entries/44",        (clone $c)->subscription(47)->article(44),   [],                                   new ErrorResponse("404", 404)],
+            ["/feeds/47/entries/2112",      (clone $c)->subscription(47)->article(2112), new ExceptionInput("subjectMissing"), new ErrorResponse("404", 404)],
+            ["/feeds/2112/entries/47",      (clone $c)->subscription(2112)->article(47), new ExceptionInput("idMissing"),      new ErrorResponse("404", 404)],
+            ["/categories/47/entries/42",   (clone $c)->folder(46)->article(42),         [self::ENTRIES[1]],                   new Response(self::ENTRIES_OUT[1])],
+            ["/categories/47/entries/44",   (clone $c)->folder(46)->article(44),         [],                                   new ErrorResponse("404", 404)],
+            ["/categories/47/entries/2112", (clone $c)->folder(46)->article(2112),       new ExceptionInput("subjectMissing"), new ErrorResponse("404", 404)],
+            ["/categories/2112/entries/47", (clone $c)->folder(2111)->article(47),       new ExceptionInput("idMissing"),      new ErrorResponse("404", 404)],
+            ["/categories/1/entries/42",    (clone $c)->folderShallow(0)->article(42),   [self::ENTRIES[1]],                   new Response(self::ENTRIES_OUT[1])],
         ];
     }
 }

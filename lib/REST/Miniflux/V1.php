@@ -1032,6 +1032,21 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         return ['total' => $count, 'entries' => $out];
     }
+
+    protected function findEntry(int $id, Context $c = null): array {
+        $c = ($c ?? new Context)->article($id);
+        $tr = Arsse::$db->begin();
+        $meta = $this->userMeta(Arsse::$user->id);
+        // find the entry we want
+        $entry = Arsse::$db->articleList(Arsse::$user->id, $c, self::ARTICLE_COLUMNS)->getRow();
+        if (!$entry) {
+            throw new ExceptionInput("idMissing");
+        }
+        $out = $this->transformEntry($entry, $meta['num'], $meta['tz']);
+        // next transform the parent feed of the entry
+        $out['feed'] = $this->transformFeed(Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, $out['feed_id']), $meta['num'], $meta['root'], $meta['tz']);
+        return $out;
+    }
     
     protected function getEntries(array $query): ResponseInterface {
         try {
@@ -1055,6 +1070,37 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $query['category_id'] = (int) $path[1];
         try {
             return new Response($this->listEntries($query, new Context));
+        } catch (ExceptionInput $e) {
+            return new ErrorResponse("404", 404);
+        }
+    }
+    
+    protected function getEntry(array $path): ResponseInterface {
+        try {
+            return new Response($this->findEntry((int) $path[1]));
+        } catch (ExceptionInput $e) {
+            return new ErrorResponse("404", 404);
+        }
+    }
+    
+    protected function getFeedEntry(array $path): ResponseInterface {
+        $c = (new Context)->subscription((int) $path[1]);
+        try {
+            return new Response($this->findEntry((int) $path[3], $c));
+        } catch (ExceptionInput $e) {
+            return new ErrorResponse("404", 404);
+        }
+    }
+    
+    protected function getCategoryEntry(array $path): ResponseInterface {
+        $c = new Context;
+        if ($path[1] === "1") {
+            $c->folderShallow(0);
+        } else {
+            $c->folder((int) $path[1] - 1);
+        }
+        try {
+            return new Response($this->findEntry((int) $path[3], $c));
         } catch (ExceptionInput $e) {
             return new ErrorResponse("404", 404);
         }
