@@ -398,13 +398,6 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage(new ErrorResponse("403", 403), $this->req("DELETE", "/users/2112"));
     }
 
-    public function testMarkAllArticlesAsRead(): void {
-        \Phake::when(Arsse::$db)->articleMark->thenReturn(true);
-        $this->assertMessage(new ErrorResponse("403", 403), $this->req("PUT", "/users/1/mark-all-as-read"));
-        $this->assertMessage(new EmptyResponse(204), $this->req("PUT", "/users/42/mark-all-as-read"));
-        \Phake::verify(Arsse::$db)->articleMark("john.doe@example.com", ['read' => true], (new Context)->hidden(false));
-    }
-
     public function testListCategories(): void {
         \Phake::when(Arsse::$db)->folderList->thenReturn(new Result($this->v([
             ['id' => 1,  'name' => "Science"],
@@ -509,18 +502,6 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             \Phake::verify(Arsse::$db)->subscriptionRemove("john.doe@example.com", 47),
             \Phake::verify(Arsse::$db)->subscriptionRemove("john.doe@example.com", 2112),
             \Phake::verify($this->transaction)->commit()
-        );
-    }
-
-    public function testMarkACategoryAsRead(): void {
-        \Phake::when(Arsse::$db)->articleMark->thenReturn(1)->thenReturn(1)->thenThrow(new ExceptionInput("idMissing"));
-        $this->assertMessage(new EmptyResponse(204), $this->req("PUT", "/categories/2/mark-all-as-read"));
-        $this->assertMessage(new EmptyResponse(204), $this->req("PUT", "/categories/1/mark-all-as-read"));
-        $this->assertMessage(new ErrorResponse("404", 404), $this->req("PUT", "/categories/2112/mark-all-as-read"));
-        \Phake::inOrder(
-            \Phake::verify(Arsse::$db)->articleMark("john.doe@example.com", ['read' => true], (new Context)->folder(1)),
-            \Phake::verify(Arsse::$db)->articleMark("john.doe@example.com", ['read' => true], (new Context)->folderShallow(0)),
-            \Phake::verify(Arsse::$db)->articleMark("john.doe@example.com", ['read' => true], (new Context)->folder(2111))
         );
     }
 
@@ -831,6 +812,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function provideSingleEntryQueries(): iterable {
+        self::clearData();
         $c = new Context;
         return [
             ["/entries/42",                 (clone $c)->article(42),                     [self::ENTRIES[1]],                   new Response(self::ENTRIES_OUT[1])],
@@ -844,6 +826,99 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             ["/categories/47/entries/2112", (clone $c)->folder(46)->article(2112),       new ExceptionInput("subjectMissing"), new ErrorResponse("404", 404)],
             ["/categories/2112/entries/47", (clone $c)->folder(2111)->article(47),       new ExceptionInput("idMissing"),      new ErrorResponse("404", 404)],
             ["/categories/1/entries/42",    (clone $c)->folderShallow(0)->article(42),   [self::ENTRIES[1]],                   new Response(self::ENTRIES_OUT[1])],
+        ];
+    }
+
+    /** @dataProvider provideEntryMarkings */
+    public function testMarkEntries(array $in, ?array $data, ResponseInterface $exp): void {
+        \Phake::when(Arsse::$db)->articleMark->thenReturn(0);
+        $this->assertMessage($exp, $this->req("PUT", "/entries", $in));
+        if ($data) {
+            \Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $data, (new Context)->articles($in['entry_ids']));
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::times(0))->articleMark;
+        }
+    }
+
+    public function provideEntryMarkings(): iterable {
+        self::clearData();
+        return [
+            [['status' => "read"],                           null,                                 new ErrorResponse(["MissingInputValue", 'field' => "entry_ids"], 422)],
+            [['entry_ids' => [1]],                           null,                                 new ErrorResponse(["MissingInputValue", 'field' => "status"], 422)],
+            [['entry_ids' => [], 'status' => "read"],        null,                                 new ErrorResponse(["MissingInputValue", 'field' => "entry_ids"], 422)],
+            [['entry_ids' => 1, 'status' => "read"],         null,                                 new ErrorResponse(["InvalidInputType", 'field' => "entry_ids", 'expected' => "array", 'actual' => "integer"], 422)],
+            [['entry_ids' => ["1"], 'status' => "read"],     null,                                 new ErrorResponse(["InvalidInputType", 'field' => "entry_ids", 'expected' => "integer", 'actual' => "string"], 422)],
+            [['entry_ids' => [1], 'status' => 1],            null,                                 new ErrorResponse(["InvalidInputType", 'field' => "status", 'expected' => "string", 'actual' => "integer"], 422)],
+            [['entry_ids' => [0], 'status' => "read"],       null,                                 new ErrorResponse(["InvalidInputValue", 'field' => "entry_ids",], 422)],
+            [['entry_ids' => [1], 'status' => "reread"],     null,                                 new ErrorResponse(["InvalidInputValue", 'field' => "status",], 422)],
+            [['entry_ids' => [1, 2], 'status' => "read"],    ['read' => true,  'hidden' => false], new EmptyResponse(204)],
+            [['entry_ids' => [1, 2], 'status' => "unread"],  ['read' => false, 'hidden' => false], new EmptyResponse(204)],
+            [['entry_ids' => [1, 2], 'status' => "removed"], ['read' => true,  'hidden' => true],  new EmptyResponse(204)],
+        ];
+    }
+
+    /** @dataProvider provideMassMarkings */
+    public function testMassMarkEntries(string $url, Context $c, $out, ResponseInterface $exp): void {
+        if ($out instanceof \Exception) {
+            \Phake::when(Arsse::$db)->articleMark->thenThrow($out);
+        } else {
+            \Phake::when(Arsse::$db)->articleMark->thenReturn($out);
+        }
+        $this->assertMessage($exp, $this->req("PUT", $url));
+        if ($out !== null) {
+            \Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, ['read' => true], $c);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::times(0))->articleMark;
+        }
+    }
+
+    public function provideMassMarkings(): iterable {
+        self::clearData();
+        $c = (new Context)->hidden(false);
+        return [
+            ["/users/42/mark-all-as-read",        $c,                             1123,                            new EmptyResponse(204)],
+            ["/users/2112/mark-all-as-read",      $c,                             null,                            new ErrorResponse("403", 403)],
+            ["/feeds/47/mark-all-as-read",        (clone $c)->subscription(47),   2112,                            new EmptyResponse(204)],
+            ["/feeds/2112/mark-all-as-read",      (clone $c)->subscription(2112), new ExceptionInput("idMissing"), new ErrorResponse("404", 404)],
+            ["/categories/47/mark-all-as-read",   (clone $c)->folder(46),         1337,                            new EmptyResponse(204)],
+            ["/categories/2112/mark-all-as-read", (clone $c)->folder(2111),       new ExceptionInput("idMissing"), new ErrorResponse("404", 404)],
+            ["/categories/1/mark-all-as-read",    (clone $c)->folderShallow(0),   6666,                            new EmptyResponse(204)],
+        ];
+    }
+
+    /** @dataProvider provideBookmarkTogglings */
+    public function testToggleABookmark($before, ?bool $after, ResponseInterface $exp): void {
+        $c = (new Context)->article(2112);
+        \Phake::when(Arsse::$db)->articleMark->thenReturn(1);
+        if ($before instanceof \Exception) {
+            \Phake::when(Arsse::$db)->articleCount->thenThrow($before);
+        } else {
+            \Phake::when(Arsse::$db)->articleCount->thenReturn($before);
+        }
+        $this->assertMessage($exp, $this->req("PUT", "/entries/2112/bookmark"));
+        if ($after !== null) {
+            \Phake::inOrder(
+                \Phake::verify(Arsse::$db)->begin(),
+                \Phake::verify(Arsse::$db)->articleCount(Arsse::$user->id, (clone $c)->starred(false)),
+                \Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, ['starred' => $after], $c),
+                \Phake::verify($this->transaction)->commit()
+            );
+        } else {
+            \Phake::inOrder(
+                \Phake::verify(Arsse::$db)->begin(),
+                \Phake::verify(Arsse::$db)->articleCount(Arsse::$user->id, (clone $c)->starred(false))
+            );
+            \Phake::verify(Arsse::$db, \Phake::times(0))->articleMark;
+            \Phake::verifyNoInteraction($this->transaction);
+        }
+    }
+
+    public function provideBookmarkTogglings(): iterable {
+        self::clearData();
+        return [
+            [1,                                    true,  new EmptyResponse(204)],
+            [0,                                    false, new EmptyResponse(204)],
+            [new ExceptionInput("subjectMissing"), null,  new ErrorResponse("404", 404)],
         ];
     }
 }

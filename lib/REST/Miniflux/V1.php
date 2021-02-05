@@ -71,6 +71,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'disabled'          => "boolean",
         'ignore_http_cache' => "boolean",
         'fetch_via_proxy'   => "boolean",
+        'entry_ids'         => "array", // this is a special case: it is an array of integers
+        'status'            => "string",
     ];
     protected const USER_META_MAP = [
         // Miniflux ID             // Arsse ID        Default value
@@ -146,7 +148,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         ],
         '/entries'                       => [
             'GET'                        => ["getEntries",            false, false, false, true,  []],
-            'PUT'                        => ["updateEntries",         false, false, true,  false, []],
+            'PUT'                        => ["updateEntries",         false, false, true,  false, ["entry_ids", "status"]],
         ],
         '/entries/1'                     => [
             'GET'                        => ["getEntry",              false, true,  false, false, []],
@@ -349,8 +351,17 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 (in_array($k, ["keeplist_rules", "blocklist_rules"]) && !Rule::validate($body[$k]))
                 || (in_array($k, ["url", "feed_url"]) && !URL::absolute($body[$k])) 
                 || ($k === "category_id" && $body[$k] < 1)
+                || ($k === "status" && !in_array($body[$k], ["read", "unread", "removed"]))
             ) {
                 return new ErrorResponse(["InvalidInputValue", 'field' => $k], 422);
+            } elseif ($k === "entry_ids") {
+                foreach ($body[$k] as $v) {
+                    if (gettype($v) !== "integer") {
+                        return new ErrorResponse(["InvalidInputType", 'field' => $k, 'expected' => "integer", 'actual' => gettype($v)], 422);
+                    } elseif ($v < 1) {
+                        return new ErrorResponse(["InvalidInputValue", 'field' => $k], 422);
+                    }
+                }
             }
         }
         //normalize user-specific input
@@ -368,7 +379,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // check for any missing required values
         foreach ($req as $k) {
-            if (!isset($body[$k])) {
+            if (!isset($body[$k]) || (is_array($body[$k]) && !$body[$k])) {
                 return new ErrorResponse(["MissingInputValue", 'field' => $k], 422);
             }
         }
@@ -629,16 +640,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return new EmptyResponse(204);
     }
 
-    protected function markUserByNum(array $path): ResponseInterface {
-        // this function is restricted to the logged-in user
-        $user = Arsse::$user->propertiesGet(Arsse::$user->id, false);
-        if (((int) $path[1]) !== $user['num']) {
-            return new ErrorResponse("403", 403);
-        }
-        Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], (new Context)->hidden(false));
-        return new EmptyResponse(204);
-    }
-
     /** Returns a useful subset of user metadata
      * 
      * The following keys are included:
@@ -723,23 +724,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 }
                 $tr->commit();
             }
-        } catch (ExceptionInput $e) {
-            return new ErrorResponse("404", 404);
-        }
-        return new EmptyResponse(204);
-    }
-
-    protected function markCategory(array $path): ResponseInterface {
-        $folder = $path[1] - 1;
-        $c = new Context;
-        if ($folder === 0) {
-            // if we're marking the root folder don't also mark its child folders, since Miniflux organizes it as a peer of other folders
-            $c = $c->folderShallow($folder);
-        } else {
-            $c = $c->folder($folder);
-        }
-        try {
-            Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], $c);
         } catch (ExceptionInput $e) {
             return new ErrorResponse("404", 404);
         }
@@ -1104,6 +1088,77 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionInput $e) {
             return new ErrorResponse("404", 404);
         }
+    }
+
+    protected function updateEntries(array $data): ResponseInterface {
+        if ($data['status'] === "read") {
+            $in = ['read' => true, 'hidden' => false];
+        } elseif ($data['status'] === "unread") {
+            $in = ['read' => false, 'hidden' => false];
+        } elseif ($data['status'] === "removed") {
+            $in = ['read' => true, 'hidden' => true];
+        }
+        assert(isset($in), new \Exception("Unknown status specified"));
+        Arsse::$db->articleMark(Arsse::$user->id, $in, (new Context)->articles($data['entry_ids']));
+        return new EmptyResponse(204);
+    }
+
+    protected function massRead(Context $c): void {
+        Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], $c->hidden(false));
+    }
+
+    protected function markUserByNum(array $path): ResponseInterface {
+        // this function is restricted to the logged-in user
+        $user = Arsse::$user->propertiesGet(Arsse::$user->id, false);
+        if (((int) $path[1]) !== $user['num']) {
+            return new ErrorResponse("403", 403);
+        }
+        $this->massRead(new Context);
+        return new EmptyResponse(204);
+    }
+
+    protected function markFeed(array $path): ResponseInterface {
+        try {
+            $this->massRead((new Context)->subscription((int) $path[1]));
+        } catch (ExceptionInput $e) {
+            return new ErrorResponse("404", 404);
+        }
+        return new EmptyResponse(204);
+    }
+
+    protected function markCategory(array $path): ResponseInterface {
+        $folder = $path[1] - 1;
+        $c = new Context;
+        if ($folder === 0) {
+            // if we're marking the root folder don't also mark its child folders, since Miniflux organizes it as a peer of other folders
+            $c->folderShallow($folder);
+        } else {
+            $c->folder($folder);
+        }
+        try {
+            $this->massRead($c);
+        } catch (ExceptionInput $e) {
+            return new ErrorResponse("404", 404);
+        }
+        return new EmptyResponse(204);
+    }
+
+    protected function toggleEntryBookmark(array $path): ResponseInterface {
+        // NOTE: A toggle is bad design, but we have no choice but to implement what Miniflux does
+        $id = (int) $path[1];
+        $c = (new Context)->article($id);
+        try {
+            $tr = Arsse::$db->begin();
+            if (Arsse::$db->articleCount(Arsse::$user->id, (clone $c)->starred(false))) {
+                Arsse::$db->articleMark(Arsse::$user->id, ['starred' => true], $c);
+            } else {
+                Arsse::$db->articleMark(Arsse::$user->id, ['starred' => false], $c);
+            }
+            $tr->commit();
+        } catch (ExceptionInput $e) {
+            return new ErrorResponse("404", 404);
+        }
+        return new EmptyResponse(204);
     }
 
     public static function tokenGenerate(string $user, string $label): string {
