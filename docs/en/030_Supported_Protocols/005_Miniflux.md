@@ -42,6 +42,7 @@ Miniflux version 2.0.28 is emulated, though not all features are implemented
 - Creating a feed with the `scrape` property set to `true` might not return scraped content for the initial synchronization
 - Querying articles for both read/unread and removed statuses will not return all removed articles
 - Search strings will match partial words
+- OPML import either succeeds or fails atomically: if one feed fails, no feeds are imported
 
 # Behaviour of filtering (block and keep) rules
 

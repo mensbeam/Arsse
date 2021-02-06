@@ -13,7 +13,8 @@ use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Db\ExceptionInput;
-use JKingWeb\Arsse\Misc\HTTP;
+use JKingWeb\Arsse\ImportExport\OPML;
+use JKingWeb\Arsse\ImportExport\Exception as ImportException;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\URL;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
@@ -25,6 +26,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\EmptyResponse;
 use Laminas\Diactoros\Response\JsonResponse as Response;
+use Laminas\Diactoros\Response\TextResponse as GenericResponse;
 use Laminas\Diactoros\Uri;
 
 class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
@@ -141,8 +143,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'GET'                        => ["getCategoryFeeds",      false, true,  false, false, []],
         ],
         '/categories/1/mark-all-as-read' => [
-            'PUT'                        => ["markCategory",          false, true,  false, false, []],
         ],
+        'PUT'                        => ["markCategory",          false, true,  false, false, []],
         '/discover'                      => [
             'POST'                       => ["discoverSubscriptions", false, false, true,  false, ["url"]],
         ],
@@ -212,6 +214,11 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function __construct() {
     }
 
+    /** @codeCoverageIgnore */
+    protected function getInstance(string $class) {
+        return new $class;
+    }
+
     protected function authenticate(ServerRequestInterface $req): bool {
         // first check any tokens; this is what Miniflux does
         if ($req->hasHeader("X-Auth-Token")) {
@@ -261,9 +268,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         if ($reqBody) {
             if ($func === "opmlImport") {
-                if (!HTTP::matchType($req, "", ...[self::ACCEPTED_TYPES_OPML])) {
-                    return new ErrorResponse("", 415, ['Accept' => implode(", ", self::ACCEPTED_TYPES_OPML)]);
-                }
                 $args[] = (string) $req->getBody();
             } else {
                 $data = (string) $req->getBody();
@@ -1175,6 +1179,32 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // NOTE: This is a no-op
         // It could be implemented, but the need is considered low since we use a dynamic schedule always
         return new EmptyResponse(204);
+    }
+
+    protected function opmlImport(string $data): ResponseInterface {
+        try {
+            $this->getInstance(OPML::class)->import(Arsse::$user->id, $data);
+        } catch (ImportException $e) {
+            switch ($e->getCode()) {
+                case 10611:
+                    return new ErrorResponse("InvalidBodyXML", 400);
+                case 10612:
+                    return new ErrorResponse("InvalidBodyOPML", 422);
+                case 10613:
+                    return new ErrorResponse("InvalidImportCategory", 422);
+                case 10614:
+                    return new ErrorResponse("DuplicateImportCatgory", 422);
+                case 10615:
+                    return new ErrorResponse("InvalidImportLabel", 422);
+            }
+        } catch (FeedException $e) {
+            return new ErrorResponse(["FailedImportFeed", 'url' => $e->getParams()['url'], 'code' => $e->getCode()], 502);
+        }
+        return new Response(['message' => Arsse::$lang->msg("ImportSuccess")]);
+    }
+
+    protected function opmlExport(): ResponseInterface {
+        return new GenericResponse($this->getInstance(OPML::class)->export(Arsse::$user->id), 200, ['Content-Type' => "application/xml"]);
     }
 
     public static function tokenGenerate(string $user, string $label): string {

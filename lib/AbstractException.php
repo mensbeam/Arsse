@@ -104,7 +104,12 @@ abstract class AbstractException extends \Exception {
         "Rule/Exception.invalidPattern"               => 10701,
     ];
 
+    protected $symbol;
+    protected $params;
+
     public function __construct(string $msgID = "", $vars = null, \Throwable $e = null) {
+        $this->symbol = $msgID;
+        $this->params = $vars ?? [];
         if ($msgID === "") {
             $msg = "Exception.unknown";
             $code = 10000;
@@ -120,5 +125,13 @@ abstract class AbstractException extends \Exception {
             $msg = (Arsse::$lang ?? new Lang)->msg($msg, $vars);
         }
         parent::__construct($msg, $code, $e);
+    }
+
+    public function getSymbol(): string {
+        return $this->symbol;
+    }
+
+    public function getParams(): array {
+        return $this->aparams;
     }
 }
