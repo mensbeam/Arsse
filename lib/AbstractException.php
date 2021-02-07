@@ -132,6 +132,6 @@ abstract class AbstractException extends \Exception {
     }
 
     public function getParams(): array {
-        return $this->aparams;
+        return $this->params;
     }
 }

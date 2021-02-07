@@ -78,4 +78,14 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->expectException('JKingWeb\Arsse\ExceptionFatal');
         throw new \JKingWeb\Arsse\ExceptionFatal("");
     }
+
+    public function testGetExceptionSymbol(): void {
+        $e = new LangException("stringMissing", ['msgID' => "OOK"]);
+        $this->assertSame("stringMissing", $e->getSymbol());
+    }
+
+    public function testGetExceptionParams(): void {
+        $e = new LangException("stringMissing", ['msgID' => "OOK"]);
+        $this->assertSame(['msgID' => "OOK"], $e->getParams());
+    }
 }
