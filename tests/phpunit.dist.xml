@@ -45,6 +45,7 @@
         <file>cases/Conf/TestConf.php</file>
     </testsuite>
     <testsuite name="Sundry">
+        <file>cases/Misc/TestFactory.php</file>
         <file>cases/Misc/TestValueInfo.php</file>
         <file>cases/Misc/TestDate.php</file>
         <file>cases/Misc/TestQuery.php</file>

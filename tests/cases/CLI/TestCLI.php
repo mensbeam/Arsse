@@ -60,22 +60,20 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testStartTheDaemon(): void {
         $srv = \Phake::mock(Service::class);
+        \Phake::when(Arsse::$obj)->get(Service::class)->thenReturn($srv);
         \Phake::when($srv)->watch->thenReturn(new \DateTimeImmutable);
-        \Phake::when($this->cli)->getInstance(Service::class)->thenReturn($srv);
         $this->assertConsole($this->cli, "arsse.php daemon", 0);
         \Phake::verify($this->cli)->loadConf;
         \Phake::verify($srv)->watch(true);
-        \Phake::verify($this->cli)->getInstance(Service::class);
     }
 
     public function testRefreshAllFeeds(): void {
         $srv = \Phake::mock(Service::class);
+        \Phake::when(Arsse::$obj)->get(Service::class)->thenReturn($srv);
         \Phake::when($srv)->watch->thenReturn(new \DateTimeImmutable);
-        \Phake::when($this->cli)->getInstance(Service::class)->thenReturn($srv);
         $this->assertConsole($this->cli, "arsse.php feed refresh-all", 0);
         \Phake::verify($this->cli)->loadConf;
         \Phake::verify($srv)->watch(false);
-        \Phake::verify($this->cli)->getInstance(Service::class);
     }
 
     /** @dataProvider provideFeedUpdates */
@@ -98,10 +96,10 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideDefaultConfigurationSaves */
     public function testSaveTheDefaultConfiguration(string $cmd, int $exitStatus, string $file): void {
         $conf = \Phake::mock(Conf::class);
+        \Phake::when(Arsse::$obj)->get(Conf::class)->thenReturn($conf);
         \Phake::when($conf)->exportFile("php://output", true)->thenReturn(true);
         \Phake::when($conf)->exportFile("good.conf", true)->thenReturn(true);
         \Phake::when($conf)->exportFile("bad.conf", true)->thenThrow(new \JKingWeb\Arsse\Conf\Exception("fileUnwritable"));
-        \Phake::when($this->cli)->getInstance(Conf::class)->thenReturn($conf);
         $this->assertConsole($this->cli, $cmd, $exitStatus);
         \Phake::verify($this->cli, \Phake::times(0))->loadConf;
         \Phake::verify($conf)->exportFile($file, true);
@@ -169,10 +167,10 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             ;
         }));
         $fever = \Phake::mock(FeverUser::class);
+        \Phake::when(Arsse::$obj)->get(FeverUser::class)->thenReturn($fever);
         \Phake::when($fever)->authenticate->thenReturn(false);
         \Phake::when($fever)->authenticate("john.doe@example.com", "ashalla")->thenReturn(true);
         \Phake::when($fever)->authenticate("jane.doe@example.com", "thx1138")->thenReturn(true);
-        \Phake::when($this->cli)->getInstance(FeverUser::class)->thenReturn($fever);
         $this->assertConsole($this->cli, $cmd, $exitStatus, $output);
     }
 
@@ -226,8 +224,8 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user = $this->createMock(User::class);
         Arsse::$user->method("passwordSet")->will($this->returnCallback($passwordChange));
         $fever = \Phake::mock(FeverUser::class);
+        \Phake::when(Arsse::$obj)->get(FeverUser::class)->thenReturn($fever);
         \Phake::when($fever)->register->thenReturnCallback($passwordChange);
-        \Phake::when($this->cli)->getInstance(FeverUser::class)->thenReturn($fever);
         $this->assertConsole($this->cli, $cmd, $exitStatus, $output);
     }
 
@@ -256,8 +254,8 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user = $this->createMock(User::class);
         Arsse::$user->method("passwordUnset")->will($this->returnCallback($passwordClear));
         $fever = \Phake::mock(FeverUser::class);
+        \Phake::when(Arsse::$obj)->get(FeverUser::class)->thenReturn($fever);
         \Phake::when($fever)->unregister->thenReturnCallback($passwordClear);
-        \Phake::when($this->cli)->getInstance(FeverUser::class)->thenReturn($fever);
         $this->assertConsole($this->cli, $cmd, $exitStatus, $output);
     }
 
@@ -273,10 +271,10 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideOpmlExports */
     public function testExportToOpml(string $cmd, int $exitStatus, string $file, string $user, bool $flat): void {
         $opml = \Phake::mock(OPML::class);
+        \Phake::when(Arsse::$obj)->get(OPML::class)->thenReturn($opml);
         \Phake::when($opml)->exportFile("php://output", $user, $flat)->thenReturn(true);
         \Phake::when($opml)->exportFile("good.opml", $user, $flat)->thenReturn(true);
         \Phake::when($opml)->exportFile("bad.opml", $user, $flat)->thenThrow(new \JKingWeb\Arsse\ImportExport\Exception("fileUnwritable"));
-        \Phake::when($this->cli)->getInstance(OPML::class)->thenReturn($opml);
         $this->assertConsole($this->cli, $cmd, $exitStatus);
         \Phake::verify($this->cli)->loadConf;
         \Phake::verify($opml)->exportFile($file, $user, $flat);
@@ -314,10 +312,10 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideOpmlImports */
     public function testImportFromOpml(string $cmd, int $exitStatus, string $file, string $user, bool $flat, bool $replace): void {
         $opml = \Phake::mock(OPML::class);
+        \Phake::when(Arsse::$obj)->get(OPML::class)->thenReturn($opml);
         \Phake::when($opml)->importFile("php://input", $user, $flat, $replace)->thenReturn(true);
         \Phake::when($opml)->importFile("good.opml", $user, $flat, $replace)->thenReturn(true);
         \Phake::when($opml)->importFile("bad.opml", $user, $flat, $replace)->thenThrow(new \JKingWeb\Arsse\ImportExport\Exception("fileUnreadable"));
-        \Phake::when($this->cli)->getInstance(OPML::class)->thenReturn($opml);
         $this->assertConsole($this->cli, $cmd, $exitStatus);
         \Phake::verify($this->cli)->loadConf;
         \Phake::verify($opml)->importFile($file, $user, $flat, $replace);

@@ -90,7 +90,7 @@ class REST {
             // modify the request to have an uppercase method and a stripped target
             $req = $req->withMethod(strtoupper($req->getMethod()))->withRequestTarget($target);
             // fetch the correct handler
-            $drv = $this->getHandler($class);
+            $drv = Arsse::$obj->get($class);
             // generate a response
             if ($req->getMethod() === "HEAD") {
                 // if the request is a HEAD request, we act exactly as if it were a GET request, and simply remove the response body later
@@ -103,11 +103,6 @@ class REST {
         }
         // modify the response so that it has all the required metadata
         return $this->normalizeResponse($res, $req);
-    }
-
-    public function getHandler(string $className): REST\Handler {
-        // instantiate the API handler
-        return new $className();
     }
 
     public function apiMatch(string $url): array {

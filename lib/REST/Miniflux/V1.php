@@ -214,11 +214,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function __construct() {
     }
 
-    /** @codeCoverageIgnore */
-    protected function getInstance(string $class) {
-        return new $class;
-    }
-
     protected function authenticate(ServerRequestInterface $req): bool {
         // first check any tokens; this is what Miniflux does
         if ($req->hasHeader("X-Auth-Token")) {
@@ -1183,7 +1178,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function opmlImport(string $data): ResponseInterface {
         try {
-            $this->getInstance(OPML::class)->import(Arsse::$user->id, $data);
+            Arsse::$obj->get(OPML::class)->import(Arsse::$user->id, $data);
         } catch (ImportException $e) {
             switch ($e->getCode()) {
                 case 10611:
@@ -1204,7 +1199,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function opmlExport(): ResponseInterface {
-        return new GenericResponse($this->getInstance(OPML::class)->export(Arsse::$user->id), 200, ['Content-Type' => "application/xml"]);
+        return new GenericResponse(Arsse::$obj->get(OPML::class)->export(Arsse::$user->id), 200, ['Content-Type' => "application/xml"]);
     }
 
     public static function tokenGenerate(string $user, string $label): string {

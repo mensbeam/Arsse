@@ -286,14 +286,6 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    public function testCreateHandlers(): void {
-        $r = new REST();
-        foreach (REST::API_LIST as $api) {
-            $class = $api['class'];
-            $this->assertInstanceOf(Handler::class, $r->getHandler($class));
-        }
-    }
-
     /** @dataProvider provideMockRequests */
     public function testDispatchRequests(ServerRequest $req, string $method, bool $called, string $class = "", string $target = ""): void {
         $r = \Phake::partialMock(REST::class);
@@ -305,7 +297,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         });
         if ($called) {
             $h = \Phake::mock($class);
-            \Phake::when($r)->getHandler($class)->thenReturn($h);
+            \Phake::when(Arsse::$obj)->get($class)->thenReturn($h);
             \Phake::when($h)->dispatch->thenReturn(new EmptyResponse(204));
         }
         $out = $r->dispatch($req);

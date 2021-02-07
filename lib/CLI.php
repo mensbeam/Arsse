@@ -182,26 +182,26 @@ USAGE_TEXT;
                     echo Arsse::VERSION.\PHP_EOL;
                     return 0;
                 case "daemon":
-                    $this->getInstance(Service::class)->watch(true);
+                    Arsse::$obj->get(Service::class)->watch(true);
                     return 0;
                 case "feed refresh":
                     return (int) !Arsse::$db->feedUpdate((int) $args['<n>'], true);
                 case "feed refresh-all":
-                    $this->getInstance(Service::class)->watch(false);
+                    Arsse::$obj->get(Service::class)->watch(false);
                     return 0;
                 case "conf save-defaults":
                     $file = $this->resolveFile($args['<file>'], "w");
-                    return (int) !$this->getInstance(Conf::class)->exportFile($file, true);
+                    return (int) !Arsse::$obj->get(Conf::class)->exportFile($file, true);
                 case "user":
                     return $this->userManage($args);
                 case "export":
                     $u = $args['<username>'];
                     $file = $this->resolveFile($args['<file>'], "w");
-                    return (int) !$this->getInstance(OPML::class)->exportFile($file, $u, ($args['--flat'] || $args['-f']));
+                    return (int) !Arsse::$obj->get(OPML::class)->exportFile($file, $u, ($args['--flat'] || $args['-f']));
                 case "import":
                     $u = $args['<username>'];
                     $file = $this->resolveFile($args['<file>'], "r");
-                    return (int) !$this->getInstance(OPML::class)->importFile($file, $u, ($args['--flat'] || $args['-f']), ($args['--replace'] || $args['-r']));
+                    return (int) !Arsse::$obj->get(OPML::class)->importFile($file, $u, ($args['--flat'] || $args['-f']), ($args['--replace'] || $args['-r']));
             }
         } catch (AbstractException $e) {
             $this->logError($e->getMessage());
@@ -214,11 +214,6 @@ USAGE_TEXT;
         fwrite(STDERR, $msg.\PHP_EOL);
     }
 
-    /** @codeCoverageIgnore */
-    protected function getInstance(string $class) {
-        return new $class;
-    }
-
     protected function userManage($args): int {
         $cmd = $this->command(["add", "remove", "set-pass", "unset-pass", "list", "auth"], $args);
         switch ($cmd) {
@@ -226,7 +221,7 @@ USAGE_TEXT;
                 return $this->userAddOrSetPassword("add", $args["<username>"], $args["<password>"]);
             case "set-pass":
                 if ($args['--fever']) {
-                    $passwd = $this->getInstance(Fever::class)->register($args["<username>"], $args["<password>"]);
+                    $passwd = Arsse::$obj->get(Fever::class)->register($args["<username>"], $args["<password>"]);
                     if (is_null($args["<password>"])) {
                         echo $passwd.\PHP_EOL;
                     }
@@ -237,7 +232,7 @@ USAGE_TEXT;
                 // no break
             case "unset-pass":
                 if ($args['--fever']) {
-                    $this->getInstance(Fever::class)->unregister($args["<username>"]);
+                    Arsse::$obj->get(Fever::class)->unregister($args["<username>"]);
                 } else {
                     Arsse::$user->passwordUnset($args["<username>"], $args["--oldpass"]);
                 }
@@ -271,7 +266,7 @@ USAGE_TEXT;
     }
 
     protected function userAuthenticate(string $user, string $password, bool $fever = false): int {
-        $result = $fever ? $this->getInstance(Fever::class)->authenticate($user, $password) : Arsse::$user->auth($user, $password);
+        $result = $fever ? Arsse::$obj->get(Fever::class)->authenticate($user, $password) : Arsse::$user->auth($user, $password);
         if ($result) {
             echo Arsse::$lang->msg("CLI.Auth.Success").\PHP_EOL;
             return 0;

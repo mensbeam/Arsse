@@ -211,8 +211,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
                 throw $u[2];
             }
         });
-        $this->h = $this->createPartialMock(V1::class, ["now"]);
-        $this->h->method("now")->willReturn(Date::normalize(self::NOW));
+        \Phake::when(Arsse::$obj)->get(\DateTimeImmutable::class)->thenReturn(new \DateTimeImmutable(self::NOW));
         $this->assertMessage($exp, $this->req("GET", $route, "", [], $user));
     }
 
@@ -240,8 +239,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideUserModifications */
     public function testModifyAUser(bool $admin, string $url, array $body, $in1, $out1, $in2, $out2, $in3, $out3, ResponseInterface $exp): void {
-        $this->h = $this->createPartialMock(V1::class, ["now"]);
-        $this->h->method("now")->willReturn(Date::normalize(self::NOW));
+        \Phake::when(Arsse::$obj)->get(\DateTimeImmutable::class)->thenReturn(new \DateTimeImmutable(self::NOW));
         Arsse::$user = $this->createMock(User::class);
         Arsse::$user->method("begin")->willReturn($this->transaction);
         Arsse::$user->method("propertiesGet")->willReturnCallback(function(string $u, bool $includeLarge) use ($admin) {
@@ -321,8 +319,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideUserAdditions */
     public function testAddAUser(array $body, $in1, $out1, $in2, $out2, ResponseInterface $exp): void {
-        $this->h = $this->createPartialMock(V1::class, ["now"]);
-        $this->h->method("now")->willReturn(Date::normalize(self::NOW));
+        \Phake::when(Arsse::$obj)->get(\DateTimeImmutable::class)->thenReturn(new \DateTimeImmutable(self::NOW));
         Arsse::$user = $this->createMock(User::class);
         Arsse::$user->method("begin")->willReturn($this->transaction);
         Arsse::$user->method("propertiesGet")->willReturnCallback(function(string $u, bool $includeLarge) {

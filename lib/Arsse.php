@@ -7,8 +7,10 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 class Arsse {
-    public const VERSION = "0.8.5";
+    public const VERSION = "0.9.0";
 
+    /** @var Factory */
+    public static $obj;
     /** @var Lang */
     public static $lang;
     /** @var Conf  */
@@ -19,6 +21,7 @@ class Arsse {
     public static $user;
 
     public static function load(Conf $conf): void {
+        static::$obj = static::$obj ?? new Factory;
         static::$lang = static::$lang ?? new Lang;
         static::$conf = $conf;
         static::$lang->set($conf->lang);

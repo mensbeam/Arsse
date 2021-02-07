@@ -1700,8 +1700,7 @@ LONG_STRING;
     public function testRetrieveHeadlines(bool $full, array $in, $out, Context $c, array $fields, array $order, ResponseInterface $exp): void {
         $base = ['op' => $full ? "getHeadlines" : "getCompactHeadlines", 'sid' => "PriestsOfSyrinx"];
         $in = array_merge($base, $in);
-        $this->h = \Phake::partialMock(API::class);
-        \Phake::when($this->h)->now->thenReturn(Date::normalize(self::NOW));
+        \Phake::when(Arsse::$obj)->get(\DateTimeImmutable::class)->thenReturn(new \DateTimeImmutable(self::NOW));
         \Phake::when(Arsse::$db)->labelList->thenReturn(new Result($this->v($this->labels)));
         \Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result($this->v($this->usedLabels)));
         \Phake::when(Arsse::$db)->articleLabelsGet->thenReturn([]);

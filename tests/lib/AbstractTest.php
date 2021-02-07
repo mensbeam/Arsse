@@ -13,6 +13,7 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\Db\Driver;
 use JKingWeb\Arsse\Db\Result;
+use JKingWeb\Arsse\Factory;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\Misc\URL;
@@ -45,6 +46,11 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         }
         if ($loadLang) {
             Arsse::$lang = new \JKingWeb\Arsse\Lang();
+            // also create the object factory as a mock
+            Arsse::$obj = \Phake::mock(Factory::class);
+            \Phake::when(Arsse::$obj)->get->thenReturnCallback(function(string $class) {
+                return new $class;
+            });
         }
     }
 

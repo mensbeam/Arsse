@@ -16,9 +16,8 @@ abstract class AbstractHandler implements Handler {
     abstract public function __construct();
     abstract public function dispatch(ServerRequestInterface $req): ResponseInterface;
 
-    /** @codeCoverageIgnore */
     protected function now(): \DateTimeImmutable {
-        return Date::normalize("now");
+        return Arsse::$obj->get(\DateTimeImmutable::class)->setTimezone(new \DateTimeZone("UTC"));
     }
 
     protected function isAdmin(): bool {
