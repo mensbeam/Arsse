@@ -143,8 +143,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'GET'                        => ["getCategoryFeeds",      false, true,  false, false, []],
         ],
         '/categories/1/mark-all-as-read' => [
+            'PUT'                        => ["markCategory",          false, true,  false, false, []],
         ],
-        'PUT'                        => ["markCategory",          false, true,  false, false, []],
         '/discover'                      => [
             'POST'                       => ["discoverSubscriptions", false, false, true,  false, ["url"]],
         ],
