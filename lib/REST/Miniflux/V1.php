@@ -263,7 +263,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         if ($reqBody) {
             if ($func === "opmlImport") {
-                $args[] = (string) $req->getBody();
+                $data = (string) $req->getBody();
             } else {
                 $data = (string) $req->getBody();
                 if (strlen($data)) {
@@ -1188,14 +1188,14 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 case 10613:
                     return new ErrorResponse("InvalidImportCategory", 422);
                 case 10614:
-                    return new ErrorResponse("DuplicateImportCatgory", 422);
+                    return new ErrorResponse("DuplicateImportCategory", 422);
                 case 10615:
                     return new ErrorResponse("InvalidImportLabel", 422);
             }
         } catch (FeedException $e) {
             return new ErrorResponse(["FailedImportFeed", 'url' => $e->getParams()['url'], 'code' => $e->getCode()], 502);
         }
-        return new Response(['message' => Arsse::$lang->msg("ImportSuccess")]);
+        return new Response(['message' => Arsse::$lang->msg("API.Miniflux.ImportSuccess")]);
     }
 
     protected function opmlExport(): ResponseInterface {

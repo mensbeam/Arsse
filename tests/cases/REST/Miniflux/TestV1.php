@@ -16,12 +16,15 @@ use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\REST\Miniflux\V1;
 use JKingWeb\Arsse\REST\Miniflux\ErrorResponse;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
+use JKingWeb\Arsse\ImportExport\Exception as ImportException;
+use JKingWeb\Arsse\ImportExport\OPML;
 use JKingWeb\Arsse\User\ExceptionConflict;
 use JKingWeb\Arsse\User\ExceptionInput as UserExceptionInput;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\JsonResponse as Response;
 use Laminas\Diactoros\Response\EmptyResponse;
 use JKingWeb\Arsse\Test\Result;
+use Laminas\Diactoros\Response\TextResponse;
 
 /** @covers \JKingWeb\Arsse\REST\Miniflux\V1<extended> */
 class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -933,5 +936,39 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testRefreshAllFeeds(): void {
         $this->assertMessage(new EmptyResponse(204), $this->req("PUT", "/feeds/refresh"));
+    }
+
+    /** @dataProvider provideImports */
+    public function testImport($out, ResponseInterface $exp): void {
+        $opml = \Phake::mock(OPML::class);
+        \Phake::when(Arsse::$obj)->get(OPML::class)->thenReturn($opml);
+        if ($out instanceof \Exception) {
+            \Phake::when($opml)->import->thenThrow($out);
+        } else {
+            \Phake::when($opml)->import->thenReturn($out);
+        }
+        $this->assertMessage($exp, $this->req("POST", "/import", "IMPORT DATA"));
+        \Phake::verify($opml)->import(Arsse::$user->id, "IMPORT DATA");
+    }
+
+    public function provideImports(): iterable {
+        self::clearData();
+        return [
+            [new ImportException("invalidSyntax"),                              new ErrorResponse("InvalidBodyXML", 400)],
+            [new ImportException("invalidSemantics"),                           new ErrorResponse("InvalidBodyOPML", 422)],
+            [new ImportException("invalidFolderName"),                          new ErrorResponse("InvalidImportCategory", 422)],
+            [new ImportException("invalidFolderCopy"),                          new ErrorResponse("DuplicateImportCategory", 422)],
+            [new ImportException("invalidTagName"),                             new ErrorResponse("InvalidImportLabel", 422)],
+            [new FeedException("invalidUrl", ['url' => "http://example.com/"]), new ErrorResponse(["FailedImportFeed", 'url' => "http://example.com/", 'code' => 10502], 502)],
+            [true,                                                              new Response(['message' => Arsse::$lang->msg("API.Miniflux.ImportSuccess")])],
+        ];
+    }
+
+    public function testExport(): void {
+        $opml = \Phake::mock(OPML::class);
+        \Phake::when(Arsse::$obj)->get(OPML::class)->thenReturn($opml);
+        \Phake::when($opml)->export->thenReturn("EXPORT DATA");
+        $this->assertMessage(new TextResponse("EXPORT DATA", 200, ['Content-Type' => "application/xml"]), $this->req("GET", "/export"));
+        \Phake::verify($opml)->export(Arsse::$user->id);
     }
 }
