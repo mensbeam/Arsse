@@ -667,6 +667,14 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
+    public function testModifyAFeedWithNoBody(): void {
+        $this->h = \Phake::partialMock(V1::class);
+        \Phake::when($this->h)->getFeed->thenReturn(new Response(self::FEEDS_OUT[0]));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn(true);
+        $this->assertMessage(new Response(self::FEEDS_OUT[0]), $this->req("PUT", "/feeds/2112", ""));
+        \Phake::verify(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 2112, []);
+    }
+
     public function testDeleteAFeed(): void {
         \Phake::when(Arsse::$db)->subscriptionRemove->thenReturn(true);
         $this->assertMessage(new EmptyResponse(204), $this->req("DELETE", "/feeds/2112"));
@@ -970,5 +978,35 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when($opml)->export->thenReturn("EXPORT DATA");
         $this->assertMessage(new TextResponse("EXPORT DATA", 200, ['Content-Type' => "application/xml"]), $this->req("GET", "/export"));
         \Phake::verify($opml)->export(Arsse::$user->id);
+    }
+
+    public function testGenerateTokens(): void {
+        \Phake::when(Arsse::$db)->tokenCreate->thenReturn("RANDOM TOKEN");
+        $this->assertSame("RANDOM TOKEN", V1::tokenGenerate("ook", "Eek"));
+        \Phake::verify(Arsse::$db)->tokenCreate("ook", "miniflux.login", \Phake::capture($token), null, "Eek");
+        $this->assertRegExp("/^[A-Za-z0-9_\-]{43}=$/", $token);
+    }
+
+    public function testListTheTokensOfAUser(): void {
+        $out = [
+            ['id' => "TOKEN 1", 'data' => "Ook"],
+            ['id' => "TOKEN 2", 'data' => "Eek"],
+            ['id' => "TOKEN 3", 'data' => "Ack"],
+        ];
+        $exp = [
+            ['label' => "Ook", 'id' => "TOKEN 1"],
+            ['label' => "Eek", 'id' => "TOKEN 2"],
+            ['label' => "Ack", 'id' => "TOKEN 3"],
+        ];
+        \Phake::when(Arsse::$db)->tokenList->thenReturn(new Result($this->v($out)));
+        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        $this->assertSame($exp, V1::tokenList("john.doe@example.com"));
+        \Phake::verify(Arsse::$db)->tokenList("john.doe@example.com", "miniflux.login");
+    }
+
+    public function testListTheTokensOfAMissingUser(): void {
+        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
+        $this->assertException("doesNotExist", "User", "ExceptionConflict");
+        V1::tokenList("john.doe@example.com");
     }
 }

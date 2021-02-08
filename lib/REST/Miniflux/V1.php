@@ -1203,7 +1203,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public static function tokenGenerate(string $user, string $label): string {
-        // Miniflux produces tokenss in base64url alphabet
+        // Miniflux produces tokens in base64url alphabet
         $t = str_replace(["+", "/"], ["-", "_"], base64_encode(random_bytes(self::TOKEN_LENGTH)));
         return Arsse::$db->tokenCreate($user, "miniflux.login", $t, null, $label);
     }
