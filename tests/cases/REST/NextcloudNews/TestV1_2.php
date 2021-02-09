@@ -317,6 +317,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         // create a mock user manager
         Arsse::$user = \Phake::mock(User::class);
         Arsse::$user->id = "john.doe@example.com";
+        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['admin' => true]);
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
         $this->transaction = \Phake::mock(Transaction::class);
@@ -629,6 +630,13 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/feeds/all"));
     }
 
+    public function testListStaleFeedsWithoutAuthority(): void {
+        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['admin' => false]);
+        $exp = new EmptyResponse(403);
+        $this->assertMessage($exp, $this->req("GET", "/feeds/all"));
+        \Phake::verify(Arsse::$db, \Phake::times(0))->feedListStale;
+    }
+
     public function testUpdateAFeed(): void {
         $in = [
             ['feedId' =>    42], // valid
@@ -648,6 +656,13 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[2])));
         $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[3])));
         $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[4])));
+    }
+
+    public function testUpdateAFeedWithoutAuthority(): void {
+        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['admin' => false]);
+        $exp = new EmptyResponse(403);
+        $this->assertMessage($exp, $this->req("GET", "/feeds/update", ['feedId' => 42]));
+        \Phake::verify(Arsse::$db, \Phake::times(0))->feedUpdate;
     }
 
     /** @dataProvider provideArticleQueries */
@@ -849,11 +864,25 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->feedCleanup();
     }
 
+    public function testCleanUpBeforeUpdateWithoutAuthority(): void {
+        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['admin' => false]);
+        $exp = new EmptyResponse(403);
+        $this->assertMessage($exp, $this->req("GET", "/cleanup/before-update"));
+        \Phake::verify(Arsse::$db, \Phake::times(0))->feedCleanup;
+    }
+
     public function testCleanUpAfterUpdate(): void {
         \Phake::when(Arsse::$db)->articleCleanup()->thenReturn(true);
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("GET", "/cleanup/after-update"));
         \Phake::verify(Arsse::$db)->articleCleanup();
+    }
+
+    public function testCleanUpAfterUpdateWithoutAuthority(): void {
+        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['admin' => false]);
+        $exp = new EmptyResponse(403);
+        $this->assertMessage($exp, $this->req("GET", "/cleanup/after-update"));
+        \Phake::verify(Arsse::$db, \Phake::times(0))->feedCleanup;
     }
 
     public function testQueryTheUserStatus(): void {

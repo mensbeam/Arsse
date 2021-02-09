@@ -24,7 +24,6 @@ It allows organizing newsfeeds into single-level folders, and supports a wide ra
 - When marking articles as starred the feed ID is ignored, as they are not needed to establish uniqueness
 - The feed updater ignores the `userId` parameter: feeds in The Arsse are deduplicated, and have no owner
 - The `/feeds/all` route lists only feeds which should be checked for updates, and it also returns all `userId` attributes as empty strings: feeds in The Arsse are deduplicated, and have no owner
-- The API's "updater" routes do not require administrator priviledges as The Arsse has no concept of user classes
 - The "updater" console commands mentioned in the protocol specification are not implemented, as The Arsse does not implement the required Nextcloud subsystems
 - The `lastLoginTimestamp` attribute of the user metadata is always the current time: The Arsse's implementation of the protocol is fully stateless
 - Syntactically invalid JSON input will yield a `400 Bad Request` response instead of falling back to GET parameters

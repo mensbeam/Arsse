@@ -360,6 +360,9 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     // return list of feeds which should be refreshed
     protected function feedListStale(array $url, array $data): ResponseInterface {
+        if (!$this->isAdmin()) {
+            return new EmptyResponse(403);
+        }
         // list stale feeds which should be checked for updates
         $feeds = Arsse::$db->feedListStale();
         $out = [];
@@ -372,6 +375,9 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     // refresh a feed
     protected function feedUpdate(array $url, array $data): ResponseInterface {
+        if (!$this->isAdmin()) {
+            return new EmptyResponse(403);
+        }
         try {
             Arsse::$db->feedUpdate($data['feedId']);
         } catch (ExceptionInput $e) {
@@ -667,11 +673,17 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function cleanupBefore(array $url, array $data): ResponseInterface {
+        if (!$this->isAdmin()) {
+            return new EmptyResponse(403);
+        }
         Service::cleanupPre();
         return new EmptyResponse(204);
     }
 
     protected function cleanupAfter(array $url, array $data): ResponseInterface {
+        if (!$this->isAdmin()) {
+            return new EmptyResponse(403);
+        }
         Service::cleanupPost();
         return new EmptyResponse(204);
     }
