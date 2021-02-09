@@ -19,8 +19,8 @@ use JKingWeb\Arsse\REST\TinyTinyRSS\API;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\JsonResponse as Response;
 use Laminas\Diactoros\Response\EmptyResponse;
-/** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\API<extended>
 
+/** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\API<extended>
  *  @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Exception */
 class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     protected const NOW = "2020-12-21T23:09:17.189065Z";
@@ -1317,7 +1317,7 @@ LONG_STRING;
         // create a mock-current time
         \Phake::when(Arsse::$obj)->get(\DateTimeImmutable::class)->thenReturn(new \DateTimeImmutable(self::NOW));
         // TT-RSS always responds the same regardless of success or failure
-        $this->assertMessage($this->respGood(['status' => "OK"]), $this->req($in)); 
+        $this->assertMessage($this->respGood(['status' => "OK"]), $this->req($in));
         if (isset($c)) {
             \Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, ['read' => true], $c);
         } else {

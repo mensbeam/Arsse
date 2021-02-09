@@ -59,7 +59,6 @@ class ValueInfo {
         'float'     => ["U.u",                    "U.u"                  ],
     ];
 
-
     public static function normalize($value, int $type, string $dateInFormat = null, $dateOutFormat = null) {
         $allowNull = ($type & self::M_NULL);
         $strict = ($type & (self::M_STRICT | self::M_DROP));

@@ -55,7 +55,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     ];
     protected const VALID_JSON = [
         // user properties which map directly to Arsse user metadata are listed separately;
-        // not all these properties are used by our implementation, but they are treated 
+        // not all these properties are used by our implementation, but they are treated
         // with the same strictness as in Miniflux to ease cross-compatibility
         'url'               => "string",
         'username'          => "string",
@@ -90,7 +90,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'stylesheet'              => ["stylesheet",   ""],
     ];
     /** A map between Miniflux's input properties and our input properties when modifiying feeds
-     * 
+     *
      * Miniflux also allows changing the following properties:
      *
      *  - feed_url
@@ -107,7 +107,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
      *  or cannot be changed because feeds are deduplicated and changing
      *  how they are fetched is not practical with our implementation.
      *  The properties are still checked for type and syntactic validity
-     *  where practical, on the assumption Miniflux would also reject 
+     *  where practical, on the assumption Miniflux would also reject
      *  invalid values.
      */
     protected const FEED_META_MAP = [
@@ -118,11 +118,11 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'blocklist_rules' => "block_rule",
     ];
     protected const ARTICLE_COLUMNS = [
-        "id", "url", "title", "subscription", 
+        "id", "url", "title", "subscription",
         "author", "fingerprint",
-        "published_date", "modified_date", 
+        "published_date", "modified_date",
         "starred", "unread", "hidden",
-        "content", "media_url", "media_type"
+        "content", "media_url", "media_type",
     ];
     protected const CALLS = [                // handler method        Admin  Path   Body   Query  Required fields
         '/categories'                    => [
@@ -291,7 +291,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         try {
             return $this->$func(...$args);
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (Exception $e) {
             // if there was a REST exception return 400
             return new EmptyResponse(400);
@@ -348,7 +348,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 return new ErrorResponse(["InvalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])], 422);
             } elseif (
                 (in_array($k, ["keeplist_rules", "blocklist_rules"]) && !Rule::validate($body[$k]))
-                || (in_array($k, ["url", "feed_url"]) && !URL::absolute($body[$k])) 
+                || (in_array($k, ["url", "feed_url"]) && !URL::absolute($body[$k]))
                 || ($k === "category_id" && $body[$k] < 1)
                 || ($k === "status" && !in_array($body[$k], ["read", "unread", "removed"]))
             ) {
@@ -492,7 +492,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function editUser(string $user, array $data): array {
         // map Miniflux properties to internal metadata properties
         $in = [];
-        foreach (self::USER_META_MAP as $i => [$o,]) {
+        foreach (self::USER_META_MAP as $i => [$o]) {
             if (isset($data[$i])) {
                 if ($i === "entry_sorting_direction") {
                     $in[$o] = $data[$i] === "asc";
@@ -640,9 +640,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     /** Returns a useful subset of user metadata
-     * 
+     *
      * The following keys are included:
-     * 
+     *
      * - "num": The user's numeric ID,
      * - "root": The effective name of the root folder
      */
@@ -880,8 +880,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new ErrorResponse("404", 404);
         }
         return new Response([
-            'id' => $icon['id'],
-            'data' => $icon['type'].";base64,".base64_encode($icon['data']),
+            'id'        => $icon['id'],
+            'data'      => $icon['type'].";base64,".base64_encode($icon['data']),
             'mime_type' => $icon['type'],
         ]);
     }
@@ -960,7 +960,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                     'url'       => $entry['media_url'],
                     'mime_type' => $entry['media_type'] ?: "application/octet-stream",
                     'size'      => 0,
-                ]
+                ],
             ];
         } else {
             $enclosures = null;
@@ -1030,7 +1030,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $out['feed'] = $this->transformFeed(Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, $out['feed_id']), $meta['num'], $meta['root'], $meta['tz']);
         return $out;
     }
-    
+
     protected function getEntries(array $query): ResponseInterface {
         try {
             return new Response($this->listEntries($query, new Context));
@@ -1038,7 +1038,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new ErrorResponse("MissingCategory", 400);
         }
     }
-    
+
     protected function getFeedEntries(array $path, array $query): ResponseInterface {
         $c = (new Context)->subscription((int) $path[1]);
         try {
@@ -1048,7 +1048,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new ErrorResponse("404", 404);
         }
     }
-    
+
     protected function getCategoryEntries(array $path, array $query): ResponseInterface {
         $query['category_id'] = (int) $path[1];
         try {
@@ -1057,7 +1057,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new ErrorResponse("404", 404);
         }
     }
-    
+
     protected function getEntry(array $path): ResponseInterface {
         try {
             return new Response($this->findEntry((int) $path[1]));
@@ -1065,7 +1065,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new ErrorResponse("404", 404);
         }
     }
-    
+
     protected function getFeedEntry(array $path): ResponseInterface {
         $c = (new Context)->subscription((int) $path[1]);
         try {
@@ -1074,7 +1074,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new ErrorResponse("404", 404);
         }
     }
-    
+
     protected function getCategoryEntry(array $path): ResponseInterface {
         $c = new Context;
         if ($path[1] === "1") {

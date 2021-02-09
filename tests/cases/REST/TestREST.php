@@ -9,7 +9,6 @@ namespace JKingWeb\Arsse\TestCase\REST;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\REST;
-use JKingWeb\Arsse\REST\Handler;
 use JKingWeb\Arsse\REST\Exception501;
 use JKingWeb\Arsse\REST\NextcloudNews\V1_2 as NCN;
 use JKingWeb\Arsse\REST\TinyTinyRSS\API as TTRSS;

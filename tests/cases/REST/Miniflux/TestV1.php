@@ -12,7 +12,6 @@ use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\Db\ExceptionInput;
-use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\REST\Miniflux\V1;
 use JKingWeb\Arsse\REST\Miniflux\ErrorResponse;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
@@ -46,7 +45,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ['id' => 42,   'url' => "http://example.com/42",   'title' => "Title 42",   'subscription' => 55, 'author' => "Thomas Costain", 'fingerprint' => "FINGERPRINT", 'published_date' => "2021-01-22 02:21:12", 'modified_date' => "2021-01-22 13:44:47", 'starred' => 0, 'unread' => 0, 'hidden' => 0, 'content' => "Content 42",   'media_url' => null,                                'media_type' => null],
         ['id' => 44,   'url' => "http://example.com/44",   'title' => "Title 44",   'subscription' => 55, 'author' => null,             'fingerprint' => "FINGERPRINT", 'published_date' => "2021-01-22 02:21:12", 'modified_date' => "2021-01-22 13:44:47", 'starred' => 1, 'unread' => 1, 'hidden' => 0, 'content' => "Content 44",   'media_url' => "http://example.com/44/enclosure",   'media_type' => null],
         ['id' => 47,   'url' => "http://example.com/47",   'title' => "Title 47",   'subscription' => 55, 'author' => null,             'fingerprint' => "FINGERPRINT", 'published_date' => "2021-01-22 02:21:12", 'modified_date' => "2021-01-22 13:44:47", 'starred' => 0, 'unread' => 1, 'hidden' => 1, 'content' => "Content 47",   'media_url' => "http://example.com/47/enclosure",   'media_type' => ""],
-        ['id' => 2112, 'url' => "http://example.com/2112", 'title' => "Title 2112", 'subscription' => 55, 'author' => null,             'fingerprint' => "FINGERPRINT", 'published_date' => "2021-01-22 02:21:12", 'modified_date' => "2021-01-22 13:44:47", 'starred' => 0, 'unread' => 0, 'hidden' => 1, 'content' => "Content 2112", 'media_url' => "http://example.com/2112/enclosure", 'media_type' => "image/png"]
+        ['id' => 2112, 'url' => "http://example.com/2112", 'title' => "Title 2112", 'subscription' => 55, 'author' => null,             'fingerprint' => "FINGERPRINT", 'published_date' => "2021-01-22 02:21:12", 'modified_date' => "2021-01-22 13:44:47", 'starred' => 0, 'unread' => 0, 'hidden' => 1, 'content' => "Content 2112", 'media_url' => "http://example.com/2112/enclosure", 'media_type' => "image/png"],
     ];
     protected const ENTRIES_OUT = [
         ['id' => 42,   'user_id' => 42, 'feed_id' => 55, 'status' => "read",    'hash' => "FINGERPRINT", 'title' => "Title 42",   'url' => "http://example.com/42",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 42",   'author' => "Thomas Costain", 'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => null, 'feed' => self::FEEDS_OUT[1]],
@@ -663,7 +662,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             [['crawler' => false],                   ['scrape' => false],                   true,                                 $success],
             [['keeplist_rules' => ""],               ['keep_rule' => ""],                   true,                                 $success],
             [['blocklist_rules' => "ook"],           ['block_rule' => "ook"],               true,                                 $success],
-            [['title' => "Ook!", 'crawler' => true], ['title' => "Ook!", 'scrape' => true], true,                                 $success]
+            [['title' => "Ook!", 'crawler' => true], ['title' => "Ook!", 'scrape' => true], true,                                 $success],
         ];
     }
 
@@ -857,8 +856,8 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             [['entry_ids' => 1, 'status' => "read"],         null,                                 new ErrorResponse(["InvalidInputType", 'field' => "entry_ids", 'expected' => "array", 'actual' => "integer"], 422)],
             [['entry_ids' => ["1"], 'status' => "read"],     null,                                 new ErrorResponse(["InvalidInputType", 'field' => "entry_ids", 'expected' => "integer", 'actual' => "string"], 422)],
             [['entry_ids' => [1], 'status' => 1],            null,                                 new ErrorResponse(["InvalidInputType", 'field' => "status", 'expected' => "string", 'actual' => "integer"], 422)],
-            [['entry_ids' => [0], 'status' => "read"],       null,                                 new ErrorResponse(["InvalidInputValue", 'field' => "entry_ids",], 422)],
-            [['entry_ids' => [1], 'status' => "reread"],     null,                                 new ErrorResponse(["InvalidInputValue", 'field' => "status",], 422)],
+            [['entry_ids' => [0], 'status' => "read"],       null,                                 new ErrorResponse(["InvalidInputValue", 'field' => "entry_ids"], 422)],
+            [['entry_ids' => [1], 'status' => "reread"],     null,                                 new ErrorResponse(["InvalidInputValue", 'field' => "status"], 422)],
             [['entry_ids' => [1, 2], 'status' => "read"],    ['read' => true,  'hidden' => false], new EmptyResponse(204)],
             [['entry_ids' => [1, 2], 'status' => "unread"],  ['read' => false, 'hidden' => false], new EmptyResponse(204)],
             [['entry_ids' => [1, 2], 'status' => "removed"], ['read' => true,  'hidden' => true],  new EmptyResponse(204)],

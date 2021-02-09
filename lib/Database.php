@@ -755,7 +755,7 @@ class Database {
     }
 
     /** Lists a user's subscriptions, returning various data
-     * 
+     *
      * Each record has the following keys:
      *
      * - "id": The numeric identifier of the subscription
@@ -993,7 +993,7 @@ class Database {
      * - "url": The URL of the icon
      * - "type": The Content-Type of the icon e.g. "image/png"
      * - "data": The icon itself, as a binary sring; if $withData is false this will be null
-     * 
+     *
      * If the subscription has no icon null is returned instead of an array
      *
      * @param string|null $user The user who owns the subscription being queried; using null here is supported for TT-RSS and SHOULD NOT be used elsewhere as it leaks information
@@ -1031,7 +1031,7 @@ class Database {
     }
 
     /** Evalutes the filter rules specified for a subscription against every article associated with the subscription's feed
-     * 
+     *
      * @param string $user The user who owns the subscription
      * @param integer $id The identifier of the subscription whose rules are to be evaluated
      */
@@ -1071,7 +1071,6 @@ class Database {
             $this->articleMark($user, ['hidden' => false], (new Context)->articles($unhide), false);
         }
     }
-
 
     /** Ensures the specified subscription exists and raises an exception otherwise
      *
@@ -1747,7 +1746,7 @@ class Database {
             } elseif (!$context->$m) {
                 throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
             }
-            $columns = array_map(function ($c) use ($colDefs) {
+            $columns = array_map(function($c) use ($colDefs) {
                 assert(isset($colDefs[$c]), new Exception("constantUnknown", $c));
                 return $colDefs[$c];
             }, $columns);
@@ -1758,7 +1757,7 @@ class Database {
             if (!$context->not->$m() || !$context->not->$m) {
                 continue;
             }
-            $columns = array_map(function ($c) use ($colDefs) {
+            $columns = array_map(function($c) use ($colDefs) {
                 assert(isset($colDefs[$c]), new Exception("constantUnknown", $c));
                 return $colDefs[$c];
             }, $columns);
