@@ -273,9 +273,9 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testListFeeds(): void {
         \Phake::when(Arsse::$db)->subscriptionList(Arsse::$user->id)->thenReturn(new Result([
-            ['id' => 1, 'feed' => 5, 'title' => "Ankh-Morpork News", 'url' => "http://example.com/feed", 'source' => "http://example.com/", 'edited' => "2019-01-01 21:12:00", 'icon_url' => "http://example.com/favicon.ico"],
-            ['id' => 2, 'feed' => 9, 'title' => "Ook, Ook Eek Ook!", 'url' => "http://example.net/feed", 'source' => "http://example.net/", 'edited' => "1988-06-24 12:21:00", 'icon_url' => ""],
-            ['id' => 3, 'feed' => 1, 'title' => "The Last Soul",     'url' => "http://example.org/feed", 'source' => "http://example.org/", 'edited' => "1991-08-12 03:22:00", 'icon_url' => "http://example.org/favicon.ico"],
+            ['id' => 1, 'feed' => 5, 'title' => "Ankh-Morpork News", 'url' => "http://example.com/feed", 'source' => "http://example.com/", 'edited' => "2019-01-01 21:12:00", 'icon_url' => "http://example.com/favicon.ico", 'icon_id' => 42],
+            ['id' => 2, 'feed' => 9, 'title' => "Ook, Ook Eek Ook!", 'url' => "http://example.net/feed", 'source' => "http://example.net/", 'edited' => "1988-06-24 12:21:00", 'icon_url' => "",                               'icon_id' => null],
+            ['id' => 3, 'feed' => 1, 'title' => "The Last Soul",     'url' => "http://example.org/feed", 'source' => "http://example.org/", 'edited' => "1991-08-12 03:22:00", 'icon_url' => "http://example.org/favicon.ico", 'icon_id' => 42],
         ]));
         \Phake::when(Arsse::$db)->tagSummarize(Arsse::$user->id)->thenReturn(new Result([
             ['id' => 1, 'name' => "Fascinating", 'subscription' => 1],
@@ -285,9 +285,9 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         ]));
         $exp = new JsonResponse([
             'feeds' => [
-                ['id' => 1, 'favicon_id' => 0, 'title' => "Ankh-Morpork News", 'url' => "http://example.com/feed", 'site_url' => "http://example.com/", 'is_spark' => 0, 'last_updated_on_time' => strtotime("2019-01-01T21:12:00Z")],
-                ['id' => 2, 'favicon_id' => 0, 'title' => "Ook, Ook Eek Ook!", 'url' => "http://example.net/feed", 'site_url' => "http://example.net/", 'is_spark' => 0, 'last_updated_on_time' => strtotime("1988-06-24T12:21:00Z")],
-                ['id' => 3, 'favicon_id' => 0, 'title' => "The Last Soul",     'url' => "http://example.org/feed", 'site_url' => "http://example.org/", 'is_spark' => 0, 'last_updated_on_time' => strtotime("1991-08-12T03:22:00Z")],
+                ['id' => 1, 'favicon_id' => 42, 'title' => "Ankh-Morpork News", 'url' => "http://example.com/feed", 'site_url' => "http://example.com/", 'is_spark' => 0, 'last_updated_on_time' => strtotime("2019-01-01T21:12:00Z")],
+                ['id' => 2, 'favicon_id' => 0,  'title' => "Ook, Ook Eek Ook!", 'url' => "http://example.net/feed", 'site_url' => "http://example.net/", 'is_spark' => 0, 'last_updated_on_time' => strtotime("1988-06-24T12:21:00Z")],
+                ['id' => 3, 'favicon_id' => 42, 'title' => "The Last Soul",     'url' => "http://example.org/feed", 'site_url' => "http://example.org/", 'is_spark' => 0, 'last_updated_on_time' => strtotime("1991-08-12T03:22:00Z")],
             ],
             'feeds_groups' => [
                 ['group_id' => 1, 'feed_ids' => "1,2"],
@@ -492,8 +492,17 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testListFeedIcons(): void {
         $iconType = (new \ReflectionClassConstant(API::class, "GENERIC_ICON_TYPE"))->getValue();
         $iconData = (new \ReflectionClassConstant(API::class, "GENERIC_ICON_DATA"))->getValue();
+        \Phake::when(Arsse::$db)->iconList->thenReturn(new Result($this->v([
+            ['id' => 42, 'type' => "image/svg+xml", 'data' => "<svg/>"],
+            ['id' => 44, 'type' => null,            'data' => "IMAGE DATA"],
+            ['id' => 47, 'type' => null,            'data' => null],
+        ])));
         $act = $this->h->dispatch($this->req("api&favicons"));
-        $exp = new JsonResponse(['favicons' => [['id' => 0, 'data' => $iconType.",".$iconData]]]);
+        $exp = new JsonResponse(['favicons' => [
+            ['id' => 0,  'data' => $iconType.",".$iconData],
+            ['id' => 42, 'data' => "image/svg+xml;base64,PHN2Zy8+"],
+            ['id' => 44, 'data' => "application/octet-stream;base64,SU1BR0UgREFUQQ=="],
+        ]]);
         $this->assertMessage($exp, $act);
     }
 

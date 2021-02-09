@@ -150,14 +150,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             $out['feeds_groups'] = $this->getRelationships();
         }
         if ($G['favicons']) {
-            // TODO: implement favicons properly
-            // we provide a single blank favicon for now
-            $out['favicons'] = [
-                [
-                    'id'   => 0,
-                    'data' => self::GENERIC_ICON_TYPE.",".self::GENERIC_ICON_DATA,
-                ],
-            ];
+            $out['favicons'] = $this->getIcons();
         }
         if ($G['items']) {
             $out['items'] = $this->getItems($G);
@@ -333,13 +326,31 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         foreach (arsse::$db->subscriptionList(Arsse::$user->id) as $sub) {
             $out[] = [
                 'id'                   => (int) $sub['id'],
-                'favicon_id'           => 0, // TODO: implement favicons
+                'favicon_id'           => (int) $sub['icon_id'],
                 'title'                => (string) $sub['title'],
                 'url'                  => $sub['url'],
                 'site_url'             => $sub['source'],
                 'is_spark'             => 0,
                 'last_updated_on_time' => Date::transform($sub['edited'], "unix", "sql"),
             ];
+        }
+        return $out;
+    }
+
+    protected function getIcons(): array {
+        $out = [
+            [
+                'id'   => 0,
+                'data' => self::GENERIC_ICON_TYPE.",".self::GENERIC_ICON_DATA,
+            ],
+        ];
+        foreach (Arsse::$db->iconList(Arsse::$user->id) as $icon) {
+            if ($icon['data']) {
+                $out[] = [
+                    'id'   => (int) $icon['id'],
+                    'data' => ($icon['type'] ?: "application/octet-stream").";base64,".base64_encode($icon['data']),
+                ];
+            }
         }
         return $out;
     }
