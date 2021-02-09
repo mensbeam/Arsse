@@ -880,7 +880,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new ErrorResponse("404", 404);
         }
         return new Response([
-            'id'        => $icon['id'],
+            'id'        => (int) $icon['id'],
             'data'      => $icon['type'].";base64,".base64_encode($icon['data']),
             'mime_type' => $icon['type'],
         ]);
@@ -954,9 +954,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($entry['media_url']) {
             $enclosures = [
                 [
-                    'id'        => $entry['id'], // NOTE: We don't have IDs for enclosures, but we also only have one enclosure per entry, so we can just re-use the same ID
+                    'id'        => (int) $entry['id'], // NOTE: We don't have IDs for enclosures, but we also only have one enclosure per entry, so we can just re-use the same ID
                     'user_id'   => $uid,
-                    'entry_id'  => $entry['id'],
+                    'entry_id'  => (int) $entry['id'],
                     'url'       => $entry['media_url'],
                     'mime_type' => $entry['media_type'] ?: "application/octet-stream",
                     'size'      => 0,
