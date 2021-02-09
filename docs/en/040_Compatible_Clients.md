@@ -20,6 +20,24 @@ The Arsse does not at this time have any first party clients. However, because T
    <th colspan="7">Web</th>
   </tr>
   <tr>
+   <td><a href="https://github.com/jakobend/maxiflux">maxiflux</a></td>
+   <td></td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td></td>
+  </tr>
+  <tr>
+   <td><a href="https://github.com/yurikhan/miniflux-reader">Miniflux Reader</a></td>
+   <td></td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td></td>
+  </tr>
+  <tr>
    <td><a href="https://github.com/reminiflux/reminiflux">reminiflux</a></td>
    <td></td>
    <td class="Y">✔</td>
