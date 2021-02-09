@@ -3,6 +3,8 @@ Version 0.9.0 (????-??-??)
 
 New features:
 - Support for the Miniflux protocol (see manual for details)
+- Support for API level 15 of Tiny Tiny RSS
+- Support for feed icons in Fever
 
 Bug fixes:
 - Use icons specified in Atom feeds when available

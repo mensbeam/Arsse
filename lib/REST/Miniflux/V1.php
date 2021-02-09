@@ -30,7 +30,7 @@ use Laminas\Diactoros\Response\TextResponse as GenericResponse;
 use Laminas\Diactoros\Uri;
 
 class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
-    public const VERSION = "2.0.26";
+    public const VERSION = "2.0.28";
 
     protected const ACCEPTED_TYPES_OPML = ["application/xml", "text/xml", "text/x-opml"];
     protected const ACCEPTED_TYPES_JSON = ["application/json"];

@@ -23,7 +23,6 @@ The Fever protocol is incomplete, unusual, _and_ a product of proprietary softwa
 
 - All feeds are considered "Kindling"
 - The "Hot Links" feature is not implemented; when requested, an empty array will be returned. As there is no way to classify a feed as a "Spark" in the protocol itself and no documentation exists on how link temperature was calculated, an implementation is unlikely to appear in the future
-- Favicons are not currently supported; all feeds have a simple blank image as their favicon unless the client finds the icons itself
 
 # Special considerations
 
