@@ -136,6 +136,18 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return implode("/", $path);
     }
 
+    protected function normalizeInput(array $data, array $types, string $dateFormat = null, int $mode = 0): array {
+        $out = [];
+        foreach ($types as $key => $type) {
+            if (isset($data[$key])) {
+                $out[$key] = ValueInfo::normalize($data[$key], $type | $mode, $dateFormat);
+            } else {
+                $out[$key] = null;
+            }
+        }
+        return $out;
+    }
+
     protected function chooseCall(string $url, string $method) {
         // // normalize the URL path: change any IDs to 1 for easier comparison
         $url = $this->normalizePathIds($url);

@@ -8,7 +8,6 @@ namespace JKingWeb\Arsse\REST;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Misc\Date;
-use JKingWeb\Arsse\Misc\ValueInfo;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -45,17 +44,5 @@ abstract class AbstractHandler implements Handler {
             }
         }
         return $data;
-    }
-
-    protected function normalizeInput(array $data, array $types, string $dateFormat = null, int $mode = 0): array {
-        $out = [];
-        foreach ($types as $key => $type) {
-            if (isset($data[$key])) {
-                $out[$key] = ValueInfo::normalize($data[$key], $type | $mode, $dateFormat);
-            } else {
-                $out[$key] = null;
-            }
-        }
-        return $out;
     }
 }

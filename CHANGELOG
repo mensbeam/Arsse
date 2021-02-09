@@ -11,6 +11,7 @@ Bug fixes:
 - Do not return null as subscription unread count
 - Explicitly forbid U+003A COLON and control characters in usernames, for 
   compatibility with RFC 7617
+- Accept "t" and "f" as booleans in Tiny Tiny RSS
 
 Version 0.8.5 (2020-10-27)
 ==========================

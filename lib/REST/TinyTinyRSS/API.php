@@ -12,7 +12,7 @@ use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\Date;
-use JKingWeb\Arsse\Misc\ValueInfo;
+use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\ExceptionType;
 use JKingWeb\Arsse\Db\ExceptionInput;
@@ -46,41 +46,41 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     // valid input
     protected const ACCEPTED_TYPES = ["application/json", "text/json"];
     protected const VALID_INPUT = [
-        'op'                  => ValueInfo::T_STRING,                           // the function ("operation") to perform
-        'sid'                 => ValueInfo::T_STRING,                           // session ID
-        'seq'                 => ValueInfo::T_INT,                              // request number from client
-        'user'                => ValueInfo::T_STRING | ValueInfo::M_STRICT,     // user name for `login`
-        'password'            => ValueInfo::T_STRING | ValueInfo::M_STRICT,     // password for `login` or remote password for `subscribeToFeed`
-        'include_empty'       => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to include empty items in `getFeedTree` and `getCategories`
-        'unread_only'         => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to exclude items without unread articles in `getCategories` and `getFeeds`
-        'enable_nested'       => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to NOT show subcategories in `getCategories
-        'include_nested'      => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to include subcategories in `getFeeds` and the articles thereof in `getHeadlines`
-        'caption'             => ValueInfo::T_STRING | ValueInfo::M_STRICT,     // name for categories, feed, and labels
-        'parent_id'           => ValueInfo::T_INT,                              // parent category for `addCategory` and `moveCategory`
-        'category_id'         => ValueInfo::T_INT,                              // parent category for `subscribeToFeed` and `moveFeed`, and subject for category-modification functions
-        'cat_id'              => ValueInfo::T_INT,                              // parent category for `getFeeds`
-        'label_id'            => ValueInfo::T_INT,                              // label ID in label-related functions
-        'feed_url'            => ValueInfo::T_STRING | ValueInfo::M_STRICT,     // URL of feed in `subscribeToFeed`
-        'login'               => ValueInfo::T_STRING | ValueInfo::M_STRICT,     // remote user name in `subscribeToFeed`
-        'feed_id'             => ValueInfo::T_INT,                              // feed, label, or category ID for various functions
-        'is_cat'              => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether 'feed_id' refers to a category
-        'article_id'          => ValueInfo::T_MIXED,                            // single article ID in `getLabels`; one or more (comma-separated) article IDs in `getArticle`
-        'article_ids'         => ValueInfo::T_STRING,                           // one or more (comma-separated) article IDs in `updateArticle` and `setArticleLabel`
-        'assign'              => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to assign or clear (false) a label in `setArticleLabel`
-        'limit'               => ValueInfo::T_INT,                              // maximum number of records returned in `getFeeds`, `getHeadlines`, and `getCompactHeadlines`
-        'offset'              => ValueInfo::T_INT,                              // number of records to skip in `getFeeds`, for pagination
-        'skip'                => ValueInfo::T_INT,                              // number of records to skip in `getHeadlines` and `getCompactHeadlines`, for pagination
-        'show_excerpt'        => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to include article excerpts in `getHeadlines`
-        'show_content'        => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to include article content in `getHeadlines`
-        'include_attachments' => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to include article enclosures in `getHeadlines`
-        'view_mode'           => ValueInfo::T_STRING,                           // various filters for `getHeadlines`
-        'since_id'            => ValueInfo::T_INT,                              // cut-off article ID for `getHeadlines` and `getCompactHeadlines; returns only higher article IDs when specified
-        'order_by'            => ValueInfo::T_STRING,                           // sort order for `getHeadlines`
-        'include_header'      => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to attach a header to the results of `getHeadlines`
-        'search'              => ValueInfo::T_STRING,                           // search string for `getHeadlines`
-        'field'               => ValueInfo::T_INT,                              // which state to change in `updateArticle`
-        'mode'                => ValueInfo::T_MIXED,                            // whether to set, clear, or toggle the selected state in `updateArticle` (integer), or whether to ignore a certain recent timeframe in `catchupFeed` (string)
-        'data'                => ValueInfo::T_STRING,                           // note text in `updateArticle` if setting a note
+        'op'                  => V::T_STRING,                   // the function ("operation") to perform
+        'sid'                 => V::T_STRING,                   // session ID
+        'seq'                 => V::T_INT,                      // request number from client
+        'user'                => V::T_STRING | V::M_STRICT,     // user name for `login`
+        'password'            => V::T_STRING | V::M_STRICT,     // password for `login` or remote password for `subscribeToFeed`
+        'include_empty'       => V::T_BOOL | V::M_DROP,         // whether to include empty items in `getFeedTree` and `getCategories`
+        'unread_only'         => V::T_BOOL | V::M_DROP,         // whether to exclude items without unread articles in `getCategories` and `getFeeds`
+        'enable_nested'       => V::T_BOOL | V::M_DROP,         // whether to NOT show subcategories in `getCategories
+        'include_nested'      => V::T_BOOL | V::M_DROP,         // whether to include subcategories in `getFeeds` and the articles thereof in `getHeadlines`
+        'caption'             => V::T_STRING | V::M_STRICT,     // name for categories, feed, and labels
+        'parent_id'           => V::T_INT,                      // parent category for `addCategory` and `moveCategory`
+        'category_id'         => V::T_INT,                      // parent category for `subscribeToFeed` and `moveFeed`, and subject for category-modification functions
+        'cat_id'              => V::T_INT,                      // parent category for `getFeeds`
+        'label_id'            => V::T_INT,                      // label ID in label-related functions
+        'feed_url'            => V::T_STRING | V::M_STRICT,     // URL of feed in `subscribeToFeed`
+        'login'               => V::T_STRING | V::M_STRICT,     // remote user name in `subscribeToFeed`
+        'feed_id'             => V::T_INT,                      // feed, label, or category ID for various functions
+        'is_cat'              => V::T_BOOL | V::M_DROP,         // whether 'feed_id' refers to a category
+        'article_id'          => V::T_MIXED,                    // single article ID in `getLabels`; one or more (comma-separated) article IDs in `getArticle`
+        'article_ids'         => V::T_STRING,                   // one or more (comma-separated) article IDs in `updateArticle` and `setArticleLabel`
+        'assign'              => V::T_BOOL | V::M_DROP,         // whether to assign or clear (false) a label in `setArticleLabel`
+        'limit'               => V::T_INT,                      // maximum number of records returned in `getFeeds`, `getHeadlines`, and `getCompactHeadlines`
+        'offset'              => V::T_INT,                      // number of records to skip in `getFeeds`, for pagination
+        'skip'                => V::T_INT,                      // number of records to skip in `getHeadlines` and `getCompactHeadlines`, for pagination
+        'show_excerpt'        => V::T_BOOL | V::M_DROP,         // whether to include article excerpts in `getHeadlines`
+        'show_content'        => V::T_BOOL | V::M_DROP,         // whether to include article content in `getHeadlines`
+        'include_attachments' => V::T_BOOL | V::M_DROP,         // whether to include article enclosures in `getHeadlines`
+        'view_mode'           => V::T_STRING,                   // various filters for `getHeadlines`
+        'since_id'            => V::T_INT,                      // cut-off article ID for `getHeadlines` and `getCompactHeadlines; returns only higher article IDs when specified
+        'order_by'            => V::T_STRING,                   // sort order for `getHeadlines`
+        'include_header'      => V::T_BOOL | V::M_DROP,         // whether to attach a header to the results of `getHeadlines`
+        'search'              => V::T_STRING,                   // search string for `getHeadlines`
+        'field'               => V::T_INT,                      // which state to change in `updateArticle`
+        'mode'                => V::T_MIXED,                    // whether to set, clear, or toggle the selected state in `updateArticle` (integer), or whether to ignore a certain recent timeframe in `catchupFeed` (string)
+        'data'                => V::T_STRING,                   // note text in `updateArticle` if setting a note
     ];
     protected const VIEW_MODES = ["all_articles", "adaptive", "unread", "marked", "has_note", "published"];
     // generic error construct
@@ -154,6 +154,26 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             // absence of a request body indicates an error
             return new Response(self::FATAL_ERR);
         }
+    }
+
+    protected function normalizeInput(array $data): array {
+        $out = [];
+        foreach (self::VALID_INPUT as $key => $type) {
+            if (isset($data[$key])) {
+                // TT-RSS accepts "t" and "f" as booleans
+                if ($type === V::T_BOOL | V::M_DROP) {
+                    if ($data[$key] === "t") {
+                        $data[$key] = true;
+                    } elseif ($data[$key] === "f") {
+                        $data[$key] = false;
+                    }
+                }
+                $out[$key] = V::normalize($data[$key], $type, "unix");
+            } else {
+                $out[$key] = null;
+            }
+        }
+        return $out;
     }
 
     protected function resumeSession(string $id): bool {
@@ -589,7 +609,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function opRemoveCategory(array $data) {
-        if (!ValueInfo::id($data['category_id'])) {
+        if (!V::id($data['category_id'])) {
             // if the folder is invalid, throw an error
             throw new Exception("INCORRECT_USAGE");
         }
@@ -603,7 +623,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function opMoveCategory(array $data) {
-        if (!ValueInfo::id($data['category_id']) || !ValueInfo::id($data['parent_id'], true)) {
+        if (!V::id($data['category_id']) || !V::id($data['parent_id'], true)) {
             // if the folder or parent is invalid, throw an error
             throw new Exception("INCORRECT_USAGE");
         }
@@ -620,8 +640,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function opRenameCategory(array $data) {
-        $info = ValueInfo::str($data['caption']);
-        if (!ValueInfo::id($data['category_id']) || !($info & ValueInfo::VALID) || ($info & ValueInfo::EMPTY) || ($info & ValueInfo::WHITE)) {
+        $info = V::str($data['caption']);
+        if (!V::id($data['category_id']) || !($info & V::VALID) || ($info & V::EMPTY) || ($info & V::WHITE)) {
             // if the folder or its new name are invalid, throw an error
             throw new Exception("INCORRECT_USAGE");
         }
@@ -646,7 +666,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $offset = $data['offset'] ?? 0;
         $nested = $data['include_nested'] ?? false;
         // if a special category was selected, nesting does not apply
-        if (!ValueInfo::id($cat)) {
+        if (!V::id($cat)) {
             $nested = false;
             // if the All, Special, or Labels category was selected, pagination also does not apply
             if (in_array($cat, [self::CAT_ALL, self::CAT_SPECIAL, self::CAT_LABELS])) {
@@ -820,7 +840,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function opSubscribeToFeed(array $data): array {
-        if (!$data['feed_url'] || !ValueInfo::id($data['category_id'], true)) {
+        if (!$data['feed_url'] || !V::id($data['category_id'], true)) {
             // if the feed URL or the category ID is invalid, throw an error
             throw new Exception("INCORRECT_USAGE");
         }
@@ -887,7 +907,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function opMoveFeed(array $data) {
-        if (!ValueInfo::id($data['feed_id']) || !isset($data['category_id']) || !ValueInfo::id($data['category_id'], true)) {
+        if (!V::id($data['feed_id']) || !isset($data['category_id']) || !V::id($data['category_id'], true)) {
             // if the feed or folder is invalid, throw an error
             throw new Exception("INCORRECT_USAGE");
         }
@@ -904,8 +924,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function opRenameFeed(array $data) {
-        $info = ValueInfo::str($data['caption']);
-        if (!ValueInfo::id($data['feed_id']) || !($info & ValueInfo::VALID) || ($info & ValueInfo::EMPTY) || ($info & ValueInfo::WHITE)) {
+        $info = V::str($data['caption']);
+        if (!V::id($data['feed_id']) || !($info & V::VALID) || ($info & V::EMPTY) || ($info & V::WHITE)) {
             // if the feed ID or name is invalid, throw an error
             throw new Exception("INCORRECT_USAGE");
         }
@@ -922,7 +942,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function opUpdateFeed(array $data): array {
-        if (!isset($data['feed_id']) || !ValueInfo::id($data['feed_id'])) {
+        if (!isset($data['feed_id']) || !V::id($data['feed_id'])) {
             // if the feed is invalid, throw an error
             throw new Exception("INCORRECT_USAGE");
         }
@@ -935,7 +955,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function labelIn($id, bool $throw = true): int {
-        if (!(ValueInfo::int($id) & ValueInfo::NEG) || $id > (-1 - self::LABEL_OFFSET)) {
+        if (!(V::int($id) & V::NEG) || $id > (-1 - self::LABEL_OFFSET)) {
             if ($throw) {
                 throw new Exception("INCORRECT_USAGE");
             } else {
@@ -951,7 +971,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     public function opGetLabels(array $data): array {
         // this function doesn't complain about invalid article IDs
-        $article = ValueInfo::id($data['article_id']) ? $data['article_id'] : 0;
+        $article = V::id($data['article_id']) ? $data['article_id'] : 0;
         try {
             $list = $article ? Arsse::$db->articleLabelsGet(Arsse::$user->id, $article) : [];
         } catch (ExceptionInput $e) {
@@ -1112,8 +1132,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     public function opUpdateArticle(array $data): array {
         // normalize input
-        $articles = array_filter(ValueInfo::normalize(explode(",", (string) $data['article_ids']), ValueInfo::T_INT | ValueInfo::M_ARRAY), [ValueInfo::class, "id"]);
-        $data['mode'] = ValueInfo::normalize($data['mode'], ValueInfo::T_INT);
+        $articles = array_filter(V::normalize(explode(",", (string) $data['article_ids']), V::T_INT | V::M_ARRAY), [V::class, "id"]);
+        $data['mode'] = V::normalize($data['mode'], V::T_INT);
         if (!$articles) {
             // if there are no valid articles this is an error
             throw new Exception("INCORRECT_USAGE");
@@ -1185,7 +1205,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     public function opGetArticle(array $data): array {
         // normalize input
-        $articles = array_filter(ValueInfo::normalize(explode(",", (string) $data['article_id']), ValueInfo::T_INT | ValueInfo::M_ARRAY), [ValueInfo::class, "id"]);
+        $articles = array_filter(V::normalize(explode(",", (string) $data['article_id']), V::T_INT | V::M_ARRAY), [V::class, "id"]);
         if (!$articles) {
             // if there are no valid articles this is an error
             throw new Exception("INCORRECT_USAGE");

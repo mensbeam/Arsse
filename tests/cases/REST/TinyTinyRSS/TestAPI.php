@@ -1333,7 +1333,7 @@ LONG_STRING;
             [['feed_id' => 0, 'is_cat' => true],                     (clone $c)->folderShallow(0)],
             [['feed_id' => 0, 'is_cat' => true, 'mode' => "bogus"],  (clone $c)->folderShallow(0)],
             [['feed_id' => -1],                                      (clone $c)->starred(true)],
-            [['feed_id' => -1, 'is_cat' => true],                    null],
+            [['feed_id' => -1, 'is_cat' => "t"],                     null],
             [['feed_id' => -3],                                      (clone $c)->modifiedSince(Date::sub("PT24H", self::NOW))],
             [['feed_id' => -3, 'mode' => "1day"],                    (clone $c)->modifiedSince(Date::sub("PT24H", self::NOW))->notModifiedSince(Date::sub("PT24H", self::NOW))], // this is a nonsense query, but it's what TT-RSS appearsto do
             [['feed_id' => -3, 'is_cat' => true],                    null],
@@ -1342,7 +1342,7 @@ LONG_STRING;
             [['feed_id' => -2, 'is_cat' => true, 'mode' => "all"],   (clone $c)->labelled(true)],
             [['feed_id' => -4],                                      $c],
             [['feed_id' => -4, 'is_cat' => true],                    null],
-            [['feed_id' => -6],                                      null],
+            [['feed_id' => -6, 'is_cat' => "f"],                     null],
             [['feed_id' => -2112],                                   (clone $c)->label(1088)],
             [['feed_id' => 42, 'is_cat' => true],                    (clone $c)->folder(42)],
             [['feed_id' => 42, 'is_cat' => true, 'mode' => "1week"], (clone $c)->folder(42)->notModifiedSince(Date::sub("P1W", self::NOW))],
