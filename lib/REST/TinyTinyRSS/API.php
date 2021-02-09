@@ -24,7 +24,7 @@ use Laminas\Diactoros\Response\JsonResponse as Response;
 use Laminas\Diactoros\Response\EmptyResponse;
 
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
-    public const LEVEL = 14;           // emulated API level
+    public const LEVEL = 15;           // emulated API level
     public const VERSION = "17.4";     // emulated TT-RSS version
 
     protected const LABEL_OFFSET = 1024;  // offset below zero at which labels begin, counting down
@@ -79,7 +79,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         'include_header'      => ValueInfo::T_BOOL | ValueInfo::M_DROP,         // whether to attach a header to the results of `getHeadlines`
         'search'              => ValueInfo::T_STRING,                           // search string for `getHeadlines`
         'field'               => ValueInfo::T_INT,                              // which state to change in `updateArticle`
-        'mode'                => ValueInfo::T_INT,                              // whether to set, clear, or toggle the selected state in `updateArticle`
+        'mode'                => ValueInfo::T_MIXED,                            // whether to set, clear, or toggle the selected state in `updateArticle` (integer), or whether to ignore a certain recent timeframe in `catchupFeed` (string)
         'data'                => ValueInfo::T_STRING,                           // note text in `updateArticle` if setting a note
     ];
     protected const VIEW_MODES = ["all_articles", "adaptive", "unread", "marked", "has_note", "published"];
@@ -1037,6 +1037,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function opCatchUpFeed(array $data): array {
         $id = $data['feed_id'] ?? self::FEED_ARCHIVED;
         $cat = $data['is_cat'] ?? false;
+        $mode = $data['mode'] ?? "all";
         $out = ['status' => "OK"];
         // first prepare the context; unsupported contexts simply return early
         $c = (new Context)->hidden(false);
@@ -1089,6 +1090,16 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 }
             }
         }
+        switch ($mode) {
+            case "2week":
+                $c->notModifiedSince(Date::sub("P2W", $this->now()));
+                break;
+            case "1week":
+                $c->notModifiedSince(Date::sub("P1W", $this->now()));
+                break;
+            case "1day":
+                $c->notModifiedSince(Date::sub("PT24H", $this->now()));
+        }
         // perform the marking
         try {
             Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], $c);
@@ -1102,6 +1113,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function opUpdateArticle(array $data): array {
         // normalize input
         $articles = array_filter(ValueInfo::normalize(explode(",", (string) $data['article_ids']), ValueInfo::T_INT | ValueInfo::M_ARRAY), [ValueInfo::class, "id"]);
+        $data['mode'] = ValueInfo::normalize($data['mode'], ValueInfo::T_INT);
         if (!$articles) {
             // if there are no valid articles this is an error
             throw new Exception("INCORRECT_USAGE");

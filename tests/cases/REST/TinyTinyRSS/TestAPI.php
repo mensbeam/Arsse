@@ -19,8 +19,8 @@ use JKingWeb\Arsse\REST\TinyTinyRSS\API;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\JsonResponse as Response;
 use Laminas\Diactoros\Response\EmptyResponse;
-
 /** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\API<extended>
+
  *  @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Exception */
 class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     protected const NOW = "2020-12-21T23:09:17.189065Z";
@@ -1309,55 +1309,46 @@ LONG_STRING;
         $this->assertMessage($this->respGood($exp), $this->req($in[1]));
     }
 
-    public function testMarkFeedsAsRead(): void {
-        $in1 = [
-            // no-ops
-            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx"],
-            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 0],
-            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2],
-            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -6],
-            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -1, 'is_cat' => true],
-            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -3, 'is_cat' => true],
-            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'is_cat' => true],
-        ];
-        $in2 = [
-            // simple contexts
-            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -1],
-            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4],
-            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2112],
-            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2112],
-            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'is_cat' => true],
-            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 0, 'is_cat' => true],
-            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -2, 'is_cat' => true],
-        ];
-        $in3 = [
-            // this one has a tricky time-based context
-            ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -3],
-        ];
+    /** @dataProvider provideMassMarkings */
+    public function testMarkFeedsAsRead(array $in, ?Context $c): void {
+        $base = ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx"];
+        $in = array_merge($base, $in);
         \Phake::when(Arsse::$db)->articleMark->thenThrow(new ExceptionInput("typeViolation"));
-        $exp = $this->respGood(['status' => "OK"]);
-        // verify the above are in fact no-ops
-        for ($a = 0; $a < sizeof($in1); $a++) {
-            $this->assertMessage($exp, $this->req($in1[$a]), "Test $a failed");
+        // create a mock-current time
+        \Phake::when(Arsse::$obj)->get(\DateTimeImmutable::class)->thenReturn(new \DateTimeImmutable(self::NOW));
+        // TT-RSS always responds the same regardless of success or failure
+        $this->assertMessage($this->respGood(['status' => "OK"]), $this->req($in)); 
+        if (isset($c)) {
+            \Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, ['read' => true], $c);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::times(0))->articleMark;
         }
-        \Phake::verify(Arsse::$db, \Phake::times(0))->articleMark;
-        // verify the simple contexts
-        for ($a = 0; $a < sizeof($in2); $a++) {
-            $this->assertMessage($exp, $this->req($in2[$a]), "Test $a failed");
-        }
-        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->hidden(false));
-        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->starred(true)->hidden(false));
-        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->label(1088)->hidden(false));
-        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->subscription(2112)->hidden(false));
-        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->folder(42)->hidden(false));
-        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->folderShallow(0)->hidden(false));
-        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], (new Context)->labelled(true)->hidden(false));
-        // verify the time-based mock
-        $t = Date::sub("PT24H");
-        for ($a = 0; $a < sizeof($in3); $a++) {
-            $this->assertMessage($exp, $this->req($in3[$a]), "Test $a failed");
-        }
-        \Phake::verify(Arsse::$db)->articleMark($this->anything(), ['read' => true], $this->equalTo((new Context)->hidden(false)->modifiedSince($t), 2)); // within two seconds
+    }
+
+    public function provideMassMarkings(): iterable {
+        $c = (new Context)->hidden(false);
+        return [
+            [[],                                                     null],
+            [['feed_id' => 0],                                       null],
+            [['feed_id' => 0, 'is_cat' => true],                     (clone $c)->folderShallow(0)],
+            [['feed_id' => 0, 'is_cat' => true, 'mode' => "bogus"],  (clone $c)->folderShallow(0)],
+            [['feed_id' => -1],                                      (clone $c)->starred(true)],
+            [['feed_id' => -1, 'is_cat' => true],                    null],
+            [['feed_id' => -3],                                      (clone $c)->modifiedSince(Date::sub("PT24H", self::NOW))],
+            [['feed_id' => -3, 'mode' => "1day"],                    (clone $c)->modifiedSince(Date::sub("PT24H", self::NOW))->notModifiedSince(Date::sub("PT24H", self::NOW))], // this is a nonsense query, but it's what TT-RSS appearsto do
+            [['feed_id' => -3, 'is_cat' => true],                    null],
+            [['feed_id' => -2],                                      null],
+            [['feed_id' => -2, 'is_cat' => true],                    (clone $c)->labelled(true)],
+            [['feed_id' => -2, 'is_cat' => true, 'mode' => "all"],   (clone $c)->labelled(true)],
+            [['feed_id' => -4],                                      $c],
+            [['feed_id' => -4, 'is_cat' => true],                    null],
+            [['feed_id' => -6],                                      null],
+            [['feed_id' => -2112],                                   (clone $c)->label(1088)],
+            [['feed_id' => 42, 'is_cat' => true],                    (clone $c)->folder(42)],
+            [['feed_id' => 42, 'is_cat' => true, 'mode' => "1week"], (clone $c)->folder(42)->notModifiedSince(Date::sub("P1W", self::NOW))],
+            [['feed_id' => 2112],                                    (clone $c)->subscription(2112)],
+            [['feed_id' => 2112, 'mode' => "2week"],                 (clone $c)->subscription(2112)->notModifiedSince(Date::sub("P2W", self::NOW))],
+        ];
     }
 
     public function testRetrieveFeedList(): void {
