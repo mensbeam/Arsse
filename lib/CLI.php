@@ -88,12 +88,12 @@ Commands:
 
     user set <username> <property> <value>
 
-    Sets a user's metadata proprty to the supplied value. See below for
+    Sets a user's metadata property to the supplied value. See below for
     details on the various properties available.
 
     user unset <username> <property>
 
-    Sets a user's metadata proprty to its default value. See below for
+    Sets a user's metadata property to its default value. See below for
     details on the various properties available. What the default value
     for a property evaluates to depends on which protocol is used. 
 
@@ -215,16 +215,14 @@ USAGE_TEXT;
         return str_replace("arsse.php", $prog, self::USAGE);
     }
 
-    protected function command(array $options, $args): string {
-        foreach ($options as $cmd) {
-            foreach (explode(" ", $cmd) as $part) {
-                if (!$args[$part]) {
-                    continue 2;
-                }
+    protected function command($args): string {
+        $out = [];
+        foreach ($args as $k => $v) {
+            if (preg_match("/^[a-z]/", $k) && $v === true) {
+                $out[] = $k;
             }
-            return $cmd;
         }
-        return "";
+        return implode(" ", $out);
     }
 
     /** @codeCoverageIgnore */
@@ -248,18 +246,18 @@ USAGE_TEXT;
             'help' => false,
         ]);
         try {
-            $cmd = $this->command(["-h", "--help", "--version", "daemon", "feed refresh", "feed refresh-all", "conf save-defaults", "user", "export", "import"], $args);
-            if ($cmd && !in_array($cmd, ["-h", "--help", "--version", "conf save-defaults"])) {
+            $cmd = $this->command($args);
+            if ($cmd && !in_array($cmd, ["", "conf save-defaults"])) {
                 // only certain commands don't require configuration to be loaded
                 $this->loadConf();
             }
             switch ($cmd) {
-                case "-h":
-                case "--help":
-                    echo $this->usage($argv0).\PHP_EOL;
-                    return 0;
-                case "--version":
-                    echo Arsse::VERSION.\PHP_EOL;
+                case "":
+                    if ($args['--version']) {
+                        echo Arsse::VERSION.\PHP_EOL;
+                    } elseif ($args['--help'] || $args['-h']) {
+                        echo $this->usage($argv0).\PHP_EOL;
+                    }
                     return 0;
                 case "daemon":
                     Arsse::$obj->get(Service::class)->watch(true);
@@ -272,8 +270,6 @@ USAGE_TEXT;
                 case "conf save-defaults":
                     $file = $this->resolveFile($args['<file>'], "w");
                     return (int) !Arsse::$obj->get(Conf::class)->exportFile($file, true);
-                case "user":
-                    return $this->userManage($args);
                 case "export":
                     $u = $args['<username>'];
                     $file = $this->resolveFile($args['<file>'], "w");
@@ -282,6 +278,43 @@ USAGE_TEXT;
                     $u = $args['<username>'];
                     $file = $this->resolveFile($args['<file>'], "r");
                     return (int) !Arsse::$obj->get(OPML::class)->importFile($file, $u, ($args['--flat'] || $args['-f']), ($args['--replace'] || $args['-r']));
+                case "user add":
+                    $out = $this->userAddOrSetPassword("add", $args["<username>"], $args["<password>"]);
+                    if ($args['--admin']) {
+                        Arsse::$user->propertiesSet($args["<username>"], ['admin' => true]);
+                    }
+                    return $out;
+                case "user set-pass":
+                    if ($args['--fever']) {
+                        $passwd = Arsse::$obj->get(Fever::class)->register($args["<username>"], $args["<password>"]);
+                        if (is_null($args["<password>"])) {
+                            echo $passwd.\PHP_EOL;
+                        }
+                        return 0;
+                    } else {
+                        return $this->userAddOrSetPassword("passwordSet", $args["<username>"], $args["<password>"], $args["--oldpass"]);
+                    }
+                    // no break
+                case "user unset-pass":
+                    if ($args['--fever']) {
+                        Arsse::$obj->get(Fever::class)->unregister($args["<username>"]);
+                    } else {
+                        Arsse::$user->passwordUnset($args["<username>"], $args["--oldpass"]);
+                    }
+                    return 0;
+                case "user remove":
+                    return (int) !Arsse::$user->remove($args["<username>"]);
+                case "user show":
+                    return $this->userShowProperties($args["<username>"]);
+                case "user set":
+                    return (int) !Arsse::$user->propertiesSet($args["<username>"], [$args["<property>"] => $args["<value>"]]);
+                case "user unset":
+                    return (int) !Arsse::$user->propertiesSet($args["<username>"], [$args["<property>"] => null]);
+                case "user auth":
+                    return $this->userAuthenticate($args["<username>"], $args["<password>"], $args["--fever"]);
+                case "user list":
+                case "user":
+                    return $this->userList();
             }
         } catch (AbstractException $e) {
             $this->logError($e->getMessage());
@@ -292,51 +325,6 @@ USAGE_TEXT;
     /** @codeCoverageIgnore */
     protected function logError(string $msg): void {
         fwrite(STDERR, $msg.\PHP_EOL);
-    }
-
-    protected function userManage($args): int {
-        $cmd = $this->command(["add", "remove", "show", "set", "unset", "set-pass", "unset-pass", "list", "auth"], $args);
-        switch ($cmd) {
-            case "add":
-                $out = $this->userAddOrSetPassword("add", $args["<username>"], $args["<password>"]);
-                if ($args['--admin']) {
-                    Arsse::$user->propertiesSet($args["<username>"], ['admin' => true]);
-                }
-                return $out;
-            case "set-pass":
-                if ($args['--fever']) {
-                    $passwd = Arsse::$obj->get(Fever::class)->register($args["<username>"], $args["<password>"]);
-                    if (is_null($args["<password>"])) {
-                        echo $passwd.\PHP_EOL;
-                    }
-                    return 0;
-                } else {
-                    return $this->userAddOrSetPassword("passwordSet", $args["<username>"], $args["<password>"], $args["--oldpass"]);
-                }
-                // no break
-            case "unset-pass":
-                if ($args['--fever']) {
-                    Arsse::$obj->get(Fever::class)->unregister($args["<username>"]);
-                } else {
-                    Arsse::$user->passwordUnset($args["<username>"], $args["--oldpass"]);
-                }
-                return 0;
-            case "remove":
-                return (int) !Arsse::$user->remove($args["<username>"]);
-            case "show":
-                return $this->userShowProperties($args["<username>"]);
-            case "set":
-                return (int) !Arsse::$user->propertiesSet($args["<username>"], [$args["<property>"] => $args["<value>"]]);
-            case "unset":
-                return (int) !Arsse::$user->propertiesSet($args["<username>"], [$args["<property>"] => null]);
-            case "auth":
-                return $this->userAuthenticate($args["<username>"], $args["<password>"], $args["--fever"]);
-            case "list":
-            case "":
-                return $this->userList();
-            default:
-                throw new Exception("constantUnknown", $cmd); // @codeCoverageIgnore
-        }
     }
 
     protected function userAddOrSetPassword(string $method, string $user, string $password = null, string $oldpass = null): int {
