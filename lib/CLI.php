@@ -152,7 +152,7 @@ Commands:
 
 User metadata:
 
-    User metadata is primary used by the Miniflux protocol, and most 
+    User metadata are primarily used by the Miniflux protocol, and most 
     properties have identical or similar names to those used by Miniflux.
     Properties may also affect other protocols, or conversely may have no
     effect even when using the Miniflux protocol; this is noted below when
@@ -173,7 +173,7 @@ User metadata:
         String. The preferred language of the user, as a BCP 47 language tag
         e.g. "en-ca". Note that since The Arsse currently only includes 
         English text it is not used by The Arsse itself, but clients may
-        use this metadata in protocols which expose it.
+        use this metadatum in protocols which expose it.
     tz
         String. The time zone of the user, as a tzdata identifier e.g.
         "America/Los_Angeles". 
@@ -187,19 +187,19 @@ User metadata:
         explicit.
     theme
         String. The user's preferred theme. This is not used by The Arsse
-        itself, but clients may use this metadata in protocols which expose
+        itself, but clients may use this metadatum in protocols which expose
         it.
     page_size
-        Integer. The user's preferred pge size when listing articles. This is
-        not used by The Arsse itself, but clients may use this metadata in 
+        Integer. The user's preferred page size when listing articles. This is
+        not used by The Arsse itself, but clients may use this metadatum in 
         protocols which expose it.
     shortcuts
         Boolean. Whether to enable keyboard shortcuts. This is not used by 
-        The Arsse itself, but clients may use this metadata in protocols which
+        The Arsse itself, but clients may use this metadatum in protocols which
         expose it.
     gestures
         Boolean. Whether to enable touch gestures. This is not used by 
-        The Arsse itself, but clients may use this metadata in protocols which
+        The Arsse itself, but clients may use this metadatum in protocols which
         expose it.
     reading_time
         Boolean. Whether to calculate and display the estimated reading time
@@ -207,7 +207,7 @@ User metadata:
         changing this will likely have no effect.
     stylesheet
         String. A user CSS stylesheet. This is not used by  The Arsse itself,
-        but clients may use this metadata in protocols which expose it.
+        but clients may use this metadatum in protocols which expose it.
 USAGE_TEXT;
 
     protected function usage($prog): string {
