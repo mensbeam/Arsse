@@ -156,6 +156,15 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
+    public function testAddAUserAsAdministrator(): void {
+        Arsse::$user = $this->createMock(User::class);
+        Arsse::$user->method("add")->willReturn("random password");
+        Arsse::$user->method("propertiesSet")->willReturn([]);
+        Arsse::$user->expects($this->exactly(1))->method("add")->with("jane.doe@example.com", null);
+        Arsse::$user->expects($this->exactly(1))->method("propertiesSet")->with("jane.doe@example.com", ['admin' => true]);
+        $this->assertConsole($this->cli, "arsse.php user add jane.doe@example.com --admin", 0, "random password");
+    }
+
     /** @dataProvider provideUserAuthentication */
     public function testAuthenticateAUser(string $cmd, int $exitStatus, string $output): void {
         // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
@@ -355,6 +364,58 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             ["arsse.php import jane.doe@example.com - --flat --replace",         0,     "php://input", "jane.doe@example.com", true,  true],
             ["arsse.php import --flat jane.doe@example.com good.opml -r",        0,     "good.opml",   "jane.doe@example.com", true,  true],
             ["arsse.php import jane.doe@example.com bad.opml --replace --flat",  10603, "bad.opml",    "jane.doe@example.com", true,  true],
+        ];
+    }
+
+    public function testShowMetadataOfAUser(): void {
+        $data = [
+            'num'              => 42,
+            'admin'            => false,
+            'lang'             => "en-ca",
+            'tz'               => "America/Toronto",
+            'root_folder_name' => null,
+            'sort_asc'         => true,
+            'theme'            => null,
+            'page_size'        => 50,
+            'shortcuts'        => true,
+            'gestures'         => null,
+            'reading_time'     => false,
+            'stylesheet'       => "body {color:gray}",
+        ];
+        $exp = implode(\PHP_EOL, [
+            "num               42",
+            "admin             false",
+            "lang              'en-ca'",
+            "tz                'America/Toronto'",
+            "root_folder_name  NULL",
+            "sort_asc          true",
+            "theme             NULL",
+            "page_size         50",
+            "shortcuts         true",
+            "gestures          NULL",
+            "reading_time      false",
+            "stylesheet        'body {color:gray}'",
+        ]);
+        Arsse::$user = $this->createMock(User::class);
+        Arsse::$user->method("propertiesGet")->willReturn($data);
+        Arsse::$user->expects($this->once())->method("propertiesGet")->with("john.doe@example.com", true);
+        $this->assertConsole($this->cli, "arsse.php user show john.doe@example.com", 0, $exp);
+    }
+
+    /** @dataProvider provideMetadataChanges */
+    public function testSetMetadataOfAUser(string $cmd, string $user, array $in, array $out, int $exp): void {
+        Arsse::$user = $this->createMock(User::class);
+        Arsse::$user->method("propertiesSet")->willReturn($out);
+        Arsse::$user->expects($this->once())->method("propertiesSet")->with($user, $in);
+        $this->assertConsole($this->cli, $cmd, $exp, "");
+    }
+
+    public function provideMetadataChanges(): iterable {
+        return [
+            ["arsse.php user set john admin true", "john", ['admin' => "true"], ['admin' => "true"], 0],
+            ["arsse.php user set john bogus 1",    "john", ['bogus' => "1"],    [],                  1],
+            ["arsse.php user unset john admin",    "john", ['admin' => null],   ['admin' => null],   0],
+            ["arsse.php user unset john bogus",    "john", ['bogus' => null],   [],                  1],
         ];
     }
 }

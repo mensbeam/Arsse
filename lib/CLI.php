@@ -17,8 +17,11 @@ Usage:
     arsse.php feed refresh <n>
     arsse.php conf save-defaults [<file>]
     arsse.php user [list]
-    arsse.php user add <username> [<password>]
+    arsse.php user add <username> [<password>] [--admin]
     arsse.php user remove <username>
+    arsse.php user show <username>
+    arsse.php user set <username> <property> <value>
+    arsse.php user unset <username> <property>
     arsse.php user set-pass <username> [<password>]
         [--oldpass=<pass>] [--fever]
     arsse.php user unset-pass <username>
@@ -63,11 +66,13 @@ Commands:
 
     Prints a list of all existing users, one per line.
 
-    user add <username> [<password>]
+    user add <username> [<password>] [--admin]
 
     Adds the user specified by <username>, with the provided password
     <password>. If no password is specified, a random password will be
-    generated and printed to standard output.
+    generated and printed to standard output. The --admin option will make 
+    the user an administrator, which allows them to manage users via the 
+    Miniflux protocol, among other things.
 
     user remove <username>
 
@@ -75,6 +80,22 @@ Commands:
     including folders and subscriptions, are immediately deleted. Feeds to
     which the user was subscribed will be retained and refreshed until the
     configured retention time elapses.
+
+    user show <username>
+
+    Displays the metadata of a user in a basic tabular format. See below for
+    details on the various properties displayed.
+
+    user set <username> <property> <value>
+
+    Sets a user's metadata proprty to the supplied value. See below for
+    details on the various properties available.
+
+    user unset <username> <property>
+
+    Sets a user's metadata proprty to its default value. See below for
+    details on the various properties available. What the default value
+    for a property evaluates to depends on which protocol is used. 
 
     user set-pass <username> [<password>]
 
@@ -128,6 +149,65 @@ Commands:
     The --flat option can be used to omit folders from the export. Some OPML
     implementations may not support folders, or arbitrary nesting; this option
     may be used when planning to import into such software.
+
+User metadata:
+
+    User metadata is primary used by the Miniflux protocol, and most 
+    properties have identical or similar names to those used by Miniflux.
+    Properties may also affect other protocols, or conversely may have no
+    effect even when using the Miniflux protocol; this is noted below when
+    appropriate.
+    
+    Booleans accept any of the values true/false, 1/0, yes/no, on/off.
+    
+    The following metadata properties exist for each user:
+
+    num
+        Integer. The numeric identifier of the user. This is assigned at user
+        creation and is read-only.
+    admin
+        Boolean. Whether the user is an administrator. Administrators may
+        manage other users via the Miniflux protocol, and also may trigger
+        feed updates manually via the Nextcloud News protocol.
+    lang
+        String. The preferred language of the user, as a BCP 47 language tag
+        e.g. "en-ca". Note that since The Arsse currently only includes 
+        English text it is not used by The Arsse itself, but clients may
+        use this metadata in protocols which expose it.
+    tz
+        String. The time zone of the user, as a tzdata identifier e.g.
+        "America/Los_Angeles". 
+    root_folder_name
+        String. The name of the root folder, in protocols which allow it to
+        be renamed. 
+    sort_asc
+        Boolean. Whether the user prefers ascending sort order for articles.
+        Descending order is usually the default, but explicitly setting this
+        property false will also make a preference for descending order 
+        explicit.
+    theme
+        String. The user's preferred theme. This is not used by The Arsse
+        itself, but clients may use this metadata in protocols which expose
+        it.
+    page_size
+        Integer. The user's preferred pge size when listing articles. This is
+        not used by The Arsse itself, but clients may use this metadata in 
+        protocols which expose it.
+    shortcuts
+        Boolean. Whether to enable keyboard shortcuts. This is not used by 
+        The Arsse itself, but clients may use this metadata in protocols which
+        expose it.
+    gestures
+        Boolean. Whether to enable touch gestures. This is not used by 
+        The Arsse itself, but clients may use this metadata in protocols which
+        expose it.
+    reading_time
+        Boolean. Whether to calculate and display the estimated reading time
+        for articles. Currently The Arsse does not calculate reading time, so
+        changing this will likely have no effect.
+    stylesheet
+        String. A user CSS stylesheet. This is not used by  The Arsse itself,
+        but clients may use this metadata in protocols which expose it.
 USAGE_TEXT;
 
     protected function usage($prog): string {
@@ -215,10 +295,14 @@ USAGE_TEXT;
     }
 
     protected function userManage($args): int {
-        $cmd = $this->command(["add", "remove", "set-pass", "unset-pass", "list", "auth"], $args);
+        $cmd = $this->command(["add", "remove", "show", "set", "unset", "set-pass", "unset-pass", "list", "auth"], $args);
         switch ($cmd) {
             case "add":
-                return $this->userAddOrSetPassword("add", $args["<username>"], $args["<password>"]);
+                $out = $this->userAddOrSetPassword("add", $args["<username>"], $args["<password>"]);
+                if ($args['--admin']) {
+                    Arsse::$user->propertiesSet($args["<username>"], ['admin' => true]);
+                }
+                return $out;
             case "set-pass":
                 if ($args['--fever']) {
                     $passwd = Arsse::$obj->get(Fever::class)->register($args["<username>"], $args["<password>"]);
@@ -239,6 +323,12 @@ USAGE_TEXT;
                 return 0;
             case "remove":
                 return (int) !Arsse::$user->remove($args["<username>"]);
+            case "show":
+                return $this->userShowProperties($args["<username>"]);
+            case "set":
+                return (int) !Arsse::$user->propertiesSet($args["<username>"], [$args["<property>"] => $args["<value>"]]);
+            case "unset":
+                return (int) !Arsse::$user->propertiesSet($args["<username>"], [$args["<property>"] => null]);
             case "auth":
                 return $this->userAuthenticate($args["<username>"], $args["<password>"], $args["--fever"]);
             case "list":
@@ -274,5 +364,17 @@ USAGE_TEXT;
             echo Arsse::$lang->msg("CLI.Auth.Failure").\PHP_EOL;
             return 1;
         }
+    }
+
+    protected function userShowProperties(string $user): int {
+        $data = Arsse::$user->propertiesGet($user);
+        $len = array_reduce(array_keys($data), function($carry, $item) {
+            return max($carry, strlen($item));
+        }, 0) + 2;
+        foreach ($data as $k => $v) {
+            echo str_pad($k, $len, " ");
+            echo var_export($v, true).\PHP_EOL;
+        }
+        return 0;
     }
 }

@@ -5,6 +5,7 @@ New features:
 - Support for the Miniflux protocol (see manual for details)
 - Support for API level 15 of Tiny Tiny RSS
 - Support for feed icons in Fever
+- Command-line functionality for managing user metadata
 
 Bug fixes:
 - Use icons specified in Atom feeds when available

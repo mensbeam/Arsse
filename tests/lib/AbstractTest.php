@@ -88,6 +88,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                 }, $params, array_keys($params)));
             }
             $url = URL::queryAppend($url, (string) $params);
+            $params = null;
         }
         $q = parse_url($url, \PHP_URL_QUERY);
         if (strlen($q ?? "")) {
