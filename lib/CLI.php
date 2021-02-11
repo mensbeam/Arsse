@@ -8,6 +8,7 @@ namespace JKingWeb\Arsse;
 
 use JKingWeb\Arsse\REST\Fever\User as Fever;
 use JKingWeb\Arsse\ImportExport\OPML;
+use JKingWeb\Arsse\REST\Miniflux\Token as Miniflux;
 
 class CLI {
     public const USAGE = <<<USAGE_TEXT
@@ -27,6 +28,9 @@ Usage:
     arsse.php user unset-pass <username>
         [--oldpass=<pass>] [--fever]
     arsse.php user auth <username> <password> [--fever]
+    arsse.php token list <username>
+    arsse.php token create <username> [<label>]
+    arsse.php token revoke <username> [<token>]
     arsse.php import <username> [<file>]
         [-f | --flat] [-r | --replace]
     arsse.php export <username> [<file>] 
@@ -124,6 +128,24 @@ Commands:
 
     The --fever option may be used to test the user's Fever protocol password,
     if any.
+
+    token list <username>
+
+    Lists available tokens for <username> in a simple tabular format. These 
+    tokens act as an alternative means of authentication for the Miniflux
+    protocol and may be required by some clients. They do not expire.
+
+    token create <username> [<label>]
+
+    Creates a new login token for <username> and prints it. These tokens act
+    as an alternative means of authentication for the Miniflux protocol and
+    may be required by some clients. An optional label may be specified to 
+    give the token a meaningful name.
+
+    token revoke <username> [<token>]
+
+    Deletes the specified token from the database. The token itself must be
+    supplied, not its label. If it is omitted all tokens are revoked.
 
     import <username> [<file>]
 
@@ -278,6 +300,15 @@ USAGE_TEXT;
                     $u = $args['<username>'];
                     $file = $this->resolveFile($args['<file>'], "r");
                     return (int) !Arsse::$obj->get(OPML::class)->importFile($file, $u, ($args['--flat'] || $args['-f']), ($args['--replace'] || $args['-r']));
+                case "token list":
+                case "list token": // command reconstruction yields this order for "token list" command
+                    return $this->tokenList($args['<username>']);
+                case "token create":
+                    echo Arsse::$obj->get(Miniflux::class)->tokenGenerate($args['<username>'], $args['<label>']).\PHP_EOL;
+                    return 0;
+                case "token revoke":
+                    Arsse::$db->tokenRevoke($args['<username>'], "miniflux.login", $args['<token>']);
+                    return 0;
                 case "user add":
                     $out = $this->userAddOrSetPassword("add", $args["<username>"], $args["<password>"]);
                     if ($args['--admin']) {
@@ -315,6 +346,8 @@ USAGE_TEXT;
                 case "user list":
                 case "user":
                     return $this->userList();
+                default:
+                    throw new Exception("constantUnknown", $cmd); // @codeCoverageIgnore
             }
         } catch (AbstractException $e) {
             $this->logError($e->getMessage());
@@ -362,6 +395,17 @@ USAGE_TEXT;
         foreach ($data as $k => $v) {
             echo str_pad($k, $len, " ");
             echo var_export($v, true).\PHP_EOL;
+        }
+        return 0;
+    }
+
+    protected function tokenList(string $user): int {
+        $list = Arsse::$obj->get(Miniflux::class)->tokenList($user);
+        usort($list, function($v1, $v2) {
+            return $v1['label'] <=> $v2['label'];
+        });
+        foreach ($list as $t) {
+            echo $t['id']."  ".$t['label'].\PHP_EOL;
         }
         return 0;
     }

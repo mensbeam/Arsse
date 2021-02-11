@@ -34,7 +34,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected const ACCEPTED_TYPES_OPML = ["application/xml", "text/xml", "text/x-opml"];
     protected const ACCEPTED_TYPES_JSON = ["application/json"];
-    protected const TOKEN_LENGTH = 32;
     protected const DEFAULT_ENTRY_LIMIT = 100;
     protected const DEFAULT_ORDER_COL = "modified_date";
     protected const DATE_FORMAT_SEC = "Y-m-d\TH:i:sP";
@@ -1200,22 +1199,5 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function opmlExport(): ResponseInterface {
         return new GenericResponse(Arsse::$obj->get(OPML::class)->export(Arsse::$user->id), 200, ['Content-Type' => "application/xml"]);
-    }
-
-    public static function tokenGenerate(string $user, string $label): string {
-        // Miniflux produces tokens in base64url alphabet
-        $t = str_replace(["+", "/"], ["-", "_"], base64_encode(random_bytes(self::TOKEN_LENGTH)));
-        return Arsse::$db->tokenCreate($user, "miniflux.login", $t, null, $label);
-    }
-
-    public static function tokenList(string $user): array {
-        if (!Arsse::$db->userExists($user)) {
-            throw new ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
-        }
-        $out = [];
-        foreach (Arsse::$db->tokenList($user, "miniflux.login") as $r) {
-            $out[] = ['label' => $r['data'], 'id' => $r['id']];
-        }
-        return $out;
     }
 }

@@ -118,7 +118,9 @@
         <file>cases/REST/Miniflux/TestErrorResponse.php</file>
         <file>cases/REST/Miniflux/TestStatus.php</file>
         <file>cases/REST/Miniflux/TestV1.php</file>
+        <file>cases/REST/Miniflux/TestToken.php</file>
         <file>cases/REST/Miniflux/PDO/TestV1.php</file>
+        <file>cases/REST/Miniflux/PDO/TestToken.php</file>
     </testsuite>
     <testsuite name="NCNv1">
         <file>cases/REST/NextcloudNews/TestVersions.php</file>

@@ -14,6 +14,7 @@ use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\CLI;
 use JKingWeb\Arsse\REST\Fever\User as FeverUser;
+use JKingWeb\Arsse\REST\Miniflux\Token as MinifluxToken;
 use JKingWeb\Arsse\ImportExport\OPML;
 
 /** @covers \JKingWeb\Arsse\CLI */
@@ -417,5 +418,55 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             ["arsse.php user unset john admin",    "john", ['admin' => null],   ['admin' => null],   0],
             ["arsse.php user unset john bogus",    "john", ['bogus' => null],   [],                  1],
         ];
+    }
+
+    public function testListTokens(): void {
+        $data = [
+            ['label' => 'Ook', 'id' => "TOKEN 1"],
+            ['label' => 'Eek', 'id' => "TOKEN 2"],
+            ['label' => null,  'id' => "TOKEN 3"],
+            ['label' => 'Ack', 'id' => "TOKEN 4"],
+        ];
+        $exp = implode(\PHP_EOL, [
+            "TOKEN 3  ",
+            "TOKEN 4  Ack",
+            "TOKEN 2  Eek",
+            "TOKEN 1  Ook",
+        ]);
+        $t = \Phake::mock(MinifluxToken::class);
+        \Phake::when(Arsse::$obj)->get(MinifluxToken::class)->thenReturn($t);
+        \Phake::when($t)->tokenList->thenReturn($data);
+        $this->assertConsole($this->cli, "arsse.php token list john", 0, $exp);
+        \Phake::verify($t)->tokenList("john");
+    }
+
+    public function testCreateToken(): void {
+        $t = \Phake::mock(MinifluxToken::class);
+        \Phake::when(Arsse::$obj)->get(MinifluxToken::class)->thenReturn($t);
+        \Phake::when($t)->tokenGenerate->thenReturn("RANDOM TOKEN");
+        $this->assertConsole($this->cli, "arse.php token create jane", 0, "RANDOM TOKEN");
+        \Phake::verify($t)->tokenGenerate("jane", null);
+    }
+
+    public function testCreateTokenWithLabel(): void {
+        $t = \Phake::mock(MinifluxToken::class);
+        \Phake::when(Arsse::$obj)->get(MinifluxToken::class)->thenReturn($t);
+        \Phake::when($t)->tokenGenerate->thenReturn("RANDOM TOKEN");
+        $this->assertConsole($this->cli, "arse.php token create jane Ook", 0, "RANDOM TOKEN");
+        \Phake::verify($t)->tokenGenerate("jane", "Ook");
+    }
+
+    public function testRevokeAToken(): void {
+        Arsse::$db = \Phake::mock(Database::class);
+        \Phake::when(Arsse::$db)->tokenRevoke->thenReturn(true);
+        $this->assertConsole($this->cli, "arse.php token revoke jane TOKEN_ID", 0);
+        \Phake::verify(Arsse::$db)->tokenRevoke("jane", "miniflux.login", "TOKEN_ID");
+    }
+
+    public function testRevokeAllTokens(): void {
+        Arsse::$db = \Phake::mock(Database::class);
+        \Phake::when(Arsse::$db)->tokenRevoke->thenReturn(true);
+        $this->assertConsole($this->cli, "arse.php token revoke jane", 0);
+        \Phake::verify(Arsse::$db)->tokenRevoke("jane", "miniflux.login", null);
     }
 }

@@ -6,6 +6,7 @@ New features:
 - Support for API level 15 of Tiny Tiny RSS
 - Support for feed icons in Fever
 - Command-line functionality for managing user metadata
+- Command-line functionality for managing Miniflux login tokens
 
 Bug fixes:
 - Use icons specified in Atom feeds when available
