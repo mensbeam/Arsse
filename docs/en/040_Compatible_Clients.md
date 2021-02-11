@@ -16,8 +16,8 @@ The Arsse does not at this time have any first party clients. However, because T
   </tr>
  </thead>
  <tbody>
-  <tr>
    <th colspan="7">Web</th>
+  <tr>
   </tr>
   <tr>
    <td><a href="https://github.com/jakobend/maxiflux">maxiflux</a></td>
@@ -180,6 +180,17 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>
     <p>Rentalware - For the software to be usable (you can't even add feeds otherwise) a subscription fee must be paid.</p>
     <p>Currently keeps showing items in the unread badge which have already been read.</p>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://github.com/fbarthelery/geekttrss">Geekttrss</a></td>
+   <td>Android</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td>
+    <p></p>
    </td>
   </tr>
   <tr>
@@ -353,17 +364,6 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td class="Y">✔</td>
    <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td>
-    <p></p>
-   </td>
-  </tr>
-  <tr>
-   <td><a href="https://github.com/fbarthelery/geekttrss">Geekttrss</a></td>
-   <td>Android</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="Y">✔</td>
    <td class="N">✘</td>
    <td>
     <p></p>
