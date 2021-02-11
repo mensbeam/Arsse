@@ -347,6 +347,39 @@ The Arsse does not at this time have any first party clients. However, because T
     <p></p>
    </td>
   </tr>
+  <tr>
+   <td><a href="https://github.com/Huessenbergnetz/Fuoten">Fuoten</a></td>
+   <td>Sailfish</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td>
+    <p></p>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://github.com/fbarthelery/geekttrss">Geekttrss</a></td>
+   <td>Android</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td>
+    <p></p>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://github.com/mkiol/kaktus">Kaktus</a></td>
+   <td>Sailfish, BlackBerry</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td>
+    <p></p>
+   </td>
+  </tr>
   <!--
   <tr>
    <td><a href="https://github.com/fabienheureux/liseur">Liseur</a></td>
@@ -363,6 +396,16 @@ The Arsse does not at this time have any first party clients. However, because T
   <tr>
    <td><a href="https://open-store.io/app/newsie.martinferretti">Newsie</a></td>
    <td>Ubuntu Touch</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://github.com/jgerstbe/nx-news-ion">NX News</a></td>
+   <td>Web</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
    <td class="N">✘</td>
@@ -401,6 +444,28 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td>
     <p>Does not support HTTP authentication.</p>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://github.com/kucrut/ttrss-reader">Tiny Tiny RSS Reader</a></td>
+   <td>Web</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td>
+    <p></p>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://github.com/cnlpete/ttrss">ttrss</a></td>
+   <td>Sailfish</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td>
+    <p></p>
    </td>
   </tr>
  </tbody>
