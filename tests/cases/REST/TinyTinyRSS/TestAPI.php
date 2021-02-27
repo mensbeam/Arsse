@@ -16,6 +16,7 @@ use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\TinyTinyRSS\API;
+use JKingWeb\Arsse\Feed\Exception as FeedException;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\JsonResponse as Response;
 use Laminas\Diactoros\Response\EmptyResponse;
@@ -26,6 +27,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     protected const NOW = "2020-12-21T23:09:17.189065Z";
 
     protected $h;
+    protected $userId = "john.doe@example.com";
     protected $folders = [
         ['id' => 5, 'parent' => 3,    'children' => 0, 'feeds' => 1, 'name' => "Local"],
         ['id' => 6, 'parent' => 3,    'children' => 0, 'feeds' => 2, 'name' => "National"],
@@ -127,7 +129,33 @@ LONG_STRING;
         return $value;
     }
 
+    public function setUp(): void {
+        parent::setUp();
+        self::setConf();
+        // create mock timestamps
+        $this->objMock->get->with(\DateTimeImmutable::class)->returns(new \DateTimeImmutable(self::NOW));
+        // create a mock user manager
+        $this->userId = "john.doe@example.com";
+        $this->userMock = $this->mock(User::class);
+        $this->userMock->auth->returns(true);
+        // create a mock database interface
+        $this->dbMock = $this->mock(Database::class);
+        $this->dbMock->begin->returns($this->mock(Transaction::class));
+        $this->dbMock->sessionResume->throws(new \JKingWeb\Arsse\User\ExceptionSession("invalid"));
+        $this->dbMock->sessionResume->with("PriestsOfSyrinx")->returns([
+            'id'      => "PriestsOfSyrinx",
+            'created' => "2000-01-01 00:00:00",
+            'expires' => "2112-12-21 21:12:00",
+            'user'    => $this->userId,
+        ]);
+        $this->h = new API();
+    }
+
     protected function req($data, string $method = "POST", string $target = "", string $strData = null, string $user = null): ResponseInterface {
+        Arsse::$obj = $this->objMock->get();
+        Arsse::$db = $this->dbMock->get();
+        Arsse::$user = $this->userMock->get();
+        Arsse::$user->id = $this->userId;
         $prefix = "/tt-rss/api";
         $url = $prefix.$target;
         $body = $strData ?? json_encode($data);
@@ -156,30 +184,6 @@ LONG_STRING;
         ]);
     }
 
-    public function setUp(): void {
-        self::clearData();
-        self::setConf();
-        // create a mock user manager
-        Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->auth->thenReturn(true);
-        Arsse::$user->id = "john.doe@example.com";
-        // create a mock database interface
-        Arsse::$db = \Phake::mock(Database::class);
-        \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(Transaction::class));
-        \Phake::when(Arsse::$db)->sessionResume->thenThrow(new \JKingWeb\Arsse\User\ExceptionSession("invalid"));
-        \Phake::when(Arsse::$db)->sessionResume("PriestsOfSyrinx")->thenReturn([
-            'id'      => "PriestsOfSyrinx",
-            'created' => "2000-01-01 00:00:00",
-            'expires' => "2112-12-21 21:12:00",
-            'user'    => Arsse::$user->id,
-        ]);
-        $this->h = new API();
-    }
-
-    public function tearDown(): void {
-        self::clearData();
-    }
-
     public function testHandleInvalidPaths(): void {
         $exp = $this->respErr("MALFORMED_INPUT", [], null);
         $this->assertMessage($exp, $this->req(null, "POST", "", ""));
@@ -205,13 +209,13 @@ LONG_STRING;
 
     /** @dataProvider provideLoginRequests */
     public function testLogIn(array $conf, $httpUser, array $data, $sessions): void {
-        Arsse::$user->id = null;
+        $this->userId = null;
         self::setConf($conf);
-        \Phake::when(Arsse::$user)->auth->thenReturn(false);
-        \Phake::when(Arsse::$user)->auth("john.doe@example.com", "secret")->thenReturn(true);
-        \Phake::when(Arsse::$user)->auth("jane.doe@example.com", "superman")->thenReturn(true);
-        \Phake::when(Arsse::$db)->sessionCreate("john.doe@example.com")->thenReturn("PriestsOfSyrinx")->thenReturn("SolarFederation");
-        \Phake::when(Arsse::$db)->sessionCreate("jane.doe@example.com")->thenReturn("ClockworkAngels")->thenReturn("SevenCitiesOfGold");
+        $this->userMock->auth->returns(false);
+        $this->userMock->auth->with("john.doe@example.com", "secret")->returns(true);
+        $this->userMock->auth->with("jane.doe@example.com", "superman")->returns(true);
+        $this->dbMock->sessionCreate->with("john.doe@example.com")->returns("PriestsOfSyrinx", "SolarFederation");
+        $this->dbMock->sessionCreate->with("jane.doe@example.com")->returns("ClockworkAngels", "SevenCitiesOfGold");
         if ($sessions instanceof EmptyResponse) {
             $exp1 = $sessions;
             $exp2 = $sessions;
@@ -230,7 +234,7 @@ LONG_STRING;
         }
         $this->assertMessage($exp2, $this->reqAuth($data, $httpUser));
         // logging in should never try to resume a session
-        \Phake::verify(Arsse::$db, \Phake::times(0))->sessionResume($this->anything());
+        $this->dbMock->sessionResume->never()->called();
     }
 
     public function provideLoginRequests(): iterable {
@@ -239,15 +243,15 @@ LONG_STRING;
 
     /** @dataProvider provideResumeRequests */
     public function testValidateASession(array $conf, $httpUser, string $data, $result): void {
-        Arsse::$user->id = null;
+        $this->userId = null;
         self::setConf($conf);
-        \Phake::when(Arsse::$db)->sessionResume("PriestsOfSyrinx")->thenReturn([
+        $this->dbMock->sessionResume->with("PriestsOfSyrinx")->returns([
             'id'      => "PriestsOfSyrinx",
             'created' => "2000-01-01 00:00:00",
             'expires' => "2112-12-21 21:12:00",
             'user'    => "john.doe@example.com",
         ]);
-        \Phake::when(Arsse::$db)->sessionResume("ClockworkAngels")->thenReturn([
+        $this->dbMock->sessionResume->with("ClockworkAngels")->returns([
             'id'      => "ClockworkAngels",
             'created' => "2000-01-01 00:00:00",
             'expires' => "2112-12-21 21:12:00",
@@ -523,10 +527,10 @@ LONG_STRING;
     }
 
     public function testHandleGenericError(): void {
-        \Phake::when(Arsse::$user)->auth(Arsse::$user->id, $this->anything())->thenThrow(new \JKingWeb\Arsse\Db\ExceptionTimeout("general"));
+        $this->userMock->auth->throws(new \JKingWeb\Arsse\Db\ExceptionTimeout("general"));
         $data = [
             'op'       => "login",
-            'user'     => Arsse::$user->id,
+            'user'     => $this->userId,
             'password' => "secret",
         ];
         $exp = new EmptyResponse(500);
@@ -534,14 +538,14 @@ LONG_STRING;
     }
 
     public function testLogOut(): void {
-        \Phake::when(Arsse::$db)->sessionDestroy->thenReturn(true);
+        $this->dbMock->sessionDestroy->returns(true);
         $data = [
             'op'       => "logout",
             'sid'      => "PriestsOfSyrinx",
         ];
         $exp = $this->respGood(['status' => "OK"]);
         $this->assertMessage($exp, $this->req($data));
-        \Phake::verify(Arsse::$db)->sessionDestroy(Arsse::$user->id, "PriestsOfSyrinx");
+        $this->dbMock->sessionDestroy->calledWith($this->userId, "PriestsOfSyrinx");
     }
 
     public function testHandleUnknownMethods(): void {
@@ -589,245 +593,155 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($data));
     }
 
-    public function testAddACategory(): void {
-        $in = [
-            ['op' => "addCategory", 'sid' => "PriestsOfSyrinx", 'caption' => "Software"],
-            ['op' => "addCategory", 'sid' => "PriestsOfSyrinx", 'caption' => "Hardware", 'parent_id' => 1],
-            ['op' => "addCategory", 'sid' => "PriestsOfSyrinx", 'caption' => "Hardware", 'parent_id' => 2112],
-            ['op' => "addCategory", 'sid' => "PriestsOfSyrinx"],
-            ['op' => "addCategory", 'sid' => "PriestsOfSyrinx", 'caption' => ""],
-            ['op' => "addCategory", 'sid' => "PriestsOfSyrinx", 'caption' => "   "],
-        ];
-        $db = [
-            ['name' => "Software", 'parent' => null],
-            ['name' => "Hardware", 'parent' => 1],
-            ['name' => "Hardware", 'parent' => 2112],
-        ];
-        $out = [
+    /** @dataProvider provideCategoryAdditions */
+    public function testAddACategory(array $in, array $data, $out, ResponseInterface $exp): void {
+        $in = array_merge(['op' => "addCategory", 'sid' => "PriestsOfSyrinx"], $in);
+        $action = ($out instanceof \Exception) ? "throws" : "returns";
+        $this->dbMock->folderAdd->$action($out);
+        $this->dbMock->folderList->with("~", null, false)->returns(new Result($this->v([
             ['id' => 2, 'name' => "Software", 'parent' => null],
-            ['id' => 3, 'name' => "Hardware", 'parent' => 1],
             ['id' => 1, 'name' => "Politics", 'parent' => null],
-        ];
-        // set of various mocks for testing
-        \Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $db[0])->thenReturn(2)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        \Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $db[1])->thenReturn(3)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        \Phake::when(Arsse::$db)->folderList(Arsse::$user->id, null, false)->thenReturn(new Result($this->v([$out[0], $out[2]])));
-        \Phake::when(Arsse::$db)->folderList(Arsse::$user->id, 1, false)->thenReturn(new Result($this->v([$out[1]])));
-        // set up mocks that produce errors
-        \Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, $db[2])->thenThrow(new ExceptionInput("idMissing")); // parent folder does not exist
-        \Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, [])->thenThrow(new ExceptionInput("missing"));
-        \Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => "",    'parent' => null])->thenThrow(new ExceptionInput("missing"));
-        \Phake::when(Arsse::$db)->folderAdd(Arsse::$user->id, ['name' => "   ", 'parent' => null])->thenThrow(new ExceptionInput("whitespace"));
-        // correctly add two folders
-        $exp = $this->respGood("2");
-        $this->assertMessage($exp, $this->req($in[0]));
-        $exp = $this->respGood("3");
-        $this->assertMessage($exp, $this->req($in[1]));
-        // attempt to add the two folders again
-        $exp = $this->respGood("2");
-        $this->assertMessage($exp, $this->req($in[0]));
-        $exp = $this->respGood("3");
-        $this->assertMessage($exp, $this->req($in[1]));
-        \Phake::verify(Arsse::$db)->folderList(Arsse::$user->id, null, false);
-        \Phake::verify(Arsse::$db)->folderList(Arsse::$user->id, 1, false);
-        // add a folder to a missing parent (silently fails)
-        $exp = $this->respGood(false);
-        $this->assertMessage($exp, $this->req($in[2]));
-        // add some invalid folders
-        $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertMessage($exp, $this->req($in[3]));
-        $this->assertMessage($exp, $this->req($in[4]));
-        $this->assertMessage($exp, $this->req($in[5]));
+        ])));
+        $this->dbMock->folderList->with("~", 1, false)->returns(new Result($this->v([
+            ['id' => 3, 'name' => "Hardware", 'parent' => 1],
+        ])));
+        $this->assertMessage($exp, $this->req($in));
+        $this->dbMock->folderAdd->calledWith($this->userId, $data);
+        if (!$out instanceof \Exception) {
+            $this->dbMock->folderList->never()->called();
+        }
     }
 
-    public function testRemoveACategory(): void {
-        $in = [
-            ['op' => "removeCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42],
-            ['op' => "removeCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 2112],
-            ['op' => "removeCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => -1],
+    public function provideCategoryAdditions(): iterable {
+        return [
+            [[],                                             ['name' => null,       'parent' => null], new ExceptionInput("missing"),             $this->respErr("INCORRECT_USAGE")],
+            [['caption' => ""],                              ['name' => "",         'parent' => null], new ExceptionInput("missing"),             $this->respErr("INCORRECT_USAGE")],
+            [['caption' => "   "],                           ['name' => "   ",      'parent' => null], new ExceptionInput("whitespace"),          $this->respErr("INCORRECT_USAGE")],
+            [['caption' => "Software"],                      ['name' => "Software", 'parent' => null], 2,                                         $this->respGood("2")],
+            [['caption' => "Hardware", 'parent_id' => 1],    ['name' => "Hardware", 'parent' => 1],    3,                                         $this->respGood("3")],
+            [['caption' => "Hardware", 'parent_id' => 2112], ['name' => "Hardware", 'parent' => 2112], new ExceptionInput("idMissing"),           $this->respGood(false)],
+            [['caption' => "Software"],                      ['name' => "Software", 'parent' => null], new ExceptionInput("constraintViolation"), $this->respGood("2")],
+            [['caption' => "Hardware", 'parent_id' => 1],    ['name' => "Hardware", 'parent' => 1],    new ExceptionInput("constraintViolation"), $this->respGood("3")],
         ];
-        \Phake::when(Arsse::$db)->folderRemove(Arsse::$user->id, $this->anything())->thenThrow(new ExceptionInput("subjectMissing"));
-        \Phake::when(Arsse::$db)->folderRemove(Arsse::$user->id, 42)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
-        // succefully delete a folder
-        $exp = $this->respGood();
-        $this->assertMessage($exp, $this->req($in[0]));
-        // try deleting it again (this should silently fail)
-        $exp = $this->respGood();
-        $this->assertMessage($exp, $this->req($in[0]));
-        // delete a folder which does not exist (this should also silently fail)
-        $exp = $this->respGood();
-        $this->assertMessage($exp, $this->req($in[1]));
-        // delete an invalid folder (causes an error)
-        $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertMessage($exp, $this->req($in[2]));
-        \Phake::verify(Arsse::$db, \Phake::times(3))->folderRemove(Arsse::$user->id, $this->anything());
     }
 
-    public function testMoveACategory(): void {
-        $in = [
-            ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42, 'parent_id' => 1],
-            ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 2112, 'parent_id' => 2],
-            ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42, 'parent_id' => 0],
-            ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42, 'parent_id' => 47],
-            ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => -1, 'parent_id' => 1],
-            ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42, 'parent_id' => -1],
-            ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42],
-            ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx", 'parent_id' => -1],
-            ['op' => "moveCategory", 'sid' => "PriestsOfSyrinx"],
-        ];
-        $db = [
-            [Arsse::$user->id, 42, ['parent' => 1]],
-            [Arsse::$user->id, 2112, ['parent' => 2]],
-            [Arsse::$user->id, 42, ['parent' => 0]],
-            [Arsse::$user->id, 42, ['parent' => 47]],
-            [Arsse::$user->id, -1, ['parent' => 1]],
-            [Arsse::$user->id, 42, ['parent' => -1]],
-            [Arsse::$user->id, 42, ['parent' => 0]],
-            [Arsse::$user->id, 0, ['parent' => -1]],
-            [Arsse::$user->id, 0, ['parent' => 0]],
-        ];
-        \Phake::when(Arsse::$db)->folderPropertiesSet(...$db[0])->thenReturn(true);
-        \Phake::when(Arsse::$db)->folderPropertiesSet(...$db[1])->thenThrow(new ExceptionInput("subjectMissing"));
-        \Phake::when(Arsse::$db)->folderPropertiesSet(...$db[2])->thenThrow(new ExceptionInput("constraintViolation"));
-        \Phake::when(Arsse::$db)->folderPropertiesSet(...$db[3])->thenThrow(new ExceptionInput("idMissing"));
-        \Phake::when(Arsse::$db)->folderPropertiesSet(...$db[4])->thenThrow(new ExceptionInput("typeViolation"));
-        \Phake::when(Arsse::$db)->folderPropertiesSet(...$db[5])->thenThrow(new ExceptionInput("typeViolation"));
-        \Phake::when(Arsse::$db)->folderPropertiesSet(...$db[6])->thenThrow(new ExceptionInput("constraintViolation"));
-        \Phake::when(Arsse::$db)->folderPropertiesSet(...$db[7])->thenThrow(new ExceptionInput("typeViolation"));
-        \Phake::when(Arsse::$db)->folderPropertiesSet(...$db[8])->thenThrow(new ExceptionInput("typeViolation"));
-        // succefully move a folder
-        $exp = $this->respGood();
-        $this->assertMessage($exp, $this->req($in[0]));
-        // move a folder which does not exist (this should silently fail)
-        $exp = $this->respGood();
-        $this->assertMessage($exp, $this->req($in[1]));
-        // move a folder causing a duplication (this should also silently fail)
-        $exp = $this->respGood();
-        $this->assertMessage($exp, $this->req($in[2]));
-        $this->assertMessage($exp, $this->req($in[3]));
-        $this->assertMessage($exp, $this->req($in[6]));
-        // all the rest should cause errors
-        $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertMessage($exp, $this->req($in[4]));
-        $this->assertMessage($exp, $this->req($in[5]));
-        $this->assertMessage($exp, $this->req($in[7]));
-        $this->assertMessage($exp, $this->req($in[8]));
-        \Phake::verify(Arsse::$db, \Phake::times(5))->folderPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
+    /** @dataProvider provideCategoryRemovals */
+    public function testRemoveACategory(array $in, ?int $data, $out, ResponseInterface $exp): void {
+        $in = array_merge(['op' => "removeCategory", 'sid' => "PriestsOfSyrinx"], $in);
+        $action = ($out instanceof \Exception) ? "throws" : "returns";
+        $this->dbMock->folderRemove->$action($out);
+        $this->assertMessage($exp, $this->req($in));
+        if ($data > 0) {
+            $this->dbMock->folderRemove->calledWith($this->userId, (int) $data);
+        }
     }
 
-    public function testRenameACategory(): void {
-        $in = [
-            ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42, 'caption' => "Ook"],
-            ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 2112, 'caption' => "Eek"],
-            ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42, 'caption' => "Eek"],
-            ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42, 'caption' => ""],
-            ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42, 'caption' => " "],
-            ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => -1, 'caption' => "Ook"],
-            ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx", 'category_id' => 42],
-            ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx", 'caption' => "Ook"],
-            ['op' => "renameCategory", 'sid' => "PriestsOfSyrinx"],
+    public function provideCategoryRemovals(): iterable {
+        return [
+            [['category_id' => 42],   42,   true,                                 $this->respGood()],
+            [['category_id' => 2112], 2112, new ExceptionInput("subjectMissing"), $this->respGood()],
+            [[],                      null, null,                                 $this->respErr("INCORRECT_USAGE")],
+            [['category_id' => -1],   null, null,                                 $this->respErr("INCORRECT_USAGE")],
         ];
-        $db = [
-            [Arsse::$user->id, 42, ['name' => "Ook"]],
-            [Arsse::$user->id, 2112, ['name' => "Eek"]],
-            [Arsse::$user->id, 42, ['name' => "Eek"]],
-        ];
-        \Phake::when(Arsse::$db)->folderPropertiesSet(...$db[0])->thenReturn(true);
-        \Phake::when(Arsse::$db)->folderPropertiesSet(...$db[1])->thenThrow(new ExceptionInput("subjectMissing"));
-        \Phake::when(Arsse::$db)->folderPropertiesSet(...$db[2])->thenThrow(new ExceptionInput("constraintViolation"));
-        // succefully rename a folder
-        $exp = $this->respGood();
-        $this->assertMessage($exp, $this->req($in[0]));
-        // rename a folder which does not exist (this should silently fail)
-        $exp = $this->respGood();
-        $this->assertMessage($exp, $this->req($in[1]));
-        // rename a folder causing a duplication (this should also silently fail)
-        $exp = $this->respGood();
-        $this->assertMessage($exp, $this->req($in[2]));
-        // all the rest should cause errors
-        $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertMessage($exp, $this->req($in[3]));
-        $this->assertMessage($exp, $this->req($in[4]));
-        $this->assertMessage($exp, $this->req($in[5]));
-        $this->assertMessage($exp, $this->req($in[6]));
-        $this->assertMessage($exp, $this->req($in[7]));
-        $this->assertMessage($exp, $this->req($in[8]));
-        \Phake::verify(Arsse::$db, \Phake::times(3))->folderPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
     }
 
-    public function testAddASubscription(): void {
-        $in = [
-            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/0"],
-            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/1", 'category_id' => 42],
-            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/2", 'category_id' => 2112],
-            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/3"],
-            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://localhost:8000/Feed/Discovery/Valid"],
-            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://localhost:8000/Feed/Discovery/Invalid"],
-            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/6"],
-            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/7"],
-            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/8", 'category_id' => 47],
-            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/9", 'category_id' => 1],
-            // these don't even query the database as the input is syntactically invalid
-            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx"],
-            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/", 'login' => []],
-            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/", 'login' => "", 'password' => []],
-            ['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx", 'feed_url' => "http://example.com/", 'category_id' => -1],
+    /** @dataProvider provideCategoryMoves */
+    public function testMoveACategory(array $in, array $data, $out, ResponseInterface $exp): void {
+        $in = array_merge(['op' => "moveCategory", 'sid' => "PriestsOfSyrinx"], $in);
+        $action = ($out instanceof \Exception) ? "throws" : "returns";
+        $this->dbMock->folderPropertiesSet->$action($out);
+        $this->assertMessage($exp, $this->req($in));
+        if ($out !== null) {
+            $this->dbMock->folderPropertiesSet->calledWith(...$data);
+        } else {
+            $this->dbMock->folderPropertiesSet->never()->called();
+        }
+    }
+
+    public function provideCategoryMoves(): iterable {
+        return [
+            [['category_id' => 42,   'parent_id' => 1],  [$this->userId, 42,   ['parent' => 1]],  true,                                      $this->respGood()],
+            [['category_id' => 2112, 'parent_id' => 2],  [$this->userId, 2112, ['parent' => 2]],  new ExceptionInput("subjectMissing"),      $this->respGood()],
+            [['category_id' => 42,   'parent_id' => 0],  [$this->userId, 42,   ['parent' => 0]],  new ExceptionInput("constraintViolation"), $this->respGood()],
+            [['category_id' => 42,   'parent_id' => 47], [$this->userId, 42,   ['parent' => 47]], new ExceptionInput("idMissing"),           $this->respGood()],
+            [['category_id' => -1,   'parent_id' => 1],  [$this->userId, -1,   ['parent' => 1]],  null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['category_id' => 42,   'parent_id' => -1], [$this->userId, 42,   ['parent' => -1]], null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['category_id' => 42],                      [$this->userId, 42,   ['parent' => 0]],  new ExceptionInput("constraintViolation"), $this->respGood()],
+            [['parent_id' => -1],                        [$this->userId, 0,    ['parent' => -1]], null,                                      $this->respErr("INCORRECT_USAGE")],
+            [[],                                         [$this->userId, 0,    ['parent' => 0]],  null,                                      $this->respErr("INCORRECT_USAGE")],
         ];
-        $db = [
-            [Arsse::$user->id, "http://example.com/0", "", ""],
-            [Arsse::$user->id, "http://example.com/1", "", ""],
-            [Arsse::$user->id, "http://example.com/2", "", ""],
-            [Arsse::$user->id, "http://example.com/3", "", ""],
-            [Arsse::$user->id, "http://localhost:8000/Feed/Discovery/Valid", "", ""],
-            [Arsse::$user->id, "http://localhost:8000/Feed/Discovery/Invalid", "", ""],
-            [Arsse::$user->id, "http://example.com/6", "", ""],
-            [Arsse::$user->id, "http://example.com/7", "", ""],
-            [Arsse::$user->id, "http://example.com/8", "", ""],
-            [Arsse::$user->id, "http://example.com/9", "", ""],
+    }
+
+    /** @dataProvider provideCategoryRenamings */
+    public function testRenameACategory(array $in, ?array $data, $out, ResponseInterface $exp): void {
+        $in = array_merge(['op' => "renameCategory", 'sid' => "PriestsOfSyrinx"], $in);
+        $action = ($out instanceof \Exception) ? "throws" : "returns";
+        $this->dbMock->folderPropertiesSet->$action($out);
+        $this->assertMessage($exp, $this->req($in));
+        if ($out !== null) {
+            $this->dbMock->folderPropertiesSet->calledWith(...$data);
+        } else {
+            $this->dbMock->folderPropertiesSet->never()->called();
+        }
+    }
+
+    public function provideCategoryRenamings(): iterable {
+        return [
+            [['category_id' => 42,   'caption' => "Ook"], [$this->userId, 42,   ['name' => "Ook"]], true,                                      $this->respGood()],
+            [['category_id' => 2112, 'caption' => "Eek"], [$this->userId, 2112, ['name' => "Eek"]], new ExceptionInput("subjectMissing"),      $this->respGood()],
+            [['category_id' => 42,   'caption' => "Eek"], [$this->userId, 42,   ['name' => "Eek"]], new ExceptionInput("constraintViolation"), $this->respGood()],
+            [['category_id' => 42,   'caption' => ""],    null,                                     null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['category_id' => 42,   'caption' => " "],   null,                                     null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['category_id' => -1,   'caption' => "Ook"], null,                                     null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['category_id' => 42],                       null,                                     null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['caption' => "Ook"],                        null,                                     null,                                      $this->respErr("INCORRECT_USAGE")],
+            [[],                                          null,                                     null,                                      $this->respErr("INCORRECT_USAGE")],
         ];
-        $out = [
-            ['code' => 1, 'feed_id' => 2],
-            ['code' => 5, 'message' => (new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://example.com/1"], $this->mockGuzzleException(ClientException::class, "", 401)))->getMessage()],
-            ['code' => 1, 'feed_id' => 0],
-            ['code' => 0, 'feed_id' => 3],
-            ['code' => 0, 'feed_id' => 1],
-            ['code' => 3, 'message' => (new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://localhost:8000/Feed/Discovery/Invalid"], new \PicoFeed\Reader\SubscriptionNotFoundException()))->getMessage()],
-            ['code' => 2, 'message' => (new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://example.com/6"], $this->mockGuzzleException(ClientException::class, "", 404)))->getMessage()],
-            ['code' => 6, 'message' => (new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://example.com/7"], new \PicoFeed\Parser\MalformedXmlException()))->getMessage()],
-            ['code' => 1, 'feed_id' => 4],
-            ['code' => 0, 'feed_id' => 4],
-        ];
+    }
+
+    /** @dataProvider provideSubscriptionAdditions */
+    public function testAddASubscription(array $in, ?array $data, $out, ResponseInterface $exp): void {
+        $in = array_merge(['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx"], $in);
+        $action = ($out instanceof \Exception) ? "throws" : "returns";
         $list = [
             ['id' => 1, 'url' => "http://localhost:8000/Feed/Discovery/Feed"],
             ['id' => 2, 'url' => "http://example.com/0"],
             ['id' => 3, 'url' => "http://example.com/3"],
             ['id' => 4, 'url' => "http://example.com/9"],
         ];
-        \Phake::when(Arsse::$db)->subscriptionAdd(...$db[0])->thenReturn(2);
-        \Phake::when(Arsse::$db)->subscriptionAdd(...$db[1])->thenThrow(new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://example.com/1"], $this->mockGuzzleException(ClientException::class, "", 401)));
-        \Phake::when(Arsse::$db)->subscriptionAdd(...$db[2])->thenReturn(2);
-        \Phake::when(Arsse::$db)->subscriptionAdd(...$db[3])->thenThrow(new ExceptionInput("constraintViolation"));
-        \Phake::when(Arsse::$db)->subscriptionAdd(...$db[4])->thenThrow(new ExceptionInput("constraintViolation"));
-        \Phake::when(Arsse::$db)->subscriptionAdd(...$db[5])->thenThrow(new ExceptionInput("constraintViolation"));
-        \Phake::when(Arsse::$db)->subscriptionAdd(...$db[6])->thenThrow(new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://example.com/6"], $this->mockGuzzleException(ClientException::class, "", 404)));
-        \Phake::when(Arsse::$db)->subscriptionAdd(...$db[7])->thenThrow(new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://example.com/7"], new \PicoFeed\Parser\MalformedXmlException()));
-        \Phake::when(Arsse::$db)->subscriptionAdd(...$db[8])->thenReturn(4);
-        \Phake::when(Arsse::$db)->subscriptionAdd(...$db[9])->thenThrow(new ExceptionInput("constraintViolation"));
-        \Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 42)->thenReturn($this->v(['id' => 42]));
-        \Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 47)->thenReturn($this->v(['id' => 47]));
-        \Phake::when(Arsse::$db)->folderPropertiesGet(Arsse::$user->id, 2112)->thenThrow(new ExceptionInput("subjectMissing"));
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything())->thenReturn(true);
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 4, $this->anything())->thenThrow(new ExceptionInput("idMissing"));
-        \Phake::when(Arsse::$db)->subscriptionList(Arsse::$user->id)->thenReturn(new Result($this->v($list)));
-        for ($a = 0; $a < (sizeof($in) - 4); $a++) {
-            $exp = $this->respGood($out[$a]);
-            $this->assertMessage($exp, $this->req($in[$a]), "Failed test $a");
+        $this->dbMock->subscriptionAdd->$action($out);
+        $this->dbMock->folderPropertiesGet->with($this->userId, 42)->returns($this->v(['id' => 42]));
+        $this->dbMock->folderPropertiesGet->with($this->userId, 47)->returns($this->v(['id' => 47]));
+        $this->dbMock->folderPropertiesGet->with($this->userId, 2112)->throws(new ExceptionInput("subjectMissing"));
+        $this->dbMock->subscriptionPropertiesSet->with($this->userId, "*")->returns(true);
+        $this->dbMock->subscriptionPropertiesSet->with($this->userId, 4, "~")->throws(new ExceptionInput("idMissing"));
+        $this->dbMock->subscriptionList->with($this->userId)->returns(new Result($this->v($list)));
+        $this->assertMessage($exp, $this->req($in));
+        if ($data !== null) {
+            $this->dbMock->subscriptionAdd->calledWith(...$data);
+        } else {
+            $this->dbMock->subscriptionAdd->never()->called();
         }
-        $exp = $this->respErr("INCORRECT_USAGE");
-        for ($a = (sizeof($in) - 4); $a < sizeof($in); $a++) {
-            $this->assertMessage($exp, $this->req($in[$a]), "Failed test $a");
-        }
-        \Phake::verify(Arsse::$db, \Phake::times(0))->subscriptionPropertiesSet(Arsse::$user->id, 4, ['folder' => 1]);
+        $this->dbMock->subscriptionPropertiesSet->never()->calledWith($this->userId, 4, ['folder' => 1]);
+    }
+
+    public function provideSubscriptionAdditions(): iterable {
+        return [
+            [['feed_url' => "http://example.com/0"],                                 [$this->userId, "http://example.com/0", "", ""],                         2,                                         $this->respGood(['code' => 1, 'feed_id' => 2])],
+            [['feed_url' => "http://example.com/1", 'category_id' => 42],            [$this->userId, "http://example.com/1", "", ""],                         new FeedException("unauthorized"),         $this->respGood(['code' => 5, 'message' => (new FeedException("unauthorized"))->getMessage()])],
+            [['feed_url' => "http://example.com/2", 'category_id' => 2112],          null,                                                                    null,                                      $this->respGood(['code' => 1, 'feed_id' => 0])],
+            [['feed_url' => "http://example.com/3"],                                 [$this->userId, "http://example.com/3", "", ""],                         new ExceptionInput("constraintViolation"), $this->respGood(['code' => 0, 'feed_id' => 3])],
+            [['feed_url' => "http://localhost:8000/Feed/Discovery/Valid"],           [$this->userId, "http://localhost:8000/Feed/Discovery/Valid", "", ""],   new ExceptionInput("constraintViolation"), $this->respGood(['code' => 0, 'feed_id' => 1])],
+            [['feed_url' => "http://localhost:8000/Feed/Discovery/Invalid"],         [$this->userId, "http://localhost:8000/Feed/Discovery/Invalid", "", ""], new ExceptionInput("constraintViolation"), $this->respGood(['code' => 3, 'message' => (new FeedException("subscriptionNotFound", ['url' => "http://localhost:8000/Feed/Discovery/Invalid"]))->getMessage()])],
+            [['feed_url' => "http://example.com/6"],                                 [$this->userId, "http://example.com/6", "", ""],                         new FeedException("invalidUrl"),           $this->respGood(['code' => 2, 'message' => (new FeedException("invalidUrl"))->getMessage()])],
+            [['feed_url' => "http://example.com/7"],                                 [$this->userId, "http://example.com/7", "", ""],                         new FeedException("malformedXml"),         $this->respGood(['code' => 6, 'message' => (new FeedException("malformedXml"))->getMessage()])],
+            [['feed_url' => "http://example.com/8", 'category_id' => 47],            [$this->userId, "http://example.com/8", "", ""],                         4,                                         $this->respGood(['code' => 1, 'feed_id' => 4])],
+            [['feed_url' => "http://example.com/9", 'category_id' => 1],             [$this->userId, "http://example.com/9", "", ""],                         new ExceptionInput("constraintViolation"), $this->respGood(['code' => 0, 'feed_id' => 4])],
+            [[],                                                                     null,                                                                    null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['feed_url' => "http://example.com/", 'login' => []],                   null,                                                                    null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['feed_url' => "http://example.com/", 'login' => "", 'password' => []], null,                                                                    null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['feed_url' => "http://example.com/", 'category_id' => -1],             null,                                                                    null,                                      $this->respErr("INCORRECT_USAGE")],
+        ];
     }
 
     public function testRemoveASubscription(): void {
@@ -938,7 +852,7 @@ LONG_STRING;
 
     public function testRetrieveTheGlobalUnreadCount(): void {
         $in = ['op' => "getUnread", 'sid' => "PriestsOfSyrinx"];
-        \Phake::when(Arsse::$db)->subscriptionList(Arsse::$user->id)->thenReturn(new Result($this->v([
+        $this->dbMock->subscriptionList->returns(new Result($this->v([
             ['id' => 1, 'unread' => 2112],
             ['id' => 2, 'unread' => 42],
             ['id' => 3, 'unread' => 47],
@@ -952,14 +866,10 @@ LONG_STRING;
         $interval = Arsse::$conf->serviceFrequency;
         $valid = (new \DateTimeImmutable("now", new \DateTimezone("UTC")))->sub($interval);
         $invalid = $valid->sub($interval)->sub($interval);
-        \Phake::when(Arsse::$db)->metaGet("service_last_checkin")->thenReturn(Date::transform($valid, "sql"))->thenReturn(Date::transform($invalid, "sql"));
-        \Phake::when(Arsse::$db)->subscriptionCount(Arsse::$user->id)->thenReturn(12)->thenReturn(2);
-        $exp = [
-            ['icons_dir' => "feed-icons", 'icons_url' => "feed-icons", 'daemon_is_running' => true, 'num_feeds' => 12],
-            ['icons_dir' => "feed-icons", 'icons_url' => "feed-icons", 'daemon_is_running' => false, 'num_feeds' => 2],
-        ];
-        $this->assertMessage($this->respGood($exp[0]), $this->req($in));
-        $this->assertMessage($this->respGood($exp[1]), $this->req($in));
+        $this->dbMock->metaGet->with("service_last_checkin")->returns(Date::transform($valid, "sql"))->returns(Date::transform($invalid, "sql"));
+        $this->dbMock->subscriptionCount->with($this->userId)->returns(12, 2);
+        $this->assertMessage($this->respGood(['icons_dir' => "feed-icons", 'icons_url' => "feed-icons", 'daemon_is_running' => true, 'num_feeds' => 12]), $this->req($in));
+        $this->assertMessage($this->respGood(['icons_dir' => "feed-icons", 'icons_url' => "feed-icons", 'daemon_is_running' => false, 'num_feeds' => 2]), $this->req($in));
     }
 
     public function testUpdateAFeed(): void {
@@ -1176,11 +1086,11 @@ LONG_STRING;
 
     public function testRetrieveCounterList(): void {
         $in = ['op' => "getCounters", 'sid' => "PriestsOfSyrinx"];
-        \Phake::when(Arsse::$db)->folderList($this->anything())->thenReturn(new Result($this->v($this->folders)));
-        \Phake::when(Arsse::$db)->subscriptionList($this->anything())->thenReturn(new Result($this->v($this->subscriptions)));
-        \Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result($this->v($this->usedLabels)));
-        \Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->hidden(false)->unread(true)->modifiedSince(Date::sub("PT24H")), 2))->thenReturn(7);
-        \Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn($this->v($this->starred));
+        $this->dbMock->folderList->returns(new Result($this->v($this->folders)));
+        $this->dbMock->subscriptionList->returns(new Result($this->v($this->subscriptions)));
+        $this->dbMock->labelList->with("~", false)->returns(new Result($this->v($this->usedLabels)));
+        $this->dbMock->articleCount->returns(7);
+        $this->dbMock->articleStarred->returns($this->v($this->starred));
         $exp = [
             ['id' => "global-unread", 'counter' => 35],
             ['id' => "subscribed-feeds", 'counter' => 6],
@@ -1207,6 +1117,7 @@ LONG_STRING;
             ['id' => -2, 'kind' => "cat", 'counter' => 6],
         ];
         $this->assertMessage($this->respGood($exp), $this->req($in));
+        $this->dbMock->articleCount->calledWith($this->userId, $this->equalTo((new Context)->hidden(false)->unread(true)->modifiedSince(Date::sub("PT24H", self::NOW))));
     }
 
     public function testRetrieveTheLabelList(): void {
@@ -1297,31 +1208,32 @@ LONG_STRING;
             ['op' => "getFeedTree", 'sid' => "PriestsOfSyrinx", 'include_empty' => true],
             ['op' => "getFeedTree", 'sid' => "PriestsOfSyrinx"],
         ];
-        \Phake::when(Arsse::$db)->folderList($this->anything(), null, true)->thenReturn(new Result($this->v($this->folders)));
-        \Phake::when(Arsse::$db)->subscriptionList($this->anything())->thenReturn(new Result($this->v($this->subscriptions)));
-        \Phake::when(Arsse::$db)->labelList($this->anything(), true)->thenReturn(new Result($this->v($this->labels)));
-        \Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->hidden(false)->unread(true)->modifiedSince(Date::sub("PT24H")), 2))->thenReturn(7);
-        \Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn($this->v($this->starred));
+        $this->dbMock->folderList->with("~", null, true)->returns(new Result($this->v($this->folders)));
+        $this->dbMock->subscriptionList->returns(new Result($this->v($this->subscriptions)));
+        $this->dbMock->labelList->with("~", true)->returns(new Result($this->v($this->labels)));
+        $this->dbMock->articleCount->returns(7);
+        $this->dbMock->articleStarred->returns($this->v($this->starred));
         // the expectations are packed tightly since they're very verbose; one can use var_export() (or convert to JSON) to pretty-print them
         $exp = ['categories' => ['identifier' => 'id','label' => 'name','items' => [['name' => 'Special','id' => 'CAT:-1','bare_id' => -1,'type' => 'category','unread' => 0,'items' => [['name' => 'All articles','id' => 'FEED:-4','bare_id' => -4,'icon' => 'images/folder.png','unread' => 35,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Fresh articles','id' => 'FEED:-3','bare_id' => -3,'icon' => 'images/fresh.png','unread' => 7,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Starred articles','id' => 'FEED:-1','bare_id' => -1,'icon' => 'images/star.png','unread' => 4,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Published articles','id' => 'FEED:-2','bare_id' => -2,'icon' => 'images/feed.png','unread' => 0,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Archived articles','id' => 'FEED:0','bare_id' => 0,'icon' => 'images/archive.png','unread' => 0,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Recently read','id' => 'FEED:-6','bare_id' => -6,'icon' => 'images/time.png','unread' => 0,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => '']]],['name' => 'Labels','id' => 'CAT:-2','bare_id' => -2,'type' => 'category','unread' => 6,'items' => [['name' => 'Fascinating','id' => 'FEED:-1027','bare_id' => -1027,'unread' => 0,'icon' => 'images/label.png','type' => 'feed','auxcounter' => 0,'error' => '','updated' => '','fg_color' => '','bg_color' => ''],['name' => 'Interesting','id' => 'FEED:-1029','bare_id' => -1029,'unread' => 0,'icon' => 'images/label.png','type' => 'feed','auxcounter' => 0,'error' => '','updated' => '','fg_color' => '','bg_color' => ''],['name' => 'Logical','id' => 'FEED:-1025','bare_id' => -1025,'unread' => 0,'icon' => 'images/label.png','type' => 'feed','auxcounter' => 0,'error' => '','updated' => '','fg_color' => '','bg_color' => '']]],['name' => 'Photography','id' => 'CAT:4','bare_id' => 4,'parent_id' => null,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(0 feeds)','items' => []],['name' => 'Politics','id' => 'CAT:3','bare_id' => 3,'parent_id' => null,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(3 feeds)','items' => [['name' => 'Local','id' => 'CAT:5','bare_id' => 5,'parent_id' => 3,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(1 feed)','items' => [['name' => 'Toronto Star','id' => 'FEED:2','bare_id' => 2,'icon' => 'feed-icons/2.ico','error' => 'oops','param' => '2011-11-11T11:11:11Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]],['name' => 'National','id' => 'CAT:6','bare_id' => 6,'parent_id' => 3,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(2 feeds)','items' => [['name' => 'CBC News','id' => 'FEED:4','bare_id' => 4,'icon' => 'feed-icons/4.ico','error' => '','param' => '2017-10-09T15:58:34Z','unread' => 0,'auxcounter' => 0,'checkbox' => false],['name' => 'Ottawa Citizen','id' => 'FEED:5','bare_id' => 5,'icon' => false,'error' => '','param' => '2017-07-07T17:07:17Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]]]],['name' => 'Science','id' => 'CAT:1','bare_id' => 1,'parent_id' => null,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(2 feeds)','items' => [['name' => 'Rocketry','id' => 'CAT:2','bare_id' => 2,'parent_id' => 1,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(1 feed)','items' => [['name' => 'NASA JPL','id' => 'FEED:1','bare_id' => 1,'icon' => false,'error' => '','param' => '2017-09-15T22:54:16Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]],['name' => 'Ars Technica','id' => 'FEED:3','bare_id' => 3,'icon' => 'feed-icons/3.ico','error' => 'argh','param' => '2016-05-23T06:40:02Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]],['name' => 'Uncategorized','id' => 'CAT:0','bare_id' => 0,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'parent_id' => null,'param' => '(1 feed)','items' => [['name' => 'Eurogamer','id' => 'FEED:6','bare_id' => 6,'icon' => 'feed-icons/6.ico','error' => '','param' => '2010-02-12T20:08:47Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]]]]];
         $this->assertMessage($this->respGood($exp), $this->req($in[0]));
         $exp = ['categories' => ['identifier' => 'id','label' => 'name','items' => [['name' => 'Special','id' => 'CAT:-1','bare_id' => -1,'type' => 'category','unread' => 0,'items' => [['name' => 'All articles','id' => 'FEED:-4','bare_id' => -4,'icon' => 'images/folder.png','unread' => 35,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Fresh articles','id' => 'FEED:-3','bare_id' => -3,'icon' => 'images/fresh.png','unread' => 7,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Starred articles','id' => 'FEED:-1','bare_id' => -1,'icon' => 'images/star.png','unread' => 4,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Published articles','id' => 'FEED:-2','bare_id' => -2,'icon' => 'images/feed.png','unread' => 0,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Archived articles','id' => 'FEED:0','bare_id' => 0,'icon' => 'images/archive.png','unread' => 0,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Recently read','id' => 'FEED:-6','bare_id' => -6,'icon' => 'images/time.png','unread' => 0,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => '']]],['name' => 'Labels','id' => 'CAT:-2','bare_id' => -2,'type' => 'category','unread' => 6,'items' => [['name' => 'Fascinating','id' => 'FEED:-1027','bare_id' => -1027,'unread' => 0,'icon' => 'images/label.png','type' => 'feed','auxcounter' => 0,'error' => '','updated' => '','fg_color' => '','bg_color' => ''],['name' => 'Interesting','id' => 'FEED:-1029','bare_id' => -1029,'unread' => 0,'icon' => 'images/label.png','type' => 'feed','auxcounter' => 0,'error' => '','updated' => '','fg_color' => '','bg_color' => ''],['name' => 'Logical','id' => 'FEED:-1025','bare_id' => -1025,'unread' => 0,'icon' => 'images/label.png','type' => 'feed','auxcounter' => 0,'error' => '','updated' => '','fg_color' => '','bg_color' => '']]],['name' => 'Politics','id' => 'CAT:3','bare_id' => 3,'parent_id' => null,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(3 feeds)','items' => [['name' => 'Local','id' => 'CAT:5','bare_id' => 5,'parent_id' => 3,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(1 feed)','items' => [['name' => 'Toronto Star','id' => 'FEED:2','bare_id' => 2,'icon' => 'feed-icons/2.ico','error' => 'oops','param' => '2011-11-11T11:11:11Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]],['name' => 'National','id' => 'CAT:6','bare_id' => 6,'parent_id' => 3,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(2 feeds)','items' => [['name' => 'CBC News','id' => 'FEED:4','bare_id' => 4,'icon' => 'feed-icons/4.ico','error' => '','param' => '2017-10-09T15:58:34Z','unread' => 0,'auxcounter' => 0,'checkbox' => false],['name' => 'Ottawa Citizen','id' => 'FEED:5','bare_id' => 5,'icon' => false,'error' => '','param' => '2017-07-07T17:07:17Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]]]],['name' => 'Science','id' => 'CAT:1','bare_id' => 1,'parent_id' => null,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(2 feeds)','items' => [['name' => 'Rocketry','id' => 'CAT:2','bare_id' => 2,'parent_id' => 1,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(1 feed)','items' => [['name' => 'NASA JPL','id' => 'FEED:1','bare_id' => 1,'icon' => false,'error' => '','param' => '2017-09-15T22:54:16Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]],['name' => 'Ars Technica','id' => 'FEED:3','bare_id' => 3,'icon' => 'feed-icons/3.ico','error' => 'argh','param' => '2016-05-23T06:40:02Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]],['name' => 'Uncategorized','id' => 'CAT:0','bare_id' => 0,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'parent_id' => null,'param' => '(1 feed)','items' => [['name' => 'Eurogamer','id' => 'FEED:6','bare_id' => 6,'icon' => 'feed-icons/6.ico','error' => '','param' => '2010-02-12T20:08:47Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]]]]];
         $this->assertMessage($this->respGood($exp), $this->req($in[1]));
+        $this->dbMock->articleCount->twice()->calledWith($this->userId, $this->equalTo((new Context)->hidden(false)->unread(true)->modifiedSince(Date::sub("PT24H", self::NOW))));
     }
 
     /** @dataProvider provideMassMarkings */
     public function testMarkFeedsAsRead(array $in, ?Context $c): void {
         $base = ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx"];
         $in = array_merge($base, $in);
-        \Phake::when(Arsse::$db)->articleMark->thenThrow(new ExceptionInput("typeViolation"));
+        $this->dbMock->articleMark->throws(new ExceptionInput("typeViolation"));
         // create a mock-current time
-        \Phake::when(Arsse::$obj)->get(\DateTimeImmutable::class)->thenReturn(new \DateTimeImmutable(self::NOW));
+        $this->objMock->get->with(\DateTimeImmutable::class)->returns(new \DateTimeImmutable(self::NOW));
         // TT-RSS always responds the same regardless of success or failure
         $this->assertMessage($this->respGood(['status' => "OK"]), $this->req($in));
         if (isset($c)) {
-            \Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, ['read' => true], $c);
+            $this->dbMock->articleMark->calledWith(Arsse::$user->id, ['read' => true], $this->equalTo($c));
         } else {
-            \Phake::verify(Arsse::$db, \Phake::times(0))->articleMark;
+            $this->dbMock->articleMark->never()->called();
         }
     }
 
@@ -1691,24 +1603,21 @@ LONG_STRING;
     public function testRetrieveHeadlines(bool $full, array $in, $out, Context $c, array $fields, array $order, ResponseInterface $exp): void {
         $base = ['op' => $full ? "getHeadlines" : "getCompactHeadlines", 'sid' => "PriestsOfSyrinx"];
         $in = array_merge($base, $in);
-        \Phake::when(Arsse::$obj)->get(\DateTimeImmutable::class)->thenReturn(new \DateTimeImmutable(self::NOW));
-        \Phake::when(Arsse::$db)->labelList->thenReturn(new Result($this->v($this->labels)));
-        \Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result($this->v($this->usedLabels)));
-        \Phake::when(Arsse::$db)->articleLabelsGet->thenReturn([]);
-        \Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 2112)->thenReturn($this->v([1,3]));
-        \Phake::when(Arsse::$db)->articleCategoriesGet->thenReturn([]);
-        \Phake::when(Arsse::$db)->articleCategoriesGet($this->anything(), 2112)->thenReturn(["Boring","Illogical"]);
-        \Phake::when(Arsse::$db)->articleCount->thenReturn(2);
-        if ($out instanceof \Exception) {
-            \Phake::when(Arsse::$db)->articleList->thenThrow($out);
-        } else {
-            \Phake::when(Arsse::$db)->articleList->thenReturn($out);
-        }
+        $action = ($out instanceof \Exception) ? "throws" : "returns";
+        $this->objMock->get->with(\DateTimeImmutable::class)->returns(new \DateTimeImmutable(self::NOW));
+        $this->dbMock->labelList->returns(new Result($this->v($this->labels)));
+        $this->dbMock->labelList->with("~", false)->returns(new Result($this->v($this->usedLabels)));
+        $this->dbMock->articleLabelsGet->returns([]);
+        $this->dbMock->articleLabelsGet->with("~", 2112)->returns($this->v([1,3]));
+        $this->dbMock->articleCategoriesGet->returns([]);
+        $this->dbMock->articleCategoriesGet->with("~", 2112)->returns(["Boring","Illogical"]);
+        $this->dbMock->articleCount->returns(2);
+        $this->dbMock->articleList->$action($out);
         $this->assertMessage($exp, $this->req($in));
         if ($out) {
-            \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, $c, $fields, $order);
+            $this->dbMock->articleList->calledWith($this->userId, $this->equalTo($c), $fields, $order);
         } else {
-            \Phake::verify(Arsse::$db, \Phake::times(0))->articleList;
+            $this->dbMock->articleList->never()->called();
         }
     }
 
