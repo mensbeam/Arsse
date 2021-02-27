@@ -31,7 +31,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function setUp(): void {
-        self::clearData();
+        parent::setUp();
         self::setConf(static::$conf);
         if (!static::$interface) {
             $this->markTestSkipped(static::$implementation." database driver not available");
@@ -48,7 +48,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
     public function tearDown(): void {
         // deconstruct the driver
         unset($this->drv);
-        self::clearData();
+        parent::tearDown();
     }
 
     public static function tearDownAfterClass(): void {
@@ -57,7 +57,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
             static::dbRaze(static::$interface);
         }
         static::$interface = null;
-        self::clearData();
+        self::clearData(true);
     }
 
     protected function exec($q): bool {

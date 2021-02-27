@@ -10,10 +10,6 @@ use JKingWeb\Arsse\Misc\Date;
 
 /** @covers \JKingWeb\Arsse\Misc\Date */
 class TestDate extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function setUp(): void {
-        self::clearData();
-    }
-
     public function testNormalizeADate(): void {
         $exp = new \DateTimeImmutable("2018-01-01T00:00:00Z");
         $this->assertEquals($exp, Date::normalize(1514764800));

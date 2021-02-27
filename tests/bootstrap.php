@@ -12,7 +12,7 @@ const DOCROOT = BASE."tests".DIRECTORY_SEPARATOR."docroot".DIRECTORY_SEPARATOR;
 ini_set("memory_limit", "-1");
 ini_set("zend.assertions", "1");
 ini_set("assert.exception", "true");
-error_reporting(\E_ALL);
+error_reporting(\E_ALL ^ \E_DEPRECATED);
 require_once BASE."vendor".DIRECTORY_SEPARATOR."autoload.php";
 
 if (function_exists("xdebug_set_filter")) {

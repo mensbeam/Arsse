@@ -24,11 +24,11 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
     ];
 
     public function setUp(): void {
-        self::clearData();
+        parent::setUp();
         // create a mock user manager
-        Arsse::$user = \Phake::mock(\JKingWeb\Arsse\User::class);
+        Arsse::$user = $this->mock(\JKingWeb\Arsse\User::class)->get();
         // create a mock Import/Export processor
-        $this->proc = \Phake::partialMock(AbstractImportExport::class);
+        $this->proc = $this->partialMock(AbstractImportExport::class);
         // initialize an SQLite memeory database
         static::setConf();
         try {
@@ -142,12 +142,12 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
     public function tearDown(): void {
         $this->drv = null;
         $this->proc = null;
-        self::clearData();
+        parent::tearDown();
     }
 
     public function testImportForAMissingUser(): void {
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
-        $this->proc->import("no.one@example.com", "", false, false);
+        $this->proc->get()->import("no.one@example.com", "", false, false);
     }
 
     public function testImportWithInvalidFolder(): void {
@@ -155,9 +155,9 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         ], [1 =>
             ['id' => 1, 'name' => "", 'parent' => 0],
         ]];
-        \Phake::when($this->proc)->parse->thenReturn($in);
+        $this->proc->parse->returns($in);
         $this->assertException("invalidFolderName", "ImportExport");
-        $this->proc->import("john.doe@example.com", "", false, false);
+        $this->proc->get()->import("john.doe@example.com", "", false, false);
     }
 
     public function testImportWithDuplicateFolder(): void {
@@ -166,9 +166,9 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 1, 'name' => "New", 'parent' => 0],
             ['id' => 2, 'name' => "New", 'parent' => 0],
         ]];
-        \Phake::when($this->proc)->parse->thenReturn($in);
+        $this->proc->parse->returns($in);
         $this->assertException("invalidFolderCopy", "ImportExport");
-        $this->proc->import("john.doe@example.com", "", false, false);
+        $this->proc->get()->import("john.doe@example.com", "", false, false);
     }
 
     public function testMakeNoEffectiveChanges(): void {
@@ -187,11 +187,11 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 5, 'name' => "Local",       'parent' => 4],
             ['id' => 6, 'name' => "National",    'parent' => 4],
         ]];
-        \Phake::when($this->proc)->parse->thenReturn($in);
+        $this->proc->parse->returns($in);
         $exp = $this->primeExpectations($this->data, $this->checkTables);
-        $this->proc->import("john.doe@example.com", "", false, false);
+        $this->proc->get()->import("john.doe@example.com", "", false, false);
         $this->compareExpectations($this->drv, $exp);
-        $this->proc->import("john.doe@example.com", "", false, true);
+        $this->proc->get()->import("john.doe@example.com", "", false, true);
         $this->compareExpectations($this->drv, $exp);
     }
 
@@ -212,8 +212,8 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 6, 'name' => "National",    'parent' => 4],
             ['id' => 7, 'name' => "Nature",      'parent' => 0], // new folder
         ]];
-        \Phake::when($this->proc)->parse->thenReturn($in);
-        $this->proc->import("john.doe@example.com", "", false, true);
+        $this->proc->parse->returns($in);
+        $this->proc->get()->import("john.doe@example.com", "", false, true);
         $exp = $this->primeExpectations($this->data, $this->checkTables);
         $exp['arsse_subscriptions']['rows'][3] = [4, "john.doe@example.com", null, 4, "CBC"];
         $exp['arsse_folders']['rows'][] = [7, "john.doe@example.com", null, "Nature"];
@@ -224,8 +224,8 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         $in = [[
             ['url' => "http://localhost:8000/Import/some-feed", 'title' => "Some Feed", 'folder' => 0, 'tags' => ["frequent", "cryptic"]], //one existing tag and one new one
         ], []];
-        \Phake::when($this->proc)->parse->thenReturn($in);
-        $this->proc->import("john.doe@example.com", "", false, false);
+        $this->proc->parse->returns($in);
+        $this->proc->get()->import("john.doe@example.com", "", false, false);
         $exp = $this->primeExpectations($this->data, $this->checkTables);
         $exp['arsse_feeds']['rows'][] = [7, "http://localhost:8000/Import/some-feed", "Some feed"]; // author-supplied and user-supplied titles differ
         $exp['arsse_subscriptions']['rows'][] = [7, "john.doe@example.com", null, 7, "Some Feed"];
@@ -239,9 +239,9 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         $in = [[
             ['url' => "http://localhost:8000/Import/some-feed", 'title' => "Some Feed", 'folder' => 0, 'tags' => [""]],
         ], []];
-        \Phake::when($this->proc)->parse->thenReturn($in);
+        $this->proc->parse->returns($in);
         $this->assertException("invalidTagName", "ImportExport");
-        $this->proc->import("john.doe@example.com", "", false, false);
+        $this->proc->get()->import("john.doe@example.com", "", false, false);
     }
 
     public function testReplaceData(): void {
@@ -250,8 +250,8 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         ], [1 =>
             ['id' => 1, 'name' => "Photography", 'parent' => 0],
         ]];
-        \Phake::when($this->proc)->parse->thenReturn($in);
-        $this->proc->import("john.doe@example.com", "", false, true);
+        $this->proc->parse->returns($in);
+        $this->proc->get()->import("john.doe@example.com", "", false, true);
         $exp = $this->primeExpectations($this->data, $this->checkTables);
         $exp['arsse_feeds']['rows'][] = [7, "http://localhost:8000/Import/some-feed", "Some feed"]; // author-supplied and user-supplied titles differ
         $exp['arsse_subscriptions']['rows'] = [[7, "john.doe@example.com", 4, 7, "Some Feed"]];

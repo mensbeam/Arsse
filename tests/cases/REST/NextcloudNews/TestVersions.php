@@ -14,7 +14,7 @@ use Laminas\Diactoros\Response\EmptyResponse;
 /** @covers \JKingWeb\Arsse\REST\NextcloudNews\Versions */
 class TestVersions extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
-        self::clearData();
+        parent::setUp();
     }
 
     protected function req(string $method, string $target): ResponseInterface {

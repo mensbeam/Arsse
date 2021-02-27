@@ -24,7 +24,8 @@ use Laminas\Diactoros\Response\EmptyResponse;
 class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @var \JKingWeb\Arsse\REST\Fever\API */
     protected $h;
-
+    protected $hMock;
+    protected $userId = "john.doe@example.com";
     protected $articles = [
         'db' => [
             [
@@ -141,35 +142,35 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             ],
         ],
     ];
+
     protected function v($value) {
         return $value;
     }
 
-    protected function req($dataGet, $dataPost = "", string $method = "POST", string $type = null, string $target = "", string $user = null): ServerRequest {
+    protected function req($dataGet, $dataPost = "", string $method = "POST", ?string $type = null, string $target = "", ?string $user = null): ResponseInterface {
+        Arsse::$db = $this->dbMock->get();
+        $this->h = $this->hMock->get();
         $prefix = "/fever/";
         $url = $prefix.$target;
         $type = $type ?? "application/x-www-form-urlencoded";
-        return $this->serverRequest($method, $url, $prefix, [], [], $dataPost, $type, $dataGet, $user);
+        return $this->h->dispatch($this->serverRequest($method, $url, $prefix, [], [], $dataPost, $type, $dataGet, $user));
     }
 
     public function setUp(): void {
         self::clearData();
         self::setConf();
         // create a mock user manager
-        Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->auth->thenReturn(true);
-        Arsse::$user->id = "john.doe@example.com";
+        $this->userMock = $this->mock(User::class);
+        $this->userMock->auth->returns(true);
+        Arsse::$user = $this->userMock->get();
+        Arsse::$user->id = $this->userId;
         // create a mock database interface
-        Arsse::$db = \Phake::mock(Database::class);
-        \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(Transaction::class));
-        \Phake::when(Arsse::$db)->tokenLookup->thenReturn(['user' => "john.doe@example.com"]);
+        $this->dbMock = $this->mock(Database::class);
+        $this->dbMock->begin->returns($this->mock(Transaction::class));
+        $this->dbMock->tokenLookup->returns(['user' => "john.doe@example.com"]);
         // instantiate the handler as a partial mock to simplify testing
-        $this->h = \Phake::partialMock(API::class);
-        \Phake::when($this->h)->baseResponse->thenReturn([]);
-    }
-
-    public function tearDown(): void {
-        self::clearData();
+        $this->hMock = $this->partialMock(API::class);
+        $this->hMock->baseResponse->returns([]);
     }
 
     /** @dataProvider provideTokenAuthenticationRequests */
@@ -179,17 +180,16 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             'userSessionEnforced'  => $tokenEnforced,
         ], true);
         Arsse::$user->id = null;
-        \Phake::when(Arsse::$db)->tokenLookup->thenThrow(new ExceptionInput("subjectMissing"));
-        \Phake::when(Arsse::$db)->tokenLookup("fever.login", "validtoken")->thenReturn(['user' => "jane.doe@example.com"]);
+        $this->dbMock->tokenLookup->throws(new ExceptionInput("subjectMissing"));
+        $this->dbMock->tokenLookup->with("fever.login", "validtoken")->returns(['user' => "jane.doe@example.com"]);
         // test only the authentication process
-        \Phake::when($this->h)->baseResponse->thenReturnCallback(function(bool $authenticated) {
+        $this->hMock->baseResponse->does(function(bool $authenticated) {
             return ['auth' => (int) $authenticated];
         });
-        \Phake::when($this->h)->processRequest->thenReturnCallback(function($out, $G, $P) {
+        $this->hMock->processRequest->does(function($out, $G, $P) {
             return $out;
         });
-        $act = $this->h->dispatch($this->req($dataGet, $dataPost, "POST", null, "", $httpUser));
-        $this->assertMessage($exp, $act);
+        $this->assertMessage($exp, $this->req($dataGet, $dataPost, "POST", null, "", $httpUser));
     }
 
     public function provideTokenAuthenticationRequests(): iterable {
@@ -245,12 +245,12 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testListGroups(): void {
-        \Phake::when(Arsse::$db)->tagList(Arsse::$user->id)->thenReturn(new Result([
+        $this->dbMock->tagList->with($this->userId)->returns(new Result([
             ['id' => 1, 'name' => "Fascinating", 'subscriptions' => 2],
             ['id' => 2, 'name' => "Interesting", 'subscriptions' => 2],
             ['id' => 3, 'name' => "Boring",      'subscriptions' => 0],
         ]));
-        \Phake::when(Arsse::$db)->tagSummarize(Arsse::$user->id)->thenReturn(new Result([
+        $this->dbMock->tagSummarize->with($this->userId)->returns(new Result([
             ['id' => 1, 'name' => "Fascinating", 'subscription' => 1],
             ['id' => 1, 'name' => "Fascinating", 'subscription' => 2],
             ['id' => 2, 'name' => "Interesting", 'subscription' => 1],
@@ -267,17 +267,16 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
                 ['group_id' => 2, 'feed_ids' => "1,3"],
             ],
         ]);
-        $act = $this->h->dispatch($this->req("api&groups"));
-        $this->assertMessage($exp, $act);
+        $this->assertMessage($exp, $this->req("api&groups"));
     }
 
     public function testListFeeds(): void {
-        \Phake::when(Arsse::$db)->subscriptionList(Arsse::$user->id)->thenReturn(new Result([
+        $this->dbMock->subscriptionList->with($this->userId)->returns(new Result([
             ['id' => 1, 'feed' => 5, 'title' => "Ankh-Morpork News", 'url' => "http://example.com/feed", 'source' => "http://example.com/", 'edited' => "2019-01-01 21:12:00", 'icon_url' => "http://example.com/favicon.ico", 'icon_id' => 42],
             ['id' => 2, 'feed' => 9, 'title' => "Ook, Ook Eek Ook!", 'url' => "http://example.net/feed", 'source' => "http://example.net/", 'edited' => "1988-06-24 12:21:00", 'icon_url' => "",                               'icon_id' => null],
             ['id' => 3, 'feed' => 1, 'title' => "The Last Soul",     'url' => "http://example.org/feed", 'source' => "http://example.org/", 'edited' => "1991-08-12 03:22:00", 'icon_url' => "http://example.org/favicon.ico", 'icon_id' => 42],
         ]));
-        \Phake::when(Arsse::$db)->tagSummarize(Arsse::$user->id)->thenReturn(new Result([
+        $this->dbMock->tagSummarize->with($this->userId)->returns(new Result([
             ['id' => 1, 'name' => "Fascinating", 'subscription' => 1],
             ['id' => 1, 'name' => "Fascinating", 'subscription' => 2],
             ['id' => 2, 'name' => "Interesting", 'subscription' => 1],
@@ -294,23 +293,21 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
                 ['group_id' => 2, 'feed_ids' => "1,3"],
             ],
         ]);
-        $act = $this->h->dispatch($this->req("api&feeds"));
-        $this->assertMessage($exp, $act);
+        $this->assertMessage($exp, $this->req("api&feeds"));
     }
 
     /** @dataProvider provideItemListContexts */
     public function testListItems(string $url, Context $c, bool $desc): void {
         $fields = ["id", "subscription", "title", "author", "content", "url", "starred", "unread", "published_date"];
         $order = [$desc ? "id desc" : "id"];
-        \Phake::when(Arsse::$db)->articleList->thenReturn(new Result($this->articles['db']));
-        \Phake::when(Arsse::$db)->articleCount(Arsse::$user->id, (new Context)->hidden(false))->thenReturn(1024);
+        $this->dbMock->articleList->returns(new Result($this->articles['db']));
+        $this->dbMock->articleCount->with($this->userId, (new Context)->hidden(false))->returns(1024);
         $exp = new JsonResponse([
             'items'       => $this->articles['rest'],
             'total_items' => 1024,
         ]);
-        $act = $this->h->dispatch($this->req("api&$url"));
-        $this->assertMessage($exp, $act);
-        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, $c, $fields, $order);
+        $this->assertMessage($exp, $this->req("api&$url"));
+        $this->dbMock->articleList->calledWith($this->userId, $this->equalTo($c), $fields, $order);
     }
 
     public function provideItemListContexts(): iterable {
@@ -332,35 +329,34 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testListItemIds(): void {
         $saved = [['id' => 1],['id' => 2],['id' => 3]];
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true)->hidden(false))->thenReturn(new Result($saved));
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->unread(true)->hidden(false))->thenReturn(new Result($unread));
+        $this->dbMock->articleList->with($this->userId, (new Context)->starred(true)->hidden(false))->returns(new Result($saved));
+        $this->dbMock->articleList->with($this->userId, (new Context)->unread(true)->hidden(false))->returns(new Result($unread));
         $exp = new JsonResponse(['saved_item_ids' => "1,2,3"]);
-        $this->assertMessage($exp, $this->h->dispatch($this->req("api&saved_item_ids")));
+        $this->assertMessage($exp, $this->req("api&saved_item_ids"));
         $exp = new JsonResponse(['unread_item_ids' => "4,5,6"]);
-        $this->assertMessage($exp, $this->h->dispatch($this->req("api&unread_item_ids")));
+        $this->assertMessage($exp, $this->req("api&unread_item_ids"));
     }
 
     public function testListHotLinks(): void {
         // hot links are not actually implemented, so an empty array should be all we get
         $exp = new JsonResponse(['links' => []]);
-        $this->assertMessage($exp, $this->h->dispatch($this->req("api&links")));
+        $this->assertMessage($exp, $this->req("api&links"));
     }
 
     /** @dataProvider provideMarkingContexts */
     public function testSetMarks(string $post, Context $c, array $data, array $out): void {
         $saved = [['id' => 1],['id' => 2],['id' => 3]];
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true)->hidden(false))->thenReturn(new Result($saved));
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->unread(true)->hidden(false))->thenReturn(new Result($unread));
-        \Phake::when(Arsse::$db)->articleMark->thenReturn(0);
-        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->article(2112))->thenThrow(new \JKingWeb\Arsse\Db\ExceptionInput("subjectMissing"));
+        $this->dbMock->articleList->with($this->userId, (new Context)->starred(true)->hidden(false))->returns(new Result($saved));
+        $this->dbMock->articleList->with($this->userId, (new Context)->unread(true)->hidden(false))->returns(new Result($unread));
+        $this->dbMock->articleMark->returns(0);
+        $this->dbMock->articleMark->with($this->userId, $this->anything(), (new Context)->article(2112))->throws(new \JKingWeb\Arsse\Db\ExceptionInput("subjectMissing"));
         $exp = new JsonResponse($out);
-        $act = $this->h->dispatch($this->req("api", $post));
-        $this->assertMessage($exp, $act);
+        $this->assertMessage($exp, $this->req("api", $post));
         if ($c && $data) {
-            \Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $data, $c);
+            $this->dbMock->articleMark->calledWith($this->userId, $data, $this->equalTo($c));
         } else {
-            \Phake::verify(Arsse::$db, \Phake::times(0))->articleMark;
+            $this->dbMock->articleMark->never()->called();
         }
     }
 
@@ -368,17 +364,16 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testSetMarksWithQuery(string $get, Context $c, array $data, array $out): void {
         $saved = [['id' => 1],['id' => 2],['id' => 3]];
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->starred(true)->hidden(false))->thenReturn(new Result($saved));
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->unread(true)->hidden(false))->thenReturn(new Result($unread));
-        \Phake::when(Arsse::$db)->articleMark->thenReturn(0);
-        \Phake::when(Arsse::$db)->articleMark(Arsse::$user->id, $this->anything(), (new Context)->article(2112))->thenThrow(new \JKingWeb\Arsse\Db\ExceptionInput("subjectMissing"));
+        $this->dbMock->articleList->with($this->userId, (new Context)->starred(true)->hidden(false))->returns(new Result($saved));
+        $this->dbMock->articleList->with($this->userId, (new Context)->unread(true)->hidden(false))->returns(new Result($unread));
+        $this->dbMock->articleMark->returns(0);
+        $this->dbMock->articleMark->with($this->userId, $this->anything(), (new Context)->article(2112))->throws(new \JKingWeb\Arsse\Db\ExceptionInput("subjectMissing"));
         $exp = new JsonResponse($out);
-        $act = $this->h->dispatch($this->req("api&$get"));
-        $this->assertMessage($exp, $act);
+        $this->assertMessage($exp, $this->req("api&$get"));
         if ($c && $data) {
-            \Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $data, $c);
+            $this->dbMock->articleMark->calledWith($this->userId, $data, $this->equalTo($c));
         } else {
-            \Phake::verify(Arsse::$db, \Phake::times(0))->articleMark;
+            $this->dbMock->articleMark->never()->called();
         }
     }
 
@@ -421,97 +416,89 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideInvalidRequests */
-    public function testSendInvalidRequests(ServerRequest $req, ResponseInterface $exp): void {
-        $this->assertMessage($exp, $this->h->dispatch($req));
+    public function testSendInvalidRequests(string $get, string $post, string $method, ?string $type, ResponseInterface $exp): void {
+        $this->assertMessage($exp, $this->req($get, $post, $method, $type));
     }
 
     public function provideInvalidRequests(): iterable {
         return [
-            'Not an API request'        => [$this->req(""), new EmptyResponse(404)],
-            'Wrong method'              => [$this->req("api", "", "PUT"), new EmptyResponse(405, ['Allow' => "OPTIONS,POST"])],
-            'Non-standard method'       => [$this->req("api", "", "GET"), new JsonResponse([])],
-            'Wrong content type'        => [$this->req("api", '{"api_key":"validToken"}', "POST", "application/json"), new EmptyResponse(415, ['Accept' => "application/x-www-form-urlencoded, multipart/form-data"])],
-            'Non-standard content type' => [$this->req("api", '{"api_key":"validToken"}', "POST", "multipart/form-data; boundary=33b68964f0de4c1f-5144aa6caaa6e4a8-18bfaf416a1786c8-5c5053a45f221bc1"), new JsonResponse([])],
+            'Not an API request'        => ["",    "",                         "POST", null,                                                                                                new EmptyResponse(404)],
+            'Wrong method'              => ["api", "",                         "PUT",  null,                                                                                                new EmptyResponse(405, ['Allow' => "OPTIONS,POST"])],
+            'Non-standard method'       => ["api", "",                         "GET",  null,                                                                                                new JsonResponse([])],
+            'Wrong content type'        => ["api", '{"api_key":"validToken"}', "POST", "application/json",                                                                                  new EmptyResponse(415, ['Accept' => "application/x-www-form-urlencoded, multipart/form-data"])],
+            'Non-standard content type' => ["api", '{"api_key":"validToken"}', "POST", "multipart/form-data; boundary=33b68964f0de4c1f-5144aa6caaa6e4a8-18bfaf416a1786c8-5c5053a45f221bc1", new JsonResponse([])],
         ];
     }
 
     public function testMakeABaseQuery(): void {
-        $this->h = \Phake::partialMock(API::class);
-        \Phake::when($this->h)->logIn->thenReturn(true);
-        \Phake::when(Arsse::$db)->subscriptionRefreshed(Arsse::$user->id)->thenReturn(new \DateTimeImmutable("2000-01-01T00:00:00Z"));
+        $this->hMock->baseResponse->forwards();
+        $this->hMock->logIn->returns(true);
+        $this->dbMock->subscriptionRefreshed->with($this->userId)->returns(new \DateTimeImmutable("2000-01-01T00:00:00Z"));
         $exp = new JsonResponse([
             'api_version'            => API::LEVEL,
             'auth'                   => 1,
             'last_refreshed_on_time' => 946684800,
         ]);
-        $act = $this->h->dispatch($this->req("api"));
-        $this->assertMessage($exp, $act);
-        \Phake::when(Arsse::$db)->subscriptionRefreshed(Arsse::$user->id)->thenReturn(null); // no subscriptions
+        $this->assertMessage($exp, $this->req("api"));
+        $this->dbMock->subscriptionRefreshed->with($this->userId)->returns(null); // no subscriptions
         $exp = new JsonResponse([
             'api_version'            => API::LEVEL,
             'auth'                   => 1,
             'last_refreshed_on_time' => null,
         ]);
-        $act = $this->h->dispatch($this->req("api"));
-        $this->assertMessage($exp, $act);
-        \Phake::when($this->h)->logIn->thenReturn(false);
+        $this->assertMessage($exp, $this->req("api"));
+        $this->hMock->logIn->returns(false);
         $exp = new JsonResponse([
             'api_version' => API::LEVEL,
             'auth'        => 0,
         ]);
-        $act = $this->h->dispatch($this->req("api"));
-        $this->assertMessage($exp, $act);
+        $this->assertMessage($exp, $this->req("api"));
     }
 
     public function testUndoReadMarks(): void {
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
         $out = ['unread_item_ids' => "4,5,6"];
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->limit(1)->hidden(false), ["marked_date"], ["marked_date desc"])->thenReturn(new Result([['marked_date' => "2000-01-01 00:00:00"]]));
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->unread(true)->hidden(false))->thenReturn(new Result($unread));
-        \Phake::when(Arsse::$db)->articleMark->thenReturn(0);
+        $this->dbMock->articleList->with($this->userId, $this->equalTo((new Context)->limit(1)->hidden(false)), ["marked_date"], ["marked_date desc"])->returns(new Result([['marked_date' => "2000-01-01 00:00:00"]]));
+        $this->dbMock->articleList->with($this->userId, $this->equalTo((new Context)->unread(true)->hidden(false)))->returns(new Result($unread));
+        $this->dbMock->articleMark->returns(0);
         $exp = new JsonResponse($out);
-        $act = $this->h->dispatch($this->req("api", ['unread_recently_read' => 1]));
-        $this->assertMessage($exp, $act);
-        \Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, ['read' => false], (new Context)->unread(false)->markedSince("1999-12-31T23:59:45Z")->hidden(false));
-        \Phake::when(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->limit(1)->hidden(false), ["marked_date"], ["marked_date desc"])->thenReturn(new Result([]));
-        $act = $this->h->dispatch($this->req("api", ['unread_recently_read' => 1]));
-        $this->assertMessage($exp, $act);
-        \Phake::verify(Arsse::$db)->articleMark; // only called one time, above
+        $this->assertMessage($exp, $this->req("api", ['unread_recently_read' => 1]));
+        $this->dbMock->articleMark->calledWith($this->userId, ['read' => false], $this->equalTo((new Context)->unread(false)->markedSince("1999-12-31T23:59:45Z")->hidden(false)));
+        $this->dbMock->articleList->with($this->userId, (new Context)->limit(1)->hidden(false), ["marked_date"], ["marked_date desc"])->returns(new Result([]));
+        $this->assertMessage($exp, $this->req("api", ['unread_recently_read' => 1]));
+        $this->dbMock->articleMark->once()->called(); // only called one time, above
     }
 
     public function testOutputToXml(): void {
-        \Phake::when($this->h)->processRequest->thenReturn([
+        $this->hMock->processRequest->returns([
             'items'       => $this->articles['rest'],
             'total_items' => 1024,
         ]);
         $exp = new XmlResponse("<response><items><item><id>101</id><feed_id>8</feed_id><title>Article title 1</title><author></author><html>&lt;p&gt;Article content 1&lt;/p&gt;</html><url>http://example.com/1</url><is_saved>0</is_saved><is_read>0</is_read><created_on_time>946684800</created_on_time></item><item><id>102</id><feed_id>8</feed_id><title>Article title 2</title><author></author><html>&lt;p&gt;Article content 2&lt;/p&gt;</html><url>http://example.com/2</url><is_saved>0</is_saved><is_read>1</is_read><created_on_time>946771200</created_on_time></item><item><id>103</id><feed_id>9</feed_id><title>Article title 3</title><author></author><html>&lt;p&gt;Article content 3&lt;/p&gt;</html><url>http://example.com/3</url><is_saved>1</is_saved><is_read>0</is_read><created_on_time>946857600</created_on_time></item><item><id>104</id><feed_id>9</feed_id><title>Article title 4</title><author></author><html>&lt;p&gt;Article content 4&lt;/p&gt;</html><url>http://example.com/4</url><is_saved>1</is_saved><is_read>1</is_read><created_on_time>946944000</created_on_time></item><item><id>105</id><feed_id>10</feed_id><title>Article title 5</title><author></author><html>&lt;p&gt;Article content 5&lt;/p&gt;</html><url>http://example.com/5</url><is_saved>0</is_saved><is_read>0</is_read><created_on_time>947030400</created_on_time></item></items><total_items>1024</total_items></response>");
-        $act = $this->h->dispatch($this->req("api=xml"));
-        $this->assertMessage($exp, $act);
+        $this->assertMessage($exp, $this->req("api=xml"));
     }
 
     public function testListFeedIcons(): void {
         $iconType = (new \ReflectionClassConstant(API::class, "GENERIC_ICON_TYPE"))->getValue();
         $iconData = (new \ReflectionClassConstant(API::class, "GENERIC_ICON_DATA"))->getValue();
-        \Phake::when(Arsse::$db)->iconList->thenReturn(new Result($this->v([
+        $this->dbMock->iconList->returns(new Result($this->v([
             ['id' => 42, 'type' => "image/svg+xml", 'data' => "<svg/>"],
             ['id' => 44, 'type' => null,            'data' => "IMAGE DATA"],
             ['id' => 47, 'type' => null,            'data' => null],
         ])));
-        $act = $this->h->dispatch($this->req("api&favicons"));
         $exp = new JsonResponse(['favicons' => [
             ['id' => 0,  'data' => $iconType.",".$iconData],
             ['id' => 42, 'data' => "image/svg+xml;base64,PHN2Zy8+"],
             ['id' => 44, 'data' => "application/octet-stream;base64,SU1BR0UgREFUQQ=="],
         ]]);
-        $this->assertMessage($exp, $act);
+        $this->assertMessage($exp, $this->req("api&favicons"));
     }
 
     public function testAnswerOptionsRequest(): void {
-        $act = $this->h->dispatch($this->req("api", "", "OPTIONS"));
         $exp = new EmptyResponse(204, [
             'Allow'  => "POST",
             'Accept' => "application/x-www-form-urlencoded, multipart/form-data",
         ]);
-        $this->assertMessage($exp, $act);
+        $this->assertMessage($exp, $this->req("api", "", "OPTIONS"));
     }
 }

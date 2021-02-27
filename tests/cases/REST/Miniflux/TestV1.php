@@ -71,7 +71,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function setUp(): void {
-        self::clearData();
+        parent::setUp();
         self::setConf();
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
@@ -83,10 +83,6 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user->method("begin")->willReturn($this->transaction);
         //initialize a handler
         $this->h = new V1();
-    }
-
-    public function tearDown(): void {
-        self::clearData();
     }
 
     protected function v($value) {

@@ -16,16 +16,9 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         self::clearData(false);
         // create a mock Lang object so as not to create a dependency loop
-        Arsse::$lang = \Phake::mock(Lang::class);
-        \Phake::when(Arsse::$lang)->msg->thenReturn("");
-    }
-
-    public function tearDown(): void {
-        // verify calls to the mock Lang object
-        \Phake::verify(Arsse::$lang, \Phake::atLeast(0))->msg($this->isType("string"), $this->anything());
-        \Phake::verifyNoOtherInteractions(Arsse::$lang);
-        // clean up
-        self::clearData(true);
+        $this->langMock = $this->mock(Lang::class);
+        $this->langMock->msg->returns("");
+        Arsse::$lang = $this->langMock->get();
     }
 
     public function testBaseClass(): void {

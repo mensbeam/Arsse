@@ -29,7 +29,7 @@ class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         if (!static::$interface) {
             $this->markTestSkipped(static::$implementation." database driver not available");
         }
-        self::clearData();
+        parent::setUp();
         self::setConf();
         // construct a fresh driver for each test
         $this->drv = new static::$dbDriverClass;
@@ -46,7 +46,7 @@ class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         // deconstruct the driver
         unset($this->drv);
         unset($this->path, $this->base, $this->vfs);
-        self::clearData();
+        parent::tearDown();
     }
 
     public static function tearDownAfterClass(): void {
@@ -55,7 +55,7 @@ class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
             static::dbRaze(static::$interface);
         }
         static::$interface = null;
-        self::clearData();
+        self::clearData(true);
     }
 
     public function testLoadMissingFile(): void {

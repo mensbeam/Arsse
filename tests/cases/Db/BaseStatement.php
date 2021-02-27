@@ -23,7 +23,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function setUp(): void {
-        self::clearData();
+        parent::setUp();
         self::setConf();
         if (!static::$interface) {
             $this->markTestSkipped(static::$implementation." database driver not available");
@@ -33,17 +33,13 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->statementClass = static::$dbStatementClass;
     }
 
-    public function tearDown(): void {
-        self::clearData();
-    }
-
     public static function tearDownAfterClass(): void {
         if (static::$interface) {
             // completely clear the database
             static::dbRaze(static::$interface);
         }
         static::$interface = null;
-        self::clearData();
+        self::clearData(true);
     }
 
     public function testConstructStatement(): void {

@@ -19,7 +19,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $u;
 
     public function setUp(): void {
-        self::clearData();
+        parent::setUp();
         self::setConf();
         // create a mock user manager
         Arsse::$user = \Phake::mock(User::class);
@@ -29,10 +29,6 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(Transaction::class));
         // instantiate the handler
         $this->u = new FeverUser();
-    }
-
-    public function tearDown(): void {
-        self::clearData();
     }
 
     /** @dataProvider providePasswordCreations */

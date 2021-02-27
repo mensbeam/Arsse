@@ -15,47 +15,50 @@ class TestTransaction extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $drv;
 
     public function setUp(): void {
-        self::clearData();
-        $drv = \Phake::mock(\JKingWeb\Arsse\Db\SQLite3\Driver::class);
-        \Phake::when($drv)->savepointRelease->thenReturn(true);
-        \Phake::when($drv)->savepointUndo->thenReturn(true);
-        \Phake::when($drv)->savepointCreate->thenReturn(1)->thenReturn(2);
+        parent::setUp();
+        $drv = $this->mock(\JKingWeb\Arsse\Db\SQLite3\Driver::class);
+        $drv->savepointRelease->returns(true);
+        $drv->savepointUndo->returns(true);
+        $drv->savepointCreate->returns(1, 2);
         $this->drv = $drv;
     }
 
     public function testManipulateTransactions(): void {
-        $tr1 = new Transaction($this->drv);
-        $tr2 = new Transaction($this->drv);
-        \Phake::verify($this->drv, \Phake::times(2))->savepointCreate;
+        $drv = $this->drv->get();
+        $tr1 = new Transaction($drv);
+        $tr2 = new Transaction($drv);
+        $this->drv->savepointCreate->twice()->called();
         $this->assertSame(1, $tr1->getIndex());
         $this->assertSame(2, $tr2->getIndex());
         unset($tr1);
-        \Phake::verify($this->drv)->savepointUndo(1);
+        $this->drv->savepointUndo->calledWith(1);
         unset($tr2);
-        \Phake::verify($this->drv)->savepointUndo(2);
+        $this->drv->savepointUndo->calledWith(2);
     }
 
     public function testCloseTransactions(): void {
-        $tr1 = new Transaction($this->drv);
-        $tr2 = new Transaction($this->drv);
+        $drv = $this->drv->get();
+        $tr1 = new Transaction($drv);
+        $tr2 = new Transaction($drv);
         $this->assertTrue($tr1->isPending());
         $this->assertTrue($tr2->isPending());
         $tr1->commit();
         $this->assertFalse($tr1->isPending());
         $this->assertTrue($tr2->isPending());
-        \Phake::verify($this->drv)->savepointRelease(1);
+        $this->drv->savepointRelease->calledWith(1);
         $tr2->rollback();
         $this->assertFalse($tr1->isPending());
         $this->assertFalse($tr2->isPending());
-        \Phake::verify($this->drv)->savepointUndo(2);
+        $this->drv->savepointUndo->calledWith(2);
     }
 
     public function testIgnoreRollbackErrors(): void {
-        \Phake::when($this->drv)->savepointUndo->thenThrow(new Exception("savepointStale"));
-        $tr1 = new Transaction($this->drv);
-        $tr2 = new Transaction($this->drv);
+        $this->drv->savepointUndo->throws(new Exception("savepointStale"));
+        $drv = $this->drv->get();
+        $tr1 = new Transaction($drv);
+        $tr2 = new Transaction($drv);
         unset($tr1, $tr2); // no exception should bubble up
-        \Phake::verify($this->drv)->savepointUndo(1);
-        \Phake::verify($this->drv)->savepointUndo(2);
+        $this->drv->savepointUndo->calledWith(1);
+        $this->drv->savepointUndo->calledWith(2);
     }
 }

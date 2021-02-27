@@ -20,17 +20,13 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $user = "john.doe@example.com";
 
     public function setUp(): void {
-        self::clearData();
+        parent::setUp();
         self::setConf();
         // create a mock user manager
         Arsse::$user = \Phake::mock(User::class);
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
         $this->h = new Icon();
-    }
-
-    public function tearDown(): void {
-        self::clearData();
     }
 
     protected function req(string $target, string $method = "GET", string $user = null): ResponseInterface {

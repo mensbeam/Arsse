@@ -6,6 +6,8 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test;
 
+use Eloquent\Phony\Mock\Handle\InstanceHandle;
+use Eloquent\Phony\Phpunit\Phony;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use JKingWeb\Arsse\Exception;
@@ -29,12 +31,20 @@ use Laminas\Diactoros\Response\XmlResponse;
 abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     use \DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
 
+    protected $objMock;
+    protected $confMock;
+    protected $langMock;
+    protected $dbMock;
+    protected $userMock;
+    
+
     public function setUp(): void {
         self::clearData();
-    }
-
-    public function tearDown(): void {
-        self::clearData();
+        // create the object factory as a mock
+        $this->objMock = Arsse::$obj = $this->mock(Factory::class);
+        $this->objMock->get->does(function(string $class) {
+            return new $class;
+        });
     }
 
     public static function clearData(bool $loadLang = true): void {
@@ -46,11 +56,6 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         }
         if ($loadLang) {
             Arsse::$lang = new \JKingWeb\Arsse\Lang();
-            // also create the object factory as a mock
-            Arsse::$obj = \Phake::mock(Factory::class);
-            \Phake::when(Arsse::$obj)->get->thenReturnCallback(function(string $class) {
-                return new $class;
-            });
         }
     }
 
@@ -340,12 +345,20 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     /** Guzzle's exception classes require some fairly complicated construction; this abstracts it all away so that only message and code need be supplied  */
     protected function mockGuzzleException(string $class, ?string $message = null, ?int $code = null, ?\Throwable $e = null): GuzzleException {
         if (is_a($class, RequestException::class, true)) {
-            $req = \Phake::mock(RequestInterface::class);
-            $res = \Phake::mock(ResponseInterface::class);
-            \Phake::when($res)->getStatusCode->thenReturn($code ?? 0);
-            return new $class($message ?? "", $req, $res, $e);
+            $req = $this->mock(RequestInterface::class);
+            $res = $this->mock(ResponseInterface::class);
+            $res->getStatusCode->returns($code ?? 0);
+            return new $class($message ?? "", $req->get(), $res->get(), $e);
         } else {
             return new $class($message ?? "", $code ?? 0, $e);
         }
+    }
+
+    protected function mock(string $class): InstanceHandle {
+        return Phony::mock($class);
+    }
+
+    protected function partialMock(string $class, ...$argument): InstanceHandle {
+        return Phony::partialMock($class, $argument);
     }
 }

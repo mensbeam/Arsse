@@ -21,17 +21,13 @@ class TestToken extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $transaction;
 
     public function setUp(): void {
-        self::clearData();
+        parent::setUp();
         self::setConf();
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
         $this->transaction = \Phake::mock(Transaction::class);
         \Phake::when(Arsse::$db)->begin->thenReturn($this->transaction);
         $this->h = new Token();
-    }
-
-    public function tearDown(): void {
-        self::clearData();
     }
 
     protected function v($value) {

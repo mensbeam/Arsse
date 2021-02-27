@@ -17,7 +17,7 @@ use JKingWeb\Arsse\User\Driver;
 /** @covers \JKingWeb\Arsse\User */
 class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
-        self::clearData();
+        parent::setUp();
         self::setConf();
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);

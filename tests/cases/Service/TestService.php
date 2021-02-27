@@ -16,7 +16,7 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $srv;
 
     public function setUp(): void {
-        self::clearData();
+        parent::setUp();
         self::setConf();
         Arsse::$db = \Phake::mock(Database::class);
         $this->srv = new Service();

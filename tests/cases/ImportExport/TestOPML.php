@@ -7,9 +7,11 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\ImportExport;
 
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Test\Result;
 use JKingWeb\Arsse\ImportExport\OPML;
 use JKingWeb\Arsse\ImportExport\Exception;
+use ReflectionMethod;
 
 /** @covers \JKingWeb\Arsse\ImportExport\OPML<extended> */
 class TestOPML extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -80,27 +82,25 @@ OPML_EXPORT_SERIALIZATION;
 OPML_EXPORT_SERIALIZATION;
 
     public function setUp(): void {
-        self::clearData();
-        Arsse::$db = \Phake::mock(\JKingWeb\Arsse\Database::class);
-        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        parent::setUp();
+        $this->dbMock = $this->mock(Database::class);
+        $this->dbMock->userExists->returns(true);
+        $this->dbMock->folderList->with("john.doe@example.com")->returns(new Result($this->folders));
+        $this->dbMock->subscriptionList->with("john.doe@example.com")->returns(new Result($this->subscriptions));
+        $this->dbMock->tagSummarize->with("john.doe@example.com")->returns(new Result($this->tags));
+        Arsse::$db = $this->dbMock->get();
     }
 
     public function testExportToOpml(): void {
-        \Phake::when(Arsse::$db)->folderList("john.doe@example.com")->thenReturn(new Result($this->folders));
-        \Phake::when(Arsse::$db)->subscriptionList("john.doe@example.com")->thenReturn(new Result($this->subscriptions));
-        \Phake::when(Arsse::$db)->tagSummarize("john.doe@example.com")->thenReturn(new Result($this->tags));
         $this->assertXmlStringEqualsXmlString($this->serialization, (new OPML)->export("john.doe@example.com"));
     }
 
     public function testExportToFlatOpml(): void {
-        \Phake::when(Arsse::$db)->folderList("john.doe@example.com")->thenReturn(new Result($this->folders));
-        \Phake::when(Arsse::$db)->subscriptionList("john.doe@example.com")->thenReturn(new Result($this->subscriptions));
-        \Phake::when(Arsse::$db)->tagSummarize("john.doe@example.com")->thenReturn(new Result($this->tags));
         $this->assertXmlStringEqualsXmlString($this->serializationFlat, (new OPML)->export("john.doe@example.com", true));
     }
 
     public function testExportToOpmlAMissingUser(): void {
-        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
+        $this->dbMock->userExists->returns(false);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         (new OPML)->export("john.doe@example.com");
     }
@@ -108,13 +108,15 @@ OPML_EXPORT_SERIALIZATION;
     /** @dataProvider provideParserData */
     public function testParseOpmlForImport(string $file, bool $flat, $exp): void {
         $data = file_get_contents(\JKingWeb\Arsse\DOCROOT."Import/OPML/$file");
-        // set up a partial mock to make the ImportExport::parse() method visible
-        $parser = \Phake::makeVisible(\Phake::partialMock(OPML::class));
-        if ($exp instanceof \JKingWeb\Arsse\AbstractException) {
+        // make the ImportExport::parse() method visible
+        $parser = new OPML;
+        $parseFunc = new \ReflectionMethod($parser, "parse");
+        $parseFunc->setAccessible(true);
+        if ($exp instanceof \Exception) {
             $this->assertException($exp);
-            $parser->parse($data, $flat);
+            $parseFunc->invoke($parser, $data, $flat);
         } else {
-            $this->assertSame($exp, $parser->parse($data, $flat));
+            $this->assertSame($exp, $parseFunc->invoke($parser, $data, $flat));
         }
     }
 
