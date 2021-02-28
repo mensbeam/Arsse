@@ -699,7 +699,7 @@ LONG_STRING;
         ];
     }
 
-    /** @dataProvider provideSubscriptionAdditions */
+    /** @dataProvider provideFeedSubscriptions */
     public function testAddASubscription(array $in, ?array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx"], $in);
         $action = ($out instanceof \Exception) ? "throws" : "returns";
@@ -725,7 +725,7 @@ LONG_STRING;
         $this->dbMock->subscriptionPropertiesSet->never()->calledWith($this->userId, 4, ['folder' => 1]);
     }
 
-    public function provideSubscriptionAdditions(): iterable {
+    public function provideFeedSubscriptions(): iterable {
         return [
             [['feed_url' => "http://example.com/0"],                                 [$this->userId, "http://example.com/0", "", ""],                         2,                                         $this->respGood(['code' => 1, 'feed_id' => 2])],
             [['feed_url' => "http://example.com/1", 'category_id' => 42],            [$this->userId, "http://example.com/1", "", ""],                         new FeedException("unauthorized"),         $this->respGood(['code' => 5, 'message' => (new FeedException("unauthorized"))->getMessage()])],
@@ -744,110 +744,80 @@ LONG_STRING;
         ];
     }
 
-    public function testRemoveASubscription(): void {
-        $in = [
-            ['op' => "unsubscribeFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42],
-            ['op' => "unsubscribeFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2112],
-            ['op' => "unsubscribeFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -1],
-            ['op' => "unsubscribeFeed", 'sid' => "PriestsOfSyrinx"],
-        ];
-        \Phake::when(Arsse::$db)->subscriptionRemove(Arsse::$user->id, $this->anything())->thenThrow(new ExceptionInput("typeViolation"));
-        \Phake::when(Arsse::$db)->subscriptionRemove(Arsse::$user->id, 2112)->thenThrow(new ExceptionInput("subjectMissing"));
-        \Phake::when(Arsse::$db)->subscriptionRemove(Arsse::$user->id, 42)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
-        // succefully delete a folder
-        $exp = $this->respGood(['status' => "OK"]);
-        $this->assertMessage($exp, $this->req($in[0]));
-        // try deleting it again (this should noisily fail, as should everything else)
-        $exp = $this->respErr("FEED_NOT_FOUND");
-        $this->assertMessage($exp, $this->req($in[0]));
-        $this->assertMessage($exp, $this->req($in[1]));
-        $this->assertMessage($exp, $this->req($in[2]));
-        $this->assertMessage($exp, $this->req($in[3]));
-        \Phake::verify(Arsse::$db, \Phake::times(5))->subscriptionRemove(Arsse::$user->id, $this->anything());
+    /** @dataProvider provideFeedUnsubscriptions */
+    public function testRemoveASubscription(array $in, ?array $data, $out, ResponseInterface $exp): void {
+        $in = array_merge(['op' => "unsubscribeFeed", 'sid' => "PriestsOfSyrinx"], $in);
+        $action = ($out instanceof \Exception) ? "throws" : "returns";
+        $this->dbMock->subscriptionRemove->$action($out);
+        $this->assertMessage($exp, $this->req($in));
+        if ($out !== null) {
+            $this->dbMock->subscriptionRemove->calledWith(...$data);
+        } else {
+            $this->dbMock->subscriptionRemove->never()->called();
+        }
     }
 
-    public function testMoveASubscription(): void {
-        $in = [
-            ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'category_id' => 1],
-            ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2112, 'category_id' => 2],
-            ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'category_id' => 0],
-            ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'category_id' => 47],
-            ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -1, 'category_id' => 1],
-            ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'category_id' => -1],
-            ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42],
-            ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx", 'category_id' => -1],
-            ['op' => "moveFeed", 'sid' => "PriestsOfSyrinx"],
+    public function provideFeedUnsubscriptions(): iterable {
+        return [
+            [['feed_id' => 42],   [$this->userId, 42],   true,                                 $this->respGood(['status' => "OK"])],
+            [['feed_id' => 2112], [$this->userId, 2112], new ExceptionInput("subjectMissing"), $this->respErr("FEED_NOT_FOUND")],
+            [['feed_id' => -1],   [$this->userId, -1],   new ExceptionInput("typeViolation"),  $this->respErr("FEED_NOT_FOUND")],
+            [[],                  [$this->userId, 0],    new ExceptionInput("typeViolation"),  $this->respErr("FEED_NOT_FOUND")],
         ];
-        $db = [
-            [Arsse::$user->id, 42, ['folder' => 1]],
-            [Arsse::$user->id, 2112, ['folder' => 2]],
-            [Arsse::$user->id, 42, ['folder' => 0]],
-            [Arsse::$user->id, 42, ['folder' => 47]],
-        ];
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(...$db[0])->thenReturn(true);
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(...$db[1])->thenThrow(new ExceptionInput("subjectMissing"));
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(...$db[2])->thenThrow(new ExceptionInput("constraintViolation"));
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(...$db[3])->thenThrow(new ExceptionInput("constraintViolation"));
-        // succefully move a subscription
-        $exp = $this->respGood();
-        $this->assertMessage($exp, $this->req($in[0]));
-        // move a subscription which does not exist (this should silently fail)
-        $exp = $this->respGood();
-        $this->assertMessage($exp, $this->req($in[1]));
-        // move a subscription causing a duplication (this should also silently fail)
-        $exp = $this->respGood();
-        $this->assertMessage($exp, $this->req($in[2]));
-        $this->assertMessage($exp, $this->req($in[3]));
-        // all the rest should cause errors
-        $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertMessage($exp, $this->req($in[4]));
-        $this->assertMessage($exp, $this->req($in[5]));
-        $this->assertMessage($exp, $this->req($in[6]));
-        $this->assertMessage($exp, $this->req($in[7]));
-        $this->assertMessage($exp, $this->req($in[8]));
-        \Phake::verify(Arsse::$db, \Phake::times(4))->subscriptionPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
     }
 
-    public function testRenameASubscription(): void {
-        $in = [
-            ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'caption' => "Ook"],
-            ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2112, 'caption' => "Eek"],
-            ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'caption' => "Eek"],
-            ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'caption' => ""],
-            ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'caption' => " "],
-            ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -1, 'caption' => "Ook"],
-            ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42],
-            ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx", 'caption' => "Ook"],
-            ['op' => "renameFeed", 'sid' => "PriestsOfSyrinx"],
+    /** @dataProvider provideFeedMoves */
+    public function testMoveAFeed(array $in, ?array $data, $out, ResponseInterface $exp): void {
+        $in = array_merge(['op' => "moveFeed", 'sid' => "PriestsOfSyrinx"], $in);
+        $action = ($out instanceof \Exception) ? "throws" : "returns";
+        $this->dbMock->subscriptionPropertiesSet->$action($out);
+        $this->assertMessage($exp, $this->req($in));
+        if ($out !== null) {
+            $this->dbMock->subscriptionPropertiesSet->calledWith(...$data);
+        } else {
+            $this->dbMock->subscriptionPropertiesSet->never()->called();
+        }
+    }
+
+    public function provideFeedMoves(): iterable {
+        return [
+            [['feed_id' => 42,   'category_id' => 1],  [$this->userId, 42,   ['folder' => 1]],  true,                                      $this->respGood()],
+            [['feed_id' => 2112, 'category_id' => 2],  [$this->userId, 2112, ['folder' => 2]],  new ExceptionInput("subjectMissing"),      $this->respGood()],
+            [['feed_id' => 42,   'category_id' => 0],  [$this->userId, 42,   ['folder' => 0]],  new ExceptionInput("constraintViolation"), $this->respGood()],
+            [['feed_id' => 42,   'category_id' => 47], [$this->userId, 42,   ['folder' => 47]], new ExceptionInput("constraintViolation"), $this->respGood()],
+            [['feed_id' => -1,   'category_id' => 1],  null,                                    null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['feed_id' => 42,   'category_id' => -1], null,                                    null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['feed_id' => 42],                        null,                                    null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['category_id' => -1],                    null,                                    null,                                      $this->respErr("INCORRECT_USAGE")],
+            [[],                                       null,                                    null,                                      $this->respErr("INCORRECT_USAGE")],
         ];
-        $db = [
-            [Arsse::$user->id, 42, ['title' => "Ook"]],
-            [Arsse::$user->id, 2112, ['title' => "Eek"]],
-            [Arsse::$user->id, 42, ['title' => "Eek"]],
+    }
+
+    /** @dataProvider provideFeedRenamings */
+    public function testRenameAFeed(array $in, ?array $data, $out, ResponseInterface $exp): void {
+        $in = array_merge(['op' => "renameFeed", 'sid' => "PriestsOfSyrinx"], $in);
+        $action = ($out instanceof \Exception) ? "throws" : "returns";
+        $this->dbMock->subscriptionPropertiesSet->$action($out);
+        $this->assertMessage($exp, $this->req($in));
+        if ($out !== null) {
+            $this->dbMock->subscriptionPropertiesSet->calledWith(...$data);
+        } else {
+            $this->dbMock->subscriptionPropertiesSet->never()->called();
+        }
+    }
+
+    public function provideFeedRenamings(): iterable {
+        return [
+            [['feed_id' => 42,   'caption' => "Ook"], [$this->userId, 42,   ['title' => "Ook"]], true,                                      $this->respGood()],
+            [['feed_id' => 2112, 'caption' => "Eek"], [$this->userId, 2112, ['title' => "Eek"]], new ExceptionInput("subjectMissing"),      $this->respGood()],
+            [['feed_id' => 42,   'caption' => "Eek"], [$this->userId, 42,   ['title' => "Eek"]], new ExceptionInput("constraintViolation"), $this->respGood()],
+            [['feed_id' => 42,   'caption' => ""],    null,                                      null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['feed_id' => 42,   'caption' => " "],   null,                                      null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['feed_id' => -1,   'caption' => "Ook"], null,                                      null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['feed_id' => 42],                       null,                                      null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['caption' => "Ook"],                    null,                                      null,                                      $this->respErr("INCORRECT_USAGE")],
+            [[],                                      null,                                      null,                                      $this->respErr("INCORRECT_USAGE")],
         ];
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(...$db[0])->thenReturn(true);
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(...$db[1])->thenThrow(new ExceptionInput("subjectMissing"));
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(...$db[2])->thenThrow(new ExceptionInput("constraintViolation"));
-        // succefully rename a subscription
-        $exp = $this->respGood();
-        $this->assertMessage($exp, $this->req($in[0]));
-        // rename a subscription which does not exist (this should silently fail)
-        $exp = $this->respGood();
-        $this->assertMessage($exp, $this->req($in[1]));
-        // rename a subscription causing a duplication (this should also silently fail)
-        $exp = $this->respGood();
-        $this->assertMessage($exp, $this->req($in[2]));
-        // all the rest should cause errors
-        $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertMessage($exp, $this->req($in[3]));
-        $this->assertMessage($exp, $this->req($in[4]));
-        $this->assertMessage($exp, $this->req($in[5]));
-        $this->assertMessage($exp, $this->req($in[6]));
-        $this->assertMessage($exp, $this->req($in[7]));
-        $this->assertMessage($exp, $this->req($in[8]));
-        \Phake::verify(Arsse::$db)->subscriptionPropertiesSet(...$db[0]);
-        \Phake::verify(Arsse::$db)->subscriptionPropertiesSet(...$db[1]);
-        \Phake::verify(Arsse::$db)->subscriptionPropertiesSet(...$db[2]);
     }
 
     public function testRetrieveTheGlobalUnreadCount(): void {
@@ -866,76 +836,69 @@ LONG_STRING;
         $interval = Arsse::$conf->serviceFrequency;
         $valid = (new \DateTimeImmutable("now", new \DateTimezone("UTC")))->sub($interval);
         $invalid = $valid->sub($interval)->sub($interval);
-        $this->dbMock->metaGet->with("service_last_checkin")->returns(Date::transform($valid, "sql"))->returns(Date::transform($invalid, "sql"));
+        $this->dbMock->metaGet->with("service_last_checkin")->returns(Date::transform($valid, "sql"), Date::transform($invalid, "sql"));
         $this->dbMock->subscriptionCount->with($this->userId)->returns(12, 2);
         $this->assertMessage($this->respGood(['icons_dir' => "feed-icons", 'icons_url' => "feed-icons", 'daemon_is_running' => true, 'num_feeds' => 12]), $this->req($in));
         $this->assertMessage($this->respGood(['icons_dir' => "feed-icons", 'icons_url' => "feed-icons", 'daemon_is_running' => false, 'num_feeds' => 2]), $this->req($in));
     }
 
-    public function testUpdateAFeed(): void {
-        $in = [
-            ['op' => "updateFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 1],
-            ['op' => "updateFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => 2],
-            ['op' => "updateFeed", 'sid' => "PriestsOfSyrinx", 'feed_id' => -1],
-            ['op' => "updateFeed", 'sid' => "PriestsOfSyrinx"],
-        ];
-        \Phake::when(Arsse::$db)->feedUpdate(11)->thenReturn(true);
-        \Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 1)->thenReturn($this->v(['id' => 1, 'feed' => 11]));
-        \Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 2)->thenThrow(new ExceptionInput("subjectMissing"));
-        $exp = $this->respGood(['status' => "OK"]);
-        $this->assertMessage($exp, $this->req($in[0]));
-        \Phake::verify(Arsse::$db)->feedUpdate(11);
-        $exp = $this->respErr("FEED_NOT_FOUND");
-        $this->assertMessage($exp, $this->req($in[1]));
-        $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertMessage($exp, $this->req($in[2]));
-        $this->assertMessage($exp, $this->req($in[3]));
+    /** @dataProvider provideFeedUpdates */
+    public function testUpdateAFeed(array $in, ?array $data, $out, ?int $id, ResponseInterface $exp): void {
+        $in = array_merge(['op' => "updateFeed", 'sid' => "PriestsOfSyrinx"], $in);
+        $action = ($out instanceof \Exception) ? "throws" : "returns";
+        $this->dbMock->subscriptionPropertiesGet->$action($out);
+        $this->dbMock->feedUpdate->returns(true);
+        $this->assertMessage($exp, $this->req($in));
+        if ($data !== null) {
+            $this->dbMock->subscriptionPropertiesGet->calledWith(...$data);
+        } else {
+            $this->dbMock->subscriptionPropertiesGet->never()->called();
+        }
+        if ($id !== null) {
+            $this->dbMock->feedUpdate->calledWith($id);
+        } else {
+            $this->dbMock->feedUpdate->never()->called();
+        }
     }
 
-    public function testAddALabel(): void {
-        $in = [
-            ['op' => "addLabel", 'sid' => "PriestsOfSyrinx", 'caption' => "Software"],
-            ['op' => "addLabel", 'sid' => "PriestsOfSyrinx", 'caption' => "Hardware"],
-            ['op' => "addLabel", 'sid' => "PriestsOfSyrinx"],
-            ['op' => "addLabel", 'sid' => "PriestsOfSyrinx", 'caption' => ""],
-            ['op' => "addLabel", 'sid' => "PriestsOfSyrinx", 'caption' => "   "],
+    public function provideFeedUpdates(): iterable {
+        return [
+            [['feed_id' => 1],  [$this->userId, 1], $this->v(['id' => 1, 'feed' => 11]),  11,   $this->respGood(['status' => "OK"])],
+            [['feed_id' => 2],  [$this->userId, 2], new ExceptionInput("subjectMissing"), null, $this->respErr("FEED_NOT_FOUND")],
+            [['feed_id' => -1], null,               null,                                 null, $this->respErr("INCORRECT_USAGE")],
+            [[],                null,               null,                                 null, $this->respErr("INCORRECT_USAGE")],
         ];
-        $db = [
-            ['name' => "Software"],
-            ['name' => "Hardware"],
+    }
+
+    /** @dataProvider provideLabelAdditions */
+    public function testAddALabel(array $in, ?array $data1, $out1, ?array $data2, $out2, ResponseInterface $exp): void {
+        $in = array_merge(['op' => "addLabel", 'sid' => "PriestsOfSyrinx"], $in);
+        $action = ($out1 instanceof \Exception) ? "throws" : "returns";
+        $this->dbMock->labelAdd->$action($out1);
+        $this->dbMock->labelPropertiesGet->returns($out2);
+        $this->assertMessage($exp, $this->req($in));
+        if ($out1 !== null) {
+            $this->dbMock->labelAdd->calledWith(...$data1);
+        } else {
+            $this->dbMock->labelAdd->never()->called();
+        }
+        if ($out2 !== null) {
+            $this->dbMock->labelPropertiesGet->calledWith(...$data2);
+        } else {
+            $this->dbMock->labelPropertiesGet->never()->called();
+        }
+    }
+
+    public function provideLabelAdditions(): iterable {
+        return [
+            [['caption' => "Software"], [$this->userId, ['name' => "Software"]], 2,                                         null,                              null,        $this->respGood(-1026)],
+            [['caption' => "Hardware"], [$this->userId, ['name' => "Hardware"]], 3,                                         null,                              null,        $this->respGood(-1027)],
+            [['caption' => "Software"], [$this->userId, ['name' => "Software"]], new ExceptionInput("constraintViolation"), [$this->userId, "Software", true], ['id' => 2], $this->respGood(-1026)],
+            [['caption' => "Hardware"], [$this->userId, ['name' => "Hardware"]], new ExceptionInput("constraintViolation"), [$this->userId, "Hardware", true], ['id' => 3], $this->respGood(-1027)],
+            [[],                        [$this->userId, ['name' => ""]],         new ExceptionInput("typeViolation"),       null,                              null,        $this->respErr("INCORRECT_USAGE")],
+            [['caption' => ""],         [$this->userId, ['name' => ""]],         new ExceptionInput("typeViolation"),       null,                              null,        $this->respErr("INCORRECT_USAGE")],
+            [['caption' => "   "],      [$this->userId, ['name' => "   "]],      new ExceptionInput("typeViolation"),       null,                              null,        $this->respErr("INCORRECT_USAGE")],
         ];
-        $out = [
-            ['id' => 2, 'name' => "Software"],
-            ['id' => 3, 'name' => "Hardware"],
-            ['id' => 1, 'name' => "Politics"],
-        ];
-        $labelOffset = (new \ReflectionClassConstant(API::class, "LABEL_OFFSET"))->getValue();
-        // set of various mocks for testing
-        \Phake::when(Arsse::$db)->labelAdd(Arsse::$user->id, $db[0])->thenReturn(2)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        \Phake::when(Arsse::$db)->labelAdd(Arsse::$user->id, $db[1])->thenReturn(3)->thenThrow(new ExceptionInput("constraintViolation")); // error on the second call
-        \Phake::when(Arsse::$db)->labelPropertiesGet(Arsse::$user->id, "Software", true)->thenReturn($this->v($out[0]));
-        \Phake::when(Arsse::$db)->labelPropertiesGet(Arsse::$user->id, "Hardware", true)->thenReturn($this->v($out[1]));
-        // set up mocks that produce errors
-        \Phake::when(Arsse::$db)->labelAdd(Arsse::$user->id, [])->thenThrow(new ExceptionInput("missing"));
-        \Phake::when(Arsse::$db)->labelAdd(Arsse::$user->id, ['name' => ""])->thenThrow(new ExceptionInput("missing"));
-        \Phake::when(Arsse::$db)->labelAdd(Arsse::$user->id, ['name' => "   "])->thenThrow(new ExceptionInput("whitespace"));
-        // correctly add two labels
-        $exp = $this->respGood((-1 * $labelOffset) - 2);
-        $this->assertMessage($exp, $this->req($in[0]));
-        $exp = $this->respGood((-1 * $labelOffset) - 3);
-        $this->assertMessage($exp, $this->req($in[1]));
-        // attempt to add the two labels again
-        $exp = $this->respGood((-1 * $labelOffset) - 2);
-        $this->assertMessage($exp, $this->req($in[0]));
-        $exp = $this->respGood((-1 * $labelOffset) - 3);
-        $this->assertMessage($exp, $this->req($in[1]));
-        \Phake::verify(Arsse::$db)->labelPropertiesGet(Arsse::$user->id, "Software", true);
-        \Phake::verify(Arsse::$db)->labelPropertiesGet(Arsse::$user->id, "Hardware", true);
-        // add some invalid labels
-        $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertMessage($exp, $this->req($in[2]));
-        $this->assertMessage($exp, $this->req($in[3]));
-        $this->assertMessage($exp, $this->req($in[4]));
     }
 
     public function testRemoveALabel(): void {
