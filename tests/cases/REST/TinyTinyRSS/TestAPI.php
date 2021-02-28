@@ -6,7 +6,6 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\REST\TinyTinyRSS;
 
-use GuzzleHttp\Exception\ClientException;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
@@ -900,96 +899,71 @@ LONG_STRING;
             [['caption' => "   "],      [$this->userId, ['name' => "   "]],      new ExceptionInput("typeViolation"),       null,                              null,        $this->respErr("INCORRECT_USAGE")],
         ];
     }
-
-    public function testRemoveALabel(): void {
-        $in = [
-            ['op' => "removeLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -1042],
-            ['op' => "removeLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -2112],
-            ['op' => "removeLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => 1],
-            ['op' => "removeLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => 0],
-            ['op' => "removeLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -10],
-        ];
-        \Phake::when(Arsse::$db)->labelRemove(Arsse::$user->id, $this->anything())->thenThrow(new ExceptionInput("subjectMissing"));
-        \Phake::when(Arsse::$db)->labelRemove(Arsse::$user->id, 18)->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
-        // succefully delete a label
-        $exp = $this->respGood();
-        $this->assertMessage($exp, $this->req($in[0]));
-        // try deleting it again (this should silently fail)
-        $exp = $this->respGood();
-        $this->assertMessage($exp, $this->req($in[0]));
-        // delete a label which does not exist (this should also silently fail)
-        $exp = $this->respGood();
-        $this->assertMessage($exp, $this->req($in[1]));
-        // delete some invalid labels (causes an error)
-        $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertMessage($exp, $this->req($in[2]));
-        $this->assertMessage($exp, $this->req($in[3]));
-        $this->assertMessage($exp, $this->req($in[4]));
-        \Phake::verify(Arsse::$db, \Phake::times(2))->labelRemove(Arsse::$user->id, 18);
-        \Phake::verify(Arsse::$db)->labelRemove(Arsse::$user->id, 1088);
+    
+    /** @dataProvider provideLabelRemovals */
+    public function testRemoveALabel(array $in, ?array $data, $out, ResponseInterface $exp): void {
+        $in = array_merge(['op' => "removeLabel", 'sid' => "PriestsOfSyrinx"], $in);
+        $action = ($out instanceof \Exception) ? "throws" : "returns";
+        $this->dbMock->labelRemove->$action($out);
+        $this->assertMessage($exp, $this->req($in));
+        if ($out !== null) {
+            $this->dbMock->labelRemove->calledWith(...$data);
+        } else {
+            $this->dbMock->labelRemove->never()->called();
+        }
     }
 
-    public function testRenameALabel(): void {
-        $in = [
-            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -1042, 'caption' => "Ook"],
-            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -2112, 'caption' => "Eek"],
-            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -1042, 'caption' => "Eek"],
-            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -1042, 'caption' => ""],
-            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -1042, 'caption' => " "],
-            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -1042],
-            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -1, 'caption' => "Ook"],
-            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx", 'caption' => "Ook"],
-            ['op' => "renameLabel", 'sid' => "PriestsOfSyrinx"],
+    public function provideLabelRemovals(): iterable {
+        return [
+            [['label_id' => -1042], [$this->userId, 18],   true,                                 $this->respGood()],
+            [['label_id' => -2112], [$this->userId, 1088], new ExceptionInput("subjectMissing"), $this->respGood()],
+            [['label_id' => 1],     null,                  null,                                 $this->respErr("INCORRECT_USAGE")],
+            [['label_id' => 0],     null,                  null,                                 $this->respErr("INCORRECT_USAGE")],
+            [['label_id' => -10],   null,                  null,                                 $this->respErr("INCORRECT_USAGE")],
+            [[],                    null,                  null,                                 $this->respErr("INCORRECT_USAGE")],
         ];
-        $db = [
-            [Arsse::$user->id, 18, ['name' => "Ook"]],
-            [Arsse::$user->id, 1088, ['name' => "Eek"]],
-            [Arsse::$user->id, 18, ['name' => "Eek"]],
-            [Arsse::$user->id, 18, ['name' => ""]],
-            [Arsse::$user->id, 18, ['name' => " "]],
-            [Arsse::$user->id, 18, ['name' => ""]],
-        ];
-        \Phake::when(Arsse::$db)->labelPropertiesSet(...$db[0])->thenReturn(true);
-        \Phake::when(Arsse::$db)->labelPropertiesSet(...$db[1])->thenThrow(new ExceptionInput("subjectMissing"));
-        \Phake::when(Arsse::$db)->labelPropertiesSet(...$db[2])->thenThrow(new ExceptionInput("constraintViolation"));
-        \Phake::when(Arsse::$db)->labelPropertiesSet(...$db[3])->thenThrow(new ExceptionInput("typeViolation"));
-        \Phake::when(Arsse::$db)->labelPropertiesSet(...$db[4])->thenThrow(new ExceptionInput("typeViolation"));
-        \Phake::when(Arsse::$db)->labelPropertiesSet(...$db[5])->thenThrow(new ExceptionInput("typeViolation"));
-        // succefully rename a label
-        $exp = $this->respGood();
-        $this->assertMessage($exp, $this->req($in[0]));
-        // rename a label which does not exist (this should silently fail)
-        $exp = $this->respGood();
-        $this->assertMessage($exp, $this->req($in[1]));
-        // rename a label causing a duplication (this should also silently fail)
-        $exp = $this->respGood();
-        $this->assertMessage($exp, $this->req($in[2]));
-        // all the rest should cause errors
-        $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertMessage($exp, $this->req($in[3]));
-        $this->assertMessage($exp, $this->req($in[4]));
-        $this->assertMessage($exp, $this->req($in[5]));
-        $this->assertMessage($exp, $this->req($in[6]));
-        $this->assertMessage($exp, $this->req($in[7]));
-        $this->assertMessage($exp, $this->req($in[8]));
-        \Phake::verify(Arsse::$db, \Phake::times(6))->labelPropertiesSet(Arsse::$user->id, $this->anything(), $this->anything());
     }
 
-    public function testRetrieveCategoryLists(): void {
-        $in = [
-            ['op' => "getCategories", 'sid' => "PriestsOfSyrinx", 'include_empty' => true],
-            ['op' => "getCategories", 'sid' => "PriestsOfSyrinx"],
-            ['op' => "getCategories", 'sid' => "PriestsOfSyrinx", 'unread_only' => true],
-            ['op' => "getCategories", 'sid' => "PriestsOfSyrinx", 'enable_nested' => true, 'include_empty' => true],
-            ['op' => "getCategories", 'sid' => "PriestsOfSyrinx", 'enable_nested' => true],
-            ['op' => "getCategories", 'sid' => "PriestsOfSyrinx", 'enable_nested' => true, 'unread_only' => true],
+    /** @dataProvider provideLabelRenamings */
+    public function testRenameALabel(array $in, ?array $data, $out, ResponseInterface $exp): void {
+        $in = array_merge(['op' => "renameLabel", 'sid' => "PriestsOfSyrinx"], $in);
+        $action = ($out instanceof \Exception) ? "throws" : "returns";
+        $this->dbMock->labelPropertiesSet->$action($out);
+        $this->assertMessage($exp, $this->req($in));
+        if ($out !== null) {
+            $this->dbMock->labelPropertiesSet->calledWith(...$data);
+        } else {
+            $this->dbMock->labelPropertiesSet->never()->called();
+        }
+    }
+
+    public function provideLabelRenamings(): iterable {
+        return [
+            [['label_id' => -1042, 'caption' => "Ook"], [$this->userId, 18,   ['name' => "Ook"]], true,                                      $this->respGood()],
+            [['label_id' => -2112, 'caption' => "Eek"], [$this->userId, 1088, ['name' => "Eek"]], new ExceptionInput("subjectMissing"),      $this->respGood()],
+            [['label_id' => -1042, 'caption' => "Eek"], [$this->userId, 18,   ['name' => "Eek"]], new ExceptionInput("constraintViolation"), $this->respGood()],
+            [['label_id' => -1042, 'caption' => ""],    [$this->userId, 18,   ['name' => ""]],    new ExceptionInput("missing"),             $this->respGood()],
+            [['label_id' => -1042, 'caption' => " "],   [$this->userId, 18,   ['name' => " "]],   new ExceptionInput("whitespace"),          $this->respGood()],
+            [['label_id' => -1042],                     [$this->userId, 18,   ['name' => ""]],    new ExceptionInput("missing"),             $this->respGood()],
+            [['label_id' => -1,    'caption' => "Ook"], null,                                     null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['caption' => "Ook"],                      null,                                     null,                                      $this->respErr("INCORRECT_USAGE")],
+            [[],                                        null,                                     null,                                      $this->respErr("INCORRECT_USAGE")],
         ];
-        \Phake::when(Arsse::$db)->folderList($this->anything(), null, true)->thenReturn(new Result($this->v($this->folders)));
-        \Phake::when(Arsse::$db)->folderList($this->anything(), null, false)->thenReturn(new Result($this->v($this->topFolders)));
-        \Phake::when(Arsse::$db)->subscriptionList($this->anything())->thenReturn(new Result($this->v($this->subscriptions)));
-        \Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result($this->v($this->labels)));
-        \Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->hidden(false)->unread(true)->modifiedSince(Date::sub("PT24H")), 2))->thenReturn(7);
-        \Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn($this->v($this->starred));
+    }
+
+    /** @dataProvider provideCategoryListings */
+    public function testRetrieveCategoryLists(array $in, ResponseInterface $exp): void {
+        $in = array_merge(['op' => "getCategories", 'sid' => "PriestsOfSyrinx"], $in);
+        $this->dbMock->folderList->with("~", null, true)->returns(new Result($this->v($this->folders)));
+        $this->dbMock->folderList->with("~", null, false)->returns(new Result($this->v($this->topFolders)));
+        $this->dbMock->subscriptionList->returns(new Result($this->v($this->subscriptions)));
+        $this->dbMock->labelList->returns(new Result($this->v($this->labels)));
+        $this->dbMock->articleCount->with("~", $this->equalTo((new Context)->hidden(false)->unread(true)->modifiedSince(Date::sub("PT24H", self::NOW))))->returns(7);
+        $this->dbMock->articleStarred->returns($this->v($this->starred));
+        $this->assertMessage($exp, $this->req($in));
+    }
+
+    public function provideCategoryListings(): iterable {
         $exp = [
             [
                 ['id' => "5", 'title' => "Local",         'unread' => 10, 'order_id' => 1],
@@ -1042,9 +1016,14 @@ LONG_STRING;
                 ['id' => -2,  'title' => "Labels",        'unread' => "6"],
             ],
         ];
-        for ($a = 0; $a < sizeof($in); $a++) {
-            $this->assertMessage($this->respGood($exp[$a]), $this->req($in[$a]), "Test $a failed");
-        }
+        return [
+            [['include_empty' => true],                          $this->respGood($exp[0])],
+            [[],                                                 $this->respGood($exp[1])],
+            [['unread_only' => true],                            $this->respGood($exp[2])],
+            [['enable_nested' => true, 'include_empty' => true], $this->respGood($exp[3])],
+            [['enable_nested' => true],                          $this->respGood($exp[4])],
+            [['enable_nested' => true, 'unread_only' => true],   $this->respGood($exp[5])],
+        ];
     }
 
     public function testRetrieveCounterList(): void {
@@ -1083,19 +1062,18 @@ LONG_STRING;
         $this->dbMock->articleCount->calledWith($this->userId, $this->equalTo((new Context)->hidden(false)->unread(true)->modifiedSince(Date::sub("PT24H", self::NOW))));
     }
 
-    public function testRetrieveTheLabelList(): void {
-        $in = [
-            ['op' => "getLabels", 'sid' => "PriestsOfSyrinx"],
-            ['op' => "getLabels", 'sid' => "PriestsOfSyrinx", 'article_id' => 1],
-            ['op' => "getLabels", 'sid' => "PriestsOfSyrinx", 'article_id' => 2],
-            ['op' => "getLabels", 'sid' => "PriestsOfSyrinx", 'article_id' => 3],
-            ['op' => "getLabels", 'sid' => "PriestsOfSyrinx", 'article_id' => 4],
-        ];
-        \Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result($this->v($this->labels)));
-        \Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 1)->thenReturn($this->v([1,3]));
-        \Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 2)->thenReturn($this->v([3]));
-        \Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 3)->thenReturn([]);
-        \Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 4)->thenThrow(new ExceptionInput("idMissing"));
+    /** @dataProvider provideLabelListings */
+    public function testRetrieveTheLabelList(array $in, ResponseInterface $exp): void {
+        $in = array_merge(['op' => "getLabels", 'sid' => "PriestsOfSyrinx"], $in);
+        $this->dbMock->labelList->returns(new Result($this->v($this->labels)));
+        $this->dbMock->articleLabelsGet->with("~", 1)->returns($this->v([1,3]));
+        $this->dbMock->articleLabelsGet->with("~", 2)->returns($this->v([3]));
+        $this->dbMock->articleLabelsGet->with("~", 3)->returns([]);
+        $this->dbMock->articleLabelsGet->with("~", 4)->throws(new ExceptionInput("idMissing"));
+        $this->assertMessage($exp, $this->req($in));
+    }
+
+    public function provideLabelListings(): iterable {
         $exp = [
             [
                 ['id' => -1027, 'caption' => "Fascinating", 'fg_color' => "", 'bg_color' => "", 'checked' => false],
@@ -1123,9 +1101,13 @@ LONG_STRING;
                 ['id' => -1025, 'caption' => "Logical",     'fg_color' => "", 'bg_color' => "", 'checked' => false],
             ],
         ];
-        for ($a = 0; $a < sizeof($in); $a++) {
-            $this->assertMessage($this->respGood($exp[$a]), $this->req($in[$a]), "Test $a failed");
-        }
+        return [
+            [[],                  $this->respGood($exp[0])],
+            [['article_id' => 1], $this->respGood($exp[1])],
+            [['article_id' => 2], $this->respGood($exp[2])],
+            [['article_id' => 3], $this->respGood($exp[3])],
+            [['article_id' => 4], $this->respGood($exp[4])],
+        ];
     }
 
     public function testAssignArticlesToALabel(): void {
@@ -1143,20 +1125,20 @@ LONG_STRING;
             ['op' => "setArticleLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => 0],
             ['op' => "setArticleLabel", 'sid' => "PriestsOfSyrinx"],
         ];
-        \Phake::when(Arsse::$db)->labelArticlesSet(Arsse::$user->id, $this->anything(), (new Context)->articles([]), $this->anything())->thenThrow(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
-        \Phake::when(Arsse::$db)->labelArticlesSet(Arsse::$user->id, $this->anything(), (new Context)->articles($list[0]), $this->anything())->thenThrow(new ExceptionInput("tooLong")); // data model function limited to 50 items for multiples
-        \Phake::when(Arsse::$db)->labelArticlesSet(Arsse::$user->id, 1088, (new Context)->articles($list[1]), Database::ASSOC_REMOVE)->thenReturn(42);
-        \Phake::when(Arsse::$db)->labelArticlesSet(Arsse::$user->id, 1088, (new Context)->articles($list[2]), Database::ASSOC_REMOVE)->thenReturn(47);
-        \Phake::when(Arsse::$db)->labelArticlesSet(Arsse::$user->id, 1088, (new Context)->articles($list[1]), Database::ASSOC_ADD)->thenReturn(5);
-        \Phake::when(Arsse::$db)->labelArticlesSet(Arsse::$user->id, 1088, (new Context)->articles($list[2]), Database::ASSOC_ADD)->thenReturn(2);
+        \Phake::when(Arsse::$db)->labelArticlesSet($this->userId, $this->anything(), (new Context)->articles([]), $this->anything())->thenThrow(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
+        \Phake::when(Arsse::$db)->labelArticlesSet($this->userId, $this->anything(), (new Context)->articles($list[0]), $this->anything())->thenThrow(new ExceptionInput("tooLong")); // data model function limited to 50 items for multiples
+        \Phake::when(Arsse::$db)->labelArticlesSet($this->userId, 1088, (new Context)->articles($list[1]), Database::ASSOC_REMOVE)->thenReturn(42);
+        \Phake::when(Arsse::$db)->labelArticlesSet($this->userId, 1088, (new Context)->articles($list[2]), Database::ASSOC_REMOVE)->thenReturn(47);
+        \Phake::when(Arsse::$db)->labelArticlesSet($this->userId, 1088, (new Context)->articles($list[1]), Database::ASSOC_ADD)->thenReturn(5);
+        \Phake::when(Arsse::$db)->labelArticlesSet($this->userId, 1088, (new Context)->articles($list[2]), Database::ASSOC_ADD)->thenReturn(2);
         $exp = $this->respGood(['status' => "OK", 'updated' => 89]);
         $this->assertMessage($exp, $this->req($in[0]));
-        \Phake::verify(Arsse::$db)->labelArticlesSet(Arsse::$user->id, 1088, (new Context)->articles($list[1]), Database::ASSOC_REMOVE);
-        \Phake::verify(Arsse::$db)->labelArticlesSet(Arsse::$user->id, 1088, (new Context)->articles($list[2]), Database::ASSOC_REMOVE);
+        \Phake::verify(Arsse::$db)->labelArticlesSet($this->userId, 1088, (new Context)->articles($list[1]), Database::ASSOC_REMOVE);
+        \Phake::verify(Arsse::$db)->labelArticlesSet($this->userId, 1088, (new Context)->articles($list[2]), Database::ASSOC_REMOVE);
         $exp = $this->respGood(['status' => "OK", 'updated' => 7]);
         $this->assertMessage($exp, $this->req($in[1]));
-        \Phake::verify(Arsse::$db)->labelArticlesSet(Arsse::$user->id, 1088, (new Context)->articles($list[1]), Database::ASSOC_ADD);
-        \Phake::verify(Arsse::$db)->labelArticlesSet(Arsse::$user->id, 1088, (new Context)->articles($list[2]), Database::ASSOC_ADD);
+        \Phake::verify(Arsse::$db)->labelArticlesSet($this->userId, 1088, (new Context)->articles($list[1]), Database::ASSOC_ADD);
+        \Phake::verify(Arsse::$db)->labelArticlesSet($this->userId, 1088, (new Context)->articles($list[2]), Database::ASSOC_ADD);
         $exp = $this->respGood(['status' => "OK", 'updated' => 0]);
         $this->assertMessage($exp, $this->req($in[2]));
         $exp = $this->respErr("INCORRECT_USAGE");
@@ -1194,7 +1176,7 @@ LONG_STRING;
         // TT-RSS always responds the same regardless of success or failure
         $this->assertMessage($this->respGood(['status' => "OK"]), $this->req($in));
         if (isset($c)) {
-            $this->dbMock->articleMark->calledWith(Arsse::$user->id, ['read' => true], $this->equalTo($c));
+            $this->dbMock->articleMark->calledWith($this->userId, ['read' => true], $this->equalTo($c));
         } else {
             $this->dbMock->articleMark->never()->called();
         }
