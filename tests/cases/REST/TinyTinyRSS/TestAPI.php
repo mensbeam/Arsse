@@ -1110,42 +1110,30 @@ LONG_STRING;
         ];
     }
 
-    public function testAssignArticlesToALabel(): void {
-        $list = [
-            range(1, 100),
-            range(1, 50),
-            range(51, 100),
+    public function provideLabelAssignments(): iterable {
+        $ids = implode(",", range(1, 100));
+        return [
+            [['label_id' => -2112, 'article_ids' => $ids],                   1088, Database::ASSOC_REMOVE, $this->respGood(['status' => "OK", 'updated' => 89])],
+            [['label_id' => -2112, 'article_ids' => $ids, 'assign' => true], 1088, Database::ASSOC_ADD,    $this->respGood(['status' => "OK", 'updated' => 7])],
+            [['label_id' => -2112],                                          null, null,                   $this->respGood(['status' => "OK", 'updated' => 0])],
+            [['label_id' => -42],                                            null, null,                   $this->respErr("INCORRECT_USAGE")],
+            [['label_id' => 42],                                             null, null,                   $this->respErr("INCORRECT_USAGE")],
+            [['label_id' => 0],                                              null, null,                   $this->respErr("INCORRECT_USAGE")],
+            [[],                                                             null, null,                   $this->respErr("INCORRECT_USAGE")],
         ];
-        $in = [
-            ['op' => "setArticleLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -2112, 'article_ids' => implode(",", $list[0])],
-            ['op' => "setArticleLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -2112, 'article_ids' => implode(",", $list[0]), 'assign' => true],
-            ['op' => "setArticleLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -2112],
-            ['op' => "setArticleLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => -42],
-            ['op' => "setArticleLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => 42],
-            ['op' => "setArticleLabel", 'sid' => "PriestsOfSyrinx", 'label_id' => 0],
-            ['op' => "setArticleLabel", 'sid' => "PriestsOfSyrinx"],
-        ];
-        \Phake::when(Arsse::$db)->labelArticlesSet($this->userId, $this->anything(), (new Context)->articles([]), $this->anything())->thenThrow(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
-        \Phake::when(Arsse::$db)->labelArticlesSet($this->userId, $this->anything(), (new Context)->articles($list[0]), $this->anything())->thenThrow(new ExceptionInput("tooLong")); // data model function limited to 50 items for multiples
-        \Phake::when(Arsse::$db)->labelArticlesSet($this->userId, 1088, (new Context)->articles($list[1]), Database::ASSOC_REMOVE)->thenReturn(42);
-        \Phake::when(Arsse::$db)->labelArticlesSet($this->userId, 1088, (new Context)->articles($list[2]), Database::ASSOC_REMOVE)->thenReturn(47);
-        \Phake::when(Arsse::$db)->labelArticlesSet($this->userId, 1088, (new Context)->articles($list[1]), Database::ASSOC_ADD)->thenReturn(5);
-        \Phake::when(Arsse::$db)->labelArticlesSet($this->userId, 1088, (new Context)->articles($list[2]), Database::ASSOC_ADD)->thenReturn(2);
-        $exp = $this->respGood(['status' => "OK", 'updated' => 89]);
-        $this->assertMessage($exp, $this->req($in[0]));
-        \Phake::verify(Arsse::$db)->labelArticlesSet($this->userId, 1088, (new Context)->articles($list[1]), Database::ASSOC_REMOVE);
-        \Phake::verify(Arsse::$db)->labelArticlesSet($this->userId, 1088, (new Context)->articles($list[2]), Database::ASSOC_REMOVE);
-        $exp = $this->respGood(['status' => "OK", 'updated' => 7]);
-        $this->assertMessage($exp, $this->req($in[1]));
-        \Phake::verify(Arsse::$db)->labelArticlesSet($this->userId, 1088, (new Context)->articles($list[1]), Database::ASSOC_ADD);
-        \Phake::verify(Arsse::$db)->labelArticlesSet($this->userId, 1088, (new Context)->articles($list[2]), Database::ASSOC_ADD);
-        $exp = $this->respGood(['status' => "OK", 'updated' => 0]);
-        $this->assertMessage($exp, $this->req($in[2]));
-        $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertMessage($exp, $this->req($in[3]));
-        $this->assertMessage($exp, $this->req($in[4]));
-        $this->assertMessage($exp, $this->req($in[5]));
-        $this->assertMessage($exp, $this->req($in[6]));
+    }
+
+    /** @dataProvider provideLabelAssignments */
+    public function testAssignArticlesToALabel(array $in, ?int $label, ?int $operation, ResponseInterface $exp): void {
+        $in = array_merge(['op' => "setArticleLabel", 'sid' => "PriestsOfSyrinx"], $in);
+        $this->dbMock->labelArticlesSet->with($this->userId, "~", "~", Database::ASSOC_REMOVE)->returns(42)->returns(47);
+        $this->dbMock->labelArticlesSet->with($this->userId, "~", "~", Database::ASSOC_ADD)->returns(5)->returns(2);
+        $this->dbMock->labelArticlesSet->with($this->userId, "~", $this->equalTo((new Context)->articles([])), "~")->throws(new ExceptionInput("tooShort"));
+        $this->assertMessage($exp, $this->req($in));
+        if ($label !== null) {
+            $this->dbMock->labelArticlesSet->calledWith($this->userId, $label, $this->equalTo((new Context)->articles(range(1, 50))), $operation);
+            $this->dbMock->labelArticlesSet->calledWith($this->userId, $label, $this->equalTo((new Context)->articles(range(51, 100))), $operation);
+        }
     }
 
     public function testRetrieveFeedTree(): void {
@@ -1208,51 +1196,58 @@ LONG_STRING;
         ];
     }
 
-    public function testRetrieveFeedList(): void {
-        $in1 = [
-            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx"],
-            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => -1],
-            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => -1, 'unread_only' => true],
-            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => -2],
-            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => -2, 'unread_only' => true],
-            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => -3],
-            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => -3, 'unread_only' => true],
-            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => -4],
-            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => -4, 'unread_only' => true],
-            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => 6],
-            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => 6, 'limit' => 1],
-            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => 6, 'limit' => 1, 'offset' => 1],
-            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => 1],
-            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => 1, 'include_nested' => true],
-        ];
-        $in2 = [
-            // these should all return an empty list
-            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => 0, 'unread_only' => true],
-            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => 2112],
-            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => 2112, 'include_nested' => true],
-            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => 6, 'limit' => -42],
-            ['op' => "getFeeds", 'sid' => "PriestsOfSyrinx", 'cat_id' => 6, 'offset' => 2],
-        ];
+    /** @dataProvider provideFeedListings */
+    public function testRetrieveFeedList(array $in, ResponseInterface $exp): void {
+        $in = array_merge(['op' => "getFeeds", 'sid' => "PriestsOfSyrinx"], $in);
         // statistical mocks
-        \Phake::when(Arsse::$db)->articleStarred($this->anything())->thenReturn($this->v($this->starred));
-        \Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->unread(true)->hidden(false)->modifiedSince(Date::sub("PT24H")), 2))->thenReturn(7);
-        \Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true)->hidden(false))->thenReturn(35);
+        $this->dbMock->articleStarred->returns($this->v($this->starred));
+        $this->dbMock->articleCount->with("~", $this->equalTo((new Context)->unread(true)->hidden(false)->modifiedSince(Date::sub("PT24H", self::NOW))))->returns(7);
+        $this->dbMock->articleCount->with("~", $this->equalTo((new Context)->unread(true)->hidden(false)))->returns(35);
         // label mocks
-        \Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result($this->v($this->labels)));
-        \Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result($this->v($this->usedLabels)));
+        $this->dbMock->labelList->returns(new Result($this->v($this->labels)));
+        $this->dbMock->labelList->with("~", false)->returns(new Result($this->v($this->usedLabels)));
         // subscription and folder list and unread count mocks
-        \Phake::when(Arsse::$db)->folderList->thenThrow(new ExceptionInput("subjectMissing"));
-        \Phake::when(Arsse::$db)->subscriptionList->thenThrow(new ExceptionInput("subjectMissing"));
-        \Phake::when(Arsse::$db)->folderList($this->anything())->thenReturn(new Result($this->v($this->folders)));
-        \Phake::when(Arsse::$db)->subscriptionList($this->anything(), null, true)->thenReturn(new Result($this->v($this->subscriptions)));
-        \Phake::when(Arsse::$db)->subscriptionList($this->anything(), null, false)->thenReturn(new Result($this->v($this->filterSubs(null))));
-        \Phake::when(Arsse::$db)->folderList($this->anything(), null)->thenReturn(new Result($this->v($this->folders)));
-        \Phake::when(Arsse::$db)->folderList($this->anything(), null, false)->thenReturn(new Result($this->v($this->filterFolders(null))));
+        $this->dbMock->folderList->throws(new ExceptionInput("subjectMissing"));
+        $this->dbMock->subscriptionList->throws(new ExceptionInput("subjectMissing"));
+        $this->dbMock->folderList->with("~")->returns(new Result($this->v($this->folders)));
+        $this->dbMock->subscriptionList->with("~", null, true)->returns(new Result($this->v($this->subscriptions)));
+        $this->dbMock->subscriptionList->with("~", null, false)->returns(new Result($this->v($this->filterSubs(null))));
+        $this->dbMock->folderList->with("~", null)->returns(new Result($this->v($this->folders)));
+        $this->dbMock->folderList->with("~", null, false)->returns(new Result($this->v($this->filterFolders(null))));
         foreach ($this->folders as $f) {
-            \Phake::when(Arsse::$db)->folderList($this->anything(), $f['id'], false)->thenReturn(new Result($this->v($this->filterFolders($f['id']))));
-            \Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true)->hidden(false)->folder($f['id']))->thenReturn($this->reduceFolders($f['id']));
-            \Phake::when(Arsse::$db)->subscriptionList($this->anything(), $f['id'], false)->thenReturn(new Result($this->v($this->filterSubs($f['id']))));
+            $this->dbMock->folderList->with("~", $f['id'], false)->returns(new Result($this->v($this->filterFolders($f['id']))));
+            $this->dbMock->articleCount->with("~", $this->equalTo((new Context)->unread(true)->hidden(false)->folder($f['id'])))->returns($this->reduceFolders($f['id']));
+            $this->dbMock->subscriptionList->with("~", $f['id'], false)->returns(new Result($this->v($this->filterSubs($f['id']))));
         }
+        $this->assertMessage($exp, $this->req($in));
+    }
+
+    protected function filterFolders(int $id = null): array {
+        return array_filter($this->folders, function($value) use ($id) {
+            return $value['parent'] == $id;
+        });
+    }
+
+    protected function filterSubs(int $folder = null): array {
+        return array_filter($this->subscriptions, function($value) use ($folder) {
+            return $value['folder'] == $folder;
+        });
+    }
+
+    protected function reduceFolders(int $id = null): int {
+        $out = 0;
+        foreach ($this->filterFolders($id) as $f) {
+            $out += $this->reduceFolders($f['id']);
+        }
+        $out += array_reduce(array_filter($this->subscriptions, function($value) use ($id) {
+            return $value['folder'] == $id;
+        }), function($sum, $value) {
+            return $sum + $value['unread'];
+        }, 0);
+        return $out;
+    }
+
+    public function provideFeedListings(): iterable {
         $exp = [
             [
                 ['id' => 6, 'title' => 'Eurogamer', 'unread' => 0, 'cat_id' => 0, 'feed_url' => " http://example.com/6", 'has_icon' => true, 'last_updated' => 1266005327, 'order_id' => 1],
@@ -1337,148 +1332,95 @@ LONG_STRING;
                 ['id' => 3, 'title' => 'Ars Technica', 'unread' => 2, 'cat_id' => 1, 'feed_url' => " http://example.com/3", 'has_icon' => true, 'last_updated' => 1463985602, 'order_id' => 1],
             ],
         ];
-        for ($a = 0; $a < sizeof($in1); $a++) {
-            $this->assertMessage($this->respGood($exp[$a]), $this->req($in1[$a]), "Test $a failed");
-        }
-        for ($a = 0; $a < sizeof($in2); $a++) {
-            $this->assertMessage($this->respGood([]), $this->req($in2[$a]), "Test $a failed");
-        }
-    }
-
-    protected function filterFolders(int $id = null): array {
-        return array_filter($this->folders, function($value) use ($id) {
-            return $value['parent'] == $id;
-        });
-    }
-
-    protected function filterSubs(int $folder = null): array {
-        return array_filter($this->subscriptions, function($value) use ($folder) {
-            return $value['folder'] == $folder;
-        });
-    }
-
-    protected function reduceFolders(int $id = null): int {
-        $out = 0;
-        foreach ($this->filterFolders($id) as $f) {
-            $out += $this->reduceFolders($f['id']);
-        }
-        $out += array_reduce(array_filter($this->subscriptions, function($value) use ($id) {
-            return $value['folder'] == $id;
-        }), function($sum, $value) {
-            return $sum + $value['unread'];
-        }, 0);
-        return $out;
-    }
-
-    public function testChangeArticles(): void {
-        $in = [
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx"],
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1"],
-
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 0],
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 0],
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 1],
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 2],
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 3], // invalid mode
-
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 1], // Published feed' no-op
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 0],
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 1],
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 2],
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 3], // invalid mode
-
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 2],
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 2, 'mode' => 0],
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 2, 'mode' => 1],
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 2, 'mode' => 2],
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 2, 'mode' => 3], // invalid mode
-
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 3],
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 3, 'mode' => 0],
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 3, 'mode' => 1],
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 3, 'mode' => 2],
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 3, 'mode' => 3], // invalid mode
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 3, 'data' => "eh"],
-
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "42, 2112, -1", 'field' => 4], // invalid field
-            ['op' => "updateArticle", 'sid' => "PriestsOfSyrinx", 'article_ids' => "0, -1", 'field' => 3], // no valid IDs
+        return [
+            [[],                                           $this->respGood($exp[0])],
+            [['cat_id' => -1],                             $this->respGood($exp[1])],
+            [['cat_id' => -1, 'unread_only' => true],      $this->respGood($exp[2])],
+            [['cat_id' => -2],                             $this->respGood($exp[3])],
+            [['cat_id' => -2, 'unread_only' => true],      $this->respGood($exp[4])],
+            [['cat_id' => -3],                             $this->respGood($exp[5])],
+            [['cat_id' => -3, 'unread_only' => true],      $this->respGood($exp[6])],
+            [['cat_id' => -4],                             $this->respGood($exp[7])],
+            [['cat_id' => -4, 'unread_only' => true],      $this->respGood($exp[8])],
+            [['cat_id' => 6],                              $this->respGood($exp[9])],
+            [['cat_id' => 6, 'limit' => 1],                $this->respGood($exp[10])],
+            [['cat_id' => 6, 'limit' => 1, 'offset' => 1], $this->respGood($exp[11])],
+            [['cat_id' => 1],                              $this->respGood($exp[12])],
+            [['cat_id' => 1, 'include_nested' => true],    $this->respGood($exp[13])],
+            [['cat_id' => 0, 'unread_only' => true],       $this->respGood([])],
+            [['cat_id' => 2112],                           $this->respGood([])],
+            [['cat_id' => 2112, 'include_nested' => true], $this->respGood([])],
+            [['cat_id' => 6, 'limit' => -42],              $this->respGood([])],
+            [['cat_id' => 6, 'offset' => 2],               $this->respGood([])],
         ];
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([42, 2112])->starred(true), $this->anything())->thenReturn(new Result($this->v([['id' => 42]])));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([42, 2112])->starred(false), $this->anything())->thenReturn(new Result($this->v([['id' => 2112]])));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([42, 2112])->unread(true), $this->anything())->thenReturn(new Result($this->v([['id' => 42]])));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([42, 2112])->unread(false), $this->anything())->thenReturn(new Result($this->v([['id' => 2112]])));
-        \Phake::when(Arsse::$db)->articleMark->thenReturn(1);
-        \Phake::when(Arsse::$db)->articleMark($this->anything(), ['starred' => false], (new Context)->articles([42, 2112]))->thenReturn(2);
-        \Phake::when(Arsse::$db)->articleMark($this->anything(), ['starred' =>  true], (new Context)->articles([42, 2112]))->thenReturn(4);
-        \Phake::when(Arsse::$db)->articleMark($this->anything(), ['starred' => false], (new Context)->articles([42]))->thenReturn(8);
-        \Phake::when(Arsse::$db)->articleMark($this->anything(), ['starred' =>  true], (new Context)->articles([2112]))->thenReturn(16);
-        \Phake::when(Arsse::$db)->articleMark($this->anything(), ['read'    =>  true], (new Context)->articles([42, 2112]))->thenReturn(32); // false is read for TT-RSS
-        \Phake::when(Arsse::$db)->articleMark($this->anything(), ['read'    => false], (new Context)->articles([42, 2112]))->thenReturn(64);
-        \Phake::when(Arsse::$db)->articleMark($this->anything(), ['read'    =>  true], (new Context)->articles([42]))->thenReturn(128);
-        \Phake::when(Arsse::$db)->articleMark($this->anything(), ['read'    => false], (new Context)->articles([2112]))->thenReturn(256);
-        \Phake::when(Arsse::$db)->articleMark($this->anything(), ['note'    =>    ""], (new Context)->articles([42, 2112]))->thenReturn(512);
-        \Phake::when(Arsse::$db)->articleMark($this->anything(), ['note'    =>  "eh"], (new Context)->articles([42, 2112]))->thenReturn(1024);
-        $out = [
-            $this->respErr("INCORRECT_USAGE"),
-            $this->respGood(['status' => "OK", 'updated' => 2]),
-
-            $this->respGood(['status' => "OK", 'updated' => 2]),
-            $this->respGood(['status' => "OK", 'updated' => 2]),
-            $this->respGood(['status' => "OK", 'updated' => 4]),
-            $this->respGood(['status' => "OK", 'updated' => 24]),
-            $this->respErr("INCORRECT_USAGE"),
-
-            $this->respGood(['status' => "OK", 'updated' => 0]),
-            $this->respGood(['status' => "OK", 'updated' => 0]),
-            $this->respGood(['status' => "OK", 'updated' => 0]),
-            $this->respGood(['status' => "OK", 'updated' => 0]),
-            $this->respErr("INCORRECT_USAGE"),
-
-            $this->respGood(['status' => "OK", 'updated' => 32]),
-            $this->respGood(['status' => "OK", 'updated' => 32]),
-            $this->respGood(['status' => "OK", 'updated' => 64]),
-            $this->respGood(['status' => "OK", 'updated' => 384]),
-            $this->respErr("INCORRECT_USAGE"),
-
-            $this->respGood(['status' => "OK", 'updated' => 512]),
-            $this->respGood(['status' => "OK", 'updated' => 512]),
-            $this->respGood(['status' => "OK", 'updated' => 512]),
-            $this->respGood(['status' => "OK", 'updated' => 512]),
-            $this->respGood(['status' => "OK", 'updated' => 512]),
-            $this->respGood(['status' => "OK", 'updated' => 1024]),
-
-            $this->respErr("INCORRECT_USAGE"),
-            $this->respErr("INCORRECT_USAGE"),
-        ];
-        for ($a = 0; $a < sizeof($in); $a++) {
-            $this->assertMessage($out[$a], $this->req($in[$a]), "Test $a failed");
-        }
     }
 
-    public function testListArticles(): void {
-        $in = [
-            // error conditions
-            ['op' => "getArticle", 'sid' => "PriestsOfSyrinx"],
-            ['op' => "getArticle", 'sid' => "PriestsOfSyrinx", 'article_id' => 0],
-            ['op' => "getArticle", 'sid' => "PriestsOfSyrinx", 'article_id' => -1],
-            ['op' => "getArticle", 'sid' => "PriestsOfSyrinx", 'article_id' => "0,-1"],
-            // acceptable input
-            ['op' => "getArticle", 'sid' => "PriestsOfSyrinx", 'article_id' => "101,102"],
-            ['op' => "getArticle", 'sid' => "PriestsOfSyrinx", 'article_id' => "101"],
-            ['op' => "getArticle", 'sid' => "PriestsOfSyrinx", 'article_id' => "102"],
+    
+    /** @dataProvider provideArticleChanges */
+    public function testChangeArticles(array $in, ResponseInterface $exp): void {
+        $in = array_merge(['op' => "updateArticle", 'sid' => "PriestsOfSyrinx"], $in);
+        $this->dbMock->articleMark->returns(1);
+        $this->dbMock->articleMark->with($this->userId, ['starred' => false], $this->equalTo((new Context)->articles([42, 2112])))->returns(2);
+        $this->dbMock->articleMark->with($this->userId, ['starred' =>  true], $this->equalTo((new Context)->articles([42, 2112])))->returns(4);
+        $this->dbMock->articleMark->with($this->userId, ['starred' => false], $this->equalTo((new Context)->articles([42])))->returns(8);
+        $this->dbMock->articleMark->with($this->userId, ['starred' =>  true], $this->equalTo((new Context)->articles([2112])))->returns(16);
+        $this->dbMock->articleMark->with($this->userId, ['read'    =>  true], $this->equalTo((new Context)->articles([42, 2112])))->returns(32); // false is read for TT-RSS
+        $this->dbMock->articleMark->with($this->userId, ['read'    => false], $this->equalTo((new Context)->articles([42, 2112])))->returns(64);
+        $this->dbMock->articleMark->with($this->userId, ['read'    =>  true], $this->equalTo((new Context)->articles([42])))->returns(128);
+        $this->dbMock->articleMark->with($this->userId, ['read'    => false], $this->equalTo((new Context)->articles([2112])))->returns(256);
+        $this->dbMock->articleMark->with($this->userId, ['note'    =>    ""], $this->equalTo((new Context)->articles([42, 2112])))->returns(512);
+        $this->dbMock->articleMark->with($this->userId, ['note'    =>  "eh"], $this->equalTo((new Context)->articles([42, 2112])))->returns(1024);
+        $this->dbMock->articleList->with($this->userId, $this->equalTo((new Context)->articles([42, 2112])->starred(true)), "~")->returns(new Result($this->v([['id' => 42]])));
+        $this->dbMock->articleList->with($this->userId, $this->equalTo((new Context)->articles([42, 2112])->starred(false)), "~")->returns(new Result($this->v([['id' => 2112]])));
+        $this->dbMock->articleList->with($this->userId, $this->equalTo((new Context)->articles([42, 2112])->unread(true)), "~")->returns(new Result($this->v([['id' => 42]])));
+        $this->dbMock->articleList->with($this->userId, $this->equalTo((new Context)->articles([42, 2112])->unread(false)), "~")->returns(new Result($this->v([['id' => 2112]])));
+        $this->assertMessage($exp, $this->req($in));
+    }
+
+    public function provideArticleChanges(): iterable {
+        return [
+            [[],                                                              $this->respErr("INCORRECT_USAGE")],
+            [['article_ids' => "42, 2112, -1"],                               $this->respGood(['status' => "OK", 'updated' => 2])],
+            [['article_ids' => "42, 2112, -1", 'field' => 0],                 $this->respGood(['status' => "OK", 'updated' => 2])],
+            [['article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 0],    $this->respGood(['status' => "OK", 'updated' => 2])],
+            [['article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 1],    $this->respGood(['status' => "OK", 'updated' => 4])],
+            [['article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 2],    $this->respGood(['status' => "OK", 'updated' => 24])],
+            [['article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 3],    $this->respErr("INCORRECT_USAGE")],
+            [['article_ids' => "42, 2112, -1", 'field' => 1],                 $this->respGood(['status' => "OK", 'updated' => 0])],
+            [['article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 0],    $this->respGood(['status' => "OK", 'updated' => 0])],
+            [['article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 1],    $this->respGood(['status' => "OK", 'updated' => 0])],
+            [['article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 2],    $this->respGood(['status' => "OK", 'updated' => 0])],
+            [['article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 3],    $this->respErr("INCORRECT_USAGE")],
+            [['article_ids' => "42, 2112, -1", 'field' => 2],                 $this->respGood(['status' => "OK", 'updated' => 32])],
+            [['article_ids' => "42, 2112, -1", 'field' => 2, 'mode' => 0],    $this->respGood(['status' => "OK", 'updated' => 32])],
+            [['article_ids' => "42, 2112, -1", 'field' => 2, 'mode' => 1],    $this->respGood(['status' => "OK", 'updated' => 64])],
+            [['article_ids' => "42, 2112, -1", 'field' => 2, 'mode' => 2],    $this->respGood(['status' => "OK", 'updated' => 384])],
+            [['article_ids' => "42, 2112, -1", 'field' => 2, 'mode' => 3],    $this->respErr("INCORRECT_USAGE")],
+            [['article_ids' => "42, 2112, -1", 'field' => 3],                 $this->respGood(['status' => "OK", 'updated' => 512])],
+            [['article_ids' => "42, 2112, -1", 'field' => 3, 'mode' => 0],    $this->respGood(['status' => "OK", 'updated' => 512])],
+            [['article_ids' => "42, 2112, -1", 'field' => 3, 'mode' => 1],    $this->respGood(['status' => "OK", 'updated' => 512])],
+            [['article_ids' => "42, 2112, -1", 'field' => 3, 'mode' => 2],    $this->respGood(['status' => "OK", 'updated' => 512])],
+            [['article_ids' => "42, 2112, -1", 'field' => 3, 'mode' => 3],    $this->respGood(['status' => "OK", 'updated' => 512])],
+            [['article_ids' => "42, 2112, -1", 'field' => 3, 'data' => "eh"], $this->respGood(['status' => "OK", 'updated' => 1024])],
+            [['article_ids' => "42, 2112, -1", 'field' => 4],                 $this->respErr("INCORRECT_USAGE")],
+            [['article_ids' => "0, -1",        'field' => 3],                 $this->respErr("INCORRECT_USAGE")],
         ];
-        \Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result($this->v($this->labels)));
-        \Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result($this->v($this->usedLabels)));
-        \Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 101)->thenReturn([]);
-        \Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 102)->thenReturn($this->v([1,3]));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([101, 102]), $this->anything())->thenReturn(new Result($this->v($this->articles)));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([101]), $this->anything())->thenReturn(new Result($this->v([$this->articles[0]])));
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->articles([102]), $this->anything())->thenReturn(new Result($this->v([$this->articles[1]])));
-        $exp = $this->respErr("INCORRECT_USAGE");
-        $this->assertMessage($exp, $this->req($in[0]));
-        $this->assertMessage($exp, $this->req($in[1]));
-        $this->assertMessage($exp, $this->req($in[2]));
-        $this->assertMessage($exp, $this->req($in[3]));
+    }
+
+    /** @dataProvider provideArticleListings */
+    public function testListArticles(array $in, ResponseInterface $exp): void {
+        $in = array_merge(['op' => "getArticle", 'sid' => "PriestsOfSyrinx"], $in);
+        $this->dbMock->labelList->with("~")->returns(new Result($this->v($this->labels)));
+        $this->dbMock->labelList->with("~", false)->returns(new Result($this->v($this->usedLabels)));
+        $this->dbMock->articleLabelsGet->with("~", 101)->returns([]);
+        $this->dbMock->articleLabelsGet->with("~", 102)->returns($this->v([1,3]));
+        $this->dbMock->articleList->with("~", $this->equalTo((new Context)->articles([101, 102])), "~")->returns(new Result($this->v($this->articles)));
+        $this->dbMock->articleList->with("~", $this->equalTo((new Context)->articles([101])), "~")->returns(new Result($this->v([$this->articles[0]])));
+        $this->dbMock->articleList->with("~", $this->equalTo((new Context)->articles([102])), "~")->returns(new Result($this->v([$this->articles[1]])));
+        $this->assertMessage($exp, $this->req($in));
+    }
+
+    public function provideArticleListings(): iterable {
         $exp = [
             [
                 'id'          => "101",
@@ -1535,13 +1477,15 @@ LONG_STRING;
                 'content' => '<p>Article content 2</p>',
             ],
         ];
-        $this->assertMessage($this->respGood($exp), $this->req($in[4]));
-        $this->assertMessage($this->respGood([$exp[0]]), $this->req($in[5]));
-        $this->assertMessage($this->respGood([$exp[1]]), $this->req($in[6]));
-        // test the special case when labels are not used
-        \Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result([]));
-        \Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result([]));
-        $this->assertMessage($this->respGood([$exp[0]]), $this->req($in[5]));
+        return [
+            [[],                          $this->respErr("INCORRECT_USAGE")],
+            [['article_id' => 0],         $this->respErr("INCORRECT_USAGE")],
+            [['article_id' => -1],        $this->respErr("INCORRECT_USAGE")],
+            [['article_id' => "0,-1"],    $this->respErr("INCORRECT_USAGE")],
+            [['article_id' => "101,102"], $this->respGood($exp)],
+            [['article_id' => "101"],     $this->respGood([$exp[0]])],
+            [['article_id' => "102"],     $this->respGood([$exp[1]])],
+        ];
     }
 
     /** @dataProvider provideHeadlines */
