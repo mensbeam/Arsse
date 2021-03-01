@@ -141,6 +141,14 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         return $req;
     }
 
+    public static function assertMatchesRegularExpression(string $pattern, string $string, string $message = ''): void {
+        if (method_exists(parent::class, "assertMatchesRegularExpression")) {
+            parent::assertMatchesRegularExpression($pattern, $string, $message);
+        } else {
+            parent::assertRegExp($pattern, $string, $message);
+        }
+    }
+
     public function assertException($msg = "", string $prefix = "", string $type = "Exception"): void {
         if (func_num_args()) {
             if ($msg instanceof \JKingWeb\Arsse\AbstractException) {
@@ -334,7 +342,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             }
             // compare the result set to the expectations
             foreach ($rows as $row) {
-                $this->assertContains($row, $expected, "Result set contains unexpected record.");
+                $this->assertEquals($row, $expected, "Result set contains unexpected record.");
                 $found = array_search($row, $expected);
                 unset($expected[$found]);
             }

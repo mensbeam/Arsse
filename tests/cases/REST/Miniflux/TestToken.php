@@ -43,7 +43,7 @@ class TestToken extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame("RANDOM TOKEN", $this->prepTest()->tokenGenerate("ook", "Eek"));
         $this->dbMock->tokenCreate->calledWith("ook", "miniflux.login", "~", null, "Eek");
         $token = $this->dbMock->tokenCreate->firstCall()->argument(2);
-        $this->assertRegExp("/^[A-Za-z0-9_\-]{43}=$/", $token);
+        $this->assertMatchesRegularExpression("/^[A-Za-z0-9_\-]{43}=$/", $token);
     }
 
     public function testListTheTokensOfAUser(): void {
