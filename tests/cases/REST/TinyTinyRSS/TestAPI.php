@@ -1594,15 +1594,15 @@ LONG_STRING;
             ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'skip' => 47, 'include_header' => true, 'order_by' => "date_reverse"],
             ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'show_excerpt' => true],
         ];
-        \Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result($this->v($this->labels)));
-        \Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result($this->v($this->usedLabels)));
-        \Phake::when(Arsse::$db)->articleLabelsGet->thenReturn([]);
-        \Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 2112)->thenReturn($this->v([1,3]));
-        \Phake::when(Arsse::$db)->articleCategoriesGet->thenReturn([]);
-        \Phake::when(Arsse::$db)->articleCategoriesGet($this->anything(), 2112)->thenReturn(["Boring","Illogical"]);
-        \Phake::when(Arsse::$db)->articleList->thenReturn($this->generateHeadlines(1));
-        \Phake::when(Arsse::$db)->articleCount->thenReturn(0);
-        \Phake::when(Arsse::$db)->articleCount($this->anything(), (new Context)->unread(true)->hidden(false))->thenReturn(1);
+        $this->dbMock->labelList->with("~")->returns(new Result($this->v($this->labels)));
+        $this->dbMock->labelList->with("~", false)->returns(new Result($this->v($this->usedLabels)));
+        $this->dbMock->articleLabelsGet->returns([]);
+        $this->dbMock->articleLabelsGet->with("~", 2112)->returns($this->v([1,3]));
+        $this->dbMock->articleCategoriesGet->returns([]);
+        $this->dbMock->articleCategoriesGet->with("~", 2112)->returns(["Boring","Illogical"]);
+        $this->dbMock->articleList->returns($this->generateHeadlines(1));
+        $this->dbMock->articleCount->returns(0);
+        $this->dbMock->articleCount->with("~", $this->equalTo((new Context)->unread(true)->hidden(false)))->returns(1);
         // sanity check; this makes sure extra fields are not included in default situations
         $test = $this->req($in[0]);
         $this->assertMessage($this->outputHeadlines(1), $test);
@@ -1653,7 +1653,7 @@ LONG_STRING;
         ]);
         $this->assertMessage($exp, $test);
         // test 'include_header' with an erroneous result
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->limit(200)->subscription(2112)->hidden(false), $this->anything(), ["edited_date desc"])->thenThrow(new ExceptionInput("subjectMissing"));
+        $this->dbMock->articleList->with("~", $this->equalTo((new Context)->limit(200)->subscription(2112)->hidden(false)), "~", ["edited_date desc"])->throws(new ExceptionInput("subjectMissing"));
         $test = $this->req($in[6]);
         $exp = $this->respGood([
             ['id' => 2112, 'is_cat' => false, 'first_id' => 0],
@@ -1668,7 +1668,7 @@ LONG_STRING;
         ]);
         $this->assertMessage($exp, $test);
         // test 'include_header' with skip
-        \Phake::when(Arsse::$db)->articleList($this->anything(), (new Context)->limit(1)->subscription(42)->hidden(false), $this->anything(), ["edited_date desc"])->thenReturn($this->generateHeadlines(1867));
+        $this->dbMock->articleList->with("~", $this->equalTo((new Context)->limit(1)->subscription(42)->hidden(false)), "~", ["edited_date desc"])->returns($this->generateHeadlines(1867));
         $test = $this->req($in[8]);
         $exp = $this->respGood([
             ['id' => 42, 'is_cat' => false, 'first_id' => 1867],
