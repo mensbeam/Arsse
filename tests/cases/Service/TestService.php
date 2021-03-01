@@ -18,14 +18,17 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         parent::setUp();
         self::setConf();
-        Arsse::$db = \Phake::mock(Database::class);
+        $this->dbMock = $this->mock(Database::class);
+        Arsse::$db = $this->dbMock->get();
         $this->srv = new Service();
     }
+
 
     public function testCheckIn(): void {
         $now = time();
         $this->srv->checkIn();
-        \Phake::verify(Arsse::$db)->metaSet("service_last_checkin", \Phake::capture($then), "datetime");
+        $this->dbMock->metaSet->calledWith("service_last_checkin", "~", "datetime");
+        $then = $this->dbMock->metaSet->firstCall()->argument(1);
         $this->assertTime($now, $then);
     }
 
@@ -35,51 +38,55 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
         $interval = Arsse::$conf->serviceFrequency;
         $valid = (new \DateTimeImmutable("now", new \DateTimezone("UTC")))->sub($interval);
         $invalid = $valid->sub($interval)->sub($interval);
-        \Phake::when(Arsse::$db)->metaGet("service_last_checkin")->thenReturn(Date::transform($valid, "sql"))->thenReturn(Date::transform($invalid, "sql"));
+        $this->dbMock->metaGet->with("service_last_checkin")->returns(Date::transform($valid, "sql"), Date::transform($invalid, "sql"));
+        Arsse::$db = $this->dbMock->get();
         $this->assertTrue(Service::hasCheckedIn());
         $this->assertFalse(Service::hasCheckedIn());
     }
 
     public function testPerformPreCleanup(): void {
         $this->assertTrue(Service::cleanupPre());
-        \Phake::verify(Arsse::$db)->feedCleanup();
-        \Phake::verify(Arsse::$db)->iconCleanup();
-        \Phake::verify(Arsse::$db)->sessionCleanup();
+        $this->dbMock->feedCleanup->called();
+        $this->dbMock->iconCleanup->called();
+        $this->dbMock->sessionCleanup->called();
     }
 
     public function testPerformShortPostCleanup(): void {
-        \Phake::when(Arsse::$db)->articleCleanup()->thenReturn(0);
+        $this->dbMock->articleCleanup->returns(0);
+        Arsse::$db = $this->dbMock->get();
         $this->assertTrue(Service::cleanupPost());
-        \Phake::verify(Arsse::$db)->articleCleanup();
-        \Phake::verify(Arsse::$db, \Phake::times(0))->driverMaintenance();
+        $this->dbMock->articleCleanup->Called();
+        $this->dbMock->driverMaintenance->never()->called();
     }
 
     public function testPerformFullPostCleanup(): void {
-        \Phake::when(Arsse::$db)->articleCleanup()->thenReturn(1);
+        $this->dbMock->articleCleanup->returns(1);
+        Arsse::$db = $this->dbMock->get();
         $this->assertTrue(Service::cleanupPost());
-        \Phake::verify(Arsse::$db)->articleCleanup();
-        \Phake::verify(Arsse::$db)->driverMaintenance();
+        $this->dbMock->articleCleanup->called();
+        $this->dbMock->driverMaintenance->called();
     }
 
     public function testRefreshFeeds(): void {
         // set up mock database actions
-        \Phake::when(Arsse::$db)->metaSet->thenReturn(true);
-        \Phake::when(Arsse::$db)->feedCleanup->thenReturn(true);
-        \Phake::when(Arsse::$db)->sessionCleanup->thenReturn(true);
-        \Phake::when(Arsse::$db)->articleCleanup->thenReturn(0);
-        \Phake::when(Arsse::$db)->feedListStale->thenReturn([1,2,3]);
+        $this->dbMock->metaSet->returns(true);
+        $this->dbMock->feedCleanup->returns(true);
+        $this->dbMock->sessionCleanup->returns(true);
+        $this->dbMock->articleCleanup->returns(0);
+        $this->dbMock->feedListStale->returns([1,2,3]);
         // perform the test
-        $d = \Phake::mock(\JKingWeb\Arsse\Service\Driver::class);
-        $s = new \JKingWeb\Arsse\Test\Service($d);
+        Arsse::$db = $this->dbMock->get();
+        $d = $this->mock(\JKingWeb\Arsse\Service\Driver::class);
+        $s = new \JKingWeb\Arsse\Test\Service($d->get());
         $this->assertInstanceOf(\DateTimeInterface::class, $s->watch(false));
         // verify invocations
-        \Phake::verify($d)->queue(1, 2, 3);
-        \Phake::verify($d)->exec();
-        \Phake::verify($d)->clean();
-        \Phake::verify(Arsse::$db)->feedCleanup();
-        \Phake::verify(Arsse::$db)->iconCleanup();
-        \Phake::verify(Arsse::$db)->sessionCleanup();
-        \Phake::verify(Arsse::$db)->articleCleanup();
-        \Phake::verify(Arsse::$db)->metaSet("service_last_checkin", $this->anything(), "datetime");
+        $d->queue->calledWith(1, 2, 3);
+        $d->exec->called();
+        $d->clean->called();
+        $this->dbMock->feedCleanup->called();
+        $this->dbMock->iconCleanup->called();
+        $this->dbMock->sessionCleanup->called();
+        $this->dbMock->articleCleanup->called();
+        $this->dbMock->metaSet->calledWith("service_last_checkin", $this->anything(), "datetime");
     }
 }

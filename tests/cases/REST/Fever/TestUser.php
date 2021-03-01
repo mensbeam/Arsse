@@ -22,32 +22,37 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         parent::setUp();
         self::setConf();
         // create a mock user manager
-        Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->auth->thenReturn(true);
+        $this->userMock = $this->mock(User::class);
+        $this->userMock->auth->returns(true);
         // create a mock database interface
-        Arsse::$db = \Phake::mock(Database::class);
-        \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(Transaction::class));
-        // instantiate the handler
-        $this->u = new FeverUser();
+        $this->dbMock = $this->mock(Database::class);
+        $this->dbMock->begin->returns($this->mock(Transaction::class));
     }
+
+    protected function prepTest(): FeverUser {
+        Arsse::$user = $this->userMock->get();
+        Arsse::$db = $this->dbMock->get();
+        // instantiate the handler
+        return new FeverUser;
+    }        
 
     /** @dataProvider providePasswordCreations */
     public function testRegisterAUserPassword(string $user, string $password = null, $exp): void {
-        \Phake::when(Arsse::$user)->generatePassword->thenReturn("RANDOM_PASSWORD");
-        \Phake::when(Arsse::$db)->tokenCreate->thenReturnCallback(function($user, $class, $id = null) {
+        $this->userMock->generatePassword->returns("RANDOM_PASSWORD");
+        $this->dbMock->tokenCreate->does(function($user, $class, $id = null) {
             return $id ?? "RANDOM_TOKEN";
         });
-        \Phake::when(Arsse::$db)->tokenCreate("john.doe@example.org", $this->anything(), $this->anything())->thenThrow(new UserException("doesNotExist"));
+        $this->dbMock->tokenCreate->with("john.doe@example.org", $this->anything(), $this->anything())->throws(new UserException("doesNotExist"));
         try {
             if ($exp instanceof \JKingWeb\Arsse\AbstractException) {
                 $this->assertException($exp);
-                $this->u->register($user, $password);
+                $this->prepTest()->register($user, $password);
             } else {
-                $this->assertSame($exp, $this->u->register($user, $password));
+                $this->assertSame($exp, $this->prepTest()->register($user, $password));
             }
         } finally {
-            \Phake::verify(Arsse::$db)->tokenRevoke($user, "fever.login");
-            \Phake::verify(Arsse::$db)->tokenCreate($user, "fever.login", md5($user.":".($password ?? "RANDOM_PASSWORD")));
+            $this->dbMock->tokenRevoke->calledWith($user, "fever.login");
+            $this->dbMock->tokenCreate->calledWith($user, "fever.login", md5($user.":".($password ?? "RANDOM_PASSWORD")));
         }
     }
 
@@ -63,20 +68,20 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testUnregisterAUser(): void {
-        \Phake::when(Arsse::$db)->tokenRevoke->thenReturn(3);
-        $this->assertTrue($this->u->unregister("jane.doe@example.com"));
-        \Phake::verify(Arsse::$db)->tokenRevoke("jane.doe@example.com", "fever.login");
-        \Phake::when(Arsse::$db)->tokenRevoke->thenReturn(0);
-        $this->assertFalse($this->u->unregister("john.doe@example.com"));
-        \Phake::verify(Arsse::$db)->tokenRevoke("john.doe@example.com", "fever.login");
+        $this->dbMock->tokenRevoke->returns(3);
+        $this->assertTrue($this->prepTest()->unregister("jane.doe@example.com"));
+        $this->dbMock->tokenRevoke->calledWith("jane.doe@example.com", "fever.login");
+        $this->dbMock->tokenRevoke->returns(0);
+        $this->assertFalse($this->prepTest()->unregister("john.doe@example.com"));
+        $this->dbMock->tokenRevoke->calledWith("john.doe@example.com", "fever.login");
     }
 
     /** @dataProvider provideUserAuthenticationRequests */
     public function testAuthenticateAUserName(string $user, string $password, bool $exp): void {
-        \Phake::when(Arsse::$db)->tokenLookup->thenThrow(new ExceptionInput("constraintViolation"));
-        \Phake::when(Arsse::$db)->tokenLookup("fever.login", md5("jane.doe@example.com:secret"))->thenReturn(['user' => "jane.doe@example.com"]);
-        \Phake::when(Arsse::$db)->tokenLookup("fever.login", md5("john.doe@example.com:superman"))->thenReturn(['user' => "john.doe@example.com"]);
-        $this->assertSame($exp, $this->u->authenticate($user, $password));
+        $this->dbMock->tokenLookup->throws(new ExceptionInput("constraintViolation"));
+        $this->dbMock->tokenLookup->with("fever.login", md5("jane.doe@example.com:secret"))->returns(['user' => "jane.doe@example.com"]);
+        $this->dbMock->tokenLookup->with("fever.login", md5("john.doe@example.com:superman"))->returns(['user' => "john.doe@example.com"]);
+        $this->assertSame($exp, $this->prepTest()->authenticate($user, $password));
     }
 
     public function provideUserAuthenticationRequests(): iterable {

@@ -17,17 +17,21 @@ class TestToken extends \JKingWeb\Arsse\Test\AbstractTest {
     protected const NOW = "2020-12-09T22:35:10.023419Z";
     protected const TOKEN = "Tk2o9YubmZIL2fm2w8Z4KlDEQJz532fNSOcTG0s2_xc=";
 
-    protected $h;
     protected $transaction;
 
     public function setUp(): void {
         parent::setUp();
         self::setConf();
         // create a mock database interface
-        Arsse::$db = \Phake::mock(Database::class);
-        $this->transaction = \Phake::mock(Transaction::class);
-        \Phake::when(Arsse::$db)->begin->thenReturn($this->transaction);
-        $this->h = new Token();
+        $this->dbMock = $this->mock(Database::class);
+        $this->transaction = $this->mock(Transaction::class);
+        $this->dbMock->begin->returns($this->transaction);
+    }
+
+    protected function prepTest(): Token {
+        Arsse::$db = $this->dbMock->get();
+        // instantiate the handler
+        return new Token;
     }
 
     protected function v($value) {
@@ -35,9 +39,10 @@ class TestToken extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testGenerateTokens(): void {
-        \Phake::when(Arsse::$db)->tokenCreate->thenReturn("RANDOM TOKEN");
-        $this->assertSame("RANDOM TOKEN", $this->h->tokenGenerate("ook", "Eek"));
-        \Phake::verify(Arsse::$db)->tokenCreate("ook", "miniflux.login", \Phake::capture($token), null, "Eek");
+        $this->dbMock->tokenCreate->returns("RANDOM TOKEN");
+        $this->assertSame("RANDOM TOKEN", $this->prepTest()->tokenGenerate("ook", "Eek"));
+        $this->dbMock->tokenCreate->calledWith("ook", "miniflux.login", "~", null, "Eek");
+        $token = $this->dbMock->tokenCreate->firstCall()->argument(2);
         $this->assertRegExp("/^[A-Za-z0-9_\-]{43}=$/", $token);
     }
 
@@ -52,15 +57,15 @@ class TestToken extends \JKingWeb\Arsse\Test\AbstractTest {
             ['label' => "Eek", 'id' => "TOKEN 2"],
             ['label' => "Ack", 'id' => "TOKEN 3"],
         ];
-        \Phake::when(Arsse::$db)->tokenList->thenReturn(new Result($this->v($out)));
-        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
-        $this->assertSame($exp, $this->h->tokenList("john.doe@example.com"));
-        \Phake::verify(Arsse::$db)->tokenList("john.doe@example.com", "miniflux.login");
+        $this->dbMock->tokenList->returns(new Result($this->v($out)));
+        $this->dbMock->userExists->returns(true);
+        $this->assertSame($exp, $this->prepTest()->tokenList("john.doe@example.com"));
+        $this->dbMock->tokenList->calledWith("john.doe@example.com", "miniflux.login");
     }
 
     public function testListTheTokensOfAMissingUser(): void {
-        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
+        $this->dbMock->userExists->returns(false);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
-        $this->h->tokenList("john.doe@example.com");
+        $this->prepTest()->tokenList("john.doe@example.com");
     }
 }

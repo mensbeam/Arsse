@@ -37,14 +37,16 @@ trait Setup {
         // set up a file without read access
         chmod($this->path."ru.php", 0000);
         // make the test Lang class use the vfs files
-        $this->l = \Phake::partialMock(Lang::class, $this->path);
-        \Phake::when($this->l)->globFiles->thenReturnCallback(function(string $path): array {
+        $this->l = $this->partialMock(Lang::class, $this->path);
+        $this->l->globFiles->does(function(string $path): array {
             return Glob::glob($this->path."*.php");
         });
+        $this->l = $this->l->get();
         // create a mock Lang object so as not to create a dependency loop
         self::clearData(false);
-        Arsse::$lang = \Phake::mock(Lang::class);
-        \Phake::when(Arsse::$lang)->msg->thenReturn("");
+        Arsse::$lang = $this->mock(Lang::class);
+        Arsse::$lang->msg->returns("");
+        Arsse::$lang = Arsse::$lang->get();
         // call the additional setup method if it exists
         if (method_exists($this, "setUpSeries")) {
             $this->setUpSeries();
@@ -52,9 +54,6 @@ trait Setup {
     }
 
     public function tearDown(): void {
-        // verify calls to the mock Lang object
-        \Phake::verify(Arsse::$lang, \Phake::atLeast(0))->msg($this->isType("string"), $this->anything());
-        \Phake::verifyNoOtherInteractions(Arsse::$lang);
         // clean up
         self::clearData(true);
         // call the additional teardiwn method if it exists
