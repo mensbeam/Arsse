@@ -718,7 +718,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 // otherwise we'd be deleting the entire tree
                 $tr = Arsse::$db->begin();
                 foreach (Arsse::$db->subscriptionList(Arsse::$user->id, null, false) as $sub) {
-                    Arsse::$db->subscriptionRemove(Arsse::$user->id, $sub['id']);
+                    Arsse::$db->subscriptionRemove(Arsse::$user->id, (int) $sub['id']);
                 }
                 $tr->commit();
             }

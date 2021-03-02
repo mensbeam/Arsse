@@ -945,6 +945,7 @@ LONG_STRING;
             [['label_id' => -1042, 'caption' => ""],    [$this->userId, 18,   ['name' => ""]],    new ExceptionInput("missing"),             $this->respGood()],
             [['label_id' => -1042, 'caption' => " "],   [$this->userId, 18,   ['name' => " "]],   new ExceptionInput("whitespace"),          $this->respGood()],
             [['label_id' => -1042],                     [$this->userId, 18,   ['name' => ""]],    new ExceptionInput("missing"),             $this->respGood()],
+            [['label_id' => -1042],                     [$this->userId, 18,   ['name' => ""]],    new ExceptionInput("typeViolation"),       $this->respErr("INCORRECT_USAGE")],
             [['label_id' => -1,    'caption' => "Ook"], null,                                     null,                                      $this->respErr("INCORRECT_USAGE")],
             [['caption' => "Ook"],                      null,                                     null,                                      $this->respErr("INCORRECT_USAGE")],
             [[],                                        null,                                     null,                                      $this->respErr("INCORRECT_USAGE")],

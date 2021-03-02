@@ -1357,7 +1357,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     'score'                      => 0, // score is not implemented as it is not modifiable from the TTRSS API
                     'note'                       => strlen((string) $article['note']) ? $article['note'] : null,
                     'lang'                       => "", // FIXME: picoFeed should be able to retrieve this information
-                    'tags'                       => Arsse::$db->articleCategoriesGet(Arsse::$user->id, $article['id']),
+                    'tags'                       => Arsse::$db->articleCategoriesGet(Arsse::$user->id, (int) $article['id']),
                     'comments_count'             => 0,
                     'comments_link'              => "",
                     'always_display_attachments' => false,
