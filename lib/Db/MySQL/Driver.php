@@ -164,6 +164,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
 
     protected function makeConnection(string $db, string $user, string $password, string $host, int $port, string $socket): void {
         $this->db = mysqli_init();
+        $this->db->options(\MYSQLI_SET_CHARSET_NAME, "utf8mb4");
+        $this->db->options(\MYSQLI_OPT_INT_AND_FLOAT_NATIVE, false);
         $this->db->options(\MYSQLI_OPT_CONNECT_TIMEOUT, ceil(Arsse::$conf->dbTimeoutConnect));
         @$this->db->real_connect($host, $user, $password, $db, $port, $socket);
         if ($this->db->connect_errno) {

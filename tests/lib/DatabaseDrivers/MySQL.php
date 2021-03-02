@@ -21,7 +21,10 @@ trait MySQL {
         if (!class_exists("mysqli")) {
             return null;
         }
-        $d = @new \mysqli(Arsse::$conf->dbMySQLHost, Arsse::$conf->dbMySQLUser, Arsse::$conf->dbMySQLPass, Arsse::$conf->dbMySQLDb, Arsse::$conf->dbMySQLPort);
+        $d = mysqli_init();
+        $d->options(\MYSQLI_OPT_INT_AND_FLOAT_NATIVE, false);
+        $d->options(\MYSQLI_SET_CHARSET_NAME, "utf8mb4");
+        @$d->real_connect(Arsse::$conf->dbMySQLHost, Arsse::$conf->dbMySQLUser, Arsse::$conf->dbMySQLPass, Arsse::$conf->dbMySQLDb, Arsse::$conf->dbMySQLPort);
         if ($d->connect_errno) {
             return null;
         }
