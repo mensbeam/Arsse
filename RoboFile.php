@@ -6,6 +6,7 @@ const BASE = __DIR__.\DIRECTORY_SEPARATOR;
 const BASE_TEST = BASE."tests".\DIRECTORY_SEPARATOR;
 define("IS_WIN", defined("PHP_WINDOWS_VERSION_MAJOR"));
 define("IS_MAC", php_uname("s") === "Darwin");
+error_reporting(0);
 
 function norm(string $path): string {
     $out = realpath($path);
