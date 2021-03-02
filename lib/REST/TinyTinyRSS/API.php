@@ -947,7 +947,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             throw new Exception("INCORRECT_USAGE");
         }
         try {
-            Arsse::$db->feedUpdate(Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, $data['feed_id'])['feed']);
+            Arsse::$db->feedUpdate((int) Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, $data['feed_id'])['feed']);
         } catch (ExceptionInput $e) {
             throw new Exception("FEED_NOT_FOUND");
         }
@@ -973,7 +973,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         // this function doesn't complain about invalid article IDs
         $article = V::id($data['article_id']) ? $data['article_id'] : 0;
         try {
-            $list = $article ? Arsse::$db->articleLabelsGet(Arsse::$user->id, $article) : [];
+            $list = $article ? Arsse::$db->articleLabelsGet(Arsse::$user->id, (int) $article) : [];
         } catch (ExceptionInput $e) {
             $list = [];
         }

@@ -226,7 +226,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         }
         foreach ($value as $k => $v) {
             if (is_array($v)) {
-                $value[$k] = $this->v($v);
+                $value[$k] = $this->stringify($v);
             } elseif (is_int($v) || is_float($v)) {
                 $value[$k] = (string) $v;
             }
@@ -324,6 +324,10 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     }
 
     public function assertResult(array $expected, Result $data): void {
+        // stringify our expectations if necessary
+        if (static::$stringOutput ?? false) {
+            $expected = $this->stringify($expected);
+        }
         $data = $data->getAll();
         $this->assertCount(sizeof($expected), $data, "Number of result rows (".sizeof($data).") differs from number of expected rows (".sizeof($expected).")");
         if (sizeof($expected)) {
@@ -337,12 +341,19 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             }
             // filter the result set to contain just the desired keys (we don't care if the result has extra keys)
             $rows = [];
+            $keys = array_keys($keys);
             foreach ($data as $row) {
-                $rows[] = array_intersect_key($row, $keys);
+                $r = [];
+                foreach ($keys as $k) {
+                    if (array_key_exists($k, $row)) {
+                        $r[$k] = $row[$k];
+                    }
+                }
+                $rows[] = $r;
             }
             // compare the result set to the expectations
             foreach ($rows as $row) {
-                $this->assertEquals($row, $expected, "Result set contains unexpected record.");
+                $this->assertContains($row, $expected, "Result set contains unexpected record.\n".var_export($expected, true));
                 $found = array_search($row, $expected);
                 unset($expected[$found]);
             }

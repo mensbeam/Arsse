@@ -7,8 +7,6 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\User;
 
 interface Driver {
-    public function __construct();
-
     /** Returns a human-friendly name for the driver (for display in installer, for example) */
     public static function driverName(): string;
 
