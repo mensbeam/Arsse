@@ -18,6 +18,8 @@ Bug fixes:
 Changes:
 - Administrator account requirements for Nextcloud News functionality are
   now enforced
+- E_DEPRECATED is now suppressed for compatibility with PHP 8 until affected
+  dependencies can be replaced
 
 Version 0.8.5 (2020-10-27)
 ==========================
