@@ -236,16 +236,16 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
-        // try to authenticate
-        if (!$this->authenticate($req)) {
-            return new ErrorResponse("401", 401);
-        }
         // get the request path only; this is assumed to already be normalized
         $target = parse_url($req->getRequestTarget(), \PHP_URL_PATH) ?? "";
         $method = $req->getMethod();
         // handle HTTP OPTIONS requests
         if ($method === "OPTIONS") {
             return $this->handleHTTPOptions($target);
+        }
+        // try to authenticate
+        if (!$this->authenticate($req)) {
+            return new ErrorResponse("401", 401);
         }
         $func = $this->chooseCall($target, $method);
         if ($func instanceof ResponseInterface) {

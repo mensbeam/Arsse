@@ -76,17 +76,17 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
-        // try to authenticate
-        if ($req->getAttribute("authenticated", false)) {
-            Arsse::$user->id = $req->getAttribute("authenticatedUser");
-        } else {
-            return new EmptyResponse(401);
-        }
         // get the request path only; this is assumed to already be normalized
         $target = parse_url($req->getRequestTarget())['path'] ?? "";
         // handle HTTP OPTIONS requests
         if ($req->getMethod() === "OPTIONS") {
             return $this->handleHTTPOptions($target);
+        }
+        // try to authenticate
+        if ($req->getAttribute("authenticated", false)) {
+            Arsse::$user->id = $req->getAttribute("authenticatedUser");
+        } else {
+            return new EmptyResponse(401);
         }
         // normalize the input
         $data = (string) $req->getBody();

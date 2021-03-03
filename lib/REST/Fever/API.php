@@ -72,9 +72,6 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 ]);
             case "GET": // HTTP violation required for client "Unread" on iOS
             case "POST":
-                if (!HTTP::matchType($req, "", ...self::ACCEPTED_TYPES)) {
-                    return new EmptyResponse(415, ['Accept' => implode(", ", self::ACCEPTED_TYPES)]);
-                }
                 $out = [
                     'api_version' => self::LEVEL,
                     'auth'        => 0,
