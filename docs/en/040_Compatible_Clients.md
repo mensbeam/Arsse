@@ -20,15 +20,6 @@ The Arsse does not at this time have any first party clients. However, because T
   <tr>
   </tr>
   <tr>
-   <td><a href="https://github.com/jakobend/maxiflux">maxiflux</a></td>
-   <td></td>
-   <td class="Y">✔</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td></td>
-  </tr>
-  <tr>
    <td><a href="https://github.com/yurikhan/miniflux-reader">Miniflux Reader</a></td>
    <td></td>
    <td class="Y">✔</td>
@@ -393,6 +384,15 @@ The Arsse does not at this time have any first party clients. However, because T
    </td>
   </tr>
   -->
+  <tr>
+   <td><a href="https://github.com/jakobend/maxiflux">maxiflux</a></td>
+   <td>Web</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td></td>
+  </tr>
   <tr>
    <td><a href="https://open-store.io/app/newsie.martinferretti">Newsie</a></td>
    <td>Ubuntu Touch</td>
