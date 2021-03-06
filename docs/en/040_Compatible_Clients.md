@@ -1,4 +1,4 @@
-The Arsse does not at this time have any first party clients. However, because The Arsse [supports existing protocols](/en/Supported_Protocols), most clients built for these protocols are compatible with The Arsse. Below are those that we personally know of and have tested with The Arsse.
+The Arsse does not at this time have any first party clients. However, because The Arsse [supports existing protocols](/en/Supported_Protocols), most clients built for these protocols are compatible with The Arsse. Below are those that we personally know of and have tested with The Arsse, presented in alphabetical order.
 
 <table class="clients">
  <thead>
@@ -26,7 +26,16 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
-   <td></td>
+   <td>Functional, but has some display glitches.</td>
+  </tr>
+  <tr>
+   <td><a href="https://github.com/jgerstbe/nx-news-ion">NX News</a></td>
+   <td>Web</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td>Extremely basic client.</td>
   </tr>
   <tr>
    <td><a href="https://github.com/reminiflux/reminiflux">reminiflux</a></td>
@@ -36,7 +45,18 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td>
-    <p>Three-pane alternative front-end for Minflux.</p>
+    <p>Three-pane alternative front-end for Minflux. Does not include functionality for managing feeds. Requires token authentication.</p>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://github.com/kucrut/ttrss-reader">Tiny Tiny RSS Reader</a></td>
+   <td></td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td>
+    <p></p>
    </td>
   </tr>
   <tr>
@@ -47,7 +67,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="Y">✔</td>
    <td class="N">✘</td>
    <td>
-    <p>Does not (<a href="https://github.com/TheScientist/ttrss-pwa/issues/7">yet</a>) support HTTP authentication.</p>
+    <p>Does not (<a href="https://github.com/TheScientist/ttrss-pwa/issues/7">yet</a>) support HTTP authentication. Does not include functionality for managing feeds.</p>
    </td>
   </tr>
  </tbody>
@@ -186,15 +206,6 @@ The Arsse does not at this time have any first party clients. However, because T
   </tr>
   <tr>
    <td><a href="https://play.google.com/store/apps/details?id=com.constantin.microflux">Microflux for Miniflux</a></td>
-   <td>Android</td>
-   <td class="Y">✔</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td></td>
-  </tr>
-  <tr>
-   <td><a href="https://github.com/DocMarty84/miniflutt">Miniflutt</a></td>
    <td>Android</td>
    <td class="Y">✔</td>
    <td class="N">✘</td>
@@ -383,7 +394,6 @@ The Arsse does not at this time have any first party clients. However, because T
     <p>Level of functionality unclear.</p>
    </td>
   </tr>
-  -->
   <tr>
    <td><a href="https://github.com/jakobend/maxiflux">maxiflux</a></td>
    <td>Web</td>
@@ -391,21 +401,21 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
-   <td></td>
+   <td>Level of functionality unclear.</td>
+  </tr>
+  -->
+  <tr>
+   <td><a href="https://github.com/DocMarty84/miniflutt">Miniflutt</a></td>
+   <td>Android</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td>Does not display articles ([see bug](https://github.com/DocMarty84/miniflutt/issues/3))</td>
   </tr>
   <tr>
    <td><a href="https://open-store.io/app/newsie.martinferretti">Newsie</a></td>
    <td>Ubuntu Touch</td>
-   <td class="N">✘</td>
-   <td class="Y">✔</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td>
-   </td>
-  </tr>
-  <tr>
-   <td><a href="https://github.com/jgerstbe/nx-news-ion">NX News</a></td>
-   <td>Web</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
    <td class="N">✘</td>
@@ -444,17 +454,6 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td>
     <p>Does not support HTTP authentication.</p>
-   </td>
-  </tr>
-  <tr>
-   <td><a href="https://github.com/kucrut/ttrss-reader">Tiny Tiny RSS Reader</a></td>
-   <td>Web</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="Y">✔</td>
-   <td class="N">✘</td>
-   <td>
-    <p></p>
    </td>
   </tr>
   <tr>
