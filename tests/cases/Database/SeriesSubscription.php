@@ -47,9 +47,11 @@ trait SeriesSubscription {
                 'columns' => [
                     'id'  => "int",
                     'url' => "str",
+                    'data' => "blob",
                 ],
                 'rows' => [
-                    [1,"http://example.com/favicon.ico"],
+                    [1,"http://example.com/favicon.ico", "ICON DATA"],
+                    [2,"http://example.net/favicon.ico", null],
                 ],
             ],
             'arsse_feeds' => [
@@ -66,7 +68,8 @@ trait SeriesSubscription {
                 'rows' => [
                     [1,"http://example.com/feed1", "Ook", "", "",strtotime("now"),strtotime("now"),null],
                     [2,"http://example.com/feed2", "eek", "", "",strtotime("now - 1 hour"),strtotime("now - 1 hour"),1],
-                    [3,"http://example.com/feed3", "Ack", "", "",strtotime("now + 1 hour"),strtotime("now + 1 hour"),null],
+                    [3,"http://example.com/feed3", "Ack", "", "",strtotime("now + 1 hour"),strtotime("now + 1 hour"),2],
+                    [4,"http://example.com/feed4", "Foo", "", "",strtotime("now + 1 hour"),strtotime("now + 1 hour"),null],
                 ],
             ],
             'arsse_subscriptions' => [
@@ -88,6 +91,7 @@ trait SeriesSubscription {
                     [3,"john.doe@example.com",3,"Ook",2,0,1,null,null,0],
                     [4,"jill.doe@example.com",2,null,null,0,0,null,null,0],
                     [5,"jack.doe@example.com",2,null,null,1,2,"","3|E",0],
+                    [6,"john.doe@example.com",4,"Bar",3,0,0,null,null,0],
                 ],
             ],
             'arsse_tags' => [
@@ -329,6 +333,8 @@ trait SeriesSubscription {
                 'unread'          => 4,
                 'pinned'          => 1,
                 'order_type'      => 2,
+                'icon_url'        => "http://example.com/favicon.ico",
+                'icon_id'         => 1,
             ],
             [
                 'url'             => "http://example.com/feed3",
@@ -340,6 +346,21 @@ trait SeriesSubscription {
                 'unread'          => 2,
                 'pinned'          => 0,
                 'order_type'      => 1,
+                'icon_url'        => "http://example.net/favicon.ico",
+                'icon_id'         => null,
+            ],
+            [
+                'url'             => "http://example.com/feed4",
+                'title'           => "Bar",
+                'folder'          => 3,
+                'top_folder'      => 1,
+                'folder_name'     => "Rocketry",
+                'top_folder_name' => "Technology",
+                'unread'          => 0,
+                'pinned'          => 0,
+                'order_type'      => 0,
+                'icon_url'        => null,
+                'icon_id'         => null,
             ],
         ];
         $this->assertResult($exp, Arsse::$db->subscriptionList($this->user));
@@ -375,7 +396,7 @@ trait SeriesSubscription {
         $this->assertResult($exp, Arsse::$db->subscriptionList($this->user, null, false));
     }
 
-    public function testListSubscriptionsWithoutRecursion(): void {
+    public function testListSubscriptionsWithRecursion(): void {
         $exp = [
             [
                 'url'        => "http://example.com/feed3",
@@ -396,7 +417,7 @@ trait SeriesSubscription {
     }
 
     public function testCountSubscriptions(): void {
-        $this->assertSame(2, Arsse::$db->subscriptionCount($this->user));
+        $this->assertSame(3, Arsse::$db->subscriptionCount($this->user));
         $this->assertSame(1, Arsse::$db->subscriptionCount($this->user, 2));
     }
 
@@ -488,7 +509,7 @@ trait SeriesSubscription {
         $exp = "http://example.com/favicon.ico";
         $this->assertSame($exp, Arsse::$db->subscriptionIcon(null, 1)['url']);
         $this->assertSame($exp, Arsse::$db->subscriptionIcon(null, 2)['url']);
-        $this->assertSame(null, Arsse::$db->subscriptionIcon(null, 3));
+        $this->assertSame(null, Arsse::$db->subscriptionIcon(null, 6));
     }
 
     public function testRetrieveTheFaviconOfAMissingSubscription(): void {
@@ -500,7 +521,7 @@ trait SeriesSubscription {
         $exp = "http://example.com/favicon.ico";
         $user = "john.doe@example.com";
         $this->assertSame($exp, Arsse::$db->subscriptionIcon($user, 1)['url']);
-        $this->assertSame(null, Arsse::$db->subscriptionIcon($user, 3));
+        $this->assertSame(null, Arsse::$db->subscriptionIcon($user, 6));
         $user = "jane.doe@example.com";
         $this->assertSame($exp, Arsse::$db->subscriptionIcon($user, 2)['url']);
     }

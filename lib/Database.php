@@ -801,11 +801,11 @@ class Database {
                 f.modified as edited,
                 s.modified as modified,
                 f.next_fetch,
-                i.id as icon_id,
+                case when i.data is not null then i.id end as icon_id,
                 i.url as icon_url,
                 folder, t.top as top_folder, d.name as folder_name, dt.name as top_folder_name,
                 coalesce(s.title, f.title) as title,
-                coalesce((articles - hidden - marked), articles) as unread
+                coalesce((articles - hidden - marked), coalesce(articles,0)) as unread
             FROM arsse_subscriptions as s
                 join arsse_feeds as f on f.id = s.feed
                 left join topmost as t on t.f_id = s.folder

@@ -425,8 +425,8 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             'Not an API request'        => ["",    "",                         "POST", null,                                                                                                new EmptyResponse(404)],
             'Wrong method'              => ["api", "",                         "PUT",  null,                                                                                                new EmptyResponse(405, ['Allow' => "OPTIONS,POST"])],
             'Non-standard method'       => ["api", "",                         "GET",  null,                                                                                                new JsonResponse([])],
-            'Wrong content type'        => ["api", '{"api_key":"validToken"}', "POST", "application/json",                                                                                  new EmptyResponse(415, ['Accept' => "application/x-www-form-urlencoded, multipart/form-data"])],
-            'Non-standard content type' => ["api", '{"api_key":"validToken"}', "POST", "multipart/form-data; boundary=33b68964f0de4c1f-5144aa6caaa6e4a8-18bfaf416a1786c8-5c5053a45f221bc1", new JsonResponse([])],
+            'Wrong content type'        => ["api", '{"api_key":"validToken"}', "POST", "application/json",                                                                                  new JsonResponse([])], // some clients send nonsensical content types; Fever seems to have allowed this
+            'Non-standard content type' => ["api", '{"api_key":"validToken"}', "POST", "multipart/form-data; boundary=33b68964f0de4c1f-5144aa6caaa6e4a8-18bfaf416a1786c8-5c5053a45f221bc1", new JsonResponse([])], // some clients send nonsensical content types; Fever seems to have allowed this
         ];
     }
 
