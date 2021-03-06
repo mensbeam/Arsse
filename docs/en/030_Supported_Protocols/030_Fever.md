@@ -37,7 +37,7 @@ The Fever protocol is incomplete, unusual, _and_ a product of proprietary softwa
 
 # Interaction with HTTP Authentication
 
-We are not aware of any Fever clients which respond to HTTP authentication challenges. If the Web server or The Arsse is configured to require successful HTTP authentication, Fever clients are not likely to be able to connect properly.
+Fever was not designed with HTTP authentication in mind, and few clients respond to challenges. If the Web server or The Arsse is configured to require successful HTTP authentication, most Fever clients are not likely to be able to connect properly.
 
 # Interaction with Folders
 

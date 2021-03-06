@@ -30,7 +30,7 @@ The Arsse does not at this time have any first party clients. However, because T
   </tr>
   <tr>
    <td><a href="https://github.com/jgerstbe/nx-news-ion">NX News</a></td>
-   <td>Web</td>
+   <td></td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
    <td class="N">✘</td>
@@ -190,6 +190,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="Y">✔</td>
    <td>
     <p>Rentalware - For the software to be usable (you can't even add feeds otherwise) a subscription fee must be paid.</p>
+    <p>Support HTTP authentication with Fever.</p>
     <p>Currently keeps showing items in the unread badge which have already been read.</p>
    </td>
   </tr>
@@ -411,7 +412,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
-   <td>Does not display articles ([see bug](https://github.com/DocMarty84/miniflutt/issues/3))</td>
+   <td>Does not display articles (<a href="https://github.com/DocMarty84/miniflutt/issues/3">see bug</a>)</td>
   </tr>
   <tr>
    <td><a href="https://open-store.io/app/newsie.martinferretti">Newsie</a></td>
