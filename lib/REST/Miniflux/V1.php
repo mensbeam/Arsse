@@ -886,6 +886,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function computeContext(array $query, Context $c = null): Context {
+        if ($query['before'] && $query['before']->getTimestamp() === 0) {
+            $query['before'] = null; // NOTE: This workaround is needed for compatibility with "Microflux for Miniflux", an Android Client
+        }
         $c = ($c ?? new Context)
             ->limit($query['limit'] ?? self::DEFAULT_ENTRY_LIMIT) // NOTE: This does not honour user preferences
             ->offset($query['offset'])
