@@ -22,8 +22,8 @@ Upgrading from 0.8.5 to 0.9.0
     - /version
     - /healthcheck
 - Icons for existing feeds in Miniflux and Fever will only appear once the
-  feeds in question have been fetched after upgrade. This may take up to
-  twenty-four hours to occur
+  feeds in question have been fetched and parsed after upgrade. This may take
+  some time to occur depending on how often the feed is updated
 - An administrator account is now required to refresh feeds via the 
   Nextcloud News protocol
 
