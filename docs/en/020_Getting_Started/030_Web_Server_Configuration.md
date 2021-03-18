@@ -66,6 +66,23 @@ server {
         # this path should not be behind HTTP authentication
         try_files $uri @arsse;
     }
+
+    # Miniflux protocol
+    location /v1/ {
+        try_files $uri @arsse;
+    }
+
+    # Miniflux version number
+    location /version {
+        # this path should not be behind HTTP authentication
+        try_files $uri @arsse;
+    }
+
+    # Miniflux "health check"
+    location /healthcheck {
+        # this path should not be behind HTTP authentication
+        try_files $uri @arsse;
+    }
 }
 ```
 
@@ -93,13 +110,13 @@ Afterward the follow virtual host configuration should work, after modifying pat
     ProxyFCGISetEnvIf "true" SCRIPT_FILENAME "/usr/share/arsse/arsse.php"
     ProxyPreserveHost On
 
-    # Nextcloud News v1.2, Tiny Tiny RSS API, TT-RSS newsfeed icons
-    <LocationMatch "(/index\.php/apps/news/api/?.+|/tt-rss/(api|feed-icons))">
+    # Nextcloud News v1.2, Tiny Tiny RSS API, TT-RSS newsfeed icons, Miniflux API
+    <LocationMatch "(/index\.php/apps/news/api/?.+|/tt-rss/(api|feed-icons)|/v1/)">
         ProxyPass "unix:/var/run/php/php7.2-fpm.sock|fcgi://localhost/usr/share/arsse"
     </LocationMatch>
 
-    # Nextcloud News API detection, Fever API
-    <LocationMatch "(/index\.php/apps/news/api/?$|/fever)">
+    # Nextcloud News API detection, Fever API, Miniflux miscellanies
+    <LocationMatch "(/index\.php/apps/news/api/?$|/fever|/version$|/healthcheck$)">
         # these locations should not be behind HTTP authentication
         ProxyPass "unix:/var/run/php/php7.2-fpm.sock|fcgi://localhost/usr/share/arsse"
     </LocationMatch>
