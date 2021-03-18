@@ -626,7 +626,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
             throw $e; // @codeCoverageIgnore
         }
-        return new Response($out);
+        return new Response($out, 201);
     }
 
     protected function deleteUserByNum(array $path): ResponseInterface {
@@ -705,7 +705,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
-        return new Response(['id' => (int) $path[1], 'title' => $title, 'user_id' => $meta['num']]);
+        return new Response(['id' => (int) $path[1], 'title' => $title, 'user_id' => $meta['num']], 201);
     }
 
     protected function deleteCategory(array $path): ResponseInterface {
@@ -857,7 +857,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                     return new ErrorResponse("404", 404);
             }
         }
-        return $this->getFeed($path);
+        return $this->getFeed($path)->withStatus(201);
     }
 
     protected function deleteFeed(array $path): ResponseInterface {

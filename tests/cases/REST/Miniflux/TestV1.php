@@ -308,16 +308,16 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             [false, "/users/1", ['entry_sorting_direction' => "bad"],       null,  null,                                      null,  null,  null,                  null,                                            new ErrorResponse(["InvalidInputValue", 'field' => "entry_sorting_direction"], 422)],
             [false, "/users/1", ['theme' => "stark"],                       null,  null,                                      null,  null,  null,                  null,                                            new ErrorResponse("403", 403)],
             [false, "/users/2", ['is_admin' => true],                       null,  null,                                      null,  null,  null,                  null,                                            new ErrorResponse("InvalidElevation", 403)],
-            [false, "/users/2", ['language' => "fr_CA"],                    null,  null,                                      null,  null,  ['lang' => "fr_CA"],   $out1,                                           new Response($resp1)],
-            [false, "/users/2", ['entry_sorting_direction' => "asc"],       null,  null,                                      null,  null,  ['sort_asc' => true],  $out1,                                           new Response($resp1)],
-            [false, "/users/2", ['entry_sorting_direction' => "desc"],      null,  null,                                      null,  null,  ['sort_asc' => false], $out1,                                           new Response($resp1)],
+            [false, "/users/2", ['language' => "fr_CA"],                    null,  null,                                      null,  null,  ['lang' => "fr_CA"],   $out1,                                           new Response($resp1, 201)],
+            [false, "/users/2", ['entry_sorting_direction' => "asc"],       null,  null,                                      null,  null,  ['sort_asc' => true],  $out1,                                           new Response($resp1, 201)],
+            [false, "/users/2", ['entry_sorting_direction' => "desc"],      null,  null,                                      null,  null,  ['sort_asc' => false], $out1,                                           new Response($resp1, 201)],
             [false, "/users/2", ['entries_per_page' => -1],                 null,  null,                                      null,  null,  ['page_size' => -1],   new UserExceptionInput("invalidNonZeroInteger"), new ErrorResponse(["InvalidInputValue", 'field' => "entries_per_page"], 422)],
             [false, "/users/2", ['timezone' => "Ook"],                      null,  null,                                      null,  null,  ['tz' => "Ook"],       new UserExceptionInput("invalidTimezone"),       new ErrorResponse(["InvalidInputValue", 'field' => "timezone"], 422)],
             [false, "/users/2", ['username' => "j:k"],                      "j:k", new UserExceptionInput("invalidUsername"), null,  null,  null,                  null,                                            new ErrorResponse(["InvalidInputValue", 'field' => "username"], 422)],
             [false, "/users/2", ['username' => "ook"],                      "ook", new ExceptionConflict("alreadyExists"),    null,  null,  null,                  null,                                            new ErrorResponse(["DuplicateUser", 'user' => "ook"], 409)],
-            [false, "/users/2", ['password' => "ook"],                      null,  null,                                      "ook", "ook", null,                  null,                                            new Response(array_merge($resp1, ['password' => "ook"]))],
-            [false, "/users/2", ['username' => "ook", 'password' => "ook"], "ook", true,                                      "ook", "ook", null,                  null,                                            new Response(array_merge($resp1, ['username' => "ook", 'password' => "ook"]))],
-            [true,  "/users/1", ['theme' => "stark"],                       null,  null,                                      null,  null,  ['theme' => "stark"],  $out2,                                           new Response($resp2)],
+            [false, "/users/2", ['password' => "ook"],                      null,  null,                                      "ook", "ook", null,                  null,                                            new Response(array_merge($resp1, ['password' => "ook"]), 201)],
+            [false, "/users/2", ['username' => "ook", 'password' => "ook"], "ook", true,                                      "ook", "ook", null,                  null,                                            new Response(array_merge($resp1, ['username' => "ook", 'password' => "ook"]), 201)],
+            [true,  "/users/1", ['theme' => "stark"],                       null,  null,                                      null,  null,  ['theme' => "stark"],  $out2,                                           new Response($resp2, 201)],
             [true,  "/users/3", ['theme' => "stark"],                       null,  null,                                      null,  null,  null,                  null,                                            new ErrorResponse("404", 404)],
         ];
     }
@@ -465,14 +465,14 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideCategoryUpdates(): iterable {
         return [
             [3, "New",       "subjectMissing",      new ErrorResponse("404", 404)],
-            [2, "New",       true,                  new Response(['id' => 2, 'title' => "New", 'user_id' => 42])],
+            [2, "New",       true,                  new Response(['id' => 2, 'title' => "New", 'user_id' => 42], 201)],
             [2, "Duplicate", "constraintViolation", new ErrorResponse(["DuplicateCategory", 'title' => "Duplicate"], 409)],
             [2, "",          "missing",             new ErrorResponse(["InvalidCategory", 'title' => ""], 422)],
             [2, " ",         "whitespace",          new ErrorResponse(["InvalidCategory", 'title' => " "], 422)],
             [2, null,        "missing",             new ErrorResponse(["MissingInputValue", 'field' => "title"], 422)],
             [2, false,       "subjectMissing",      new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 422)],
-            [1, "New",       true,                  new Response(['id' => 1, 'title' => "New", 'user_id' => 42])],
-            [1, "Duplicate", "constraintViolation", new Response(['id' => 1, 'title' => "Duplicate", 'user_id' => 42])], // This is allowed because the name of the root folder is only a duplicate in circumstances where it is used
+            [1, "New",       true,                  new Response(['id' => 1, 'title' => "New", 'user_id' => 42], 201)],
+            [1, "Duplicate", "constraintViolation", new Response(['id' => 1, 'title' => "Duplicate", 'user_id' => 42], 201)], // This is allowed because the name of the root folder is only a duplicate in circumstances where it is used
             [1, "",          "missing",             new ErrorResponse(["InvalidCategory", 'title' => ""], 422)],
             [1, " ",         "whitespace",          new ErrorResponse(["InvalidCategory", 'title' => " "], 422)],
             [1, null,        "missing",             new ErrorResponse(["MissingInputValue", 'field' => "title"], 422)],
@@ -653,7 +653,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provideFeedModifications(): iterable {
         self::clearData();
-        $success = new Response(self::FEEDS_OUT[0]);
+        $success = new Response(self::FEEDS_OUT[0], 201);
         return [
             [[],                                     [],                                    true,                                 $success],
             [[],                                     [],                                    new ExceptionInput("subjectMissing"), new ErrorResponse("404", 404)],
@@ -672,7 +672,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->h = $this->partialMock(V1::class);
         $this->h->getFeed->returns(new Response(self::FEEDS_OUT[0]));
         $this->dbMock->subscriptionPropertiesSet->returns(true);
-        $this->assertMessage(new Response(self::FEEDS_OUT[0]), $this->req("PUT", "/feeds/2112", ""));
+        $this->assertMessage(new Response(self::FEEDS_OUT[0], 201), $this->req("PUT", "/feeds/2112", ""));
         $this->dbMock->subscriptionPropertiesSet->calledWith(Arsse::$user->id, 2112, []);
     }
 
