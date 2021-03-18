@@ -1,3 +1,12 @@
+Version 0.9.1 (2021-03-18)
+==========================
+
+Bug fixes:
+- Respond to PUT requests with 201 rather than 200 in Miniflux
+
+Changes:
+- Corrected Web server configuration in manual
+
 Version 0.9.0 (2021-03-06)
 ==========================
 
