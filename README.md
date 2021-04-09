@@ -74,7 +74,7 @@ The `/vendor-bin/` directory houses the files needed for the tools used in The A
 | `/robo`           | Simple wrapper for executing Robo on POSIX systems       |
 | `/robo.bat`       | Simple wrapper for executing Robo on Windows             |
 
-In addition the files `/package.json`, `/yarn.lock`, and the `/node_modules/` directory are used by [Yarn](https://yarnpkg.com/) and [Sass](https://sass-lang.com/) when modifying the stylesheet for The Arsse's manual.
+In addition the files `/package.json`, `/yarn.lock`, and `/postcss.config.js` as well as the `/node_modules/` directory are used by [Yarn](https://yarnpkg.com/) and [PostCSS](https://postcss.org/) when modifying the stylesheet for The Arsse's manual.
 
 # Common tasks
 

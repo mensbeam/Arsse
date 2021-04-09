@@ -190,7 +190,8 @@ class RoboFile extends \Robo\Tasks {
             $dir."robo",
             $dir."robo.bat",
             $dir."package.json",
-            $dir."yarn.lock"
+            $dir."yarn.lock",
+            $dir."postcss.config.js",
         ]);
         // generate a sample configuration file
         $t->taskExec(escapeshellarg(\PHP_BINARY)." arsse.php conf save-defaults config.defaults.php")->dir($dir);
@@ -229,7 +230,7 @@ class RoboFile extends \Robo\Tasks {
      * Daux's theme changes
      */
     public function manualTheme(array $args): Result {
-        $sass = escapeshellarg(norm(BASE."node_modules/.bin/sass"));
+        $postcss = escapeshellarg(norm(BASE."node_modules/.bin/postcss"));
         $themesrc = norm(BASE."docs/theme/src/").\DIRECTORY_SEPARATOR;
         $themeout = norm(BASE."docs/theme/arsse/").\DIRECTORY_SEPARATOR;
         $dauxjs = norm(BASE."vendor-bin/daux/vendor/daux/daux.io/themes/daux/js/").\DIRECTORY_SEPARATOR;
@@ -238,7 +239,7 @@ class RoboFile extends \Robo\Tasks {
         // install dependencies via Yarn
         $t->taskExec("yarn install");
         // compile the stylesheet
-        $t->taskExec($sass)->arg('--no-source-map')->option('--style', 'compressed')->arg("{$themesrc}arsse.scss")->arg("{$themeout}arsse.css");
+        $t->taskExec($postcss)->arg($themesrc."arsse.scss")->option("-o", $themeout."arsse.css");
         // copy JavaScript files from the Daux theme
         foreach (glob($dauxjs."daux*.js") as $file) {
             $t->taskFilesystemStack()->copy($file, $themeout.basename($file), true);
