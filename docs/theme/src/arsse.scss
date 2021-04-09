@@ -6,8 +6,10 @@
 @import "../../../vendor-bin/daux/vendor/daux/daux.io/src/css/theme_daux/_typography.scss";
 @import "../../../vendor-bin/daux/vendor/daux/daux.io/src/css/theme_daux/_components.scss";
 @import "../../../vendor-bin/daux/vendor/daux/daux.io/src/css/theme_daux/_homepage.scss";
-@import "../../../vendor-bin/daux/vendor/daux/daux.io/src/css/theme_daux/_print.scss" print;
 
+@media print {
+    @import "../../../vendor-bin/daux/vendor/daux/daux.io/src/css/theme_daux/_print.scss";
+}
 
 
 /* The Arsse overrides */
@@ -96,6 +98,10 @@
     --hero-button-block-background: var(--beige);
     --homepage-hero-background: #fff;
     --content-floating-blocks-background: var(--blue);
+}
+
+html, body {
+    font-size: 16px;
 }
 
 body {
