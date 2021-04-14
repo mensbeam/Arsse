@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\Misc;
 
 use JKingWeb\Arsse\ExceptionType;
@@ -107,7 +108,7 @@ class ValueInfo {
                     if ($strict && !$drop) {
                         throw new ExceptionType("strictFailure", $type);
                     }
-                    return (!$drop) ? (int) $value->getTimestamp(): null;
+                    return (!$drop) ? (int) $value->getTimestamp() : null;
                 } elseif ($value instanceof \DateInterval) {
                     if ($strict && !$drop) {
                         throw new ExceptionType("strictFailure", $type);
@@ -159,7 +160,7 @@ class ValueInfo {
                     if ($strict && !$drop) {
                         throw new ExceptionType("strictFailure", $type);
                     }
-                    return (!$drop) ? (float) $value->getTimestamp(): null;
+                    return (!$drop) ? (float) $value->getTimestamp() : null;
                 } elseif ($value instanceof \DateInterval) {
                     if ($drop) {
                         return null;
@@ -203,13 +204,13 @@ class ValueInfo {
                     if ($value->days) {
                         $dateSpec = $value->days."D";
                     } else {
-                        $dateSpec .= $value->y ? $value->y."Y": "";
-                        $dateSpec .= $value->m ? $value->m."M": "";
-                        $dateSpec .= $value->d ? $value->d."D": "";
+                        $dateSpec .= $value->y ? $value->y."Y" : "";
+                        $dateSpec .= $value->m ? $value->m."M" : "";
+                        $dateSpec .= $value->d ? $value->d."D" : "";
                     }
-                    $timeSpec .= $value->h ? $value->h."H": "";
-                    $timeSpec .= $value->i ? $value->i."M": "";
-                    $timeSpec .= $value->s ? $value->s."S": "";
+                    $timeSpec .= $value->h ? $value->h."H" : "";
+                    $timeSpec .= $value->i ? $value->i."M" : "";
+                    $timeSpec .= $value->s ? $value->s."S" : "";
                     $timeSpec = $timeSpec ? "T".$timeSpec : "";
                     if (!$dateSpec && !$timeSpec) {
                         return "PT0S";

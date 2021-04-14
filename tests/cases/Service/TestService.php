@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Service;
 
 use JKingWeb\Arsse\Arsse;
@@ -22,7 +23,6 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$db = $this->dbMock->get();
         $this->srv = new Service();
     }
-
 
     public function testCheckIn(): void {
         $now = time();

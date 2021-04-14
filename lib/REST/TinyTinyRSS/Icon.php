@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\REST\TinyTinyRSS;
 
 use JKingWeb\Arsse\Arsse;

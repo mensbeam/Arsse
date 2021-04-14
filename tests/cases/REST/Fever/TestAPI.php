@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\REST\Fever;
 
 use JKingWeb\Arsse\Arsse;
@@ -15,7 +16,6 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\Fever\API;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\ServerRequest;
 use Laminas\Diactoros\Response\JsonResponse;
 use Laminas\Diactoros\Response\XmlResponse;
 use Laminas\Diactoros\Response\EmptyResponse;

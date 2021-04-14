@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\REST\Fever;
 
 use JKingWeb\Arsse\Arsse;
@@ -34,7 +35,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$db = $this->dbMock->get();
         // instantiate the handler
         return new FeverUser;
-    }        
+    }
 
     /** @dataProvider providePasswordCreations */
     public function testRegisterAUserPassword(string $user, string $password = null, $exp): void {

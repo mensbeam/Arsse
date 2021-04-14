@@ -5,6 +5,7 @@
 
 /** Conf class */
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse;
 
 use JKingWeb\Arsse\Misc\ValueInfo as Value;

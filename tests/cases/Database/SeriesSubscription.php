@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Database;
 
 use GuzzleHttp\Exception\ClientException;
@@ -45,8 +46,8 @@ trait SeriesSubscription {
             ],
             'arsse_icons' => [
                 'columns' => [
-                    'id'  => "int",
-                    'url' => "str",
+                    'id'   => "int",
+                    'url'  => "str",
                     'data' => "blob",
                 ],
                 'rows' => [

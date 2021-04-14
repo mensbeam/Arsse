@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\REST;
 
 use JKingWeb\Arsse\Arsse;
@@ -22,7 +23,6 @@ use Laminas\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST */
 class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
-
     /** @dataProvider provideApiMatchData */
     public function testMatchAUrlToAnApi($apiList, string $input, array $exp): void {
         $r = new REST($apiList);
@@ -306,7 +306,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         if ($called) {
             $rMock->authenticateRequest->called();
             $hMock->dispatch->once()->called();
-            $in = $hMock->dispatch->firstCall()->argument();;
+            $in = $hMock->dispatch->firstCall()->argument();
             $this->assertSame($method, $in->getMethod());
             $this->assertSame($target, $in->getRequestTarget());
         } else {

@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Misc;
 
 use JKingWeb\Arsse\Misc\ValueInfo as I;
@@ -12,7 +13,6 @@ use JKingWeb\Arsse\Test\Result;
 
 /** @covers \JKingWeb\Arsse\Misc\ValueInfo */
 class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
-
     public function testGetIntegerInfo(): void {
         $tests = [
             [null,          I::NULL],

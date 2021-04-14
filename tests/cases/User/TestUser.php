@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\User;
 
 use Eloquent\Phony\Phpunit\Phony;
@@ -21,12 +22,12 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         parent::setUp();
         self::setConf();
         // create a mock database interface
-        $this->dbMock= $this->mock(Database::class);
+        $this->dbMock = $this->mock(Database::class);
         $this->dbMock->begin->returns($this->mock(\JKingWeb\Arsse\Db\Transaction::class));
         // create a mock user driver
         $this->drv = $this->mock(Driver::class);
     }
-    
+
     protected function prepTest(?\Closure $partialMockDef = null): User {
         Arsse::$db = $this->dbMock->get();
         if ($partialMockDef) {
@@ -189,7 +190,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $pass = "random password";
         $this->drv->userAdd->returns(null)->returns($pass);
         $this->dbMock->userExists->returns(true);
-        $u = $this->prepTest(function ($u) use ($pass) {
+        $u = $this->prepTest(function($u) use ($pass) {
             $u->generatePassword->returns($pass);
         });
         $this->assertSame($pass, $u->add($user));
@@ -330,7 +331,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv->userPasswordSet->returns(null)->returns($pass);
         $this->dbMock->userPasswordSet->returns($pass);
         $this->dbMock->userExists->returns(true);
-        $u = $this->prepTest(function ($u) use ($pass) {
+        $u = $this->prepTest(function($u) use ($pass) {
             $u->generatePassword->returns($pass);
         });
         $this->assertSame($pass, $u->passwordSet($user, null));
@@ -360,7 +361,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv->userPasswordSet->returns(null)->returns($pass);
         $this->dbMock->userPasswordSet->returns($pass);
         $this->dbMock->userExists->returns(false);
-        $u = $this->prepTest(function ($u) use ($pass) {
+        $u = $this->prepTest(function($u) use ($pass) {
             $u->generatePassword->returns($pass);
         });
         $this->assertSame($pass, $u->passwordSet($user, null));
@@ -374,7 +375,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $user = "john.doe@example.com";
         $pass = "random password";
         $this->drv->userPasswordSet->throws(new ExceptionConflict("doesNotExist"));
-        $u = $this->prepTest(function ($u) use ($pass) {
+        $u = $this->prepTest(function($u) use ($pass) {
             $u->generatePassword->returns($pass);
         });
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
