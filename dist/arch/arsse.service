@@ -2,7 +2,8 @@
 Description=The Arsse newsfeed management service
 Documentation=https://thearsse.com/manual/
 Requires=arsse-fetch.service
-BindsTo=arsse-web.service
+BindsTo=php-fpm.service
+After=php-fpm.service
 
 [Service]
 Type=oneshot

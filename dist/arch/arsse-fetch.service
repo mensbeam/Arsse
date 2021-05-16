@@ -1,6 +1,7 @@
 [Unit]
 Description=The Arsse newsfeed fetching service
 Documentation=https://thearsse.com/manual/
+PartOf=arsse.service
 
 [Service]
 User=arsse
