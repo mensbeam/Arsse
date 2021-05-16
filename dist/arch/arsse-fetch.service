@@ -8,7 +8,7 @@ User=arsse
 Group=arsse
 Type=simple
 WorkingDirectory=/usr/share/webapps/arsse
-ExecStart=/usr/bin/env php /usr/share/webapps/arsse/arsse.php daemon
+ExecStart=/usr/bin/arsse daemon
 
 ProtectProc=invisible
 NoNewPrivileges=true
