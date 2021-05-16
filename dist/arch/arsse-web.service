@@ -1,0 +1,33 @@
+[Unit]
+Description=The Arsse newsfeed client service
+Documentation=https://thearsse.com/manual/
+
+[Service]
+User=arsse
+Group=arsse
+Type=simple
+WorkingDirectory=/usr/share/webapps/arsse
+ExecStart=/usr/bin/uwsgi /etc/webapps/arsse/uwsgi.ini
+
+ProtectProc=invisible
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+RuntimeDirectory=arsse
+StateDirectory=arsse
+ConfigurationDirectory=webapps/arsse
+ReadOnlyPaths=/
+ReadWriePaths=/usr/lib/arsse
+NoExecPaths=/
+ExecPaths=/usr/bin/uwsgi
+PrivateTmp=true
+PrivateDevices=true
+RestrictSUIDSGID=true
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=arsse
+Restart=on-failure
+RestartPreventStatus=
+
+[Install]
+WantedBy=multi-user.target

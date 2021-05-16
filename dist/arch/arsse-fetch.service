@@ -1,0 +1,32 @@
+[Unit]
+Description=The Arsse newsfeed fetching service
+Documentation=https://thearsse.com/manual/
+
+[Service]
+User=arsse
+Group=arsse
+Type=simple
+WorkingDirectory=/usr/share/webapps/arsse
+ExecStart=/usr/bin/env php /usr/share/webapps/arsse/arsse.php daemon
+
+ProtectProc=invisible
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+StateDirectory=arsse
+ConfigurationDirectory=webapps/arsse
+ReadOnlyPaths=/
+ReadWriePaths=/usr/lib/arsse
+NoExecPaths=/
+ExecPaths=/usr/bin/php /usr/bin/php7
+PrivateTmp=true
+PrivateDevices=true
+RestrictSUIDSGID=true
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=arsse
+Restart=on-failure
+RestartPreventStatus=
+
+[Install]
+WantedBy=multi-user.target

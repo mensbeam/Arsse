@@ -6,6 +6,8 @@
 /documentation/
 /manual/
 /tests/coverage/
+/dist/arch/src
+/dist/arch/pkg
 /arsse.db*
 /config.php
 /.php_cs.cache
@@ -36,6 +38,7 @@ $RECYCLE.BIN/
 *.zip
 *.7z
 *.tar.gz
+*.tar.xz
 *.tgz
 *.deb
 *.rpm

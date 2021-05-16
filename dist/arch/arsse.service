@@ -1,0 +1,12 @@
+[Unit]
+Description=The Arsse newsfeed management service
+Documentation=https://thearsse.com/manual/
+Requires=arsse-fetch.service
+BindsTo=arsse-web.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,56 @@
+pkgname="arsse"
+pkgver="0.9.1"
+pkgrel=1
+epoch=
+pkgdesc="RSS/Atom newsfeed synchronization server"
+arch=("any")
+url="https://thearsse.com/"
+license=("MIT")
+groups=()
+depends=("php>=7.1" "php-intl" "php-sqlite" "uwsgi" "uwsgi-plugin-php")
+makedepends=("composer")
+checkdepends=()
+optdepends=("php-pgsql: PostgreSQL database support")
+provides=()
+conflicts=()
+replaces=()
+backup=("etc/webapps/arsse/config.php" "etc/webapps/arsse/uwsgi.ini")
+options=()
+install=
+changelog=
+source=("https://code.mensbeam.com/attachments/229880aa-3fcc-499f-b747-6932a661dc0e"
+        "arsse.service"
+        "arsse-web.service"
+        "arsse-fetch.service"
+        "sysuser.conf"
+        "config.php"
+        "uwsgi.ini"
+        "arsse.sh")
+noextract=()
+
+package() {
+    cd "$pkgdir"
+    mkdir -p "usr/bin" "usr/share/webapps/arsse" "usr/share/doc/arsse" "usr/share/licenses/arsse" "usr/lib/systemd/system" "usr/lib/sysusers.d" "etc/webapps/arsse"
+    cd "$srcdir/arsse"
+    cp ../arsse.sh "$pkgdir/usr/bin/arsse"
+    cp -r lib locale sql vendor www CHANGELOG UPGRADING README.md arsse.php "$pkgdir/usr/share/webapps/arsse"
+    cp -r manual/* "$pkgdir/usr/share/doc/arsse"
+    cp LICENSE AUTHORS "$pkgdir/usr/share/licenses/arsse"
+    cp ../*.service "$pkgdir/usr/lib/systemd/system"
+    cp ../sysuser.conf "$pkgdir/usr/lib/sysusers.d/arsse.conf"
+    cp ../config.php config.defaults.php ../uwsgi.ini "$pkgdir/etc/webapps/arsse"
+    cd "$pkgdir"
+    chmod -R a=rX *
+    chmod a=rx usr/bin/arsse
+    chmod u=r etc/webapps/arsse/*
+    ln -sT "/etc/webapps/arsse/config.php" "usr/share/webapps/arsse/config.php"
+}
+
+md5sums=('c7c9526f02fe34bf6f8399eff95c819d'
+         '53f150081dc9097790166ac22575fb1d'
+         '9ed9119aff93e0099c15cd12a3f71655'
+         '71a5975aed6b2da581262441f14bc929'
+         'b6ef9ab7e9062df1d5ba060066b6d734'
+         '33e7a5b290ef20339952f1d904b33f8f'
+         'ff8fc77353d8e06f5c74ad577880a19d'
+         '4fb46ec290e497279c3dd7c8c528abf6')
