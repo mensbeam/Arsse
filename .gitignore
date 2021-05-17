@@ -6,6 +6,7 @@
 /documentation/
 /manual/
 /tests/coverage/
+/dist/arch/arsse
 /dist/arch/src
 /dist/arch/pkg
 /arsse.db*
