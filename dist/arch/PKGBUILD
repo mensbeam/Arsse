@@ -1,4 +1,3 @@
-_repopath=`dirname $(dirname $(pwd))`
 pkgname="arsse"
 pkgver=0.9.1.r10.7abdf05
 pkgrel=1
@@ -11,7 +10,9 @@ groups=()
 depends=()
 makedepends=("git" "php" "php-intl" "composer")
 checkdepends=()
-optdepends=("php-pgsql: PostgreSQL database support")
+optdepends=("php-pgsql: PostgreSQL database support"
+            "nginx: HTTP server"
+            "apache: HTTP server")
 provides=()
 conflicts=()
 replaces=()
@@ -19,7 +20,7 @@ backup=("etc/webapps/arsse/config.php" "etc/php/php-fpm.d/arsse.conf")
 options=()
 install=
 changelog=
-source=("git+file://$_repopath")
+source=("git+file://$(dirname $(dirname $(pwd)))")
 noextract=()
 md5sums=("SKIP")
 

@@ -4,5 +4,5 @@
 # for possible configuration parameters
 
 return [
-    'dbSQLiteFile' => "/usr/lib/arsse/arsse.db",
+    'dbSQLite3File' => "/var/lib/arsse/arsse.db",
 ];
