@@ -271,7 +271,7 @@ class Database {
         }
         $hash = (strlen($password) > 0) ? password_hash($password, \PASSWORD_DEFAULT) : "";
         // NOTE: This roundabout construction (with 'select' rather than 'values') is required by MySQL, because MySQL is riddled with pitfalls and exceptions
-        $this->db->prepare("INSERT INTO arsse_users(id,password,num) select ?, ?, ((select max(num) from arsse_users) + 1)", "str", "str")->runArray([$user,$hash]);
+        $this->db->prepare("INSERT INTO arsse_users(id,password,num) select ?, ?, (coalesce((select max(num) from arsse_users), 0) + 1)", "str", "str")->runArray([$user,$hash]);
         return true;
     }
 

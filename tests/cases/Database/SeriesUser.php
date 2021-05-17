@@ -205,4 +205,11 @@ trait SeriesUser {
         $this->assertException("alreadyExists", "User", "ExceptionConflict");
         Arsse::$db->userRename("john.doe@example.com", "jane.doe@example.com");
     }
+
+    public function testAddFirstUser(): void {
+        // first truncate the users table
+        static::$drv->exec("DELETE FROM arsse_users");
+        // add a user; if the max of the num column is not properly coalesced, this will result in a constraint violation
+        $this->assertTrue(Arsse::$db->userAdd("john.doe@example.com", ""));
+    }
 }
