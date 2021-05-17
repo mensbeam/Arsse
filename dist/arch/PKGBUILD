@@ -1,6 +1,6 @@
 _repopath=`dirname $(dirname $(pwd))`
 pkgname="arsse"
-pkgver="0.9.1"
+pkgver=0.9.1.r10.7abdf05
 pkgrel=1
 epoch=
 pkgdesc="RSS/Atom newsfeed synchronization server"
@@ -32,7 +32,8 @@ build() {
     composer install
     ./robo manual
     composer install --no-dev -o -n --no-scripts
-    php arsse.php conf save-defaults config.defaults.php 
+    php arsse.php conf save-defaults config.defaults.php
+    rm -r vendor/bin
 }
 
 package() {
