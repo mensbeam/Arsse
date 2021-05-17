@@ -1,5 +1,5 @@
 pkgname="arsse"
-pkgver=0.9.1.r10.7abdf05
+pkgver=0.9.1.r14.e2b182e
 pkgrel=1
 epoch=
 pkgdesc="RSS/Atom newsfeed synchronization server"
@@ -39,21 +39,16 @@ build() {
 
 package() {
     depends=("php" "php-intl" "php-sqlite" "php-fpm")
-    cd "$pkgdir"
-    mkdir -p "usr/bin" "usr/share/webapps/arsse" "usr/share/doc/arsse" "usr/share/licenses/arsse" "usr/lib/systemd/system" "usr/lib/sysusers.d" "etc/php/php-fpm.d/" "etc/webapps/arsse" "etc/webapps/arsse/nginx"
     cd "$srcdir/arsse"
-    cp dist/arch/arsse.sh "$pkgdir/usr/bin/arsse"
-    cp -r lib locale sql vendor www CHANGELOG UPGRADING README.md arsse.php "$pkgdir/usr/share/webapps/arsse"
-    cp -r manual/* "$pkgdir/usr/share/doc/arsse"
-    cp LICENSE AUTHORS "$pkgdir/usr/share/licenses/arsse"
-    cp dist/arch/*.service "$pkgdir/usr/lib/systemd/system"
-    cp dist/arch/sysuser.conf "$pkgdir/usr/lib/sysusers.d/arsse.conf"
-    cp dist/arch/php-fpm.conf "$pkgdir/etc/php/php-fpm.d/arsse.conf"
-    cp dist/arch/config.php config.defaults.php "$pkgdir/etc/webapps/arsse"
-    cp dist/arch/nginx/* "$pkgdir/etc/webapps/arsse/nginx"
-    cd "$pkgdir"
-    chmod -R a=rX *
-    chmod a=rx usr/bin/arsse
-    chmod u=r etc/webapps/arsse/*
+    install -DTm755 dist/arch/arsse.sh "$pkgdir/usr/bin/arsse"
+    install -D lib locale sql vendor www CHANGELOG UPGRADING README.md arsse.php "$pkgdir/usr/share/webapps/arsse"
+    install -D manual/* "$pkgdir/usr/share/doc/arsse"
+    install -D LICENSE AUTHORS "$pkgdir/usr/share/licenses/arsse"
+    install -D dist/arch/*.service "$pkgdir/usr/lib/systemd/system"
+    install -DT dist/arch/sysuser.conf "$pkgdir/usr/lib/sysusers.d/arsse.conf"
+    install -DT dist/arch/php-fpm.conf "$pkgdir/etc/php/php-fpm.d/arsse.conf"
+    install -Dm640 dist/arch/config.php "$pkgdir/etc/webapps/arsse"
+    install -D config.defaults.php "$pkgdir/etc/webapps/arsse"
+    install -D dist/arch/nginx/* "$pkgdir/etc/webapps/arsse/nginx"
     ln -sT "/etc/webapps/arsse/config.php" "usr/share/webapps/arsse/config.php"
 }
