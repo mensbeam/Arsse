@@ -1,5 +1,5 @@
 pkgname="arsse"
-pkgver=0.9.1.r15.a97ca23
+pkgver=0.9.1.r16.d1fd6e9
 pkgrel=1
 epoch=
 pkgdesc="RSS/Atom newsfeed synchronization server"
@@ -40,13 +40,14 @@ build() {
 package() {
     depends=("php" "php-intl" "php-sqlite" "php-fpm")
     cd "$pkgdir"
-    mkdir -p "usr/share/webapps/arsse" "usr/share/doc/arsse" "usr/share/licenses/arsse" "usr/lib/systemd/system" "usr/lib/sysusers.d" "etc/php/php-fpm.d/" "etc/webapps/arsse" "etc/webapps/arsse/nginx"
+    mkdir -p "usr/share/webapps/arsse" "usr/share/doc/arsse" "usr/share/licenses/arsse" "usr/lib/systemd/system" "usr/lib/sysusers.d" "usr/lib/tmpfiles.d" "etc/php/php-fpm.d/" "etc/webapps/arsse" "etc/webapps/arsse/nginx"
     cd "$srcdir/arsse"
     cp -r lib locale sql vendor www CHANGELOG UPGRADING README.md arsse.php "$pkgdir/usr/share/webapps/arsse"
     cp -r manual/* "$pkgdir/usr/share/doc/arsse"
     cp LICENSE AUTHORS "$pkgdir/usr/share/licenses/arsse"
     cp dist/arch/*.service "$pkgdir/usr/lib/systemd/system"
     cp dist/arch/sysuser.conf "$pkgdir/usr/lib/sysusers.d/arsse.conf"
+    cp dist/arch/tmpfiles.conf "$pkgdir/usr/lib/tmpfiles.d/arsse.conf"
     cp dist/arch/php-fpm.conf "$pkgdir/etc/php/php-fpm.d/arsse.conf"
     cp -r dist/arch/nginx config.defaults.php "$pkgdir/etc/webapps/arsse"
     cd "$pkgdir"
