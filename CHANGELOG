@@ -3,6 +3,8 @@ Version 0.9.2 (2021-??-??)
 
 Bug fixes:
 - Do not fail adding users to an empty database (regression since 0.9.0)
+- Cleanly ignore unknown configuration properties
+- Set access mode to rw-r---- when creating SQLite databases
 
 Changes:
 - Packages for Arch Linux are now available (see manual for details)

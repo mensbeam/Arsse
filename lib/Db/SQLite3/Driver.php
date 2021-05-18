@@ -31,6 +31,12 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $dbKey = Arsse::$conf->dbSQLite3Key;
         $timeout = Arsse::$conf->dbSQLite3Timeout * 1000;
         try {
+            // check whether the file exists; if it doesn't create the file and set its mode to rw-r-----
+            if ($dbFile !== ":memory:" && !file_exists($dbFile)) {
+                if (@touch($dbFile)) {
+                    chmod($dbFile, 0640);
+                }
+            }
             $this->makeConnection($dbFile, $dbKey);
         } catch (\Throwable $e) {
             // if opening the database doesn't work, check various pre-conditions to find out what the problem might be

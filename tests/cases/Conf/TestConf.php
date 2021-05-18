@@ -108,6 +108,14 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
         $conf->import($arr);
     }
 
+    public function testImportCustomProperty(): void {
+        $arr = [
+            'customProperty' => "I'm special!",
+        ];
+        $conf = new Conf;
+        $this->assertSame($conf, $conf->import($arr));
+    }
+
     public function testImportBogusDriver(): void {
         $arr = [
             'dbDriver' => "this driver does not exist",

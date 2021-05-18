@@ -265,7 +265,7 @@ class Conf {
     protected function propertyImport(string $key, $value, string $file = "") {
         $typeName = $this->types[$key]['name'] ?? "mixed";
         $typeConst = $this->types[$key]['const'] ?? Value::T_MIXED;
-        $nullable = (int) (bool) ($this->types[$key]['const'] & Value::M_NULL);
+        $nullable = (int) (bool) ($typeConst & Value::M_NULL);
         try {
             if ($typeName === "\\DateInterval") {
                 // date intervals have special handling: if the existing value (ultimately, the default value)

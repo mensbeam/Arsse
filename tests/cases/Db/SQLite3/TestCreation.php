@@ -185,4 +185,17 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertException("fileCorrupt", "Db");
         new Driver;
     }
+
+    public function testSetFileMode(): void {
+        $f = tempnam(sys_get_temp_dir(), "arsse");
+        Arsse::$conf->dbSQLite3File = $f;
+        // delete the file PHP just created
+        unlink($f);
+        // recreate the file
+        new Driver;
+        // check the mode
+        clearstatcache();
+        $mode = base_convert((string) stat($f)['mode'], 10, 8);
+        $this->assertMatchesRegularExpression("/640$/",  $mode);
+    }
 }
