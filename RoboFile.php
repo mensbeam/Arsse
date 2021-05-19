@@ -220,10 +220,6 @@ class RoboFile extends \Robo\Tasks {
      * The version to package may be any Git tree-ish identifier: a tag, a branch,
      * or any commit hash. If none is provided on the command line, Robo will prompt
      * for a commit to package; the default is "HEAD".
-     *
-     * Note that while it is possible to re-package old versions, the resultant tarball
-     * may not be equivalent due to subsequent changes in the exclude list, or because
-     * of new tooling.
      */
     public function packageArch(string $version = null): Result {
         // establish which commit to package
@@ -239,7 +235,8 @@ class RoboFile extends \Robo\Tasks {
         $t->addCode(function() use ($archive) {
             // because Robo doesn't support extracting a single file we have to do it ourselves
             (new \Archive_Tar($archive))->extractList("arsse/dist/arch/PKGBUILD", BASE, "arsse/dist/arch/", false);
-            return $this->taskFilesystemStack()->touch(BASE."PKGBUILD")->run();
+            // perform a do-nothing filesystem operation since we need a Robo task result
+            return $this->taskFilesystemStack()->chmod(BASE."PKGBUILD", 0644)->run();
         })->completion($this->taskFilesystemStack()->remove(BASE."PKGBUILD"));
         $t->taskExec("makepkg -Ccf")->dir(BASE);
         return $t->run();
