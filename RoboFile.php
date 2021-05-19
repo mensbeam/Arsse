@@ -149,7 +149,7 @@ class RoboFile extends \Robo\Tasks {
      *
      * The version to package may be any Git tree-ish identifier: a tag, a branch,
      * or any commit hash. If none is provided on the command line, Robo will prompt
-     * for a commit to package; the default is "head".
+     * for a commit to package; the default is "HEAD".
      *
      * Note that while it is possible to re-package old versions, the resultant tarball
      * may not be equivalent due to subsequent changes in the exclude list, or because
@@ -164,7 +164,9 @@ class RoboFile extends \Robo\Tasks {
         // create a temporary directory
         $dir = $t->tmpDir().\DIRECTORY_SEPARATOR;
         // create a Git worktree for the selected commit in the temp location
-        $t->taskExec("git worktree add ".escapeshellarg($dir)." ".escapeshellarg($version));
+        $t->taskExec("git worktree add ".escapeshellarg($dir)." ".escapeshellarg($version))
+            ->completion($this->taskFilesystemStack()->remove($dir))
+            ->completion($this->taskExec("git worktree prune"));
         // perform Composer installation in the temp location with dev dependencies
         $t->taskComposerInstall()->dir($dir);
         // generate the manual
@@ -195,13 +197,36 @@ class RoboFile extends \Robo\Tasks {
         ]);
         // generate a sample configuration file
         $t->taskExec(escapeshellarg(\PHP_BINARY)." arsse.php conf save-defaults config.defaults.php")->dir($dir);
+        // remove any existing archive
+        $t->taskFilesystemStack()->remove($archive);
         // package it all up
         $t->taskPack($archive)->addDir("arsse", $dir);
         // execute the collection
-        $out = $t->run();
-        // clean the Git worktree list
-        $this->_exec("git worktree prune");
-        return $out;
+        return $t->run();
+    }
+
+    /** Packages a given commit of the software into an Arch package
+     *
+     * The version to package may be any Git tree-ish identifier: a tag, a branch,
+     * or any commit hash. If none is provided on the command line, Robo will prompt
+     * for a commit to package; the default is "HEAD".
+     *
+     * Note that while it is possible to re-package old versions, the resultant tarball
+     * may not be equivalent due to subsequent changes in the exclude list, or because
+     * of new tooling.
+     */
+    public function packageArch(string $version = null): Result {
+        // establish which commit to package
+        $version = $version ?? $this->askDefault("Commit to package:", "HEAD");
+        $archive = BASE."arsse-$version.tar.gz";
+        // start a collection
+        $t = $this->collectionBuilder();
+        // create a tarball
+        $t->addCode(function() use ($version) {
+            return $this->package($version);
+        });
+        // extract PKGBUILD and run it; todo
+        return $t->run();
     }
 
     /** Generates static manual pages in the "manual" directory

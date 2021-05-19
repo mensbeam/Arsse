@@ -1,41 +1,22 @@
 pkgname="arsse"
-pkgver=0.9.1.r16.d1fd6e9
+pkgver=0.9.1
 pkgrel=1
 epoch=
 pkgdesc="RSS/Atom newsfeed synchronization server"
 arch=("any")
 url="https://thearsse.com/"
 license=("MIT")
-groups=()
 depends=()
 makedepends=("git" "php" "php-intl" "composer")
 checkdepends=()
 optdepends=("php-pgsql: PostgreSQL database support"
             "nginx: HTTP server"
             "apache: HTTP server")
-provides=()
-conflicts=()
-replaces=()
 backup=("etc/webapps/arsse/config.php" "etc/php/php-fpm.d/arsse.conf")
-options=()
 install=
 changelog=
-source=("git+file://$(dirname $(dirname $(pwd)))")
-noextract=()
+source=("arsse-0.9.1.tar.gz")
 md5sums=("SKIP")
-
-pkgver() {
-    git describe --tags | sed 's/\([^-]*-\)g/r\1/;s/-/./g'
-}
-
-build() {
-    cd "$srcdir/arsse"
-    composer install
-    ./robo manual
-    composer install --no-dev -o -n --no-scripts
-    php arsse.php conf save-defaults config.defaults.php
-    rm -r vendor/bin
-}
 
 package() {
     depends=("php" "php-intl" "php-sqlite" "php-fpm")
