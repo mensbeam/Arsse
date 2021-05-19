@@ -5,9 +5,9 @@ Requires=arsse-fetch.service
 BindsTo=php-fpm.service
 After=php-fpm.service
 
+[Install]
+WantedBy=multi-user.target
+
 [Service]
 Type=oneshot
 RemainAfterExit=true
-
-[Install]
-WantedBy=multi-user.target

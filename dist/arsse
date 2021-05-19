@@ -7,4 +7,4 @@ if (posix_geteuid() == 0) {
         posix_setuid($info['uid']);
     }
 }
-require "/usr/share/webapps/arsse/arsse.php";
+require "/usr/share/arsse/arsse.php";

@@ -3,11 +3,14 @@ Description=The Arsse newsfeed fetching service
 Documentation=https://thearsse.com/manual/
 PartOf=arsse.service
 
+[Install]
+WantedBy=multi-user.target
+
 [Service]
 User=arsse
 Group=arsse
 Type=simple
-WorkingDirectory=/usr/share/webapps/arsse
+WorkingDirectory=/usr/share/arsse
 ExecStart=/usr/bin/arsse daemon
 
 ProtectProc=invisible
@@ -15,11 +18,7 @@ NoNewPrivileges=true
 ProtectSystem=full
 ProtectHome=true
 StateDirectory=arsse
-ConfigurationDirectory=webapps/arsse
-ReadOnlyPaths=/
-ReadWriePaths=/var/lib/arsse
-NoExecPaths=/
-ExecPaths=/usr/bin/php /usr/bin/php7
+ConfigurationDirectory=arsse
 PrivateTmp=true
 PrivateDevices=true
 RestrictSUIDSGID=true
@@ -29,5 +28,9 @@ SyslogIdentifier=arsse
 Restart=on-failure
 RestartPreventStatus=
 
-[Install]
-WantedBy=multi-user.target
+# These directives can be used for extra security, but are disabled for now for compatibility
+
+#ReadOnlyPaths=/
+#ReadWriePaths=/var/lib/arsse
+#NoExecPaths=/
+#ExecPaths=/usr/bin/php /usr/bin/php7
