@@ -167,6 +167,16 @@ class RoboFile extends \Robo\Tasks {
         $t->taskExec("git worktree add ".escapeshellarg($dir)." ".escapeshellarg($version))
             ->completion($this->taskFilesystemStack()->remove($dir))
             ->completion($this->taskExec("git worktree prune"));
+        // patch the Arch PKGBUILD file with the correct version string
+        $t->addCode(function () use ($dir) {
+            $ver = trim(preg_replace('/^([^-]+)-(\d+)-(\w+)$/', "$1.r$2.$3", `git -C "$dir" describe --tags`));
+            return $this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^pkgver=.*$/m')->to("pkgver=$ver")->run();
+        });
+        // patch the Arch PKGBUILD file with the correct source file
+        $t->addCode(function () use ($dir, $archive) {
+            $tar = basename($archive);
+            return $this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^source=\("arsse-[^"]+"\)$/m')->to("source=(\"$tar\")")->run();
+        });
         // perform Composer installation in the temp location with dev dependencies
         $t->taskComposerInstall()->dir($dir);
         // generate the manual
@@ -225,7 +235,13 @@ class RoboFile extends \Robo\Tasks {
         $t->addCode(function() use ($version) {
             return $this->package($version);
         });
-        // extract PKGBUILD and run it; todo
+        // extract the PKGBUILD from the just-created archive and build it
+        $t->addCode(function() use ($archive) {
+            // because Robo doesn't support extracting a single file we have to do it ourselves
+            (new \Archive_Tar($archive))->extractList("arsse/dist/arch/PKGBUILD", BASE, "arsse/dist/arch/", false);
+            return $this->taskFilesystemStack()->touch(BASE."PKGBUILD")->run();
+        })->completion($this->taskFilesystemStack()->remove(BASE."PKGBUILD"));
+        $t->taskExec("makepkg -Ccf")->dir(BASE);
         return $t->run();
     }
 
