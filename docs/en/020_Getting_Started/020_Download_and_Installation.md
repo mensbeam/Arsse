@@ -1,6 +1,6 @@
 [TOC]
 
-# Downloading The Arse
+# Downloading The Arsse
 
 The latest version of The Arsse can be downloaded [from our Web site](https://thearsse.com/). If installing an older release from our archives, the attachments named _arsse-x.x.x.tar.gz_ should be used rather than those marked "Source Code".
 

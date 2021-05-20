@@ -1,6 +1,6 @@
 _[TOC]
 
-# Downloading The Arse
+# Downloading The Arsse
 
 The Arsse is available from the [Arch User Repository](https://aur.archlinux.org/) as packages `arsse` and `arsse-git`. The latter should normally only be used to test bug fixes.
 
