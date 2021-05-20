@@ -24,8 +24,8 @@ Note that the above is the most concise process, not necessarily the recommended
 
 # Next steps
 
-If using a database other than SQLite, you will likely want to [set it up](Database_Setup) before doing anything else.
+If using a database other than SQLite, you will likely want to [set it up](en/Getting_Started/Database_Setup) before doing anything else.
 
-In order for the various synchronization protocols to work, a Web server [must be configured](Web_Server_Configuration), and in order for The Arsse to serve users, those users [must be created](/en/Using_The_Arsse/Managing_Users).
+In order for the various synchronization protocols to work, a Web server [must be configured](en/Getting_Started/Web_Server_Configuration), and in order for The Arsse to serve users, those users [must be created](/en/Using_The_Arsse/Managing_Users).
 
-You may also want to review the `config.defaults.php` file included in the download package and create [a configuration file](Configuration), though The Arsse can function even without using a configuration file.
+You may also want to review the `config.defaults.php` file included in `/etc/webapps/arsse/` or consult [the documentation for the configuration file](en/Getting_Started/Configuration), though The Arsse should function with the default configuration.
