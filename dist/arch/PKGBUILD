@@ -14,7 +14,15 @@ optdepends=("nginx: HTTP server"
             "percona-server: Alternate database"
             "postgresql: Alternate database"
             "php-pgsql: PostgreSQL database support")
-backup=("etc/webapps/arsse/config.php" "etc/php/php-fpm.d/arsse.conf")
+backup=("etc/webapps/arsse/config.php"
+        "etc/php/php-fpm.d/arsse.conf"
+        "etc/webapps/arsse/nginx/example.conf"
+        "etc/webapps/arsse/nginx/arsse.conf"
+        "etc/webapps/arsse/nginx/arsse-loc.conf"
+        "etc/webapps/arsse/nginx/arsse-fcgi.conf"
+        "etc/webapps/arsse/apache/example.conf"
+        "etc/webapps/arsse/apache/arsse.conf"
+        "etc/webapps/arsse/apache/arsse-loc.conf")
 install=
 changelog=
 source=("arsse-0.9.1.tar.gz")
