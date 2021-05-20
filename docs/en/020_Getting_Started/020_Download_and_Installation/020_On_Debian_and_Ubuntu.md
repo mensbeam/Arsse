@@ -8,7 +8,7 @@ Installation from source code is also possible, but the release packages are rec
 
 # Installation
 
-In order for The Arsse to function correctly, [its requirements](Requirements) must first be satisfied. The process of installing the required PHP extensions differs from one system to the next, but on Debian the following series of commands should do:
+In order for The Arsse to function correctly, its requirements must first be satisfied. The following series of commands should do so:
 
 ```sh
 # Install PHP; this assumes the FastCGI process manager will be used
@@ -30,12 +30,26 @@ sudo chown -R www-data:www-data "/usr/share/arsse"
 sudo chmod o+rwX "/usr/share/arsse"
 ```
 
+# Web server configuration
+
+Sample configuration for both Nginx and Apache HTTPd can be found in `dist/nginx/` and `dist/apache/`, respectively. The `example.conf` files are basic virtual host examples; the other files they include should normally be usable without modification, but may be modified if desired.
+
+In order to use Apache HTTPd the FastCGI proxy module must be enabled and the server restarted:
+
+```sh
+sudo a2enmod proxy proxy_fcgi
+sudo systemctl restart apache2
+```
+
+No additional set-up is required for Nginx.
+
+
 # Next steps
 
-If using a database other than SQLite, you will likely want to [set it up](Database_Setup) before doing anything else.
+If using a database other than SQLite, you will likely want to [set it up](/en/Getting_Started/Database_Setup) before doing anything else.
 
-In order for the various synchronization protocols to work, a Web server [must be configured](Web_Server_Configuration), and in order for The Arsse to serve users, those users [must be created](/en/Using_The_Arsse/Managing_Users).
+In order for The Arsse to serve users, those users [must be created](/en/Using_The_Arsse/Managing_Users).
 
-You may also want to review the `config.defaults.php` file included in the download package and create [a configuration file](Configuration), though The Arsse can function even without using a configuration file.
+You may also want to review the `config.defaults.php` file included in the download package and create [a configuration file](/en/Getting_Started/Configuration), though The Arsse can function even without using a configuration file.
 
 Finally, The Arsse's [newsfeed refreshing service](/en/Using_The_Arsse/Keeping_Newsfeeds_Up_to_Date) needs to be installed in order for news to actually be fetched from the Internet.
