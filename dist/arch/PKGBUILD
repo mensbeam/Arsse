@@ -2,7 +2,7 @@ pkgname="arsse"
 pkgver=0.9.1
 pkgrel=1
 epoch=
-pkgdesc="RSS/Atom newsfeed synchronization server"
+pkgdesc="Multi-protocol RSS/Atom newsfeed synchronization server"
 arch=("any")
 url="https://thearsse.com/"
 license=("MIT")
@@ -57,4 +57,5 @@ package() {
     sed -ise 's/\/\(etc\|usr\/share\)\/arsse\//\/\1\/webapps\/arsse\//' "$pkgdir/etc/webapps/arsse/nginx/"* "$pkgdir/etc/webapps/arsse/apache/"* "$pkgdir/usr/lib/tmpfiles.d/arsse.conf" "$pkgdir/usr/lib/systemd/system/"* "$pkgdir/usr/bin/"*
     sed -ise 's/\/var\/run\/php\//\/run\/php-fpm\//' "$pkgdir/etc/webapps/arsse/nginx/"* "$pkgdir/etc/webapps/arsse/apache/"* "$pkgdir/etc/php/php-fpm.d/arsse.conf"
     sed -ise 's/www-data/http/' "$pkgdir/etc/php/php-fpm.d/arsse.conf"
+    sed -ie 's/^WorkingDirectory=.*$/WorkingDirectory=\/usr\/share\/webapps\/arsse/' -e 's/^ConfigurationDirectory=.*$/ConfigurationDirectory=webapps\/arsse/' "$pkgdir/usr/lib/systemd/system/arsse-fetch.service"
 }

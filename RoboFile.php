@@ -158,7 +158,7 @@ class RoboFile extends \Robo\Tasks {
     public function package(string $version = null): Result {
         // establish which commit to package
         $version = $version ?? $this->askDefault("Commit to package:", "HEAD");
-        $archive = BASE."arsse-$version.tar.gz";
+        $archive = "arsse-$version.tar.gz";
         // start a collection
         $t = $this->collectionBuilder();
         // create a temporary directory
@@ -215,30 +215,20 @@ class RoboFile extends \Robo\Tasks {
         return $t->run();
     }
 
-    /** Packages a given commit of the software into an Arch package
-     *
-     * The version to package may be any Git tree-ish identifier: a tag, a branch,
-     * or any commit hash. If none is provided on the command line, Robo will prompt
-     * for a commit to package; the default is "HEAD".
-     */
-    public function packageArch(string $version = null): Result {
-        // establish which commit to package
-        $version = $version ?? $this->askDefault("Commit to package:", "HEAD");
-        $archive = BASE."arsse-$version.tar.gz";
+    /** Packages a release tarball into an Arch package  */
+    public function packageArch(string $tarball): Result {
+        $dir = dirname($tarball);
         // start a collection
         $t = $this->collectionBuilder();
-        // create a tarball
-        $t->addCode(function() use ($version) {
-            return $this->package($version);
-        });
-        // extract the PKGBUILD from the just-created archive and build it
-        $t->addCode(function() use ($archive) {
+        // extract the PKGBUILD from the tarball
+        $t->addCode(function() use ($tarball, $dir) {
             // because Robo doesn't support extracting a single file we have to do it ourselves
-            (new \Archive_Tar($archive))->extractList("arsse/dist/arch/PKGBUILD", BASE, "arsse/dist/arch/", false);
+            (new \Archive_Tar($tarball))->extractList("arsse/dist/arch/PKGBUILD", $dir,"arsse/dist/arch/", false);
             // perform a do-nothing filesystem operation since we need a Robo task result
-            return $this->taskFilesystemStack()->chmod(BASE."PKGBUILD", 0644)->run();
-        })->completion($this->taskFilesystemStack()->remove(BASE."PKGBUILD"));
-        $t->taskExec("makepkg -Ccf")->dir(BASE);
+            return $this->taskFilesystemStack()->chmod("PKGBUILD", 0644)->dir($dir)->run();
+        })->completion($this->taskFilesystemStack()->remove("PKGBUILD")->dir($dir));
+        // build the package
+        $t->taskExec("makepkg -Ccf")->dir($dir);
         return $t->run();
     }
 
@@ -284,5 +274,37 @@ class RoboFile extends \Robo\Tasks {
         }
         // execute the collection
         return $t->run();
+    }
+
+    protected function parseChangelog(string $text, string $targetVersion): array {
+        $baseVersion = preg_replace('/^(\d+(?:\.\d+)*).*/', "$1", $targetVersion);
+        $lines = preg_split('/[\r\n]+/', trim($text));
+        $version = "";
+        $section = "";
+        $out = [];
+        $l = 0;
+        $expected = "version";
+        for ($a = 0; $a < sizeof($lines);) {
+            $l = rtrim($lines[$a++]);
+            Process:
+            if (in_array($expected, ["version", "section"]) && preg_match('/^Version (\d+(?:\.\d+)*) \(([\d\?]{4}-[\d\?]{2}-[\d\?]{2})\)\s*$/', $l, $m)) {
+                $version = $m[1];
+                if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $m[2])) {
+                    // uncertain dates are allowed only for the top version, and only if it does not match the target version (otherwise we have forgot to set the correct date before tagging)
+                    if (!$out && $targetVersion !== $version) {
+                        // use today's date; local time is fine
+                        $date = date("Y-m-d");
+                    } else {
+                        throw new \Exception("CHANGELOG: Date at line $a is incomplete");
+                    }
+                } else {
+                    $date = $m[2];
+                }
+                $out[$version] = ['date' => $date, 'features' => [], 'fixes' => [], 'changes' => []];
+                $expected = "separator";
+            } elseif ($expected === "separator" && $length = strlen($lines[$a - 2]) && preg_match('/^={'.$length.'}$/', $l)) {
+                // verify that the next line is blank
+            }
+        }
     }
 }
