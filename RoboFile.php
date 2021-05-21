@@ -163,66 +163,69 @@ class RoboFile extends \Robo\Tasks {
         // create a temporary directory
         $dir = $t->tmpDir().\DIRECTORY_SEPARATOR;
         // create a Git worktree for the selected commit in the temp location
-        $result = $this->taskExec("git worktree add ".escapeshellarg($dir)." ".escapeshellarg($commit))->run();
+        $result = $this->taskExec("git worktree add ".escapeshellarg($dir)." ".escapeshellarg($commit))->dir(BASE)->run();
         if ($result->getExitCode() > 0) {
             return $result;
         }
-        // get useable version strings from Git
-        $version = trim(`git -C "$dir" describe --tags`);
-        $archVersion = preg_replace('/^([^-]+)-(\d+)-(\w+)$/', "$1.r$2.$3", $version);
-        // name the generic release tarball
-        $tarball = "arsse-$version.tar.gz";
-        // generate the Debian changelog; this also validates our original changelog
-        $debianChangelog = $this->changelogDebian($this->changelogParse(file_get_contents($dir."CHANGELOG"), $version), $version);
-        // save commit description to VERSION file for use by packaging
-        $t->addTask($this->taskWriteToFile($dir."VERSION")->text($version));
-        // save the Debian changelog
-        $t->addTask($this->taskWriteToFile($dir."dist/debian/changelog")->text($debianChangelog));
-        // patch the Arch PKGBUILD file with the correct version string
-        $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^pkgver=.*$/m')->to("pkgver=$archVersion"));
-        // patch the Arch PKGBUILD file with the correct source file
-        $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^source=\("arsse-[^"]+"\)$/m')->to('source=("'.basename($tarball).'")'));
-        // perform Composer installation in the temp location with dev dependencies
-        $t->addTask($this->taskComposerInstall()->arg("-q")->dir($dir));
-        // generate the manual
-        $t->addCode(function() {
-            return $this->manual(["-q"]);
-        });
-        // perform Composer installation in the temp location for final output
-        $t->addTask($this->taskComposerInstall()->dir($dir)->noDev()->optimizeAutoloader()->arg("--no-scripts")->arg("-q"));
-        // delete unwanted files
-        $t->addTask($this->taskFilesystemStack()->remove([
-            $dir.".git",
-            $dir.".gitignore",
-            $dir.".gitattributes",
-            $dir."composer.json",
-            $dir."composer.lock",
-            $dir.".php_cs.dist",
-            $dir."phpdoc.dist.xml",
-            $dir."build.xml",
-            $dir."RoboFile.php",
-            $dir."CONTRIBUTING.md",
-            $dir."docs",
-            $dir."tests",
-            $dir."vendor-bin",
-            $dir."vendor/bin",
-            $dir."robo",
-            $dir."robo.bat",
-            $dir."package.json",
-            $dir."yarn.lock",
-            $dir."postcss.config.js",
-        ]));
-        // generate a sample configuration file
-        $t->addTask($this->taskExec(escapeshellarg(\PHP_BINARY)." arsse.php conf save-defaults config.defaults.php")->dir($dir));
-        // remove any existing archive
-        $t->addTask($this->taskFilesystemStack()->remove($tarball));
-        // package it all up
-        $t->addTask($this->taskPack($tarball)->addDir("arsse", $dir));
-        // execute the collection
-        $result = $t->run();
-        // remove the Git worktree
-        $this->taskFilesystemStack()->remove($dir)->run();
-        $this->taskExec("git worktree prune")->run();
+        try {
+            // get useable version strings from Git
+            $version = trim(`git -C "$dir" describe --tags`);
+            $archVersion = preg_replace('/^([^-]+)-(\d+)-(\w+)$/', "$1.r$2.$3", $version);
+            // name the generic release tarball
+            $tarball = "arsse-$version.tar.gz";
+            // generate the Debian changelog; this also validates our original changelog
+            $debianChangelog = $this->changelogDebian($this->changelogParse(file_get_contents($dir."CHANGELOG"), $version), $version);
+            // save commit description to VERSION file for use by packaging
+            $t->addTask($this->taskWriteToFile($dir."VERSION")->text($version));
+            // save the Debian changelog
+            $t->addTask($this->taskWriteToFile($dir."dist/debian/changelog")->text($debianChangelog));
+            // patch the Arch PKGBUILD file with the correct version string
+            $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^pkgver=.*$/m')->to("pkgver=$archVersion"));
+            // patch the Arch PKGBUILD file with the correct source file
+            $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^source=\("arsse-[^"]+"\)$/m')->to('source=("'.basename($tarball).'")'));
+            // perform Composer installation in the temp location with dev dependencies
+            $t->addTask($this->taskComposerInstall()->arg("-q")->dir($dir));
+            // generate the manual
+            $t->addCode(function() {
+                return $this->manual(["-q"]);
+            });
+            // perform Composer installation in the temp location for final output
+            $t->addTask($this->taskComposerInstall()->dir($dir)->noDev()->optimizeAutoloader()->arg("--no-scripts")->arg("-q"));
+            // delete unwanted files
+            $t->addTask($this->taskFilesystemStack()->remove([
+                $dir.".git",
+                $dir.".gitignore",
+                $dir.".gitattributes",
+                $dir."composer.json",
+                $dir."composer.lock",
+                $dir.".php_cs.dist",
+                $dir."phpdoc.dist.xml",
+                $dir."build.xml",
+                $dir."RoboFile.php",
+                $dir."CONTRIBUTING.md",
+                $dir."docs",
+                $dir."tests",
+                $dir."vendor-bin",
+                $dir."vendor/bin",
+                $dir."robo",
+                $dir."robo.bat",
+                $dir."package.json",
+                $dir."yarn.lock",
+                $dir."postcss.config.js",
+            ]));
+            // generate a sample configuration file
+            $t->addTask($this->taskExec(escapeshellarg(\PHP_BINARY)." arsse.php conf save-defaults config.defaults.php")->dir($dir));
+            // remove any existing archive
+            $t->addTask($this->taskFilesystemStack()->remove($tarball));
+            // package it all up
+            $t->addTask($this->taskPack($tarball)->addDir("arsse", $dir));
+            // execute the collection
+            $result = $t->run();
+        } finally {
+            // remove the Git worktree
+            $this->taskFilesystemStack()->remove($dir)->run();
+            $this->taskExec("git worktree prune")->dir(BASE)->run();
+        }
         return $result;
     }
 
