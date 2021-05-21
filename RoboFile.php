@@ -173,7 +173,7 @@ class RoboFile extends \Robo\Tasks {
         // name the generic release tarball
         $tarball = "arsse-$version.tar.gz";
         // generate the Debian changelog; this also validates our original changelog
-        $debianChangelog = changelogDebian(changelogParse(file_get_contents($dir."CHANGELOG"), $version), $version);
+        $debianChangelog = $this->changelogDebian($this->changelogParse(file_get_contents($dir."CHANGELOG"), $version), $version);
         // save commit description to VERSION file for use by packaging
         $t->addTask($this->taskWriteToFile($dir."VERSION")->text($version));
         // save the Debian changelog
@@ -185,9 +185,11 @@ class RoboFile extends \Robo\Tasks {
         // perform Composer installation in the temp location with dev dependencies
         $t->addTask($this->taskComposerInstall()->arg("-q")->dir($dir));
         // generate the manual
-        $t->addTask($this->taskExec(escapeshellarg($dir."robo")." manual")->dir($dir));
+        $t->addCode(function() {
+            return $this->manual(["-q"]);
+        });
         // perform Composer installation in the temp location for final output
-        $t->addTask($this->taskComposerInstall()->dir($dir)->noDev()->optimizeAutoloader()->arg("--no-scripts"));
+        $t->addTask($this->taskComposerInstall()->dir($dir)->noDev()->optimizeAutoloader()->arg("--no-scripts")->arg("-q"));
         // delete unwanted files
         $t->addTask($this->taskFilesystemStack()->remove([
             $dir.".git",
@@ -285,119 +287,115 @@ class RoboFile extends \Robo\Tasks {
         return $t->run();
     }
 
-    public function changelog() {
-        echo changelogDebian(changelogParse(file_get_contents("CHANGELOG"), "0.9.1-r26"), "0.9.1-r26");
-    }
-}
-
-function changelogParse(string $text, string $targetVersion): array {
-    $lines = preg_split('/\r?\n/', $text);
-    $version = "";
-    $section = "";
-    $out = [];
-    $entry = [];
-    $expected = ["version"];
-    for ($a = 0; $a < sizeof($lines);) {
-        $l = rtrim($lines[$a++]);
-        if (in_array("version", $expected) && preg_match('/^Version (\d+(?:\.\d+)*) \(([\d\?]{4}-[\d\?]{2}-[\d\?]{2})\)\s*$/', $l, $m)) {
-            $version = $m[1];
-            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $m[2])) {
-                // uncertain dates are allowed only for the top version, and only if it does not match the target version (otherwise we have forgotten to set the correct date before tagging)
-                if (!$out && $targetVersion !== $version) {
-                    // use today's date; local time is fine
-                    $date = date("Y-m-d");
+    protected function changelogParse(string $text, string $targetVersion): array {
+        $lines = preg_split('/\r?\n/', $text);
+        $version = "";
+        $section = "";
+        $out = [];
+        $entry = [];
+        $expected = ["version"];
+        for ($a = 0; $a < sizeof($lines);) {
+            $l = rtrim($lines[$a++]);
+            if (in_array("version", $expected) && preg_match('/^Version (\d+(?:\.\d+)*) \(([\d\?]{4}-[\d\?]{2}-[\d\?]{2})\)\s*$/', $l, $m)) {
+                $version = $m[1];
+                if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $m[2])) {
+                    // uncertain dates are allowed only for the top version, and only if it does not match the target version (otherwise we have forgotten to set the correct date before tagging)
+                    if (!$out && $targetVersion !== $version) {
+                        // use today's date; local time is fine
+                        $date = date("Y-m-d");
+                    } else {
+                        throw new \Exception("CHANGELOG: Date at line $a is incomplete");
+                    }
                 } else {
-                    throw new \Exception("CHANGELOG: Date at line $a is incomplete");
+                    $date = $m[2];
                 }
+                if ($entry) {
+                    $out[] = $entry;
+                }
+                $entry = ['version' => $version, 'date' => $date, 'features' => [], 'fixes' => [], 'changes' => []];
+                $expected = ["separator"];
+            } elseif (in_array("separator", $expected) && preg_match('/^=+/', $l)) {
+                $length = strlen($lines[$a - 2]);
+                if (strlen($l) !== $length) {
+                    throw new \Exception("CHANGELOG: Separator at line $a is of incorrect length");
+                }
+                $expected = ["blank line"];
+                $section = "";
+            } elseif (in_array("blank line", $expected) && $l === "") {
+                $expected = [
+                    ''         => ["features section", "fixes section", "changes section"],
+                    'features' => ["fixes section", "changes section", "version"],
+                    'fixes'    => ["changes section", "version"],
+                    'changes'  => ["version"],
+                ][$section];
+                $expected[] = "end-of-file";
+            } elseif (in_array("features section", $expected) && $l === "New features:") {
+                $section = "features";
+                $expected = ["item"];
+            } elseif (in_array("fixes section", $expected) && $l === "Bug fixes:") {
+                $section = "fixes";
+                $expected = ["item"];
+            } elseif (in_array("changes section", $expected) && $l === "Changes:") {
+                $section = "changes";
+                $expected = ["item"];
+            } elseif (in_array("item", $expected) && preg_match('/^- (\w.*)$/', $l, $m)) {
+                $entry[$section][] = $m[1];
+                $expected = ["item", "continuation", "blank line"];
+            } elseif (in_array("continuation", $expected) && preg_match('/^  (\w.*)$/', $l, $m)) {
+                $last = sizeof($entry[$section]) - 1;
+                $entry[$section][$last] .= "\n".$m[1];
             } else {
-                $date = $m[2];
+                if (sizeof($expected) > 1) {
+                    throw new \Exception("CHANGELOG: Expected one of [".implode(", ", $expected)."] at line $a");
+                } else {
+                    throw new \Exception("CHANGELOG: Expected ".$expected[0]." at line $a");
+                }
             }
-            if ($entry) {
-                $out[] = $entry;
-            }
-            $entry = ['version' => $version, 'date' => $date, 'features' => [], 'fixes' => [], 'changes' => []];
-            $expected = ["separator"];
-        } elseif (in_array("separator", $expected) && preg_match('/^=+/', $l)) {
-            $length = strlen($lines[$a - 2]);
-            if (strlen($l) !== $length) {
-                throw new \Exception("CHANGELOG: Separator at line $a is of incorrect length");
-            }
-            $expected = ["blank line"];
-            $section = "";
-        } elseif (in_array("blank line", $expected) && $l === "") {
-            $expected = [
-                ''         => ["features section", "fixes section", "changes section"],
-                'features' => ["fixes section", "changes section", "version"],
-                'fixes'    => ["changes section", "version"],
-                'changes'  => ["version"],
-            ][$section];
-            $expected[] = "end-of-file";
-        } elseif (in_array("features section", $expected) && $l === "New features:") {
-            $section = "features";
-            $expected = ["item"];
-        } elseif (in_array("fixes section", $expected) && $l === "Bug fixes:") {
-            $section = "fixes";
-            $expected = ["item"];
-        } elseif (in_array("changes section", $expected) && $l === "Changes:") {
-            $section = "changes";
-            $expected = ["item"];
-        } elseif (in_array("item", $expected) && preg_match('/^- (\w.*)$/', $l, $m)) {
-            $entry[$section][] = $m[1];
-            $expected = ["item", "continuation", "blank line"];
-        } elseif (in_array("continuation", $expected) && preg_match('/^  (\w.*)$/', $l, $m)) {
-            $last = sizeof($entry[$section]) - 1;
-            $entry[$section][$last] .= "\n".$m[1];
-        } else {
+        }
+        if (!in_array("end-of-file", $expected)) {
             if (sizeof($expected) > 1) {
-                throw new \Exception("CHANGELOG: Expected one of [".implode(", ", $expected)."] at line $a");
+                throw new \Exception("CHANGELOG: Expected one of [".implode(", ", $expected)."] at end of file");
             } else {
-                throw new \Exception("CHANGELOG: Expected ".$expected[0]." at line $a");
+                throw new \Exception("CHANGELOG: Expected ".$expected[0]." at end of file");
             }
         }
+        $out[] = $entry;
+        return $out;
     }
-    if (!in_array("end-of-file", $expected)) {
-        if (sizeof($expected) > 1) {
-            throw new \Exception("CHANGELOG: Expected one of [".implode(", ", $expected)."] at end of file");
+    
+    protected function changelogDebian(array $log, string $targetVersion): string {
+        $latest = $log[0]['version'];
+        $baseVersion = preg_replace('/^(\d+(?:\.\d+)*).*/', "$1", $targetVersion);
+        if ($baseVersion !== $targetVersion && version_compare($latest, $baseVersion, ">")) {
+            // if the changelog contains an entry for a future version, change its version number to match the target version instead of using the future version
+            $log[0]['version'] = $targetVersion;
         } else {
-            throw new \Exception("CHANGELOG: Expected ".$expected[0]." at end of file");
+            // otherwise synthesize a changelog entry for the changes since the last tag
+            array_unshift($log, ['version' => $targetVersion, 'date' => date("Y-m-d"), 'features' => [], 'fixes' => [], 'changes' => ["Unspecified changes"]]);
         }
-    }
-    $out[] = $entry;
-    return $out;
-}
-
-function changelogDebian(array $log, string $targetVersion): string {
-    $latest = $log[0]['version'];
-    $baseVersion = preg_replace('/^(\d+(?:\.\d+)*).*/', "$1", $targetVersion);
-    if ($baseVersion !== $targetVersion && version_compare($latest, $baseVersion, ">")) {
-        // if the changelog contains an entry for a future version, change its version number to match the target version instead of using the future version
-        $log[0]['version'] = $targetVersion;
-    } else {
-        // otherwise synthesize a changelog entry for the changes since the last tag
-        array_unshift($log, ['version' => $targetVersion, 'date' => date("Y-m-d"), 'features' => [], 'fixes' => [], 'changes' => ["Unspecified changes"]]);
-    }
-    $out = "";
-    foreach ($log as $entry) {
-        $out .= "arsse (".$entry['version']."-1) unstable; urgency=low\n";
-        if ($entry['features']) {
-            $out .= "\n  [ New features ]\n";
-            foreach ($entry['features'] as $item) {
-                $out .= "  * ".trim(preg_replace("/^/m", "    ", $item))."\n";
+        $out = "";
+        foreach ($log as $entry) {
+            $out .= "arsse (".$entry['version']."-1) unstable; urgency=low\n";
+            if ($entry['features']) {
+                $out .= "\n  [ New features ]\n";
+                foreach ($entry['features'] as $item) {
+                    $out .= "  * ".trim(preg_replace("/^/m", "    ", $item))."\n";
+                }
             }
-        }
-        if ($entry['fixes']) {
-            $out .= "\n  [ Bug fixes ]\n";
-            foreach ($entry['fixes'] as $item) {
-                $out .= "  * ".trim(preg_replace("/^/m", "    ", $item))."\n";
+            if ($entry['fixes']) {
+                $out .= "\n  [ Bug fixes ]\n";
+                foreach ($entry['fixes'] as $item) {
+                    $out .= "  * ".trim(preg_replace("/^/m", "    ", $item))."\n";
+                }
             }
-        }
-        if ($entry['changes']) {
-            $out .= "\n  [ Other changes ]\n";
-            foreach ($entry['changes'] as $item) {
-                $out .= "  * ".trim(preg_replace("/^/m", "    ", $item))."\n";
+            if ($entry['changes']) {
+                $out .= "\n  [ Other changes ]\n";
+                foreach ($entry['changes'] as $item) {
+                    $out .= "  * ".trim(preg_replace("/^/m", "    ", $item))."\n";
+                }
             }
+            $out .= "\n  -- The Arsse team <no-contact@invalid> ".\DateTimeImmutable::createFromFormat("Y-m-d", $entry['date'], new \DateTimeZone("UTC"))->format("D, d M Y")." 00:00:00 +0000\n\n";
         }
-        $out .= "\n  -- The Arsse team <no-contact@invalid> ".\DateTimeImmutable::createFromFormat("Y-m-d", $entry['date'], new \DateTimeZone("UTC"))->format("D, d M Y")." 00:00:00 +0000\n\n";
+        return $out;
     }
-    return $out;
 }
