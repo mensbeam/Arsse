@@ -129,7 +129,7 @@ Bug fixes:
 Version 0.6.1 (2019-01-23)
 ==========================
 
-Bug Fixes:
+Bug fixes:
 - Unify SQL timeout settings
 - Correctly escape shell command in subprocess service driver
 - Correctly allow null time intervals in configuration when appropriate
@@ -249,4 +249,5 @@ Bug fixes:
 Version 0.1.0 (2017-08-29)
 ==========================
 
-Initial release
+New features:
+- Initial release

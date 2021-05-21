@@ -157,34 +157,39 @@ class RoboFile extends \Robo\Tasks {
      */
     public function package(string $version = null): Result {
         // establish which commit to package
-        $version = $version ?? $this->askDefault("Commit to package:", "HEAD");
-        $archive = "arsse-$version.tar.gz";
+        $commit = $version ?? $this->askDefault("Commit to package:", "HEAD");
         // start a collection
         $t = $this->collectionBuilder();
         // create a temporary directory
         $dir = $t->tmpDir().\DIRECTORY_SEPARATOR;
         // create a Git worktree for the selected commit in the temp location
-        $t->taskExec("git worktree add ".escapeshellarg($dir)." ".escapeshellarg($version))
-            ->completion($this->taskFilesystemStack()->remove($dir))
-            ->completion($this->taskExec("git worktree prune"));
+        $result = $this->taskExec("git worktree add ".escapeshellarg($dir)." ".escapeshellarg($commit))->run();
+        if ($result->getExitCode() > 0) {
+            return $result;
+        }
+        // get useable version strings from Git
+        $version = trim(`git -C "$dir" describe --tags`);
+        $archVersion = preg_replace('/^([^-]+)-(\d+)-(\w+)$/', "$1.r$2.$3", $version);
+        // name the generic release tarball
+        $tarball = "arsse-$version.tar.gz";
+        // generate the Debian changelog; this also validates our original changelog
+        $debianChangelog = changelogDebian(changelogParse(file_get_contents($dir."CHANGELOG"), $version), $version);
+        // save commit description to VERSION file for use by packaging
+        $t->addTask($this->taskWriteToFile($dir."VERSION")->text($version));
+        // save the Debian changelog
+        $t->addTask($this->taskWriteToFile($dir."dist/debian/changelog")->text($debianChangelog));
         // patch the Arch PKGBUILD file with the correct version string
-        $t->addCode(function () use ($dir) {
-            $ver = trim(preg_replace('/^([^-]+)-(\d+)-(\w+)$/', "$1.r$2.$3", `git -C "$dir" describe --tags`));
-            return $this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^pkgver=.*$/m')->to("pkgver=$ver")->run();
-        });
+        $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^pkgver=.*$/m')->to("pkgver=$archVersion"));
         // patch the Arch PKGBUILD file with the correct source file
-        $t->addCode(function () use ($dir, $archive) {
-            $tar = basename($archive);
-            return $this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^source=\("arsse-[^"]+"\)$/m')->to("source=(\"$tar\")")->run();
-        });
+        $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^source=\("arsse-[^"]+"\)$/m')->to('source=("'.basename($tarball).'")'));
         // perform Composer installation in the temp location with dev dependencies
-        $t->taskComposerInstall()->dir($dir);
+        $t->addTask($this->taskComposerInstall()->arg("-q")->dir($dir));
         // generate the manual
-        $t->taskExec(escapeshellarg($dir."robo")." manual")->dir($dir);
+        $t->addTask($this->taskExec(escapeshellarg($dir."robo")." manual")->dir($dir));
         // perform Composer installation in the temp location for final output
-        $t->taskComposerInstall()->dir($dir)->noDev()->optimizeAutoloader()->arg("--no-scripts");
+        $t->addTask($this->taskComposerInstall()->dir($dir)->noDev()->optimizeAutoloader()->arg("--no-scripts"));
         // delete unwanted files
-        $t->taskFilesystemStack()->remove([
+        $t->addTask($this->taskFilesystemStack()->remove([
             $dir.".git",
             $dir.".gitignore",
             $dir.".gitattributes",
@@ -204,15 +209,19 @@ class RoboFile extends \Robo\Tasks {
             $dir."package.json",
             $dir."yarn.lock",
             $dir."postcss.config.js",
-        ]);
+        ]));
         // generate a sample configuration file
-        $t->taskExec(escapeshellarg(\PHP_BINARY)." arsse.php conf save-defaults config.defaults.php")->dir($dir);
+        $t->addTask($this->taskExec(escapeshellarg(\PHP_BINARY)." arsse.php conf save-defaults config.defaults.php")->dir($dir));
         // remove any existing archive
-        $t->taskFilesystemStack()->remove($archive);
+        $t->addTask($this->taskFilesystemStack()->remove($tarball));
         // package it all up
-        $t->taskPack($archive)->addDir("arsse", $dir);
+        $t->addTask($this->taskPack($tarball)->addDir("arsse", $dir));
         // execute the collection
-        return $t->run();
+        $result = $t->run();
+        // remove the Git worktree
+        $this->taskFilesystemStack()->remove($dir)->run();
+        $this->taskExec("git worktree prune")->run();
+        return $result;
     }
 
     /** Packages a release tarball into an Arch package  */
@@ -276,35 +285,119 @@ class RoboFile extends \Robo\Tasks {
         return $t->run();
     }
 
-    protected function parseChangelog(string $text, string $targetVersion): array {
-        $baseVersion = preg_replace('/^(\d+(?:\.\d+)*).*/', "$1", $targetVersion);
-        $lines = preg_split('/[\r\n]+/', trim($text));
-        $version = "";
-        $section = "";
-        $out = [];
-        $l = 0;
-        $expected = "version";
-        for ($a = 0; $a < sizeof($lines);) {
-            $l = rtrim($lines[$a++]);
-            Process:
-            if (in_array($expected, ["version", "section"]) && preg_match('/^Version (\d+(?:\.\d+)*) \(([\d\?]{4}-[\d\?]{2}-[\d\?]{2})\)\s*$/', $l, $m)) {
-                $version = $m[1];
-                if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $m[2])) {
-                    // uncertain dates are allowed only for the top version, and only if it does not match the target version (otherwise we have forgot to set the correct date before tagging)
-                    if (!$out && $targetVersion !== $version) {
-                        // use today's date; local time is fine
-                        $date = date("Y-m-d");
-                    } else {
-                        throw new \Exception("CHANGELOG: Date at line $a is incomplete");
-                    }
+    public function changelog() {
+        echo changelogDebian(changelogParse(file_get_contents("CHANGELOG"), "0.9.1-r26"), "0.9.1-r26");
+    }
+}
+
+function changelogParse(string $text, string $targetVersion): array {
+    $lines = preg_split('/\r?\n/', $text);
+    $version = "";
+    $section = "";
+    $out = [];
+    $entry = [];
+    $expected = ["version"];
+    for ($a = 0; $a < sizeof($lines);) {
+        $l = rtrim($lines[$a++]);
+        if (in_array("version", $expected) && preg_match('/^Version (\d+(?:\.\d+)*) \(([\d\?]{4}-[\d\?]{2}-[\d\?]{2})\)\s*$/', $l, $m)) {
+            $version = $m[1];
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $m[2])) {
+                // uncertain dates are allowed only for the top version, and only if it does not match the target version (otherwise we have forgotten to set the correct date before tagging)
+                if (!$out && $targetVersion !== $version) {
+                    // use today's date; local time is fine
+                    $date = date("Y-m-d");
                 } else {
-                    $date = $m[2];
+                    throw new \Exception("CHANGELOG: Date at line $a is incomplete");
                 }
-                $out[$version] = ['date' => $date, 'features' => [], 'fixes' => [], 'changes' => []];
-                $expected = "separator";
-            } elseif ($expected === "separator" && $length = strlen($lines[$a - 2]) && preg_match('/^={'.$length.'}$/', $l)) {
-                // verify that the next line is blank
+            } else {
+                $date = $m[2];
+            }
+            if ($entry) {
+                $out[] = $entry;
+            }
+            $entry = ['version' => $version, 'date' => $date, 'features' => [], 'fixes' => [], 'changes' => []];
+            $expected = ["separator"];
+        } elseif (in_array("separator", $expected) && preg_match('/^=+/', $l)) {
+            $length = strlen($lines[$a - 2]);
+            if (strlen($l) !== $length) {
+                throw new \Exception("CHANGELOG: Separator at line $a is of incorrect length");
+            }
+            $expected = ["blank line"];
+            $section = "";
+        } elseif (in_array("blank line", $expected) && $l === "") {
+            $expected = [
+                ''         => ["features section", "fixes section", "changes section"],
+                'features' => ["fixes section", "changes section", "version"],
+                'fixes'    => ["changes section", "version"],
+                'changes'  => ["version"],
+            ][$section];
+            $expected[] = "end-of-file";
+        } elseif (in_array("features section", $expected) && $l === "New features:") {
+            $section = "features";
+            $expected = ["item"];
+        } elseif (in_array("fixes section", $expected) && $l === "Bug fixes:") {
+            $section = "fixes";
+            $expected = ["item"];
+        } elseif (in_array("changes section", $expected) && $l === "Changes:") {
+            $section = "changes";
+            $expected = ["item"];
+        } elseif (in_array("item", $expected) && preg_match('/^- (\w.*)$/', $l, $m)) {
+            $entry[$section][] = $m[1];
+            $expected = ["item", "continuation", "blank line"];
+        } elseif (in_array("continuation", $expected) && preg_match('/^  (\w.*)$/', $l, $m)) {
+            $last = sizeof($entry[$section]) - 1;
+            $entry[$section][$last] .= "\n".$m[1];
+        } else {
+            if (sizeof($expected) > 1) {
+                throw new \Exception("CHANGELOG: Expected one of [".implode(", ", $expected)."] at line $a");
+            } else {
+                throw new \Exception("CHANGELOG: Expected ".$expected[0]." at line $a");
             }
         }
     }
+    if (!in_array("end-of-file", $expected)) {
+        if (sizeof($expected) > 1) {
+            throw new \Exception("CHANGELOG: Expected one of [".implode(", ", $expected)."] at end of file");
+        } else {
+            throw new \Exception("CHANGELOG: Expected ".$expected[0]." at end of file");
+        }
+    }
+    $out[] = $entry;
+    return $out;
+}
+
+function changelogDebian(array $log, string $targetVersion): string {
+    $latest = $log[0]['version'];
+    $baseVersion = preg_replace('/^(\d+(?:\.\d+)*).*/', "$1", $targetVersion);
+    if ($baseVersion !== $targetVersion && version_compare($latest, $baseVersion, ">")) {
+        // if the changelog contains an entry for a future version, change its version number to match the target version instead of using the future version
+        $log[0]['version'] = $targetVersion;
+    } else {
+        // otherwise synthesize a changelog entry for the changes since the last tag
+        array_unshift($log, ['version' => $targetVersion, 'date' => date("Y-m-d"), 'features' => [], 'fixes' => [], 'changes' => ["Unspecified changes"]]);
+    }
+    $out = "";
+    foreach ($log as $entry) {
+        $out .= "arsse (".$entry['version']."-1) unstable; urgency=low\n";
+        if ($entry['features']) {
+            $out .= "\n  [ New features ]\n";
+            foreach ($entry['features'] as $item) {
+                $out .= "  * ".trim(preg_replace("/^/m", "    ", $item))."\n";
+            }
+        }
+        if ($entry['fixes']) {
+            $out .= "\n  [ Bug fixes ]\n";
+            foreach ($entry['fixes'] as $item) {
+                $out .= "  * ".trim(preg_replace("/^/m", "    ", $item))."\n";
+            }
+        }
+        if ($entry['changes']) {
+            $out .= "\n  [ Other changes ]\n";
+            foreach ($entry['changes'] as $item) {
+                $out .= "  * ".trim(preg_replace("/^/m", "    ", $item))."\n";
+            }
+        }
+        $out .= "\n  -- The Arsse team <no-contact@invalid> ".\DateTimeImmutable::createFromFormat("Y-m-d", $entry['date'], new \DateTimeZone("UTC"))->format("D, d M Y")." 00:00:00 +0000\n\n";
+    }
+    return $out;
 }
