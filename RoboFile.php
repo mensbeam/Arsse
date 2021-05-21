@@ -246,6 +246,26 @@ class RoboFile extends \Robo\Tasks {
         return $t->run();
     }
 
+    /** Packages a release tarball into a Debian package */
+    public function packageDeb(string $tarball): Result {
+        $t = $this->collectionBuilder();
+        $dir = $t->tmpDir().\DIRECTORY_SEPARATOR;
+        // name the "orig" tarball
+        $orig = $dir.str_replace(".tar.gz", ".orig.tar.gz", str_replace("arsse-", "arsse_", basename($tarball)));
+        // copy the tarball
+        $t->addTask($this->taskFilesystemStack()->copy($tarball, $orig));
+        // extract the tarball and keep all "dist files"
+        $t->addCode(function() use ($tarball, $dir) {
+            // because Robo doesn't support extracting a single file we have to do it ourselves
+            (new \Archive_Tar($tarball))->extract($dir, false);
+            // perform a do-nothing filesystem operation since we need a Robo task result
+            return $this->taskFilesystemStack()->rename($dir."arsse", $dir."src")->run();
+        });
+        $t->addTask($this->taskFilesystemStack()->mirror($dir."src/dist", $dir));
+        $t->addTask($this->taskExec("deber")->dir($dir));
+        return $t->run();
+    }
+
     /** Generates static manual pages in the "manual" directory
      *
      * The resultant files are suitable for offline viewing and inclusion into release builds
