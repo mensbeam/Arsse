@@ -17,6 +17,7 @@ Description: Multi-protocol RSS/Atom newsfeed synchronization server
  client protocols such as Tiny Tiny RSS, Nextcloud News and Miniflux,
  allowing you to use compatible clients for many protocols with a single
  server.
+Build-Depends: debhelper
 Depends: ${misc:Depends},
          dbconfig-mysql | dbconfig-pgsql |  dbconfig-sqlite3 |  dbconfig-no-thanks,
          php (>= 7.1.0),
