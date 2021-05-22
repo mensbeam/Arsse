@@ -248,29 +248,27 @@ class RoboFile extends \Robo\Tasks {
 
     /** Packages a release tarball into a Debian package */
     public function packageDeb(string $tarball): Result {
+        $t = $this->collectionBuilder();
+        $dir = $t->workDir("/home/jking/temp").\DIRECTORY_SEPARATOR;
         // determine the "upstream" (tagged) version
-        if (preg_match('/^arsse-(\d+(?:\.\d+)*)/', basename($tarball, $m))) {
+        if (preg_match('/^arsse-(\d+(?:\.\d+)*)/', basename($tarball), $m)) {
             $version = $m[1];
             $base = $dir."arsse-$version";
         } else {
             throw new \Exception("Tarball is not named correctly");
         }
-        $t = $this->collectionBuilder();
-        $dir = $t->workDir("~/temp2").\DIRECTORY_SEPARATOR;
-        // copy the tarball
-        $t->addTask($this->taskFilesystemStack()->copy($tarball, $orig));
         // extract the tarball
-        $t->addCode(function() use ($tarball, $dir) {
+        $t->addCode(function() use ($tarball, $dir, $base) {
             // Robo's extract task is broken, so we do it manually
             (new \Archive_Tar($tarball))->extract($dir, false);
-            // "temp.orig" is a special directory name to Debian's "quilt" format
-            return $this->taskFilesystemStack()->rename($dir."arsse", $dir."temp.orig")->run();
+            // "$package-$version.orig" is a special directory name to Debian's "quilt" format
+            return $this->taskFilesystemStack()->rename($dir."arsse", "$base.orig")->run();
         });
         // create a directory with the package name and "upstream" version; this is also special to Debian
         $t->addTask($this->taskFilesystemStack()->mkdir($base));
         // copy relevant files to the directory
-        $t->addTask($this->taskFilesystemStack()->mirror($dir."temp.orig/dist", $base));
-        $t->addTask($this->taskExec("deber")->dir($dir));
+        $t->addTask($this->taskFilesystemStack()->mirror("$base.orig/dist", $base));
+        //$t->addTask($this->taskExec("deber")->dir($dir));
         return $t->run();
     }
 
