@@ -248,26 +248,26 @@ class RoboFile extends \Robo\Tasks {
 
     /** Packages a release tarball into a Debian package */
     public function packageDeb(string $tarball): Result {
-        $t = $this->collectionBuilder();
-        $dir = $t->workDir("/home/jking/temp").\DIRECTORY_SEPARATOR;
         // determine the "upstream" (tagged) version
         if (preg_match('/^arsse-(\d+(?:\.\d+)*)/', basename($tarball), $m)) {
             $version = $m[1];
-            $base = $dir."arsse-$version";
         } else {
             throw new \Exception("Tarball is not named correctly");
         }
-        // extract the tarball
+        // start a task collection and create a temporary directory
+        $t = $this->collectionBuilder();
+        $dir = $t->workDir("/home/jking/temp").\DIRECTORY_SEPARATOR;
+        $base = $dir."arsse-$version".\DIRECTORY_SEPARATOR;
+        // start by extracting the tarball
         $t->addCode(function() use ($tarball, $dir, $base) {
             // Robo's extract task is broken, so we do it manually
             (new \Archive_Tar($tarball))->extract($dir, false);
-            // "$package-$version.orig" is a special directory name to Debian's "quilt" format
-            return $this->taskFilesystemStack()->rename($dir."arsse", "$base.orig")->run();
+            return $this->taskFilesystemStack()->rename($dir."arsse", $base)->run();
         });
-        // create a directory with the package name and "upstream" version; this is also special to Debian
-        $t->addTask($this->taskFilesystemStack()->mkdir($base));
-        // copy relevant files to the directory
-        $t->addTask($this->taskFilesystemStack()->mirror("$base.orig/dist", $base));
+        // re-pack the tarball using specific names special to debuild
+        $t->addTask($this->taskPack($dir."arsse_$version.orig.tar.gz")->addDir("arsse-$version", $base));
+        // copy Debian files to lower down in the tree
+        $t->addTask($this->taskFilesystemStack()->mirror($base."dist/debian", $base."debian"));
         //$t->addTask($this->taskExec("deber")->dir($dir));
         return $t->run();
     }
