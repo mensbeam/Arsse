@@ -4,3 +4,4 @@ DH_VERBOSE = 1
 
 %:
 	dh $@
+

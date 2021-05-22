@@ -248,20 +248,28 @@ class RoboFile extends \Robo\Tasks {
 
     /** Packages a release tarball into a Debian package */
     public function packageDeb(string $tarball): Result {
+        // determine the "upstream" (tagged) version
+        if (preg_match('/^arsse-(\d+(?:\.\d+)*)/', basename($tarball, $m))) {
+            $version = $m[1];
+            $base = $dir."arsse-$version";
+        } else {
+            throw new \Exception("Tarball is not named correctly");
+        }
         $t = $this->collectionBuilder();
-        $dir = $t->tmpDir().\DIRECTORY_SEPARATOR;
-        // name the "orig" tarball
-        $orig = $dir.str_replace(".tar.gz", ".orig.tar.gz", str_replace("arsse-", "arsse_", basename($tarball)));
+        $dir = $t->workDir("~/temp2").\DIRECTORY_SEPARATOR;
         // copy the tarball
         $t->addTask($this->taskFilesystemStack()->copy($tarball, $orig));
-        // extract the tarball and keep all "dist files"
+        // extract the tarball
         $t->addCode(function() use ($tarball, $dir) {
-            // because Robo doesn't support extracting a single file we have to do it ourselves
+            // Robo's extract task is broken, so we do it manually
             (new \Archive_Tar($tarball))->extract($dir, false);
-            // perform a do-nothing filesystem operation since we need a Robo task result
-            return $this->taskFilesystemStack()->rename($dir."arsse", $dir."src")->run();
+            // "temp.orig" is a special directory name to Debian's "quilt" format
+            return $this->taskFilesystemStack()->rename($dir."arsse", $dir."temp.orig")->run();
         });
-        $t->addTask($this->taskFilesystemStack()->mirror($dir."src/dist", $dir));
+        // create a directory with the package name and "upstream" version; this is also special to Debian
+        $t->addTask($this->taskFilesystemStack()->mkdir($base));
+        // copy relevant files to the directory
+        $t->addTask($this->taskFilesystemStack()->mirror($dir."temp.orig/dist", $base));
         $t->addTask($this->taskExec("deber")->dir($dir));
         return $t->run();
     }
@@ -334,7 +342,7 @@ class RoboFile extends \Robo\Tasks {
                 }
                 if ($entry) {
                     $out[] = $entry;
-                }
+                } 
                 $entry = ['version' => $version, 'date' => $date, 'features' => [], 'fixes' => [], 'changes' => []];
                 $expected = ["separator"];
             } elseif (in_array("separator", $expected) && preg_match('/^=+/', $l)) {
@@ -398,26 +406,30 @@ class RoboFile extends \Robo\Tasks {
         }
         $out = "";
         foreach ($log as $entry) {
-            $out .= "arsse (".$entry['version']."-1) unstable; urgency=low\n";
+            // normalize the version string
+            preg_match('/^(\d+(?:\.\d+)*)(?:-(\d+)-.+)?$/', $entry['version'], $m);
+            $version = $m[1]."-".($m[2] ?: "1");
+            // output the entry
+            $out .= "arsse ($version) UNRELEASED; urgency=low\n";
             if ($entry['features']) {
-                $out .= "\n  [ New features ]\n";
+                $out .= "\n";
                 foreach ($entry['features'] as $item) {
                     $out .= "  * ".trim(preg_replace("/^/m", "    ", $item))."\n";
                 }
             }
             if ($entry['fixes']) {
-                $out .= "\n  [ Bug fixes ]\n";
+                $out .= "\n";
                 foreach ($entry['fixes'] as $item) {
                     $out .= "  * ".trim(preg_replace("/^/m", "    ", $item))."\n";
                 }
             }
             if ($entry['changes']) {
-                $out .= "\n  [ Other changes ]\n";
+                $out .= "\n";
                 foreach ($entry['changes'] as $item) {
                     $out .= "  * ".trim(preg_replace("/^/m", "    ", $item))."\n";
                 }
             }
-            $out .= "\n  -- The Arsse team <no-contact@invalid> ".\DateTimeImmutable::createFromFormat("Y-m-d", $entry['date'], new \DateTimeZone("UTC"))->format("D, d M Y")." 00:00:00 +0000\n\n";
+            $out .= "\n -- The Arsse team <no-contact@code.mensbeam.com>  ".\DateTimeImmutable::createFromFormat("Y-m-d", $entry['date'], new \DateTimeZone("UTC"))->format("D, d M Y")." 00:00:00 +0000\n\n";
         }
         return $out;
     }
