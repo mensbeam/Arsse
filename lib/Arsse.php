@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 class Arsse {
-    public const VERSION = "0.9.1";
+    public const VERSION = "0.9.2";
 
     /** @var Factory */
     public static $obj;

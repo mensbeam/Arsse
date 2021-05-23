@@ -1,5 +1,6 @@
+# Maintainer: J. King <jking@jkingweb.ca>
 pkgname="arsse"
-pkgver=0.9.1
+pkgver=0.9.2
 pkgrel=1
 epoch=
 pkgdesc="Multi-protocol RSS/Atom newsfeed synchronization server"
@@ -23,9 +24,7 @@ backup=("etc/webapps/arsse/config.php"
         "etc/webapps/arsse/apache/example.conf"
         "etc/webapps/arsse/apache/arsse.conf"
         "etc/webapps/arsse/apache/arsse-loc.conf")
-install=
-changelog=
-source=("arsse-0.9.1.tar.gz")
+source=("arsse-0.9.2.tar.gz")
 md5sums=("SKIP")
 
 package() {
@@ -45,10 +44,6 @@ package() {
     cp dist/php-fpm.conf "$pkgdir/etc/php/php-fpm.d/arsse.conf"
     cp -r dist/nginx dist/apache config.defaults.php "$pkgdir/etc/webapps/arsse"
     cd "$pkgdir"
-    # adjust permissions, just in case
-    chmod -R u=rwX,g=rX,o=rX *
-    # create a symbolic link for the configuration file
-    ln -sT "/etc/webapps/arsse/config.php" "usr/share/webapps/arsse/config.php"
     # copy files requiring special permissions
     cd "$srcdir/arsse"
     install -Dm755 dist/arsse "$pkgdir/usr/bin"
