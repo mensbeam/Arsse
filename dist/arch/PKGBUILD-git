@@ -1,14 +1,16 @@
 # Maintainer: J. King <jking@jkingweb.ca>
-pkgname="arsse"
-pkgver=0.9.2
+pkgname="arsse-git"
+pkgver=0.9.1.r44.g0236b42
 pkgrel=1
 epoch=
 pkgdesc="Multi-protocol RSS/Atom newsfeed synchronization server"
 arch=("any")
 url="https://thearsse.com/"
 license=("MIT")
-depends=()
-makedepends=()
+provides=("arsse")
+conflicts=("arsse")
+depends=("php" "php-intl" "php-sqlite")
+makedepends=("composer")
 checkdepends=()
 optdepends=("nginx: HTTP server"
             "apache: HTTP server"
@@ -24,8 +26,22 @@ backup=("etc/webapps/arsse/config.php"
         "etc/webapps/arsse/apache/example.conf"
         "etc/webapps/arsse/apache/arsse.conf"
         "etc/webapps/arsse/apache/arsse-loc.conf")
-source=("arsse-0.9.2.tar.gz")
+source=("git+https://code.mensbeam.com/MensBeam/arsse/")
 md5sums=("SKIP")
+
+pkgver() {
+  cd "arsse"
+  git describe --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+build() {
+    cd "$srcdir/arsse"
+    composer install
+    ./robo manual
+    composer install --no-dev -o --no-scripts
+    php arsse.php conf save-defaults config.defaults.php
+    rm -r vendor/bin
+}
 
 package() {
     # define runtime dependencies
