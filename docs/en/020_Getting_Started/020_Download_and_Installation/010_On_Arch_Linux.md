@@ -22,7 +22,7 @@ sudo systemctl restart php-fpm arsse
 
 Note that the above is the most concise process, not necessarily the recommended one. In particular [it is recommended](https://wiki.archlinux.org/title/PHP#Extensions) to use `/etc/php/conf.d/` to enable PHP extensions rather than editing `php.ini` as done above.
 
-The PHP extensions listed in [the requirements](/en/Getting_Started/Requirements) not mentioned above are compiled into Arch's PHP binaries and thus always enabled.
+The PHP extensions listed in [the requirements](/en/Getting_Started/index) not mentioned above are compiled into Arch's PHP binaries and thus always enabled.
 
 # Web server configuration
 
@@ -35,3 +35,13 @@ If using a database other than SQLite, you will likely want to [set it up](/en/G
 In order for The Arsse to serve users, those users [must be created](/en/Using_The_Arsse/Managing_Users).
 
 You may also want to review the `config.defaults.php` file included in `/etc/webapps/arsse/` or consult [the documentation for the configuration file](/en/Getting_Started/Configuration), though The Arsse should function with the default configuration.
+
+# Upgrading
+
+Upgrading The Arsse is done as like any other package. By default The Arsse will perform any required database schema upgrades when the new version is executed, so the service does need to be restarted:
+
+```sh
+sudo systemctl restart arsse
+```
+
+Occasionally changes to Web server configuration have been required, such as when new protocols become supported; these changes are always explicit in the `UPGRADING` file.

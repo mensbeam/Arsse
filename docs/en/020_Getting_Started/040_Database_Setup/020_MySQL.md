@@ -8,7 +8,7 @@
     <dt>Minimum version</dt>
         <dd>8.0.11</dd>
     <dt>Configuration</dt>
-        <dd><a href="../Configuration.html#page_Database-settings">General</a>, <a href="../Configuration.html#page_Database-settings-specific-to-MySQL">Specific</a></dd>
+        <dd><a href="../Configuration.html#page_Database_settings">General</a>, <a href="../Configuration.html#page_Database_settings_specific_to_MySQL">Specific</a></dd>
 </dl>
 
 While MySQL can be used as a database for The Arsse, this is **not recommended** due to MySQL's technical limitations. It is fully functional, but may fail with some newsfeeds where other database systems do not. Additionally, it is particularly important before upgrading from one version of The Arsse to the next to back up your database: a failure in a database upgrade can corrupt your database much more easily than when using other database systems.

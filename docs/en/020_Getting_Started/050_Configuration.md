@@ -321,7 +321,7 @@ It is also possible to specify the fully-qualified name of a class which impleme
 
 The interval the newsfeed fetching service observes between checks for new articles. Note that requests to foreign servers are not necessarily made at this frequency: each newsfeed is assigned its own time at which to be next retrieved. This setting instead defines the length of time the fetching service will sleep between periods of activity.
 
-Consult "[How Often Newsfeeds Are Fetched](/en/Using_The_Arsse/Keeping_Newsfeeds_Up_to_Date#page_Appendix-how-often-newsfeeds-are-fetched)" for details on how often newsfeeds are fetched.
+Consult "[How Often Newsfeeds Are Fetched](/en/Using_The_Arsse/Other_Topics#page_How_often_newsfeeds_are_fetched)" for details on newsfeed update frequency.
 
 ### serviceQueueWidth
 
