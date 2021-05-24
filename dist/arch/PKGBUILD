@@ -11,10 +11,10 @@ depends=()
 makedepends=()
 checkdepends=()
 optdepends=("nginx: HTTP server"
-            "apache: HTTP server"
+            "apache>=2.4: HTTP server"
             "percona-server: Alternate database"
-            "postgresql: Alternate database"
-            "php-pgsql: PostgreSQL database support")
+            "postgresql>=10: Alternate database"
+            "php-pgsql>=7.1: PostgreSQL database support")
 backup=("etc/webapps/arsse/config.php"
         "etc/php/php-fpm.d/arsse.conf"
         "etc/webapps/arsse/nginx/example.conf"
@@ -29,7 +29,7 @@ md5sums=("SKIP")
 
 package() {
     # define runtime dependencies
-    depends=("php" "php-intl" "php-sqlite" "php-fpm")
+    depends=("php>=7.1" "php-intl>=7.1" "php-sqlite>=7.1" "php-fpm>=7.1")
     # create most directories necessary for the final package
     cd "$pkgdir"
     mkdir -p "usr/share/webapps/arsse" "usr/share/doc/arsse" "usr/share/licenses/arsse" "usr/lib/systemd/system" "usr/lib/sysusers.d" "usr/lib/tmpfiles.d" "etc/php/php-fpm.d/" "etc/webapps/arsse" "etc/webapps/arsse/nginx"
