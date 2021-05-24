@@ -11,3 +11,4 @@ WantedBy=multi-user.target
 [Service]
 Type=oneshot
 RemainAfterExit=true
+ExecStart=/usr/bin/true
