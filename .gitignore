@@ -1,8 +1,5 @@
-# Temporary files and dependencies
+# Temporary files
 
-/vendor/
-/vendor-bin/*/vendor
-/node_modules
 /documentation/
 /manual/
 /tests/coverage/
@@ -12,8 +9,15 @@
 /arsse.db*
 /config.php
 /.php_cs.cache
-/yarn-error.log
 /tests/.phpunit.result.cache
+
+# Dependencies
+
+/vendor/
+/vendor-bin/*/vendor
+/node_modules
+/yarn.lock
+/yarn-error.log
 
 
 # Windows files
