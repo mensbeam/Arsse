@@ -186,9 +186,7 @@ class RoboFile extends \Robo\Tasks {
             // perform Composer installation in the temp location with dev dependencies
             $t->addTask($this->taskComposerInstall()->arg("-q")->dir($dir));
             // generate the manual
-            $t->addCode(function() {
-                return $this->manual(["-q"]);
-            });
+            $t->addTask($this->taskExec("./robo manual -q")->dir($dir));
             // perform Composer installation in the temp location for final output
             $t->addTask($this->taskComposerInstall()->dir($dir)->noDev()->optimizeAutoloader()->arg("--no-scripts")->arg("-q"));
             // delete unwanted files
@@ -231,18 +229,18 @@ class RoboFile extends \Robo\Tasks {
 
     /** Packages a release tarball into an Arch package  */
     public function packageArch(string $tarball): Result {
-        $dir = dirname($tarball);
+        $dir = dirname($tarball).\DIRECTORY_SEPARATOR;
         // start a collection
         $t = $this->collectionBuilder();
         // extract the PKGBUILD from the tarball
         $t->addCode(function() use ($tarball, $dir) {
             // because Robo doesn't support extracting a single file we have to do it ourselves
-            (new \Archive_Tar($tarball))->extractList("arsse/dist/arch/PKGBUILD", $dir,"arsse/dist/arch/", false);
+            (new \Archive_Tar($tarball))->extractList("arsse/dist/arch/PKGBUILD", $dir, "arsse/dist/arch/", false);
             // perform a do-nothing filesystem operation since we need a Robo task result
-            return $this->taskFilesystemStack()->chmod("PKGBUILD", 0644)->dir($dir)->run();
-        })->completion($this->taskFilesystemStack()->remove("PKGBUILD")->dir($dir));
+            return $this->taskFilesystemStack()->chmod($dir."PKGBUILD", 0644)->run();
+        })->completion($this->taskFilesystemStack()->remove($dir."PKGBUILD"));
         // build the package
-        $t->taskExec("makepkg -Ccf")->dir($dir);
+        $t->addTask($this->taskExec("makepkg -Ccf")->dir($dir));
         return $t->run();
     }
 
