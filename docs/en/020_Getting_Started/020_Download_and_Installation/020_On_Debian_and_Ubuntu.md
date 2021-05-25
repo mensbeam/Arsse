@@ -43,7 +43,7 @@ Finally, services must be restarted to apply the new configurations, and The Ars
 
 ```sh
 sudo systemctl restart systemd-sysusers
-sudo systemctl restart systemd-tmpfiles
+sudo systemd-tmpfiles --create
 sudo systemctl restart php$php_ver-fpm
 sudo systemctl reenable arsse
 sudo systemctl restart arsse
