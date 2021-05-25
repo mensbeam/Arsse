@@ -1,4 +1,4 @@
-Presently installing and setting up The Arsse involves some manual labour. We have packages for Arch Linux and hope to have installation packages available for other operating systems eventually, but for now the pages in this section should help get you up and running on Arch Linux or Debian-based systems, with Nginx or Apache HTTPd.
+Presently installing and setting up The Arsse involves some manual labour. We have packages for Arch Linux and hope to have installation packages available for other operating systems eventually, but for now the pages in this section should help get you up and running on Arch Linux or Debian-based systems, with Nginx or Apache HTTP Server.
 
 It is also be possible to run The Arsse on other operating systems (including Windows) and with other Web servers, but the configuration required to do so is not documented in this manual.
 

@@ -26,7 +26,16 @@ The PHP extensions listed in [the requirements](/en/Getting_Started/index) not m
 
 # Web server configuration
 
-Sample configuration for both Nginx and Apache HTTPd can be found in `/etc/webapps/arsse/nginx/` and `/etc/webapps/arsse/apache/`, respectively. The `example.conf` files are basic virtual host examples; the other files they include should normally be usable without modification, but may be modified if desired.
+Sample configuration for both Nginx and Apache HTTP Server can be found in `/etc/webapps/arsse/nginx/` and `/etc/webapps/arsse/apache/`, respectively. The `example.conf` files are basic virtual host examples; the other files they include should normally be usable without modification, but may be modified if desired.
+
+If using Apache HTTP Server the `mod_proxy` and `mod_proxy_fcgi` modules must be enabled. This can be achieved by adding the following lines to your virtual host or global configuration:
+
+```apache
+LoadModule proxy_module modules/mod_proxy.so
+LoadModule proxy_fcgi_module modules/mod_proxy_fcgi.so
+```
+
+No additional set-up is required for Nginx.
 
 # Next steps
 

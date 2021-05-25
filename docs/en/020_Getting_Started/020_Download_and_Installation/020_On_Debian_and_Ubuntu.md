@@ -51,9 +51,9 @@ sudo systemctl restart arsse
 
 # Web server configuration
 
-Sample configuration for both Nginx and Apache HTTPd can be found in `/etc/arsse/nginx/` and `/etc/arsse/apache/`, respectively. The `example.conf` files are basic virtual host examples; the other files they include should normally be usable without modification, but may be modified if desired.
+Sample configuration for both Nginx and Apache HTTP Server can be found in `/etc/arsse/nginx/` and `/etc/arsse/apache/`, respectively. The `example.conf` files are basic virtual host examples; the other files they include should normally be usable without modification, but may be modified if desired.
 
-In order to use Apache HTTPd the FastCGI proxy module must be enabled and the server restarted:
+In order to use Apache HTTP Server the FastCGI proxy module must be enabled and the server restarted:
 
 ```sh
 sudo a2enmod proxy proxy_fcgi
