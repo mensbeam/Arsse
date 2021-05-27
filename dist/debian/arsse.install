@@ -1,0 +1,16 @@
+lib       usr/share/arsse/
+locale    usr/share/arsse/
+sql       usr/share/arsse/
+vendor    usr/share/arsse/
+www       usr/share/arsse/
+CHANGELOG usr/share/arsse/
+UPGRADING usr/share/arsse/
+README.md usr/share/arsse/
+arsse.php usr/share/arsse/
+
+dist/arsse          usr/bin/
+manual              usr/share/doc/arsse/
+dist/nginx          etc/arsse/
+dist/apache         etc/arsse/
+dist/config.php     etc/arsse
+config.defaults.php etc/arsse/
