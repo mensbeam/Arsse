@@ -6,6 +6,7 @@ Standards-Version: 4.5.1
 Homepage: https://thearsse.com/
 Vcs-Browser: https://code.mensbeam.com/MensBeam/arsse/
 Vcs-Git: https://code.mensbeam.com/MensBeam/arsse/
+Build-Depends: debhelper, dh-systemd
 
 Package: arsse
 Architecture: all
@@ -17,16 +18,15 @@ Description: Multi-protocol RSS/Atom newsfeed synchronization server
  client protocols such as Tiny Tiny RSS, Nextcloud News and Miniflux,
  allowing you to use compatible clients for many protocols with a single
  server.
-Build-Depends: debhelper
 Depends: ${misc:Depends},
-         dbconfig-mysql | dbconfig-pgsql |  dbconfig-sqlite3 |  dbconfig-no-thanks,
+         dbconfig-sqlite3 | dbconfig-pgsql | dbconfig-no-thanks,
          php (>= 7.1.0),
          php-cli,
          php-intl,
          php-json,
          php-xml,
-         php-sqlite3 | php-mysql | php-pgsql
-Recommends: apache2 | nginx,
+         php-sqlite3 | php-pgsql
+Recommends: nginx | apache2,
             php-fpm,
             php-curl,
             ca-certificates
