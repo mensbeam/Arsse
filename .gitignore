@@ -1,11 +1,12 @@
 # Temporary files
 
+/temp/
 /documentation/
 /manual/
 /tests/coverage/
-/dist/arch/arsse
-/dist/arch/src
-/dist/arch/pkg
+/dist/arch/arsse/
+/dist/arch/src/
+/dist/arch/pkg/
 /arsse.db*
 /config.php
 /.php_cs.cache

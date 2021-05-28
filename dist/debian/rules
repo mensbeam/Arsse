@@ -4,3 +4,10 @@ DH_VERBOSE = 1
 
 %:
 	dh $@ --with systemd
+
+override_dh_install:
+	# Run the normal dh_install
+	dh_install
+	# Satisfy lintian's complaints about VCS control files
+	rm -f debian/arsse/vendor/**/.gitignore
+	rm -f debian/arsse/vendor/**/.gitattributes

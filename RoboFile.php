@@ -254,7 +254,7 @@ class RoboFile extends \Robo\Tasks {
         }
         // start a task collection and create a temporary directory
         $t = $this->collectionBuilder();
-        $dir = $t->tmpDir().\DIRECTORY_SEPARATOR;
+        $dir = $t->workDir(BASE."temp").\DIRECTORY_SEPARATOR;
         $base = $dir."arsse-$version".\DIRECTORY_SEPARATOR;
         // start by extracting the tarball
         $t->addCode(function() use ($tarball, $dir, $base) {
@@ -266,7 +266,7 @@ class RoboFile extends \Robo\Tasks {
         $t->addTask($this->taskPack($dir."arsse_$version.orig.tar.gz")->addDir("arsse-$version", $base));
         // copy Debian files to lower down in the tree
         $t->addTask($this->taskFilesystemStack()->mirror($base."dist/debian", $base."debian"));
-        $t->addTask($this->taskExec("deber")->dir($dir));
+        $t->addTask($this->taskExec("deber")->dir($base));
         return $t->run();
     }
 
