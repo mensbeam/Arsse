@@ -211,6 +211,16 @@ class RoboFile extends \Robo\Tasks {
                 $dir."yarn.lock",
                 $dir."postcss.config.js",
             ]));
+            $t->addCode(function() use ($dir) {
+                // Remove files which lintian complains about; they're otherwise harmless
+                $files = [];
+                foreach (new \CallbackFilterIterator(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir."vendor", \FilesystemIterator::CURRENT_AS_PATHNAME | \FilesystemIterator::SKIP_DOTS)), function($v, $k, $i) {
+                    return preg_match('/\/\.git(?:ignore|attributes|modules)$/', $v);
+                }) as $f) {
+                    $files[] = $f;
+                }
+                return $this->taskFilesystemStack()->remove($files)->run();
+            });
             // generate a sample configuration file
             $t->addTask($this->taskExec(escapeshellarg(\PHP_BINARY)." arsse.php conf save-defaults config.defaults.php")->dir($dir));
             // remove any existing archive
@@ -266,7 +276,7 @@ class RoboFile extends \Robo\Tasks {
         $t->addTask($this->taskPack($dir."arsse_$version.orig.tar.gz")->addDir("arsse-$version", $base));
         // copy Debian files to lower down in the tree
         $t->addTask($this->taskFilesystemStack()->mirror($base."dist/debian", $base."debian"));
-        $t->addTask($this->taskExec("deber")->dir($base));
+        //$t->addTask($this->taskExec("deber")->dir($base));
         return $t->run();
     }
 

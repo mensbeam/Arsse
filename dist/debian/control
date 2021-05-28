@@ -6,7 +6,7 @@ Standards-Version: 4.5.1
 Homepage: https://thearsse.com/
 Vcs-Browser: https://code.mensbeam.com/MensBeam/arsse/
 Vcs-Git: https://code.mensbeam.com/MensBeam/arsse/
-Build-Depends: debhelper, dh-systemd
+Build-Depends: debhelper
 
 Package: arsse
 Architecture: all
