@@ -37,6 +37,7 @@ pkgver() {
 build() {
     cd "$srcdir/arsse"
     composer install
+    ./robo manpage
     ./robo manual
     composer install --no-dev -o --no-scripts
     php arsse.php conf save-defaults config.defaults.php
@@ -48,7 +49,7 @@ package() {
     depends=("php>=7.1" "php-intl>=7.1" "php-sqlite>=7.1" "php-fpm>=7.1")
     # create most directories necessary for the final package
     cd "$pkgdir"
-    mkdir -p "usr/share/webapps/arsse" "usr/share/doc/arsse" "usr/share/licenses/arsse" "usr/lib/systemd/system" "usr/lib/sysusers.d" "usr/lib/tmpfiles.d" "etc/php/php-fpm.d/" "etc/webapps/arsse" "etc/webapps/arsse/nginx"
+    mkdir -p "usr/share/webapps/arsse" "usr/share/doc/arsse" "usr/share/licenses/arsse" "usr/lib/systemd/system" "usr/lib/sysusers.d" "usr/lib/tmpfiles.d" "usr/share/man/man1", "etc/php/php-fpm.d" "etc/webapps/arsse"
     #copy requisite files
     cd "$srcdir/arsse"
     cp -r lib locale sql vendor www CHANGELOG UPGRADING README.md arsse.php "$pkgdir/usr/share/webapps/arsse"
@@ -58,6 +59,7 @@ package() {
     cp dist/sysuser.conf "$pkgdir/usr/lib/sysusers.d/arsse.conf"
     cp dist/tmpfiles.conf "$pkgdir/usr/lib/tmpfiles.d/arsse.conf"
     cp dist/php-fpm.conf "$pkgdir/etc/php/php-fpm.d/arsse.conf"
+    cp dist/manpage "$pkgdir/usr/share/man/man1/arsse.1"
     cp -r dist/nginx dist/apache config.defaults.php "$pkgdir/etc/webapps/arsse"
     cd "$pkgdir"
     # copy files requiring special permissions
