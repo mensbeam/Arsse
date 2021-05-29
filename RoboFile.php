@@ -332,7 +332,7 @@ class RoboFile extends \Robo\Tasks {
      * available in $PATH.
      */
     public function manpage(): Result {
-        $src = BASE."docs/en/025_Using_The_Arsse/999_The_Command-Line_Manual_Page.md";
+        $src = BASE."docs/manpage.md";
         $out = BASE."dist/manpage";
         return $this->taskExec("pandoc -s -f markdown -t man -o ".escapeshellarg($out)." ".escapeshellarg($src))->run();
     }
