@@ -333,14 +333,19 @@ class RoboFile extends \Robo\Tasks {
      * available in $PATH.
      */
     public function manpage(): Result {
+        $t = $this->collectionBuilder();
         $p = $this->taskParallelExec();
         $man = [
             'en' => "man1/arsse.1",
         ];
         foreach($man as $src => $out) {
-            $p->process("pandoc -s -f markdown-smart -t man -o ".escapeshellarg(BASE."dist/$out")." ".escapeshellarg(BASE."manpages/$src.md"));
+            $src = BASE."manpages/$src.md";
+            $out = BASE."dist/man/$out";
+            $t->addTask($this->taskFilesystemStack()->mkdir(dirname($out), 0755));
+            $p->process("pandoc -s -f markdown-smart -t man -o ".escapeshellarg($out)." ".escapeshellarg($src));
         }
-        return $p->run();
+        $t->addTask($p);
+        return $t->run();
     }
 
     protected function changelogParse(string $text, string $targetVersion): array {
