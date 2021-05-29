@@ -171,8 +171,6 @@ class RoboFile extends \Robo\Tasks {
             // get useable version strings from Git
             $version = trim(`git -C "$dir" describe --tags`);
             $archVersion = preg_replace('/^([^-]+)-(\d+)-(\w+)$/', "$1.r$2.$3", $version);
-            // generate manpages
-            $t->addTask($this->taskExec("./robo manpage")->dir($dir));
             // name the generic release tarball
             $tarball = "arsse-$version.tar.gz";
             // generate the Debian changelog; this also validates our original changelog
@@ -187,7 +185,9 @@ class RoboFile extends \Robo\Tasks {
             $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^source=\("arsse-[^"]+"\)$/m')->to('source=("'.basename($tarball).'")'));
             // perform Composer installation in the temp location with dev dependencies
             $t->addTask($this->taskComposerInstall()->arg("-q")->dir($dir));
-            // generate the manual
+            // generate manpages
+            $t->addTask($this->taskExec("./robo manpage")->dir($dir));
+            // generate the HTML manual
             $t->addTask($this->taskExec("./robo manual -q")->dir($dir));
             // perform Composer installation in the temp location for final output
             $t->addTask($this->taskComposerInstall()->dir($dir)->noDev()->optimizeAutoloader()->arg("--no-scripts")->arg("-q"));

@@ -42,7 +42,7 @@ package() {
     cp dist/sysuser.conf "$pkgdir/usr/lib/sysusers.d/arsse.conf"
     cp dist/tmpfiles.conf "$pkgdir/usr/lib/tmpfiles.d/arsse.conf"
     cp dist/php-fpm.conf "$pkgdir/etc/php/php-fpm.d/arsse.conf"
-    cp dist/manpage "$pkgdir/usr/share/man/man1/arsse.1"
+    cp -T dist/manpage "$pkgdir/usr/share/man/man1/arsse.1"
     cp -r dist/nginx dist/apache config.defaults.php "$pkgdir/etc/webapps/arsse"
     cd "$pkgdir"
     # copy files requiring special permissions
