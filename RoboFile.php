@@ -334,7 +334,7 @@ class RoboFile extends \Robo\Tasks {
     public function manpage(): Result {
         $src = BASE."docs/manpage.md";
         $out = BASE."dist/manpage";
-        return $this->taskExec("pandoc -s -f markdown -t man -o ".escapeshellarg($out)." ".escapeshellarg($src))->run();
+        return $this->taskExec("pandoc -s -f markdown-smart -t man -o ".escapeshellarg($out)." ".escapeshellarg($src))->run();
     }
 
     protected function changelogParse(string $text, string $targetVersion): array {

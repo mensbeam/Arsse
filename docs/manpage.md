@@ -34,4 +34,8 @@ These are documented in the next section **PRIMARY COMMANDS**. Further, seldom-u
 
 : Adds a new user to the database with the specified username and password. If <*password*> is omitted a random password will be generated and printed.
 
-: The **--admin** flag may be used to mark the user as an administrator. This has no meaning within the context of The Arsse as a whole, but it is used for access control in the Miniflux and Nextcloud News protocols. 
+   The **--admin** flag may be used to mark the user as an administrator. This has no meaning within the context of The Arsse as a whole, but it is used control access to certain features in the Miniflux and Nextcloud News protocols. 
+
+**arsse user remove** <*username*>
+
+: Immediately removes a user from the database. All associated data (folders, subscriptions, etc.) are also removed.
