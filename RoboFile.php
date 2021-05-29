@@ -204,6 +204,7 @@ class RoboFile extends \Robo\Tasks {
                 $dir."RoboFile.php",
                 $dir."CONTRIBUTING.md",
                 $dir."docs",
+                $dir."manpages",
                 $dir."tests",
                 $dir."vendor-bin",
                 $dir."vendor/bin",
@@ -332,9 +333,14 @@ class RoboFile extends \Robo\Tasks {
      * available in $PATH.
      */
     public function manpage(): Result {
-        $src = BASE."docs/manpage.md";
-        $out = BASE."dist/manpage";
-        return $this->taskExec("pandoc -s -f markdown-smart -t man -o ".escapeshellarg($out)." ".escapeshellarg($src))->run();
+        $p = $this->taskParallelExec();
+        $man = [
+            'en' => "man1/arsse.1",
+        ];
+        foreach($man as $src => $out) {
+            $p->process("pandoc -s -f markdown-smart -t man -o ".escapeshellarg(BASE."dist/$out")." ".escapeshellarg(BASE."manpages/$src.md"));
+        }
+        return $p->run();
     }
 
     protected function changelogParse(string $text, string $targetVersion): array {
