@@ -1,5 +1,5 @@
 ---
-title: "ARSSE(1)"
+title: "ARSSE"
 section: 1
 date: 2021-05-30
 footer: "arsse 0.9.3"
