@@ -8,7 +8,7 @@ Information on how to install and use the software can be found in [the manual](
 
 The main repository for The Arsse can be found at [code.mensbeam.com](https://code.mensbeam.com/MensBeam/arsse/), with a mirror also available [at GitHub](https://github.com/mensbeam/arsse/). The GitHub mirror does not accept bug reports, but the two should otherwise be equivalent.
 
-[Composer](https://getcomposer.org/) is required to manage PHP dependencies. After cloning the repository or downloading a source code tarball, running `composer install` will download all the required dependencies, and will advise if any PHP extensions need to be installed. If not installing as a programming environment, running `composer install --no-dev` is recommended.
+[Composer](https://getcomposer.org/) is required to manage PHP dependencies. After cloning the repository or downloading a source code tarball, running `composer install` will download all the required dependencies, and will advise if any PHP extensions need to be installed. If not installing as a programming environment, running `composer install -o --no-dev --no-scripts` is recommended.
 
 # Repository structure
 
@@ -34,13 +34,15 @@ Also necessary to the functioning of the application is the `/vendor/` directory
 
 The `/locale/` and `/sql/` directories contain human-language files and database schemata, both of which are occasionally used by the application in the course of execution. The `/www/` directory serves as a document root for a few static files to be made available to users by a Web server.
 
-The `/dist/` directory, on the other hand, contains samples of configuration for Web servers and init systems. These are not used by The Arsse itself, but are merely distributed with it for reference.
+The `/dist/` directory, on the other hand, contains general and system-specific build files, and samples of configuration for Web servers and other system integration. These are not used by The Arsse itself, but are used during the process of preparing new releases for supported operating systems.
 
 ## Documentation
 
 The source text for The Arsse's manual can be found in `/docs/`, with pages written in [Markdown](https://spec.commonmark.org/current/) and converted to HTML [with Daux](#building-the-manual). If a static manual is generated its files will appear under `/manual/`.
 
-In addition to the manual the files `/README.md` (this file), `/CHANGELOG`, `/UPGRADING`, `/LICENSE`, and `/AUTHORS` also document various things about the software, rather than the software itself.
+The Arsse also has a UNIX manual page, also written in Markdown, which can be found under `/manpages/`. [Pandoc](https://pandoc.org/) is needed to convert it to the appropriate format, with the results stored under `/dist/man/`.
+
+In addition to the manuals the files `/README.md` (this file), `/CHANGELOG`, `/UPGRADING`, `/LICENSE`, and `/AUTHORS` also document various things about the software, rather than the software itself.
 
 ## Tests
 
@@ -50,7 +52,7 @@ The `/tests/` directory contains everything related to automated testing. It is 
 |--------------------|------------------------------------------------------------------------------------|
 | `cases/`           | The test cases themselves, organized in roughly the same structure as the code     |
 | `coverage/`        | (optional) Generated code coverage reports                                         |
-| `docroot/`         | Sample documents used in some tests, to be returned by the PHP's basic HTTP server |
+| `docroot/`         | Sample documents used in some tests, to be returned by PHP's basic HTTP server |
 | `lib/`             | Supporting classes which do not contain test cases                                 |
 | `bootstrap.php`    | Bootstrap script, equivalent to `/arsse.php`, but for tests                        |
 | `phpunit.dist.xml` | PHPUnit configuration file                                                         |
@@ -74,7 +76,7 @@ The `/vendor-bin/` directory houses the files needed for the tools used in The A
 | `/robo`           | Simple wrapper for executing Robo on POSIX systems       |
 | `/robo.bat`       | Simple wrapper for executing Robo on Windows             |
 
-In addition the files `/package.json`, `/yarn.lock`, and `/postcss.config.js` as well as the `/node_modules/` directory are used by [Yarn](https://yarnpkg.com/) and [PostCSS](https://postcss.org/) when modifying the stylesheet for The Arsse's manual.
+In addition the files `/package.json` and `/postcss.config.js` as well as the `/node_modules/` directory are used by [Yarn](https://yarnpkg.com/) and [PostCSS](https://postcss.org/) when modifying the stylesheet for The Arsse's manual.
 
 # Common tasks
 
@@ -105,12 +107,16 @@ The Arsse's user manual, made using [Daux](https://daux.io/), can be compiled by
 
 The manual employs a custom theme derived from the standard Daux theme. If the standard Daux theme receives improvements, the custom theme can be rebuilt by running `./robo manual:theme`. This requires that [NodeJS](https://nodejs.org) and [Yarn](https://yarnpkg.com/) be installed, but JavaScript tools are not required to modify The Arsse itself, nor the content of the manual.
 
+## Building the man page
+
+The Arsse's UNIX manual page is authored in Markdown, and must be converted to the native roff format using [Pandoc](https://pandoc.org/). This can be done by running `./robo manpage`, which will output appropriate files to `/dist/man/`. The conversion should not be done manually as there is post-processing required for optimal output.
+
 ## Packaging a release
 
 Producing a release package is done by running `./robo package`. This performs the following operations:
 
 - Duplicates a working tree with the commit (usually a release tag) to package
-- Generates UNIX manual pages with [Pandoc](https://pandoc.org/)
+- Generates UNIX manual pages with Pandoc
 - Generates the HTML manual
 - Installs runtime Composer dependencies with an optimized autoloader
 - Deletes numerous unneeded files
