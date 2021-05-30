@@ -334,7 +334,6 @@ class RoboFile extends \Robo\Tasks {
      */
     public function manpage(): Result {
         $t = $this->collectionBuilder();
-        $p = $this->taskParallelExec();
         $man = [
             'en' => "man1/arsse.1",
         ];
@@ -342,9 +341,9 @@ class RoboFile extends \Robo\Tasks {
             $src = BASE."manpages/$src.md";
             $out = BASE."dist/man/$out";
             $t->addTask($this->taskFilesystemStack()->mkdir(dirname($out), 0755));
-            $p->process("pandoc -s -f markdown-smart -t man -o ".escapeshellarg($out)." ".escapeshellarg($src));
+            $t->addTask($this->taskExec("pandoc -s -f markdown-smart -t man -o ".escapeshellarg($out)." ".escapeshellarg($src)));
+            $t->addTask($this->taskReplaceInFile($out)->regex('/\.\n(?!\.)/s')->to(". "));
         }
-        $t->addTask($p);
         return $t->run();
     }
 
