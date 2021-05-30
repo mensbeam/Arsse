@@ -10,6 +10,7 @@ arsse.php usr/share/arsse/
 
 dist/arsse          usr/bin/
 manual              usr/share/doc/arsse/
+dist/man/*          usr/share/man/
 dist/nginx          etc/arsse/
 dist/apache         etc/arsse/
 dist/config.php     etc/arsse

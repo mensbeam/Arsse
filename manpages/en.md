@@ -194,7 +194,7 @@ The following metadata properties exist for each user:
         
 - Make Bob the Builder an administrator
 
-      $ arsse user set admin true
+      $ arsse user set "Bob the Builder" admin true
 
 - Disable Alice's account by clearing her password
 
@@ -206,7 +206,7 @@ The following metadata properties exist for each user:
 
 - Fail to log in as Alice
 
-      $ arsse user authbLS!$_UUZ!iN2i_!^IC6 alice "Oh, dear!"
+      $ arsse user auth alice "Oh, dear!"
       Authentication failed
       $ echo $?
       1
