@@ -129,6 +129,10 @@ These are documented in the next section **PRIMARY COMMANDS**. Further, seldom-u
 
 :   Performs a one-time fetch of the feed (not subscription) identified by integer <_n_>. This is used internally by the fetching service and should not normally be needed.
 
+**arsse conf save-defaults** [<_file_>]
+
+:   Prints default configuration parameters to standard output, or to <_file_> if specified. Each parameter is annotated with a short description of its purpose and usage.
+
 # USER METADATA
 
 User metadata are primarily used by the Miniflux protocol, and most properties have identical or similar names to those used by Miniflux. Properties may also affect other protocols, or conversely may have no effect even when using the Miniflux protocol; this is noted below when appropriate.
@@ -171,11 +175,37 @@ The following metadata properties exist for each user:
 :   Boolean. Whether to calculate and display the estimated reading time for articles. Currently The Arsse does not calculate reading time, so changing this will likely have no effect.
 
 **stylesheet**
-:   String. A user CSS stylesheet. This is not used by  The Arsse itself, but clients may use this metadatum in protocols which expose it.
+:   String. A user CSS stylesheet. This is not used by The Arsse itself, but clients may use this metadatum in protocols which expose it.
 
 # EXAMPLES
 
-TODO
+- Add an administrator to the database with an explicit password
+
+      $ arsse user add --admin alice "Curiouser and curiouser!"
+
+- Add a regular user to the database with a random password
+
+      $ arsse user add "Bob the Builder"
+      bLS!$_UUZ!iN2i_!^IC6
+        
+- Make Bob the Builder an administrator
+
+      $ arsse user set admin true
+
+- Disable Alice's account by clearing her password
+
+      $ arsse user unset-pass alice
+
+- Move all of Foobar's newsfeeds to the root folder
+
+      $ arsse export foobar -f | arsse import -r foobar
+
+- Fail to log in as Alice
+
+      $ arsse user authbLS!$_UUZ!iN2i_!^IC6 alice "Oh, dear!"
+      Authentication failed
+      $ echo $?
+      1
 
 # REPORTING BUGS
 
