@@ -35,6 +35,7 @@ sudo mv sysusers.conf /etc/sysusers.d/arsse.conf
 sudo mv tmpfiles.conf /etc/tmpfiles.d/arsse.conf
 sudo mv config.php nginx apache /etc/arsse/
 sudo mv php-fpm.conf /etc/php/$php_ver/fpm/pool.d/arsse.conf
+sudo mv man/man1/* /usr/shame/man/man1/
 # Move the administration executable
 sudo mv arsse /usr/bin/
 ```
