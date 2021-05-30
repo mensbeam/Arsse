@@ -185,7 +185,9 @@ class RoboFile extends \Robo\Tasks {
             $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^source=\("arsse-[^"]+"\)$/m')->to('source=("'.basename($tarball).'")'));
             // perform Composer installation in the temp location with dev dependencies
             $t->addTask($this->taskComposerInstall()->arg("-q")->dir($dir));
-            // generate the manual
+            // generate manpages
+            $t->addTask($this->taskExec("./robo manpage")->dir($dir));
+            // generate the HTML manual
             $t->addTask($this->taskExec("./robo manual -q")->dir($dir));
             // perform Composer installation in the temp location for final output
             $t->addTask($this->taskComposerInstall()->dir($dir)->noDev()->optimizeAutoloader()->arg("--no-scripts")->arg("-q"));
@@ -202,6 +204,7 @@ class RoboFile extends \Robo\Tasks {
                 $dir."RoboFile.php",
                 $dir."CONTRIBUTING.md",
                 $dir."docs",
+                $dir."manpages",
                 $dir."tests",
                 $dir."vendor-bin",
                 $dir."vendor/bin",
@@ -321,6 +324,26 @@ class RoboFile extends \Robo\Tasks {
             $t->taskFilesystemStack()->copy($file, $themeout.basename($file), true);
         }
         // execute the collection
+        return $t->run();
+    }
+
+    /** Generates the "arsse" command's manual page (UNIX man page)
+     * 
+     * This requires that the Pandoc document converter be installed and 
+     * available in $PATH.
+     */
+    public function manpage(): Result {
+        $t = $this->collectionBuilder();
+        $man = [
+            'en' => "man1/arsse.1",
+        ];
+        foreach($man as $src => $out) {
+            $src = BASE."manpages/$src.md";
+            $out = BASE."dist/man/$out";
+            $t->addTask($this->taskFilesystemStack()->mkdir(dirname($out), 0755));
+            $t->addTask($this->taskExec("pandoc -s -f markdown-smart -t man -o ".escapeshellarg($out)." ".escapeshellarg($src)));
+            $t->addTask($this->taskReplaceInFile($out)->regex('/\.\n(?!\.)/s')->to(". "));
+        }
         return $t->run();
     }
 

@@ -110,10 +110,11 @@ The manual employs a custom theme derived from the standard Daux theme. If the s
 Producing a release package is done by running `./robo package`. This performs the following operations:
 
 - Duplicates a working tree with the commit (usually a release tag) to package
-- Generates the manual
+- Generates UNIX manual pages with [Pandoc](https://pandoc.org/)
+- Generates the HTML manual
 - Installs runtime Composer dependencies with an optimized autoloader
 - Deletes numerous unneeded files
 - Exports the default configuration of The Arsse to a file
 - Compresses the remaining files into a tarball
 
-Due to the first step, [Git](https://git-scm.com/) is required to package a release.
+Due to the first two steps, [Git](https://git-scm.com/) and [Pandoc](https://pandoc.org/) are required in PATH to package a release.

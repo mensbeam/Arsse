@@ -2,7 +2,7 @@
 
 This section details a few administrative tasks which may need to be performed after installing The Arsse. As no Web-based administrative interface is included, these tasks are generally performed via command line interface.
 
-Though this section describes some commands briefly, complete documentation of The Arsse's command line interface is not included in this manual. Documentation for CLI commands can instead be viewed with the CLI itself by executing `arsse --help`.
+Though this section describes some commands briefly, complete documentation of The Arsse's command line interface is not included in this manual. Documentation for CLI commands can instead be viewed using the system manual service by executing `man arsse`.
 
 # A Note on Command Invocation
 
