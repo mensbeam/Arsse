@@ -1,6 +1,10 @@
-% ARSSE(1) arsse 0.9.2
-%
-% 2021-05-28
+---
+title: "ARSSE(1)"
+section: 1
+date: 2021-05-30
+footer: "arsse 0.9.3"
+header: "User Commands"
+---
 
 # NAME
 
