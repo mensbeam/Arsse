@@ -478,6 +478,6 @@ class RoboFile extends \Robo\Tasks {
         // change the user reference in the executable file
         $t->addTask($this->taskFilesystemStack()->mkdir($dir."dist/debian/bin"));
         $t->addTask($this->taskFilesystemStack()->copy($dir."dist/arsse", $dir."dist/debian/bin/arsse"));
-        $t->addTask($this->taskReplaceInFile($dir."dist/debian/arsse")->from('posix_getpwnam("arsse"')->to('posix_getpwnam("www-data"'));        
+        $t->addTask($this->taskReplaceInFile($dir."dist/debian/bin/arsse")->from('posix_getpwnam("arsse"')->to('posix_getpwnam("www-data"'));        
     }
 }
