@@ -33,4 +33,4 @@ RestartPreventStatus=
 #ReadOnlyPaths=/
 #ReadWriePaths=/var/lib/arsse
 #NoExecPaths=/
-#ExecPaths=/usr/bin/php /usr/bin/php7
+#ExecPaths=/usr/bin/php

@@ -1,5 +1,6 @@
 <?php
 
+use Robo\Collection\CollectionBuilder;
 use Robo\Result;
 
 const BASE = __DIR__.\DIRECTORY_SEPARATOR;
@@ -173,16 +174,14 @@ class RoboFile extends \Robo\Tasks {
             $archVersion = preg_replace('/^([^-]+)-(\d+)-(\w+)$/', "$1.r$2.$3", $version);
             // name the generic release tarball
             $tarball = "arsse-$version.tar.gz";
-            // generate the Debian changelog; this also validates our original changelog
-            $debianChangelog = $this->changelogDebian($this->changelogParse(file_get_contents($dir."CHANGELOG"), $version), $version);
-            // save commit description to VERSION file for use by packaging
+            // save commit description to VERSION file for reference
             $t->addTask($this->taskWriteToFile($dir."VERSION")->text($version));
-            // save the Debian changelog
-            $t->addTask($this->taskWriteToFile($dir."dist/debian/changelog")->text($debianChangelog));
             // patch the Arch PKGBUILD file with the correct version string
             $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^pkgver=.*$/m')->to("pkgver=$archVersion"));
             // patch the Arch PKGBUILD file with the correct source file
             $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^source=\("arsse-[^"]+"\)$/m')->to('source=("'.basename($tarball).'")'));
+            // Prepare Debian-related files
+            $this->prepDebian($t, $dir, $version);
             // perform Composer installation in the temp location with dev dependencies
             $t->addTask($this->taskComposerInstall()->arg("-q")->dir($dir));
             // generate manpages
@@ -196,6 +195,7 @@ class RoboFile extends \Robo\Tasks {
                 $dir.".git",
                 $dir.".gitignore",
                 $dir.".gitattributes",
+                $dir."dist/debian/.gitignore",
                 $dir."composer.json",
                 $dir."composer.lock",
                 $dir.".php_cs.dist",
@@ -461,5 +461,22 @@ class RoboFile extends \Robo\Tasks {
             $out .= "\n -- The Arsse team <no-contact@code.mensbeam.com>  ".\DateTimeImmutable::createFromFormat("Y-m-d", $entry['date'], new \DateTimeZone("UTC"))->format("D, d M Y")." 00:00:00 +0000\n\n";
         }
         return $out;
+    }
+
+    protected function prepDebian(CollectionBuilder $t, string $dir, string $version): void {
+        // generate the Debian changelog; this also validates our original changelog
+        $debianChangelog = $this->changelogDebian($this->changelogParse(file_get_contents($dir."CHANGELOG"), $version), $version);
+        // save the Debian changelog
+        $t->addTask($this->taskWriteToFile($dir."dist/debian/changelog")->text($debianChangelog));
+        // adapt the systemd unit for Debian: this involves using only the "arsse-fetch" unit (renamed to "arsse"), removing the "PartOf" directive, and changing the user and group to "www-data"
+        $t->addTask($this->taskFilesystemStack()->copy($dir."dist/systemd/arsse-fetch.service", $dir."dist/debian/arsse.service"));
+        $t->addTask($this->taskReplaceInFile($dir."/dist/debian/arsse.service")->regex('/^PartOf=.*$/m')->to(""));
+        $t->addTask($this->taskReplaceInFile($dir."/dist/debian/arsse.service")->regex('/^(User|Group)=.*$/m')->to("$1=www-data"));
+        // change the user and group references in tmpfiles
+        $t->addTask($this->taskFilesystemStack()->copy($dir."dist/tmpfiles.conf", $dir."dist/debian/arsse.tmpfiles"));
+        $t->addTask($this->taskReplaceInFile($dir."dist/debian/arsse.tmpfiles")->regex('/(?<= )arsse(?= )/')->to("www-data"));
+        // change the user reference in the executable file
+        $t->addTask($this->taskFilesystemStack()->copy($dir."dist/arsse", $dir."dist/debian/arsse"));
+        $t->addTask($this->taskReplaceInFile($dir."dist/debian/arsse")->from('posix_getpwnam("arsse"')->to('posix_getpwnam("www-data"'));        
     }
 }

@@ -8,7 +8,7 @@ UPGRADING usr/share/arsse/
 README.md usr/share/arsse/
 arsse.php usr/share/arsse/
 
-dist/arsse          usr/bin/
+dist/debian/arsse   usr/bin/
 manual              usr/share/doc/arsse/
 dist/man/*          usr/share/man/
 dist/nginx          etc/arsse/

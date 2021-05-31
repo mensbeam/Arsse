@@ -1,0 +1,13 @@
+*
+!.gitignore
+!arsse.install
+!compat
+!control
+!copyright
+!lintian-overrides
+!rules
+
+!source/
+source/*
+!source/lintian-overrides
+!source/format
