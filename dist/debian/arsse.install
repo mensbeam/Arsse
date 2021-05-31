@@ -8,10 +8,10 @@ UPGRADING usr/share/arsse/
 README.md usr/share/arsse/
 arsse.php usr/share/arsse/
 
-dist/debian/arsse   usr/bin/
-manual              usr/share/doc/arsse/
-dist/man/*          usr/share/man/
-dist/nginx          etc/arsse/
-dist/apache         etc/arsse/
-dist/config.php     etc/arsse
-config.defaults.php etc/arsse/
+dist/debian/bin/arsse usr/bin/
+manual                usr/share/doc/arsse/
+dist/man/*            usr/share/man/
+dist/nginx            etc/arsse/
+dist/apache           etc/arsse/
+dist/config.php       etc/arsse
+config.defaults.php   etc/arsse/
