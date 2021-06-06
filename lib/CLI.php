@@ -81,7 +81,7 @@ USAGE_TEXT;
         try {
             $cmd = $this->command($args);
             if ($cmd && !in_array($cmd, ["", "conf save-defaults", "daemon"])) {
-                // only certain commands don't require configuration to be loaded
+                // only certain commands don't require configuration to be loaded; daemon loads configuration after forking (if applicable)
                 $this->loadConf();
             }
             switch ($cmd) {
@@ -96,6 +96,7 @@ USAGE_TEXT;
                     if ($args['--fork'] !== null) {
                         $this->fork($args['--fork']);
                     }
+                    $this->loadConf();
                     Arsse::$obj->get(Service::class)->watch(true);
                     return 0;
                 case "feed refresh":
