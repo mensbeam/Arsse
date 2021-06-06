@@ -330,11 +330,15 @@ USAGE_TEXT;
     protected function resolvePID(string $pidfile): string {
         $dir = dirname($pidfile);
         $file = basename($pidfile);
-        if ($base = @realpath($dir)) {
+        if (!strlen($file)) {
+            throw new \Exception("Specified PID file location must be a regular file");
+        } elseif ($base = @realpath($dir)) {
             $out = "$base/$file";
             if (file_exists($out)) {
                 if (!is_writable($out)) {
                     throw new \Exception("PID file is not writable");
+                } elseif (!is_file($out)) {
+                    throw new \Exception("Specified PID file location must be a regular file");
                 }
             } elseif (!is_writable($base)) {
                 throw new \Exception("Cannot create PID file");
