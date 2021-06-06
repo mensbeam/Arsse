@@ -229,6 +229,10 @@ USAGE_TEXT;
         return 0;
     }
 
+    /** Daemonizes the process via the traditional sysvinit double-fork procedure
+     * 
+     * @codeCoverageIgnore
+     */
     protected function fork(string $pidfile): void {
         // check that the PID file is not already used by another process
         $this->checkPID($pidfile, false);

@@ -103,6 +103,9 @@ class Service {
         }
     }
 
+    /** Changes the condition for the service loop upon receiving a termination signal
+     * 
+     * @codeCoverageIgnore */
     protected function sigTerm(int $signo): void {
         $this->loop = false;
     }
