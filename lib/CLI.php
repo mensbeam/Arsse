@@ -142,14 +142,14 @@ USAGE_TEXT;
                         }
                         return 0;
                     } else {
-                        return $this->userAddOrSetPassword("passwordSet", $args["<username>"], $args["<password>"], $args["--oldpass"]);
+                        return $this->userAddOrSetPassword("passwordSet", $args["<username>"], $args["<password>"]);
                     }
                     // no break
                 case "user unset-pass":
                     if ($args['--fever']) {
                         Arsse::$obj->get(Fever::class)->unregister($args["<username>"]);
                     } else {
-                        Arsse::$user->passwordUnset($args["<username>"], $args["--oldpass"]);
+                        Arsse::$user->passwordUnset($args["<username>"]);
                     }
                     return 0;
                 case "user remove":
