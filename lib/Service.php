@@ -16,6 +16,7 @@ class Service {
 
     /** @var Service\Driver */
     protected $drv;
+    protected $loop = false;
 
     public function __construct() {
         $driver = Arsse::$conf->serviceDriver;
@@ -23,6 +24,8 @@ class Service {
     }
 
     public function watch(bool $loop = true): \DateTimeInterface {
+        $this->loop = $loop;
+        $this->signalInit();
         $t = new \DateTime();
         do {
             $this->checkIn();
@@ -37,13 +40,14 @@ class Service {
             static::cleanupPost();
             $t->add(Arsse::$conf->serviceFrequency);
             // @codeCoverageIgnoreStart
-            if ($loop) {
+            if ($this->loop) {
                 do {
-                    @time_sleep_until($t->getTimestamp());
-                } while ($t->getTimestamp() > time());
+                    sleep((int) max(0, $t->getTimestamp() - time()));
+                    pcntl_signal_dispatch();
+                } while ($this->loop && $t->getTimestamp() > time());
             }
             // @codeCoverageIgnoreEnd
-        } while ($loop);
+        } while ($this->loop);
         return $t;
     }
 
@@ -88,4 +92,20 @@ class Service {
         }
         return true;
     }
+
+    protected function signalInit(): void {
+        if (function_exists("pcntl_async_signals") && function_exists("pcntl_signal")) {
+            // receive asynchronous signals if supported
+            pcntl_async_signals(true);
+            foreach ([\SIGABRT, \SIGINT, \SIGTERM] as $sig) {
+                pcntl_signal($sig, [$this, "sigTerm"]);
+            }
+        }
+    }
+
+    protected function sigTerm(int $signo): void {
+        $this->loop = false;
+    }
+
+
 }

@@ -94,10 +94,14 @@ USAGE_TEXT;
                     return 0;
                 case "daemon":
                     if ($args['--fork'] !== null) {
-                        $this->fork($args['--fork']);
+                        $pidfile = $this->resolvePID($args['--fork']);
+                        $this->fork($pidfile);
                     }
                     $this->loadConf();
                     Arsse::$obj->get(Service::class)->watch(true);
+                    if (isset($pidfile)) {
+                        unlink($pidfile);
+                    }
                     return 0;
                 case "feed refresh":
                     return (int) !Arsse::$db->feedUpdate((int) $args['<n>'], true);
@@ -282,6 +286,7 @@ USAGE_TEXT;
             default:
                 fclose($pipe[1]);
                 fread($pipe[0], 100);
+                fclose($pipe[0]);
                 # Call exit() in the original process. The process that invoked the daemon must be able to rely on that this exit() happens after initialization is complete and all external communication channels are established and accessible.
                 exit;
         }
@@ -319,5 +324,24 @@ USAGE_TEXT;
                 throw new Exception("Could not write to PID file");
             }
         }
+    }
+
+    /** Resolves the PID file path and ensures the file or parent directory is writable */
+    protected function resolvePID(string $pidfile): string {
+        $dir = dirname($pidfile);
+        $file = basename($pidfile);
+        if ($base = @realpath($dir)) {
+            $out = "$base/$file";
+            if (file_exists($out)) {
+                if (!is_writable($out)) {
+                    throw new \Exception("PID file is not writable");
+                }
+            } elseif (!is_writable($base)) {
+                throw new \Exception("Cannot create PID file");
+            }
+        } else {
+            throw new \Exception("Parent directory of PID file does not exist");
+        }
+        return $out;
     }
 }
