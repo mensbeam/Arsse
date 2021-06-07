@@ -210,6 +210,9 @@ return [
     'Exception.JKingWeb/Arsse/Rule/Exception.invalidPattern'               => 'Specified rule pattern is invalid',
     'Exception.JKingWeb/Arsse/CLI/Exception.pidNotFile'                    => 'Specified PID file location "{pidfile}" must be a regular file',
     'Exception.JKingWeb/Arsse/CLI/Exception.pidDirNotFound'                => 'Parent directory "{piddir}" of PID file does not exist',
+    'Exception.JKingWeb/Arsse/CLI/Exception.pidUnreadable'                 => 'Insufficient permissions to open PID file "{pidfile}" for reading',
     'Exception.JKingWeb/Arsse/CLI/Exception.pidUnwritable'                 => 'Insufficient permissions to open PID file "{pidfile}" for writing',
-    'Exception.JKingWeb/Arsse/CLI/Exception.pidNotFile'                    => 'Specified PID file location "{pidfile}" must be a regular file',
+    'Exception.JKingWeb/Arsse/CLI/Exception.pidUnusable'                   => 'Insufficient permissions to open PID file "{pidfile}" for reading or writing',
+    'Exception.JKingWeb/Arsse/CLI/Exception.pidUncreatable'                => 'Insufficient permissions to create PID file "{pidfile}"',
+    'Exception.JKingWeb/Arsse/CLI/Exception.pidNotFile'                    => 'PID file "{pidfile}" must be a regular file',
 ];

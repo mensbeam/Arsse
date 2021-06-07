@@ -339,13 +339,17 @@ USAGE_TEXT;
         } elseif ($base = @realpath($dir)) {
             $out = "$base/$file";
             if (file_exists($out)) {
-                if (!is_writable($out)) {
-                    throw new \Exception("PID file is not writable");
+                if (!is_readable($out) && !is_writable($out)) {
+                    throw new CLI\Exception("pidUnusable", ['pidfile' => $out]);
+                } elseif (!is_readable($out)) {
+                    throw new CLI\Exception("pidunreadable", ['pidfile' => $out]);
+                } elseif (!is_writable($out)) {
+                    throw new CLI\Exception("pidUnwritable", ['pidfile' => $out]);
                 } elseif (!is_file($out)) {
                     throw new CLI\Exception("pidNotFile", ['pidfile' => $out]);
                 }
             } elseif (!is_writable($base)) {
-                throw new \Exception("Cannot create PID file");
+                throw new CLI\Exception("pidUncreatable", ['pidfile' => $out]);
             }
         } else {
             throw new \Exception("pidDirNotFound", ['piddir' => $dir]);

@@ -104,8 +104,10 @@ abstract class AbstractException extends \Exception {
         "Rule/Exception.invalidPattern"               => 10701,
         "CLI/Exception.pidNotFile"                    => 10801,
         "CLI/Exception.pidDirNotFound"                => 10802,
-        "CLI/Exception.pidUnwritable"                 => 10803,
-        "CLI/Exception.pidUncreatable"                => 10804,
+        "CLI/Exception.pidUnusable"                   => 10803,
+        "CLI/Exception.pidUnreadable"                 => 10804,
+        "CLI/Exception.pidUnwritable"                 => 10805,
+        "CLI/Exception.pidUncreatable"                => 10806,
     ];
 
     protected $symbol;
