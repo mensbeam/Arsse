@@ -102,6 +102,10 @@ abstract class AbstractException extends \Exception {
         "ImportExport/Exception.invalidFolderCopy"    => 10614,
         "ImportExport/Exception.invalidTagName"       => 10615,
         "Rule/Exception.invalidPattern"               => 10701,
+        "CLI/Exception.pidNotFile"                    => 10801,
+        "CLI/Exception.pidDirNotFound"                => 10802,
+        "CLI/Exception.pidUnwritable"                 => 10803,
+        "CLI/Exception.pidUncreatable"                => 10804,
     ];
 
     protected $symbol;

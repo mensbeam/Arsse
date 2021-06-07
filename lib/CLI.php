@@ -331,24 +331,24 @@ USAGE_TEXT;
     }
 
     /** Resolves the PID file path and ensures the file or parent directory is writable */
-    protected function resolvePID(string $pidfile): string {
+    public function resolvePID(string $pidfile): string {
         $dir = dirname($pidfile);
         $file = basename($pidfile);
         if (!strlen($file)) {
-            throw new \Exception("Specified PID file location must be a regular file");
+            throw new CLI\Exception("pidNotFile", ['pidfile' => $dir]);
         } elseif ($base = @realpath($dir)) {
             $out = "$base/$file";
             if (file_exists($out)) {
                 if (!is_writable($out)) {
                     throw new \Exception("PID file is not writable");
                 } elseif (!is_file($out)) {
-                    throw new \Exception("Specified PID file location must be a regular file");
+                    throw new CLI\Exception("pidNotFile", ['pidfile' => $out]);
                 }
             } elseif (!is_writable($base)) {
                 throw new \Exception("Cannot create PID file");
             }
         } else {
-            throw new \Exception("Parent directory of PID file does not exist");
+            throw new \Exception("pidDirNotFound", ['piddir' => $dir]);
         }
         return $out;
     }

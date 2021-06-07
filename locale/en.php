@@ -207,5 +207,9 @@ return [
     'Exception.JKingWeb/Arsse/ImportExport/Exception.invalidFolderName'    => 'Input data contains an invalid folder name',
     'Exception.JKingWeb/Arsse/ImportExport/Exception.invalidFolderCopy'    => 'Input data contains multiple folders of the same name under the same parent',
     'Exception.JKingWeb/Arsse/ImportExport/Exception.invalidTagName'       => 'Input data contains an invalid tag name',
-    'Exception.JKingWeb/Arsse/Rule/Exception.invalidPattern'               => 'Specified rule pattern is invalid'
+    'Exception.JKingWeb/Arsse/Rule/Exception.invalidPattern'               => 'Specified rule pattern is invalid',
+    'Exception.JKingWeb/Arsse/CLI/Exception.pidNotFile'                    => 'Specified PID file location "{pidfile}" must be a regular file',
+    'Exception.JKingWeb/Arsse/CLI/Exception.pidDirNotFound'                => 'Parent directory "{piddir}" of PID file does not exist',
+    'Exception.JKingWeb/Arsse/CLI/Exception.pidUnwritable'                 => 'Insufficient permissions to open PID file "{pidfile}" for writing',
+    'Exception.JKingWeb/Arsse/CLI/Exception.pidNotFile'                    => 'Specified PID file location "{pidfile}" must be a regular file',
 ];
