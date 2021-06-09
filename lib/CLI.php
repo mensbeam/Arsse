@@ -352,8 +352,12 @@ USAGE_TEXT;
                 throw new CLI\Exception("pidUncreatable", ['pidfile' => $out]);
             }
         } else {
-            throw new \Exception("pidDirNotFound", ['piddir' => $dir]);
+            throw new CLI\Exception("pidDirNotFound", ['piddir' => $dir]);
         }
         return $out;
+    }
+
+    protected function realpath(string $path) {
+        return @realpath($path);
     }
 }

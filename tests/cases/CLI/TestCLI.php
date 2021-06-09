@@ -13,18 +13,60 @@ use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\CLI;
+use JKingWeb\Arsse\CLI\Exception;
 use JKingWeb\Arsse\REST\Fever\User as FeverUser;
 use JKingWeb\Arsse\REST\Miniflux\Token as MinifluxToken;
 use JKingWeb\Arsse\ImportExport\OPML;
+use org\bovigo\vfs\vfsStream;
 
 /** @covers \JKingWeb\Arsse\CLI */
 class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
+    protected $pidfiles = [
+        'errors' => [
+            'create'    => [],
+            'read'      => "",
+            'write'     => "",
+            'readwrite' => "",
+        ],
+        'ok' => [
+            'dir' => [],
+            'file' => "",
+        ],
+    ];
+
     public function setUp(): void {
         parent::setUp();
         $this->cli = $this->partialMock(CLI::class);
         $this->cli->logError->returns(null);
         $this->cli->loadConf->returns(true);
         $this->dbMock = $this->mock(Database::class);
+    }
+
+    /** @dataProvider providePidResolutions */
+    public function testResolvePidFiles(string $file, bool $realpath, $exp): void {
+        $vfs = vfsStream::setup("pidtest", 0777, $this->pidfiles);
+        $path = $vfs->url()."/";
+        // set up access blocks
+        chmod($path."errors/create", 0555);
+        chmod($path."errors/read", 0333);
+        chmod($path."errors/write", 0555);
+        chmod($path."errors/readwrite", 0111);
+        // set up mock CLI
+        $this->cli->realPath->returns($realpath ? $path.$file : false);
+        $cli = $this->cli->get();
+        // perform the test
+        if ($exp instanceof \Exception) {
+            $this->assertException($exp);
+            $cli->resolvePID($file);
+        } else {
+            $this->assertSame($exp, $cli->resolvePID($file));
+        }
+    }
+
+    public function providePidResolutions(): iterable {
+        return [
+            ["errors/create", true, new Exception("pidUncreatable")],
+        ];
     }
 
     public function assertConsole(string $command, int $exitStatus, string $output = "", bool $pattern = false): void {
