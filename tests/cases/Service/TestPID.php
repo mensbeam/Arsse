@@ -6,7 +6,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Service;
 
-use JKingWeb\Arsse\Service;
+use JKingWeb\Arsse\Service\Daemon;
 use JKingWeb\Arsse\Service\Exception;
 use org\bovigo\vfs\vfsStream;
 
@@ -25,6 +25,11 @@ class TestPID extends \JKingWeb\Arsse\Test\AbstractTest {
         ],
     ];
 
+    public function setUp(): void {
+        parent::setUp();
+        $this->daemon = $this->partialMock(Daemon::class);
+    }
+
     /** @dataProvider providePidResolutions */
     public function testResolvePidFiles(string $file, bool $realpath, $exp): void {
         $vfs = vfsStream::setup("pidtest", 0777, $this->pidfiles);
@@ -34,15 +39,15 @@ class TestPID extends \JKingWeb\Arsse\Test\AbstractTest {
         chmod($path."errors/read", 0333);
         chmod($path."errors/write", 0555);
         chmod($path."errors/readwrite", 0111);
-        // set up mock CLI
-        $this->cli->realPath->returns($realpath ? $path.$file : false);
-        $cli = $this->cli->get();
+        // set up mock daemon class
+        $this->daemon->realPath->returns($realpath ? $path.$file : false);
+        $daemon = $this->daemon->get();
         // perform the test
         if ($exp instanceof \Exception) {
             $this->assertException($exp);
-            $cli->resolvePID($file);
+            $daemon->resolvePID($file);
         } else {
-            $this->assertSame($exp, $cli->resolvePID($file));
+            $this->assertSame($exp, $daemon->resolvePID($file));
         }
     }
 

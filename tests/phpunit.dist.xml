@@ -142,6 +142,7 @@
         <file>cases/Service/TestService.php</file>
         <file>cases/Service/TestSerial.php</file>
         <file>cases/Service/TestSubprocess.php</file>
+        <file>cases/Service/TestPID.php</file>
         <file>cases/CLI/TestCLI.php</file>
         <file>cases/TestArsse.php</file>
     </testsuite>
