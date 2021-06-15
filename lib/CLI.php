@@ -9,6 +9,7 @@ namespace JKingWeb\Arsse;
 use JKingWeb\Arsse\REST\Fever\User as Fever;
 use JKingWeb\Arsse\ImportExport\OPML;
 use JKingWeb\Arsse\REST\Miniflux\Token as Miniflux;
+use JKingWeb\Arsse\Service\Daemon;
 
 class CLI {
     public const USAGE = <<<USAGE_TEXT
@@ -40,7 +41,7 @@ importing or exporting data.
 
 See the manual page for more details:
 
-    man 1 arsse
+    man arsse 
 USAGE_TEXT;
 
     protected function usage($prog): string {
@@ -94,13 +95,10 @@ USAGE_TEXT;
                     return 0;
                 case "daemon":
                     if ($args['--fork'] !== null) {
-                        $pidfile = Service::resolvePID($args['--fork']);
-                        Service::fork($pidfile);
-                    }
-                    $this->loadConf();
-                    Arsse::$obj->get(Service::class)->watch(true);
-                    if (isset($pidfile)) {
-                        unlink($pidfile);
+                        return $this->serviceFork($args['--fork']);
+                    } else {
+                        $this->loadConf();
+                        Arsse::$obj->get(Service::class)->watch(true);
                     }
                     return 0;
                 case "feed refresh":
@@ -177,6 +175,23 @@ USAGE_TEXT;
     /** @codeCoverageIgnore */
     protected function logError(string $msg): void {
         fwrite(STDERR, $msg.\PHP_EOL);
+    }
+
+    protected function serviceFork(string $pidfile): int {
+        // initialize the object factory
+        Arsse::$obj = Arsse::$obj ?? new Factory;
+        // create a Daemon object which contains various helper functions
+        $daemon = Arsse::$obj->get(Daemon::class);
+        // resolve the PID file to its absolute path; this also checks its readability and writability
+        $pidfile = $daemon->resolvePID($pidfile);
+        // daemonize
+        $daemon->fork($pidfile);
+        // start the fetching service as normal
+        $this->loadConf();
+        Arsse::$obj->get(Service::class)->watch(true);
+        // after the service has been shut down, delete the PID file and exit cleanly
+        unlink($pidfile);
+        return 0;
     }
 
     protected function userAddOrSetPassword(string $method, string $user, string $password = null, string $oldpass = null): int {

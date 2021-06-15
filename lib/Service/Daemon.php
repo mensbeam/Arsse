@@ -13,7 +13,7 @@ class Daemon {
      */
     public function fork(string $pidfile): void {
         // check that the PID file is not already used by another process
-        static::checkPID($pidfile, false);
+        $this->checkPID($pidfile, false);
         // We will follow systemd's recommended daemonizing process as much as possible:
         # Close all open file descriptors except standard input, output, and error (i.e. the first three file descriptors 0, 1, 2). This ensures that no accidentally passed file descriptor stays around in the daemon process. On Linux, this is best implemented by iterating through /proc/self/fd, with a fallback of iterating from file descriptor 3 to the value returned by getrlimit() for RLIMIT_NOFILE.
         // We should have no open file descriptors at this time. Even if we did, I'm not certain how they should be closed from PHP
@@ -41,7 +41,7 @@ class Daemon {
                     case 0:
                         // We do some things out of order because as far as I know there's no way to reconnect stdin, stdout, and stderr without closing the channel to the parent first
                         # In the daemon process, write the daemon PID (as returned by getpid()) to a PID file, for example /run/foobar.pid (for a hypothetical daemon "foobar") to ensure that the daemon cannot be started more than once. This must be implemented in race-free fashion so that the PID file is only updated when it is verified at the same time that the PID previously stored in the PID file no longer exists or belongs to a foreign process.
-                        static::checkPID($pidfile, true);
+                        $this->checkPID($pidfile, true);
                         # In the daemon process, drop privileges, if possible and applicable.
                         // already done
                         # From the daemon process, notify the original process started that initialization is complete. This can be implemented via an unnamed pipe or similar communication channel that is created before the first fork() and hence available in both the original and the daemon process.
