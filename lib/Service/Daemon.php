@@ -109,33 +109,74 @@ class Daemon {
     }
 
     /** Resolves the PID file path and ensures the file or parent directory is writable */
-    public function resolvePID(string $pidfile): string {
+    public function checkPIDFilePath(string $pidfile): string {
         $dir = dirname($pidfile);
         $file = basename($pidfile);
+        $base = $this->resolveRelativePath($dir);
         if (!strlen($file)) {
             throw new Exception("pidNotFile", ['pidfile' => $dir]);
-        } elseif ($base = @$this->realpath($dir)) {
+        } elseif ($base) {
             $out = "$base/$file";
             if (file_exists($out)) {
-                if (!is_readable($out) && !is_writable($out)) {
+                if (!is_file($out)) {
+                    throw new Exception("pidNotFile", ['pidfile' => $out]);
+                } elseif (!is_readable($out) && !is_writable($out)) {
                     throw new Exception("pidUnusable", ['pidfile' => $out]);
                 } elseif (!is_readable($out)) {
-                    throw new Exception("pidunreadable", ['pidfile' => $out]);
+                    throw new Exception("pidUnreadable", ['pidfile' => $out]);
                 } elseif (!is_writable($out)) {
                     throw new Exception("pidUnwritable", ['pidfile' => $out]);
-                } elseif (!is_file($out)) {
-                    throw new Exception("pidNotFile", ['pidfile' => $out]);
                 }
+            } elseif (!is_dir($base)) {
+                throw new Exception("pidDirMissing", ['piddir' => $dir]);
             } elseif (!is_writable($base)) {
                 throw new Exception("pidUncreatable", ['pidfile' => $out]);
             }
         } else {
-            throw new Exception("pidDirNotFound", ['piddir' => $dir]);
+            throw new Exception("pidDirUnresolvable", ['piddir' => $dir]);
         }
         return $out;
     }
 
-    protected function realpath(string $path) {
-        return @realpath($path);
+    /** Resolves paths with relative components
+     * 
+     * This method has fewer filesystem access requirements than the native
+     * realpath() function. The current working directory most be resolvable
+     * for a relative path, but for absolute paths with relativelu components
+     * the filesystem is not involved at all.
+     * 
+     * Consequently symbolic links are not resolved.
+     * 
+     * @return string|false
+     */
+    public function resolveRelativePath(string $path) {
+        if ($path[0] !== "/") {
+            $cwd = $this->cwd();
+            if ($cwd === false) {
+                return false;
+            }
+            $path = substr($cwd, 1)."/".$path;
+        }
+        $path = explode("/", substr($path, 1));
+        $out = [];
+        foreach ($path as $p) {
+            if ($p === "..") {
+                array_pop($out);
+            } elseif ($p === ".") {
+                continue;
+            } else {
+                $out[] = $p;
+            }
+        }
+        return "/".implode("/", $out);
+    }
+
+    /** Wrapper around posix_getcwd to facilitate testing
+     * 
+     * @return string|false
+     * @codeCoverageIgnore
+     */
+    protected function cwd() {
+        return posix_getcwd();
     }
 }

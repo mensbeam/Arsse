@@ -183,7 +183,7 @@ USAGE_TEXT;
         // create a Daemon object which contains various helper functions
         $daemon = Arsse::$obj->get(Daemon::class);
         // resolve the PID file to its absolute path; this also checks its readability and writability
-        $pidfile = $daemon->resolvePID($pidfile);
+        $pidfile = $daemon->checkPIDFilePath($pidfile);
         // daemonize
         $daemon->fork($pidfile);
         // start the fetching service as normal
