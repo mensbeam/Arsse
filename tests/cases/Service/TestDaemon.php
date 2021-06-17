@@ -30,7 +30,27 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->daemon = $this->partialMock(Daemon::class);
     }
 
-    /** @dataProvider providePidChecks */
+    /** @dataProvider providePathResolutions */
+    public function testResolveRelativePaths(string $path, $cwd, $exp): void {
+        // set up mock daemon class
+        $this->daemon->cwd->returns($cwd);
+        $daemon = $this->daemon->get();
+        // perform the test
+        $this->AssertSame($exp, $daemon->resolveRelativePath($path));
+    }
+
+    public function providePathResolutions(): iterable {
+        return [
+            ["/",       "/home/me", "/"],
+            ["/.",      "/home/me", "/"],
+            ["/..",     "/home/me", "/"],
+            ["/run",    "/home/me", "/run"],
+            ["/./run",  "/home/me", "/run"],
+            ["/../run", "/home/me", "/run"],
+        ];
+    }
+
+    /** @dataProvider providePidFileChecks */
     public function testCheckPidFiles(string $file, bool $accessible, $exp): void {
         $vfs = vfsStream::setup("pidtest", 0777, $this->pidfiles);
         $path = $vfs->url()."/";
@@ -51,7 +71,7 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function providePidChecks(): iterable {
+    public function providePidFileChecks(): iterable {
         return [
             ["ok/file",           false, new Exception("pidDirUnresolvable")],
             ["not/found",         true,  new Exception("pidDirMissing")],
