@@ -74,38 +74,42 @@ class Daemon {
         }
     }
 
-    protected function checkPID(string $pidfile, bool $lock) {
-        if (!$lock) {
-            if (file_exists($pidfile)) {
-                $pid = @file_get_contents($pidfile);
+    protected function checkPID(string $pidfile) {
+        if (file_exists($pidfile)) {
+            $pid = @file_get_contents($pidfile);
+            if (preg_match("/^\d+$/s", (string) $pid)) {
+                if ($this->processExists((int) $pid)) {
+                    throw new \Exception("Process already exists");
+                }
+            }
+        }
+    }
+
+    public function writePID(string $pidfile): void {
+        if ($f = @fopen($pidfile, "c+")) {
+            if (@flock($f, \LOCK_EX | \LOCK_NB)) {
+                // confirm that some other process didn't get in before us
+                $pid = fread($f, 100);
                 if (preg_match("/^\d+$/s", (string) $pid)) {
-                    if (@posix_kill((int) $pid, 0)) {
+                    if ($this->processExists((int) $pid)) {
                         throw new \Exception("Process already exists");
                     }
                 }
+                // write the PID to the pidfile
+                rewind($f);
+                ftruncate($f, 0);
+                fwrite($f, (string) posix_getpid());
+                fclose($f);
+            } else {
+                throw new \Exception("Process already exists");
             }
         } else {
-            if ($f = @fopen($pidfile, "c+")) {
-                if (@flock($f, \LOCK_EX | \LOCK_NB)) {
-                    // confirm that some other process didn't get in before us
-                    $pid = fread($f, 100);
-                    if (preg_match("/^\d+$/s", (string) $pid)) {
-                        if (@posix_kill((int) $pid, 0)) {
-                            throw new \Exception("Process already exists");
-                        }
-                    }
-                    // write the PID to the pidfile
-                    rewind($f);
-                    ftruncate($f, 0);
-                    fwrite($f, (string) posix_getpid());
-                    fclose($f);
-                } else {
-                    throw new \Exception("Process already exists");
-                }
-            } else {
-                throw new Exception("Could not write to PID file");
-            }
+            throw new \Exception("Could not write to PID file");
         }
+    }
+
+    protected function processExists(int $pid): bool {
+        return @posix_kill($pid, 0);
     }
 
     /** Resolves the PID file path and ensures the file or parent directory is writable */
