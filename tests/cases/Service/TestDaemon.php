@@ -41,12 +41,18 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function providePathResolutions(): iterable {
         return [
-            ["/",       "/home/me", "/"],
-            ["/.",      "/home/me", "/"],
-            ["/..",     "/home/me", "/"],
-            ["/run",    "/home/me", "/run"],
-            ["/./run",  "/home/me", "/run"],
-            ["/../run", "/home/me", "/run"],
+            ["/",           "/home/me", "/"],
+            ["/.",          "/home/me", "/"],
+            ["/..",         "/home/me", "/"],
+            ["/run",        "/home/me", "/run"],
+            ["/./run",      "/home/me", "/run"],
+            ["/../run",     "/home/me", "/run"],
+            ["/run/../run", "/home/me", "/run"],
+            ["/run/./run",  "/home/me", "/run/run"],
+            ["run",         "/home/me", "/home/me/run"],
+            ["run/..",      "/home/me", "/home/me"],
+            [".",           "/",        "/"],
+            [".",           false,      false],
         ];
     }
 

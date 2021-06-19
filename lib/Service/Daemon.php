@@ -159,9 +159,10 @@ class Daemon {
             if ($cwd === false) {
                 return false;
             }
-            $path = substr($cwd, 1)."/".$path;
+            $path = explode("/", substr($cwd, 1)."/".$path);
+        } else {
+            $path = explode("/", substr($path, 1));
         }
-        $path = explode("/", substr($path, 1));
         $out = [];
         foreach ($path as $p) {
             if ($p === "..") {
