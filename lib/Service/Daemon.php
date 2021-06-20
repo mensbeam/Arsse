@@ -76,8 +76,8 @@ class Daemon {
 
     protected function checkPID(string $pidfile) {
         if (file_exists($pidfile)) {
-            $pid = @file_get_contents($pidfile);
-            if (preg_match("/^\d+$/s", (string) $pid)) {
+            $pid = (string) @file_get_contents($pidfile);
+            if (preg_match("/^\d+$/s", $pid)) {
                 if ($this->processExists((int) $pid)) {
                     throw new \Exception("Process already exists");
                 }
@@ -108,6 +108,10 @@ class Daemon {
         }
     }
 
+    /** Wrapper around posix_kill (with signal 0) to facilitation testing
+     * 
+     * @codeCoverageIgnore
+     */
     protected function processExists(int $pid): bool {
         return @posix_kill($pid, 0);
     }
