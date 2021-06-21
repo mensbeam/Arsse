@@ -109,6 +109,10 @@ abstract class AbstractException extends \Exception {
         "Service/Exception.pidUnreadable"             => 10805,
         "Service/Exception.pidUnwritable"             => 10806,
         "Service/Exception.pidUncreatable"            => 10807,
+        "Service/Exception.pidCorrupt"                => 10808,
+        "Service/Exception.pidDuplicate"              => 10809,
+        "Service/Exception.pidLocked"                 => 10810,
+        "Service/Exception.pidInaccessible"           => 10811,
     ];
 
     protected $symbol;

@@ -7,6 +7,8 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Service;
 
 class Daemon {
+    protected const PID_PATTERN = "/^(?:[1-9]\d{0,77})*$/s"; // no more than 78 digits (256-bit unsigned integer), starting with a digit other than zero
+
     /** Daemonizes the process via the traditional sysvinit double-fork procedure
      * 
      * @codeCoverageIgnore
@@ -20,7 +22,7 @@ class Daemon {
         # Reset all signal handlers to their default. This is best done by iterating through the available signals up to the limit of _NSIG and resetting them to SIG_DFL.
         // We have not yet set any signal handlers, so this should be fine
         # Reset the signal mask using sigprocmask().
-        // Not possible to my knowledge
+        pcntl_sigprocmask(\SIG_SETMASK, []);
         # Sanitize the environment block, removing or resetting environment variables that might negatively impact daemon runtime.
         //Not necessary; we don't use the environment
         # Call fork(), to create a background process.
@@ -77,10 +79,12 @@ class Daemon {
     protected function checkPID(string $pidfile) {
         if (file_exists($pidfile)) {
             $pid = (string) @file_get_contents($pidfile);
-            if (preg_match("/^\d+$/s", $pid)) {
-                if ($this->processExists((int) $pid)) {
-                    throw new \Exception("Process already exists");
+            if (preg_match(static::PID_PATTERN, $pid)) {
+                if (strlen($pid) && $this->processExists((int) $pid)) {
+                    throw new Exception("pidDuplicate", ['pid' => $pid]);
                 }
+            } else {
+                throw new Exception("pidCorrupt", ['pidfile' => $pidfile]);
             }
         }
     }
@@ -89,11 +93,13 @@ class Daemon {
         if ($f = @fopen($pidfile, "c+")) {
             if (@flock($f, \LOCK_EX | \LOCK_NB)) {
                 // confirm that some other process didn't get in before us
-                $pid = fread($f, 100);
-                if (preg_match("/^\d+$/s", (string) $pid)) {
+                $pid = fread($f, 80);
+                if (preg_match(static::PID_PATTERN, (string) $pid)) {
                     if ($this->processExists((int) $pid)) {
-                        throw new \Exception("Process already exists");
+                        throw new Exception("pidDuplicate", ['pid' => $pid]);
                     }
+                } else {
+                    throw new Exception("pidCorrupt", ['pidfile' => $pidfile]);
                 }
                 // write the PID to the pidfile
                 rewind($f);
@@ -101,10 +107,10 @@ class Daemon {
                 fwrite($f, (string) posix_getpid());
                 fclose($f);
             } else {
-                throw new \Exception("Process already exists");
+                throw new Exception("pidLocked", ['pidfile' => $pidfile]);
             }
         } else {
-            throw new \Exception("Could not write to PID file");
+            throw new Exception("pidInaccessible", ['pidfile' => $pidfile]);
         }
     }
 
