@@ -76,7 +76,7 @@ class Daemon {
         }
     }
 
-    protected function checkPID(string $pidfile) {
+    public function checkPID(string $pidfile): void {
         if (file_exists($pidfile)) {
             $pid = @file_get_contents($pidfile);
             if ($pid !== false) {

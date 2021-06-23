@@ -23,6 +23,21 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
             'dir' => [],
             'file' => "this file can be fully accessed",
         ],
+        'pid' => [
+            'current'    => "2112",
+            'stale'      => "42",
+            "empty"      => "",
+            'malformed1' => "02112",
+            'malformed2' => "2112 ",
+            'malformed3' => "2112\n",
+            'bogus1'     => "bogus",
+            'bogus2'     => " ",
+            'bogus3'     => "\n",
+            'overlong'   => "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890",
+            'locked'     => "", // this file will be locked by the test
+            'unreadable' => "", // this file will be chmodded by the test
+            'unwritable' => "", // this file will be chmodded by the test
+        ],
     ];
 
     public function setUp(): void {
@@ -89,6 +104,52 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
             ["ok/dir",            true,  new Exception("pidNotFile")],
             ["ok/file",           true,  "ok/file"],
             ["ok/dir/file",       true,  "ok/dir/file"],
+        ];
+    }
+
+    /** @dataProvider providePidReadChecks */
+    public function testCheckPidReads(string $file, $exp) {
+        $vfs = vfsStream::setup("pidtest", 0777, $this->pidfiles);
+        $path = $vfs->url()."/pid/";
+        // set up access blocks
+        $f = fopen($path."locked", "r+");
+        flock($f, \LOCK_EX | \LOCK_NB);
+        chmod($path."unreadable", 0333);
+        chmod($path."unwritable", 0555);
+        // set up mock daemon class
+        $this->daemon->processExists->with(2112)->returns(true);
+        $this->daemon->processExists->with(42)->returns(false);
+        $daemon = $this->daemon->get();
+        // perform the test
+        try {
+            if ($exp instanceof \Exception) {
+                $this->assertException($exp);
+                $daemon->checkPID($path.$file);
+            } else {
+                $this->assertSame($exp, $daemon->checkPID($path.$file));
+            }
+        } finally {
+            flock($f, \LOCK_UN);
+            fclose($f);
+        }
+    }
+
+    public function providePidReadChecks(): iterable {
+        return [
+            ["current",    new Exception("pidDuplicate")],
+            ["malformed1", new Exception("pidCorrupt")],
+            ["malformed2", new Exception("pidCorrupt")],
+            ["malformed3", new Exception("pidCorrupt")],
+            ["bogus1",     new Exception("pidCorrupt")],
+            ["bogus2",     new Exception("pidCorrupt")],
+            ["bogus3",     new Exception("pidCorrupt")],
+            ["overlong",   new Exception("pidCorrupt")],
+            ["unreadable", new Exception("pidInaccessible")],
+            ["unwritable", null],
+            ["missing",    null],
+            ["locked",     null],
+            ["stale",      null],
+            ["empty",      null],
         ];
     }
 }
