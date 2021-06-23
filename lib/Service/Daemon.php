@@ -43,7 +43,7 @@ class Daemon {
                     case 0:
                         // We do some things out of order because as far as I know there's no way to reconnect stdin, stdout, and stderr without closing the channel to the parent first
                         # In the daemon process, write the daemon PID (as returned by getpid()) to a PID file, for example /run/foobar.pid (for a hypothetical daemon "foobar") to ensure that the daemon cannot be started more than once. This must be implemented in race-free fashion so that the PID file is only updated when it is verified at the same time that the PID previously stored in the PID file no longer exists or belongs to a foreign process.
-                        $this->checkPID($pidfile, true);
+                        $this->writePID($pidfile);
                         # In the daemon process, drop privileges, if possible and applicable.
                         // already done
                         # From the daemon process, notify the original process started that initialization is complete. This can be implemented via an unnamed pipe or similar communication channel that is created before the first fork() and hence available in both the original and the daemon process.
@@ -78,13 +78,17 @@ class Daemon {
 
     protected function checkPID(string $pidfile) {
         if (file_exists($pidfile)) {
-            $pid = (string) @file_get_contents($pidfile);
-            if (preg_match(static::PID_PATTERN, $pid)) {
-                if (strlen($pid) && $this->processExists((int) $pid)) {
-                    throw new Exception("pidDuplicate", ['pid' => $pid]);
+            $pid = @file_get_contents($pidfile);
+            if ($pid !== false) {
+                if (preg_match(static::PID_PATTERN, $pid)) {
+                    if (strlen($pid) && $this->processExists((int) $pid)) {
+                        throw new Exception("pidDuplicate", ['pid' => $pid]);
+                    }
+                } else {
+                    throw new Exception("pidCorrupt", ['pidfile' => $pidfile]);
                 }
             } else {
-                throw new Exception("pidCorrupt", ['pidfile' => $pidfile]);
+                throw new Exception("pidInaccessible", ['pidfile' => $pidfile]);
             }
         }
     }
