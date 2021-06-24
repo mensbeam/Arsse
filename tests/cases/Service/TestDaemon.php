@@ -146,8 +146,62 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
             ["overlong",   new Exception("pidCorrupt")],
             ["unreadable", new Exception("pidInaccessible")],
             ["unwritable", null],
-            ["missing",    null],
             ["locked",     null],
+            ["missing",    null],
+            ["stale",      null],
+            ["empty",      null],
+        ];
+    }
+
+    /**
+     * @dataProvider providePidWriteChecks
+     * @requires extension posix
+     */
+    public function testCheckPidWrites(string $file, $exp) {
+        $pid = (string) posix_getpid();
+        $vfs = vfsStream::setup("pidtest", 0777, $this->pidfiles);
+        $path = $vfs->url()."/pid/";
+        // set up access blocks
+        $f = fopen($path."locked", "r+");
+        flock($f, \LOCK_EX | \LOCK_NB);
+        chmod($path."unreadable", 0333);
+        chmod($path."unwritable", 0555);
+        // set up mock daemon class
+        $this->daemon->processExists->with(2112)->returns(true);
+        $this->daemon->processExists->with(42)->returns(false);
+        $daemon = $this->daemon->get();
+        // perform the test
+        try {
+            if ($exp instanceof \Exception) {
+                $this->assertException($exp);
+                $exp = $this->pidfiles['pid'][$file] ?? false;
+                $daemon->writePID($path.$file);
+            } else {
+                $this->assertSame($exp, $daemon->writePID($path.$file));
+                $exp = $pid;
+            }
+        } finally {
+            flock($f, \LOCK_UN);
+            fclose($f);
+            chmod($path."unreadable", 0777);
+            $this->assertSame($exp, @file_get_contents($path.$file));
+        }
+    }
+
+    public function providePidWriteChecks(): iterable {
+        return [
+            ["current",    new Exception("pidDuplicate")],
+            ["malformed1", new Exception("pidCorrupt")],
+            ["malformed2", new Exception("pidCorrupt")],
+            ["malformed3", new Exception("pidCorrupt")],
+            ["bogus1",     new Exception("pidCorrupt")],
+            ["bogus2",     new Exception("pidCorrupt")],
+            ["bogus3",     new Exception("pidCorrupt")],
+            ["overlong",   new Exception("pidCorrupt")],
+            ["unreadable", new Exception("pidInaccessible")],
+            ["unwritable", new Exception("pidInaccessible")],
+            ["locked",     new Exception("pidLocked")],
+            ["missing",    null],
             ["stale",      null],
             ["empty",      null],
         ];

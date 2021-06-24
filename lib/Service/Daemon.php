@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Service;
 
 class Daemon {
-    protected const PID_PATTERN = '/^([1-9]\d{0,77})*$/D'; // no more than 78 digits (256-bit unsigned integer), starting with a digit other than zero
+    protected const PID_PATTERN = '/^([1-9]\d{0,77})?$/D'; // no more than 78 digits (256-bit unsigned integer), starting with a digit other than zero
 
     /** Daemonizes the process via the traditional sysvinit double-fork procedure
      * 
@@ -96,20 +96,25 @@ class Daemon {
     public function writePID(string $pidfile): void {
         if ($f = @fopen($pidfile, "c+")) {
             if (@flock($f, \LOCK_EX | \LOCK_NB)) {
-                // confirm that some other process didn't get in before us
-                $pid = fread($f, 80);
-                if (preg_match(static::PID_PATTERN, (string) $pid)) {
-                    if ($this->processExists((int) $pid)) {
-                        throw new Exception("pidDuplicate", ['pid' => $pid]);
+                try {
+                    // confirm that some other process didn't get in before us
+                    $pid = fread($f, 80);
+                    if (preg_match(static::PID_PATTERN, (string) $pid)) {
+                        if (strlen($pid) && $this->processExists((int) $pid)) {
+                            throw new Exception("pidDuplicate", ['pid' => $pid]);
+                        }
+                    } else {
+                        throw new Exception("pidCorrupt", ['pidfile' => $pidfile]);
                     }
-                } else {
-                    throw new Exception("pidCorrupt", ['pidfile' => $pidfile]);
+                    // write the PID to the pidfile
+                    rewind($f);
+                    if (!ftruncate($f, 0) || !fwrite($f, (string) posix_getpid())) {
+                        throw new Exception("pidInaccessible", ['pidfile' => $pidfile]);
+                    }
+                } finally {
+                    flock($f, \LOCK_UN);
+                    fclose($f);
                 }
-                // write the PID to the pidfile
-                rewind($f);
-                ftruncate($f, 0);
-                fwrite($f, (string) posix_getpid());
-                fclose($f);
             } else {
                 throw new Exception("pidLocked", ['pidfile' => $pidfile]);
             }
