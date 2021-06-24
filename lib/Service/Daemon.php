@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Service;
 
 class Daemon {
-    protected const PID_PATTERN = "/^(?:[1-9]\d{0,77})*$/s"; // no more than 78 digits (256-bit unsigned integer), starting with a digit other than zero
+    protected const PID_PATTERN = '/^([1-9]\d{0,77})*$/D'; // no more than 78 digits (256-bit unsigned integer), starting with a digit other than zero
 
     /** Daemonizes the process via the traditional sysvinit double-fork procedure
      * 
