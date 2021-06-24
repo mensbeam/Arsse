@@ -23,7 +23,7 @@ class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
             case "float":
                 return (substr($value, -2) === ".0") ? "'".substr($value, 0, strlen($value) - 2)."'" : "'$value'";
             case "string":
-                if (preg_match("<^char\((\d+)\)$>", $value, $match)) {
+                if (preg_match("<^char\((\d+)\)$>D", $value, $match)) {
                     return "'".\IntlChar::chr((int) $match[1])."'";
                 }
                 return $value;

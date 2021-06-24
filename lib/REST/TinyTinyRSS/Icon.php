@@ -27,7 +27,7 @@ class Icon extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($req->getMethod() !== "GET") {
             // only GET requests are allowed
             return new Response(405, ['Allow' => "GET"]);
-        } elseif (!preg_match("<^(\d+)\.ico$>", $req->getRequestTarget(), $match) || !((int) $match[1])) {
+        } elseif (!preg_match("<^(\d+)\.ico$>D", $req->getRequestTarget(), $match) || !((int) $match[1])) {
             return new Response(404);
         }
         try {

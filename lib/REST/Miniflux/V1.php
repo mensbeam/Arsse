@@ -332,7 +332,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         // handle special case "Get User By User Name", which can have any non-numeric string, non-empty as the last component
-        if (sizeof($path) === 3 && $path[0] === "" && $path[1] === "users" && !preg_match("/^(?:\d+)?$/", $path[2])) {
+        if (sizeof($path) === 3 && $path[0] === "" && $path[1] === "users" && !preg_match("/^(?:\d+)?$/D", $path[2])) {
             $path[2] = "*";
         }
         return implode("/", $path);

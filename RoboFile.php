@@ -218,7 +218,7 @@ class RoboFile extends \Robo\Tasks {
                 // Remove files which lintian complains about; they're otherwise harmless
                 $files = [];
                 foreach (new \CallbackFilterIterator(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir."vendor", \FilesystemIterator::CURRENT_AS_PATHNAME | \FilesystemIterator::SKIP_DOTS)), function($v, $k, $i) {
-                    return preg_match('/\/\.git(?:ignore|attributes|modules)$/', $v);
+                    return preg_match('/\/\.git(?:ignore|attributes|modules)$/D', $v);
                 }) as $f) {
                     $files[] = $f;
                 }
@@ -356,9 +356,9 @@ class RoboFile extends \Robo\Tasks {
         $expected = ["version"];
         for ($a = 0; $a < sizeof($lines);) {
             $l = rtrim($lines[$a++]);
-            if (in_array("version", $expected) && preg_match('/^Version (\d+(?:\.\d+)*) \(([\d\?]{4}-[\d\?]{2}-[\d\?]{2})\)\s*$/', $l, $m)) {
+            if (in_array("version", $expected) && preg_match('/^Version (\d+(?:\.\d+)*) \(([\d\?]{4}-[\d\?]{2}-[\d\?]{2})\)\s*$/D', $l, $m)) {
                 $version = $m[1];
-                if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $m[2])) {
+                if (!preg_match('/^\d{4}-\d{2}-\d{2}$/D', $m[2])) {
                     // uncertain dates are allowed only for the top version, and only if it does not match the target version (otherwise we have forgotten to set the correct date before tagging)
                     if (!$out && $targetVersion !== $version) {
                         // use today's date; local time is fine
@@ -398,10 +398,10 @@ class RoboFile extends \Robo\Tasks {
             } elseif (in_array("changes section", $expected) && $l === "Changes:") {
                 $section = "changes";
                 $expected = ["item"];
-            } elseif (in_array("item", $expected) && preg_match('/^- (\w.*)$/', $l, $m)) {
+            } elseif (in_array("item", $expected) && preg_match('/^- (\w.*)$/D', $l, $m)) {
                 $entry[$section][] = $m[1];
                 $expected = ["item", "continuation", "blank line"];
-            } elseif (in_array("continuation", $expected) && preg_match('/^  (\w.*)$/', $l, $m)) {
+            } elseif (in_array("continuation", $expected) && preg_match('/^  (\w.*)$/D', $l, $m)) {
                 $last = sizeof($entry[$section]) - 1;
                 $entry[$section][$last] .= "\n".$m[1];
             } else {
@@ -436,7 +436,7 @@ class RoboFile extends \Robo\Tasks {
         $out = "";
         foreach ($log as $entry) {
             // normalize the version string
-            preg_match('/^(\d+(?:\.\d+)*)(?:-(\d+)-.+)?$/', $entry['version'], $m);
+            preg_match('/^(\d+(?:\.\d+)*)(?:-(\d+)-.+)?$/D', $entry['version'], $m);
             $version = $m[1]."-".($m[2] ?: "1");
             // output the entry
             $out .= "arsse ($version) UNRELEASED; urgency=low\n";

@@ -224,7 +224,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         // with MySQL each table must be analyzed separately, so we first have to get a list of tables
         foreach ($this->query("SHOW TABLES like 'arsse\\_%'") as $table) {
             $table = array_pop($table);
-            if (!preg_match("/^arsse_[a-z_]+$/", $table)) {
+            if (!preg_match("/^arsse_[a-z_]+$/D", $table)) {
                 // table is not one of ours
                 continue; // @codeCoverageIgnore
             }

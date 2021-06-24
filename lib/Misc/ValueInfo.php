@@ -222,7 +222,7 @@ class ValueInfo {
                         return $out;
                     } else {
                         $out = sprintf("%F", $value);
-                        return preg_match("/\.0{1,}$/", $out) ? (string) (int) $out : $out;
+                        return preg_match("/\.0{1,}$/D", $out) ? (string) (int) $out : $out;
                     }
                 }
                 $info = self::str($value);
@@ -256,7 +256,7 @@ class ValueInfo {
                             $out = false;
                             if ($dateInFormat === "microtime") {
                                 // PHP is not able to correctly handle the output of microtime() as the input of DateTime::createFromFormat(), so we fudge it to look like a float
-                                if (preg_match("<^0\.\d{6}00 \d+$>", $value)) {
+                                if (preg_match("<^0\.\d{6}00 \d+$>D", $value)) {
                                     $value = substr($value, 11).".".substr($value, 2, 6);
                                 } else {
                                     throw new \Exception;

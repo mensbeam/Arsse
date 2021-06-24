@@ -118,7 +118,7 @@ class REST {
             // first try a simple substring match
             if (strpos($url, $api['match']) === 0) {
                 // if it matches, perform a more rigorous match and then strip off any defined prefix
-                $pattern = "<^".preg_quote($api['match'])."([/\?#]|$)>";
+                $pattern = "<^".preg_quote($api['match'])."([/\?#]|$)>D";
                 if ($url === $api['match'] || in_array(substr($api['match'], -1, 1), ["/", "?", "#"]) || preg_match($pattern, $url)) {
                     $target = substr($url, strlen($api['strip']));
                 } else {
@@ -258,7 +258,7 @@ class REST {
             // if the origin is the special value "null", use it
             return "null";
         }
-        if (preg_match("<^([^:]+)://(\[[^\]]+\]|[^\[\]:/\?#@]+)((?::.*)?)$>i", $origin, $match)) {
+        if (preg_match("<^([^:]+)://(\[[^\]]+\]|[^\[\]:/\?#@]+)((?::.*)?)$>Di", $origin, $match)) {
             // if the origin sort-of matches the syntax in a general sense, continue
             $scheme = $match[1];
             $host = $match[2];
@@ -266,7 +266,7 @@ class REST {
             // decode and normalize the scheme and port (the port may be blank)
             $scheme = strtolower(rawurldecode($scheme));
             $port = rawurldecode($port);
-            if (!preg_match("<^(?::[0-9]+)?$>", $port) || !preg_match("<^[a-z](?:[a-z0-9\+\-\.])*$>", $scheme)) {
+            if (!preg_match("<^(?::[0-9]+)?$>D", $port) || !preg_match("<^[a-z](?:[a-z0-9\+\-\.])*$>D", $scheme)) {
                 // if the normalized port contains anything but numbers, or the scheme does not follow the generic URL syntax, the origin is invalid
                 return "";
             }
