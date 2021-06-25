@@ -100,14 +100,11 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         $daemon->fork->returns(null);
         $this->objMock->get->with(Service::class)->returns($srv->get());
         $this->objMock->get->with(Daemon::class)->returns($daemon->get());
-        $this->assertConsole("arsse.php daemon --fork=arsse.pid", 0);
-        $this->assertFileDoesNotExist($f);
-        Phony::inOrder(
-            $daemon->checkPIDFilePath->calledWith("arsse.pid"),
-            $daemon->fork->calledWith($f),
-            $this->cli->loadConf->called(),
-            $srv->watch->calledWith(true)
-        );
+        $this->assertConsole("arsse.php daemon --fork=arsse.pid", 10809);
+        $daemon->checkPIDFilePath->calledWith("arsse.pid");
+        $daemon->fork->never()->called(); 
+        $this->cli->loadConf->never()->called();
+        $srv->watch->never()->called();
     }
 
     public function testRefreshAllFeeds(): void {
