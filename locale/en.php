@@ -219,4 +219,5 @@ return [
     'Exception.JKingWeb/Arsse/Service/Exception.pidDuplicate'              => 'Service is already running with process identifier {pid}',
     'Exception.JKingWeb/Arsse/Service/Exception.pidLocked'                 => 'PID file "{pidfile}" is locked',
     'Exception.JKingWeb/Arsse/Service/Exception.pidInaccessible'           => 'Unable to open PID file "{pidfile}"',
+    'Exception.JKingWeb/Arsse/Service/Exception.forkFailed'                => 'Failed to spawn child process ({instance, ordinal} instance)',
 ];

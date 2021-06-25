@@ -113,6 +113,7 @@ abstract class AbstractException extends \Exception {
         "Service/Exception.pidDuplicate"              => 10809,
         "Service/Exception.pidLocked"                 => 10810,
         "Service/Exception.pidInaccessible"           => 10811,
+        "Service/Exception.forkFailed"                => 10812,
     ];
 
     protected $symbol;

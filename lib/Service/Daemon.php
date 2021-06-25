@@ -30,7 +30,7 @@ class Daemon {
         switch (@pcntl_fork()) {
             case -1:
                 // Unable to fork
-                throw new \Exception("Unable to fork");
+                throw new Exception("forkFailed", ['instance' => 1]);
             case 0:
                 fclose($pipe[0]);
                 # In the child, call setsid() to detach from any terminal and create an independent session.
@@ -39,7 +39,7 @@ class Daemon {
                 switch (@pcntl_fork()) {
                     case -1:
                         // Unable to fork
-                        throw new \Exception("Unable to fork");
+                        throw new Exception("forkFailed", ['instance' => 2]);
                     case 0:
                         // We do some things out of order because as far as I know there's no way to reconnect stdin, stdout, and stderr without closing the channel to the parent first
                         # In the daemon process, write the daemon PID (as returned by getpid()) to a PID file, for example /run/foobar.pid (for a hypothetical daemon "foobar") to ensure that the daemon cannot be started more than once. This must be implemented in race-free fashion so that the PID file is only updated when it is verified at the same time that the PID previously stored in the PID file no longer exists or belongs to a foreign process.
