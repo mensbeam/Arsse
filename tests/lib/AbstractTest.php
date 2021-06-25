@@ -149,6 +149,15 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         }
     }
 
+    public static function assertFileDoesNotExist(string $filename, string $message = ''): void {
+        if (method_exists(parent::class, "assertFileDoesNotExist")) {
+            parent::assertFileDoesNotExist($filename, $message);
+        } else {
+            parent::assertFileNotExists($filename, $message);
+        }
+        
+    }
+
     public function assertException($msg = "", string $prefix = "", string $type = "Exception"): void {
         if (func_num_args()) {
             if ($msg instanceof \JKingWeb\Arsse\AbstractException) {

@@ -6,6 +6,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\CLI;
 
+use Eloquent\Phony\Phpunit\Phony;
 use GuzzleHttp\Exception\ClientException;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Conf;
@@ -13,10 +14,10 @@ use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\CLI;
-use JKingWeb\Arsse\CLI\Exception;
 use JKingWeb\Arsse\REST\Fever\User as FeverUser;
 use JKingWeb\Arsse\REST\Miniflux\Token as MinifluxToken;
 use JKingWeb\Arsse\ImportExport\OPML;
+use JKingWeb\Arsse\Service\Daemon;
 
 /** @covers \JKingWeb\Arsse\CLI */
 class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -70,6 +71,43 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertConsole("arsse.php daemon", 0);
         $this->cli->loadConf->called();
         $srv->watch->calledWith(true);
+    }
+
+    public function testStartTheForkingDaemon(): void {
+        $f = tempnam(sys_get_temp_dir(), "arsse");
+        $srv = $this->mock(Service::class);
+        $srv->watch->returns(new \DateTimeImmutable);
+        $daemon = $this->mock(Daemon::class);
+        $daemon->checkPIDFilePath->returns($f);
+        $daemon->fork->returns(null);
+        $this->objMock->get->with(Service::class)->returns($srv->get());
+        $this->objMock->get->with(Daemon::class)->returns($daemon->get());
+        $this->assertConsole("arsse.php daemon --fork=arsse.pid", 0);
+        $this->assertFileDoesNotExist($f);
+        Phony::inOrder(
+            $daemon->checkPIDFilePath->calledWith("arsse.pid"),
+            $daemon->fork->calledWith($f),
+            $this->cli->loadConf->called(),
+            $srv->watch->calledWith(true)
+        );
+    }
+
+    public function testFailToStartTheForkingDaemon(): void {
+        $srv = $this->mock(Service::class);
+        $srv->watch->returns(new \DateTimeImmutable);
+        $daemon = $this->mock(Daemon::class);
+        $daemon->checkPIDFilePath->throws(new Service\Exception("pidDuplicate", ['pid' =>2112]));
+        $daemon->fork->returns(null);
+        $this->objMock->get->with(Service::class)->returns($srv->get());
+        $this->objMock->get->with(Daemon::class)->returns($daemon->get());
+        $this->assertConsole("arsse.php daemon --fork=arsse.pid", 0);
+        $this->assertFileDoesNotExist($f);
+        Phony::inOrder(
+            $daemon->checkPIDFilePath->calledWith("arsse.pid"),
+            $daemon->fork->calledWith($f),
+            $this->cli->loadConf->called(),
+            $srv->watch->calledWith(true)
+        );
     }
 
     public function testRefreshAllFeeds(): void {
