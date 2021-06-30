@@ -472,6 +472,9 @@ class RoboFile extends \Robo\Tasks {
         $t->addTask($this->taskFilesystemStack()->copy($dir."dist/systemd/arsse-fetch.service", $dir."dist/debian/arsse.service"));
         $t->addTask($this->taskReplaceInFile($dir."/dist/debian/arsse.service")->regex('/^PartOf=.*$/m')->to(""));
         $t->addTask($this->taskReplaceInFile($dir."/dist/debian/arsse.service")->regex('/^(User|Group)=.*$/m')->to("$1=www-data"));
+        // adapt the init script for Debian: this involves changing the user and group to "www-data"
+        $t->addTask($this->taskFilesystemStack()->copy($dir."dist/init.sh", $dir."dist/debian/arsse.init"));
+        $t->addTask($this->taskReplaceInFile($dir."/dist/debian/arsse.init")->regex('/^(\s*)chown arsse:arsse $/m')->to("$1chown www-data:www-data "));
         // change the user and group references in tmpfiles
         $t->addTask($this->taskFilesystemStack()->copy($dir."dist/tmpfiles.conf", $dir."dist/debian/arsse.tmpfiles"));
         $t->addTask($this->taskReplaceInFile($dir."dist/debian/arsse.tmpfiles")->regex('/(?<= )arsse(?= )/')->to("www-data"));
