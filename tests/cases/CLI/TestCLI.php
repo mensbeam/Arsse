@@ -96,7 +96,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         $srv = $this->mock(Service::class);
         $srv->watch->returns(new \DateTimeImmutable);
         $daemon = $this->mock(Daemon::class);
-        $daemon->checkPIDFilePath->throws(new Service\Exception("pidDuplicate", ['pid' =>2112]));
+        $daemon->checkPIDFilePath->throws(new Service\Exception("pidDuplicate", ['pid' => 2112]));
         $daemon->fork->returns(null);
         $this->objMock->get->with(Service::class)->returns($srv->get());
         $this->objMock->get->with(Daemon::class)->returns($daemon->get());
