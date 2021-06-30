@@ -25,7 +25,7 @@ DAEMON=/usr/bin/$NAME
 arsse_start() {
     touch "$PIDFILE"
     chown arsse:arsse "$PIDFILE"
-    $DAEMON daemon --fork "$PIDFILE" || return 2
+    $DAEMON daemon --fork="$PIDFILE" || return 2
 }
 
 arsse_stop() {
