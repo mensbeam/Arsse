@@ -14,6 +14,7 @@
 
 # This script is designed for Debian; some adaptation will be required for other systems
 
+PATH=/usr/sbin/:/usr/bin:/sbin:/bin
 NAME=arsse
 DESC=newsfeed synchronization server
 PIDFILE=/run/arsse.pid
