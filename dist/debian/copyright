@@ -2,6 +2,7 @@ Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: arsse
 Upstream-Contact: J. King <jking@jkingweb.ca>
 Source: https://code.mensbeam.com/MensBeam/arsse/
+License: Expat
 
 Files: *
 Copyright: 2017 J. King <jking@jkingweb.ca>
