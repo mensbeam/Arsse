@@ -1,8 +1,8 @@
 ---
 title: "ARSSE"
 section: 1
-date: 2021-05-30
-footer: "arsse 0.9.3"
+date: 2021-07-03
+footer: "arsse 0.10.0"
 header: "User Commands"
 ---
 
@@ -12,26 +12,26 @@ arsse - manage an instance of The Advanced RSS Environment (The Arsse)
 
 # SYNOPSIS
 
-**arsse** user [list]\
-**arsse** user add <_username_> [<_password_>] [--admin]\
-**arsse** user remove <_username_>\
-**arsse** user show <_username_>\
-**arsse** user set <_username_> <_property_> <_value_>\
-**arsse** user unset <_username_> <_property_>\
-**arsse** user set-pass <_username_> [<_password_>] [--fever]\
-**arsse** user unset-pass <_username_> [--fever]\
-**arsse** user auth <_username_> <_password_> [--fever]\
-**arsse** token list <_username_>\
-**arsse** token create <_username_> [<_label_>]\
-**arsse** token revoke <_username_> [<_token_>]\
-**arsse** import <_username_> [<_file_>] [-f|--flat] [-r|--replace]\
-**arsse** export <_username_> [<_file_>] [-f|--flat]\
-**arsse** daemon\
-**arsse** feed refresh-all\
-**arsse** feed refresh <_n_>\
-**arsse** conf save-defaults [<_file_>]\
-**arsse** --version\
-**arsse** -h|--help
+**arsse user** [**list**]\
+**arsse user add** <_username_> [<_password_>] [**--admin**]\
+**arsse user remove** <_username_>\
+**arsse user show** <_username_>\
+**arsse user set** <_username_> <_property_> <_value_>\
+**arsse user unset** <_username_> <_property_>\
+**arsse user set-pass** <_username_> [<_password_>] [**--fever**]\
+**arsse user unset-pass** <_username_> [**--fever**]\
+**arsse user auth** <_username_> <_password_> [**--fever**]\
+**arsse token list** <_username_>\
+**arsse token create** <_username_> [<_label_>]\
+**arsse token revoke** <_username_> [<_token_>]\
+**arsse import** <_username_> [<_file_>] [**-f**|**--flat**] [**-r**|**--replace**]\
+**arsse export** <_username_> [<_file_>] [**-f**|**--flat**]\
+**arsse daemon** [**--fork=**<_pidfile_>]\ 
+**arsse feed refresh-all**\
+**arsse feed refresh** <_n_>\
+**arsse conf save-defaults** [<_file_>]\
+**arsse --version**\
+**arsse -h**|**--help**
 
 # DESCRIPTION
 
@@ -51,7 +51,7 @@ These are documented in the next section **PRIMARY COMMANDS**. Further, seldom-u
 
 :   Displays a simple list of user names with one entry per line
 
-**arsse user add** <_username_> [<_password_>] [--admin]
+**arsse user add** <_username_> [<_password_>] [**--admin**]
 
 :   Adds a new user to the database with the specified username and password. If <_password_> is omitted a random password will be generated and printed.
 
@@ -75,17 +75,17 @@ These are documented in the next section **PRIMARY COMMANDS**. Further, seldom-u
 
 ## Managing passwords and authentication tokens
 
-**arsse user set-pass** <_username_> [<_password_>] [--fever]
+**arsse user set-pass** <_username_> [<_password_>] [**--fever**]
 
 :   Changes a user's password to the specified value. If no password is specified, a random password will be generated and printed.
-  
+
     The **--fever** option sets a user's Fever protocol password instead of their general password. As the Fever protocol requires that passwords be stored insecurely, users do not have Fever passwords by default, and logging in to the Fever protocol is disabled until a suitable password is set. It is highly recommended that a user's Fever password be different from their general password.
 
-**arsse user unset-pass** <_username_> [--fever]
+**arsse user unset-pass** <_username_> [**--fever**]
 
 :   Unsets a user's password, effectively disabling their account. As with password setting, the **--fever** option may be used to operate on a user's Fever password instead of their general password.
 
-**arsse user auth** <_username_> <_password_> [--fever]
+**arsse user auth** <_username_> <_password_> [**--fever**]
 
 :   Tests logging a user in. This only checks that the user's password is correctly recognized; it has no side effects.
 
@@ -105,7 +105,7 @@ These are documented in the next section **PRIMARY COMMANDS**. Further, seldom-u
 
 ## Importing and exporting data
 
-**arsse import** <_username_> [<_file_>] [-r|--replace] [-f|--flat]
+**arsse import** <_username_> [<_file_>] [**-r**|**--replace**] [**-f**|**--flat**]
 
 :   Imports the newsfeeds, folders, and tags found in the OPML formatted <_file_> into the account of the specified user. If no file is specified, data is instead read from standard input. Import operations are atomic: if any of the newsfeeds listed in the input cannot be retrieved, the entire import operation will fail.
 
@@ -113,7 +113,7 @@ These are documented in the next section **PRIMARY COMMANDS**. Further, seldom-u
 
     The **--flat** (or **-f**) option can be used to ignore any folder structures in the file, importing any newsfeeds directly into the root folder. Combining this with the **--replace** option is possible.
 
-**arsse export** <_username_> [<_file_>] [-f|--flat]
+**arsse export** <_username_> [<_file_>] [**-f**|**--flat**]
 
 :   Exports a user's newsfeeds, folders, and tags to the OPML file specified by <_file_>, or standard output if no file is specified. Note that due to a limitation of the OPML format, any commas present in tag names will not be retained in the export.
 
@@ -121,9 +121,11 @@ These are documented in the next section **PRIMARY COMMANDS**. Further, seldom-u
 
 # ADDITIONAL COMMANDS
 
-**arsse daemon**
+**arsse daemon** [**--fork=**<_pidfile_>]
 
-:   Starts the newsfeed fetching service. Normally this command is only invoked by systemd.
+:   Starts the newsfeed fetching service. Normally this command is only invoked by Systemd.
+
+    The **--fork** option executes an "old-style" fork-then-terminate daemon rather than a "new-style" non-terminating daemon. This option should only be employed if using a System V-style init daemon on POSIX systems; normally Systemd is used. When using this option the daemon will write its process identifier to <_pidfile_> after forking.
 
 **arsse feed refresh-all**
 
@@ -191,7 +193,7 @@ The following metadata properties exist for each user:
 
       $ arsse user add "Bob the Builder"
       bLS!$_UUZ!iN2i_!^IC6
-        
+
 - Make Bob the Builder an administrator
 
       $ arsse user set "Bob the Builder" admin true
