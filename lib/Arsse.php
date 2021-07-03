@@ -28,4 +28,18 @@ class Arsse {
         static::$db = static::$db ?? new Database;
         static::$user = static::$user ?? new User;
     }
+
+    public static function checkExtensions(string ...$ext): void {
+        $missing = [];
+        foreach ($ext as $e) {
+            if (!extension_loaded($e)) {
+                $missing[] = $e;
+            }
+        }
+        if ($missing) {
+            $total = sizeof($missing);
+            $first = $missing[0];
+            throw new Exception("extMissing", ['first' => $first, 'total' => $total]);
+        }
+    }
 }
