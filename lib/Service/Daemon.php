@@ -7,9 +7,15 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Service;
 
 use JKingWeb\Arsse\AbstractException;
+use JKingWeb\Arsse\Arsse;
 
 class Daemon {
     protected const PID_PATTERN = '/^([1-9]\d{0,77})?$/D'; // no more than 78 digits (256-bit unsigned integer), starting with a digit other than zero
+    protected const REQUIRED_EXTENSIONS = ["posix", "pcntl"];
+
+    public function __construct() {
+        Arsse::checkExtensions(...self::REQUIRED_EXTENSIONS);
+    }
 
     /** Daemonizes the process via the traditional sysvinit double-fork procedure
      * 

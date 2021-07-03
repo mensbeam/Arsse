@@ -8,6 +8,15 @@ namespace JKingWeb\Arsse;
 
 class Arsse {
     public const VERSION = "0.9.2";
+    public const REQUIRED_EXTENSIONS = [
+        "intl",      // as this extension is required to prepare formatted messages, its absence will throw a distinct English-only exception
+        "dom",
+        "filter",
+        "json",      // part of the PHP core since version 8.0
+        "hash",      // part of the PHP core since version 7.4
+        "simplexml", // required by PicoFeed only
+        "iconv",     // required by PicoFeed only
+    ];
 
     /** @var Factory */
     public static $obj;
@@ -29,6 +38,7 @@ class Arsse {
         static::$user = static::$user ?? new User;
     }
 
+    /** Checks whether the specified extensions are loaded and throws an exception if any are not */
     public static function checkExtensions(string ...$ext): void {
         $missing = [];
         foreach ($ext as $e) {

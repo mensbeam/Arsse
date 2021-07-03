@@ -80,10 +80,12 @@ class REST {
     }
 
     public function dispatch(ServerRequestInterface $req = null): ResponseInterface {
-        // create a request object if not provided
-        $req = $req ?? ServerRequestFactory::fromGlobals();
-        // find the API to handle
         try {
+            // ensure the require extensions are loaded
+            Arsse::checkExtensions(...Arsse::REQUIRED_EXTENSIONS);
+            // create a request object if not provided
+            $req = $req ?? ServerRequestFactory::fromGlobals();
+            // find the API to handle
             [$api, $target, $class] = $this->apiMatch($req->getRequestTarget(), $this->apis);
             // authenticate the request pre-emptively
             $req = $this->authenticateRequest($req);
