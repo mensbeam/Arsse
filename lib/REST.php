@@ -86,7 +86,7 @@ class REST {
             // create a request object if not provided
             $req = $req ?? ServerRequestFactory::fromGlobals();
             // find the API to handle
-            [$api, $target, $class] = $this->apiMatch($req->getRequestTarget(), $this->apis);
+            [, $target, $class] = $this->apiMatch($req->getRequestTarget(), $this->apis);
             // authenticate the request pre-emptively
             $req = $this->authenticateRequest($req);
             // modify the request to have an uppercase method and a stripped target

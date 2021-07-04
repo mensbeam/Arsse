@@ -6,6 +6,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase;
 
+use JKingWeb\Arsse\Exception;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\Lang;
@@ -46,5 +47,22 @@ class TestArsse extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertInstanceOf(Lang::class, Arsse::$lang);
         $this->assertInstanceOf(Database::class, Arsse::$db);
         $this->assertInstanceOf(User::class, Arsse::$user);
+    }
+
+    /** @dataProvider provideExtensionChecks */
+    public function testCheckForExtensions(array $ext, $exp): void {
+        if ($exp instanceof \Exception) {
+            $this->assertException($exp);
+            Arsse::checkExtensions(...$ext);
+        } else {
+            $this->assertNull(Arsse::checkExtensions(...$ext));
+        }
+    }
+
+    public function provideExtensionChecks(): iterable {
+        return [
+            [["pcre"], null],
+            [["foo", "bar", "baz"], new Exception("extMissing", ['first' => "foo", 'total' => 3])],
+        ];
     }
 }
