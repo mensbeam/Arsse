@@ -17,6 +17,7 @@ class Service {
     /** @var Service\Driver */
     protected $drv;
     protected $loop = false;
+    protected $reload = false;
 
     public function __construct() {
         $driver = Arsse::$conf->serviceDriver;
@@ -43,12 +44,22 @@ class Service {
             if ($this->loop) {
                 do {
                     sleep((int) max(0, $t->getTimestamp() - time()));
-                    pcntl_signal_dispatch();
+                    pcntl_signal_dispatch();   
+                    if ($this->hangup) {
+                        $this->reload();
+                    }
                 } while ($this->loop && $t->getTimestamp() > time());
             }
             // @codeCoverageIgnoreEnd
         } while ($this->loop);
         return $t;
+    }
+
+    public function reload(): void {
+        $this->reload = false;
+        unset(Arsse::$user, Arsse::$db, Arsse::$conf, Arsse::$lang, Arsse::$obj, $this->drv);
+        Arsse::bootstrap();
+        $this->__construct();
     }
 
     public function checkIn(): bool {
@@ -100,6 +111,7 @@ class Service {
             foreach ([\SIGABRT, \SIGINT, \SIGTERM] as $sig) {
                 pcntl_signal($sig, [$this, "sigTerm"]);
             }
+            pcntl_signal(\SIGHUP, [$this, "sigHup"]);
         }
     }
 
@@ -108,5 +120,12 @@ class Service {
      * @codeCoverageIgnore */
     protected function sigTerm(int $signo): void {
         $this->loop = false;
+    }
+
+    /** Changes the condition for the service loop upon receiving a hangup signal
+     * 
+     * @codeCoverageIgnore */
+    protected function sigHup(int $signo): void {
+        $this->hangup = true;
     }
 }

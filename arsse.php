@@ -25,8 +25,7 @@ if (\PHP_SAPI === "cli") {
     exit($exitStatus);
 } else {
     // load configuration
-    $conf = file_exists(BASE."config.php") ? new Conf(BASE."config.php") : new Conf;
-    Arsse::load($conf);
+    Arsse::bootstrap();
     // handle Web requests
     $emitter = new \Laminas\HttpHandlerRunner\Emitter\SapiEmitter;
     $response = (new REST)->dispatch();

@@ -61,8 +61,7 @@ USAGE_TEXT;
 
     /** @codeCoverageIgnore */
     protected function loadConf(): bool {
-        $conf = file_exists(BASE."config.php") ? new Conf(BASE."config.php") : new Conf;
-        Arsse::load($conf);
+        Arsse::bootstrap();
         return true;
     }
 

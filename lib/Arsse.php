@@ -29,6 +29,12 @@ class Arsse {
     /** @var User */
     public static $user;
 
+    /** @codeCoverageIgnore */
+    public static function bootstrap(): void {
+        $conf = file_exists(BASE."config.php") ? new Conf(BASE."config.php") : new Conf;
+        static::load($conf);
+    }
+
     public static function load(Conf $conf): void {
         static::$obj = static::$obj ?? new Factory;
         static::$lang = static::$lang ?? new Lang;
