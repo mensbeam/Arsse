@@ -80,10 +80,11 @@ return [
      }',
      // indicates programming error
     'Exception.JKingWeb/Arsse/ExceptionType.typeUnknown'                   => 'Normalization type {0} is  not implemented',
-    'Exception.JKingWeb/Arsse/Exception.extMissing'                        => 'The "{first}" PHP extension {total, plural, offset:1
-        =0 {is}
-        =1 {and one other extension are}
-        other {and # other extensions are}
+    'Exception.JKingWeb/Arsse/Exception.extMissing'                        =>
+        'The "{first}" PHP extension {total, plural, offset:1
+            =1    {is}
+            one   {and # other extension are}
+            other {and # other extensions are}
         } not installed or not enabled.',
     'Exception.JKingWeb/Arsse/Lang/Exception.defaultFileMissing'           => 'Default language file "{0}" missing',
     'Exception.JKingWeb/Arsse/Lang/Exception.fileMissing'                  => 'Language file "{0}" is not available',
