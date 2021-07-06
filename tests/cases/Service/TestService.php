@@ -88,4 +88,18 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->articleCleanup->called();
         $this->dbMock->metaSet->calledWith("service_last_checkin", $this->anything(), "datetime");
     }
+
+    public function testReloadTheService(): void {
+        $u = Arsse::$user;
+        $l = Arsse::$lang;
+        $d = Arsse::$db;
+        $o = Arsse::$obj;
+        $c = Arsse::$conf;
+        $this->srv->reload();
+        $this->assertNotSame($u, Arsse::$user);
+        $this->assertNotSame($l, Arsse::$lang);
+        $this->assertNotSame($d, Arsse::$db);
+        $this->assertNotSame($o, Arsse::$obj);
+        $this->assertNotSame($c, Arsse::$conf);
+    }
 }

@@ -48,6 +48,7 @@ class Service {
                         pcntl_signal_dispatch();
                         if ($this->reload) {
                             $this->reload();
+                            fwrite(\STDERR, Arsse::$lang->msg("Service.Reload").\PHP_EOL);
                         }
                     }
                 } while ($this->loop && $t->getTimestamp() > time());
@@ -62,7 +63,6 @@ class Service {
         Arsse::$user = Arsse::$db = Arsse::$conf = Arsse::$lang = Arsse::$obj = $this->drv = null;
         Arsse::bootstrap();
         $this->__construct();
-        fwrite(\STDERR, Arsse::$lang->msg("Service.Reload").\PHP_EOL);
     }
 
     public function checkIn(): bool {
