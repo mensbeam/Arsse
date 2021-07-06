@@ -45,7 +45,7 @@ class Service {
                 do {
                     sleep((int) max(0, $t->getTimestamp() - time()));
                     pcntl_signal_dispatch();   
-                    if ($this->hangup) {
+                    if ($this->reload) {
                         $this->reload();
                     }
                 } while ($this->loop && $t->getTimestamp() > time());
@@ -57,9 +57,10 @@ class Service {
 
     public function reload(): void {
         $this->reload = false;
-        unset(Arsse::$user, Arsse::$db, Arsse::$conf, Arsse::$lang, Arsse::$obj, $this->drv);
+        Arsse::$user = Arsse::$db = Arsse::$conf = Arsse::$lang = Arsse::$obj = $this->drv = null;
         Arsse::bootstrap();
         $this->__construct();
+        fwrite(\STDERR, Arsse::$lang->msg("Service.Reload").\PHP_EOL);
     }
 
     public function checkIn(): bool {
@@ -126,6 +127,6 @@ class Service {
      * 
      * @codeCoverageIgnore */
     protected function sigHup(int $signo): void {
-        $this->hangup = true;
+        $this->reload = true;
     }
 }

@@ -6,6 +6,7 @@
 return [
     'CLI.Auth.Success'                                                     => 'Authentication successful',
     'CLI.Auth.Failure'                                                     => 'Authentication failed',
+    'Service.Reload'                                                       => 'Configuration reloaded',
 
     'API.Miniflux.DefaultCategoryName'                                     => "All",
     'API.Miniflux.ImportSuccess'                                           => 'Feeds imported successfully',

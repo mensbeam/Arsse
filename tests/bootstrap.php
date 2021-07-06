@@ -12,6 +12,7 @@ const DOCROOT = BASE."tests".DIRECTORY_SEPARATOR."docroot".DIRECTORY_SEPARATOR;
 ini_set("memory_limit", "-1");
 ini_set("zend.assertions", "1");
 ini_set("assert.exception", "true");
+// FIXME: Workaround for a bug in PCRE2 10.37
 ini_set("pcre.jit", "0");
 // FIXME: This is required by a dependency of Picofeed
 error_reporting(\E_ALL & ~\E_DEPRECATED);
