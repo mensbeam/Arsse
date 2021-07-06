@@ -34,7 +34,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$db = $this->dbMock->get();
         // instantiate the handler
         return new FeverUser;
-    }        
+    }
 
     /** @dataProvider providePasswordCreations */
     public function testRegisterAUserPassword(string $user, string $password = null, $exp): void {

@@ -196,6 +196,6 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
         // check the mode
         clearstatcache();
         $mode = base_convert((string) stat($f)['mode'], 10, 8);
-        $this->assertMatchesRegularExpression("/640$/",  $mode);
+        $this->assertMatchesRegularExpression("/640$/", $mode);
     }
 }

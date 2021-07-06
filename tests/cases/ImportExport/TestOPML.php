@@ -11,7 +11,6 @@ use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Test\Result;
 use JKingWeb\Arsse\ImportExport\OPML;
 use JKingWeb\Arsse\ImportExport\Exception;
-use ReflectionMethod;
 
 /** @covers \JKingWeb\Arsse\ImportExport\OPML<extended> */
 class TestOPML extends \JKingWeb\Arsse\Test\AbstractTest {

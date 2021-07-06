@@ -34,6 +34,9 @@
     "require-dev": {
         "bamarni/composer-bin-plugin": "*"
     },
+    "suggest": {
+        "ext-pcntl": "To respond to signals, particular to reload configuration via SIGHUP"
+    },
     "config": {
         "platform": {
             "php": "7.1.33"

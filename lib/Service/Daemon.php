@@ -18,7 +18,7 @@ class Daemon {
     }
 
     /** Daemonizes the process via the traditional sysvinit double-fork procedure
-     * 
+     *
      * @codeCoverageIgnore
      */
     public function fork(string $pidfile): void {
@@ -144,7 +144,7 @@ class Daemon {
     }
 
     /** Wrapper around posix_kill (with signal 0) to facilitation testing
-     * 
+     *
      * @codeCoverageIgnore
      */
     protected function processExists(int $pid): bool {
@@ -182,14 +182,14 @@ class Daemon {
     }
 
     /** Resolves paths with relative components
-     * 
+     *
      * This method has fewer filesystem access requirements than the native
      * realpath() function. The current working directory most be resolvable
      * for a relative path, but for absolute paths with relativelu components
      * the filesystem is not involved at all.
-     * 
+     *
      * Consequently symbolic links are not resolved.
-     * 
+     *
      * @return string|false
      */
     public function resolveRelativePath(string $path) {
@@ -216,7 +216,7 @@ class Daemon {
     }
 
     /** Wrapper around posix_getcwd to facilitate testing
-     * 
+     *
      * @return string|false
      * @codeCoverageIgnore
      */

@@ -328,8 +328,8 @@ class RoboFile extends \Robo\Tasks {
     }
 
     /** Generates the "arsse" command's manual page (UNIX man page)
-     * 
-     * This requires that the Pandoc document converter be installed and 
+     *
+     * This requires that the Pandoc document converter be installed and
      * available in $PATH.
      */
     public function manpage(): Result {
@@ -337,7 +337,7 @@ class RoboFile extends \Robo\Tasks {
         $man = [
             'en' => "man1/arsse.1",
         ];
-        foreach($man as $src => $out) {
+        foreach ($man as $src => $out) {
             $src = BASE."manpages/$src.md";
             $out = BASE."dist/man/$out";
             $t->addTask($this->taskFilesystemStack()->mkdir(dirname($out), 0755));
@@ -371,7 +371,7 @@ class RoboFile extends \Robo\Tasks {
                 }
                 if ($entry) {
                     $out[] = $entry;
-                } 
+                }
                 $entry = ['version' => $version, 'date' => $date, 'features' => [], 'fixes' => [], 'changes' => []];
                 $expected = ["separator"];
             } elseif (in_array("separator", $expected) && preg_match('/^=+/', $l)) {
@@ -422,7 +422,7 @@ class RoboFile extends \Robo\Tasks {
         $out[] = $entry;
         return $out;
     }
-    
+
     protected function changelogDebian(array $log, string $targetVersion): string {
         $latest = $log[0]['version'];
         $baseVersion = preg_replace('/^(\d+(?:\.\d+)*).*/', "$1", $targetVersion);
@@ -481,6 +481,6 @@ class RoboFile extends \Robo\Tasks {
         // change the user reference in the executable file
         $t->addTask($this->taskFilesystemStack()->mkdir($dir."dist/debian/bin"));
         $t->addTask($this->taskFilesystemStack()->copy($dir."dist/arsse", $dir."dist/debian/bin/arsse"));
-        $t->addTask($this->taskReplaceInFile($dir."dist/debian/bin/arsse")->from('posix_getpwnam("arsse"')->to('posix_getpwnam("www-data"'));        
+        $t->addTask($this->taskReplaceInFile($dir."dist/debian/bin/arsse")->from('posix_getpwnam("arsse"')->to('posix_getpwnam("www-data"'));
     }
 }

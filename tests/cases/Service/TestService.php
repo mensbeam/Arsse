@@ -23,7 +23,6 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->srv = new Service();
     }
 
-
     public function testCheckIn(): void {
         $now = time();
         $this->srv->checkIn();

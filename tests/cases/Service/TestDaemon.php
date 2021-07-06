@@ -20,7 +20,7 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
             'readwrite' => "can neither be read nor written to",
         ],
         'ok' => [
-            'dir' => [],
+            'dir'  => [],
             'file' => "this file can be fully accessed",
         ],
         'pid' => [

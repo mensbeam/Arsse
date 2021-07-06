@@ -899,7 +899,7 @@ LONG_STRING;
             [['caption' => "   "],      [$this->userId, ['name' => "   "]],      new ExceptionInput("typeViolation"),       null,                              null,        $this->respErr("INCORRECT_USAGE")],
         ];
     }
-    
+
     /** @dataProvider provideLabelRemovals */
     public function testRemoveALabel(array $in, ?array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "removeLabel", 'sid' => "PriestsOfSyrinx"], $in);
@@ -1356,7 +1356,6 @@ LONG_STRING;
         ];
     }
 
-    
     /** @dataProvider provideArticleChanges */
     public function testChangeArticles(array $in, ResponseInterface $exp): void {
         $in = array_merge(['op' => "updateArticle", 'sid' => "PriestsOfSyrinx"], $in);

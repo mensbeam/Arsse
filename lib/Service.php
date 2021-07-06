@@ -44,9 +44,11 @@ class Service {
             if ($this->loop) {
                 do {
                     sleep((int) max(0, $t->getTimestamp() - time()));
-                    pcntl_signal_dispatch();   
-                    if ($this->reload) {
-                        $this->reload();
+                    if (function_exists("pcntl_signal_dispatch")) {
+                        pcntl_signal_dispatch();
+                        if ($this->reload) {
+                            $this->reload();
+                        }
                     }
                 } while ($this->loop && $t->getTimestamp() > time());
             }
@@ -117,14 +119,14 @@ class Service {
     }
 
     /** Changes the condition for the service loop upon receiving a termination signal
-     * 
+     *
      * @codeCoverageIgnore */
     protected function sigTerm(int $signo): void {
         $this->loop = false;
     }
 
     /** Changes the condition for the service loop upon receiving a hangup signal
-     * 
+     *
      * @codeCoverageIgnore */
     protected function sigHup(int $signo): void {
         $this->reload = true;

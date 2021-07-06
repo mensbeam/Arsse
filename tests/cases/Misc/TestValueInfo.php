@@ -12,7 +12,6 @@ use JKingWeb\Arsse\Test\Result;
 
 /** @covers \JKingWeb\Arsse\Misc\ValueInfo */
 class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
-
     public function testGetIntegerInfo(): void {
         $tests = [
             [null,          I::NULL],

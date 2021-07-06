@@ -36,7 +36,6 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     protected $langMock;
     protected $dbMock;
     protected $userMock;
-    
 
     public function setUp(): void {
         self::clearData();
@@ -155,7 +154,6 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         } else {
             parent::assertFileNotExists($filename, $message);
         }
-        
     }
 
     public function assertException($msg = "", string $prefix = "", string $type = "Exception"): void {

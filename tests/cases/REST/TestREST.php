@@ -306,7 +306,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         if ($called) {
             $rMock->authenticateRequest->called();
             $hMock->dispatch->once()->called();
-            $in = $hMock->dispatch->firstCall()->argument();;
+            $in = $hMock->dispatch->firstCall()->argument();
             $this->assertSame($method, $in->getMethod());
             $this->assertSame($target, $in->getRequestTarget());
         } else {

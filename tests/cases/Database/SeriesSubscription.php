@@ -45,8 +45,8 @@ trait SeriesSubscription {
             ],
             'arsse_icons' => [
                 'columns' => [
-                    'id'  => "int",
-                    'url' => "str",
+                    'id'   => "int",
+                    'url'  => "str",
                     'data' => "blob",
                 ],
                 'rows' => [

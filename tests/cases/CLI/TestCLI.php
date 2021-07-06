@@ -102,7 +102,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->objMock->get->with(Daemon::class)->returns($daemon->get());
         $this->assertConsole("arsse.php daemon --fork=arsse.pid", 10809);
         $daemon->checkPIDFilePath->calledWith("arsse.pid");
-        $daemon->fork->never()->called(); 
+        $daemon->fork->never()->called();
         $this->cli->loadConf->never()->called();
         $srv->watch->never()->called();
     }
