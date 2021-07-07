@@ -1,6 +1,6 @@
 *
 !.gitignore
-!arsse.install
+!arsse.*
 !compat
 !control
 !copyright
