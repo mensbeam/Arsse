@@ -22,7 +22,7 @@ if (file_exists($dbconfpath)) {
             'dbPostgreSQLHost' => $dbserver ?? "",
             'dbPostgreSQLUser' => $dbuser ?? "arsse",
             'dbPostgreSQLPass' => $dbpass ?? "",
-            'dbPostgreSQLPort' => $dbport ?? 5432,
+            'dbPostgreSQLPort' => (int) $dbport ?: 5432,
             'dbPostgreSQLDb'   => $dbname ?? "arsse",
         ];
     } elseif ($dbtype === "mysql") {
@@ -31,7 +31,7 @@ if (file_exists($dbconfpath)) {
             'dbMySQLHost' => $dbserver ?? "",
             'dbMySQLUser' => $dbuser ?? "arsse",
             'dbMySQLPass' => $dbpass ?? "",
-            'dbMySQLPort' => $dbport ?? 3306,
+            'dbMySQLPort' => (int) $dbport ?: 3306,
             'dbMySQLDb'   => $dbname ?? "arsse",
         ];
     } else {
