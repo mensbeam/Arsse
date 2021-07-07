@@ -6,6 +6,8 @@
 !copyright
 !lintian-overrides
 !rules
+!config.php
+!dbconfig-common.php
 
 !source/
 source/*
