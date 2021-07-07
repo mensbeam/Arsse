@@ -4,17 +4,21 @@ set -e
 
 . /usr/share/debconf/confmodule
 
-# Set up dbconfig-common
-if test -f /usr/share/dbconfig-common/dpkg/postinst; then
-    . /usr/share/dbconfig-common/dpkg/postinst
-    dbc_generate_include_owner="root:www-data"
-    dbc_generate_include_perms="0640"
-    dbc_generate_include="php:/var/lib/arsse/dbconfig.inc"
-    dbc_pgsql_createdb_encoding="UTF8' lc_collate='C"
-    dbc_mysql_createdb_encoding="UTF8"
-    dbc_dbfile_owner="root:www-data"
-    dbc_dbfile_perms="0660"
-    dbc_go arsse "$@"
+if [ "$1" = "configure" ]; then
+    # Set permissions on configuration file
+    dpkg-statoverride --list "/etc/arsse/config.php" >/dev/null || dpkg-statoverride --update --add root www-data 640 "/etc/arsse/config.php"
+    # Set up dbconfig-common
+    if test -f /usr/share/dbconfig-common/dpkg/postinst; then
+        . /usr/share/dbconfig-common/dpkg/postinst
+        dbc_generate_include_owner="root:www-data"
+        dbc_generate_include_perms="0640"
+        dbc_generate_include="php:/var/lib/arsse/dbconfig.inc"
+        dbc_pgsql_createdb_encoding="UTF8' lc_collate='C"
+        dbc_mysql_createdb_encoding="UTF8"
+        dbc_dbfile_owner="root:www-data"
+        dbc_dbfile_perms="0660"
+        dbc_go arsse "$@"
+    fi
 fi
 
 # dh_installdeb will replace this with shell code automatically
