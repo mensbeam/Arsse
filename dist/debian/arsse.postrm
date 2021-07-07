@@ -3,13 +3,13 @@
 set -e
 
 if test -f /usr/share/debconf/confmodule; then
-	. /usr/share/debconf/confmodule
+    . /usr/share/debconf/confmodule
 fi
 
-# Do dbconfig-common removal stuff
+# Set up dbconfig-common
 if test -f /usr/share/dbconfig-common/dpkg/postrm; then
-	. /usr/share/dbconfig-common/dpkg/postrm
-	dbc_go arsse "$@"
+    . /usr/share/dbconfig-common/dpkg/postrm
+    dbc_go arsse "$@"
 fi
 
 # dh_installdeb will replace this with shell code automatically

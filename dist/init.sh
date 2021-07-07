@@ -41,8 +41,8 @@ case "$1" in
     start)
         log_daemon_msg "Starting $DESC" "$NAME"
         if pidofproc -p $PIDFILE "$DAEMON" > /dev/null 2>&1 ; then
-	        return 1
-	    fi
+            return 1
+        fi
         arsse_start
         ;;
     stop)

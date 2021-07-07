@@ -4,7 +4,7 @@ set -e
 
 . /usr/share/debconf/confmodule
 
-# Do dbconfig-common prerm stuff
+# Set up dbconfig-common
 . /usr/share/dbconfig-common/dpkg/prerm
 dbc_go arsse "$@"
 

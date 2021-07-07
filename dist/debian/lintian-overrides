@@ -2,3 +2,5 @@
 spelling-error-in-description Tiny Tiny (duplicate word) Tiny
 # The manual for DrUUID (a dependency) includes a harmless "up" link
 privacy-breach-generic usr/share/arsse/vendor/jkingweb/druuid/documentation/manual.html [<link rel="up" href="http://jkingweb.ca/code/">] (http://jkingweb.ca/code/)
+# We only ask dbconfig-common questions, which don't seem to require templates
+no-debconf-templates
