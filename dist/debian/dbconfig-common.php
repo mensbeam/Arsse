@@ -1,6 +1,6 @@
 <?php
 
-# This script transforms Debian's dbconfig-common's PHP-format include files
+# This script transforms Debian's dbconfig-common PHP-format include files
 # into a form usable by The Arsse. This is necessary because The Arsse
 # supports defining configuration parameters for all supported database types
 # at once, using separate keys for the different types
@@ -39,6 +39,6 @@ if (file_exists($dbconfpath)) {
     }
     return $conf;
 } else {
-    // if not configuration file exists simply return an empty array
+    // if no configuration file exists simply return an empty array
     return [];
 }
