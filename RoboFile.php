@@ -160,7 +160,7 @@ class RoboFile extends \Robo\Tasks {
 
     /** Packages a given commit of the software into a release tarball
      *
-     * The version to package may be any Git tree-ish identifier: a tag, a branch,
+     * The commit to package may be any Git tree-ish identifier: a tag, a branch,
      * or any commit hash. If none is provided on the command line, Robo will prompt
      * for a commit to package; the default is "HEAD".
      *
@@ -168,9 +168,9 @@ class RoboFile extends \Robo\Tasks {
      * may not be equivalent due to subsequent changes in the exclude list, or because
      * of new tooling.
      */
-    public function package(string $version = null): Result {
+    public function package(string $commit = null): Result {
         // establish which commit to package
-        $version = $this->commitVersion($version);
+        $version = $this->commitVersion($commit);
         $archVersion = preg_replace('/^([^-]+)-(\d+)-(\w+)$/', "$1.r$2.$3", $version);
         // name the generic release tarball
         $tarball = BASE."release/$version/arsse-$version.tar.gz";
@@ -251,11 +251,26 @@ class RoboFile extends \Robo\Tasks {
         return $result;
     }
 
-    /** Packages a release tarball into an Arch package  */
-    public function packageArch(string $tarball): Result {
+    /** Packages a given commit of the software into an Arch package
+     *
+     * The version to package may be any Git tree-ish identifier: a tag, a branch,
+     * or any commit hash. If none is provided on the command line, Robo will prompt
+     * for a commit to package; the default is "HEAD".
+     * 
+     * The Arch base-devel group should be installed for this.
+     */
+    public function packageArch(string $commit = null): Result {
+        // establish which commit to package
+        $version = $this->commitVersion($commit);
+        $commit = $commit ?? "HEAD";
+        $tarball = BASE."release/$version/arsse-$version.tar.gz";
         $dir = dirname($tarball).\DIRECTORY_SEPARATOR;
         // start a collection
         $t = $this->collectionBuilder();
+        // build the generic release tarball if it doesn't exist
+        if (!file_exists($tarball)) {
+            $t->addTask($this->taskExec(BASE."robo package $commit"));
+        }
         // extract the PKGBUILD from the tarball
         $t->addCode(function() use ($tarball, $dir) {
             // because Robo doesn't support extracting a single file we have to do it ourselves
@@ -268,12 +283,20 @@ class RoboFile extends \Robo\Tasks {
         return $t->run();
     }
 
-    /** Packages a release tarball into a Debian package */
-    public function packageDeb(string $tarball): Result {
-        // validate the tarball name
-        if (!preg_match('/^arsse-(\d+(?:\.\d+)*)/', basename($tarball))) {
-            throw new \Exception("Tarball is not named correctly");
-        }
+    /** Packages a given commit of the software into source and binary Debian packages
+     *
+     * The commit to package may be any Git tree-ish identifier: a tag, a branch,
+     * or any commit hash. If none is provided on the command line, Robo will prompt
+     * for a commit to package; the default is "HEAD".
+     * 
+     * The pbuilder tool should be installed for this.
+     */
+    public function packageDeb(string $commit = null): Result {
+        // establish which commit to package
+        $version = $this->commitVersion($commit);
+        $commit = $commit ?? "HEAD";
+        $tarball = BASE."release/$version/arsse-$version.tar.gz";
+        // define some more variables
         $tgz = BASE."release/pbuilder-arsse.tgz";
         $bind = dirname(realpath($tarball));
         $script = BASE."dist/debian/pbuilder.sh";
@@ -284,6 +307,10 @@ class RoboFile extends \Robo\Tasks {
         // check that the pbuilder base exists and create it if it does not
         if (!file_exists($tgz)) {
             $t->addTask($this->taskExec('sudo pbuilder create --basetgz '.escapeshellarg($tgz).' --mirror http://ftp.ca.debian.org/debian/ --extrapackages debhelper --extrapackages devscripts'));
+        }
+        // build the generic release tarball if it doesn't exist
+        if (!file_exists($tarball)) {
+            $t->addTask($this->taskExec(BASE."robo package $commit"));
         }
         // build the packages
         $t->addTask($this->taskExec('sudo pbuilder execute --basetgz '.escapeshellarg($tgz).' --bindmounts '.escapeshellarg($bind).' -- '.escapeshellarg($script).' '.escapeshellarg("$bind/".basename($tarball))));
