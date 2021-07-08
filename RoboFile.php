@@ -146,6 +146,18 @@ class RoboFile extends \Robo\Tasks {
         return $this->taskExec($executor)->option("-d", "zend.assertions=1")->arg($execpath)->option("-c", $confpath)->args(array_merge($set, $args))->run();
     }
 
+    protected function commitVersion(?string $commit): string {
+        $target = $commit ?? $this->askDefault("Reference commit:", "HEAD");
+        $base = escapeshellarg(BASE);
+        $blackhole = $this->blackhole();
+        // get useable version strings from Git
+        $out = trim(`git -C $base describe --tags $target $blackhole`);
+        if (!$out) {
+            throw new \Exception("Commit reference invalid");
+        }
+        return $out;
+    }
+
     /** Packages a given commit of the software into a release tarball
      *
      * The version to package may be any Git tree-ish identifier: a tag, a branch,
@@ -158,22 +170,20 @@ class RoboFile extends \Robo\Tasks {
      */
     public function package(string $version = null): Result {
         // establish which commit to package
-        $commit = $version ?? $this->askDefault("Commit to package:", "HEAD");
+        $version = $this->commitVersion($version);
+        $archVersion = preg_replace('/^([^-]+)-(\d+)-(\w+)$/', "$1.r$2.$3", $version);
+        // name the generic release tarball
+        $tarball = BASE."release/$version/arsse-$version.tar.gz";
         // start a collection
         $t = $this->collectionBuilder();
         // create a temporary directory
         $dir = $t->tmpDir().\DIRECTORY_SEPARATOR;
         // create a Git worktree for the selected commit in the temp location
-        $result = $this->taskExec("git worktree add ".escapeshellarg($dir)." ".escapeshellarg($commit))->dir(BASE)->run();
+        $result = $this->taskExec("git worktree add ".escapeshellarg($dir)." ".escapeshellarg($version))->dir(BASE)->run();
         if ($result->getExitCode() > 0) {
             return $result;
         }
         try {
-            // get useable version strings from Git
-            $version = trim(`git -C "$dir" describe --tags`);
-            $archVersion = preg_replace('/^([^-]+)-(\d+)-(\w+)$/', "$1.r$2.$3", $version);
-            // name the generic release tarball
-            $tarball = "arsse-$version.tar.gz";
             // save commit description to VERSION file for reference
             $t->addTask($this->taskWriteToFile($dir."VERSION")->text($version));
             // patch the Arch PKGBUILD file with the correct version string
@@ -229,6 +239,7 @@ class RoboFile extends \Robo\Tasks {
             // remove any existing archive
             $t->addTask($this->taskFilesystemStack()->remove($tarball));
             // package it all up
+            $t->addTask($this->taskFilesystemStack()->mkdir(dirname($tarball)));
             $t->addTask($this->taskPack($tarball)->addDir("arsse", $dir));
             // execute the collection
             $result = $t->run();
@@ -259,27 +270,25 @@ class RoboFile extends \Robo\Tasks {
 
     /** Packages a release tarball into a Debian package */
     public function packageDeb(string $tarball): Result {
-        // determine the "upstream" (tagged) version
-        if (preg_match('/^arsse-(\d+(?:\.\d+)*)/', basename($tarball), $m)) {
-            $version = $m[1];
-        } else {
+        // validate the tarball name
+        if (!preg_match('/^arsse-(\d+(?:\.\d+)*)/', basename($tarball))) {
             throw new \Exception("Tarball is not named correctly");
         }
-        // start a task collection and create a temporary directory
+        $tgz = BASE."release/pbuilder-arsse.tgz";
+        $bind = dirname(realpath($tarball));
+        $script = BASE."dist/debian/pbuilder.sh";
+        $user = trim(`id -un`);
+        $group = trim(`id -gn`);
+        // start a task collection
         $t = $this->collectionBuilder();
-        $dir = $t->workDir(BASE."temp").\DIRECTORY_SEPARATOR;
-        $base = $dir."arsse-$version".\DIRECTORY_SEPARATOR;
-        // start by extracting the tarball
-        $t->addCode(function() use ($tarball, $dir, $base) {
-            // Robo's extract task is broken, so we do it manually
-            (new \Archive_Tar($tarball))->extract($dir, false);
-            return $this->taskFilesystemStack()->rename($dir."arsse", $base)->run();
-        });
-        // re-pack the tarball using specific names special to debuild
-        $t->addTask($this->taskPack($dir."arsse_$version.orig.tar.gz")->addDir("arsse-$version", $base));
-        // copy Debian files to lower down in the tree
-        $t->addTask($this->taskFilesystemStack()->mirror($base."dist/debian", $base."debian"));
-        //$t->addTask($this->taskExec("deber")->dir($base));
+        // check that the pbuilder base exists and create it if it does not
+        if (!file_exists($tgz)) {
+            $t->addTask($this->taskExec('sudo pbuilder create --basetgz '.escapeshellarg($tgz).' --mirror http://ftp.ca.debian.org/debian/ --extrapackages debhelper --extrapackages devscripts'));
+        }
+        // build the packages
+        $t->addTask($this->taskExec('sudo pbuilder execute --basetgz '.escapeshellarg($tgz).' --bindmounts '.escapeshellarg($bind).' -- '.escapeshellarg($script).' '.escapeshellarg("$bind/".basename($tarball))));
+        // take ownership of the output files
+        $t->addTask($this->taskExec("sudo chown -R $user:$group ".escapeshellarg($bind)));
         return $t->run();
     }
 
@@ -429,9 +438,10 @@ class RoboFile extends \Robo\Tasks {
         if ($baseVersion !== $targetVersion && version_compare($latest, $baseVersion, ">")) {
             // if the changelog contains an entry for a future version, change its version number to match the target version instead of using the future version
             $log[0]['version'] = $targetVersion;
-        } else {
+            $log[0]['distribution'] = "UNRELEASED";
+        } elseif ($baseVersion !== $targetVersion) {
             // otherwise synthesize a changelog entry for the changes since the last tag
-            array_unshift($log, ['version' => $targetVersion, 'date' => date("Y-m-d"), 'features' => [], 'fixes' => [], 'changes' => ["Unspecified changes"]]);
+            array_unshift($log, ['version' => $targetVersion, 'date' => date("Y-m-d"), 'features' => [], 'fixes' => [], 'changes' => ["Unspecified changes"], 'distribution' => "UNRELEASED"]);
         }
         $out = "";
         foreach ($log as $entry) {
@@ -439,7 +449,7 @@ class RoboFile extends \Robo\Tasks {
             preg_match('/^(\d+(?:\.\d+)*)(?:-(\d+)-.+)?$/D', $entry['version'], $m);
             $version = $m[1]."-".($m[2] ?: "1");
             // output the entry
-            $out .= "arsse ($version) UNRELEASED; urgency=low\n";
+            $out .= "arsse ($version) ".($entry['distribution'] ?? "unstable")."; urgency=low\n";
             if ($entry['features']) {
                 $out .= "\n";
                 foreach ($entry['features'] as $item) {
@@ -458,7 +468,7 @@ class RoboFile extends \Robo\Tasks {
                     $out .= "  * ".trim(preg_replace("/^/m", "    ", $item))."\n";
                 }
             }
-            $out .= "\n -- The Arsse team <no-contact@code.mensbeam.com>  ".\DateTimeImmutable::createFromFormat("Y-m-d", $entry['date'], new \DateTimeZone("UTC"))->format("D, d M Y")." 00:00:00 +0000\n\n";
+            $out .= "\n -- J. King <jking@jkingweb.ca>  ".\DateTimeImmutable::createFromFormat("Y-m-d", $entry['date'], new \DateTimeZone("UTC"))->format("D, d M Y")." 00:00:00 +0000\n\n";
         }
         return $out;
     }
