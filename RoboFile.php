@@ -147,23 +147,24 @@ class RoboFile extends \Robo\Tasks {
         return $this->taskExec($executor)->option("-d", "zend.assertions=1")->arg($execpath)->option("-c", $confpath)->args(array_merge($set, $args))->run();
     }
 
-    protected function commitVersion(?string $commit): string {
+    protected function commitVersion(?string $commit): array {
         $target = $commit ?? $this->askDefault("Reference commit:", "HEAD");
         $base = escapeshellarg(BASE);
         $blackhole = $this->blackhole();
         // get useable version strings from Git
-        $out = trim(`git -C $base describe --tags $target $blackhole`);
-        if (!$out) {
+        $version = trim(`git -C $base describe --tags $target $blackhole`);
+        if (!$version) {
             throw new \Exception("Commit reference invalid");
         }
-        return $out;
+        return [$target, $version];
     }
 
     protected function toolExists(string ...$binary): bool {
+        $blackhole = $this->blackhole(IS_WIN);
         foreach ($binary as $bin) {
             if (
-                (IS_WIN && (!exec(escapeshellarg($bin)." --help", $junk, $status) || $status))
-                || (!IS_WIN && (!exec("which ".escapeshellarg($bin), $junk, $status) || $status))
+                (IS_WIN && (!exec(escapeshellarg($bin)." --help $blackhole", $junk, $status) || $status))
+                || (!IS_WIN && (!exec("which ".escapeshellarg($bin)." $blackhole", $junk, $status) || $status))
              ) {
                     return false;
             }
@@ -181,12 +182,12 @@ class RoboFile extends \Robo\Tasks {
      * may not be equivalent due to subsequent changes in the exclude list, or because
      * of new tooling.
      */
-    public function package(string $commit = null): Result {
+    public function packageGeneric(string $commit = null): Result {
         if (!$this->toolExists("git", "pandoc")) {
             throw new \Exception("Git and Pandoc are required in PATH to produce generic release tarballs");
         }
         // establish which commit to package
-        $version = $this->commitVersion($commit);
+        [$commit, $version] = $this->commitVersion($commit);
         $archVersion = preg_replace('/^([^-]+)-(\d+)-(\w+)$/', "$1.r$2.$3", $version);
         // name the generic release tarball
         $tarball = BASE."release/$version/arsse-$version.tar.gz";
@@ -269,7 +270,7 @@ class RoboFile extends \Robo\Tasks {
 
     /** Packages a given commit of the software into an Arch package
      *
-     * The version to package may be any Git tree-ish identifier: a tag, a branch,
+     * The commit to package may be any Git tree-ish identifier: a tag, a branch,
      * or any commit hash. If none is provided on the command line, Robo will prompt
      * for a commit to package; the default is "HEAD".
      * 
@@ -280,8 +281,7 @@ class RoboFile extends \Robo\Tasks {
             throw new \Exception("Git, makepkg, and updpkgsums are required in PATH to produce Arch packages");
         }
         // establish which commit to package
-        $version = $this->commitVersion($commit);
-        $commit = $commit ?? "HEAD";
+        [$commit, $version] = $this->commitVersion($commit);
         $tarball = BASE."release/$version/arsse-$version.tar.gz";
         $dir = dirname($tarball).\DIRECTORY_SEPARATOR;
         // start a collection
@@ -310,13 +310,12 @@ class RoboFile extends \Robo\Tasks {
      * 
      * The pbuilder tool should be installed for this.
      */
-    public function packageDeb(string $commit = null): Result {
+    public function packageDebian(string $commit = null): Result {
         if (!$this->toolExists("git", "sudo", "pbuilder")) {
             throw new \Exception("Git, sudo, and pbuilder are required in PATH to produce Debian packages");
         }
         // establish which commit to package
-        $version = $this->commitVersion($commit);
-        $commit = $commit ?? "HEAD";
+        [$commit, $version] = $this->commitVersion($commit);
         $tarball = BASE."release/$version/arsse-$version.tar.gz";
         // define some more variables
         $tgz = BASE."release/pbuilder-arsse.tgz";
@@ -340,6 +339,46 @@ class RoboFile extends \Robo\Tasks {
         // take ownership of the output files
         $t->addTask($this->taskExec("sudo chown -R $user:$group ".escapeshellarg($bind)));
         return $t->run();
+    }
+
+    /** Generates all possible package types for a given commit of the software
+     *
+     * The commit to package may be any Git tree-ish identifier: a tag, a branch,
+     * or any commit hash. If none is provided on the command line, Robo will prompt
+     * for a commit to package; the default is "HEAD".
+     * 
+     * Generic release tarballs will always be generated, but distribution-specific
+     * packages are skipped when the required tools are not available
+     */
+    public function package(string $commit = null): Result {
+        if (!$this->toolExists("git")) {
+            throw new \Exception("Git is required in PATH to produce packages");
+        }
+        [$commit,] = $this->commitVersion($commit);
+        // determine whether the distribution-specific packages can be built
+        $dist = [
+            'Arch'   => $this->toolExists("git", "makepkg", "updpkgsums"),
+            'Debian' => $this->toolExists("git", "sudo", "pbuilder"),
+        ];
+        // start a collection
+        $t = $this->collectionBuilder();
+        // build the generic release tarball
+        $t->addTask($this->taskExec(BASE."robo package:generic $commit"));
+        // build other packages
+        foreach ($dist as $distro => $run) {
+            if ($run) {
+                $subcmd = strtolower($distro);
+                $t->addTask($this->taskExec(BASE."robo package:$subcmd $commit"));
+            }
+        }
+        $out = $t->run();
+        // note any packages which were not built
+        foreach ($dist as $distro => $run) {
+            if (!$run) {
+                $this->say("Packages for $distro skipped");
+            }
+        }
+        return $out;
     }
 
     /** Generates static manual pages in the "manual" directory

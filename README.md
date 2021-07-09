@@ -113,14 +113,14 @@ The Arsse's UNIX manual page is authored in Markdown, and must be converted to t
 
 ## Packaging a release
 
-Producing a release package is done by running `./robo package`. This performs the following operations:
+Producing release packages is done by running `./robo package`. This performs the following operations:
 
-- Duplicates a working tree with the commit (usually a release tag) to package
-- Generates UNIX manual pages with Pandoc
+- Duplicates a [Git](https://git-scm.com/) working tree with the commit (usually a release tag) to package
+- Generates UNIX manual pages with [Pandoc](https://pandoc.org/)
 - Generates the HTML manual
 - Installs runtime Composer dependencies with an optimized autoloader
 - Deletes numerous unneeded files
 - Exports the default configuration of The Arsse to a file
 - Compresses the remaining files into a tarball
-
-Due to the first two steps, [Git](https://git-scm.com/) and [Pandoc](https://pandoc.org/) are required in PATH to package a release.
+- Produces a binary package for Arch Linux, if possible
+- Produces source and binary packages for Debian using [pbuilder](https://pbuilder-team.pages.debian.net/pbuilder/), if possible
