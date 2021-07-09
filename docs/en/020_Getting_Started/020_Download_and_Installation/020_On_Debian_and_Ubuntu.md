@@ -2,53 +2,51 @@
 
 # Downloading The Arsse
 
-The latest version of The Arsse can be downloaded [from our Web site](https://thearsse.com/). If installing an older release from our archives, the attachments named _arsse-x.x.x.tar.gz_ should be used rather than those marked "Source Code".
+Since version 0.10.0 pre-built Debian packages for The Arsse are available from the [OpenSUSE Build Service](https://build.opensuse.org/) (OBS) under the author's personal project repository. This is the preferred method for instaling the software and is the means documented below.
 
-Installation from source code is also possible, but the release packages are recommended.
+Generic release tarballs may also be downloaded [from our Web site](https://thearsse.com), and a Debian package built manually. Installing directly from the generic release tarball without producing a Debian package is not recommended as the Debian packages make the set-up process on Debian systems significantly simpler.
+
+# Adding the repository
+
+In order to install The Arsse, the OBS repository must first be configured along with its signing key:
+
+```sh
+# Add the key
+wget -q -O - "https://download.opensuse.org/repositories/home:/JKingWeb/Debian_Unstable/Release.key" | gpg --dearmor | sudo tee "/usr/share/keyrings/arsse-obs-keyring.gpg" >/dev/null
+# Add the repository
+echo "deb [signed-by=/usr/share/keyrings/arsse-obs-keyring.gpg] https://download.opensuse.org/repositories/home:/JKingWeb/Debian_Unstable/ ." | sudo tee "/etc/apt/sources.list.d/arsse-obs.list" >/dev/null
+# Update APT's database
+sudo apt update -qq
+```
+
+Please note that the "Unstable" qualifier in the repository URL is a reference to Debian's "sid" release and is not a reflection on The Arsse's stability. The repository should be suitable for any Debian version or derivative which includes a sufficiently recent version of PHP.
 
 # Installation
 
-Presently installing The Arsse on Debian systems is a manual process. The first step is to install its dependencies:
+Once the OBS repository is configured, installing The Arsse is achieved with a single command:
 
 ```sh
-# Install PHP; this assumes the FastCGI process manager will be used
-sudo apt install php-cli php-fpm
-# Install the needed PHP extensions; php-curl is optional
-sudo apt install php-intl php-json php-xml php-curl
-# Install any one of the required database extensions
-sudo apt install php-sqlite3 php-pgsql php-mysql
+sudo apt install arsse
 ```
 
-Next its files must be unpacked into their requisite locations:
+During the installation process you will be prompted whether to allow `dbconfig-common` to configure The Arsse's database. The default `sqlite3` (SQLite) option is a good choice, but `pgsql` (PostgreSQL) and `mysql` (MySQL) are possible alternatives. If you wish to [use a database other than SQLite](Database_Setup/index), you should install it before installing The Arsse:
 
 ```sh
-# Unpack the archive
-sudo tar -xzf arsse-x.x.x.tar.gz -C "/usr/share"
-# Create necessary directories
-sudo mkdir -p /etc/arsse /etc/sysusers.d /etc/tmpfiles.d
-# Find the PHP version
-php_ver=`phpquery -V`
-# Move configuration files to their proper locations
-cd /usr/share/arsse/dist
-sudo mv systemd/* /etc/systemd/system/
-sudo mv sysusers.conf /etc/sysusers.d/arsse.conf
-sudo mv tmpfiles.conf /etc/tmpfiles.d/arsse.conf
-sudo mv config.php nginx apache /etc/arsse/
-sudo mv php-fpm.conf /etc/php/$php_ver/fpm/pool.d/arsse.conf
-sudo mv man/man1/* /usr/shame/man/man1/
-# Move the administration executable
-sudo mv arsse /usr/bin/
+# Install PostgreSQL
+sudo apt install postgresql php-pgsql
+# Install MySQL
+sudo apt install mysql-server php-mysql
+# Install SQLite explicitly
+sudo apt install php-sqlite3
 ```
 
-Finally, services must be restarted to apply the new configurations, and The Arsse's service also started:
+If you wish to change the database backend after having installed The Arsse, running `dpkg-reconfigure` after installing the database server can be used to achieve this:
 
 ```sh
-sudo systemctl restart systemd-sysusers
-sudo systemd-tmpfiles --create
-sudo systemctl restart php$php_ver-fpm
-sudo systemctl reenable arsse
-sudo systemctl restart arsse
+sudo dpkg-reconfigure arsse
 ```
+
+After installation is complete The Arsse will be started automatically.
 
 # Web server configuration
 
@@ -65,20 +63,10 @@ No additional set-up is required for Nginx.
 
 # Next steps
 
-If using a database other than SQLite, you will likely want to [set it up](/en/Getting_Started/Database_Setup) before doing anything else.
-
 In order for The Arsse to serve users, those users [must be created](/en/Using_The_Arsse/Managing_Users).
 
 You may also want to review the `config.defaults.php` file included in the download package and create [a configuration file](/en/Getting_Started/Configuration), though The Arsse can function even without using a configuration file.
 
 # Upgrading
 
-Upgrading The Arsse is simple:
-
-1. Download the latest release
-2. Check the `UPGRADING` file for any special notes
-3. Stop the newsfeed refreshing service if it is running
-4. Install the new version per the process above
-6. Start the newsfeed refreshing service
-
-By default The Arsse will perform any required database schema upgrades when the new version is executed. Occasionally changes to Web server configuration have been required, such as when new protocols become supported; these changes are always explicit in the `UPGRADING` file.
+Upgrading The Arsse is done like any other package. Occasionally changes to Web server configuration have been required, such as when new protocols become supported; these changes are always explicit in the `UPGRADING` file.

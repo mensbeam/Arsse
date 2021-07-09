@@ -47,7 +47,7 @@ You may also want to review the `config.defaults.php` file included in `/etc/web
 
 # Upgrading
 
-Upgrading The Arsse is done as like any other package. By default The Arsse will perform any required database schema upgrades when the new version is executed, so the service does need to be restarted:
+Upgrading The Arsse is done like any other package. By default The Arsse will perform any required database schema upgrades when the new version is executed, so the service does need to be restarted:
 
 ```sh
 sudo systemctl restart arsse
