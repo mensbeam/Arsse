@@ -7,6 +7,7 @@ const BASE = __DIR__.\DIRECTORY_SEPARATOR;
 const BASE_TEST = BASE."tests".\DIRECTORY_SEPARATOR;
 define("IS_WIN", defined("PHP_WINDOWS_VERSION_MAJOR"));
 define("IS_MAC", php_uname("s") === "Darwin");
+define("IS_LINUX", !IS_WIN && !IS_MAC);
 error_reporting(0);
 
 function norm(string $path): string {
@@ -158,6 +159,18 @@ class RoboFile extends \Robo\Tasks {
         return $out;
     }
 
+    protected function toolExists(string ...$binary): bool {
+        foreach ($binary as $bin) {
+            if (
+                (IS_WIN && (!exec(escapeshellarg($bin)." --help", $junk, $status) || $status))
+                || (!IS_WIN && (!exec("which ".escapeshellarg($bin), $junk, $status) || $status))
+             ) {
+                    return false;
+            }
+        }
+        return true;
+    }
+
     /** Packages a given commit of the software into a release tarball
      *
      * The commit to package may be any Git tree-ish identifier: a tag, a branch,
@@ -169,6 +182,9 @@ class RoboFile extends \Robo\Tasks {
      * of new tooling.
      */
     public function package(string $commit = null): Result {
+        if (!$this->toolExists("git", "pandoc")) {
+            throw new \Exception("Git and Pandoc are required in PATH to produce generic release tarballs");
+        }
         // establish which commit to package
         $version = $this->commitVersion($commit);
         $archVersion = preg_replace('/^([^-]+)-(\d+)-(\w+)$/', "$1.r$2.$3", $version);
@@ -260,6 +276,9 @@ class RoboFile extends \Robo\Tasks {
      * The Arch base-devel group should be installed for this.
      */
     public function packageArch(string $commit = null): Result {
+        if (!$this->toolExists("git", "makepkg", "updpkgsums")) {
+            throw new \Exception("Git, makepkg, and updpkgsums are required in PATH to produce Arch packages");
+        }
         // establish which commit to package
         $version = $this->commitVersion($commit);
         $commit = $commit ?? "HEAD";
@@ -292,6 +311,9 @@ class RoboFile extends \Robo\Tasks {
      * The pbuilder tool should be installed for this.
      */
     public function packageDeb(string $commit = null): Result {
+        if (!$this->toolExists("git", "sudo", "pbuilder")) {
+            throw new \Exception("Git, sudo, and pbuilder are required in PATH to produce Debian packages");
+        }
         // establish which commit to package
         $version = $this->commitVersion($commit);
         $commit = $commit ?? "HEAD";
@@ -306,6 +328,7 @@ class RoboFile extends \Robo\Tasks {
         $t = $this->collectionBuilder();
         // check that the pbuilder base exists and create it if it does not
         if (!file_exists($tgz)) {
+            $t->addTask($this->taskFilesystemStack()->mkdir(BASE."release"));
             $t->addTask($this->taskExec('sudo pbuilder create --basetgz '.escapeshellarg($tgz).' --mirror http://ftp.ca.debian.org/debian/ --extrapackages debhelper --extrapackages devscripts'));
         }
         // build the generic release tarball if it doesn't exist
@@ -345,6 +368,9 @@ class RoboFile extends \Robo\Tasks {
      * Daux's theme changes
      */
     public function manualTheme(array $args): Result {
+        if (!$this->toolExists("yarn")) {
+            throw new \Exception("Yarn is required in PATH to update the Daux theme");
+        }
         $postcss = escapeshellarg(norm(BASE."node_modules/.bin/postcss"));
         $themesrc = norm(BASE."docs/theme/src/").\DIRECTORY_SEPARATOR;
         $themeout = norm(BASE."docs/theme/arsse/").\DIRECTORY_SEPARATOR;
@@ -369,6 +395,9 @@ class RoboFile extends \Robo\Tasks {
      * available in $PATH.
      */
     public function manpage(): Result {
+        if (!$this->toolExists("pandoc")) {
+            throw new \Exception("Pandoc is required in PATH to generate manual pages");
+        }
         $t = $this->collectionBuilder();
         $man = [
             'en' => "man1/arsse.1",
