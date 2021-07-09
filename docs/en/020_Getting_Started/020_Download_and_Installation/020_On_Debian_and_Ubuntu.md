@@ -14,7 +14,7 @@ In order to install The Arsse, the OBS repository must first be configured along
 # Add the key
 wget -q -O - "https://download.opensuse.org/repositories/home:/JKingWeb/Debian_Unstable/Release.key" | gpg --dearmor | sudo tee "/usr/share/keyrings/arsse-obs-keyring.gpg" >/dev/null
 # Add the repository
-echo "deb [signed-by=/usr/share/keyrings/arsse-obs-keyring.gpg] https://download.opensuse.org/repositories/home:/JKingWeb/Debian_Unstable/ ." | sudo tee "/etc/apt/sources.list.d/arsse-obs.list" >/dev/null
+echo "deb [signed-by=/usr/share/keyrings/arsse-obs-keyring.gpg] https://download.opensuse.org/repositories/home:/JKingWeb/Debian_Unstable/ ./" | sudo tee "/etc/apt/sources.list.d/arsse-obs.list" >/dev/null
 # Update APT's database
 sudo apt update -qq
 ```
@@ -29,7 +29,9 @@ Once the OBS repository is configured, installing The Arsse is achieved with a s
 sudo apt install arsse
 ```
 
-During the installation process you will be prompted whether to allow `dbconfig-common` to configure The Arsse's database. The default `sqlite3` (SQLite) option is a good choice, but `pgsql` (PostgreSQL) and `mysql` (MySQL) are possible alternatives. If you wish to [use a database other than SQLite](Database_Setup/index), you should install it before installing The Arsse:
+After installation is complete The Arsse will be started automatically.
+
+During the installation process you will be prompted whether to allow `dbconfig-common` to configure The Arsse's database automatically. The default `sqlite3` (SQLite) option is a good choice, but `pgsql` (PostgreSQL) and `mysql` (MySQL) are possible alternatives. If you wish to [use a database other than SQLite](/en/Getting_Started/Database_Setup/index), you should install it before installing The Arsse:
 
 ```sh
 # Install PostgreSQL
@@ -45,8 +47,6 @@ If you wish to change the database backend after having installed The Arsse, run
 ```sh
 sudo dpkg-reconfigure arsse
 ```
-
-After installation is complete The Arsse will be started automatically.
 
 # Web server configuration
 
