@@ -4,3 +4,20 @@ DH_VERBOSE = 1
 
 %:
 	dh $@
+
+execute_before_dh_install:
+	# Adapt the systemd service for Debian: this involves using only the "arsse-fetch" unit (renamed to "arsse"), removing the "PartOf" directive, and changing the user and group to "www-data"
+	cp dist/systemd/arsse-fetch.service debian/arsse.service
+	sed -i -se 's/^PartOf=.*//' debian/arsse.service
+	sed -i -se 's/^\(User\|Group\)=.*/\1=www-data/' debian/arsse.service
+	# Adapt the init script for Debian: this involves changing the user and group to "www-data"
+	cp dist/init.sh debian/arsse.init
+	sed -i -se 's/^\([ \t]*chown\) arsse:arsse /\1 www-data:www-data /' debian/arsse.init
+	# Change the user and group references in tmpfiles
+	cp dist/tmpfiles.conf debian/arsse.tmpfiles
+	sed -i -se 's/ arsse / www-data /' debian/arsse.tmpfiles
+	sed -i -se 's/ arsse / www-data /' debian/arsse.tmpfiles
+	# Change the user reference in the executable file
+	mkdir -p debian/bin
+	cp dist/arsse debian/bin/arsse
+	sed -i -se 's/posix_getpwnam("arsse"/posix_getpwnam("www-data"/' debian/bin/arsse

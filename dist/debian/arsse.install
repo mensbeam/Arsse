@@ -15,4 +15,4 @@ dist/nginx                      etc/arsse/
 dist/apache                     etc/arsse/
 dist/debian/config.php          etc/arsse/
 dist/debian/dbconfig-common.php usr/share/arsse/
-dist/debian/bin/arsse           usr/bin/
+debian/bin/arsse                usr/bin/

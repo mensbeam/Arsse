@@ -201,14 +201,16 @@ class RoboFile extends \Robo\Tasks {
             return $result;
         }
         try {
+            // generate the Debian changelog; this also validates our original changelog
+            $debianChangelog = $this->changelogDebian($this->changelogParse(file_get_contents($dir."CHANGELOG"), $version), $version);
             // save commit description to VERSION file for reference
             $t->addTask($this->taskWriteToFile($dir."VERSION")->text($version));
             // patch the Arch PKGBUILD file with the correct version string
             $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^pkgver=.*$/m')->to("pkgver=$archVersion"));
             // patch the Arch PKGBUILD file with the correct source file
             $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^source=\("arsse-[^"]+"\)$/m')->to('source=("'.basename($tarball).'")'));
-            // Prepare Debian-related files
-            $this->prepDebian($t, $dir, $version);
+            // save the Debian-format changelog
+            $t->addTask($this->taskWriteToFile($dir."dist/debian/changelog")->text($debianChangelog));
             // perform Composer installation in the temp location with dev dependencies
             $t->addTask($this->taskComposerInstall()->arg("-q")->dir($dir));
             // generate manpages
@@ -288,7 +290,7 @@ class RoboFile extends \Robo\Tasks {
         $t = $this->collectionBuilder();
         // build the generic release tarball if it doesn't exist
         if (!file_exists($tarball)) {
-            $t->addTask($this->taskExec(BASE."robo package $commit"));
+            $t->addTask($this->taskExec(BASE."robo package:generic $commit"));
         }
         // extract the PKGBUILD from the tarball
         $t->addCode(function() use ($tarball, $dir) {
@@ -319,7 +321,7 @@ class RoboFile extends \Robo\Tasks {
         $tarball = BASE."release/$version/arsse-$version.tar.gz";
         // define some more variables
         $tgz = BASE."release/pbuilder-arsse.tgz";
-        $bind = dirname(realpath($tarball));
+        $bind = dirname($tarball);
         $script = BASE."dist/debian/pbuilder.sh";
         $user = trim(`id -un`);
         $group = trim(`id -gn`);
@@ -328,11 +330,11 @@ class RoboFile extends \Robo\Tasks {
         // check that the pbuilder base exists and create it if it does not
         if (!file_exists($tgz)) {
             $t->addTask($this->taskFilesystemStack()->mkdir(BASE."release"));
-            $t->addTask($this->taskExec('sudo pbuilder create --basetgz '.escapeshellarg($tgz).' --mirror http://ftp.ca.debian.org/debian/ --extrapackages debhelper --extrapackages devscripts'));
+            $t->addTask($this->taskExec('sudo pbuilder create --basetgz '.escapeshellarg($tgz).' --mirror http://ftp.ca.debian.org/debian/ --extrapackages "debhelper devscripts lintian"'));
         }
         // build the generic release tarball if it doesn't exist
         if (!file_exists($tarball)) {
-            $t->addTask($this->taskExec(BASE."robo package $commit"));
+            $t->addTask($this->taskExec(BASE."robo package:generic $commit"));
         }
         // build the packages
         $t->addTask($this->taskExec('sudo pbuilder execute --basetgz '.escapeshellarg($tgz).' --bindmounts '.escapeshellarg($bind).' -- '.escapeshellarg($script).' '.escapeshellarg("$bind/".basename($tarball))));
@@ -566,26 +568,5 @@ class RoboFile extends \Robo\Tasks {
             $out .= "\n -- J. King <jking@jkingweb.ca>  ".\DateTimeImmutable::createFromFormat("Y-m-d", $entry['date'], new \DateTimeZone("UTC"))->format("D, d M Y")." 00:00:00 +0000\n\n";
         }
         return $out;
-    }
-
-    protected function prepDebian(CollectionBuilder $t, string $dir, string $version): void {
-        // generate the Debian changelog; this also validates our original changelog
-        $debianChangelog = $this->changelogDebian($this->changelogParse(file_get_contents($dir."CHANGELOG"), $version), $version);
-        // save the Debian changelog
-        $t->addTask($this->taskWriteToFile($dir."dist/debian/changelog")->text($debianChangelog));
-        // adapt the systemd unit for Debian: this involves using only the "arsse-fetch" unit (renamed to "arsse"), removing the "PartOf" directive, and changing the user and group to "www-data"
-        $t->addTask($this->taskFilesystemStack()->copy($dir."dist/systemd/arsse-fetch.service", $dir."dist/debian/arsse.service"));
-        $t->addTask($this->taskReplaceInFile($dir."/dist/debian/arsse.service")->regex('/^PartOf=.*$/m')->to(""));
-        $t->addTask($this->taskReplaceInFile($dir."/dist/debian/arsse.service")->regex('/^(User|Group)=.*$/m')->to("$1=www-data"));
-        // adapt the init script for Debian: this involves changing the user and group to "www-data"
-        $t->addTask($this->taskFilesystemStack()->copy($dir."dist/init.sh", $dir."dist/debian/arsse.init"));
-        $t->addTask($this->taskReplaceInFile($dir."/dist/debian/arsse.init")->regex('/^(\s*)chown arsse:arsse $/m')->to("$1chown www-data:www-data "));
-        // change the user and group references in tmpfiles
-        $t->addTask($this->taskFilesystemStack()->copy($dir."dist/tmpfiles.conf", $dir."dist/debian/arsse.tmpfiles"));
-        $t->addTask($this->taskReplaceInFile($dir."dist/debian/arsse.tmpfiles")->regex('/(?<= )arsse(?= )/')->to("www-data"));
-        // change the user reference in the executable file
-        $t->addTask($this->taskFilesystemStack()->mkdir($dir."dist/debian/bin"));
-        $t->addTask($this->taskFilesystemStack()->copy($dir."dist/arsse", $dir."dist/debian/bin/arsse"));
-        $t->addTask($this->taskReplaceInFile($dir."dist/debian/bin/arsse")->from('posix_getpwnam("arsse"')->to('posix_getpwnam("www-data"'));
     }
 }

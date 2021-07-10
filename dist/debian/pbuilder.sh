@@ -4,7 +4,7 @@
 # This script is fed to pbuilder to build Debian packages. The base tarball
 # should be created with a command similar to the following:
 #
-#   sudo pbuilder create --basetgz pbuilder-arsse.tgz --mirror http://ftp.ca.debian.org/debian/ --extrapackages debhelper --extrapackages devscripts
+#   sudo pbuilder create --basetgz pbuilder-arsse.tgz --mirror http://ftp.ca.debian.org/debian/ --extrapackages "debhelper devscripts lintian"
 #
 # Thereafter pbuilder can be used to build packages with this command:
 #
