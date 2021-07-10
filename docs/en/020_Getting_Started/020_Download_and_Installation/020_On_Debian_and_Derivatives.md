@@ -2,7 +2,7 @@
 
 # Downloading The Arsse
 
-Since version 0.10.0 pre-built Debian packages for The Arsse are available from the [OpenSUSE Build Service](https://build.opensuse.org/) (OBS) under the author's personal project repository. This is the preferred method for instaling the software and is the means documented below.
+Since version 0.10.0 pre-built Debian packages for The Arsse are available from the [OpenSUSE Build Service](https://build.opensuse.org/) (OBS) under [the author's personal project repository](https://build.opensuse.org/package/show/home:JKingWeb/arsse). This is the preferred method for instaling the software and is the means documented below.
 
 Generic release tarballs may also be downloaded [from our Web site](https://thearsse.com), and a Debian package built manually. Installing directly from the generic release tarball without producing a Debian package is not recommended as the Debian packages make the set-up process on Debian systems significantly simpler.
 
