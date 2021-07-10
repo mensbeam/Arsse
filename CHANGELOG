@@ -2,9 +2,12 @@ Version 0.10.0 (2021-??-??)
 ===========================
 
 New features:
-- Complete UNIX manual page
+- Complete Unix manual page
 - Support for running service as a forking daemon
 - Respond to TERM and HUP signals when possible
+
+Changes:
+- Packages for Debian and related are now available (see manual for details)
 
 Version 0.9.2 (2021-05-25)
 ==========================
