@@ -50,7 +50,7 @@ sudo dpkg-reconfigure arsse
 
 # Web server configuration
 
-Sample configuration for both Nginx and Apache HTTP Server can be found in `/etc/arsse/nginx/` and `/etc/arsse/apache/`, respectively. The `example.conf` files are basic virtual host examples; the other files they include should normally be usable without modification, but may be modified if desired.
+Sample configuration for both Nginx and Apache HTTP Server can be found in `/etc/arsse/nginx/` and `/etc/arsse/apache/`, respectively. The `example.conf` files are basic virtual host examples; the other files they include should normally be usable without modification, but may be modified if needed or desired. In particularly users of older Debians may need to change the PHP-FPM socket path in Nginx or Apache's `arsse.conf`.
 
 In order to use Apache HTTP Server the FastCGI proxy module must be enabled and the server restarted:
 

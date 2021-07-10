@@ -11,8 +11,8 @@ arsse.php usr/share/arsse/
 config.defaults.php             etc/arsse/
 manual                          usr/share/doc/arsse/
 dist/man/*                      usr/share/man/
-dist/nginx                      etc/arsse/
-dist/apache                     etc/arsse/
 dist/debian/config.php          etc/arsse/
 dist/debian/dbconfig-common.php usr/share/arsse/
 debian/bin/arsse                usr/bin/
+debian/nginx                    etc/arsse/
+debian/apache                   etc/arsse/

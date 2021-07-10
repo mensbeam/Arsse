@@ -21,3 +21,6 @@ execute_before_dh_install:
 	mkdir -p debian/bin
 	cp dist/arsse debian/bin/arsse
 	sed -i -se 's/posix_getpwnam("arsse"/posix_getpwnam("www-data"/' debian/bin/arsse
+	# Change PHP-FPM socket paths
+	cp -r dist/apache dist/nginx debian
+	sed -i -se 's/arsse\.sock/php-fpm.sock/' debian/apache/arsse.conf debian/nginx/arsse.conf
