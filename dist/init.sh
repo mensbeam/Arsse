@@ -16,7 +16,7 @@
 
 PATH=/usr/sbin/:/usr/bin:/sbin:/bin
 NAME=arsse
-DESC=newsfeed synchronization server
+DESC="newsfeed synchronization server"
 PIDFILE=/run/arsse.pid
 DAEMON=/usr/bin/$NAME
 

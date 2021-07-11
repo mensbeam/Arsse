@@ -86,7 +86,7 @@ class Daemon {
             default:
                 fclose($pipe[1]);
                 $result = json_decode(fread($pipe[0], 100), true);
-                if ($result) {
+                if (is_array($result)) {
                     [$class, $symbol, $params] = $result;
                     throw new $class($symbol, $params);
                 }
