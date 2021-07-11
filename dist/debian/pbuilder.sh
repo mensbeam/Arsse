@@ -35,6 +35,6 @@ tar -C "$tmp" -czf "$tmp/arsse_$version.orig.tar.gz" "arsse-$version"
 cp -r "$in/dist/debian" "$in/debian"
 # build the package
 cd "$in"
-debuild
+debuild -us -uc
 # move the resultant files to their final destination
 find "$tmp" -maxdepth 1 -type f -exec mv '{}' "$out" \;
