@@ -14,15 +14,13 @@ For illustrative purposes, this document assumes the `yay` [AUR helper](https://
 # Install the package
 sudo yay -S arsse
 # Enable the necessary PHP extensions; curl is optional but recommended; pdo_sqlite may be used instead of sqlite3, but this is not recommended
-sudo sed -ie 's/^;\(extension=\(curl\|iconv\|intl\|sqlite3\)\)$/\1/' /etc/php/php.ini
+sudo sed -i -e 's/^;\(extension=\(curl\|iconv\|intl\|sqlite3\)\)$/\1/' /etc/php/php.ini
 # Enable and start the necessary systemd units
 sudo systemctl enable php-fpm arsse
 sudo systemctl restart php-fpm arsse
 ```
 
 Note that the above is the most concise process, not necessarily the recommended one. In particular [it is recommended](https://wiki.archlinux.org/title/PHP#Extensions) to use `/etc/php/conf.d/` to enable PHP extensions rather than editing `php.ini` as done above.
-
-The PHP extensions listed in [the requirements](/en/Getting_Started/index) not mentioned above are compiled into Arch's PHP binaries and thus always enabled.
 
 # Web server configuration
 

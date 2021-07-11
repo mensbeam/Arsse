@@ -1,5 +1,9 @@
 [TOC]
 
+# Preface
+
+This section describes in brief some CLI commands. Please read [the general notes on the command line interface](index) before continuing.
+
 # Refreshing newsfeeds with a cron job
 
 Normally The Arsse has a systemd service which checks newsfeeds for updates and processes them into its database for the user. If for whatever reason this is not practical a [cron](https://en.wikipedia.org/wiki/Cron) job may be used instead.
