@@ -10,7 +10,7 @@ license=("MIT")
 provides=("arsse")
 conflicts=("arsse")
 depends=("php>=7.1" "php-intl>=7.1" "php-sqlite>=7.1")
-makedepends=("composer")
+makedepends=("composer" "pandoc")
 checkdepends=()
 optdepends=("nginx: HTTP server"
             "apache>=2.4: HTTP server"
