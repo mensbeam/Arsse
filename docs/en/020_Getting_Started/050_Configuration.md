@@ -2,7 +2,7 @@
 
 Depending on how The Arsse was installed, it will look for configuration in the following places:
 
-| Installation method | Default database path                                  |
+| Installation method | Default configuration file path                        |
 |---------------------|--------------------------------------------------------|
 | Arch Linux package  | `/etc/webapps/arsse/config.php`                        |
 | Debian package      | `/etc/arsse/config.php`                                |
