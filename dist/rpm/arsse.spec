@@ -30,6 +30,9 @@ Recommends:     arsse-sqlite
 Recommends:     arsse-nginx-fpm
 Suggests:       php-curl
 
+Provides:       arsse = %{version}
+Obsoletes:      arsse < %{version}
+
 %description
 The Arsse bridges the gap between multiple existing newsfeed aggregator
 client protocols such as Tiny Tiny RSS, Nextcloud News and Miniflux,
@@ -43,8 +46,10 @@ Requires:       %{name} = %{version}-%{release}
 Conflicts:      arsse-postgresql
 Conflicts:      arsse-mysql
 Provides:       arsse-conf-db
+Provides:       arsse-sqlite = %{version}
+Obsoletes:      arsse-sqlite < %{version}
 
-%package postgresql
+%package pgsql
 Summary:        PostgreSQL database configuration for The Arsse
 Requires:       (php-pgsql or php-pdo_pgsql)
 Requires:       postgresql-server >= 10
@@ -52,6 +57,8 @@ Requires:       %{name} = %{version}-%{release}
 Conflicts:      arsse-sqlite
 Conflicts:      arsse-mysql
 Provides:       arsse-conf-db
+Provides:       arsse-pgsql = %{version}
+Obsoletes:      arsse-pgsql < %{version}
 
 %package mysql
 Summary:        MySQL database configuration for The Arsse
@@ -62,6 +69,8 @@ Conflicts:      arsse-sqlite
 Conflicts:      arsse-postgresql
 # OpenSUSE only packages MariaDb, which does not worth with The Arsse
 #Provides:      arsse-conf-db
+Provides:       arsse-mysql = %{version}
+Obsoletes:      arsse-mysql < %{version}
 
 %package nginx-fpm
 Summary:        Nginx Web server configuration for The Arsse using PHP-FPM
@@ -69,6 +78,8 @@ Requires:       php-fpm >= %{phpver}
 Requires:       nginx
 Requires:       %{name} = %{version}-%{release}
 Provides:       arsse-conf-www
+Provides:       arsse-nginx-fpm = %{version}
+Obsoletes:      arsse-nginx-fpm < %{version}
 
 %package apache-fpm
 Summary:        Apache Web server configuration for The Arsse using PHP-FPM
@@ -76,3 +87,15 @@ Requires:       php-fpm >= %{phpver}
 Requires:       %{name} = %{version}-%{release}
 Requires:       apache >= 2.4
 Provides:       arsse-conf-www
+Provides:       arsse-apache-fpm = %{version}
+Obsoletes:      arsse-apache-fpm < %{version}
+
+%prep
+%setup -q -n %{name}
+### Perform adjustments to config files here?
+
+%build
+# Nothing to do
+
+%install
+
