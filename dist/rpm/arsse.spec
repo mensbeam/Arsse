@@ -126,5 +126,14 @@ generally preferred as it receives more testing.
 # Nothing to do
 
 %install
-cp -r lib locale sql vendor www CHANGELOG UPGRADING README.md arsse.php "%{buildroot}/usr/share/php/arsse"
-cp -r manual/* "%{buildroot}/usr/share/doc/arsse"
+mkdir -p "%{buildroot}%{_datadir}/php/arsse" "%{buildroot}%{_mandir}"
+cp -r lib locale sql vendor www CHANGELOG UPGRADING README.md arsse.php "%{buildroot}%{_datadir}/php/arsse"
+cp -r dist/man/* "%{buildroot}%{_mandir}"
+install -Dm755 dist/arsse "%{buildroot}%{_bindir}/arsse"
+
+%files
+%license LICENSE AUTHORS
+%doc manual/*
+%{_datadir}/php/arsse
+%{_mandir}/man*/arsse.*
+%{_bindir}/arsse
