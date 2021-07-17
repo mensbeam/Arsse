@@ -201,22 +201,30 @@ class RoboFile extends \Robo\Tasks {
             return $result;
         }
         try {
-            // generate the Debian changelog; this also validates our original changelog
-            $debianChangelog = $this->changelogDebian($this->changelogParse(file_get_contents($dir."CHANGELOG"), $version), $version);
+            if (file_exists($dir."dist/debian")) {
+                // generate the Debian changelog; this also validates our original changelog
+                $debianChangelog = $this->changelogDebian($this->changelogParse(file_get_contents($dir."CHANGELOG"), $version), $version);
+                // save the Debian-format changelog
+                $t->addTask($this->taskWriteToFile($dir."dist/debian/changelog")->text($debianChangelog));
+            }
+            if (file_exists($dir."dist/arch")) {
+                // patch the Arch PKGBUILD file with the correct version string
+                $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^pkgver=.*$/m')->to("pkgver=$archVersion"));
+                // patch the Arch PKGBUILD file with the correct source file
+                $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^source=\("arsse-[^"]+"\)$/m')->to('source=("'.basename($tarball).'")'));
+            }
             // save commit description to VERSION file for reference
             $t->addTask($this->taskWriteToFile($dir."VERSION")->text($version));
-            // patch the Arch PKGBUILD file with the correct version string
-            $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^pkgver=.*$/m')->to("pkgver=$archVersion"));
-            // patch the Arch PKGBUILD file with the correct source file
-            $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^source=\("arsse-[^"]+"\)$/m')->to('source=("'.basename($tarball).'")'));
-            // save the Debian-format changelog
-            $t->addTask($this->taskWriteToFile($dir."dist/debian/changelog")->text($debianChangelog));
             // perform Composer installation in the temp location with dev dependencies
             $t->addTask($this->taskComposerInstall()->arg("-q")->dir($dir));
-            // generate manpages
-            $t->addTask($this->taskExec("./robo manpage")->dir($dir));
-            // generate the HTML manual
-            $t->addTask($this->taskExec("./robo manual -q")->dir($dir));
+            if (file_exists($dir."manpages")) {
+                // generate manpages
+                $t->addTask($this->taskExec("./robo manpage")->dir($dir));
+            }
+            if (file_exists($dir."docs")) {
+                // generate the HTML manual
+                $t->addTask($this->taskExec("./robo manual -q")->dir($dir));
+            }
             // perform Composer installation in the temp location for final output
             $t->addTask($this->taskComposerInstall()->dir($dir)->noDev()->optimizeAutoloader()->arg("--no-scripts")->arg("-q"));
             // delete unwanted files
@@ -663,15 +671,6 @@ class RoboFile extends \Robo\Tasks {
         } else {
             throw new \Exception("Number of priorities defined in Debian control file does not match number of packages");
         }
-        // read the package priorities from the control file
-        if (preg_match_all('/^Priority:\s*(\S+)/m', $control, $m) || sizeof($m[1]) != sizeof($binary)) {
-            $priority = [];
-            foreach ($m[1] as $pkg) {
-                $priority[] = $pkg;
-            }
-        } else {
-            throw new \Exception("Number of priorities defined in Debian control file does not match number of packages");
-        }
         // read simple metadata from the control file
         $metadata = [];
         foreach (["Source", "Maintainer", "Homepage", "Standards-Version", "Vcs-Browser", "Vcs-Git"] as $meta) {
@@ -683,7 +682,6 @@ class RoboFile extends \Robo\Tasks {
         }
         // read build dependencies from control file
         if (preg_match('/(?:^|\n)Build-Depends:\s*((?:[^\n]|\n(?= ))+)/s', $control, $m)) {
-            $this->say(var_export($m));
             $buildDepends = preg_replace('/\s/', "", $m[1]);
         } else {
             $buildDepends = "";
