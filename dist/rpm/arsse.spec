@@ -129,6 +129,7 @@ generally preferred as it receives more testing.
 mkdir -p "%{buildroot}%{_datadir}/php/arsse" "%{buildroot}%{_mandir}"
 cp -r lib locale sql vendor www CHANGELOG UPGRADING README.md arsse.php "%{buildroot}%{_datadir}/php/arsse"
 cp -r dist/man/* "%{buildroot}%{_mandir}"
+cp dist/systemd/arsse-fetch.service "%{buildroot}%{_unitdir}/arsse.service"
 install -Dm755 dist/arsse "%{buildroot}%{_bindir}/arsse"
 
 %files
@@ -137,3 +138,4 @@ install -Dm755 dist/arsse "%{buildroot}%{_bindir}/arsse"
 %{_datadir}/php/arsse
 %{_mandir}/man*/arsse.*
 %{_bindir}/arsse
+%{_unitdir}/arsse.service
