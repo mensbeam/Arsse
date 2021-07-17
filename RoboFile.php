@@ -172,6 +172,64 @@ class RoboFile extends \Robo\Tasks {
         return true;
     }
 
+    /** Packages a given commit of the software and produces all relevant release files
+     *
+     * The commit to package may be any Git tree-ish identifier: a tag, a branch,
+     * or any commit hash. If none is provided on the command line, Robo will prompt
+     * for a commit to package; the default is "HEAD".
+     *
+     * In addition to the release tarball, a Debian source package, Arch PKGBUILD,
+     * and RPM spec file are output as well. These are suitable for use with Open
+     * Build Service instances and with slight modification the Arch User Repository.
+     * Use for Launchpad PPAs has not been tested.
+     */
+    public function package(string $commit = null): Result {
+        if (!$this->toolExists("git")) {
+            throw new \Exception("Git is required in PATH to produce packages");
+        }
+        [$commit, $version] = $this->commitVersion($commit);
+        $tarball = BASE."release/$version/arsse-$version.tar.gz";
+        // build the generic release tarball
+        $result = $this->taskExec(BASE."robo package:generic $commit")->run();
+        if (!$result->wasSuccessful()) {
+            return $result;
+        }
+        // if the generic tarball could be built, try to Arch, Debian, and RPM files; these might legitimately not exist in old releases
+        // start by getting the list of files from the tarball
+        $archive = new \Archive_Tar($tarball);
+        $filelist = array_flip(array_column($archive->listContent(), "filename"));
+        // start a collection
+        $t = $this->collectionBuilder();
+        // Produce an Arch PKGBUILD if appropriate
+        if (isset($filelist['arsse/dist/arch/PKGBUILD'])) {
+            $t->addCode(function() use ($tarball, $archive) {
+                $this->say("Preparing PKGBUILD");
+                $dir = dirname($tarball).\DIRECTORY_SEPARATOR;
+                $archive->extractList("arsse/dist/arch/PKGBUILD", $dir, "arsse/dist/arch/", false);
+                // update the tarball's checksum
+                $sums = [
+                    'md5' => hash_file("md5", $tarball),
+                ];
+                return $this->taskReplaceInFile($dir."PKGBUILD")->regex('/^md5sums=\("SKIP"\)$/m')->to('md5sums=("'.$sums['md5'].'")')->run();
+            });
+        }
+        // Produce a Debian source package if appropriate
+        if (isset($filelist['arsse/dist/debian/control']) && isset($filelist['arsse/dist/debian/source/format'])) {
+            $t->addTask($this->taskExec(BASE."robo package:debsrc $commit"));
+        }
+        // Produce an RPM spec file if appropriate
+        if (isset($filelist['arsse/dist/rpm/arsse.spec'])) {
+            $t->addCode(function() use ($tarball, $archive) {
+                $this->say("Preparing RPM spec file");
+                $dir = dirname($tarball).\DIRECTORY_SEPARATOR;
+                $archive->extractList("arsse/dist/rpm/arsse.spec", $dir, "arsse/dist/rpm/", false);
+                // perform a do-nothing filesystem operation since we need a Robo task result
+                return $this->taskFilesystemStack()->chmod($dir."arsse.spec", 0644)->run();
+            });
+        }
+        return $t->run();
+    }
+
     /** Packages a given commit of the software into a release tarball
      *
      * The commit to package may be any Git tree-ish identifier: a tag, a branch,
@@ -399,7 +457,7 @@ class RoboFile extends \Robo\Tasks {
         return $t->run();
     }
 
-    /** Generates all possible package types for a given commit of the software
+    /** Generates all possible binary package types for a given commit of the software
      *
      * The commit to package may be any Git tree-ish identifier: a tag, a branch,
      * or any commit hash. If none is provided on the command line, Robo will prompt
@@ -408,7 +466,7 @@ class RoboFile extends \Robo\Tasks {
      * Generic release tarballs will always be generated, but distribution-specific
      * packages are skipped when the required tools are not available
      */
-    public function package(string $commit = null): Result {
+    public function packageBin(string $commit = null): Result {
         if (!$this->toolExists("git")) {
             throw new \Exception("Git is required in PATH to produce packages");
         }
