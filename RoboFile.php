@@ -304,7 +304,7 @@ class RoboFile extends \Robo\Tasks {
         return $t->run();
     }
 
-    /** Packages a given commit of the software into source and binary Debian packages
+    /** Packages a given commit of the software a binary Debian package
      *
      * The commit to package may be any Git tree-ish identifier: a tag, a branch,
      * or any commit hash. If none is provided on the command line, Robo will prompt
@@ -312,7 +312,7 @@ class RoboFile extends \Robo\Tasks {
      * 
      * The pbuilder tool should be installed for this.
      */
-    public function packageDebian(string $commit = null): Result {
+    public function packageDeb(string $commit = null): Result {
         if (!$this->toolExists("git", "sudo", "pbuilder")) {
             throw new \Exception("Git, sudo, and pbuilder are required in PATH to produce Debian packages");
         }
@@ -343,6 +343,54 @@ class RoboFile extends \Robo\Tasks {
         return $t->run();
     }
 
+    /** Packages a release tarball into a Debian source package
+     *
+     * The commit to package may be any Git tree-ish identifier: a tag, a branch,
+     * or any commit hash. If none is provided on the command line, Robo will prompt
+     * for a commit to package; the default is "HEAD".
+     */
+    public function packageDebsrc(string $commit = null): Result {
+        // establish which commit to package
+        [$commit, $version] = $this->commitVersion($commit);
+        $tarball = BASE."release/$version/arsse-$version.tar.gz";
+        // determine the base version (i.e. x.y.z) and the Debian version (i.e. x.y.z-a)
+        preg_match('/^(\d+(?:\.\d+)+)(?:-(\d+))?/', $version, $m);
+        $baseVersion = $m[1];
+        $debVersion = $m[1]."-".($version === $baseVersion ? "1" : $m[2]);
+        // start a task collection and create a temporary directory
+        $t = $this->collectionBuilder();
+        $dir = $t->tmpDir().\DIRECTORY_SEPARATOR;
+        // build the generic release tarball if it doesn't exist
+        if (!file_exists($tarball)) {
+            $t->addTask($this->taskExec(BASE."robo package:generic $commit"));
+        }
+        $base = $dir."arsse-$version".\DIRECTORY_SEPARATOR;
+        // start by extracting the tarball
+        $t->addCode(function() use ($tarball, $dir, $base) {
+            // Robo's extract task is broken, so we do it manually
+            (new \Archive_Tar($tarball))->extract($dir, false);
+            return $this->taskFilesystemStack()->rename($dir."arsse", $base)->run();
+        });
+        // re-pack the tarball using a specific name special to Debian
+        $t->addTask($this->taskPack($dir."arsse_$baseVersion.orig.tar.gz")->addDir("arsse-$baseVersion", $base));
+        // pack the debian tarball
+        $t->addTask($this->taskPack($dir."arsse_$debVersion.debian.tar.gz")->addDir("debian", $base."dist"));
+        // generate the DSC file
+        $t->addCode(function() use ($t, $debVersion, $baseVersion, $dir, $base) {
+            try {
+                $dsc = $this->generateDebianSourceControl($base."dist/debian/", $debVersion, [$dir."arsse_$baseVersion.orig.tar.gz", $dir."arsse_$debVersion.debian.tar.gz"]);
+            } catch (\Exception $e) {
+                return new Result($t, 1, $e->getMessage());
+            }
+            // write the DSC file
+            return $this->taskWriteToFile($dir."arsse_$debVersion.dsc")->text($dsc)->run();
+        });
+        // delete any existing files
+        $t->AddTask($this->taskFilesystemStack()->remove(BASE."release/$version/arsse_$baseVersion.orig.tar.gz")->remove(BASE."release/$version/arsse_$debVersion.debian.tar.gz")->remove(BASE."release/$version/arsse_$debVersion.dsc"));
+        $t->addTask($this->taskFilesystemStack()->copy($dir."arsse_$baseVersion.orig.tar.gz", BASE."release/$version/arsse_$baseVersion.orig.tar.gz")->copy($dir."arsse_$debVersion.debian.tar.gz", BASE."release/$version/arsse_$debVersion.debian.tar.gz")->copy($dir."arsse_$debVersion.dsc", BASE."release/$version/arsse_$debVersion.dsc"));
+        return $t->run();
+    }
+
     /** Generates all possible package types for a given commit of the software
      *
      * The commit to package may be any Git tree-ish identifier: a tag, a branch,
@@ -360,7 +408,7 @@ class RoboFile extends \Robo\Tasks {
         // determine whether the distribution-specific packages can be built
         $dist = [
             'Arch'   => $this->toolExists("git", "makepkg", "updpkgsums"),
-            'Debian' => $this->toolExists("git", "sudo", "pbuilder"),
+            'Deb' => $this->toolExists("git", "sudo", "pbuilder"),
         ];
         // start a collection
         $t = $this->collectionBuilder();
@@ -568,5 +616,141 @@ class RoboFile extends \Robo\Tasks {
             $out .= "\n -- J. King <jking@jkingweb.ca>  ".\DateTimeImmutable::createFromFormat("Y-m-d", $entry['date'], new \DateTimeZone("UTC"))->format("D, d M Y")." 00:00:00 +0000\n\n";
         }
         return $out;
+    }
+
+    protected function generateDebianSourceControl(string $dir, string $version, array $tarballs): string {
+        // read in control file
+        if (!$control = @file_get_contents($dir."control")) {
+            throw new \Exception("Unable to read Debian control file");
+        }
+        // read the format
+        if (!$format = @file_get_contents($dir."source/format")) {
+            throw new \Exception("Unable to read source format in Debian files");
+        }
+        // read the binary packages from the control file
+        if (preg_match_all('/^Package:\s*(\S+)/m', $control, $m)) {
+            $binary = [];
+            foreach ($m[1] as $pkg) {
+                $binary[] = $pkg;
+            }
+        } else {
+            throw new \Exception("No packages defined in Debian control file");
+        }
+        // read the package architectures from the control file
+        if (preg_match_all('/^Architecture:\s*(\S+)/m', $control, $m) || sizeof($m[1]) != sizeof($binary)) {
+            $architecture = [];
+            foreach ($m[1] as $pkg) {
+                $architecture[] = preg_replace('/\s/', "", $pkg);
+            }
+        } else {
+            throw new \Exception("Number of architectures defined in Debian control file does not match number of packages");
+        }
+        // read the package sections from the control file
+        if (preg_match_all('/^Section:\s*(\S+)/m', $control, $m) || sizeof($m[1]) != sizeof($binary)) {
+            $section = [];
+            foreach ($m[1] as $pkg) {
+                $section[] = $pkg;
+            }
+        } else {
+            throw new \Exception("Number of sections defined in Debian control file does not match number of packages");
+        }
+        // read the package priorities from the control file
+        if (preg_match_all('/^Priority:\s*(\S+)/m', $control, $m) || sizeof($m[1]) != sizeof($binary)) {
+            $priority = [];
+            foreach ($m[1] as $pkg) {
+                $priority[] = $pkg;
+            }
+        } else {
+            throw new \Exception("Number of priorities defined in Debian control file does not match number of packages");
+        }
+        // read the package priorities from the control file
+        if (preg_match_all('/^Priority:\s*(\S+)/m', $control, $m) || sizeof($m[1]) != sizeof($binary)) {
+            $priority = [];
+            foreach ($m[1] as $pkg) {
+                $priority[] = $pkg;
+            }
+        } else {
+            throw new \Exception("Number of priorities defined in Debian control file does not match number of packages");
+        }
+        // read simple metadata from the control file
+        $metadata = [];
+        foreach (["Source", "Maintainer", "Homepage", "Standards-Version", "Vcs-Browser", "Vcs-Git"] as $meta) {
+            if (preg_match('/^'.$meta.':\s*(.+)/m', $control, $m)) {
+                $metadata[$meta] = $m[1];
+            } else {
+                throw new \Exception("$meta is not defined in Debian control file");
+            }
+        }
+        // read build dependencies from control file
+        if (preg_match('/(?:^|\n)Build-Depends:\s*((?:[^\n]|\n(?= ))+)/s', $control, $m)) {
+            $this->say(var_export($m));
+            $buildDepends = preg_replace('/\s/', "", $m[1]);
+        } else {
+            $buildDepends = "";
+        }
+        // trim format
+        $format = trim($format);
+        // consolidate binaries and package list
+        $packageList = [];
+        for ($a = 0; $a < sizeof($binary); $a++) {
+            $packageList[] = "$binary[$a] deb $section[$a] $priority[$a] arch=$architecture[$a]";
+        }
+        $packageList = implode("\n ", $packageList);
+        // consolidate package names
+        $binary = implode(",", $binary);
+        // consolidate architectures
+        $architecture = implode(",", array_unique($architecture));
+        // calculate checksums for files
+        $fMeta = [];
+        foreach ($tarballs as $f) {
+            $fMeta[$f] = [
+                'name'   => basename($f),
+                'size'   => filesize($f),
+                'sha1'   => hash_file("sha1", $f),
+                'sha256' => hash_file("sha256", $f),
+                'md5'    => hash_file("md5", $f),
+            ];
+        }
+        // consolidate SHA-1 checksums
+        $sums = [];
+        foreach ($fMeta as $data) {
+            $sums[] = $data['sha1']." ".$data['size']." ".$data['name'];
+        }
+        $sumsSha1 = implode("\n ", $sums);
+        // consolidate SHA-256 checksums
+        $sums = [];
+        foreach ($fMeta as $data) {
+            $sums[] = $data['sha256']." ".$data['size']." ".$data['name'];
+        }
+        $sumsSha256 = implode("\n ", $sums);
+        // consolidate MD5 checksums
+        $sums = [];
+        foreach ($fMeta as $data) {
+            $sums[] = $data['md5']." ".$data['size']." ".$data['name'];
+        }
+        $sumsMd5 = implode("\n ", $sums);
+        // return complete file
+        return <<< DSC_FILE
+Format: $format
+Source: {$metadata['Source']}
+Binary: $binary
+Architecture: $architecture
+Version: $version
+Maintainer: {$metadata['Maintainer']}
+Homepage: {$metadata['Homepage']}
+Standards-Version: {$metadata['Standards-Version']}
+Vcs-Browser: {$metadata['Vcs-Browser']}
+Vcs-Git: {$metadata['Vcs-Git']}
+Build-Depends: $buildDepends
+Package-List:
+ $packageList
+Checksums-Sha1:
+ $sumsSha1
+Checksums-Sha256:
+ $sumsSha256
+Files:
+ $sumsMd5
+
+DSC_FILE;
     }
 }
