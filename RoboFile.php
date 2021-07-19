@@ -643,6 +643,42 @@ class RoboFile extends \Robo\Tasks {
         return $out;
     }
 
+    protected function changelogRPM(array $log, string $targetVersion): string {
+        $latest = $log[0]['version'];
+        $baseVersion = preg_replace('/^(\d+(?:\.\d+)*).*/', "$1", $targetVersion);
+        if ($baseVersion !== $targetVersion && version_compare($latest, $baseVersion, ">")) {
+            // if the changelog contains an entry for a future version, change its version number to match the target version instead of using the future version
+            $log[0]['version'] = $targetVersion;
+        } elseif ($baseVersion !== $targetVersion) {
+            // otherwise synthesize a changelog entry for the changes since the last tag
+            array_unshift($log, ['version' => $targetVersion, 'date' => date("Y-m-d"), 'features' => [], 'fixes' => [], 'changes' => ["Unspecified changes"]]);
+        }
+        $out = "";
+        foreach ($log as $entry) {
+            // normalize the version string
+            preg_match('/^(\d+(?:\.\d+)*(?:-\d+)?).+$/D', $entry['version'], $m);
+            $version = $m[1];
+            // output the entry
+            $out .= "-------------------------------------------------------------------\n";
+            $out .= DateTimeImmutable::createFromFormat("!Y-m-d", $entry['date'], new \DateTimeZone("UTC"))->format("D, M d 00:00:00 \U\T\C Y");
+            $out .= " - ";
+            $out .= "J. King <jking@jkingweb.ca>";
+            $out .= " - ";
+            $out .= "$version\n\n";
+            foreach ($entry['features'] as $item) {
+                $out .= "- ".trim(preg_replace("/^/m", "  ", $item))."\n";
+            }
+            foreach ($entry['fixes'] as $item) {
+                $out .= "- ".trim(preg_replace("/^/m", "  ", $item))."\n";
+            }
+            foreach ($entry['changes'] as $item) {
+                $out .= "- ".trim(preg_replace("/^/m", "  ", $item))."\n";
+            }
+            $out .= "\n";
+        }
+        return trim($out)."\n";
+    }
+
     protected function changelogDebian(array $log, string $targetVersion): string {
         $latest = $log[0]['version'];
         $baseVersion = preg_replace('/^(\d+(?:\.\d+)*).*/', "$1", $targetVersion);
