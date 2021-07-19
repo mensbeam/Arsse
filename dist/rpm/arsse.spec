@@ -22,15 +22,16 @@ Requires:       php-filter
 # The below extensions are part of the PHP core in recent versions
 Requires:       php-hash
 Requires:       php-json
-# A database option is required; a Web server option is required as well, but what we package is not exhaustive
-Requires:       arsse-conf-db
+# A database option is required
+Requires:       (php-sqlite or php-pgsql)
 # User and Group
 Requires:       user(arsse) group(arsse)
 
 %systemd_requires
 
-Recommends:     arsse-sqlite
+Recommends:     php-sqlite
 Suggests:       php-curl
+Suggests:       (php-pgsql if postgresql-server)
 Obsoletes:      arsse < %{version}
 
 BuildRequires:  systemd-rpm-macros
@@ -41,57 +42,6 @@ The Arsse bridges the gap between multiple existing newsfeed aggregator
 client protocols such as Tiny Tiny RSS, Nextcloud News and Miniflux,
 allowing you to use compatible clients for many protocols with a single
 server.
-
-%package sqlite
-Summary:        SQLite database configuration for The Arsse
-Group:          Productivity/Networking/Web/Utilities
-Requires:       (php-sqlite or php-pdo_sqlite)
-Requires:       %{name} = %{version}-%{release}
-Conflicts:      arsse-pgsql
-Conflicts:      arsse-mysql
-Provides:       arsse-config-db
-Provides:       arsse-sqlite = %{version}
-Obsoletes:      arsse-sqlite < %{version}
-
-%description sqlite
-Configures The Arsse to use an SQLite database. This is the default
-option and is suitable for most installations
-
-%package pgsql
-Summary:        PostgreSQL database configuration for The Arsse
-Group:          Productivity/Networking/Web/Utilities
-Requires:       (php-pgsql or php-pdo_pgsql)
-Requires:       postgresql-server >= 10
-Requires:       %{name} = %{version}-%{release}
-Conflicts:      arsse-sqlite
-Conflicts:      arsse-mysql
-Provides:       arsse-config-db
-Provides:       arsse-pgsql = %{version}
-Obsoletes:      arsse-pgsql < %{version}
-
-%description pgsql
-Configures The Arsse to use a PostgreSQL database.
-
-%package mysql
-Summary:        MySQL database configuration for The Arsse
-Group:          Productivity/Networking/Web/Utilities
-Requires:       (php-mysql or php-pdo_mysql)
-Requires:       mysql-server >= 8.0
-Requires:       %{name} = %{version}-%{release}
-Conflicts:      arsse-sqlite
-Conflicts:      arsse-pgsql
-# OpenSUSE only packages MariaDb, which does not worth with The Arsse
-#Provides:      arsse-config-db
-Provides:       arsse-mysql = %{version}
-Obsoletes:      arsse-mysql < %{version}
-
-%description mysql
-Configures The Arsse to use a MySQL database. Using this package is not
-recommended, but it is provided for those who wish to use an existing MySQL
-installation.
-
-Note that MariaDb is not compatible. See https://jira.mariadb.org/browse/MDEV-18511
-for details.
 
 %package config-nginx-fpm
 Summary:        Nginx Web server configuration for The Arsse using PHP-FPM
