@@ -370,45 +370,6 @@ class RoboFile extends \Robo\Tasks {
         return $t->run();
     }
 
-    /** Packages a given commit of the software a binary Debian package
-     *
-     * The commit to package may be any Git tree-ish identifier: a tag, a branch,
-     * or any commit hash. If none is provided on the command line, Robo will prompt
-     * for a commit to package; the default is "HEAD".
-     * 
-     * The pbuilder tool should be installed for this.
-     */
-    public function packageDeb(string $commit = null): Result {
-        if (!$this->toolExists("git", "sudo", "pbuilder")) {
-            throw new \Exception("Git, sudo, and pbuilder are required in PATH to produce Debian packages");
-        }
-        // establish which commit to package
-        [$commit, $version] = $this->commitVersion($commit);
-        $tarball = BASE."release/$version/arsse-$version.tar.gz";
-        // define some more variables
-        $tgz = BASE."release/pbuilder-arsse.tgz";
-        $bind = dirname($tarball);
-        $script = BASE."dist/debian/pbuilder.sh";
-        $user = trim(`id -un`);
-        $group = trim(`id -gn`);
-        // start a task collection
-        $t = $this->collectionBuilder();
-        // check that the pbuilder base exists and create it if it does not
-        if (!file_exists($tgz)) {
-            $t->addTask($this->taskFilesystemStack()->mkdir(BASE."release"));
-            $t->addTask($this->taskExec('sudo pbuilder create --basetgz '.escapeshellarg($tgz).' --mirror http://ftp.ca.debian.org/debian/ --extrapackages "debhelper devscripts lintian"'));
-        }
-        // build the generic release tarball if it doesn't exist
-        if (!file_exists($tarball)) {
-            $t->addTask($this->taskExec(BASE."robo package:generic $commit"));
-        }
-        // build the packages
-        $t->addTask($this->taskExec('sudo pbuilder execute --basetgz '.escapeshellarg($tgz).' --bindmounts '.escapeshellarg($bind).' -- '.escapeshellarg($script).' '.escapeshellarg("$bind/".basename($tarball))));
-        // take ownership of the output files
-        $t->addTask($this->taskExec("sudo chown -R $user:$group ".escapeshellarg($bind)));
-        return $t->run();
-    }
-
     /** Packages a release tarball into a Debian source package
      *
      * The commit to package may be any Git tree-ish identifier: a tag, a branch,
@@ -463,13 +424,10 @@ class RoboFile extends \Robo\Tasks {
      * The commit to package may be any Git tree-ish identifier: a tag, a branch,
      * or any commit hash. If none is provided on the command line, Robo will prompt
      * for a commit to package; the default is "HEAD".
-     * 
-     * Generic release tarballs will always be generated, but distribution-specific
-     * packages are skipped when the required tools are not available
      */
     public function packageBin(string $commit = null, string $target = null): Result {
-        if (!$this->toolExists("git")) {
-            throw new \Exception("Git is required in PATH to produce packages");
+        if (!$this->toolExists("git", "build", "sudo")) {
+            throw new \Exception("Git OBS-Build are required in PATH to produce packages");
         }
         [$commit, $version] = $this->commitVersion($commit);
         $tarball = BASE."release/$version/arsse-$version.tar.gz";
@@ -496,8 +454,18 @@ class RoboFile extends \Robo\Tasks {
             $repo = implode(" ", array_map(function($repo) {
                 return "--repo ".escapeshellarg($repo);
             }, $s['repos']));
-            $t->addTask($this->taskExec("sudo build $dist $repo $recipe"));
-            // TODO: copy output back
+            // perform the build
+            $t->addTask($this->taskExec("sudo build --clean $dist $repo $recipe"));
+            // move the output files alongside the tarball
+            $t->addCode(function() use ($dir, $s, $target) {
+                $dir = $dir.$target.\DIRECTORY_SEPARATOR;
+                $stack = $this->taskFilesystemStack()->mkdir($dir);
+                foreach (glob("/var/tmp/build-root".$s['output']) as $f) {
+                    $name = basename($f);
+                    $stack->remove($dir.$name)->rename($f, $dir.$name);
+                }
+                return $stack->run();
+            });
         }
         return $t->run();
     }
