@@ -5,7 +5,7 @@ DH_VERBOSE = 1
 %:
 	dh $@
 
-execute_before_dh_install:
+override_dh_install:
 	# Adapt the systemd service for Debian: this involves using only the "arsse-fetch" unit (renamed to "arsse"), removing the "PartOf" directive, and changing the user and group to "www-data"
 	cp dist/systemd/arsse-fetch.service debian/arsse.service
 	sed -i -se 's/^PartOf=.*//' debian/arsse.service
@@ -24,3 +24,5 @@ execute_before_dh_install:
 	# Change PHP-FPM socket paths
 	cp -r dist/apache dist/nginx debian
 	sed -i -se 's/arsse\.sock/php-fpm.sock/' debian/apache/arsse.conf debian/nginx/arsse.conf
+	# Execute dh_install as normal
+	dh_install

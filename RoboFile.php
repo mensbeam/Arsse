@@ -194,7 +194,7 @@ class RoboFile extends \Robo\Tasks {
         if (!$result->wasSuccessful()) {
             return $result;
         }
-        // if the generic tarball could be built, try to Arch, Debian, and RPM files; these might legitimately not exist in old releases
+        // if the generic tarball could be built, try to produce Arch, Debian, and RPM files; these might legitimately not exist in old releases
         // start by getting the list of files from the tarball
         $archive = new \Archive_Tar($tarball);
         $filelist = array_flip(array_column($archive->listContent(), "filename"));
@@ -203,7 +203,6 @@ class RoboFile extends \Robo\Tasks {
         // Produce an Arch PKGBUILD if appropriate
         if (isset($filelist['arsse/dist/arch/PKGBUILD'])) {
             $t->addCode(function() use ($tarball, $archive) {
-                $this->say("Preparing PKGBUILD");
                 $dir = dirname($tarball).\DIRECTORY_SEPARATOR;
                 $archive->extractList("arsse/dist/arch/PKGBUILD", $dir, "arsse/dist/arch/", false);
                 // update the tarball's checksum
@@ -220,7 +219,6 @@ class RoboFile extends \Robo\Tasks {
         // Produce an RPM spec file if appropriate
         if (isset($filelist['arsse/dist/rpm/arsse.spec'])) {
             $t->addCode(function() use ($tarball, $archive) {
-                $this->say("Preparing RPM spec file");
                 $dir = dirname($tarball).\DIRECTORY_SEPARATOR;
                 $archive->extractList("arsse/dist/rpm/arsse.spec", $dir, "arsse/dist/rpm/", false);
                 // perform a do-nothing filesystem operation since we need a Robo task result
@@ -273,8 +271,10 @@ class RoboFile extends \Robo\Tasks {
             }
             // save commit description to VERSION file for reference
             $t->addTask($this->taskWriteToFile($dir."VERSION")->text($version));
-            // perform Composer installation in the temp location with dev dependencies
-            $t->addTask($this->taskComposerInstall()->arg("-q")->dir($dir));
+            if (file_exists($dir."docs") || file_exists($dir."manpages")) {
+                // perform Composer installation in the temp location with dev dependencies to include Robo and Daux
+                $t->addTask($this->taskExec("composer install")->arg("-q")->dir($dir));
+            }
             if (file_exists($dir."manpages")) {
                 // generate manpages
                 $t->addTask($this->taskExec("./robo manpage")->dir($dir));
@@ -284,7 +284,7 @@ class RoboFile extends \Robo\Tasks {
                 $t->addTask($this->taskExec("./robo manual -q")->dir($dir));
             }
             // perform Composer installation in the temp location for final output
-            $t->addTask($this->taskComposerInstall()->dir($dir)->noDev()->optimizeAutoloader()->arg("--no-scripts")->arg("-q"));
+            $t->addTask($this->taskExec("composer install")->dir($dir)->arg("--no-dev")->arg("-o")->arg("--no-scripts")->arg("-q"));
             // delete unwanted files
             $t->addTask($this->taskFilesystemStack()->remove([
                 $dir.".git",
@@ -440,7 +440,7 @@ class RoboFile extends \Robo\Tasks {
         // re-pack the tarball using a specific name special to Debian
         $t->addTask($this->taskPack($dir."arsse_$baseVersion.orig.tar.gz")->addDir("arsse-$baseVersion", $base));
         // pack the debian tarball
-        $t->addTask($this->taskPack($dir."arsse_$debVersion.debian.tar.gz")->addDir("debian", $base."dist"));
+        $t->addTask($this->taskPack($dir."arsse_$debVersion.debian.tar.gz")->addDir("debian", $base."dist/debian"));
         // generate the DSC file
         $t->addCode(function() use ($t, $debVersion, $baseVersion, $dir, $base) {
             try {
@@ -452,7 +452,8 @@ class RoboFile extends \Robo\Tasks {
             return $this->taskWriteToFile($dir."arsse_$debVersion.dsc")->text($dsc)->run();
         });
         // delete any existing files
-        $t->AddTask($this->taskFilesystemStack()->remove(BASE."release/$version/arsse_$baseVersion.orig.tar.gz")->remove(BASE."release/$version/arsse_$debVersion.debian.tar.gz")->remove(BASE."release/$version/arsse_$debVersion.dsc"));
+        $t->AddTask($this->taskFilesystemStack()->remove([BASE."release/$version/arsse_$baseVersion.orig.tar.gz", BASE."release/$version/arsse_$debVersion.debian.tar.gz", BASE."release/$version/arsse_$debVersion.dsc"]));
+        // copy the new files over
         $t->addTask($this->taskFilesystemStack()->copy($dir."arsse_$baseVersion.orig.tar.gz", BASE."release/$version/arsse_$baseVersion.orig.tar.gz")->copy($dir."arsse_$debVersion.debian.tar.gz", BASE."release/$version/arsse_$debVersion.debian.tar.gz")->copy($dir."arsse_$debVersion.dsc", BASE."release/$version/arsse_$debVersion.dsc"));
         return $t->run();
     }
@@ -466,35 +467,39 @@ class RoboFile extends \Robo\Tasks {
      * Generic release tarballs will always be generated, but distribution-specific
      * packages are skipped when the required tools are not available
      */
-    public function packageBin(string $commit = null): Result {
+    public function packageBin(string $commit = null, string $target = null): Result {
         if (!$this->toolExists("git")) {
             throw new \Exception("Git is required in PATH to produce packages");
         }
-        [$commit,] = $this->commitVersion($commit);
-        // determine whether the distribution-specific packages can be built
-        $dist = [
-            'Arch'   => $this->toolExists("git", "makepkg", "updpkgsums"),
-            'Deb' => $this->toolExists("git", "sudo", "pbuilder"),
-        ];
-        // start a collection
+        [$commit, $version] = $this->commitVersion($commit);
+        $tarball = BASE."release/$version/arsse-$version.tar.gz";
+        $dir = dirname($tarball).\DIRECTORY_SEPARATOR;
+        // build the generic release tarball and related files if the tarball doesn't exist
+        if (!file_exists($tarball)) {
+            $result = $this->taskExec(BASE."robo package $commit")->run();
+            if (!$result->wasSuccessful()) {
+                return $result;
+            }
+        }
+        // import settings
+        $settings = (@include BASE."release/settings.default.php");
         $t = $this->collectionBuilder();
-        // build the generic release tarball
-        $t->addTask($this->taskExec(BASE."robo package:generic $commit"));
-        // build other packages
-        foreach ($dist as $distro => $run) {
-            if ($run) {
-                $subcmd = strtolower($distro);
-                $t->addTask($this->taskExec(BASE."robo package:$subcmd $commit"));
+        foreach ($settings as $target => $s) {
+            // glob the recipe and use the first one found
+            $recipe = glob($dir.$s['recipe']);
+            if (!$recipe) {
+                $this->say("Build target '$target' skipped");
+                continue;
             }
+            $recipe = escapeshellarg($recipe[0]);
+            $dist = "--dist ".escapeshellarg($s['dist']);
+            $repo = implode(" ", array_map(function($repo) {
+                return "--repo ".escapeshellarg($repo);
+            }, $s['repos']));
+            $t->addTask($this->taskExec("sudo build $dist $repo $recipe"));
+            // TODO: copy output back
         }
-        $out = $t->run();
-        // note any packages which were not built
-        foreach ($dist as $distro => $run) {
-            if (!$run) {
-                $this->say("Packages for $distro skipped");
-            }
-        }
-        return $out;
+        return $t->run();
     }
 
     /** Generates static manual pages in the "manual" directory

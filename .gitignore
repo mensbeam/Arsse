@@ -1,6 +1,5 @@
 # Temporary files
 
-/release/
 /documentation/
 /manual/
 /tests/coverage/
@@ -12,6 +11,9 @@
 /config.php
 /.php_cs.cache
 /tests/.phpunit.result.cache
+/release/*
+
+!/release/settings.default.php
 
 # Dependencies
 
