@@ -244,7 +244,10 @@ class RoboFile extends \Robo\Tasks {
         }
         // establish which commit to package
         [$commit, $version] = $this->commitVersion($commit);
-        $archVersion = preg_replace('/^([^-]+)-(\d+)-(\w+)$/', "$1.r$2.$3", $version);
+        preg_match('/^([^-]+)(?:-(\d+)-(\w+))?$/', $version, $m);
+        $archVersion = $m[1].($m[2] ? ".r$m[2].$m[3]" : "");
+        $baseVersion = $m[1];
+        $release = $m[2];
         // name the generic release tarball
         $tarball = BASE."release/$version/arsse-$version.tar.gz";
         // start a collection
@@ -257,17 +260,30 @@ class RoboFile extends \Robo\Tasks {
             return $result;
         }
         try {
-            if (file_exists($dir."dist/debian")) {
-                // generate the Debian changelog; this also validates our original changelog
-                $debianChangelog = $this->changelogDebian($this->changelogParse(file_get_contents($dir."CHANGELOG"), $version), $version);
-                // save the Debian-format changelog
-                $t->addTask($this->taskWriteToFile($dir."dist/debian/changelog")->text($debianChangelog));
-            }
+            // Perform Arch-specific tasks
             if (file_exists($dir."dist/arch")) {
                 // patch the Arch PKGBUILD file with the correct version string
                 $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^pkgver=.*$/m')->to("pkgver=$archVersion"));
                 // patch the Arch PKGBUILD file with the correct source file
                 $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^source=\("arsse-[^"]+"\)$/m')->to('source=("'.basename($tarball).'")'));
+                // perform Debian-specific tasks
+                if (file_exists($dir."dist/debian")) {
+                    // generate the Debian changelog; this also validates our original changelog
+                    $changelog = $this->changelogParse(file_get_contents($dir."CHANGELOG"), $version);
+                    $debianChangelog = $this->changelogDebian($changelog, $version);
+                    // save the Debian-format changelog
+                    $t->addTask($this->taskWriteToFile($dir."dist/debian/changelog")->text($debianChangelog));
+                    // perform RPM-specific tasks
+                    if (file_exists($dir."dist/rpm")) {
+                        // patch the spec file with the correct version and release
+                        $t->addTask($this->taskReplaceInFile($dir."dist/rpm/arsse.spec")->regex('/^Version:        .*$/m')->to("Version:        $baseVersion"));
+                        $t->addTask($this->taskReplaceInFile($dir."dist/rpm/arsse.spec")->regex('/^Release:        .*$/m')->to("Release:        $release"));
+                        // patch the spec file with the correct tarball name
+                        $t->addTask($this->taskReplaceInFile($dir."dist/rpm/arsse.spec")->regex('/^Source0:        .*$/m')->to("Source0:        arsse-$version.tar.gz"));
+                        // append the RPM changelog to the spec file
+                        $t->addTask($this->taskWriteToFile($dir."dist/rpm/arsse.spec")->append(true)->text("\n\n%changelog\n".$this->changelogRPM($changelog, $version)));
+                    }
+                }
             }
             // save commit description to VERSION file for reference
             $t->addTask($this->taskWriteToFile($dir."VERSION")->text($version));
@@ -334,40 +350,6 @@ class RoboFile extends \Robo\Tasks {
             $this->taskExec("git worktree prune")->dir(BASE)->run();
         }
         return $result;
-    }
-
-    /** Packages a given commit of the software into an Arch package
-     *
-     * The commit to package may be any Git tree-ish identifier: a tag, a branch,
-     * or any commit hash. If none is provided on the command line, Robo will prompt
-     * for a commit to package; the default is "HEAD".
-     * 
-     * The Arch base-devel group should be installed for this.
-     */
-    public function packageArch(string $commit = null): Result {
-        if (!$this->toolExists("git", "makepkg", "updpkgsums")) {
-            throw new \Exception("Git, makepkg, and updpkgsums are required in PATH to produce Arch packages");
-        }
-        // establish which commit to package
-        [$commit, $version] = $this->commitVersion($commit);
-        $tarball = BASE."release/$version/arsse-$version.tar.gz";
-        $dir = dirname($tarball).\DIRECTORY_SEPARATOR;
-        // start a collection
-        $t = $this->collectionBuilder();
-        // build the generic release tarball if it doesn't exist
-        if (!file_exists($tarball)) {
-            $t->addTask($this->taskExec(BASE."robo package:generic $commit"));
-        }
-        // extract the PKGBUILD from the tarball
-        $t->addCode(function() use ($tarball, $dir) {
-            // because Robo doesn't support extracting a single file we have to do it ourselves
-            (new \Archive_Tar($tarball))->extractList("arsse/dist/arch/PKGBUILD", $dir, "arsse/dist/arch/", false);
-            // perform a do-nothing filesystem operation since we need a Robo task result
-            return $this->taskFilesystemStack()->chmod($dir."PKGBUILD", 0644)->run();
-        })->completion($this->taskFilesystemStack()->remove($dir."PKGBUILD"));
-        // build the package
-        $t->addTask($this->taskExec("makepkg -Ccf")->dir($dir));
-        return $t->run();
     }
 
     /** Packages a release tarball into a Debian source package
@@ -628,16 +610,12 @@ class RoboFile extends \Robo\Tasks {
         }
         $out = "";
         foreach ($log as $entry) {
-            // normalize the version string
-            preg_match('/^(\d+(?:\.\d+)*(?:-\d+)?).+$/D', $entry['version'], $m);
-            $version = $m[1];
-            // output the entry
-            $out .= "-------------------------------------------------------------------\n";
-            $out .= DateTimeImmutable::createFromFormat("!Y-m-d", $entry['date'], new \DateTimeZone("UTC"))->format("D, M d 00:00:00 \U\T\C Y");
-            $out .= " - ";
+            $out .= "* ";
+            $out .= DateTimeImmutable::createFromFormat("!Y-m-d", $entry['date'], new \DateTimeZone("UTC"))->format("D M d Y");
+            $out .= " ";
             $out .= "J. King <jking@jkingweb.ca>";
-            $out .= " - ";
-            $out .= "$version\n\n";
+            $out .= " ";
+            $out .= "{$entry['version']}\n";
             foreach ($entry['features'] as $item) {
                 $out .= "- ".trim(preg_replace("/^/m", "  ", $item))."\n";
             }

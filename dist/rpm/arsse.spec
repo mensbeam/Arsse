@@ -110,10 +110,10 @@ install -m 644 dist/sysuser.conf %{buildroot}%{_sysusersdir}/system-user-arsse.c
 %{_sysusersdir}/system-user-arsse.conf
 
 %pre
-%service_add_pre arsse.service demo1.service
+%service_add_pre arsse.service arsse.service
 
 %post
-%service_add_post arsse.service demo1.service
+%service_add_post arsse.service arsse.service
 
 %preun
 %service_del_preun arsse.service
