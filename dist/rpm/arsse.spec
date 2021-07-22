@@ -43,10 +43,22 @@ client protocols such as Tiny Tiny RSS, Nextcloud News and Miniflux,
 allowing you to use compatible clients for many protocols with a single
 server.
 
+%package config-fpm
+Summary:        PHP-FPM process pool configuration for The Arsse
+Group:          Productivity/Networking/Web/Utilities
+Requires:       php-fpm >= %{minver}
+Requires:       %{name} = %{version}-%{release}
+Provides:       arsse-config-fpm = %{version}
+Obsoletes:      arsse-config-fpm < %{version}
+Supplements:    packageand(php-fpm:arsse)
+
+%description fpm
+PHP-FPM process pool configuration for The Arsse
+
 %package config-nginx-fpm
 Summary:        Nginx Web server configuration for The Arsse using PHP-FPM
 Group:          Productivity/Networking/Web/Utilities
-Requires:       php-fpm >= %{minver}
+Requires:       arsse-fpm
 Requires:       nginx
 Requires:       %{name} = %{version}-%{release}
 Provides:       arsse-config-nginx-fpm = %{version}
@@ -60,7 +72,7 @@ generally preferred as it receives more testing.
 %package config-apache-fpm
 Summary:        Apache Web server configuration for The Arsse using PHP-FPM
 Group:          Productivity/Networking/Web/Utilities
-Requires:       php-fpm >= %{minver}
+Requires:       arsse-fpm
 Requires:       %{name} = %{version}-%{release}
 Requires:       apache >= 2.4
 Provides:       arsse-config-apache-fpm = %{version}
@@ -85,6 +97,8 @@ This package provides the system account and group 'arsse'.
 sed -i -se 's/#! \?\/usr\/bin\/env php/#! \/usr\/bin\/php/' dist/arsse
 # Remove stray executable
 rm -f vendor/nicolus/picofeed/picofeed
+# Patch PHP-FPM pool with correct socket path
+sed -i -se 's/\/var\/run\/php\/arsse\.sock/\/run\/php-fpm\/arsse.sock/' dist/php-fpm.conf
 
 %build
 %sysusers_generate_pre dist/sysuser.conf arsse system-user-arsse.conf
@@ -94,6 +108,8 @@ mkdir -p "%{buildroot}%{_datadir}/php/arsse" "%{buildroot}%{_mandir}" "%{buildro
 cp -r lib locale sql vendor www CHANGELOG UPGRADING README.md arsse.php "%{buildroot}%{_datadir}/php/arsse"
 cp -r dist/man/* "%{buildroot}%{_mandir}"
 cp dist/systemd/arsse-fetch.service "%{buildroot}%{_unitdir}/arsse.service"
+install -D dist/php-fpm.conf "%{buildroot}/etc/php7/fpm/php-fpm.d/arsse.conf"
+install -D dist/php-fpm.conf "%{buildroot}/etc/php8/fpm/php-fpm.d/arsse.conf"
 install -m 755 dist/arsse "%{buildroot}%{_bindir}/arsse"
 install -m 644 dist/sysuser.conf %{buildroot}%{_sysusersdir}/system-user-arsse.conf
 
@@ -105,6 +121,10 @@ install -m 644 dist/sysuser.conf %{buildroot}%{_sysusersdir}/system-user-arsse.c
 %{_mandir}/man*/arsse.*
 %{_bindir}/arsse
 %{_unitdir}/arsse.service
+
+%files fpm
+/etc/php7/fpm/php-fpm.d/arsse.conf
+/etc/php8/fpm/php-fpm.d/arsse.conf
 
 %files -n system-user-arsse
 %{_sysusersdir}/system-user-arsse.conf
