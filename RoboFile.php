@@ -409,7 +409,7 @@ class RoboFile extends \Robo\Tasks {
      */
     public function packageBin(string $commit = null, string $target = null): Result {
         if (!$this->toolExists("git", "build", "sudo")) {
-            throw new \Exception("Git OBS-Build are required in PATH to produce packages");
+            throw new \Exception("Git and OBS-Build are required in PATH to produce packages");
         }
         [$commit, $version] = $this->commitVersion($commit);
         $tarball = BASE."release/$version/arsse-$version.tar.gz";
@@ -428,8 +428,14 @@ class RoboFile extends \Robo\Tasks {
             // glob the recipe and use the first one found
             $recipe = glob($dir.$s['recipe']);
             if (!$recipe) {
-                $this->say("Build target '$target' skipped");
+                $this->yell("Build target '$target' skipped: recipe file not available");
                 continue;
+            }
+            if ($s['keys']) {
+                if (!$this->toolExists("rpm", "rpmkeys")) {
+                    $this->yell("Build target '$target' skipped: RPM tools not available");
+                    continue;
+                }
             }
             $recipe = escapeshellarg($recipe[0]);
             $dist = "--dist ".escapeshellarg($s['dist']);
