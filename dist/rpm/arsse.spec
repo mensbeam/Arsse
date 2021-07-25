@@ -11,17 +11,12 @@ BuildArch:      noarch
 %define minver 7.1
 
 Requires:       php >= %{minver}
-Requires:       php-intl
-Requires:       php-dom
-Requires:       php-simplexml
-Requires:       php-iconv
-Requires:       php-posix
-Requires:       php-pcntl
+Requires:       php-intl php-dom php-posix php-pcntl
+Requires:       php-simplexml php-iconv
 # This is usually compiled in
 Requires:       php-filter
 # The below extensions are part of the PHP core in recent versions
-Requires:       php-hash
-Requires:       php-json
+Requires:       php-hash php-json
 # A database option is required
 Requires:       (php-sqlite or php-pgsql)
 # User and Group
@@ -35,6 +30,7 @@ Suggests:       (php-pgsql if postgresql-server)
 Obsoletes:      arsse < %{version}
 
 BuildRequires:  systemd-rpm-macros
+BuildRequires:  apache-rpm-macros
 BuildRequires:  sysuser-tools
 
 %description
@@ -52,7 +48,7 @@ Provides:       arsse-config-fpm = %{version}
 Obsoletes:      arsse-config-fpm < %{version}
 Supplements:    packageand(php-fpm:arsse)
 
-%description fpm
+%description config-fpm
 PHP-FPM process pool configuration for The Arsse
 
 %package config-nginx-fpm
@@ -74,7 +70,7 @@ Summary:        Apache Web server configuration for The Arsse using PHP-FPM
 Group:          Productivity/Networking/Web/Utilities
 Requires:       arsse-fpm
 Requires:       %{name} = %{version}-%{release}
-Requires:       apache >= 2.4
+Requires:       apache2 >= 2.4
 Provides:       arsse-config-apache-fpm = %{version}
 Obsoletes:      arsse-config-apache-fpm < %{version}
 Supplements:    packageand(apache2:arsse)
@@ -99,6 +95,8 @@ sed -i -se 's/#! \?\/usr\/bin\/env php/#! \/usr\/bin\/php/' dist/arsse
 rm -f vendor/nicolus/picofeed/picofeed
 # Patch PHP-FPM pool with correct socket path
 sed -i -se 's/\/var\/run\/php\/arsse\.sock/\/run\/php-fpm\/arsse.sock/' dist/php-fpm.conf
+# Patch the systemd unit file to remove the binding to the PHP-FPM service
+sed -i -se 's/^PartOf=.*//' /dist/systemd/arsse-fetch.service
 
 %build
 %sysusers_generate_pre dist/sysuser.conf arsse system-user-arsse.conf
@@ -108,8 +106,8 @@ mkdir -p "%{buildroot}%{_datadir}/php/arsse" "%{buildroot}%{_mandir}" "%{buildro
 cp -r lib locale sql vendor www CHANGELOG UPGRADING README.md arsse.php "%{buildroot}%{_datadir}/php/arsse"
 cp -r dist/man/* "%{buildroot}%{_mandir}"
 cp dist/systemd/arsse-fetch.service "%{buildroot}%{_unitdir}/arsse.service"
-install -D dist/php-fpm.conf "%{buildroot}/etc/php7/fpm/php-fpm.d/arsse.conf"
-install -D dist/php-fpm.conf "%{buildroot}/etc/php8/fpm/php-fpm.d/arsse.conf"
+install -D dist/php-fpm.conf "%{buildroot}%{_sysconfdir}/php7/fpm/php-fpm.d/arsse.conf"
+install -D dist/php-fpm.conf "%{buildroot}%{_sysconfdir}/php8/fpm/php-fpm.d/arsse.conf"
 install -m 755 dist/arsse "%{buildroot}%{_bindir}/arsse"
 install -m 644 dist/sysuser.conf %{buildroot}%{_sysusersdir}/system-user-arsse.conf
 
@@ -123,8 +121,8 @@ install -m 644 dist/sysuser.conf %{buildroot}%{_sysusersdir}/system-user-arsse.c
 %{_unitdir}/arsse.service
 
 %files fpm
-/etc/php7/fpm/php-fpm.d/arsse.conf
-/etc/php8/fpm/php-fpm.d/arsse.conf
+%{_sysconfdir}/php7/fpm/php-fpm.d/arsse.conf
+%{_sysconfdir}/php8/fpm/php-fpm.d/arsse.conf
 
 %files -n system-user-arsse
 %{_sysusersdir}/system-user-arsse.conf
