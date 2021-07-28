@@ -436,6 +436,12 @@ class RoboFile extends \Robo\Tasks {
                     $this->yell("Build target '$target' skipped: RPM tools not available");
                     continue;
                 }
+                $installed = explode("\n", trim(`rpm -qa "gpg-pubkey*"`));
+                $missing = array_diff($s['keys'], $installed);
+                if ($missing) {
+                    $this->yell("Build target '$target' skipped: the following RPM verificcation keys are not installed:\n".implode("\n", $missing));
+                    continue;
+                }
             }
             $recipe = escapeshellarg($recipe[0]);
             $dist = "--dist ".escapeshellarg($s['dist']);
