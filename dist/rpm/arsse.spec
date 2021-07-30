@@ -90,24 +90,27 @@ This package provides the system account and group 'arsse'.
 %prep
 %setup -q -n %{name}
 # Patch the executable so it does not use env as the interpreter; RPMLint complains about this
-sed -i -se 's/#! \?\/usr\/bin\/env php/#! \/usr\/bin\/php/' dist/arsse
+sed -i -se 's|#! \?/usr/bin/env php|#! %{_bindir}/php|' dist/arsse
 # Remove stray executable
 rm -f vendor/nicolus/picofeed/picofeed
 # Patch PHP-FPM pool with correct socket path
-sed -i -se 's/\/var\/run\/php\/arsse\.sock/\/run\/php-fpm\/arsse.sock/' dist/php-fpm.conf
+sed -i -se 's /var/run/php/arsse\.sock %{_rundir}/php-fpm/arsse.sock ' dist/php-fpm.conf
 # Patch the systemd unit file to remove the binding to the PHP-FPM service
-sed -i -se 's/^PartOf=.*//' dist/systemd/arsse-fetch.service
+sed -i -se 's ^PartOf=.*  ' dist/systemd/arsse-fetch.service
 
 %build
 %sysusers_generate_pre dist/sysuser.conf arsse system-user-arsse.conf
 
 %install
-mkdir -p "%{buildroot}%{_datadir}/php/arsse" "%{buildroot}%{_mandir}" "%{buildroot}%{_unitdir}" "%{buildroot}%{_sysusersdir}" "%{buildroot}%{_bindir}"
+mkdir -p "%{buildroot}%{_mandir}" "%{buildroot}%{_unitdir}" "%{buildroot}%{_sysusersdir}" "%{buildroot}%{_bindir}" "%{buildroot}%{_sysconfdir}/arsse"
+mkdir -p "%{buildroot}%{_datadir}/php/arsse" "%{buildroot}%{_sysconfdir}/arsse/nginx" "%{buildroot}%{_sysconfdir}/arsse/apache"
 cp -r lib locale sql vendor www CHANGELOG UPGRADING README.md arsse.php "%{buildroot}%{_datadir}/php/arsse"
 cp -r dist/man/* "%{buildroot}%{_mandir}"
 cp dist/systemd/arsse-fetch.service "%{buildroot}%{_unitdir}/arsse.service"
 install -D dist/php-fpm.conf "%{buildroot}%{_sysconfdir}/php7/fpm/php-fpm.d/arsse.conf"
 install -D dist/php-fpm.conf "%{buildroot}%{_sysconfdir}/php8/fpm/php-fpm.d/arsse.conf"
+#install dist/nginx/* "%{buildroot}%{_sysconfdir}/arsse/nginx
+#install dist/apache/* "%{buildroot}%{_sysconfdir}/arsse/apache
 install -m 755 dist/arsse "%{buildroot}%{_bindir}/arsse"
 install -m 644 dist/sysuser.conf %{buildroot}%{_sysusersdir}/system-user-arsse.conf
 
@@ -117,8 +120,8 @@ install -m 644 dist/sysuser.conf %{buildroot}%{_sysusersdir}/system-user-arsse.c
 %doc manual/*
 %{_datadir}/php/arsse
 %{_mandir}/man*/arsse.*
-%{_bindir}/arsse
 %{_unitdir}/arsse.service
+%attr(755, root, root) %{_bindir}/arsse
 
 %files config-fpm
 %dir %{_sysconfdir}/php7
