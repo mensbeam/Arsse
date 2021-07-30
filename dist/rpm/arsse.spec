@@ -96,7 +96,7 @@ rm -f vendor/nicolus/picofeed/picofeed
 # Patch PHP-FPM pool with correct socket path
 sed -i -se 's/\/var\/run\/php\/arsse\.sock/\/run\/php-fpm\/arsse.sock/' dist/php-fpm.conf
 # Patch the systemd unit file to remove the binding to the PHP-FPM service
-sed -i -se 's/^PartOf=.*//' /dist/systemd/arsse-fetch.service
+sed -i -se 's/^PartOf=.*//' dist/systemd/arsse-fetch.service
 
 %build
 %sysusers_generate_pre dist/sysuser.conf arsse system-user-arsse.conf
@@ -120,7 +120,13 @@ install -m 644 dist/sysuser.conf %{buildroot}%{_sysusersdir}/system-user-arsse.c
 %{_bindir}/arsse
 %{_unitdir}/arsse.service
 
-%files fpm
+%files config-fpm
+%dir %{_sysconfdir}/php7
+%dir %{_sysconfdir}/php8
+%dir %{_sysconfdir}/php7/fpm
+%dir %{_sysconfdir}/php8/fpm
+%dir %{_sysconfdir}/php7/fpm/php-fpm.d
+%dir %{_sysconfdir}/php8/fpm/php-fpm.d
 %{_sysconfdir}/php7/fpm/php-fpm.d/arsse.conf
 %{_sysconfdir}/php8/fpm/php-fpm.d/arsse.conf
 
