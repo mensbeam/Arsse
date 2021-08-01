@@ -100,11 +100,12 @@ sed -i -se 's|^PartOf=.*||' dist/systemd/arsse-fetch.service
 # Patch PHP-FPM pool and Web server configuration with correct socket path
 sed -i -se 's|/var/run/php/arsse\.sock|%{socketpath}|' dist/php-fpm.conf dist/nginx/* dist/apache/*
 # Patch various files to adjust installation path
-sed -i -se 's|/usr/share/arsse/|%{arssepath}/|' dist/arsse dist/nginx/* dist/apache/*
+sed -i -se 's|/usr/share/arsse/|%{arssepath}/|' dist/arsse dist/nginx/* dist/apache/* dist/tmpfiles.conf
 sed -i -se 's|/usr/share/arsse|%{arssepath}|' dist/systemd/arsse-fetch.service
 # Patch configuration files to adjust other paths (they're probably already correct)
-sed -i -se 's|/etc/arsse/|%{_sysconfdir}/arsse/|' dist/nginx/* dist/apache/*
+sed -i -se 's|/etc/arsse/|%{_sysconfdir}/arsse/|' dist/nginx/* dist/apache/* dist/tmpfiles.conf
 sed -i -se 's|/usr/bin/|%{_bindir}/|' dist/systemd/arsse-fetch.service
+sed -i -se 's|/var/lib|%{_sharedstatedir}|' dist/systemd/arsse-fetch.service dist/tmpfiles.conf dist/config.php
 # Patch Web server configuration to use unique hostname; "news" is recommended, but might conflict with other example configuration
 sed -i -se 's|news.example.com|arsse.example.com|' dist/nginx/* dist/apache/*
 
@@ -112,7 +113,7 @@ sed -i -se 's|news.example.com|arsse.example.com|' dist/nginx/* dist/apache/*
 %sysusers_generate_pre dist/sysuser.conf arsse system-user-arsse.conf
 
 %install
-mkdir -p "%{buildroot}%{_mandir}" "%{buildroot}%{_unitdir}" "%{buildroot}%{_sysusersdir}" "%{buildroot}%{_bindir}" "%{buildroot}%{_sysconfdir}/arsse"
+mkdir -p "%{buildroot}%{_mandir}" "%{buildroot}%{_unitdir}" "%{buildroot}%{_sysusersdir}" "%{buildroot}%{_tmpfilesdir}" "%{buildroot}%{_bindir}" "%{buildroot}%{_sysconfdir}/arsse"
 mkdir -p "%{buildroot}%{arssepath}" "%{buildroot}%{_sysconfdir}/arsse/nginx" "%{buildroot}%{_sysconfdir}/arsse/apache"
 cp -r lib locale sql vendor www CHANGELOG UPGRADING README.md arsse.php "%{buildroot}%{arssepath}"
 cp -r dist/man/* "%{buildroot}%{_mandir}"
@@ -121,15 +122,21 @@ install -D dist/php-fpm.conf "%{buildroot}%{_sysconfdir}/php7/fpm/php-fpm.d/arss
 install -D dist/php-fpm.conf "%{buildroot}%{_sysconfdir}/php8/fpm/php-fpm.d/arsse.conf"
 install dist/nginx/arsse* "%{buildroot}%{_sysconfdir}/arsse/nginx"
 install dist/apache/arsse* "%{buildroot}%{_sysconfdir}/arsse/apache"
+install dist/sysuser.conf "%{buildroot}%{_sysusersdir}/system-user-arsse.conf"
+install dist/tmpfiles.conf "%{buildroot}%{_tmpfilesdir}/arsse.conf"
+install config.defaults.php "%{buildroot}%{_sysconfdir}/arsse"
+install -m 640 dist/config.php "%{buildroot}%{_sysconfdir}/arsse/config.php"
 install -m 755 dist/arsse "%{buildroot}%{_bindir}/arsse"
-install -m 644 dist/sysuser.conf %{buildroot}%{_sysusersdir}/system-user-arsse.conf
 
 %files
 %dir %{_datadir}/php
 %dir %{_sysconfdir}/arsse
 %{arssepath}
+%{_sysconfdir}/arsse/config.php
+%{_sysconfdir}/arsse/config.defaults.php
 %{_mandir}/man*/arsse.*
 %{_unitdir}/arsse.service
+%{_tmpfilesdir}/arsse.conf
 %attr(755, root, root) %{_bindir}/arsse
 %license LICENSE AUTHORS
 %doc manual/*
@@ -161,6 +168,7 @@ install -m 644 dist/sysuser.conf %{buildroot}%{_sysusersdir}/system-user-arsse.c
 %service_add_pre arsse.service arsse.service
 
 %post
+%tmpfiles_create "%{_tmpfilesdir}/arsse.conf"
 %service_add_post arsse.service arsse.service
 
 %preun
