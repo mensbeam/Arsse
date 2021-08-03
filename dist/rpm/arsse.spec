@@ -92,35 +92,40 @@ This package provides the system account and group 'arsse'.
 %prep
 %setup -q -n %{name}
 # Patch the executable so it does not use env as the interpreter; RPMLint complains about this
-sed -i -se 's|/usr/bin/env php|{_bindir}/php|' dist/arsse
+sed -i -s 's|/usr/bin/env php|{_bindir}/php|' dist/arsse
 # Remove stray executable
 rm -f vendor/nicolus/picofeed/picofeed
 # Patch the systemd unit file to remove the binding to the PHP-FPM service
-sed -i -se 's|^PartOf=.*||' dist/systemd/arsse-fetch.service
+sed -i -s 's|^PartOf=.*||' dist/systemd/arsse-fetch.service
 # Patch PHP-FPM pool and Web server configuration with correct socket path
-sed -i -se 's|/var/run/php/arsse\.sock|%{socketpath}|' dist/php-fpm.conf dist/nginx/* dist/apache/*
+sed -i -s 's|/var/run/php/arsse\.sock|%{socketpath}|' dist/php-fpm.conf dist/nginx/* dist/apache/*
 # Patch various files to adjust installation path
-sed -i -se 's|/usr/share/arsse/|%{arssepath}/|' dist/arsse dist/nginx/* dist/apache/* dist/tmpfiles.conf
-sed -i -se 's|/usr/share/arsse|%{arssepath}|' dist/systemd/arsse-fetch.service
+sed -i -s 's|/usr/share/arsse/|%{arssepath}/|' dist/arsse dist/nginx/* dist/apache/* dist/tmpfiles.conf
+sed -i -s 's|/usr/share/arsse|%{arssepath}|' dist/systemd/arsse-fetch.service
 # Patch configuration files to adjust other paths (they're probably already correct)
-sed -i -se 's|/etc/arsse/|%{_sysconfdir}/arsse/|' dist/nginx/* dist/apache/* dist/tmpfiles.conf
-sed -i -se 's|/usr/bin/|%{_bindir}/|' dist/systemd/arsse-fetch.service
-sed -i -se 's|/var/lib|%{_sharedstatedir}|' dist/systemd/arsse-fetch.service dist/tmpfiles.conf dist/config.php
+sed -i -s 's|/etc/arsse/|%{_sysconfdir}/arsse/|' dist/nginx/* dist/apache/* dist/tmpfiles.conf
+sed -i -s 's|/usr/bin/|%{_bindir}/|' dist/systemd/arsse-fetch.service
+sed -i -s 's|/var/lib|%{_sharedstatedir}|' dist/systemd/arsse-fetch.service dist/tmpfiles.conf dist/config.php
 # Patch Web server configuration to use unique hostname; "news" is recommended, but might conflict with other example configuration
-sed -i -se 's|news.example.com|arsse.example.com|' dist/nginx/* dist/apache/*
+sed -i -s 's|news.example.com|arsse.example.com|' dist/nginx/* dist/apache/*
+# Comment out any TLS-related configuration in Nginx example
+sed -i -s 's|^\([ \t]*\)ssl_|\1#ssl_|' dist/nginx/example.conf
+sed -i -s 's|^\([ \t]*\)\(listen \(\[::\]:\)\?443\)|\1#\2|' dist/nginx/example.conf
 
 %build
 %sysusers_generate_pre dist/sysuser.conf arsse system-user-arsse.conf
 
 %install
-mkdir -p "%{buildroot}%{_mandir}" "%{buildroot}%{_unitdir}" "%{buildroot}%{_sysusersdir}" "%{buildroot}%{_tmpfilesdir}" "%{buildroot}%{_bindir}" "%{buildroot}%{_sysconfdir}/arsse"
-mkdir -p "%{buildroot}%{arssepath}" "%{buildroot}%{_sysconfdir}/arsse/nginx" "%{buildroot}%{_sysconfdir}/arsse/apache"
+mkdir -p "%{buildroot}%{_mandir}" "%{buildroot}%{_unitdir}" "%{buildroot}%{_sysusersdir}" "%{buildroot}%{_tmpfilesdir}" "%{buildroot}%{_bindir}"
+mkdir -p "%{buildroot}%{_sysconfdir}/nginx/vhosts.d" "%{buildroot}%{_sysconfdir}/php7/fpm/php-fpm.d/" "%{buildroot}%{_sysconfdir}/php8/fpm/php-fpm.d/"
+mkdir -p "%{buildroot}%{arssepath}" "%{buildroot}%{_sysconfdir}/arsse" "%{buildroot}%{_sysconfdir}/arsse/nginx" "%{buildroot}%{_sysconfdir}/arsse/apache"
 cp -r lib locale sql vendor www CHANGELOG UPGRADING README.md arsse.php "%{buildroot}%{arssepath}"
 cp -r dist/man/* "%{buildroot}%{_mandir}"
 cp dist/systemd/arsse-fetch.service "%{buildroot}%{_unitdir}/arsse.service"
-install -D dist/php-fpm.conf "%{buildroot}%{_sysconfdir}/php7/fpm/php-fpm.d/arsse.conf"
-install -D dist/php-fpm.conf "%{buildroot}%{_sysconfdir}/php8/fpm/php-fpm.d/arsse.conf"
-install dist/nginx/arsse* "%{buildroot}%{_sysconfdir}/arsse/nginx"
+install dist/php-fpm.conf "%{buildroot}%{_sysconfdir}/php7/fpm/php-fpm.d/arsse.conf"
+install dist/php-fpm.conf "%{buildroot}%{_sysconfdir}/php8/fpm/php-fpm.d/arsse.conf"
+install dist/nginx/arsse*.conf "%{buildroot}%{_sysconfdir}/arsse/nginx"
+install dist/nginx/example.conf "%{buildroot}%{_sysconfdir}/nginx/vhosts.d/arsse.conf"
 install dist/apache/arsse* "%{buildroot}%{_sysconfdir}/arsse/apache"
 install dist/sysuser.conf "%{buildroot}%{_sysusersdir}/system-user-arsse.conf"
 install dist/tmpfiles.conf "%{buildroot}%{_tmpfilesdir}/arsse.conf"
@@ -154,7 +159,10 @@ install -m 755 dist/arsse "%{buildroot}%{_bindir}/arsse"
 %files config-nginx-fpm
 %dir %{_sysconfdir}/arsse
 %dir %{_sysconfdir}/arsse/nginx
-%{_sysconfdir}/arsse/nginx/arsse*
+%dir %{_sysconfdir}/nginx
+%dir %{_sysconfdir}/nginx/vhosts.d
+%{_sysconfdir}/arsse/nginx/*
+%config(noreplace) %{_sysconfdir}/nginx/vhosts.d/arsse.conf
 
 %files config-apache-fpm
 %dir %{_sysconfdir}/arsse
