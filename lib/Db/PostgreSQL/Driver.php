@@ -211,7 +211,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
 
     public function query(string $query): \JKingWeb\Arsse\Db\Result {
         $r = $this->dispatchQuery($query);
-        if (is_resource($r)) {
+        if (is_resource($r) || $r instanceof \PgSql\Result) { //class since PHP 8.1
             return new Result($this->db, $r);
         } else {
             [$excClass, $excMsg, $excData] = $r;

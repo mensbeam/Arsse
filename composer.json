@@ -40,6 +40,9 @@
     "config": {
         "platform": {
             "php": "7.1.33"
+        },
+        "allow-plugins": {
+            "bamarni/composer-bin-plugin": true
         }
     },
     "scripts": {

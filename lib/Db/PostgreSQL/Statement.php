@@ -35,7 +35,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         $this->bindValues($values);
         $r = $this->dispatchQuery($this->qMunged, $this->in);
         $this->in = [];
-        if (is_resource($r)) {
+        if (is_resource($r) || $r instanceof \PgSql\Result) { //class since PHP 8.1
             return new Result($this->db, $r);
         } else {
             [$excClass, $excMsg, $excData] = $r;
