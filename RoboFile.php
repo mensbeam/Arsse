@@ -1,6 +1,5 @@
 <?php
 
-use Robo\Collection\CollectionBuilder;
 use Robo\Result;
 
 const BASE = __DIR__.\DIRECTORY_SEPARATOR;
@@ -166,7 +165,7 @@ class RoboFile extends \Robo\Tasks {
                 (IS_WIN && (!exec(escapeshellarg($bin)." --help $blackhole", $junk, $status) || $status))
                 || (!IS_WIN && (!exec("which ".escapeshellarg($bin)." $blackhole", $junk, $status) || $status))
              ) {
-                    return false;
+                return false;
             }
         }
         return true;
@@ -283,7 +282,7 @@ class RoboFile extends \Robo\Tasks {
      * The commit to package may be any Git tree-ish identifier: a tag, a branch,
      * or any commit hash. If none is provided on the command line, Robo will prompt
      * for a commit to package; the default is "HEAD".
-     * 
+     *
      * The Arch base-devel group should be installed for this.
      */
     public function packageArch(string $commit = null): Result {
@@ -317,7 +316,7 @@ class RoboFile extends \Robo\Tasks {
      * The commit to package may be any Git tree-ish identifier: a tag, a branch,
      * or any commit hash. If none is provided on the command line, Robo will prompt
      * for a commit to package; the default is "HEAD".
-     * 
+     *
      * The pbuilder tool should be installed for this.
      */
     public function packageDeb(string $commit = null): Result {
@@ -404,7 +403,7 @@ class RoboFile extends \Robo\Tasks {
      * The commit to package may be any Git tree-ish identifier: a tag, a branch,
      * or any commit hash. If none is provided on the command line, Robo will prompt
      * for a commit to package; the default is "HEAD".
-     * 
+     *
      * Generic release tarballs will always be generated, but distribution-specific
      * packages are skipped when the required tools are not available
      */
@@ -416,7 +415,7 @@ class RoboFile extends \Robo\Tasks {
         // determine whether the distribution-specific packages can be built
         $dist = [
             'Arch'   => $this->toolExists("git", "makepkg", "updpkgsums"),
-            'Deb' => $this->toolExists("git", "sudo", "pbuilder"),
+            'Deb'    => $this->toolExists("git", "sudo", "pbuilder"),
         ];
         // start a collection
         $t = $this->collectionBuilder();

@@ -6,7 +6,6 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Test\DatabaseDrivers;
 
-use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Db\Driver;
 
 trait PostgreSQLCommon {
