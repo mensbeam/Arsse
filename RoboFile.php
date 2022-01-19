@@ -1,6 +1,5 @@
 <?php
 
-use Robo\Collection\CollectionBuilder;
 use Robo\Result;
 
 const BASE = __DIR__.\DIRECTORY_SEPARATOR;
@@ -166,7 +165,7 @@ class RoboFile extends \Robo\Tasks {
                 (IS_WIN && (!exec(escapeshellarg($bin)." --help $blackhole", $junk, $status) || $status))
                 || (!IS_WIN && (!exec("which ".escapeshellarg($bin)." $blackhole", $junk, $status) || $status))
              ) {
-                    return false;
+                return false;
             }
         }
         return true;

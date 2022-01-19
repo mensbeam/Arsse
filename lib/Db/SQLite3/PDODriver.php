@@ -18,7 +18,8 @@ class PDODriver extends AbstractPDODriver {
 
     protected function makeConnection(string $file, string $key): void {
         $this->db = new \PDO("sqlite:".$file, "", "", [
-            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            \PDO::ATTR_ERRMODE           => \PDO::ERRMODE_EXCEPTION,
+            \PDO::ATTR_STRINGIFY_FETCHES => true,
         ]);
     }
 

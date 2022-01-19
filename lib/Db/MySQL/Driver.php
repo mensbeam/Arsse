@@ -163,6 +163,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     }
 
     protected function makeConnection(string $db, string $user, string $password, string $host, int $port, string $socket): void {
+        $drv = new \mysqli_driver;
+        $drv->report_mode = \MYSQLI_REPORT_OFF;
         $this->db = mysqli_init();
         $this->db->options(\MYSQLI_SET_CHARSET_NAME, "utf8mb4");
         $this->db->options(\MYSQLI_OPT_INT_AND_FLOAT_NATIVE, false);

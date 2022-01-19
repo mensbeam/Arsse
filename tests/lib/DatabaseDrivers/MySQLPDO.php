@@ -9,6 +9,8 @@ namespace JKingWeb\Arsse\Test\DatabaseDrivers;
 use JKingWeb\Arsse\Arsse;
 
 trait MySQLPDO {
+    use MySQLCommon;
+
     protected static $implementation = "PDO MySQL";
     protected static $backend = "MySQL";
     protected static $dbResultClass = \JKingWeb\Arsse\Db\PDOResult::class;
@@ -31,6 +33,7 @@ trait MySQLPDO {
             $dsn = "mysql:".implode(";", $dsn);
             $d = new \PDO($dsn, Arsse::$conf->dbMySQLUser, Arsse::$conf->dbMySQLPass, [
                 \PDO::ATTR_ERRMODE                => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_STRINGIFY_FETCHES      => true,
                 \PDO::MYSQL_ATTR_MULTI_STATEMENTS => false,
             ]);
             foreach (\JKingWeb\Arsse\Db\MySQL\PDODriver::makeSetupQueries() as $q) {
@@ -40,17 +43,5 @@ trait MySQLPDO {
         } catch (\Throwable $e) {
             return;
         }
-    }
-
-    public static function dbTableList($db): array {
-        return MySQL::dbTableList($db);
-    }
-
-    public static function dbTruncate($db, array $afterStatements = []): void {
-        MySQL::dbTruncate($db, $afterStatements);
-    }
-
-    public static function dbRaze($db, array $afterStatements = []): void {
-        MySQL::dbRaze($db, $afterStatements);
     }
 }

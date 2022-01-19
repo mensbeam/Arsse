@@ -9,6 +9,8 @@ namespace JKingWeb\Arsse\Test\DatabaseDrivers;
 use JKingWeb\Arsse\Arsse;
 
 trait PostgreSQLPDO {
+    use PostgreSQLCommon;
+
     protected static $implementation = "PDO PostgreSQL";
     protected static $backend = "PostgreSQL";
     protected static $dbResultClass = \JKingWeb\Arsse\Db\PostgreSQL\PDOResult::class;
@@ -27,17 +29,5 @@ trait PostgreSQLPDO {
             $d->exec($q);
         }
         return $d;
-    }
-
-    public static function dbTableList($db): array {
-        return PostgreSQL::dbTableList($db);
-    }
-
-    public static function dbTruncate($db, array $afterStatements = []): void {
-        PostgreSQL::dbTruncate($db, $afterStatements);
-    }
-
-    public static function dbRaze($db, array $afterStatements = []): void {
-        PostgreSQL::dbRaze($db, $afterStatements);
     }
 }

@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 class Arsse {
-    public const VERSION = "0.10.0";
+    public const VERSION = "0.10.1";
     public const REQUIRED_EXTENSIONS = [
         "intl",      // as this extension is required to prepare formatted messages, its absence will throw a distinct English-only exception
         "dom",
