@@ -187,7 +187,10 @@ class RoboFile extends \Robo\Tasks {
         }
         // establish which commit to package
         [$commit, $version] = $this->commitVersion($commit);
-        $archVersion = preg_replace('/^([^-]+)-(\d+)-(\w+)$/', "$1.r$2.$3", $version);
+        preg_match('/^([^-]+)(?:-(\d+)-(\w+))?$/', $version, $m);
+        $archVersion = $m[1].($m[2] ? ".r$m[2].$m[3]" : "");
+        $baseVersion = $m[1];
+        $release = $m[2];
         // name the generic release tarball
         $tarball = BASE."release/$version/arsse-$version.tar.gz";
         // start a collection
@@ -200,22 +203,37 @@ class RoboFile extends \Robo\Tasks {
             return $result;
         }
         try {
-            if (file_exists($dir."dist/debian")) {
-                // generate the Debian changelog; this also validates our original changelog
-                $debianChangelog = $this->changelogDebian($this->changelogParse(file_get_contents($dir."CHANGELOG"), $version), $version);
-                // save the Debian-format changelog
-                $t->addTask($this->taskWriteToFile($dir."dist/debian/changelog")->text($debianChangelog));
-            }
+            // Perform Arch-specific tasks
             if (file_exists($dir."dist/arch")) {
                 // patch the Arch PKGBUILD file with the correct version string
                 $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^pkgver=.*$/m')->to("pkgver=$archVersion"));
                 // patch the Arch PKGBUILD file with the correct source file
                 $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^source=\("arsse-[^"]+"\)$/m')->to('source=("'.basename($tarball).'")'));
             }
+            // perform Debian-specific tasks
+            if (file_exists($dir."dist/debian")) {
+                // generate the Debian changelog; this also validates our original changelog
+                $changelog = $this->changelogParse(file_get_contents($dir."CHANGELOG"), $version);
+                $debianChangelog = $this->changelogDebian($changelog, $version);
+                // save the Debian-format changelog
+                $t->addTask($this->taskWriteToFile($dir."dist/debian/changelog")->text($debianChangelog));
+            }
+            // perform RPM-specific tasks
+            if (file_exists($dir."dist/rpm")) {
+                // patch the spec file with the correct version and release
+                $t->addTask($this->taskReplaceInFile($dir."dist/rpm/arsse.spec")->regex('/^Version:        .*$/m')->to("Version:        $baseVersion"));
+                $t->addTask($this->taskReplaceInFile($dir."dist/rpm/arsse.spec")->regex('/^Release:        .*$/m')->to("Release:        $release"));
+                // patch the spec file with the correct tarball name
+                $t->addTask($this->taskReplaceInFile($dir."dist/rpm/arsse.spec")->regex('/^Source0:        .*$/m')->to("Source0:        arsse-$version.tar.gz"));
+                // append the RPM changelog to the spec file
+                $t->addTask($this->taskWriteToFile($dir."dist/rpm/arsse.spec")->append(true)->text("\n\n%changelog\n".$this->changelogRPM($changelog, $version)));
+            }
             // save commit description to VERSION file for reference
             $t->addTask($this->taskWriteToFile($dir."VERSION")->text($version));
-            // perform Composer installation in the temp location with dev dependencies
-            $t->addTask($this->taskComposerInstall()->arg("-q")->dir($dir));
+            if (file_exists($dir."docs") || file_exists($dir."manpages")) {
+                // perform Composer installation in the temp location with dev dependencies to include Robo and Daux
+                $t->addTask($this->taskExec("composer install")->arg("-q")->dir($dir));
+            }
             if (file_exists($dir."manpages")) {
                 // generate manpages
                 $t->addTask($this->taskExec("./robo manpage")->dir($dir));
@@ -225,7 +243,7 @@ class RoboFile extends \Robo\Tasks {
                 $t->addTask($this->taskExec("./robo manual -q")->dir($dir));
             }
             // perform Composer installation in the temp location for final output
-            $t->addTask($this->taskComposerInstall()->dir($dir)->noDev()->optimizeAutoloader()->arg("--no-scripts")->arg("-q"));
+            $t->addTask($this->taskExec("composer install")->dir($dir)->arg("--no-dev")->arg("-o")->arg("--no-scripts")->arg("-q"));
             // delete unwanted files
             $t->addTask($this->taskFilesystemStack()->remove([
                 $dir.".git",
@@ -277,79 +295,6 @@ class RoboFile extends \Robo\Tasks {
         return $result;
     }
 
-    /** Packages a given commit of the software into an Arch package
-     *
-     * The commit to package may be any Git tree-ish identifier: a tag, a branch,
-     * or any commit hash. If none is provided on the command line, Robo will prompt
-     * for a commit to package; the default is "HEAD".
-     *
-     * The Arch base-devel group should be installed for this.
-     */
-    public function packageArch(string $commit = null): Result {
-        if (!$this->toolExists("git", "makepkg", "updpkgsums")) {
-            throw new \Exception("Git, makepkg, and updpkgsums are required in PATH to produce Arch packages");
-        }
-        // establish which commit to package
-        [$commit, $version] = $this->commitVersion($commit);
-        $tarball = BASE."release/$version/arsse-$version.tar.gz";
-        $dir = dirname($tarball).\DIRECTORY_SEPARATOR;
-        // start a collection
-        $t = $this->collectionBuilder();
-        // build the generic release tarball if it doesn't exist
-        if (!file_exists($tarball)) {
-            $t->addTask($this->taskExec(BASE."robo package:generic $commit"));
-        }
-        // extract the PKGBUILD from the tarball
-        $t->addCode(function() use ($tarball, $dir) {
-            // because Robo doesn't support extracting a single file we have to do it ourselves
-            (new \Archive_Tar($tarball))->extractList("arsse/dist/arch/PKGBUILD", $dir, "arsse/dist/arch/", false);
-            // perform a do-nothing filesystem operation since we need a Robo task result
-            return $this->taskFilesystemStack()->chmod($dir."PKGBUILD", 0644)->run();
-        })->completion($this->taskFilesystemStack()->remove($dir."PKGBUILD"));
-        // build the package
-        $t->addTask($this->taskExec("makepkg -Ccf")->dir($dir));
-        return $t->run();
-    }
-
-    /** Packages a given commit of the software a binary Debian package
-     *
-     * The commit to package may be any Git tree-ish identifier: a tag, a branch,
-     * or any commit hash. If none is provided on the command line, Robo will prompt
-     * for a commit to package; the default is "HEAD".
-     *
-     * The pbuilder tool should be installed for this.
-     */
-    public function packageDeb(string $commit = null): Result {
-        if (!$this->toolExists("git", "sudo", "pbuilder")) {
-            throw new \Exception("Git, sudo, and pbuilder are required in PATH to produce Debian packages");
-        }
-        // establish which commit to package
-        [$commit, $version] = $this->commitVersion($commit);
-        $tarball = BASE."release/$version/arsse-$version.tar.gz";
-        // define some more variables
-        $tgz = BASE."release/pbuilder-arsse.tgz";
-        $bind = dirname($tarball);
-        $script = BASE."dist/debian/pbuilder.sh";
-        $user = trim(`id -un`);
-        $group = trim(`id -gn`);
-        // start a task collection
-        $t = $this->collectionBuilder();
-        // check that the pbuilder base exists and create it if it does not
-        if (!file_exists($tgz)) {
-            $t->addTask($this->taskFilesystemStack()->mkdir(BASE."release"));
-            $t->addTask($this->taskExec('sudo pbuilder create --basetgz '.escapeshellarg($tgz).' --mirror http://ftp.ca.debian.org/debian/ --extrapackages "debhelper devscripts lintian"'));
-        }
-        // build the generic release tarball if it doesn't exist
-        if (!file_exists($tarball)) {
-            $t->addTask($this->taskExec(BASE."robo package:generic $commit"));
-        }
-        // build the packages
-        $t->addTask($this->taskExec('sudo pbuilder execute --basetgz '.escapeshellarg($tgz).' --bindmounts '.escapeshellarg($bind).' -- '.escapeshellarg($script).' '.escapeshellarg("$bind/".basename($tarball))));
-        // take ownership of the output files
-        $t->addTask($this->taskExec("sudo chown -R $user:$group ".escapeshellarg($bind)));
-        return $t->run();
-    }
-
     /** Packages a release tarball into a Debian source package
      *
      * The commit to package may be any Git tree-ish identifier: a tag, a branch,
@@ -381,7 +326,7 @@ class RoboFile extends \Robo\Tasks {
         // re-pack the tarball using a specific name special to Debian
         $t->addTask($this->taskPack($dir."arsse_$baseVersion.orig.tar.gz")->addDir("arsse-$baseVersion", $base));
         // pack the debian tarball
-        $t->addTask($this->taskPack($dir."arsse_$debVersion.debian.tar.gz")->addDir("debian", $base."dist"));
+        $t->addTask($this->taskPack($dir."arsse_$debVersion.debian.tar.gz")->addDir("debian", $base."dist/debian"));
         // generate the DSC file
         $t->addCode(function() use ($t, $debVersion, $baseVersion, $dir, $base) {
             try {
@@ -393,49 +338,66 @@ class RoboFile extends \Robo\Tasks {
             return $this->taskWriteToFile($dir."arsse_$debVersion.dsc")->text($dsc)->run();
         });
         // delete any existing files
-        $t->AddTask($this->taskFilesystemStack()->remove(BASE."release/$version/arsse_$baseVersion.orig.tar.gz")->remove(BASE."release/$version/arsse_$debVersion.debian.tar.gz")->remove(BASE."release/$version/arsse_$debVersion.dsc"));
+        $t->AddTask($this->taskFilesystemStack()->remove([BASE."release/$version/arsse_$baseVersion.orig.tar.gz", BASE."release/$version/arsse_$debVersion.debian.tar.gz", BASE."release/$version/arsse_$debVersion.dsc"]));
+        // copy the new files over
         $t->addTask($this->taskFilesystemStack()->copy($dir."arsse_$baseVersion.orig.tar.gz", BASE."release/$version/arsse_$baseVersion.orig.tar.gz")->copy($dir."arsse_$debVersion.debian.tar.gz", BASE."release/$version/arsse_$debVersion.debian.tar.gz")->copy($dir."arsse_$debVersion.dsc", BASE."release/$version/arsse_$debVersion.dsc"));
         return $t->run();
     }
 
-    /** Generates all possible package types for a given commit of the software
+    /** Packages a given commit of the software and produces all relevant release files
      *
      * The commit to package may be any Git tree-ish identifier: a tag, a branch,
      * or any commit hash. If none is provided on the command line, Robo will prompt
      * for a commit to package; the default is "HEAD".
      *
-     * Generic release tarballs will always be generated, but distribution-specific
-     * packages are skipped when the required tools are not available
+     * In addition to the release tarball, a Debian source package, Arch PKGBUILD,
+     * and RPM spec file are output as well. These are suitable for use with Open
+     * Build Service instances and with slight modification the Arch User Repository.
+     * Use for Launchpad PPAs has not been tested.
      */
     public function package(string $commit = null): Result {
         if (!$this->toolExists("git")) {
             throw new \Exception("Git is required in PATH to produce packages");
         }
-        [$commit,] = $this->commitVersion($commit);
-        // determine whether the distribution-specific packages can be built
-        $dist = [
-            'Arch'   => $this->toolExists("git", "makepkg", "updpkgsums"),
-            'Deb'    => $this->toolExists("git", "sudo", "pbuilder"),
-        ];
+        [$commit, $version] = $this->commitVersion($commit);
+        $tarball = BASE."release/$version/arsse-$version.tar.gz";
+        // build the generic release tarball
+        $result = $this->taskExec(BASE."robo package:generic $commit")->run();
+        if (!$result->wasSuccessful()) {
+            return $result;
+        }
+        // if the generic tarball could be built, try to produce Arch, Debian, and RPM files; these might legitimately not exist in old releases
+        // start by getting the list of files from the tarball
+        $archive = new \Archive_Tar($tarball);
+        $filelist = array_flip(array_column($archive->listContent(), "filename"));
         // start a collection
         $t = $this->collectionBuilder();
-        // build the generic release tarball
-        $t->addTask($this->taskExec(BASE."robo package:generic $commit"));
-        // build other packages
-        foreach ($dist as $distro => $run) {
-            if ($run) {
-                $subcmd = strtolower($distro);
-                $t->addTask($this->taskExec(BASE."robo package:$subcmd $commit"));
-            }
+        // Produce an Arch PKGBUILD if appropriate
+        if (isset($filelist['arsse/dist/arch/PKGBUILD'])) {
+            $t->addCode(function() use ($tarball, $archive) {
+                $dir = dirname($tarball).\DIRECTORY_SEPARATOR;
+                $archive->extractList("arsse/dist/arch/PKGBUILD", $dir, "arsse/dist/arch/", false);
+                // update the tarball's checksum
+                $sums = [
+                    'md5' => hash_file("md5", $tarball),
+                ];
+                return $this->taskReplaceInFile($dir."PKGBUILD")->regex('/^md5sums=\("SKIP"\)$/m')->to('md5sums=("'.$sums['md5'].'")')->run();
+            });
         }
-        $out = $t->run();
-        // note any packages which were not built
-        foreach ($dist as $distro => $run) {
-            if (!$run) {
-                $this->say("Packages for $distro skipped");
-            }
+        // Produce a Debian source package if appropriate
+        if (isset($filelist['arsse/dist/debian/control']) && isset($filelist['arsse/dist/debian/source/format'])) {
+            $t->addTask($this->taskExec(BASE."robo package:debsrc $commit"));
         }
-        return $out;
+        // Produce an RPM spec file if appropriate
+        if (isset($filelist['arsse/dist/rpm/arsse.spec'])) {
+            $t->addCode(function() use ($tarball, $archive) {
+                $dir = dirname($tarball).\DIRECTORY_SEPARATOR;
+                $archive->extractList("arsse/dist/rpm/arsse.spec", $dir, "arsse/dist/rpm/", false);
+                // perform a do-nothing filesystem operation since we need a Robo task result
+                return $this->taskFilesystemStack()->chmod($dir."arsse.spec", 0644)->run();
+            });
+        }
+        return $t->run();
     }
 
     /** Generates static manual pages in the "manual" directory
