@@ -10,7 +10,7 @@
     <dt>API endpoint</dt>
         <dd>/index.php/apps/news/api/v1-2/</dd>
     <dt>Specifications</dt>
-        <dd><a href="https://github.com/nextcloud/news/blob/master/docs/externalapi/Legacy.md">Version 1.2</a></dd>
+        <dd><a href="https://github.com/nextcloud/news/blob/master/docs/api/api-v1.md">Version 1.2</a></dd>
 </dl>
 
 The Nextcloud News protocol was the first supported by The Arsse, and has been supported in full since version 0.3.0.
