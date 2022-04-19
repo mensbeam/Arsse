@@ -6,7 +6,10 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Context;
 
-class ExclusionContext extends AbstractContext {
-    use ExclusionMethods;
-    use ExclusionProperties;
+trait BooleanProperties {
+    public $unread = null;
+    public $starred = null;
+    public $hidden = null;
+    public $labelled = null;
+    public $annotated = null;
 }

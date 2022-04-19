@@ -6,16 +6,16 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Context;
 
-class Context extends ExclusionContext {
+class Context extends AbstractContext {
+    use BooleanMethods;
+    use BooleanProperties;
+    use ExclusionMethods;
+    use ExclusionProperties;
+
     /** @var ExclusionContext */
     public $not;
     public $limit = 0;
     public $offset = 0;
-    public $unread;
-    public $starred;
-    public $hidden;
-    public $labelled;
-    public $annotated;
 
     public function __construct() {
         $this->not = new ExclusionContext($this);
@@ -36,26 +36,6 @@ class Context extends ExclusionContext {
     }
 
     public function offset(int $spec = null) {
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function unread(bool $spec = null) {
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function starred(bool $spec = null) {
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function hidden(bool $spec = null) {
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function labelled(bool $spec = null) {
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function annotated(bool $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 }
