@@ -9,7 +9,10 @@ namespace JKingWeb\Arsse\TestCase\Misc;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\ValueInfo;
 
-/** @covers \JKingWeb\Arsse\Context\Context<extended> */
+/**
+ * @covers \JKingWeb\Arsse\Context\Context<extended>
+ * @covers \JKingWeb\Arsse\Context\ExclusionContext<extended>
+ */
 class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $ranges = ['modifiedRange', 'markedRange', 'articleRange', 'editionRange'];
 
@@ -77,6 +80,45 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             $c->$method(null);
             $this->assertFalse($c->$method());
         }
+    }
+
+    public function provideContextOptions(): iterable {
+        return [
+            'reverse'          => [[true], true],
+            'limit'            => [[10],                                             10],
+            'offset'           => [[5],                                              5],
+            'folder'           => [[42],                                             42],
+            'folders'          => [[[12,22]],                                        [12,22]],
+            'folderShallow'    => [[42],                                             42],
+            'foldersShallow'   => [[[0,1]],                                          [0,1]],
+            'tag'              => [[44],                                             44],
+            'tags'             => [[[44, 2112]],                                     [44, 2112]],
+            'tagName'          => [["XLIV"],                                         "XLIV"],
+            'tagNames'         => [[["XLIV", "MMCXII"]],                             ["XLIV", "MMCXII"]],
+            'subscription'     => [[2112],                                           2112],
+            'subscriptions'    => [[[44, 2112]],                                     [44, 2112]],
+            'article'          => [[255],                                            255],
+            'edition'          => [[65535],                                          65535],
+            'unread'           => [[true],                                           true],
+            'starred'          => [[true],                                           true],
+            'hidden'           => [[true],                                           true],
+            'editions'         => [[[1,2]],                                          [1,2]],
+            'articles'         => [[[1,2]],                                          [1,2]],
+            'label'            => [[2112],                                           2112],
+            'labels'           => [[[2112, 1984]],                                   [2112, 1984]],
+            'labelName'        => [["Rush"],                                         "Rush"],
+            'labelNames'       => [[["Rush", "Orwell"]],                             ["Rush", "Orwell"]],
+            'labelled'         => [[true],                                           true],
+            'annotated'        => [[true],                                           true],
+            'searchTerms'      => [[["foo", "bar"]],                                 ["foo", "bar"]],
+            'annotationTerms'  => [[["foo", "bar"]],                                 ["foo", "bar"]],
+            'titleTerms'       => [[["foo", "bar"]],                                 ["foo", "bar"]],
+            'authorTerms'      => [[["foo", "bar"]],                                 ["foo", "bar"]],
+            'modifiedRange'    => [["2020-03-06T22:08:03Z", "2022-12-31T06:33:12Z"], ["2020-03-06T22:08:03Z", "2022-12-31T06:33:12Z"]],
+            'markedRange'      => [["2020-03-06T22:08:03Z", "2022-12-31T06:33:12Z"], ["2020-03-06T22:08:03Z", "2022-12-31T06:33:12Z"]],
+            'articleRange'     => [[1, 100],                                         [1, 100]],
+            'editionRange'     => [[1, 100],                                         [1, 100]],
+        ];
     }
 
     public function testCleanIdArrayValues(): void {

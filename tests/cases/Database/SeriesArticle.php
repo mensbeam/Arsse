@@ -526,6 +526,8 @@ trait SeriesArticle {
             'Excluding entire folder tree'                               => [(new Context)->not->folder(0), []],
             'Excluding multiple folder trees'                            => [(new Context)->not->folders([1,5]), [1,2,3,4]],
             'Excluding multiple folder trees including root'             => [(new Context)->not->folders([0,1,5]), []],
+            'Before article 3'                                           => [(new Context)->not->articleRange(3, null), [1,2]],
+            'Before article 19'                                          => [(new Context)->not->articleRange(null, 19), [20]],
         ];
     }
 
