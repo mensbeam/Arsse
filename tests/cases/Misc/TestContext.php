@@ -11,6 +11,8 @@ use JKingWeb\Arsse\Misc\ValueInfo;
 
 /** @covers \JKingWeb\Arsse\Context\Context<extended> */
 class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
+    protected $ranges = ['modifiedRange', 'markedRange', 'articleRange', 'editionRange'];
+
     public function testVerifyInitialState(): void {
         $c = new Context;
         foreach ((new \ReflectionObject($c))->getMethods(\ReflectionMethod::IS_PUBLIC) as $m) {
@@ -19,7 +21,11 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             }
             $method = $m->name;
             $this->assertFalse($c->$method(), "Context method $method did not initially return false");
-            $this->assertEquals(null, $c->$method, "Context property $method is not initially falsy");
+            if (in_array($method, $this->ranges)) {
+                $this->assertEquals([null, null], $c->$method, "Context property $method is not initially a two-member falsy array");
+            } else {
+                $this->assertEquals(null, $c->$method, "Context property $method is not initially falsy");
+            }
         }
     }
 
@@ -40,10 +46,6 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             'subscriptions'    => [44, 2112],
             'article'          => 255,
             'edition'          => 65535,
-            'latestArticle'    => 47,
-            'oldestArticle'    => 1337,
-            'latestEdition'    => 47,
-            'oldestEdition'    => 1337,
             'unread'           => true,
             'starred'          => true,
             'hidden'           => true,
@@ -61,10 +63,9 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             'authorTerms'      => ["foo", "bar"],
             'not'              => (new Context)->subscription(5),
         ];
-        $ranges = ['modifiedRange', 'markedRange', 'articleRange', 'editionRange'];
         $c = new Context;
         foreach ((new \ReflectionObject($c))->getMethods(\ReflectionMethod::IS_PUBLIC) as $m) {
-            if ($m->isStatic() || strpos($m->name, "__") === 0 || in_array($m->name, $ranges)) {
+            if ($m->isStatic() || strpos($m->name, "__") === 0 || in_array($m->name, $this->ranges)) {
                 continue;
             }
             $method = $m->name;

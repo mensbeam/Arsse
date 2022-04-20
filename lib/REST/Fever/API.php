@@ -388,10 +388,10 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($G['with_ids']) {
             $c->articles(explode(",", $G['with_ids']))->hidden(null);
         } elseif ($G['max_id']) {
-            $c->latestArticle($G['max_id'] - 1);
+            $c->articleRange(null, $G['max_id'] - 1);
             $reverse = true;
         } elseif ($G['since_id']) {
-            $c->oldestArticle($G['since_id'] + 1);
+            $c->articleRange($G['since_id'] + 1, null);
         }
         // handle the undocumented options
         if ($G['group_ids']) {

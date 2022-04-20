@@ -456,12 +456,12 @@ trait SeriesArticle {
             'Not hidden'                                                 => [(new Context)->hidden(false), [1,2,3,4,5,7,8,19,20]],
             'Labelled'                                                   => [(new Context)->labelled(true), [1,5,8,19,20]],
             'Not labelled'                                               => [(new Context)->labelled(false), [2,3,4,6,7]],
-            'Not after edition 999'                                      => [(new Context)->subscription(5)->latestEdition(999), [19]],
-            'Not after edition 19'                                       => [(new Context)->subscription(5)->latestEdition(19), [19]],
-            'Not before edition 999'                                     => [(new Context)->subscription(5)->oldestEdition(999), [20]],
-            'Not before edition 1001'                                    => [(new Context)->subscription(5)->oldestEdition(1001), [20]],
-            'Not after article 3'                                        => [(new Context)->latestArticle(3), [1,2,3]],
-            'Not before article 19'                                      => [(new Context)->oldestArticle(19), [19,20]],
+            'Not after edition 999'                                      => [(new Context)->subscription(5)->editionRange(null, 999), [19]],
+            'Not after edition 19'                                       => [(new Context)->subscription(5)->editionRange(null, 19), [19]],
+            'Not before edition 999'                                     => [(new Context)->subscription(5)->editionRange(999, null), [20]],
+            'Not before edition 1001'                                    => [(new Context)->subscription(5)->editionRange(1001, null), [20]],
+            'Not after article 3'                                        => [(new Context)->articleRange(null, 3), [1,2,3]],
+            'Not before article 19'                                      => [(new Context)->articleRange(19, null), [19,20]],
             'Modified by author since 2005'                              => [(new Context)->modifiedRange("2005-01-01T00:00:00Z", null), [2,4,6,8,20]],
             'Modified by author since 2010'                              => [(new Context)->modifiedRange("2010-01-01T00:00:00Z", null), [2,4,6,8,20]],
             'Not modified by author since 2005'                          => [(new Context)->modifiedRange(null, "2005-01-01T00:00:00Z"), [1,3,5,7,19]],
@@ -472,7 +472,7 @@ trait SeriesArticle {
             'Not marked or labelled since 2005'                          => [(new Context)->markedRange(null, "2005-01-01T00:00:00Z"), [1,3,5,7]],
             'Marked or labelled between 2000 and 2015'                   => [(new Context)->markedRange("2000-01-01T00:00:00Z", "2015-12-31T23:59:59Z"), [1,2,3,4,5,6,7,8,20]],
             'Marked or labelled in 2010'                                 => [(new Context)->markedRange("2010-01-01T00:00:00Z", "2010-12-31T23:59:59Z"), [2,4,6,20]],
-            'Paged results'                                              => [(new Context)->limit(2)->oldestEdition(4), [4,5]],
+            'Paged results'                                              => [(new Context)->limit(2)->editionRange(4, null), [4,5]],
             'With label ID 1'                                            => [(new Context)->label(1), [1,19]],
             'With label ID 2'                                            => [(new Context)->label(2), [1,5,20]],
             'With label ID 1 or 2'                                       => [(new Context)->labels([1,2]), [1,5,19,20]],
@@ -929,7 +929,7 @@ trait SeriesArticle {
     }
 
     public function testMarkByOldestEdition(): void {
-        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->oldestEdition(19));
+        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editionRange(19, null));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][8][3] = 1;
@@ -940,7 +940,7 @@ trait SeriesArticle {
     }
 
     public function testMarkByLatestEdition(): void {
-        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->latestEdition(20));
+        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editionRange(null, 20));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][8][3] = 1;

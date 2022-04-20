@@ -894,8 +894,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             ->offset($query['offset'])
             ->starred($query['starred'])
             ->modifiedRange($query['after'], $query['before']) // FIXME: This may not be the correct date field
-            ->oldestArticle($query['after_entry_id'] ? $query['after_entry_id'] + 1 : null) // FIXME: This might be edition
-            ->latestArticle($query['before_entry_id'] ? $query['before_entry_id'] - 1 : null)
+            ->articleRange($query['after_entry_id'] ? $query['after_entry_id'] + 1 : null, $query['before_entry_id'] ? $query['before_entry_id'] - 1 : null) // FIXME: This might be edition
             ->searchTerms(strlen($query['search'] ?? "") ? preg_split("/\s+/", $query['search']) : null); // NOTE: Miniflux matches only whole words; we match simple substrings
         if ($query['category_id']) {
             if ($query['category_id'] === 1) {

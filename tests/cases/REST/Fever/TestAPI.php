@@ -316,12 +316,12 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             ["items&group_ids=1,2,3,4", (clone $c)->tags([1,2,3,4])->hidden(false), false],
             ["items&feed_ids=1,2,3,4", (clone $c)->subscriptions([1,2,3,4])->hidden(false), false],
             ["items&with_ids=1,2,3,4", (clone $c)->articles([1,2,3,4]), false],
-            ["items&since_id=1", (clone $c)->oldestArticle(2)->hidden(false), false],
-            ["items&max_id=2", (clone $c)->latestArticle(1)->hidden(false), true],
+            ["items&since_id=1", (clone $c)->articleRange(2, null)->hidden(false), false],
+            ["items&max_id=2", (clone $c)->articleRange(null, 1)->hidden(false), true],
             ["items&with_ids=1,2,3,4&max_id=6", (clone $c)->articles([1,2,3,4]), false],
             ["items&with_ids=1,2,3,4&since_id=6", (clone $c)->articles([1,2,3,4]), false],
-            ["items&max_id=3&since_id=6", (clone $c)->latestArticle(2)->hidden(false), true],
-            ["items&feed_ids=1,2,3,4&since_id=6", (clone $c)->subscriptions([1,2,3,4])->oldestArticle(7)->hidden(false), false],
+            ["items&max_id=3&since_id=6", (clone $c)->articleRange(null, 2)->hidden(false), true],
+            ["items&feed_ids=1,2,3,4&since_id=6", (clone $c)->subscriptions([1,2,3,4])->articleRange(7, null)->hidden(false), false],
         ];
     }
 

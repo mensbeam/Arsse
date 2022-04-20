@@ -1550,7 +1550,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // set the minimum article ID
         if ($data['since_id'] > 0) {
-            $c->oldestArticle($data['since_id'] + 1);
+            $c->articleRange($data['since_id'] + 1, null);
         }
         // return results
         return Arsse::$db->articleList(Arsse::$user->id, $c, $fields, $order);

@@ -1579,7 +1579,16 @@ class Database {
                 continue;
             } elseif ($op === "between") {
                 // option is a range
-                $q->setWhereNot("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], $context->$m);
+                if ($context->$m[0] === null) {
+                    // range is open at the low end
+                    $q->setWhere("{$colDefs[$col]} <= ?", $type, $context->$m[1]);
+                } elseif ($context->$m[1] === null) {
+                    // range is open at the high end
+                    $q->setWhere("{$colDefs[$col]} >= ?", $type, $context->$m[0]);
+                } else {
+                    // range is bounded in both directions
+                    $q->setWhere("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], $context->$m);
+                }
             } elseif (is_array($context->$m)) {
                 // context option is an array of values
                 if (!$context->$m) {
@@ -1598,7 +1607,16 @@ class Database {
                 continue;
             } elseif ($op === "between") {
                 // option is a range
-                $q->setWhereNot("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], $context->not->$m);
+                if ($context->not->$m[0] === null) {
+                    // range is open at the low end
+                    $q->setWhereNot("{$colDefs[$col]} <= ?", $type, $context->not->$m[1]);
+                } elseif ($context->not->$m[1] === null) {
+                    // range is open at the high end
+                    $q->setWhereNot("{$colDefs[$col]} >= ?", $type, $context->not->$m[0]);
+                } else {
+                    // range is bounded in both directions
+                    $q->setWhereNot("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], $context->not->$m);
+                }
             } elseif (is_array($context->not->$m)) {
                 if (!$context->not->$m) {
                     // for exclusions we don't care if the array is empty
