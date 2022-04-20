@@ -6,7 +6,13 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Context;
 
-trait BooleanMethods {
+trait BooleanMembers {
+    public $unread = null;
+    public $starred = null;
+    public $hidden = null;
+    public $labelled = null;
+    public $annotated = null;
+
     public function unread(bool $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }

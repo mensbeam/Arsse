@@ -7,10 +7,8 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Context;
 
 class Context extends AbstractContext {
-    use BooleanMethods;
-    use BooleanProperties;
-    use ExclusionMethods;
-    use ExclusionProperties;
+    use BooleanMembers;
+    use ExclusionMembers;
 
     /** @var ExclusionContext */
     public $not;

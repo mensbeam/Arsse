@@ -10,25 +10,6 @@ abstract class AbstractContext {
     protected $props = [];
     protected $parent = null;
 
-    public function __construct(self $c = null) {
-        $this->parent = $c;
-    }
-
-    public function __clone() {
-        // if the context was cloned because its parent was cloned, change the parent to the clone
-        if ($this->parent) {
-            $t = debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS | \DEBUG_BACKTRACE_PROVIDE_OBJECT, 2)[1];
-            if (($t['object'] ?? null) instanceof self && $t['function'] === "__clone") {
-                $this->parent = $t['object'];
-            }
-        }
-    }
-
-    /** @codeCoverageIgnore */
-    public function __destruct() {
-        unset($this->parent);
-    }
-
     protected function act(string $prop, int $set, $value) {
         if ($set) {
             if (is_null($value)) {

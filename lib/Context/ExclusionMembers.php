@@ -9,7 +9,34 @@ namespace JKingWeb\Arsse\Context;
 use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\Misc\Date;
 
-trait ExclusionMethods {
+trait ExclusionMembers {
+    public $folder = null;
+    public $folders = null;
+    public $folderShallow = null;
+    public $foldersShallow = null;
+    public $tag = null;
+    public $tags = null;
+    public $tagName = null;
+    public $tagNames = null;
+    public $subscription = null;
+    public $subscriptions = null;
+    public $edition = null;
+    public $editions = null;
+    public $article = null;
+    public $articles = null;
+    public $label = null;
+    public $labels = null;
+    public $labelName = null;
+    public $labelNames = null;
+    public $annotationTerms = null;
+    public $searchTerms = null;
+    public $titleTerms = null;
+    public $authorTerms = null;
+    public $articleRange = [null, null];
+    public $editionRange = [null, null];
+    public $modifiedRange = [null, null];
+    public $markedRange = [null, null];
+
     protected function cleanIdArray(array $spec, bool $allowZero = false): array {
         $spec = array_values($spec);
         for ($a = 0; $a < sizeof($spec); $a++) {
