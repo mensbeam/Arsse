@@ -256,7 +256,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function opGetCounters(array $data): array {
         $user = Arsse::$user->id;
         $starred = Arsse::$db->articleStarred($user);
-        $fresh = Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H", $this->now()))->hidden(false));
+        $fresh = Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedRange(Date::sub("PT24H", $this->now()), null)->hidden(false));
         $countAll = 0;
         $countSubs = 0;
         $feeds = [];
@@ -361,7 +361,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     'id'      => "FEED:".self::FEED_FRESH,
                     'bare_id' => self::FEED_FRESH,
                     'icon'    => "images/fresh.png",
-                    'unread'  => Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H", $this->now()))->hidden(false)),
+                    'unread'  => Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedRange(Date::sub("PT24H", $this->now()), null)->hidden(false)),
                 ], $tSpecial),
                 array_merge([ // Starred articles
                     'name'    => Arsse::$lang->msg("API.TTRSS.Feed.Starred"),
@@ -545,7 +545,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         // FIXME: this is pretty inefficient
         $f = $map[self::CAT_SPECIAL];
         $cats[$f]['unread'] += Arsse::$db->articleStarred($user)['unread']; // starred
-        $cats[$f]['unread'] += Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H", $this->now()))->hidden(false)); // fresh
+        $cats[$f]['unread'] += Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedRange(Date::sub("PT24H", $this->now()), null)->hidden(false)); // fresh
         if (!$read) {
             // if we're only including unread entries, remove any categories with zero unread items (this will by definition also exclude empties)
             $count = sizeof($cats);
@@ -697,7 +697,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($cat == self::CAT_ALL || $cat == self::CAT_SPECIAL) {
             // gather some statistics
             $starred = Arsse::$db->articleStarred($user)['unread'];
-            $fresh = Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedSince(Date::sub("PT24H", $this->now()))->hidden(false));
+            $fresh = Arsse::$db->articleCount($user, (new Context)->unread(true)->modifiedRange(Date::sub("PT24H", $this->now()), null)->hidden(false));
             $global = Arsse::$db->articleCount($user, (new Context)->unread(true)->hidden(false));
             $published = 0; // TODO: if the Published feed is implemented, the getFeeds method needs to be adjusted accordingly
             $archived = 0; // the archived feed is non-functional in the TT-RSS protocol itself
@@ -1096,7 +1096,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                         // TODO: if the Published feed is implemented, the catchup function needs to be modified accordingly
                         return $out;
                     case self::FEED_FRESH:
-                        $c->modifiedSince(Date::sub("PT24H", $this->now()));
+                        $c->modifiedRange(Date::sub("PT24H", $this->now()), null);
                         break;
                     case self::FEED_ALL:
                         // no context needed here
@@ -1112,13 +1112,13 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         switch ($mode) {
             case "2week":
-                $c->notModifiedSince(Date::sub("P2W", $this->now()));
+                $c->modifiedRange($c->modifiedRange[0], Date::sub("P2W", $this->now()));
                 break;
             case "1week":
-                $c->notModifiedSince(Date::sub("P1W", $this->now()));
+                $c->modifiedRange($c->modifiedRange[0], Date::sub("P1W", $this->now()));
                 break;
             case "1day":
-                $c->notModifiedSince(Date::sub("PT24H", $this->now()));
+                $c->modifiedRange($c->modifiedRange[0], Date::sub("PT24H", $this->now()));
         }
         // perform the marking
         try {
@@ -1473,13 +1473,13 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                         // TODO: if the Published feed is implemented, the headline function needs to be modified accordingly
                         return new ResultEmpty;
                     case self::FEED_FRESH:
-                        $c->modifiedSince(Date::sub("PT24H", $this->now()))->unread(true);
+                        $c->modifiedRange(Date::sub("PT24H", $this->now()), null)->unread(true);
                         break;
                     case self::FEED_ALL:
                         // no context needed here
                         break;
                     case self::FEED_READ:
-                        $c->markedSince(Date::sub("PT24H", $this->now()))->unread(false); // FIXME: this selects any recently touched (read, starred, annotated) article which is read, not necessarily a recently read one
+                        $c->markedRange(Date::sub("PT24H", $this->now()), null)->unread(false); // FIXME: this selects any recently touched (read, starred, annotated) article which is read, not necessarily a recently read one
                         break;
                     default:
                         // any actual feed

@@ -1556,31 +1556,30 @@ class Database {
         $q->setLimit($context->limit, $context->offset);
         // handle the simple context options
         $options = [
-            // each context array consists of a column identifier (see $colDefs above), a comparison operator, a data type, and an option to pair with for BETWEEN evaluation
-            "edition"          => ["edition",       "=",  "int",      ""],
-            "editions"         => ["edition",       "in", "int",      ""],
-            "article"          => ["id",            "=",  "int",      ""],
-            "articles"         => ["id",            "in", "int",      ""],
-            "oldestArticle"    => ["id",            ">=", "int",      "latestArticle"],
-            "latestArticle"    => ["id",            "<=", "int",      "oldestArticle"],
-            "oldestEdition"    => ["edition",       ">=", "int",      "latestEdition"],
-            "latestEdition"    => ["edition",       "<=", "int",      "oldestEdition"],
-            "modifiedSince"    => ["modified_date", ">=", "datetime", "notModifiedSince"],
-            "notModifiedSince" => ["modified_date", "<=", "datetime", "modifiedSince"],
-            "markedSince"      => ["marked_date",   ">=", "datetime", "notMarkedSince"],
-            "notMarkedSince"   => ["marked_date",   "<=", "datetime", "markedSince"],
-            "folderShallow"    => ["folder",        "=",  "int",      ""],
-            "foldersShallow"   => ["folder",        "in", "int",      ""],
-            "subscription"     => ["subscription",  "=",  "int",      ""],
-            "subscriptions"    => ["subscription",  "in", "int",      ""],
-            "unread"           => ["unread",        "=",  "bool",     ""],
-            "starred"          => ["starred",       "=",  "bool",     ""],
-            "hidden"           => ["hidden",        "=",  "bool",     ""],
+            // each context array consists of a column identifier (see $colDefs above), a comparison operator, and a data type; the "between" operator has special handling
+            "edition"          => ["edition",       "=",       "int"],
+            "editions"         => ["edition",       "in",      "int"],
+            "article"          => ["id",            "=",       "int"],
+            "articles"         => ["id",            "in",      "int"],
+            "articleRange"     => ["id",            "between", "int"],
+            "editionRange"     => ["edition",       "between", "int"],
+            "modifiedRange"    => ["modified_date", "between", "datetime"],
+            "markedRange"      => ["marked_date",   "between", "datetime"],
+            "folderShallow"    => ["folder",        "=",       "int"],
+            "foldersShallow"   => ["folder",        "in",      "int"],
+            "subscription"     => ["subscription",  "=",       "int"],
+            "subscriptions"    => ["subscription",  "in",      "int"],
+            "unread"           => ["unread",        "=",       "bool"],
+            "starred"          => ["starred",       "=",       "bool"],
+            "hidden"           => ["hidden",        "=",       "bool"],
         ];
-        foreach ($options as $m => [$col, $op, $type, $pair]) {
+        foreach ($options as $m => [$col, $op, $type]) {
             if (!$context->$m()) {
                 // context is not being used
                 continue;
+            } elseif ($op === "between") {
+                // option is a range
+                $q->setWhereNot("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], $context->$m);
             } elseif (is_array($context->$m)) {
                 // context option is an array of values
                 if (!$context->$m) {
@@ -1588,23 +1587,18 @@ class Database {
                 }
                 [$clause, $types, $values] = $this->generateIn($context->$m, $type);
                 $q->setWhere("{$colDefs[$col]} $op ($clause)", $types, $values);
-            } elseif ($pair && $context->$pair()) {
-                // option is paired with another which is also being used
-                if ($op === ">=") {
-                    $q->setWhere("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], [$context->$m, $context->$pair]);
-                } else {
-                    // option has already been paired
-                    continue;
-                }
             } else {
                 $q->setWhere("{$colDefs[$col]} $op ?", $type, $context->$m);
             }
         }
         // further handle exclusionary options if specified
-        foreach ($options as $m => [$col, $op, $type, $pair]) {
+        foreach ($options as $m => [$col, $op, $type]) {
             if (!method_exists($context->not, $m) || !$context->not->$m()) {
                 // context option is not being used
                 continue;
+            } elseif ($op === "between") {
+                // option is a range
+                $q->setWhereNot("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], $context->not->$m);
             } elseif (is_array($context->not->$m)) {
                 if (!$context->not->$m) {
                     // for exclusions we don't care if the array is empty
@@ -1612,14 +1606,6 @@ class Database {
                 }
                 [$clause, $types, $values] = $this->generateIn($context->not->$m, $type);
                 $q->setWhereNot("{$colDefs[$col]} $op ($clause)", $types, $values);
-            } elseif ($pair && $context->not->$pair()) {
-                // option is paired with another which is also being used
-                if ($op === ">=") {
-                    $q->setWhereNot("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], [$context->not->$m, $context->not->$pair]);
-                } else {
-                    // option has already been paired
-                    continue;
-                }
             } else {
                 $q->setWhereNot("{$colDefs[$col]} $op ?", $type, $context->not->$m);
             }

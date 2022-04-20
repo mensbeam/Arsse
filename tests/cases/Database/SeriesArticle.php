@@ -462,16 +462,16 @@ trait SeriesArticle {
             'Not before edition 1001'                                    => [(new Context)->subscription(5)->oldestEdition(1001), [20]],
             'Not after article 3'                                        => [(new Context)->latestArticle(3), [1,2,3]],
             'Not before article 19'                                      => [(new Context)->oldestArticle(19), [19,20]],
-            'Modified by author since 2005'                              => [(new Context)->modifiedSince("2005-01-01T00:00:00Z"), [2,4,6,8,20]],
-            'Modified by author since 2010'                              => [(new Context)->modifiedSince("2010-01-01T00:00:00Z"), [2,4,6,8,20]],
-            'Not modified by author since 2005'                          => [(new Context)->notModifiedSince("2005-01-01T00:00:00Z"), [1,3,5,7,19]],
-            'Not modified by author since 2000'                          => [(new Context)->notModifiedSince("2000-01-01T00:00:00Z"), [1,3,5,7,19]],
-            'Marked or labelled since 2014'                              => [(new Context)->markedSince("2014-01-01T00:00:00Z"), [8,19]],
-            'Marked or labelled since 2010'                              => [(new Context)->markedSince("2010-01-01T00:00:00Z"), [2,4,6,8,19,20]],
-            'Not marked or labelled since 2014'                          => [(new Context)->notMarkedSince("2014-01-01T00:00:00Z"), [1,2,3,4,5,6,7,20]],
-            'Not marked or labelled since 2005'                          => [(new Context)->notMarkedSince("2005-01-01T00:00:00Z"), [1,3,5,7]],
-            'Marked or labelled between 2000 and 2015'                   => [(new Context)->markedSince("2000-01-01T00:00:00Z")->notMarkedSince("2015-12-31T23:59:59Z"), [1,2,3,4,5,6,7,8,20]],
-            'Marked or labelled in 2010'                                 => [(new Context)->markedSince("2010-01-01T00:00:00Z")->notMarkedSince("2010-12-31T23:59:59Z"), [2,4,6,20]],
+            'Modified by author since 2005'                              => [(new Context)->modifiedRange("2005-01-01T00:00:00Z", null), [2,4,6,8,20]],
+            'Modified by author since 2010'                              => [(new Context)->modifiedRange("2010-01-01T00:00:00Z", null), [2,4,6,8,20]],
+            'Not modified by author since 2005'                          => [(new Context)->modifiedRange(null, "2005-01-01T00:00:00Z"), [1,3,5,7,19]],
+            'Not modified by author since 2000'                          => [(new Context)->modifiedRange(null, "2000-01-01T00:00:00Z"), [1,3,5,7,19]],
+            'Marked or labelled since 2014'                              => [(new Context)->markedRange("2014-01-01T00:00:00Z", null), [8,19]],
+            'Marked or labelled since 2010'                              => [(new Context)->markedRange("2010-01-01T00:00:00Z", null), [2,4,6,8,19,20]],
+            'Not marked or labelled since 2014'                          => [(new Context)->markedRange(null, "2014-01-01T00:00:00Z"), [1,2,3,4,5,6,7,20]],
+            'Not marked or labelled since 2005'                          => [(new Context)->markedRange(null, "2005-01-01T00:00:00Z"), [1,3,5,7]],
+            'Marked or labelled between 2000 and 2015'                   => [(new Context)->markedRange("2000-01-01T00:00:00Z", "2015-12-31T23:59:59Z"), [1,2,3,4,5,6,7,8,20]],
+            'Marked or labelled in 2010'                                 => [(new Context)->markedRange("2010-01-01T00:00:00Z", "2010-12-31T23:59:59Z"), [2,4,6,20]],
             'Paged results'                                              => [(new Context)->limit(2)->oldestEdition(4), [4,5]],
             'With label ID 1'                                            => [(new Context)->label(1), [1,19]],
             'With label ID 2'                                            => [(new Context)->label(2), [1,5,20]],
@@ -505,7 +505,7 @@ trait SeriesArticle {
             'Folder tree 1 excluding subscription 4'                     => [(new Context)->not->subscription(4)->folder(1), [5,6]],
             'Folder tree 1 excluding articles 7 and 8'                   => [(new Context)->folder(1)->not->articles([7,8]), [5,6]],
             'Folder tree 1 excluding no articles'                        => [(new Context)->folder(1)->not->articles([]), [5,6,7,8]],
-            'Marked or labelled between 2000 and 2015 excluding in 2010' => [(new Context)->markedSince("2000-01-01T00:00:00Z")->notMarkedSince("2015-12-31T23:59:59")->not->markedSince("2010-01-01T00:00:00Z")->not->notMarkedSince("2010-12-31T23:59:59Z"), [1,3,5,7,8]],
+            'Marked or labelled between 2000 and 2015 excluding in 2010' => [(new Context)->markedRange("2000-01-01T00:00:00Z", "2015-12-31T23:59:59")->not->markedRange("2010-01-01T00:00:00Z", "2010-12-31T23:59:59Z"), [1,3,5,7,8]],
             'Search with exclusion'                                      => [(new Context)->searchTerms(["Article"])->not->searchTerms(["one", "two"]), [3]],
             'Excluded folder tree'                                       => [(new Context)->not->folder(1), [1,2,3,4,19,20]],
             'Excluding label ID 2'                                       => [(new Context)->not->label(2), [2,3,4,6,7,8,19]],
@@ -953,7 +953,7 @@ trait SeriesArticle {
     }
 
     public function testMarkByLastMarked(): void {
-        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->markedSince('2017-01-01T00:00:00Z'));
+        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->markedRange('2017-01-01T00:00:00Z', null));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][8][3] = 1;
@@ -964,7 +964,7 @@ trait SeriesArticle {
     }
 
     public function testMarkByNotLastMarked(): void {
-        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->notMarkedSince('2000-01-01T00:00:00Z'));
+        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->markedRange(null, '2000-01-01T00:00:00Z'));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_marks']['rows'][] = [13,5,0,1,$now,'',0];

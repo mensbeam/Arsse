@@ -47,10 +47,6 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             'unread'           => true,
             'starred'          => true,
             'hidden'           => true,
-            'modifiedSince'    => new \DateTime(),
-            'notModifiedSince' => new \DateTime(),
-            'markedSince'      => new \DateTime(),
-            'notMarkedSince'   => new \DateTime(),
             'editions'         => [1,2],
             'articles'         => [1,2],
             'label'            => 2112,
@@ -65,21 +61,17 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             'authorTerms'      => ["foo", "bar"],
             'not'              => (new Context)->subscription(5),
         ];
-        $times = ['modifiedSince','notModifiedSince','markedSince','notMarkedSince'];
+        $ranges = ['modifiedRange', 'markedRange', 'articleRange', 'editionRange'];
         $c = new Context;
         foreach ((new \ReflectionObject($c))->getMethods(\ReflectionMethod::IS_PUBLIC) as $m) {
-            if ($m->isStatic() || strpos($m->name, "__") === 0) {
+            if ($m->isStatic() || strpos($m->name, "__") === 0 || in_array($m->name, $ranges)) {
                 continue;
             }
             $method = $m->name;
             $this->assertArrayHasKey($method, $v, "Context method $method not included in test");
             $this->assertInstanceOf(Context::class, $c->$method($v[$method]));
             $this->assertTrue($c->$method());
-            if (in_array($method, $times)) {
-                $this->assertTime($c->$method, $v[$method], "Context method $method did not return the expected results");
-            } else {
-                $this->assertSame($c->$method, $v[$method], "Context method $method did not return the expected results");
-            }
+            $this->assertSame($c->$method, $v[$method], "Context method $method did not return the expected results");
             // clear the context option
             $c->$method(null);
             $this->assertFalse($c->$method());

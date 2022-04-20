@@ -244,7 +244,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $c = new Context;
         $id = $P['id'];
         if ($P['before']) {
-            $c->notMarkedSince($P['before']);
+            $c->markedRange(null, $P['before']);
         }
         switch ($P['mark']) {
             case "item":
@@ -310,7 +310,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $c = (new Context)->hidden(false);
         $lastUnread = Date::normalize($lastUnread, "sql");
         $since = Date::sub("PT15S", $lastUnread);
-        $c->unread(false)->markedSince($since);
+        $c->unread(false)->markedRange($since, null);
         Arsse::$db->articleMark(Arsse::$user->id, ['read' => false], $c);
     }
 

@@ -407,7 +407,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             ["mark=group&as=unread&id=-1", (new Context)->not->folder(0), $markUnread, $listUnread],
             ["mark=group&as=saved&id=-1", (new Context)->not->folder(0), $markSaved, $listSaved],
             ["mark=group&as=unsaved&id=-1", (new Context)->not->folder(0), $markUnsaved, $listSaved],
-            ["mark=group&as=read&id=-1&before=946684800", (new Context)->not->folder(0)->notMarkedSince("2000-01-01T00:00:00Z"), $markRead, $listUnread],
+            ["mark=group&as=read&id=-1&before=946684800", (new Context)->not->folder(0)->markedRange(null, "2000-01-01T00:00:00Z"), $markRead, $listUnread],
             ["mark=item&as=unread", new Context, [], []],
             ["mark=item&id=6", new Context, [], []],
             ["as=unread&id=6", new Context, [], []],
@@ -462,7 +462,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->articleMark->returns(0);
         $exp = new JsonResponse($out);
         $this->assertMessage($exp, $this->req("api", ['unread_recently_read' => 1]));
-        $this->dbMock->articleMark->calledWith($this->userId, ['read' => false], $this->equalTo((new Context)->unread(false)->markedSince("1999-12-31T23:59:45Z")->hidden(false)));
+        $this->dbMock->articleMark->calledWith($this->userId, ['read' => false], $this->equalTo((new Context)->unread(false)->markedRange("1999-12-31T23:59:45Z", null)->hidden(false)));
         $this->dbMock->articleList->with($this->userId, (new Context)->limit(1)->hidden(false), ["marked_date"], ["marked_date desc"])->returns(new Result([]));
         $this->assertMessage($exp, $this->req("api", ['unread_recently_read' => 1]));
         $this->dbMock->articleMark->once()->called(); // only called one time, above

@@ -29,12 +29,8 @@ trait ExclusionProperties {
     public $searchTerms = null;
     public $titleTerms = null;
     public $authorTerms = null;
-    public $oldestArticle = null;
-    public $latestArticle = null;
-    public $oldestEdition = null;
-    public $latestEdition = null;
-    public $modifiedSince = null;
-    public $notModifiedSince = null;
-    public $markedSince = null;
-    public $notMarkedSince = null;
+    public $articleRange = [null, null];
+    public $editionRange = [null, null];
+    public $modifiedRange = [null, null];
+    public $markedRange = [null, null];
 }

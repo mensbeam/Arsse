@@ -101,10 +101,10 @@ class TestSearch extends \JKingWeb\Arsse\Test\AbstractTest {
             'Doubled boolean'                     => ['unread:true unread:true', (new Context)->unread(true)],
             'Bare blank date'                     => ['@', new Context],
             'Quoted blank date'                   => ['"@"', new Context],
-            'Bare ISO date'                       => ['@2019-03-01', (new Context)->modifiedSince("2019-03-01T00:00:00Z")->notModifiedSince("2019-03-01T23:59:59Z")],
-            'Quoted ISO date'                     => ['"@March 1st, 2019"', (new Context)->modifiedSince("2019-03-01T00:00:00Z")->notModifiedSince("2019-03-01T23:59:59Z")],
-            'Bare negative ISO date'              => ['-@2019-03-01', (new Context)->not->modifiedSince("2019-03-01T00:00:00Z")->not->notModifiedSince("2019-03-01T23:59:59Z")],
-            'Quoted negative English date'        => ['"-@March 1st, 2019"', (new Context)->not->modifiedSince("2019-03-01T00:00:00Z")->not->notModifiedSince("2019-03-01T23:59:59Z")],
+            'Bare ISO date'                       => ['@2019-03-01', (new Context)->modifiedRange("2019-03-01T00:00:00Z", "2019-03-01T23:59:59Z")],
+            'Quoted ISO date'                     => ['"@March 1st, 2019"', (new Context)->modifiedRange("2019-03-01T00:00:00Z", "2019-03-01T23:59:59Z")],
+            'Bare negative ISO date'              => ['-@2019-03-01', (new Context)->not->modifiedRange("2019-03-01T00:00:00Z", "2019-03-01T23:59:59Z")],
+            'Quoted negative English date'        => ['"-@March 1st, 2019"', (new Context)->not->modifiedRange("2019-03-01T00:00:00Z", "2019-03-01T23:59:59Z")],
             'Invalid date'                        => ['@Bugaboo', new Context],
             'Escaped quoted date 1'               => ['"@""Yesterday" and today', (new Context)->searchTerms(["and", "today"])],
             'Escaped quoted date 2'               => ['"@\\"Yesterday" and today', (new Context)->searchTerms(["and", "today"])],
@@ -112,8 +112,8 @@ class TestSearch extends \JKingWeb\Arsse\Test\AbstractTest {
             'Escaped quoted date 4'               => ['"@Yesterday\\and today', new Context],
             'Escaped quoted date 5'               => ['"@Yesterday"and today', (new Context)->searchTerms(["today"])],
             'Contradictory dates'                 => ['@Yesterday @Today', null],
-            'Doubled date'                        => ['"@March 1st, 2019" @2019-03-01', (new Context)->modifiedSince("2019-03-01T00:00:00Z")->notModifiedSince("2019-03-01T23:59:59Z")],
-            'Doubled negative date'               => ['"-@March 1st, 2019" -@2019-03-01', (new Context)->not->modifiedSince("2019-03-01T00:00:00Z")->not->notModifiedSince("2019-03-01T23:59:59Z")],
+            'Doubled date'                        => ['"@March 1st, 2019" @2019-03-01', (new Context)->modifiedRange("2019-03-01T00:00:00Z", "2019-03-01T23:59:59Z")],
+            'Doubled negative date'               => ['"-@March 1st, 2019" -@2019-03-01', (new Context)->not->modifiedRange("2019-03-01T00:00:00Z", "2019-03-01T23:59:59Z")],
         ];
     }
 

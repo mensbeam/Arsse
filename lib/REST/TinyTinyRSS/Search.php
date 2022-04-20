@@ -320,16 +320,15 @@ class Search {
         $end = $day."T23:59:59+00:00";
         // if a date is already set, the same date is a no-op; anything else is a contradiction
         $cc = $neg ? $c->not : $c;
-        if ($cc->modifiedSince() || $cc->notModifiedSince()) {
-            if (!$cc->modifiedSince() || !$cc->notModifiedSince() || $cc->modifiedSince->format("c") !== $start || $cc->notModifiedSince->format("c") !== $end) {
+        if ($cc->modifiedRange()) {
+            if (!$cc->modifiedRange[0] || !$cc->modifiedRange[1] || $cc->modifiedRange[0]->format("c") !== $start || $cc->modifiedRange[1]->format("c") !== $end) {
                 // FIXME: multiple negative dates should be allowed, but the design of the Context class does not support this
                 throw new Exception;
             } else {
                 return $c;
             }
         }
-        $cc->modifiedSince($start);
-        $cc->notModifiedSince($end);
+        $cc->modifiedRange($start, $end);
         return $c;
     }
 

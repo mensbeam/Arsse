@@ -164,39 +164,39 @@ trait ExclusionMethods {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function latestArticle(int $spec = null) {
+    public function articleRange(?int $start = null, ?int $end = null) {
+        if ($start === null && $end === null) {
+            $spec = null;
+        } else {
+            $spec = [$start, $end];
+        }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function oldestArticle(int $spec = null) {
+    public function editionRange(?int $start = null, ?int $end = null) {
+        if ($start === null && $end === null) {
+            $spec = null;
+        } else {
+            $spec = [$start, $end];
+        }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function latestEdition(int $spec = null) {
+    public function modifiedRange($start = null, $end = null) {
+        if ($start === null && $end === null) {
+            $spec = null;
+        } else {
+            $spec = [Date::normalize($start), Date::normalize($end)];
+        }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function oldestEdition(int $spec = null) {
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function modifiedSince($spec = null) {
-        $spec = Date::normalize($spec);
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function notModifiedSince($spec = null) {
-        $spec = Date::normalize($spec);
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function markedSince($spec = null) {
-        $spec = Date::normalize($spec);
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function notMarkedSince($spec = null) {
-        $spec = Date::normalize($spec);
+    public function markedRange($start = null, $end = null) {
+        if ($start === null && $end === null) {
+            $spec = null;
+        } else {
+            $spec = [Date::normalize($start), Date::normalize($end)];
+        }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 }

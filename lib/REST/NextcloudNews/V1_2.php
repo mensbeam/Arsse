@@ -556,7 +556,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // whether to return only updated items
         if ($data['lastModified']) {
-            $c->markedSince($data['lastModified']);
+            $c->markedRange($data['lastModified'], null);
         }
         // perform the fetch
         try {

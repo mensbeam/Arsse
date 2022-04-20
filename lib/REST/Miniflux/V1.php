@@ -893,8 +893,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             ->limit($query['limit'] ?? self::DEFAULT_ENTRY_LIMIT) // NOTE: This does not honour user preferences
             ->offset($query['offset'])
             ->starred($query['starred'])
-            ->modifiedSince($query['after']) // FIXME: This may not be the correct date field
-            ->notModifiedSince($query['before'])
+            ->modifiedRange($query['after'], $query['before']) // FIXME: This may not be the correct date field
             ->oldestArticle($query['after_entry_id'] ? $query['after_entry_id'] + 1 : null) // FIXME: This might be edition
             ->latestArticle($query['before_entry_id'] ? $query['before_entry_id'] - 1 : null)
             ->searchTerms(strlen($query['search'] ?? "") ? preg_split("/\s+/", $query['search']) : null); // NOTE: Miniflux matches only whole words; we match simple substrings
