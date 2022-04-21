@@ -7,13 +7,12 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Context;
 
 class Context extends AbstractContext {
+    use RootMembers;
     use BooleanMembers;
     use ExclusionMembers;
 
     /** @var ExclusionContext */
     public $not;
-    public $limit = 0;
-    public $offset = 0;
 
     public function __construct() {
         $this->not = new ExclusionContext($this);
@@ -27,13 +26,5 @@ class Context extends AbstractContext {
     /** @codeCoverageIgnore */
     public function __destruct() {
         unset($this->not);
-    }
-
-    public function limit(int $spec = null) {
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
-    }
-
-    public function offset(int $spec = null) {
-        return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 }

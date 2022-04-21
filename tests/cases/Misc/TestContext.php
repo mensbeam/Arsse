@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Misc;
 
 use JKingWeb\Arsse\Context\Context;
+use JKingWeb\Arsse\Context\ExclusionContext;
 use JKingWeb\Arsse\Misc\ValueInfo;
 
 /**
@@ -15,76 +16,46 @@ use JKingWeb\Arsse\Misc\ValueInfo;
  */
 class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $ranges = ['modifiedRange', 'markedRange', 'articleRange', 'editionRange'];
+    protected $times = ['modifiedRange', 'markedRange'];
 
-    public function testVerifyInitialState(): void {
-        $c = new Context;
-        foreach ((new \ReflectionObject($c))->getMethods(\ReflectionMethod::IS_PUBLIC) as $m) {
-            if ($m->isStatic() || strpos($m->name, "__") === 0) {
-                continue;
-            }
-            $method = $m->name;
-            $this->assertFalse($c->$method(), "Context method $method did not initially return false");
-            if (in_array($method, $this->ranges)) {
-                $this->assertEquals([null, null], $c->$method, "Context property $method is not initially a two-member falsy array");
+    /** @dataProvider provideContextOptions */
+    public function testSetContextOptions(string $method, array $input, $output, bool $not): void {
+        $parent = new Context;
+        $c = ($not) ? $parent->not : $parent;
+        $default = (new \ReflectionProperty($c, $method))->getDefaultValue();
+        $this->assertFalse($c->$method(), "Context method did not initially return false");
+        if (in_array($method, $this->ranges)) {
+            $this->assertEquals([null, null], $c->$method, "Context property is not initially a two-member falsy array");
+        } else {
+            $this->assertEquals(null, $c->$method, "Context property is not initially falsy");
+        }
+        $this->assertSame($parent, $c->$method(...$input), "Context method did not return the root after setting");
+        $this->assertTrue($c->$method());
+        if (in_array($method, $this->times)) {
+            if (is_array($default)) {
+                array_walk_recursive($c->$method, function(&$v, $k) {
+                    if ($v !== null) {
+                        $this->assertInstanceOf(\DateTimeImmutable::class, $v, "Context property contains an non-normalized date");
+                    }
+                    $v = ValueInfo::normalize($v, ValueInfo::T_STRING, null, "iso8601");
+                });
+                array_walk_recursive($output, function(&$v) {
+                    $v = ValueInfo::normalize($v, ValueInfo::T_STRING, null, "iso8601");
+                });
+                $this->assertSame($c->$method, $output, "Context property did not return the expected results after setting");
             } else {
-                $this->assertEquals(null, $c->$method, "Context property $method is not initially falsy");
+                $this->assertTime($c->$method, $output, "Context property did not return the expected results after setting");
             }
+        } else {
+            $this->assertSame($c->$method, $output, "Context property did not return the expected results after setting");
         }
-    }
-
-    public function testSetContextOptions(): void {
-        $v = [
-            'reverse'          => true,
-            'limit'            => 10,
-            'offset'           => 5,
-            'folder'           => 42,
-            'folders'          => [12,22],
-            'folderShallow'    => 42,
-            'foldersShallow'   => [0,1],
-            'tag'              => 44,
-            'tags'             => [44, 2112],
-            'tagName'          => "XLIV",
-            'tagNames'         => ["XLIV", "MMCXII"],
-            'subscription'     => 2112,
-            'subscriptions'    => [44, 2112],
-            'article'          => 255,
-            'edition'          => 65535,
-            'unread'           => true,
-            'starred'          => true,
-            'hidden'           => true,
-            'editions'         => [1,2],
-            'articles'         => [1,2],
-            'label'            => 2112,
-            'labels'           => [2112, 1984],
-            'labelName'        => "Rush",
-            'labelNames'       => ["Rush", "Orwell"],
-            'labelled'         => true,
-            'annotated'        => true,
-            'searchTerms'      => ["foo", "bar"],
-            'annotationTerms'  => ["foo", "bar"],
-            'titleTerms'       => ["foo", "bar"],
-            'authorTerms'      => ["foo", "bar"],
-            'not'              => (new Context)->subscription(5),
-        ];
-        $c = new Context;
-        foreach ((new \ReflectionObject($c))->getMethods(\ReflectionMethod::IS_PUBLIC) as $m) {
-            if ($m->isStatic() || strpos($m->name, "__") === 0 || in_array($m->name, $this->ranges)) {
-                continue;
-            }
-            $method = $m->name;
-            $this->assertArrayHasKey($method, $v, "Context method $method not included in test");
-            $this->assertInstanceOf(Context::class, $c->$method($v[$method]));
-            $this->assertTrue($c->$method());
-            $this->assertSame($c->$method, $v[$method], "Context method $method did not return the expected results");
-            // clear the context option
-            $c->$method(null);
-            $this->assertFalse($c->$method());
-        }
+        // clear the context option
+        $c->$method(...array_fill(0, sizeof($input), null));
+        $this->assertFalse($c->$method(), "Context method did not return false after clearing");
     }
 
     public function provideContextOptions(): iterable {
-        return [
-            'reverse'          => [[true], true],
+        $tests = [
             'limit'            => [[10],                                             10],
             'offset'           => [[5],                                              5],
             'folder'           => [[42],                                             42],
@@ -119,6 +90,12 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             'articleRange'     => [[1, 100],                                         [1, 100]],
             'editionRange'     => [[1, 100],                                         [1, 100]],
         ];
+        foreach($tests as $k => $t) {
+            yield $k => [$k, ...$t, false];
+            if (method_exists(ExclusionContext::class, $k)) {
+                yield "$k (not)" => [$k, ...$t, true];
+            }
+        }
     }
 
     public function testCleanIdArrayValues(): void {
