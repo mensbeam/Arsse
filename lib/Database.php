@@ -1534,7 +1534,20 @@ class Database {
         assert(strlen($outColumns) > 0, new \Exception("No input columns matched whitelist"));
         // define the basic query, to which we add lots of stuff where necessary
         $q = new Query(
-            "SELECT 
+            "WITH RECURSIVE
+            topmost(f_id,top) as (
+                select id,id from arsse_folders where owner = ? and parent is null union all select id,top from arsse_folders join topmost on parent=f_id
+            ),
+            folder_data(id,name,top,top_name) as (
+                select f1.id, f1.name, top, f2.name from arsse_folders as f1 join topmost on f1.id = f_id join arsse_folders as f2 on f2.id = top
+            ),
+            labelled(article,label_id,label_name) as (
+                select m.article, l.id, l.name from arsse_label_members as m join arsse_labels as l on l.id = m.label where l.owner = ? and m.assigned = 1
+            ),
+            tagged(subscription,tag_id,tag_name) as (
+                select m.subscription, t.id, t.name from arsse_tag_members as m join arsse_tags as t on t.id = m.tag where t.owner = ? and m.assigned = 1
+            )
+            select 
                 $outColumns
             from arsse_articles
             join arsse_subscriptions on arsse_subscriptions.feed = arsse_articles.feed and arsse_subscriptions.owner = ?
@@ -1543,16 +1556,14 @@ class Database {
             left join arsse_marks on arsse_marks.subscription = arsse_subscriptions.id and arsse_marks.article = arsse_articles.id
             left join arsse_enclosures on arsse_enclosures.article = arsse_articles.id
             join (
-                SELECT article, max(id) as edition from arsse_editions group by article
+                select article, max(id) as edition from arsse_editions group by article
             ) as latest_editions on arsse_articles.id = latest_editions.article
             left join (
-                SELECT arsse_label_members.article, max(arsse_label_members.modified) as modified, sum(arsse_label_members.assigned) as assigned from arsse_label_members join arsse_labels on arsse_labels.id = arsse_label_members.label where arsse_labels.owner = ? group by arsse_label_members.article
+                select arsse_label_members.article, max(arsse_label_members.modified) as modified, sum(arsse_label_members.assigned) as assigned from arsse_label_members join arsse_labels on arsse_labels.id = arsse_label_members.label where arsse_labels.owner = ? group by arsse_label_members.article
             ) as label_stats on label_stats.article = arsse_articles.id",
-            ["str", "str"],
-            [$user, $user]
+            ["str", "str", "str", "str", "str"],
+            [$user, $user, $user, $user, $user]
         );
-        $q->setCTE("topmost(f_id,top)", "SELECT id,id from arsse_folders where owner = ? and parent is null union all select id,top from arsse_folders join topmost on parent=f_id", ["str"], [$user]);
-        $q->setCTE("folder_data(id,name,top,top_name)", "SELECT f1.id, f1.name, top, f2.name from arsse_folders as f1 join topmost on f1.id = f_id join arsse_folders as f2 on f2.id = top");
         $q->setLimit($context->limit, $context->offset);
         // handle the simple context options
         $options = [
@@ -1630,75 +1641,38 @@ class Database {
         }
         // handle labels and tags
         $options = [
-            'label' => [
-                'match_col'  => "arsse_articles.id",
-                'cte_name'   => "labelled",
-                'cte_cols'   => ["article", "label_id", "label_name"],
-                'cte_body'   => "SELECT m.article, l.id, l.name from arsse_label_members as m join arsse_labels as l on l.id = m.label where l.owner = ? and m.assigned = 1",
-                'cte_types'  => ["str"],
-                'cte_values' => [$user],
-                'options'    => [
-                    'label'      => ['use_name' => false, 'multi' => false],
-                    'labels'     => ['use_name' => false, 'multi' => true],
-                    'labelName'  => ['use_name' => true,  'multi' => false],
-                    'labelNames' => ['use_name' => true,  'multi' => true],
-                ],
-            ],
-            'tag' => [
-                'match_col'  => "arsse_subscriptions.id",
-                'cte_name'   => "tagged",
-                'cte_cols'   => ["subscription", "tag_id", "tag_name"],
-                'cte_body'   => "SELECT m.subscription, t.id, t.name from arsse_tag_members as m join arsse_tags as t on t.id = m.tag where t.owner = ? and m.assigned = 1",
-                'cte_types'  => ["str"],
-                'cte_values' => [$user],
-                'options'    => [
-                    'tag'      => ['use_name' => false, 'multi' => false],
-                    'tags'     => ['use_name' => false, 'multi' => true],
-                    'tagName'  => ['use_name' => true,  'multi' => false],
-                    'tagNames' => ['use_name' => true,  'multi' => true],
-                ],
-            ],
+            'label'      => ["labelled", "article",      "label_id",   "=",  "int"],
+            'labels'     => ["labelled", "article",      "label_id",   "in", "int"],
+            'labelName'  => ["labelled", "article",      "label_name", "=",  "str"],
+            'labelNames' => ["labelled", "article",      "label_name", "in", "str"],
+            'tag'        => ["tagged",   "subscription", "tag_id",     "=",  "int"],
+            'tags'       => ["tagged",   "subscription", "tag_id",     "in", "int"],
+            'tagName'    => ["tagged",   "subscription", "tag_name",   "=",  "str"],
+            'tagNames'   => ["tagged",   "subscription", "tag_name",   "in", "str"],
         ];
-        foreach ($options as $opt) {
-            $seen = false;
-            $match = $opt['match_col'];
-            $table = $opt['cte_name'];
-            foreach ($opt['options'] as $m => $props) {
-                $named = $props['use_name'];
-                $multi = $props['multi'];
-                $selection = $opt['cte_cols'][0];
-                $col = $opt['cte_cols'][$named ? 2 : 1];
-                if ($context->$m()) {
-                    $seen = true;
+        foreach ($options as $m => [$cte, $col, $selection, $op, $type]) {
+            if ($context->$m()) {
+                if ($op === "in") {
                     if (!$context->$m) {
                         throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
                     }
-                    if ($multi) {
-                        [$test, $types, $values] = $this->generateIn($context->$m, $named ? "str" : "int");
-                        $test = "in ($test)";
-                    } else {
-                        $test = "= ?";
-                        $types = $named ? "str" : "int";
-                        $values = $context->$m;
-                    }
-                    $q->setWhere("$match in (select $selection from $table where $col $test)", $types, $values);
-                }
-                if ($context->not->$m()) {
-                    $seen = true;
-                    if ($multi) {
-                        [$test, $types, $values] = $this->generateIn($context->not->$m, $named ? "str" : "int");
-                        $test = "in ($test)";
-                    } else {
-                        $test = "= ?";
-                        $types = $named ? "str" : "int";
-                        $values = $context->not->$m;
-                    }
-                    $q->setWhereNot("$match in (select $selection from $table where $col $test)", $types, $values);
+                    [$inClause, $inTypes, $inValues] = $this->generateIn($context->$m, $type);
+                    $q->setWhere("{$colDefs[$col]} in (select $selection from $cte where $col in($inClause))", $inTypes, $inValues);
+                } else {
+                    $q->setWhere("{$colDefs[$col]} in (select $selection from $cte where $col = ?)", $type, $$context->$m);
                 }
             }
-            if ($seen) {
-                $spec = $opt['cte_name']."(".implode(",", $opt['cte_cols']).")";
-                $q->setCTE($spec, $opt['cte_body'], $opt['cte_types'], $opt['cte_values']);
+            // handle the exclusionary version
+            if ($context->not->$m()) {
+                if ($op === "in") {
+                    if (!$context->not->$m) {
+                        throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
+                    }
+                    [$inClause, $inTypes, $inValues] = $this->generateIn($context->not->$m, $type);
+                    $q->setWhereNot("{$colDefs[$col]} in (select $selection from $cte where $col in($inClause))", $inTypes, $inValues);
+                } else {
+                    $q->setWhereNot("{$colDefs[$col]} in (select $selection from $cte where $col = ?)", $type, $$context->not->$m);
+                }
             }
         }
         // handle complex context options
