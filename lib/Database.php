@@ -1641,10 +1641,10 @@ class Database {
         }
         // handle labels and tags
         $options = [
-            'label'      => ["labelled", "article",      "label_id",   "=",  "int"],
-            'labels'     => ["labelled", "article",      "label_id",   "in", "int"],
-            'labelName'  => ["labelled", "article",      "label_name", "=",  "str"],
-            'labelNames' => ["labelled", "article",      "label_name", "in", "str"],
+            'label'      => ["labelled", "id",           "label_id",   "=",  "int"],
+            'labels'     => ["labelled", "id",           "label_id",   "in", "int"],
+            'labelName'  => ["labelled", "id",           "label_name", "=",  "str"],
+            'labelNames' => ["labelled", "id",           "label_name", "in", "str"],
             'tag'        => ["tagged",   "subscription", "tag_id",     "=",  "int"],
             'tags'       => ["tagged",   "subscription", "tag_id",     "in", "int"],
             'tagName'    => ["tagged",   "subscription", "tag_name",   "=",  "str"],
@@ -1659,7 +1659,7 @@ class Database {
                     [$inClause, $inTypes, $inValues] = $this->generateIn($context->$m, $type);
                     $q->setWhere("{$colDefs[$col]} in (select $selection from $cte where $col in($inClause))", $inTypes, $inValues);
                 } else {
-                    $q->setWhere("{$colDefs[$col]} in (select $selection from $cte where $col = ?)", $type, $$context->$m);
+                    $q->setWhere("{$colDefs[$col]} in (select $selection from $cte where $col = ?)", $type, $context->$m);
                 }
             }
             // handle the exclusionary version
@@ -1671,7 +1671,7 @@ class Database {
                     [$inClause, $inTypes, $inValues] = $this->generateIn($context->not->$m, $type);
                     $q->setWhereNot("{$colDefs[$col]} in (select $selection from $cte where $col in($inClause))", $inTypes, $inValues);
                 } else {
-                    $q->setWhereNot("{$colDefs[$col]} in (select $selection from $cte where $col = ?)", $type, $$context->not->$m);
+                    $q->setWhereNot("{$colDefs[$col]} in (select $selection from $cte where $col = ?)", $type, $context->not->$m);
                 }
             }
         }
