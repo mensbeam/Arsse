@@ -27,7 +27,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
         if (in_array($method, $this->ranges)) {
             $this->assertEquals([null, null], $c->$method, "Context property is not initially a two-member falsy array");
         } else {
-            $this->assertEquals(null, $c->$method, "Context property is not initially falsy");
+            $this->assertFalse((bool) $c->$method, "Context property is not initially falsy");
         }
         $this->assertSame($parent, $c->$method(...$input), "Context method did not return the root after setting");
         $this->assertTrue($c->$method());

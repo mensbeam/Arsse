@@ -1533,6 +1533,9 @@ class Database {
         }
         assert(strlen($outColumns) > 0, new \Exception("No input columns matched whitelist"));
         // define the basic query, to which we add lots of stuff where necessary
+        // selecting from folders requires in() clauses, which may be empty
+        [$fmInClause, $fmInTypes, $fmInValues] = $this->generateIn($context->folders, "int");
+        [$fmxInClause, $fmxInTypes, $fmxInValues] = $this->generateIn($context->not->folders, "int");
         $q = new Query(
             "WITH RECURSIVE
             topmost(f_id,top) as (
@@ -1540,6 +1543,18 @@ class Database {
             ),
             folder_data(id,name,top,top_name) as (
                 select f1.id, f1.name, top, f2.name from arsse_folders as f1 join topmost on f1.id = f_id join arsse_folders as f2 on f2.id = top
+            ),
+            folders(folder) as (
+                select ? union all select id from arsse_folders join folders on coalesce(parent,0) = folder
+            ),
+            folders_multi(folder) as (
+                select id as folder from (select id from (select 0 as id union all select id from arsse_folders where owner = ?) as f where id in ($fmInClause)) as folders_multi union select id from arsse_folders join folders_multi on coalesce(parent,0) = folder
+            ),
+            folders_excluded(folder) as (
+                select ? union all select id from arsse_folders join folders_excluded on coalesce(parent,0) = folder
+            ),
+            folders_multi_excluded(folder) as (
+                select id as folder from (select id from (select 0 as id union all select id from arsse_folders where owner = ?) as f where id in ($fmxInClause)) as folders_multi_excluded union select id from arsse_folders join folders_multi_excluded on coalesce(parent,0) = folder
             ),
             labelled(article,label_id,label_name) as (
                 select m.article, l.id, l.name from arsse_label_members as m join arsse_labels as l on l.id = m.label where l.owner = ? and m.assigned = 1
@@ -1561,8 +1576,8 @@ class Database {
             left join (
                 select arsse_label_members.article, max(arsse_label_members.modified) as modified, sum(arsse_label_members.assigned) as assigned from arsse_label_members join arsse_labels on arsse_labels.id = arsse_label_members.label where arsse_labels.owner = ? group by arsse_label_members.article
             ) as label_stats on label_stats.article = arsse_articles.id",
-            ["str", "str", "str", "str", "str"],
-            [$user, $user, $user, $user, $user]
+            ["str", "int",            "str", $fmInTypes,  "int",                 "str", $fmxInTypes,  "str", "str", "str", "str"],
+            [$user, $context->folder, $user, $fmInValues, $context->not->folder, $user, $fmxInValues, $user, $user, $user, $user]
         );
         $q->setLimit($context->limit, $context->offset);
         // handle the simple context options
@@ -1641,25 +1656,26 @@ class Database {
         }
         // handle labels and tags
         $options = [
-            'label'      => ["labelled", "id",           "label_id",   "=",  "int"],
-            'labels'     => ["labelled", "id",           "label_id",   "in", "int"],
-            'labelName'  => ["labelled", "id",           "label_name", "=",  "str"],
-            'labelNames' => ["labelled", "id",           "label_name", "in", "str"],
-            'tag'        => ["tagged",   "subscription", "tag_id",     "=",  "int"],
-            'tags'       => ["tagged",   "subscription", "tag_id",     "in", "int"],
-            'tagName'    => ["tagged",   "subscription", "tag_name",   "=",  "str"],
-            'tagNames'   => ["tagged",   "subscription", "tag_name",   "in", "str"],
+            // each context array consists of a common table expression to select from, the column to match in the main join, the column to match in the CTE, the column to select in the CTE, an operator, and a type for the match in the CTE
+            'label'      => ["labelled", "id",           "labelled.article",    "label_id",   "=",  "int"],
+            'labels'     => ["labelled", "id",           "labelled.article",    "label_id",   "in", "int"],
+            'labelName'  => ["labelled", "id",           "labelled.article",    "label_name", "=",  "str"],
+            'labelNames' => ["labelled", "id",           "labelled.article",    "label_name", "in", "str"],
+            'tag'        => ["tagged",   "subscription", "tagged.subscription", "tag_id",     "=",  "int"],
+            'tags'       => ["tagged",   "subscription", "tagged.subscription", "tag_id",     "in", "int"],
+            'tagName'    => ["tagged",   "subscription", "tagged.subscription", "tag_name",   "=",  "str"],
+            'tagNames'   => ["tagged",   "subscription", "tagged.subscription", "tag_name",   "in", "str"],
         ];
-        foreach ($options as $m => [$cte, $col, $selection, $op, $type]) {
+        foreach ($options as $m => [$cte, $outerCol, $selection, $innerCol, $op, $type]) {
             if ($context->$m()) {
                 if ($op === "in") {
                     if (!$context->$m) {
                         throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
                     }
                     [$inClause, $inTypes, $inValues] = $this->generateIn($context->$m, $type);
-                    $q->setWhere("{$colDefs[$col]} in (select $selection from $cte where $col in($inClause))", $inTypes, $inValues);
+                    $q->setWhere("{$colDefs[$outerCol]} in (select $selection from $cte where $innerCol in($inClause))", $inTypes, $inValues);
                 } else {
-                    $q->setWhere("{$colDefs[$col]} in (select $selection from $cte where $col = ?)", $type, $context->$m);
+                    $q->setWhere("{$colDefs[$outerCol]} in (select $selection from $cte where $innerCol = ?)", $type, $context->$m);
                 }
             }
             // handle the exclusionary version
@@ -1669,13 +1685,26 @@ class Database {
                         throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
                     }
                     [$inClause, $inTypes, $inValues] = $this->generateIn($context->not->$m, $type);
-                    $q->setWhereNot("{$colDefs[$col]} in (select $selection from $cte where $col in($inClause))", $inTypes, $inValues);
+                    $q->setWhereNot("{$colDefs[$outerCol]} in (select $selection from $cte where $innerCol in($inClause))", $inTypes, $inValues);
                 } else {
-                    $q->setWhereNot("{$colDefs[$col]} in (select $selection from $cte where $col = ?)", $type, $context->not->$m);
+                    $q->setWhereNot("{$colDefs[$outerCol]} in (select $selection from $cte where $innerCol = ?)", $type, $context->not->$m);
                 }
             }
         }
-        // handle complex context options
+        // handle folder selection
+        $options = [
+            'folder'  => "folders",
+            'folders' => "folders_multi",
+        ];
+        foreach ($options as $m => $cte) {
+            if ($context->$m()) {
+                $q->setWhere("coalesce(arsse_subscriptions.folder,0) in (select folder from $cte)");
+            }
+            if ($context->not->$m()) {
+                $q->setWhereNot("coalesce(arsse_subscriptions.folder,0) in (select folder from {$cte}_excluded)");
+            }
+        }
+        // handle context options with more than one operator
         if ($context->annotated()) {
             $comp = ($context->annotated) ? "<>" : "=";
             $q->setWhere("coalesce(arsse_marks.note,'') $comp ''");
@@ -1684,32 +1713,6 @@ class Database {
             // any label (true) or no label (false)
             $op = $context->labelled ? ">" : "=";
             $q->setWhere("coalesce(label_stats.assigned,0) $op 0");
-        }
-        if ($context->folder()) {
-            // add a common table expression to list the folder and its children so that we select from the entire subtree
-            $q->setCTE("folders(folder)", "SELECT ? union all select id from arsse_folders join folders on coalesce(parent,0) = folder", "int", $context->folder);
-            // limit subscriptions to the listed folders
-            $q->setWhere("coalesce(arsse_subscriptions.folder,0) in (select folder from folders)");
-        }
-        if ($context->folders()) {
-            [$inClause, $inTypes, $inValues] = $this->generateIn($context->folders, "int");
-            // add a common table expression to list the folders and their children so that we select from the entire subtree
-            $q->setCTE("folders_multi(folder)", "SELECT id as folder from (select id from (select 0 as id union all select id from arsse_folders where owner = ?) as f where id in ($inClause)) as folders_multi union select id from arsse_folders join folders_multi on coalesce(parent,0) = folder", ["str", $inTypes], [$user, $inValues]);
-            // limit subscriptions to the listed folders
-            $q->setWhere("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_multi)");
-        }
-        if ($context->not->folder()) {
-            // add a common table expression to list the folder and its children so that we exclude from the entire subtree
-            $q->setCTE("folders_excluded(folder)", "SELECT ? union all select id from arsse_folders join folders_excluded on coalesce(parent,0) = folder", "int", $context->not->folder);
-            // excluded any subscriptions in the listed folders
-            $q->setWhereNot("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_excluded)");
-        }
-        if ($context->not->folders()) {
-            [$inClause, $inTypes, $inValues] = $this->generateIn($context->not->folders, "int");
-            // add a common table expression to list the folders and their children so that we select from the entire subtree
-            $q->setCTE("folders_multi_excluded(folder)", "SELECT id as folder from (select id from (select 0 as id union all select id from arsse_folders where owner = ?) as f where id in ($inClause)) as folders_multi_excluded union select id from arsse_folders join folders_multi_excluded on coalesce(parent,0) = folder", ["str", $inTypes], [$user, $inValues]);
-            // limit subscriptions to the listed folders
-            $q->setWhereNot("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_multi_excluded)");
         }
         // handle text-matching context options
         $options = [
