@@ -35,7 +35,9 @@ trait ExclusionMembers {
     public $articleRange = [null, null];
     public $editionRange = [null, null];
     public $modifiedRange = [null, null];
+    public $modifiedRanges = [];
     public $markedRange = [null, null];
+    public $markedRanges = [];
 
     protected function cleanIdArray(array $spec, bool $allowZero = false): array {
         $spec = array_values($spec);
@@ -59,6 +61,22 @@ trait ExclusionMembers {
                 $spec[$a] = $str;
             } else {
                 unset($spec[$a]);
+            }
+        }
+        return array_values(array_unique($spec));
+    }
+
+    protected function cleanDateRangeArray(array $spec): array {
+        $spec = array_values($spec);
+        $stop = sizeof($spec);
+        for ($a = 0; $a < $stop; $a++) {
+            if (!is_array($spec[$a]) || sizeof($spec[$a]) !== 2) {
+                unset($spec[$a]);
+            } else {
+                $spec[$a] = ValueInfo::normalize($spec[$a], ValueInfo::T_DATE | ValueInfo::M_ARRAY | ValueInfo::M_DROP);
+                if ($spec[$a] === [null, null]) {
+                    unset($spec[$a]);
+                }
             }
         }
         return array_values(array_unique($spec));
@@ -218,11 +236,26 @@ trait ExclusionMembers {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
+    public function modifiedRanges(array $spec) {
+        if (isset($spec)) {
+            $spec = $this->cleanDateRangeArray($spec);
+        }
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+
     public function markedRange($start = null, $end = null) {
         if ($start === null && $end === null) {
             $spec = null;
         } else {
             $spec = [Date::normalize($start), Date::normalize($end)];
+        }
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function markedRanges(array $spec) {
+        if (isset($spec)) {
+            $spec = $this->cleanDateRangeArray($spec);
         }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
