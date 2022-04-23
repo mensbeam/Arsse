@@ -1533,28 +1533,17 @@ class Database {
         }
         assert(strlen($outColumns) > 0, new \Exception("No input columns matched whitelist"));
         // define the basic query, to which we add lots of stuff where necessary
-        // selecting from folders requires in() clauses, which may be empty
-        [$fmInClause, $fmInTypes, $fmInValues] = $this->generateIn($context->folders, "int");
-        [$fmxInClause, $fmxInTypes, $fmxInValues] = $this->generateIn($context->not->folders, "int");
+        [$fInClause, $fInTypes, $fInValues] = $this->generateIn([...$context->folders, ...$context->not->folders, $context->folder, $context->not->folder], "int");
         $q = new Query(
             "WITH RECURSIVE
-            topmost(f_id,top) as (
-                select id,id from arsse_folders where owner = ? and parent is null union all select id,top from arsse_folders join topmost on parent=f_id
+            folders_top(id,top) as (
+                select f.id,f.id from arsse_folders as f where owner = ? and parent is null union all select f.id,top from arsse_folders as f join folders_top as t on parent=t.id
             ),
             folder_data(id,name,top,top_name) as (
-                select f1.id, f1.name, top, f2.name from arsse_folders as f1 join topmost on f1.id = f_id join arsse_folders as f2 on f2.id = top
+                select f1.id, f1.name, top, f2.name from arsse_folders as f1 join folders_top as f0 on f1.id = f0.id join arsse_folders as f2 on f2.id = top
             ),
-            folders(folder) as (
-                select ? union all select id from arsse_folders join folders on coalesce(parent,0) = folder
-            ),
-            folders_multi(folder) as (
-                select id as folder from (select id from (select 0 as id union all select id from arsse_folders where owner = ?) as f where id in ($fmInClause)) as folders_multi union select id from arsse_folders join folders_multi on coalesce(parent,0) = folder
-            ),
-            folders_excluded(folder) as (
-                select ? union all select id from arsse_folders join folders_excluded on coalesce(parent,0) = folder
-            ),
-            folders_multi_excluded(folder) as (
-                select id as folder from (select id from (select 0 as id union all select id from arsse_folders where owner = ?) as f where id in ($fmxInClause)) as folders_multi_excluded union select id from arsse_folders join folders_multi_excluded on coalesce(parent,0) = folder
+            folders(id,req) as (
+                select * from (select 0,0 union select f.id,f.id from arsse_folders as f where owner = ? and id in ($fInClause)) union all select f.id,req from arsse_folders as f join folders on coalesce(parent,0)=folders.id
             ),
             labelled(article,label_id,label_name) as (
                 select m.article, l.id, l.name from arsse_label_members as m join arsse_labels as l on l.id = m.label where l.owner = ? and m.assigned = 1
@@ -1576,8 +1565,8 @@ class Database {
             left join (
                 select arsse_label_members.article, max(arsse_label_members.modified) as modified, sum(arsse_label_members.assigned) as assigned from arsse_label_members join arsse_labels on arsse_labels.id = arsse_label_members.label where arsse_labels.owner = ? group by arsse_label_members.article
             ) as label_stats on label_stats.article = arsse_articles.id",
-            ["str", "int",            "str", $fmInTypes,  "int",                 "str", $fmxInTypes,  "str", "str", "str", "str"],
-            [$user, $context->folder, $user, $fmInValues, $context->not->folder, $user, $fmxInValues, $user, $user, $user, $user]
+            ["str", "str", $fInTypes,  "str", "str", "str", "str"],
+            [$user, $user, $fInValues, $user, $user, $user, $user]
         );
         $q->setLimit($context->limit, $context->offset);
         // handle the simple context options
@@ -1654,9 +1643,11 @@ class Database {
                 $q->setWhereNot("{$colDefs[$col]} $op ?", $type, $context->not->$m);
             }
         }
-        // handle labels and tags
+        // handle folders, labels, and tags
         $options = [
             // each context array consists of a common table expression to select from, the column to match in the main join, the column to match in the CTE, the column to select in the CTE, an operator, and a type for the match in the CTE
+            'folder'     => ["folders",  "folder",       "folders.id",          "req",        "=",  "int"],
+            'folders'    => ["folders",  "folder",       "folders.id",          "req",        "in",  "int"],
             'label'      => ["labelled", "id",           "labelled.article",    "label_id",   "=",  "int"],
             'labels'     => ["labelled", "id",           "labelled.article",    "label_id",   "in", "int"],
             'labelName'  => ["labelled", "id",           "labelled.article",    "label_name", "=",  "str"],
@@ -1690,19 +1681,6 @@ class Database {
                 } else {
                     $q->setWhereNot("{$colDefs[$outerCol]} in (select $selection from $cte where $innerCol = ?)", $type, $context->not->$m);
                 }
-            }
-        }
-        // handle folder selection
-        $options = [
-            'folder'  => "folders",
-            'folders' => "folders_multi",
-        ];
-        foreach ($options as $m => $cte) {
-            if ($context->$m()) {
-                $q->setWhere("coalesce(arsse_subscriptions.folder,0) in (select folder from $cte)");
-            }
-            if ($context->not->$m()) {
-                $q->setWhereNot("coalesce(arsse_subscriptions.folder,0) in (select folder from {$cte}_excluded)");
             }
         }
         // handle context options with more than one operator
