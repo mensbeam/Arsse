@@ -1533,17 +1533,16 @@ class Database {
         }
         assert(strlen($outColumns) > 0, new \Exception("No input columns matched whitelist"));
         // define the basic query, to which we add lots of stuff where necessary
-        [$fInClause, $fInTypes, $fInValues] = $this->generateIn([...$context->folders, ...$context->not->folders, $context->folder, $context->not->folder], "int");
         $q = new Query(
             "WITH RECURSIVE
+            folders(id,req) as (
+                select * from (select 0,0 union select f.id,f.id from arsse_folders as f where owner = ?) union all select f.id,req from arsse_folders as f join folders on coalesce(parent,0)=folders.id
+            ),
             folders_top(id,top) as (
                 select f.id,f.id from arsse_folders as f where owner = ? and parent is null union all select f.id,top from arsse_folders as f join folders_top as t on parent=t.id
             ),
             folder_data(id,name,top,top_name) as (
                 select f1.id, f1.name, top, f2.name from arsse_folders as f1 join folders_top as f0 on f1.id = f0.id join arsse_folders as f2 on f2.id = top
-            ),
-            folders(id,req) as (
-                select * from (select 0,0 union select f.id,f.id from arsse_folders as f where owner = ? and id in ($fInClause)) union all select f.id,req from arsse_folders as f join folders on coalesce(parent,0)=folders.id
             ),
             labelled(article,label_id,label_name) as (
                 select m.article, l.id, l.name from arsse_label_members as m join arsse_labels as l on l.id = m.label where l.owner = ? and m.assigned = 1
@@ -1565,8 +1564,8 @@ class Database {
             left join (
                 select arsse_label_members.article, max(arsse_label_members.modified) as modified, sum(arsse_label_members.assigned) as assigned from arsse_label_members join arsse_labels on arsse_labels.id = arsse_label_members.label where arsse_labels.owner = ? group by arsse_label_members.article
             ) as label_stats on label_stats.article = arsse_articles.id",
-            ["str", "str", $fInTypes,  "str", "str", "str", "str"],
-            [$user, $user, $fInValues, $user, $user, $user, $user]
+            ["str", "str", "str", "str", "str", "str"],
+            [$user, $user, $user, $user, $user, $user]
         );
         $q->setLimit($context->limit, $context->offset);
         // handle the simple context options
@@ -1647,7 +1646,7 @@ class Database {
         $options = [
             // each context array consists of a common table expression to select from, the column to match in the main join, the column to match in the CTE, the column to select in the CTE, an operator, and a type for the match in the CTE
             'folder'     => ["folders",  "folder",       "folders.id",          "req",        "=",  "int"],
-            'folders'    => ["folders",  "folder",       "folders.id",          "req",        "in",  "int"],
+            'folders'    => ["folders",  "folder",       "folders.id",          "req",        "in", "int"],
             'label'      => ["labelled", "id",           "labelled.article",    "label_id",   "=",  "int"],
             'labels'     => ["labelled", "id",           "labelled.article",    "label_id",   "in", "int"],
             'labelName'  => ["labelled", "id",           "labelled.article",    "label_name", "=",  "str"],
