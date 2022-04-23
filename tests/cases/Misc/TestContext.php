@@ -91,9 +91,9 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             'editionRange'     => [[1, 100],                                         [1, 100]],
         ];
         foreach($tests as $k => $t) {
-            yield $k => [$k, ...$t, false];
+            yield $k => array_merge([$k], $t, [false]);
             if (method_exists(ExclusionContext::class, $k)) {
-                yield "$k (not)" => [$k, ...$t, true];
+                yield "$k (not)" => array_merge([$k], $t, [true]);
             }
         }
     }
