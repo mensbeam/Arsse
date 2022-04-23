@@ -1449,6 +1449,7 @@ class Database {
      */
     protected function articleColumns(): array {
         $greatest = $this->db->sqlToken("greatest");
+        $least = $this->db->sqlToken("least");
         return [
             'id'                 => "arsse_articles.id",                                                                                                                                // The article's unchanging numeric ID
             'edition'            => "latest_editions.edition",                                                                                                                          // The article's numeric ID which increases each time it is modified in the feed
@@ -1468,6 +1469,8 @@ class Database {
             'hidden'             => "coalesce(arsse_marks.hidden,0)",                                                                                                                   // Whether the article is hidden
             'starred'            => "coalesce(arsse_marks.starred,0)",                                                                                                                  // Whether the article is starred
             'unread'             => "abs(coalesce(arsse_marks.read,0) - 1)",                                                                                                            // Whether the article is unread
+            'labelled'           => "$least(coalesce(label_stats.assigned,0),1)",                                                                                                       // Whether the article has at least one label
+            'annotated'          => "(case when coalesce(arsse_marks.note,'') <> '' then 1 else 0 end)",                                                                                // Whether the article has a note
             'note'               => "coalesce(arsse_marks.note,'')",                                                                                                                    // The article's note, if any
             'published_date'     => "arsse_articles.published",                                                                                                                         // The date at which the article was first published i.e. its creation date
             'edited_date'        => "arsse_articles.edited",                                                                                                                            // The date at which the article was last edited according to the feed
@@ -1536,10 +1539,10 @@ class Database {
         $q = new Query(
             "WITH RECURSIVE
             folders(id,req) as (
-                select * from (select 0,0 union select f.id,f.id from arsse_folders as f where owner = ?) union all select f.id,req from arsse_folders as f join folders on coalesce(parent,0)=folders.id
+                select 0, 0 union all select f.id, f.id from arsse_folders as f where owner = ? union all select f1.id, req from arsse_folders as f1 join folders on coalesce(parent,0)=folders.id
             ),
             folders_top(id,top) as (
-                select f.id,f.id from arsse_folders as f where owner = ? and parent is null union all select f.id,top from arsse_folders as f join folders_top as t on parent=t.id
+                select f.id, f.id from arsse_folders as f where owner = ? and parent is null union all select f.id, top from arsse_folders as f join folders_top as t on parent=t.id
             ),
             folder_data(id,name,top,top_name) as (
                 select f1.id, f1.name, top, f2.name from arsse_folders as f1 join folders_top as f0 on f1.id = f0.id join arsse_folders as f2 on f2.id = top
@@ -1586,6 +1589,8 @@ class Database {
             "unread"           => ["unread",        "=",       "bool"],
             "starred"          => ["starred",       "=",       "bool"],
             "hidden"           => ["hidden",        "=",       "bool"],
+            "labelled"         => ["labelled",      "=",       "bool"],
+            "annotated"        => ["annotated",     "=",       "bool"],
         ];
         foreach ($options as $m => [$col, $op, $type]) {
             if (!$context->$m()) {
@@ -1681,16 +1686,6 @@ class Database {
                     $q->setWhereNot("{$colDefs[$outerCol]} in (select $selection from $cte where $innerCol = ?)", $type, $context->not->$m);
                 }
             }
-        }
-        // handle context options with more than one operator
-        if ($context->annotated()) {
-            $comp = ($context->annotated) ? "<>" : "=";
-            $q->setWhere("coalesce(arsse_marks.note,'') $comp ''");
-        }
-        if ($context->labelled()) {
-            // any label (true) or no label (false)
-            $op = $context->labelled ? ">" : "=";
-            $q->setWhere("coalesce(label_stats.assigned,0) $op 0");
         }
         // handle text-matching context options
         $options = [
