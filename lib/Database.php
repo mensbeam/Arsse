@@ -1682,7 +1682,8 @@ class Database {
             if ($context->not->$m()) {
                 if ($op === "in") {
                     if (!$context->not->$m) {
-                        throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
+                        // for exclusions we don't care if the array is empty
+                        continue;
                     }
                     [$inClause, $inTypes, $inValues] = $this->generateIn($context->not->$m, $type);
                     $q->setWhereNot("{$colDefs[$outerCol]} in (select $selection from $cte where $innerCol in($inClause))", $inTypes, $inValues);
