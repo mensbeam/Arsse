@@ -79,7 +79,7 @@ trait ExclusionMembers {
                 }
             }
         }
-        return array_values(array_unique($spec));
+        return array_values(array_unique($spec, \SORT_REGULAR));
     }
 
     public function folder(int $spec = null) {

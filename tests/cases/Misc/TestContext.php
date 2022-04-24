@@ -8,6 +8,7 @@ namespace JKingWeb\Arsse\TestCase\Misc;
 
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Context\ExclusionContext;
+use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 
 /**
@@ -126,6 +127,16 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
         $c = new Context;
         foreach ($methods as $method) {
             $this->assertSame($out, $c->$method($in)->$method, "Context method $method did not return the expected results");
+        }
+    }
+
+    public function testCleanDateRangeArrayValues(): void {
+        $methods = ["modifiedRanges", "markedRanges"];
+        $in = [null, 1, [1, 2, 3], [1], [null, null], ["ook", null], ["2022-09-13T06:46:28 America/Los_angeles", new \DateTime("2022-01-23T00:33:49Z")], [0, null], [null, 0]];
+        $out = [[Date::normalize("2022-09-13T13:46:28Z"), Date::normalize("2022-01-23T00:33:49Z")], [Date::normalize(0), null], [null, Date::normalize(0)]];
+        $c = new Context;
+        foreach ($methods as $method) {
+            $this->assertEquals($out, $c->$method($in)->$method, "Context method $method did not return the expected results");
         }
     }
 

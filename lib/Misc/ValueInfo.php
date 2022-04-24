@@ -281,15 +281,19 @@ class ValueInfo {
                             if (!$out) {
                                 throw new \Exception;
                             }
-                            return $out;
+                            return $out->setTimezone(new \DateTimeZone("UTC"));
                         } else {
-                            return new \DateTimeImmutable($value, new \DateTimeZone("UTC"));
+                            $out = new \DateTimeImmutable($value, new \DateTimeZone("UTC"));
+                            if ($out) {
+                                return $out->setTimezone(new \DateTimeZone("UTC"));
+                            } elseif ($strict && !$drop) {
+                                throw new \Exception;
+                            }
                         }
                     } catch (\Exception $e) {
                         if ($strict && !$drop) {
                             throw new ExceptionType("strictFailure", $type);
                         }
-                        return null;
                     }
                 } elseif ($strict && !$drop) {
                     throw new ExceptionType("strictFailure", $type);
