@@ -15,7 +15,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         self::T_DATETIME => "timestamp(0) without time zone",
         self::T_BINARY   => "bytea",
         self::T_STRING   => "text",
-        self::T_BOOLEAN  => "smallint", // FIXME: using boolean leads to incompatibilities with versions of SQLite bundled prior to PHP 7.3
+        self::T_BOOLEAN  => "smallint", // NOTE: Integers are used rather than booleans so that they may be manipulated arithmetically
     ];
 
     protected $db;

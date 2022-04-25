@@ -15,7 +15,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         self::T_DATETIME => "s",
         self::T_BINARY   => "b",
         self::T_STRING   => "s",
-        self::T_BOOLEAN  => "i",
+        self::T_BOOLEAN  => "i", // NOTE: Integers are used rather than booleans so that they may be manipulated arithmetically
     ];
 
     protected $db;
