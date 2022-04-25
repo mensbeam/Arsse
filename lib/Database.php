@@ -1725,7 +1725,7 @@ class Database {
                         $w[] = "{$colDefs[$col]} <= ?";
                         $t[] = $type;
                         $v[] = $r[1];
-                    } elseif ($context->$m[1] === null) {
+                    } elseif ($r[1] === null) {
                         // range is open at the high end
                         $w[] = "{$colDefs[$col]} >= ?";
                         $t[] = $type;

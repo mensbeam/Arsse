@@ -530,6 +530,14 @@ trait SeriesArticle {
             'Excluding multiple folder trees including root'             => [(new Context)->not->folders([0,1,5]), []],
             'Before article 3'                                           => [(new Context)->not->articleRange(3, null), [1,2]],
             'Before article 19'                                          => [(new Context)->not->articleRange(null, 19), [20]],
+            'Marked or labelled in 2010 or 2015'                         => [(new Context)->markedRanges([["2010-01-01T00:00:00Z", "2010-12-31T23:59:59Z"], ["2015-01-01T00:00:00Z", "2015-12-31T23:59:59Z"]]), [2,4,6,8,20]],
+            'Not marked or labelled in 2010 or 2015'                     => [(new Context)->not->markedRanges([["2010-01-01T00:00:00Z", "2010-12-31T23:59:59Z"], ["2015-01-01T00:00:00Z", "2015-12-31T23:59:59Z"]]), [1,3,5,7,19]],
+            'Marked or labelled prior to 2010 or since 2015'             => [(new Context)->markedRanges([[null, "2009-12-31T23:59:59Z"], ["2015-01-01T00:00:00Z", null]]), [1,3,5,7,8,19]],
+            'Not marked or labelled prior to 2010 or since 2015'         => [(new Context)->not->markedRanges([[null, "2009-12-31T23:59:59Z"], ["2015-01-01T00:00:00Z", null]]), [2,4,6,20]],
+            'Modified in 2010 or 2015'                                   => [(new Context)->modifiedRanges([["2010-01-01T00:00:00Z", "2010-12-31T23:59:59Z"], ["2015-01-01T00:00:00Z", "2015-12-31T23:59:59Z"]]), [2,4,6,8,20]],
+            'Not modified in 2010 or 2015'                               => [(new Context)->not->modifiedRanges([["2010-01-01T00:00:00Z", "2010-12-31T23:59:59Z"], ["2015-01-01T00:00:00Z", "2015-12-31T23:59:59Z"]]), [1,3,5,7,19]],
+            'Modified prior to 2010 or since 2015'                       => [(new Context)->modifiedRanges([[null, "2009-12-31T23:59:59Z"], ["2015-01-01T00:00:00Z", null]]), [1,3,5,7,19]],
+            'Not modified prior to 2010 or since 2015'                   => [(new Context)->not->modifiedRanges([[null, "2009-12-31T23:59:59Z"], ["2015-01-01T00:00:00Z", null]]), [2,4,6,8,20]],
         ];
     }
 
@@ -1039,9 +1047,10 @@ trait SeriesArticle {
     public function provideArrayContextOptions(): iterable {
         foreach ([
             "articles", "editions",
-            "subscriptions", "foldersShallow", //"folders",
+            "subscriptions", "foldersShallow", "folders",
             "tags", "tagNames", "labels", "labelNames",
             "searchTerms", "authorTerms", "annotationTerms",
+            "modifiedRanges", "markedRanges",
         ] as $method) {
             yield [$method];
         }
