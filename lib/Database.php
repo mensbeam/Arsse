@@ -1593,61 +1593,57 @@ class Database {
             "annotated"        => ["annotated",     "=",       "bool"],
         ];
         foreach ($options as $m => [$col, $op, $type]) {
-            if (!$context->$m()) {
-                // context is not being used
-                continue;
-            } elseif ($op === "between") {
-                // option is a range
-                if ($context->$m[0] === null) {
-                    // range is open at the low end
-                    $q->setWhere("{$colDefs[$col]} <= ?", $type, $context->$m[1]);
-                } elseif ($context->$m[1] === null) {
-                    // range is open at the high end
-                    $q->setWhere("{$colDefs[$col]} >= ?", $type, $context->$m[0]);
+            if ($context->$m()) {
+                if ($op === "between") {
+                    // option is a range
+                    if ($context->$m[0] === null) {
+                        // range is open at the low end
+                        $q->setWhere("{$colDefs[$col]} <= ?", $type, $context->$m[1]);
+                    } elseif ($context->$m[1] === null) {
+                        // range is open at the high end
+                        $q->setWhere("{$colDefs[$col]} >= ?", $type, $context->$m[0]);
+                    } else {
+                        // range is bounded in both directions
+                        $q->setWhere("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], $context->$m);
+                    }
+                } elseif (is_array($context->$m)) {
+                    // context option is an array of values
+                    if (!$context->$m) {
+                        throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
+                    }
+                    [$clause, $types, $values] = $this->generateIn($context->$m, $type);
+                    $q->setWhere("{$colDefs[$col]} $op ($clause)", $types, $values);
                 } else {
-                    // range is bounded in both directions
-                    $q->setWhere("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], $context->$m);
+                    $q->setWhere("{$colDefs[$col]} $op ?", $type, $context->$m);
                 }
-            } elseif (is_array($context->$m)) {
-                // context option is an array of values
-                if (!$context->$m) {
-                    throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
+            }
+            // handle the exclusionary version
+            if (method_exists($context->not, $m) && $context->not->$m()) {
+                if ($op === "between") {
+                    // option is a range
+                    if ($context->not->$m[0] === null) {
+                        // range is open at the low end
+                        $q->setWhereNot("{$colDefs[$col]} <= ?", $type, $context->not->$m[1]);
+                    } elseif ($context->not->$m[1] === null) {
+                        // range is open at the high end
+                        $q->setWhereNot("{$colDefs[$col]} >= ?", $type, $context->not->$m[0]);
+                    } else {
+                        // range is bounded in both directions
+                        $q->setWhereNot("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], $context->not->$m);
+                    }
+                } elseif (is_array($context->not->$m)) {
+                    if (!$context->not->$m) {
+                        // for exclusions we don't care if the array is empty
+                        continue;
+                    }
+                    [$clause, $types, $values] = $this->generateIn($context->not->$m, $type);
+                    $q->setWhereNot("{$colDefs[$col]} $op ($clause)", $types, $values);
+                } else {
+                    $q->setWhereNot("{$colDefs[$col]} $op ?", $type, $context->not->$m);
                 }
-                [$clause, $types, $values] = $this->generateIn($context->$m, $type);
-                $q->setWhere("{$colDefs[$col]} $op ($clause)", $types, $values);
-            } else {
-                $q->setWhere("{$colDefs[$col]} $op ?", $type, $context->$m);
             }
         }
-        // further handle exclusionary options if specified
-        foreach ($options as $m => [$col, $op, $type]) {
-            if (!method_exists($context->not, $m) || !$context->not->$m()) {
-                // context option is not being used
-                continue;
-            } elseif ($op === "between") {
-                // option is a range
-                if ($context->not->$m[0] === null) {
-                    // range is open at the low end
-                    $q->setWhereNot("{$colDefs[$col]} <= ?", $type, $context->not->$m[1]);
-                } elseif ($context->not->$m[1] === null) {
-                    // range is open at the high end
-                    $q->setWhereNot("{$colDefs[$col]} >= ?", $type, $context->not->$m[0]);
-                } else {
-                    // range is bounded in both directions
-                    $q->setWhereNot("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], $context->not->$m);
-                }
-            } elseif (is_array($context->not->$m)) {
-                if (!$context->not->$m) {
-                    // for exclusions we don't care if the array is empty
-                    continue;
-                }
-                [$clause, $types, $values] = $this->generateIn($context->not->$m, $type);
-                $q->setWhereNot("{$colDefs[$col]} $op ($clause)", $types, $values);
-            } else {
-                $q->setWhereNot("{$colDefs[$col]} $op ?", $type, $context->not->$m);
-            }
-        }
-        // handle folders, labels, and tags
+        // handle folder trees, labels, and tags
         $options = [
             // each context array consists of a common table expression to select from, the column to match in the main join, the column to match in the CTE, the column to select in the CTE, an operator, and a type for the match in the CTE
             'folder'     => ["folders",  "folder",       "folders.id",          "req",        "=",  "int"],
@@ -1695,27 +1691,69 @@ class Database {
             "annotationTerms" => ["note"],
         ];
         foreach ($options as $m => $columns) {
-            if (!$context->$m()) {
-                continue;
-            } elseif (!$context->$m) {
-                throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
-            }
             $columns = array_map(function($c) use ($colDefs) {
                 assert(isset($colDefs[$c]), new Exception("constantUnknown", $c));
                 return $colDefs[$c];
             }, $columns);
-            $q->setWhere(...$this->generateSearch($context->$m, $columns));
+            if ($context->$m()) {
+                if (!$context->$m) {
+                    throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
+                }
+                $q->setWhere(...$this->generateSearch($context->$m, $columns));
+            }
+            // handle the exclusionary version
+            if ($context->not->$m() && $context->not->$m) {
+                $q->setWhereNot(...$this->generateSearch($context->not->$m, $columns, true));
+            }
         }
-        // further handle exclusionary text-matching context options
-        foreach ($options as $m => $columns) {
-            if (!$context->not->$m() || !$context->not->$m) {
-                continue;
+        // handle arrays of ranges
+        $options = [
+            'modifiedRanges' => ["modified_date", "datetime"],
+            'markedRanges'   => ["marked_date",   "datetime"],
+        ];
+        foreach ($options as $m => [$col, $type]) {
+            if ($context->$m()) {
+                if (!$context->$m) {
+                    throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
+                }
+                $w = [];
+                $t = [];
+                $v = [];
+                foreach ($context->$m as $r) {
+                    if ($r[0] === null) {
+                        // range is open at the low end
+                        $w[] = "{$colDefs[$col]} <= ?";
+                        $t[] = $type;
+                        $v[] = $r[1];
+                    } elseif ($context->$m[1] === null) {
+                        // range is open at the high end
+                        $w[] = "{$colDefs[$col]} >= ?";
+                        $t[] = $type;
+                        $v[] = $r[0];
+                    } else {
+                        // range is bounded in both directions
+                        $w[] = "{$colDefs[$col]} BETWEEN ? AND ?";
+                        $t[] = [$type, $type];
+                        $v[] = $r;
+                    }
+                }
+                $q->setWhere("(".implode(" OR ", $w).")", $t, $v);
             }
-            $columns = array_map(function($c) use ($colDefs) {
-                assert(isset($colDefs[$c]), new Exception("constantUnknown", $c));
-                return $colDefs[$c];
-            }, $columns);
-            $q->setWhereNot(...$this->generateSearch($context->not->$m, $columns, true));
+            // handle the exclusionary version
+            if ($context->not->$m() && $context->not->$m) {
+                foreach ($context->not->$m as $r) {
+                    if ($r[0] === null) {
+                        // range is open at the low end
+                        $q->setWhereNot("{$colDefs[$col]} <= ?", $type, $r[1]);
+                    } elseif ($r[1] === null) {
+                        // range is open at the high end
+                        $q->setWhereNot("{$colDefs[$col]} >= ?", $type, $r[0]);
+                    } else {
+                        // range is bounded in both directions
+                        $q->setWhereNot("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], $r);
+                    }
+                }
+            }
         }
         // return the query
         return $q;

@@ -236,7 +236,7 @@ trait ExclusionMembers {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function modifiedRanges(array $spec) {
+    public function modifiedRanges(array $spec = null) {
         if (isset($spec)) {
             $spec = $this->cleanDateRangeArray($spec);
         }
@@ -253,7 +253,7 @@ trait ExclusionMembers {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function markedRanges(array $spec) {
+    public function markedRanges(array $spec = null) {
         if (isset($spec)) {
             $spec = $this->cleanDateRangeArray($spec);
         }
