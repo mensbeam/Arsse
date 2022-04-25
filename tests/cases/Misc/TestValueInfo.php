@@ -568,7 +568,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             null,
         ];
         foreach ([
-            /* Input value                          microtime                    iso8601                      iso8601m                     http                         sql                          date                         time                         unix                         float                        '!M j, Y (D)'                *strtotime* (null)                  */
+            /* Input value                          microtime                    iso8601                      iso8601m                     http                         sql                          date                         time                         unix                         float                        '!M j, Y (D)'                *strtotime* (null) */
             [null,                                  null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
             [INF,                                   null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
             [NAN,                                   null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
@@ -600,7 +600,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [[],                                    null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
             [$this->i("P1Y2D"),                     null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
             ["P1Y2D",                               null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
-        ] as $set) {
+        ] as $k => $set) {
             // shift the input value off the set
             $input = array_shift($set);
             // generate a set of tests for each target date formats
@@ -612,7 +612,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
                     [false, true],
                     [true,  true],
                 ] as [$strict, $drop]) {
-                    yield [$input, $formats[$format], $exp, $strict, $drop];
+                    yield "Index #$k format \"$format\" strict:$strict drop:$drop" => [$input, $formats[$format], $exp, $strict, $drop];
                 }
             }
         }

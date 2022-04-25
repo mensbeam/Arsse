@@ -283,12 +283,8 @@ class ValueInfo {
                             }
                             return $out->setTimezone(new \DateTimeZone("UTC"));
                         } else {
-                            $out = new \DateTimeImmutable($value, new \DateTimeZone("UTC"));
-                            if ($out) {
-                                return $out->setTimezone(new \DateTimeZone("UTC"));
-                            } elseif ($strict && !$drop) {
-                                throw new \Exception;
-                            }
+                            // if the string fails to parse it will produce an exception which is caught just below
+                            return (new \DateTimeImmutable($value, new \DateTimeZone("UTC")))->setTimezone(new \DateTimeZone("UTC"));
                         }
                     } catch (\Exception $e) {
                         if ($strict && !$drop) {

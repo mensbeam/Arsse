@@ -1,3 +1,9 @@
+Version 0.1?.? (2022-??-??)
+===========================
+
+Bug fixes:
+- Perform MySQL table maintenance more reliably
+
 Version 0.10.2 (2022-04-04)
 ===========================
 
