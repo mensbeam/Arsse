@@ -119,7 +119,7 @@ class TestSearch extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideSearchStrings */
     public function testApplySearchToContext(string $search, $exp): void {
-        $act = Search::parse($search);
+        $act = Search::parse($search, "UTC");
         $this->assertEquals($exp, $act);
     }
 }

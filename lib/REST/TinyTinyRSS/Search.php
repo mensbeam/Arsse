@@ -32,7 +32,7 @@ class Search {
         ""       => "searchTerms",
     ];
 
-    public static function parse(string $search, Context $context = null): ?Context {
+    public static function parse(string $search, string $tz, Context $context = null): ?Context {
         // normalize the input
         $search = strtolower(trim(preg_replace("<\s+>", " ", $search)));
         // set initial state
@@ -88,7 +88,7 @@ class Search {
                                 continue 3;
                             case '"':
                                 if (($pos + 1 == $stop) || $search[$pos + 1] === " ") {
-                                    $context = self::processToken($context, $buffer, $tag, $flag_negative, false);
+                                    $context = self::processToken($context, $buffer, $tag, $flag_negative);
                                     $state = self::STATE_BEFORE_TOKEN;
                                     $flag_negative = false;
                                     $buffer = $tag = "";
@@ -135,7 +135,7 @@ class Search {
                         while ($pos < $stop && $search[$pos] !== " ") {
                             $buffer .= $search[$pos++];
                         }
-                        $context = self::processToken($context, $buffer, $tag, $flag_negative, true);
+                        $context = self::processToken($context, $buffer, $tag, $flag_negative, $tz);
                         $state = self::STATE_BEFORE_TOKEN;
                         $flag_negative = false;
                         $buffer = $tag = "";
@@ -145,7 +145,7 @@ class Search {
                             case "":
                             case '"':
                                 if (($pos + 1 >= $stop) || $search[$pos + 1] === " ") {
-                                    $context = self::processToken($context, $buffer, $tag, $flag_negative, true);
+                                    $context = self::processToken($context, $buffer, $tag, $flag_negative, $tz);
                                     $state = self::STATE_BEFORE_TOKEN;
                                     $flag_negative = false;
                                     $buffer = $tag = "";
@@ -178,7 +178,7 @@ class Search {
                         if (!strlen($tag)) {
                             $buffer = ":".$buffer;
                         }
-                        $context = self::processToken($context, $buffer, $tag, $flag_negative, false);
+                        $context = self::processToken($context, $buffer, $tag, $flag_negative);
                         $state = self::STATE_BEFORE_TOKEN;
                         $flag_negative = false;
                         $buffer = $tag = "";
@@ -191,7 +191,7 @@ class Search {
                                     if (!strlen($tag)) {
                                         $buffer = ":".$buffer;
                                     }
-                                    $context = self::processToken($context, $buffer, $tag, $flag_negative, false);
+                                    $context = self::processToken($context, $buffer, $tag, $flag_negative);
                                     $state = self::STATE_BEFORE_TOKEN;
                                     $flag_negative = false;
                                     $buffer = $tag = "";
@@ -221,7 +221,7 @@ class Search {
                         switch ($char) {
                             case "":
                             case " ":
-                                $context = self::processToken($context, $buffer, $tag, $flag_negative, false);
+                                $context = self::processToken($context, $buffer, $tag, $flag_negative);
                                 $state = self::STATE_BEFORE_TOKEN;
                                 $flag_negative = false;
                                 $buffer = $tag = "";
@@ -241,7 +241,7 @@ class Search {
                             case "":
                             case '"':
                                 if (($pos + 1 >= $stop) || $search[$pos + 1] === " ") {
-                                    $context = self::processToken($context, $buffer, $tag, $flag_negative, false);
+                                    $context = self::processToken($context, $buffer, $tag, $flag_negative);
                                     $state = self::STATE_BEFORE_TOKEN;
                                     $flag_negative = false;
                                     $buffer = $tag = "";
@@ -282,7 +282,7 @@ class Search {
         return $context;
     }
 
-    protected static function processToken(Context $c, string $value, string $tag, bool $neg, bool $date): Context {
+    protected static function processToken(Context $c, string $value, string $tag, bool $neg, string $tz = null): Context {
         if (!strlen($value) && !strlen($tag)) {
             return $c;
         } elseif (!strlen($value)) {
@@ -290,8 +290,8 @@ class Search {
             $value = "$tag:";
             $tag = "";
         }
-        if ($date) {
-            return self::setDate($value, $c, $neg);
+        if ($tz !== null) {
+            return self::setDate($value, $c, $neg, $tz);
         } elseif (isset(self::FIELDS_BOOLEAN[$tag])) {
             return self::setBoolean($tag, $value, $c, $neg);
         } else {
@@ -309,15 +309,15 @@ class Search {
         return $c->$type(array_merge($c->$type ?? [], [$value]));
     }
 
-    protected static function setDate(string $value, Context $c, bool $neg): Context {
+    protected static function setDate(string $value, Context $c, bool $neg, string $tz): Context {
         $spec = Date::normalize($value);
         // TTRSS treats invalid dates as the start of the Unix epoch; we ignore them instead
         if (!$spec) {
             return $c;
         }
         $day = $spec->format("Y-m-d");
-        $start = $day."T00:00:00+00:00";
-        $end = $day."T23:59:59+00:00";
+        $start = $day."T00:00:00 $tz";
+        $end = $day."T23:59:59 $tz";
         // if a date is already set, the same date is a no-op; anything else is a contradiction
         $cc = $neg ? $c->not : $c;
         if ($cc->modifiedRange()) {
