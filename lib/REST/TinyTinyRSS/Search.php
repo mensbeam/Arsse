@@ -318,18 +318,9 @@ class Search {
         $day = $spec->format("Y-m-d");
         $start = $day."T00:00:00 $tz";
         $end = $day."T23:59:59 $tz";
-        // if a date is already set, the same date is a no-op; anything else is a contradiction
         $cc = $neg ? $c->not : $c;
-        if ($cc->modifiedRange()) {
-            if (!$cc->modifiedRange[0] || !$cc->modifiedRange[1] || $cc->modifiedRange[0]->format("c") !== $start || $cc->modifiedRange[1]->format("c") !== $end) {
-                // FIXME: multiple negative dates should be allowed, but the design of the Context class does not support this
-                throw new Exception;
-            } else {
-                return $c;
-            }
-        }
-        $cc->modifiedRange($start, $end);
-        return $c;
+        // NOTE: TTRSS treats multiple positive dates as contradictory; we instead treat them as complimentary instead, because it makes more sense 
+        return $cc->modifiedRanges(array_merge($cc->modifiedRanges, [[$start, $end]]));
     }
 
     protected static function setBoolean(string $tag, string $value, Context $c, bool $neg): Context {

@@ -37,7 +37,7 @@ The Arsse does not currently support the entire protocol. Notably missing featur
 - Processing of the `search` parameter of the `getHeadlines` operation differs in the following ways:
     - Values other than `"true"` or `"false"` for the `unread`, `star`, and `pub` special keywords treat the entire token as a search term rather than as `"false"`
     - Invalid dates are ignored rather than assumed to be `"1970-01-01"`
-    - Only a single negative date is allowed (this is a known bug rather than intentional)
+    - Specifying multiple non-negative dates usually returns no results as articles must match all specified dates simultaneously; The Arsse instead returns articles matching any of the specified dates
     - Dates are always relative to UTC
     - Full-text search is not yet employed with any database, including PostgreSQL
 - Article hashes are normally SHA1; The Arsse uses SHA256 hashes
