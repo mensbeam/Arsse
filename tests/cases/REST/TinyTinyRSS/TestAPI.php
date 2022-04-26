@@ -1488,6 +1488,84 @@ LONG_STRING;
         ];
     }
 
+    /** @dataProvider provideArticleListingsWithoutLabels */
+    public function testListArticlesWithoutLabels(array $in, ResponseInterface $exp): void {
+        $in = array_merge(['op' => "getArticle", 'sid' => "PriestsOfSyrinx"], $in);
+        $this->dbMock->labelList->with("~")->returns(new Result([]));
+        $this->dbMock->labelList->with("~", false)->returns(new Result([]));
+        $this->dbMock->articleLabelsGet->with("~", 101)->returns([]);
+        $this->dbMock->articleLabelsGet->with("~", 102)->returns($this->v([1,3]));
+        $this->dbMock->articleList->with("~", $this->equalTo((new Context)->articles([101, 102])), "~")->returns(new Result($this->v($this->articles)));
+        $this->dbMock->articleList->with("~", $this->equalTo((new Context)->articles([101])), "~")->returns(new Result($this->v([$this->articles[0]])));
+        $this->dbMock->articleList->with("~", $this->equalTo((new Context)->articles([102])), "~")->returns(new Result($this->v([$this->articles[1]])));
+        $this->assertMessage($exp, $this->req($in));
+    }
+
+    public function provideArticleListingsWithoutLabels(): iterable {
+        $exp = [
+            [
+                'id'          => "101",
+                'guid'        => null,
+                'title'       => 'Article title 1',
+                'link'        => 'http://example.com/1',
+                'labels'      => [],
+                'unread'      => true,
+                'marked'      => false,
+                'published'   => false,
+                'comments'    => "",
+                'author'      => '',
+                'updated'     => strtotime('2000-01-01T00:00:01Z'),
+                'feed_id'     => "8",
+                'feed_title'  => "Feed 11",
+                'attachments' => [],
+                'score'       => 0,
+                'note'        => null,
+                'lang'        => "",
+                'content'     => '<p>Article content 1</p>',
+            ],
+            [
+                'id'     => "102",
+                'guid'   => "SHA256:5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7",
+                'title'  => 'Article title 2',
+                'link'   => 'http://example.com/2',
+                'labels' => [],
+                'unread'      => false,
+                'marked'      => false,
+                'published'   => false,
+                'comments'    => "",
+                'author'      => "J. King",
+                'updated'     => strtotime('2000-01-02T00:00:02Z'),
+                'feed_id'     => "8",
+                'feed_title'  => "Feed 11",
+                'attachments' => [
+                    [
+                        'id'           => "0",
+                        'content_url'  => "http://example.com/text",
+                        'content_type' => "text/plain",
+                        'title'        => "",
+                        'duration'     => "",
+                        'width'        => "",
+                        'height'       => "",
+                        'post_id'      => "102",
+                    ],
+                ],
+                'score'   => 0,
+                'note'    => "Note 2",
+                'lang'    => "",
+                'content' => '<p>Article content 2</p>',
+            ],
+        ];
+        return [
+            [[],                          $this->respErr("INCORRECT_USAGE")],
+            [['article_id' => 0],         $this->respErr("INCORRECT_USAGE")],
+            [['article_id' => -1],        $this->respErr("INCORRECT_USAGE")],
+            [['article_id' => "0,-1"],    $this->respErr("INCORRECT_USAGE")],
+            [['article_id' => "101,102"], $this->respGood($exp)],
+            [['article_id' => "101"],     $this->respGood([$exp[0]])],
+            [['article_id' => "102"],     $this->respGood([$exp[1]])],
+        ];
+    }
+
     /** @dataProvider provideHeadlines */
     public function testRetrieveHeadlines(bool $full, array $in, $out, Context $c, array $fields, array $order, ResponseInterface $exp): void {
         $base = ['op' => $full ? "getHeadlines" : "getCompactHeadlines", 'sid' => "PriestsOfSyrinx"];
