@@ -121,14 +121,14 @@ The Arsse does not at this time have any first party clients. However, because T
    </td>
   </tr>
   <tr>
-   <td><a href="https://reeder.app/">Reeder</a></td>
+   <td><a href="https://reeder.app/">Reeder 3</a></td>
    <td>macOS</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
    <td>
-    <p>Also available for iOS.</p>
+    <p>Also available for iOS. Reeder 5 no longer supports the Fever protocol.</p>
    </td>
   </tr>
   <tr>
