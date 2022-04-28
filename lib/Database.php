@@ -544,22 +544,27 @@ class Database {
         // check to make sure the parent exists, if one is specified
         $parent = $this->folderValidateId($user, $parent)['id'];
         $q = new Query(
-            "SELECT
+            "WITH RECURSIVE
+            folders as (
+                select id from arsse_folders where owner = ? and coalesce(parent,0) = ? union all select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id
+            )
+            select
                 id,
                 name,
                 arsse_folders.parent as parent,
                 coalesce(children,0) as children, 
                 coalesce(feeds,0) as feeds
-            FROM arsse_folders
-            left join (SELECT parent,count(id) as children from arsse_folders group by parent) as child_stats on child_stats.parent = arsse_folders.id
-            left join (SELECT folder,count(id) as feeds from arsse_subscriptions group by folder) as sub_stats on sub_stats.folder = arsse_folders.id"
+            from arsse_folders
+            left join (select parent,count(id) as children from arsse_folders group by parent) as child_stats on child_stats.parent = arsse_folders.id
+            left join (select folder,count(id) as feeds from arsse_subscriptions group by folder) as sub_stats on sub_stats.folder = arsse_folders.id",
+            ["str", "strict int"],
+            [$user, $parent]
         );
         if (!$recursive) {
             $q->setWhere("owner = ?", "str", $user);
             $q->setWhere("coalesce(arsse_folders.parent,0) = ?", "strict int", $parent);
         } else {
-            $q->setCTE("folders", "SELECT id from arsse_folders where owner = ? and coalesce(parent,0) = ? union all select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id", ["str", "strict int"], [$user, $parent]);
-            $q->setWhere("id in (SELECT id from folders)");
+            $q->setWhere("id in (select id from folders)");
         }
         $q->setOrder("name");
         return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
@@ -694,14 +699,14 @@ class Database {
         $p = $this->db->prepareArray(
             "WITH RECURSIVE
             target as (
-                SELECT ? as userid, ? as source, ? as dest, ? as new_name
+                select ? as userid, ? as source, ? as dest, ? as new_name
             ),
             folders as (
-                SELECT id from arsse_folders join target on owner = userid and coalesce(parent,0) = source 
+                select id from arsse_folders join target on owner = userid and coalesce(parent,0) = source 
                 union all 
                 select arsse_folders.id as id from arsse_folders join folders on arsse_folders.parent=folders.id
             )
-            SELECT
+            select
                 case when 
                     ((select dest from target) is null or exists(select id from arsse_folders join target on owner = userid and coalesce(id,0) = coalesce(dest,0))) 
                 then 1 else 0 end as extant,
@@ -808,7 +813,14 @@ class Database {
         // create a complex query
         $integer = $this->db->sqlToken("integer");
         $q = new Query(
-            "SELECT
+            "WITH RECURSIVE
+            topmost(f_id, top) as (
+                select id,id from arsse_folders where owner = ? and parent is null union all select id,top from arsse_folders join topmost on parent=f_id
+            ),
+            folders(folder) as (
+                select ? union all select id from arsse_folders join folders on parent = folder
+            )
+            select
                 s.id as id,
                 s.feed as feed,
                 f.url,source,pinned,err_count,err_msg,order_type,added,keep_rule,block_rule,f.etag,s.scrape,
@@ -821,7 +833,7 @@ class Database {
                 folder, t.top as top_folder, d.name as folder_name, dt.name as top_folder_name,
                 coalesce(s.title, f.title) as title,
                 coalesce((articles - hidden - marked), coalesce(articles,0)) as unread
-            FROM arsse_subscriptions as s
+            from arsse_subscriptions as s
                 join arsse_feeds as f on f.id = s.feed
                 left join topmost as t on t.f_id = s.folder
                 left join arsse_folders as d on s.folder = d.id
@@ -840,21 +852,19 @@ class Database {
                         sum(hidden) as hidden,
                         sum(cast((\"read\" = 1 and hidden = 0) as $integer)) as marked
                     from arsse_marks group by subscription
-                ) as mark_stats on mark_stats.subscription = s.id"
+                ) as mark_stats on mark_stats.subscription = s.id",
+                ["str", "int"],
+                [$user, $folder]
         );
         $q->setWhere("s.owner = ?", ["str"], [$user]);
         $nocase = $this->db->sqlToken("nocase");
         $q->setOrder("pinned desc, coalesce(s.title, f.title) collate $nocase");
-        // topmost folders belonging to the user
-        $q->setCTE("topmost(f_id,top)", "SELECT id,id from arsse_folders where owner = ? and parent is null union all select id,top from arsse_folders join topmost on parent=f_id", ["str"], [$user]);
         if ($id) {
             // if an ID is specified, add a suitable WHERE condition and bindings
             // this condition facilitates the implementation of subscriptionPropertiesGet, which would otherwise have to duplicate the complex query; it takes precedence over a specified folder
             $q->setWhere("s.id = ?", "int", $id);
         } elseif ($folder && $recursive) {
-            // if a folder is specified and we're listing recursively, add a common table expression to list it and its children so that we select from the entire subtree
-            $q->setCTE("folders(folder)", "SELECT ? union all select id from arsse_folders join folders on parent = folder", "int", $folder);
-            // add a suitable WHERE condition
+            // if a folder is specified and we're listing recursively, add a suitable WHERE condition
             $q->setWhere("folder in (select folder from folders)");
         } elseif (!$recursive) {
             // if we're not listing recursively, match against only the specified folder (even if it is null)
