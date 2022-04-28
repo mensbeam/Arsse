@@ -41,7 +41,8 @@ use JKingWeb\Arsse\Rule\Exception as RuleException;
  * concerns, will typically follow different conventions.
  *
  * Note that operations on users should be performed with the User class rather
- * than the Database class directly. This is to allow for alternate user sources.
+ * than the Database class directly. This is to allow for alternate user
+ * databases e.g. LDAP, although not such support for alternatives exists yet.
  */
 class Database {
     /** The version number of the latest schema the interface is aware of */
@@ -275,6 +276,10 @@ class Database {
         return true;
     }
 
+    /** Renames a user
+     * 
+     * This does not have an effect on their numeric ID, but has a cascading effect on many tables
+     */
     public function userRename(string $user, string $name): bool {
         if ($user === $name) {
             return false;
@@ -328,6 +333,11 @@ class Database {
         return true;
     }
 
+    /** Retrieves any metadata associated with a user
+     * 
+     * @param string $user The user whose metadata is to be retrieved
+     * @param bool $includeLarge Whether to include values which can be arbitrarily large text
+     */
     public function userPropertiesGet(string $user, bool $includeLarge = true): array {
         $basic = $this->db->prepare("SELECT num, admin from arsse_users where id = ?", "str")->run($user)->getRow();
         if (!$basic) {
@@ -345,6 +355,11 @@ class Database {
         return $meta;
     }
 
+    /** Set one or more metadata properties for a user
+     *
+     * @param string $user The user whose metadata is to be sedt
+     * @param array $data An associative array of property names and values
+     */
     public function userPropertiesSet(string $user, array $data): bool {
         if (!$this->userExists($user)) {
             throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
