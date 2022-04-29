@@ -16,7 +16,7 @@ class QueryFilter {
 
     public $filterRestrictive = true;
 
-    public function setWhere(string $where, $types = null, $values = null): self {
+    public function setWhere(string $where, $types = null, $values = null): static {
         $this->qWhere[] = $where;
         if (!is_null($types)) {
             $this->tWhere[] = $types ?? [];
@@ -25,7 +25,7 @@ class QueryFilter {
         return $this;
     }
 
-    public function setWhereNot(string $where, $types = null, $values = null): self {
+    public function setWhereNot(string $where, $types = null, $values = null): static {
         $this->qWhereNot[] = $where;
         if (!is_null($types)) {
             $this->tWhereNot[] = $types;
@@ -34,7 +34,7 @@ class QueryFilter {
         return $this;
     }
 
-    public function setFilter(self $filter): self {
+    public function setFilter(self $filter): static {
         $this->qWhere[] = "(".$filter->buildWhereBody().")";
         $this->tWhere[] = $filter->getWhereTypes();
         $this->vWhere[] = $filter->getWhereValues();
