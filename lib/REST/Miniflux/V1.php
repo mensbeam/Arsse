@@ -644,9 +644,10 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
      *
      * - "num": The user's numeric ID,
      * - "root": The effective name of the root folder
+     * - "tz": The time zone preference of the user, or UTC if not set
      */
     protected function userMeta(string $user): array {
-        $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
+        $meta = Arsse::$user->propertiesGet($user, false);
         return [
             'num'  => $meta['num'],
             'root' => $meta['root_folder_name'] ?? Arsse::$lang->msg("API.Miniflux.DefaultCategoryName"),
