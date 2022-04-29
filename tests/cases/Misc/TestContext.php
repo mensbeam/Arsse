@@ -8,12 +8,14 @@ namespace JKingWeb\Arsse\TestCase\Misc;
 
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Context\ExclusionContext;
+use JKingWeb\Arsse\Context\UnionContext;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 
 /**
  * @covers \JKingWeb\Arsse\Context\Context<extended>
  * @covers \JKingWeb\Arsse\Context\ExclusionContext<extended>
+ * @covers \JKingWeb\Arsse\Context\UnionContext<extended>
  */
 class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $ranges = ['modifiedRange', 'markedRange', 'articleRange', 'editionRange'];
@@ -149,5 +151,28 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertNotSame($c1->not, $c2->not);
         $this->assertSame($c1, $c1->not->article(null));
         $this->assertSame($c2, $c2->not->article(null));
+    }
+
+    public function testExerciseAUnionContext(): void {
+        $c1 = new UnionContext;
+        $c2 = new Context;
+        $c3 = new UnionContext;
+        $this->assertSame(0, sizeof($c1));
+        $c1[] = $c2;
+        $c1[2] = $c3;
+        $this->assertSame(2, sizeof($c1));
+        $this->assertSame($c2, $c1[0]);
+        $this->assertSame($c3, $c1[2]);
+        $this->assertSame(null, $c1[1]);
+        unset($c1[0]);
+        $this->assertFalse(isset($c1[0]));
+        $this->assertTrue(isset($c1[2]));
+        $c1[] = $c2;
+        $act = [];
+        foreach($c1 as $k => $v) {
+            $act[$k] = $v;
+        }
+        $exp = [2 => $c3, $c2];
+        $this->assertSame($exp, $act);
     }
 }

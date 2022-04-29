@@ -6,7 +6,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Context;
 
-class RootContext extends AbstractContext {
+abstract class RootContext extends AbstractContext {
     public $limit = 0;
     public $offset = 0;
 

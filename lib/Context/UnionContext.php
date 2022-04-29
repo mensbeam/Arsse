@@ -10,7 +10,7 @@ class UnionContext extends RootContext implements \ArrayAccess, \Countable, \Ite
     protected $contexts = [];
 
     public function offsetExists(mixed $offset): bool {
-        return array_key_exists($offset, $this->contexts);
+        return isset($this->contexts[$offset]);
     }
 
     public function offsetGet(mixed $offset): mixed {
@@ -18,7 +18,12 @@ class UnionContext extends RootContext implements \ArrayAccess, \Countable, \Ite
     }
 
     public function offsetSet(mixed $offset, mixed $value): void {
-        $this->contexts[$offset ?? count($this->contexts)] = $value;
+        assert($value instanceof RootContext, new \Exception("Union contexts may only contain other non-exclusion contexts"));
+        if (isset($offset)) {
+            $this->contexts[$offset] = $value;
+        } else {
+            $this->contexts[] = $value;
+        }
     }
 
     public function offsetUnset(mixed $offset): void {
@@ -35,7 +40,7 @@ class UnionContext extends RootContext implements \ArrayAccess, \Countable, \Ite
         }
     }
 
-    public function __construct(Context ...$context) {
+    public function __construct(RootContext ...$context) {
         $this->contexts = $context;
     }
 }
