@@ -690,7 +690,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             if ($folder === 0) {
                 // folder 0 doesn't actually exist in the database, so its name is kept as user metadata
                 if (!strlen(trim($title))) {
-                    throw new ExceptionInput("whitespace");
+                    throw new ExceptionInput("whitespace", ['field' => "title", 'action' => __FUNCTION__]);
                 }
                 $title = Arsse::$user->propertiesSet(Arsse::$user->id, ['root_folder_name' => $title])['root_folder_name'];
             } else {
@@ -1024,7 +1024,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // find the entry we want
         $entry = Arsse::$db->articleList(Arsse::$user->id, $c, self::ARTICLE_COLUMNS)->getRow();
         if (!$entry) {
-            throw new ExceptionInput("idMissing");
+            throw new ExceptionInput("idMissing", ['id' => $id, 'field' => 'entry']);
         }
         $out = $this->transformEntry($entry, $meta['num'], $meta['tz']);
         // next transform the parent feed of the entry
