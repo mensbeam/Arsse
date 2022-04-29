@@ -882,12 +882,18 @@ class Database {
         // validate inputs
         $folder = $this->folderValidateId($user, $folder)['id'];
         // create a complex query
-        $q = new Query("SELECT count(*) from arsse_subscriptions");
+        $q = new Query(
+            "WITH RECURSIVE
+            folders(folder) as (
+                select ? union all select id from arsse_folders join folders on parent = folder
+            )
+            select count(*) from arsse_subscriptions",
+            ["int"],
+            [$folder]
+        );
         $q->setWhere("owner = ?", "str", $user);
         if ($folder) {
-            // if the specified folder exists, add a common table expression to list it and its children so that we select from the entire subtree
-            $q->setCTE("folders(folder)", "SELECT ? union all select id from arsse_folders join folders on parent = folder", "int", $folder);
-            // add a suitable WHERE condition
+            // if the specified folder exists, add a suitable WHERE condition
             $q->setWhere("folder in (select folder from folders)");
         }
         return (int) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
@@ -1882,10 +1888,23 @@ class Database {
             // marking as read is ignored if the edition is not the latest, but the same is not true of the other two marks
             $this->db->query("UPDATE arsse_marks set touched = 0 where touched <> 0");
             // set read marks
-            $q = $this->articleQuery($user, $context, ["id", "subscription"]);
-            $q->setWhere("arsse_marks.read <> coalesce(?,arsse_marks.read)", "bool", $data['read']);
-            $q->pushCTE("target_articles(article,subscription)");
-            $q->setBody("UPDATE arsse_marks set \"read\" = ?, touched = 1 where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", "bool", $data['read']);
+            $subq = $this->articleQuery($user, $context, ["id", "subscription"]);
+            $subq->setWhere("arsse_marks.read <> coalesce(?,arsse_marks.read)", "bool", $data['read']);
+            $q = new Query(
+                "WITH RECURSIVE
+                target_articles(article, subscription) as (
+                    {$subq->getQuery()}
+                )
+                update arsse_marks 
+                set 
+                    \"read\" = ?, 
+                    touched = 1 
+                where 
+                    article in (select article from target_articles) 
+                    and subscription in (select distinct subscription from target_articles)", 
+                [$subq->getTypes(), "bool"], 
+                [$subq->getValues(), $data['read']]
+            );
             $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
             // get the articles associated with the requested editions
             if ($context->edition()) {
@@ -1895,14 +1914,27 @@ class Database {
             }
             // set starred, hidden, and/or note marks (unless all requested editions actually do not exist)
             if ($context->article || $context->articles) {
-                $q = $this->articleQuery($user, $context, ["id", "subscription"]);
-                $q->setWhere("(arsse_marks.note <> coalesce(?,arsse_marks.note) or arsse_marks.starred <> coalesce(?,arsse_marks.starred) or arsse_marks.hidden <> coalesce(?,arsse_marks.hidden))", ["str", "bool", "bool"], [$data['note'], $data['starred'], $data['hidden']]);
-                $q->pushCTE("target_articles(article,subscription)");
-                $data = array_filter($data, function($v) {
+                $setData = array_filter($data, function($v) {
                     return isset($v);
                 });
-                [$set, $setTypes, $setValues] = $this->generateSet($data, ['starred' => "bool", 'hidden' => "bool", 'note' => "str"]);
-                $q->setBody("UPDATE arsse_marks set touched = 1, $set where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", $setTypes, $setValues);
+                [$set, $setTypes, $setValues] = $this->generateSet($setData, ['starred' => "bool", 'hidden' => "bool", 'note' => "str"]);
+                $subq = $this->articleQuery($user, $context, ["id", "subscription"]);
+                $subq->setWhere("(arsse_marks.note <> coalesce(?,arsse_marks.note) or arsse_marks.starred <> coalesce(?,arsse_marks.starred) or arsse_marks.hidden <> coalesce(?,arsse_marks.hidden))", ["str", "bool", "bool"], [$data['note'], $data['starred'], $data['hidden']]);
+                $q = new Query(
+                    "WITH RECURSIVE
+                    target_articles(article, subscription) as (
+                        {$subq->getQuery()}
+                    )
+                    update arsse_marks 
+                    set 
+                        touched = 1, 
+                        $set 
+                    where 
+                        article in (select article from target_articles) 
+                        and subscription in (select distinct subscription from target_articles)",
+                    [$subq->getTypes(), $setTypes], 
+                    [$subq->getValues(), $setValues]
+                );
                 $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
             }
             // finally set the modification date for all touched marks and return the number of affected marks
@@ -1923,17 +1955,29 @@ class Database {
                     return 0;
                 }
             }
-            $q = $this->articleQuery($user, $context, ["id", "subscription"]);
-            $q->setWhere("(arsse_marks.note <> coalesce(?,arsse_marks.note) or arsse_marks.starred <> coalesce(?,arsse_marks.starred) or arsse_marks.read <> coalesce(?,arsse_marks.read) or arsse_marks.hidden <> coalesce(?,arsse_marks.hidden))", ["str", "bool", "bool", "bool"], [$data['note'], $data['starred'], $data['read'], $data['hidden']]);
-            $q->pushCTE("target_articles(article,subscription)");
-            $data = array_filter($data, function($v) {
+            $setData = array_filter($data, function($v) {
                 return isset($v);
             });
-            [$set, $setTypes, $setValues] = $this->generateSet($data, ['read' => "bool", 'starred' => "bool", 'hidden' => "bool", 'note' => "str"]);
+            [$set, $setTypes, $setValues] = $this->generateSet($setData, ['read' => "bool", 'starred' => "bool", 'hidden' => "bool", 'note' => "str"]);
             if ($updateTimestamp) {
                 $set .= ", modified = CURRENT_TIMESTAMP";
             }
-            $q->setBody("UPDATE arsse_marks set $set where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", $setTypes, $setValues);
+            $subq = $this->articleQuery($user, $context, ["id", "subscription"]);
+            $subq->setWhere("(arsse_marks.note <> coalesce(?,arsse_marks.note) or arsse_marks.starred <> coalesce(?,arsse_marks.starred) or arsse_marks.read <> coalesce(?,arsse_marks.read) or arsse_marks.hidden <> coalesce(?,arsse_marks.hidden))", ["str", "bool", "bool", "bool"], [$data['note'], $data['starred'], $data['read'], $data['hidden']]);
+            $q = new Query(
+                "WITH RECURSIVE
+                target_articles(article, subscription) as (
+                    {$subq->getQuery()}
+                )
+                update arsse_marks 
+                set 
+                    $set 
+                where 
+                    article in (select article from target_articles) 
+                    and subscription in (select distinct subscription from target_articles)",
+                [$subq->getTypes(), $setTypes],
+                [$subq->getValues(), $setValues]
+            );
             $out = $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
         }
         $tr->commit();

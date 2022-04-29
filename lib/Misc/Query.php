@@ -10,9 +10,6 @@ class Query {
     protected $qBody = ""; // main query body
     protected $tBody = []; // main query parameter types
     protected $vBody = []; // main query parameter values
-    protected $qCTE = []; // Common table expression query components
-    protected $tCTE = []; // Common table expression type bindings
-    protected $vCTE = []; // Common table expression binding values
     protected $qWhere = []; // WHERE clause components
     protected $tWhere = []; // WHERE clause type bindings
     protected $vWhere = []; // WHERE clause binding values
@@ -33,15 +30,6 @@ class Query {
         if (!is_null($types)) {
             $this->tBody[] = $types;
             $this->vBody[] = $values;
-        }
-        return $this;
-    }
-
-    public function setCTE(string $tableSpec, string $body, $types = null, $values = null): self {
-        $this->qCTE[] = "$tableSpec as ($body)";
-        if (!is_null($types)) {
-            $this->tCTE[] = $types;
-            $this->vCTE[] = $values;
         }
         return $this;
     }
@@ -84,33 +72,8 @@ class Query {
         return $this;
     }
 
-    public function pushCTE(string $tableSpec): self {
-        // this function takes the query body and converts it to a common table expression, putting it at the bottom of the existing CTE stack
-        // all WHERE, ORDER BY, and LIMIT parts belong to the new CTE and are removed from the main query
-        $this->setCTE($tableSpec, $this->buildQueryBody(), [$this->tBody, $this->tWhere, $this->tWhereNot], [$this->vBody, $this->vWhere, $this->vWhereNot]);
-        $this->tBody = [];
-        $this->vBody = [];
-        $this->qWhere = [];
-        $this->tWhere = [];
-        $this->vWhere = [];
-        $this->qWhereNot = [];
-        $this->tWhereNot = [];
-        $this->vWhereNot = [];
-        $this->order = [];
-        $this->group = [];
-        $this->setLimit(0, 0);
-        return $this;
-    }
-
     public function __toString(): string {
-        $out = "";
-        if (sizeof($this->qCTE)) {
-            // start with common table expressions
-            $out .= "WITH RECURSIVE ".implode(", ", $this->qCTE)." ";
-        }
-        // add the body
-        $out .= $this->buildQueryBody();
-        return $out;
+        return $this->buildQueryBody();
     }
 
     public function getQuery(): string {
@@ -118,11 +81,11 @@ class Query {
     }
 
     public function getTypes(): array {
-        return ValueInfo::flatten([$this->tCTE, $this->tBody, $this->tWhere, $this->tWhereNot]);
+        return ValueInfo::flatten([$this->tBody, $this->tWhere, $this->tWhereNot]);
     }
 
     public function getValues(): array {
-        return ValueInfo::flatten([$this->vCTE, $this->vBody, $this->vWhere, $this->vWhereNot]);
+        return ValueInfo::flatten([$this->vBody, $this->vWhere, $this->vWhereNot]);
     }
 
     protected function buildQueryBody(): string {
