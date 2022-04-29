@@ -6,8 +6,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Context;
 
-class Context extends AbstractContext {
-    use RootMembers;
+class Context extends RootContext {
     use BooleanMembers;
     use ExclusionMembers;
 
