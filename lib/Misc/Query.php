@@ -6,16 +6,10 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\Misc;
 
-class Query {
+class Query extends QueryFilter {
     protected $qBody = ""; // main query body
     protected $tBody = []; // main query parameter types
     protected $vBody = []; // main query parameter values
-    protected $qWhere = []; // WHERE clause components
-    protected $tWhere = []; // WHERE clause type bindings
-    protected $vWhere = []; // WHERE clause binding values
-    protected $qWhereNot = []; // WHERE NOT clause components
-    protected $tWhereNot = []; // WHERE NOT clause type bindings
-    protected $vWhereNot = []; // WHERE NOT clause binding values
     protected $group = []; // GROUP BY clause components
     protected $order = []; // ORDER BY clause components
     protected $limit = 0;
@@ -30,24 +24,6 @@ class Query {
         if (!is_null($types)) {
             $this->tBody[] = $types;
             $this->vBody[] = $values;
-        }
-        return $this;
-    }
-
-    public function setWhere(string $where, $types = null, $values = null): self {
-        $this->qWhere[] = $where;
-        if (!is_null($types)) {
-            $this->tWhere[] = $types;
-            $this->vWhere[] = $values;
-        }
-        return $this;
-    }
-
-    public function setWhereNot(string $where, $types = null, $values = null): self {
-        $this->qWhereNot[] = $where;
-        if (!is_null($types)) {
-            $this->tWhereNot[] = $types;
-            $this->vWhereNot[] = $values;
         }
         return $this;
     }
@@ -81,11 +57,11 @@ class Query {
     }
 
     public function getTypes(): array {
-        return ValueInfo::flatten([$this->tBody, $this->tWhere, $this->tWhereNot]);
+        return ValueInfo::flatten([$this->tBody, $this->getWhereTypes()]);
     }
 
     public function getValues(): array {
-        return ValueInfo::flatten([$this->vBody, $this->vWhere, $this->vWhereNot]);
+        return ValueInfo::flatten([$this->vBody, $this->getWhereValues()]);
     }
 
     protected function buildQueryBody(): string {
@@ -94,11 +70,7 @@ class Query {
         $out .= $this->qBody;
         // add any WHERE terms
         if (sizeof($this->qWhere) || sizeof($this->qWhereNot)) {
-            $where = implode(" AND ", $this->qWhere);
-            $whereNot = implode(" OR ", $this->qWhereNot);
-            $whereNot = strlen($whereNot) ? "NOT ($whereNot)" : "";
-            $where = implode(" AND ", array_filter([$where, $whereNot]));
-            $out .= " WHERE $where";
+            $out .= " WHERE ".$this->buildWhereBody();
         }
         // add any GROUP BY terms
         if (sizeof($this->group)) {
