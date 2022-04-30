@@ -13,8 +13,7 @@ class QueryFilter {
     protected $qWhereNot = []; // WHERE NOT clause components
     protected $tWhereNot = []; // WHERE NOT clause type bindings
     protected $vWhereNot = []; // WHERE NOT clause binding values
-
-    public $filterRestrictive = true;
+    protected $filterRestrictive = true; // Whether to glue WHERE conditions with OR (false) or AND (true)
 
     public function setWhere(string $where, $types = null, $values = null): static {
         $this->qWhere[] = $where;
@@ -34,10 +33,15 @@ class QueryFilter {
         return $this;
     }
 
-    public function setFilter(self $filter): static {
+    public function setWhereGroup(self $filter): static {
         $this->qWhere[] = "(".$filter->buildWhereBody().")";
         $this->tWhere[] = $filter->getWhereTypes();
         $this->vWhere[] = $filter->getWhereValues();
+        return $this;
+    }
+
+    public function setWhereRestrictive(bool $restrictive): static {
+        $this->filterRestrictive = $restrictive;
         return $this;
     }
 

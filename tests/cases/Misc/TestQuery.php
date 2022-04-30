@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Misc;
 
 use JKingWeb\Arsse\Misc\Query;
+use JKingWeb\Arsse\Misc\QueryFilter;
 
 /** 
  * @covers \JKingWeb\Arsse\Misc\Query
@@ -90,5 +91,25 @@ class TestQuery extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame("SELECT *, ? as const from table WHERE a = ? AND NOT (b = ?) GROUP BY col1, col2 ORDER BY col3 LIMIT 4 OFFSET 5", $q->getQuery());
         $this->assertSame(["datetime", "str", "bool"], $q->getTypes());
         $this->assertSame([1, 3, 2], $q->getValues());
+    }
+
+    public function testNestedWhereConditions(): void {
+        $q = new Query("SELECT *, ? as const from table", "datetime", 1);
+        $f = new QueryFilter;
+        $f->setWhere("a = ?", "str", "ook")->setWhere("b = c")->setWhere("c = ?", "int", 42);
+        $this->assertSame("a = ? AND b = c AND c = ?", (string) $f);
+        $this->assertSame(["str", "int"], $f->getTypes());
+        $this->assertSame(["ook", 42], $f->getValues());
+        $q->setWhereGroup($f);
+        $f->setWhereRestrictive(false);
+        $this->assertSame("a = ? OR b = c OR c = ?", (string) $f);
+        $q->setWhereGroup($f);
+        $this->assertSame("SELECT *, ? as const from table WHERE (a = ? AND b = c AND c = ?) AND (a = ? OR b = c OR c = ?)", $q->getQuery());
+        $this->assertSame(["datetime", "str", "int", "str", "int"], $q->getTypes());
+        $this->assertSame([1, "ook", 42, "ook", 42], $q->getValues());
+        $q->setWhereRestrictive(false);
+        $this->assertSame("SELECT *, ? as const from table WHERE (a = ? AND b = c AND c = ?) OR (a = ? OR b = c OR c = ?)", $q->getQuery());
+        $this->assertSame(["datetime", "str", "int", "str", "int"], $q->getTypes());
+        $this->assertSame([1, "ook", 42, "ook", 42], $q->getValues());
     }
 }
