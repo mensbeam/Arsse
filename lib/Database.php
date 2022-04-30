@@ -10,7 +10,10 @@ use JKingWeb\DrUUID\UUID;
 use JKingWeb\Arsse\Db\Statement;
 use JKingWeb\Arsse\Misc\Query;
 use JKingWeb\Arsse\Context\Context;
+use JKingWeb\Arsse\Context\UnionContext;
+use JKingWeb\Arsse\Context\RootContext;
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Misc\QueryFilter;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\Misc\URL;
 use JKingWeb\Arsse\Rule\Rule;
@@ -41,7 +44,8 @@ use JKingWeb\Arsse\Rule\Exception as RuleException;
  * concerns, will typically follow different conventions.
  *
  * Note that operations on users should be performed with the User class rather
- * than the Database class directly. This is to allow for alternate user sources.
+ * than the Database class directly. This is to allow for alternate user
+ * databases e.g. LDAP, although not such support for alternatives exists yet.
  */
 class Database {
     /** The version number of the latest schema the interface is aware of */
@@ -275,6 +279,10 @@ class Database {
         return true;
     }
 
+    /** Renames a user
+     * 
+     * This does not have an effect on their numeric ID, but has a cascading effect on many tables
+     */
     public function userRename(string $user, string $name): bool {
         if ($user === $name) {
             return false;
@@ -328,6 +336,11 @@ class Database {
         return true;
     }
 
+    /** Retrieves any metadata associated with a user
+     * 
+     * @param string $user The user whose metadata is to be retrieved
+     * @param bool $includeLarge Whether to include values which can be arbitrarily large text
+     */
     public function userPropertiesGet(string $user, bool $includeLarge = true): array {
         $basic = $this->db->prepare("SELECT num, admin from arsse_users where id = ?", "str")->run($user)->getRow();
         if (!$basic) {
@@ -345,6 +358,11 @@ class Database {
         return $meta;
     }
 
+    /** Set one or more metadata properties for a user
+     *
+     * @param string $user The user whose metadata is to be sedt
+     * @param array $data An associative array of property names and values
+     */
     public function userPropertiesSet(string $user, array $data): bool {
         if (!$this->userExists($user)) {
             throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
@@ -529,22 +547,27 @@ class Database {
         // check to make sure the parent exists, if one is specified
         $parent = $this->folderValidateId($user, $parent)['id'];
         $q = new Query(
-            "SELECT
+            "WITH RECURSIVE
+            folders as (
+                select id from arsse_folders where owner = ? and coalesce(parent,0) = ? union all select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id
+            )
+            select
                 id,
                 name,
                 arsse_folders.parent as parent,
                 coalesce(children,0) as children, 
                 coalesce(feeds,0) as feeds
-            FROM arsse_folders
-            left join (SELECT parent,count(id) as children from arsse_folders group by parent) as child_stats on child_stats.parent = arsse_folders.id
-            left join (SELECT folder,count(id) as feeds from arsse_subscriptions group by folder) as sub_stats on sub_stats.folder = arsse_folders.id"
+            from arsse_folders
+            left join (select parent,count(id) as children from arsse_folders group by parent) as child_stats on child_stats.parent = arsse_folders.id
+            left join (select folder,count(id) as feeds from arsse_subscriptions group by folder) as sub_stats on sub_stats.folder = arsse_folders.id",
+            ["str", "strict int"],
+            [$user, $parent]
         );
         if (!$recursive) {
             $q->setWhere("owner = ?", "str", $user);
             $q->setWhere("coalesce(arsse_folders.parent,0) = ?", "strict int", $parent);
         } else {
-            $q->setCTE("folders", "SELECT id from arsse_folders where owner = ? and coalesce(parent,0) = ? union all select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id", ["str", "strict int"], [$user, $parent]);
-            $q->setWhere("id in (SELECT id from folders)");
+            $q->setWhere("id in (select id from folders)");
         }
         $q->setOrder("name");
         return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
@@ -679,14 +702,14 @@ class Database {
         $p = $this->db->prepareArray(
             "WITH RECURSIVE
             target as (
-                SELECT ? as userid, ? as source, ? as dest, ? as new_name
+                select ? as userid, ? as source, ? as dest, ? as new_name
             ),
             folders as (
-                SELECT id from arsse_folders join target on owner = userid and coalesce(parent,0) = source 
+                select id from arsse_folders join target on owner = userid and coalesce(parent,0) = source 
                 union all 
                 select arsse_folders.id as id from arsse_folders join folders on arsse_folders.parent=folders.id
             )
-            SELECT
+            select
                 case when 
                     ((select dest from target) is null or exists(select id from arsse_folders join target on owner = userid and coalesce(id,0) = coalesce(dest,0))) 
                 then 1 else 0 end as extant,
@@ -793,7 +816,14 @@ class Database {
         // create a complex query
         $integer = $this->db->sqlToken("integer");
         $q = new Query(
-            "SELECT
+            "WITH RECURSIVE
+            topmost(f_id, top) as (
+                select id,id from arsse_folders where owner = ? and parent is null union all select id,top from arsse_folders join topmost on parent=f_id
+            ),
+            folders(folder) as (
+                select ? union all select id from arsse_folders join folders on parent = folder
+            )
+            select
                 s.id as id,
                 s.feed as feed,
                 f.url,source,pinned,err_count,err_msg,order_type,added,keep_rule,block_rule,f.etag,s.scrape,
@@ -806,7 +836,7 @@ class Database {
                 folder, t.top as top_folder, d.name as folder_name, dt.name as top_folder_name,
                 coalesce(s.title, f.title) as title,
                 coalesce((articles - hidden - marked), coalesce(articles,0)) as unread
-            FROM arsse_subscriptions as s
+            from arsse_subscriptions as s
                 join arsse_feeds as f on f.id = s.feed
                 left join topmost as t on t.f_id = s.folder
                 left join arsse_folders as d on s.folder = d.id
@@ -825,21 +855,19 @@ class Database {
                         sum(hidden) as hidden,
                         sum(cast((\"read\" = 1 and hidden = 0) as $integer)) as marked
                     from arsse_marks group by subscription
-                ) as mark_stats on mark_stats.subscription = s.id"
+                ) as mark_stats on mark_stats.subscription = s.id",
+                ["str", "int"],
+                [$user, $folder]
         );
         $q->setWhere("s.owner = ?", ["str"], [$user]);
         $nocase = $this->db->sqlToken("nocase");
         $q->setOrder("pinned desc, coalesce(s.title, f.title) collate $nocase");
-        // topmost folders belonging to the user
-        $q->setCTE("topmost(f_id,top)", "SELECT id,id from arsse_folders where owner = ? and parent is null union all select id,top from arsse_folders join topmost on parent=f_id", ["str"], [$user]);
         if ($id) {
             // if an ID is specified, add a suitable WHERE condition and bindings
             // this condition facilitates the implementation of subscriptionPropertiesGet, which would otherwise have to duplicate the complex query; it takes precedence over a specified folder
             $q->setWhere("s.id = ?", "int", $id);
         } elseif ($folder && $recursive) {
-            // if a folder is specified and we're listing recursively, add a common table expression to list it and its children so that we select from the entire subtree
-            $q->setCTE("folders(folder)", "SELECT ? union all select id from arsse_folders join folders on parent = folder", "int", $folder);
-            // add a suitable WHERE condition
+            // if a folder is specified and we're listing recursively, add a suitable WHERE condition
             $q->setWhere("folder in (select folder from folders)");
         } elseif (!$recursive) {
             // if we're not listing recursively, match against only the specified folder (even if it is null)
@@ -857,12 +885,18 @@ class Database {
         // validate inputs
         $folder = $this->folderValidateId($user, $folder)['id'];
         // create a complex query
-        $q = new Query("SELECT count(*) from arsse_subscriptions");
+        $q = new Query(
+            "WITH RECURSIVE
+            folders(folder) as (
+                select ? union all select id from arsse_folders join folders on parent = folder
+            )
+            select count(*) from arsse_subscriptions",
+            ["int"],
+            [$folder]
+        );
         $q->setWhere("owner = ?", "str", $user);
         if ($folder) {
-            // if the specified folder exists, add a common table expression to list it and its children so that we select from the entire subtree
-            $q->setCTE("folders(folder)", "SELECT ? union all select id from arsse_folders join folders on parent = folder", "int", $folder);
-            // add a suitable WHERE condition
+            // if the specified folder exists, add a suitable WHERE condition
             $q->setWhere("folder in (select folder from folders)");
         }
         return (int) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
@@ -1449,6 +1483,7 @@ class Database {
      */
     protected function articleColumns(): array {
         $greatest = $this->db->sqlToken("greatest");
+        $least = $this->db->sqlToken("least");
         return [
             'id'                 => "arsse_articles.id",                                                                                                                                // The article's unchanging numeric ID
             'edition'            => "latest_editions.edition",                                                                                                                          // The article's numeric ID which increases each time it is modified in the feed
@@ -1468,6 +1503,8 @@ class Database {
             'hidden'             => "coalesce(arsse_marks.hidden,0)",                                                                                                                   // Whether the article is hidden
             'starred'            => "coalesce(arsse_marks.starred,0)",                                                                                                                  // Whether the article is starred
             'unread'             => "abs(coalesce(arsse_marks.read,0) - 1)",                                                                                                            // Whether the article is unread
+            'labelled'           => "$least(coalesce(label_stats.assigned,0),1)",                                                                                                       // Whether the article has at least one label
+            'annotated'          => "(case when coalesce(arsse_marks.note,'') <> '' then 1 else 0 end)",                                                                                // Whether the article has a note
             'note'               => "coalesce(arsse_marks.note,'')",                                                                                                                    // The article's note, if any
             'published_date'     => "arsse_articles.published",                                                                                                                         // The date at which the article was first published i.e. its creation date
             'edited_date'        => "arsse_articles.edited",                                                                                                                            // The date at which the article was last edited according to the feed
@@ -1484,33 +1521,11 @@ class Database {
      * If an empty column list is supplied, a count of articles matching the context is queried instead
      *
      * @param string $user The user whose articles are to be queried
-     * @param Context $context The search context
+     * @param RootContext $context The search context
      * @param array $cols The columns to request in the result set
      */
-    protected function articleQuery(string $user, Context $context, array $cols = ["id"]): Query {
-        // validate input
-        if ($context->subscription()) {
-            $this->subscriptionValidateId($user, $context->subscription);
-        }
-        if ($context->folder()) {
-            $this->folderValidateId($user, $context->folder);
-        }
-        if ($context->folderShallow()) {
-            $this->folderValidateId($user, $context->folderShallow);
-        }
-        if ($context->edition()) {
-            $this->articleValidateEdition($user, $context->edition);
-        }
-        if ($context->article()) {
-            $this->articleValidateId($user, $context->article);
-        }
-        if ($context->label()) {
-            $this->labelValidateId($user, $context->label, false);
-        }
-        if ($context->labelName()) {
-            $this->labelValidateId($user, $context->labelName, true);
-        }
-        // prepare the output column list; the column definitions are also used later
+    protected function articleQuery(string $user, RootContext $context, array $cols = ["id"]): Query {
+        // prepare the output column list; the column definitions are also used for ordering
         $colDefs = $this->articleColumns();
         if (!$cols) {
             // if no columns are specified return a count; don't borther with sorting
@@ -1534,7 +1549,23 @@ class Database {
         assert(strlen($outColumns) > 0, new \Exception("No input columns matched whitelist"));
         // define the basic query, to which we add lots of stuff where necessary
         $q = new Query(
-            "SELECT 
+            "WITH RECURSIVE
+            folders(id,req) as (
+                select 0, 0 union all select f.id, f.id from arsse_folders as f where owner = ? union all select f1.id, req from arsse_folders as f1 join folders on coalesce(parent,0)=folders.id
+            ),
+            folders_top(id,top) as (
+                select f.id, f.id from arsse_folders as f where owner = ? and parent is null union all select f.id, top from arsse_folders as f join folders_top as t on parent=t.id
+            ),
+            folder_data(id,name,top,top_name) as (
+                select f1.id, f1.name, top, f2.name from arsse_folders as f1 join folders_top as f0 on f1.id = f0.id join arsse_folders as f2 on f2.id = top
+            ),
+            labelled(article,label_id,label_name) as (
+                select m.article, l.id, l.name from arsse_label_members as m join arsse_labels as l on l.id = m.label where l.owner = ? and m.assigned = 1
+            ),
+            tagged(subscription,tag_id,tag_name) as (
+                select m.subscription, t.id, t.name from arsse_tag_members as m join arsse_tags as t on t.id = m.tag where t.owner = ? and m.assigned = 1
+            )
+            select 
                 $outColumns
             from arsse_articles
             join arsse_subscriptions on arsse_subscriptions.feed = arsse_articles.feed and arsse_subscriptions.owner = ?
@@ -1543,195 +1574,181 @@ class Database {
             left join arsse_marks on arsse_marks.subscription = arsse_subscriptions.id and arsse_marks.article = arsse_articles.id
             left join arsse_enclosures on arsse_enclosures.article = arsse_articles.id
             join (
-                SELECT article, max(id) as edition from arsse_editions group by article
+                select article, max(id) as edition from arsse_editions group by article
             ) as latest_editions on arsse_articles.id = latest_editions.article
             left join (
-                SELECT arsse_label_members.article, max(arsse_label_members.modified) as modified, sum(arsse_label_members.assigned) as assigned from arsse_label_members join arsse_labels on arsse_labels.id = arsse_label_members.label where arsse_labels.owner = ? group by arsse_label_members.article
+                select arsse_label_members.article, max(arsse_label_members.modified) as modified, sum(arsse_label_members.assigned) as assigned from arsse_label_members join arsse_labels on arsse_labels.id = arsse_label_members.label where arsse_labels.owner = ? group by arsse_label_members.article
             ) as label_stats on label_stats.article = arsse_articles.id",
-            ["str", "str"],
-            [$user, $user]
+            ["str", "str", "str", "str", "str", "str"],
+            [$user, $user, $user, $user, $user, $user]
         );
-        $q->setCTE("topmost(f_id,top)", "SELECT id,id from arsse_folders where owner = ? and parent is null union all select id,top from arsse_folders join topmost on parent=f_id", ["str"], [$user]);
-        $q->setCTE("folder_data(id,name,top,top_name)", "SELECT f1.id, f1.name, top, f2.name from arsse_folders as f1 join topmost on f1.id = f_id join arsse_folders as f2 on f2.id = top");
         $q->setLimit($context->limit, $context->offset);
+        if ($context instanceof UnionContext) {
+            // if the context is a union context, we compute each context in turn
+            $q->setWhereRestrictive(false);
+            foreach ($context as $c) {
+                $q->setWhereGroup($this->articleFilter($c));
+            }
+        } else {
+            // if the context is not a union, first validate input to catch 404s and the like
+            if ($context->subscription()) {
+                $this->subscriptionValidateId($user, $context->subscription);
+            }
+            if ($context->folder()) {
+                $this->folderValidateId($user, $context->folder);
+            }
+            if ($context->folderShallow()) {
+                $this->folderValidateId($user, $context->folderShallow);
+            }
+            if ($context->edition()) {
+                $this->articleValidateEdition($user, $context->edition);
+            }
+            if ($context->article()) {
+                $this->articleValidateId($user, $context->article);
+            }
+            if ($context->label()) {
+                $this->labelValidateId($user, $context->label, false);
+            }
+            if ($context->labelName()) {
+                $this->labelValidateId($user, $context->labelName, true);
+            }
+            // ensure any used array-type context options contain at least one member
+            foreach ([
+                "articles", 
+                "editions",
+                "subscriptions",
+                "folders", 
+                "foldersShallow", 
+                "labels", 
+                "labelNames", 
+                "tags", 
+                "tagNames", 
+                "searchTerms", 
+                "titleTerms", 
+                "authorTerms", 
+                "annotationTerms",
+                "modifiedRanges",
+                "markedRanges",
+                ] as $m) {
+                    if ($context->$m() && !$context->$m) {
+                        throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]);
+                    }
+                }
+            // next compute the context, supplying the query to manipulate directly
+            $this->articleFilter($context, $q);
+        }
+        // return the query
+        return $q;
+    }
+
+    protected function articleFilter(Context $context, QueryFilter $q = null) {
+        $q = $q ?? new QueryFilter;
+        $colDefs = $this->articleColumns();
         // handle the simple context options
         $options = [
-            // each context array consists of a column identifier (see $colDefs above), a comparison operator, a data type, and an option to pair with for BETWEEN evaluation
-            "edition"          => ["edition",       "=",  "int",      ""],
-            "editions"         => ["edition",       "in", "int",      ""],
-            "article"          => ["id",            "=",  "int",      ""],
-            "articles"         => ["id",            "in", "int",      ""],
-            "oldestArticle"    => ["id",            ">=", "int",      "latestArticle"],
-            "latestArticle"    => ["id",            "<=", "int",      "oldestArticle"],
-            "oldestEdition"    => ["edition",       ">=", "int",      "latestEdition"],
-            "latestEdition"    => ["edition",       "<=", "int",      "oldestEdition"],
-            "modifiedSince"    => ["modified_date", ">=", "datetime", "notModifiedSince"],
-            "notModifiedSince" => ["modified_date", "<=", "datetime", "modifiedSince"],
-            "markedSince"      => ["marked_date",   ">=", "datetime", "notMarkedSince"],
-            "notMarkedSince"   => ["marked_date",   "<=", "datetime", "markedSince"],
-            "folderShallow"    => ["folder",        "=",  "int",      ""],
-            "foldersShallow"   => ["folder",        "in", "int",      ""],
-            "subscription"     => ["subscription",  "=",  "int",      ""],
-            "subscriptions"    => ["subscription",  "in", "int",      ""],
-            "unread"           => ["unread",        "=",  "bool",     ""],
-            "starred"          => ["starred",       "=",  "bool",     ""],
-            "hidden"           => ["hidden",        "=",  "bool",     ""],
+            // each context array consists of a column identifier (see $colDefs above), a comparison operator, and a data type; the "between" operator has special handling
+            "edition"          => ["edition",       "=",       "int"],
+            "editions"         => ["edition",       "in",      "int"],
+            "article"          => ["id",            "=",       "int"],
+            "articles"         => ["id",            "in",      "int"],
+            "articleRange"     => ["id",            "between", "int"],
+            "editionRange"     => ["edition",       "between", "int"],
+            "modifiedRange"    => ["modified_date", "between", "datetime"],
+            "markedRange"      => ["marked_date",   "between", "datetime"],
+            "folderShallow"    => ["folder",        "=",       "int"],
+            "foldersShallow"   => ["folder",        "in",      "int"],
+            "subscription"     => ["subscription",  "=",       "int"],
+            "subscriptions"    => ["subscription",  "in",      "int"],
+            "unread"           => ["unread",        "=",       "bool"],
+            "starred"          => ["starred",       "=",       "bool"],
+            "hidden"           => ["hidden",        "=",       "bool"],
+            "labelled"         => ["labelled",      "=",       "bool"],
+            "annotated"        => ["annotated",     "=",       "bool"],
         ];
-        foreach ($options as $m => [$col, $op, $type, $pair]) {
-            if (!$context->$m()) {
-                // context is not being used
-                continue;
-            } elseif (is_array($context->$m)) {
-                // context option is an array of values
-                if (!$context->$m) {
-                    throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
-                }
-                [$clause, $types, $values] = $this->generateIn($context->$m, $type);
-                $q->setWhere("{$colDefs[$col]} $op ($clause)", $types, $values);
-            } elseif ($pair && $context->$pair()) {
-                // option is paired with another which is also being used
-                if ($op === ">=") {
-                    $q->setWhere("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], [$context->$m, $context->$pair]);
+        foreach ($options as $m => [$col, $op, $type]) {
+            if ($context->$m()) {
+                if ($op === "between") {
+                    // option is a range
+                    if ($context->$m[0] === null) {
+                        // range is open at the low end
+                        $q->setWhere("{$colDefs[$col]} <= ?", $type, $context->$m[1]);
+                    } elseif ($context->$m[1] === null) {
+                        // range is open at the high end
+                        $q->setWhere("{$colDefs[$col]} >= ?", $type, $context->$m[0]);
+                    } else {
+                        // range is bounded in both directions
+                        $q->setWhere("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], $context->$m);
+                    }
+                } elseif (is_array($context->$m)) {
+                    // context option is an array of values
+                    [$clause, $types, $values] = $this->generateIn($context->$m, $type);
+                    $q->setWhere("{$colDefs[$col]} $op ($clause)", $types, $values);
                 } else {
-                    // option has already been paired
-                    continue;
+                    $q->setWhere("{$colDefs[$col]} $op ?", $type, $context->$m);
                 }
-            } else {
-                $q->setWhere("{$colDefs[$col]} $op ?", $type, $context->$m);
+            }
+            // handle the exclusionary version
+            if (method_exists($context->not, $m) && $context->not->$m()) {
+                if ($op === "between") {
+                    // option is a range
+                    if ($context->not->$m[0] === null) {
+                        // range is open at the low end
+                        $q->setWhereNot("{$colDefs[$col]} <= ?", $type, $context->not->$m[1]);
+                    } elseif ($context->not->$m[1] === null) {
+                        // range is open at the high end
+                        $q->setWhereNot("{$colDefs[$col]} >= ?", $type, $context->not->$m[0]);
+                    } else {
+                        // range is bounded in both directions
+                        $q->setWhereNot("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], $context->not->$m);
+                    }
+                } elseif (is_array($context->not->$m)) {
+                    if (!$context->not->$m) {
+                        // for exclusions we don't care if the array is empty
+                        continue;
+                    }
+                    [$clause, $types, $values] = $this->generateIn($context->not->$m, $type);
+                    $q->setWhereNot("{$colDefs[$col]} $op ($clause)", $types, $values);
+                } else {
+                    $q->setWhereNot("{$colDefs[$col]} $op ?", $type, $context->not->$m);
+                }
             }
         }
-        // further handle exclusionary options if specified
-        foreach ($options as $m => [$col, $op, $type, $pair]) {
-            if (!method_exists($context->not, $m) || !$context->not->$m()) {
-                // context option is not being used
-                continue;
-            } elseif (is_array($context->not->$m)) {
-                if (!$context->not->$m) {
-                    // for exclusions we don't care if the array is empty
-                    continue;
-                }
-                [$clause, $types, $values] = $this->generateIn($context->not->$m, $type);
-                $q->setWhereNot("{$colDefs[$col]} $op ($clause)", $types, $values);
-            } elseif ($pair && $context->not->$pair()) {
-                // option is paired with another which is also being used
-                if ($op === ">=") {
-                    $q->setWhereNot("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], [$context->not->$m, $context->not->$pair]);
-                } else {
-                    // option has already been paired
-                    continue;
-                }
-            } else {
-                $q->setWhereNot("{$colDefs[$col]} $op ?", $type, $context->not->$m);
-            }
-        }
-        // handle labels and tags
+        // handle folder trees, labels, and tags
         $options = [
-            'label' => [
-                'match_col'  => "arsse_articles.id",
-                'cte_name'   => "labelled",
-                'cte_cols'   => ["article", "label_id", "label_name"],
-                'cte_body'   => "SELECT m.article, l.id, l.name from arsse_label_members as m join arsse_labels as l on l.id = m.label where l.owner = ? and m.assigned = 1",
-                'cte_types'  => ["str"],
-                'cte_values' => [$user],
-                'options'    => [
-                    'label'      => ['use_name' => false, 'multi' => false],
-                    'labels'     => ['use_name' => false, 'multi' => true],
-                    'labelName'  => ['use_name' => true,  'multi' => false],
-                    'labelNames' => ['use_name' => true,  'multi' => true],
-                ],
-            ],
-            'tag' => [
-                'match_col'  => "arsse_subscriptions.id",
-                'cte_name'   => "tagged",
-                'cte_cols'   => ["subscription", "tag_id", "tag_name"],
-                'cte_body'   => "SELECT m.subscription, t.id, t.name from arsse_tag_members as m join arsse_tags as t on t.id = m.tag where t.owner = ? and m.assigned = 1",
-                'cte_types'  => ["str"],
-                'cte_values' => [$user],
-                'options'    => [
-                    'tag'      => ['use_name' => false, 'multi' => false],
-                    'tags'     => ['use_name' => false, 'multi' => true],
-                    'tagName'  => ['use_name' => true,  'multi' => false],
-                    'tagNames' => ['use_name' => true,  'multi' => true],
-                ],
-            ],
+            // each context array consists of a common table expression to select from, the column to match in the main join, the column to match in the CTE, the column to select in the CTE, an operator, and a type for the match in the CTE
+            'folder'     => ["folders",  "folder",       "folders.id",          "req",        "=",  "int"],
+            'folders'    => ["folders",  "folder",       "folders.id",          "req",        "in", "int"],
+            'label'      => ["labelled", "id",           "labelled.article",    "label_id",   "=",  "int"],
+            'labels'     => ["labelled", "id",           "labelled.article",    "label_id",   "in", "int"],
+            'labelName'  => ["labelled", "id",           "labelled.article",    "label_name", "=",  "str"],
+            'labelNames' => ["labelled", "id",           "labelled.article",    "label_name", "in", "str"],
+            'tag'        => ["tagged",   "subscription", "tagged.subscription", "tag_id",     "=",  "int"],
+            'tags'       => ["tagged",   "subscription", "tagged.subscription", "tag_id",     "in", "int"],
+            'tagName'    => ["tagged",   "subscription", "tagged.subscription", "tag_name",   "=",  "str"],
+            'tagNames'   => ["tagged",   "subscription", "tagged.subscription", "tag_name",   "in", "str"],
         ];
-        foreach ($options as $opt) {
-            $seen = false;
-            $match = $opt['match_col'];
-            $table = $opt['cte_name'];
-            foreach ($opt['options'] as $m => $props) {
-                $named = $props['use_name'];
-                $multi = $props['multi'];
-                $selection = $opt['cte_cols'][0];
-                $col = $opt['cte_cols'][$named ? 2 : 1];
-                if ($context->$m()) {
-                    $seen = true;
-                    if (!$context->$m) {
-                        throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
-                    }
-                    if ($multi) {
-                        [$test, $types, $values] = $this->generateIn($context->$m, $named ? "str" : "int");
-                        $test = "in ($test)";
-                    } else {
-                        $test = "= ?";
-                        $types = $named ? "str" : "int";
-                        $values = $context->$m;
-                    }
-                    $q->setWhere("$match in (select $selection from $table where $col $test)", $types, $values);
-                }
-                if ($context->not->$m()) {
-                    $seen = true;
-                    if ($multi) {
-                        [$test, $types, $values] = $this->generateIn($context->not->$m, $named ? "str" : "int");
-                        $test = "in ($test)";
-                    } else {
-                        $test = "= ?";
-                        $types = $named ? "str" : "int";
-                        $values = $context->not->$m;
-                    }
-                    $q->setWhereNot("$match in (select $selection from $table where $col $test)", $types, $values);
+        foreach ($options as $m => [$cte, $outerCol, $selection, $innerCol, $op, $type]) {
+            if ($context->$m()) {
+                if ($op === "in") {
+                    [$inClause, $inTypes, $inValues] = $this->generateIn($context->$m, $type);
+                    $q->setWhere("{$colDefs[$outerCol]} in (select $selection from $cte where $innerCol in($inClause))", $inTypes, $inValues);
+                } else {
+                    $q->setWhere("{$colDefs[$outerCol]} in (select $selection from $cte where $innerCol = ?)", $type, $context->$m);
                 }
             }
-            if ($seen) {
-                $spec = $opt['cte_name']."(".implode(",", $opt['cte_cols']).")";
-                $q->setCTE($spec, $opt['cte_body'], $opt['cte_types'], $opt['cte_values']);
+            // handle the exclusionary version
+            if ($context->not->$m()) {
+                if ($op === "in") {
+                    if (!$context->not->$m) {
+                        // for exclusions we don't care if the array is empty
+                        continue;
+                    }
+                    [$inClause, $inTypes, $inValues] = $this->generateIn($context->not->$m, $type);
+                    $q->setWhereNot("{$colDefs[$outerCol]} in (select $selection from $cte where $innerCol in($inClause))", $inTypes, $inValues);
+                } else {
+                    $q->setWhereNot("{$colDefs[$outerCol]} in (select $selection from $cte where $innerCol = ?)", $type, $context->not->$m);
+                }
             }
-        }
-        // handle complex context options
-        if ($context->annotated()) {
-            $comp = ($context->annotated) ? "<>" : "=";
-            $q->setWhere("coalesce(arsse_marks.note,'') $comp ''");
-        }
-        if ($context->labelled()) {
-            // any label (true) or no label (false)
-            $op = $context->labelled ? ">" : "=";
-            $q->setWhere("coalesce(label_stats.assigned,0) $op 0");
-        }
-        if ($context->folder()) {
-            // add a common table expression to list the folder and its children so that we select from the entire subtree
-            $q->setCTE("folders(folder)", "SELECT ? union all select id from arsse_folders join folders on coalesce(parent,0) = folder", "int", $context->folder);
-            // limit subscriptions to the listed folders
-            $q->setWhere("coalesce(arsse_subscriptions.folder,0) in (select folder from folders)");
-        }
-        if ($context->folders()) {
-            [$inClause, $inTypes, $inValues] = $this->generateIn($context->folders, "int");
-            // add a common table expression to list the folders and their children so that we select from the entire subtree
-            $q->setCTE("folders_multi(folder)", "SELECT id as folder from (select id from (select 0 as id union all select id from arsse_folders where owner = ?) as f where id in ($inClause)) as folders_multi union select id from arsse_folders join folders_multi on coalesce(parent,0) = folder", ["str", $inTypes], [$user, $inValues]);
-            // limit subscriptions to the listed folders
-            $q->setWhere("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_multi)");
-        }
-        if ($context->not->folder()) {
-            // add a common table expression to list the folder and its children so that we exclude from the entire subtree
-            $q->setCTE("folders_excluded(folder)", "SELECT ? union all select id from arsse_folders join folders_excluded on coalesce(parent,0) = folder", "int", $context->not->folder);
-            // excluded any subscriptions in the listed folders
-            $q->setWhereNot("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_excluded)");
-        }
-        if ($context->not->folders()) {
-            [$inClause, $inTypes, $inValues] = $this->generateIn($context->not->folders, "int");
-            // add a common table expression to list the folders and their children so that we select from the entire subtree
-            $q->setCTE("folders_multi_excluded(folder)", "SELECT id as folder from (select id from (select 0 as id union all select id from arsse_folders where owner = ?) as f where id in ($inClause)) as folders_multi_excluded union select id from arsse_folders join folders_multi_excluded on coalesce(parent,0) = folder", ["str", $inTypes], [$user, $inValues]);
-            // limit subscriptions to the listed folders
-            $q->setWhereNot("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_multi_excluded)");
         }
         // handle text-matching context options
         $options = [
@@ -1741,29 +1758,56 @@ class Database {
             "annotationTerms" => ["note"],
         ];
         foreach ($options as $m => $columns) {
-            if (!$context->$m()) {
-                continue;
-            } elseif (!$context->$m) {
-                throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
-            }
             $columns = array_map(function($c) use ($colDefs) {
                 assert(isset($colDefs[$c]), new Exception("constantUnknown", $c));
                 return $colDefs[$c];
             }, $columns);
-            $q->setWhere(...$this->generateSearch($context->$m, $columns));
-        }
-        // further handle exclusionary text-matching context options
-        foreach ($options as $m => $columns) {
-            if (!$context->not->$m() || !$context->not->$m) {
-                continue;
+            if ($context->$m()) {
+                $q->setWhere(...$this->generateSearch($context->$m, $columns));
             }
-            $columns = array_map(function($c) use ($colDefs) {
-                assert(isset($colDefs[$c]), new Exception("constantUnknown", $c));
-                return $colDefs[$c];
-            }, $columns);
-            $q->setWhereNot(...$this->generateSearch($context->not->$m, $columns, true));
+            // handle the exclusionary version
+            if ($context->not->$m() && $context->not->$m) {
+                $q->setWhereNot(...$this->generateSearch($context->not->$m, $columns, true));
+            }
         }
-        // return the query
+        // handle arrays of ranges
+        $options = [
+            'modifiedRanges' => ["modified_date", "datetime"],
+            'markedRanges'   => ["marked_date",   "datetime"],
+        ];
+        foreach ($options as $m => [$col, $type]) {
+            if ($context->$m()) {
+                $subq = (new QueryFilter)->setWhereRestrictive(false);
+                foreach ($context->$m as $r) {
+                    if ($r[0] === null) {
+                        // range is open at the low end
+                        $subq->setWhere("{$colDefs[$col]} <= ?", $type, $r[1]);
+                    } elseif ($r[1] === null) {
+                        // range is open at the high end
+                        $subq->setWhere("{$colDefs[$col]} >= ?", $type, $r[0]);
+                    } else {
+                        // range is bounded in both directions
+                        $subq->setWhere("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], $r);
+                    }
+                }
+                $q->setWhereGroup($subq);
+            }
+            // handle the exclusionary version
+            if ($context->not->$m() && $context->not->$m) {
+                foreach ($context->not->$m as $r) {
+                    if ($r[0] === null) {
+                        // range is open at the low end
+                        $q->setWhereNot("{$colDefs[$col]} <= ?", $type, $r[1]);
+                    } elseif ($r[1] === null) {
+                        // range is open at the high end
+                        $q->setWhereNot("{$colDefs[$col]} >= ?", $type, $r[0]);
+                    } else {
+                        // range is bounded in both directions
+                        $q->setWhereNot("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], $r);
+                    }
+                }
+            }
+        }
         return $q;
     }
 
@@ -1772,11 +1816,11 @@ class Database {
      * If an empty column list is supplied, a count of articles is returned instead
      *
      * @param string $user The user whose articles are to be listed
-     * @param Context $context The search context
+     * @param RootContext $context The search context
      * @param array $fieldss The columns to return in the result set, any of: id, edition, url, title, author, content, guid, fingerprint, folder, subscription, feed, starred, unread, note, published_date, edited_date, modified_date, marked_date, subscription_title, media_url, media_type
      * @param array $sort The columns to sort the result by eg. "edition desc" in decreasing order of importance
      */
-    public function articleList(string $user, Context $context = null, array $fields = ["id"], array $sort = []): Db\Result {
+    public function articleList(string $user, RootContext $context = null, array $fields = ["id"], array $sort = []): Db\Result {
         // make a base query based on context and output columns
         $context = $context ?? new Context;
         $q = $this->articleQuery($user, $context, $fields);
@@ -1818,9 +1862,9 @@ class Database {
     /** Returns a count of articles which match the given query context
      *
      * @param string $user The user whose articles are to be counted
-     * @param Context $context The search context
+     * @param RootContext $context The search context
      */
-    public function articleCount(string $user, Context $context = null): int {
+    public function articleCount(string $user, RootContext $context = null): int {
         $context = $context ?? new Context;
         $q = $this->articleQuery($user, $context, []);
         return (int) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
@@ -1837,10 +1881,10 @@ class Database {
      *
      * @param string $user The user who owns the articles to be modified
      * @param array $data An associative array of properties to modify. Anything not specified will remain unchanged
-     * @param Context $context The query context to match articles against
+     * @param RootContext $context The query context to match articles against
      * @param bool $updateTimestamp Whether to also update the timestamp. This should only be false if a mark is changed as a result of an automated action not taken by the user
      */
-    public function articleMark(string $user, array $data, Context $context = null, bool $updateTimestamp = true): int {
+    public function articleMark(string $user, array $data, RootContext $context = null, bool $updateTimestamp = true): int {
         $data = [
             'read'    => $data['read'] ?? null,
             'starred' => $data['starred'] ?? null,
@@ -1865,10 +1909,23 @@ class Database {
             // marking as read is ignored if the edition is not the latest, but the same is not true of the other two marks
             $this->db->query("UPDATE arsse_marks set touched = 0 where touched <> 0");
             // set read marks
-            $q = $this->articleQuery($user, $context, ["id", "subscription"]);
-            $q->setWhere("arsse_marks.read <> coalesce(?,arsse_marks.read)", "bool", $data['read']);
-            $q->pushCTE("target_articles(article,subscription)");
-            $q->setBody("UPDATE arsse_marks set \"read\" = ?, touched = 1 where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", "bool", $data['read']);
+            $subq = $this->articleQuery($user, $context, ["id", "subscription"]);
+            $subq->setWhere("arsse_marks.read <> coalesce(?,arsse_marks.read)", "bool", $data['read']);
+            $q = new Query(
+                "WITH RECURSIVE
+                target_articles(article, subscription) as (
+                    {$subq->getQuery()}
+                )
+                update arsse_marks 
+                set 
+                    \"read\" = ?, 
+                    touched = 1 
+                where 
+                    article in (select article from target_articles) 
+                    and subscription in (select distinct subscription from target_articles)", 
+                [$subq->getTypes(), "bool"], 
+                [$subq->getValues(), $data['read']]
+            );
             $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
             // get the articles associated with the requested editions
             if ($context->edition()) {
@@ -1878,14 +1935,27 @@ class Database {
             }
             // set starred, hidden, and/or note marks (unless all requested editions actually do not exist)
             if ($context->article || $context->articles) {
-                $q = $this->articleQuery($user, $context, ["id", "subscription"]);
-                $q->setWhere("(arsse_marks.note <> coalesce(?,arsse_marks.note) or arsse_marks.starred <> coalesce(?,arsse_marks.starred) or arsse_marks.hidden <> coalesce(?,arsse_marks.hidden))", ["str", "bool", "bool"], [$data['note'], $data['starred'], $data['hidden']]);
-                $q->pushCTE("target_articles(article,subscription)");
-                $data = array_filter($data, function($v) {
+                $setData = array_filter($data, function($v) {
                     return isset($v);
                 });
-                [$set, $setTypes, $setValues] = $this->generateSet($data, ['starred' => "bool", 'hidden' => "bool", 'note' => "str"]);
-                $q->setBody("UPDATE arsse_marks set touched = 1, $set where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", $setTypes, $setValues);
+                [$set, $setTypes, $setValues] = $this->generateSet($setData, ['starred' => "bool", 'hidden' => "bool", 'note' => "str"]);
+                $subq = $this->articleQuery($user, $context, ["id", "subscription"]);
+                $subq->setWhere("(arsse_marks.note <> coalesce(?,arsse_marks.note) or arsse_marks.starred <> coalesce(?,arsse_marks.starred) or arsse_marks.hidden <> coalesce(?,arsse_marks.hidden))", ["str", "bool", "bool"], [$data['note'], $data['starred'], $data['hidden']]);
+                $q = new Query(
+                    "WITH RECURSIVE
+                    target_articles(article, subscription) as (
+                        {$subq->getQuery()}
+                    )
+                    update arsse_marks 
+                    set 
+                        touched = 1, 
+                        $set 
+                    where 
+                        article in (select article from target_articles) 
+                        and subscription in (select distinct subscription from target_articles)",
+                    [$subq->getTypes(), $setTypes], 
+                    [$subq->getValues(), $setValues]
+                );
                 $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
             }
             // finally set the modification date for all touched marks and return the number of affected marks
@@ -1906,17 +1976,29 @@ class Database {
                     return 0;
                 }
             }
-            $q = $this->articleQuery($user, $context, ["id", "subscription"]);
-            $q->setWhere("(arsse_marks.note <> coalesce(?,arsse_marks.note) or arsse_marks.starred <> coalesce(?,arsse_marks.starred) or arsse_marks.read <> coalesce(?,arsse_marks.read) or arsse_marks.hidden <> coalesce(?,arsse_marks.hidden))", ["str", "bool", "bool", "bool"], [$data['note'], $data['starred'], $data['read'], $data['hidden']]);
-            $q->pushCTE("target_articles(article,subscription)");
-            $data = array_filter($data, function($v) {
+            $setData = array_filter($data, function($v) {
                 return isset($v);
             });
-            [$set, $setTypes, $setValues] = $this->generateSet($data, ['read' => "bool", 'starred' => "bool", 'hidden' => "bool", 'note' => "str"]);
+            [$set, $setTypes, $setValues] = $this->generateSet($setData, ['read' => "bool", 'starred' => "bool", 'hidden' => "bool", 'note' => "str"]);
             if ($updateTimestamp) {
                 $set .= ", modified = CURRENT_TIMESTAMP";
             }
-            $q->setBody("UPDATE arsse_marks set $set where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", $setTypes, $setValues);
+            $subq = $this->articleQuery($user, $context, ["id", "subscription"]);
+            $subq->setWhere("(arsse_marks.note <> coalesce(?,arsse_marks.note) or arsse_marks.starred <> coalesce(?,arsse_marks.starred) or arsse_marks.read <> coalesce(?,arsse_marks.read) or arsse_marks.hidden <> coalesce(?,arsse_marks.hidden))", ["str", "bool", "bool", "bool"], [$data['note'], $data['starred'], $data['read'], $data['hidden']]);
+            $q = new Query(
+                "WITH RECURSIVE
+                target_articles(article, subscription) as (
+                    {$subq->getQuery()}
+                )
+                update arsse_marks 
+                set 
+                    $set 
+                where 
+                    article in (select article from target_articles) 
+                    and subscription in (select distinct subscription from target_articles)",
+                [$subq->getTypes(), $setTypes],
+                [$subq->getValues(), $setValues]
+            );
             $out = $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
         }
         $tr->commit();
@@ -2086,7 +2168,7 @@ class Database {
     }
 
     /** Returns the numeric identifier of the most recent edition of an article matching the given context */
-    public function editionLatest(string $user, Context $context = null): int {
+    public function editionLatest(string $user, RootContext $context = null): int {
         $context = $context ?? new Context;
         $q = $this->articleQuery($user, $context, ["latest_edition"]);
         return (int) $this->db->prepare((string) $q, $q->getTypes())->run($q->getValues())->getValue();
@@ -2289,11 +2371,11 @@ class Database {
      *
      * @param string $user The owner of the label
      * @param integer|string $id The numeric identifier or name of the label
-     * @param Context $context The query context matching the desired articles
+     * @param RootContext $context The query context matching the desired articles
      * @param int $mode Whether to add (ASSOC_ADD), remove (ASSOC_REMOVE), or replace with (ASSOC_REPLACE) the matching associations
      * @param boolean $byName Whether to interpret the $id parameter as the label's name (true) or identifier (false)
      */
-    public function labelArticlesSet(string $user, $id, Context $context, int $mode = self::ASSOC_ADD, bool $byName = false): int {
+    public function labelArticlesSet(string $user, $id, RootContext $context, int $mode = self::ASSOC_ADD, bool $byName = false): int {
         assert(in_array($mode, [self::ASSOC_ADD, self::ASSOC_REMOVE, self::ASSOC_REPLACE]), new Exception("constantUnknown", $mode));
         // validate the tag ID, and get the numeric ID if matching by name
         $id = $this->labelValidateId($user, $id, $byName, true)['id'];

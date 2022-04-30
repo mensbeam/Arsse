@@ -316,12 +316,12 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             ["items&group_ids=1,2,3,4", (clone $c)->tags([1,2,3,4])->hidden(false), false],
             ["items&feed_ids=1,2,3,4", (clone $c)->subscriptions([1,2,3,4])->hidden(false), false],
             ["items&with_ids=1,2,3,4", (clone $c)->articles([1,2,3,4]), false],
-            ["items&since_id=1", (clone $c)->oldestArticle(2)->hidden(false), false],
-            ["items&max_id=2", (clone $c)->latestArticle(1)->hidden(false), true],
+            ["items&since_id=1", (clone $c)->articleRange(2, null)->hidden(false), false],
+            ["items&max_id=2", (clone $c)->articleRange(null, 1)->hidden(false), true],
             ["items&with_ids=1,2,3,4&max_id=6", (clone $c)->articles([1,2,3,4]), false],
             ["items&with_ids=1,2,3,4&since_id=6", (clone $c)->articles([1,2,3,4]), false],
-            ["items&max_id=3&since_id=6", (clone $c)->latestArticle(2)->hidden(false), true],
-            ["items&feed_ids=1,2,3,4&since_id=6", (clone $c)->subscriptions([1,2,3,4])->oldestArticle(7)->hidden(false), false],
+            ["items&max_id=3&since_id=6", (clone $c)->articleRange(null, 2)->hidden(false), true],
+            ["items&feed_ids=1,2,3,4&since_id=6", (clone $c)->subscriptions([1,2,3,4])->articleRange(7, null)->hidden(false), false],
         ];
     }
 
@@ -407,7 +407,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             ["mark=group&as=unread&id=-1", (new Context)->not->folder(0), $markUnread, $listUnread],
             ["mark=group&as=saved&id=-1", (new Context)->not->folder(0), $markSaved, $listSaved],
             ["mark=group&as=unsaved&id=-1", (new Context)->not->folder(0), $markUnsaved, $listSaved],
-            ["mark=group&as=read&id=-1&before=946684800", (new Context)->not->folder(0)->notMarkedSince("2000-01-01T00:00:00Z"), $markRead, $listUnread],
+            ["mark=group&as=read&id=-1&before=946684800", (new Context)->not->folder(0)->markedRange(null, "2000-01-01T00:00:00Z"), $markRead, $listUnread],
             ["mark=item&as=unread", new Context, [], []],
             ["mark=item&id=6", new Context, [], []],
             ["as=unread&id=6", new Context, [], []],
@@ -462,7 +462,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->articleMark->returns(0);
         $exp = new JsonResponse($out);
         $this->assertMessage($exp, $this->req("api", ['unread_recently_read' => 1]));
-        $this->dbMock->articleMark->calledWith($this->userId, ['read' => false], $this->equalTo((new Context)->unread(false)->markedSince("1999-12-31T23:59:45Z")->hidden(false)));
+        $this->dbMock->articleMark->calledWith($this->userId, ['read' => false], $this->equalTo((new Context)->unread(false)->markedRange("1999-12-31T23:59:45Z", null)->hidden(false)));
         $this->dbMock->articleList->with($this->userId, (new Context)->limit(1)->hidden(false), ["marked_date"], ["marked_date desc"])->returns(new Result([]));
         $this->assertMessage($exp, $this->req("api", ['unread_recently_read' => 1]));
         $this->dbMock->articleMark->once()->called(); // only called one time, above

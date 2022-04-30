@@ -346,7 +346,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // build the context
         $c = (new Context)->hidden(false);
-        $c->latestEdition((int) $data['newestItemId']);
+        $c->editionRange(null, (int) $data['newestItemId']);
         $c->folder((int) $url[1]);
         // perform the operation
         try {
@@ -501,7 +501,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // build the context
         $c = (new Context)->hidden(false);
-        $c->latestEdition((int) $data['newestItemId']);
+        $c->editionRange(null, (int) $data['newestItemId']);
         $c->subscription((int) $url[1]);
         // perform the operation
         try {
@@ -526,9 +526,9 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // set the edition mark-off; the database uses an or-equal comparison for internal consistency, but the protocol does not, so we must adjust by one
         if ($data['offset'] > 0) {
             if ($reverse) {
-                $c->latestEdition($data['offset'] - 1);
+                $c->editionRange(null, $data['offset'] - 1);
             } else {
-                $c->oldestEdition($data['offset'] + 1);
+                $c->editionRange($data['offset'] + 1, null);
             }
         }
         // set whether to only return unread
@@ -556,7 +556,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // whether to return only updated items
         if ($data['lastModified']) {
-            $c->markedSince($data['lastModified']);
+            $c->markedRange($data['lastModified'], null);
         }
         // perform the fetch
         try {
@@ -597,7 +597,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // build the context
         $c = (new Context)->hidden(false);
-        $c->latestEdition((int) $data['newestItemId']);
+        $c->editionRange(null, (int) $data['newestItemId']);
         // perform the operation
         Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], $c);
         return new EmptyResponse(204);

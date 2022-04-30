@@ -18,7 +18,7 @@ class Statement extends \JKingWeb\Arsse\Db\AbstractStatement {
         self::T_DATETIME => \SQLITE3_TEXT,
         self::T_BINARY   => \SQLITE3_BLOB,
         self::T_STRING   => \SQLITE3_TEXT,
-        self::T_BOOLEAN  => \SQLITE3_INTEGER,
+        self::T_BOOLEAN  => \SQLITE3_INTEGER, // NOTE: Integers are used rather than booleans so that they may be manipulated arithmetically
     ];
 
     protected $db;

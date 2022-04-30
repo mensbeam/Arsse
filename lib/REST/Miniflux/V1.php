@@ -12,6 +12,8 @@ use JKingWeb\Arsse\ExceptionType;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Context\Context;
+use JKingWeb\Arsse\Context\UnionContext;
+use JKingWeb\Arsse\Context\RootContext;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\ImportExport\OPML;
 use JKingWeb\Arsse\ImportExport\Exception as ImportException;
@@ -644,9 +646,10 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
      *
      * - "num": The user's numeric ID,
      * - "root": The effective name of the root folder
+     * - "tz": The time zone preference of the user, or UTC if not set
      */
     protected function userMeta(string $user): array {
-        $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
+        $meta = Arsse::$user->propertiesGet($user, false);
         return [
             'num'  => $meta['num'],
             'root' => $meta['root_folder_name'] ?? Arsse::$lang->msg("API.Miniflux.DefaultCategoryName"),
@@ -689,7 +692,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             if ($folder === 0) {
                 // folder 0 doesn't actually exist in the database, so its name is kept as user metadata
                 if (!strlen(trim($title))) {
-                    throw new ExceptionInput("whitespace");
+                    throw new ExceptionInput("whitespace", ['field' => "title", 'action' => __FUNCTION__]);
                 }
                 $title = Arsse::$user->propertiesSet(Arsse::$user->id, ['root_folder_name' => $title])['root_folder_name'];
             } else {
@@ -885,18 +888,15 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         ]);
     }
 
-    protected function computeContext(array $query, Context $c = null): Context {
+    protected function computeContext(array $query, Context $c): RootContext {
         if ($query['before'] && $query['before']->getTimestamp() === 0) {
             $query['before'] = null; // NOTE: This workaround is needed for compatibility with "Microflux for Miniflux", an Android Client
         }
-        $c = ($c ?? new Context)
-            ->limit($query['limit'] ?? self::DEFAULT_ENTRY_LIMIT) // NOTE: This does not honour user preferences
+        $c->limit($query['limit'] ?? self::DEFAULT_ENTRY_LIMIT) // NOTE: This does not honour user preferences
             ->offset($query['offset'])
             ->starred($query['starred'])
-            ->modifiedSince($query['after']) // FIXME: This may not be the correct date field
-            ->notModifiedSince($query['before'])
-            ->oldestArticle($query['after_entry_id'] ? $query['after_entry_id'] + 1 : null) // FIXME: This might be edition
-            ->latestArticle($query['before_entry_id'] ? $query['before_entry_id'] - 1 : null)
+            ->modifiedRange($query['after'], $query['before']) // FIXME: This may not be the correct date field
+            ->articleRange($query['after_entry_id'] ? $query['after_entry_id'] + 1 : null, $query['before_entry_id'] ? $query['before_entry_id'] - 1 : null) // FIXME: This might be edition
             ->searchTerms(strlen($query['search'] ?? "") ? preg_split("/\s+/", $query['search']) : null); // NOTE: Miniflux matches only whole words; we match simple substrings
         if ($query['category_id']) {
             if ($query['category_id'] === 1) {
@@ -905,17 +905,20 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 $c->folder($query['category_id'] - 1);
             }
         }
-        // FIXME: specifying e.g. ?status=read&status=removed should yield all hidden articles and all read articles, but the best we can do is all read articles which are or are not hidden
         $status = array_unique($query['status']);
         sort($status);
         if ($status === ["read", "removed"]) {
-            $c->unread(false);
+            $c1 = $c;
+            $c2 = clone $c;
+            $c = new UnionContext($c1->unread(false), $c2->hidden(true));
         } elseif ($status === ["read", "unread"]) {
             $c->hidden(false);
         } elseif ($status === ["read"]) {
             $c->hidden(false)->unread(false);
         } elseif ($status === ["removed", "unread"]) {
-            $c->unread(true);
+            $c1 = $c;
+            $c2 = clone $c;
+            $c = new UnionContext($c1->unread(true), $c2->hidden(true));
         } elseif ($status === ["removed"]) {
             $c->hidden(true);
         } elseif ($status === ["unread"]) {
@@ -1025,7 +1028,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // find the entry we want
         $entry = Arsse::$db->articleList(Arsse::$user->id, $c, self::ARTICLE_COLUMNS)->getRow();
         if (!$entry) {
-            throw new ExceptionInput("idMissing");
+            throw new ExceptionInput("idMissing", ['id' => $id, 'field' => 'entry']);
         }
         $out = $this->transformEntry($entry, $meta['num'], $meta['tz']);
         // next transform the parent feed of the entry

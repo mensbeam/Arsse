@@ -686,40 +686,40 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $r200 = new Response(['items' => $this->articles['rest']]);
         $r422 = new EmptyResponse(422);
         return [
-            ["/items",         [],                                                         clone $c,                                $out,                                $r200],
-            ["/items",         ['type' => 0, 'id' => 42],                                  (clone $c)->subscription(42),            new ExceptionInput("idMissing"),     $r422],
-            ["/items",         ['type' => 1, 'id' => 2112],                                (clone $c)->folder(2112),                new ExceptionInput("idMissing"),     $r422],
-            ["/items",         ['type' => 0, 'id' => -1],                                  (clone $c)->subscription(-1),            new ExceptionInput("typeViolation"), $r422],
-            ["/items",         ['type' => 1, 'id' => -1],                                  (clone $c)->folder(-1),                  new ExceptionInput("typeViolation"), $r422],
-            ["/items",         ['type' => 2, 'id' => 0],                                   (clone $c)->starred(true),               $out,                                $r200],
-            ["/items",         ['type' => 3, 'id' => 0],                                   clone $c,                                $out,                                $r200],
-            ["/items",         ['getRead' => true],                                        clone $c,                                $out,                                $r200],
-            ["/items",         ['getRead' => false],                                       (clone $c)->unread(true),                $out,                                $r200],
-            ["/items",         ['lastModified' => $t->getTimestamp()],                     (clone $c)->markedSince($t),             $out,                                $r200],
-            ["/items",         ['oldestFirst' => true,  'batchSize' => 10, 'offset' => 5], (clone $c)->oldestEdition(6)->limit(10), $out,                                $r200],
-            ["/items",         ['oldestFirst' => false, 'batchSize' => 5,  'offset' => 5], (clone $c)->latestEdition(4)->limit(5),  $out,                                $r200],
-            ["/items",         ['oldestFirst' => false, 'batchSize' => 5,  'offset' => 0], (clone $c)->limit(5),                    $out,                                $r200],
-            ["/items/updated", [],                                                         clone $c,                                $out,                                $r200],
-            ["/items/updated", ['type' => 0, 'id' => 42],                                  (clone $c)->subscription(42),            new ExceptionInput("idMissing"),     $r422],
-            ["/items/updated", ['type' => 1, 'id' => 2112],                                (clone $c)->folder(2112),                new ExceptionInput("idMissing"),     $r422],
-            ["/items/updated", ['type' => 0, 'id' => -1],                                  (clone $c)->subscription(-1),            new ExceptionInput("typeViolation"), $r422],
-            ["/items/updated", ['type' => 1, 'id' => -1],                                  (clone $c)->folder(-1),                  new ExceptionInput("typeViolation"), $r422],
-            ["/items/updated", ['type' => 2, 'id' => 0],                                   (clone $c)->starred(true),               $out,                                $r200],
-            ["/items/updated", ['type' => 3, 'id' => 0],                                   clone $c,                                $out,                                $r200],
-            ["/items/updated", ['getRead' => true],                                        clone $c,                                $out,                                $r200],
-            ["/items/updated", ['getRead' => false],                                       (clone $c)->unread(true),                $out,                                $r200],
-            ["/items/updated", ['lastModified' => $t->getTimestamp()],                     (clone $c)->markedSince($t),             $out,                                $r200],
-            ["/items/updated", ['oldestFirst' => true,  'batchSize' => 10, 'offset' => 5], (clone $c)->oldestEdition(6)->limit(10), $out,                                $r200],
-            ["/items/updated", ['oldestFirst' => false, 'batchSize' => 5,  'offset' => 5], (clone $c)->latestEdition(4)->limit(5),  $out,                                $r200],
-            ["/items/updated", ['oldestFirst' => false, 'batchSize' => 5,  'offset' => 0], (clone $c)->limit(5),                    $out,                                $r200],
+            ["/items",         [],                                                         clone $c,                                     $out,                                $r200],
+            ["/items",         ['type' => 0, 'id' => 42],                                  (clone $c)->subscription(42),                 new ExceptionInput("idMissing"),     $r422],
+            ["/items",         ['type' => 1, 'id' => 2112],                                (clone $c)->folder(2112),                     new ExceptionInput("idMissing"),     $r422],
+            ["/items",         ['type' => 0, 'id' => -1],                                  (clone $c)->subscription(-1),                 new ExceptionInput("typeViolation"), $r422],
+            ["/items",         ['type' => 1, 'id' => -1],                                  (clone $c)->folder(-1),                       new ExceptionInput("typeViolation"), $r422],
+            ["/items",         ['type' => 2, 'id' => 0],                                   (clone $c)->starred(true),                    $out,                                $r200],
+            ["/items",         ['type' => 3, 'id' => 0],                                   clone $c,                                     $out,                                $r200],
+            ["/items",         ['getRead' => true],                                        clone $c,                                     $out,                                $r200],
+            ["/items",         ['getRead' => false],                                       (clone $c)->unread(true),                     $out,                                $r200],
+            ["/items",         ['lastModified' => $t->getTimestamp()],                     (clone $c)->markedRange($t, null),            $out,                                $r200],
+            ["/items",         ['oldestFirst' => true,  'batchSize' => 10, 'offset' => 5], (clone $c)->editionRange(6, null)->limit(10), $out,                                $r200],
+            ["/items",         ['oldestFirst' => false, 'batchSize' => 5,  'offset' => 5], (clone $c)->editionRange(null, 4)->limit(5),  $out,                                $r200],
+            ["/items",         ['oldestFirst' => false, 'batchSize' => 5,  'offset' => 0], (clone $c)->limit(5),                         $out,                                $r200],
+            ["/items/updated", [],                                                         clone $c,                                     $out,                                $r200],
+            ["/items/updated", ['type' => 0, 'id' => 42],                                  (clone $c)->subscription(42),                 new ExceptionInput("idMissing"),     $r422],
+            ["/items/updated", ['type' => 1, 'id' => 2112],                                (clone $c)->folder(2112),                     new ExceptionInput("idMissing"),     $r422],
+            ["/items/updated", ['type' => 0, 'id' => -1],                                  (clone $c)->subscription(-1),                 new ExceptionInput("typeViolation"), $r422],
+            ["/items/updated", ['type' => 1, 'id' => -1],                                  (clone $c)->folder(-1),                       new ExceptionInput("typeViolation"), $r422],
+            ["/items/updated", ['type' => 2, 'id' => 0],                                   (clone $c)->starred(true),                    $out,                                $r200],
+            ["/items/updated", ['type' => 3, 'id' => 0],                                   clone $c,                                     $out,                                $r200],
+            ["/items/updated", ['getRead' => true],                                        clone $c,                                     $out,                                $r200],
+            ["/items/updated", ['getRead' => false],                                       (clone $c)->unread(true),                     $out,                                $r200],
+            ["/items/updated", ['lastModified' => $t->getTimestamp()],                     (clone $c)->markedRange($t, null),            $out,                                $r200],
+            ["/items/updated", ['oldestFirst' => true,  'batchSize' => 10, 'offset' => 5], (clone $c)->editionRange(6, null)->limit(10), $out,                                $r200],
+            ["/items/updated", ['oldestFirst' => false, 'batchSize' => 5,  'offset' => 5], (clone $c)->editionRange(null, 4)->limit(5),  $out,                                $r200],
+            ["/items/updated", ['oldestFirst' => false, 'batchSize' => 5,  'offset' => 0], (clone $c)->limit(5),                         $out,                                $r200],
         ];
     }
 
     public function testMarkAFolderRead(): void {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
-        $this->dbMock->articleMark->with($this->userId, $read, $this->equalTo((new Context)->folder(1)->latestEdition(2112)->hidden(false)))->returns(42);
-        $this->dbMock->articleMark->with($this->userId, $read, $this->equalTo((new Context)->folder(42)->latestEdition(2112)->hidden(false)))->throws(new ExceptionInput("idMissing")); // folder doesn't exist
+        $this->dbMock->articleMark->with($this->userId, $read, $this->equalTo((new Context)->folder(1)->editionRange(null, 2112)->hidden(false)))->returns(42);
+        $this->dbMock->articleMark->with($this->userId, $read, $this->equalTo((new Context)->folder(42)->editionRange(null, 2112)->hidden(false)))->throws(new ExceptionInput("idMissing")); // folder doesn't exist
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("PUT", "/folders/1/read", $in));
         $this->assertMessage($exp, $this->req("PUT", "/folders/1/read?newestItemId=2112"));
@@ -733,8 +733,8 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testMarkASubscriptionRead(): void {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
-        $this->dbMock->articleMark->with($this->userId, $read, $this->equalTo((new Context)->subscription(1)->latestEdition(2112)->hidden(false)))->returns(42);
-        $this->dbMock->articleMark->with($this->userId, $read, $this->equalTo((new Context)->subscription(42)->latestEdition(2112)->hidden(false)))->throws(new ExceptionInput("idMissing")); // subscription doesn't exist
+        $this->dbMock->articleMark->with($this->userId, $read, $this->equalTo((new Context)->subscription(1)->editionRange(null, 2112)->hidden(false)))->returns(42);
+        $this->dbMock->articleMark->with($this->userId, $read, $this->equalTo((new Context)->subscription(42)->editionRange(null, 2112)->hidden(false)))->throws(new ExceptionInput("idMissing")); // subscription doesn't exist
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/read", $in));
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/read?newestItemId=2112"));
@@ -748,7 +748,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testMarkAllItemsRead(): void {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
-        $this->dbMock->articleMark->with($this->userId, $read, $this->equalTo((new Context)->latestEdition(2112)))->returns(42);
+        $this->dbMock->articleMark->with($this->userId, $read, $this->equalTo((new Context)->editionRange(null, 2112)))->returns(42);
         $exp = new EmptyResponse(204);
         $this->assertMessage($exp, $this->req("PUT", "/items/read", $in));
         $this->assertMessage($exp, $this->req("PUT", "/items/read?newestItemId=2112"));

@@ -387,9 +387,11 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $integer = $this->drv->sqlToken("InTEGer");
         $asc = $this->drv->sqlToken("asc");
         $desc = $this->drv->sqlToken("desc");
+        $least = $this->drv->sqlToken("leASt");
 
         $this->assertSame("NOT_A_TOKEN", $this->drv->sqlToken("NOT_A_TOKEN"));
 
+        $this->assertSame("A", $this->drv->query("SELECT $least('Z', 'A')")->getValue());
         $this->assertSame("Z", $this->drv->query("SELECT $greatest('Z', 'A')")->getValue());
         $this->assertSame("Z", $this->drv->query("SELECT 'Z' collate $nocase")->getValue());
         $this->assertSame("Z", $this->drv->query("SELECT 'Z' where 'Z' $like 'z'")->getValue());

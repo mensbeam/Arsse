@@ -101,25 +101,31 @@ class TestSearch extends \JKingWeb\Arsse\Test\AbstractTest {
             'Doubled boolean'                     => ['unread:true unread:true', (new Context)->unread(true)],
             'Bare blank date'                     => ['@', new Context],
             'Quoted blank date'                   => ['"@"', new Context],
-            'Bare ISO date'                       => ['@2019-03-01', (new Context)->modifiedSince("2019-03-01T00:00:00Z")->notModifiedSince("2019-03-01T23:59:59Z")],
-            'Quoted ISO date'                     => ['"@March 1st, 2019"', (new Context)->modifiedSince("2019-03-01T00:00:00Z")->notModifiedSince("2019-03-01T23:59:59Z")],
-            'Bare negative ISO date'              => ['-@2019-03-01', (new Context)->not->modifiedSince("2019-03-01T00:00:00Z")->not->notModifiedSince("2019-03-01T23:59:59Z")],
-            'Quoted negative English date'        => ['"-@March 1st, 2019"', (new Context)->not->modifiedSince("2019-03-01T00:00:00Z")->not->notModifiedSince("2019-03-01T23:59:59Z")],
+            'Bare ISO date'                       => ['@2019-03-01', (new Context)->modifiedRanges([["2019-03-01T00:00:00Z", "2019-03-01T23:59:59Z"]])],
+            'Quoted ISO date'                     => ['"@March 1st, 2019"', (new Context)->modifiedRanges([["2019-03-01T00:00:00Z", "2019-03-01T23:59:59Z"]])],
+            'Bare negative ISO date'              => ['-@2019-03-01', (new Context)->not->modifiedRanges([["2019-03-01T00:00:00Z", "2019-03-01T23:59:59Z"]])],
+            'Quoted negative English date'        => ['"-@March 1st, 2019"', (new Context)->not->modifiedRanges([["2019-03-01T00:00:00Z", "2019-03-01T23:59:59Z"]])],
             'Invalid date'                        => ['@Bugaboo', new Context],
             'Escaped quoted date 1'               => ['"@""Yesterday" and today', (new Context)->searchTerms(["and", "today"])],
             'Escaped quoted date 2'               => ['"@\\"Yesterday" and today', (new Context)->searchTerms(["and", "today"])],
             'Escaped quoted date 3'               => ['"@Yesterday\\', new Context],
             'Escaped quoted date 4'               => ['"@Yesterday\\and today', new Context],
             'Escaped quoted date 5'               => ['"@Yesterday"and today', (new Context)->searchTerms(["today"])],
-            'Contradictory dates'                 => ['@Yesterday @Today', null],
-            'Doubled date'                        => ['"@March 1st, 2019" @2019-03-01', (new Context)->modifiedSince("2019-03-01T00:00:00Z")->notModifiedSince("2019-03-01T23:59:59Z")],
-            'Doubled negative date'               => ['"-@March 1st, 2019" -@2019-03-01', (new Context)->not->modifiedSince("2019-03-01T00:00:00Z")->not->notModifiedSince("2019-03-01T23:59:59Z")],
+            'Contradictory dates'                 => ['@2010-01-01 @2015-01-01', (new Context)->modifiedRanges([["2010-01-01T00:00:00Z", "2010-01-01T23:59:59Z"], ["2015-01-01T00:00:00Z", "2015-01-01T23:59:59Z"]])], // This differs from TTRSS' behaviour
+            'Doubled date'                        => ['"@March 1st, 2019" @2019-03-01', (new Context)->modifiedRanges([["2019-03-01T00:00:00Z", "2019-03-01T23:59:59Z"]])],
+            'Doubled negative date'               => ['"-@March 1st, 2019" -@2019-03-01', (new Context)->not->modifiedRanges([["2019-03-01T00:00:00Z", "2019-03-01T23:59:59Z"]])],
         ];
     }
 
     /** @dataProvider provideSearchStrings */
     public function testApplySearchToContext(string $search, $exp): void {
-        $act = Search::parse($search);
+        $act = Search::parse($search, "UTC");
+        $this->assertEquals($exp, $act);
+    }
+
+    public function testApplySearchToContextWithTimeZone() {
+        $act = Search::parse("@2022-02-02", "America/Toronto");
+        $exp = (new Context)->modifiedRanges([["2022-02-02T05:00:00Z", "2022-02-03T04:59:59Z"]]);
         $this->assertEquals($exp, $act);
     }
 }
