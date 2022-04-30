@@ -2,6 +2,7 @@ Version 0.1?.? (2022-??-??)
 ===========================
 
 Bug fixes:
+- Return all removed articles when multiple statuses are requested in Miniflux
 - Allow multiple date ranges in search strings in Tiny Tiny RSS
 - Honour user time zone when interpreting search strings in Tiny Tiny RSS
 - Perform MySQL table maintenance more reliably

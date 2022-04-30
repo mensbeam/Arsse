@@ -12,6 +12,8 @@ use JKingWeb\Arsse\ExceptionType;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Context\Context;
+use JKingWeb\Arsse\Context\UnionContext;
+use JKingWeb\Arsse\Context\RootContext;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\ImportExport\OPML;
 use JKingWeb\Arsse\ImportExport\Exception as ImportException;
@@ -886,12 +888,11 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         ]);
     }
 
-    protected function computeContext(array $query, Context $c = null): Context {
+    protected function computeContext(array $query, Context $c): RootContext {
         if ($query['before'] && $query['before']->getTimestamp() === 0) {
             $query['before'] = null; // NOTE: This workaround is needed for compatibility with "Microflux for Miniflux", an Android Client
         }
-        $c = ($c ?? new Context)
-            ->limit($query['limit'] ?? self::DEFAULT_ENTRY_LIMIT) // NOTE: This does not honour user preferences
+        $c->limit($query['limit'] ?? self::DEFAULT_ENTRY_LIMIT) // NOTE: This does not honour user preferences
             ->offset($query['offset'])
             ->starred($query['starred'])
             ->modifiedRange($query['after'], $query['before']) // FIXME: This may not be the correct date field
@@ -904,17 +905,20 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 $c->folder($query['category_id'] - 1);
             }
         }
-        // FIXME: specifying e.g. ?status=read&status=removed should yield all hidden articles and all read articles, but the best we can do is all read articles which are or are not hidden
         $status = array_unique($query['status']);
         sort($status);
         if ($status === ["read", "removed"]) {
-            $c->unread(false);
+            $c1 = $c;
+            $c2 = clone $c;
+            $c = new UnionContext($c1->unread(false), $c2->hidden(true));
         } elseif ($status === ["read", "unread"]) {
             $c->hidden(false);
         } elseif ($status === ["read"]) {
             $c->hidden(false)->unread(false);
         } elseif ($status === ["removed", "unread"]) {
-            $c->unread(true);
+            $c1 = $c;
+            $c2 = clone $c;
+            $c = new UnionContext($c1->unread(true), $c2->hidden(true));
         } elseif ($status === ["removed"]) {
             $c->hidden(true);
         } elseif ($status === ["unread"]) {

@@ -10,7 +10,10 @@ use JKingWeb\DrUUID\UUID;
 use JKingWeb\Arsse\Db\Statement;
 use JKingWeb\Arsse\Misc\Query;
 use JKingWeb\Arsse\Context\Context;
+use JKingWeb\Arsse\Context\UnionContext;
+use JKingWeb\Arsse\Context\RootContext;
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Misc\QueryFilter;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\Misc\URL;
 use JKingWeb\Arsse\Rule\Rule;
@@ -1518,33 +1521,11 @@ class Database {
      * If an empty column list is supplied, a count of articles matching the context is queried instead
      *
      * @param string $user The user whose articles are to be queried
-     * @param Context $context The search context
+     * @param RootContext $context The search context
      * @param array $cols The columns to request in the result set
      */
-    protected function articleQuery(string $user, Context $context, array $cols = ["id"]): Query {
-        // validate input
-        if ($context->subscription()) {
-            $this->subscriptionValidateId($user, $context->subscription);
-        }
-        if ($context->folder()) {
-            $this->folderValidateId($user, $context->folder);
-        }
-        if ($context->folderShallow()) {
-            $this->folderValidateId($user, $context->folderShallow);
-        }
-        if ($context->edition()) {
-            $this->articleValidateEdition($user, $context->edition);
-        }
-        if ($context->article()) {
-            $this->articleValidateId($user, $context->article);
-        }
-        if ($context->label()) {
-            $this->labelValidateId($user, $context->label, false);
-        }
-        if ($context->labelName()) {
-            $this->labelValidateId($user, $context->labelName, true);
-        }
-        // prepare the output column list; the column definitions are also used later
+    protected function articleQuery(string $user, RootContext $context, array $cols = ["id"]): Query {
+        // prepare the output column list; the column definitions are also used for ordering
         $colDefs = $this->articleColumns();
         if (!$cols) {
             // if no columns are specified return a count; don't borther with sorting
@@ -1602,6 +1583,67 @@ class Database {
             [$user, $user, $user, $user, $user, $user]
         );
         $q->setLimit($context->limit, $context->offset);
+        if ($context instanceof UnionContext) {
+            // if the context is a union context, we compute each context in turn
+            $q->setWhereRestrictive(false);
+            foreach ($context as $c) {
+                $q->setWhereGroup($this->articleFilter($c));
+            }
+        } else {
+            // if the context is not a union, first validate input to catch 404s and the like
+            if ($context->subscription()) {
+                $this->subscriptionValidateId($user, $context->subscription);
+            }
+            if ($context->folder()) {
+                $this->folderValidateId($user, $context->folder);
+            }
+            if ($context->folderShallow()) {
+                $this->folderValidateId($user, $context->folderShallow);
+            }
+            if ($context->edition()) {
+                $this->articleValidateEdition($user, $context->edition);
+            }
+            if ($context->article()) {
+                $this->articleValidateId($user, $context->article);
+            }
+            if ($context->label()) {
+                $this->labelValidateId($user, $context->label, false);
+            }
+            if ($context->labelName()) {
+                $this->labelValidateId($user, $context->labelName, true);
+            }
+            // ensure any used array-type context options contain at least one member
+            foreach ([
+                "articles", 
+                "editions",
+                "subscriptions",
+                "folders", 
+                "foldersShallow", 
+                "labels", 
+                "labelNames", 
+                "tags", 
+                "tagNames", 
+                "searchTerms", 
+                "titleTerms", 
+                "authorTerms", 
+                "annotationTerms",
+                "modifiedRanges",
+                "markedRanges",
+                ] as $m) {
+                    if ($context->$m() && !$context->$m) {
+                        throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]);
+                    }
+                }
+            // next compute the context, supplying the query to manipulate directly
+            $this->articleFilter($context, $q);
+        }
+        // return the query
+        return $q;
+    }
+
+    protected function articleFilter(Context $context, QueryFilter $q = null) {
+        $q = $q ?? new QueryFilter;
+        $colDefs = $this->articleColumns();
         // handle the simple context options
         $options = [
             // each context array consists of a column identifier (see $colDefs above), a comparison operator, and a data type; the "between" operator has special handling
@@ -1639,9 +1681,6 @@ class Database {
                     }
                 } elseif (is_array($context->$m)) {
                     // context option is an array of values
-                    if (!$context->$m) {
-                        throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
-                    }
                     [$clause, $types, $values] = $this->generateIn($context->$m, $type);
                     $q->setWhere("{$colDefs[$col]} $op ($clause)", $types, $values);
                 } else {
@@ -1691,9 +1730,6 @@ class Database {
         foreach ($options as $m => [$cte, $outerCol, $selection, $innerCol, $op, $type]) {
             if ($context->$m()) {
                 if ($op === "in") {
-                    if (!$context->$m) {
-                        throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
-                    }
                     [$inClause, $inTypes, $inValues] = $this->generateIn($context->$m, $type);
                     $q->setWhere("{$colDefs[$outerCol]} in (select $selection from $cte where $innerCol in($inClause))", $inTypes, $inValues);
                 } else {
@@ -1727,9 +1763,6 @@ class Database {
                 return $colDefs[$c];
             }, $columns);
             if ($context->$m()) {
-                if (!$context->$m) {
-                    throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
-                }
                 $q->setWhere(...$this->generateSearch($context->$m, $columns));
             }
             // handle the exclusionary version
@@ -1744,31 +1777,20 @@ class Database {
         ];
         foreach ($options as $m => [$col, $type]) {
             if ($context->$m()) {
-                if (!$context->$m) {
-                    throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
-                }
-                $w = [];
-                $t = [];
-                $v = [];
+                $subq = (new QueryFilter)->setWhereRestrictive(false);
                 foreach ($context->$m as $r) {
                     if ($r[0] === null) {
                         // range is open at the low end
-                        $w[] = "{$colDefs[$col]} <= ?";
-                        $t[] = $type;
-                        $v[] = $r[1];
+                        $subq->setWhere("{$colDefs[$col]} <= ?", $type, $r[1]);
                     } elseif ($r[1] === null) {
                         // range is open at the high end
-                        $w[] = "{$colDefs[$col]} >= ?";
-                        $t[] = $type;
-                        $v[] = $r[0];
+                        $subq->setWhere("{$colDefs[$col]} >= ?", $type, $r[0]);
                     } else {
                         // range is bounded in both directions
-                        $w[] = "{$colDefs[$col]} BETWEEN ? AND ?";
-                        $t[] = [$type, $type];
-                        $v[] = $r;
+                        $subq->setWhere("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], $r);
                     }
                 }
-                $q->setWhere("(".implode(" OR ", $w).")", $t, $v);
+                $q->setWhereGroup($subq);
             }
             // handle the exclusionary version
             if ($context->not->$m() && $context->not->$m) {
@@ -1786,7 +1808,6 @@ class Database {
                 }
             }
         }
-        // return the query
         return $q;
     }
 
@@ -1795,11 +1816,11 @@ class Database {
      * If an empty column list is supplied, a count of articles is returned instead
      *
      * @param string $user The user whose articles are to be listed
-     * @param Context $context The search context
+     * @param RootContext $context The search context
      * @param array $fieldss The columns to return in the result set, any of: id, edition, url, title, author, content, guid, fingerprint, folder, subscription, feed, starred, unread, note, published_date, edited_date, modified_date, marked_date, subscription_title, media_url, media_type
      * @param array $sort The columns to sort the result by eg. "edition desc" in decreasing order of importance
      */
-    public function articleList(string $user, Context $context = null, array $fields = ["id"], array $sort = []): Db\Result {
+    public function articleList(string $user, RootContext $context = null, array $fields = ["id"], array $sort = []): Db\Result {
         // make a base query based on context and output columns
         $context = $context ?? new Context;
         $q = $this->articleQuery($user, $context, $fields);
@@ -1841,9 +1862,9 @@ class Database {
     /** Returns a count of articles which match the given query context
      *
      * @param string $user The user whose articles are to be counted
-     * @param Context $context The search context
+     * @param RootContext $context The search context
      */
-    public function articleCount(string $user, Context $context = null): int {
+    public function articleCount(string $user, RootContext $context = null): int {
         $context = $context ?? new Context;
         $q = $this->articleQuery($user, $context, []);
         return (int) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
@@ -1860,10 +1881,10 @@ class Database {
      *
      * @param string $user The user who owns the articles to be modified
      * @param array $data An associative array of properties to modify. Anything not specified will remain unchanged
-     * @param Context $context The query context to match articles against
+     * @param RootContext $context The query context to match articles against
      * @param bool $updateTimestamp Whether to also update the timestamp. This should only be false if a mark is changed as a result of an automated action not taken by the user
      */
-    public function articleMark(string $user, array $data, Context $context = null, bool $updateTimestamp = true): int {
+    public function articleMark(string $user, array $data, RootContext $context = null, bool $updateTimestamp = true): int {
         $data = [
             'read'    => $data['read'] ?? null,
             'starred' => $data['starred'] ?? null,
@@ -2147,7 +2168,7 @@ class Database {
     }
 
     /** Returns the numeric identifier of the most recent edition of an article matching the given context */
-    public function editionLatest(string $user, Context $context = null): int {
+    public function editionLatest(string $user, RootContext $context = null): int {
         $context = $context ?? new Context;
         $q = $this->articleQuery($user, $context, ["latest_edition"]);
         return (int) $this->db->prepare((string) $q, $q->getTypes())->run($q->getValues())->getValue();
@@ -2350,11 +2371,11 @@ class Database {
      *
      * @param string $user The owner of the label
      * @param integer|string $id The numeric identifier or name of the label
-     * @param Context $context The query context matching the desired articles
+     * @param RootContext $context The query context matching the desired articles
      * @param int $mode Whether to add (ASSOC_ADD), remove (ASSOC_REMOVE), or replace with (ASSOC_REPLACE) the matching associations
      * @param boolean $byName Whether to interpret the $id parameter as the label's name (true) or identifier (false)
      */
-    public function labelArticlesSet(string $user, $id, Context $context, int $mode = self::ASSOC_ADD, bool $byName = false): int {
+    public function labelArticlesSet(string $user, $id, RootContext $context, int $mode = self::ASSOC_ADD, bool $byName = false): int {
         assert(in_array($mode, [self::ASSOC_ADD, self::ASSOC_REMOVE, self::ASSOC_REPLACE]), new Exception("constantUnknown", $mode));
         // validate the tag ID, and get the numeric ID if matching by name
         $id = $this->labelValidateId($user, $id, $byName, true)['id'];

@@ -9,6 +9,8 @@ namespace JKingWeb\Arsse\TestCase\Database;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Context\Context;
+use JKingWeb\Arsse\Context\UnionContext;
+use JKingWeb\Arsse\Context\RootContext;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 
@@ -423,7 +425,7 @@ trait SeriesArticle {
     }
 
     /** @dataProvider provideContextMatches */
-    public function testListArticlesCheckingContext(Context $c, array $exp): void {
+    public function testListArticlesCheckingContext(RootContext $c, array $exp): void {
         $ids = array_column($ids = Arsse::$db->articleList("john.doe@example.com", $c, ["id"], ["id"])->getAll(), "id");
         sort($ids);
         sort($exp);
@@ -538,6 +540,7 @@ trait SeriesArticle {
             'Not modified in 2010 or 2015'                               => [(new Context)->not->modifiedRanges([["2010-01-01T00:00:00Z", "2010-12-31T23:59:59Z"], ["2015-01-01T00:00:00Z", "2015-12-31T23:59:59Z"]]), [1,3,5,7,19]],
             'Modified prior to 2010 or since 2015'                       => [(new Context)->modifiedRanges([[null, "2009-12-31T23:59:59Z"], ["2015-01-01T00:00:00Z", null]]), [1,3,5,7,19]],
             'Not modified prior to 2010 or since 2015'                   => [(new Context)->not->modifiedRanges([[null, "2009-12-31T23:59:59Z"], ["2015-01-01T00:00:00Z", null]]), [2,4,6,8,20]],
+            'Either read or hidden'                                      => [(new UnionContext((new Context)->unread(false), (new Context)->hidden(true))), [1, 6, 19]],
         ];
     }
 
