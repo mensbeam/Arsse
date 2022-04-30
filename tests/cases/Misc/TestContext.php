@@ -25,7 +25,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testSetContextOptions(string $method, array $input, $output, bool $not): void {
         $parent = new Context;
         $c = ($not) ? $parent->not : $parent;
-        $default = (new \ReflectionProperty($c, $method))->getDefaultValue();
+        $default = (new \ReflectionClass($c))->getDefaultProperties()[$method];
         $this->assertFalse($c->$method(), "Context method did not initially return false");
         if (in_array($method, $this->ranges)) {
             $this->assertEquals([null, null], $c->$method, "Context property is not initially a two-member falsy array");
