@@ -15,7 +15,7 @@ class QueryFilter {
     protected $vWhereNot = []; // WHERE NOT clause binding values
     protected $filterRestrictive = true; // Whether to glue WHERE conditions with OR (false) or AND (true)
 
-    public function setWhere(string $where, $types = null, $values = null): static {
+    public function setWhere(string $where, $types = null, $values = null): self {
         $this->qWhere[] = $where;
         if (!is_null($types)) {
             $this->tWhere[] = $types ?? [];
@@ -24,7 +24,7 @@ class QueryFilter {
         return $this;
     }
 
-    public function setWhereNot(string $where, $types = null, $values = null): static {
+    public function setWhereNot(string $where, $types = null, $values = null): self {
         $this->qWhereNot[] = $where;
         if (!is_null($types)) {
             $this->tWhereNot[] = $types;
@@ -33,14 +33,14 @@ class QueryFilter {
         return $this;
     }
 
-    public function setWhereGroup(self $filter): static {
+    public function setWhereGroup(self $filter): self {
         $this->qWhere[] = "(".$filter->buildWhereBody().")";
         $this->tWhere[] = $filter->getWhereTypes();
         $this->vWhere[] = $filter->getWhereValues();
         return $this;
     }
 
-    public function setWhereRestrictive(bool $restrictive): static {
+    public function setWhereRestrictive(bool $restrictive): self {
         $this->filterRestrictive = $restrictive;
         return $this;
     }

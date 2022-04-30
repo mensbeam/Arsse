@@ -9,15 +9,18 @@ namespace JKingWeb\Arsse\Context;
 class UnionContext extends RootContext implements \ArrayAccess, \Countable, \IteratorAggregate {
     protected $contexts = [];
 
-    public function offsetExists(mixed $offset): bool {
+    #[\ReturnTypeWillChange]
+    public function offsetExists($offset) {
         return isset($this->contexts[$offset]);
     }
 
-    public function offsetGet(mixed $offset): mixed {
+    #[\ReturnTypeWillChange]
+    public function offsetGet($offset) {
         return $this->contexts[$offset] ?? null;
     }
 
-    public function offsetSet(mixed $offset, mixed $value): void {
+    #[\ReturnTypeWillChange]
+    public function offsetSet($offset, $value) {
         assert($value instanceof RootContext, new \Exception("Union contexts may only contain other non-exclusion contexts"));
         if (isset($offset)) {
             $this->contexts[$offset] = $value;
@@ -26,7 +29,8 @@ class UnionContext extends RootContext implements \ArrayAccess, \Countable, \Ite
         }
     }
 
-    public function offsetUnset(mixed $offset): void {
+    #[\ReturnTypeWillChange]
+    public function offsetUnset($offset) {
         unset($this->contexts[$offset]);
     }
 
