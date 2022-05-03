@@ -36,23 +36,24 @@ insert into arsse_articles_map(article, subscription, owner, id)
 
 -- Create a new articles table which combines the marks table but does not include content
 create table arsse_articles_new(
-    id integer primary key,
-    subscription integer not null references arsse_subscriptions(id) on delete cascade on update cascade,
-    read boolean not null default 0,
-    starred boolean not null default 0,
-    hidden boolean not null default 0,
-    published text,
-    edited text,
-    modified text not null default CURRENT_TIMESTAMP,
-    marked text,
-    url text,
-    title text collate nocase,
-    author text collate nocase,
-    guid text,
-    url_title_hash text not null,
-    url_content_hash text not null,
-    title_content_hash text not null,
-    note text not null default ''
+-- metadata for entries in newsfeeds, including user state
+    id integer primary key,                                                                                 -- sequence number
+    subscription integer not null references arsse_subscriptions(id) on delete cascade on update cascade,   -- associated subscription
+    read boolean not null default 0,                                                                        -- whether the article has been read
+    starred boolean not null default 0,                                                                     -- whether the article is starred
+    hidden boolean not null default 0,                                                                      -- whether the article should be excluded from selection by default
+    published text,                                                                                         -- time of original publication
+    edited text,                                                                                            -- time of last edit by author
+    modified text not null default CURRENT_TIMESTAMP,                                                       -- time when article was last modified in database pursuant to an authorial edit
+    marked text,                                                                                            -- time at which an article was last modified by the user
+    url text,                                                                                               -- URL of article
+    title text collate nocase,                                                                              -- article title
+    author text collate nocase,                                                                             -- author's name
+    guid text,                                                                                              -- a nominally globally unique identifier for the article, from the feed
+    url_title_hash text not null,                                                                           -- hash of URL + title; used when checking for updates and for identification if there is no guid
+    url_content_hash text not null,                                                                         -- hash of URL + content + enclosure URL + enclosure content type; used when checking for updates and for identification if there is no guid
+    title_content_hash text not null,                                                                       -- hash of title + content + enclosure URL + enclosure content type; used when checking for updates and for identification if there is no guid
+    note text not null default ''                                                                           -- Tiny Tiny RSS freeform user note
 );
 insert into arsse_articles_new
     select
@@ -79,8 +80,9 @@ insert into arsse_articles_new
 
 -- Create a new table to hold article content
 create table arsse_article_contents(
-    id integer primary key references arsse_articles(id) on delete cascade on update cascade,
-    content text
+-- contents of articles, which is typically large text
+    id integer primary key references arsse_articles(id) on delete cascade on update cascade,   -- reference to the article ID
+    content text                                                                                -- the contents
 );
 insert into arsse_article_contents
     select
@@ -92,25 +94,32 @@ insert into arsse_article_contents
 -- Create a new table for editions
 create table arsse_editions_temp(
     id integer primary key autoincrement,
-    article integer
+    article integer,
+    modified datetime not null default CURRENT_TIMESTAMP
 );
 create table arsse_editions_new(
-    id integer primary key,
-    article integer references arsse_articles(id) on delete cascade on update cascade
+-- IDs for specific editions of articles (required for at least Nextcloud News)
+-- every time an article is updated by its author, a new unique edition number is assigned
+-- with Nextcloud News this prevents users from marking as read an article which has been 
+-- updated since the client state was last refreshed
+    id integer primary key,                                                     -- sequence number
+    article integer not null references arsse_articles(id) on delete cascade,   -- the article of which this is an edition
+    modified datetime not null default CURRENT_TIMESTAMP                        -- time at which the edition was modified (practically, when it was created)
 );
 insert into arsse_editions_temp values(1,1);
 delete from arsse_editions_temp;
 update sqlite_sequence set seq = (select max(id) from arsse_editions) where name = 'arsse_editions_temp';
 insert into arsse_editions_temp(article) select id from arsse_articles_map where id = article;
-insert into arsse_editions_temp(id, article)
-    select id, article from arsse_editions where article in (select article from arsse_editions_temp where id <> article);
+insert into arsse_editions_temp(id, article, modified)
+    select id, article, modified from arsse_editions where article in (select article from arsse_editions_temp where id <> article);
 insert into arsse_editions_new select * from arsse_editions_temp;
 
 -- Create a new enclosures table
 create table arsse_enclosures_new(
-    article integer not null references arsse_articles(id) on delete cascade,
-    url text,
-    type text
+-- enclosures (attachments) associated with articles
+    article integer not null references arsse_articles(id) on delete cascade,   -- article to which the enclosure belongs
+    url text,                                                                   -- URL of the enclosure
+    type text                                                                   -- content-type (MIME type) of the enclosure
 );
 insert into arsse_enclosures_new 
     select
@@ -120,7 +129,16 @@ insert into arsse_enclosures_new
     from arsse_articles_map as i 
     join arsse_enclosures as e on e.article = i.article;  
 
--- Fix up the label members table
+-- Create a new label members table
+create table arsse_label_members_new(
+-- label assignments for articles
+    label integer not null references arsse_labels(id) on delete cascade,                   -- label ID associated to an article; label IDs belong to a user
+    article integer not null references arsse_articles(id) on delete cascade,               -- article associated to a label
+    subscription integer not null references arsse_subscriptions(id) on delete cascade,     -- Subscription is included so that records are deleted when a subscription is removed
+    assigned boolean not null default 1,                                                    -- whether the association is current, to support soft deletion
+    modified text not null default CURRENT_TIMESTAMP,                                       -- time at which the association was last made or unmade
+    primary key(label,article)                                                              -- only one association of a given label to a given article
+) without rowid;
 
 -- Create a new subscriptions table which combines the feeds table
 
