@@ -39,9 +39,9 @@ create table arsse_articles_new(
 -- metadata for entries in newsfeeds, including user state
     id integer primary key,                                                                                 -- sequence number
     subscription integer not null references arsse_subscriptions(id) on delete cascade on update cascade,   -- associated subscription
-    read boolean not null default 0,                                                                        -- whether the article has been read
-    starred boolean not null default 0,                                                                     -- whether the article is starred
-    hidden boolean not null default 0,                                                                      -- whether the article should be excluded from selection by default
+    read int not null default 0,                                                                            -- whether the article has been read
+    starred int not null default 0,                                                                         -- whether the article is starred
+    hidden int not null default 0,                                                                          -- whether the article should be excluded from selection by default
     published text,                                                                                         -- time of original publication
     edited text,                                                                                            -- time of last edit by author
     modified text not null default CURRENT_TIMESTAMP,                                                       -- time when article was last modified in database pursuant to an authorial edit
@@ -86,64 +86,97 @@ create table arsse_article_contents(
 );
 insert into arsse_article_contents
     select
-        i.id,
+        m.id,
         a.content
-    from arsse_articles_map as i
-    left join arsse_articles as a on a.id = i.article;
+    from arsse_articles_map as m
+    left join arsse_articles as a on a.id = m.article;
 
--- Create a new table for editions
-create table arsse_editions_temp(
-    id integer primary key autoincrement,
-    article integer,
-    modified datetime not null default CURRENT_TIMESTAMP
-);
-create table arsse_editions_new(
--- IDs for specific editions of articles (required for at least Nextcloud News)
--- every time an article is updated by its author, a new unique edition number is assigned
--- with Nextcloud News this prevents users from marking as read an article which has been 
--- updated since the client state was last refreshed
-    id integer primary key,                                                     -- sequence number
-    article integer not null references arsse_articles(id) on delete cascade,   -- the article of which this is an edition
-    modified datetime not null default CURRENT_TIMESTAMP                        -- time at which the edition was modified (practically, when it was created)
-);
-insert into arsse_editions_temp values(1,1);
-delete from arsse_editions_temp;
-update sqlite_sequence set seq = (select max(id) from arsse_editions) where name = 'arsse_editions_temp';
-insert into arsse_editions_temp(article) select id from arsse_articles_map where id = article;
-insert into arsse_editions_temp(id, article, modified)
-    select id, article, modified from arsse_editions where article in (select article from arsse_editions_temp where id <> article);
-insert into arsse_editions_new select * from arsse_editions_temp;
+-- Create one edition for each renumbered article, and delete any editions for obsolete articles
+insert into arsse_editions(article) select id from arsse_articles_map where id <> article;
+delete from arsse_editions where article in (select article from arsse_articles_map where id <> article);
 
--- Create a new enclosures table
-create table arsse_enclosures_new(
--- enclosures (attachments) associated with articles
-    article integer not null references arsse_articles(id) on delete cascade,   -- article to which the enclosure belongs
-    url text,                                                                   -- URL of the enclosure
-    type text                                                                   -- content-type (MIME type) of the enclosure
-);
-insert into arsse_enclosures_new 
-    select
-        i.id,
-        e.url,
-        e.type
-    from arsse_articles_map as i 
-    join arsse_enclosures as e on e.article = i.article;  
+-- Create enclures for renumbered articles and delete obsolete enclosures
+insert into arsse_enclosures(article, url, type)
+    select 
+        m.id, url, type
+    from arsse_articles_map as m
+    join arsse_enclosures as e on m.article = e.article
+    where m.id <> m.article;
+delete from arsse_enclosures where article in (select article from arsse_articles_map where id <> article);
 
--- Create a new label members table
+-- Create a new label-associations table which omits the subscription column and populate it with new data
 create table arsse_label_members_new(
 -- label assignments for articles
     label integer not null references arsse_labels(id) on delete cascade,                   -- label ID associated to an article; label IDs belong to a user
     article integer not null references arsse_articles(id) on delete cascade,               -- article associated to a label
-    subscription integer not null references arsse_subscriptions(id) on delete cascade,     -- Subscription is included so that records are deleted when a subscription is removed
-    assigned boolean not null default 1,                                                    -- whether the association is current, to support soft deletion
+    assigned int not null default 1,                                                        -- whether the association is current, to support soft deletion
     modified text not null default CURRENT_TIMESTAMP,                                       -- time at which the association was last made or unmade
     primary key(label,article)                                                              -- only one association of a given label to a given article
 ) without rowid;
+insert into arsse_label_members_new
+    select
+        label, m.id, assigned, l.modified
+    from arsse_articles_map as m
+    join arsse_label_members as l using(article);
 
 -- Create a new subscriptions table which combines the feeds table
-
--- Fix up the tag members table
-
--- Fix up the icons table
+create table arsse_subscriptions_new(
+-- users' subscriptions to newsfeeds, with settings
+    id integer primary key,                                                                 -- sequence number
+    owner text not null references arsse_users(id) on delete cascade on update cascade,     -- owner of subscription
+    url text not null,                                                                      -- URL of feed
+    feed_title text not null collate nocase,                                                -- feed title
+    title text collate nocase,                                                              -- user-supplied title, which overrides the feed title when set
+    folder integer references arsse_folders(id) on delete cascade,                          -- TT-RSS category (nestable); the first-level category (which acts as Nextcloud folder) is joined in when needed
+    last_mod text,                                                                          -- time at which the feed last actually changed at the foreign host
+    etag text not null default '',                                                          -- HTTP ETag hash used for cache validation, changes each time the content changes
+    next_fetch text,                                                                        -- time at which the feed should next be fetched
+    added text not null default CURRENT_TIMESTAMP,                                          -- time at which feed was added
+    source text,                                                                            -- URL of site to which the feed belongs
+    updated text,                                                                           -- time at which the feed was last fetched
+    err_count integer not null default 0,                                                   -- count of successive times update resulted in error since last successful update
+    err_msg text,                                                                           -- last error message
+    size integer not null default 0,                                                        -- number of articles in the feed at last fetch
+    icon integer references arsse_icons(id) on delete set null,                             -- numeric identifier of any associated icon
+    modified text not null default CURRENT_TIMESTAMP,                                       -- time at which subscription properties were last modified by the user
+    order_type int not null default 0,                                                      -- Nextcloud sort order
+    pinned int not null default 0,                                                          -- whether feed is pinned (always sorts at top)
+    unique(owner,url)                                                                       -- a URL with particular credentials should only appear once
+);
+insert into arsse_subscriptions_new
+    select
+        s.id, 
+        s.owner, 
+        f.url, 
+        coalesce(f.title, f.url), 
+        s.title, 
+        s.folder,
+        f.modified,
+        f.etag
+        f.next_fetch,
+        f.added,
+        f.source,
+        f.updated,
+        f.err_count,
+        f.err_msg,
+        f.size,
+        f.icon,
+        s.modified,
+        s.order_type,
+        s.pinned
+    from arsse_subscriptions as s left join arsse_feeds as f on s.feed = f.id;
 
 -- Delete the old tables and rename the new ones
+drop table arsse_label_members;
+drop table arsse_subscriptions;
+drop table arsse_feeds;
+drop table arsse_articles;
+drop table arsse_marks;
+drop table arsse_articles_map;
+alter table arsse_subscriptions_new rename to arsse_subscriptions;
+alter table arsse_articles_new rename to arsse_articles;
+alter table arsse_label_members_new rename to arsse_label_members;
+
+-- set version marker
+pragma user_version = 8;
+update arsse_meta set value = '8' where "key" = 'schema_version';
