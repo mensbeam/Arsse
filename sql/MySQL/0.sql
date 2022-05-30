@@ -31,7 +31,7 @@ create table arsse_folders(
     owner varchar(255) not null references arsse_users(id) on delete cascade on update cascade,
     parent bigint references arsse_folders(id) on delete cascade,
     name varchar(255) not null,
-    modified datetime(0) not null default CURRENT_TIMESTAMP,                                                       --
+    modified datetime(0) not null default CURRENT_TIMESTAMP,
     unique(owner,name,parent)
 ) character set utf8mb4;
 
