@@ -8,28 +8,25 @@
 create table arsse_articles_map(
     article int not null,
     subscription int not null,
-    owner text not null,
     id integer primary key autoincrement
 );
-insert into arsse_articles_map(article, subscription, owner) values(1, 1, '');
+insert into arsse_articles_map(article, subscription) values(1, 1, '');
 delete from arsse_articles_map;
 update sqlite_sequence set seq = (select max(id) from arsse_articles) where name = 'arsse_articles_map';
 insert into arsse_articles_map(article, subscription)
     select 
         a.id as article, 
-        s.id as subscription,
-        s,owner as owner
-    from arsse_articles as a cross join arsse_subscriptions as s using(feed)
+        s.id as subscription
+    from arsse_articles as a join arsse_subscriptions as s using(feed)
     where feed in (
         select feed from (select feed, count(*) as count from arsse_subscriptions group by feed) as c where c.count > 1
     );
-insert into arsse_articles_map(article, subscription, owner, id)
+insert into arsse_articles_map(article, subscription, id)
     select 
         a.id as article, 
         s.id as subscription,
-        s.owner as owner,
         a.id as id
-    from arsse_articles as a cross join arsse_subscriptions as s using(feed)
+    from arsse_articles as a join arsse_subscriptions as s using(feed)
     where feed in (
         select feed from (select feed, count(*) as count from arsse_subscriptions group by feed) as c where c.count = 1
     );
@@ -59,9 +56,9 @@ insert into arsse_articles_new
     select
         i.id,
         i.subscription,
-        m.read,
-        m.starred,
-        m.hidden,
+        coalesce(m.read,0),
+        coalesce(m.starred,0),
+        coalesce(m.hidden,0),
         a.published,
         a.edited,
         a.modified,
@@ -73,7 +70,7 @@ insert into arsse_articles_new
         a.url_title_hash,
         a_url_content_hash,
         a.title_content_hash,
-        m.note
+        coalesce(m.note,'')
     from arsse_articles_map as i
     left join arsse_articles as a on a.id = i.article
     left join arsse_marks as m on a.id = m.article;
@@ -87,7 +84,7 @@ create table arsse_article_contents(
 insert into arsse_article_contents
     select
         m.id,
-        a.content
+        coalesce(a.content_scraped, a.content)
     from arsse_articles_map as m
     left join arsse_articles as a on a.id = m.article;
 
@@ -103,6 +100,15 @@ insert into arsse_enclosures(article, url, type)
     join arsse_enclosures as e on m.article = e.article
     where m.id <> m.article;
 delete from arsse_enclosures where article in (select article from arsse_articles_map where id <> article);
+
+-- Create categories for renumbered articles and delete obsolete categories
+insert into arsse_categories(article, name)
+    select 
+        m.id, name
+    from arsse_articles_map as m
+    join arsse_categories as c on m.article = c.article
+    where m.id <> m.article;
+delete from arsse_categories where article in (select article from arsse_articles_map where id <> article);
 
 -- Create a new label-associations table which omits the subscription column and populate it with new data
 create table arsse_label_members_new(
@@ -125,7 +131,7 @@ create table arsse_subscriptions_new(
     id integer primary key,                                                                 -- sequence number
     owner text not null references arsse_users(id) on delete cascade on update cascade,     -- owner of subscription
     url text not null,                                                                      -- URL of feed
-    feed_title text not null collate nocase,                                                -- feed title
+    feed_title text collate nocase,                                                         -- feed title
     title text collate nocase,                                                              -- user-supplied title, which overrides the feed title when set
     folder integer references arsse_folders(id) on delete cascade,                          -- TT-RSS category (nestable); the first-level category (which acts as Nextcloud folder) is joined in when needed
     last_mod text,                                                                          -- time at which the feed last actually changed at the foreign host
@@ -141,6 +147,9 @@ create table arsse_subscriptions_new(
     modified text not null default CURRENT_TIMESTAMP,                                       -- time at which subscription properties were last modified by the user
     order_type int not null default 0,                                                      -- Nextcloud sort order
     pinned int not null default 0,                                                          -- whether feed is pinned (always sorts at top)
+    scrape int not null default 0,                                                          -- whether the user has requested scraping content from source articles
+    keep_rule text,                                                                         -- Regular expression the subscription's articles must match to avoid being hidden
+    block_rule text,                                                                        -- Regular expression the subscription's articles must not match to avoid being hidden
     unique(owner,url)                                                                       -- a URL with particular credentials should only appear once
 );
 insert into arsse_subscriptions_new
@@ -148,7 +157,7 @@ insert into arsse_subscriptions_new
         s.id, 
         s.owner, 
         f.url, 
-        coalesce(f.title, f.url), 
+        f.title, 
         s.title, 
         s.folder,
         f.modified,
@@ -163,7 +172,10 @@ insert into arsse_subscriptions_new
         f.icon,
         s.modified,
         s.order_type,
-        s.pinned
+        s.pinned,
+        s.scrape,
+        s.keep_rule,
+        s.block_rule
     from arsse_subscriptions as s left join arsse_feeds as f on s.feed = f.id;
 
 -- Delete the old tables and rename the new ones
