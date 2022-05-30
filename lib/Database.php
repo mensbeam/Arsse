@@ -814,7 +814,6 @@ class Database {
         // validate inputs
         $folder = $this->folderValidateId($user, $folder)['id'];
         // create a complex query
-        $integer = $this->db->sqlToken("integer");
         $q = new Query(
             "WITH RECURSIVE
             topmost(f_id, top) as (
@@ -853,7 +852,7 @@ class Database {
                     select 
                         subscription, 
                         sum(hidden) as hidden,
-                        sum(cast((\"read\" = 1 and hidden = 0) as $integer)) as marked
+                        sum(case when \"read\" = 1 and hidden = 0 then 1 else 0 end) as marked
                     from arsse_marks group by subscription
                 ) as mark_stats on mark_stats.subscription = s.id",
                 ["str", "int"],
@@ -2053,7 +2052,6 @@ class Database {
 
     /** Deletes from the database articles which are beyond the configured clean-up threshold */
     public function articleCleanup(): bool {
-        $integer = $this->db->sqlToken("integer");
         $query = $this->db->prepareArray(
             "WITH RECURSIVE
             exempt_articles as (
@@ -2079,8 +2077,8 @@ class Database {
                 left join (
                     select 
                         article, 
-                        sum(cast((starred = 1 and hidden = 0) as $integer)) as starred, 
-                        sum(cast((\"read\" = 1 or hidden = 1) as $integer)) as \"read\", 
+                        sum(case when starred = 1 and hidden = 0 then 1 else 0 end) as starred, 
+                        sum(case when \"read\" = 1 or hidden = 1 then 1 else 0 end) as \"read\", 
                         max(arsse_marks.modified) as marked_date 
                     from arsse_marks 
                     group by article
@@ -2211,7 +2209,6 @@ class Database {
      * @param boolean $includeEmpty Whether to include (true) or supress (false) labels which have no articles assigned to them
      */
     public function labelList(string $user, bool $includeEmpty = true): Db\Result {
-        $integer = $this->db->sqlToken("integer");
         return $this->db->prepareArray(
             "SELECT * FROM (
                 SELECT
@@ -2227,7 +2224,7 @@ class Database {
                         SELECT
                             label,
                             sum(hidden) as hidden,
-                            sum(cast((\"read\" = 1 and hidden = 0) as $integer)) as marked
+                            sum(case when \"read\" = 1 and hidden = 0 then 1 else 0 end) as marked
                         from arsse_marks
                             join arsse_subscriptions on arsse_subscriptions.id = arsse_marks.subscription
                             join arsse_label_members on arsse_label_members.article = arsse_marks.article
@@ -2277,7 +2274,6 @@ class Database {
         $this->labelValidateId($user, $id, $byName, false);
         $field = $byName ? "name" : "id";
         $type = $byName ? "str" : "int";
-        $integer = $this->db->sqlToken("integer");
         $out = $this->db->prepareArray(
             "SELECT
                 id,
@@ -2292,7 +2288,7 @@ class Database {
                     SELECT
                         label,
                         sum(hidden) as hidden,
-                        sum(cast((\"read\" = 1 and hidden = 0) as $integer)) as marked
+                        sum(case when \"read\" = 1 and hidden = 0 then 1 else 0 end) as marked
                     from arsse_marks
                     join arsse_subscriptions on arsse_subscriptions.id = arsse_marks.subscription
                     join arsse_label_members on arsse_label_members.article = arsse_marks.article
