@@ -48,7 +48,7 @@ $rules = [
     'pow_to_exponentiation'                     => true,
     'set_type_to_cast'                          => true,
     'standardize_not_equals'                    => true,
-    'trailing_comma_in_multiline_array'         => true,
+    'trailing_comma_in_multiline'               => true,
     'unary_operator_spaces'                     => true,
     'yoda_style'                                => false,
     // PSR standard to apply
@@ -82,4 +82,4 @@ foreach ($paths as $path) {
         $finder = $finder->in($path);
     }
 }
-return \PhpCsFixer\Config::create()->setRiskyAllowed(true)->setRules($rules)->setFinder($finder);
+return (new \PhpCsFixer\Config)->setRiskyAllowed(true)->setRules($rules)->setFinder($finder);

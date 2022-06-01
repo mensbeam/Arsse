@@ -280,7 +280,7 @@ class Database {
     }
 
     /** Renames a user
-     * 
+     *
      * This does not have an effect on their numeric ID, but has a cascading effect on many tables
      */
     public function userRename(string $user, string $name): bool {
@@ -337,7 +337,7 @@ class Database {
     }
 
     /** Retrieves any metadata associated with a user
-     * 
+     *
      * @param string $user The user whose metadata is to be retrieved
      * @param bool $includeLarge Whether to include values which can be arbitrarily large text
      */
@@ -855,8 +855,8 @@ class Database {
                         sum(case when \"read\" = 1 and hidden = 0 then 1 else 0 end) as marked
                     from arsse_marks group by subscription
                 ) as mark_stats on mark_stats.subscription = s.id",
-                ["str", "int"],
-                [$user, $folder]
+            ["str", "int"],
+            [$user, $folder]
         );
         $q->setWhere("s.owner = ?", ["str"], [$user]);
         $nocase = $this->db->sqlToken("nocase");
@@ -1613,26 +1613,26 @@ class Database {
             }
             // ensure any used array-type context options contain at least one member
             foreach ([
-                "articles", 
+                "articles",
                 "editions",
                 "subscriptions",
-                "folders", 
-                "foldersShallow", 
-                "labels", 
-                "labelNames", 
-                "tags", 
-                "tagNames", 
-                "searchTerms", 
-                "titleTerms", 
-                "authorTerms", 
+                "folders",
+                "foldersShallow",
+                "labels",
+                "labelNames",
+                "tags",
+                "tagNames",
+                "searchTerms",
+                "titleTerms",
+                "authorTerms",
                 "annotationTerms",
                 "modifiedRanges",
                 "markedRanges",
                 ] as $m) {
-                    if ($context->$m() && !$context->$m) {
-                        throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]);
-                    }
+                if ($context->$m() && !$context->$m) {
+                    throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]);
                 }
+            }
             // next compute the context, supplying the query to manipulate directly
             $this->articleFilter($context, $q);
         }
@@ -1921,8 +1921,8 @@ class Database {
                     touched = 1 
                 where 
                     article in (select article from target_articles) 
-                    and subscription in (select distinct subscription from target_articles)", 
-                [$subq->getTypes(), "bool"], 
+                    and subscription in (select distinct subscription from target_articles)",
+                [$subq->getTypes(), "bool"],
                 [$subq->getValues(), $data['read']]
             );
             $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
@@ -1952,7 +1952,7 @@ class Database {
                     where 
                         article in (select article from target_articles) 
                         and subscription in (select distinct subscription from target_articles)",
-                    [$subq->getTypes(), $setTypes], 
+                    [$subq->getTypes(), $setTypes],
                     [$subq->getValues(), $setValues]
                 );
                 $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());

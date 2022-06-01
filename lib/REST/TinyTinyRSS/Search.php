@@ -319,7 +319,7 @@ class Search {
         $start = $day."T00:00:00 $tz";
         $end = $day."T23:59:59 $tz";
         $cc = $neg ? $c->not : $c;
-        // NOTE: TTRSS treats multiple positive dates as contradictory; we instead treat them as complimentary instead, because it makes more sense 
+        // NOTE: TTRSS treats multiple positive dates as contradictory; we instead treat them as complimentary instead, because it makes more sense
         return $cc->modifiedRanges(array_merge($cc->modifiedRanges, [[$start, $end]]));
     }
 
