@@ -22,7 +22,6 @@ use Laminas\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST */
 class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
-
     /** @dataProvider provideApiMatchData */
     public function testMatchAUrlToAnApi($apiList, string $input, array $exp): void {
         $r = new REST($apiList);
@@ -61,7 +60,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideAuthenticableRequests */
     public function testAuthenticateRequests(array $serverParams, array $expAttr): void {
-        $r = new REST();
+        $r = new REST;
         // create a mock user manager
         $this->userMock = $this->mock(User::class);
         $this->userMock->auth->returns(false);
@@ -95,7 +94,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testSendAuthenticationChallenges(): void {
         self::setConf();
-        $r = new REST();
+        $r = new REST;
         $in = new EmptyResponse(401);
         $exp = $in->withHeader("WWW-Authenticate", 'Basic realm="OOK", charset="UTF-8"');
         $act = $r->challenge($in, "OOK");
@@ -107,7 +106,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideUnnormalizedOrigins */
     public function testNormalizeOrigins(string $origin, string $exp, array $ports = null): void {
-        $r = new REST();
+        $r = new REST;
         $act = $r->corsNormalizeOrigin($origin, $ports);
         $this->assertSame($exp, $act);
     }
@@ -188,7 +187,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideCorsHeaders */
     public function testAddCorsHeaders(string $reqMethod, array $reqHeaders, array $resHeaders, array $expHeaders): void {
-        $r = new REST();
+        $r = new REST;
         $req = new Request("", $reqMethod, "php://memory", $reqHeaders);
         $res = new EmptyResponse(204, $resHeaders);
         $exp = new EmptyResponse(204, $expHeaders);

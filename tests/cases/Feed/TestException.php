@@ -150,10 +150,10 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function providePicoFeedException() {
         return [
-            'Failed feed discovery' => [new \PicoFeed\Reader\SubscriptionNotFoundException(),  "subscriptionNotFound"],
-            'Unsupported format'    => [new \PicoFeed\Reader\UnsupportedFeedFormatException(), "unsupportedFeedFormat"],
-            'Malformed XML'         => [new \PicoFeed\Parser\MalformedXmlException(),          "malformedXml"],
-            'XML entity expansion'  => [new \PicoFeed\Parser\XmlEntityException(),             "xmlEntity"],
+            'Failed feed discovery' => [new \PicoFeed\Reader\SubscriptionNotFoundException,  "subscriptionNotFound"],
+            'Unsupported format'    => [new \PicoFeed\Reader\UnsupportedFeedFormatException, "unsupportedFeedFormat"],
+            'Malformed XML'         => [new \PicoFeed\Parser\MalformedXmlException,          "malformedXml"],
+            'XML entity expansion'  => [new \PicoFeed\Parser\XmlEntityException,             "xmlEntity"],
         ];
     }
 

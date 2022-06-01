@@ -103,7 +103,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testCleanIdArrayValues(): void {
         $methods = ["articles", "editions", "tags", "labels", "subscriptions"];
-        $in = [1, "2", 3.5, 4.0, 4, "ook", 0, -20, true, false, null, new \DateTime(), -1.0];
+        $in = [1, "2", 3.5, 4.0, 4, "ook", 0, -20, true, false, null, new \DateTime, -1.0];
         $out = [1, 2, 4];
         $c = new Context;
         foreach ($methods as $method) {
@@ -113,7 +113,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testCleanFolderIdArrayValues(): void {
         $methods = ["folders", "foldersShallow"];
-        $in = [1, "2", 3.5, 4.0, 4, "ook", 0, -20, true, false, null, new \DateTime(), -1.0];
+        $in = [1, "2", 3.5, 4.0, 4, "ook", 0, -20, true, false, null, new \DateTime, -1.0];
         $out = [1, 2, 4, 0];
         $c = new Context;
         foreach ($methods as $method) {

@@ -147,7 +147,7 @@ LONG_STRING;
             'expires' => "2112-12-21 21:12:00",
             'user'    => $this->userId,
         ]);
-        $this->h = new API();
+        $this->h = new API;
     }
 
     protected function req($data, string $method = "POST", string $target = "", string $strData = null, string $user = null): ResponseInterface {

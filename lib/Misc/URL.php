@@ -10,7 +10,6 @@ namespace JKingWeb\Arsse\Misc;
  * A collection of functions for manipulating URLs
  */
 class URL {
-
     /** Returns whether a URL is absolute i.e. has a scheme */
     public static function absolute(string $url): bool {
         return (bool) strlen((string) parse_url($url, \PHP_URL_SCHEME));

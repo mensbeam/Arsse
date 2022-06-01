@@ -93,7 +93,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user->method("propertiesGet")->willReturn(['num' => 42, 'admin' => false, 'root_folder_name' => null, 'tz' => "Asia/Gaza"]);
         Arsse::$user->method("begin")->willReturn($this->transaction->get());
         //initialize a handler
-        $this->h = new V1();
+        $this->h = new V1;
     }
 
     protected function v($value) {

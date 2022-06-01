@@ -31,7 +31,7 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
      */
     public function testBaseClassWithoutMessage(): void {
         $this->assertException("unknown");
-        throw new Exception();
+        throw new Exception;
     }
 
     /**
