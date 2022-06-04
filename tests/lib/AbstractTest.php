@@ -31,6 +31,152 @@ use Laminas\Diactoros\Response\XmlResponse;
 abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     use \DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
 
+    protected const COL_DEFS = [
+        'arsse_meta' => [
+            'key'   => "str",
+            'value' => "str",
+        ],
+        'arsse_users' => [
+            'id'       => "str",
+            'password' => "str",
+            'num'      => "int",
+            'admin'    => "bool",
+        ],
+        'arsse_user_meta' => [
+            'owner'    => "str",
+            'key'      => "str",
+            'modified' => "datetime",
+            'value'    => "str",
+        ],
+        'arsse_sessions' => [
+            'id'      => "str",
+            'created' => "datetime",
+            'expires' => "datetime",
+            'user'    => "str",
+        ],
+        'arsse_tokens' => [
+            'id'      => "str",
+            'class'   => "str",
+            'user'    => "str",
+            'created' => "datetime",
+            'expires' => "datetime",
+            'data'    => "str",
+        ],
+        'arsse_feeds' => [
+            'id'         => "int",
+            'url'        => "str",
+            'title'      => "str",
+            'source'     => "str",
+            'updated'    => "datetime",
+            'modified'   => "datetime",
+            'next_fetch' => "datetime",
+            'orphaned'   => "datetime",
+            'etag'       => "str",
+            'err_count'  => "int",
+            'err_msg'    => "str",
+            'username'   => "str",
+            'password'   => "str",
+            'size'       => "int",
+            'icon'       => "int",
+        ],
+        'arsse_icons' => [
+            'id'         => "int",
+            'url'        => "str",
+            'modified'   => "datetime",
+            'etag'       => "str",
+            'next_fetch' => "datetime",
+            'orphaned'   => "datetime",
+            'type'       => "str",
+            'data'       => "blob",
+        ],
+        'arsse_articles' => [
+            'id'                 => "int",
+            'feed'               => "int",
+            'url'                => "str",
+            'title'              => "str",
+            'author'             => "str",
+            'published'          => "datetime",
+            'edited'             => "datetime",
+            'modified'           => "datetime",
+            'guid'               => "str",
+            'url_title_hash'     => "str",
+            'url_content_hash'   => "str",
+            'title_content_hash' => "str",
+            'content_scraped'    => "str",
+            'content'            => "str",
+        ],
+        'arsse_editions' => [
+            'id'       => "int",
+            'article'  => "int",
+            'modified' => "datetime",
+        ],
+        'arsse_enclosures' => [
+            'article' => "int",
+            'url'     => "str",
+            'type'    => "str",
+        ],
+        'arsse_categories' => [
+            'article' => "int",
+            'name'    => "str",
+        ],
+        'arsse_marks' => [
+            'article'      => "int",
+            'subscription' => "int",
+            'read'         => "bool",
+            'starred'      => "bool",
+            'modified'     => "datetime",
+            'note'         => "str",
+            'touched'      => "bool",
+            'hidden'       => "bool",
+        ],
+        'arsse_subscriptions' => [
+            'id'         => "int",
+            'owner'      => "str",
+            'feed'       => "int",
+            'added'      => "datetime",
+            'modified'   => "datetime",
+            'title'      => "str",
+            'order_type' => "int",
+            'pinned'     => "bool",
+            'folder'     => "int",
+            'keep_rule'  => "str",
+            'block_rule' => "str",
+            'scrape'     => "bool",
+        ],
+        'arsse_folders' => [
+            'id'       => "int",
+            'owner'    => "str",
+            'parent'   => "int",
+            'name'     => "str",
+            'modified' => "datetime",
+        ],
+        'arsse_tags' => [
+            'id'       => "int",
+            'owner'    => "str",
+            'name'     => "str",
+            'modified' => "datetime",
+        ],
+        'arsse_tag_members' => [
+            'tag'          => "int",
+            'subscription' => "int",
+            'assigned'     => "bool",
+            'modified'     => "datetime",
+        ],
+        'arsse_labels' => [
+            'id'       => "int",
+            'owner'    => "str",
+            'name'     => "str",
+            'modified' => "datetime",
+        ],
+        'arsse_label_members' => [
+            'label'        => "int",
+            'article'      => "int",
+            'subscription' => "int",
+            'assigned'     => "bool",
+            'modified'     => "datetime",
+        ],
+    ];
+
     protected $objMock;
     protected $confMock;
     protected $langMock;
@@ -260,47 +406,61 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         return true;
     }
 
-    public function compareExpectations(Driver $drv, array $expected): bool {
+    public function compareExpectations(Driver $drv, array $expected): void {
         foreach ($expected as $table => $info) {
-            $cols = array_map(function($v) {
-                return '"'.str_replace('"', '""', $v).'"';
-            }, array_keys($info['columns']));
-            $cols = implode(",", $cols);
-            $types = $info['columns'];
-            $data = $drv->prepare("SELECT $cols from $table")->run()->getAll();
-            $cols = array_keys($info['columns']);
-            foreach ($info['rows'] as $index => $row) {
-                $this->assertCount(sizeof($cols), $row, "The number of columns in array index $index of expectations for table $table does not match its definition");
-                $row = array_combine($cols, $row);
-                foreach ($data as $index => $test) {
-                    foreach ($test as $col => $value) {
-                        switch ($types[$col]) {
-                            case "datetime":
-                                $test[$col] = $this->approximateTime($row[$col], $value);
-                                break;
-                            case "int":
-                                $test[$col] = ValueInfo::normalize($value, ValueInfo::T_INT | ValueInfo::M_DROP | valueInfo::M_NULL);
-                                break;
-                            case "float":
-                                $test[$col] = ValueInfo::normalize($value, ValueInfo::T_FLOAT | ValueInfo::M_DROP | valueInfo::M_NULL);
-                                break;
-                            case "bool":
-                                $test[$col] = (int) ValueInfo::normalize($value, ValueInfo::T_BOOL | ValueInfo::M_DROP | valueInfo::M_NULL);
-                                break;
-                        }
+            // serialize the rows of the expected output
+            $types = array_values($info['columns']);
+            $exp = [];
+            $dates = [];
+            foreach ($info['rows'] as $r) {
+                $row = [];
+                foreach ($r as $c => $v) {
+                    if ($types[$c] === "datetime") {
+                        $dates[] = $v;
                     }
-                    if ($row === $test) {
-                        $data[$index] = $test;
-                        break;
+                    if ($v === null) {
+                        $row[] = "";
+                    } elseif (static::$stringOutput || is_string($v)) {
+                        $row[] = '"'.str_replace('"', '""', (string) $v).'"';
+                    } else {
+                        $row[] = (string) $v;
                     }
                 }
-                $this->assertContains($row, $data, "Actual Table $table does not contain record at expected array index $index");
-                $found = array_search($row, $data, true);
-                unset($data[$found]);
+                $exp[] = implode(",", $row);
             }
-            $this->assertSame([], $data, "Actual table $table contains extra rows not in expectations");
+            // serialize the rows of the actual output
+            $cols = implode(",", array_map(function($v) {
+                return '"'.str_replace('"', '""', $v).'"';
+            }, array_keys($info['columns'])));
+            $data = $drv->prepare("SELECT $cols from $table")->run()->getAll();
+            $types = $info['columns'];
+            $act = [];
+            foreach ($data as $r) {
+                $row = [];
+                foreach ($r as $c => $v) {
+                    if ($types[$c] === "datetime") {
+                        if (array_search($v, $dates, true) === false) {
+                            $v = Date::transform(Date::sub("PT1S", $v), "sql");
+                            if (array_search($v, $dates, true) === false) {
+                                $v = Date::transform(Date::add("PT2S", $v), "sql");
+                                if (array_search($v, $dates, true) === false) {
+                                    $v = Date::transform(Date::sub("PT1S", $v), "sql");
+                                }
+                            }
+                        }
+                    }
+                    if ($v === null) {
+                        $row[] = "";
+                    } elseif (is_string($v)) {
+                        $row[] = '"'.str_replace('"', '""', (string) $v).'"';
+                    } else {
+                        $row[] = (string) $v;
+                    }
+                }
+                $act[] = implode(",", $row);
+            }
+            $this->assertSame($exp, $act, "Actual table $table does not match expectations");
         }
-        return true;
     }
 
     public function primeExpectations(array $source, array $tableSpecs): array {
