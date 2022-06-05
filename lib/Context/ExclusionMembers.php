@@ -243,7 +243,6 @@ trait ExclusionMembers {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-
     public function markedRange($start = null, $end = null) {
         if ($start === null && $end === null) {
             $spec = null;

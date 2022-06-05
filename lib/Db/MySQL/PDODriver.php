@@ -29,7 +29,7 @@ class PDODriver extends Driver {
         try {
             $this->db = new \PDO($dsn, $user, $password, [
                 \PDO::ATTR_ERRMODE           => \PDO::ERRMODE_EXCEPTION,
-                \PDO::ATTR_STRINGIFY_FETCHES => true,
+                \PDO::ATTR_STRINGIFY_FETCHES => false,
             ]);
         } catch (\PDOException $e) {
             $msg = $e->getMessage();

@@ -9,9 +9,9 @@ namespace JKingWeb\Arsse\TestCase\Misc;
 use JKingWeb\Arsse\Misc\Query;
 use JKingWeb\Arsse\Misc\QueryFilter;
 
-/** 
+/**
  * @covers \JKingWeb\Arsse\Misc\Query
- * @covers \JKingWeb\Arsse\Misc\QueryFilter 
+ * @covers \JKingWeb\Arsse\Misc\QueryFilter
  */
 class TestQuery extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testBasicQuery(): void {

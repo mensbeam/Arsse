@@ -7,7 +7,6 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Db\PostgreSQL;
 
 class PDOResult extends \JKingWeb\Arsse\Db\PDOResult {
-
     // This method exists to transparent handle byte-array results
 
     public function valid() {

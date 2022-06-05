@@ -125,14 +125,14 @@ class REST {
                     $target = substr($url, strlen($api['strip']));
                 } else {
                     // if the match fails we are not able to handle the request
-                    throw new REST\Exception501();
+                    throw new REST\Exception501;
                 }
                 // return the API name, stripped URL, and API class name
                 return [$id, $target, $api['class']];
             }
         }
         // or throw an exception otherwise
-        throw new REST\Exception501();
+        throw new REST\Exception501;
     }
 
     public function authenticateRequest(ServerRequestInterface $req): ServerRequestInterface {

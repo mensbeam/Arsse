@@ -41,23 +41,14 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$db->driverSchemaUpdate();
         $this->data = [
             'arsse_users' => [
-                'columns' => [
-                    'id'       => 'str',
-                    'password' => 'str',
-                    'num'      => 'int',
-                ],
+                'columns' => ["id", "password", "num"],
                 'rows' => [
                     ["john.doe@example.com", "", 1],
                     ["jane.doe@example.com", "", 2],
                 ],
             ],
             'arsse_folders' => [
-                'columns' => [
-                    'id'     => "int",
-                    'owner'  => "str",
-                    'parent' => "int",
-                    'name'   => "str",
-                ],
+                'columns' => ["id", "owner", "parent", "name"],
                 'rows' => [
                     [1, "john.doe@example.com", null, "Science"],
                     [2, "john.doe@example.com", 1,    "Rocketry"],
@@ -68,11 +59,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
                 ],
             ],
             'arsse_feeds' => [
-                'columns' => [
-                    'id'         => "int",
-                    'url'        => "str",
-                    'title'      => "str",
-                ],
+                'columns' => ["id", "url", "title"],
                 'rows' => [
                     [1, "http://localhost:8000/Import/nasa-jpl",  "NASA JPL"],
                     [2, "http://localhost:8000/Import/torstar",   "Toronto Star"],
@@ -83,13 +70,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
                 ],
             ],
             'arsse_subscriptions' => [
-                'columns' => [
-                    'id'         => "int",
-                    'owner'      => "str",
-                    'folder'     => "int",
-                    'feed'       => "int",
-                    'title'      => "str",
-                ],
+                'columns' => ["id", "owner", "folder", "feed", "title"],
                 'rows' => [
                     [1, "john.doe@example.com", 2,    1, "NASA JPL"],
                     [2, "john.doe@example.com", 5,    2, "Toronto Star"],
@@ -100,11 +81,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
                 ],
             ],
             'arsse_tags' => [
-                'columns' => [
-                    'id'       => "int",
-                    'owner'    => "str",
-                    'name'     => "str",
-                ],
+                'columns' => ["id", "owner", "name"],
                 'rows' => [
                     [1, "john.doe@example.com", "canada"],
                     [2, "john.doe@example.com", "frequent"],
@@ -115,11 +92,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
                 ],
             ],
             'arsse_tag_members' => [
-                'columns' => [
-                    'tag'          => "int",
-                    'subscription' => "int",
-                    'assigned'     => "bool",
-                ],
+                'columns' => ["tag", "subscription", "assigned"],
                 'rows' => [
                     [1, 2, 1],
                     [1, 4, 1],

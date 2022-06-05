@@ -21,13 +21,13 @@ class Service {
 
     public function __construct() {
         $driver = Arsse::$conf->serviceDriver;
-        $this->drv = new $driver();
+        $this->drv = new $driver;
     }
 
     public function watch(bool $loop = true): \DateTimeInterface {
         $this->loop = $loop;
         $this->signalInit();
-        $t = new \DateTime();
+        $t = new \DateTime;
         do {
             $this->checkIn();
             static::cleanupPre();
@@ -80,7 +80,7 @@ class Service {
         // get the checking interval
         $int = Arsse::$conf->serviceFrequency;
         // subtract twice the checking interval from the current time to yield the earliest acceptable check-in time
-        $limit = new \DateTime();
+        $limit = new \DateTime;
         $limit->sub($int);
         $limit->sub($int);
         // return whether the check-in time is within the acceptable limit

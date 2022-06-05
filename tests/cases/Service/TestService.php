@@ -20,7 +20,7 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
         self::setConf();
         $this->dbMock = $this->mock(Database::class);
         Arsse::$db = $this->dbMock->get();
-        $this->srv = new Service();
+        $this->srv = new Service;
     }
 
     public function testCheckIn(): void {

@@ -328,7 +328,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock = $this->mock(Database::class);
         $this->dbMock->begin->returns($this->mock(Transaction::class));
         //initialize a handler
-        $this->h = new V1_2();
+        $this->h = new V1_2;
     }
 
     protected function v($value) {

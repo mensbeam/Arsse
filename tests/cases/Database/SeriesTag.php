@@ -13,11 +13,7 @@ trait SeriesTag {
     protected function setUpSeriesTag(): void {
         $this->data = [
             'arsse_users' => [
-                'columns' => [
-                    'id'       => 'str',
-                    'password' => 'str',
-                    'num'      => 'int',
-                ],
+                'columns' => ["id", "password", "num"],
                 'rows' => [
                     ["jane.doe@example.com", "",1],
                     ["john.doe@example.com", "",2],
@@ -26,11 +22,7 @@ trait SeriesTag {
                 ],
             ],
             'arsse_feeds' => [
-                'columns' => [
-                    'id'         => "int",
-                    'url'        => "str",
-                    'title'      => "str",
-                ],
+                'columns' => ["id", "url", "title"],
                 'rows' => [
                     [1,"http://example.com/1",""],
                     [2,"http://example.com/2",""],
@@ -48,12 +40,7 @@ trait SeriesTag {
                 ],
             ],
             'arsse_subscriptions' => [
-                'columns' => [
-                    'id'         => "int",
-                    'owner'      => "str",
-                    'feed'       => "int",
-                    'title'      => "str",
-                ],
+                'columns' => ["id", "owner", "feed", "title"],
                 'rows' => [
                     [1, "john.doe@example.com", 1,"Lord of Carrots"],
                     [2, "john.doe@example.com", 2,null],
@@ -72,11 +59,7 @@ trait SeriesTag {
                 ],
             ],
             'arsse_tags' => [
-                'columns' => [
-                    'id'       => "int",
-                    'owner'    => "str",
-                    'name'     => "str",
-                ],
+                'columns' => ["id", "owner", "name"],
                 'rows' => [
                     [1,"john.doe@example.com","Interesting"],
                     [2,"john.doe@example.com","Fascinating"],
@@ -85,11 +68,7 @@ trait SeriesTag {
                 ],
             ],
             'arsse_tag_members' => [
-                'columns' => [
-                    'tag'          => "int",
-                    'subscription' => "int",
-                    'assigned'     => "bool",
-                ],
+                'columns' => ["tag", "subscription", "assigned"],
                 'rows' => [
                     [1,1,1],
                     [1,3,0],

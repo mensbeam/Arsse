@@ -280,7 +280,7 @@ class Database {
     }
 
     /** Renames a user
-     * 
+     *
      * This does not have an effect on their numeric ID, but has a cascading effect on many tables
      */
     public function userRename(string $user, string $name): bool {
@@ -337,7 +337,7 @@ class Database {
     }
 
     /** Retrieves any metadata associated with a user
-     * 
+     *
      * @param string $user The user whose metadata is to be retrieved
      * @param bool $includeLarge Whether to include values which can be arbitrarily large text
      */
@@ -813,8 +813,8 @@ class Database {
     public function subscriptionList(string $user, $folder = null, bool $recursive = true, int $id = null): Db\Result {
         // validate inputs
         $folder = $this->folderValidateId($user, $folder)['id'];
-        // create a complex query
-        $integer = $this->db->sqlToken("integer");
+        // compile the query
+        $integerType = $this->db->sqlToken("integer");
         $q = new Query(
             "WITH RECURSIVE
             topmost(f_id, top) as (
@@ -835,7 +835,7 @@ class Database {
                 i.url as icon_url,
                 folder, t.top as top_folder, d.name as folder_name, dt.name as top_folder_name,
                 coalesce(s.title, f.title) as title,
-                coalesce((articles - hidden - marked), coalesce(articles,0)) as unread
+                cast(coalesce((articles - hidden - marked), coalesce(articles,0)) as $integerType) as unread -- this cast is required for MySQL for unclear reasons
             from arsse_subscriptions as s
                 join arsse_feeds as f on f.id = s.feed
                 left join topmost as t on t.f_id = s.folder
@@ -853,11 +853,11 @@ class Database {
                     select 
                         subscription, 
                         sum(hidden) as hidden,
-                        sum(cast((\"read\" = 1 and hidden = 0) as $integer)) as marked
+                        sum(case when \"read\" = 1 and hidden = 0 then 1 else 0 end) as marked
                     from arsse_marks group by subscription
                 ) as mark_stats on mark_stats.subscription = s.id",
-                ["str", "int"],
-                [$user, $folder]
+            ["str", "int"],
+            [$user, $folder]
         );
         $q->setWhere("s.owner = ?", ["str"], [$user]);
         $nocase = $this->db->sqlToken("nocase");
@@ -1614,26 +1614,26 @@ class Database {
             }
             // ensure any used array-type context options contain at least one member
             foreach ([
-                "articles", 
+                "articles",
                 "editions",
                 "subscriptions",
-                "folders", 
-                "foldersShallow", 
-                "labels", 
-                "labelNames", 
-                "tags", 
-                "tagNames", 
-                "searchTerms", 
-                "titleTerms", 
-                "authorTerms", 
+                "folders",
+                "foldersShallow",
+                "labels",
+                "labelNames",
+                "tags",
+                "tagNames",
+                "searchTerms",
+                "titleTerms",
+                "authorTerms",
                 "annotationTerms",
                 "modifiedRanges",
                 "markedRanges",
                 ] as $m) {
-                    if ($context->$m() && !$context->$m) {
-                        throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]);
-                    }
+                if ($context->$m() && !$context->$m) {
+                    throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]);
                 }
+            }
             // next compute the context, supplying the query to manipulate directly
             $this->articleFilter($context, $q);
         }
@@ -1922,8 +1922,8 @@ class Database {
                     touched = 1 
                 where 
                     article in (select article from target_articles) 
-                    and subscription in (select distinct subscription from target_articles)", 
-                [$subq->getTypes(), "bool"], 
+                    and subscription in (select distinct subscription from target_articles)",
+                [$subq->getTypes(), "bool"],
                 [$subq->getValues(), $data['read']]
             );
             $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
@@ -1953,7 +1953,7 @@ class Database {
                     where 
                         article in (select article from target_articles) 
                         and subscription in (select distinct subscription from target_articles)",
-                    [$subq->getTypes(), $setTypes], 
+                    [$subq->getTypes(), $setTypes],
                     [$subq->getValues(), $setValues]
                 );
                 $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
@@ -2053,7 +2053,6 @@ class Database {
 
     /** Deletes from the database articles which are beyond the configured clean-up threshold */
     public function articleCleanup(): bool {
-        $integer = $this->db->sqlToken("integer");
         $query = $this->db->prepareArray(
             "WITH RECURSIVE
             exempt_articles as (
@@ -2079,8 +2078,8 @@ class Database {
                 left join (
                     select 
                         article, 
-                        sum(cast((starred = 1 and hidden = 0) as $integer)) as starred, 
-                        sum(cast((\"read\" = 1 or hidden = 1) as $integer)) as \"read\", 
+                        sum(case when starred = 1 and hidden = 0 then 1 else 0 end) as starred, 
+                        sum(case when \"read\" = 1 or hidden = 1 then 1 else 0 end) as \"read\", 
                         max(arsse_marks.modified) as marked_date 
                     from arsse_marks 
                     group by article
@@ -2211,14 +2210,14 @@ class Database {
      * @param boolean $includeEmpty Whether to include (true) or supress (false) labels which have no articles assigned to them
      */
     public function labelList(string $user, bool $includeEmpty = true): Db\Result {
-        $integer = $this->db->sqlToken("integer");
+        $integerType = $this->db->sqlToken("integer");
         return $this->db->prepareArray(
             "SELECT * FROM (
                 SELECT
                     id,
                     name,
-                    coalesce(articles - coalesce(hidden, 0), 0) as articles,
-                    coalesce(marked, 0) as \"read\"
+                    cast(coalesce(articles - coalesce(hidden, 0), 0) as $integerType) as articles, -- this cast is required for MySQL for unclear reasons
+                    cast(coalesce(marked, 0) as $integerType) as \"read\" -- this cast is required for MySQL for unclear reasons
                 from arsse_labels
                     left join (
                         SELECT label, sum(assigned) as articles from arsse_label_members group by label
@@ -2227,7 +2226,7 @@ class Database {
                         SELECT
                             label,
                             sum(hidden) as hidden,
-                            sum(cast((\"read\" = 1 and hidden = 0) as $integer)) as marked
+                            sum(case when \"read\" = 1 and hidden = 0 then 1 else 0 end) as marked
                         from arsse_marks
                             join arsse_subscriptions on arsse_subscriptions.id = arsse_marks.subscription
                             join arsse_label_members on arsse_label_members.article = arsse_marks.article
@@ -2277,7 +2276,6 @@ class Database {
         $this->labelValidateId($user, $id, $byName, false);
         $field = $byName ? "name" : "id";
         $type = $byName ? "str" : "int";
-        $integer = $this->db->sqlToken("integer");
         $out = $this->db->prepareArray(
             "SELECT
                 id,
@@ -2292,7 +2290,7 @@ class Database {
                     SELECT
                         label,
                         sum(hidden) as hidden,
-                        sum(cast((\"read\" = 1 and hidden = 0) as $integer)) as marked
+                        sum(case when \"read\" = 1 and hidden = 0 then 1 else 0 end) as marked
                     from arsse_marks
                     join arsse_subscriptions on arsse_subscriptions.id = arsse_marks.subscription
                     join arsse_label_members on arsse_label_members.article = arsse_marks.article

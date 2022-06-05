@@ -15,11 +15,7 @@ trait SeriesSubscription {
     public function setUpSeriesSubscription(): void {
         $this->data = [
             'arsse_users' => [
-                'columns' => [
-                    'id'       => 'str',
-                    'password' => 'str',
-                    'num'      => 'int',
-                ],
+                'columns' => ["id", "password", "num"],
                 'rows' => [
                     ["jane.doe@example.com", "", 1],
                     ["john.doe@example.com", "", 2],
@@ -28,12 +24,7 @@ trait SeriesSubscription {
                 ],
             ],
             'arsse_folders' => [
-                'columns' => [
-                    'id'     => "int",
-                    'owner'  => "str",
-                    'parent' => "int",
-                    'name'   => "str",
-                ],
+                'columns' => ["id", "owner", "parent", "name"],
                 'rows' => [
                     [1, "john.doe@example.com", null, "Technology"],
                     [2, "john.doe@example.com",    1, "Software"],
@@ -44,27 +35,14 @@ trait SeriesSubscription {
                 ],
             ],
             'arsse_icons' => [
-                'columns' => [
-                    'id'   => "int",
-                    'url'  => "str",
-                    'data' => "blob",
-                ],
+                'columns' => ["id", "url", "data"],
                 'rows' => [
                     [1,"http://example.com/favicon.ico", "ICON DATA"],
                     [2,"http://example.net/favicon.ico", null],
                 ],
             ],
             'arsse_feeds' => [
-                'columns' => [
-                    'id'         => "int",
-                    'url'        => "str",
-                    'title'      => "str",
-                    'username'   => "str",
-                    'password'   => "str",
-                    'updated'    => "datetime",
-                    'next_fetch' => "datetime",
-                    'icon'       => "int",
-                ],
+                'columns' => ["id", "url", "title", "username", "password", "updated", "next_fetch", "icon"],
                 'rows' => [
                     [1,"http://example.com/feed1", "Ook", "", "",strtotime("now"),strtotime("now"),null],
                     [2,"http://example.com/feed2", "eek", "", "",strtotime("now - 1 hour"),strtotime("now - 1 hour"),1],
@@ -73,18 +51,7 @@ trait SeriesSubscription {
                 ],
             ],
             'arsse_subscriptions' => [
-                'columns' => [
-                    'id'         => "int",
-                    'owner'      => "str",
-                    'feed'       => "int",
-                    'title'      => "str",
-                    'folder'     => "int",
-                    'pinned'     => "bool",
-                    'order_type' => "int",
-                    'keep_rule'  => "str",
-                    'block_rule' => "str",
-                    'scrape'     => "bool",
-                ],
+                'columns' => ["id", "owner", "feed", "title", "folder", "pinned", "order_type", "keep_rule", "block_rule", "scrape"],
                 'rows' => [
                     [1,"john.doe@example.com",2,null,null,1,2,null,null,0],
                     [2,"jane.doe@example.com",2,null,null,0,0,null,null,0],
@@ -95,11 +62,7 @@ trait SeriesSubscription {
                 ],
             ],
             'arsse_tags' => [
-                'columns' => [
-                    'id'       => "int",
-                    'owner'    => "str",
-                    'name'     => "str",
-                ],
+                'columns' => ["id", "owner", "name"],
                 'rows' => [
                     [1,"john.doe@example.com","Interesting"],
                     [2,"john.doe@example.com","Fascinating"],
@@ -108,11 +71,7 @@ trait SeriesSubscription {
                 ],
             ],
             'arsse_tag_members' => [
-                'columns' => [
-                    'tag'          => "int",
-                    'subscription' => "int",
-                    'assigned'     => "bool",
-                ],
+                'columns' => ["tag", "subscription", "assigned"],
                 'rows' => [
                     [1,1,1],
                     [1,3,0],
@@ -122,14 +81,7 @@ trait SeriesSubscription {
                 ],
             ],
             'arsse_articles' => [
-                'columns' => [
-                    'id'                 => "int",
-                    'feed'               => "int",
-                    'url_title_hash'     => "str",
-                    'url_content_hash'   => "str",
-                    'title_content_hash' => "str",
-                    'title'              => "str",
-                ],
+                'columns' => ["id", "feed", "url_title_hash", "url_content_hash", "title_content_hash", "title"],
                 'rows' => [
                     [1,2,"","","","Title 1"],
                     [2,2,"","","","Title 2"],
@@ -142,10 +94,7 @@ trait SeriesSubscription {
                 ],
             ],
             'arsse_editions' => [
-                'columns' => [
-                    'id'      => "int",
-                    'article' => "int",
-                ],
+                'columns' => ["id", "article"],
                 'rows' => [
                     [1,1],
                     [2,2],
@@ -158,10 +107,7 @@ trait SeriesSubscription {
                 ],
             ],
             'arsse_categories' => [
-                'columns' => [
-                    'article' => "int",
-                    'name'    => "str",
-                ],
+                'columns' => ["article", "name"],
                 'rows' => [
                     [1,"A"],
                     [2,"B"],
@@ -173,13 +119,7 @@ trait SeriesSubscription {
                 ],
             ],
             'arsse_marks' => [
-                'columns' => [
-                    'article'      => "int",
-                    'subscription' => "int",
-                    'read'         => "bool",
-                    'starred'      => "bool",
-                    'hidden'       => "bool",
-                ],
+                'columns' => ["article", "subscription", "read", "starred", "hidden"],
                 'rows' => [
                     [1,2,1,0,0],
                     [2,2,1,0,0],

@@ -12,7 +12,7 @@ use JKingWeb\Arsse\Db\Exception;
 class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     use ExceptionBuilder;
 
-    protected const SQL_MODE = "ANSI_QUOTES,HIGH_NOT_PRECEDENCE,NO_BACKSLASH_ESCAPES,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT,STRICT_ALL_TABLES";
+    protected const SQL_MODE = "ANSI_QUOTES,HIGH_NOT_PRECEDENCE,NO_BACKSLASH_ESCAPES,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT,STRICT_ALL_TABLES,NO_UNSIGNED_SUBTRACTION";
     protected const TRANSACTIONAL_LOCKS = false;
 
     /** @var \mysqli */
@@ -81,10 +81,10 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         switch (strtolower($token)) {
             case "nocase":
                 return '"utf8mb4_unicode_ci"';
-            case "integer":
-                return "signed integer";
             case "asc":
                 return "";
+            case "integer":
+                return "signed integer";
             default:
                 return $token;
         }
@@ -167,7 +167,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $drv->report_mode = \MYSQLI_REPORT_OFF;
         $this->db = mysqli_init();
         $this->db->options(\MYSQLI_SET_CHARSET_NAME, "utf8mb4");
-        $this->db->options(\MYSQLI_OPT_INT_AND_FLOAT_NATIVE, false);
+        $this->db->options(\MYSQLI_OPT_INT_AND_FLOAT_NATIVE, true);
         $this->db->options(\MYSQLI_OPT_CONNECT_TIMEOUT, ceil(Arsse::$conf->dbTimeoutConnect));
         @$this->db->real_connect($host, $user, $password, $db, $port, $socket);
         if ($this->db->connect_errno) {

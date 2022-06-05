@@ -13,13 +13,10 @@ trait SeriesMeta {
     protected function setUpSeriesMeta(): void {
         $dataBare = [
             'arsse_meta' => [
-                'columns' => [
-                    'key'   => 'str',
-                    'value' => 'str',
-                ],
+                'columns' => ["key", "value"],
                 'rows' => [
-                //['schema_version', "".\JKingWeb\Arsse\Database::SCHEMA_VERSION],
-                ['album',"A Farewell to Kings"],
+                    //['schema_version', "".\JKingWeb\Arsse\Database::SCHEMA_VERSION],
+                    ['album',"A Farewell to Kings"],
                 ],
             ],
         ];
