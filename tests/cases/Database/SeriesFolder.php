@@ -12,23 +12,14 @@ trait SeriesFolder {
     protected function setUpSeriesFolder(): void {
         $this->data = [
             'arsse_users' => [
-                'columns' => [
-                    'id'       => 'str',
-                    'password' => 'str',
-                    'num'      => 'int',
-                ],
+                'columns' => ["id", "password", "num"],
                 'rows' => [
                     ["jane.doe@example.com", "",1],
                     ["john.doe@example.com", "",2],
                 ],
             ],
             'arsse_folders' => [
-                'columns' => [
-                    'id'     => "int",
-                    'owner'  => "str",
-                    'parent' => "int",
-                    'name'   => "str",
-                ],
+                'columns' => ["id", "owner", "parent", "name"],
                 /* Layout translates to:
                 Jane
                     Politics
@@ -49,11 +40,7 @@ trait SeriesFolder {
                 ],
             ],
             'arsse_feeds' => [
-                'columns' => [
-                    'id'         => "int",
-                    'url'        => "str",
-                    'title'      => "str",
-                ],
+                'columns' => ["id", "url", "title"],
                 'rows' => [
                     [1,"http://example.com/1", "Feed 1"],
                     [2,"http://example.com/2", "Feed 2"],
@@ -71,12 +58,7 @@ trait SeriesFolder {
                 ],
             ],
             'arsse_subscriptions' => [
-                'columns' => [
-                    'id'         => "int",
-                    'owner'      => "str",
-                    'feed'       => "int",
-                    'folder'     => "int",
-                ],
+                'columns' => ["id", "owner", "feed", "folder"],
                 'rows' => [
                     [1, "john.doe@example.com",1, null],
                     [2, "john.doe@example.com",2, null],

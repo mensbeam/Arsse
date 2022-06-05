@@ -12,12 +12,7 @@ trait SeriesUser {
     protected function setUpSeriesUser(): void {
         $this->data = [
             'arsse_users' => [
-                'columns' => [
-                    'id'       => 'str',
-                    'password' => 'str',
-                    'num'      => 'int',
-                    'admin'    => 'bool',
-                ],
+                'columns' => ["id", "password", "num", "admin"],
                 'rows' => [
                     ["admin@example.net", '$2y$10$PbcG2ZR3Z8TuPzM7aHTF8.v61dtCjzjK78gdZJcp4UePE8T9jEgBW', 1, 1], // password is hash of "secret"
                     ["jane.doe@example.com", "", 2, 0],
@@ -25,11 +20,7 @@ trait SeriesUser {
                 ],
             ],
             'arsse_user_meta' => [
-                'columns' => [
-                    'owner' => "str",
-                    'key'   => "str",
-                    'value' => "str",
-                ],
+                'columns' => ["owner", "key", "value"],
                 'rows' => [
                     ["admin@example.net", "lang", "en"],
                     ["admin@example.net", "tz", "America/Toronto"],

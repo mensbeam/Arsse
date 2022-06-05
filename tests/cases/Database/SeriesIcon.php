@@ -16,23 +16,14 @@ trait SeriesIcon {
         $now = gmdate("Y-m-d H:i:s", strtotime("now"));
         $this->data = [
             'arsse_users' => [
-                'columns' => [
-                    'id'       => 'str',
-                    'password' => 'str',
-                    'num'      => 'int',
-                ],
+                'columns' => ["id", "password", "num"],
                 'rows' => [
                     ["jane.doe@example.com", "",1],
                     ["john.doe@example.com", "",2],
                 ],
             ],
             'arsse_icons' => [
-                'columns' => [
-                    'id'   => "int",
-                    'url'  => "str",
-                    'type' => "str",
-                    'data' => "blob",
-                ],
+                'columns' => ["id", "url", "type", "data"],
                 'rows' => [
                     [1,'http://localhost:8000/Icon/PNG','image/png',base64_decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMjHxIGmVAAAADUlEQVQYV2NgYGBgAAAABQABijPjAAAAAABJRU5ErkJggg==")],
                     [2,'http://localhost:8000/Icon/GIF','image/gif',base64_decode("R0lGODlhAQABAIABAAAAAP///yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==")],
@@ -41,17 +32,7 @@ trait SeriesIcon {
                 ],
             ],
             'arsse_feeds' => [
-                'columns' => [
-                    'id'         => "int",
-                    'url'        => "str",
-                    'title'      => "str",
-                    'err_count'  => "int",
-                    'err_msg'    => "str",
-                    'modified'   => "datetime",
-                    'next_fetch' => "datetime",
-                    'size'       => "int",
-                    'icon'       => "int",
-                ],
+                'columns' => ["id", "url", "title", "err_count", "err_msg", "modified", "next_fetch", "size", "icon"],
                 'rows' => [
                     [1,"http://localhost:8000/Feed/Matching/3","Ook",0,"",$past,$past,0,1],
                     [2,"http://localhost:8000/Feed/Matching/1","Eek",5,"There was an error last time",$past,$future,0,2],
@@ -61,11 +42,7 @@ trait SeriesIcon {
                 ],
             ],
             'arsse_subscriptions' => [
-                'columns' => [
-                    'id'    => "int",
-                    'owner' => "str",
-                    'feed'  => "int",
-                ],
+                'columns' => ["id", "owner", "feed"],
                 'rows' => [
                     [1,'john.doe@example.com',1],
                     [2,'john.doe@example.com',2],

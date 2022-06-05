@@ -23,23 +23,14 @@ trait SeriesSession {
         $old = gmdate("Y-m-d H:i:s", strtotime("now - 2 days"));
         $this->data = [
             'arsse_users' => [
-                'columns' => [
-                    'id'       => 'str',
-                    'password' => 'str',
-                    'num'      => 'int',
-                ],
+                'columns' => ["id", "password", "num"],
                 'rows' => [
                     ["jane.doe@example.com", "",1],
                     ["john.doe@example.com", "",2],
                 ],
             ],
             'arsse_sessions' => [
-                'columns' => [
-                    'id'      => "str",
-                    'user'    => "str",
-                    'created' => "datetime",
-                    'expires' => "datetime",
-                ],
+                'columns' => ["id", "user", "created", "expires"],
                 'rows' => [
                     ["80fa94c1a11f11e78667001e673b2560", "jane.doe@example.com", $past, $faroff],
                     ["27c6de8da13311e78667001e673b2560", "jane.doe@example.com", $past, $past], // expired

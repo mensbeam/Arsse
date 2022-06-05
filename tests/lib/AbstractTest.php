@@ -387,14 +387,33 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         return $value;
     }
 
+    /** Inserts into the database test data in the following format:
+     * 
+     * ```php
+     * $data = [
+     *  'some_table' => [
+     *   'columns' => ["id", "name"],
+     *   'rows'    => [
+     *    [1,"Dupond"],
+     *    [2,"Dupont"],
+     *   ]
+     *  ],
+     *  'other_table' => [
+     *   ...
+     *  ]
+     * ];
+     * ```
+     */
     public function primeDatabase(Driver $drv, array $data): bool {
         $tr = $drv->begin();
         foreach ($data as $table => $info) {
             $cols = array_map(function($v) {
                 return '"'.str_replace('"', '""', $v).'"';
-            }, array_keys($info['columns']));
+            }, $info['columns']);
             $cols = implode(",", $cols);
-            $bindings = array_values($info['columns']);
+            $bindings = array_map(function($c) use ($table) {
+                return self::COL_DEFS[$table][$c];
+            }, $info['columns']);
             $params = implode(",", array_fill(0, sizeof($info['columns']), "?"));
             $s = $drv->prepareArray("INSERT INTO $table($cols) values($params)", $bindings);
             foreach ($info['rows'] as $row) {
@@ -433,16 +452,15 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             // serialize the rows of the actual output
             $cols = implode(",", array_map(function($v) {
                 return '"'.str_replace('"', '""', $v).'"';
-            }, array_keys($info['columns'])));
+            }, $info['columns']));
             $data = $drv->prepare("SELECT $cols from $table")->run()->getAll();
-            $types = $info['columns'];
             $act = [];
             $extra = [];
             foreach ($data as $r) {
                 $row = [];
                 foreach ($r as $c => $v) {
                     // account for dates which might be off by one second
-                    if ($types[$c] === "datetime") {
+                    if (self::COL_DEFS[$table][$c] === "datetime") {
                         if (array_search($v, $dates, true) === false) {
                             $v = Date::transform(Date::sub("PT1S", $v), "sql");
                             if (array_search($v, $dates, true) === false) {
@@ -490,23 +508,22 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         $out = [];
         foreach ($tableSpecs as $table => $columns) {
             // make sure the source has the table we want
-            $this->assertArrayHasKey($table, $source, "Source for expectations does not contain requested table $table.");
+            if (!isset($source[$table])) {
+                throw new Exception("Source for expectations does not contain requested table $table.");
+            }
+            // fill the output, particularly the correct number of (empty) rows
+            $rows = sizeof($source[$table]['rows']);
             $out[$table] = [
-                'columns' => [],
-                'rows'    => array_fill(0, sizeof($source[$table]['rows']), []),
+                'columns' => $columns,
+                'rows'    => array_fill(0, $rows, []),
             ];
-            // make sure the source has all the columns we want for the table
-            $cols = array_flip($columns);
-            $cols = array_intersect_key($cols, $source[$table]['columns']);
-            $this->assertSame(array_keys($cols), $columns, "Source for table $table does not contain all requested columns");
-            // get a map of source value offsets and keys
-            $targets = array_flip(array_keys($source[$table]['columns']));
-            foreach ($cols as $key => $order) {
-                // fill the column-spec
-                $out[$table]['columns'][$key] = $source[$table]['columns'][$key];
-                foreach ($source[$table]['rows'] as $index => $row) {
-                    // fill each row column-wise with re-ordered values
-                    $out[$table]['rows'][$index][$order] = $row[$targets[$key]];
+            // fill the rows with the requested data, column-wise
+            foreach ($columns as $c) {
+                if (($index = array_search($c, $source[$table]['columns'], true)) === false) {
+                    throw new exception("Expected column $table.$c is not present in test data");
+                }
+                for ($a = 0; $a < $rows; $a++) {
+                    $out[$table]['rows'][$a][] = $source[$table]['rows'][$a][$index];
                 }
             }
         }
