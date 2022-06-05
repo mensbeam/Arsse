@@ -428,14 +428,13 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     public function compareExpectations(Driver $drv, array $expected): void {
         foreach ($expected as $table => $info) {
             // serialize the rows of the expected output
-            $types = array_values($info['columns']);
             $exp = [];
             $dates = [];
             foreach ($info['rows'] as $r) {
                 $row = [];
                 foreach ($r as $c => $v) {
                     // store any date values for later comparison
-                    if ($types[$c] === "datetime") {
+                    if (self::COL_DEFS[$table][$info['columns'][$c]] === "datetime") {
                         $dates[] = $v;
                     }
                     // serialize to CSV, null being represented by no value
