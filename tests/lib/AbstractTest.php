@@ -518,10 +518,6 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         // stringify our expectations if necessary
         if (static::$stringOutput ?? false) {
             $expected = $this->stringify($expected);
-            // MySQL is extra-special and mixes strings and integers, so we cast the data, too
-            if ((static::$implementation ?? "") === "MySQL") {
-                $data = $this->stringify($data);
-            }
         }
         $this->assertCount(sizeof($expected), $data, "Number of result rows (".sizeof($data).") differs from number of expected rows (".sizeof($expected).")");
         if (sizeof($expected)) {

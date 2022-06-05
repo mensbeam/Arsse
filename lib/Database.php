@@ -813,7 +813,8 @@ class Database {
     public function subscriptionList(string $user, $folder = null, bool $recursive = true, int $id = null): Db\Result {
         // validate inputs
         $folder = $this->folderValidateId($user, $folder)['id'];
-        // create a complex query
+        // compile the query
+        $integerType = $this->db->sqlToken("integer");
         $q = new Query(
             "WITH RECURSIVE
             topmost(f_id, top) as (
@@ -834,7 +835,7 @@ class Database {
                 i.url as icon_url,
                 folder, t.top as top_folder, d.name as folder_name, dt.name as top_folder_name,
                 coalesce(s.title, f.title) as title,
-                coalesce((articles - hidden - marked), coalesce(articles,0)) as unread
+                cast(coalesce((articles - hidden - marked), coalesce(articles,0)) as $integerType) as unread -- this cast is required for MySQL for unclear reasons
             from arsse_subscriptions as s
                 join arsse_feeds as f on f.id = s.feed
                 left join topmost as t on t.f_id = s.folder
@@ -2209,13 +2210,14 @@ class Database {
      * @param boolean $includeEmpty Whether to include (true) or supress (false) labels which have no articles assigned to them
      */
     public function labelList(string $user, bool $includeEmpty = true): Db\Result {
+        $integerType = $this->db->sqlToken("integer");
         return $this->db->prepareArray(
             "SELECT * FROM (
                 SELECT
                     id,
                     name,
-                    coalesce(articles - coalesce(hidden, 0), 0) as articles,
-                    coalesce(marked, 0) as \"read\"
+                    cast(coalesce(articles - coalesce(hidden, 0), 0) as $integerType) as articles, -- this cast is required for MySQL for unclear reasons
+                    cast(coalesce(marked, 0) as $integerType) as \"read\" -- this cast is required for MySQL for unclear reasons
                 from arsse_labels
                     left join (
                         SELECT label, sum(assigned) as articles from arsse_label_members group by label
