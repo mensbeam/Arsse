@@ -422,7 +422,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                     // serialize to CSV, null being represented by no value
                     if ($v === null) {
                         $row[] = "";
-                    } elseif (static::$stringOutput || is_string($v)) {
+                    } elseif ($drv->stringOutput() || is_string($v)) {
                         $row[] = '"'.str_replace('"', '""', (string) $v).'"';
                     } else {
                         $row[] = (string) $v;

@@ -12,7 +12,7 @@ use JKingWeb\Arsse\Db\Exception;
 class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     use ExceptionBuilder;
 
-    protected const SQL_MODE = "ANSI_QUOTES,HIGH_NOT_PRECEDENCE,NO_BACKSLASH_ESCAPES,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT,STRICT_ALL_TABLES";
+    protected const SQL_MODE = "ANSI_QUOTES,HIGH_NOT_PRECEDENCE,NO_BACKSLASH_ESCAPES,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT,STRICT_ALL_TABLES,NO_UNSIGNED_SUBTRACTION";
     protected const TRANSACTIONAL_LOCKS = false;
 
     /** @var \mysqli */

@@ -204,4 +204,8 @@ abstract class AbstractDriver implements Driver {
     public function prepare(string $query, ...$paramType): Statement {
         return $this->prepareArray($query, $paramType);
     }
+
+    public function stringOutput(): bool {
+        return false;
+    }
 }
