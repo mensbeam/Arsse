@@ -415,9 +415,11 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             foreach ($info['rows'] as $r) {
                 $row = [];
                 foreach ($r as $c => $v) {
+                    // store any date values for later comparison
                     if ($types[$c] === "datetime") {
                         $dates[] = $v;
                     }
+                    // serialize to CSV, null being represented by no value
                     if ($v === null) {
                         $row[] = "";
                     } elseif (static::$stringOutput || is_string($v)) {
@@ -435,9 +437,11 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             $data = $drv->prepare("SELECT $cols from $table")->run()->getAll();
             $types = $info['columns'];
             $act = [];
+            $extra = [];
             foreach ($data as $r) {
                 $row = [];
                 foreach ($r as $c => $v) {
+                    // account for dates which might be off by one second
                     if ($types[$c] === "datetime") {
                         if (array_search($v, $dates, true) === false) {
                             $v = Date::transform(Date::sub("PT1S", $v), "sql");
@@ -457,8 +461,27 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                         $row[] = (string) $v;
                     }
                 }
-                $act[] = implode(",", $row);
+                $row = implode(",", $row);
+                // now search for the actual output row in the expected output
+                $found = array_keys($exp, $row, true);
+                foreach ($found as $k) {
+                    if(!isset($act[$k])) {
+                        $act[$k] = $row;
+                        // skip to the next row
+                        continue 2;
+                    }
+                }
+                // if the row was not found, add it to a buffer which will be added to the actual output once all found rows are processed
+                $extra[] = $row;
             }
+            // add any unfound rows to the end of the actual array
+            $base = sizeof($exp) + 1;
+            foreach ($extra as $k => $v) {
+                $act[$base + $k] = $v;
+            }
+            // sort the actual output by keys
+            ksort($act);
+            // finally perform the comparison to be shown to the tester
             $this->assertSame($exp, $act, "Actual table $table does not match expectations");
         }
     }

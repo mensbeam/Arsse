@@ -165,7 +165,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $drv->report_mode = \MYSQLI_REPORT_OFF;
         $this->db = mysqli_init();
         $this->db->options(\MYSQLI_SET_CHARSET_NAME, "utf8mb4");
-        $this->db->options(\MYSQLI_OPT_INT_AND_FLOAT_NATIVE, false);
+        $this->db->options(\MYSQLI_OPT_INT_AND_FLOAT_NATIVE, true);
         $this->db->options(\MYSQLI_OPT_CONNECT_TIMEOUT, ceil(Arsse::$conf->dbTimeoutConnect));
         @$this->db->real_connect($host, $user, $password, $db, $port, $socket);
         if ($this->db->connect_errno) {
