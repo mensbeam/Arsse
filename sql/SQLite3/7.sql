@@ -5,30 +5,30 @@
 -- Create a temporary table mapping old article IDs to new article IDs per-user.
 -- Any articles which have only one subscription will be unchanged, which will
 -- limit the amount of disruption
-create table arsse_articles_map(
+create temp table arsse_articles_map(
     article int not null,
     subscription int not null,
     id integer primary key autoincrement
 );
-insert into arsse_articles_map(article, subscription) values(1, 1, '');
+insert into arsse_articles_map(article, subscription) values(1, 1);
 delete from arsse_articles_map;
-update sqlite_sequence set seq = (select max(id) from arsse_articles) where name = 'arsse_articles_map';
+update temp.sqlite_sequence set seq = (select max(id) from arsse_articles) where name = 'arsse_articles_map';
 insert into arsse_articles_map(article, subscription)
-    select 
-        a.id as article, 
-        s.id as subscription
+    select
+       a.id as article,
+       s.id as subscription
     from arsse_articles as a join arsse_subscriptions as s using(feed)
     where feed in (
-        select feed from (select feed, count(*) as count from arsse_subscriptions group by feed) as c where c.count > 1
+        select feed from (select feed, count(*) as count from arsse_subscriptions group by feed) as c where count > 1
     );
 insert into arsse_articles_map(article, subscription, id)
-    select 
-        a.id as article, 
-        s.id as subscription,
+    select
+       a.id as article,
+       s.id as subscription,
         a.id as id
     from arsse_articles as a join arsse_subscriptions as s using(feed)
     where feed in (
-        select feed from (select feed, count(*) as count from arsse_subscriptions group by feed) as c where c.count = 1
+        select feed from (select feed, count(*) as count from arsse_subscriptions group by feed) as c where count = 1
     );
 
 -- Create a new articles table which combines the marks table but does not include content
@@ -68,7 +68,7 @@ insert into arsse_articles_new
         a.author,
         a.guid,
         a.url_title_hash,
-        a_url_content_hash,
+        a.url_content_hash,
         a.title_content_hash,
         coalesce(m.note,'')
     from arsse_articles_map as i
@@ -94,8 +94,8 @@ delete from arsse_editions where article in (select article from arsse_articles_
 
 -- Create enclures for renumbered articles and delete obsolete enclosures
 insert into arsse_enclosures(article, url, type)
-    select 
-        m.id, url, type
+    select
+       m.id, url, type
     from arsse_articles_map as m
     join arsse_enclosures as e on m.article = e.article
     where m.id <> m.article;
@@ -103,8 +103,8 @@ delete from arsse_enclosures where article in (select article from arsse_article
 
 -- Create categories for renumbered articles and delete obsolete categories
 insert into arsse_categories(article, name)
-    select 
-        m.id, name
+    select
+       m.id, name
     from arsse_articles_map as m
     join arsse_categories as c on m.article = c.article
     where m.id <> m.article;
@@ -154,16 +154,16 @@ create table arsse_subscriptions_new(
 );
 insert into arsse_subscriptions_new
     select
-        s.id, 
-        s.owner, 
-        f.url, 
-        f.title, 
-        s.title, 
+        s.id,
+        s.owner,
+        f.url,
+        f.title,
+        s.title,
         s.folder,
         f.modified,
-        f.etag
+        f.etag,
         f.next_fetch,
-        f.added,
+        s.added,
         f.source,
         f.updated,
         f.err_count,

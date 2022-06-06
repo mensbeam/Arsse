@@ -11,7 +11,7 @@ use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\Exception;
 use org\bovigo\vfs\vfsStream;
 
-class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
+abstract class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
     protected static $interface;
     protected $drv;
     protected $vfs;

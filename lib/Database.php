@@ -27,9 +27,8 @@ use JKingWeb\Arsse\Rule\Exception as RuleException;
  * - Subscriptions to feeds, which belong to users
  * - Folders, which belong to users and contain subscriptions
  * - Tags, which belong to users and can be assigned to multiple subscriptions
- * - Feeds to which users are subscribed
- * - Icons, which are associated with feeds
- * - Articles, which belong to feeds and for which users can only affect metadata
+ * - Icons, which are associated with subscriptions
+ * - Articles, which belong to subscriptions
  * - Editions, identifying authorial modifications to articles
  * - Labels, which belong to users and can be assigned to multiple articles
  * - Sessions, used by some protocols to identify users across periods of time
@@ -49,7 +48,7 @@ use JKingWeb\Arsse\Rule\Exception as RuleException;
  */
 class Database {
     /** The version number of the latest schema the interface is aware of */
-    public const SCHEMA_VERSION = 7;
+    public const SCHEMA_VERSION = 8;
     /** Makes tag/label association change operations remove members */
     public const ASSOC_REMOVE = 0;
     /** Makes tag/label association change operations add members */

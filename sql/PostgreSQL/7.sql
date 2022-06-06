@@ -5,12 +5,12 @@
 -- Create a temporary table mapping old article IDs to new article IDs per-user.
 -- Any articles which have only one subscription will be unchanged, which will
 -- limit the amount of disruption
-create table arsse_articles_map(
+create temp table arsse_articles_map(
     article bigint not null,
     subscription bigint not null,
     id bigserial primary key
 );
-alter sequence arsse_articles_map_id_seq restart with (select max(id) + 1 from arsse_articles);
+select setval('arsse_articles_map_id_seq', (select max(id) from arsse_articles));
 insert into arsse_articles_map(article, subscription)
     select 
         a.id as article, 
@@ -55,30 +55,35 @@ alter table arsse_articles add column marked timestamp(0) without time zone;
 alter table arsse_articles add column note text collate "und-x-icu" not null default '';
 
 -- Populate the articles table with new information; this either inserts or updates in-place
-insert into arsse_articles(id,feed,subscription,read,starred,hidden,published,edited,modified,marked,url,title,author,guid,url_title_hash,url_content_hash,title_content_hash,note)
+with new_data as (
     select
         i.id,
         a.feed,
         i.subscription,
-        coalesce(m.read,0),
-        coalesce(m.starred,0),
-        coalesce(m.hidden,0),
+        coalesce(m.read,0) as read,
+        coalesce(m.starred,0) as starred,
+        coalesce(m.hidden,0) as hidden,
         a.published,
         a.edited,
         a.modified,
-        m.modified,
+        m.modified as marked,
         a.url,
         a.title,
         a.author,
         a.guid,
         a.url_title_hash,
-        a_url_content_hash,
+        a.url_content_hash,
         a.title_content_hash,
-        coalesce(m.note,'')
+        coalesce(m.note,'') as note
     from arsse_articles_map as i
     left join arsse_articles as a on a.id = i.article
     left join arsse_marks as m on a.id = m.article
-on conflict do update set (id,feed,subscription,read,starred,hidden,published,edited,modified,marked,url,title,author,guid,url_title_hash,url_content_hash,title_content_hash,note) = row;
+)
+insert into arsse_articles(id,feed,subscription,read,starred,hidden,published,edited,modified,marked,url,title,author,guid,url_title_hash,url_content_hash,title_content_hash,note)
+    select * from new_data
+on conflict (id) do update set (subscription,read,starred,hidden,marked,note) = (
+    select subscription, read, starred, hidden, marked, note from new_data where id = excluded.id
+);
 
 -- Create one edition for each renumbered article
 insert into arsse_editions(article) select id from arsse_articles_map where id <> article;

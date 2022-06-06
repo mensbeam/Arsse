@@ -10,7 +10,10 @@ create table arsse_articles_map(
     subscription bigint unsigned not null,
     id serial
 );
-alter table arsse_articles_map auto_increment = (select max(id) + 1 from arsse_articles);
+-- alter table arsse_articles_map auto_increment = (select max(id) + 1 from arsse_articles);
+insert into arsse_articles_map 
+    select 0, 0, max(id) from arsse_articles;
+delete from arsse_articles_map;
 insert into arsse_articles_map(article, subscription)
     select 
         a.id as article, 
@@ -73,7 +76,7 @@ insert into arsse_articles(id,feed,subscription,"read",starred,hidden,published,
         a.author,
         a.guid,
         a.url_title_hash,
-        a_url_content_hash,
+        a.url_content_hash,
         a.title_content_hash,
         coalesce(m.note,'')
     from arsse_articles_map as i
