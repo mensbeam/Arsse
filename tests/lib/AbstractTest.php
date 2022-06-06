@@ -434,7 +434,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                 $row = [];
                 foreach ($r as $c => $v) {
                     // store any date values for later comparison
-                    if (self::COL_DEFS[$table][$info['columns'][$c]] === "datetime") {
+                    if (is_string($v) && preg_match("/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d$/", $v)) {
                         $dates[] = $v;
                     }
                     // serialize to CSV, null being represented by no value
@@ -459,7 +459,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                 $row = [];
                 foreach ($r as $c => $v) {
                     // account for dates which might be off by one second
-                    if (self::COL_DEFS[$table][$c] === "datetime") {
+                    if (is_string($v) && preg_match("/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d$/", $v)) {
                         if (array_search($v, $dates, true) === false) {
                             $v = Date::transform(Date::sub("PT1S", $v), "sql");
                             if (array_search($v, $dates, true) === false) {
@@ -492,7 +492,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                 $extra[] = $row;
             }
             // add any unfound rows to the end of the actual array
-            $base = sizeof($exp) + 1;
+            $base = sizeof($exp);
             foreach ($extra as $k => $v) {
                 $act[$base + $k] = $v;
             }

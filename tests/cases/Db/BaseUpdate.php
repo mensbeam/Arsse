@@ -158,34 +158,47 @@ class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
 QUERY_TEXT
         );
         $this->drv->schemaUpdate(7);
-        $users = [
-            ['id' => "a", 'password' => "xyz", 'num' => 1],
-            ['id' => "b", 'password' => "abc", 'num' => 2],
+        $exp = [
+            'arsse_users' => [
+                'columns' => ["id", "password", "num"],
+                'rows'    => [
+                    ["a", "xyz", 1],
+                    ["b", "abc", 2],
+                ]
+            ],
+            'arsse_folders' => [
+                'columns' => ["owner", "name"],
+                'rows'    => [
+                    ["a", "1"],
+                    ["b", "2"],
+                ]
+            ],
+            'arsse_icons' => [
+                'columns' => ["id", "url"],
+                'rows'    => [
+                    [1, "http://example.com/icon"],
+                    [2, "http://example.org/icon"],
+                ]
+            ],
+            'arsse_feeds' => [
+                'columns' => ["url", "icon"],
+                'rows'    => [
+                    ["http://example.com/", 1],
+                    ["http://example.org/", 2],
+                    ["https://example.com/", 1],
+                    ["http://example.net/", null],
+                ]
+            ],
+            'arsse_subscriptions' => [
+                'columns' => ["id", "scrape"],
+                'rows'    => [
+                    [1,1],
+                    [2,1],
+                    [3,0],
+                    [4,0],
+                ]
+            ]
         ];
-        $folders = [
-            ['owner' => "a", 'name' => "1"],
-            ['owner' => "b", 'name' => "2"],
-        ];
-        $icons = [
-            ['id' => 1, 'url' => "http://example.com/icon"],
-            ['id' => 2, 'url' => "http://example.org/icon"],
-        ];
-        $feeds = [
-            ['url' => 'http://example.com/', 'icon' => 1],
-            ['url' => 'http://example.org/', 'icon' => 2],
-            ['url' => 'https://example.com/', 'icon' => 1],
-            ['url' => 'http://example.net/', 'icon' => null],
-        ];
-        $subs = [
-            ['id' => 1, 'scrape' => 1],
-            ['id' => 2, 'scrape' => 1],
-            ['id' => 3, 'scrape' => 0],
-            ['id' => 4, 'scrape' => 0],
-        ];
-        $this->assertEquals($users, $this->drv->query("SELECT id, password, num from arsse_users order by id")->getAll());
-        $this->assertEquals($folders, $this->drv->query("SELECT owner, name from arsse_folders order by owner")->getAll());
-        $this->assertEquals($icons, $this->drv->query("SELECT id, url from arsse_icons order by id")->getAll());
-        $this->assertEquals($feeds, $this->drv->query("SELECT url, icon from arsse_feeds order by id")->getAll());
-        $this->assertEquals($subs, $this->drv->query("SELECT id, scrape from arsse_subscriptions order by id")->getAll());
+        $this->compareExpectations($this->drv, $exp);
     }
 }
