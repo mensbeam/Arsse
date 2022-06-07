@@ -130,6 +130,7 @@ abstract class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv->schemaUpdate(-1, $this->base);
     }
 
+    /** @depends testPerformActualUpdate */
     public function testPerformMaintenance(): void {
         $this->drv->schemaUpdate(Database::SCHEMA_VERSION);
         $this->assertTrue($this->drv->maintenance());

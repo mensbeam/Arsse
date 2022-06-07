@@ -10,9 +10,7 @@ create temp table arsse_articles_map(
     subscription int not null,
     id integer primary key autoincrement
 );
-insert into arsse_articles_map(article, subscription) values(1, 1);
-delete from arsse_articles_map;
-update temp.sqlite_sequence set seq = (select max(id) from arsse_articles) where name = 'arsse_articles_map';
+replace into temp.sqlite_sequence(name,seq) select 'arsse_articles_map', max(id) from arsse_articles;
 insert into arsse_articles_map(article, subscription)
     select
        a.id as article,
