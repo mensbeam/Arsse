@@ -111,6 +111,7 @@ insert into arsse_categories(article, name)
     where m.id <> m.article;
 
 -- Drop the subscription column from the label members table as it is no longer needed (there is now a direct link between articles and subscriptions)
+alter table arsse_label_members drop foreign key arsse_label_members_ibfk_3;
 alter table arsse_label_members drop column subscription;
 
 -- Create label associations for renumbered articles
@@ -125,41 +126,42 @@ insert into arsse_label_members
 delete from arsse_articles where id in (select article from arsse_articles_map where id <> article);
 alter table arsse_articles modify subscription bigint unsigned not null;
 alter table arsse_articles add foreign key(subscription) references arsse_subscriptions(id) on delete cascade on update cascade;
+alter table arsse_articles drop foreign key arsse_articles_ibfk_1;
 alter table arsse_articles drop column feed;
 
 -- Add feed-related columns to the subscriptions table
-alter table arsse_subscriptions add column url varchar(255);
-alter table arsse_subscriptions add column feed_title largetext;
-alter table arsse_subscriptions add column etag largetext not null default '';
+alter table arsse_subscriptions add column url longtext;
+alter table arsse_subscriptions add column feed_title longtext;
+alter table arsse_subscriptions add column etag varchar(255) not null default '';
 alter table arsse_subscriptions add column last_mod datetime(0);
 alter table arsse_subscriptions add column next_fetch datetime(0);
 alter table arsse_subscriptions add column updated datetime(0);
-alter table arsse_subscriptions add column source largetext;
+alter table arsse_subscriptions add column source longtext;
 alter table arsse_subscriptions add column err_count bigint unsigned not null default 0;
-alter table arsse_subscriptions add column err_msg largetext;
+alter table arsse_subscriptions add column err_msg longtext;
 alter table arsse_subscriptions add column size bigint unsigned not null default 0;
 alter table arsse_subscriptions add column icon bigint unsigned;
 
 -- Populate the new columns
-update arsse_subscriptions as s set 
-    url = f.url,
-    feed_title = f.title,
-    last_mod = f.modified,
-    etag = f.etag,
-    next_fetch = f.next_fetch,
-    source = f.source,
-    updated = f.updated,
-    err_count = f.err_count,
-    err_msg = f.err_msg,
-    size = f.size,
-    icon = f.icon
-from arsse_feeds as f
+update arsse_subscriptions as s, arsse_feeds as f set 
+    s.url = f.url,
+    s.feed_title = f.title,
+    s.last_mod = f.modified,
+    s.etag = f.etag,
+    s.next_fetch = f.next_fetch,
+    s.source = f.source,
+    s.updated = f.updated,
+    s.err_count = f.err_count,
+    s.err_msg = f.err_msg,
+    s.size = f.size,
+    s.icon = f.icon
 where s.feed = f.id;
 
 -- Clean up the subscriptions table: add necessary constraints on new columns which could not be satisfied before inserting information, and drop the now obsolete feed column
-alter table arsse_subscriptions alter column url set not null;
+alter table arsse_subscriptions modify url longtext not null;
 alter table arsse_subscriptions add foreign key(icon) references arsse_icons(id) on delete set null;
-alter table arsse_subscriptions add unique(owner,url);
+alter table arsse_subscriptions add unique(owner,url(255));
+alter table arsse_subscriptions drop constraint arsse_subscriptions_ibfk_2;
 alter table arsse_subscriptions drop column feed;
 
 -- Delete unneeded table
