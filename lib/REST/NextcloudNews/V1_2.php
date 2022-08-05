@@ -18,7 +18,6 @@ use JKingWeb\Arsse\REST\Exception;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\JsonResponse as Response;
-use Laminas\Diactoros\Response\EmptyResponse;
 
 class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     public const VERSION = "11.0.5";
@@ -86,19 +85,19 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($req->getAttribute("authenticated", false)) {
             Arsse::$user->id = $req->getAttribute("authenticatedUser");
         } else {
-            return new EmptyResponse(401);
+            return HTTP::respEmpty(401);
         }
         // normalize the input
         $data = (string) $req->getBody();
         if ($data) {
             // if the entity body is not JSON according to content type, return "415 Unsupported Media Type"
             if (!HTTP::matchType($req, "", self::ACCEPTED_TYPE)) {
-                return new EmptyResponse(415, ['Accept' => self::ACCEPTED_TYPE]);
+                return HTTP::respEmpty(415, ['Accept' => self::ACCEPTED_TYPE]);
             }
             $data = @json_decode($data, true);
             if (json_last_error() !== \JSON_ERROR_NONE) {
                 // if the body could not be parsed as JSON, return "400 Bad Request"
-                return new EmptyResponse(400);
+                return HTTP::respEmpty(400);
             }
         } else {
             $data = [];
@@ -117,10 +116,10 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             // @codeCoverageIgnoreStart
         } catch (Exception $e) {
             // if there was a REST exception return 400
-            return new EmptyResponse(400);
+            return HTTP::respEmpty(400);
         } catch (AbstractException $e) {
             // if there was any other Arsse exception return 500
-            return new EmptyResponse(500);
+            return HTTP::respEmpty(500);
         }
         // @codeCoverageIgnoreEnd
     }
@@ -162,11 +161,11 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 return $this->paths[$url][$method];
             } else {
                 // otherwise return 405
-                return new EmptyResponse(405, ['Allow' => implode(", ", array_keys($this->paths[$url]))]);
+                return HTTP::respEmpty(405, ['Allow' => implode(", ", array_keys($this->paths[$url]))]);
             }
         } else {
             // if the path is not supported, return 404
-            return new EmptyResponse(404);
+            return HTTP::respEmpty(404);
         }
     }
 
@@ -268,13 +267,13 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             if (in_array("GET", $allowed)) {
                 array_unshift($allowed, "HEAD");
             }
-            return new EmptyResponse(204, [
+            return HTTP::respEmpty(204, [
                 'Allow'  => implode(",", $allowed),
                 'Accept' => self::ACCEPTED_TYPE,
             ]);
         } else {
             // if the path is not supported, return 404
-            return new EmptyResponse(404);
+            return HTTP::respEmpty(404);
         }
     }
 
@@ -294,12 +293,12 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionInput $e) {
             switch ($e->getCode()) {
                 // folder already exists
-                case 10236: return new EmptyResponse(409);
+                case 10236: return HTTP::respEmpty(409);
                 // folder name not acceptable
                 case 10231:
-                case 10232: return new EmptyResponse(422);
+                case 10232: return HTTP::respEmpty(422);
                 // other errors related to input
-                default: return new EmptyResponse(400); // @codeCoverageIgnore
+                default: return HTTP::respEmpty(400); // @codeCoverageIgnore
             }
         }
         $folder = $this->folderTranslate(Arsse::$db->folderPropertiesGet(Arsse::$user->id, $folder));
@@ -313,9 +312,9 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             Arsse::$db->folderRemove(Arsse::$user->id, (int) $url[1]);
         } catch (ExceptionInput $e) {
             // folder does not exist
-            return new EmptyResponse(404);
+            return HTTP::respEmpty(404);
         }
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     // rename a folder (also supports moving nesting folders, but this is not a feature of the API)
@@ -325,24 +324,24 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionInput $e) {
             switch ($e->getCode()) {
                 // folder does not exist
-                case 10239: return new EmptyResponse(404);
+                case 10239: return HTTP::respEmpty(404);
                 // folder already exists
-                case 10236: return new EmptyResponse(409);
+                case 10236: return HTTP::respEmpty(409);
                 // folder name not acceptable
                 case 10231:
-                case 10232: return new EmptyResponse(422);
+                case 10232: return HTTP::respEmpty(422);
                 // other errors related to input
-                default: return new EmptyResponse(400); // @codeCoverageIgnore
+                default: return HTTP::respEmpty(400); // @codeCoverageIgnore
             }
         }
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     // mark all articles associated with a folder as read
     protected function folderMarkRead(array $url, array $data): ResponseInterface {
         if (!ValueInfo::id($data['newestItemId'])) {
             // if the item ID is invalid (i.e. not a positive integer), this is an error
-            return new EmptyResponse(422);
+            return HTTP::respEmpty(422);
         }
         // build the context
         $c = (new Context)->hidden(false);
@@ -353,15 +352,15 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], $c);
         } catch (ExceptionInput $e) {
             // folder does not exist
-            return new EmptyResponse(404);
+            return HTTP::respEmpty(404);
         }
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     // return list of feeds which should be refreshed
     protected function feedListStale(array $url, array $data): ResponseInterface {
         if (!$this->isAdmin()) {
-            return new EmptyResponse(403);
+            return HTTP::respEmpty(403);
         }
         // list stale feeds which should be checked for updates
         $feeds = Arsse::$db->feedListStale();
@@ -376,21 +375,21 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     // refresh a feed
     protected function feedUpdate(array $url, array $data): ResponseInterface {
         if (!$this->isAdmin()) {
-            return new EmptyResponse(403);
+            return HTTP::respEmpty(403);
         }
         try {
             Arsse::$db->feedUpdate($data['feedId']);
         } catch (ExceptionInput $e) {
             switch ($e->getCode()) {
                 case 10239: // feed does not exist
-                    return new EmptyResponse(404);
+                    return HTTP::respEmpty(404);
                 case 10237: // feed ID invalid
-                    return new EmptyResponse(422);
+                    return HTTP::respEmpty(422);
                 default: // other errors related to input
-                    return new EmptyResponse(400); // @codeCoverageIgnore
+                    return HTTP::respEmpty(400); // @codeCoverageIgnore
             }
         }
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     // add a new feed
@@ -401,10 +400,10 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $id = Arsse::$db->subscriptionAdd(Arsse::$user->id, (string) $data['url']);
         } catch (ExceptionInput $e) {
             // feed already exists
-            return new EmptyResponse(409);
+            return HTTP::respEmpty(409);
         } catch (FeedException $e) {
             // feed could not be retrieved
-            return new EmptyResponse(422);
+            return HTTP::respEmpty(422);
         }
         // if a folder was specified, move the feed to the correct folder; silently ignore errors
         if ($data['folderId']) {
@@ -447,9 +446,9 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             Arsse::$db->subscriptionRemove(Arsse::$user->id, (int) $url[1]);
         } catch (ExceptionInput $e) {
             // feed does not exist
-            return new EmptyResponse(404);
+            return HTTP::respEmpty(404);
         }
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     // rename a feed
@@ -459,22 +458,22 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionInput $e) {
             switch ($e->getCode()) {
                 // subscription does not exist
-                case 10239: return new EmptyResponse(404);
+                case 10239: return HTTP::respEmpty(404);
                 // name is invalid
                 case 10231:
-                case 10232: return new EmptyResponse(422);
+                case 10232: return HTTP::respEmpty(422);
                 // other errors related to input
-                default: return new EmptyResponse(400); // @codeCoverageIgnore
+                default: return HTTP::respEmpty(400); // @codeCoverageIgnore
             }
         }
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     // move a feed to a folder
     protected function subscriptionMove(array $url, array $data): ResponseInterface {
         // if no folder is specified this is an error
         if (!isset($data['folderId'])) {
-            return new EmptyResponse(422);
+            return HTTP::respEmpty(422);
         }
         // perform the move
         try {
@@ -482,22 +481,22 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionInput $e) {
             switch ($e->getCode()) {
                 case 10239: // subscription does not exist
-                    return new EmptyResponse(404);
+                    return HTTP::respEmpty(404);
                 case 10235: // folder does not exist
                 case 10237: // folder ID is invalid
-                    return new EmptyResponse(422);
+                    return HTTP::respEmpty(422);
                 default: // other errors related to input
-                    return new EmptyResponse(400); // @codeCoverageIgnore
+                    return HTTP::respEmpty(400); // @codeCoverageIgnore
             }
         }
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     // mark all articles associated with a subscription as read
     protected function subscriptionMarkRead(array $url, array $data): ResponseInterface {
         if (!ValueInfo::id($data['newestItemId'])) {
             // if the item ID is invalid (i.e. not a positive integer), this is an error
-            return new EmptyResponse(422);
+            return HTTP::respEmpty(422);
         }
         // build the context
         $c = (new Context)->hidden(false);
@@ -508,9 +507,9 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], $c);
         } catch (ExceptionInput $e) {
             // subscription does not exist
-            return new EmptyResponse(404);
+            return HTTP::respEmpty(404);
         }
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     // list articles and their properties
@@ -579,7 +578,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             ], [$reverse ? "edition desc" : "edition"]);
         } catch (ExceptionInput $e) {
             // ID of subscription or folder is not valid
-            return new EmptyResponse(422);
+            return HTTP::respEmpty(422);
         }
         $out = [];
         foreach ($items as $item) {
@@ -593,14 +592,14 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function articleMarkReadAll(array $url, array $data): ResponseInterface {
         if (!ValueInfo::id($data['newestItemId'])) {
             // if the item ID is invalid (i.e. not a positive integer), this is an error
-            return new EmptyResponse(422);
+            return HTTP::respEmpty(422);
         }
         // build the context
         $c = (new Context)->hidden(false);
         $c->editionRange(null, (int) $data['newestItemId']);
         // perform the operation
         Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], $c);
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     // mark a single article as read
@@ -614,9 +613,9 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             Arsse::$db->articleMark(Arsse::$user->id, ['read' => $set], $c);
         } catch (ExceptionInput $e) {
             // ID is not valid
-            return new EmptyResponse(404);
+            return HTTP::respEmpty(404);
         }
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     // mark a single article as read
@@ -630,9 +629,9 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             Arsse::$db->articleMark(Arsse::$user->id, ['starred' => $set], $c);
         } catch (ExceptionInput $e) {
             // ID is not valid
-            return new EmptyResponse(404);
+            return HTTP::respEmpty(404);
         }
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     // mark an array of articles as read
@@ -646,7 +645,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             Arsse::$db->articleMark(Arsse::$user->id, ['read' => $set], $c);
         } catch (ExceptionInput $e) {
         }
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     // mark an array of articles as starred
@@ -660,7 +659,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             Arsse::$db->articleMark(Arsse::$user->id, ['starred' => $set], $c);
         } catch (ExceptionInput $e) {
         }
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     protected function userStatus(array $url, array $data): ResponseInterface {
@@ -674,18 +673,18 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function cleanupBefore(array $url, array $data): ResponseInterface {
         if (!$this->isAdmin()) {
-            return new EmptyResponse(403);
+            return HTTP::respEmpty(403);
         }
         Service::cleanupPre();
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     protected function cleanupAfter(array $url, array $data): ResponseInterface {
         if (!$this->isAdmin()) {
-            return new EmptyResponse(403);
+            return HTTP::respEmpty(403);
         }
         Service::cleanupPost();
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     // return the server version

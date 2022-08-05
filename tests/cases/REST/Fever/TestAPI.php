@@ -9,6 +9,7 @@ namespace JKingWeb\Arsse\TestCase\REST\Fever;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
+use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Test\Result;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Db\ExceptionInput;
@@ -17,7 +18,6 @@ use JKingWeb\Arsse\REST\Fever\API;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\JsonResponse;
 use Laminas\Diactoros\Response\XmlResponse;
-use Laminas\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST\Fever\API<extended> */
 class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -194,7 +194,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideTokenAuthenticationRequests(): iterable {
         $success = new JsonResponse(['auth' => 1]);
         $failure = new JsonResponse(['auth' => 0]);
-        $denied = new EmptyResponse(401);
+        $denied = HTTP::respEmpty(401);
         return [
             [false, true,  null, [], ['api' => null], $failure],
             [false, false, null, [], ['api' => null], $failure],
@@ -421,8 +421,8 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provideInvalidRequests(): iterable {
         return [
-            'Not an API request'        => ["",    "",                         "POST", null,                                                                                                new EmptyResponse(404)],
-            'Wrong method'              => ["api", "",                         "PUT",  null,                                                                                                new EmptyResponse(405, ['Allow' => "OPTIONS,POST"])],
+            'Not an API request'        => ["",    "",                         "POST", null,                                                                                                HTTP::respEmpty(404)],
+            'Wrong method'              => ["api", "",                         "PUT",  null,                                                                                                HTTP::respEmpty(405, ['Allow' => "OPTIONS,POST"])],
             'Non-standard method'       => ["api", "",                         "GET",  null,                                                                                                new JsonResponse([])],
             'Wrong content type'        => ["api", '{"api_key":"validToken"}', "POST", "application/json",                                                                                  new JsonResponse([])], // some clients send nonsensical content types; Fever seems to have allowed this
             'Non-standard content type' => ["api", '{"api_key":"validToken"}', "POST", "multipart/form-data; boundary=33b68964f0de4c1f-5144aa6caaa6e4a8-18bfaf416a1786c8-5c5053a45f221bc1", new JsonResponse([])], // some clients send nonsensical content types; Fever seems to have allowed this
@@ -494,7 +494,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testAnswerOptionsRequest(): void {
-        $exp = new EmptyResponse(204, [
+        $exp = HTTP::respEmpty(204, [
             'Allow'  => "POST",
             'Accept' => "application/x-www-form-urlencoded, multipart/form-data",
         ]);

@@ -9,10 +9,10 @@ namespace JKingWeb\Arsse\TestCase\REST\TinyTinyRSS;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
+use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\REST\TinyTinyRSS\Icon;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\Response\EmptyResponse as Response;
 
 /** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Icon<extended> */
 class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -51,21 +51,21 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->subscriptionIcon->with($this->anything(), 2112, false)->returns(['url' => "http://example.net/logo.png"]);
         $this->dbMock->subscriptionIcon->with($this->anything(), 1337, false)->returns(['url' => "http://example.org/icon.gif\r\nLocation: http://bad.example.com/"]);
         // these requests should succeed
-        $exp = new Response(301, ['Location' => "http://example.com/favicon.ico"]);
+        $exp = HTTP::respEmpty(301, ['Location' => "http://example.com/favicon.ico"]);
         $this->assertMessage($exp, $this->req("42.ico"));
-        $exp = new Response(301, ['Location' => "http://example.net/logo.png"]);
+        $exp = HTTP::respEmpty(301, ['Location' => "http://example.net/logo.png"]);
         $this->assertMessage($exp, $this->req("2112.ico"));
-        $exp = new Response(301, ['Location' => "http://example.org/icon.gif"]);
+        $exp = HTTP::respEmpty(301, ['Location' => "http://example.org/icon.gif"]);
         $this->assertMessage($exp, $this->req("1337.ico"));
         // these requests should fail
-        $exp = new Response(404);
+        $exp = HTTP::respEmpty(404);
         $this->assertMessage($exp, $this->req("ook.ico"));
         $this->assertMessage($exp, $this->req("ook"));
         $this->assertMessage($exp, $this->req("47.ico"));
         $this->assertMessage($exp, $this->req("2112.png"));
         $this->assertMessage($exp, $this->req("1123.ico"));
         // only GET is allowed
-        $exp = new Response(405, ['Allow' => "GET"]);
+        $exp = HTTP::respEmpty(405, ['Allow' => "GET"]);
         $this->assertMessage($exp, $this->req("2112.ico", "PUT"));
     }
 
@@ -79,32 +79,32 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->subscriptionIcon->with(null, 2112, false)->returns($url);
         $this->dbMock->subscriptionIcon->with(null, 1337, false)->returns($url);
         // these requests should succeed
-        $exp = new Response(301, ['Location' => "http://example.org/icon.gif"]);
+        $exp = HTTP::respEmpty(301, ['Location' => "http://example.org/icon.gif"]);
         $this->assertMessage($exp, $this->req("42.ico"));
         $this->assertMessage($exp, $this->req("2112.ico"));
         $this->assertMessage($exp, $this->req("1337.ico"));
         $this->assertMessage($exp, $this->reqAuth("42.ico"));
         $this->assertMessage($exp, $this->reqAuth("1337.ico"));
         // these requests should fail
-        $exp = new Response(404);
+        $exp = HTTP::respEmpty(404);
         $this->assertMessage($exp, $this->reqAuth("2112.ico"));
-        $exp = new Response(401);
+        $exp = HTTP::respEmpty(401);
         $this->assertMessage($exp, $this->reqAuthFailed("42.ico"));
         $this->assertMessage($exp, $this->reqAuthFailed("1337.ico"));
         // with HTTP auth required, only authenticated requests should succeed
         self::setConf(['userHTTPAuthRequired' => true]);
-        $exp = new Response(301, ['Location' => "http://example.org/icon.gif"]);
+        $exp = HTTP::respEmpty(301, ['Location' => "http://example.org/icon.gif"]);
         $this->assertMessage($exp, $this->reqAuth("42.ico"));
         $this->assertMessage($exp, $this->reqAuth("1337.ico"));
         // anything else should fail
-        $exp = new Response(401);
+        $exp = HTTP::respEmpty(401);
         $this->assertMessage($exp, $this->req("42.ico"));
         $this->assertMessage($exp, $this->req("2112.ico"));
         $this->assertMessage($exp, $this->req("1337.ico"));
         $this->assertMessage($exp, $this->reqAuthFailed("42.ico"));
         $this->assertMessage($exp, $this->reqAuthFailed("1337.ico"));
         // resources for the wrtong user should still fail, too
-        $exp = new Response(404);
+        $exp = HTTP::respEmpty(404);
         $this->assertMessage($exp, $this->reqAuth("2112.ico"));
     }
 }

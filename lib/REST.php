@@ -7,11 +7,11 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 use JKingWeb\Arsse\Misc\URL;
+use JKingWeb\Arsse\Misc\HTTP;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\ServerRequestFactory;
-use Laminas\Diactoros\Response\EmptyResponse;
 
 class REST {
     public const API_LIST = [
@@ -101,7 +101,7 @@ class REST {
                 $res = $drv->dispatch($req);
             }
         } catch (REST\Exception501 $e) {
-            $res = new EmptyResponse(501);
+            $res = HTTP::respEmpty(501);
         }
         // modify the response so that it has all the required metadata
         return $this->normalizeResponse($res, $req);
@@ -180,7 +180,7 @@ class REST {
         }
         // if the response is to a HEAD request, the body should be omitted
         if ($req && $req->getMethod() === "HEAD") {
-            $res = new EmptyResponse($res->getStatusCode(), $res->getHeaders());
+            $res = HTTP::respEmpty($res->getStatusCode(), $res->getHeaders());
         }
         // if an Allow header field is present, normalize it
         if ($res->hasHeader("Allow")) {

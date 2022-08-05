@@ -14,6 +14,7 @@ use JKingWeb\Arsse\Context\RootContext;
 use JKingWeb\Arsse\Context\UnionContext;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
+use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\REST\Miniflux\V1;
@@ -26,7 +27,6 @@ use JKingWeb\Arsse\User\ExceptionInput as UserExceptionInput;
 use JKingWeb\Arsse\Test\Result;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\JsonResponse as Response;
-use Laminas\Diactoros\Response\EmptyResponse;
 use Laminas\Diactoros\Response\TextResponse;
 
 /** @covers \JKingWeb\Arsse\REST\Miniflux\V1<extended> */
@@ -102,7 +102,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideAuthResponses */
     public function testAuthenticateAUser($token, bool $auth, bool $success): void {
-        $exp = $success ? new EmptyResponse(404) : new ErrorResponse("401", 401);
+        $exp = $success ? HTTP::respEmpty(404) : new ErrorResponse("401", 401);
         $user = "john.doe@example.com";
         if ($token !== null) {
             $headers = ['X-Auth-Token' => $token];
@@ -133,7 +133,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideInvalidPaths */
     public function testRespondToInvalidPaths($path, $method, $code, $allow = null): void {
-        $exp = new EmptyResponse($code, $allow ? ['Allow' => $allow] : []);
+        $exp = HTTP::respEmpty($code, $allow ? ['Allow' => $allow] : []);
         $this->assertMessage($exp, $this->req($method, $path));
     }
 
@@ -148,7 +148,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideOptionsRequests */
     public function testRespondToOptionsRequests(string $url, string $allow, string $accept): void {
-        $exp = new EmptyResponse(204, [
+        $exp = HTTP::respEmpty(204, [
             'Allow'  => $allow,
             'Accept' => $accept,
         ]);
@@ -382,7 +382,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user->method("remove")->willReturn(true);
         Arsse::$user->expects($this->exactly(1))->method("lookup")->with(2112);
         Arsse::$user->expects($this->exactly(1))->method("remove")->with("john.doe@example.com");
-        $this->assertMessage(new EmptyResponse(204), $this->req("DELETE", "/users/2112"));
+        $this->assertMessage(HTTP::respEmpty(204), $this->req("DELETE", "/users/2112"));
     }
 
     public function testDeleteAMissingUser(): void {
@@ -484,7 +484,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testDeleteARealCategory(): void {
         $this->dbMock->folderRemove->returns(true)->throws(new ExceptionInput("subjectMissing"));
-        $this->assertMessage(new EmptyResponse(204), $this->req("DELETE", "/categories/2112"));
+        $this->assertMessage(HTTP::respEmpty(204), $this->req("DELETE", "/categories/2112"));
         $this->dbMock->folderRemove->calledWith("john.doe@example.com", 2111);
         $this->assertMessage(new ErrorResponse("404", 404), $this->req("DELETE", "/categories/47"));
         $this->dbMock->folderRemove->calledWith("john.doe@example.com", 46);
@@ -497,7 +497,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 2112],
         ])));
         $this->dbMock->subscriptionRemove->returns(true);
-        $this->assertMessage(new EmptyResponse(204), $this->req("DELETE", "/categories/1"));
+        $this->assertMessage(HTTP::respEmpty(204), $this->req("DELETE", "/categories/1"));
         Phony::inOrder(
             $this->dbMock->begin->calledWith(),
             $this->dbMock->subscriptionList->calledWith("john.doe@example.com", null, false),
@@ -680,7 +680,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testDeleteAFeed(): void {
         $this->dbMock->subscriptionRemove->returns(true);
-        $this->assertMessage(new EmptyResponse(204), $this->req("DELETE", "/feeds/2112"));
+        $this->assertMessage(HTTP::respEmpty(204), $this->req("DELETE", "/feeds/2112"));
         $this->dbMock->subscriptionRemove->calledWith(Arsse::$user->id, 2112);
     }
 
@@ -864,9 +864,9 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             [['entry_ids' => [1], 'status' => 1],            null,                                 new ErrorResponse(["InvalidInputType", 'field' => "status", 'expected' => "string", 'actual' => "integer"], 422)],
             [['entry_ids' => [0], 'status' => "read"],       null,                                 new ErrorResponse(["InvalidInputValue", 'field' => "entry_ids"], 422)],
             [['entry_ids' => [1], 'status' => "reread"],     null,                                 new ErrorResponse(["InvalidInputValue", 'field' => "status"], 422)],
-            [['entry_ids' => [1, 2], 'status' => "read"],    ['read' => true,  'hidden' => false], new EmptyResponse(204)],
-            [['entry_ids' => [1, 2], 'status' => "unread"],  ['read' => false, 'hidden' => false], new EmptyResponse(204)],
-            [['entry_ids' => [1, 2], 'status' => "removed"], ['read' => true,  'hidden' => true],  new EmptyResponse(204)],
+            [['entry_ids' => [1, 2], 'status' => "read"],    ['read' => true,  'hidden' => false], HTTP::respEmpty(204)],
+            [['entry_ids' => [1, 2], 'status' => "unread"],  ['read' => false, 'hidden' => false], HTTP::respEmpty(204)],
+            [['entry_ids' => [1, 2], 'status' => "removed"], ['read' => true,  'hidden' => true],  HTTP::respEmpty(204)],
         ];
     }
 
@@ -889,13 +889,13 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
         $c = (new Context)->hidden(false);
         return [
-            ["/users/42/mark-all-as-read",        $c,                             1123,                            new EmptyResponse(204)],
+            ["/users/42/mark-all-as-read",        $c,                             1123,                            HTTP::respEmpty(204)],
             ["/users/2112/mark-all-as-read",      $c,                             null,                            new ErrorResponse("403", 403)],
-            ["/feeds/47/mark-all-as-read",        (clone $c)->subscription(47),   2112,                            new EmptyResponse(204)],
+            ["/feeds/47/mark-all-as-read",        (clone $c)->subscription(47),   2112,                            HTTP::respEmpty(204)],
             ["/feeds/2112/mark-all-as-read",      (clone $c)->subscription(2112), new ExceptionInput("idMissing"), new ErrorResponse("404", 404)],
-            ["/categories/47/mark-all-as-read",   (clone $c)->folder(46),         1337,                            new EmptyResponse(204)],
+            ["/categories/47/mark-all-as-read",   (clone $c)->folder(46),         1337,                            HTTP::respEmpty(204)],
             ["/categories/2112/mark-all-as-read", (clone $c)->folder(2111),       new ExceptionInput("idMissing"), new ErrorResponse("404", 404)],
-            ["/categories/1/mark-all-as-read",    (clone $c)->folderShallow(0),   6666,                            new EmptyResponse(204)],
+            ["/categories/1/mark-all-as-read",    (clone $c)->folderShallow(0),   6666,                            HTTP::respEmpty(204)],
         ];
     }
 
@@ -929,15 +929,15 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideBookmarkTogglings(): iterable {
         self::clearData();
         return [
-            [1,                                    true,  new EmptyResponse(204)],
-            [0,                                    false, new EmptyResponse(204)],
+            [1,                                    true,  HTTP::respEmpty(204)],
+            [0,                                    false, HTTP::respEmpty(204)],
             [new ExceptionInput("subjectMissing"), null,  new ErrorResponse("404", 404)],
         ];
     }
 
     public function testRefreshAFeed(): void {
         $this->dbMock->subscriptionPropertiesGet->returns([]);
-        $this->assertMessage(new EmptyResponse(204), $this->req("PUT", "/feeds/47/refresh"));
+        $this->assertMessage(HTTP::respEmpty(204), $this->req("PUT", "/feeds/47/refresh"));
         $this->dbMock->subscriptionPropertiesGet->calledWith(Arsse::$user->id, 47);
     }
 
@@ -948,7 +948,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testRefreshAllFeeds(): void {
-        $this->assertMessage(new EmptyResponse(204), $this->req("PUT", "/feeds/refresh"));
+        $this->assertMessage(HTTP::respEmpty(204), $this->req("PUT", "/feeds/refresh"));
     }
 
     /** @dataProvider provideImports */

@@ -19,6 +19,7 @@ use JKingWeb\Arsse\ImportExport\OPML;
 use JKingWeb\Arsse\ImportExport\Exception as ImportException;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\URL;
+use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\REST\Exception;
 use JKingWeb\Arsse\Rule\Rule;
@@ -26,7 +27,6 @@ use JKingWeb\Arsse\User\ExceptionConflict;
 use JKingWeb\Arsse\User\Exception as UserException;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\Response\EmptyResponse;
 use Laminas\Diactoros\Response\JsonResponse as Response;
 use Laminas\Diactoros\Response\TextResponse as GenericResponse;
 use Laminas\Diactoros\Uri;
@@ -295,10 +295,10 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             // @codeCoverageIgnoreStart
         } catch (Exception $e) {
             // if there was a REST exception return 400
-            return new EmptyResponse(400);
+            return HTTP::respEmpty(400);
         } catch (AbstractException $e) {
             // if there was any other Arsse exception return 500
-            return new EmptyResponse(500);
+            return HTTP::respEmpty(500);
         }
         // @codeCoverageIgnoreEnd
     }
@@ -317,11 +317,11 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 return self::CALLS[$url][$method];
             } else {
                 // otherwise return 405
-                return new EmptyResponse(405, ['Allow' => implode(", ", array_keys(self::CALLS[$url]))]);
+                return HTTP::respEmpty(405, ['Allow' => implode(", ", array_keys(self::CALLS[$url]))]);
             }
         } else {
             // if the path is not supported, return 404
-            return new EmptyResponse(404);
+            return HTTP::respEmpty(404);
         }
     }
 
@@ -451,13 +451,13 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             if (in_array("GET", $allowed)) {
                 array_unshift($allowed, "HEAD");
             }
-            return new EmptyResponse(204, [
+            return HTTP::respEmpty(204, [
                 'Allow'  => implode(", ", $allowed),
                 'Accept' => implode(", ", $url === "/import" ? self::ACCEPTED_TYPES_OPML : self::ACCEPTED_TYPES_JSON),
             ]);
         } else {
             // if the path is not supported, return 404
-            return new EmptyResponse(404);
+            return HTTP::respEmpty(404);
         }
     }
 
@@ -637,7 +637,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionConflict $e) {
             return new ErrorResponse("404", 404);
         }
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     /** Returns a useful subset of user metadata
@@ -728,7 +728,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionInput $e) {
             return new ErrorResponse("404", 404);
         }
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     protected function transformFeed(array $sub, int $uid, string $rootName, \DateTimeZone $tz): array {
@@ -866,7 +866,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function deleteFeed(array $path): ResponseInterface {
         try {
             Arsse::$db->subscriptionRemove(Arsse::$user->id, (int) $path[1]);
-            return new EmptyResponse(204);
+            return HTTP::respEmpty(204);
         } catch (ExceptionInput $e) {
             return new ErrorResponse("404", 404);
         }
@@ -1104,7 +1104,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         assert(isset($in), new \Exception("Unknown status specified"));
         Arsse::$db->articleMark(Arsse::$user->id, $in, (new Context)->articles($data['entry_ids']));
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     protected function massRead(Context $c): void {
@@ -1118,7 +1118,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return new ErrorResponse("403", 403);
         }
         $this->massRead(new Context);
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     protected function markFeed(array $path): ResponseInterface {
@@ -1127,7 +1127,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionInput $e) {
             return new ErrorResponse("404", 404);
         }
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     protected function markCategory(array $path): ResponseInterface {
@@ -1144,7 +1144,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionInput $e) {
             return new ErrorResponse("404", 404);
         }
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     protected function toggleEntryBookmark(array $path): ResponseInterface {
@@ -1162,7 +1162,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionInput $e) {
             return new ErrorResponse("404", 404);
         }
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     protected function refreshFeed(array $path): ResponseInterface {
@@ -1172,13 +1172,13 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionInput $e) {
             return new ErrorResponse("404", 404);
         }
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     protected function refreshAllFeeds(): ResponseInterface {
         // NOTE: This is a no-op
         // It could be implemented, but the need is considered low since we use a dynamic schedule always
-        return new EmptyResponse(204);
+        return HTTP::respEmpty(204);
     }
 
     protected function opmlImport(string $data): ResponseInterface {

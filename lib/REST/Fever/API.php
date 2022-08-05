@@ -10,13 +10,12 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\Misc\Date;
-use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Misc\HTTP;
+use JKingWeb\Arsse\Db\ExceptionInput;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\JsonResponse;
 use Laminas\Diactoros\Response\XmlResponse;
-use Laminas\Diactoros\Response\EmptyResponse;
 
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     public const LEVEL = 3;
@@ -62,11 +61,11 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $P = $this->normalizeInputPost($req->getParsedBody() ?? []);
         if (!isset($G['api'])) {
             // the original would have shown the Fever UI in the absence of the "api" parameter, but we'll return 404
-            return new EmptyResponse(404);
+            return HTTP::respEmpty(404);
         }
         switch ($req->getMethod()) {
             case "OPTIONS":
-                return new EmptyResponse(204, [
+                return HTTP::respEmpty(204, [
                     'Allow'  => "POST",
                     'Accept' => implode(", ", self::ACCEPTED_TYPES),
                 ]);
@@ -82,7 +81,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     $out['auth'] = 1;
                 } elseif (Arsse::$conf->userHTTPAuthRequired || Arsse::$conf->userPreAuth || $req->getAttribute("authenticationFailed", false)) {
                     // otherwise if HTTP authentication failed or is required, deny access at the HTTP level
-                    return new EmptyResponse(401);
+                    return HTTP::respEmpty(401);
                 }
                 // produce a full response if authenticated or a basic response otherwise
                 if ($this->logIn(strtolower($P['api_key'] ?? ""))) {
@@ -93,7 +92,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 // return the result, possibly formatted as XML
                 return $this->formatResponse($out, ($G['api'] === "xml"));
             default:
-                return new EmptyResponse(405, ['Allow' => "OPTIONS,POST"]);
+                return HTTP::respEmpty(405, ['Allow' => "OPTIONS,POST"]);
         }
     }
 

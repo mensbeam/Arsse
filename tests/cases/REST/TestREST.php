@@ -12,13 +12,13 @@ use JKingWeb\Arsse\REST;
 use JKingWeb\Arsse\REST\Exception501;
 use JKingWeb\Arsse\REST\NextcloudNews\V1_2 as NCN;
 use JKingWeb\Arsse\REST\TinyTinyRSS\API as TTRSS;
+use JKingWeb\Arsse\Misc\HTTP;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Request;
 use Laminas\Diactoros\Response;
 use Laminas\Diactoros\ServerRequest;
 use Laminas\Diactoros\Response\TextResponse;
-use Laminas\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST */
 class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -96,7 +96,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testSendAuthenticationChallenges(): void {
         self::setConf();
         $r = new REST();
-        $in = new EmptyResponse(401);
+        $in = HTTP::respEmpty(401);
         $exp = $in->withHeader("WWW-Authenticate", 'Basic realm="OOK", charset="UTF-8"');
         $act = $r->challenge($in, "OOK");
         $this->assertMessage($exp, $act);
@@ -190,8 +190,8 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testAddCorsHeaders(string $reqMethod, array $reqHeaders, array $resHeaders, array $expHeaders): void {
         $r = new REST();
         $req = new Request("", $reqMethod, "php://memory", $reqHeaders);
-        $res = new EmptyResponse(204, $resHeaders);
-        $exp = new EmptyResponse(204, $expHeaders);
+        $res = HTTP::respEmpty(204, $resHeaders);
+        $exp = HTTP::respEmpty(204, $expHeaders);
         $act = $r->corsApply($res, $req);
         $this->assertMessage($exp, $act);
     }
@@ -268,21 +268,21 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         $stream = fopen("php://memory", "w+b");
         fwrite($stream, "ook");
         return [
-            [new EmptyResponse(204),                                          new EmptyResponse(204)],
-            [new EmptyResponse(401),                                          new EmptyResponse(401, ['WWW-Authenticate' => "Fake Value"])],
-            [new EmptyResponse(204, ['Allow' => "PUT"]),                      new EmptyResponse(204, ['Allow' => "PUT, OPTIONS"])],
-            [new EmptyResponse(204, ['Allow' => "PUT, OPTIONS"]),             new EmptyResponse(204, ['Allow' => "PUT, OPTIONS"])],
-            [new EmptyResponse(204, ['Allow' => "PUT,OPTIONS"]),              new EmptyResponse(204, ['Allow' => "PUT, OPTIONS"])],
-            [new EmptyResponse(204, ['Allow' => ["PUT", "OPTIONS"]]),         new EmptyResponse(204, ['Allow' => "PUT, OPTIONS"])],
-            [new EmptyResponse(204, ['Allow' => ["PUT, DELETE", "OPTIONS"]]), new EmptyResponse(204, ['Allow' => "PUT, DELETE, OPTIONS"])],
-            [new EmptyResponse(204, ['Allow' => "HEAD,GET"]),                 new EmptyResponse(204, ['Allow' => "HEAD, GET, OPTIONS"])],
-            [new EmptyResponse(204, ['Allow' => "GET"]),                      new EmptyResponse(204, ['Allow' => "GET, HEAD, OPTIONS"])],
-            [new TextResponse("ook", 200),                                    new TextResponse("ook", 200, ['Content-Length' => "3"])],
-            [new TextResponse("", 200),                                       new TextResponse("", 200, ['Content-Length' => "0"])],
-            [new TextResponse("ook", 404),                                    new TextResponse("ook", 404, ['Content-Length' => "3"])],
-            [new TextResponse("", 404),                                       new TextResponse("", 404)],
-            [new Response($stream, 200),                                      new Response($stream, 200, ['Content-Length' => "3"]),   new Request("", "GET")],
-            [new Response($stream, 200),                                      new EmptyResponse(200, ['Content-Length' => "3"]),       new Request("", "HEAD")],
+            [HTTP::respEmpty(204),                                          HTTP::respEmpty(204)],
+            [HTTP::respEmpty(401),                                          HTTP::respEmpty(401, ['WWW-Authenticate' => "Fake Value"])],
+            [HTTP::respEmpty(204, ['Allow' => "PUT"]),                      HTTP::respEmpty(204, ['Allow' => "PUT, OPTIONS"])],
+            [HTTP::respEmpty(204, ['Allow' => "PUT, OPTIONS"]),             HTTP::respEmpty(204, ['Allow' => "PUT, OPTIONS"])],
+            [HTTP::respEmpty(204, ['Allow' => "PUT,OPTIONS"]),              HTTP::respEmpty(204, ['Allow' => "PUT, OPTIONS"])],
+            [HTTP::respEmpty(204, ['Allow' => ["PUT", "OPTIONS"]]),         HTTP::respEmpty(204, ['Allow' => "PUT, OPTIONS"])],
+            [HTTP::respEmpty(204, ['Allow' => ["PUT, DELETE", "OPTIONS"]]), HTTP::respEmpty(204, ['Allow' => "PUT, DELETE, OPTIONS"])],
+            [HTTP::respEmpty(204, ['Allow' => "HEAD,GET"]),                 HTTP::respEmpty(204, ['Allow' => "HEAD, GET, OPTIONS"])],
+            [HTTP::respEmpty(204, ['Allow' => "GET"]),                      HTTP::respEmpty(204, ['Allow' => "GET, HEAD, OPTIONS"])],
+            [new TextResponse("ook", 200),                                  new TextResponse("ook", 200, ['Content-Length' => "3"])],
+            [new TextResponse("", 200),                                     new TextResponse("", 200, ['Content-Length' => "0"])],
+            [new TextResponse("ook", 404),                                  new TextResponse("ook", 404, ['Content-Length' => "3"])],
+            [new TextResponse("", 404),                                     new TextResponse("", 404)],
+            [new Response($stream, 200),                                    new Response($stream, 200, ['Content-Length' => "3"]),   new Request("", "GET")],
+            [new Response($stream, 200),                                    HTTP::respEmpty(200, ['Content-Length' => "3"]),         new Request("", "HEAD")],
         ];
     }
 
@@ -297,7 +297,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         });
         if ($called) {
             $hMock = $this->mock($class);
-            $hMock->dispatch->returns(new EmptyResponse(204));
+            $hMock->dispatch->returns(HTTP::respEmpty(204));
             $this->objMock->get->with($class)->returns($hMock);
             Arsse::$obj = $this->objMock->get();
         }

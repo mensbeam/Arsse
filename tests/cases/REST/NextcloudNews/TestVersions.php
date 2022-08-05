@@ -6,10 +6,10 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\REST\NextcloudNews;
 
+use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\REST\NextcloudNews\Versions;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\JsonResponse as Response;
-use Laminas\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST\NextcloudNews\Versions */
 class TestVersions extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -32,17 +32,17 @@ class TestVersions extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testRespondToOptionsRequest(): void {
-        $exp = new EmptyResponse(204, ['Allow' => "HEAD,GET"]);
+        $exp = HTTP::respEmpty(204, ['Allow' => "HEAD,GET"]);
         $this->assertMessage($exp, $this->req("OPTIONS", "/"));
     }
 
     public function testUseIncorrectMethod(): void {
-        $exp = new EmptyResponse(405, ['Allow' => "HEAD,GET"]);
+        $exp = HTTP::respEmpty(405, ['Allow' => "HEAD,GET"]);
         $this->assertMessage($exp, $this->req("POST", "/"));
     }
 
     public function testUseIncorrectPath(): void {
-        $exp = new EmptyResponse(404);
+        $exp = HTTP::respEmpty(404);
         $this->assertMessage($exp, $this->req("GET", "/ook"));
         $this->assertMessage($exp, $this->req("OPTIONS", "/ook"));
     }

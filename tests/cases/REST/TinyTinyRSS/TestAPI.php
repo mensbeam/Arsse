@@ -11,6 +11,7 @@ use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Test\Result;
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
@@ -18,7 +19,6 @@ use JKingWeb\Arsse\REST\TinyTinyRSS\API;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\Response\JsonResponse as Response;
-use Laminas\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\API<extended>
  *  @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Exception */
@@ -188,12 +188,12 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req(null, "POST", "", ""));
         $this->assertMessage($exp, $this->req(null, "POST", "/", ""));
         $this->assertMessage($exp, $this->req(null, "POST", "/index.php", ""));
-        $exp = new EmptyResponse(404);
+        $exp = HTTP::respEmpty(404);
         $this->assertMessage($exp, $this->req(null, "POST", "/bad/path", ""));
     }
 
     public function testHandleOptionsRequest(): void {
-        $exp = new EmptyResponse(204, [
+        $exp = HTTP::respEmpty(204, [
             'Allow'  => "POST",
             'Accept' => "application/json, text/json",
         ]);
@@ -215,7 +215,7 @@ LONG_STRING;
         $this->userMock->auth->with("jane.doe@example.com", "superman")->returns(true);
         $this->dbMock->sessionCreate->with("john.doe@example.com")->returns("PriestsOfSyrinx", "SolarFederation");
         $this->dbMock->sessionCreate->with("jane.doe@example.com")->returns("ClockworkAngels", "SevenCitiesOfGold");
-        if ($sessions instanceof EmptyResponse) {
+        if ($sessions instanceof ResponseInterface) {
             $exp1 = $sessions;
             $exp2 = $sessions;
         } elseif ($sessions) {
@@ -260,7 +260,7 @@ LONG_STRING;
             'op'       => "isLoggedIn",
             'sid'      => $data,
         ];
-        if ($result instanceof EmptyResponse) {
+        if ($result instanceof ResponseInterface) {
             $exp1 = $result;
             $exp2 = null;
         } elseif ($result) {
@@ -333,7 +333,7 @@ LONG_STRING;
             'userHTTPAuthRequired' => true,
             'userSessionEnforced'  => false,
         ];
-        $http401 = new EmptyResponse(401);
+        $http401 = HTTP::respEmpty(401);
         if ($type === "login") {
             return [
                 // conf,    user,  data,      result
@@ -532,7 +532,7 @@ LONG_STRING;
             'user'     => $this->userId,
             'password' => "secret",
         ];
-        $exp = new EmptyResponse(500);
+        $exp = HTTP::respEmpty(500);
         $this->assertMessage($exp, $this->req($data));
     }
 
