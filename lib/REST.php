@@ -11,7 +11,7 @@ use JKingWeb\Arsse\Misc\HTTP;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\ServerRequestFactory;
+use GuzzleHttp\Psr7\ServerRequest;
 
 class REST {
     public const API_LIST = [
@@ -84,7 +84,7 @@ class REST {
             // ensure the require extensions are loaded
             Arsse::checkExtensions(...Arsse::REQUIRED_EXTENSIONS);
             // create a request object if not provided
-            $req = $req ?? ServerRequestFactory::fromGlobals();
+            $req = $req ?? ServerRequest::fromGlobals();
             // find the API to handle
             [, $target, $class] = $this->apiMatch($req->getRequestTarget(), $this->apis);
             // authenticate the request pre-emptively
