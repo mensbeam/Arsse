@@ -24,8 +24,7 @@ use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\ServerRequest;
-use Laminas\Diactoros\Response\XmlResponse;
+use GuzzleHttp\Psr7\ServerRequest;
 
 /** @coversNothing */
 abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
@@ -112,7 +111,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             }
         }
         $server = array_merge($server, $vars);
-        $req = new ServerRequest($server, [], $url, $method, "php://memory", [], [], $params, $parsedBody);
+        $req = new ServerRequest($method, $url, $headers, $body, "1.1", $server);
         if (isset($user)) {
             if (strlen($user)) {
                 $req = $req->withAttribute("authenticated", true)->withAttribute("authenticatedUser", $user);
@@ -192,8 +191,8 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             $this->assertSame($exp->getRequestTarget(), $act->getRequestTarget(), $text);
         }
         if ($exp instanceof ResponseInterface && HTTP::matchType($exp, "application/json", "text/json", "+json")) {
-            $expBody = json_decode((string) $exp->getBody(), true);
-            $actBody = json_decode((string) $act->getBody(), true);
+            $expBody = @json_decode((string) $exp->getBody(), true);
+            $actBody = @json_decode((string) $act->getBody(), true);
             $this->assertSame(\JSON_ERROR_NONE, json_last_error(), "Response body is not valid JSON");
             $this->assertEquals($expBody, $actBody, $text);
             $this->assertSame($expBody, $actBody, $text);
@@ -203,6 +202,16 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             $this->assertSame((string) $exp->getBody(), (string) $act->getBody(), $text);
         }
         $this->assertEquals($exp->getHeaders(), $act->getHeaders(), $text);
+    }
+
+    protected function extractMessageJson(MessageInterface $msg) {
+        if (HTTP::matchType($msg, "application/json", "text/json", "+json")) {
+            $json = @json_decode((string) $msg->getBody(), true);
+            if (json_last_error() === \JSON_ERROR_NONE) {
+                return $json;
+            }
+        }
+        return null;
     }
 
     public function assertTime($exp, $test, string $msg = ''): void {

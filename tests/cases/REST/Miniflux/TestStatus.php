@@ -10,7 +10,6 @@ use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\REST\Miniflux\Status;
 use JKingWeb\Arsse\REST\Miniflux\V1;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\Response\TextResponse;
 
 /** @covers \JKingWeb\Arsse\REST\Miniflux\Status */
 class TestStatus extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -22,10 +21,10 @@ class TestStatus extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provideRequests(): iterable {
         return [
-            ["/version",     "GET",     new TextResponse(V1::VERSION)],
+            ["/version",     "GET",     HTTP::respText(V1::VERSION)],
             ["/version",     "POST",    HTTP::respEmpty(405, ['Allow' => "HEAD, GET"])],
             ["/version",     "OPTIONS", HTTP::respEmpty(204, ['Allow' => "HEAD, GET"])],
-            ["/healthcheck", "GET",     new TextResponse("OK")],
+            ["/healthcheck", "GET",     HTTP::respText("OK")],
             ["/healthcheck", "POST",    HTTP::respEmpty(405, ['Allow' => "HEAD, GET"])],
             ["/healthcheck", "OPTIONS", HTTP::respEmpty(204, ['Allow' => "HEAD, GET"])],
             ["/version/",     "GET",    HTTP::respEmpty(404)],

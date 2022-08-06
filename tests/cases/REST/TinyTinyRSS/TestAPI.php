@@ -1685,10 +1685,10 @@ LONG_STRING;
         $this->assertMessage($this->outputHeadlines(1), $test);
         // test 'show_content'
         $test = $this->req($in[1]);
-        $this->assertArrayHasKey("content", $test->getPayload()['content'][0]);
-        $this->assertArrayHasKey("content", $test->getPayload()['content'][1]);
+        $this->assertArrayHasKey("content", $this->extractMessageJson($test)['content'][0]);
+        $this->assertArrayHasKey("content", $this->extractMessageJson($test)['content'][1]);
         foreach ($this->generateHeadlines(1) as $key => $row) {
-            $this->assertSame($row['content'], $test->getPayload()['content'][$key]['content']);
+            $this->assertSame($row['content'], $this->extractMessageJson($test)['content'][$key]['content']);
         }
         // test 'include_attachments'
         $test = $this->req($in[2]);
@@ -1704,22 +1704,22 @@ LONG_STRING;
                 'post_id'      => "2112",
             ],
         ];
-        $this->assertArrayHasKey("attachments", $test->getPayload()['content'][0]);
-        $this->assertArrayHasKey("attachments", $test->getPayload()['content'][1]);
-        $this->assertSame([], $test->getPayload()['content'][0]['attachments']);
-        $this->assertSame($exp, $test->getPayload()['content'][1]['attachments']);
+        $this->assertArrayHasKey("attachments", $this->extractMessageJson($test)['content'][0]);
+        $this->assertArrayHasKey("attachments", $this->extractMessageJson($test)['content'][1]);
+        $this->assertSame([], $this->extractMessageJson($test)['content'][0]['attachments']);
+        $this->assertSame($exp, $this->extractMessageJson($test)['content'][1]['attachments']);
         // test 'include_header'
         $test = $this->req($in[3]);
         $exp = $this->respGood([
             ['id' => -4, 'is_cat' => false, 'first_id' => 1],
-            $this->outputHeadlines(1)->getPayload()['content'],
+            $this->extractMessageJson($this->outputHeadlines(1))['content'],
         ]);
         $this->assertMessage($exp, $test);
         // test 'include_header' with a category
         $test = $this->req($in[4]);
         $exp = $this->respGood([
             ['id' => -3, 'is_cat' => true, 'first_id' => 1],
-            $this->outputHeadlines(1)->getPayload()['content'],
+            $this->extractMessageJson($this->outputHeadlines(1))['content'],
         ]);
         $this->assertMessage($exp, $test);
         // test 'include_header' with an empty result
@@ -1741,7 +1741,7 @@ LONG_STRING;
         $test = $this->req($in[7]);
         $exp = $this->respGood([
             ['id' => -4, 'is_cat' => false, 'first_id' => 0],
-            $this->outputHeadlines(1)->getPayload()['content'],
+            $this->extractMessageJson($this->outputHeadlines(1))['content'],
         ]);
         $this->assertMessage($exp, $test);
         // test 'include_header' with skip
@@ -1749,24 +1749,24 @@ LONG_STRING;
         $test = $this->req($in[8]);
         $exp = $this->respGood([
             ['id' => 42, 'is_cat' => false, 'first_id' => 1867],
-            $this->outputHeadlines(1)->getPayload()['content'],
+            $this->extractMessageJson($this->outputHeadlines(1))['content'],
         ]);
         $this->assertMessage($exp, $test);
         // test 'include_header' with skip and ascending order
         $test = $this->req($in[9]);
         $exp = $this->respGood([
             ['id' => 42, 'is_cat' => false, 'first_id' => 0],
-            $this->outputHeadlines(1)->getPayload()['content'],
+            $this->extractMessageJson($this->outputHeadlines(1))['content'],
         ]);
         $this->assertMessage($exp, $test);
         // test 'show_excerpt'
         $exp1 = "“This & that, you know‽”";
         $exp2 = "Pour vous faire mieux connaitre d’ou\u{300} vient l’erreur de ceux qui bla\u{302}ment la volupte\u{301}, et qui louent en…";
         $test = $this->req($in[10]);
-        $this->assertArrayHasKey("excerpt", $test->getPayload()['content'][0]);
-        $this->assertArrayHasKey("excerpt", $test->getPayload()['content'][1]);
-        $this->assertSame($exp1, $test->getPayload()['content'][0]['excerpt']);
-        $this->assertSame($exp2, $test->getPayload()['content'][1]['excerpt']);
+        $this->assertArrayHasKey("excerpt", $this->extractMessageJson($test)['content'][0]);
+        $this->assertArrayHasKey("excerpt", $this->extractMessageJson($test)['content'][1]);
+        $this->assertSame($exp1, $this->extractMessageJson($test)['content'][0]['excerpt']);
+        $this->assertSame($exp2, $this->extractMessageJson($test)['content'][1]['excerpt']);
     }
 
     protected function generateHeadlines(int $id): Result {

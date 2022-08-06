@@ -242,7 +242,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
             ["OPTIONS", ['Origin' => "http://example", 'Access-Control-Request-Headers' => ["Content-Type", "If-None-Match"]], [], [
                 'Access-Control-Allow-Origin'      => "http://example",
                 'Access-Control-Allow-Credentials' => "true",
-                'Access-Control-Allow-Headers'     => "Content-Type,If-None-Match",
+                'Access-Control-Allow-Headers'     => "Content-Type, If-None-Match",
                 'Access-Control-Max-Age'           => (string) (60 * 60 * 24),
                 'Vary'                             => "Origin",
             ]],
@@ -280,8 +280,8 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
             [HTTP::respText("", 200),                                       HTTP::respText("", 200, ['Content-Length' => "0"])],
             [HTTP::respText("ook", 404),                                    HTTP::respText("ook", 404, ['Content-Length' => "3"])],
             [HTTP::respText("", 404),                                       HTTP::respText("", 404)],
-            [new Response(200, [], $stream),                                new Response(200, ['Content-Length' => "3"], $stream),   new Request("", "GET")],
-            [new Response(200, [], $stream),                                HTTP::respEmpty(200, ['Content-Length' => "3"]),         new Request("", "HEAD")],
+            [new Response(200, [], $stream),                                new Response(200, ['Content-Length' => "3"], $stream),   new Request("GET", "")],
+            [new Response(200, [], $stream),                                HTTP::respEmpty(200, ['Content-Length' => "3"]),         new Request("HEAD", "")],
         ];
     }
 

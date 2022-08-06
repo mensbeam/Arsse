@@ -212,6 +212,14 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     public function __construct() {
     }
+    
+    public static function respError($data, int $status = 400, array $headers = []): ResponseInterface {
+        assert(isset(Arsse::$lang) && Arsse::$lang instanceof \JKingWeb\Arsse\Lang, new \Exception("Language database must be initialized before use"));
+        $data = (array) $data;
+        $msg = array_shift($data);
+        $data = ["error_message" => Arsse::$lang->msg("API.Miniflux.Error.".$msg, $data)];
+        return HTTP::respJson($data, $status, $headers);
+    }
 
     protected function authenticate(ServerRequestInterface $req): bool {
         // first check any tokens; this is what Miniflux does
@@ -245,7 +253,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // try to authenticate
         if (!$this->authenticate($req)) {
-            return new ErrorResponse("401", 401);
+            return self::respError("401", 401);
         }
         $func = $this->chooseCall($target, $method);
         if ($func instanceof ResponseInterface) {
@@ -254,7 +262,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             [$func, $reqAdmin, $reqPath, $reqBody, $reqQuery, $reqFields] = $func;
         }
         if ($reqAdmin && !$this->isAdmin()) {
-            return new ErrorResponse("403", 403);
+            return self::respError("403", 403);
         }
         $args = [];
         if ($reqPath) {
@@ -269,7 +277,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                     $data = @json_decode($data, true);
                     if (json_last_error() !== \JSON_ERROR_NONE) {
                         // if the body could not be parsed as JSON, return "400 Bad Request"
-                        return new ErrorResponse(["InvalidBodyJSON", json_last_error_msg()], 400);
+                        return self::respError(["InvalidBodyJSON", json_last_error_msg()], 400);
                     }
                 } else {
                     $data = [];
@@ -344,20 +352,20 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             if (!isset($body[$k])) {
                 $body[$k] = null;
             } elseif (gettype($body[$k]) !== $t) {
-                return new ErrorResponse(["InvalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])], 422);
+                return self::respError(["InvalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])], 422);
             } elseif (
                 (in_array($k, ["keeplist_rules", "blocklist_rules"]) && !Rule::validate($body[$k]))
                 || (in_array($k, ["url", "feed_url"]) && !URL::absolute($body[$k]))
                 || ($k === "category_id" && $body[$k] < 1)
                 || ($k === "status" && !in_array($body[$k], ["read", "unread", "removed"]))
             ) {
-                return new ErrorResponse(["InvalidInputValue", 'field' => $k], 422);
+                return self::respError(["InvalidInputValue", 'field' => $k], 422);
             } elseif ($k === "entry_ids") {
                 foreach ($body[$k] as $v) {
                     if (gettype($v) !== "integer") {
-                        return new ErrorResponse(["InvalidInputType", 'field' => $k, 'expected' => "integer", 'actual' => gettype($v)], 422);
+                        return self::respError(["InvalidInputType", 'field' => $k, 'expected' => "integer", 'actual' => gettype($v)], 422);
                     } elseif ($v < 1) {
-                        return new ErrorResponse(["InvalidInputValue", 'field' => $k], 422);
+                        return self::respError(["InvalidInputValue", 'field' => $k], 422);
                     }
                 }
             }
@@ -369,16 +377,16 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 $body[$k] = null;
             } elseif ($k === "entry_sorting_direction") {
                 if (!in_array($body[$k], ["asc", "desc"])) {
-                    return new ErrorResponse(["InvalidInputValue", 'field' => $k], 422);
+                    return self::respError(["InvalidInputValue", 'field' => $k], 422);
                 }
             } elseif (gettype($body[$k]) !== $t) {
-                return new ErrorResponse(["InvalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])], 422);
+                return self::respError(["InvalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])], 422);
             }
         }
         // check for any missing required values
         foreach ($req as $k) {
             if (!isset($body[$k]) || (is_array($body[$k]) && !$body[$k])) {
-                return new ErrorResponse(["MissingInputValue", 'field' => $k], 422);
+                return self::respError(["MissingInputValue", 'field' => $k], 422);
             }
         }
         return $body;
@@ -407,7 +415,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 if ($seen[$k] && !$a) {
                     // if the key has already been seen and it's not an array field, bail
                     // NOTE: Miniflux itself simply ignores duplicates entirely
-                    return new ErrorResponse(["DuplicateInputValue", 'field' => $k], 400);
+                    return self::respError(["DuplicateInputValue", 'field' => $k], 400);
                 }
                 $seen[$k] = true;
                 if ($k === "starred") {
@@ -423,7 +431,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                     $out[$k] = V::normalize($v, $t + V::M_STRICT, "unix");
                 }
             } catch (ExceptionType $e) {
-                return new ErrorResponse(["InvalidInputValue", 'field' => $k], 400);
+                return self::respError(["InvalidInputValue", 'field' => $k], 400);
             }
             // perform additional validation
             if (
@@ -433,7 +441,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 || ($k === "order" && !in_array($v, ["id", "status", "published_at", "category_title", "category_id"]))
                 || ($k === "status" && !in_array($v, ["read", "unread", "removed"]))
             ) {
-                return new ErrorResponse(["InvalidInputValue", 'field' => $k], 400);
+                return self::respError(["InvalidInputValue", 'field' => $k], 400);
             }
         }
         return $out;
@@ -525,7 +533,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 10507 => "Fetch401",
                 10521 => "Fetch404",
             ][$e->getCode()] ?? "FetchOther";
-            return new ErrorResponse($msg, 502);
+            return self::respError($msg, 502);
         }
         $out = [];
         foreach ($list as $url) {
@@ -544,7 +552,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             return HTTP::respJson($this->listUsers([$path[1]], true)[0] ?? new \stdClass);
         } catch (UserException $e) {
-            return new ErrorResponse("404", 404);
+            return self::respError("404", 404);
         }
     }
 
@@ -553,7 +561,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $user = Arsse::$user->lookup((int) $path[1]);
             return HTTP::respJson($this->listUsers([$user], true)[0] ?? new \stdClass);
         } catch (UserException $e) {
-            return new ErrorResponse("404", 404);
+            return self::respError("404", 404);
         }
     }
 
@@ -570,13 +578,13 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (UserException $e) {
             switch ($e->getCode()) {
                 case 10403:
-                    return new ErrorResponse(["DuplicateUser", 'user' => $data['username']], 409);
+                    return self::respError(["DuplicateUser", 'user' => $data['username']], 409);
                 case 10441:
-                    return new ErrorResponse(["InvalidInputValue", 'field' => "timezone"], 422);
+                    return self::respError(["InvalidInputValue", 'field' => "timezone"], 422);
                 case 10443:
-                    return new ErrorResponse(["InvalidInputValue", 'field' => "entries_per_page"], 422);
+                    return self::respError(["InvalidInputValue", 'field' => "entries_per_page"], 422);
                 case 10444:
-                    return new ErrorResponse(["InvalidInputValue", 'field' => "username"], 422);
+                    return self::respError(["InvalidInputValue", 'field' => "username"], 422);
             }
             throw $e; // @codeCoverageIgnore
         }
@@ -589,16 +597,16 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if (((int) $path[1]) === $user['num']) {
             if ($data['is_admin'] && !$user['admin']) {
                 // non-admins should not be able to set themselves as admin
-                return new ErrorResponse("InvalidElevation", 403);
+                return self::respError("InvalidElevation", 403);
             }
             $user = Arsse::$user->id;
         } elseif (!$user['admin']) {
-            return new ErrorResponse("403", 403);
+            return self::respError("403", 403);
         } else {
             try {
                 $user = Arsse::$user->lookup((int) $path[1]);
             } catch (ExceptionConflict $e) {
-                return new ErrorResponse("404", 404);
+                return self::respError("404", 404);
             }
         }
         // make any requested changes
@@ -616,13 +624,13 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (UserException $e) {
             switch ($e->getCode()) {
                 case 10403:
-                    return new ErrorResponse(["DuplicateUser", 'user' => $data['username']], 409);
+                    return self::respError(["DuplicateUser", 'user' => $data['username']], 409);
                 case 10441:
-                    return new ErrorResponse(["InvalidInputValue", 'field' => "timezone"], 422);
+                    return self::respError(["InvalidInputValue", 'field' => "timezone"], 422);
                 case 10443:
-                    return new ErrorResponse(["InvalidInputValue", 'field' => "entries_per_page"], 422);
+                    return self::respError(["InvalidInputValue", 'field' => "entries_per_page"], 422);
                 case 10444:
-                    return new ErrorResponse(["InvalidInputValue", 'field' => "username"], 422);
+                    return self::respError(["InvalidInputValue", 'field' => "username"], 422);
             }
             throw $e; // @codeCoverageIgnore
         }
@@ -633,7 +641,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             Arsse::$user->remove(Arsse::$user->lookup((int) $path[1]));
         } catch (ExceptionConflict $e) {
-            return new ErrorResponse("404", 404);
+            return self::respError("404", 404);
         }
         return HTTP::respEmpty(204);
     }
@@ -673,9 +681,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $id = Arsse::$db->folderAdd(Arsse::$user->id, ['name' => (string) $data['title']]);
         } catch (ExceptionInput $e) {
             if ($e->getCode() === 10236) {
-                return new ErrorResponse(["DuplicateCategory", 'title' => $data['title']], 409);
+                return self::respError(["DuplicateCategory", 'title' => $data['title']], 409);
             } else {
-                return new ErrorResponse(["InvalidCategory", 'title' => $data['title']], 422);
+                return self::respError(["InvalidCategory", 'title' => $data['title']], 422);
             }
         }
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
@@ -698,11 +706,11 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         } catch (ExceptionInput $e) {
             if ($e->getCode() === 10236) {
-                return new ErrorResponse(["DuplicateCategory", 'title' => $title], 409);
+                return self::respError(["DuplicateCategory", 'title' => $title], 409);
             } elseif (in_array($e->getCode(), [10237, 10239])) {
-                return new ErrorResponse("404", 404);
+                return self::respError("404", 404);
             } else {
-                return new ErrorResponse(["InvalidCategory", 'title' => $title], 422);
+                return self::respError(["InvalidCategory", 'title' => $title], 422);
             }
         }
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
@@ -724,7 +732,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 $tr->commit();
             }
         } catch (ExceptionInput $e) {
-            return new ErrorResponse("404", 404);
+            return self::respError("404", 404);
         }
         return HTTP::respEmpty(204);
     }
@@ -788,7 +796,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         } catch (ExceptionInput $e) {
             // the folder does not exist
-            return new ErrorResponse("404", 404);
+            return self::respError("404", 404);
         }
         return HTTP::respJson($out);
     }
@@ -800,7 +808,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $sub = Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, (int) $path[1]);
             return HTTP::respJson($this->transformFeed($sub, $meta['num'], $meta['root'], $meta['tz']));
         } catch (ExceptionInput $e) {
-            return new ErrorResponse("404", 404);
+            return self::respError("404", 404);
         }
     }
 
@@ -823,13 +831,13 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 10521 => "Fetch404",
                 10522 => "FetchFormat",
             ][$e->getCode()] ?? "FetchOther";
-            return new ErrorResponse($msg, 502);
+            return self::respError($msg, 502);
         } catch (ExceptionInput $e) {
             switch ($e->getCode()) {
                 case 10235:
-                    return new ErrorResponse("MissingCategory", 422);
+                    return self::respError("MissingCategory", 422);
                 case 10236:
-                    return new ErrorResponse("DuplicateFeed", 409);
+                    return self::respError("DuplicateFeed", 409);
             }
         }
         return HTTP::respJson(['feed_id' => $id], 201);
@@ -851,11 +859,11 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             switch ($e->getCode()) {
                 case 10231:
                 case 10232:
-                    return new ErrorResponse("InvalidTitle", 422);
+                    return self::respError("InvalidTitle", 422);
                 case 10235:
-                    return new ErrorResponse("MissingCategory", 422);
+                    return self::respError("MissingCategory", 422);
                 case 10239:
-                    return new ErrorResponse("404", 404);
+                    return self::respError("404", 404);
             }
         }
         return $this->getFeed($path)->withStatus(201);
@@ -866,7 +874,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             Arsse::$db->subscriptionRemove(Arsse::$user->id, (int) $path[1]);
             return HTTP::respEmpty(204);
         } catch (ExceptionInput $e) {
-            return new ErrorResponse("404", 404);
+            return self::respError("404", 404);
         }
     }
 
@@ -874,10 +882,10 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             $icon = Arsse::$db->subscriptionIcon(Arsse::$user->id, (int) $path[1]);
         } catch (ExceptionInput $e) {
-            return new ErrorResponse("404", 404);
+            return self::respError("404", 404);
         }
         if (!$icon || !$icon['type'] || !$icon['data']) {
-            return new ErrorResponse("404", 404);
+            return self::respError("404", 404);
         }
         return HTTP::respJson([
             'id'        => (int) $icon['id'],
@@ -1038,7 +1046,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             return HTTP::respJson($this->listEntries($query, new Context));
         } catch (ExceptionInput $e) {
-            return new ErrorResponse("MissingCategory", 400);
+            return self::respError("MissingCategory", 400);
         }
     }
 
@@ -1048,7 +1056,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return HTTP::respJson($this->listEntries($query, $c));
         } catch (ExceptionInput $e) {
             // FIXME: this should differentiate between a missing feed and a missing category, but doesn't
-            return new ErrorResponse("404", 404);
+            return self::respError("404", 404);
         }
     }
 
@@ -1057,7 +1065,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             return HTTP::respJson($this->listEntries($query, new Context));
         } catch (ExceptionInput $e) {
-            return new ErrorResponse("404", 404);
+            return self::respError("404", 404);
         }
     }
 
@@ -1065,7 +1073,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             return HTTP::respJson($this->findEntry((int) $path[1]));
         } catch (ExceptionInput $e) {
-            return new ErrorResponse("404", 404);
+            return self::respError("404", 404);
         }
     }
 
@@ -1074,7 +1082,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             return HTTP::respJson($this->findEntry((int) $path[3], $c));
         } catch (ExceptionInput $e) {
-            return new ErrorResponse("404", 404);
+            return self::respError("404", 404);
         }
     }
 
@@ -1088,7 +1096,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             return HTTP::respJson($this->findEntry((int) $path[3], $c));
         } catch (ExceptionInput $e) {
-            return new ErrorResponse("404", 404);
+            return self::respError("404", 404);
         }
     }
 
@@ -1113,7 +1121,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // this function is restricted to the logged-in user
         $user = Arsse::$user->propertiesGet(Arsse::$user->id, false);
         if (((int) $path[1]) !== $user['num']) {
-            return new ErrorResponse("403", 403);
+            return self::respError("403", 403);
         }
         $this->massRead(new Context);
         return HTTP::respEmpty(204);
@@ -1123,7 +1131,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             $this->massRead((new Context)->subscription((int) $path[1]));
         } catch (ExceptionInput $e) {
-            return new ErrorResponse("404", 404);
+            return self::respError("404", 404);
         }
         return HTTP::respEmpty(204);
     }
@@ -1140,7 +1148,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             $this->massRead($c);
         } catch (ExceptionInput $e) {
-            return new ErrorResponse("404", 404);
+            return self::respError("404", 404);
         }
         return HTTP::respEmpty(204);
     }
@@ -1158,7 +1166,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
             $tr->commit();
         } catch (ExceptionInput $e) {
-            return new ErrorResponse("404", 404);
+            return self::respError("404", 404);
         }
         return HTTP::respEmpty(204);
     }
@@ -1168,7 +1176,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, (int) $path[1]);
         } catch (ExceptionInput $e) {
-            return new ErrorResponse("404", 404);
+            return self::respError("404", 404);
         }
         return HTTP::respEmpty(204);
     }
@@ -1185,18 +1193,18 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ImportException $e) {
             switch ($e->getCode()) {
                 case 10611:
-                    return new ErrorResponse("InvalidBodyXML", 400);
+                    return self::respError("InvalidBodyXML", 400);
                 case 10612:
-                    return new ErrorResponse("InvalidBodyOPML", 422);
+                    return self::respError("InvalidBodyOPML", 422);
                 case 10613:
-                    return new ErrorResponse("InvalidImportCategory", 422);
+                    return self::respError("InvalidImportCategory", 422);
                 case 10614:
-                    return new ErrorResponse("DuplicateImportCategory", 422);
+                    return self::respError("DuplicateImportCategory", 422);
                 case 10615:
-                    return new ErrorResponse("InvalidImportLabel", 422);
+                    return self::respError("InvalidImportLabel", 422);
             }
         } catch (FeedException $e) {
-            return new ErrorResponse(["FailedImportFeed", 'url' => $e->getParams()['url'], 'code' => $e->getCode()], 502);
+            return self::respError(["FailedImportFeed", 'url' => $e->getParams()['url'], 'code' => $e->getCode()], 502);
         }
         return HTTP::respJson(['message' => Arsse::$lang->msg("API.Miniflux.ImportSuccess")]);
     }
