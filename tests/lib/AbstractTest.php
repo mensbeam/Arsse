@@ -112,6 +112,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         }
         $server = array_merge($server, $vars);
         $req = new ServerRequest($method, $url, $headers, $body, "1.1", $server);
+        $req = $req->withParsedBody($parsedBody)->withQueryParams($params);
         if (isset($user)) {
             if (strlen($user)) {
                 $req = $req->withAttribute("authenticated", true)->withAttribute("authenticatedUser", $user);
