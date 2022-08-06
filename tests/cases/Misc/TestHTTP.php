@@ -7,14 +7,16 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Misc;
 
 use JKingWeb\Arsse\Misc\HTTP;
+use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Response;
 
 /** @covers \JKingWeb\Arsse\Misc\HTTP */
 class TestHTTP extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideMediaTypes */
     public function testMatchMediaType(string $header, array $types, bool $exp): void {
-        $msg = (new \Laminas\Diactoros\Request)->withHeader("Content-Type", $header);
+        $msg = (new Request("POST", "/"))->withHeader("Content-Type", $header);
         $this->assertSame($exp, HTTP::matchType($msg, ...$types));
-        $msg = (new \Laminas\Diactoros\Response)->withHeader("Content-Type", $header);
+        $msg = (new Response)->withHeader("Content-Type", $header);
         $this->assertSame($exp, HTTP::matchType($msg, ...$types));
     }
 

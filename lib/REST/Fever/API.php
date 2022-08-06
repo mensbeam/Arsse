@@ -14,7 +14,6 @@ use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\Response\XmlResponse;
 
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     public const LEVEL = 3;
@@ -180,7 +179,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($xml) {
             $d = new \DOMDocument("1.0", "utf-8");
             $d->appendChild($this->makeXMLAssoc($data, $d->createElement("response")));
-            return new XmlResponse($d->saveXML());
+            return HTTP::respXml($d->saveXML());
         } else {
             return HTTP::respJson($data, 200, [], \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
         }

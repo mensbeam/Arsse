@@ -9,7 +9,6 @@ namespace JKingWeb\Arsse\REST\Miniflux;
 use JKingWeb\Arsse\Misc\HTTP;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\Response\TextResponse;
 
 class Status extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function __construct() {
@@ -32,6 +31,6 @@ class Status extends \JKingWeb\Arsse\REST\AbstractHandler {
         } elseif ($target === "/healthcheck") {
             $out = "OK";
         }
-        return new TextResponse($out);
+        return HTTP::respText($out);
     }
 }

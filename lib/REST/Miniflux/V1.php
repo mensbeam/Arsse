@@ -27,8 +27,7 @@ use JKingWeb\Arsse\User\ExceptionConflict;
 use JKingWeb\Arsse\User\Exception as UserException;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\Response\TextResponse as GenericResponse;
-use Laminas\Diactoros\Uri;
+use GuzzleHttp\Psr7\Uri;
 
 class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     public const VERSION = "2.0.28";
@@ -1203,6 +1202,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function opmlExport(): ResponseInterface {
-        return new GenericResponse(Arsse::$obj->get(OPML::class)->export(Arsse::$user->id), 200, ['Content-Type' => "application/xml"]);
+        return HTTP::respText(Arsse::$obj->get(OPML::class)->export(Arsse::$user->id), 200, ['Content-Type' => "application/xml"]);
     }
 }
