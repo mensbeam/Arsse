@@ -18,7 +18,6 @@ use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\TinyTinyRSS\API;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\Response\JsonResponse as Response;
 
 /** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\API<extended>
  *  @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Exception */
@@ -166,17 +165,17 @@ LONG_STRING;
         return $this->req($data, "POST", "", null, $user);
     }
 
-    protected function respGood($content = null, $seq = 0): Response {
-        return new Response([
+    protected function respGood($content = null, $seq = 0): ResponseInterface {
+        return HTTP::respJson([
             'seq'     => $seq,
             'status'  => 0,
             'content' => $content,
         ]);
     }
 
-    protected function respErr(string $msg, $content = [], $seq = 0): Response {
+    protected function respErr(string $msg, $content = [], $seq = 0): ResponseInterface {
         $err = ['error' => $msg];
-        return new Response([
+        return HTTP::respJson([
             'seq'     => $seq,
             'status'  => 1,
             'content' => array_merge($err, $content, $err),
@@ -1815,7 +1814,7 @@ LONG_STRING;
         ]));
     }
 
-    protected function outputHeadlines(int $id): Response {
+    protected function outputHeadlines(int $id): ResponseInterface {
         return $this->respGood([
             [
                 'id'                         => $id,

@@ -14,7 +14,11 @@ class HTTP {
     public static function matchType(MessageInterface $msg, string ...$type): bool {
         $header = $msg->getHeaderLine("Content-Type") ?? "";
         foreach ($type as $t) {
-            $pattern = "/^".preg_quote(trim($t), "/")."\s*($|;|,)/Di";
+            if (($t[0] ?? "") === "+") {
+                $pattern = "/^[^+;,\s]*".preg_quote(trim($t), "/")."\s*($|;|,)/Di";
+            } else {
+                $pattern = "/^".preg_quote(trim($t), "/")."\s*($|;|,)/Di";
+            }
             if (preg_match($pattern, $header)) {
                 return true;
             }

@@ -27,7 +27,6 @@ use JKingWeb\Arsse\User\ExceptionConflict;
 use JKingWeb\Arsse\User\Exception as UserException;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\Response\JsonResponse as Response;
 use Laminas\Diactoros\Response\TextResponse as GenericResponse;
 use Laminas\Diactoros\Uri;
 
@@ -534,17 +533,17 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             // TODO: This needs to be refined once PicoFeed is replaced
             $out[] = ['title' => "Feed", 'type' => "rss", 'url' => $url];
         }
-        return new Response($out);
+        return HTTP::respJson($out);
     }
 
     protected function getUsers(): ResponseInterface {
         $tr = Arsse::$user->begin();
-        return new Response($this->listUsers(Arsse::$user->list(), false));
+        return HTTP::respJson($this->listUsers(Arsse::$user->list(), false));
     }
 
     protected function getUserById(array $path): ResponseInterface {
         try {
-            return new Response($this->listUsers([$path[1]], true)[0] ?? new \stdClass);
+            return HTTP::respJson($this->listUsers([$path[1]], true)[0] ?? new \stdClass);
         } catch (UserException $e) {
             return new ErrorResponse("404", 404);
         }
@@ -553,14 +552,14 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function getUserByNum(array $path): ResponseInterface {
         try {
             $user = Arsse::$user->lookup((int) $path[1]);
-            return new Response($this->listUsers([$user], true)[0] ?? new \stdClass);
+            return HTTP::respJson($this->listUsers([$user], true)[0] ?? new \stdClass);
         } catch (UserException $e) {
             return new ErrorResponse("404", 404);
         }
     }
 
     protected function getCurrentUser(): ResponseInterface {
-        return new Response($this->listUsers([Arsse::$user->id], false)[0] ?? new \stdClass);
+        return HTTP::respJson($this->listUsers([Arsse::$user->id], false)[0] ?? new \stdClass);
     }
 
     protected function createUser(array $data): ResponseInterface {
@@ -582,7 +581,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
             throw $e; // @codeCoverageIgnore
         }
-        return new Response($out, 201);
+        return HTTP::respJson($out, 201);
     }
 
     protected function updateUserByNum(array $path, array $data): ResponseInterface {
@@ -628,7 +627,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
             throw $e; // @codeCoverageIgnore
         }
-        return new Response($out, 201);
+        return HTTP::respJson($out, 201);
     }
 
     protected function deleteUserByNum(array $path): ResponseInterface {
@@ -667,7 +666,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             // always add 1 to the ID since the root folder will always be 1 instead of 0.
             $out[] = ['id' => $f['id'] + 1, 'title' => $f['name'], 'user_id' => $meta['num']];
         }
-        return new Response($out);
+        return HTTP::respJson($out);
     }
 
     protected function createCategory(array $data): ResponseInterface {
@@ -681,7 +680,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
-        return new Response(['id' => $id + 1, 'title' => $data['title'], 'user_id' => $meta['num']], 201);
+        return HTTP::respJson(['id' => $id + 1, 'title' => $data['title'], 'user_id' => $meta['num']], 201);
     }
 
     protected function updateCategory(array $path, array $data): ResponseInterface {
@@ -708,7 +707,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
-        return new Response(['id' => (int) $path[1], 'title' => $title, 'user_id' => $meta['num']], 201);
+        return HTTP::respJson(['id' => (int) $path[1], 'title' => $title, 'user_id' => $meta['num']], 201);
     }
 
     protected function deleteCategory(array $path): ResponseInterface {
@@ -772,7 +771,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $r) {
             $out[] = $this->transformFeed($r, $meta['num'], $meta['root'], $meta['tz']);
         }
-        return new Response($out);
+        return HTTP::respJson($out);
     }
 
     protected function getCategoryFeeds(array $path): ResponseInterface {
@@ -792,7 +791,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             // the folder does not exist
             return new ErrorResponse("404", 404);
         }
-        return new Response($out);
+        return HTTP::respJson($out);
     }
 
     protected function getFeed(array $path): ResponseInterface {
@@ -800,7 +799,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $meta = $this->userMeta(Arsse::$user->id);
         try {
             $sub = Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, (int) $path[1]);
-            return new Response($this->transformFeed($sub, $meta['num'], $meta['root'], $meta['tz']));
+            return HTTP::respJson($this->transformFeed($sub, $meta['num'], $meta['root'], $meta['tz']));
         } catch (ExceptionInput $e) {
             return new ErrorResponse("404", 404);
         }
@@ -834,7 +833,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                     return new ErrorResponse("DuplicateFeed", 409);
             }
         }
-        return new Response(['feed_id' => $id], 201);
+        return HTTP::respJson(['feed_id' => $id], 201);
     }
 
     protected function updateFeed(array $path, array $data): ResponseInterface {
@@ -881,7 +880,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if (!$icon || !$icon['type'] || !$icon['data']) {
             return new ErrorResponse("404", 404);
         }
-        return new Response([
+        return HTTP::respJson([
             'id'        => (int) $icon['id'],
             'data'      => $icon['type'].";base64,".base64_encode($icon['data']),
             'mime_type' => $icon['type'],
@@ -1038,7 +1037,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function getEntries(array $query): ResponseInterface {
         try {
-            return new Response($this->listEntries($query, new Context));
+            return HTTP::respJson($this->listEntries($query, new Context));
         } catch (ExceptionInput $e) {
             return new ErrorResponse("MissingCategory", 400);
         }
@@ -1047,7 +1046,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function getFeedEntries(array $path, array $query): ResponseInterface {
         $c = (new Context)->subscription((int) $path[1]);
         try {
-            return new Response($this->listEntries($query, $c));
+            return HTTP::respJson($this->listEntries($query, $c));
         } catch (ExceptionInput $e) {
             // FIXME: this should differentiate between a missing feed and a missing category, but doesn't
             return new ErrorResponse("404", 404);
@@ -1057,7 +1056,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function getCategoryEntries(array $path, array $query): ResponseInterface {
         $query['category_id'] = (int) $path[1];
         try {
-            return new Response($this->listEntries($query, new Context));
+            return HTTP::respJson($this->listEntries($query, new Context));
         } catch (ExceptionInput $e) {
             return new ErrorResponse("404", 404);
         }
@@ -1065,7 +1064,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function getEntry(array $path): ResponseInterface {
         try {
-            return new Response($this->findEntry((int) $path[1]));
+            return HTTP::respJson($this->findEntry((int) $path[1]));
         } catch (ExceptionInput $e) {
             return new ErrorResponse("404", 404);
         }
@@ -1074,7 +1073,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function getFeedEntry(array $path): ResponseInterface {
         $c = (new Context)->subscription((int) $path[1]);
         try {
-            return new Response($this->findEntry((int) $path[3], $c));
+            return HTTP::respJson($this->findEntry((int) $path[3], $c));
         } catch (ExceptionInput $e) {
             return new ErrorResponse("404", 404);
         }
@@ -1088,7 +1087,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $c->folder((int) $path[1] - 1);
         }
         try {
-            return new Response($this->findEntry((int) $path[3], $c));
+            return HTTP::respJson($this->findEntry((int) $path[3], $c));
         } catch (ExceptionInput $e) {
             return new ErrorResponse("404", 404);
         }
@@ -1200,7 +1199,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (FeedException $e) {
             return new ErrorResponse(["FailedImportFeed", 'url' => $e->getParams()['url'], 'code' => $e->getCode()], 502);
         }
-        return new Response(['message' => Arsse::$lang->msg("API.Miniflux.ImportSuccess")]);
+        return HTTP::respJson(['message' => Arsse::$lang->msg("API.Miniflux.ImportSuccess")]);
     }
 
     protected function opmlExport(): ResponseInterface {

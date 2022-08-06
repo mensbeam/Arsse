@@ -19,12 +19,12 @@ use JKingWeb\Arsse\Factory;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\Misc\URL;
+use JKingWeb\Arsse\Misc\HTTP;
 use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Laminas\Diactoros\ServerRequest;
-use Laminas\Diactoros\Response\JsonResponse;
 use Laminas\Diactoros\Response\XmlResponse;
 
 /** @coversNothing */
@@ -191,12 +191,13 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             $this->assertSame($exp->getMethod(), $act->getMethod(), $text);
             $this->assertSame($exp->getRequestTarget(), $act->getRequestTarget(), $text);
         }
-        if ($exp instanceof JsonResponse) {
-            $this->assertInstanceOf(JsonResponse::class, $act, $text);
-            $this->assertEquals($exp->getPayload(), $act->getPayload(), $text);
-            $this->assertSame($exp->getPayload(), $act->getPayload(), $text);
-        } elseif ($exp instanceof XmlResponse) {
-            $this->assertInstanceOf(XmlResponse::class, $act, $text);
+        if ($exp instanceof ResponseInterface && HTTP::matchType($exp, "application/json", "text/json", "+json")) {
+            $expBody = json_decode((string) $exp->getBody(), true);
+            $actBody = json_decode((string) $act->getBody(), true);
+            $this->assertSame(\JSON_ERROR_NONE, json_last_error(), "Response body is not valid JSON");
+            $this->assertEquals($expBody, $actBody, $text);
+            $this->assertSame($expBody, $actBody, $text);
+        } elseif ($exp instanceof ResponseInterface && HTTP::matchType($exp, "application/xml", "text/xml", "+xml")) {
             $this->assertXmlStringEqualsXmlString((string) $exp->getBody(), (string) $act->getBody(), $text);
         } else {
             $this->assertSame((string) $exp->getBody(), (string) $act->getBody(), $text);

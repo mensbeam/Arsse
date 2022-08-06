@@ -21,7 +21,6 @@ use JKingWeb\Arsse\Db\ResultEmpty;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\Response\JsonResponse as Response;
 
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     public const LEVEL = 15;           // emulated API level
@@ -110,7 +109,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             // only JSON entities are allowed, but Content-Type is ignored, as is request method
             $data = @json_decode($data, true);
             if (json_last_error() !== \JSON_ERROR_NONE || !is_array($data)) {
-                return new Response(self::FATAL_ERR);
+                return HTTP::respJson(self::FATAL_ERR);
             }
             try {
                 // normalize input
@@ -136,13 +135,13 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     // TT-RSS operations are case-insensitive by dint of PHP method names being case-insensitive; this will only trigger if the method really doesn't exist
                     throw new Exception("UNKNOWN_METHOD", ['method' => $data['op']]);
                 }
-                return new Response([
+                return HTTP::respJson([
                     'seq'     => $data['seq'],
                     'status'  => 0,
                     'content' => $this->$method($data),
                 ]);
             } catch (Exception $e) {
-                return new Response([
+                return HTTP::respJson([
                     'seq'     => $data['seq'],
                     'status'  => 1,
                     'content' => $e->getData(),
@@ -152,7 +151,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         } else {
             // absence of a request body indicates an error
-            return new Response(self::FATAL_ERR);
+            return HTTP::respJson(self::FATAL_ERR);
         }
     }
 

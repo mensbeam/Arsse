@@ -9,7 +9,6 @@ namespace JKingWeb\Arsse\TestCase\REST\NextcloudNews;
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\REST\NextcloudNews\Versions;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\Response\JsonResponse as Response;
 
 /** @covers \JKingWeb\Arsse\REST\NextcloudNews\Versions */
 class TestVersions extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -25,7 +24,7 @@ class TestVersions extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testFetchVersionList(): void {
-        $exp = new Response(['apiLevels' => ['v1-2']]);
+        $exp = HTTP::respJson(['apiLevels' => ['v1-2']]);
         $this->assertMessage($exp, $this->req("GET", "/"));
         $this->assertMessage($exp, $this->req("GET", "/"));
         $this->assertMessage($exp, $this->req("GET", "/"));

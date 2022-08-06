@@ -17,7 +17,6 @@ use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\REST\Exception;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\Response\JsonResponse as Response;
 
 class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     public const VERSION = "11.0.5";
@@ -283,7 +282,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         foreach (Arsse::$db->folderList(Arsse::$user->id, null, false) as $folder) {
             $folders[] = $this->folderTranslate($folder);
         }
-        return new Response(['folders' => $folders]);
+        return HTTP::respJson(['folders' => $folders]);
     }
 
     // create a folder
@@ -302,7 +301,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         $folder = $this->folderTranslate(Arsse::$db->folderPropertiesGet(Arsse::$user->id, $folder));
-        return new Response(['folders' => [$folder]]);
+        return HTTP::respJson(['folders' => [$folder]]);
     }
 
     // delete a folder
@@ -369,7 +368,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             // since in our implementation feeds don't belong the users, the 'userId' field will always be an empty string
             $out[] = ['id' => (int) $feed, 'userId' => ""];
         }
-        return new Response(['feeds' => $out]);
+        return HTTP::respJson(['feeds' => $out]);
     }
 
     // refresh a feed
@@ -421,7 +420,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($newest) {
             $out['newestItemId'] = $newest;
         }
-        return new Response($out);
+        return HTTP::respJson($out);
     }
 
     // return list of feeds for the logged-in user
@@ -437,7 +436,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($newest) {
             $out['newestItemId'] = $newest;
         }
-        return new Response($out);
+        return HTTP::respJson($out);
     }
 
     // delete a feed
@@ -585,7 +584,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $out[] = $this->articleTranslate($item);
         }
         $out = ['items' => $out];
-        return new Response($out);
+        return HTTP::respJson($out);
     }
 
     // mark all articles as read
@@ -663,7 +662,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function userStatus(array $url, array $data): ResponseInterface {
-        return new Response([
+        return HTTP::respJson([
             'userId'             => (string) Arsse::$user->id,
             'displayName'        => (string) Arsse::$user->id,
             'lastLoginTimestamp' => time(),
@@ -689,14 +688,14 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     // return the server version
     protected function serverVersion(array $url, array $data): ResponseInterface {
-        return new Response([
+        return HTTP::respJson([
             'version'       => self::VERSION,
             'arsse_version' => Arsse::VERSION,
         ]);
     }
 
     protected function serverStatus(array $url, array $data): ResponseInterface {
-        return new Response([
+        return HTTP::respJson([
             'version'       => self::VERSION,
             'arsse_version' => Arsse::VERSION,
             'warnings'      => [

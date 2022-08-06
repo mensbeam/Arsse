@@ -17,7 +17,6 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\NextcloudNews\V1_2;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\Response\JsonResponse as Response;
 
 /** @covers \JKingWeb\Arsse\REST\NextcloudNews\V1_2<extended> */
 class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -408,7 +407,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 12, 'name' => "Hardware"],
         ];
         $this->dbMock->folderList->with($this->userId, null, false)->returns(new Result($this->v($list)));
-        $exp = new Response(['folders' => $out]);
+        $exp = HTTP::respJson(['folders' => $out]);
         $this->assertMessage($exp, $this->req("GET", "/folders"));
     }
 
@@ -432,10 +431,10 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provideFolderCreations(): array {
         return [
-            [['name' => "Software"], true,  1,                                         new Response(['folders' => [['id' => 1, 'name' => "Software"]]])],
-            [['name' => "Software"], false, 1,                                         new Response(['folders' => [['id' => 1, 'name' => "Software"]]])],
-            [['name' => "Hardware"], true,  "2",                                       new Response(['folders' => [['id' => 2, 'name' => "Hardware"]]])],
-            [['name' => "Hardware"], false, "2",                                       new Response(['folders' => [['id' => 2, 'name' => "Hardware"]]])],
+            [['name' => "Software"], true,  1,                                         HTTP::respJson(['folders' => [['id' => 1, 'name' => "Software"]]])],
+            [['name' => "Software"], false, 1,                                         HTTP::respJson(['folders' => [['id' => 1, 'name' => "Software"]]])],
+            [['name' => "Hardware"], true,  "2",                                       HTTP::respJson(['folders' => [['id' => 2, 'name' => "Hardware"]]])],
+            [['name' => "Hardware"], false, "2",                                       HTTP::respJson(['folders' => [['id' => 2, 'name' => "Hardware"]]])],
             [['name' => "Software"], true,  new ExceptionInput("constraintViolation"), HTTP::respEmpty(409)],
             [['name' => ""],         true,  new ExceptionInput("whitespace"),          HTTP::respEmpty(422)],
             [['name' => " "],        true,  new ExceptionInput("whitespace"),          HTTP::respEmpty(422)],
@@ -477,7 +476,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testRetrieveServerVersion(): void {
-        $exp = new Response([
+        $exp = HTTP::respJson([
             'version'       => V1_2::VERSION,
             'arsse_version' => Arsse::VERSION,
             ]);
@@ -497,9 +496,9 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->subscriptionList->with($this->userId)->returns(new Result([]))->returns(new Result($this->v($this->feeds['db'])));
         $this->dbMock->articleStarred->with($this->userId)->returns($this->v(['total' => 0]))->returns($this->v(['total' => 5]));
         $this->dbMock->editionLatest->with($this->userId)->returns(0)->returns(4758915);
-        $exp = new Response($exp1);
+        $exp = HTTP::respJson($exp1);
         $this->assertMessage($exp, $this->req("GET", "/feeds"));
-        $exp = new Response($exp2);
+        $exp = HTTP::respJson($exp2);
         $this->assertMessage($exp, $this->req("GET", "/feeds"));
     }
 
@@ -538,12 +537,12 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideNewSubscriptions(): array {
         $feedException = new \JKingWeb\Arsse\Feed\Exception("", [], new \PicoFeed\Reader\SubscriptionNotFoundException);
         return [
-            [['url' => "http://example.com/news.atom", 'folderId' => 3],  2112,                                      0,       $this->feeds['db'][0], new ExceptionInput("idMissing"),     new Response(['feeds' => [$this->feeds['rest'][0]]])],
-            [['url' => "http://example.org/news.atom", 'folderId' => 8],  42,                                        4758915, $this->feeds['db'][1], true,                                new Response(['feeds' => [$this->feeds['rest'][1]], 'newestItemId' => 4758915])],
+            [['url' => "http://example.com/news.atom", 'folderId' => 3],  2112,                                      0,       $this->feeds['db'][0], new ExceptionInput("idMissing"),     HTTP::respJson(['feeds' => [$this->feeds['rest'][0]]])],
+            [['url' => "http://example.org/news.atom", 'folderId' => 8],  42,                                        4758915, $this->feeds['db'][1], true,                                HTTP::respJson(['feeds' => [$this->feeds['rest'][1]], 'newestItemId' => 4758915])],
             [['url' => "http://example.com/news.atom", 'folderId' => 3],  new ExceptionInput("constraintViolation"), 0,       $this->feeds['db'][0], new ExceptionInput("idMissing"),     HTTP::respEmpty(409)],
             [['url' => "http://example.org/news.atom", 'folderId' => 8],  new ExceptionInput("constraintViolation"), 4758915, $this->feeds['db'][1], true,                                HTTP::respEmpty(409)],
             [[],                                                          $feedException,                            0,       [],                    false,                               HTTP::respEmpty(422)],
-            [['url' => "http://example.net/news.atom", 'folderId' => -1], 47,                                        2112,    $this->feeds['db'][2], new ExceptionInput("typeViolation"), new Response(['feeds' => [$this->feeds['rest'][2]], 'newestItemId' => 2112])],
+            [['url' => "http://example.net/news.atom", 'folderId' => -1], 47,                                        2112,    $this->feeds['db'][2], new ExceptionInput("typeViolation"), HTTP::respJson(['feeds' => [$this->feeds['rest'][2]], 'newestItemId' => 2112])],
         ];
     }
 
@@ -627,7 +626,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ],
         ];
         $this->dbMock->feedListStale->returns($this->v(array_column($out, "id")));
-        $exp = new Response(['feeds' => $out]);
+        $exp = HTTP::respJson(['feeds' => $out]);
         $this->assertMessage($exp, $this->req("GET", "/feeds/all"));
     }
 
@@ -683,7 +682,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $c = (new Context)->hidden(false);
         $t = Date::normalize(time());
         $out = new Result($this->v($this->articles['db']));
-        $r200 = new Response(['items' => $this->articles['rest']]);
+        $r200 = HTTP::respJson(['items' => $this->articles['rest']]);
         $r422 = HTTP::respEmpty(422);
         return [
             ["/items",         [],                                                         clone $c,                                     $out,                                $r200],
@@ -854,7 +853,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
         $arr2['warnings']['improperlyConfiguredCron'] = true;
         $arr2['warnings']['incorrectDbCharset'] = true;
-        $exp = new Response($arr1);
+        $exp = HTTP::respJson($arr1);
         $this->assertMessage($exp, $this->req("GET", "/status"));
     }
 
@@ -888,10 +887,10 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testQueryTheUserStatus(): void {
         $act = $this->req("GET", "/user");
-        $exp = new Response([
+        $exp = HTTP::respJson([
             'userId'             => $this->userId,
             'displayName'        => $this->userId,
-            'lastLoginTimestamp' => $this->approximateTime($act->getPayload()['lastLoginTimestamp'], new \DateTimeImmutable),
+            'lastLoginTimestamp' => $this->approximateTime(json_decode((string) $act->getBody(), true)['lastLoginTimestamp'], new \DateTimeImmutable),
             'avatar'             => null,
         ]);
         $this->assertMessage($exp, $act);
@@ -906,7 +905,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->folderAdd->with($this->anything(), $in)->returns(1);
         $this->dbMock->folderPropertiesGet->with($this->userId, 1)->returns($this->v($out1));
         $this->dbMock->folderPropertiesGet->with($this->userId, 2)->returns($this->v($out2));
-        $exp = new Response(['folders' => [$out1]]);
+        $exp = HTTP::respJson(['folders' => [$out1]]);
         $this->assertMessage($exp, $this->req("POST", "/folders?name=Hardware", json_encode($in)));
     }
 

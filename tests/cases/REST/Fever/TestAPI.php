@@ -16,7 +16,6 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\Fever\API;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\Response\JsonResponse;
 use Laminas\Diactoros\Response\XmlResponse;
 
 /** @covers \JKingWeb\Arsse\REST\Fever\API<extended> */
@@ -192,8 +191,8 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function provideTokenAuthenticationRequests(): iterable {
-        $success = new JsonResponse(['auth' => 1]);
-        $failure = new JsonResponse(['auth' => 0]);
+        $success = HTTP::respJson(['auth' => 1]);
+        $failure = HTTP::respJson(['auth' => 0]);
         $denied = HTTP::respEmpty(401);
         return [
             [false, true,  null, [], ['api' => null], $failure],
@@ -255,7 +254,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 2, 'name' => "Interesting", 'subscription' => 1],
             ['id' => 2, 'name' => "Interesting", 'subscription' => 3],
         ]));
-        $exp = new JsonResponse([
+        $exp = HTTP::respJson([
             'groups' => [
                 ['id' => 1, 'title' => "Fascinating"],
                 ['id' => 2, 'title' => "Interesting"],
@@ -281,7 +280,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 2, 'name' => "Interesting", 'subscription' => 1],
             ['id' => 2, 'name' => "Interesting", 'subscription' => 3],
         ]));
-        $exp = new JsonResponse([
+        $exp = HTTP::respJson([
             'feeds' => [
                 ['id' => 1, 'favicon_id' => 42, 'title' => "Ankh-Morpork News", 'url' => "http://example.com/feed", 'site_url' => "http://example.com/", 'is_spark' => 0, 'last_updated_on_time' => strtotime("2019-01-01T21:12:00Z")],
                 ['id' => 2, 'favicon_id' => 0,  'title' => "Ook, Ook Eek Ook!", 'url' => "http://example.net/feed", 'site_url' => "http://example.net/", 'is_spark' => 0, 'last_updated_on_time' => strtotime("1988-06-24T12:21:00Z")],
@@ -301,7 +300,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $order = [$desc ? "id desc" : "id"];
         $this->dbMock->articleList->returns(new Result($this->articles['db']));
         $this->dbMock->articleCount->with($this->userId, (new Context)->hidden(false))->returns(1024);
-        $exp = new JsonResponse([
+        $exp = HTTP::respJson([
             'items'       => $this->articles['rest'],
             'total_items' => 1024,
         ]);
@@ -330,15 +329,15 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
         $this->dbMock->articleList->with($this->userId, (new Context)->starred(true)->hidden(false))->returns(new Result($saved));
         $this->dbMock->articleList->with($this->userId, (new Context)->unread(true)->hidden(false))->returns(new Result($unread));
-        $exp = new JsonResponse(['saved_item_ids' => "1,2,3"]);
+        $exp = HTTP::respJson(['saved_item_ids' => "1,2,3"]);
         $this->assertMessage($exp, $this->req("api&saved_item_ids"));
-        $exp = new JsonResponse(['unread_item_ids' => "4,5,6"]);
+        $exp = HTTP::respJson(['unread_item_ids' => "4,5,6"]);
         $this->assertMessage($exp, $this->req("api&unread_item_ids"));
     }
 
     public function testListHotLinks(): void {
         // hot links are not actually implemented, so an empty array should be all we get
-        $exp = new JsonResponse(['links' => []]);
+        $exp = HTTP::respJson(['links' => []]);
         $this->assertMessage($exp, $this->req("api&links"));
     }
 
@@ -350,7 +349,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->articleList->with($this->userId, (new Context)->unread(true)->hidden(false))->returns(new Result($unread));
         $this->dbMock->articleMark->returns(0);
         $this->dbMock->articleMark->with($this->userId, $this->anything(), (new Context)->article(2112))->throws(new \JKingWeb\Arsse\Db\ExceptionInput("subjectMissing"));
-        $exp = new JsonResponse($out);
+        $exp = HTTP::respJson($out);
         $this->assertMessage($exp, $this->req("api", $post));
         if ($c && $data) {
             $this->dbMock->articleMark->calledWith($this->userId, $data, $this->equalTo($c));
@@ -367,7 +366,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->articleList->with($this->userId, (new Context)->unread(true)->hidden(false))->returns(new Result($unread));
         $this->dbMock->articleMark->returns(0);
         $this->dbMock->articleMark->with($this->userId, $this->anything(), (new Context)->article(2112))->throws(new \JKingWeb\Arsse\Db\ExceptionInput("subjectMissing"));
-        $exp = new JsonResponse($out);
+        $exp = HTTP::respJson($out);
         $this->assertMessage($exp, $this->req("api&$get"));
         if ($c && $data) {
             $this->dbMock->articleMark->calledWith($this->userId, $data, $this->equalTo($c));
@@ -423,9 +422,9 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         return [
             'Not an API request'        => ["",    "",                         "POST", null,                                                                                                HTTP::respEmpty(404)],
             'Wrong method'              => ["api", "",                         "PUT",  null,                                                                                                HTTP::respEmpty(405, ['Allow' => "OPTIONS,POST"])],
-            'Non-standard method'       => ["api", "",                         "GET",  null,                                                                                                new JsonResponse([])],
-            'Wrong content type'        => ["api", '{"api_key":"validToken"}', "POST", "application/json",                                                                                  new JsonResponse([])], // some clients send nonsensical content types; Fever seems to have allowed this
-            'Non-standard content type' => ["api", '{"api_key":"validToken"}', "POST", "multipart/form-data; boundary=33b68964f0de4c1f-5144aa6caaa6e4a8-18bfaf416a1786c8-5c5053a45f221bc1", new JsonResponse([])], // some clients send nonsensical content types; Fever seems to have allowed this
+            'Non-standard method'       => ["api", "",                         "GET",  null,                                                                                                HTTP::respJson([])],
+            'Wrong content type'        => ["api", '{"api_key":"validToken"}', "POST", "application/json",                                                                                  HTTP::respJson([])], // some clients send nonsensical content types; Fever seems to have allowed this
+            'Non-standard content type' => ["api", '{"api_key":"validToken"}', "POST", "multipart/form-data; boundary=33b68964f0de4c1f-5144aa6caaa6e4a8-18bfaf416a1786c8-5c5053a45f221bc1", HTTP::respJson([])], // some clients send nonsensical content types; Fever seems to have allowed this
         ];
     }
 
@@ -433,21 +432,21 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->hMock->baseResponse->forwards();
         $this->hMock->logIn->returns(true);
         $this->dbMock->subscriptionRefreshed->with($this->userId)->returns(new \DateTimeImmutable("2000-01-01T00:00:00Z"));
-        $exp = new JsonResponse([
+        $exp = HTTP::respJson([
             'api_version'            => API::LEVEL,
             'auth'                   => 1,
             'last_refreshed_on_time' => 946684800,
         ]);
         $this->assertMessage($exp, $this->req("api"));
         $this->dbMock->subscriptionRefreshed->with($this->userId)->returns(null); // no subscriptions
-        $exp = new JsonResponse([
+        $exp = HTTP::respJson([
             'api_version'            => API::LEVEL,
             'auth'                   => 1,
             'last_refreshed_on_time' => null,
         ]);
         $this->assertMessage($exp, $this->req("api"));
         $this->hMock->logIn->returns(false);
-        $exp = new JsonResponse([
+        $exp = HTTP::respJson([
             'api_version' => API::LEVEL,
             'auth'        => 0,
         ]);
@@ -460,7 +459,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->articleList->with($this->userId, $this->equalTo((new Context)->limit(1)->hidden(false)), ["marked_date"], ["marked_date desc"])->returns(new Result([['marked_date' => "2000-01-01 00:00:00"]]));
         $this->dbMock->articleList->with($this->userId, $this->equalTo((new Context)->unread(true)->hidden(false)))->returns(new Result($unread));
         $this->dbMock->articleMark->returns(0);
-        $exp = new JsonResponse($out);
+        $exp = HTTP::respJson($out);
         $this->assertMessage($exp, $this->req("api", ['unread_recently_read' => 1]));
         $this->dbMock->articleMark->calledWith($this->userId, ['read' => false], $this->equalTo((new Context)->unread(false)->markedRange("1999-12-31T23:59:45Z", null)->hidden(false)));
         $this->dbMock->articleList->with($this->userId, (new Context)->limit(1)->hidden(false), ["marked_date"], ["marked_date desc"])->returns(new Result([]));
@@ -485,7 +484,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 44, 'type' => null,            'data' => "IMAGE DATA"],
             ['id' => 47, 'type' => null,            'data' => null],
         ])));
-        $exp = new JsonResponse(['favicons' => [
+        $exp = HTTP::respJson(['favicons' => [
             ['id' => 0,  'data' => $iconType.",".$iconData],
             ['id' => 42, 'data' => "image/svg+xml;base64,PHN2Zy8+"],
             ['id' => 44, 'data' => "application/octet-stream;base64,SU1BR0UgREFUQQ=="],

@@ -9,7 +9,6 @@ namespace JKingWeb\Arsse\REST\NextcloudNews;
 use JKingWeb\Arsse\Misc\HTTP;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\Response\JsonResponse as Response;
 
 class Versions implements \JKingWeb\Arsse\REST\Handler {
     public function __construct() {
@@ -31,7 +30,7 @@ class Versions implements \JKingWeb\Arsse\REST\Handler {
                         'v1-2',
                     ],
                 ];
-                return new Response($out);
+                return HTTP::respJson($out);
             default:
                 // if any other method was used, this is an error
                 return HTTP::respEmpty(405, ['Allow' => "HEAD,GET"]);
