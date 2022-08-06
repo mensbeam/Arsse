@@ -906,7 +906,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->folderPropertiesGet->with($this->userId, 1)->returns($this->v($out1));
         $this->dbMock->folderPropertiesGet->with($this->userId, 2)->returns($this->v($out2));
         $exp = HTTP::respJson(['folders' => [$out1]]);
-        $this->assertMessage($exp, $this->req("POST", "/folders?name=Hardware", json_encode($in)));
+        $this->assertMessage($exp, $this->req("POST", $url, json_encode($in)));
     }
 
     public function testMeldJsonAndQueryParameters(): void {
