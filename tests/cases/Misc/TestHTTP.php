@@ -9,6 +9,7 @@ namespace JKingWeb\Arsse\TestCase\Misc;
 use JKingWeb\Arsse\Misc\HTTP;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use Psr\Http\Message\ResponseInterface;
 
 /** @covers \JKingWeb\Arsse\Misc\HTTP */
 class TestHTTP extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -29,6 +30,22 @@ class TestHTTP extends \JKingWeb\Arsse\Test\AbstractTest {
             ["",                         ["application/json"],              false],
             ["",                         ["application/json", ""],          true],
             ["application/json ;",       ["application/json"],              true],
+            ["application/feed+json",    ["application/json", "+json"],     true],
+            ["application/xhtml+xml",    ["application/json", "+json"],     false],
+        ];
+    }
+
+    /** @dataProvider provideTypedMessages */
+    public function testCreateResponses(string $type, array $params, ResponseInterface $exp): void {
+        $act = call_user_func(["JKingWeb\\Arsse\\Misc\\HTTP", $type], ...$params);
+        $this->assertMessage($exp, $act);
+    }
+
+    public function provideTypedMessages(): iterable {
+        return [
+            ["respEmpty", [422, ['Content-Length' => "0"]],                             new Response(422, ['Content-Length' => "0"])],
+            ["respText",  ["OOK"],                                                      new Response(200, ['Content-Type' => "text/plain; charset=UTF-8"], "OOK")],
+            ["respText",  ["OOK", 201, ['Content-Type' => "application/octet-stream"]], new Response(201, ['Content-Type' => "application/octet-stream"], "OOK")],
         ];
     }
 }
