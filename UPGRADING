@@ -9,6 +9,13 @@ usually prudent:
 - Check for any changes to sample systemd unit or other init files
 - If installing from source, update dependencies with:
   `composer install -o --no-dev`
+    
+
+Upgrading from 0.10.2 to 0.10.3
+=============================
+
+- The following Composer dependencies have been removed:
+    - laminas/laminas-diactoros
 
 
 Upgrading from 0.8.5 to 0.9.0
