@@ -98,6 +98,12 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         return $value;
     }
 
+    public function testGenerateErrorResponse() {
+        $act = V1::respError(["DuplicateUser", 'user' => "john.doe"], 409, ['Cache-Control' => "no-store"]);
+        $exp = HTTP::respJson(['error_message' => 'The user name "john.doe" already exists'], 409, ['Cache-Control' => "no-store"]);
+        $this->assertMessage($exp, $act);
+    }
+
     /** @dataProvider provideAuthResponses */
     public function testAuthenticateAUser($token, bool $auth, bool $success): void {
         $exp = $success ? HTTP::respEmpty(404) : V1::respError("401", 401);

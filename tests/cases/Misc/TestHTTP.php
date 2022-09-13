@@ -43,9 +43,13 @@ class TestHTTP extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provideTypedMessages(): iterable {
         return [
-            ["respEmpty", [422, ['Content-Length' => "0"]],                             new Response(422, ['Content-Length' => "0"])],
-            ["respText",  ["OOK"],                                                      new Response(200, ['Content-Type' => "text/plain; charset=UTF-8"], "OOK")],
-            ["respText",  ["OOK", 201, ['Content-Type' => "application/octet-stream"]], new Response(201, ['Content-Type' => "application/octet-stream"], "OOK")],
+            ["respEmpty", [422, ['Content-Length' => "0"]],                                     new Response(422, ['Content-Length' => "0"])],
+            ["respText",  ["OOK"],                                                              new Response(200, ['Content-Type' => "text/plain; charset=UTF-8"], "OOK")],
+            ["respText",  ["OOK", 201, ['Content-Type' => "application/octet-stream"]],         new Response(201, ['Content-Type' => "application/octet-stream"], "OOK")],
+            ["respJson",  [['ook' => "eek"]],                                                   new Response(200, ['Content-Type' => "application/json"], '{"ook":"eek"}')],
+            ["respJson",  [['ook' => "eek"], 400, ['Content-Type' => "application/feed+json"]], new Response(400, ['Content-Type' => "application/feed+json"], '{"ook":"eek"}')],
+            ["respXml",   ["<html/>"],                                                          new Response(200, ['Content-Type' => "application/xml; charset=UTF-8"], "<html/>")],
+            ["respXml",   ["<html/>", 451, ['Content-Type' => "text/plain", 'Vary' => "ETag"]], new Response(451, ['Content-Type' => "text/plain", 'Vary' => "ETag"], "<html/>")],
         ];
     }
 }
