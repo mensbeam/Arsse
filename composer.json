@@ -28,7 +28,7 @@
         "hosteurope/password-generator": "1.*",
         "docopt/docopt": "1.*",
         "jkingweb/druuid": "3.*",
-        "laminas/laminas-diactoros": "2.*",
+        "guzzlehttp/psr7": "1.*",
         "laminas/laminas-httphandlerrunner": "1.*"
     },
     "require-dev": {

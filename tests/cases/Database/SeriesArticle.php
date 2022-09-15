@@ -19,7 +19,7 @@ trait SeriesArticle {
         $this->data = [
             'arsse_users' => [
                 'columns' => ["id", "password", "num"],
-                'rows' => [
+                'rows'    => [
                     ["jane.doe@example.com", "", 1],
                     ["john.doe@example.com", "", 2],
                     ["john.doe@example.org", "", 3],
@@ -29,7 +29,7 @@ trait SeriesArticle {
             ],
             'arsse_feeds' => [
                 'columns' => ["id", "url", "title"],
-                'rows' => [
+                'rows'    => [
                     [1,"http://example.com/1", "Feed 1"],
                     [2,"http://example.com/2", "Feed 2"],
                     [3,"http://example.com/3", "Feed 3"],
@@ -47,7 +47,7 @@ trait SeriesArticle {
             ],
             'arsse_folders' => [
                 'columns' => ["id", "owner", "parent", "name"],
-                'rows' => [
+                'rows'    => [
                     [1, "john.doe@example.com", null, "Technology"],
                     [2, "john.doe@example.com",    1, "Software"],
                     [3, "john.doe@example.com",    1, "Rocketry"],
@@ -61,7 +61,7 @@ trait SeriesArticle {
             ],
             'arsse_tags' => [
                 'columns' => ["id", "owner", "name"],
-                'rows' => [
+                'rows'    => [
                     [1, "john.doe@example.com", "Technology"],
                     [2, "john.doe@example.com", "Software"],
                     [3, "john.doe@example.com", "Rocketry"],
@@ -74,7 +74,7 @@ trait SeriesArticle {
             ],
             'arsse_subscriptions' => [
                 'columns' => ["id", "owner", "feed", "folder", "title", "scrape"],
-                'rows' => [
+                'rows'    => [
                     [1, "john.doe@example.com",1, null,"Subscription 1", 0],
                     [2, "john.doe@example.com",2, null,null,             0],
                     [3, "john.doe@example.com",3,    1,"Subscription 3", 0],
@@ -94,7 +94,7 @@ trait SeriesArticle {
             ],
             'arsse_tag_members' => [
                 'columns' => ["tag", "subscription", "assigned"],
-                'rows' => [
+                'rows'    => [
                     [1,3,1],
                     [1,4,1],
                     [2,4,1],
@@ -109,8 +109,8 @@ trait SeriesArticle {
             ],
             'arsse_articles' => [
                 'columns' => [
-                    "id", "feed", "url", "title", "author", "published", "edited", "content", "guid", 
-                    "url_title_hash", "url_content_hash", "title_content_hash", "modified", "content_scraped"
+                    "id", "feed", "url", "title", "author", "published", "edited", "content", "guid",
+                    "url_title_hash", "url_content_hash", "title_content_hash", "modified", "content_scraped",
                 ],
                 'rows' => [
                     [1,1,null,"Title one",  null,null,null,"First article", null,"","","","2000-01-01T00:00:00Z",null],
@@ -142,7 +142,7 @@ trait SeriesArticle {
             ],
             'arsse_enclosures' => [
                 'columns' => ["article", "url", "type"],
-                'rows' => [
+                'rows'    => [
                     [102,"http://example.com/text","text/plain"],
                     [103,"http://example.com/video","video/webm"],
                     [104,"http://example.com/image","image/svg+xml"],
@@ -152,7 +152,7 @@ trait SeriesArticle {
             ],
             'arsse_editions' => [
                 'columns' => ["id", "article"],
-                'rows' => [
+                'rows'    => [
                     [1,1],
                     [2,2],
                     [3,3],
@@ -188,7 +188,7 @@ trait SeriesArticle {
             ],
             'arsse_marks' => [
                 'columns' => ["subscription", "article", "read", "starred", "modified", "note", "hidden"],
-                'rows' => [
+                'rows'    => [
                     [1,   1,1,1,'2000-01-01 00:00:00','',0],
                     [5,  19,1,0,'2016-01-01 00:00:00','',0],
                     [5,  20,0,1,'2005-01-01 00:00:00','',0],
@@ -209,7 +209,7 @@ trait SeriesArticle {
             ],
             'arsse_categories' => [ // author-supplied categories
                 'columns' => ["article", "name"],
-                'rows' => [
+                'rows'    => [
                     [19,"Fascinating"],
                     [19,"Logical"],
                     [20,"Interesting"],
@@ -218,7 +218,7 @@ trait SeriesArticle {
             ],
             'arsse_labels' => [ // labels applied to articles
                 'columns' => ["id", "owner", "name"],
-                'rows' => [
+                'rows'    => [
                     [1,"john.doe@example.com","Interesting"],
                     [2,"john.doe@example.com","Fascinating"],
                     [3,"jane.doe@example.com","Boring"],
@@ -227,7 +227,7 @@ trait SeriesArticle {
             ],
             'arsse_label_members' => [
                 'columns' => ["label", "article", "subscription", "assigned", "modified"],
-                'rows' => [
+                'rows'    => [
                     [1, 1,1,1,'2000-01-01 00:00:00'],
                     [2, 1,1,1,'2000-01-01 00:00:00'],
                     [1,19,5,1,'2000-01-01 00:00:00'],

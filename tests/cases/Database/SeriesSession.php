@@ -24,14 +24,14 @@ trait SeriesSession {
         $this->data = [
             'arsse_users' => [
                 'columns' => ["id", "password", "num"],
-                'rows' => [
+                'rows'    => [
                     ["jane.doe@example.com", "",1],
                     ["john.doe@example.com", "",2],
                 ],
             ],
             'arsse_sessions' => [
                 'columns' => ["id", "user", "created", "expires"],
-                'rows' => [
+                'rows'    => [
                     ["80fa94c1a11f11e78667001e673b2560", "jane.doe@example.com", $past, $faroff],
                     ["27c6de8da13311e78667001e673b2560", "jane.doe@example.com", $past, $past], // expired
                     ["ab3b3eb8a13311e78667001e673b2560", "jane.doe@example.com", $old, $future], // too old

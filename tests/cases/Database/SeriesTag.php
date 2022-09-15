@@ -14,7 +14,7 @@ trait SeriesTag {
         $this->data = [
             'arsse_users' => [
                 'columns' => ["id", "password", "num"],
-                'rows' => [
+                'rows'    => [
                     ["jane.doe@example.com", "",1],
                     ["john.doe@example.com", "",2],
                     ["john.doe@example.org", "",3],
@@ -23,7 +23,7 @@ trait SeriesTag {
             ],
             'arsse_feeds' => [
                 'columns' => ["id", "url", "title"],
-                'rows' => [
+                'rows'    => [
                     [1,"http://example.com/1",""],
                     [2,"http://example.com/2",""],
                     [3,"http://example.com/3","Feed Title"],
@@ -41,7 +41,7 @@ trait SeriesTag {
             ],
             'arsse_subscriptions' => [
                 'columns' => ["id", "owner", "feed", "title"],
-                'rows' => [
+                'rows'    => [
                     [1, "john.doe@example.com", 1,"Lord of Carrots"],
                     [2, "john.doe@example.com", 2,null],
                     [3, "john.doe@example.com", 3,"Subscription Title"],
@@ -60,7 +60,7 @@ trait SeriesTag {
             ],
             'arsse_tags' => [
                 'columns' => ["id", "owner", "name"],
-                'rows' => [
+                'rows'    => [
                     [1,"john.doe@example.com","Interesting"],
                     [2,"john.doe@example.com","Fascinating"],
                     [3,"jane.doe@example.com","Boring"],
@@ -69,7 +69,7 @@ trait SeriesTag {
             ],
             'arsse_tag_members' => [
                 'columns' => ["tag", "subscription", "assigned"],
-                'rows' => [
+                'rows'    => [
                     [1,1,1],
                     [1,3,0],
                     [1,5,1],

@@ -34,7 +34,7 @@ return [
     'API.Miniflux.Error.InvalidTitle'                                      => 'Invalid feed title',
     'API.Miniflux.Error.InvalidImportCategory'                             => 'Payload contains an invalid category name',
     'API.Miniflux.Error.DuplicateImportCategory'                           => 'Payload contains the same category name twice',
-    'API.Miniflux.Error.FailedImportFeed'                                  => 'Unable to import feed at URL "{url}" (code {code}',
+    'API.Miniflux.Error.FailedImportFeed'                                  => 'Unable to import feed at URL "{url}" (code {code})',
     'API.Miniflux.Error.InvalidImportLabel'                                => 'Payload contains an invalid label name',
 
     'API.TTRSS.Category.Uncategorized'                                     => 'Uncategorized',

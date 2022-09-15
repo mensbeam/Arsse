@@ -14,10 +14,10 @@ use JKingWeb\Arsse\Context\RootContext;
 use JKingWeb\Arsse\Context\UnionContext;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
+use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\REST\Miniflux\V1;
-use JKingWeb\Arsse\REST\Miniflux\ErrorResponse;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\ImportExport\Exception as ImportException;
 use JKingWeb\Arsse\ImportExport\OPML;
@@ -25,9 +25,6 @@ use JKingWeb\Arsse\User\ExceptionConflict;
 use JKingWeb\Arsse\User\ExceptionInput as UserExceptionInput;
 use JKingWeb\Arsse\Test\Result;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\Response\JsonResponse as Response;
-use Laminas\Diactoros\Response\EmptyResponse;
-use Laminas\Diactoros\Response\TextResponse;
 
 /** @covers \JKingWeb\Arsse\REST\Miniflux\V1<extended> */
 class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -100,9 +97,15 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         return $value;
     }
 
+    public function testGenerateErrorResponse() {
+        $act = V1::respError(["DuplicateUser", 'user' => "john.doe"], 409, ['Cache-Control' => "no-store"]);
+        $exp = HTTP::respJson(['error_message' => 'The user name "john.doe" already exists'], 409, ['Cache-Control' => "no-store"]);
+        $this->assertMessage($exp, $act);
+    }
+
     /** @dataProvider provideAuthResponses */
     public function testAuthenticateAUser($token, bool $auth, bool $success): void {
-        $exp = $success ? new EmptyResponse(404) : new ErrorResponse("401", 401);
+        $exp = $success ? HTTP::respEmpty(404) : V1::respError("401", 401);
         $user = "john.doe@example.com";
         if ($token !== null) {
             $headers = ['X-Auth-Token' => $token];
@@ -133,7 +136,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideInvalidPaths */
     public function testRespondToInvalidPaths($path, $method, $code, $allow = null): void {
-        $exp = new EmptyResponse($code, $allow ? ['Allow' => $allow] : []);
+        $exp = HTTP::respEmpty($code, $allow ? ['Allow' => $allow] : []);
         $this->assertMessage($exp, $this->req($method, $path));
     }
 
@@ -148,7 +151,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideOptionsRequests */
     public function testRespondToOptionsRequests(string $url, string $allow, string $accept): void {
-        $exp = new EmptyResponse(204, [
+        $exp = HTTP::respEmpty(204, [
             'Allow'  => $allow,
             'Accept' => $accept,
         ]);
@@ -166,7 +169,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testRejectBadlyTypedData(): void {
-        $exp = new ErrorResponse(["InvalidInputType", 'field' => "url", 'expected' => "string", 'actual' => "integer"], 422);
+        $exp = V1::respError(["InvalidInputType", 'field' => "url", 'expected' => "string", 'actual' => "integer"], 422);
         $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => 2112]));
     }
 
@@ -182,12 +185,12 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['title' => "Feed", 'type' => "rss", 'url' => "http://localhost:8000/Feed/Discovery/Missing"],
         ];
         return [
-            ["http://localhost:8000/Feed/Discovery/Valid",   new Response($discovered)],
-            ["http://localhost:8000/Feed/Discovery/Invalid", new Response([])],
-            ["http://localhost:8000/Feed/Discovery/Missing", new ErrorResponse("Fetch404", 502)],
-            [1,                                              new ErrorResponse(["InvalidInputType", 'field' => "url", 'expected' => "string", 'actual' => "integer"], 422)],
-            ["Not a URL",                                    new ErrorResponse(["InvalidInputValue", 'field' => "url"], 422)],
-            [null,                                           new ErrorResponse(["MissingInputValue", 'field' => "url"], 422)],
+            ["http://localhost:8000/Feed/Discovery/Valid",   HTTP::respJson($discovered)],
+            ["http://localhost:8000/Feed/Discovery/Invalid", HTTP::respJson([])],
+            ["http://localhost:8000/Feed/Discovery/Missing", V1::respError("Fetch404", 502)],
+            [1,                                              V1::respError(["InvalidInputType", 'field' => "url", 'expected' => "string", 'actual' => "integer"], 422)],
+            ["Not a URL",                                    V1::respError(["InvalidInputValue", 'field' => "url"], 422)],
+            [null,                                           V1::respError(["MissingInputValue", 'field' => "url"], 422)],
         ];
     }
 
@@ -226,22 +229,22 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideUserQueries(): iterable {
         self::clearData();
         return [
-            [true,  "/users",                      new Response(self::USERS)],
-            [true,  "/me",                         new Response(self::USERS[0])],
-            [true,  "/users/john.doe@example.com", new Response(self::USERS[0])],
-            [true,  "/users/1",                    new Response(self::USERS[0])],
-            [true,  "/users/jane.doe@example.com", new Response(self::USERS[1])],
-            [true,  "/users/2",                    new Response(self::USERS[1])],
-            [true,  "/users/jack.doe@example.com", new ErrorResponse("404", 404)],
-            [true,  "/users/47",                   new ErrorResponse("404", 404)],
-            [false, "/users",                      new ErrorResponse("403", 403)],
-            [false, "/me",                         new Response(self::USERS[1])],
-            [false, "/users/john.doe@example.com", new ErrorResponse("403", 403)],
-            [false, "/users/1",                    new ErrorResponse("403", 403)],
-            [false, "/users/jane.doe@example.com", new ErrorResponse("403", 403)],
-            [false, "/users/2",                    new ErrorResponse("403", 403)],
-            [false, "/users/jack.doe@example.com", new ErrorResponse("403", 403)],
-            [false, "/users/47",                   new ErrorResponse("403", 403)],
+            [true,  "/users",                      HTTP::respJson(self::USERS)],
+            [true,  "/me",                         HTTP::respJson(self::USERS[0])],
+            [true,  "/users/john.doe@example.com", HTTP::respJson(self::USERS[0])],
+            [true,  "/users/1",                    HTTP::respJson(self::USERS[0])],
+            [true,  "/users/jane.doe@example.com", HTTP::respJson(self::USERS[1])],
+            [true,  "/users/2",                    HTTP::respJson(self::USERS[1])],
+            [true,  "/users/jack.doe@example.com", V1::respError("404", 404)],
+            [true,  "/users/47",                   V1::respError("404", 404)],
+            [false, "/users",                      V1::respError("403", 403)],
+            [false, "/me",                         HTTP::respJson(self::USERS[1])],
+            [false, "/users/john.doe@example.com", V1::respError("403", 403)],
+            [false, "/users/1",                    V1::respError("403", 403)],
+            [false, "/users/jane.doe@example.com", V1::respError("403", 403)],
+            [false, "/users/2",                    V1::respError("403", 403)],
+            [false, "/users/jack.doe@example.com", V1::respError("403", 403)],
+            [false, "/users/47",                   V1::respError("403", 403)],
         ];
     }
 
@@ -306,21 +309,21 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $resp1 = array_merge(self::USERS[1], ['username' => "john.doe@example.com"]);
         $resp2 = array_merge(self::USERS[1], ['id' => 1, 'is_admin' => true]);
         return [
-            [false, "/users/1", ['is_admin' => 0],                          null,  null,                                      null,  null,  null,                  null,                                            new ErrorResponse(["InvalidInputType", 'field' => "is_admin", 'expected' => "boolean", 'actual' => "integer"], 422)],
-            [false, "/users/1", ['entry_sorting_direction' => "bad"],       null,  null,                                      null,  null,  null,                  null,                                            new ErrorResponse(["InvalidInputValue", 'field' => "entry_sorting_direction"], 422)],
-            [false, "/users/1", ['theme' => "stark"],                       null,  null,                                      null,  null,  null,                  null,                                            new ErrorResponse("403", 403)],
-            [false, "/users/2", ['is_admin' => true],                       null,  null,                                      null,  null,  null,                  null,                                            new ErrorResponse("InvalidElevation", 403)],
-            [false, "/users/2", ['language' => "fr_CA"],                    null,  null,                                      null,  null,  ['lang' => "fr_CA"],   $out1,                                           new Response($resp1, 201)],
-            [false, "/users/2", ['entry_sorting_direction' => "asc"],       null,  null,                                      null,  null,  ['sort_asc' => true],  $out1,                                           new Response($resp1, 201)],
-            [false, "/users/2", ['entry_sorting_direction' => "desc"],      null,  null,                                      null,  null,  ['sort_asc' => false], $out1,                                           new Response($resp1, 201)],
-            [false, "/users/2", ['entries_per_page' => -1],                 null,  null,                                      null,  null,  ['page_size' => -1],   new UserExceptionInput("invalidNonZeroInteger"), new ErrorResponse(["InvalidInputValue", 'field' => "entries_per_page"], 422)],
-            [false, "/users/2", ['timezone' => "Ook"],                      null,  null,                                      null,  null,  ['tz' => "Ook"],       new UserExceptionInput("invalidTimezone"),       new ErrorResponse(["InvalidInputValue", 'field' => "timezone"], 422)],
-            [false, "/users/2", ['username' => "j:k"],                      "j:k", new UserExceptionInput("invalidUsername"), null,  null,  null,                  null,                                            new ErrorResponse(["InvalidInputValue", 'field' => "username"], 422)],
-            [false, "/users/2", ['username' => "ook"],                      "ook", new ExceptionConflict("alreadyExists"),    null,  null,  null,                  null,                                            new ErrorResponse(["DuplicateUser", 'user' => "ook"], 409)],
-            [false, "/users/2", ['password' => "ook"],                      null,  null,                                      "ook", "ook", null,                  null,                                            new Response(array_merge($resp1, ['password' => "ook"]), 201)],
-            [false, "/users/2", ['username' => "ook", 'password' => "ook"], "ook", true,                                      "ook", "ook", null,                  null,                                            new Response(array_merge($resp1, ['username' => "ook", 'password' => "ook"]), 201)],
-            [true,  "/users/1", ['theme' => "stark"],                       null,  null,                                      null,  null,  ['theme' => "stark"],  $out2,                                           new Response($resp2, 201)],
-            [true,  "/users/3", ['theme' => "stark"],                       null,  null,                                      null,  null,  null,                  null,                                            new ErrorResponse("404", 404)],
+            [false, "/users/1", ['is_admin' => 0],                          null,  null,                                      null,  null,  null,                  null,                                            V1::respError(["InvalidInputType", 'field' => "is_admin", 'expected' => "boolean", 'actual' => "integer"], 422)],
+            [false, "/users/1", ['entry_sorting_direction' => "bad"],       null,  null,                                      null,  null,  null,                  null,                                            V1::respError(["InvalidInputValue", 'field' => "entry_sorting_direction"], 422)],
+            [false, "/users/1", ['theme' => "stark"],                       null,  null,                                      null,  null,  null,                  null,                                            V1::respError("403", 403)],
+            [false, "/users/2", ['is_admin' => true],                       null,  null,                                      null,  null,  null,                  null,                                            V1::respError("InvalidElevation", 403)],
+            [false, "/users/2", ['language' => "fr_CA"],                    null,  null,                                      null,  null,  ['lang' => "fr_CA"],   $out1,                                           HTTP::respJson($resp1, 201)],
+            [false, "/users/2", ['entry_sorting_direction' => "asc"],       null,  null,                                      null,  null,  ['sort_asc' => true],  $out1,                                           HTTP::respJson($resp1, 201)],
+            [false, "/users/2", ['entry_sorting_direction' => "desc"],      null,  null,                                      null,  null,  ['sort_asc' => false], $out1,                                           HTTP::respJson($resp1, 201)],
+            [false, "/users/2", ['entries_per_page' => -1],                 null,  null,                                      null,  null,  ['page_size' => -1],   new UserExceptionInput("invalidNonZeroInteger"), V1::respError(["InvalidInputValue", 'field' => "entries_per_page"], 422)],
+            [false, "/users/2", ['timezone' => "Ook"],                      null,  null,                                      null,  null,  ['tz' => "Ook"],       new UserExceptionInput("invalidTimezone"),       V1::respError(["InvalidInputValue", 'field' => "timezone"], 422)],
+            [false, "/users/2", ['username' => "j:k"],                      "j:k", new UserExceptionInput("invalidUsername"), null,  null,  null,                  null,                                            V1::respError(["InvalidInputValue", 'field' => "username"], 422)],
+            [false, "/users/2", ['username' => "ook"],                      "ook", new ExceptionConflict("alreadyExists"),    null,  null,  null,                  null,                                            V1::respError(["DuplicateUser", 'user' => "ook"], 409)],
+            [false, "/users/2", ['password' => "ook"],                      null,  null,                                      "ook", "ook", null,                  null,                                            HTTP::respJson(array_merge($resp1, ['password' => "ook"]), 201)],
+            [false, "/users/2", ['username' => "ook", 'password' => "ook"], "ook", true,                                      "ook", "ook", null,                  null,                                            HTTP::respJson(array_merge($resp1, ['username' => "ook", 'password' => "ook"]), 201)],
+            [true,  "/users/1", ['theme' => "stark"],                       null,  null,                                      null,  null,  ['theme' => "stark"],  $out2,                                           HTTP::respJson($resp2, 201)],
+            [true,  "/users/3", ['theme' => "stark"],                       null,  null,                                      null,  null,  null,                  null,                                            V1::respError("404", 404)],
         ];
     }
 
@@ -361,18 +364,18 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideUserAdditions(): iterable {
         $resp1 = array_merge(self::USERS[1], ['username' => "ook", 'password' => "eek"]);
         return [
-            [[],                                                                   null,           null,                                      null,                   null,                                            new ErrorResponse(["MissingInputValue", 'field' => "username"], 422)],
-            [['username' => "ook"],                                                null,           null,                                      null,                   null,                                            new ErrorResponse(["MissingInputValue", 'field' => "password"], 422)],
-            [['username' => "ook", 'password' => "eek"],                           ["ook", "eek"], new ExceptionConflict("alreadyExists"),    null,                   null,                                            new ErrorResponse(["DuplicateUser", 'user' => "ook"], 409)],
-            [['username' => "j:k", 'password' => "eek"],                           ["j:k", "eek"], new UserExceptionInput("invalidUsername"), null,                   null,                                            new ErrorResponse(["InvalidInputValue", 'field' => "username"], 422)],
-            [['username' => "ook", 'password' => "eek", 'timezone' => "ook"],      ["ook", "eek"], "eek",                                     ['tz' => "ook"],        new UserExceptionInput("invalidTimezone"),       new ErrorResponse(["InvalidInputValue", 'field' => "timezone"], 422)],
-            [['username' => "ook", 'password' => "eek", 'entries_per_page' => -1], ["ook", "eek"], "eek",                                     ['page_size' => -1],    new UserExceptionInput("invalidNonZeroInteger"), new ErrorResponse(["InvalidInputValue", 'field' => "entries_per_page"], 422)],
-            [['username' => "ook", 'password' => "eek", 'theme' => "default"],     ["ook", "eek"], "eek",                                     ['theme' => "default"], ['theme' => "default"],                          new Response($resp1, 201)],
+            [[],                                                                   null,           null,                                      null,                   null,                                            V1::respError(["MissingInputValue", 'field' => "username"], 422)],
+            [['username' => "ook"],                                                null,           null,                                      null,                   null,                                            V1::respError(["MissingInputValue", 'field' => "password"], 422)],
+            [['username' => "ook", 'password' => "eek"],                           ["ook", "eek"], new ExceptionConflict("alreadyExists"),    null,                   null,                                            V1::respError(["DuplicateUser", 'user' => "ook"], 409)],
+            [['username' => "j:k", 'password' => "eek"],                           ["j:k", "eek"], new UserExceptionInput("invalidUsername"), null,                   null,                                            V1::respError(["InvalidInputValue", 'field' => "username"], 422)],
+            [['username' => "ook", 'password' => "eek", 'timezone' => "ook"],      ["ook", "eek"], "eek",                                     ['tz' => "ook"],        new UserExceptionInput("invalidTimezone"),       V1::respError(["InvalidInputValue", 'field' => "timezone"], 422)],
+            [['username' => "ook", 'password' => "eek", 'entries_per_page' => -1], ["ook", "eek"], "eek",                                     ['page_size' => -1],    new UserExceptionInput("invalidNonZeroInteger"), V1::respError(["InvalidInputValue", 'field' => "entries_per_page"], 422)],
+            [['username' => "ook", 'password' => "eek", 'theme' => "default"],     ["ook", "eek"], "eek",                                     ['theme' => "default"], ['theme' => "default"],                          HTTP::respJson($resp1, 201)],
         ];
     }
 
     public function testAddAUserWithoutAuthority(): void {
-        $this->assertMessage(new ErrorResponse("403", 403), $this->req("POST", "/users", []));
+        $this->assertMessage(V1::respError("403", 403), $this->req("POST", "/users", []));
     }
 
     public function testDeleteAUser(): void {
@@ -382,7 +385,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user->method("remove")->willReturn(true);
         Arsse::$user->expects($this->exactly(1))->method("lookup")->with(2112);
         Arsse::$user->expects($this->exactly(1))->method("remove")->with("john.doe@example.com");
-        $this->assertMessage(new EmptyResponse(204), $this->req("DELETE", "/users/2112"));
+        $this->assertMessage(HTTP::respEmpty(204), $this->req("DELETE", "/users/2112"));
     }
 
     public function testDeleteAMissingUser(): void {
@@ -392,13 +395,13 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user->method("remove")->willReturn(true);
         Arsse::$user->expects($this->exactly(1))->method("lookup")->with(2112);
         Arsse::$user->expects($this->exactly(0))->method("remove");
-        $this->assertMessage(new ErrorResponse("404", 404), $this->req("DELETE", "/users/2112"));
+        $this->assertMessage(V1::respError("404", 404), $this->req("DELETE", "/users/2112"));
     }
 
     public function testDeleteAUserWithoutAuthority(): void {
         Arsse::$user->expects($this->exactly(0))->method("lookup");
         Arsse::$user->expects($this->exactly(0))->method("remove");
-        $this->assertMessage(new ErrorResponse("403", 403), $this->req("DELETE", "/users/2112"));
+        $this->assertMessage(V1::respError("403", 403), $this->req("DELETE", "/users/2112"));
     }
 
     public function testListCategories(): void {
@@ -406,7 +409,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 1,  'name' => "Science"],
             ['id' => 20, 'name' => "Technology"],
         ])));
-        $exp = new Response([
+        $exp = HTTP::respJson([
             ['id' => 1,  'title' => "All",        'user_id' => 42],
             ['id' => 2,  'title' => "Science",    'user_id' => 42],
             ['id' => 21, 'title' => "Technology", 'user_id' => 42],
@@ -416,7 +419,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         // run test again with a renamed root folder
         Arsse::$user = $this->createMock(User::class);
         Arsse::$user->method("propertiesGet")->willReturn(['num' => 47, 'admin' => false, 'root_folder_name' => "Uncategorized"]);
-        $exp = new Response([
+        $exp = HTTP::respJson([
             ['id' => 1,  'title' => "Uncategorized", 'user_id' => 47],
             ['id' => 2,  'title' => "Science",       'user_id' => 47],
             ['id' => 21, 'title' => "Technology",    'user_id' => 47],
@@ -440,12 +443,12 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provideCategoryAdditions(): iterable {
         return [
-            ["New",       new Response(['id' => 2112, 'title' => "New", 'user_id' => 42], 201)],
-            ["Duplicate", new ErrorResponse(["DuplicateCategory", 'title' => "Duplicate"], 409)],
-            ["",          new ErrorResponse(["InvalidCategory", 'title' => ""], 422)],
-            [" ",         new ErrorResponse(["InvalidCategory", 'title' => " "], 422)],
-            [null,        new ErrorResponse(["MissingInputValue", 'field' => "title"], 422)],
-            [false,       new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 422)],
+            ["New",       HTTP::respJson(['id' => 2112, 'title' => "New", 'user_id' => 42], 201)],
+            ["Duplicate", V1::respError(["DuplicateCategory", 'title' => "Duplicate"], 409)],
+            ["",          V1::respError(["InvalidCategory", 'title' => ""], 422)],
+            [" ",         V1::respError(["InvalidCategory", 'title' => " "], 422)],
+            [null,        V1::respError(["MissingInputValue", 'field' => "title"], 422)],
+            [false,       V1::respError(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 422)],
         ];
     }
 
@@ -466,27 +469,27 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provideCategoryUpdates(): iterable {
         return [
-            [3, "New",       "subjectMissing",      new ErrorResponse("404", 404)],
-            [2, "New",       true,                  new Response(['id' => 2, 'title' => "New", 'user_id' => 42], 201)],
-            [2, "Duplicate", "constraintViolation", new ErrorResponse(["DuplicateCategory", 'title' => "Duplicate"], 409)],
-            [2, "",          "missing",             new ErrorResponse(["InvalidCategory", 'title' => ""], 422)],
-            [2, " ",         "whitespace",          new ErrorResponse(["InvalidCategory", 'title' => " "], 422)],
-            [2, null,        "missing",             new ErrorResponse(["MissingInputValue", 'field' => "title"], 422)],
-            [2, false,       "subjectMissing",      new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 422)],
-            [1, "New",       true,                  new Response(['id' => 1, 'title' => "New", 'user_id' => 42], 201)],
-            [1, "Duplicate", "constraintViolation", new Response(['id' => 1, 'title' => "Duplicate", 'user_id' => 42], 201)], // This is allowed because the name of the root folder is only a duplicate in circumstances where it is used
-            [1, "",          "missing",             new ErrorResponse(["InvalidCategory", 'title' => ""], 422)],
-            [1, " ",         "whitespace",          new ErrorResponse(["InvalidCategory", 'title' => " "], 422)],
-            [1, null,        "missing",             new ErrorResponse(["MissingInputValue", 'field' => "title"], 422)],
-            [1, false,       false,                 new ErrorResponse(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 422)],
+            [3, "New",       "subjectMissing",      V1::respError("404", 404)],
+            [2, "New",       true,                  HTTP::respJson(['id' => 2, 'title' => "New", 'user_id' => 42], 201)],
+            [2, "Duplicate", "constraintViolation", V1::respError(["DuplicateCategory", 'title' => "Duplicate"], 409)],
+            [2, "",          "missing",             V1::respError(["InvalidCategory", 'title' => ""], 422)],
+            [2, " ",         "whitespace",          V1::respError(["InvalidCategory", 'title' => " "], 422)],
+            [2, null,        "missing",             V1::respError(["MissingInputValue", 'field' => "title"], 422)],
+            [2, false,       "subjectMissing",      V1::respError(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 422)],
+            [1, "New",       true,                  HTTP::respJson(['id' => 1, 'title' => "New", 'user_id' => 42], 201)],
+            [1, "Duplicate", "constraintViolation", HTTP::respJson(['id' => 1, 'title' => "Duplicate", 'user_id' => 42], 201)], // This is allowed because the name of the root folder is only a duplicate in circumstances where it is used
+            [1, "",          "missing",             V1::respError(["InvalidCategory", 'title' => ""], 422)],
+            [1, " ",         "whitespace",          V1::respError(["InvalidCategory", 'title' => " "], 422)],
+            [1, null,        "missing",             V1::respError(["MissingInputValue", 'field' => "title"], 422)],
+            [1, false,       false,                 V1::respError(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 422)],
         ];
     }
 
     public function testDeleteARealCategory(): void {
         $this->dbMock->folderRemove->returns(true)->throws(new ExceptionInput("subjectMissing"));
-        $this->assertMessage(new EmptyResponse(204), $this->req("DELETE", "/categories/2112"));
+        $this->assertMessage(HTTP::respEmpty(204), $this->req("DELETE", "/categories/2112"));
         $this->dbMock->folderRemove->calledWith("john.doe@example.com", 2111);
-        $this->assertMessage(new ErrorResponse("404", 404), $this->req("DELETE", "/categories/47"));
+        $this->assertMessage(V1::respError("404", 404), $this->req("DELETE", "/categories/47"));
         $this->dbMock->folderRemove->calledWith("john.doe@example.com", 46);
     }
 
@@ -497,7 +500,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 2112],
         ])));
         $this->dbMock->subscriptionRemove->returns(true);
-        $this->assertMessage(new EmptyResponse(204), $this->req("DELETE", "/categories/1"));
+        $this->assertMessage(HTTP::respEmpty(204), $this->req("DELETE", "/categories/1"));
         Phony::inOrder(
             $this->dbMock->begin->calledWith(),
             $this->dbMock->subscriptionList->calledWith("john.doe@example.com", null, false),
@@ -510,42 +513,42 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testListFeeds(): void {
         $this->dbMock->subscriptionList->returns(new Result($this->v(self::FEEDS)));
-        $exp = new Response(self::FEEDS_OUT);
+        $exp = HTTP::respJson(self::FEEDS_OUT);
         $this->assertMessage($exp, $this->req("GET", "/feeds"));
     }
 
     public function testListFeedsOfACategory(): void {
         $this->dbMock->subscriptionList->returns(new Result($this->v(self::FEEDS)));
-        $exp = new Response(self::FEEDS_OUT);
+        $exp = HTTP::respJson(self::FEEDS_OUT);
         $this->assertMessage($exp, $this->req("GET", "/categories/2112/feeds"));
         $this->dbMock->subscriptionList->calledWith(Arsse::$user->id, 2111, true);
     }
 
     public function testListFeedsOfTheRootCategory(): void {
         $this->dbMock->subscriptionList->returns(new Result($this->v(self::FEEDS)));
-        $exp = new Response(self::FEEDS_OUT);
+        $exp = HTTP::respJson(self::FEEDS_OUT);
         $this->assertMessage($exp, $this->req("GET", "/categories/1/feeds"));
         $this->dbMock->subscriptionList->calledWith(Arsse::$user->id, 0, false);
     }
 
     public function testListFeedsOfAMissingCategory(): void {
         $this->dbMock->subscriptionList->throws(new ExceptionInput("idMissing"));
-        $exp = new ErrorResponse("404", 404);
+        $exp = V1::respError("404", 404);
         $this->assertMessage($exp, $this->req("GET", "/categories/2112/feeds"));
         $this->dbMock->subscriptionList->calledWith(Arsse::$user->id, 2111, true);
     }
 
     public function testGetAFeed(): void {
         $this->dbMock->subscriptionPropertiesGet->returns($this->v(self::FEEDS[0]))->returns($this->v(self::FEEDS[1]));
-        $this->assertMessage(new Response(self::FEEDS_OUT[0]), $this->req("GET", "/feeds/1"));
+        $this->assertMessage(HTTP::respJson(self::FEEDS_OUT[0]), $this->req("GET", "/feeds/1"));
         $this->dbMock->subscriptionPropertiesGet->calledWith(Arsse::$user->id, 1);
-        $this->assertMessage(new Response(self::FEEDS_OUT[1]), $this->req("GET", "/feeds/55"));
+        $this->assertMessage(HTTP::respJson(self::FEEDS_OUT[1]), $this->req("GET", "/feeds/55"));
         $this->dbMock->subscriptionPropertiesGet->calledWith(Arsse::$user->id, 55);
     }
 
     public function testGetAMissingFeed(): void {
         $this->dbMock->subscriptionPropertiesGet->throws(new ExceptionInput("subjectMissing"));
-        $this->assertMessage(new ErrorResponse("404", 404), $this->req("GET", "/feeds/1"));
+        $this->assertMessage(V1::respError("404", 404), $this->req("GET", "/feeds/1"));
         $this->dbMock->subscriptionPropertiesGet->calledWith(Arsse::$user->id, 1);
     }
 
@@ -611,39 +614,39 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideFeedCreations(): iterable {
         self::clearData();
         return [
-            [['category_id' => 1],                                                                null,                                       null,                                      null,                            null, new ErrorResponse(["MissingInputValue", 'field' => "feed_url"], 422)],
-            [['feed_url' => "http://example.com/"],                                               null,                                       null,                                      null,                            null, new ErrorResponse(["MissingInputValue", 'field' => "category_id"], 422)],
-            [['feed_url' => "http://example.com/", 'category_id' => "1"],                         null,                                       null,                                      null,                            null, new ErrorResponse(["InvalidInputType", 'field' => "category_id", 'expected' => "integer", 'actual' => "string"], 422)],
-            [['feed_url' => "Not a URL", 'category_id' => 1],                                     null,                                       null,                                      null,                            null, new ErrorResponse(["InvalidInputValue", 'field' => "feed_url"], 422)],
-            [['feed_url' => "http://example.com/", 'category_id' => 0],                           null,                                       null,                                      null,                            null, new ErrorResponse(["InvalidInputValue", 'field' => "category_id"], 422)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1, 'keeplist_rules' => "["],  null,                                       null,                                      null,                            null, new ErrorResponse(["InvalidInputValue", 'field' => "keeplist_rules"], 422)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1, 'blocklist_rules' => "["], null,                                       null,                                      null,                            null, new ErrorResponse(["InvalidInputValue", 'field' => "blocklist_rules"], 422)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("internalError"),         null,                                      null,                            null, new ErrorResponse("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("invalidCertificate"),    null,                                      null,                            null, new ErrorResponse("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("invalidUrl"),            null,                                      null,                            null, new ErrorResponse("Fetch404", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("maxRedirect"),           null,                                      null,                            null, new ErrorResponse("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("maxSize"),               null,                                      null,                            null, new ErrorResponse("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("timeout"),               null,                                      null,                            null, new ErrorResponse("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("forbidden"),             null,                                      null,                            null, new ErrorResponse("Fetch403", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("unauthorized"),          null,                                      null,                            null, new ErrorResponse("Fetch401", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("transmissionError"),     null,                                      null,                            null, new ErrorResponse("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("connectionFailed"),      null,                                      null,                            null, new ErrorResponse("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("malformedXml"),          null,                                      null,                            null, new ErrorResponse("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("xmlEntity"),             null,                                      null,                            null, new ErrorResponse("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("subscriptionNotFound"),  null,                                      null,                            null, new ErrorResponse("Fetch404", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("unsupportedFeedFormat"), null,                                      null,                            null, new ErrorResponse("FetchFormat", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           2112,                                       new ExceptionInput("constraintViolation"), null,                            null, new ErrorResponse("DuplicateFeed", 409)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           2112,                                       44,                                        new ExceptionInput("idMissing"), null, new ErrorResponse("MissingCategory", 422)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           2112,                                       44,                                        true,                            null, new Response(['feed_id' => 44], 201)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1, 'keeplist_rules' => "^A"], 2112,                                       44,                                        true,                            true, new Response(['feed_id' => 44], 201)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1, 'blocklist_rules' => "A"], 2112,                                       44,                                        true,                            true, new Response(['feed_id' => 44], 201)],
+            [['category_id' => 1],                                                                null,                                       null,                                      null,                            null, V1::respError(["MissingInputValue", 'field' => "feed_url"], 422)],
+            [['feed_url' => "http://example.com/"],                                               null,                                       null,                                      null,                            null, V1::respError(["MissingInputValue", 'field' => "category_id"], 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => "1"],                         null,                                       null,                                      null,                            null, V1::respError(["InvalidInputType", 'field' => "category_id", 'expected' => "integer", 'actual' => "string"], 422)],
+            [['feed_url' => "Not a URL", 'category_id' => 1],                                     null,                                       null,                                      null,                            null, V1::respError(["InvalidInputValue", 'field' => "feed_url"], 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => 0],                           null,                                       null,                                      null,                            null, V1::respError(["InvalidInputValue", 'field' => "category_id"], 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1, 'keeplist_rules' => "["],  null,                                       null,                                      null,                            null, V1::respError(["InvalidInputValue", 'field' => "keeplist_rules"], 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1, 'blocklist_rules' => "["], null,                                       null,                                      null,                            null, V1::respError(["InvalidInputValue", 'field' => "blocklist_rules"], 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("internalError"),         null,                                      null,                            null, V1::respError("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("invalidCertificate"),    null,                                      null,                            null, V1::respError("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("invalidUrl"),            null,                                      null,                            null, V1::respError("Fetch404", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("maxRedirect"),           null,                                      null,                            null, V1::respError("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("maxSize"),               null,                                      null,                            null, V1::respError("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("timeout"),               null,                                      null,                            null, V1::respError("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("forbidden"),             null,                                      null,                            null, V1::respError("Fetch403", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("unauthorized"),          null,                                      null,                            null, V1::respError("Fetch401", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("transmissionError"),     null,                                      null,                            null, V1::respError("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("connectionFailed"),      null,                                      null,                            null, V1::respError("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("malformedXml"),          null,                                      null,                            null, V1::respError("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("xmlEntity"),             null,                                      null,                            null, V1::respError("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("subscriptionNotFound"),  null,                                      null,                            null, V1::respError("Fetch404", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("unsupportedFeedFormat"), null,                                      null,                            null, V1::respError("FetchFormat", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           2112,                                       new ExceptionInput("constraintViolation"), null,                            null, V1::respError("DuplicateFeed", 409)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           2112,                                       44,                                        new ExceptionInput("idMissing"), null, V1::respError("MissingCategory", 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           2112,                                       44,                                        true,                            null, HTTP::respJson(['feed_id' => 44], 201)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1, 'keeplist_rules' => "^A"], 2112,                                       44,                                        true,                            true, HTTP::respJson(['feed_id' => 44], 201)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1, 'blocklist_rules' => "A"], 2112,                                       44,                                        true,                            true, HTTP::respJson(['feed_id' => 44], 201)],
         ];
     }
 
     /** @dataProvider provideFeedModifications */
     public function testModifyAFeed(array $in, array $data, $out, ResponseInterface $exp): void {
         $this->h = $this->partialMock(V1::class);
-        $this->h->getFeed->returns(new Response(self::FEEDS_OUT[0]));
+        $this->h->getFeed->returns(HTTP::respJson(self::FEEDS_OUT[0]));
         if ($out instanceof \Exception) {
             $this->dbMock->subscriptionPropertiesSet->throws($out);
         } else {
@@ -655,14 +658,14 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provideFeedModifications(): iterable {
         self::clearData();
-        $success = new Response(self::FEEDS_OUT[0], 201);
+        $success = HTTP::respJson(self::FEEDS_OUT[0], 201);
         return [
             [[],                                     [],                                    true,                                 $success],
-            [[],                                     [],                                    new ExceptionInput("subjectMissing"), new ErrorResponse("404", 404)],
-            [['title' => ""],                        ['title' => ""],                       new ExceptionInput("missing"),        new ErrorResponse("InvalidTitle", 422)],
-            [['title' => " "],                       ['title' => " "],                      new ExceptionInput("whitespace"),     new ErrorResponse("InvalidTitle", 422)],
-            [['title' => " "],                       ['title' => " "],                      new ExceptionInput("whitespace"),     new ErrorResponse("InvalidTitle", 422)],
-            [['category_id' => 47],                  ['folder' => 46],                      new ExceptionInput("idMissing"),      new ErrorResponse("MissingCategory", 422)],
+            [[],                                     [],                                    new ExceptionInput("subjectMissing"), V1::respError("404", 404)],
+            [['title' => ""],                        ['title' => ""],                       new ExceptionInput("missing"),        V1::respError("InvalidTitle", 422)],
+            [['title' => " "],                       ['title' => " "],                      new ExceptionInput("whitespace"),     V1::respError("InvalidTitle", 422)],
+            [['title' => " "],                       ['title' => " "],                      new ExceptionInput("whitespace"),     V1::respError("InvalidTitle", 422)],
+            [['category_id' => 47],                  ['folder' => 46],                      new ExceptionInput("idMissing"),      V1::respError("MissingCategory", 422)],
             [['crawler' => false],                   ['scrape' => false],                   true,                                 $success],
             [['keeplist_rules' => ""],               ['keep_rule' => ""],                   true,                                 $success],
             [['blocklist_rules' => "ook"],           ['block_rule' => "ook"],               true,                                 $success],
@@ -672,21 +675,21 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testModifyAFeedWithNoBody(): void {
         $this->h = $this->partialMock(V1::class);
-        $this->h->getFeed->returns(new Response(self::FEEDS_OUT[0]));
+        $this->h->getFeed->returns(HTTP::respJson(self::FEEDS_OUT[0]));
         $this->dbMock->subscriptionPropertiesSet->returns(true);
-        $this->assertMessage(new Response(self::FEEDS_OUT[0], 201), $this->req("PUT", "/feeds/2112", ""));
+        $this->assertMessage(HTTP::respJson(self::FEEDS_OUT[0], 201), $this->req("PUT", "/feeds/2112", ""));
         $this->dbMock->subscriptionPropertiesSet->calledWith(Arsse::$user->id, 2112, []);
     }
 
     public function testDeleteAFeed(): void {
         $this->dbMock->subscriptionRemove->returns(true);
-        $this->assertMessage(new EmptyResponse(204), $this->req("DELETE", "/feeds/2112"));
+        $this->assertMessage(HTTP::respEmpty(204), $this->req("DELETE", "/feeds/2112"));
         $this->dbMock->subscriptionRemove->calledWith(Arsse::$user->id, 2112);
     }
 
     public function testDeleteAMissingFeed(): void {
         $this->dbMock->subscriptionRemove->throws(new ExceptionInput("subjectMissing"));
-        $this->assertMessage(new ErrorResponse("404", 404), $this->req("DELETE", "/feeds/2112"));
+        $this->assertMessage(V1::respError("404", 404), $this->req("DELETE", "/feeds/2112"));
         $this->dbMock->subscriptionRemove->calledWith(Arsse::$user->id, 2112);
     }
 
@@ -703,12 +706,12 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provideIcons(): iterable {
         return [
-            [['id' => 44, 'type' => "image/svg+xml", 'data' => "<svg/>"], new Response(['id' => 44, 'data' => "image/svg+xml;base64,PHN2Zy8+", 'mime_type' => "image/svg+xml"])],
-            [['id' => 47, 'type' => "",              'data' => "<svg/>"], new ErrorResponse("404", 404)],
-            [['id' => 47, 'type' => null,            'data' => "<svg/>"], new ErrorResponse("404", 404)],
-            [['id' => 47, 'type' => null,            'data' => null],     new ErrorResponse("404", 404)],
-            [null,                                                        new ErrorResponse("404", 404)],
-            [new ExceptionInput("subjectMissing"),                        new ErrorResponse("404", 404)],
+            [['id' => 44, 'type' => "image/svg+xml", 'data' => "<svg/>"], HTTP::respJson(['id' => 44, 'data' => "image/svg+xml;base64,PHN2Zy8+", 'mime_type' => "image/svg+xml"])],
+            [['id' => 47, 'type' => "",              'data' => "<svg/>"], V1::respError("404", 404)],
+            [['id' => 47, 'type' => null,            'data' => "<svg/>"], V1::respError("404", 404)],
+            [['id' => 47, 'type' => null,            'data' => null],     V1::respError("404", 404)],
+            [null,                                                        V1::respError("404", 404)],
+            [new ExceptionInput("subjectMissing"),                        V1::respError("404", 404)],
         ];
     }
 
@@ -744,62 +747,62 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $c = (new Context)->limit(100);
         $o = ["modified_date"]; // the default sort order
         return [
-            ["/entries?after=A",                                   null,                                                                  null,                      [],                              false, new ErrorResponse(["InvalidInputValue", 'field' => "after"], 400)],
-            ["/entries?before=B",                                  null,                                                                  null,                      [],                              false, new ErrorResponse(["InvalidInputValue", 'field' => "before"], 400)],
-            ["/entries?category_id=0",                             null,                                                                  null,                      [],                              false, new ErrorResponse(["InvalidInputValue", 'field' => "category_id"], 400)],
-            ["/entries?after_entry_id=0",                          null,                                                                  null,                      [],                              false, new ErrorResponse(["InvalidInputValue", 'field' => "after_entry_id"], 400)],
-            ["/entries?before_entry_id=0",                         null,                                                                  null,                      [],                              false, new ErrorResponse(["InvalidInputValue", 'field' => "before_entry_id"], 400)],
-            ["/entries?limit=-1",                                  null,                                                                  null,                      [],                              false, new ErrorResponse(["InvalidInputValue", 'field' => "limit"], 400)],
-            ["/entries?offset=-1",                                 null,                                                                  null,                      [],                              false, new ErrorResponse(["InvalidInputValue", 'field' => "offset"], 400)],
-            ["/entries?direction=sideways",                        null,                                                                  null,                      [],                              false, new ErrorResponse(["InvalidInputValue", 'field' => "direction"], 400)],
-            ["/entries?order=false",                               null,                                                                  null,                      [],                              false, new ErrorResponse(["InvalidInputValue", 'field' => "order"], 400)],
-            ["/entries?starred&starred",                           null,                                                                  null,                      [],                              false, new ErrorResponse(["DuplicateInputValue", 'field' => "starred"], 400)],
-            ["/entries?after&after=0",                             null,                                                                  null,                      [],                              false, new ErrorResponse(["DuplicateInputValue", 'field' => "after"], 400)],
-            ["/entries",                                           $c,                                                                    $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?category_id=47",                            (clone $c)->folder(46),                                                $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?category_id=1",                             (clone $c)->folderShallow(0),                                          $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=unread",                             (clone $c)->unread(true)->hidden(false),                               $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=read",                               (clone $c)->unread(false)->hidden(false),                              $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=removed",                            (clone $c)->hidden(true),                                              $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=unread&status=read",                 (clone $c)->hidden(false),                                             $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=unread&status=removed",              new UnionContext((clone $c)->unread(true), (clone $c)->hidden(true)),  $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=removed&status=read",                new UnionContext((clone $c)->unread(false), (clone $c)->hidden(true)), $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=removed&status=read&status=removed", new UnionContext((clone $c)->unread(false), (clone $c)->hidden(true)), $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=removed&status=read&status=unread",  $c,                                                                    $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?starred",                                   (clone $c)->starred(true),                                             $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?starred=",                                  (clone $c)->starred(true),                                             $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?starred=true",                              (clone $c)->starred(true),                                             $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?starred=false",                             (clone $c)->starred(true),                                             $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?after=0",                                   (clone $c)->modifiedRange(0, null),                                    $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?before=0",                                  $c,                                                                    $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?before=1",                                  (clone $c)->modifiedRange(null, 1),                                    $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?before=1&after=0",                          (clone $c)->modifiedRange(0, 1),                                       $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?after_entry_id=42",                         (clone $c)->articleRange(43, null),                                    $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?before_entry_id=47",                        (clone $c)->articleRange(null, 46),                                    $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?search=alpha%20beta",                       (clone $c)->searchTerms(["alpha", "beta"]),                            $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?limit=4",                                   (clone $c)->limit(4),                                                  $o,                        self::ENTRIES,                   true,  new Response(['total' => 2112, 'entries' => self::ENTRIES_OUT])],
-            ["/entries?offset=20",                                 (clone $c)->offset(20),                                                $o,                        [],                              true,  new Response(['total' => 2112, 'entries' => []])],
-            ["/entries?direction=asc",                             $c,                                                                    $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?order=id",                                  $c,                                                                    ["id"],                    self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?order=published_at",                        $c,                                                                    ["modified_date"],         self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?order=category_id",                         $c,                                                                    ["top_folder"],            self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?order=category_title",                      $c,                                                                    ["top_folder_name"],       self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?order=status",                              $c,                                                                    ["hidden", "unread desc"], self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?direction=desc",                            $c,                                                                    ["modified_date desc"],    self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?order=id&direction=desc",                   $c,                                                                    ["id desc"],               self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?order=published_at&direction=desc",         $c,                                                                    ["modified_date desc"],    self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?order=category_id&direction=desc",          $c,                                                                    ["top_folder desc"],       self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?order=category_title&direction=desc",       $c,                                                                    ["top_folder_name desc"],  self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?order=status&direction=desc",               $c,                                                                    ["hidden desc", "unread"], self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?category_id=2112",                          (clone $c)->folder(2111),                                              $o,                        new ExceptionInput("idMissing"), false, new ErrorResponse("MissingCategory")],
-            ["/feeds/42/entries",                                  (clone $c)->subscription(42),                                          $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/feeds/42/entries?category_id=47",                   (clone $c)->subscription(42)->folder(46),                              $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/feeds/2112/entries",                                (clone $c)->subscription(2112),                                        $o,                        new ExceptionInput("idMissing"), false, new ErrorResponse("404", 404)],
-            ["/categories/42/entries",                             (clone $c)->folder(41),                                                $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/categories/42/entries?category_id=47",              (clone $c)->folder(41),                                                $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/categories/42/entries?starred",                     (clone $c)->folder(41)->starred(true),                                 $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/categories/1/entries",                              (clone $c)->folderShallow(0),                                          $o,                        self::ENTRIES,                   false, new Response(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/categories/2112/entries",                           (clone $c)->folder(2111),                                              $o,                        new ExceptionInput("idMissing"), false, new ErrorResponse("404", 404)],
+            ["/entries?after=A",                                   null,                                                                  null,                      [],                              false, V1::respError(["InvalidInputValue", 'field' => "after"], 400)],
+            ["/entries?before=B",                                  null,                                                                  null,                      [],                              false, V1::respError(["InvalidInputValue", 'field' => "before"], 400)],
+            ["/entries?category_id=0",                             null,                                                                  null,                      [],                              false, V1::respError(["InvalidInputValue", 'field' => "category_id"], 400)],
+            ["/entries?after_entry_id=0",                          null,                                                                  null,                      [],                              false, V1::respError(["InvalidInputValue", 'field' => "after_entry_id"], 400)],
+            ["/entries?before_entry_id=0",                         null,                                                                  null,                      [],                              false, V1::respError(["InvalidInputValue", 'field' => "before_entry_id"], 400)],
+            ["/entries?limit=-1",                                  null,                                                                  null,                      [],                              false, V1::respError(["InvalidInputValue", 'field' => "limit"], 400)],
+            ["/entries?offset=-1",                                 null,                                                                  null,                      [],                              false, V1::respError(["InvalidInputValue", 'field' => "offset"], 400)],
+            ["/entries?direction=sideways",                        null,                                                                  null,                      [],                              false, V1::respError(["InvalidInputValue", 'field' => "direction"], 400)],
+            ["/entries?order=false",                               null,                                                                  null,                      [],                              false, V1::respError(["InvalidInputValue", 'field' => "order"], 400)],
+            ["/entries?starred&starred",                           null,                                                                  null,                      [],                              false, V1::respError(["DuplicateInputValue", 'field' => "starred"], 400)],
+            ["/entries?after&after=0",                             null,                                                                  null,                      [],                              false, V1::respError(["DuplicateInputValue", 'field' => "after"], 400)],
+            ["/entries",                                           $c,                                                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?category_id=47",                            (clone $c)->folder(46),                                                $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?category_id=1",                             (clone $c)->folderShallow(0),                                          $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=unread",                             (clone $c)->unread(true)->hidden(false),                               $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=read",                               (clone $c)->unread(false)->hidden(false),                              $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=removed",                            (clone $c)->hidden(true),                                              $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=unread&status=read",                 (clone $c)->hidden(false),                                             $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=unread&status=removed",              new UnionContext((clone $c)->unread(true), (clone $c)->hidden(true)),  $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=removed&status=read",                new UnionContext((clone $c)->unread(false), (clone $c)->hidden(true)), $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=removed&status=read&status=removed", new UnionContext((clone $c)->unread(false), (clone $c)->hidden(true)), $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?status=removed&status=read&status=unread",  $c,                                                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?starred",                                   (clone $c)->starred(true),                                             $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?starred=",                                  (clone $c)->starred(true),                                             $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?starred=true",                              (clone $c)->starred(true),                                             $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?starred=false",                             (clone $c)->starred(true),                                             $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?after=0",                                   (clone $c)->modifiedRange(0, null),                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?before=0",                                  $c,                                                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?before=1",                                  (clone $c)->modifiedRange(null, 1),                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?before=1&after=0",                          (clone $c)->modifiedRange(0, 1),                                       $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?after_entry_id=42",                         (clone $c)->articleRange(43, null),                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?before_entry_id=47",                        (clone $c)->articleRange(null, 46),                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?search=alpha%20beta",                       (clone $c)->searchTerms(["alpha", "beta"]),                            $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?limit=4",                                   (clone $c)->limit(4),                                                  $o,                        self::ENTRIES,                   true,  HTTP::respJson(['total' => 2112, 'entries' => self::ENTRIES_OUT])],
+            ["/entries?offset=20",                                 (clone $c)->offset(20),                                                $o,                        [],                              true,  HTTP::respJson(['total' => 2112, 'entries' => []])],
+            ["/entries?direction=asc",                             $c,                                                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?order=id",                                  $c,                                                                    ["id"],                    self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?order=published_at",                        $c,                                                                    ["modified_date"],         self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?order=category_id",                         $c,                                                                    ["top_folder"],            self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?order=category_title",                      $c,                                                                    ["top_folder_name"],       self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?order=status",                              $c,                                                                    ["hidden", "unread desc"], self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?direction=desc",                            $c,                                                                    ["modified_date desc"],    self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?order=id&direction=desc",                   $c,                                                                    ["id desc"],               self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?order=published_at&direction=desc",         $c,                                                                    ["modified_date desc"],    self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?order=category_id&direction=desc",          $c,                                                                    ["top_folder desc"],       self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?order=category_title&direction=desc",       $c,                                                                    ["top_folder_name desc"],  self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?order=status&direction=desc",               $c,                                                                    ["hidden desc", "unread"], self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?category_id=2112",                          (clone $c)->folder(2111),                                              $o,                        new ExceptionInput("idMissing"), false, V1::respError("MissingCategory")],
+            ["/feeds/42/entries",                                  (clone $c)->subscription(42),                                          $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/feeds/42/entries?category_id=47",                   (clone $c)->subscription(42)->folder(46),                              $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/feeds/2112/entries",                                (clone $c)->subscription(2112),                                        $o,                        new ExceptionInput("idMissing"), false, V1::respError("404", 404)],
+            ["/categories/42/entries",                             (clone $c)->folder(41),                                                $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/categories/42/entries?category_id=47",              (clone $c)->folder(41),                                                $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/categories/42/entries?starred",                     (clone $c)->folder(41)->starred(true),                                 $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/categories/1/entries",                              (clone $c)->folderShallow(0),                                          $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/categories/2112/entries",                           (clone $c)->folder(2111),                                              $o,                        new ExceptionInput("idMissing"), false, V1::respError("404", 404)],
         ];
     }
 
@@ -828,17 +831,17 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
         $c = new Context;
         return [
-            ["/entries/42",                 (clone $c)->article(42),                     [self::ENTRIES[1]],                   new Response(self::ENTRIES_OUT[1])],
-            ["/entries/2112",               (clone $c)->article(2112),                   new ExceptionInput("subjectMissing"), new ErrorResponse("404", 404)],
-            ["/feeds/47/entries/42",        (clone $c)->subscription(47)->article(42),   [self::ENTRIES[1]],                   new Response(self::ENTRIES_OUT[1])],
-            ["/feeds/47/entries/44",        (clone $c)->subscription(47)->article(44),   [],                                   new ErrorResponse("404", 404)],
-            ["/feeds/47/entries/2112",      (clone $c)->subscription(47)->article(2112), new ExceptionInput("subjectMissing"), new ErrorResponse("404", 404)],
-            ["/feeds/2112/entries/47",      (clone $c)->subscription(2112)->article(47), new ExceptionInput("idMissing"),      new ErrorResponse("404", 404)],
-            ["/categories/47/entries/42",   (clone $c)->folder(46)->article(42),         [self::ENTRIES[1]],                   new Response(self::ENTRIES_OUT[1])],
-            ["/categories/47/entries/44",   (clone $c)->folder(46)->article(44),         [],                                   new ErrorResponse("404", 404)],
-            ["/categories/47/entries/2112", (clone $c)->folder(46)->article(2112),       new ExceptionInput("subjectMissing"), new ErrorResponse("404", 404)],
-            ["/categories/2112/entries/47", (clone $c)->folder(2111)->article(47),       new ExceptionInput("idMissing"),      new ErrorResponse("404", 404)],
-            ["/categories/1/entries/42",    (clone $c)->folderShallow(0)->article(42),   [self::ENTRIES[1]],                   new Response(self::ENTRIES_OUT[1])],
+            ["/entries/42",                 (clone $c)->article(42),                     [self::ENTRIES[1]],                   HTTP::respJson(self::ENTRIES_OUT[1])],
+            ["/entries/2112",               (clone $c)->article(2112),                   new ExceptionInput("subjectMissing"), V1::respError("404", 404)],
+            ["/feeds/47/entries/42",        (clone $c)->subscription(47)->article(42),   [self::ENTRIES[1]],                   HTTP::respJson(self::ENTRIES_OUT[1])],
+            ["/feeds/47/entries/44",        (clone $c)->subscription(47)->article(44),   [],                                   V1::respError("404", 404)],
+            ["/feeds/47/entries/2112",      (clone $c)->subscription(47)->article(2112), new ExceptionInput("subjectMissing"), V1::respError("404", 404)],
+            ["/feeds/2112/entries/47",      (clone $c)->subscription(2112)->article(47), new ExceptionInput("idMissing"),      V1::respError("404", 404)],
+            ["/categories/47/entries/42",   (clone $c)->folder(46)->article(42),         [self::ENTRIES[1]],                   HTTP::respJson(self::ENTRIES_OUT[1])],
+            ["/categories/47/entries/44",   (clone $c)->folder(46)->article(44),         [],                                   V1::respError("404", 404)],
+            ["/categories/47/entries/2112", (clone $c)->folder(46)->article(2112),       new ExceptionInput("subjectMissing"), V1::respError("404", 404)],
+            ["/categories/2112/entries/47", (clone $c)->folder(2111)->article(47),       new ExceptionInput("idMissing"),      V1::respError("404", 404)],
+            ["/categories/1/entries/42",    (clone $c)->folderShallow(0)->article(42),   [self::ENTRIES[1]],                   HTTP::respJson(self::ENTRIES_OUT[1])],
         ];
     }
 
@@ -856,17 +859,17 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideEntryMarkings(): iterable {
         self::clearData();
         return [
-            [['status' => "read"],                           null,                                 new ErrorResponse(["MissingInputValue", 'field' => "entry_ids"], 422)],
-            [['entry_ids' => [1]],                           null,                                 new ErrorResponse(["MissingInputValue", 'field' => "status"], 422)],
-            [['entry_ids' => [], 'status' => "read"],        null,                                 new ErrorResponse(["MissingInputValue", 'field' => "entry_ids"], 422)],
-            [['entry_ids' => 1, 'status' => "read"],         null,                                 new ErrorResponse(["InvalidInputType", 'field' => "entry_ids", 'expected' => "array", 'actual' => "integer"], 422)],
-            [['entry_ids' => ["1"], 'status' => "read"],     null,                                 new ErrorResponse(["InvalidInputType", 'field' => "entry_ids", 'expected' => "integer", 'actual' => "string"], 422)],
-            [['entry_ids' => [1], 'status' => 1],            null,                                 new ErrorResponse(["InvalidInputType", 'field' => "status", 'expected' => "string", 'actual' => "integer"], 422)],
-            [['entry_ids' => [0], 'status' => "read"],       null,                                 new ErrorResponse(["InvalidInputValue", 'field' => "entry_ids"], 422)],
-            [['entry_ids' => [1], 'status' => "reread"],     null,                                 new ErrorResponse(["InvalidInputValue", 'field' => "status"], 422)],
-            [['entry_ids' => [1, 2], 'status' => "read"],    ['read' => true,  'hidden' => false], new EmptyResponse(204)],
-            [['entry_ids' => [1, 2], 'status' => "unread"],  ['read' => false, 'hidden' => false], new EmptyResponse(204)],
-            [['entry_ids' => [1, 2], 'status' => "removed"], ['read' => true,  'hidden' => true],  new EmptyResponse(204)],
+            [['status' => "read"],                           null,                                 V1::respError(["MissingInputValue", 'field' => "entry_ids"], 422)],
+            [['entry_ids' => [1]],                           null,                                 V1::respError(["MissingInputValue", 'field' => "status"], 422)],
+            [['entry_ids' => [], 'status' => "read"],        null,                                 V1::respError(["MissingInputValue", 'field' => "entry_ids"], 422)],
+            [['entry_ids' => 1, 'status' => "read"],         null,                                 V1::respError(["InvalidInputType", 'field' => "entry_ids", 'expected' => "array", 'actual' => "integer"], 422)],
+            [['entry_ids' => ["1"], 'status' => "read"],     null,                                 V1::respError(["InvalidInputType", 'field' => "entry_ids", 'expected' => "integer", 'actual' => "string"], 422)],
+            [['entry_ids' => [1], 'status' => 1],            null,                                 V1::respError(["InvalidInputType", 'field' => "status", 'expected' => "string", 'actual' => "integer"], 422)],
+            [['entry_ids' => [0], 'status' => "read"],       null,                                 V1::respError(["InvalidInputValue", 'field' => "entry_ids"], 422)],
+            [['entry_ids' => [1], 'status' => "reread"],     null,                                 V1::respError(["InvalidInputValue", 'field' => "status"], 422)],
+            [['entry_ids' => [1, 2], 'status' => "read"],    ['read' => true,  'hidden' => false], HTTP::respEmpty(204)],
+            [['entry_ids' => [1, 2], 'status' => "unread"],  ['read' => false, 'hidden' => false], HTTP::respEmpty(204)],
+            [['entry_ids' => [1, 2], 'status' => "removed"], ['read' => true,  'hidden' => true],  HTTP::respEmpty(204)],
         ];
     }
 
@@ -889,13 +892,13 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
         $c = (new Context)->hidden(false);
         return [
-            ["/users/42/mark-all-as-read",        $c,                             1123,                            new EmptyResponse(204)],
-            ["/users/2112/mark-all-as-read",      $c,                             null,                            new ErrorResponse("403", 403)],
-            ["/feeds/47/mark-all-as-read",        (clone $c)->subscription(47),   2112,                            new EmptyResponse(204)],
-            ["/feeds/2112/mark-all-as-read",      (clone $c)->subscription(2112), new ExceptionInput("idMissing"), new ErrorResponse("404", 404)],
-            ["/categories/47/mark-all-as-read",   (clone $c)->folder(46),         1337,                            new EmptyResponse(204)],
-            ["/categories/2112/mark-all-as-read", (clone $c)->folder(2111),       new ExceptionInput("idMissing"), new ErrorResponse("404", 404)],
-            ["/categories/1/mark-all-as-read",    (clone $c)->folderShallow(0),   6666,                            new EmptyResponse(204)],
+            ["/users/42/mark-all-as-read",        $c,                             1123,                            HTTP::respEmpty(204)],
+            ["/users/2112/mark-all-as-read",      $c,                             null,                            V1::respError("403", 403)],
+            ["/feeds/47/mark-all-as-read",        (clone $c)->subscription(47),   2112,                            HTTP::respEmpty(204)],
+            ["/feeds/2112/mark-all-as-read",      (clone $c)->subscription(2112), new ExceptionInput("idMissing"), V1::respError("404", 404)],
+            ["/categories/47/mark-all-as-read",   (clone $c)->folder(46),         1337,                            HTTP::respEmpty(204)],
+            ["/categories/2112/mark-all-as-read", (clone $c)->folder(2111),       new ExceptionInput("idMissing"), V1::respError("404", 404)],
+            ["/categories/1/mark-all-as-read",    (clone $c)->folderShallow(0),   6666,                            HTTP::respEmpty(204)],
         ];
     }
 
@@ -929,26 +932,26 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideBookmarkTogglings(): iterable {
         self::clearData();
         return [
-            [1,                                    true,  new EmptyResponse(204)],
-            [0,                                    false, new EmptyResponse(204)],
-            [new ExceptionInput("subjectMissing"), null,  new ErrorResponse("404", 404)],
+            [1,                                    true,  HTTP::respEmpty(204)],
+            [0,                                    false, HTTP::respEmpty(204)],
+            [new ExceptionInput("subjectMissing"), null,  V1::respError("404", 404)],
         ];
     }
 
     public function testRefreshAFeed(): void {
         $this->dbMock->subscriptionPropertiesGet->returns([]);
-        $this->assertMessage(new EmptyResponse(204), $this->req("PUT", "/feeds/47/refresh"));
+        $this->assertMessage(HTTP::respEmpty(204), $this->req("PUT", "/feeds/47/refresh"));
         $this->dbMock->subscriptionPropertiesGet->calledWith(Arsse::$user->id, 47);
     }
 
     public function testRefreshAMissingFeed(): void {
         $this->dbMock->subscriptionPropertiesGet->throws(new ExceptionInput("subjectMissing"));
-        $this->assertMessage(new ErrorResponse("404", 404), $this->req("PUT", "/feeds/2112/refresh"));
+        $this->assertMessage(V1::respError("404", 404), $this->req("PUT", "/feeds/2112/refresh"));
         $this->dbMock->subscriptionPropertiesGet->calledWith(Arsse::$user->id, 2112);
     }
 
     public function testRefreshAllFeeds(): void {
-        $this->assertMessage(new EmptyResponse(204), $this->req("PUT", "/feeds/refresh"));
+        $this->assertMessage(HTTP::respEmpty(204), $this->req("PUT", "/feeds/refresh"));
     }
 
     /** @dataProvider provideImports */
@@ -964,21 +967,21 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideImports(): iterable {
         self::clearData();
         return [
-            [new ImportException("invalidSyntax"),                              new ErrorResponse("InvalidBodyXML", 400)],
-            [new ImportException("invalidSemantics"),                           new ErrorResponse("InvalidBodyOPML", 422)],
-            [new ImportException("invalidFolderName"),                          new ErrorResponse("InvalidImportCategory", 422)],
-            [new ImportException("invalidFolderCopy"),                          new ErrorResponse("DuplicateImportCategory", 422)],
-            [new ImportException("invalidTagName"),                             new ErrorResponse("InvalidImportLabel", 422)],
-            [new FeedException("invalidUrl", ['url' => "http://example.com/"]), new ErrorResponse(["FailedImportFeed", 'url' => "http://example.com/", 'code' => 10502], 502)],
-            [true,                                                              new Response(['message' => Arsse::$lang->msg("API.Miniflux.ImportSuccess")])],
+            [new ImportException("invalidSyntax"),                              V1::respError("InvalidBodyXML", 400)],
+            [new ImportException("invalidSemantics"),                           V1::respError("InvalidBodyOPML", 422)],
+            [new ImportException("invalidFolderName"),                          V1::respError("InvalidImportCategory", 422)],
+            [new ImportException("invalidFolderCopy"),                          V1::respError("DuplicateImportCategory", 422)],
+            [new ImportException("invalidTagName"),                             V1::respError("InvalidImportLabel", 422)],
+            [new FeedException("invalidUrl", ['url' => "http://example.com/"]), V1::respError(["FailedImportFeed", 'url' => "http://example.com/", 'code' => 10502], 502)],
+            [true,                                                              HTTP::respJson(['message' => Arsse::$lang->msg("API.Miniflux.ImportSuccess")])],
         ];
     }
 
     public function testExport(): void {
         $opml = $this->mock(OPML::class);
         $this->objMock->get->with(OPML::class)->returns($opml);
-        $opml->export->returns("EXPORT DATA");
-        $this->assertMessage(new TextResponse("EXPORT DATA", 200, ['Content-Type' => "application/xml"]), $this->req("GET", "/export"));
+        $opml->export->returns("<EXPORT_DATA/>");
+        $this->assertMessage(HTTP::respText("<EXPORT_DATA/>", 200, ['Content-Type' => "application/xml"]), $this->req("GET", "/export"));
         $opml->export->calledWith(Arsse::$user->id);
     }
 }

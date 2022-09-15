@@ -11,14 +11,13 @@ use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Test\Result;
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\TinyTinyRSS\API;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\Response\JsonResponse as Response;
-use Laminas\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\API<extended>
  *  @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Exception */
@@ -166,17 +165,17 @@ LONG_STRING;
         return $this->req($data, "POST", "", null, $user);
     }
 
-    protected function respGood($content = null, $seq = 0): Response {
-        return new Response([
+    protected function respGood($content = null, $seq = 0): ResponseInterface {
+        return HTTP::respJson([
             'seq'     => $seq,
             'status'  => 0,
             'content' => $content,
         ]);
     }
 
-    protected function respErr(string $msg, $content = [], $seq = 0): Response {
+    protected function respErr(string $msg, $content = [], $seq = 0): ResponseInterface {
         $err = ['error' => $msg];
-        return new Response([
+        return HTTP::respJson([
             'seq'     => $seq,
             'status'  => 1,
             'content' => array_merge($err, $content, $err),
@@ -188,12 +187,12 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req(null, "POST", "", ""));
         $this->assertMessage($exp, $this->req(null, "POST", "/", ""));
         $this->assertMessage($exp, $this->req(null, "POST", "/index.php", ""));
-        $exp = new EmptyResponse(404);
+        $exp = HTTP::respEmpty(404);
         $this->assertMessage($exp, $this->req(null, "POST", "/bad/path", ""));
     }
 
     public function testHandleOptionsRequest(): void {
-        $exp = new EmptyResponse(204, [
+        $exp = HTTP::respEmpty(204, [
             'Allow'  => "POST",
             'Accept' => "application/json, text/json",
         ]);
@@ -215,7 +214,7 @@ LONG_STRING;
         $this->userMock->auth->with("jane.doe@example.com", "superman")->returns(true);
         $this->dbMock->sessionCreate->with("john.doe@example.com")->returns("PriestsOfSyrinx", "SolarFederation");
         $this->dbMock->sessionCreate->with("jane.doe@example.com")->returns("ClockworkAngels", "SevenCitiesOfGold");
-        if ($sessions instanceof EmptyResponse) {
+        if ($sessions instanceof ResponseInterface) {
             $exp1 = $sessions;
             $exp2 = $sessions;
         } elseif ($sessions) {
@@ -260,7 +259,7 @@ LONG_STRING;
             'op'       => "isLoggedIn",
             'sid'      => $data,
         ];
-        if ($result instanceof EmptyResponse) {
+        if ($result instanceof ResponseInterface) {
             $exp1 = $result;
             $exp2 = null;
         } elseif ($result) {
@@ -333,7 +332,7 @@ LONG_STRING;
             'userHTTPAuthRequired' => true,
             'userSessionEnforced'  => false,
         ];
-        $http401 = new EmptyResponse(401);
+        $http401 = HTTP::respEmpty(401);
         if ($type === "login") {
             return [
                 // conf,    user,  data,      result
@@ -532,7 +531,7 @@ LONG_STRING;
             'user'     => $this->userId,
             'password' => "secret",
         ];
-        $exp = new EmptyResponse(500);
+        $exp = HTTP::respEmpty(500);
         $this->assertMessage($exp, $this->req($data));
     }
 
@@ -1686,10 +1685,10 @@ LONG_STRING;
         $this->assertMessage($this->outputHeadlines(1), $test);
         // test 'show_content'
         $test = $this->req($in[1]);
-        $this->assertArrayHasKey("content", $test->getPayload()['content'][0]);
-        $this->assertArrayHasKey("content", $test->getPayload()['content'][1]);
+        $this->assertArrayHasKey("content", $this->extractMessageJson($test)['content'][0]);
+        $this->assertArrayHasKey("content", $this->extractMessageJson($test)['content'][1]);
         foreach ($this->generateHeadlines(1) as $key => $row) {
-            $this->assertSame($row['content'], $test->getPayload()['content'][$key]['content']);
+            $this->assertSame($row['content'], $this->extractMessageJson($test)['content'][$key]['content']);
         }
         // test 'include_attachments'
         $test = $this->req($in[2]);
@@ -1705,22 +1704,22 @@ LONG_STRING;
                 'post_id'      => "2112",
             ],
         ];
-        $this->assertArrayHasKey("attachments", $test->getPayload()['content'][0]);
-        $this->assertArrayHasKey("attachments", $test->getPayload()['content'][1]);
-        $this->assertSame([], $test->getPayload()['content'][0]['attachments']);
-        $this->assertSame($exp, $test->getPayload()['content'][1]['attachments']);
+        $this->assertArrayHasKey("attachments", $this->extractMessageJson($test)['content'][0]);
+        $this->assertArrayHasKey("attachments", $this->extractMessageJson($test)['content'][1]);
+        $this->assertSame([], $this->extractMessageJson($test)['content'][0]['attachments']);
+        $this->assertSame($exp, $this->extractMessageJson($test)['content'][1]['attachments']);
         // test 'include_header'
         $test = $this->req($in[3]);
         $exp = $this->respGood([
             ['id' => -4, 'is_cat' => false, 'first_id' => 1],
-            $this->outputHeadlines(1)->getPayload()['content'],
+            $this->extractMessageJson($this->outputHeadlines(1))['content'],
         ]);
         $this->assertMessage($exp, $test);
         // test 'include_header' with a category
         $test = $this->req($in[4]);
         $exp = $this->respGood([
             ['id' => -3, 'is_cat' => true, 'first_id' => 1],
-            $this->outputHeadlines(1)->getPayload()['content'],
+            $this->extractMessageJson($this->outputHeadlines(1))['content'],
         ]);
         $this->assertMessage($exp, $test);
         // test 'include_header' with an empty result
@@ -1742,7 +1741,7 @@ LONG_STRING;
         $test = $this->req($in[7]);
         $exp = $this->respGood([
             ['id' => -4, 'is_cat' => false, 'first_id' => 0],
-            $this->outputHeadlines(1)->getPayload()['content'],
+            $this->extractMessageJson($this->outputHeadlines(1))['content'],
         ]);
         $this->assertMessage($exp, $test);
         // test 'include_header' with skip
@@ -1750,24 +1749,24 @@ LONG_STRING;
         $test = $this->req($in[8]);
         $exp = $this->respGood([
             ['id' => 42, 'is_cat' => false, 'first_id' => 1867],
-            $this->outputHeadlines(1)->getPayload()['content'],
+            $this->extractMessageJson($this->outputHeadlines(1))['content'],
         ]);
         $this->assertMessage($exp, $test);
         // test 'include_header' with skip and ascending order
         $test = $this->req($in[9]);
         $exp = $this->respGood([
             ['id' => 42, 'is_cat' => false, 'first_id' => 0],
-            $this->outputHeadlines(1)->getPayload()['content'],
+            $this->extractMessageJson($this->outputHeadlines(1))['content'],
         ]);
         $this->assertMessage($exp, $test);
         // test 'show_excerpt'
         $exp1 = "“This & that, you know‽”";
         $exp2 = "Pour vous faire mieux connaitre d’ou\u{300} vient l’erreur de ceux qui bla\u{302}ment la volupte\u{301}, et qui louent en…";
         $test = $this->req($in[10]);
-        $this->assertArrayHasKey("excerpt", $test->getPayload()['content'][0]);
-        $this->assertArrayHasKey("excerpt", $test->getPayload()['content'][1]);
-        $this->assertSame($exp1, $test->getPayload()['content'][0]['excerpt']);
-        $this->assertSame($exp2, $test->getPayload()['content'][1]['excerpt']);
+        $this->assertArrayHasKey("excerpt", $this->extractMessageJson($test)['content'][0]);
+        $this->assertArrayHasKey("excerpt", $this->extractMessageJson($test)['content'][1]);
+        $this->assertSame($exp1, $this->extractMessageJson($test)['content'][0]['excerpt']);
+        $this->assertSame($exp2, $this->extractMessageJson($test)['content'][1]['excerpt']);
     }
 
     protected function generateHeadlines(int $id): Result {
@@ -1815,7 +1814,7 @@ LONG_STRING;
         ]));
     }
 
-    protected function outputHeadlines(int $id): Response {
+    protected function outputHeadlines(int $id): ResponseInterface {
         return $this->respGood([
             [
                 'id'                         => $id,

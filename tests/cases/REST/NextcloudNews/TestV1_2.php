@@ -11,13 +11,12 @@ use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Test\Result;
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\NextcloudNews\V1_2;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\Response\JsonResponse as Response;
-use Laminas\Diactoros\Response\EmptyResponse;
 
 /** @covers \JKingWeb\Arsse\REST\NextcloudNews\V1_2<extended> */
 class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -336,13 +335,13 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testSendAuthenticationChallenge(): void {
-        $exp = new EmptyResponse(401);
+        $exp = HTTP::respEmpty(401);
         $this->assertMessage($exp, $this->req("GET", "/", "", [], false));
     }
 
     /** @dataProvider provideInvalidPaths */
     public function testRespondToInvalidPaths($path, $method, $code, $allow = null): void {
-        $exp = new EmptyResponse($code, $allow ? ['Allow' => $allow] : []);
+        $exp = HTTP::respEmpty($code, $allow ? ['Allow' => $allow] : []);
         $this->assertMessage($exp, $this->req($method, $path));
     }
 
@@ -374,16 +373,16 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testRespondToInvalidInputTypes(): void {
-        $exp = new EmptyResponse(415, ['Accept' => "application/json"]);
+        $exp = HTTP::respEmpty(415, ['Accept' => "application/json"]);
         $this->assertMessage($exp, $this->req("PUT", "/folders/1", '<data/>', ['Content-Type' => "application/xml"]));
-        $exp = new EmptyResponse(400);
+        $exp = HTTP::respEmpty(400);
         $this->assertMessage($exp, $this->req("PUT", "/folders/1", '<data/>'));
         $this->assertMessage($exp, $this->req("PUT", "/folders/1", '<data/>', ['Content-Type' => null]));
     }
 
     /** @dataProvider provideOptionsRequests */
     public function testRespondToOptionsRequests(string $url, string $allow, string $accept): void {
-        $exp = new EmptyResponse(204, [
+        $exp = HTTP::respEmpty(204, [
             'Allow'  => $allow,
             'Accept' => $accept,
         ]);
@@ -408,7 +407,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 12, 'name' => "Hardware"],
         ];
         $this->dbMock->folderList->with($this->userId, null, false)->returns(new Result($this->v($list)));
-        $exp = new Response(['folders' => $out]);
+        $exp = HTTP::respJson(['folders' => $out]);
         $this->assertMessage($exp, $this->req("GET", "/folders"));
     }
 
@@ -432,23 +431,23 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provideFolderCreations(): array {
         return [
-            [['name' => "Software"], true,  1,                                         new Response(['folders' => [['id' => 1, 'name' => "Software"]]])],
-            [['name' => "Software"], false, 1,                                         new Response(['folders' => [['id' => 1, 'name' => "Software"]]])],
-            [['name' => "Hardware"], true,  "2",                                       new Response(['folders' => [['id' => 2, 'name' => "Hardware"]]])],
-            [['name' => "Hardware"], false, "2",                                       new Response(['folders' => [['id' => 2, 'name' => "Hardware"]]])],
-            [['name' => "Software"], true,  new ExceptionInput("constraintViolation"), new EmptyResponse(409)],
-            [['name' => ""],         true,  new ExceptionInput("whitespace"),          new EmptyResponse(422)],
-            [['name' => " "],        true,  new ExceptionInput("whitespace"),          new EmptyResponse(422)],
-            [['name' => null],       true,  new ExceptionInput("missing"),             new EmptyResponse(422)],
+            [['name' => "Software"], true,  1,                                         HTTP::respJson(['folders' => [['id' => 1, 'name' => "Software"]]])],
+            [['name' => "Software"], false, 1,                                         HTTP::respJson(['folders' => [['id' => 1, 'name' => "Software"]]])],
+            [['name' => "Hardware"], true,  "2",                                       HTTP::respJson(['folders' => [['id' => 2, 'name' => "Hardware"]]])],
+            [['name' => "Hardware"], false, "2",                                       HTTP::respJson(['folders' => [['id' => 2, 'name' => "Hardware"]]])],
+            [['name' => "Software"], true,  new ExceptionInput("constraintViolation"), HTTP::respEmpty(409)],
+            [['name' => ""],         true,  new ExceptionInput("whitespace"),          HTTP::respEmpty(422)],
+            [['name' => " "],        true,  new ExceptionInput("whitespace"),          HTTP::respEmpty(422)],
+            [['name' => null],       true,  new ExceptionInput("missing"),             HTTP::respEmpty(422)],
         ];
     }
 
     public function testRemoveAFolder(): void {
         $this->dbMock->folderRemove->with($this->userId, 1)->returns(true)->throws(new ExceptionInput("subjectMissing"));
-        $exp = new EmptyResponse(204);
+        $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("DELETE", "/folders/1"));
         // fail on the second invocation because it no longer exists
-        $exp = new EmptyResponse(404);
+        $exp = HTTP::respEmpty(404);
         $this->assertMessage($exp, $this->req("DELETE", "/folders/1"));
         $this->dbMock->folderRemove->times(2)->calledWith($this->userId, 1);
     }
@@ -467,17 +466,17 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provideFolderRenamings(): array {
         return [
-            [['name' => "Software"], 1, true,                                      new EmptyResponse(204)],
-            [['name' => "Software"], 2, new ExceptionInput("constraintViolation"), new EmptyResponse(409)],
-            [['name' => "Software"], 3, new ExceptionInput("subjectMissing"),      new EmptyResponse(404)],
-            [['name' => ""],         2, new ExceptionInput("whitespace"),          new EmptyResponse(422)],
-            [['name' => " "],        2, new ExceptionInput("whitespace"),          new EmptyResponse(422)],
-            [['name' => null],       2, new ExceptionInput("missing"),             new EmptyResponse(422)],
+            [['name' => "Software"], 1, true,                                      HTTP::respEmpty(204)],
+            [['name' => "Software"], 2, new ExceptionInput("constraintViolation"), HTTP::respEmpty(409)],
+            [['name' => "Software"], 3, new ExceptionInput("subjectMissing"),      HTTP::respEmpty(404)],
+            [['name' => ""],         2, new ExceptionInput("whitespace"),          HTTP::respEmpty(422)],
+            [['name' => " "],        2, new ExceptionInput("whitespace"),          HTTP::respEmpty(422)],
+            [['name' => null],       2, new ExceptionInput("missing"),             HTTP::respEmpty(422)],
         ];
     }
 
     public function testRetrieveServerVersion(): void {
-        $exp = new Response([
+        $exp = HTTP::respJson([
             'version'       => V1_2::VERSION,
             'arsse_version' => Arsse::VERSION,
             ]);
@@ -497,9 +496,9 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->subscriptionList->with($this->userId)->returns(new Result([]))->returns(new Result($this->v($this->feeds['db'])));
         $this->dbMock->articleStarred->with($this->userId)->returns($this->v(['total' => 0]))->returns($this->v(['total' => 5]));
         $this->dbMock->editionLatest->with($this->userId)->returns(0)->returns(4758915);
-        $exp = new Response($exp1);
+        $exp = HTTP::respJson($exp1);
         $this->assertMessage($exp, $this->req("GET", "/feeds"));
-        $exp = new Response($exp2);
+        $exp = HTTP::respJson($exp2);
         $this->assertMessage($exp, $this->req("GET", "/feeds"));
     }
 
@@ -538,21 +537,21 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function provideNewSubscriptions(): array {
         $feedException = new \JKingWeb\Arsse\Feed\Exception("", [], new \PicoFeed\Reader\SubscriptionNotFoundException);
         return [
-            [['url' => "http://example.com/news.atom", 'folderId' => 3],  2112,                                      0,       $this->feeds['db'][0], new ExceptionInput("idMissing"),     new Response(['feeds' => [$this->feeds['rest'][0]]])],
-            [['url' => "http://example.org/news.atom", 'folderId' => 8],  42,                                        4758915, $this->feeds['db'][1], true,                                new Response(['feeds' => [$this->feeds['rest'][1]], 'newestItemId' => 4758915])],
-            [['url' => "http://example.com/news.atom", 'folderId' => 3],  new ExceptionInput("constraintViolation"), 0,       $this->feeds['db'][0], new ExceptionInput("idMissing"),     new EmptyResponse(409)],
-            [['url' => "http://example.org/news.atom", 'folderId' => 8],  new ExceptionInput("constraintViolation"), 4758915, $this->feeds['db'][1], true,                                new EmptyResponse(409)],
-            [[],                                                          $feedException,                            0,       [],                    false,                               new EmptyResponse(422)],
-            [['url' => "http://example.net/news.atom", 'folderId' => -1], 47,                                        2112,    $this->feeds['db'][2], new ExceptionInput("typeViolation"), new Response(['feeds' => [$this->feeds['rest'][2]], 'newestItemId' => 2112])],
+            [['url' => "http://example.com/news.atom", 'folderId' => 3],  2112,                                      0,       $this->feeds['db'][0], new ExceptionInput("idMissing"),     HTTP::respJson(['feeds' => [$this->feeds['rest'][0]]])],
+            [['url' => "http://example.org/news.atom", 'folderId' => 8],  42,                                        4758915, $this->feeds['db'][1], true,                                HTTP::respJson(['feeds' => [$this->feeds['rest'][1]], 'newestItemId' => 4758915])],
+            [['url' => "http://example.com/news.atom", 'folderId' => 3],  new ExceptionInput("constraintViolation"), 0,       $this->feeds['db'][0], new ExceptionInput("idMissing"),     HTTP::respEmpty(409)],
+            [['url' => "http://example.org/news.atom", 'folderId' => 8],  new ExceptionInput("constraintViolation"), 4758915, $this->feeds['db'][1], true,                                HTTP::respEmpty(409)],
+            [[],                                                          $feedException,                            0,       [],                    false,                               HTTP::respEmpty(422)],
+            [['url' => "http://example.net/news.atom", 'folderId' => -1], 47,                                        2112,    $this->feeds['db'][2], new ExceptionInput("typeViolation"), HTTP::respJson(['feeds' => [$this->feeds['rest'][2]], 'newestItemId' => 2112])],
         ];
     }
 
     public function testRemoveASubscription(): void {
         $this->dbMock->subscriptionRemove->with($this->userId, 1)->returns(true)->throws(new ExceptionInput("subjectMissing"));
-        $exp = new EmptyResponse(204);
+        $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("DELETE", "/feeds/1"));
         // fail on the second invocation because it no longer exists
-        $exp = new EmptyResponse(404);
+        $exp = HTTP::respEmpty(404);
         $this->assertMessage($exp, $this->req("DELETE", "/feeds/1"));
         $this->dbMock->subscriptionRemove->times(2)->calledWith($this->userId, 1);
     }
@@ -571,17 +570,17 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->subscriptionPropertiesSet->with($this->userId, 1, ['folder' => 2112])->throws(new ExceptionInput("idMissing")); // folder does not exist
         $this->dbMock->subscriptionPropertiesSet->with($this->userId, 1, ['folder' =>   -1])->throws(new ExceptionInput("typeViolation")); // folder is invalid
         $this->dbMock->subscriptionPropertiesSet->with($this->userId, 42, $this->anything())->throws(new ExceptionInput("subjectMissing")); // subscription does not exist
-        $exp = new EmptyResponse(204);
+        $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/move", json_encode($in[0])));
-        $exp = new EmptyResponse(204);
+        $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/move", json_encode($in[1])));
-        $exp = new EmptyResponse(422);
+        $exp = HTTP::respEmpty(422);
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/move", json_encode($in[2])));
-        $exp = new EmptyResponse(404);
+        $exp = HTTP::respEmpty(404);
         $this->assertMessage($exp, $this->req("PUT", "/feeds/42/move", json_encode($in[3])));
-        $exp = new EmptyResponse(422);
+        $exp = HTTP::respEmpty(422);
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/move", json_encode($in[4])));
-        $exp = new EmptyResponse(422);
+        $exp = HTTP::respEmpty(422);
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/move", json_encode($in[5])));
     }
 
@@ -601,17 +600,17 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->subscriptionPropertiesSet->with($this->userId, 1, $this->identicalTo(['title' =>    ""]))->throws(new ExceptionInput("missing"));
         $this->dbMock->subscriptionPropertiesSet->with($this->userId, 1, $this->identicalTo(['title' => false]))->throws(new ExceptionInput("missing"));
         $this->dbMock->subscriptionPropertiesSet->with($this->userId, 42, $this->anything())->throws(new ExceptionInput("subjectMissing"));
-        $exp = new EmptyResponse(422);
+        $exp = HTTP::respEmpty(422);
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/rename", json_encode($in[0])));
-        $exp = new EmptyResponse(204);
+        $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/rename", json_encode($in[1])));
-        $exp = new EmptyResponse(422);
+        $exp = HTTP::respEmpty(422);
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/rename", json_encode($in[2])));
-        $exp = new EmptyResponse(422);
+        $exp = HTTP::respEmpty(422);
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/rename", json_encode($in[3])));
-        $exp = new EmptyResponse(404);
+        $exp = HTTP::respEmpty(404);
         $this->assertMessage($exp, $this->req("PUT", "/feeds/42/rename", json_encode($in[4])));
-        $exp = new EmptyResponse(422);
+        $exp = HTTP::respEmpty(422);
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/rename", json_encode($in[6])));
     }
 
@@ -627,13 +626,13 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ],
         ];
         $this->dbMock->feedListStale->returns($this->v(array_column($out, "id")));
-        $exp = new Response(['feeds' => $out]);
+        $exp = HTTP::respJson(['feeds' => $out]);
         $this->assertMessage($exp, $this->req("GET", "/feeds/all"));
     }
 
     public function testListStaleFeedsWithoutAuthority(): void {
         $this->userMock->propertiesGet->returns(['admin' => false]);
-        $exp = new EmptyResponse(403);
+        $exp = HTTP::respEmpty(403);
         $this->assertMessage($exp, $this->req("GET", "/feeds/all"));
         $this->dbMock->feedListStale->never()->called();
     }
@@ -649,11 +648,11 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->feedUpdate->with(42)->returns(true);
         $this->dbMock->feedUpdate->with(2112)->throws(new ExceptionInput("subjectMissing"));
         $this->dbMock->feedUpdate->with($this->lessThan(1))->throws(new ExceptionInput("typeViolation"));
-        $exp = new EmptyResponse(204);
+        $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[0])));
-        $exp = new EmptyResponse(404);
+        $exp = HTTP::respEmpty(404);
         $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[1])));
-        $exp = new EmptyResponse(422);
+        $exp = HTTP::respEmpty(422);
         $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[2])));
         $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[3])));
         $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[4])));
@@ -661,7 +660,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testUpdateAFeedWithoutAuthority(): void {
         $this->userMock->propertiesGet->returns(['admin' => false]);
-        $exp = new EmptyResponse(403);
+        $exp = HTTP::respEmpty(403);
         $this->assertMessage($exp, $this->req("GET", "/feeds/update", ['feedId' => 42]));
         $this->dbMock->feedUpdate->never()->called();
     }
@@ -683,8 +682,8 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $c = (new Context)->hidden(false);
         $t = Date::normalize(time());
         $out = new Result($this->v($this->articles['db']));
-        $r200 = new Response(['items' => $this->articles['rest']]);
-        $r422 = new EmptyResponse(422);
+        $r200 = HTTP::respJson(['items' => $this->articles['rest']]);
+        $r422 = HTTP::respEmpty(422);
         return [
             ["/items",         [],                                                         clone $c,                                     $out,                                $r200],
             ["/items",         ['type' => 0, 'id' => 42],                                  (clone $c)->subscription(42),                 new ExceptionInput("idMissing"),     $r422],
@@ -720,13 +719,13 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $in = json_encode(['newestItemId' => 2112]);
         $this->dbMock->articleMark->with($this->userId, $read, $this->equalTo((new Context)->folder(1)->editionRange(null, 2112)->hidden(false)))->returns(42);
         $this->dbMock->articleMark->with($this->userId, $read, $this->equalTo((new Context)->folder(42)->editionRange(null, 2112)->hidden(false)))->throws(new ExceptionInput("idMissing")); // folder doesn't exist
-        $exp = new EmptyResponse(204);
+        $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("PUT", "/folders/1/read", $in));
         $this->assertMessage($exp, $this->req("PUT", "/folders/1/read?newestItemId=2112"));
-        $exp = new EmptyResponse(422);
+        $exp = HTTP::respEmpty(422);
         $this->assertMessage($exp, $this->req("PUT", "/folders/1/read"));
         $this->assertMessage($exp, $this->req("PUT", "/folders/1/read?newestItemId=ook"));
-        $exp = new EmptyResponse(404);
+        $exp = HTTP::respEmpty(404);
         $this->assertMessage($exp, $this->req("PUT", "/folders/42/read", $in));
     }
 
@@ -735,13 +734,13 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $in = json_encode(['newestItemId' => 2112]);
         $this->dbMock->articleMark->with($this->userId, $read, $this->equalTo((new Context)->subscription(1)->editionRange(null, 2112)->hidden(false)))->returns(42);
         $this->dbMock->articleMark->with($this->userId, $read, $this->equalTo((new Context)->subscription(42)->editionRange(null, 2112)->hidden(false)))->throws(new ExceptionInput("idMissing")); // subscription doesn't exist
-        $exp = new EmptyResponse(204);
+        $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/read", $in));
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/read?newestItemId=2112"));
-        $exp = new EmptyResponse(422);
+        $exp = HTTP::respEmpty(422);
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/read"));
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/read?newestItemId=ook"));
-        $exp = new EmptyResponse(404);
+        $exp = HTTP::respEmpty(404);
         $this->assertMessage($exp, $this->req("PUT", "/feeds/42/read", $in));
     }
 
@@ -749,10 +748,10 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $read = ['read' => true];
         $in = json_encode(['newestItemId' => 2112]);
         $this->dbMock->articleMark->with($this->userId, $read, $this->equalTo((new Context)->editionRange(null, 2112)))->returns(42);
-        $exp = new EmptyResponse(204);
+        $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("PUT", "/items/read", $in));
         $this->assertMessage($exp, $this->req("PUT", "/items/read?newestItemId=2112"));
-        $exp = new EmptyResponse(422);
+        $exp = HTTP::respEmpty(422);
         $this->assertMessage($exp, $this->req("PUT", "/items/read"));
         $this->assertMessage($exp, $this->req("PUT", "/items/read?newestItemId=ook"));
     }
@@ -770,12 +769,12 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->articleMark->with($this->userId, $star, $this->equalTo((new Context)->article(2112)))->throws(new ExceptionInput("subjectMissing")); // article doesn't exist doesn't exist
         $this->dbMock->articleMark->with($this->userId, $unstar, $this->equalTo((new Context)->article(4)))->returns(42);
         $this->dbMock->articleMark->with($this->userId, $unstar, $this->equalTo((new Context)->article(1337)))->throws(new ExceptionInput("subjectMissing")); // article doesn't exist doesn't exist
-        $exp = new EmptyResponse(204);
+        $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("PUT", "/items/1/read"));
         $this->assertMessage($exp, $this->req("PUT", "/items/2/unread"));
         $this->assertMessage($exp, $this->req("PUT", "/items/1/3/star"));
         $this->assertMessage($exp, $this->req("PUT", "/items/4400/4/unstar"));
-        $exp = new EmptyResponse(404);
+        $exp = HTTP::respEmpty(404);
         $this->assertMessage($exp, $this->req("PUT", "/items/42/read"));
         $this->assertMessage($exp, $this->req("PUT", "/items/47/unread"));
         $this->assertMessage($exp, $this->req("PUT", "/items/1/2112/star"));
@@ -801,7 +800,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->articleMark->with($this->userId, $this->anything(), $this->anything())->returns(42);
         $this->dbMock->articleMark->with($this->userId, $this->anything(), $this->equalTo((new Context)->editions([])))->throws(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
         $this->dbMock->articleMark->with($this->userId, $this->anything(), $this->equalTo((new Context)->articles([])))->throws(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
-        $exp = new EmptyResponse(204);
+        $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("PUT", "/items/read/multiple"));
         $this->assertMessage($exp, $this->req("PUT", "/items/unread/multiple"));
         $this->assertMessage($exp, $this->req("PUT", "/items/star/multiple"));
@@ -854,44 +853,44 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
         $arr2['warnings']['improperlyConfiguredCron'] = true;
         $arr2['warnings']['incorrectDbCharset'] = true;
-        $exp = new Response($arr1);
+        $exp = HTTP::respJson($arr1);
         $this->assertMessage($exp, $this->req("GET", "/status"));
     }
 
     public function testCleanUpBeforeUpdate(): void {
         $this->dbMock->feedCleanup->with()->returns(true);
-        $exp = new EmptyResponse(204);
+        $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("GET", "/cleanup/before-update"));
         $this->dbMock->feedCleanup->calledWith();
     }
 
     public function testCleanUpBeforeUpdateWithoutAuthority(): void {
         $this->userMock->propertiesGet->returns(['admin' => false]);
-        $exp = new EmptyResponse(403);
+        $exp = HTTP::respEmpty(403);
         $this->assertMessage($exp, $this->req("GET", "/cleanup/before-update"));
         $this->dbMock->feedCleanup->never()->called();
     }
 
     public function testCleanUpAfterUpdate(): void {
         $this->dbMock->articleCleanup->with()->returns(true);
-        $exp = new EmptyResponse(204);
+        $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("GET", "/cleanup/after-update"));
         $this->dbMock->articleCleanup->calledWith();
     }
 
     public function testCleanUpAfterUpdateWithoutAuthority(): void {
         $this->userMock->propertiesGet->returns(['admin' => false]);
-        $exp = new EmptyResponse(403);
+        $exp = HTTP::respEmpty(403);
         $this->assertMessage($exp, $this->req("GET", "/cleanup/after-update"));
         $this->dbMock->feedCleanup->never()->called();
     }
 
     public function testQueryTheUserStatus(): void {
         $act = $this->req("GET", "/user");
-        $exp = new Response([
+        $exp = HTTP::respJson([
             'userId'             => $this->userId,
             'displayName'        => $this->userId,
-            'lastLoginTimestamp' => $this->approximateTime($act->getPayload()['lastLoginTimestamp'], new \DateTimeImmutable),
+            'lastLoginTimestamp' => $this->approximateTime(json_decode((string) $act->getBody(), true)['lastLoginTimestamp'], new \DateTimeImmutable),
             'avatar'             => null,
         ]);
         $this->assertMessage($exp, $act);
@@ -906,8 +905,8 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->folderAdd->with($this->anything(), $in)->returns(1);
         $this->dbMock->folderPropertiesGet->with($this->userId, 1)->returns($this->v($out1));
         $this->dbMock->folderPropertiesGet->with($this->userId, 2)->returns($this->v($out2));
-        $exp = new Response(['folders' => [$out1]]);
-        $this->assertMessage($exp, $this->req("POST", "/folders?name=Hardware", json_encode($in)));
+        $exp = HTTP::respJson(['folders' => [$out1]]);
+        $this->assertMessage($exp, $this->req("POST", $url, json_encode($in)));
     }
 
     public function testMeldJsonAndQueryParameters(): void {

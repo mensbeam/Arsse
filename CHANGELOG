@@ -1,4 +1,4 @@
-Version 0.1?.? (2022-??-??)
+Version 0.10.3 (2022-09-14)
 ===========================
 
 Bug fixes:
@@ -6,6 +6,7 @@ Bug fixes:
 - Allow multiple date ranges in search strings in Tiny Tiny RSS
 - Honour user time zone when interpreting search strings in Tiny Tiny RSS
 - Perform MySQL table maintenance more reliably
+- Address CVE-2022-31090, CVE-2022-31091, CVE-2022-29248, and CVE-2022-31109
 
 Version 0.10.2 (2022-04-04)
 ===========================

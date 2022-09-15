@@ -16,7 +16,7 @@ trait SeriesSubscription {
         $this->data = [
             'arsse_users' => [
                 'columns' => ["id", "password", "num"],
-                'rows' => [
+                'rows'    => [
                     ["jane.doe@example.com", "", 1],
                     ["john.doe@example.com", "", 2],
                     ["jill.doe@example.com", "", 3],
@@ -25,7 +25,7 @@ trait SeriesSubscription {
             ],
             'arsse_folders' => [
                 'columns' => ["id", "owner", "parent", "name"],
-                'rows' => [
+                'rows'    => [
                     [1, "john.doe@example.com", null, "Technology"],
                     [2, "john.doe@example.com",    1, "Software"],
                     [3, "john.doe@example.com",    1, "Rocketry"],
@@ -36,14 +36,14 @@ trait SeriesSubscription {
             ],
             'arsse_icons' => [
                 'columns' => ["id", "url", "data"],
-                'rows' => [
+                'rows'    => [
                     [1,"http://example.com/favicon.ico", "ICON DATA"],
                     [2,"http://example.net/favicon.ico", null],
                 ],
             ],
             'arsse_feeds' => [
                 'columns' => ["id", "url", "title", "username", "password", "updated", "next_fetch", "icon"],
-                'rows' => [
+                'rows'    => [
                     [1,"http://example.com/feed1", "Ook", "", "",strtotime("now"),strtotime("now"),null],
                     [2,"http://example.com/feed2", "eek", "", "",strtotime("now - 1 hour"),strtotime("now - 1 hour"),1],
                     [3,"http://example.com/feed3", "Ack", "", "",strtotime("now + 1 hour"),strtotime("now + 1 hour"),2],
@@ -52,7 +52,7 @@ trait SeriesSubscription {
             ],
             'arsse_subscriptions' => [
                 'columns' => ["id", "owner", "feed", "title", "folder", "pinned", "order_type", "keep_rule", "block_rule", "scrape"],
-                'rows' => [
+                'rows'    => [
                     [1,"john.doe@example.com",2,null,null,1,2,null,null,0],
                     [2,"jane.doe@example.com",2,null,null,0,0,null,null,0],
                     [3,"john.doe@example.com",3,"Ook",2,0,1,null,null,0],
@@ -63,7 +63,7 @@ trait SeriesSubscription {
             ],
             'arsse_tags' => [
                 'columns' => ["id", "owner", "name"],
-                'rows' => [
+                'rows'    => [
                     [1,"john.doe@example.com","Interesting"],
                     [2,"john.doe@example.com","Fascinating"],
                     [3,"jane.doe@example.com","Boring"],
@@ -72,7 +72,7 @@ trait SeriesSubscription {
             ],
             'arsse_tag_members' => [
                 'columns' => ["tag", "subscription", "assigned"],
-                'rows' => [
+                'rows'    => [
                     [1,1,1],
                     [1,3,0],
                     [2,1,1],
@@ -82,7 +82,7 @@ trait SeriesSubscription {
             ],
             'arsse_articles' => [
                 'columns' => ["id", "feed", "url_title_hash", "url_content_hash", "title_content_hash", "title"],
-                'rows' => [
+                'rows'    => [
                     [1,2,"","","","Title 1"],
                     [2,2,"","","","Title 2"],
                     [3,2,"","","","Title 3"],
@@ -95,7 +95,7 @@ trait SeriesSubscription {
             ],
             'arsse_editions' => [
                 'columns' => ["id", "article"],
-                'rows' => [
+                'rows'    => [
                     [1,1],
                     [2,2],
                     [3,3],
@@ -108,7 +108,7 @@ trait SeriesSubscription {
             ],
             'arsse_categories' => [
                 'columns' => ["article", "name"],
-                'rows' => [
+                'rows'    => [
                     [1,"A"],
                     [2,"B"],
                     [4,"D"],
@@ -120,7 +120,7 @@ trait SeriesSubscription {
             ],
             'arsse_marks' => [
                 'columns' => ["article", "subscription", "read", "starred", "hidden"],
-                'rows' => [
+                'rows'    => [
                     [1,2,1,0,0],
                     [2,2,1,0,0],
                     [3,2,1,0,0],
