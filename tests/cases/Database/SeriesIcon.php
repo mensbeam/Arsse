@@ -17,14 +17,14 @@ trait SeriesIcon {
         $this->data = [
             'arsse_users' => [
                 'columns' => ["id", "password", "num"],
-                'rows' => [
+                'rows'    => [
                     ["jane.doe@example.com", "",1],
                     ["john.doe@example.com", "",2],
                 ],
             ],
             'arsse_icons' => [
                 'columns' => ["id", "url", "type", "data"],
-                'rows' => [
+                'rows'    => [
                     [1,'http://localhost:8000/Icon/PNG','image/png',base64_decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMjHxIGmVAAAADUlEQVQYV2NgYGBgAAAABQABijPjAAAAAABJRU5ErkJggg==")],
                     [2,'http://localhost:8000/Icon/GIF','image/gif',base64_decode("R0lGODlhAQABAIABAAAAAP///yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==")],
                     [3,'http://localhost:8000/Icon/SVG1','image/svg+xml','<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><rect fill="#fff" height="600" width="900"/><circle fill="#bc002d" cx="450" cy="300" r="180"/></svg>'],
@@ -33,7 +33,7 @@ trait SeriesIcon {
             ],
             'arsse_feeds' => [
                 'columns' => ["id", "url", "title", "err_count", "err_msg", "modified", "next_fetch", "size", "icon"],
-                'rows' => [
+                'rows'    => [
                     [1,"http://localhost:8000/Feed/Matching/3","Ook",0,"",$past,$past,0,1],
                     [2,"http://localhost:8000/Feed/Matching/1","Eek",5,"There was an error last time",$past,$future,0,2],
                     [3,"http://localhost:8000/Feed/Fetching/Error?code=404","Ack",0,"",$past,$now,0,3],
@@ -43,7 +43,7 @@ trait SeriesIcon {
             ],
             'arsse_subscriptions' => [
                 'columns' => ["id", "owner", "feed"],
-                'rows' => [
+                'rows'    => [
                     [1,'john.doe@example.com',1],
                     [2,'john.doe@example.com',2],
                     [3,'john.doe@example.com',3],

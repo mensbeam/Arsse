@@ -42,14 +42,14 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->data = [
             'arsse_users' => [
                 'columns' => ["id", "password", "num"],
-                'rows' => [
+                'rows'    => [
                     ["john.doe@example.com", "", 1],
                     ["jane.doe@example.com", "", 2],
                 ],
             ],
             'arsse_folders' => [
                 'columns' => ["id", "owner", "parent", "name"],
-                'rows' => [
+                'rows'    => [
                     [1, "john.doe@example.com", null, "Science"],
                     [2, "john.doe@example.com", 1,    "Rocketry"],
                     [3, "john.doe@example.com", null, "Politics"],
@@ -60,7 +60,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
             ],
             'arsse_feeds' => [
                 'columns' => ["id", "url", "title"],
-                'rows' => [
+                'rows'    => [
                     [1, "http://localhost:8000/Import/nasa-jpl",  "NASA JPL"],
                     [2, "http://localhost:8000/Import/torstar",   "Toronto Star"],
                     [3, "http://localhost:8000/Import/ars",       "Ars Technica"],
@@ -71,7 +71,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
             ],
             'arsse_subscriptions' => [
                 'columns' => ["id", "owner", "folder", "feed", "title"],
-                'rows' => [
+                'rows'    => [
                     [1, "john.doe@example.com", 2,    1, "NASA JPL"],
                     [2, "john.doe@example.com", 5,    2, "Toronto Star"],
                     [3, "john.doe@example.com", 1,    3, "Ars Technica"],
@@ -82,7 +82,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
             ],
             'arsse_tags' => [
                 'columns' => ["id", "owner", "name"],
-                'rows' => [
+                'rows'    => [
                     [1, "john.doe@example.com", "canada"],
                     [2, "john.doe@example.com", "frequent"],
                     [3, "john.doe@example.com", "gaming"],
@@ -93,7 +93,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
             ],
             'arsse_tag_members' => [
                 'columns' => ["tag", "subscription", "assigned"],
-                'rows' => [
+                'rows'    => [
                     [1, 2, 1],
                     [1, 4, 1],
                     [1, 5, 1],

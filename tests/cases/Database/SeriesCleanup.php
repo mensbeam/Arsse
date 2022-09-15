@@ -28,14 +28,14 @@ trait SeriesCleanup {
         $this->data = [
             'arsse_users' => [
                 'columns' => ["id", "password", "num"],
-                'rows' => [
+                'rows'    => [
                     ["jane.doe@example.com", "",1],
                     ["john.doe@example.com", "",2],
                 ],
             ],
             'arsse_sessions' => [
                 'columns' => ["id", "created", "expires", "user"],
-                'rows' => [
+                'rows'    => [
                     ["a", $nowish,  $faroff, "jane.doe@example.com"], // not expired and recently created, thus kept
                     ["b", $nowish,  $soon,   "jane.doe@example.com"], // not expired and recently created, thus kept
                     ["c", $daysago, $soon,   "jane.doe@example.com"], // created more than a day ago, thus deleted
@@ -45,7 +45,7 @@ trait SeriesCleanup {
             ],
             'arsse_tokens' => [
                 'columns' => ["id", "class", "user", "expires"],
-                'rows' => [
+                'rows'    => [
                     ["80fa94c1a11f11e78667001e673b2560", "fever.login", "jane.doe@example.com", $faroff],
                     ["27c6de8da13311e78667001e673b2560", "fever.login", "jane.doe@example.com", $weeksago], // expired
                     ["ab3b3eb8a13311e78667001e673b2560", "class.class", "jane.doe@example.com", null],
@@ -54,7 +54,7 @@ trait SeriesCleanup {
             ],
             'arsse_icons' => [
                 'columns' => ["id", "url", "orphaned"],
-                'rows' => [
+                'rows'    => [
                     [1,'http://localhost:8000/Icon/PNG',$daybefore],
                     [2,'http://localhost:8000/Icon/GIF',$daybefore],
                     [3,'http://localhost:8000/Icon/SVG1',null],
@@ -62,7 +62,7 @@ trait SeriesCleanup {
             ],
             'arsse_feeds' => [
                 'columns' => ["id", "url", "title", "orphaned", "size", "icon"],
-                'rows' => [
+                'rows'    => [
                     [1,"http://example.com/1","",$daybefore,2,null],  //latest two articles should be kept
                     [2,"http://example.com/2","",$yesterday,0,2],
                     [3,"http://example.com/3","",null,0,1],
@@ -71,7 +71,7 @@ trait SeriesCleanup {
             ],
             'arsse_subscriptions' => [
                 'columns' => ["id", "owner", "feed"],
-                'rows' => [
+                'rows'    => [
                     // one feed previously marked for deletion has a subscription again, and so should not be deleted
                     [1,'jane.doe@example.com',1],
                     // other subscriptions exist for article cleanup tests
@@ -80,7 +80,7 @@ trait SeriesCleanup {
             ],
             'arsse_articles' => [
                 'columns' => ["id", "feed", "url_title_hash", "url_content_hash", "title_content_hash", "modified"],
-                'rows' => [
+                'rows'    => [
                     [1,1,"","","",$weeksago], // is the latest article, thus is kept
                     [2,1,"","","",$weeksago], // is the second latest article, thus is kept
                     [3,1,"","","",$weeksago], // is starred by one user, thus is kept
@@ -94,7 +94,7 @@ trait SeriesCleanup {
             ],
             'arsse_editions' => [
                 'columns' => ["id", "article"],
-                'rows' => [
+                'rows'    => [
                     [1,1],
                     [2,2],
                     [3,3],
@@ -105,7 +105,7 @@ trait SeriesCleanup {
             ],
             'arsse_marks' => [
                 'columns' => ["article", "subscription", "read", "starred", "hidden", "modified"],
-                'rows' => [
+                'rows'    => [
                     [3,1,0,1,0,$weeksago],
                     [4,1,1,0,0,$daysago],
                     [6,1,1,0,0,$nowish],

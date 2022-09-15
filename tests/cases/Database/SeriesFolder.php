@@ -13,7 +13,7 @@ trait SeriesFolder {
         $this->data = [
             'arsse_users' => [
                 'columns' => ["id", "password", "num"],
-                'rows' => [
+                'rows'    => [
                     ["jane.doe@example.com", "",1],
                     ["john.doe@example.com", "",2],
                 ],
@@ -41,7 +41,7 @@ trait SeriesFolder {
             ],
             'arsse_feeds' => [
                 'columns' => ["id", "url", "title"],
-                'rows' => [
+                'rows'    => [
                     [1,"http://example.com/1", "Feed 1"],
                     [2,"http://example.com/2", "Feed 2"],
                     [3,"http://example.com/3", "Feed 3"],
@@ -59,7 +59,7 @@ trait SeriesFolder {
             ],
             'arsse_subscriptions' => [
                 'columns' => ["id", "owner", "feed", "folder"],
-                'rows' => [
+                'rows'    => [
                     [1, "john.doe@example.com",1, null],
                     [2, "john.doe@example.com",2, null],
                     [3, "john.doe@example.com",3,    1],

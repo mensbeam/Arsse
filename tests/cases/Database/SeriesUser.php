@@ -13,7 +13,7 @@ trait SeriesUser {
         $this->data = [
             'arsse_users' => [
                 'columns' => ["id", "password", "num", "admin"],
-                'rows' => [
+                'rows'    => [
                     ["admin@example.net", '$2y$10$PbcG2ZR3Z8TuPzM7aHTF8.v61dtCjzjK78gdZJcp4UePE8T9jEgBW', 1, 1], // password is hash of "secret"
                     ["jane.doe@example.com", "", 2, 0],
                     ["john.doe@example.com", "", 3, 0],
@@ -21,7 +21,7 @@ trait SeriesUser {
             ],
             'arsse_user_meta' => [
                 'columns' => ["owner", "key", "value"],
-                'rows' => [
+                'rows'    => [
                     ["admin@example.net", "lang", "en"],
                     ["admin@example.net", "tz", "America/Toronto"],
                     ["admin@example.net", "sort_asc", "0"],

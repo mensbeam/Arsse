@@ -18,14 +18,14 @@ trait SeriesFeed {
         $this->data = [
             'arsse_users' => [
                 'columns' => ["id", "password", "num"],
-                'rows' => [
+                'rows'    => [
                     ["jane.doe@example.com", "",1],
                     ["john.doe@example.com", "",2],
                 ],
             ],
             'arsse_icons' => [
                 'columns' => ["id", "url", "type", "data"],
-                'rows' => [
+                'rows'    => [
                     [1,'http://localhost:8000/Icon/PNG','image/png',base64_decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMjHxIGmVAAAADUlEQVQYV2NgYGBgAAAABQABijPjAAAAAABJRU5ErkJggg==")],
                     [2,'http://localhost:8000/Icon/GIF','image/gif',base64_decode("R0lGODlhAQABAIABAAAAAP///yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==")],
                     // this actually contains the data of SVG2, which will lead to a row update when retieved
@@ -34,7 +34,7 @@ trait SeriesFeed {
             ],
             'arsse_feeds' => [
                 'columns' => ["id", "url", "title", "err_count", "err_msg", "modified", "next_fetch", "size", "icon"],
-                'rows' => [
+                'rows'    => [
                     [1,"http://localhost:8000/Feed/Matching/3","Ook",0,"",$past,$past,0,null],
                     [2,"http://localhost:8000/Feed/Matching/1","Eek",5,"There was an error last time",$past,$future,0,null],
                     [3,"http://localhost:8000/Feed/Fetching/Error?code=404","Ack",0,"",$past,$now,0,null],
@@ -49,7 +49,7 @@ trait SeriesFeed {
             ],
             'arsse_subscriptions' => [
                 'columns' => ["id", "owner", "feed", "keep_rule", "block_rule"],
-                'rows' => [
+                'rows'    => [
                     [1,'john.doe@example.com',1,null,'^Sport$'],
                     [2,'john.doe@example.com',2,"",null],
                     [3,'john.doe@example.com',3,'\w+',null],
@@ -60,7 +60,7 @@ trait SeriesFeed {
             ],
             'arsse_articles' => [
                 'columns' => ["id", "feed", "url", "title", "author", "published", "edited", "content", "guid", "url_title_hash", "url_content_hash", "title_content_hash", "modified"],
-                'rows' => [
+                'rows'    => [
                     [1,1,'http://example.com/1','Article title 1','','2000-01-01 00:00:00','2000-01-01 00:00:00','<p>Article content 1</p>','e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda','f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6','fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4','18fdd4fa93d693128c43b004399e5c9cea6c261ddfa002518d3669f55d8c2207',$past],
                     [2,1,'http://example.com/2','Article title 2','','2000-01-02 00:00:00','2000-01-02 00:00:00','<p>Article content 2</p>','5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7','0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153','13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9','2abd0a8cba83b8214a66c8f0293ba63e467d720540e29ff8ddcdab069d4f1c9e',$past],
                     [3,1,'http://example.com/3','Article title 3','','2000-01-03 00:00:00','2000-01-03 00:00:00','<p>Article content 3</p>','31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92','f74b06b240bd08abf4d3fdfc20dba6a6f6eb8b4f1a00e9a617efd63a87180a4b','b278380e984cefe63f0e412b88ffc9cb0befdfa06fdc00bace1da99a8daff406','ad622b31e739cd3a3f3c788991082cf4d2f7a8773773008e75f0572e58cd373b',$past],
@@ -72,7 +72,7 @@ trait SeriesFeed {
             ],
             'arsse_editions' => [
                 'columns' => ["id", "article", "modified"],
-                'rows' => [
+                'rows'    => [
                     [1,1,$past],
                     [2,2,$past],
                     [3,3,$past],
@@ -82,7 +82,7 @@ trait SeriesFeed {
             ],
             'arsse_marks' => [
                 'columns' => ["article", "subscription", "read", "starred", "hidden", "modified"],
-                'rows' => [
+                'rows'    => [
                     // Jane's marks
                     [1,6,1,0,0,$past],
                     [2,6,1,0,0,$past],
@@ -97,13 +97,13 @@ trait SeriesFeed {
             ],
             'arsse_enclosures' => [
                 'columns' => ["article", "url", "type"],
-                'rows' => [
+                'rows'    => [
                     [7,'http://example.com/png','image/png'],
                 ],
             ],
             'arsse_categories' => [
                 'columns' => ["article", "name"],
-                'rows' => [
+                'rows'    => [
                     [7,'Syrinx'],
                 ],
             ],

@@ -27,7 +27,7 @@ trait ExceptionBuilder {
     public static function buildConnectionException($code, string $msg): array {
         switch ($code) {
             case 1045:
-            // @codeCoverageIgnoreStart
+                // @codeCoverageIgnoreStart
             case 1043:
             case 1044:
             case 1046:
@@ -48,7 +48,7 @@ trait ExceptionBuilder {
             case 2018:
             case 2026:
             case 2028:
-            // @codeCoverageIgnoreEnd
+                // @codeCoverageIgnoreEnd
                 return [Exception::class, 'connectionFailure', ['engine' => "MySQL", 'message' => $msg]];
             default:
                 return [Exception::class, 'engineErrorGeneral', $msg]; // @codeCoverageIgnore

@@ -15,7 +15,7 @@ trait SeriesLabel {
         $this->data = [
             'arsse_users' => [
                 'columns' => ["id", "password", "num"],
-                'rows' => [
+                'rows'    => [
                     ["jane.doe@example.com", "",1],
                     ["john.doe@example.com", "",2],
                     ["john.doe@example.org", "",3],
@@ -24,7 +24,7 @@ trait SeriesLabel {
             ],
             'arsse_folders' => [
                 'columns' => ["id", "owner", "parent", "name"],
-                'rows' => [
+                'rows'    => [
                     [1, "john.doe@example.com", null, "Technology"],
                     [2, "john.doe@example.com",    1, "Software"],
                     [3, "john.doe@example.com",    1, "Rocketry"],
@@ -38,7 +38,7 @@ trait SeriesLabel {
             ],
             'arsse_feeds' => [
                 'columns' => ["id", "url"],
-                'rows' => [
+                'rows'    => [
                     [1,"http://example.com/1"],
                     [2,"http://example.com/2"],
                     [3,"http://example.com/3"],
@@ -56,7 +56,7 @@ trait SeriesLabel {
             ],
             'arsse_subscriptions' => [
                 'columns' => ["id", "owner", "feed", "folder"],
-                'rows' => [
+                'rows'    => [
                     [1,"john.doe@example.com",1,null],
                     [2,"john.doe@example.com",2,null],
                     [3,"john.doe@example.com",3,1],
@@ -75,7 +75,7 @@ trait SeriesLabel {
             ],
             'arsse_articles' => [
                 'columns' => ["id", "feed", "url", "title", "author", "published", "edited", "content", "guid", "url_title_hash", "url_content_hash", "title_content_hash", "modified"],
-                'rows' => [
+                'rows'    => [
                     [1,1,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z"],
                     [2,1,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z"],
                     [3,2,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z"],
@@ -105,7 +105,7 @@ trait SeriesLabel {
             ],
             'arsse_enclosures' => [
                 'columns' => ["article", "url", "type"],
-                'rows' => [
+                'rows'    => [
                     [102,"http://example.com/text","text/plain"],
                     [103,"http://example.com/video","video/webm"],
                     [104,"http://example.com/image","image/svg+xml"],
@@ -115,7 +115,7 @@ trait SeriesLabel {
             ],
             'arsse_editions' => [
                 'columns' => ["id", "article"],
-                'rows' => [
+                'rows'    => [
                     [1,1],
                     [2,2],
                     [3,3],
@@ -151,7 +151,7 @@ trait SeriesLabel {
             ],
             'arsse_marks' => [
                 'columns' => ["subscription", "article", "read", "starred", "modified", "hidden"],
-                'rows' => [
+                'rows'    => [
                     [1,   1,1,1,'2000-01-01 00:00:00',0],
                     [5,  19,1,0,'2000-01-01 00:00:00',0],
                     [5,  20,0,1,'2010-01-01 00:00:00',0],
@@ -169,7 +169,7 @@ trait SeriesLabel {
             ],
             'arsse_labels' => [
                 'columns' => ["id", "owner", "name"],
-                'rows' => [
+                'rows'    => [
                     [1,"john.doe@example.com","Interesting"],
                     [2,"john.doe@example.com","Fascinating"],
                     [3,"jane.doe@example.com","Boring"],
@@ -178,7 +178,7 @@ trait SeriesLabel {
             ],
             'arsse_label_members' => [
                 'columns' => ["label", "article", "subscription", "assigned"],
-                'rows' => [
+                'rows'    => [
                     [1, 1,1,1],
                     [2, 1,1,1],
                     [1,19,5,1],

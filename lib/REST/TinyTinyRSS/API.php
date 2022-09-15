@@ -12,6 +12,7 @@ use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\ExceptionType;
@@ -20,8 +21,6 @@ use JKingWeb\Arsse\Db\ResultEmpty;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\Response\JsonResponse as Response;
-use Laminas\Diactoros\Response\EmptyResponse;
 
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     public const LEVEL = 15;           // emulated API level
@@ -96,11 +95,11 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
         if (!preg_match("<^(?:/(?:index\.php)?)?$>D", $req->getRequestTarget())) {
             // reject paths other than the index
-            return new EmptyResponse(404);
+            return HTTP::respEmpty(404);
         }
         if ($req->getMethod() === "OPTIONS") {
             // respond to OPTIONS rquests; the response is a fib, as we technically accept any type or method
-            return new EmptyResponse(204, [
+            return HTTP::respEmpty(204, [
                 'Allow'  => "POST",
                 'Accept' => implode(", ", self::ACCEPTED_TYPES),
             ]);
@@ -110,7 +109,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             // only JSON entities are allowed, but Content-Type is ignored, as is request method
             $data = @json_decode($data, true);
             if (json_last_error() !== \JSON_ERROR_NONE || !is_array($data)) {
-                return new Response(self::FATAL_ERR);
+                return HTTP::respJson(self::FATAL_ERR);
             }
             try {
                 // normalize input
@@ -125,7 +124,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     Arsse::$user->id = $req->getAttribute("authenticatedUser");
                 } elseif (Arsse::$conf->userHTTPAuthRequired || Arsse::$conf->userPreAuth || $req->getAttribute("authenticationFailed", false)) {
                     // otherwise if HTTP authentication failed or is required, deny access at the HTTP level
-                    return new EmptyResponse(401);
+                    return HTTP::respEmpty(401);
                 }
                 if (strtolower((string) $data['op']) !== "login") {
                     // unless logging in, a session identifier is required
@@ -136,23 +135,23 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     // TT-RSS operations are case-insensitive by dint of PHP method names being case-insensitive; this will only trigger if the method really doesn't exist
                     throw new Exception("UNKNOWN_METHOD", ['method' => $data['op']]);
                 }
-                return new Response([
+                return HTTP::respJson([
                     'seq'     => $data['seq'],
                     'status'  => 0,
                     'content' => $this->$method($data),
                 ]);
             } catch (Exception $e) {
-                return new Response([
+                return HTTP::respJson([
                     'seq'     => $data['seq'],
                     'status'  => 1,
                     'content' => $e->getData(),
                 ]);
             } catch (AbstractException $e) {
-                return new EmptyResponse(500);
+                return HTTP::respEmpty(500);
             }
         } else {
             // absence of a request body indicates an error
-            return new Response(self::FATAL_ERR);
+            return HTTP::respJson(self::FATAL_ERR);
         }
     }
 
@@ -1000,7 +999,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             switch ($e->getCode()) {
                 case 10236: // label already exists
                     // retrieve the ID of the existing label; duplicating a label silently returns the existing one
-                     return $this->labelOut(Arsse::$db->labelPropertiesGet(Arsse::$user->id, $in['name'], true)['id']);
+                    return $this->labelOut(Arsse::$db->labelPropertiesGet(Arsse::$user->id, $in['name'], true)['id']);
                 default: // other errors related to input
                     throw new Exception("INCORRECT_USAGE");
             }

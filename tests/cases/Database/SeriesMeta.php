@@ -14,7 +14,7 @@ trait SeriesMeta {
         $dataBare = [
             'arsse_meta' => [
                 'columns' => ["key", "value"],
-                'rows' => [
+                'rows'    => [
                     //['schema_version', "".\JKingWeb\Arsse\Database::SCHEMA_VERSION],
                     ['album',"A Farewell to Kings"],
                 ],
