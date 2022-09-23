@@ -25,7 +25,7 @@ use JKingWeb\Arsse\Rule\Exception as RuleException;
  *
  * - Users
  * - Subscriptions to feeds, which belong to users
- * - Folders, which belong to users and contain subscriptions
+ * - Folders, which belong to users and contain subscriptions or other folders
  * - Tags, which belong to users and can be assigned to multiple subscriptions
  * - Icons, which are associated with subscriptions
  * - Articles, which belong to subscriptions
@@ -76,9 +76,15 @@ class Database {
     public function __construct($initialize = true) {
         $driver = Arsse::$conf->dbDriver;
         $this->db = $driver::create();
+        $this->checkSchemaVersion($initialize);
+    }
+
+    public function checkSchemaVersion(bool $initialize = false): void {
         $ver = $this->db->schemaVersion();
         if ($initialize && $ver < self::SCHEMA_VERSION) {
             $this->db->schemaUpdate(self::SCHEMA_VERSION);
+        } elseif ($ver != self::SCHEMA_VERSION) {
+            throw new Db\Exception("updateSchemaChange");
         }
     }
 

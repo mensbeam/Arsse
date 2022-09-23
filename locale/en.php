@@ -147,6 +147,7 @@ return [
             0 {Automatic updating of the {driver_name} database failed because it is already up to date with the requested version, {target}}
             other {Automatic updating of the {driver_name} database failed because its version, {current}, is newer than the requested version, {target}}
         }',
+    'Exception.JKingWeb/Arsse/Db/Exception.updateSchemaChange'             => 'Database schema version has changed since the application was started; application restart is required',
     'Exception.JKingWeb/Arsse/Db/Exception.engineErrorGeneral'             => '{0}',
     // indicates programming error
     'Exception.JKingWeb/Arsse/Db/Exception.savepointStatusUnknown'         => 'Savepoint status code {0} not implemented',

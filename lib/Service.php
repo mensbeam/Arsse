@@ -66,6 +66,7 @@ class Service {
     }
 
     public function checkIn(): bool {
+        Arsse::$db->checkSchemaVersion();
         return Arsse::$db->metaSet("service_last_checkin", time(), "datetime");
     }
 
