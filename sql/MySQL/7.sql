@@ -162,6 +162,7 @@ alter table arsse_subscriptions modify url longtext not null;
 alter table arsse_subscriptions add foreign key(icon) references arsse_icons(id) on delete set null;
 alter table arsse_subscriptions add unique(owner,url(255));
 alter table arsse_subscriptions drop constraint arsse_subscriptions_ibfk_2;
+alter table arsse_subscriptions drop constraint owner;
 alter table arsse_subscriptions drop column feed;
 
 -- Delete unneeded table
