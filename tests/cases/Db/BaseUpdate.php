@@ -226,6 +226,18 @@ QUERY_TEXT
                 (1, 'a', 1, '2002-02-02 00:02:03', '2002-02-02 00:05:03', 'User Title', 2, 1, null, 'keep', 'block', 0),
                 (4, 'a', 3, '2002-02-03 00:02:03', '2002-02-03 00:05:03', 'Rosy Title', 1, 0, 1337, 'meep', 'bloop', 0),
                 (6, 'c', 3, '2002-02-04 00:02:03', '2002-02-04 00:05:03', null,         2, 0, 4400, null,   null,    1);
+            insert into arsse_articles(id,feed,url,title,author,published,edited,modified,guid,url_title_hash,url_content_hash,title_content_hash,content_scraped,content) values
+                (1, 1, 'https://example.com/1', 'Article 1', 'John Doe', '2001-11-08 22:07:55', '2002-11-08 07:51:12', '2001-11-08 23:44:56', 'GUID1', 'UTHASH1', 'UCHASH1', 'TCHASH1', 'Scraped 1', 'Content 1'),
+                (2, 1, 'https://example.com/2', 'Article 2', 'Jane Doe', '2001-11-09 22:07:55', '2002-11-09 07:51:12', '2001-11-09 23:44:56', 'GUID2', 'UTHASH2', 'UCHASH2', 'TCHASH2', 'Scraped 2', 'Content 2'),
+                (3, 2, 'https://example.org/1', 'Article 3', 'John Doe', '2001-11-10 22:07:55', '2002-11-10 07:51:12', '2001-11-10 23:44:56', 'GUID3', 'UTHASH3', 'UCHASH3', 'TCHASH3', 'Scraped 3', 'Content 3'),
+                (4, 2, 'https://example.org/2', 'Article 4', 'Jane Doe', '2001-11-11 22:07:55', '2002-11-11 07:51:12', '2001-11-11 23:44:56', 'GUID4', 'UTHASH4', 'UCHASH4', 'TCHASH4', 'Scraped 4', 'Content 4'),
+                (5, 3, 'https://example.net/1', 'Article 5', 'Adam Doe', '2001-11-12 22:07:55', '2002-11-12 07:51:12', '2001-11-12 23:44:56', 'GUID5', 'UTHASH5', 'UCHASH5', 'TCHASH5', null,        'Content 5'),
+                (6, 3, 'https://example.net/2', 'Article 6', 'Evie Doe', '2001-11-13 22:07:55', '2002-11-13 07:51:12', '2001-11-13 23:44:56', 'GUID6', 'UTHASH6', 'UCHASH6', 'TCHASH6', 'Scraped 6', 'Content 6');
+            insert into arsse_marks(article,subscription,"read",starred,modified,note,hidden) values
+                (1, 1, 1, 1, '2002-11-08 00:37:22', 'Note 1', 0),
+                (5, 4, 1, 0, '2002-11-12 00:37:22', 'Note 5', 0),
+                (5, 6, 0, 1, '2002-12-12 00:37:22', '',       0),
+                (6, 6, 0, 0, '2002-12-13 00:37:22', 'Note 6', 1);
 QUERY_TEXT
         );
         $this->drv->schemaUpdate(8);
@@ -245,39 +257,30 @@ QUERY_TEXT
                     [4, "a", "https://example.net/rss", "Title 3", "Rosy Title", 1337, "2001-06-15 06:56:23", '"ack"', "2001-06-15 06:57:23", "2002-02-03 00:02:03", "https://example.net/", "2001-06-15 06:55:23", 44, "This error", 3,  12,   "2002-02-03 00:05:03", 1, 0, 0, "meep", "bloop"],
                     [6, "c", "https://example.net/rss", "Title 3", null,         4400, "2001-06-15 06:56:23", '"ack"', "2001-06-15 06:57:23", "2002-02-04 00:02:03", "https://example.net/", "2001-06-15 06:55:23", 44, "This error", 3,  12,   "2002-02-04 00:05:03", 2, 0, 1, null,   null],
                 ]
-            ]
+            ],
+            'arsse_articles' => [
+                'columns' => ["id", "subscription", "read", "starred", "hidden", "published", "edited", "modified", "marked", "url", "title", "author", "guid", "url_title_hash", "url_content_hash", "title_content_hash", "note"],
+                'rows'    => [
+                    [1,  1, 1, 1, 0, "2001-11-08 22:07:55", "2002-11-08 07:51:12", "2001-11-08 23:44:56", "2002-11-08 00:37:22", "https://example.com/1", "Article 1", "John Doe", "GUID1", "UTHASH1", "UCHASH1", "TCHASH1", "Note 1"],
+                    [2,  1, 0, 0, 0, "2001-11-09 22:07:55", "2002-11-09 07:51:12", "2001-11-09 23:44:56", null,                  "https://example.com/2", "Article 2", "Jane Doe", "GUID2", "UTHASH2", "UCHASH2", "TCHASH2", ""],
+                    [7,  4, 1, 0, 0, "2001-11-12 22:07:55", "2002-11-12 07:51:12", "2001-11-12 23:44:56", "2002-11-12 00:37:22", "https://example.net/1", "Article 5", "Adam Doe", "GUID5", "UTHASH5", "UCHASH5", "TCHASH5", "Note 5"],
+                    [8,  6, 0, 1, 0, "2001-11-12 22:07:55", "2002-11-12 07:51:12", "2001-11-12 23:44:56", "2002-12-12 00:37:22", "https://example.net/1", "Article 5", "Adam Doe", "GUID5", "UTHASH5", "UCHASH5", "TCHASH5", ""],
+                    [9,  4, 0, 0, 0, "2001-11-13 22:07:55", "2002-11-13 07:51:12", "2001-11-13 23:44:56", null,                  "https://example.net/2", "Article 6", "Evie Doe", "GUID6", "UTHASH6", "UCHASH6", "TCHASH6", ""],
+                    [10, 6, 0, 0, 1, "2001-11-13 22:07:55", "2002-11-13 07:51:12", "2001-11-13 23:44:56", "2002-12-13 00:37:22", "https://example.net/2", "Article 6", "Evie Doe", "GUID6", "UTHASH6", "UCHASH6", "TCHASH6", "Note 6"],
+                ]
+            ],
+            'arsse_article_contents' => [
+                'columns' => ["id", "content"],
+                'rows'    => [
+                    [1,  "Content 1"],
+                    [2,  "Content 2"],
+                    [7,  "Content 5"],
+                    [8,  "Content 5"],
+                    [9,  "Content 6"],
+                    [10, "Scraped 6"],
+                ]
+            ]    
         ];
         $this->compareExpectations($this->drv, $exp);
     }
 }
-
-/*
-
-CREATE TABLE arsse_articles(
--- metadata for entries in newsfeeds, including user state
-    id integer primary key,                                                                                 -- sequence number
-    subscription integer not null references arsse_subscriptions(id) on delete cascade on update cascade,   -- associated subscription
-    read int not null default 0,                                                                            -- whether the article has been read
-    starred int not null default 0,                                                                         -- whether the article is starred
-    hidden int not null default 0,                                                                          -- whether the article should be excluded from selection by default
-    published text,                                                                                         -- time of original publication
-    edited text,                                                                                            -- time of last edit by author
-    modified text not null default CURRENT_TIMESTAMP,                                                       -- time when article was last modified in database pursuant to an authorial edit
-    marked text,                                                                                            -- time at which an article was last modified by the user
-    url text,                                                                                               -- URL of article
-    title text collate nocase,                                                                              -- article title
-    author text collate nocase,                                                                             -- author's name
-    guid text,                                                                                              -- a nominally globally unique identifier for the article, from the feed
-    url_title_hash text not null,                                                                           -- hash of URL + title; used when checking for updates and for identification if there is no guid
-    url_content_hash text not null,                                                                         -- hash of URL + content + enclosure URL + enclosure content type; used when checking for updates and for identification if there is no guid
-    title_content_hash text not null,                                                                       -- hash of title + content + enclosure URL + enclosure content type; used when checking for updates and for identification if there is no guid
-    note text not null default ''                                                                           -- Tiny Tiny RSS freeform user note
-)
-
-CREATE TABLE arsse_article_contents(
--- contents of articles, which is typically large text
-    id integer primary key references arsse_articles(id) on delete cascade on update cascade,   -- reference to the article ID
-    content text                                                                                -- the contents
-)
-
-*/

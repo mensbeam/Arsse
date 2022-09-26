@@ -71,7 +71,7 @@ insert into arsse_articles_new
         coalesce(m.note,'')
     from arsse_articles_map as i
     left join arsse_articles as a on a.id = i.article
-    left join arsse_marks as m on a.id = m.article;
+    left join arsse_marks as m on a.id = m.article and m.subscription = i.subscription;
 
 -- Create a new table to hold article content
 create table arsse_article_contents(
@@ -82,9 +82,10 @@ create table arsse_article_contents(
 insert into arsse_article_contents
     select
         m.id,
-        coalesce(a.content_scraped, a.content)
+        case when s.scrape = 0 then a.content else coalesce(a.content_scraped, a.content) end
     from arsse_articles_map as m
-    left join arsse_articles as a on a.id = m.article;
+    left join arsse_articles as a on a.id = m.article
+    left join arsse_subscriptions as s on s.id = m.subscription;
 
 -- Create one edition for each renumbered article, and delete any editions for obsolete articles
 insert into arsse_editions(article) select id from arsse_articles_map where id <> article;

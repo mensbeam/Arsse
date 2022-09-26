@@ -18,7 +18,8 @@ insert into arsse_articles_map(article, subscription)
     from arsse_articles as a join arsse_subscriptions as s using(feed)
     where feed in (
         select feed from (select feed, count(*) as count from arsse_subscriptions group by feed) as c where c.count > 1
-    );
+    )
+    order by a.id, s.id;
 insert into arsse_articles_map(article, subscription, id)
     select 
         a.id as article, 
@@ -28,23 +29,6 @@ insert into arsse_articles_map(article, subscription, id)
     where feed in (
         select feed from (select feed, count(*) as count from arsse_subscriptions group by feed) as c where c.count = 1
     );
-
--- First create the subsidiary table to hold article contents
-create table arsse_article_contents(
--- contents of articles, which is typically large text
-    id bigint primary key references arsse_articles(id) on delete cascade on update cascade,
-    content text collate "und-x-icu"
-);
-insert into arsse_article_contents
-    select
-        m.id,
-        coalesce(a.content_scraped, a.content)
-    from arsse_articles_map as m
-    left join arsse_articles as a on a.id = m.article;
-
--- Drop the two content columns from the article table as they are no longer needed
-alter table arsse_articles drop column content;
-alter table arsse_articles drop column content_scraped;
 
 -- Add any new columns required for the articles table
 alter table arsse_articles add column subscription bigint references arsse_subscriptions(id) on delete cascade on update cascade;
@@ -77,13 +61,31 @@ with new_data as (
         coalesce(m.note,'') as note
     from arsse_articles_map as i
     left join arsse_articles as a on a.id = i.article
-    left join arsse_marks as m on a.id = m.article
+    left join arsse_marks as m on a.id = m.article and m.subscription = i.subscription
 )
 insert into arsse_articles(id,feed,subscription,read,starred,hidden,published,edited,modified,marked,url,title,author,guid,url_title_hash,url_content_hash,title_content_hash,note)
     select * from new_data
 on conflict (id) do update set (subscription,read,starred,hidden,marked,note) = (
     select subscription, read, starred, hidden, marked, note from new_data where id = excluded.id
 );
+
+-- Next create the subsidiary table to hold article contents
+create table arsse_article_contents(
+-- contents of articles, which is typically large text
+    id bigint primary key references arsse_articles(id) on delete cascade on update cascade,
+    content text collate "und-x-icu"
+);
+insert into arsse_article_contents
+    select
+        m.id,
+        case when s.scrape = 0 then a.content else coalesce(a.content_scraped, a.content) end
+    from arsse_articles_map as m
+    left join arsse_articles as a on a.id = m.article
+    left join arsse_subscriptions as s on s.id = m.subscription;
+
+-- Drop the two content columns from the article table as they are no longer needed
+alter table arsse_articles drop column content_scraped;
+alter table arsse_articles drop column content;
 
 -- Create one edition for each renumbered article
 insert into arsse_editions(article) select id from arsse_articles_map where id <> article;
@@ -117,6 +119,7 @@ insert into arsse_label_members
 
 -- Clean up the articles table: delete obsolete rows, add necessary constraints on new columns which could not be satisfied before inserting information, and drop the obsolete feed column
 delete from arsse_articles where id in (select article from arsse_articles_map where id <> article);
+delete from arsse_articles where subscription is null;
 alter table arsse_articles alter column subscription set not null;
 alter table arsse_articles drop column feed;
 
