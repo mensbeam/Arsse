@@ -98,7 +98,7 @@ insert into arsse_enclosures(article, url, type)
     from arsse_articles_map as m
     join arsse_enclosures as e on m.article = e.article
     where m.id <> m.article;
-delete from arsse_enclosures where article in (select article from arsse_articles_map where id <> article);
+delete from arsse_enclosures where article in (select article from arsse_articles_map where id <> article) or article not in (select id from arsse_articles_map);
 
 -- Create categories for renumbered articles and delete obsolete categories
 insert into arsse_categories(article, name)
@@ -107,7 +107,7 @@ insert into arsse_categories(article, name)
     from arsse_articles_map as m
     join arsse_categories as c on m.article = c.article
     where m.id <> m.article;
-delete from arsse_categories where article in (select article from arsse_articles_map where id <> article);
+delete from arsse_categories where article in (select article from arsse_articles_map where id <> article) or article not in (select id from arsse_articles_map);
 
 -- Create a new label-associations table which omits the subscription column and populate it with new data
 create table arsse_label_members_new(
@@ -122,7 +122,7 @@ insert into arsse_label_members_new
     select
         label, m.id, assigned, l.modified
     from arsse_articles_map as m
-    join arsse_label_members as l using(article);
+    join arsse_label_members as l using(article, subscription);
 
 -- Create a new subscriptions table which combines the feeds table
 create table arsse_subscriptions_new(

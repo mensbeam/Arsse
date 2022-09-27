@@ -111,17 +111,17 @@ insert into arsse_categories(article, name)
     join arsse_categories as c on m.article = c.article
     where m.id <> m.article;
 
--- Drop the subscription column from the label members table as it is no longer needed (there is now a direct link between articles and subscriptions)
-alter table arsse_label_members drop foreign key arsse_label_members_ibfk_3;
-alter table arsse_label_members drop column subscription;
-
 -- Create label associations for renumbered articles
 insert into arsse_label_members
     select
-        label, m.id, assigned, l.modified
+        label, m.id, subscription, assigned, l.modified
     from arsse_articles_map as m
-    join arsse_label_members as l using(article)
+    join arsse_label_members as l using(article, subscription)
     where m.id <> m.article;
+
+-- Drop the subscription column from the label members table as it is no longer needed (there is now a direct link between articles and subscriptions)
+alter table arsse_label_members drop foreign key arsse_label_members_ibfk_3;
+alter table arsse_label_members drop column subscription;
 
 -- Clean up the articles table: delete obsolete rows, add necessary constraints on new columns which could not be satisfied before inserting information, and drop the obsolete feed column
 delete from arsse_articles where id in (select article from arsse_articles_map where id <> article);
