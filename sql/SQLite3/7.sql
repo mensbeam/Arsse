@@ -88,8 +88,14 @@ insert into arsse_article_contents
     left join arsse_subscriptions as s on s.id = m.subscription;
 
 -- Create one edition for each renumbered article, and delete any editions for obsolete articles
-insert into arsse_editions(article) select id from arsse_articles_map where id <> article;
-delete from arsse_editions where article in (select article from arsse_articles_map where id <> article);
+insert into arsse_editions(article, modified)
+    select 
+        m.id, e.modified
+    from arsse_editions as e
+    join arsse_articles_map as m using(article)
+    where m.id <> article
+    order by m.id, modified;
+delete from arsse_editions where article in (select article from arsse_articles_map where id <> article) or article not in (select id from arsse_articles_map);
 
 -- Create enclures for renumbered articles and delete obsolete enclosures
 insert into arsse_enclosures(article, url, type)

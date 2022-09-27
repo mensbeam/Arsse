@@ -93,7 +93,13 @@ alter table arsse_articles drop column content;
 alter table arsse_articles drop column content_scraped;
 
 -- Create one edition for each renumbered article
-insert into arsse_editions(article) select id from arsse_articles_map where id <> article;
+insert into arsse_editions(article, modified)
+    select 
+        m.id, e.modified
+    from arsse_editions as e
+    join arsse_articles_map as m using(article)
+    where m.id <> article
+    order by m.id, modified;
 
 -- Create enclures for renumbered articles
 insert into arsse_enclosures(article, url, type)

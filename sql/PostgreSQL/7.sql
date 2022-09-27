@@ -68,6 +68,8 @@ insert into arsse_articles(id,feed,subscription,read,starred,hidden,published,ed
 on conflict (id) do update set (subscription,read,starred,hidden,marked,note) = (
     select subscription, read, starred, hidden, marked, note from new_data where id = excluded.id
 );
+-- set the sequence number appropriately
+select setval('arsse_articles_id_seq', (select max(id) from arsse_articles));
 
 -- Next create the subsidiary table to hold article contents
 create table arsse_article_contents(
@@ -88,7 +90,13 @@ alter table arsse_articles drop column content_scraped;
 alter table arsse_articles drop column content;
 
 -- Create one edition for each renumbered article
-insert into arsse_editions(article) select id from arsse_articles_map where id <> article;
+insert into arsse_editions(article, modified)
+    select 
+        m.id, e.modified
+    from arsse_editions as e
+    join arsse_articles_map as m using(article)
+    where m.id <> article
+    order by m.id, modified;
 
 -- Create enclures for renumbered articles
 insert into arsse_enclosures(article, url, type)
