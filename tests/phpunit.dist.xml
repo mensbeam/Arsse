@@ -81,7 +81,7 @@
         <file>cases/Db/SQLite3PDO/TestCreation.php</file>
         <file>cases/Db/SQLite3PDO/TestDriver.php</file>
         <file>cases/Db/SQLite3PDO/TestUpdate.php</file>
-        <!--<file>cases/Db/SQLite3PDO/TestDatabase.php</file>-->
+        <file>cases/Db/SQLite3PDO/TestDatabase.php</file>
     </testsuite>
     <testsuite name="PostgreSQL">
         <file>cases/Db/PostgreSQL/TestResult.php</file>

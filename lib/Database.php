@@ -81,10 +81,12 @@ class Database {
 
     public function checkSchemaVersion(bool $initialize = false): void {
         $ver = $this->db->schemaVersion();
-        if ($initialize && $ver < self::SCHEMA_VERSION) {
-            $this->db->schemaUpdate(self::SCHEMA_VERSION);
-        } elseif ($ver != self::SCHEMA_VERSION) {
-            throw new Db\Exception("updateSchemaChange");
+        if ($initialize) {
+            if ($ver < self::SCHEMA_VERSION) {
+                $this->db->schemaUpdate(self::SCHEMA_VERSION);
+            } elseif ($ver != self::SCHEMA_VERSION) {
+                throw new Db\Exception("updateSchemaChange");
+            }
         }
     }
 
@@ -1459,7 +1461,7 @@ class Database {
      * @param string $user The user whose subscription icons are to be retrieved
      */
     public function iconList(string $user): Db\Result {
-        return $this->db->prepare("SELECT distinct i.id, i.url, i.type, i.data from arsse_icons as i join arsse_feeds as f on i.id = f.icon join arsse_subscriptions as s on s.feed = f.id where s.owner = ?", "str")->run($user);
+        return $this->db->prepare("SELECT distinct i.id, i.url, i.type, i.data from arsse_icons as i join arsse_subscriptions as s on s.icon = i.id where s.owner = ?", "str")->run($user);
     }
 
     /** Deletes orphaned icons from the database

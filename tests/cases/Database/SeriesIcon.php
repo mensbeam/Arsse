@@ -11,9 +11,6 @@ use JKingWeb\Arsse\Arsse;
 trait SeriesIcon {
     protected function setUpSeriesIcon(): void {
         // set up the test data
-        $past = gmdate("Y-m-d H:i:s", strtotime("now - 1 minute"));
-        $future = gmdate("Y-m-d H:i:s", strtotime("now + 1 minute"));
-        $now = gmdate("Y-m-d H:i:s", strtotime("now"));
         $this->data = [
             'arsse_users' => [
                 'columns' => ["id", "password", "num"],
@@ -31,25 +28,15 @@ trait SeriesIcon {
                     [4,'http://localhost:8000/Icon/SVG2','image/svg+xml','<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><rect width="900" height="600" fill="#ED2939"/><rect width="600" height="600" fill="#fff"/><rect width="300" height="600" fill="#002395"/></svg>'],
                 ],
             ],
-            'arsse_feeds' => [
-                'columns' => ["id", "url", "title", "err_count", "err_msg", "modified", "next_fetch", "size", "icon"],
-                'rows'    => [
-                    [1,"http://localhost:8000/Feed/Matching/3","Ook",0,"",$past,$past,0,1],
-                    [2,"http://localhost:8000/Feed/Matching/1","Eek",5,"There was an error last time",$past,$future,0,2],
-                    [3,"http://localhost:8000/Feed/Fetching/Error?code=404","Ack",0,"",$past,$now,0,3],
-                    [4,"http://localhost:8000/Feed/NextFetch/NotModified?t=".time(),"Ooook",0,"",$past,$past,0,null],
-                    [5,"http://localhost:8000/Feed/Parsing/Valid","Ooook",0,"",$past,$future,0,2],
-                ],
-            ],
             'arsse_subscriptions' => [
-                'columns' => ["id", "owner", "feed"],
+                'columns' => ["id", "owner", "url", "title", "icon"],
                 'rows'    => [
-                    [1,'john.doe@example.com',1],
-                    [2,'john.doe@example.com',2],
-                    [3,'john.doe@example.com',3],
-                    [4,'john.doe@example.com',4],
-                    [5,'john.doe@example.com',5],
-                    [6,'jane.doe@example.com',5],
+                    [1,'john.doe@example.com',"http://localhost:8000/Feed/Matching/3",                      "Ook",   1],
+                    [2,'john.doe@example.com',"http://localhost:8000/Feed/Matching/1",                      "Eek",   2],
+                    [3,'john.doe@example.com',"http://localhost:8000/Feed/Fetching/Error?code=404",         "Ack",   3],
+                    [4,'john.doe@example.com',"http://localhost:8000/Feed/NextFetch/NotModified?t=".time(), "Ooook", null],
+                    [5,'john.doe@example.com',"http://localhost:8000/Feed/Parsing/Valid",                   "Ooook", 2],
+                    [6,'jane.doe@example.com',"http://localhost:8000/Feed/Parsing/Valid",                   "Ooook", 2],
                 ],
             ],
         ];

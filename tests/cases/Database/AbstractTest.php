@@ -17,13 +17,13 @@ abstract class AbstractTest extends \JKingWeb\Arsse\Test\AbstractTest {
     use SeriesSession;
     use SeriesToken;
     use SeriesFolder;
-    use SeriesFeed;
+    //use SeriesFeed;
     use SeriesIcon;
-    use SeriesSubscription;
-    use SeriesLabel;
+    //use SeriesSubscription;
+    //use SeriesLabel;
     use SeriesTag;
-    use SeriesArticle;
-    use SeriesCleanup;
+    //use SeriesArticle;
+    //use SeriesCleanup;
 
     /** @var \JKingWeb\Arsse\Db\Driver */
     protected static $drv;
