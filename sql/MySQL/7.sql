@@ -149,6 +149,7 @@ alter table arsse_subscriptions add column err_count bigint unsigned not null de
 alter table arsse_subscriptions add column err_msg longtext;
 alter table arsse_subscriptions add column size bigint unsigned not null default 0;
 alter table arsse_subscriptions add column icon bigint unsigned;
+alter table arsse_subscriptions add column deleted boolean not null default 0;
 
 -- Populate the new columns
 update arsse_subscriptions as s, arsse_feeds as f set 

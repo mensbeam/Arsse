@@ -130,6 +130,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             'scrape'     => "bool",
             'keep_rule'  => "str",
             'block_rule' => "str",
+            'deleted'    => "bool",
         ],
         'arsse_folders' => [
             'id'       => "int",

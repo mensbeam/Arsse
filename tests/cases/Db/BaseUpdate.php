@@ -287,11 +287,11 @@ QUERY_TEXT
                 ]
             ],
             'arsse_subscriptions' => [
-                'columns' => ["id", "owner", "url", "feed_title", "title", "folder", "last_mod", "etag", "next_fetch", "added", "source", "updated", "err_count", "err_msg", "size", "icon", "modified", "order_type", "pinned", "scrape", "keep_rule", "block_rule"],
+                'columns' => ["id", "owner", "url", "feed_title", "title", "folder", "last_mod", "etag", "next_fetch", "added", "source", "updated", "err_count", "err_msg", "size", "icon", "modified", "order_type", "pinned", "scrape", "keep_rule", "block_rule", "deleted"],
                 'rows'    => [
-                    [1, "a", "https://example.com/rss", "Title 1", "User Title", null, "2001-06-13 06:56:23", '"ook"', "2001-06-13 06:57:23", "2002-02-02 00:02:03", "https://example.com/", "2001-06-13 06:55:23", 42, "Some error", 47, null, "2002-02-02 00:05:03", 2, 1, 0, "keep", "block"],
-                    [4, "a", "https://example.net/rss", "Title 3", "Rosy Title", 1337, "2001-06-15 06:56:23", '"ack"', "2001-06-15 06:57:23", "2002-02-03 00:02:03", "https://example.net/", "2001-06-15 06:55:23", 44, "This error", 3,  12,   "2002-02-03 00:05:03", 1, 0, 0, "meep", "bloop"],
-                    [6, "c", "https://example.net/rss", "Title 3", null,         4400, "2001-06-15 06:56:23", '"ack"', "2001-06-15 06:57:23", "2002-02-04 00:02:03", "https://example.net/", "2001-06-15 06:55:23", 44, "This error", 3,  12,   "2002-02-04 00:05:03", 2, 0, 1, null,   null],
+                    [1, "a", "https://example.com/rss", "Title 1", "User Title", null, "2001-06-13 06:56:23", '"ook"', "2001-06-13 06:57:23", "2002-02-02 00:02:03", "https://example.com/", "2001-06-13 06:55:23", 42, "Some error", 47, null, "2002-02-02 00:05:03", 2, 1, 0, "keep", "block", 0],
+                    [4, "a", "https://example.net/rss", "Title 3", "Rosy Title", 1337, "2001-06-15 06:56:23", '"ack"', "2001-06-15 06:57:23", "2002-02-03 00:02:03", "https://example.net/", "2001-06-15 06:55:23", 44, "This error", 3,  12,   "2002-02-03 00:05:03", 1, 0, 0, "meep", "bloop", 0],
+                    [6, "c", "https://example.net/rss", "Title 3", null,         4400, "2001-06-15 06:56:23", '"ack"', "2001-06-15 06:57:23", "2002-02-04 00:02:03", "https://example.net/", "2001-06-15 06:55:23", 44, "This error", 3,  12,   "2002-02-04 00:05:03", 2, 0, 1, null,   null,    0],
                 ]
             ],
             'arsse_articles' => [

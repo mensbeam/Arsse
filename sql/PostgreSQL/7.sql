@@ -143,6 +143,7 @@ alter table arsse_subscriptions add column err_count bigint not null default 0;
 alter table arsse_subscriptions add column err_msg text collate "und-x-icu";
 alter table arsse_subscriptions add column size bigint not null default 0;
 alter table arsse_subscriptions add column icon bigint references arsse_icons(id) on delete set null;
+alter table arsse_subscriptions add column deleted smallint not null default 0;
 
 -- Populate the new columns
 update arsse_subscriptions as s set 

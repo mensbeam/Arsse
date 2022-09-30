@@ -136,9 +136,11 @@ create table arsse_subscriptions_new(
     id integer primary key,                                                                 -- sequence number
     owner text not null references arsse_users(id) on delete cascade on update cascade,     -- owner of subscription
     url text not null,                                                                      -- URL of feed
+    deleted int not null default 0,                                                         -- soft-delete flag
     feed_title text collate nocase,                                                         -- feed title
     title text collate nocase,                                                              -- user-supplied title, which overrides the feed title when set
     folder integer references arsse_folders(id) on delete cascade,                          -- TT-RSS category (nestable); the first-level category (which acts as Nextcloud folder) is joined in when needed
+    modified text not null default CURRENT_TIMESTAMP,                                       -- time at which subscription properties were last modified by the user
     last_mod text,                                                                          -- time at which the feed last actually changed at the foreign host
     etag text not null default '',                                                          -- HTTP ETag hash used for cache validation, changes each time the content changes
     next_fetch text,                                                                        -- time at which the feed should next be fetched
@@ -149,7 +151,6 @@ create table arsse_subscriptions_new(
     err_msg text,                                                                           -- last error message
     size integer not null default 0,                                                        -- number of articles in the feed at last fetch
     icon integer references arsse_icons(id) on delete set null,                             -- numeric identifier of any associated icon
-    modified text not null default CURRENT_TIMESTAMP,                                       -- time at which subscription properties were last modified by the user
     order_type int not null default 0,                                                      -- Nextcloud sort order
     pinned int not null default 0,                                                          -- whether feed is pinned (always sorts at top)
     scrape int not null default 0,                                                          -- whether the user has requested scraping content from source articles
@@ -162,9 +163,11 @@ insert into arsse_subscriptions_new
         s.id,
         s.owner,
         f.url,
+        0,
         f.title,
         s.title,
         s.folder,
+        s.modified,
         f.modified,
         f.etag,
         f.next_fetch,
@@ -175,7 +178,6 @@ insert into arsse_subscriptions_new
         f.err_msg,
         f.size,
         f.icon,
-        s.modified,
         s.order_type,
         s.pinned,
         s.scrape,
