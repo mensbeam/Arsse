@@ -769,19 +769,95 @@ class Database {
     }
 
     /** Adds a subscription to a newsfeed, and returns the numeric identifier of the added subscription
+     * 
+     * This is an all-in-one operation which reserves an ID, sets the subscription's 
+     * properties, and based on whether the feed is fetched successfully, either makes
+     * the subscription available to the user, or deletes the reservation.
      *
-     * @param string $user The user which will own the subscription
+     * @param string $user The user who will own the subscription
      * @param string $url The URL of the newsfeed or discovery source
      * @param string $fetchUser The user name required to access the newsfeed, if applicable
      * @param string $fetchPassword The password required to fetch the newsfeed, if applicable; this will be stored in cleartext
      * @param boolean $discover Whether to perform newsfeed discovery if $url points to an HTML document
-     * @param boolean $scrape Whether the initial synchronization should scrape full-article content
+     * @param array $properties An associative array of properties accepted by the `subscriptionPropertiesSet` function
      */
-    public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = "", bool $discover = true, bool $scrape = false): int {
-        // get the ID of the underlying feed, or add it if it's not yet in the database
-        $feedID = $this->feedAdd($url, $fetchUser, $fetchPassword, $discover, $scrape);
-        // Add the feed to the user's subscriptions and return the new subscription's ID.
-        return $this->db->prepare('INSERT INTO arsse_subscriptions(owner,feed) values(?,?)', 'str', 'int')->run($user, $feedID)->lastId();
+    public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = "", bool $discover = true, array $properties = []): int {
+        $id = $this->subscriptionReserve($user, $url, $fetchUser, $fetchPassword, $discover);
+        try {
+            if ($properties) {
+                $this->subscriptionPropertiesSet($user, $id, $properties);
+            }
+            $this->subscriptionUpdate($user, $id, true);
+            $this->subscriptionReveal($user, $id);
+        } catch (\Throwable $e) {
+            // if the process failed, the subscription should be deleted immediately rather than cluttering up the database
+            $this->db->prepare("DELETE from arsse_subscriptions where id = ?", "int")->run($id);
+            throw $e;
+        }
+        return $id;
+    }
+
+    /** Adds a subscription to the database without exposing it to the user, returning its ID
+     *
+     * If the subscription already exists in the database an exception is thrown, unless the 
+     * subscription was soft-deleted; in this case the the existing ID is returned without 
+     * clearing the delete flag
+     * 
+     * This function can used  with `subscriptionUpdate` and `subscriptionReveal` to simulate
+     * atomic addition (or rollback) of multiple newsfeeds, something which is not normally
+     * practical due to network retrieval and processing times
+     *
+     * @param string $user The user who will own the subscription
+     * @param string $url The URL of the newsfeed or discovery source
+     * @param string $fetchUser The user name required to access the newsfeed, if applicable
+     * @param string $fetchPassword The password required to fetch the newsfeed, if applicable; this will be stored in cleartext
+     * @param boolean $discover Whether to perform newsfeed discovery if $url points to an HTML document
+     */
+    public function subscriptionReserve(string $user, string $url, string $fetchUser = "", string $fetchPassword = "", bool $discover = true): int {
+        // normalize the input URL
+        $url = URL::normalize($url, $fetchUser, $fetchPassword);
+        // if discovery is enabled, check to see if the feed already exists; this will save us some network latency if it does
+        if ($discover) {
+            $id = $this->db->prepare("SELECT id from arsse_subscriptions where ownerr = ? and url = ?", "str", "str")->run($user, $url)->getValue();
+            if (!$id) {
+                // if it doesn't exist, perform discovery
+                $url = Feed::discover($url);
+            }
+        }
+        try {
+            return (int) $this->db->prepare('INSERT INTO arsse_feeds(owner, url, deleted) values(?,?,?)', 'str', 'str', 'bool')->run($user, $url, 1)->lastId();
+        } catch (Db\ExceptionInput $e) {
+            // if the insertion fails, throw if the delete flag is not set, otherwise return the existing ID
+            $id = (int) $this->db->prepare("SELECT id from arsse_subscriptions where owner = ? and url = ? and deleted = 1")->run($user, $url)->getValue();
+            if (!$id) {
+                throw $e;
+            } else {
+                // set the modification timestamp to the current time so it doesn't get cleaned up too soon
+                $this->db->prepare("UPDATE arsse_subscriptions set modified = CURRENT_TIMESTAMP where id = ?", "int")->run($id);
+            }
+            return $id;
+        }
+    }
+
+    /** Attempts to refresh a subscribed newsfeed, returning an indication of success
+     *
+     * @param string|null $user The user whose subscribed newsfeed is to be updated; this may be null to facilitate refreshing feeds from the CLI
+     * @param integer $id The numerical identifier of the subscription to refresh
+     * @param boolean $throwError Whether to throw an exception on failure in addition to storing error information in the database
+     */
+    public function subscriptionUpdate(?string $user, int $id, bool $throwError = false): bool {
+        // TODO: stub
+        return true;
+    }
+
+    /** Clears the soft-delete flag from one or more subscriptions, making them visible to the user
+     * 
+     * @param string $user The user whose subscriptions to reveal
+     * @param int $id The numerical identifier(s) of the subscription(s) to reveal
+     */
+    public function subscriptionReveal(string $user, int ...$id): void {
+        [$inClause, $inTypes, $inValues] = $this->generateIn($id, "int");
+        $this->db->prepare("UPDATE arsse_subscriptions set deleted = 0,  modified = CURRENT_TIMESTAMP where deleted = 1 and user = ? and id in ($inClause)", "str", $inTypes)->run($user, $inValues);
     }
 
     /** Lists a user's subscriptions, returning various data
@@ -997,7 +1073,7 @@ class Database {
             'pinned'     => "strict bool",
             'keep_rule'  => "str",
             'block_rule' => "str",
-            'scrape'     => "bool",
+            'scrape'     => "strict bool",
         ];
         [$setClause, $setTypes, $setValues] = $this->generateSet($data, $valid);
         if (!$setClause) {
@@ -1130,42 +1206,6 @@ class Database {
             throw new Db\ExceptionInput($subject ? "subjectMissing" : "idMissing", ["action" => $this->caller(), "field" => "subscription", 'id' => $id]);
         }
         return $out;
-    }
-
-    /** Adds a newsfeed to the database without adding any subscriptions, and returns the numeric identifier of the added feed
-     *
-     * If the feed already exists in the database, the existing ID is returned
-     *
-     * @param string $url The URL of the newsfeed or discovery source
-     * @param string $fetchUser The user name required to access the newsfeed, if applicable
-     * @param string $fetchPassword The password required to fetch the newsfeed, if applicable; this will be stored in cleartext
-     * @param boolean $discover Whether to perform newsfeed discovery if $url points to an HTML document
-     * @param boolean $scrape Whether the initial synchronization should scrape full-article content
-     */
-    public function feedAdd(string $url, string $fetchUser = "", string $fetchPassword = "", bool $discover = true, bool $scrape = false): int {
-        // normalize the input URL
-        $url = URL::normalize($url);
-        // check to see if the feed already exists
-        $check = $this->db->prepare("SELECT id from arsse_feeds where url = ? and username = ? and password = ?", "str", "str", "str");
-        $feedID = $check->run($url, $fetchUser, $fetchPassword)->getValue();
-        if ($discover && is_null($feedID)) {
-            // if the feed doesn't exist, first perform discovery if requested and check for the existence of that URL
-            $url = Feed::discover($url, $fetchUser, $fetchPassword);
-            $feedID = $check->run($url, $fetchUser, $fetchPassword)->getValue();
-        }
-        if (is_null($feedID)) {
-            // if the feed still doesn't exist in the database, add it to the database; we do this unconditionally so as to lock SQLite databases for as little time as possible
-            $feedID = $this->db->prepare('INSERT INTO arsse_feeds(url,username,password) values(?,?,?)', 'str', 'str', 'str')->run($url, $fetchUser, $fetchPassword)->lastId();
-            try {
-                // perform an initial update on the newly added feed
-                $this->feedUpdate($feedID, true, $scrape);
-            } catch (\Throwable $e) {
-                // if the update fails, delete the feed we just added
-                $this->db->prepare('DELETE from arsse_feeds where id = ?', 'int')->run($feedID);
-                throw $e;
-            }
-        }
-        return (int) $feedID;
     }
 
     /** Returns an indexed array of numeric identifiers for newsfeeds which should be refreshed */
