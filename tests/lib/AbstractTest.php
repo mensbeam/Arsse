@@ -508,7 +508,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         foreach ($tableSpecs as $table => $columns) {
             // make sure the source has the table we want
             if (!isset($source[$table])) {
-                throw new Exception("Source for expectations does not contain requested table $table.");
+                throw new \Exception("Source for expectations does not contain requested table $table.");
             }
             // fill the output, particularly the correct number of (empty) rows
             $rows = sizeof($source[$table]['rows']);
@@ -519,7 +519,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             // fill the rows with the requested data, column-wise
             foreach ($columns as $c) {
                 if (($index = array_search($c, $source[$table]['columns'], true)) === false) {
-                    throw new exception("Expected column $table.$c is not present in test data");
+                    throw new \Exception("Expected column $table.$c is not present in test data");
                 }
                 for ($a = 0; $a < $rows; $a++) {
                     $out[$table]['rows'][$a][] = $source[$table]['rows'][$a][$index];
@@ -535,7 +535,6 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         if (static::$stringOutput ?? false) {
             $expected = $this->stringify($expected);
         }
-        $this->assertCount(sizeof($expected), $data, "Number of result rows (".sizeof($data).") differs from number of expected rows (".sizeof($expected).")");
         if (sizeof($expected)) {
             // make sure the expectations are consistent
             foreach ($expected as $exp) {

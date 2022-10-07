@@ -10,6 +10,7 @@ use GuzzleHttp\Exception\ClientException;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Test\Database;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
+use JKingWeb\Arsse\Misc\Date;
 
 trait SeriesSubscription {
     public function setUpSeriesSubscription(): void {
@@ -42,14 +43,15 @@ trait SeriesSubscription {
                 ],
             ],
             'arsse_subscriptions' => [
-                'columns' => ["id", "owner", "url", "feed_title", "updated", "next_fetch", "icon", "title", "folder", "pinned", "order_type", "keep_rule", "block_rule", "scrape"],
+                'columns' => ["id", "owner", "url", "feed_title", "updated", "next_fetch", "icon", "title", "folder", "pinned", "order_type", "keep_rule", "block_rule", "scrape", "deleted", "modified"],
                 'rows'    => [
-                    [1, "john.doe@example.com", "http://example.com/feed2", "eek", strtotime("now - 1 hour"), strtotime("now - 1 hour"), 1,    null,  null, 1, 2, null, null,  0],
-                    [2, "jane.doe@example.com", "http://example.com/feed2", "eek", strtotime("now - 1 hour"), strtotime("now - 1 hour"), 1,    null,  null, 0, 0, null, null,  0],
-                    [3, "john.doe@example.com", "http://example.com/feed3", "Ack", strtotime("now + 1 hour"), strtotime("now + 1 hour"), 2,    "Ook", 2,    0, 1, null, null,  0],
-                    [4, "jill.doe@example.com", "http://example.com/feed2", "eek", strtotime("now - 1 hour"), strtotime("now - 1 hour"), 1,    null,  null, 0, 0, null, null,  0],
-                    [5, "jack.doe@example.com", "http://example.com/feed2", "eek", strtotime("now - 1 hour"), strtotime("now - 1 hour"), 1,    null,  null, 1, 2, "",   "3|E", 0],
-                    [6, "john.doe@example.com", "http://example.com/feed4", "Foo", strtotime("now + 1 hour"), strtotime("now + 1 hour"), null, "Bar", 3,    0, 0, null, null,  0],
+                    [1, "john.doe@example.com", "http://example.com/feed2", "eek", Date::transform("now - 1 hour", "sql"), Date::transform("now - 1 hour", "sql"), 1,    null,  null, 1, 2, null, null,  0, 0, Date::transform("now - 1 hour", "sql")],
+                    [2, "jane.doe@example.com", "http://example.com/feed2", "eek", Date::transform("now - 1 hour", "sql"), Date::transform("now - 1 hour", "sql"), 1,    null,  null, 0, 0, null, null,  0, 0, Date::transform("now - 1 hour", "sql")],
+                    [3, "john.doe@example.com", "http://example.com/feed3", "Ack", Date::transform("now + 1 hour", "sql"), Date::transform("now + 1 hour", "sql"), 2,    "Ook", 2,    0, 1, null, null,  0, 0, Date::transform("now - 1 hour", "sql")],
+                    [4, "jill.doe@example.com", "http://example.com/feed2", "eek", Date::transform("now - 1 hour", "sql"), Date::transform("now - 1 hour", "sql"), 1,    null,  null, 0, 0, null, null,  0, 0, Date::transform("now - 1 hour", "sql")],
+                    [5, "jack.doe@example.com", "http://example.com/feed2", "eek", Date::transform("now - 1 hour", "sql"), Date::transform("now - 1 hour", "sql"), 1,    null,  null, 1, 2, "",   "3|E", 0, 0, Date::transform("now - 1 hour", "sql")],
+                    [6, "john.doe@example.com", "http://example.com/feed4", "Foo", Date::transform("now + 1 hour", "sql"), Date::transform("now + 1 hour", "sql"), null, "Bar", 3,    0, 0, null, null,  0, 0, Date::transform("now - 1 hour", "sql")],
+                    [7, "john.doe@example.com", "http://example.com/feed1", "ook", Date::transform("now + 6 hour", "sql"), Date::transform("now - 1 hour", "sql"), null, null,  null, 0, 0, null, null,  0, 1, Date::transform("now - 1 hour", "sql")],
                 ],
             ],
             'arsse_tags' => [
@@ -159,108 +161,110 @@ trait SeriesSubscription {
         unset($this->data, $this->user);
     }
 
-    public function testAddASubscriptionToAnExistingFeed(): void {
+    public function testReserveASubscription(): void {
+        $url = "http://example.com/feed5";
+        $exp = $this->nextID("arsse_subscriptions");
+        $act = Arsse::$db->subscriptionReserve($this->user, $url, "", "", false);
+        $this->assertSame($exp, $act);
+        $state = $this->primeExpectations($this->data, ['arsse_subscriptions' => ["id", "owner", "url", "deleted", "modified"]]);
+        $state['arsse_subscriptions']['rows'][] = [$exp, $this->user, $url, 1, Date::transform("now", "sql")];
+        $this->compareExpectations(static::$drv, $state);
+    }
+
+    public function testReserveADeletedSubscription(): void {
         $url = "http://example.com/feed1";
-        $subID = $this->nextID("arsse_subscriptions");
-        $db = $this->partialMock(Database::class, static::$drv);
-        $db->feedUpdate->returns(true);
-        Arsse::$db = $db->get();
-        $this->assertSame($subID, Arsse::$db->subscriptionAdd($this->user, $url));
-        $db->feedUpdate->never()->called();
-        $state = $this->primeExpectations($this->data, ['arsse_subscriptions' => ['id', 'owner', 'feed', 'url']]);
-        $state['arsse_subscriptions']['rows'][] = [$subID, $this->user, "http://example.com/feed1"];
+        $exp = 7;
+        $act = Arsse::$db->subscriptionReserve($this->user, $url, "", "", false);
+        $this->assertSame($exp, $act);
+        $state = $this->primeExpectations($this->data, ['arsse_subscriptions' => ["id", "owner", "url", "deleted", "modified"]]);
+        $state['arsse_subscriptions']['rows'][6] = [$exp, $this->user, $url, 1, Date::transform("now", "sql")];
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testAddASubscriptionToANewFeed(): void {
-        $url = "http://example.org/feed1";
-        $feedID = $this->nextID("arsse_feeds");
-        $subID = $this->nextID("arsse_subscriptions");
-        $db = $this->partialMock(Database::class, static::$drv);
-        $db->feedUpdate->returns(true);
-        Arsse::$db = $db->get();
-        $this->assertSame($subID, Arsse::$db->subscriptionAdd($this->user, $url, "", "", false));
-        $db->feedUpdate->calledWith($feedID, true, false);
-        $state = $this->primeExpectations($this->data, [
-            'arsse_feeds'         => ['id','url','username','password'],
-            'arsse_subscriptions' => ['id','owner','feed'],
-        ]);
-        $state['arsse_feeds']['rows'][] = [$feedID,$url,"",""];
-        $state['arsse_subscriptions']['rows'][] = [$subID,$this->user,$feedID];
+    public function testReserveASubscriptionWithPassword(): void {
+        $url = "http://john:secret@example.com/feed5";
+        $exp = $this->nextID("arsse_subscriptions");
+        $act = Arsse::$db->subscriptionReserve($this->user, "http://example.com/feed5", "john", "secret", false);
+        $this->assertSame($exp, $act);
+        $state = $this->primeExpectations($this->data, ['arsse_subscriptions' => ["id", "owner", "url", "deleted", "modified"]]);
+        $state['arsse_subscriptions']['rows'][] = [$exp, $this->user, $url, 1, Date::transform("now", "sql")];
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testAddASubscriptionToANewFeedViaDiscovery(): void {
-        $url = "http://localhost:8000/Feed/Discovery/Valid";
-        $discovered = "http://localhost:8000/Feed/Discovery/Feed";
-        $feedID = $this->nextID("arsse_feeds");
-        $subID = $this->nextID("arsse_subscriptions");
-        $db = $this->partialMock(Database::class, static::$drv);
-        $db->feedUpdate->returns(true);
-        Arsse::$db = $db->get();
-        $this->assertSame($subID, Arsse::$db->subscriptionAdd($this->user, $url, "", "", true));
-        $db->feedUpdate->calledWith($feedID, true, false);
-        $state = $this->primeExpectations($this->data, [
-            'arsse_feeds'         => ['id','url','username','password'],
-            'arsse_subscriptions' => ['id','owner','feed'],
-        ]);
-        $state['arsse_feeds']['rows'][] = [$feedID,$discovered,"",""];
-        $state['arsse_subscriptions']['rows'][] = [$subID,$this->user,$feedID];
+    public function testReserveADuplicateSubscription(): void {
+        $url = "http://example.com/feed2";
+        $this->assertException("constraintViolation", "Db", "ExceptionInput");
+        Arsse::$db->subscriptionReserve($this->user, $url, "", "", false);
+    }
+
+    public function testReserveASubscriptionWithDiscovery(): void {
+        $exp = $this->nextID("arsse_subscriptions");
+        $act = Arsse::$db->subscriptionReserve($this->user, "http://localhost:8000/Feed/Discovery/Valid");
+        $this->assertSame($exp, $act);
+        $state = $this->primeExpectations($this->data, ['arsse_subscriptions' => ["id", "owner", "url", "deleted", "modified"]]);
+        $state['arsse_subscriptions']['rows'][] = [$exp, $this->user, "http://localhost:8000/Feed/Discovery/Feed", 1, Date::transform("now", "sql")];
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testAddASubscriptionToAnInvalidFeed(): void {
-        $url = "http://example.org/feed1";
-        $feedID = $this->nextID("arsse_feeds");
+    public function testRevealASubscription(): void {
+        $url = "http://example.com/feed1";
+        $this->assertNull(Arsse::$db->subscriptionReveal($this->user, 1, 7));
+        $state = $this->primeExpectations($this->data, ['arsse_subscriptions' => ["id", "owner", "url", "deleted", "modified"]]);
+        $state['arsse_subscriptions']['rows'][6] = [7, $this->user, $url, 0, Date::transform("now", "sql")];
+        $this->compareExpectations(static::$drv, $state);
+    }
+
+    public function testAddASubscription(): void {
+        $url = "http://example.org/feed5";
+        $id = $this->nextID("arsse_subscriptions");
         $db = $this->partialMock(Database::class, static::$drv);
-        $db->feedUpdate->throws(new FeedException("", ['url' => $url], $this->mockGuzzleException(ClientException::class, "", 404)));
+        $db->subscriptionUpdate->returns(true);
+        $db->subscriptionPropertiesSet->returns(true);
         Arsse::$db = $db->get();
-        $this->assertException("invalidUrl", "Feed");
         try {
-            Arsse::$db->subscriptionAdd($this->user, $url, "", "", false);
+            $this->assertSame($id, Arsse::$db->subscriptionAdd($this->user, $url, "", "", false, ['order_type' => 2]));
         } finally {
-            $db->feedUpdate->calledWith($feedID, true, false);
-            $state = $this->primeExpectations($this->data, [
-                'arsse_feeds'         => ['id','url','username','password'],
-                'arsse_subscriptions' => ['id','owner','feed'],
-            ]);
+            $db->subscriptionUpdate->calledWith($this->user, $id, true);
+            $db->subscriptionPropertiesSet->calledWith($this->user, $id, ['order_type' => 2]);
+            $state = $this->primeExpectations($this->data, ['arsse_subscriptions' => ["id", "owner", "url", "deleted", "modified"]]);
+            $state['arsse_subscriptions']['rows'][] = [$id, $this->user, $url, 0, Date::transform("now", "sql")];
             $this->compareExpectations(static::$drv, $state);
         }
     }
 
-    public function testAddADuplicateSubscription(): void {
-        $url = "http://example.com/feed2";
-        $this->assertException("constraintViolation", "Db", "ExceptionInput");
-        Arsse::$db->subscriptionAdd($this->user, $url);
-    }
-
-    public function testAddADuplicateSubscriptionWithEquivalentUrl(): void {
-        $url = "http://EXAMPLE.COM/feed2";
-        $this->assertException("constraintViolation", "Db", "ExceptionInput");
-        Arsse::$db->subscriptionAdd($this->user, $url);
-    }
-
-    public function testAddADuplicateSubscriptionViaRedirection(): void {
-        $url = "http://localhost:8000/Feed/Parsing/Valid";
-        Arsse::$db->subscriptionAdd($this->user, $url);
-        $subID = $this->nextID("arsse_subscriptions");
-        $url = "http://localhost:8000/Feed/Fetching/RedirectionDuplicate";
-        $this->assertSame($subID, Arsse::$db->subscriptionAdd($this->user, $url));
+    public function testAddASubscriptionToAnInvalidFeed(): void {
+        $url = "http://example.org/feed5";
+        $id = $this->nextID("arsse_subscriptions");
+        $db = $this->partialMock(Database::class, static::$drv);
+        $db->subscriptionUpdate->throws(new FeedException("", ['url' => $url], $this->mockGuzzleException(ClientException::class, "", 404)));
+        $db->subscriptionPropertiesSet->returns(true);
+        Arsse::$db = $db->get();
+        $this->assertException("invalidUrl", "Feed");
+        try {
+            Arsse::$db->subscriptionAdd($this->user, $url, "", "", false, ['order_type' => 2]);
+        } finally {
+            $db->subscriptionUpdate->calledWith($this->user, $id, true);
+            $db->subscriptionPropertiesSet->calledWith($this->user, $id, ['order_type' => 2]);
+            $state = $this->primeExpectations($this->data, ['arsse_subscriptions' => ["id", "owner", "url", "deleted", "modified"]]);
+            $this->compareExpectations(static::$drv, $state);
+        }
     }
 
     public function testRemoveASubscription(): void {
         $this->assertTrue(Arsse::$db->subscriptionRemove($this->user, 1));
-        $state = $this->primeExpectations($this->data, [
-            'arsse_feeds'         => ['id','url','username','password'],
-            'arsse_subscriptions' => ['id','owner','feed'],
-        ]);
-        array_shift($state['arsse_subscriptions']['rows']);
+        $state = $this->primeExpectations($this->data, ['arsse_subscriptions' => ["id", "owner", "url", "deleted", "modified"]]);
+        $state['arsse_subscriptions']['rows'][0] = [1, $this->user, "http://example.com/feed2", 1, Date::transform("now", "sql")];
         $this->compareExpectations(static::$drv, $state);
     }
 
     public function testRemoveAMissingSubscription(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionRemove($this->user, 2112);
+    }
+
+    public function testRemoveADeletedSubscription(): void {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        Arsse::$db->subscriptionRemove($this->user, 7);
     }
 
     public function testRemoveAnInvalidSubscription(): void {
@@ -384,12 +388,18 @@ trait SeriesSubscription {
         Arsse::$db->subscriptionPropertiesGet($this->user, 2112);
     }
 
+    public function testGetThePropertiesOfADeletedSubscription(): void {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        Arsse::$db->subscriptionPropertiesGet($this->user, 7);
+    }
+
     public function testGetThePropertiesOfAnInvalidSubscription(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesGet($this->user, -1);
     }
 
     public function testSetThePropertiesOfASubscription(): void {
+        $this->markTestIncomplete();
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, [
             'title'      => "Ook Ook",
             'folder'     => 3,
@@ -400,17 +410,16 @@ trait SeriesSubscription {
             'block_rule' => "eek",
         ]);
         $state = $this->primeExpectations($this->data, [
-            'arsse_feeds'         => ['id','url','username','password','title'],
-            'arsse_subscriptions' => ['id','owner','feed','title','folder','pinned','order_type','keep_rule','block_rule','scrape'],
+            'arsse_subscriptions' => ['id','owner','feed_title', 'title','folder','pinned','order_type','keep_rule','block_rule','scrape'],
         ]);
-        $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com",2,"Ook Ook",3,0,0,"ook","eek",1];
+        $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com","eek","Ook Ook",3,0,0,"ook","eek",1];
         $this->compareExpectations(static::$drv, $state);
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, [
             'title'      => null,
             'keep_rule'  => null,
             'block_rule' => null,
         ]);
-        $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com",2,null,3,0,0,null,null,1];
+        $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com","eek",null,3,0,0,null,null,1];
         $this->compareExpectations(static::$drv, $state);
         // making no changes is a valid result
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['unhinged' => true]);
@@ -470,6 +479,11 @@ trait SeriesSubscription {
         Arsse::$db->subscriptionIcon(null, -2112);
     }
 
+    public function testRetrieveTheFaviconOfADeletedSubscription(): void {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        Arsse::$db->subscriptionIcon(null, 7);
+    }
+
     public function testRetrieveTheFaviconOfASubscriptionWithUser(): void {
         $exp = "http://example.com/favicon.ico";
         $user = "john.doe@example.com";
@@ -497,6 +511,11 @@ trait SeriesSubscription {
         Arsse::$db->subscriptionTagsGet($this->user, 101);
     }
 
+    public function testListTheTagsOfADeletedSubscription(): void {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        Arsse::$db->subscriptionTagsGet($this->user, 7);
+    }
+
     public function testGetRefreshTimeOfASubscription(): void {
         $user = "john.doe@example.com";
         $this->assertTime(strtotime("now + 1 hour"), Arsse::$db->subscriptionRefreshed($user));
@@ -505,10 +524,16 @@ trait SeriesSubscription {
 
     public function testGetRefreshTimeOfAMissingSubscription(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
-        $this->assertTime(strtotime("now - 1 hour"), Arsse::$db->subscriptionRefreshed("john.doe@example.com", 2));
+        Arsse::$db->subscriptionRefreshed("john.doe@example.com", 2);
+    }
+
+    public function testGetRefreshTimeOfADeletedSubscription(): void {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        Arsse::$db->subscriptionRefreshed("john.doe@example.com", 7);
     }
 
     public function testSetTheFilterRulesOfASubscriptionCheckingMarks(): void {
+        $this->markTestIncomplete();
         Arsse::$db->subscriptionPropertiesSet("jack.doe@example.com", 5, ['keep_rule' => "1|B|3|D", 'block_rule' => "4"]);
         $state = $this->primeExpectations($this->data, ['arsse_marks' => ['article', 'subscription', 'hidden']]);
         $state['arsse_marks']['rows'][9][2] = 0;

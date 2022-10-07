@@ -818,17 +818,17 @@ class Database {
         $url = URL::normalize($url, $fetchUser, $fetchPassword);
         // if discovery is enabled, check to see if the feed already exists; this will save us some network latency if it does
         if ($discover) {
-            $id = $this->db->prepare("SELECT id from arsse_subscriptions where ownerr = ? and url = ?", "str", "str")->run($user, $url)->getValue();
+            $id = $this->db->prepare("SELECT id from arsse_subscriptions where owner = ? and url = ?", "str", "str")->run($user, $url)->getValue();
             if (!$id) {
                 // if it doesn't exist, perform discovery
                 $url = Feed::discover($url);
             }
         }
         try {
-            return (int) $this->db->prepare('INSERT INTO arsse_feeds(owner, url, deleted) values(?,?,?)', 'str', 'str', 'bool')->run($user, $url, 1)->lastId();
+            return (int) $this->db->prepare('INSERT INTO arsse_subscriptions(owner, url, deleted) values(?,?,?)', 'str', 'str', 'bool')->run($user, $url, 1)->lastId();
         } catch (Db\ExceptionInput $e) {
             // if the insertion fails, throw if the delete flag is not set, otherwise return the existing ID
-            $id = (int) $this->db->prepare("SELECT id from arsse_subscriptions where owner = ? and url = ? and deleted = 1")->run($user, $url)->getValue();
+            $id = (int) $this->db->prepare("SELECT id from arsse_subscriptions where owner = ? and url = ? and deleted = 1", "str", "str")->run($user, $url)->getValue();
             if (!$id) {
                 throw $e;
             } else {
@@ -857,7 +857,7 @@ class Database {
      */
     public function subscriptionReveal(string $user, int ...$id): void {
         [$inClause, $inTypes, $inValues] = $this->generateIn($id, "int");
-        $this->db->prepare("UPDATE arsse_subscriptions set deleted = 0,  modified = CURRENT_TIMESTAMP where deleted = 1 and user = ? and id in ($inClause)", "str", $inTypes)->run($user, $inValues);
+        $this->db->prepare("UPDATE arsse_subscriptions set deleted = 0,  modified = CURRENT_TIMESTAMP where deleted = 1 and owner = ? and id in ($inClause)", "str", $inTypes)->run($user, $inValues);
     }
 
     /** Lists a user's subscriptions, returning various data
@@ -865,7 +865,7 @@ class Database {
      * Each record has the following keys:
      *
      * - "id": The numeric identifier of the subscription
-     * - "feed": The numeric identifier of the underlying newsfeed
+     * - "feed": The numeric identifier of the subscription (historical)
      * - "url": The URL of the newsfeed, after discovery and HTTP redirects
      * - "title": The title of the newsfeed
      * - "source": The URL of the source of the newsfeed i.e. its parent Web site
@@ -908,43 +908,43 @@ class Database {
             )
             select
                 s.id as id,
-                s.feed as feed,
-                f.url,source,pinned,err_count,err_msg,order_type,added,keep_rule,block_rule,f.etag,s.scrape,
-                f.updated as updated,
-                f.modified as edited,
+                s.id as feed,
+                s.url,source,pinned,err_count,err_msg,order_type,added,keep_rule,block_rule,s.etag,s.scrape,
+                s.updated as updated,
+                s.modified as edited,
                 s.modified as modified,
-                f.next_fetch,
+                s.next_fetch,
                 case when i.data is not null then i.id end as icon_id,
                 i.url as icon_url,
                 folder, t.top as top_folder, d.name as folder_name, dt.name as top_folder_name,
-                coalesce(s.title, f.title) as title,
+                coalesce(s.title, s.feed_title) as title,
                 cast(coalesce((articles - hidden - marked), coalesce(articles,0)) as $integerType) as unread -- this cast is required for MySQL for unclear reasons
             from arsse_subscriptions as s
-                join arsse_feeds as f on f.id = s.feed
                 left join topmost as t on t.f_id = s.folder
                 left join arsse_folders as d on s.folder = d.id
                 left join arsse_folders as dt on t.top = dt.id
-                left join arsse_icons as i on i.id = f.icon
+                left join arsse_icons as i on i.id = s.icon
                 left join (
                     select 
-                        feed, 
+                        subscription, 
                         count(*) as articles 
                     from arsse_articles 
-                    group by feed
-                ) as article_stats on article_stats.feed = s.feed
+                    group by subscription
+                ) as article_stats on article_stats.subscription = s.id
                 left join (
                     select 
                         subscription, 
                         sum(hidden) as hidden,
                         sum(case when \"read\" = 1 and hidden = 0 then 1 else 0 end) as marked
-                    from arsse_marks group by subscription
+                    from arsse_articles group by subscription
                 ) as mark_stats on mark_stats.subscription = s.id",
             ["str", "int"],
             [$user, $folder]
         );
         $q->setWhere("s.owner = ?", ["str"], [$user]);
+        $q->setWhere("s.deleted = 0");
         $nocase = $this->db->sqlToken("nocase");
-        $q->setOrder("pinned desc, coalesce(s.title, f.title) collate $nocase");
+        $q->setOrder("pinned desc, coalesce(s.title, s.feed_title) collate $nocase");
         if ($id) {
             // if an ID is specified, add a suitable WHERE condition and bindings
             // this condition facilitates the implementation of subscriptionPropertiesGet, which would otherwise have to duplicate the complex query; it takes precedence over a specified folder
@@ -978,6 +978,7 @@ class Database {
             [$folder]
         );
         $q->setWhere("owner = ?", "str", $user);
+        $q->setWhere("deleted = 0");
         if ($folder) {
             // if the specified folder exists, add a suitable WHERE condition
             $q->setWhere("folder in (select folder from folders)");
@@ -996,7 +997,7 @@ class Database {
         if (!V::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'type' => "int > 0"]);
         }
-        $changes = $this->db->prepare("DELETE from arsse_subscriptions where owner = ? and id = ?", "str", "int")->run($user, $id)->changes();
+        $changes = $this->db->prepare("UPDATE arsse_subscriptions set deleted = 1, modified = CURRENT_TIMESTAMP where owner = ? and id = ? and deleted = 0", "str", "int")->run($user, $id)->changes();
         if (!$changes) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
         }
@@ -1119,8 +1120,9 @@ class Database {
      */
     public function subscriptionIcon(?string $user, int $id, bool $includeData = true): ?array {
         $data = $includeData ? "i.data" : "null as data";
-        $q = new Query("SELECT i.id, i.url, i.type, $data from arsse_subscriptions as s join arsse_feeds as f on s.feed = f.id left join arsse_icons as i on f.icon = i.id");
+        $q = new Query("SELECT i.id, i.url, i.type, $data from arsse_subscriptions as s left join arsse_icons as i on s.icon = i.id");
         $q->setWhere("s.id = ?", "int", $id);
+        $q->setWhere("s.deleted = 0");
         if (isset($user)) {
             $q->setWhere("s.owner = ?", "str", $user);
         }
@@ -1135,10 +1137,11 @@ class Database {
 
     /** Returns the time at which any of a user's subscriptions (or a specific subscription) was last refreshed, as a DateTimeImmutable object */
     public function subscriptionRefreshed(string $user, int $id = null): ?\DateTimeImmutable {
-        $q = new Query("SELECT max(arsse_feeds.updated) from arsse_feeds join arsse_subscriptions on arsse_subscriptions.feed = arsse_feeds.id");
-        $q->setWhere("arsse_subscriptions.owner = ?", "str", $user);
+        $q = new Query("SELECT max(updated) from arsse_subscriptions");
+        $q->setWhere("owner = ?", "str", $user);
+        $q->setWhere("deleted = 0");
         if ($id) {
-            $q->setWhere("arsse_subscriptions.id = ?", "int", $id);
+            $q->setWhere("id = ?", "int", $id);
         }
         $out = $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
         if (!$out && $id) {
@@ -1155,17 +1158,17 @@ class Database {
     protected function subscriptionRulesApply(string $user, int $id): void {
         // start a transaction for read isolation
         $tr = $this->begin();
-        $sub = $this->db->prepare("SELECT feed, coalesce(keep_rule, '') as keep, coalesce(block_rule, '') as block from arsse_subscriptions where owner = ? and id = ?", "str", "int")->run($user, $id)->getRow();
+        $sub = $this->db->prepare("SELECT id, coalesce(keep_rule, '') as keep, coalesce(block_rule, '') as block from arsse_subscriptions where owner = ? and id = ?", "str", "int")->run($user, $id)->getRow();
         try {
             $keep = Rule::prep($sub['keep']);
             $block = Rule::prep($sub['block']);
-            $feed = $sub['feed'];
+            $feed = $sub['id'];
         } catch (RuleException $e) { // @codeCoverageIgnore
             // invalid rules should not normally appear in the database, but it's possible
             // in this case we should halt evaluation and just leave things as they are
             return; // @codeCoverageIgnore
         }
-        $articles = $this->db->prepare("SELECT id, title, coalesce(categories, 0) as categories from arsse_articles as a left join (select article, count(*) as categories from arsse_categories group by article) as c on a.id = c.article where a.feed = ?", "int")->run($feed)->getAll();
+        $articles = $this->db->prepare("SELECT id, title, coalesce(categories, 0) as categories from arsse_articles as a left join (select article, count(*) as categories from arsse_categories group by article) as c on a.id = c.article where a.subscription = ?", "int")->run($id)->getAll();
         $hide = [];
         $unhide = [];
         foreach ($articles as $r) {
@@ -1196,12 +1199,14 @@ class Database {
      * @param string $user The user who owns the subscription to be validated
      * @param integer $id The identifier of the subscription to validate
      * @param boolean $subject Whether the subscription is the subject (true) rather than the object (false) of the operation being performed; this only affects the semantics of the error message if validation fails
+     * @param boolean $acceptDeleted Whether to consider a soft-deleted subscription as valid
      */
-    protected function subscriptionValidateId(string $user, $id, bool $subject = false): array {
+    protected function subscriptionValidateId(string $user, $id, bool $subject = false, bool $acceptDeleted = false): array {
         if (!V::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "feed", 'type' => "int > 0"]);
         }
-        $out = $this->db->prepare("SELECT id,feed from arsse_subscriptions where id = ? and owner = ?", "int", "str")->run($id, $user)->getRow();
+        $deleted = $acceptDeleted ? "deleted" : "0";
+        $out = $this->db->prepare("SELECT id, id from arsse_subscriptions where id = ? and owner = ? and deleted = $deleted", "int", "str")->run($id, $user)->getRow();
         if (!$out) {
             throw new Db\ExceptionInput($subject ? "subjectMissing" : "idMissing", ["action" => $this->caller(), "field" => "subscription", 'id' => $id]);
         }
@@ -2175,7 +2180,7 @@ class Database {
             "SELECT articles.article as article, max(arsse_editions.id)  as edition from (
                 select arsse_articles.id as article
                 FROM arsse_articles
-                    join arsse_subscriptions on arsse_subscriptions.feed = arsse_articles.feed
+                    join arsse_subscriptions on arsse_subscriptions.id = arsse_articles.subscription
                 WHERE arsse_articles.id = ? and arsse_subscriptions.owner = ?
             ) as articles left join arsse_editions on arsse_editions.article = articles.article group by articles.article",
             ["int", "str"]
