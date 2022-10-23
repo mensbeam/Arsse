@@ -839,17 +839,6 @@ class Database {
         }
     }
 
-    /** Attempts to refresh a subscribed newsfeed, returning an indication of success
-     *
-     * @param string|null $user The user whose subscribed newsfeed is to be updated; this may be null to facilitate refreshing feeds from the CLI
-     * @param integer $id The numerical identifier of the subscription to refresh
-     * @param boolean $throwError Whether to throw an exception on failure in addition to storing error information in the database
-     */
-    public function subscriptionUpdate(?string $user, int $id, bool $throwError = false): bool {
-        // TODO: stub
-        return true;
-    }
-
     /** Clears the soft-delete flag from one or more subscriptions, making them visible to the user
      * 
      * @param string $user The user whose subscriptions to reveal
@@ -1219,27 +1208,26 @@ class Database {
         return array_column($feeds, 'id');
     }
 
-    /** Attempts to refresh a newsfeed, returning an indication of success
+    /** Attempts to refresh a subscribed newsfeed, returning an indication of success
      *
-     * @param integer $feedID The numerical identifier of the newsfeed to refresh
+     * @param string|null $user The user whose subscribed newsfeed is to be updated; this may be null to facilitate refreshing feeds from the CLI
+     * @param integer $id The numerical identifier of the subscription to refresh
      * @param boolean $throwError Whether to throw an exception on failure in addition to storing error information in the database
-     * @param boolean|null $scrapeOverride If not null, overrides information in the database signaling whether or not to scrape full-article content. This is intended for when there are no subscriptions for the feed in the database yet
      */
-    public function feedUpdate($feedID, bool $throwError = false, ?bool $scrapeOverride = null): bool {
+    public function subscriptionUpdate(?string $user, $id, bool $throwError = false): bool {
         // check to make sure the feed exists
-        if (!V::id($feedID)) {
-            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID, 'type' => "int > 0"]);
+        if (!V::id($id)) {
+            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id, 'type' => "int > 0"]);
         }
         $f = $this->db->prepareArray(
             "SELECT 
-                url, username, password, modified, etag, err_count, scrapers 
-            FROM arsse_feeds as f
-            left join (select feed, count(*) as scrapers from arsse_subscriptions where scrape = 1 group by feed) as s on f.id = s.feed
+                url, las_mod as modified, etag, err_count, scrape as scrapers
+            FROM arsse_subscriptions
             where id = ?",
             ["int"]
-        )->run($feedID)->getRow();
+        )->run($id)->getRow();
         if (!$f) {
-            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID]);
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
         }
         // determine whether the feed's items should be scraped for full content from the source Web site
         $scrape = (Arsse::$conf->fetchEnableScraping && ($scrapeOverride ?? $f['scrapers']));
@@ -1247,18 +1235,18 @@ class Database {
         // here. When an exception is thrown it should update the database with the
         // error instead of failing; if other exceptions are thrown, we should simply roll back
         try {
-            $feed = new Feed((int) $feedID, $f['url'], (string) Date::transform($f['modified'], "http", "sql"), $f['etag'], $f['username'], $f['password'], $scrape);
+            $feed = new Feed((int) $id, $f['url'], (string) Date::transform($f['modified'], "http", "sql"), $f['etag'], $f['username'], $f['password'], $scrape);
             if (!$feed->modified) {
                 // if the feed hasn't changed, just compute the next fetch time and record it
-                $this->db->prepare("UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id = ?", 'datetime', 'int')->run($feed->nextFetch, $feedID);
+                $this->db->prepare("UPDATE arsse_subscriptions SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id = ?", 'datetime', 'int')->run($feed->nextFetch, $id);
                 return false;
             }
         } catch (Feed\Exception $e) {
             // update the database with the resultant error and the next fetch time, incrementing the error count
             $this->db->prepareArray(
-                "UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ?, err_count = err_count + 1, err_msg = ? WHERE id = ?",
+                "UPDATE arsse_subscriptions SET updated = CURRENT_TIMESTAMP, next_fetch = ?, err_count = err_count + 1, err_msg = ? WHERE id = ?",
                 ['datetime', 'str', 'int']
-            )->run(Feed::nextFetchOnError($f['err_count']), $e->getMessage(), $feedID);
+            )->run(Feed::nextFetchOnError($f['err_count']), $e->getMessage(), $id);
             if ($throwError) {
                 throw $e;
             }
