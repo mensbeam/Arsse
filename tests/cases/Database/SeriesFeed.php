@@ -147,21 +147,6 @@ trait SeriesFeed {
         $this->assertResult([['id' => 1]], Arsse::$db->feedMatchIds(1, ['e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda'])); // this ID appears in both feed 1 and feed 2; only one result should be returned
     }
 
-    /** @dataProvider provideFilterRules */
-    public function testGetRules(int $in, array $exp): void {
-        $this->assertSame($exp, Arsse::$db->feedRulesGet($in));
-    }
-
-    public function provideFilterRules(): iterable {
-        return [
-            [1, ['jane.doe@example.com' => ['keep' => "`^(?i)[a-z]+`u", 'block' => "`3|6`u"], 'john.doe@example.com' => ['keep' => "", 'block' => "`^Sport$`u"]]],
-            [2, []],
-            [3, ['john.doe@example.com' => ['keep' => '`\w+`u', 'block' => ""]]],
-            [4, []],
-            [5, ['john.doe@example.com' => ['keep' => "", 'block' => "`and/or`u"]]],
-        ];
-    }
-
     public function testUpdateAFeed(): void {
         // update a valid feed with both new and changed items
         Arsse::$db->feedUpdate(1);

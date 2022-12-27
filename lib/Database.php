@@ -1211,21 +1211,21 @@ class Database {
     /** Attempts to refresh a subscribed newsfeed, returning an indication of success
      *
      * @param string|null $user The user whose subscribed newsfeed is to be updated; this may be null to facilitate refreshing feeds from the CLI
-     * @param integer $id The numerical identifier of the subscription to refresh
+     * @param integer $subID The numerical identifier of the subscription to refresh
      * @param boolean $throwError Whether to throw an exception on failure in addition to storing error information in the database
      */
-    public function subscriptionUpdate(?string $user, $id, bool $throwError = false): bool {
+    public function subscriptionUpdate(?string $user, $subID, bool $throwError = false): bool {
         // check to make sure the feed exists
-        if (!V::id($id)) {
+        if (!V::id($subID)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id, 'type' => "int > 0"]);
         }
         $f = $this->db->prepareArray(
             "SELECT 
-                url, las_mod as modified, etag, err_count, scrape as scrapers
+                url, las_mod as modified, etag, err_count, scrape as scrapers, keep_rule, block_rule
             FROM arsse_subscriptions
             where id = ?",
             ["int"]
-        )->run($id)->getRow();
+        )->run($subID)->getRow();
         if (!$f) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
         }
@@ -1235,10 +1235,10 @@ class Database {
         // here. When an exception is thrown it should update the database with the
         // error instead of failing; if other exceptions are thrown, we should simply roll back
         try {
-            $feed = new Feed((int) $id, $f['url'], (string) Date::transform($f['modified'], "http", "sql"), $f['etag'], $f['username'], $f['password'], $scrape);
+            $feed = new Feed((int) $subID, $f['url'], (string) Date::transform($f['modified'], "http", "sql"), $f['etag'], $f['username'], $f['password'], $scrape);
             if (!$feed->modified) {
                 // if the feed hasn't changed, just compute the next fetch time and record it
-                $this->db->prepare("UPDATE arsse_subscriptions SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id = ?", 'datetime', 'int')->run($feed->nextFetch, $id);
+                $this->db->prepare("UPDATE arsse_subscriptions SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id = ?", 'datetime', 'int')->run($feed->nextFetch, $subID);
                 return false;
             }
         } catch (Feed\Exception $e) {
@@ -1246,10 +1246,10 @@ class Database {
             $this->db->prepareArray(
                 "UPDATE arsse_subscriptions SET updated = CURRENT_TIMESTAMP, next_fetch = ?, err_count = err_count + 1, err_msg = ? WHERE id = ?",
                 ['datetime', 'str', 'int']
-            )->run(Feed::nextFetchOnError($f['err_count']), $e->getMessage(), $id);
+            )->run(Feed::nextFetchOnError($f['err_count']), $e->getMessage(), $subID);
             if ($throwError) {
                 throw $e;
-            }
+            }   
             return false;
         }
         //prepare the necessary statements to perform the update
@@ -1260,18 +1260,28 @@ class Database {
         }
         if (sizeof($feed->newItems)) {
             $qInsertArticle = $this->db->prepareArray(
-                "INSERT INTO arsse_articles(url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash,feed,content_scraped) values(?,?,?,?,?,?,?,?,?,?,?,?)",
-                ["str", "str", "str", "datetime", "datetime", "str", "str", "str", "str", "str", "int", "str"]
+                "INSERT INTO arsse_articles(url,title,author,published,edited,guid,url_title_hash,url_content_hash,title_content_hash,subscription,hidden) values(?,?,?,?,?,?,?,?,?,?,?)",
+                ["str", "str", "str", "datetime", "datetime", "str", "str", "str", "str", "int", "bool"]
             );
         }
         if (sizeof($feed->changedItems)) {
             $qDeleteEnclosures = $this->db->prepare("DELETE FROM arsse_enclosures WHERE article = ?", 'int');
             $qDeleteCategories = $this->db->prepare("DELETE FROM arsse_categories WHERE article = ?", 'int');
-            $qClearReadMarks = $this->db->prepare("UPDATE arsse_marks SET \"read\" = 0, modified = CURRENT_TIMESTAMP WHERE article = ? and \"read\" = 1", 'int');
             $qUpdateArticle = $this->db->prepareArray(
-                "UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ?, content_scraped = ? WHERE id = ?",
-                ["str", "str", "str", "datetime", "datetime", "str", "str", "str", "str", "str", "str", "int"]
+                "UPDATE arsse_articles SET \"read\" = 0, hidden = ?, url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ?, content_scraped = ? WHERE id = ?",
+                ["bool", "str", "str", "str", "datetime", "datetime", "str", "str", "str", "str", "str", "str", "int"]
             );
+        }
+        // prepare the keep and block rules
+        try {
+            $keep = Rule::prep($f['keep_rule'] ?? "");
+        } catch (RuleException $e) {
+            $keep = "";
+        }
+        try {
+            $block = Rule::prep($f['block_rule'] ?? "");
+        } catch (RuleException $e) {
+            $block = "";
         }
         // determine if the feed icon needs to be updated, and update it if appropriate
         $tr = $this->db->begin();
@@ -1299,12 +1309,11 @@ class Database {
                 $article->publishedDate,
                 $article->updatedDate,
                 $article->id,
-                $article->content,
                 $article->urlTitleHash,
                 $article->urlContentHash,
                 $article->titleContentHash,
-                $feedID,
-                $article->scrapedContent ?? null
+                $subID,
+                !Rule::apply($keep, $block, $article->title, $article->categories)
             )->lastId();
             // note the new ID for later use
             $articleMap[$k] = $articleID;
@@ -1322,6 +1331,7 @@ class Database {
         // next update existing artricles which have been edited
         foreach ($feed->changedItems as $articleID => $article) {
             $qUpdateArticle->run(
+                !Rule::apply($keep, $block, $article->title, $article->categories),
                 $article->url,
                 $article->title,
                 $article->author,
@@ -1346,34 +1356,10 @@ class Database {
             }
             // assign a new edition ID to this version of the article
             $qInsertEdition->run($articleID);
-            $qClearReadMarks->run($articleID);
-        }
-        // hide or unhide any filtered articles
-        foreach ($feed->filteredItems as $user => $filterData) {
-            $hide = [];
-            $unhide = [];
-            foreach ($filterData['new'] as $index => $keep) {
-                if (!$keep) {
-                    $hide[] = $articleMap[$index];
-                }
-            }
-            foreach ($filterData['changed'] as $article => $keep) {
-                if (!$keep) {
-                    $hide[] = $article;
-                } else {
-                    $unhide[] = $article;
-                }
-            }
-            if ($hide) {
-                $this->articleMark($user, ['hidden' => true], (new Context)->articles($hide), false);
-            }
-            if ($unhide) {
-                $this->articleMark($user, ['hidden' => false], (new Context)->articles($unhide), false);
-            }
         }
         // lastly update the feed database itself with updated information.
         $this->db->prepareArray(
-            "UPDATE arsse_feeds SET title = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = '', next_fetch = ?, size = ?, icon = ? WHERE id = ?",
+            "UPDATE arsse_subscriptions SET feed_title = ?, source = ?, updated = CURRENT_TIMESTAMP, last_mod = ?, etag = ?, err_count = 0, err_msg = '', next_fetch = ?, size = ?, icon = ? WHERE id = ?",
             ["str", "str", "datetime", "strict str", "datetime", "int", "int", "int"]
         )->run(
             $feed->data->title,
@@ -1383,7 +1369,7 @@ class Database {
             $feed->nextFetch,
             sizeof($feed->data->items),
             $icon,
-            $feedID
+            $subID
         );
         $tr->commit();
         return true;
@@ -1407,30 +1393,6 @@ class Database {
             $out = false;
         }
         $tr->commit();
-        return $out;
-    }
-
-    /** Retrieves the set of filters users have applied to a given feed
-     *
-     * The result is an associative array whose keys are usernames, values
-     * being an array in turn with the following keys:
-     *
-     * - "keep": The "keep" rule as a prepared pattern; any articles which fail to match this rule are hidden
-     * - "block": The block rule as a prepared pattern; any articles which match this rule are hidden
-     */
-    public function feedRulesGet(int $feedID): array {
-        $out = [];
-        $result = $this->db->prepare("SELECT owner, coalesce(keep_rule, '') as keep, coalesce(block_rule, '') as block from arsse_subscriptions where feed = ? and (coalesce(keep_rule, '') || coalesce(block_rule, '')) <> '' order by owner", "int")->run($feedID);
-        foreach ($result as $row) {
-            try {
-                $keep = Rule::prep($row['keep']);
-                $block = Rule::prep($row['block']);
-            } catch (RuleException $e) {
-                // invalid rules should not normally appear in the database, but it's possible
-                continue;
-            }
-            $out[$row['owner']] = ['keep' => $keep, 'block' => $block];
-        }
         return $out;
     }
 
