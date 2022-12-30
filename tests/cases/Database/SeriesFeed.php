@@ -149,7 +149,7 @@ trait SeriesFeed {
 
     public function testUpdateAFeed(): void {
         // update a valid feed with both new and changed items
-        Arsse::$db->feedUpdate(1);
+        Arsse::$db->subscriptionUpdate(null, 1);
         $now = gmdate("Y-m-d H:i:s");
         $state = $this->primeExpectations($this->data, [
             'arsse_articles' => ["id", "feed","url","title","author","published","edited","content","guid","url_title_hash","url_content_hash","title_content_hash","modified"],
@@ -172,9 +172,9 @@ trait SeriesFeed {
         $state['arsse_feeds']['rows'][0] = [1,6];
         $this->compareExpectations(static::$drv, $state);
         // update a valid feed which previously had an error
-        Arsse::$db->feedUpdate(2);
+        Arsse::$db->subscriptionUpdate(null, 2);
         // update an erroneous feed which previously had no errors
-        Arsse::$db->feedUpdate(3);
+        Arsse::$db->subscriptionUpdate(null, 3);
         $state = $this->primeExpectations($this->data, [
             'arsse_feeds' => ["id","err_count","err_msg"],
         ]);
@@ -182,29 +182,29 @@ trait SeriesFeed {
         $state['arsse_feeds']['rows'][2] = [3,1,'Feed URL "http://localhost:8000/Feed/Fetching/Error?code=404" is invalid'];
         $this->compareExpectations(static::$drv, $state);
         // update the bad feed again, twice
-        Arsse::$db->feedUpdate(3);
-        Arsse::$db->feedUpdate(3);
+        Arsse::$db->subscriptionUpdate(null, 3);
+        Arsse::$db->subscriptionUpdate(null, 3);
         $state['arsse_feeds']['rows'][2] = [3,3,'Feed URL "http://localhost:8000/Feed/Fetching/Error?code=404" is invalid'];
         $this->compareExpectations(static::$drv, $state);
     }
 
     public function testUpdateAMissingFeed(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
-        Arsse::$db->feedUpdate(2112);
+        Arsse::$db->subscriptionUpdate(null, 2112);
     }
 
     public function testUpdateAnInvalidFeed(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
-        Arsse::$db->feedUpdate(-1);
+        Arsse::$db->subscriptionUpdate(null, -1);
     }
 
     public function testUpdateAFeedThrowingExceptions(): void {
         $this->assertException("invalidUrl", "Feed");
-        Arsse::$db->feedUpdate(3, true);
+        Arsse::$db->subscriptionUpdate(null, 3, true);
     }
 
     public function testUpdateAFeedWithEnclosuresAndCategories(): void {
-        Arsse::$db->feedUpdate(5);
+        Arsse::$db->subscriptionUpdate(null, 5);
         $state = $this->primeExpectations($this->data, [
             'arsse_enclosures' => ["url","type"],
             'arsse_categories' => ["name"],
@@ -225,13 +225,13 @@ trait SeriesFeed {
 
     public function testListStaleFeeds(): void {
         $this->assertEquals([1,3,4], Arsse::$db->feedListStale());
-        Arsse::$db->feedUpdate(3);
-        Arsse::$db->feedUpdate(4);
+        Arsse::$db->subscriptionUpdate(null, 3);
+        Arsse::$db->subscriptionUpdate(null, 4);
         $this->assertEquals([1], Arsse::$db->feedListStale());
     }
 
     public function testCheckIconDuringFeedUpdate(): void {
-        Arsse::$db->feedUpdate(6);
+        Arsse::$db->subscriptionUpdate(null, 6);
         $state = $this->primeExpectations($this->data, [
             'arsse_icons' => ["id","url","type","data"],
             'arsse_feeds' => ["id", "icon"],
@@ -240,7 +240,7 @@ trait SeriesFeed {
     }
 
     public function testAssignIconDuringFeedUpdate(): void {
-        Arsse::$db->feedUpdate(7);
+        Arsse::$db->subscriptionUpdate(null, 7);
         $state = $this->primeExpectations($this->data, [
             'arsse_icons' => ["id","url","type","data"],
             'arsse_feeds' => ["id", "icon"],
@@ -250,7 +250,7 @@ trait SeriesFeed {
     }
 
     public function testChangeIconDuringFeedUpdate(): void {
-        Arsse::$db->feedUpdate(8);
+        Arsse::$db->subscriptionUpdate(null, 8);
         $state = $this->primeExpectations($this->data, [
             'arsse_icons' => ["id","url","type","data"],
             'arsse_feeds' => ["id", "icon"],
@@ -260,7 +260,7 @@ trait SeriesFeed {
     }
 
     public function testAddIconDuringFeedUpdate(): void {
-        Arsse::$db->feedUpdate(9);
+        Arsse::$db->subscriptionUpdate(null, 9);
         $state = $this->primeExpectations($this->data, [
             'arsse_icons' => ["id","url","type","data"],
             'arsse_feeds' => ["id", "icon"],

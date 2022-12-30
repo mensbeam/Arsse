@@ -946,7 +946,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             throw new Exception("INCORRECT_USAGE");
         }
         try {
-            Arsse::$db->feedUpdate((int) Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, $data['feed_id'])['feed']);
+            Arsse::$db->subscriptionUpdate(Arsse::$user->id, $data['feed_id']);
         } catch (ExceptionInput $e) {
             throw new Exception("FEED_NOT_FOUND");
         }

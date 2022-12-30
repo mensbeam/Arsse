@@ -637,32 +637,32 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->feedListStale->never()->called();
     }
 
-    public function testUpdateAFeed(): void {
-        $in = [
-            ['feedId' =>    42], // valid
-            ['feedId' => 2112], // feed does not exist
-            ['feedId' => "ook"], // invalid ID
-            ['feedId' => -1], // invalid ID
-            ['feed'   => 42], // invalid input
+    /** @dataProvider provideFeedUpdates */
+    public function testUpdateAFeed(array $in, int $exp): void {
+        $this->dbMock->subscriptionUpdate->with("ook", 42)->returns(true);
+        $this->dbMock->subscriptionUpdate->with("eek", 2112)->throws(new ExceptionInput("subjectMissing"));
+        $this->dbMock->subscriptionUpdate->with(null, $this->anything())->throws(new ExceptionInput("subjectMissing"));
+        $this->dbMock->subscriptionUpdate->with($this->anything(), $this->lessThan(1))->throws(new ExceptionInput("typeViolation"));
+        $exp = HTTP::respEmpty($exp);
+        $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in)));
+    }
+
+    public function provideFeedUpdates(): iterable {
+        return [
+            'Valid input'  => [['userId' => "ook", 'feedId' => 42],    204],
+            'Missing feed' => [['userId' => "eek", 'feedId' => 2112],  404],
+            'String ID'    => [['userId' => "ook", 'feedId' => "ook"], 422],
+            'Negative ID'  => [['userId' => "ook", 'feedId' => -1],    422],
+            'Bad input 1'  => [['userId' => "ook", 'feed'   => 42],    422],
+            'Bad input 2'  => [['user'   => "ook", 'feedId' => 42],    404],
         ];
-        $this->dbMock->feedUpdate->with(42)->returns(true);
-        $this->dbMock->feedUpdate->with(2112)->throws(new ExceptionInput("subjectMissing"));
-        $this->dbMock->feedUpdate->with($this->lessThan(1))->throws(new ExceptionInput("typeViolation"));
-        $exp = HTTP::respEmpty(204);
-        $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[0])));
-        $exp = HTTP::respEmpty(404);
-        $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[1])));
-        $exp = HTTP::respEmpty(422);
-        $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[2])));
-        $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[3])));
-        $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[4])));
     }
 
     public function testUpdateAFeedWithoutAuthority(): void {
         $this->userMock->propertiesGet->returns(['admin' => false]);
         $exp = HTTP::respEmpty(403);
         $this->assertMessage($exp, $this->req("GET", "/feeds/update", ['feedId' => 42]));
-        $this->dbMock->feedUpdate->never()->called();
+        $this->dbMock->subscriptionUpdate->never()->called();
     }
 
     /** @dataProvider provideArticleQueries */

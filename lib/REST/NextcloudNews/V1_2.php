@@ -377,7 +377,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return HTTP::respEmpty(403);
         }
         try {
-            Arsse::$db->feedUpdate($data['feedId']);
+            Arsse::$db->subscriptionUpdate($data['userId'], $data['feedId']);
         } catch (ExceptionInput $e) {
             switch ($e->getCode()) {
                 case 10239: // feed does not exist

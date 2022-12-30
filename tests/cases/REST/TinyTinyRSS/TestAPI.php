@@ -841,30 +841,24 @@ LONG_STRING;
     }
 
     /** @dataProvider provideFeedUpdates */
-    public function testUpdateAFeed(array $in, ?array $data, $out, ?int $id, ResponseInterface $exp): void {
+    public function testUpdateAFeed(array $in, ?array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "updateFeed", 'sid' => "PriestsOfSyrinx"], $in);
         $action = ($out instanceof \Exception) ? "throws" : "returns";
-        $this->dbMock->subscriptionPropertiesGet->$action($out);
-        $this->dbMock->feedUpdate->returns(true);
+        $this->dbMock->subscriptionUpdate->$action($out);
         $this->assertMessage($exp, $this->req($in));
         if ($data !== null) {
-            $this->dbMock->subscriptionPropertiesGet->calledWith(...$data);
+            $this->dbMock->subscriptionUpdate->calledWith(...$data);
         } else {
-            $this->dbMock->subscriptionPropertiesGet->never()->called();
-        }
-        if ($id !== null) {
-            $this->dbMock->feedUpdate->calledWith($id);
-        } else {
-            $this->dbMock->feedUpdate->never()->called();
+            $this->dbMock->subscriptionUpdate->never()->called();
         }
     }
 
     public function provideFeedUpdates(): iterable {
         return [
-            [['feed_id' => 1],  [$this->userId, 1], $this->v(['id' => 1, 'feed' => 11]),  11,   $this->respGood(['status' => "OK"])],
-            [['feed_id' => 2],  [$this->userId, 2], new ExceptionInput("subjectMissing"), null, $this->respErr("FEED_NOT_FOUND")],
-            [['feed_id' => -1], null,               null,                                 null, $this->respErr("INCORRECT_USAGE")],
-            [[],                null,               null,                                 null, $this->respErr("INCORRECT_USAGE")],
+            [['feed_id' => 1],  [$this->userId, 1], true,                                 $this->respGood(['status' => "OK"])],
+            [['feed_id' => 2],  [$this->userId, 2], new ExceptionInput("subjectMissing"), $this->respErr("FEED_NOT_FOUND")],
+            [['feed_id' => -1], null,               null,                                 $this->respErr("INCORRECT_USAGE")],
+            [[],                null,               null,                                 $this->respErr("INCORRECT_USAGE")],
         ];
     }
 

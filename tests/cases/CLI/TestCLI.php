@@ -118,11 +118,11 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideFeedUpdates */
     public function testRefreshAFeed(string $cmd, int $exitStatus, string $output): void {
-        $this->dbMock->feedUpdate->with(1, true)->returns(true);
-        $this->dbMock->feedUpdate->with(2, true)->throws(new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://example.com/"], $this->mockGuzzleException(ClientException::class, "", 404)));
+        $this->dbMock->subscriptionUpdate->with(null, 1, true)->returns(true);
+        $this->dbMock->subscriptionUpdate->with(null, 2, true)->throws(new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://example.com/"], $this->mockGuzzleException(ClientException::class, "", 404)));
         $this->assertConsole($cmd, $exitStatus, $output);
         $this->cli->loadConf->called();
-        $this->dbMock->feedUpdate->called();
+        $this->dbMock->subscriptionUpdate->called();
     }
 
     public function provideFeedUpdates(): iterable {

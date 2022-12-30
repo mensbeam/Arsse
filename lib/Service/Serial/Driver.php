@@ -31,7 +31,7 @@ class Driver implements \JKingWeb\Arsse\Service\Driver {
     public function exec(): int {
         while (sizeof($this->queue)) {
             $id = array_shift($this->queue);
-            Arsse::$db->feedUpdate($id);
+            Arsse::$db->subscriptionUpdate(null, $id);
         }
         return Arsse::$conf->serviceQueueWidth - sizeof($this->queue);
     }

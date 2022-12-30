@@ -41,8 +41,8 @@ class TestSerial extends \JKingWeb\Arsse\Test\AbstractTest {
         $d = new Driver;
         $d->queue(1, 4, 3);
         $this->assertSame(Arsse::$conf->serviceQueueWidth, $d->exec());
-        $this->dbMock->feedUpdate->calledWith(1);
-        $this->dbMock->feedUpdate->calledWith(4);
-        $this->dbMock->feedUpdate->calledWith(3);
+        $this->dbMock->subscriptionUpdate->calledWith(null, 1);
+        $this->dbMock->subscriptionUpdate->calledWith(null, 4);
+        $this->dbMock->subscriptionUpdate->calledWith(null, 3);
     }
 }
