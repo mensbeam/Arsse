@@ -1217,17 +1217,17 @@ class Database {
     public function subscriptionUpdate(?string $user, $subID, bool $throwError = false): bool {
         // check to make sure the feed exists
         if (!V::id($subID)) {
-            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id, 'type' => "int > 0"]);
+            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'id' => $subID, 'type' => "int > 0"]);
         }
         $f = $this->db->prepareArray(
             "SELECT 
                 url, las_mod as modified, etag, err_count, scrape as scrapers, keep_rule, block_rule
             FROM arsse_subscriptions
-            where id = ?",
-            ["int"]
-        )->run($subID)->getRow();
+            where id = ? and owner = coalesce(?, owner)",
+            ["int", "str"]
+        )->run($subID, $user)->getRow();
         if (!$f) {
-            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $subID]);
         }
         // determine whether the feed's items should be scraped for full content from the source Web site
         $scrape = (Arsse::$conf->fetchEnableScraping && ($scrapeOverride ?? $f['scrapers']));
