@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "21a116823c3335992910966f31861811",
+    "content-hash": "62bf2d6fdc0ccbeb090399f708928a02",
     "packages": [
         {
             "name": "docopt/docopt",
-            "version": "1.0.4",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/docopt/docopt.php.git",
-                "reference": "bf3683a16e09fa1665e493eb4d5a29469e132a4f"
+                "reference": "5ad491cb9fc072e8bb0497061a09b0efcf25cbcf"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/docopt/docopt.php/zipball/bf3683a16e09fa1665e493eb4d5a29469e132a4f",
-                "reference": "bf3683a16e09fa1665e493eb4d5a29469e132a4f",
+                "url": "https://api.github.com/repos/docopt/docopt.php/zipball/5ad491cb9fc072e8bb0497061a09b0efcf25cbcf",
+                "reference": "5ad491cb9fc072e8bb0497061a09b0efcf25cbcf",
                 "shasum": ""
             },
             "require": {
@@ -26,13 +26,13 @@
             "require-dev": {
                 "phpunit/phpunit": "4.1.*"
             },
+            "default-branch": true,
             "type": "library",
             "autoload": {
                 "classmap": [
                     "src/docopt.php"
                 ]
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -51,10 +51,10 @@
                 "docs"
             ],
             "support": {
-                "issues": "https://github.com/docopt/docopt.php/issues",
-                "source": "https://github.com/docopt/docopt.php/tree/1.0.4"
+                "source": "https://github.com/docopt/docopt.php/tree/master",
+                "issues": "https://github.com/docopt/docopt.php/issues"
             },
-            "time": "2019-12-03T02:48:46+00:00"
+            "time": "2022-05-11T23:52:25+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
@@ -1299,7 +1299,8 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "nicolus/picofeed": 20
+        "nicolus/picofeed": 20,
+        "docopt/docopt": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,

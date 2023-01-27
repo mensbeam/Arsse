@@ -17,6 +17,8 @@ use JKingWeb\Arsse\User\Driver;
 
 /** @covers \JKingWeb\Arsse\User */
 class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
+    protected $drv;
+
     public function setUp(): void {
         parent::setUp();
         self::setConf();

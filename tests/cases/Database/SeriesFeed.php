@@ -10,6 +10,8 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Test\Result;
 
 trait SeriesFeed {
+    protected $matches;
+
     protected function setUpSeriesFeed(): void {
         // set up the test data
         $past = gmdate("Y-m-d H:i:s", strtotime("now - 1 minute"));

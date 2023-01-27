@@ -39,6 +39,7 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
             'unwritable' => "", // this file will be chmodded by the test
         ],
     ];
+    protected $daemon;
 
     public function setUp(): void {
         parent::setUp();

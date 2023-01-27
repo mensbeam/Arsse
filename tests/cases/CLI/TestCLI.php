@@ -21,6 +21,8 @@ use JKingWeb\Arsse\Service\Daemon;
 
 /** @covers \JKingWeb\Arsse\CLI */
 class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
+    protected $cli;
+
     public function setUp(): void {
         parent::setUp();
         $this->cli = $this->partialMock(CLI::class);

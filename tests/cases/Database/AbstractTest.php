@@ -29,6 +29,10 @@ abstract class AbstractTest extends \JKingWeb\Arsse\Test\AbstractTest {
     protected static $drv;
     protected static $failureReason = "";
     protected $primed = false;
+    protected $data;
+    protected $user;
+    protected $checkTables;
+    protected $series;
 
     abstract protected function nextID(string $table): int;
 

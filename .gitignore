@@ -11,6 +11,7 @@
 /arsse.db*
 /config.php
 /.php_cs.cache
+/.php-cs-fixer.cache
 /tests/.phpunit.result.cache
 
 # Dependencies
