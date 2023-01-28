@@ -113,26 +113,26 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $h0 = "0a4f0e3768c8a5e9d8d9a16545ae4ff5b097f6dac3ad49555a94a7cace68ba73"; // hash of Atom ID
         $h1 = "a135beced0236b723d12f845ff20ec22d4fc3afe1130012618f027170d57cb4e"; // hash of RSS2 GUID
         $h2 = "205e986f4f8b3acfa281227beadb14f5e8c32c8dae4737f888c94c0df49c56f8"; // hash of Dublin Core identifier
-        $this->assertSame($h0, $f->data->items[0]->id);
-        $this->assertSame($h1, $f->data->items[1]->id);
-        $this->assertSame($h2, $f->data->items[2]->id);
+        $this->assertSame($h0, $f->items[0]->id);
+        $this->assertSame($h1, $f->items[1]->id);
+        $this->assertSame($h2, $f->items[2]->id);
         // check null hashes
         $h3 = "6287ba30f534e404e68356237e809683e311285d8b9f47d046ac58784eece052"; // URL hash
         $h4 = "6cbb5d2dcb11610a99eb3f633dc246690c0acf33327bf7534f95542caa8f27c4"; // title hash
         $h5 = "2b7c57ffa9adde92ccd1884fa1153a5bcd3211e48d99e27be5414cb078e6891c"; // content/enclosure hash
-        $this->assertNotEquals("", $f->data->items[3]->urlTitleHash);
-        $this->assertSame($h3, $f->data->items[3]->urlContentHash);
-        $this->assertSame("", $f->data->items[3]->titleContentHash);
-        $this->assertNotEquals("", $f->data->items[4]->urlTitleHash);
-        $this->assertSame("", $f->data->items[4]->urlContentHash);
-        $this->assertSame($h4, $f->data->items[4]->titleContentHash);
-        $this->assertSame("", $f->data->items[5]->urlTitleHash);
-        $this->assertNotEquals("", $f->data->items[5]->urlContentHash);
-        $this->assertNotEquals("", $f->data->items[5]->titleContentHash);
+        $this->assertNotEquals("", $f->items[3]->urlTitleHash);
+        $this->assertSame($h3, $f->items[3]->urlContentHash);
+        $this->assertSame("", $f->items[3]->titleContentHash);
+        $this->assertNotEquals("", $f->items[4]->urlTitleHash);
+        $this->assertSame("", $f->items[4]->urlContentHash);
+        $this->assertSame($h4, $f->items[4]->titleContentHash);
+        $this->assertSame("", $f->items[5]->urlTitleHash);
+        $this->assertNotEquals("", $f->items[5]->urlContentHash);
+        $this->assertNotEquals("", $f->items[5]->titleContentHash);
         // check null IDs
-        $this->assertSame(null, $f->data->items[3]->id);
-        $this->assertSame(null, $f->data->items[4]->id);
-        $this->assertSame(null, $f->data->items[5]->id);
+        $this->assertSame(null, $f->items[3]->id);
+        $this->assertSame(null, $f->items[4]->id);
+        $this->assertSame(null, $f->items[5]->id);
         // check categories
         $categories = [
             "Aniki!",
@@ -140,11 +140,11 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
             "Bodybuilders",
             "Men",
         ];
-        $this->assertSame([], $f->data->items[0]->categories);
-        $this->assertSame([], $f->data->items[1]->categories);
-        $this->assertSame([], $f->data->items[3]->categories);
-        $this->assertSame([], $f->data->items[4]->categories);
-        $this->assertSame($categories, $f->data->items[5]->categories);
+        $this->assertSame([], $f->items[0]->categories);
+        $this->assertSame([], $f->items[1]->categories);
+        $this->assertSame([], $f->items[3]->categories);
+        $this->assertSame([], $f->items[4]->categories);
+        $this->assertSame($categories, $f->items[5]->categories);
     }
 
     public function testDiscoverAFeedSuccessfully(): void {
@@ -232,7 +232,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $e = "78567a";
         $f = new Feed(null, $this->base.$url."?t=$t&e=$e", Date::transform($t, "http"), $e);
         $this->assertTime($t, $f->lastModified);
-        $this->assertSame($e, $f->resource->getETag());
+        $this->assertSame($e, $f->etag);
     }
 
     public function provide304ResponseURLs() {
@@ -250,15 +250,15 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $t = time() - 2000;
         $f = new Feed(null, $this->base."Caching/200Past");
         $this->assertTime($t, $f->lastModified);
-        $this->assertNotEmpty($f->resource->getETag());
+        $this->assertNotEmpty($f->etag);
         $t = time() - 2000;
         $f = new Feed(null, $this->base."Caching/200Past", Date::transform(time(), "http"));
         $this->assertTime($t, $f->lastModified);
-        $this->assertNotEmpty($f->resource->getETag());
+        $this->assertNotEmpty($f->etag);
         $t = time() + 2000;
         $f = new Feed(null, $this->base."Caching/200Future");
         $this->assertTime($t, $f->lastModified);
-        $this->assertNotEmpty($f->resource->getETag());
+        $this->assertNotEmpty($f->etag);
         // these tests have no HTTP headers and rely on article dates
         $t = strtotime("2002-05-19T15:21:36Z");
         $f = new Feed(null, $this->base."Caching/200PubDateOnly");

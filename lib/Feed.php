@@ -6,6 +6,7 @@
 declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
+use JKingWeb\Arsse\Feed\Item;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Rule\Rule;
 use PicoFeed\PicoFeedException;
@@ -15,63 +16,63 @@ use PicoFeed\Reader\Reader;
 use PicoFeed\Reader\Favicon;
 use PicoFeed\Scraper\Scraper;
 
-class Feed {
-    public $data = null;
+class Feed {    
+    public $title;
+    public $siteUrl;
     public $iconUrl;
     public $iconType;
     public $iconData;
-    public $resource;
     public $modified = false;
     public $lastModified;
+    public $etag;
     public $nextFetch;
+    public $items = [];
     public $newItems = [];
     public $changedItems = [];
     public $filteredItems = [];
 
     public static function discover(string $url, string $username = '', string $password = ''): string {
         // fetch the candidate feed
-        $f = self::download($url, "", "", $username, $password);
-        if ($f->reader->detectFormat($f->getContent())) {
+        [$client, $reader] = self::download($url, "", "", $username, $password);
+        if ($reader->detectFormat($client->getContent())) {
             // if the prospective URL is a feed, use it
             $out = $url;
         } else {
-            $links = $f->reader->find($f->getUrl(), $f->getContent());
+            $links = $reader->find($client->getUrl(), $client->getContent());
             if (!$links) {
-                // work around a PicoFeed memory leak
-                libxml_use_internal_errors(false);
                 throw new Feed\Exception("", ['url' => $url], new \PicoFeed\Reader\SubscriptionNotFoundException('Unable to find a subscription'));
             } else {
                 $out = $links[0];
             }
         }
-        // work around a PicoFeed memory leak
-        libxml_use_internal_errors(false);
         return $out;
     }
 
     public static function discoverAll(string $url, string $username = '', string $password = ''): array {
         // fetch the candidate feed
-        $f = self::download($url, "", "", $username, $password);
-        if ($f->reader->detectFormat($f->getContent())) {
+        [$client, $reader] = self::download($url, "", "", $username, $password);
+        if ($reader->detectFormat($client->getContent())) {
             // if the prospective URL is a feed, use it
             return [$url];
         } else {
-            return $f->reader->find($f->getUrl(), $f->getContent());
+            return $reader->find($client->getUrl(), $client->getContent());
         }
     }
 
     public function __construct(int $feedID = null, string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = '', bool $scrape = false) {
         // fetch the feed
-        $this->resource = self::download($url, $lastModified, $etag, $username, $password);
+        [$client, $reader] = self::download($url, $lastModified, $etag, $username, $password);
         // format the HTTP Last-Modified date returned
-        $lastMod = $this->resource->getLastModified();
+        $lastMod = $client->getLastModified();
         if (strlen($lastMod ?? "")) {
             $this->lastModified = Date::normalize($lastMod, "http");
         }
-        $this->modified = $this->resource->isModified();
-        //parse the feed, if it has been modified
+        $this->modified = $client->isModified();
+        // get the ETag
+        $this->etag = $client->getEtag();
+        // parse the feed, if it has been modified
         if ($this->modified) {
-            $this->parse();
+            $this->parse($client, $reader);
             // ascertain whether there are any articles not in the database
             $this->matchToDatabase($feedID);
             // if caching header fields are not sent by the server, try to ascertain a last-modified date from the feed contents
@@ -112,12 +113,11 @@ class Feed {
         return $config;
     }
 
-    protected static function download(string $url, string $lastModified, string $etag, string $username, string $password): Client {
+    protected static function download(string $url, string $lastModified, string $etag, string $username, string $password): array {
         try {
             $reader = new Reader(self::configure());
             $client = $reader->download($url, $lastModified, $etag, $username, $password);
-            $client->reader = $reader;
-            return $client;
+            return [$client, $reader];
         } catch (PicoFeedException $e) {
             throw new Feed\Exception("", ['url' => $url], $e); // @codeCoverageIgnore
         } catch (\GuzzleHttp\Exception\GuzzleException $e) {
@@ -125,17 +125,17 @@ class Feed {
         }
     }
 
-    protected function parse(): void {
+    protected function parse(Client $client, Reader $reader): void {
         try {
-            $feed = $this->resource->reader->getParser(
-                $this->resource->getUrl(),
-                $this->resource->getContent(),
-                $this->resource->getEncoding()
+            $feed = $reader->getParser(
+                $client->getUrl(),
+                $client->getContent(),
+                $client->getEncoding()
             )->execute();
         } catch (PicoFeedException $e) {
-            throw new Feed\Exception("", ['url' => $this->resource->getUrl()], $e);
+            throw new Feed\Exception("", ['url' => $client->getUrl()], $e);
         } catch (\GuzzleHttp\Exception\GuzzleException $e) { // @codeCoverageIgnore
-            throw new Feed\Exception("", ['url' => $this->resource->getUrl()], $e); // @codeCoverageIgnore
+            throw new Feed\Exception("", ['url' => $client->getUrl()], $e); // @codeCoverageIgnore
         }
 
         // Grab the favicon for the feed, or null if no valid icon is found
@@ -150,6 +150,10 @@ class Feed {
             $this->iconUrl = $this->iconData = null;
         }
 
+        // Next gather all other feed-level information we want out of the feed
+        $this->siteUrl = $feed->siteUrl;
+        $this->title = $feed->title;
+
         // PicoFeed does not provide valid ids when there is no id element. Its solution
         // of hashing the url, title, and content together for the id if there is no id
         // element is stupid. Many feeds are frankenstein mixtures of Atom and RSS, but
@@ -158,29 +162,38 @@ class Feed {
         // only be reserved for severely broken feeds.
 
         foreach ($feed->items as $f) {
-            // Hashes used for comparison to check for updates and also to identify when an
+            // copy the basic information of an article
+            $i = new Item;
+            $i->url = $f->url;
+            $i->title = $f->title;
+            $i->content = $f->content;
+            $i->author = $f->author;
+            $i->publishedDate = $f->publishedDate;
+            $i->updatedDate = $f->updatedDate;
+            $i->enclosureType = $f->enclosureType;
+            $i->enclosureUrl = $f->enclosureUrl;
+            // add hashes used for comparison to check for updates and also to identify when an
             // id doesn't exist.
             $content = $f->content.$f->enclosureUrl.$f->enclosureType;
             // if the item link URL and item title are both equal to the feed link URL, then the item has neither a link URL nor a title
             if ($f->url === $feed->siteUrl && $f->title === $feed->siteUrl) {
-                $f->urlTitleHash = "";
+                $i->urlTitleHash = "";
             } else {
-                $f->urlTitleHash = hash('sha256', $f->url.$f->title);
+                $i->urlTitleHash = hash('sha256', $f->url.$f->title);
             }
             // if the item link URL is equal to the feed link URL, it has no link URL; if there is additionally no content, these should not be hashed
             if (!strlen($content) && $f->url === $feed->siteUrl) {
-                $f->urlContentHash = "";
+                $i->urlContentHash = "";
             } else {
-                $f->urlContentHash = hash('sha256', $f->url.$content);
+                $i->urlContentHash = hash('sha256', $f->url.$content);
             }
             // if the item's title is the same as its link URL, it has no title; if there is additionally no content, these should not be hashed
             if (!strlen($content) && $f->title === $f->url) {
-                $f->titleContentHash = "";
+                $i->titleContentHash = "";
             } else {
-                $f->titleContentHash = hash('sha256', $f->title.$content);
+                $i->titleContentHash = hash('sha256', $f->title.$content);
             }
-            $f->id = null;
-            // prefer an Atom ID as the item's ID
+            // next add an id; prefer an Atom ID as the item's ID
             $id = (string) $f->xml->children('http://www.w3.org/2005/Atom')->id;
             // otherwise use the RSS2 guid element
             if (!strlen($id)) {
@@ -192,11 +205,10 @@ class Feed {
             }
             // otherwise there is no ID; if there is one, hash it
             if (strlen($id)) {
-                $f->id = hash('sha256', $id);
+                $i->id = hash('sha256', $id);
             }
 
             // PicoFeed also doesn't gather up categories, so we do this as well
-            $f->categories = [];
             // first add Atom categories
             foreach ($f->xml->children('http://www.w3.org/2005/Atom')->category as $c) {
                 // if the category has a label, use that
@@ -207,27 +219,28 @@ class Feed {
                 }
                 // ... assuming it has that much
                 if (strlen($name)) {
-                    $f->categories[] = $name;
+                    $i->categories[] = $name;
                 }
             }
             // next add RSS2 categories
             foreach ($f->xml->children()->category as $c) {
                 $name = (string) $c;
                 if (strlen($name)) {
-                    $f->categories[] = $name;
+                    $i->categories[] = $name;
                 }
             }
             // and finally try Dublin Core subjects
             foreach ($f->xml->children('http://purl.org/dc/elements/1.1/')->subject as $c) {
                 $name = (string) $c;
                 if (strlen($name)) {
-                    $f->categories[] = $name;
+                    $i->categories[] = $name;
                 }
             }
             //sort the results
-            sort($f->categories);
+            sort($i->categories);
+            // add the item to the feed's list of items
+            $this->items[] = $i;
         }
-        $this->data = $feed;
     }
 
     protected function deduplicateItems(array $items): array {
@@ -251,7 +264,7 @@ class Feed {
                     ($item->urlContentHash && $item->urlContentHash === $check->urlContentHash) ||
                     ($item->titleContentHash && $item->titleContentHash === $check->titleContentHash)
                 ) {
-                    if (// because newsfeeds are usually order newest-first, the later item should only be used if...
+                    if (// because newsfeeds are usually ordered newest-first, the later item should only be used if...
                         // the later item has an update date and the existing item does not
                         ($item->updatedDate && !$check->updatedDate) ||
                         // the later item has an update date newer than the existing item's
@@ -276,7 +289,7 @@ class Feed {
 
     protected function matchToDatabase(int $feedID = null): void {
         // first perform deduplication on items
-        $items = $this->deduplicateItems($this->data->items);
+        $items = $this->deduplicateItems($this->items);
         // if we haven't been given a database feed ID to check against, all items are new
         if (is_null($feedID)) {
             $this->newItems = $items;
@@ -429,7 +442,7 @@ class Feed {
 
     protected function gatherDates(): array {
         $dates = [];
-        foreach ($this->data->items as $item) {
+        foreach ($this->items as $item) {
             if ($item->updatedDate) {
                 $dates[] = $item->updatedDate->getTimestamp();
             }
