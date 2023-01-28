@@ -11,7 +11,7 @@ The Arsse has the following requirements:
 - A Web server such as:
     - [Nginx](https://nginx.org)
     - [Apache HTTP server](https://httpd.apache.org) 2.4 or later
-- PHP 7.1.0 or later with the following extensions:
+- PHP 7.3.0 or later with the following extensions:
     - [intl](https://php.net/manual/en/book.intl.php), [json](https://php.net/manual/en/book.json.php), [hash](https://php.net/manual/en/book.hash.php), [filter](https://php.net/manual/en/book.filter.php), and [dom](https://php.net/manual/en/book.dom.php)
     - [simplexml](https://php.net/manual/en/book.simplexml.php), and [iconv](https://php.net/manual/en/book.iconv.php)
     - One of:
