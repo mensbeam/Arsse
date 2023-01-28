@@ -14,6 +14,12 @@ usually prudent:
 Upgrading from 0.10.2 to 0.10.3
 =============================
 
+- PHP 7.3 is now required
+
+
+Upgrading from 0.10.2 to 0.10.3
+=============================
+
 - The following Composer dependencies have been removed:
     - laminas/laminas-diactoros
 

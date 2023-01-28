@@ -15,6 +15,8 @@ use JKingWeb\Arsse\Test\Database;
 class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $drv;
     protected $proc;
+    protected $data;
+    protected $primed;
     protected $checkTables = [
         'arsse_folders'       => ["id", "owner", "parent", "name"],
         'arsse_feeds'         => ["id", "url", "title"],

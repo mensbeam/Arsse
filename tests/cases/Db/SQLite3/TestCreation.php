@@ -17,6 +17,8 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $data;
     protected $drv;
     protected $ch;
+    protected $files;
+    protected $path;
 
     public function setUp(): void {
         if (!Driver::requirementsMet()) {

@@ -11,6 +11,8 @@ use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Context\Context;
 
 trait SeriesLabel {
+    protected $checkLabels;
+
     protected function setUpSeriesLabel(): void {
         $this->data = [
             'arsse_users' => [

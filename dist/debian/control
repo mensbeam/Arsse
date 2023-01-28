@@ -20,7 +20,7 @@ Description: Multi-protocol RSS/Atom newsfeed synchronization server
  server.
 Depends: ${misc:Depends},
          dbconfig-sqlite3 | dbconfig-pgsql | dbconfig-mysql | dbconfig-no-thanks,
-         php (>= 7.1.0),
+         php (>= 7.3.0),
          php-cli,
          php-intl,
          php-json,

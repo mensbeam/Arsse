@@ -1362,12 +1362,12 @@ class Database {
             "UPDATE arsse_subscriptions SET feed_title = ?, source = ?, updated = CURRENT_TIMESTAMP, last_mod = ?, etag = ?, err_count = 0, err_msg = '', next_fetch = ?, size = ?, icon = ? WHERE id = ?",
             ["str", "str", "datetime", "strict str", "datetime", "int", "int", "int"]
         )->run(
-            $feed->data->title,
-            $feed->data->siteUrl,
+            $feed->title,
+            $feed->siteUrl,
             $feed->lastModified,
-            $feed->resource->getEtag(),
+            $feed->etag,
             $feed->nextFetch,
-            sizeof($feed->data->items),
+            sizeof($feed->items),
             $icon,
             $subID
         );

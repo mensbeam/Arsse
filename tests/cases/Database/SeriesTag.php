@@ -10,6 +10,9 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
 
 trait SeriesTag {
+    protected $checkMembers;
+    protected $checkTags;
+
     protected function setUpSeriesTag(): void {
         $this->data = [
             'arsse_users' => [

@@ -15,6 +15,8 @@ use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 
 trait SeriesArticle {
+    protected $fields;
+
     protected function setUpSeriesArticle(): void {
         $this->data = [
             'arsse_users' => [

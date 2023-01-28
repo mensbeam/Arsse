@@ -20,6 +20,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     public const SQLITE_MISMATCH = 20;
 
     protected $db;
+    protected $collator;
 
     public function __construct() {
         // check to make sure required extension is loaded
