@@ -100,7 +100,6 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->feedMatchLatest->with(1, Phony::any())->returns(new Result($this->latest));
         $this->dbMock->feedMatchIds->with(Phony::wildcard())->returns(new Result([]));
         $this->dbMock->feedMatchIds->with(1, Phony::wildcard())->returns(new Result($this->others));
-        $this->dbMock->feedRulesGet->returns([]);
         Arsse::$db = $this->dbMock->get();
     }
 
@@ -385,27 +384,5 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame(self::$host."Icon/GIF", $f->iconUrl);
         $this->assertSame("image/gif", $f->iconType);
         $this->assertSame($d, $f->iconData);
-    }
-
-    public function testApplyFilterRules(): void {
-        $exp = [
-            'jack' => ['new' => [false, true, true,  false, true],  'changed' => [7 => true,  47 => true, 2112 => false, 1 => true,  42 => false]],
-            'sam'  => ['new' => [false, true, false, false, false], 'changed' => [7 => false, 47 => true, 2112 => false, 1 => false, 42 => false]],
-        ];
-        $this->dbMock->feedMatchIds->returns(new Result([
-            // these are the sixth through tenth entries in the feed; the title hashes have been omitted for brevity
-            ['id' => 7,    'guid' => '0f2a218c311e3d8105f1b075142a5d26dabf056ffc61abe77e96c8f071bbf4a7', 'edited' => null, 'url_title_hash' => "", 'url_content_hash' => '', 'title_content_hash' => ''],
-            ['id' => 47,   'guid' => '1c19e3b9018bc246b7414ae919ddebc88d0c575129e8c4a57b84b826c00f6db5', 'edited' => null, 'url_title_hash' => "", 'url_content_hash' => '', 'title_content_hash' => ''],
-            ['id' => 2112, 'guid' => '964db0b9292ad0c7a6c225f2e0966f3bda53486fae65db0310c97409974e65b8', 'edited' => null, 'url_title_hash' => "", 'url_content_hash' => '', 'title_content_hash' => ''],
-            ['id' => 1,    'guid' => '436070cda5713a0d9a8fdc8652c7ab142f0550697acfd5206a16c18aee355039', 'edited' => null, 'url_title_hash' => "", 'url_content_hash' => '', 'title_content_hash' => ''],
-            ['id' => 42,   'guid' => '1a731433a1904220ef26e731ada7262e1d5bcecae53e7b5df9e1f5713af6e5d3', 'edited' => null, 'url_title_hash' => "", 'url_content_hash' => '', 'title_content_hash' => ''],
-        ]));
-        $this->dbMock->feedRulesGet->returns([
-            'jack' => ['keep' => "",         'block' => '`A|W|J|S`u'],
-            'sam'  => ['keep' => "`B|T|X`u", 'block' => '`C`u'],
-        ]);
-        Arsse::$db = $this->dbMock->get();
-        $f = new Feed(5, $this->base."Filtering/1");
-        $this->assertSame($exp, $f->filteredItems);
     }
 }

@@ -29,7 +29,6 @@ class Feed {
     public $items = [];
     public $newItems = [];
     public $changedItems = [];
-    public $filteredItems = [];
 
     public static function discover(string $url, string $username = '', string $password = ''): string {
         // fetch the candidate feed
@@ -83,9 +82,6 @@ class Feed {
             if (!sizeof($this->newItems) && !sizeof($this->changedItems)) {
                 $this->modified = false;
             } else {
-                if ($feedID) {
-                    $this->computeFilterRules($feedID);
-                }
                 // if requested, scrape full content for any new and changed items
                 if ($scrape) {
                     $this->scrape();

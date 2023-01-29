@@ -350,6 +350,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // Miniflux does not attempt to coerce values into different types
         foreach (self::VALID_JSON as $k => $t) {
             if (!isset($body[$k])) {
+                // if a valid key is missing set it to null so that any key may be accessed safely
                 $body[$k] = null;
             } elseif (gettype($body[$k]) !== $t) {
                 return self::respError(["InvalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])], 422);

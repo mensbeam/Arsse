@@ -553,93 +553,56 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideFeedCreations */
-    public function testCreateAFeed(array $in, $out1, $out2, $out3, $out4, ResponseInterface $exp): void {
-        if ($out1 instanceof \Exception) {
-            $this->dbMock->feedAdd->throws($out1);
+    public function testCreateAFeed(array $in, $out, ResponseInterface $exp): void {
+        if ($out instanceof \Exception) {
+            $this->dbMock->subscriptionAdd->throws($out);
         } else {
-            $this->dbMock->feedAdd->returns($out1);
-        }
-        if ($out2 instanceof \Exception) {
-            $this->dbMock->subscriptionAdd->throws($out2);
-        } else {
-            $this->dbMock->subscriptionAdd->returns($out2);
-        }
-        if ($out3 instanceof \Exception) {
-            $this->dbMock->subscriptionPropertiesSet->throws($out3);
-        } elseif ($out4 instanceof \Exception) {
-            $this->dbMock->subscriptionPropertiesSet->returns($out3)->throws($out4);
-        } else {
-            $this->dbMock->subscriptionPropertiesSet->returns($out3)->returns($out4);
+            $this->dbMock->subscriptionAdd->returns($out);
         }
         $this->assertMessage($exp, $this->req("POST", "/feeds", $in));
-        $in1 = $out1 !== null;
-        $in2 = $out2 !== null;
-        $in3 = $out3 !== null;
-        $in4 = $out4 !== null;
-        if ($in1) {
-            $this->dbMock->feedAdd->calledWith($in['feed_url'], $in['username'] ?? "", $in['password'] ?? "", false, $in['crawler'] ?? false);
-        } else {
-            $this->dbMock->feedAdd->never()->called();
-        }
-        if ($in2) {
-            $this->dbMock->begin->calledWith();
-            $this->dbMock->subscriptionAdd->calledWith("john.doe@example.com", $in['feed_url'], $in['username'] ?? "", $in['password'] ?? "", false, $in['crawler'] ?? false);
-        } else {
-            $this->dbMock->begin->never()->called();
-            $this->dbMock->subscriptionAdd->never()->called();
-        }
-        if ($in3) {
+        if ($out) {
             $props = [
                 'folder'     => $in['category_id'] - 1,
                 'scrape'     => $in['crawler'] ?? false,
-            ];
-            $this->dbMock->subscriptionPropertiesSet->calledWith("john.doe@example.com", $out2, $props);
-            if (!$out3 instanceof \Exception) {
-                $this->transaction->commit->called();
-            }
-        } else {
-            $this->dbMock->subscriptionPropertiesSet->never()->called();
-        }
-        if ($in4) {
-            $rules = [
                 'keep_rule'  => $in['keeplist_rules'] ?? null,
                 'block_rule' => $in['blocklist_rules'] ?? null,
             ];
-            $this->dbMock->subscriptionPropertiesSet->calledWith("john.doe@example.com", $out2, $rules);
+            $this->dbMock->subscriptionAdd->calledWith("john.doe@example.com", $in['feed_url'], $in['username'] ?? "", $in['password'] ?? "", false, $props);
         } else {
-            $this->dbMock->subscriptionPropertiesSet->atMost(1)->called();
+            $this->dbMock->subscriptionAdd->never()->called();
         }
     }
 
     public function provideFeedCreations(): iterable {
         self::clearData();
         return [
-            [['category_id' => 1],                                                                null,                                       null,                                      null,                            null, V1::respError(["MissingInputValue", 'field' => "feed_url"], 422)],
-            [['feed_url' => "http://example.com/"],                                               null,                                       null,                                      null,                            null, V1::respError(["MissingInputValue", 'field' => "category_id"], 422)],
-            [['feed_url' => "http://example.com/", 'category_id' => "1"],                         null,                                       null,                                      null,                            null, V1::respError(["InvalidInputType", 'field' => "category_id", 'expected' => "integer", 'actual' => "string"], 422)],
-            [['feed_url' => "Not a URL", 'category_id' => 1],                                     null,                                       null,                                      null,                            null, V1::respError(["InvalidInputValue", 'field' => "feed_url"], 422)],
-            [['feed_url' => "http://example.com/", 'category_id' => 0],                           null,                                       null,                                      null,                            null, V1::respError(["InvalidInputValue", 'field' => "category_id"], 422)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1, 'keeplist_rules' => "["],  null,                                       null,                                      null,                            null, V1::respError(["InvalidInputValue", 'field' => "keeplist_rules"], 422)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1, 'blocklist_rules' => "["], null,                                       null,                                      null,                            null, V1::respError(["InvalidInputValue", 'field' => "blocklist_rules"], 422)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("internalError"),         null,                                      null,                            null, V1::respError("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("invalidCertificate"),    null,                                      null,                            null, V1::respError("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("invalidUrl"),            null,                                      null,                            null, V1::respError("Fetch404", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("maxRedirect"),           null,                                      null,                            null, V1::respError("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("maxSize"),               null,                                      null,                            null, V1::respError("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("timeout"),               null,                                      null,                            null, V1::respError("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("forbidden"),             null,                                      null,                            null, V1::respError("Fetch403", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("unauthorized"),          null,                                      null,                            null, V1::respError("Fetch401", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("transmissionError"),     null,                                      null,                            null, V1::respError("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("connectionFailed"),      null,                                      null,                            null, V1::respError("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("malformedXml"),          null,                                      null,                            null, V1::respError("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("xmlEntity"),             null,                                      null,                            null, V1::respError("FetchOther", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("subscriptionNotFound"),  null,                                      null,                            null, V1::respError("Fetch404", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("unsupportedFeedFormat"), null,                                      null,                            null, V1::respError("FetchFormat", 502)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           2112,                                       new ExceptionInput("constraintViolation"), null,                            null, V1::respError("DuplicateFeed", 409)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           2112,                                       44,                                        new ExceptionInput("idMissing"), null, V1::respError("MissingCategory", 422)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1],                           2112,                                       44,                                        true,                            null, HTTP::respJson(['feed_id' => 44], 201)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1, 'keeplist_rules' => "^A"], 2112,                                       44,                                        true,                            true, HTTP::respJson(['feed_id' => 44], 201)],
-            [['feed_url' => "http://example.com/", 'category_id' => 1, 'blocklist_rules' => "A"], 2112,                                       44,                                        true,                            true, HTTP::respJson(['feed_id' => 44], 201)],
+            [['category_id' => 1],                                                                null,                                       V1::respError(["MissingInputValue", 'field' => "feed_url"], 422)],
+            [['feed_url' => "http://example.com/"],                                               null,                                       V1::respError(["MissingInputValue", 'field' => "category_id"], 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => "1"],                         null,                                       V1::respError(["InvalidInputType", 'field' => "category_id", 'expected' => "integer", 'actual' => "string"], 422)],
+            [['feed_url' => "Not a URL", 'category_id' => 1],                                     null,                                       V1::respError(["InvalidInputValue", 'field' => "feed_url"], 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => 0],                           null,                                       V1::respError(["InvalidInputValue", 'field' => "category_id"], 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1, 'keeplist_rules' => "["],  null,                                       V1::respError(["InvalidInputValue", 'field' => "keeplist_rules"], 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1, 'blocklist_rules' => "["], null,                                       V1::respError(["InvalidInputValue", 'field' => "blocklist_rules"], 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("internalError"),         V1::respError("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("invalidCertificate"),    V1::respError("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("invalidUrl"),            V1::respError("Fetch404", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("maxRedirect"),           V1::respError("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("maxSize"),               V1::respError("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("timeout"),               V1::respError("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("forbidden"),             V1::respError("Fetch403", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("unauthorized"),          V1::respError("Fetch401", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("transmissionError"),     V1::respError("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("connectionFailed"),      V1::respError("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("malformedXml"),          V1::respError("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("xmlEntity"),             V1::respError("FetchOther", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("subscriptionNotFound"),  V1::respError("Fetch404", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new FeedException("unsupportedFeedFormat"), V1::respError("FetchFormat", 502)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new ExceptionInput("constraintViolation"),  V1::respError("DuplicateFeed", 409)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           new ExceptionInput("idMissing"),            V1::respError("MissingCategory", 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1],                           44,                                         HTTP::respJson(['feed_id' => 44], 201)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1, 'crawler' => true],        44,                                         HTTP::respJson(['feed_id' => 44], 201)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1, 'keeplist_rules' => "^A"], 44,                                         HTTP::respJson(['feed_id' => 44], 201)],
+            [['feed_url' => "http://example.com/", 'category_id' => 1, 'blocklist_rules' => "A"], 44,                                         HTTP::respJson(['feed_id' => 44], 201)],
         ];
     }
 

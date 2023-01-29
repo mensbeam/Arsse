@@ -828,14 +828,14 @@ class Database {
             return (int) $this->db->prepare('INSERT INTO arsse_subscriptions(owner, url, deleted) values(?,?,?)', 'str', 'str', 'bool')->run($user, $url, 1)->lastId();
         } catch (Db\ExceptionInput $e) {
             // if the insertion fails, throw if the delete flag is not set, otherwise return the existing ID
-            $id = (int) $this->db->prepare("SELECT id from arsse_subscriptions where owner = ? and url = ? and deleted = 1", "str", "str")->run($user, $url)->getValue();
+            $id = $this->db->prepare("SELECT id from arsse_subscriptions where owner = ? and url = ? and deleted = 1", "str", "str")->run($user, $url)->getValue();
             if (!$id) {
                 throw $e;
             } else {
                 // set the modification timestamp to the current time so it doesn't get cleaned up too soon
                 $this->db->prepare("UPDATE arsse_subscriptions set modified = CURRENT_TIMESTAMP where id = ?", "int")->run($id);
             }
-            return $id;
+            return (int) $id;
         }
     }
 
