@@ -1204,7 +1204,7 @@ class Database {
 
     /** Returns an indexed array of numeric identifiers for newsfeeds which should be refreshed */
     public function feedListStale(): array {
-        $feeds = $this->db->query("SELECT id from arsse_feeds where next_fetch <= CURRENT_TIMESTAMP")->getAll();
+        $feeds = $this->db->query("SELECT id from arsse_subscriptions where next_fetch <= CURRENT_TIMESTAMP")->getAll();
         return array_column($feeds, 'id');
     }
 
@@ -1221,7 +1221,7 @@ class Database {
         }
         $f = $this->db->prepareArray(
             "SELECT 
-                url, las_mod as modified, etag, err_count, scrape as scrapers, keep_rule, block_rule
+                url, last_mod as modified, etag, err_count, scrape as scrapers, keep_rule, block_rule
             FROM arsse_subscriptions
             where id = ? and owner = coalesce(?, owner)",
             ["int", "str"]
@@ -1235,7 +1235,7 @@ class Database {
         // here. When an exception is thrown it should update the database with the
         // error instead of failing; if other exceptions are thrown, we should simply roll back
         try {
-            $feed = new Feed((int) $subID, $f['url'], (string) Date::transform($f['modified'], "http", "sql"), $f['etag'], $f['username'], $f['password'], $scrape);
+            $feed = new Feed((int) $subID, $f['url'], (string) Date::transform($f['modified'], "http", "sql"), $f['etag'], "", "", $scrape);
             if (!$feed->modified) {
                 // if the feed hasn't changed, just compute the next fetch time and record it
                 $this->db->prepare("UPDATE arsse_subscriptions SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id = ?", 'datetime', 'int')->run($feed->nextFetch, $subID);
@@ -1263,14 +1263,16 @@ class Database {
                 "INSERT INTO arsse_articles(url,title,author,published,edited,guid,url_title_hash,url_content_hash,title_content_hash,subscription,hidden) values(?,?,?,?,?,?,?,?,?,?,?)",
                 ["str", "str", "str", "datetime", "datetime", "str", "str", "str", "str", "int", "bool"]
             );
+            $qInsertContent = $this->db->prepareArray("INSERT INTO arsse_article_contents(id, content) values(?,?)", ["int", "str"]);
         }
         if (sizeof($feed->changedItems)) {
             $qDeleteEnclosures = $this->db->prepare("DELETE FROM arsse_enclosures WHERE article = ?", 'int');
             $qDeleteCategories = $this->db->prepare("DELETE FROM arsse_categories WHERE article = ?", 'int');
             $qUpdateArticle = $this->db->prepareArray(
-                "UPDATE arsse_articles SET \"read\" = 0, hidden = ?, url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ?, content_scraped = ? WHERE id = ?",
-                ["bool", "str", "str", "str", "datetime", "datetime", "str", "str", "str", "str", "str", "str", "int"]
+                "UPDATE arsse_articles SET \"read\" = 0, hidden = ?, url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id = ?",
+                ["bool", "str", "str", "str", "datetime", "datetime", "str", "str", "str", "str", "int"]
             );
+            $qUpdateContent = $this->db->prepareArray("UPDATE arsse_article_contents set content = ? where id = ?", ["str", "int"]); 
         }
         // prepare the keep and block rules
         try {
@@ -1315,6 +1317,7 @@ class Database {
                 $subID,
                 !Rule::apply($keep, $block, $article->title, $article->categories)
             )->lastId();
+            $qInsertContent->run($articleID, $article->scrapedContent ?? $article->content);
             // note the new ID for later use
             $articleMap[$k] = $articleID;
             // insert any enclosures
@@ -1338,13 +1341,12 @@ class Database {
                 $article->publishedDate,
                 $article->updatedDate,
                 $article->id,
-                $article->content,
                 $article->urlTitleHash,
                 $article->urlContentHash,
                 $article->titleContentHash,
-                $article->scrapedContent ?? null,
                 $articleID
             );
+            $qUpdateContent->run($article->scrapedContent ?? $article->content, $articleID);
             // delete all enclosures and categories and re-insert them
             $qDeleteEnclosures->run($articleID);
             $qDeleteCategories->run($articleID);
@@ -1410,7 +1412,7 @@ class Database {
      */
     public function feedMatchLatest(int $feedID, int $count): Db\Result {
         return $this->db->prepare(
-            "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed = ? ORDER BY modified desc, id desc limit ?",
+            "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE subscription = ? ORDER BY modified desc, id desc limit ?",
             'int',
             'int'
         )->run($feedID, $count);
@@ -1439,7 +1441,7 @@ class Database {
         [$cHashTC, $tHashTC, $vHashTC] = $this->generateIn($hashesTC, "str");
         // perform the query
         return $this->db->prepareArray(
-            "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed = ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC))",
+            "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE subscription = ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC))",
             ['int', $tId, $tHashUT, $tHashUC, $tHashTC]
         )->run($feedID, $vId, $vHashUT, $vHashUC, $vHashTC);
     }
@@ -1493,7 +1495,7 @@ class Database {
             'url'                => "arsse_articles.url",                                                                                                                               // The URL of the article's full content
             'title'              => "arsse_articles.title",                                                                                                                             // The title
             'author'             => "arsse_articles.author",                                                                                                                            // The name of the author
-            'content'            => "coalesce(case when arsse_subscriptions.scrape = 1 then arsse_articles.content_scraped end, arsse_articles.content)",                               // The article content
+            'content'            => "arsse_article_contents.content",                                                                                                                   // The article content
             'guid'               => "arsse_articles.guid",                                                                                                                              // The GUID of the article, as presented in the feed (NOTE: Picofeed actually provides a hash of the ID)
             'fingerprint'        => "arsse_articles.url_title_hash || ':' || arsse_articles.url_content_hash || ':' || arsse_articles.title_content_hash",                              // A combination of three hashes
             'folder'             => "coalesce(arsse_subscriptions.folder,0)",                                                                                                           // The folder of the article's feed. This is mainly for use in WHERE clauses
