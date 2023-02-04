@@ -152,40 +152,63 @@ trait SeriesFeed {
         Arsse::$db->subscriptionUpdate(null, 1);
         Arsse::$db->subscriptionUpdate(null, 6);
         $now = gmdate("Y-m-d H:i:s");
+        $past = gmdate("Y-m-d H:i:s", strtotime("now - 1 minute"));
         $state = $this->primeExpectations($this->data, [
-            'arsse_articles'         => ["id", "feed","url","title","author","published","edited","guid","url_title_hash","url_content_hash","title_content_hash","modified","read","starred","hidden","marked"],
+            'arsse_articles'         => ["id", "subscription","url","title","author","published","edited","guid","url_title_hash","url_content_hash","title_content_hash","modified"],
             'arsse_article_contents' => ["id", "content"],
             'arsse_editions'         => ["id","article","modified"],
-            'arsse_subscriptionss'   => ["id","size"],
+            'arsse_subscriptions'    => ["id","size"],
         ]);
-        $state['arsse_articles']['rows'][2] = [3,1,'http://example.com/3','Article title 3 (updated)','','2000-01-03 00:00:00','2000-01-03 00:00:00','<p>Article content 3</p>','31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92','6cc99be662ef3486fef35a890123f18d74c29a32d714802d743c5b4ef713315a','b278380e984cefe63f0e412b88ffc9cb0befdfa06fdc00bace1da99a8daff406','d5faccc13bf8267850a1e8e61f95950a0f34167df2c8c58011c0aaa6367026ac',$now];
-        $state['arsse_articles']['rows'][3] = [4,1,'http://example.com/4','Article title 4','','2000-01-04 00:00:00','2000-01-04 00:00:01','<p>Article content 4</p>','804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180','f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8','f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3','ab2da63276acce431250b18d3d49b988b226a99c7faadf275c90b751aee05be9',$now];
-        $state['arsse_articles']['rows'][] = [8,1,'http://example.com/6','Article title 6','','2000-01-06 00:00:00','2000-01-06 00:00:00','<p>Article content 6</p>','b3461ab8e8759eeb1d65a818c65051ec00c1dfbbb32a3c8f6999434e3e3b76ab','91d051a8e6749d014506848acd45e959af50bf876427c4f0e3a1ec0f04777b51','211d78b1a040d40d17e747a363cc283f58767b2e502630d8de9b8f1d5e941d18','5ed68ccb64243b8c1931241d2c9276274c3b1d87f223634aa7a1ab0141292ca7',$now];
+        $state['arsse_articles']['rows'][2] = [3,1,'http://example.com/3','Article title 3 (updated)','','2000-01-03 00:00:00','2000-01-03 00:00:00','31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92','6cc99be662ef3486fef35a890123f18d74c29a32d714802d743c5b4ef713315a','b278380e984cefe63f0e412b88ffc9cb0befdfa06fdc00bace1da99a8daff406','d5faccc13bf8267850a1e8e61f95950a0f34167df2c8c58011c0aaa6367026ac',$now];
+        $state['arsse_articles']['rows'][3] = [4,1,'http://example.com/4','Article title 4','','2000-01-04 00:00:00','2000-01-04 00:00:01','804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180','f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8','f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3','ab2da63276acce431250b18d3d49b988b226a99c7faadf275c90b751aee05be9',$now];
+        $state['arsse_articles']['rows'][] = [16,1,'http://example.com/6','Article title 6','','2000-01-06 00:00:00','2000-01-06 00:00:00','b3461ab8e8759eeb1d65a818c65051ec00c1dfbbb32a3c8f6999434e3e3b76ab','91d051a8e6749d014506848acd45e959af50bf876427c4f0e3a1ec0f04777b51','211d78b1a040d40d17e747a363cc283f58767b2e502630d8de9b8f1d5e941d18','5ed68ccb64243b8c1931241d2c9276274c3b1d87f223634aa7a1ab0141292ca7',$now];
+        $state['arsse_articles']['rows'][9] = [13,6,'http://example.com/3','Article title 3 (updated)','','2000-01-03 00:00:00','2000-01-03 00:00:00','31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92','6cc99be662ef3486fef35a890123f18d74c29a32d714802d743c5b4ef713315a','b278380e984cefe63f0e412b88ffc9cb0befdfa06fdc00bace1da99a8daff406','d5faccc13bf8267850a1e8e61f95950a0f34167df2c8c58011c0aaa6367026ac',$now];
+        $state['arsse_articles']['rows'][10] = [14,6,'http://example.com/4','Article title 4','','2000-01-04 00:00:00','2000-01-04 00:00:01','804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180','f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8','f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3','ab2da63276acce431250b18d3d49b988b226a99c7faadf275c90b751aee05be9',$now];
+        $state['arsse_articles']['rows'][] = [17,6,'http://example.com/6','Article title 6','','2000-01-06 00:00:00','2000-01-06 00:00:00','b3461ab8e8759eeb1d65a818c65051ec00c1dfbbb32a3c8f6999434e3e3b76ab','91d051a8e6749d014506848acd45e959af50bf876427c4f0e3a1ec0f04777b51','211d78b1a040d40d17e747a363cc283f58767b2e502630d8de9b8f1d5e941d18','5ed68ccb64243b8c1931241d2c9276274c3b1d87f223634aa7a1ab0141292ca7',$now];
         $state['arsse_editions']['rows'] = array_merge($state['arsse_editions']['rows'], [
-            [6,8,$now],
-            [7,3,$now],
-            [8,4,$now],
+            [6, 16,$now],
+            [7, 3, $now],
+            [8, 4, $now],
+            [9, 17,$now],
+            [10,13,$now],
+            [11,14,$now],
+
         ]);
-        $state['arsse_marks']['rows'][2] = [6,3,0,1,1,$now];
-        $state['arsse_marks']['rows'][3] = [6,4,0,0,0,$now];
-        $state['arsse_marks']['rows'][6] = [1,3,0,0,0,$now];
-        $state['arsse_marks']['rows'][] = [6,8,0,0,1,null];
+        $state['arsse_article_contents']['rows'][2] = [3,'<p>Article content 3</p>'];
+        $state['arsse_article_contents']['rows'][3] = [4,'<p>Article content 4</p>'];
+        $state['arsse_article_contents']['rows'][] = [16,'<p>Article content 6</p>'];
+        $state['arsse_article_contents']['rows'][9] = [13,'<p>Article content 3</p>'];
+        $state['arsse_article_contents']['rows'][10] = [14,'<p>Article content 4</p>'];
+        $state['arsse_article_contents']['rows'][] = [17,'<p>Article content 6</p>'];
         $state['arsse_subscriptions']['rows'][0] = [1,6];
+        $state['arsse_subscriptions']['rows'][5] = [6,6];
         $this->compareExpectations(static::$drv, $state);
+        $state = $this->primeExpectations($this->data, [
+            'arsse_articles' => ["id", "read", "starred", "hidden", "marked"],
+        ]);
+        $state['arsse_articles']['rows'][2] = [3,0,0,0,null];
+        $state['arsse_articles']['rows'][9] = [13,0,1,1,$past];
+        $state['arsse_articles']['rows'][10] = [14,0,0,0,$past];
+        $state['arsse_articles']['rows'][] = [16,0,0,0,null];
+        $state['arsse_articles']['rows'][] = [17,0,0,1,null];
+        $this->compareExpectations(static::$drv, $state);
+    }
+
+    public function testUpdateAFeedWithErrors(): void {
         // update a valid feed which previously had an error
         Arsse::$db->subscriptionUpdate(null, 2);
         // update an erroneous feed which previously had no errors
         Arsse::$db->subscriptionUpdate(null, 3);
         $state = $this->primeExpectations($this->data, [
-            'arsse_feeds' => ["id","err_count","err_msg"],
+            'arsse_subscriptions' => ["id","err_count","err_msg"],
         ]);
-        $state['arsse_feeds']['rows'][1] = [2,0,""];
-        $state['arsse_feeds']['rows'][2] = [3,1,'Feed URL "http://localhost:8000/Feed/Fetching/Error?code=404" is invalid'];
+        $state['arsse_subscriptions']['rows'][1] = [2,0,""];
+        $state['arsse_subscriptions']['rows'][2] = [3,1,'Feed URL "http://localhost:8000/Feed/Fetching/Error?code=404" is invalid'];
         $this->compareExpectations(static::$drv, $state);
         // update the bad feed again, twice
         Arsse::$db->subscriptionUpdate(null, 3);
         Arsse::$db->subscriptionUpdate(null, 3);
-        $state['arsse_feeds']['rows'][2] = [3,3,'Feed URL "http://localhost:8000/Feed/Fetching/Error?code=404" is invalid'];
+        $state['arsse_subscriptions']['rows'][2] = [3,3,'Feed URL "http://localhost:8000/Feed/Fetching/Error?code=404" is invalid'];
         $this->compareExpectations(static::$drv, $state);
     }
 

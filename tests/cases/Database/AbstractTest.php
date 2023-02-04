@@ -17,7 +17,7 @@ abstract class AbstractTest extends \JKingWeb\Arsse\Test\AbstractTest {
     use SeriesSession;
     use SeriesToken;
     use SeriesFolder;
-    //use SeriesFeed;
+    use SeriesFeed;
     use SeriesIcon;
     use SeriesSubscription;
     //use SeriesLabel;
