@@ -1503,7 +1503,6 @@ class Database {
             'folder_name'        => "folder_data.name",                                                                                                                                  // The name of the folder of the article's feed. This is mainly for use in WHERE clauses
             'top_folder_name'    => "folder_data.top_name",                                                                                                                              // The name of the top-most folder of the article's feed. This is mainly for use in WHERE clauses
             'subscription'       => "arsse_subscriptions.id",                                                                                                                            // The article's parent subscription
-            'feed'               => "arsse_subscriptions.feed",                                                                                                                          // The article's parent feed
             'hidden'             => "coalesce(arsse_articles.hidden,0)",                                                                                                                 // Whether the article is hidden
             'starred'            => "coalesce(arsse_articles.starred,0)",                                                                                                                // Whether the article is starred
             'unread'             => "abs(coalesce(arsse_articles.read,0) - 1)",                                                                                                          // Whether the article is unread
@@ -1573,9 +1572,10 @@ class Database {
                 $outColumns
             from arsse_articles
             join arsse_subscriptions on arsse_subscriptions.id = arsse_articles.subscription and arsse_subscriptions.owner = ?
+            left join arsse_article_contents on arsse_article_contents.id = arsse_articles.id
             left join folder_data on arsse_subscriptions.folder = folder_data.id
             left join arsse_enclosures on arsse_enclosures.article = arsse_articles.id
-            join (
+            left join (
                 select article, max(id) as edition from arsse_editions group by article
             ) as latest_editions on arsse_articles.id = latest_editions.article
             left join (
@@ -2157,7 +2157,7 @@ class Database {
                 arsse_editions.id, arsse_editions.article, edition_stats.edition as current
             from arsse_editions 
                 join arsse_articles on arsse_articles.id = arsse_editions.article
-                join arsse_subscriptions on arsse_subscriptions.feed = arsse_articles.feed
+                join arsse_subscriptions on arsse_subscriptions.id = arsse_articles.subscription
                 join (select article, max(id) as edition from arsse_editions group by article) as edition_stats on edition_stats.article = arsse_editions.article
             where arsse_editions.id = ? and arsse_subscriptions.owner = ?",
             ["int", "str"]
@@ -2397,7 +2397,7 @@ class Database {
         [$inClause, $inTypes, $inValues] = $this->generateIn($articles, "int");
         $updateQ = "UPDATE arsse_label_members set assigned = ?, modified = CURRENT_TIMESTAMP where label = ? and assigned <> ? and article %in% ($inClause)";
         $updateT = ["bool", "int", "bool", $inTypes];
-        $insertQ = "INSERT INTO arsse_label_members(label,article,subscription) SELECT ?,a.id,s.id from arsse_articles as a join arsse_subscriptions as s on a.feed = s.feed where s.owner = ? and a.id not in (select article from arsse_label_members where label = ?) and a.id in ($inClause)";
+        $insertQ = "INSERT INTO arsse_label_members(label,article,subscription) SELECT ?,a.id,s.id from arsse_articles as a join arsse_subscriptions as s on a.subscription = s.id where s.owner = ? and a.id not in (select article from arsse_label_members where label = ?) and a.id in ($inClause)";
         $insertT = ["int", "str", "int", $inTypes];
         $clearQ = str_replace("%in%", "not in", $updateQ);
         $clearT = $updateT;
