@@ -1887,6 +1887,7 @@ class Database {
      * @param bool $updateTimestamp Whether to also update the timestamp. This should only be false if a mark is changed as a result of an automated action not taken by the user
      */
     public function articleMark(string $user, array $data, RootContext $context = null, bool $updateTimestamp = true): int {
+        // normalize requested marks
         $data = [
             'read'    => $data['read'] ?? null,
             'starred' => $data['starred'] ?? null,
@@ -1894,114 +1895,94 @@ class Database {
             'note'    => $data['note'] ?? null,
         ];
         if (!isset($data['read']) && !isset($data['starred']) && !isset($data['hidden']) && !isset($data['note'])) {
+            // no changes were requested
             return 0;
         }
-        $context = $context ?? new Context;
+        // begin a transaction
         $tr = $this->begin();
-        $out = 0;
-        if ($data['read'] || $data['starred'] || $data['hidden'] || strlen($data['note'] ?? "")) {
-            // first prepare a query to insert any missing marks rows for the articles we want to mark
-            // but only insert new mark records if we're setting at least one "positive" mark
-            $q = $this->articleQuery($user, $context, ["id", "subscription", "note"]);
-            $q->setWhere("arsse_marks.starred is null"); // null means there is no marks row for the article, because the column is defined not-null
-            $this->db->prepare("INSERT INTO arsse_marks(article,subscription,note) ".$q->getQuery(), $q->getTypes())->run($q->getValues());
-        }
-        if (isset($data['read']) && (isset($data['starred']) || isset($data['hidden']) || isset($data['note'])) && ($context->edition() || $context->editions())) {
-            // if marking by edition both read and something else, do separate marks for starred and note than for read
-            // marking as read is ignored if the edition is not the latest, but the same is not true of the other two marks
-            $this->db->query("UPDATE arsse_marks set touched = 0 where touched <> 0");
-            // set read marks
-            $subq = $this->articleQuery($user, $context, ["id", "subscription"]);
-            $subq->setWhere("arsse_marks.read <> coalesce(?,arsse_marks.read)", "bool", $data['read']);
-            $q = new Query(
-                "WITH RECURSIVE
-                target_articles(article, subscription) as (
-                    {$subq->getQuery()}
-                )
-                update arsse_marks 
-                set 
-                    \"read\" = ?, 
-                    touched = 1 
-                where 
-                    article in (select article from target_articles) 
-                    and subscription in (select distinct subscription from target_articles)",
-                [$subq->getTypes(), "bool"],
-                [$subq->getValues(), $data['read']]
-            );
-            $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
-            // get the articles associated with the requested editions
-            if ($context->edition()) {
-                $context->article($this->articleValidateEdition($user, $context->edition)['article'])->edition(null);
-            } else {
-                $context->articles($this->editionArticle(...$context->editions))->editions(null);
+        $context = $context ?? new Context;
+        if ($context instanceof UnionContext) {
+            $out = 0;
+            // if we were provided a union context, mark each context in series;
+            //   this is atomic (due to the transaction already begun), but may
+            //   result in multiple timestamps as well as an inaccurate output
+            //   integer as articles may be in multiple contexts
+            // TODO: The above quirks could be fixed by resolving the union
+            //   context to a single list of article IDs noting which are
+            //   valid read marks (if editions were selected in any of the child
+            //   contexts); this functionality is not needed yet, however
+            foreach ($context as $c) {
+                $out += $this->articleMark($user, $data, $c, $updateTimestamp);
             }
-            // set starred, hidden, and/or note marks (unless all requested editions actually do not exist)
-            if ($context->article || $context->articles) {
-                $setData = array_filter($data, function($v) {
-                    return isset($v);
-                });
-                [$set, $setTypes, $setValues] = $this->generateSet($setData, ['starred' => "bool", 'hidden' => "bool", 'note' => "str"]);
-                $subq = $this->articleQuery($user, $context, ["id", "subscription"]);
-                $subq->setWhere("(arsse_marks.note <> coalesce(?,arsse_marks.note) or arsse_marks.starred <> coalesce(?,arsse_marks.starred) or arsse_marks.hidden <> coalesce(?,arsse_marks.hidden))", ["str", "bool", "bool"], [$data['note'], $data['starred'], $data['hidden']]);
-                $q = new Query(
-                    "WITH RECURSIVE
-                    target_articles(article, subscription) as (
-                        {$subq->getQuery()}
-                    )
-                    update arsse_marks 
-                    set 
-                        touched = 1, 
-                        $set 
-                    where 
-                        article in (select article from target_articles) 
-                        and subscription in (select distinct subscription from target_articles)",
-                    [$subq->getTypes(), $setTypes],
-                    [$subq->getValues(), $setValues]
-                );
-                $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
-            }
-            // finally set the modification date for all touched marks and return the number of affected marks
+            $tr->commit();
+            return $out;
+        } 
+        // prepare the subquery which selects the articles to act on
+        $subq = $this->articleQuery($user, $context);
+        $subq->setWhere("(arsse_articles.note <> coalesce(?,arsse_articles.note) or arsse_articles.starred <> coalesce(?,arsse_articles.starred) or arsse_articles.read <> coalesce(?,arsse_articles.read) or arsse_articles.hidden <> coalesce(?,arsse_articles.hidden))", ["str", "bool", "bool", "bool"], [$data['note'], $data['starred'], $data['read'], $data['hidden']]);
+        // if we're marking as read/unread by edition, we have to use a different query so that we only mark read/unread if the edition is the latest for the article
+        if (isset($data['read']) && ($context->edition() || $context->editions())) {
+            // set up the "SET" clause for the update
+            $setData = array_filter($data, function($v, $k) {
+                // filter out anyhing with a value of null (no change), as well as the "rea" key as it required special handling
+                return isset($v) && $k !== "read";
+            });
+            [$set, $setTypes, $setValues] = $this->generateSet($setData, ['read' => "bool", 'starred' => "bool", 'hidden' => "bool", 'note' => "str"]);
+            $set = $set ? "$set, " : "";
+            $set .= "read = case when id in (select article from valid_read) then ? else \"read\" end";
+            $setTypes[] = "bool";
+            $setValues[] = $data['read'];
             if ($updateTimestamp) {
-                $out = $this->db->query("UPDATE arsse_marks set modified = CURRENT_TIMESTAMP, touched = 0 where touched = 1")->changes();
-            } else {
-                $out = $this->db->query("UPDATE arsse_marks set touched = 0 where touched = 1")->changes();
+                $set .= ", modified = CURRENT_TIMESTAMP";
             }
+            // prepare the rest of the query
+            [$inClause, $inTypes, $inValues] = $this->generateIn($context->editions ?: (array) $context->edition, "int");
+            $out = $this->db->prepare(
+                "WITH RECURSIVE
+                target_articles(article) as (
+                    {$subq->getQuery()}
+                ),
+                valid_read as (
+                    select article from (
+                        select max(id) as edition, article from arsse_editions where id in ($inClause) group by article
+                    ) as selected_editions join (
+                        SELECT max(id) as edition, article from arsse_editions group by article
+                    ) as latest_editions on selected_editions.edition = latest_editions.edition
+                )
+                update arsse_articles
+                set 
+                    $set 
+                where 
+                    article in (select article from target_articles)",
+                $subq->getTypes(), $inTypes, $setTypes
+            )->run(
+                $subq->getValues(), $inValues, $setValues
+            );
         } else {
-            if (!isset($data['read']) && ($context->edition() || $context->editions())) {
-                // get the articles associated with the requested editions
-                if ($context->edition()) {
-                    $context->article($this->articleValidateEdition($user, $context->edition)['article'])->edition(null);
-                } else {
-                    $context->articles($this->editionArticle(...$context->editions))->editions(null);
-                }
-                if (!$context->article && !$context->articles) {
-                    return 0;
-                }
-            }
+            // set up the "SET" clause for the update
             $setData = array_filter($data, function($v) {
+                // filter out anyhing with a value of null (no change)
                 return isset($v);
             });
             [$set, $setTypes, $setValues] = $this->generateSet($setData, ['read' => "bool", 'starred' => "bool", 'hidden' => "bool", 'note' => "str"]);
             if ($updateTimestamp) {
                 $set .= ", modified = CURRENT_TIMESTAMP";
             }
-            $subq = $this->articleQuery($user, $context, ["id", "subscription"]);
-            $subq->setWhere("(arsse_marks.note <> coalesce(?,arsse_marks.note) or arsse_marks.starred <> coalesce(?,arsse_marks.starred) or arsse_marks.read <> coalesce(?,arsse_marks.read) or arsse_marks.hidden <> coalesce(?,arsse_marks.hidden))", ["str", "bool", "bool", "bool"], [$data['note'], $data['starred'], $data['read'], $data['hidden']]);
-            $q = new Query(
+            // prepare the rest of the query
+            $out = $this->db->prepare(
                 "WITH RECURSIVE
-                target_articles(article, subscription) as (
+                target_articles(article) as (
                     {$subq->getQuery()}
                 )
-                update arsse_marks 
+                update arsse_articles
                 set 
                     $set 
                 where 
-                    article in (select article from target_articles) 
-                    and subscription in (select distinct subscription from target_articles)",
-                [$subq->getTypes(), $setTypes],
-                [$subq->getValues(), $setValues]
+                    article in (select article from target_articles)",
+                $subq->getTypes(), $setTypes
+            )->run(
+                $subq->getValues(), $setValues
             );
-            $out = $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
         }
         $tr->commit();
         return $out;
@@ -2022,7 +2003,7 @@ class Database {
                 coalesce(sum(abs(\"read\" - 1)),0) as unread,
                 coalesce(sum(\"read\"),0) as \"read\"
             FROM (
-                select \"read\" from arsse_marks where starred = 1 and hidden <> 1 and subscription in (select id from arsse_subscriptions where owner = ?)
+                select \"read\" from arsse_articles where starred = 1 and hidden <> 1 and subscription in (select id from arsse_subscriptions where owner = ?)
             ) as starred_data",
             "str"
         )->run($user)->getRow();
