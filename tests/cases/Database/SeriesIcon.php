@@ -9,6 +9,8 @@ namespace JKingWeb\Arsse\TestCase\Database;
 use JKingWeb\Arsse\Arsse;
 
 trait SeriesIcon {
+    protected static $drv;
+
     protected function setUpSeriesIcon(): void {
         // set up the test data
         $this->data = [

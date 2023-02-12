@@ -10,6 +10,8 @@ use JKingWeb\Arsse\Arsse;
 use DateTimeImmutable as Date;
 
 trait SeriesCleanup {
+    protected static $drv;
+
     protected function setUpSeriesCleanup(): void {
         // set up the configuration
         Arsse::$conf->import([

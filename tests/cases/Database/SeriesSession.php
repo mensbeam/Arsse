@@ -10,6 +10,8 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Misc\Date;
 
 trait SeriesSession {
+    protected static $drv;
+
     protected function setUpSeriesSession(): void {
         // set up the configuration
         static::setConf([

@@ -9,6 +9,8 @@ namespace JKingWeb\Arsse\TestCase\Database;
 use JKingWeb\Arsse\Arsse;
 
 trait SeriesFolder {
+    protected static $drv;
+
     protected function setUpSeriesFolder(): void {
         $this->data = [
             'arsse_users' => [

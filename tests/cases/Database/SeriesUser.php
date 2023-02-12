@@ -9,6 +9,8 @@ namespace JKingWeb\Arsse\TestCase\Database;
 use JKingWeb\Arsse\Arsse;
 
 trait SeriesUser {
+    protected static $drv;
+
     protected function setUpSeriesUser(): void {
         $this->data = [
             'arsse_users' => [

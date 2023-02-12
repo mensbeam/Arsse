@@ -10,6 +10,8 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
 
 trait SeriesMiscellany {
+    protected static $drv;
+
     protected function setUpSeriesMiscellany(): void {
         static::setConf([
             'dbDriver' => static::$dbDriverClass,

@@ -9,6 +9,8 @@ namespace JKingWeb\Arsse\TestCase\Database;
 use JKingWeb\Arsse\Arsse;
 
 trait SeriesToken {
+    protected static $drv;
+
     protected function setUpSeriesToken(): void {
         // set up the test data
         $past = gmdate("Y-m-d H:i:s", strtotime("now - 1 minute"));

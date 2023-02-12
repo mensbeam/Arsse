@@ -10,6 +10,8 @@ use JKingWeb\Arsse\Test\Database;
 use JKingWeb\Arsse\Arsse;
 
 trait SeriesMeta {
+    protected static $drv;
+
     protected function setUpSeriesMeta(): void {
         $dataBare = [
             'arsse_meta' => [

@@ -10,6 +10,8 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
 
 trait SeriesTag {
+    protected static $drv;
+
     protected $checkMembers;
     protected $checkTags;
 

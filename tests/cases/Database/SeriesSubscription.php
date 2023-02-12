@@ -13,6 +13,8 @@ use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\Misc\Date;
 
 trait SeriesSubscription {
+    protected static $drv;
+
     public function setUpSeriesSubscription(): void {
         $this->data = [
             'arsse_users' => [

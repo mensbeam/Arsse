@@ -1926,7 +1926,7 @@ class Database {
             $setData = array_filter($data, function($v, $k) {
                 // filter out anyhing with a value of null (no change), as well as the "rea" key as it required special handling
                 return isset($v) && $k !== "read";
-            });
+            }, \ARRAY_FILTER_USE_BOTH);
             [$set, $setTypes, $setValues] = $this->generateSet($setData, ['read' => "bool", 'starred' => "bool", 'hidden' => "bool", 'note' => "str"]);
             $set = $set ? "$set, " : "";
             $set .= "read = case when id in (select article from valid_read) then ? else \"read\" end";
@@ -1939,11 +1939,11 @@ class Database {
             [$inClause, $inTypes, $inValues] = $this->generateIn($context->editions ?: (array) $context->edition, "int");
             $out = $this->db->prepare(
                 "WITH RECURSIVE
-                target_articles(article) as (
+                target_articles as (
                     {$subq->getQuery()}
                 ),
                 valid_read as (
-                    select article from (
+                    select selected_editions.article from (
                         select max(id) as edition, article from arsse_editions where id in ($inClause) group by article
                     ) as selected_editions join (
                         SELECT max(id) as edition, article from arsse_editions group by article
@@ -1953,11 +1953,11 @@ class Database {
                 set 
                     $set 
                 where 
-                    article in (select article from target_articles)",
+                    id in (select id from target_articles)",
                 $subq->getTypes(), $inTypes, $setTypes
             )->run(
                 $subq->getValues(), $inValues, $setValues
-            );
+            )->changes();
         } else {
             // set up the "SET" clause for the update
             $setData = array_filter($data, function($v) {
@@ -1971,18 +1971,18 @@ class Database {
             // prepare the rest of the query
             $out = $this->db->prepare(
                 "WITH RECURSIVE
-                target_articles(article) as (
+                target_articles as (
                     {$subq->getQuery()}
                 )
                 update arsse_articles
                 set 
                     $set 
                 where 
-                    article in (select article from target_articles)",
+                    id in (select id from target_articles)",
                 $subq->getTypes(), $setTypes
             )->run(
                 $subq->getValues(), $setValues
-            );
+            )->changes();
         }
         $tr->commit();
         return $out;

@@ -10,6 +10,7 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Test\Result;
 
 trait SeriesFeed {
+    protected static $drv;
     protected $matches;
 
     protected function setUpSeriesFeed(): void {

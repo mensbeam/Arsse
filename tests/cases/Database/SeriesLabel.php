@@ -11,6 +11,7 @@ use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Context\Context;
 
 trait SeriesLabel {
+    protected static $drv;
     protected $checkLabels;
 
     protected function setUpSeriesLabel(): void {

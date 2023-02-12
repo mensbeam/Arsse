@@ -10,6 +10,7 @@ use JKingWeb\Arsse\Database;
 
 /** @covers \JKingWeb\Arsse\Database */
 class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
+    protected static $drv;
     protected $db = null;
 
     public function setUp(): void {
