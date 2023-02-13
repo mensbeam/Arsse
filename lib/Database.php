@@ -1649,12 +1649,9 @@ class Database {
         // handle the simple context options
         $options = [
             // each context array consists of a column identifier (see $colDefs above), a comparison operator, and a data type; the "between" operator has special handling
-            "edition"          => ["edition",       "=",       "int"],
-            "editions"         => ["edition",       "in",      "int"],
             "article"          => ["id",            "=",       "int"],
             "articles"         => ["id",            "in",      "int"],
             "articleRange"     => ["id",            "between", "int"],
-            "editionRange"     => ["edition",       "between", "int"],
             "modifiedRange"    => ["modified_date", "between", "datetime"],
             "markedRange"      => ["marked_date",   "between", "datetime"],
             "folderShallow"    => ["folder",        "=",       "int"],
@@ -1810,6 +1807,45 @@ class Database {
                 }
             }
         }
+        // handle edition-related selections
+        if ($context->edition()) {
+            $q->setWhere("{$colDefs['id']} = (select article from arsse_editions where id = ?)", "int", $context->edition);
+        }
+        if ($context->not->edition()) {
+            $q->setWhereNot("{$colDefs['id']} = (select article from arsse_editions where id = ?)", "int", $context->not->edition);
+        }
+        if ($context->editions()) {
+            [$inClause, $inTypes, $inValues] = $this->generateIn($context->editions, "int");
+            $q->setWhere("{$colDefs['id']} in (select article from arsse_editions where id in ($inClause))", $inTypes, $inValues);
+        }
+        if ($context->not->editions()) {
+            [$inClause, $inTypes, $inValues] = $this->generateIn($context->not->editions, "int");
+            $q->setWhereNot("{$colDefs['id']} in (select article from arsse_editions where id in ($inClause))", $inTypes, $inValues);
+        }
+        if ($context->editionRange()) {
+            if ($context->editionRange[0] === null) {
+                // range is open at the low end
+                $q->setWhere("{$colDefs['id']} in (select article from arsse_editions where id <= ?)", "int", $context->editionRange[1]);
+            } elseif ($context->editionRange[1] === null) {
+                // range is open at the high end
+                $q->setWhere("{$colDefs['id']} in (select article from arsse_editions where id >= ?)", "int", $context->editionRange[0]);
+            } else {
+                // range is bounded in both directions
+                $q->setWhere("{$colDefs['id']} in (select article from arsse_editions where id between ? and ?)", ["int", "int"], $context->editionRange);
+            }
+        }
+        if ($context->not->editionRange()) {
+            if ($context->not->editionRange[0] === null) {
+                // range is open at the low end
+                $q->setWhereNot("{$colDefs['id']} in (select article from arsse_editions where id <= ?)", "int", $context->not->editionRange[1]);
+            } elseif ($context->not->editionRange[1] === null) {
+                // range is open at the high end
+                $q->setWhereNot("{$colDefs['id']} in (select article from arsse_editions where id >= ?)", "int", $context->not->editionRange[0]);
+            } else {
+                // range is bounded in both directions
+                $q->setWhereNot("{$colDefs['id']} in (select article from arsse_editions where id between ? and ?)", ["int", "int"], $context->not->editionRange);
+            }
+        }
         return $q;
     }
 
@@ -1933,7 +1969,7 @@ class Database {
             $setTypes[] = "bool";
             $setValues[] = $data['read'];
             if ($updateTimestamp) {
-                $set .= ", modified = CURRENT_TIMESTAMP";
+                $set .= ", marked = CURRENT_TIMESTAMP";
             }
             // prepare the rest of the query
             [$inClause, $inTypes, $inValues] = $this->generateIn($context->editions ?: (array) $context->edition, "int");
@@ -1966,7 +2002,7 @@ class Database {
             });
             [$set, $setTypes, $setValues] = $this->generateSet($setData, ['read' => "bool", 'starred' => "bool", 'hidden' => "bool", 'note' => "str"]);
             if ($updateTimestamp) {
-                $set .= ", modified = CURRENT_TIMESTAMP";
+                $set .= ", marked = CURRENT_TIMESTAMP";
             }
             // prepare the rest of the query
             $out = $this->db->prepare(
