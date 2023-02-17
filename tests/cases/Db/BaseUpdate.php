@@ -295,14 +295,14 @@ QUERY_TEXT
                 ]
             ],
             'arsse_articles' => [
-                'columns' => ["id", "subscription", "read", "starred", "hidden", "published", "edited", "modified", "marked", "url", "title", "author", "guid", "url_title_hash", "url_content_hash", "title_content_hash", "note"],
+                'columns' => ["id", "subscription", "read", "starred", "hidden", "touched", "published", "edited", "modified", "marked", "url", "title", "author", "guid", "url_title_hash", "url_content_hash", "title_content_hash", "note"],
                 'rows'    => [
-                    [1,  1, 1, 1, 0, "2001-11-08 22:07:55", "2002-11-08 07:51:12", "2001-11-08 23:44:56", "2002-11-08 00:37:22", "https://example.com/1", "Article 1", "John Doe", "GUID1", "UTHASH1", "UCHASH1", "TCHASH1", "Note 1"],
-                    [2,  1, 0, 0, 0, "2001-11-09 22:07:55", "2002-11-09 07:51:12", "2001-11-09 23:44:56", null,                  "https://example.com/2", "Article 2", "Jane Doe", "GUID2", "UTHASH2", "UCHASH2", "TCHASH2", ""],
-                    [7,  4, 1, 0, 0, "2001-11-12 22:07:55", "2002-11-12 07:51:12", "2001-11-12 23:44:56", "2002-11-12 00:37:22", "https://example.net/1", "Article 5", "Adam Doe", "GUID5", "UTHASH5", "UCHASH5", "TCHASH5", "Note 5"],
-                    [8,  6, 0, 1, 0, "2001-11-12 22:07:55", "2002-11-12 07:51:12", "2001-11-12 23:44:56", "2002-12-12 00:37:22", "https://example.net/1", "Article 5", "Adam Doe", "GUID5", "UTHASH5", "UCHASH5", "TCHASH5", ""],
-                    [9,  4, 0, 0, 0, "2001-11-13 22:07:55", "2002-11-13 07:51:12", "2001-11-13 23:44:56", null,                  "https://example.net/2", "Article 6", "Evie Doe", "GUID6", "UTHASH6", "UCHASH6", "TCHASH6", ""],
-                    [10, 6, 0, 0, 1, "2001-11-13 22:07:55", "2002-11-13 07:51:12", "2001-11-13 23:44:56", "2002-12-13 00:37:22", "https://example.net/2", "Article 6", "Evie Doe", "GUID6", "UTHASH6", "UCHASH6", "TCHASH6", "Note 6"],
+                    [1,  1, 1, 1, 0, 0, "2001-11-08 22:07:55", "2002-11-08 07:51:12", "2001-11-08 23:44:56", "2002-11-08 00:37:22", "https://example.com/1", "Article 1", "John Doe", "GUID1", "UTHASH1", "UCHASH1", "TCHASH1", "Note 1"],
+                    [2,  1, 0, 0, 0, 0, "2001-11-09 22:07:55", "2002-11-09 07:51:12", "2001-11-09 23:44:56", null,                  "https://example.com/2", "Article 2", "Jane Doe", "GUID2", "UTHASH2", "UCHASH2", "TCHASH2", ""],
+                    [7,  4, 1, 0, 0, 0, "2001-11-12 22:07:55", "2002-11-12 07:51:12", "2001-11-12 23:44:56", "2002-11-12 00:37:22", "https://example.net/1", "Article 5", "Adam Doe", "GUID5", "UTHASH5", "UCHASH5", "TCHASH5", "Note 5"],
+                    [8,  6, 0, 1, 0, 0, "2001-11-12 22:07:55", "2002-11-12 07:51:12", "2001-11-12 23:44:56", "2002-12-12 00:37:22", "https://example.net/1", "Article 5", "Adam Doe", "GUID5", "UTHASH5", "UCHASH5", "TCHASH5", ""],
+                    [9,  4, 0, 0, 0, 0, "2001-11-13 22:07:55", "2002-11-13 07:51:12", "2001-11-13 23:44:56", null,                  "https://example.net/2", "Article 6", "Evie Doe", "GUID6", "UTHASH6", "UCHASH6", "TCHASH6", ""],
+                    [10, 6, 0, 0, 1, 0, "2001-11-13 22:07:55", "2002-11-13 07:51:12", "2001-11-13 23:44:56", "2002-12-13 00:37:22", "https://example.net/2", "Article 6", "Evie Doe", "GUID6", "UTHASH6", "UCHASH6", "TCHASH6", "Note 6"],
                 ]
             ],
             'arsse_article_contents' => [

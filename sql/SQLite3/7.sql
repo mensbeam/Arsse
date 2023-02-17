@@ -48,6 +48,7 @@ create table arsse_articles_new(
     url_title_hash text not null,                                                                           -- hash of URL + title; used when checking for updates and for identification if there is no guid
     url_content_hash text not null,                                                                         -- hash of URL + content + enclosure URL + enclosure content type; used when checking for updates and for identification if there is no guid
     title_content_hash text not null,                                                                       -- hash of title + content + enclosure URL + enclosure content type; used when checking for updates and for identification if there is no guid
+    touched int not null default 0,                                                                         -- field used internally while marking; should normally be left as 0
     note text not null default ''                                                                           -- Tiny Tiny RSS freeform user note
 );
 insert into arsse_articles_new
@@ -68,6 +69,7 @@ insert into arsse_articles_new
         a.url_title_hash,
         a.url_content_hash,
         a.title_content_hash,
+        0,
         coalesce(m.note,'')
     from arsse_articles_map as i
     left join arsse_articles as a on a.id = i.article

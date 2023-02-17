@@ -515,11 +515,20 @@ trait SeriesArticle {
             103  => 103,
             104  => 104,
             105  => 105,
+            119  => 119,
+            120  => 120,
             202  => 102,
             203  => 103,
             204  => 104,
             205  => 105,
             305  => 105,
+            501  => 501,
+            502  => 502,
+            519  => 519,
+            520  => 520,
+            801  => 801,
+            802  => 802,
+            902  => 802,
             1001 => 20,
         ];
         $act = Arsse::$db->editionArticle(...range(1, 1001));
@@ -580,9 +589,9 @@ trait SeriesArticle {
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $state['arsse_articles']['rows'][20][1] = 0;
-        $state['arsse_articles']['rows'][9][4] = $now;
+        $state['arsse_articles']['rows'][20][4] = $now;
         $state['arsse_articles']['rows'][22][1] = 0;
-        $state['arsse_articles']['rows'][11][4] = $now;
+        $state['arsse_articles']['rows'][22][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -590,14 +599,12 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['read' => true]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][8][2] = 1;
-        $state['arsse_articles']['rows'][8][4] = $now;
-        $state['arsse_articles']['rows'][10][2] = 1;
-        $state['arsse_articles']['rows'][10][4] = $now;
-        $state['arsse_articles']['rows'][] = [13,5,1,0,$now,'',0];
-        $state['arsse_articles']['rows'][] = [13,6,1,0,$now,'',0];
-        $state['arsse_articles']['rows'][] = [14,7,1,0,$now,'',0];
-        $state['arsse_articles']['rows'][] = [14,8,1,0,$now,'',0];
+        $state['arsse_articles']['rows'][19] = [119,1,0,0,$now,"ook"];
+        $state['arsse_articles']['rows'][21] = [203,1,1,0,$now,"ack"];
+        $state['arsse_articles']['rows'][23] = [205,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][24] = [206,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][25] = [207,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][26] = [208,1,0,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -605,10 +612,10 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['starred' => false]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][10][3] = 0;
-        $state['arsse_articles']['rows'][10][4] = $now;
-        $state['arsse_articles']['rows'][11][3] = 0;
-        $state['arsse_articles']['rows'][11][4] = $now;
+        $state['arsse_articles']['rows'][21][2] = 0;
+        $state['arsse_articles']['rows'][21][4] = $now;
+        $state['arsse_articles']['rows'][22][2] = 0;
+        $state['arsse_articles']['rows'][22][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -616,14 +623,12 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['starred' => true]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][8][3] = 1;
-        $state['arsse_articles']['rows'][8][4] = $now;
-        $state['arsse_articles']['rows'][9][3] = 1;
-        $state['arsse_articles']['rows'][9][4] = $now;
-        $state['arsse_articles']['rows'][] = [13,5,0,1,$now,'',0];
-        $state['arsse_articles']['rows'][] = [13,6,0,1,$now,'',0];
-        $state['arsse_articles']['rows'][] = [14,7,0,1,$now,'',0];
-        $state['arsse_articles']['rows'][] = [14,8,0,1,$now,'',0];
+        $state['arsse_articles']['rows'][19] = [119,0,1,0,$now,"ook"];
+        $state['arsse_articles']['rows'][20] = [120,1,1,0,$now,"eek"];
+        $state['arsse_articles']['rows'][23] = [205,0,1,0,$now,""];
+        $state['arsse_articles']['rows'][24] = [206,0,1,0,$now,""];
+        $state['arsse_articles']['rows'][25] = [207,0,1,0,$now,""];
+        $state['arsse_articles']['rows'][26] = [208,0,1,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -631,13 +636,9 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['read' => false,'starred' => false]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][9][2] = 0;
-        $state['arsse_articles']['rows'][9][4] = $now;
-        $state['arsse_articles']['rows'][10][3] = 0;
-        $state['arsse_articles']['rows'][10][4] = $now;
-        $state['arsse_articles']['rows'][11][2] = 0;
-        $state['arsse_articles']['rows'][11][3] = 0;
-        $state['arsse_articles']['rows'][11][4] = $now;
+        $state['arsse_articles']['rows'][20] = [120,0,0,0,$now,"eek"];
+        $state['arsse_articles']['rows'][21] = [203,0,0,0,$now,"ack"];
+        $state['arsse_articles']['rows'][22] = [204,0,0,0,$now,"ach"];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -645,17 +646,13 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['read' => true,'starred' => true]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][8][2] = 1;
-        $state['arsse_articles']['rows'][8][3] = 1;
-        $state['arsse_articles']['rows'][8][4] = $now;
-        $state['arsse_articles']['rows'][9][3] = 1;
-        $state['arsse_articles']['rows'][9][4] = $now;
-        $state['arsse_articles']['rows'][10][2] = 1;
-        $state['arsse_articles']['rows'][10][4] = $now;
-        $state['arsse_articles']['rows'][] = [13,5,1,1,$now,'',0];
-        $state['arsse_articles']['rows'][] = [13,6,1,1,$now,'',0];
-        $state['arsse_articles']['rows'][] = [14,7,1,1,$now,'',0];
-        $state['arsse_articles']['rows'][] = [14,8,1,1,$now,'',0];
+        $state['arsse_articles']['rows'][19] = [119,1,1,0,$now,"ook"];
+        $state['arsse_articles']['rows'][20] = [120,1,1,0,$now,"eek"];
+        $state['arsse_articles']['rows'][21] = [203,1,1,0,$now,"ack"];
+        $state['arsse_articles']['rows'][23] = [205,1,1,0,$now,""];
+        $state['arsse_articles']['rows'][24] = [206,1,1,0,$now,""];
+        $state['arsse_articles']['rows'][25] = [207,1,1,0,$now,""];
+        $state['arsse_articles']['rows'][26] = [208,1,1,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -663,17 +660,13 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][8][3] = 1;
-        $state['arsse_articles']['rows'][8][4] = $now;
-        $state['arsse_articles']['rows'][9][2] = 0;
-        $state['arsse_articles']['rows'][9][3] = 1;
-        $state['arsse_articles']['rows'][9][4] = $now;
-        $state['arsse_articles']['rows'][11][2] = 0;
-        $state['arsse_articles']['rows'][11][4] = $now;
-        $state['arsse_articles']['rows'][] = [13,5,0,1,$now,'',0];
-        $state['arsse_articles']['rows'][] = [13,6,0,1,$now,'',0];
-        $state['arsse_articles']['rows'][] = [14,7,0,1,$now,'',0];
-        $state['arsse_articles']['rows'][] = [14,8,0,1,$now,'',0];
+        $state['arsse_articles']['rows'][19] = [119,0,1,0,$now,"ook"];
+        $state['arsse_articles']['rows'][20] = [120,0,1,0,$now,"eek"];
+        $state['arsse_articles']['rows'][22] = [204,0,1,0,$now,"ach"];
+        $state['arsse_articles']['rows'][23] = [205,0,1,0,$now,""];
+        $state['arsse_articles']['rows'][24] = [206,0,1,0,$now,""];
+        $state['arsse_articles']['rows'][25] = [207,0,1,0,$now,""];
+        $state['arsse_articles']['rows'][26] = [208,0,1,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -681,17 +674,13 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['read' => true,'starred' => false]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][8][2] = 1;
-        $state['arsse_articles']['rows'][8][4] = $now;
-        $state['arsse_articles']['rows'][10][2] = 1;
-        $state['arsse_articles']['rows'][10][3] = 0;
-        $state['arsse_articles']['rows'][10][4] = $now;
-        $state['arsse_articles']['rows'][11][3] = 0;
-        $state['arsse_articles']['rows'][11][4] = $now;
-        $state['arsse_articles']['rows'][] = [13,5,1,0,$now,'',0];
-        $state['arsse_articles']['rows'][] = [13,6,1,0,$now,'',0];
-        $state['arsse_articles']['rows'][] = [14,7,1,0,$now,'',0];
-        $state['arsse_articles']['rows'][] = [14,8,1,0,$now,'',0];
+        $state['arsse_articles']['rows'][19] = [119,1,0,0,$now,"ook"];
+        $state['arsse_articles']['rows'][21] = [203,1,0,0,$now,"ack"];
+        $state['arsse_articles']['rows'][22] = [204,1,0,0,$now,"ach"];
+        $state['arsse_articles']['rows'][23] = [205,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][24] = [206,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][25] = [207,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][26] = [208,1,0,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -699,18 +688,14 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['note' => "New note"]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][8][5] = "New note";
-        $state['arsse_articles']['rows'][8][4] = $now;
-        $state['arsse_articles']['rows'][9][5] = "New note";
-        $state['arsse_articles']['rows'][9][4] = $now;
-        $state['arsse_articles']['rows'][10][5] = "New note";
-        $state['arsse_articles']['rows'][10][4] = $now;
-        $state['arsse_articles']['rows'][11][5] = "New note";
-        $state['arsse_articles']['rows'][11][4] = $now;
-        $state['arsse_articles']['rows'][] = [13,5,0,0,$now,'New note',0];
-        $state['arsse_articles']['rows'][] = [13,6,0,0,$now,'New note',0];
-        $state['arsse_articles']['rows'][] = [14,7,0,0,$now,'New note',0];
-        $state['arsse_articles']['rows'][] = [14,8,0,0,$now,'New note',0];
+        $state['arsse_articles']['rows'][19] = [119,0,0,0,$now,"New note"];
+        $state['arsse_articles']['rows'][20] = [120,1,0,0,$now,"New note"];
+        $state['arsse_articles']['rows'][21] = [203,0,1,0,$now,"New note"];
+        $state['arsse_articles']['rows'][22] = [204,1,1,0,$now,"New note"];
+        $state['arsse_articles']['rows'][23] = [205,0,0,0,$now,"New note"];
+        $state['arsse_articles']['rows'][24] = [206,0,0,0,$now,"New note"];
+        $state['arsse_articles']['rows'][25] = [207,0,0,0,$now,"New note"];
+        $state['arsse_articles']['rows'][26] = [208,0,0,0,$now,"New note"];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -718,10 +703,10 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['read' => true], (new Context)->folder(7));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][] = [13,5,1,0,$now,'',0];
-        $state['arsse_articles']['rows'][] = [13,6,1,0,$now,'',0];
-        $state['arsse_articles']['rows'][] = [14,7,1,0,$now,'',0];
-        $state['arsse_articles']['rows'][] = [14,8,1,0,$now,'',0];
+        $state['arsse_articles']['rows'][23] = [205,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][24] = [206,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][25] = [207,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][26] = [208,1,0,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -729,8 +714,8 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['read' => true], (new Context)->folder(8));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][] = [13,5,1,0,$now,'',0];
-        $state['arsse_articles']['rows'][] = [13,6,1,0,$now,'',0];
+        $state['arsse_articles']['rows'][23] = [205,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][24] = [206,1,0,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -743,8 +728,8 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['read' => true], (new Context)->subscription(13));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][] = [13,5,1,0,$now,'',0];
-        $state['arsse_articles']['rows'][] = [13,6,1,0,$now,'',0];
+        $state['arsse_articles']['rows'][23] = [205,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][24] = [206,1,0,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -757,18 +742,17 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->article(120));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][20][3] = 1;
+        $state['arsse_articles']['rows'][20][2] = 1;
         $state['arsse_articles']['rows'][20][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
     public function testMarkMultipleArticles(): void {
-        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->articles([2,4,7,20]));
+        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->articles([202,204,207,120]));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][9][3] = 1;
-        $state['arsse_articles']['rows'][9][4] = $now;
-        $state['arsse_articles']['rows'][] = [14,7,0,1,$now,'',0];
+        $state['arsse_articles']['rows'][20] = [120,1,1,0,$now,"eek"];
+        $state['arsse_articles']['rows'][25] = [207,0,1,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -787,7 +771,7 @@ trait SeriesArticle {
 
     public function testMarkTooManyMultipleArticles(): void {
         $setSize = (new \ReflectionClassConstant(Database::class, "LIMIT_SET_SIZE"))->getValue();
-        $this->assertSame(7, Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->articles(range(1, $setSize * 3))));
+        $this->assertSame(7, Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->articles(range(119, $setSize * 3))));
     }
 
     public function testMarkAMissingArticle(): void {
@@ -799,8 +783,8 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->edition(1101));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][9][3] = 1;
-        $state['arsse_articles']['rows'][9][4] = $now;
+        $state['arsse_articles']['rows'][20][2] = 1;
+        $state['arsse_articles']['rows'][20][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1097,8 +1081,8 @@ trait SeriesArticle {
         Arsse::$db->articleMark("jane.doe@example.com", ['hidden' => true], (new Context)->edition(520));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][3][6] = 1;
-        $state['arsse_articles']['rows'][3][4] = $now;
+        $state['arsse_articles']['rows'][13][3] = 1;
+        $state['arsse_articles']['rows'][13][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 

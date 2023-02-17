@@ -35,6 +35,7 @@ alter table arsse_articles add column subscription bigint references arsse_subsc
 alter table arsse_articles add column read smallint not null default 0;
 alter table arsse_articles add column starred smallint not null default 0;
 alter table arsse_articles add column hidden smallint not null default 0;
+alter table arsse_articles add column touched smallint not null default 0;
 alter table arsse_articles add column marked timestamp(0) without time zone;
 alter table arsse_articles add column note text collate "und-x-icu" not null default '';
 

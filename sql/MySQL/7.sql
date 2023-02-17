@@ -38,6 +38,7 @@ alter table arsse_articles add column subscription bigint unsigned;
 alter table arsse_articles add column "read" smallint not null default 0;
 alter table arsse_articles add column starred smallint not null default 0;
 alter table arsse_articles add column hidden smallint not null default 0;
+alter table arsse_articles add column touched smallint not null default 0;
 alter table arsse_articles add column marked datetime(0);
 alter table arsse_articles add column note longtext;
 
