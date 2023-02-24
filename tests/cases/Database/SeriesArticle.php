@@ -595,7 +595,7 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function xtestMarkAllArticlesRead(): void {
+    public function testMarkAllArticlesRead(): void {
         Arsse::$db->articleMark($this->user, ['read' => true]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
@@ -818,15 +818,13 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function xtestMarkMultipleEditionsUnreadAndStarredWithStale(): void {
-        Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->editions([2,4,7,20]));
+    public function testMarkMultipleEditionsUnreadAndStarredWithStale(): void {
+        Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->editions([2202,2204,2207,120]));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][9][3] = 1;
-        $state['arsse_articles']['rows'][9][4] = $now;
-        $state['arsse_articles']['rows'][11][2] = 0;
-        $state['arsse_articles']['rows'][11][4] = $now;
-        $state['arsse_articles']['rows'][] = [14,7,0,1,$now,'',0];
+        $state['arsse_articles']['rows'][20] = [120,1,1,0,$now,"eek"];
+        $state['arsse_articles']['rows'][22] = [204,0,1,0,$now,"ach"];
+        $state['arsse_articles']['rows'][25] = [207,0,1,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -834,37 +832,37 @@ trait SeriesArticle {
         $this->assertSame(7, Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->editions(range(1, 51))));
     }
 
-    public function xtestMarkAStaleEditionUnread(): void {
+    public function testMarkAStaleEditionUnread(): void {
         Arsse::$db->articleMark($this->user, ['read' => false], (new Context)->edition(120)); // no changes occur
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function xtestMarkAStaleEditionStarred(): void {
+    public function testMarkAStaleEditionStarred(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->edition(120));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][9][3] = 1;
-        $state['arsse_articles']['rows'][9][4] = $now;
+        $state['arsse_articles']['rows'][20][2] = 1;
+        $state['arsse_articles']['rows'][20][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function xtestMarkAStaleEditionUnreadAndStarred(): void {
+    public function testMarkAStaleEditionUnreadAndStarred(): void {
         Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->edition(120)); // only starred is changed
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][9][3] = 1;
-        $state['arsse_articles']['rows'][9][4] = $now;
+        $state['arsse_articles']['rows'][20][2] = 1;
+        $state['arsse_articles']['rows'][20][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function xtestMarkAStaleEditionUnreadAndUnstarred(): void {
+    public function testMarkAStaleEditionUnreadAndUnstarred(): void {
         Arsse::$db->articleMark($this->user, ['read' => false,'starred' => false], (new Context)->edition(120)); // no changes occur
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function xtestMarkAMissingEdition(): void {
+    public function testMarkAMissingEdition(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->edition(2));
     }
@@ -893,27 +891,27 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function xtestMarkByLastMarked(): void {
+    public function testMarkByLastMarked(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->markedRange('2017-01-01T00:00:00Z', null));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][8][3] = 1;
-        $state['arsse_articles']['rows'][8][4] = $now;
-        $state['arsse_articles']['rows'][9][3] = 1;
-        $state['arsse_articles']['rows'][9][4] = $now;
+        $state['arsse_articles']['rows'][19][2] = 1;
+        $state['arsse_articles']['rows'][19][4] = $now;
+        $state['arsse_articles']['rows'][20][2] = 1;
+        $state['arsse_articles']['rows'][20][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function xtestMarkByNotLastMarked(): void {
+    public function testMarkByNotLastMarked(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->markedRange(null, '2000-01-01T00:00:00Z'));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][] = [13,5,0,1,$now,'',0];
-        $state['arsse_articles']['rows'][] = [14,7,0,1,$now,'',0];
+        $state['arsse_articles']['rows'][23] = [205,0,1,0,$now,""];
+        $state['arsse_articles']['rows'][25] = [207,0,1,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function xtestCountArticles(): void {
+    public function testCountArticles(): void {
         $setSize = (new \ReflectionClassConstant(Database::class, "LIMIT_SET_SIZE"))->getValue();
         $this->assertSame(2, Arsse::$db->articleCount("john.doe@example.com", (new Context)->starred(true)));
         $this->assertSame(4, Arsse::$db->articleCount("john.doe@example.com", (new Context)->folder(1)));
@@ -921,7 +919,7 @@ trait SeriesArticle {
         $this->assertSame(10, Arsse::$db->articleCount("john.doe@example.com", (new Context)->articles(range(1, $setSize * 3))));
     }
 
-    public function xtestFetchStarredCounts(): void {
+    public function testFetchStarredCounts(): void {
         $exp1 = ['total' => 2, 'unread' => 1, 'read' => 1];
         $exp2 = ['total' => 0, 'unread' => 0, 'read' => 0];
         $this->assertEquals($exp1, Arsse::$db->articleStarred("john.doe@example.com"));
@@ -934,12 +932,12 @@ trait SeriesArticle {
         $this->assertSame(5, Arsse::$db->editionLatest("john.doe@example.com", (new Context)->subscription(3)->hidden(false)));
     }
 
-    public function xtestFetchLatestEditionOfMissingSubscription(): void {
+    public function testFetchLatestEditionOfMissingSubscription(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->editionLatest($this->user, (new Context)->subscription(1));
     }
 
-    public function xtestListTheLabelsOfAnArticle(): void {
+    public function testListTheLabelsOfAnArticle(): void {
         $this->assertEquals([1,2], Arsse::$db->articleLabelsGet("john.doe@example.com", 1));
         $this->assertEquals([2], Arsse::$db->articleLabelsGet("john.doe@example.com", 5));
         $this->assertEquals([], Arsse::$db->articleLabelsGet("john.doe@example.com", 2));
@@ -948,12 +946,12 @@ trait SeriesArticle {
         $this->assertEquals([], Arsse::$db->articleLabelsGet("john.doe@example.com", 2, true));
     }
 
-    public function xtestListTheLabelsOfAMissingArticle(): void {
+    public function testListTheLabelsOfAMissingArticle(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->articleLabelsGet($this->user, 101);
     }
 
-    public function xtestListTheCategoriesOfAnArticle(): void {
+    public function testListTheCategoriesOfAnArticle(): void {
         $exp = ["Fascinating", "Logical"];
         $this->assertSame($exp, Arsse::$db->articleCategoriesGet($this->user, 119));
         $exp = ["Interesting", "Logical"];
@@ -962,13 +960,13 @@ trait SeriesArticle {
         $this->assertSame($exp, Arsse::$db->articleCategoriesGet($this->user, 204));
     }
 
-    public function xtestListTheCategoriesOfAMissingArticle(): void {
+    public function testListTheCategoriesOfAMissingArticle(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->articleCategoriesGet($this->user, 101);
     }
 
     /** @dataProvider provideArrayContextOptions */
-    public function xtestUseTooFewValuesInArrayContext(string $option): void {
+    public function testUseTooFewValuesInArrayContext(string $option): void {
         $this->assertException("tooShort", "Db", "ExceptionInput");
         Arsse::$db->articleList($this->user, (new Context)->$option([]));
     }
@@ -985,89 +983,75 @@ trait SeriesArticle {
         }
     }
 
-    public function xtestMarkAllArticlesNotHidden(): void {
+    public function testMarkAllArticlesNotHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['hidden' => false]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][14][6] = 0;
-        $state['arsse_articles']['rows'][14][4] = $now;
-        $state['arsse_articles']['rows'][15][6] = 0;
-        $state['arsse_articles']['rows'][15][4] = $now;
+        $state['arsse_articles']['rows'][10][3] = 0;
+        $state['arsse_articles']['rows'][10][4] = $now;
+        $state['arsse_articles']['rows'][11][3] = 0;
+        $state['arsse_articles']['rows'][11][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function xtestMarkAllArticlesHidden(): void {
+    public function testMarkAllArticlesHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['hidden' => true]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][3][6] = 1;
-        $state['arsse_articles']['rows'][3][4] = $now;
-        $state['arsse_articles']['rows'][] = [7,19,0,0,$now,'',1];
+        $state['arsse_articles']['rows'][12][3] = 1;
+        $state['arsse_articles']['rows'][12][4] = $now;
+        $state['arsse_articles']['rows'][13][3] = 1;
+        $state['arsse_articles']['rows'][13][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function xtestMarkAllArticlesUnreadAndNotHidden(): void {
+    public function testMarkAllArticlesUnreadAndNotHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => false, 'hidden' => false]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][3][2] = 0;
-        $state['arsse_articles']['rows'][3][4] = $now;
-        $state['arsse_articles']['rows'][14][6] = 0;
-        $state['arsse_articles']['rows'][14][4] = $now;
-        $state['arsse_articles']['rows'][15][2] = 0;
-        $state['arsse_articles']['rows'][15][6] = 0;
-        $state['arsse_articles']['rows'][15][4] = $now;
+        $state['arsse_articles']['rows'][10] = [501,0,1,0,$now,''];
+        $state['arsse_articles']['rows'][11] = [502,0,0,0,$now,''];
+        $state['arsse_articles']['rows'][13] = [520,0,0,0,$now,''];
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function xtestMarkAllArticlesReadAndHidden(): void {
+    public function testMarkAllArticlesReadAndHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => true, 'hidden' => true]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][3][6] = 1;
-        $state['arsse_articles']['rows'][3][4] = $now;
-        $state['arsse_articles']['rows'][14][2] = 1;
-        $state['arsse_articles']['rows'][14][4] = $now;
-        $state['arsse_articles']['rows'][] = [7,19,1,0,$now,'',1];
+        $state['arsse_articles']['rows'][10] = [501,1,1,1,$now,''];
+        $state['arsse_articles']['rows'][12] = [519,1,0,1,$now,''];
+        $state['arsse_articles']['rows'][13] = [520,1,0,1,$now,''];
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function xtestMarkAllArticlesUnreadAndHidden(): void {
+    public function testMarkAllArticlesUnreadAndHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => false,'hidden' => true]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][3][2] = 0;
-        $state['arsse_articles']['rows'][3][6] = 1;
-        $state['arsse_articles']['rows'][3][4] = $now;
-        $state['arsse_articles']['rows'][15][2] = 0;
-        $state['arsse_articles']['rows'][15][4] = $now;
-        $state['arsse_articles']['rows'][] = [7,19,0,0,$now,'',1];
+        $state['arsse_articles']['rows'][11] = [502,0,0,1,$now,''];
+        $state['arsse_articles']['rows'][12] = [519,0,0,1,$now,''];
+        $state['arsse_articles']['rows'][13] = [520,0,0,1,$now,''];
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function xtestMarkAllArticlesReadAndNotHidden(): void {
+    public function testMarkAllArticlesReadAndNotHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => true,'hidden' => false]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][14][2] = 1;
-        $state['arsse_articles']['rows'][14][6] = 0;
-        $state['arsse_articles']['rows'][14][4] = $now;
-        $state['arsse_articles']['rows'][15][6] = 0;
-        $state['arsse_articles']['rows'][15][4] = $now;
-        $state['arsse_articles']['rows'][] = [7,19,1,0,$now,'',0];
+        $state['arsse_articles']['rows'][10] = [501,1,1,0,$now,''];
+        $state['arsse_articles']['rows'][11] = [502,1,0,0,$now,''];
+        $state['arsse_articles']['rows'][12] = [519,1,0,0,$now,''];
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function xtestMarkMultipleEditionsUnreadAndHiddenWithStale(): void {
-        Arsse::$db->articleMark("jane.doe@example.com", ['read' => false,'hidden' => true], (new Context)->editions([1,2,19,20]));
+    public function testMarkMultipleEditionsUnreadAndHiddenWithStale(): void {
+        Arsse::$db->articleMark("jane.doe@example.com", ['read' => false,'hidden' => true], (new Context)->editions([501,502,519,520]));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][3][6] = 1;
-        $state['arsse_articles']['rows'][3][4] = $now;
-        $state['arsse_articles']['rows'][15][2] = 0;
-        $state['arsse_articles']['rows'][15][6] = 1;
-        $state['arsse_articles']['rows'][15][4] = $now;
-        $state['arsse_articles']['rows'][] = [7,19,0,0,$now,'',1];
+        $state['arsse_articles']['rows'][11] = [502,0,0,1,$now,''];
+        $state['arsse_articles']['rows'][12] = [519,0,0,1,$now,''];
+        $state['arsse_articles']['rows'][13] = [520,1,0,1,$now,''];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1080,7 +1064,7 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function xtestMarkAStaleEditionUnreadAndHidden(): void {
+    public function testMarkAStaleEditionUnreadAndHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => false,'hidden' => true], (new Context)->edition(520)); // only hidden is changed
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
@@ -1089,13 +1073,13 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function xtestMarkAStaleEditionUnreadAndNotHidden(): void {
+    public function testMarkAStaleEditionUnreadAndNotHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => false,'hidden' => false], (new Context)->edition(520)); // no changes occur
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function xtestSelectScrapedContent(): void {
+    public function testSelectScrapedContent(): void {
         $exp = [
             ['id' => 101, 'content' => "<p>Article content 1</p>"],
             ['id' => 102, 'content' => "<p>Article content 2</p>"],
@@ -1108,7 +1092,7 @@ trait SeriesArticle {
         $this->assertResult($exp, Arsse::$db->articleList("jill.doe@example.com", (new Context)->subscription(15), ["id", "content"]));
     }
 
-    public function xtestSearchScrapedContent(): void {
+    public function testSearchScrapedContent(): void {
         $exp = [
             ['id' => 801, 'content' => "<p>Scraped content 1</p>"],
             ['id' => 802, 'content' => "<p>Article content 2</p>"],

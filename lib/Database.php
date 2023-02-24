@@ -1631,7 +1631,7 @@ class Database {
                 "annotationTerms",
                 "modifiedRanges",
                 "markedRanges",
-                ] as $m) {
+            ] as $m) {
                 if ($context->$m() && !$context->$m) {
                     throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]);
                 }
