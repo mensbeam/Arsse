@@ -766,9 +766,9 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function xtestMarkTooManyMultipleArticles(): void {
+    public function testMarkTooManyMultipleArticles(): void {
         $setSize = (new \ReflectionClassConstant(Database::class, "LIMIT_SET_SIZE"))->getValue();
-        $this->assertSame(7, Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->articles(range(119, $setSize * 3))));
+        $this->assertSame(7, Arsse::$db->articleMark("john.doe@example.com", ['read' => false,'starred' => true], (new Context)->articles(range(3, $setSize * 3))));
     }
 
     public function testMarkAMissingArticle(): void {
@@ -828,8 +828,8 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function xtestMarkTooManyMultipleEditions(): void {
-        $this->assertSame(7, Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->editions(range(1, 51))));
+    public function testMarkTooManyMultipleEditions(): void {
+        $this->assertSame(7, Arsse::$db->articleMark("john.doe@example.com", ['read' => false,'starred' => true], (new Context)->editions(range(3, 51))));
     }
 
     public function testMarkAStaleEditionUnread(): void {
@@ -867,27 +867,23 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->edition(2));
     }
 
-    public function xtestMarkByOldestEdition(): void {
-        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editionRange(119, null));
+    public function testMarkByOldestEdition(): void {
+        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editionRange(2205, null));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][8][3] = 1;
-        $state['arsse_articles']['rows'][8][4] = $now;
-        $state['arsse_articles']['rows'][9][3] = 1;
-        $state['arsse_articles']['rows'][9][4] = $now;
+        $state['arsse_articles']['rows'][23] = [205,0,1,0,$now,""];
+        $state['arsse_articles']['rows'][24] = [206,0,1,0,$now,""];
+        $state['arsse_articles']['rows'][25] = [207,0,1,0,$now,""];
+        $state['arsse_articles']['rows'][26] = [208,0,1,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function xtestMarkByLatestEdition(): void {
+    public function testMarkByLatestEdition(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editionRange(null, 120));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_articles']['rows'][8][3] = 1;
-        $state['arsse_articles']['rows'][8][4] = $now;
-        $state['arsse_articles']['rows'][] = [13,5,0,1,$now,'',0];
-        $state['arsse_articles']['rows'][] = [13,6,0,1,$now,'',0];
-        $state['arsse_articles']['rows'][] = [14,7,0,1,$now,'',0];
-        $state['arsse_articles']['rows'][] = [14,8,0,1,$now,'',0];
+        $state['arsse_articles']['rows'][19][2] = 1;
+        $state['arsse_articles']['rows'][19][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -926,9 +922,9 @@ trait SeriesArticle {
         $this->assertEquals($exp2, Arsse::$db->articleStarred("jane.doe@example.com"));
     }
 
-    public function xtestFetchLatestEdition(): void {
-        $this->assertSame(1001, Arsse::$db->editionLatest($this->user));
-        $this->assertSame(4, Arsse::$db->editionLatest($this->user, (new Context)->subscription(12)));
+    public function testFetchLatestEdition(): void {
+        $this->assertSame(2208, Arsse::$db->editionLatest($this->user));
+        $this->assertSame(2204, Arsse::$db->editionLatest($this->user, (new Context)->subscription(12)));
         $this->assertSame(5, Arsse::$db->editionLatest("john.doe@example.com", (new Context)->subscription(3)->hidden(false)));
     }
 
