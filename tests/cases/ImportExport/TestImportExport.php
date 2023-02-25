@@ -19,8 +19,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $primed;
     protected $checkTables = [
         'arsse_folders'       => ["id", "owner", "parent", "name"],
-        'arsse_feeds'         => ["id", "url", "title"],
-        'arsse_subscriptions' => ["id", "owner", "folder", "feed", "title"],
+        'arsse_subscriptions' => ["id", "owner", "folder", "feed_title", "title", "url"],
         'arsse_tags'          => ["id", "owner", "name"],
         'arsse_tag_members'   => ["tag", "subscription", "assigned"],
     ];
@@ -60,26 +59,15 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
                     [6, "john.doe@example.com", 3,    "National"],
                 ],
             ],
-            'arsse_feeds' => [
-                'columns' => ["id", "url", "title"],
-                'rows'    => [
-                    [1, "http://localhost:8000/Import/nasa-jpl",  "NASA JPL"],
-                    [2, "http://localhost:8000/Import/torstar",   "Toronto Star"],
-                    [3, "http://localhost:8000/Import/ars",       "Ars Technica"],
-                    [4, "http://localhost:8000/Import/cbc",       "CBC News"],
-                    [5, "http://localhost:8000/Import/citizen",   "Ottawa Citizen"],
-                    [6, "http://localhost:8000/Import/eurogamer", "Eurogamer"],
-                ],
-            ],
             'arsse_subscriptions' => [
-                'columns' => ["id", "owner", "folder", "feed", "title"],
+                'columns' => ["id", "owner", "folder", "feed_title", "title", "url"],
                 'rows'    => [
-                    [1, "john.doe@example.com", 2,    1, "NASA JPL"],
-                    [2, "john.doe@example.com", 5,    2, "Toronto Star"],
-                    [3, "john.doe@example.com", 1,    3, "Ars Technica"],
-                    [4, "john.doe@example.com", 6,    4, "CBC News"],
-                    [5, "john.doe@example.com", 6,    5, "Ottawa Citizen"],
-                    [6, "john.doe@example.com", null, 6, "Eurogamer"],
+                    [1, "john.doe@example.com", 2,    "NASA JPL",       "NASA JPL",       "http://localhost:8000/Import/nasa-jpl"],
+                    [2, "john.doe@example.com", 5,    "Toronto Star",   "Toronto Star",   "http://localhost:8000/Import/torstar"],
+                    [3, "john.doe@example.com", 1,    "Ars Technica",   "Ars Technica",   "http://localhost:8000/Import/ars"],
+                    [4, "john.doe@example.com", 6,    "CBC News",       "CBC News",       "http://localhost:8000/Import/cbc"],
+                    [5, "john.doe@example.com", 6,    "Ottawa Citizen", "Ottawa Citizen", "http://localhost:8000/Import/citizen"],
+                    [6, "john.doe@example.com", null, "Eurogamer",      "Eurogamer",      "http://localhost:8000/Import/eurogamer"],
                 ],
             ],
             'arsse_tags' => [
@@ -190,7 +178,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->proc->parse->returns($in);
         $this->proc->get()->import("john.doe@example.com", "", false, true);
         $exp = $this->primeExpectations($this->data, $this->checkTables);
-        $exp['arsse_subscriptions']['rows'][3] = [4, "john.doe@example.com", null, 4, "CBC"];
+        $exp['arsse_subscriptions']['rows'][3] = [4, "john.doe@example.com", null, "CBC News", "CBC", "http://localhost:8000/Import/cbc"];
         $exp['arsse_folders']['rows'][] = [7, "john.doe@example.com", null, "Nature"];
         $this->compareExpectations($this->drv, $exp);
     }
@@ -202,8 +190,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->proc->parse->returns($in);
         $this->proc->get()->import("john.doe@example.com", "", false, false);
         $exp = $this->primeExpectations($this->data, $this->checkTables);
-        $exp['arsse_feeds']['rows'][] = [7, "http://localhost:8000/Import/some-feed", "Some feed"]; // author-supplied and user-supplied titles differ
-        $exp['arsse_subscriptions']['rows'][] = [7, "john.doe@example.com", null, 7, "Some Feed"];
+        $exp['arsse_subscriptions']['rows'][] = [7, "john.doe@example.com", null, "Some feed", "Some Feed", "http://localhost:8000/Import/some-feed"];
         $exp['arsse_tags']['rows'][] = [7, "john.doe@example.com", "cryptic"];
         $exp['arsse_tag_members']['rows'][] = [2, 7, 1];
         $exp['arsse_tag_members']['rows'][] = [7, 7, 1];
@@ -228,8 +215,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->proc->parse->returns($in);
         $this->proc->get()->import("john.doe@example.com", "", false, true);
         $exp = $this->primeExpectations($this->data, $this->checkTables);
-        $exp['arsse_feeds']['rows'][] = [7, "http://localhost:8000/Import/some-feed", "Some feed"]; // author-supplied and user-supplied titles differ
-        $exp['arsse_subscriptions']['rows'] = [[7, "john.doe@example.com", 4, 7, "Some Feed"]];
+        $exp['arsse_subscriptions']['rows'] = [[7, "john.doe@example.com", 4, "Some feed", "Some Feed", "http://localhost:8000/Import/some-feed"]];
         $exp['arsse_tags']['rows'] = [[2, "john.doe@example.com", "frequent"], [7, "john.doe@example.com", "cryptic"]];
         $exp['arsse_tag_members']['rows'] = [[2, 7, 1], [7, 7, 1]];
         $exp['arsse_folders']['rows'] = [[4, "john.doe@example.com", null, "Photography"]];

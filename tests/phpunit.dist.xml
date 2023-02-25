@@ -147,7 +147,7 @@
     </testsuite>
     <testsuite name="Import/Export">
         <file>cases/ImportExport/TestFile.php</file>
-        <!--<file>cases/ImportExport/TestImportExport.php</file>-->
+        <file>cases/ImportExport/TestImportExport.php</file>
         <file>cases/ImportExport/TestOPML.php</file>
     </testsuite>
 </testsuites>
