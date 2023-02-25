@@ -87,7 +87,7 @@ abstract class AbstractImportExport {
                 $new = true;
                 Arsse::$db->subscriptionReveal($user, $feedMap[$k]);
             }
-            if (!$new || $replace) {
+            if ($new || $replace) {
                 // set the subscription's properties, if this is a new feed or we're doing a full replacement
                 Arsse::$db->subscriptionPropertiesSet($user, $feedMap[$k], ['title' => $title, 'folder' => $folder]);
                 // compile the set of used tags, if this is a new feed or we're doing a full replacement
