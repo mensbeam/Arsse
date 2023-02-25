@@ -20,7 +20,7 @@ abstract class AbstractTest extends \JKingWeb\Arsse\Test\AbstractTest {
     use SeriesFeed;
     use SeriesIcon;
     use SeriesSubscription;
-    //use SeriesLabel;
+    use SeriesLabel;
     use SeriesTag;
     use SeriesArticle;
     //use SeriesCleanup;

@@ -2386,7 +2386,7 @@ class Database {
         [$inClause, $inTypes, $inValues] = $this->generateIn($articles, "int");
         $updateQ = "UPDATE arsse_label_members set assigned = ?, modified = CURRENT_TIMESTAMP where label = ? and assigned <> ? and article %in% ($inClause)";
         $updateT = ["bool", "int", "bool", $inTypes];
-        $insertQ = "INSERT INTO arsse_label_members(label,article,subscription) SELECT ?,a.id,s.id from arsse_articles as a join arsse_subscriptions as s on a.subscription = s.id where s.owner = ? and a.id not in (select article from arsse_label_members where label = ?) and a.id in ($inClause)";
+        $insertQ = "INSERT INTO arsse_label_members(label,article) SELECT ?,a.id from arsse_articles as a join arsse_subscriptions as s on a.subscription = s.id where s.owner = ? and a.id not in (select article from arsse_label_members where label = ?) and a.id in ($inClause)";
         $insertT = ["int", "str", "int", $inTypes];
         $clearQ = str_replace("%in%", "not in", $updateQ);
         $clearT = $updateT;
