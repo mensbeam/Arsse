@@ -2120,7 +2120,7 @@ class Database {
                 select arsse_articles.id as article
                 FROM arsse_articles
                     join arsse_subscriptions on arsse_subscriptions.id = arsse_articles.subscription
-                WHERE arsse_articles.id = ? and arsse_subscriptions.owner = ?
+                WHERE arsse_articles.id = ? and arsse_subscriptions.owner = ? and arsse_subscriptions.deleted = 0
             ) as articles left join arsse_editions on arsse_editions.article = articles.article group by articles.article",
             ["int", "str"]
         )->run($id, $user)->getRow();

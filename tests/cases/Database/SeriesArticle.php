@@ -207,6 +207,8 @@ trait SeriesArticle {
                     [ 801,801],
                     [ 802,802],
                     [ 902,802],
+                    [ 999,999],
+                    [9999,999],
                 ],
             ],
             'arsse_enclosures' => [
@@ -531,6 +533,7 @@ trait SeriesArticle {
             801  => 801,
             802  => 802,
             902  => 802,
+            999  => 999,
             1001 => 20,
         ];
         $act = Arsse::$db->editionArticle(...range(1, 1001));
@@ -742,7 +745,12 @@ trait SeriesArticle {
 
     public function testMarkAMissingSubscription(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
-        Arsse::$db->articleMark($this->user, ['read' => true], (new Context)->folder(2112));
+        Arsse::$db->articleMark($this->user, ['read' => true], (new Context)->subscription(1));
+    }
+
+    public function testMarkADeletedSubscription(): void {
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Arsse::$db->articleMark("john.doe@example.com", ['read' => true], (new Context)->subscription(16));
     }
 
     public function testMarkAnArticle(): void {
@@ -781,6 +789,11 @@ trait SeriesArticle {
     public function testMarkAMissingArticle(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->article(1));
+    }
+
+    public function testMarkAnArticleOfADeletedSubscription(): void {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        Arsse::$db->articleMark("john.doe@example.com", ['starred' => true], (new Context)->article(999));
     }
 
     public function testMarkAnEdition(): void {
@@ -872,6 +885,11 @@ trait SeriesArticle {
     public function testMarkAMissingEdition(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->edition(2));
+    }
+
+    public function testMarkAnEditionOfADeletedSubscription(): void {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        Arsse::$db->articleMark("john.doe@example.com", ['starred' => true], (new Context)->edition(9999));
     }
 
     public function testMarkByOldestEdition(): void {
