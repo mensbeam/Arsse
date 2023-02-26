@@ -1571,7 +1571,7 @@ class Database {
             select 
                 $outColumns
             from arsse_articles
-            join arsse_subscriptions on arsse_subscriptions.id = arsse_articles.subscription and arsse_subscriptions.owner = ?
+            join arsse_subscriptions on arsse_subscriptions.id = arsse_articles.subscription and arsse_subscriptions.owner = ? and deleted = 0
             left join arsse_article_contents on arsse_article_contents.id = arsse_articles.id
             left join folder_data on arsse_subscriptions.folder = folder_data.id
             left join arsse_enclosures on arsse_enclosures.article = arsse_articles.id

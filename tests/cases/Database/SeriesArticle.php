@@ -58,23 +58,24 @@ trait SeriesArticle {
                 ],
             ],
             'arsse_subscriptions' => [
-                'columns' => ["id", "owner", "url", "feed_title", "folder", "title", "scrape"],
+                'columns' => ["id", "owner", "url", "feed_title", "folder", "title", "scrape", "deleted"],
                 'rows'    => [
-                    [1, "john.doe@example.com","http://example.com/1",  "Feed 1", null,"Subscription 1", 0],
-                    [2, "john.doe@example.com","http://example.com/2",  "Feed 2", null,null,             0],
-                    [3, "john.doe@example.com","http://example.com/3",  "Feed 3",    1,"Subscription 3", 0],
-                    [4, "john.doe@example.com","http://example.com/4",  "Feed 4",    6,null,             0],
-                    [5, "john.doe@example.com","http://example.com/10", "Feed 10",   5,"Subscription 5", 0],
-                    [6, "jane.doe@example.com","http://example.com/1",  "Feed 1", null,null,             0],
-                    [7, "jane.doe@example.com","http://example.com/10", "Feed 10",null,"Subscription 7", 0],
-                    [8, "john.doe@example.org","http://example.com/11", "Feed 11",null,null,             0],
-                    [9, "john.doe@example.org","http://example.com/12", "Feed 12",null,"Subscription 9", 0],
-                    [10,"john.doe@example.org","http://example.com/13", "Feed 13",null,null,             0],
-                    [11,"john.doe@example.net","http://example.com/10", "Feed 10",null,"Subscription 11",0],
-                    [12,"john.doe@example.net","http://example.com/2",  "Feed 2",    9,null,             0],
-                    [13,"john.doe@example.net","http://example.com/3",  "Feed 3",    8,"Subscription 13",0],
-                    [14,"john.doe@example.net","http://example.com/4",  "Feed 4",    7,null,             0],
-                    [15,"jill.doe@example.com","http://example.com/11", "Feed 11",null,null,             1],
+                    [1, "john.doe@example.com","http://example.com/1",  "Feed 1", null,"Subscription 1", 0,0],
+                    [2, "john.doe@example.com","http://example.com/2",  "Feed 2", null,null,             0,0],
+                    [3, "john.doe@example.com","http://example.com/3",  "Feed 3",    1,"Subscription 3", 0,0],
+                    [4, "john.doe@example.com","http://example.com/4",  "Feed 4",    6,null,             0,0],
+                    [5, "john.doe@example.com","http://example.com/10", "Feed 10",   5,"Subscription 5", 0,0],
+                    [6, "jane.doe@example.com","http://example.com/1",  "Feed 1", null,null,             0,0],
+                    [7, "jane.doe@example.com","http://example.com/10", "Feed 10",null,"Subscription 7", 0,0],
+                    [8, "john.doe@example.org","http://example.com/11", "Feed 11",null,null,             0,0],
+                    [9, "john.doe@example.org","http://example.com/12", "Feed 12",null,"Subscription 9", 0,0],
+                    [10,"john.doe@example.org","http://example.com/13", "Feed 13",null,null,             0,0],
+                    [11,"john.doe@example.net","http://example.com/10", "Feed 10",null,"Subscription 11",0,0],
+                    [12,"john.doe@example.net","http://example.com/2",  "Feed 2",    9,null,             0,0],
+                    [13,"john.doe@example.net","http://example.com/3",  "Feed 3",    8,"Subscription 13",0,0],
+                    [14,"john.doe@example.net","http://example.com/4",  "Feed 4",    7,null,             0,0],
+                    [15,"jill.doe@example.com","http://example.com/11", "Feed 11",null,null,             1,0],
+                    [16,"john.doe@example.com","http://example.com/16", "Feed 16",   1,"Subscription 16",0,1],
                 ],
             ],
             'arsse_tag_members' => [
@@ -128,6 +129,7 @@ trait SeriesArticle {
                     [208,14,null,                  null,             null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2010-01-01 00:00:00",0,0,0,null,                 ''],
                     [801,15,'http://example.com/1','Article title 1','',        '2000-01-01 00:00:00','2000-01-01 00:00:01','e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda','f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6','fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4','18fdd4fa93d693128c43b004399e5c9cea6c261ddfa002518d3669f55d8c2207','2000-01-01 01:00:00',0,0,0,null,                 ''],
                     [802,15,'http://example.com/2','Article title 2','',        '2000-01-02 00:00:00','2000-01-02 00:00:02','5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7','0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153','13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9','2abd0a8cba83b8214a66c8f0293ba63e467d720540e29ff8ddcdab069d4f1c9e','2000-01-02 02:00:00',0,0,0,null,                 ''],
+                    [999,16,null,                  null,             null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2000-01-01 00:00:00",0,0,0,null,                 ''],
                 ],
             ],
             'arsse_article_contents' => [
@@ -546,6 +548,11 @@ trait SeriesArticle {
     public function testListArticlesOfAMissingSubscription(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->articleList($this->user, (new Context)->subscription(1));
+    }
+
+    public function testListArticlesOfADeletedSubscription(): void {
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Arsse::$db->articleList($this->user, (new Context)->subscription(16));
     }
 
     public function testListArticlesCheckingProperties(): void {
