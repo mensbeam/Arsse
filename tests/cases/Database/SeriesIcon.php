@@ -31,14 +31,15 @@ trait SeriesIcon {
                 ],
             ],
             'arsse_subscriptions' => [
-                'columns' => ["id", "owner", "url", "title", "icon"],
+                'columns' => ["id", "owner", "url", "title", "icon", "deleted"],
                 'rows'    => [
-                    [1,'john.doe@example.com',"http://localhost:8000/Feed/Matching/3",                      "Ook",   1],
-                    [2,'john.doe@example.com',"http://localhost:8000/Feed/Matching/1",                      "Eek",   2],
-                    [3,'john.doe@example.com',"http://localhost:8000/Feed/Fetching/Error?code=404",         "Ack",   3],
-                    [4,'john.doe@example.com',"http://localhost:8000/Feed/NextFetch/NotModified?t=".time(), "Ooook", null],
-                    [5,'john.doe@example.com',"http://localhost:8000/Feed/Parsing/Valid",                   "Ooook", 2],
-                    [6,'jane.doe@example.com',"http://localhost:8000/Feed/Parsing/Valid",                   "Ooook", 2],
+                    [1,'john.doe@example.com',"http://localhost:8000/Feed/Matching/3",                      "Ook",      1, 0],
+                    [2,'john.doe@example.com',"http://localhost:8000/Feed/Matching/1",                      "Eek",      2, 0],
+                    [3,'john.doe@example.com',"http://localhost:8000/Feed/Fetching/Error?code=404",         "Ack",      3, 0],
+                    [4,'john.doe@example.com',"http://localhost:8000/Feed/NextFetch/NotModified?t=".time(), "Ooook", null, 0],
+                    [5,'john.doe@example.com',"http://localhost:8000/Feed/Parsing/Valid",                   "Ooook",    2, 0],
+                    [6,'john.doe@example.com',"http://localhost:8000/Feed/Discovery/Valid",                 "Aaack",    4, 1],
+                    [7,'jane.doe@example.com',"http://localhost:8000/Feed/Parsing/Valid",                   "Ooook",    2, 0],
                 ],
             ],
         ];

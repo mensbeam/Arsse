@@ -129,7 +129,7 @@ trait SeriesArticle {
                     [208,14,null,                  null,             null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2010-01-01 00:00:00",0,0,0,null,                 ''],
                     [801,15,'http://example.com/1','Article title 1','',        '2000-01-01 00:00:00','2000-01-01 00:00:01','e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda','f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6','fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4','18fdd4fa93d693128c43b004399e5c9cea6c261ddfa002518d3669f55d8c2207','2000-01-01 01:00:00',0,0,0,null,                 ''],
                     [802,15,'http://example.com/2','Article title 2','',        '2000-01-02 00:00:00','2000-01-02 00:00:02','5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7','0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153','13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9','2abd0a8cba83b8214a66c8f0293ba63e467d720540e29ff8ddcdab069d4f1c9e','2000-01-02 02:00:00',0,0,0,null,                 ''],
-                    [999,16,null,                  null,             null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2000-01-01 00:00:00",0,0,0,null,                 ''],
+                    [999,16,null,                  null,             null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2000-01-01 00:00:00",0,1,0,null,                 ''],
                 ],
             ],
             'arsse_article_contents' => [
@@ -208,7 +208,6 @@ trait SeriesArticle {
                     [ 802,802],
                     [ 902,802],
                     [ 999,999],
-                    [9999,999],
                 ],
             ],
             'arsse_enclosures' => [
@@ -250,14 +249,15 @@ trait SeriesArticle {
             'arsse_label_members' => [
                 'columns' => ["label", "article", "assigned", "modified"],
                 'rows'    => [
-                    [1, 1,1,'2000-01-01 00:00:00'],
-                    [2, 1,1,'2000-01-01 00:00:00'],
-                    [1,19,1,'2000-01-01 00:00:00'],
-                    [2,20,1,'2000-01-01 00:00:00'],
-                    [1, 5,0,'2000-01-01 00:00:00'],
-                    [2, 5,1,'2000-01-01 00:00:00'],
-                    [4, 7,0,'2000-01-01 00:00:00'],
-                    [4, 8,1,'2015-01-01 00:00:00'],
+                    [1,  1,1,'2000-01-01 00:00:00'],
+                    [2,  1,1,'2000-01-01 00:00:00'],
+                    [1, 19,1,'2000-01-01 00:00:00'],
+                    [2, 20,1,'2000-01-01 00:00:00'],
+                    [1,  5,0,'2000-01-01 00:00:00'],
+                    [2,  5,1,'2000-01-01 00:00:00'],
+                    [4,  7,0,'2000-01-01 00:00:00'],
+                    [4,  8,1,'2015-01-01 00:00:00'],
+                    [1,999,1,'2000-01-01 00:00:00'],
                 ],
             ],
         ];
@@ -889,7 +889,7 @@ trait SeriesArticle {
 
     public function testMarkAnEditionOfADeletedSubscription(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
-        Arsse::$db->articleMark("john.doe@example.com", ['starred' => true], (new Context)->edition(9999));
+        Arsse::$db->articleMark("john.doe@example.com", ['starred' => false], (new Context)->edition(999));
     }
 
     public function testMarkByOldestEdition(): void {

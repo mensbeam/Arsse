@@ -566,7 +566,7 @@ class Database {
                 coalesce(feeds,0) as feeds
             from arsse_folders
             left join (select parent,count(id) as children from arsse_folders group by parent) as child_stats on child_stats.parent = arsse_folders.id
-            left join (select folder,count(id) as feeds from arsse_subscriptions group by folder) as sub_stats on sub_stats.folder = arsse_folders.id",
+            left join (select folder,count(id) as feeds from arsse_subscriptions where deleted = 0 group by folder) as sub_stats on sub_stats.folder = arsse_folders.id",
             ["str", "strict int"],
             [$user, $parent]
         );
@@ -1139,7 +1139,7 @@ class Database {
         return V::normalize($out, V::T_DATE | V::M_NULL, "sql");
     }
 
-    /** Evalutes the filter rules specified for a subscription against every article associated with the subscription's feed
+    /** Evalutes the filter rules specified for a subscription against every article associated with the subscription
      *
      * @param string $user The user who owns the subscription
      * @param integer $id The identifier of the subscription whose rules are to be evaluated
@@ -1458,7 +1458,7 @@ class Database {
      * @param string $user The user whose subscription icons are to be retrieved
      */
     public function iconList(string $user): Db\Result {
-        return $this->db->prepare("SELECT distinct i.id, i.url, i.type, i.data from arsse_icons as i join arsse_subscriptions as s on s.icon = i.id where s.owner = ?", "str")->run($user);
+        return $this->db->prepare("SELECT distinct i.id, i.url, i.type, i.data from arsse_icons as i join arsse_subscriptions as s on s.icon = i.id where s.owner = ? and s.deleted = 0", "str")->run($user);
     }
 
     /** Deletes orphaned icons from the database
@@ -1571,7 +1571,7 @@ class Database {
             select 
                 $outColumns
             from arsse_articles
-            join arsse_subscriptions on arsse_subscriptions.id = arsse_articles.subscription and arsse_subscriptions.owner = ? and deleted = 0
+            join arsse_subscriptions on arsse_subscriptions.id = arsse_articles.subscription and arsse_subscriptions.owner = ? and arsse_subscriptions.deleted = 0
             left join arsse_article_contents on arsse_article_contents.id = arsse_articles.id
             left join folder_data on arsse_subscriptions.folder = folder_data.id
             left join arsse_enclosures on arsse_enclosures.article = arsse_articles.id
@@ -1884,10 +1884,10 @@ class Database {
      *
      * @param string $user The user who owns the articles to be modified
      * @param array $data An associative array of properties to modify. Anything not specified will remain unchanged
-     * @param Context|UnionContext $context The query context to match articles against
+     * @param Context $context The query context to match articles against
      * @param bool $updateTimestamp Whether to also update the timestamp. This should only be false if a mark is changed as a result of an automated action not taken by the user
      */
-    public function articleMark(string $user, array $data, RootContext $context = null, bool $updateTimestamp = true): int {
+    public function articleMark(string $user, array $data, Context $context = null, bool $updateTimestamp = true): int {
         $data = [
             'read'    => $data['read'] ?? null,
             'starred' => $data['starred'] ?? null,
@@ -2011,7 +2011,7 @@ class Database {
                 coalesce(sum(abs(\"read\" - 1)),0) as unread,
                 coalesce(sum(\"read\"),0) as \"read\"
             FROM (
-                select \"read\" from arsse_articles where starred = 1 and hidden <> 1 and subscription in (select id from arsse_subscriptions where owner = ?)
+                select \"read\" from arsse_articles where starred = 1 and hidden <> 1 and subscription in (select id from arsse_subscriptions where owner = ? and deleted = 0)
             ) as starred_data",
             "str"
         )->run($user)->getRow();
@@ -2148,7 +2148,7 @@ class Database {
                 join arsse_articles on arsse_articles.id = arsse_editions.article
                 join arsse_subscriptions on arsse_subscriptions.id = arsse_articles.subscription
                 join (select article, max(id) as edition from arsse_editions group by article) as edition_stats on edition_stats.article = arsse_editions.article
-            where arsse_editions.id = ? and arsse_subscriptions.owner = ?",
+            where arsse_editions.id = ? and arsse_subscriptions.owner = ? and arsse_subscriptions.deleted = 0",
             ["int", "str"]
         )->run($id, $user)->getRow();
         if (!$out) {
@@ -2211,7 +2211,13 @@ class Database {
                     cast(coalesce(marked, 0) as $integerType) as \"read\" -- this cast is required for MySQL for unclear reasons
                 from arsse_labels
                     left join (
-                        SELECT label, sum(assigned) as articles from arsse_label_members group by label
+                        SELECT
+                            label, 
+                            sum(assigned) as articles 
+                        from arsse_label_members
+                        join arsse_articles on arsse_articles.id = arsse_label_members.article
+                        join arsse_subscriptions on arsse_articles.subscription = arsse_subscriptions.id and arsse_subscriptions.deleted = 0
+                        group by label
                     ) as label_stats on label_stats.label = arsse_labels.id
                     left join (
                         SELECT
@@ -2221,7 +2227,7 @@ class Database {
                         from arsse_articles
                             join arsse_subscriptions on arsse_subscriptions.id = arsse_articles.subscription
                             join arsse_label_members on arsse_label_members.article = arsse_articles.id
-                        where arsse_subscriptions.owner = ?
+                        where arsse_subscriptions.owner = ? and arsse_subscriptions.deleted = 0
                         group by label
                     ) as mark_stats on mark_stats.label = arsse_labels.id
                 WHERE owner = ?
@@ -2275,7 +2281,13 @@ class Database {
                 coalesce(marked, 0) as \"read\"
             FROM arsse_labels
                 left join (
-                    SELECT label, sum(assigned) as articles from arsse_label_members group by label
+                    SELECT
+                        label, 
+                        sum(assigned) as articles 
+                    from arsse_label_members
+                    join arsse_articles on arsse_articles.id = arsse_label_members.article
+                    join arsse_subscriptions on arsse_articles.subscription = arsse_subscriptions.id and arsse_subscriptions.deleted = 0
+                    group by label
                 ) as label_stats on label_stats.label = arsse_labels.id
                 left join (
                     SELECT
@@ -2285,7 +2297,7 @@ class Database {
                     from arsse_articles
                     join arsse_subscriptions on arsse_subscriptions.id = arsse_articles.subscription
                     join arsse_label_members on arsse_label_members.article = arsse_articles.id
-                    where arsse_subscriptions.owner = ?
+                    where arsse_subscriptions.owner = ? and arsse_subscriptions.deleted = 0
                     group by label
                 ) as mark_stats on mark_stats.label = arsse_labels.id
             WHERE $field = ? and owner = ?",
@@ -2374,7 +2386,7 @@ class Database {
         if (!sizeof($articles)) {
             if ($mode == self::ASSOC_REPLACE) {
                 // replacing with an empty set means setting everything to zero
-                return $this->db->prepare("UPDATE arsse_label_members set assigned = 0, modified = CURRENT_TIMESTAMP where label = ? and assigned = 1", "int")->run($id)->changes();
+                return $this->db->prepare("UPDATE arsse_label_members set assigned = 0, modified = CURRENT_TIMESTAMP where label = ? and assigned = 1 and article not in (select id from arsse_articles where subscription in (select id from arsse_subscriptions where deleted = 1))", "int")->run($id)->changes();
             } else {
                 // adding or removing is a no-op
                 return 0;
@@ -2384,7 +2396,7 @@ class Database {
         }
         // prepare up to three queries: removing requires one, adding two, and replacing three
         [$inClause, $inTypes, $inValues] = $this->generateIn($articles, "int");
-        $updateQ = "UPDATE arsse_label_members set assigned = ?, modified = CURRENT_TIMESTAMP where label = ? and assigned <> ? and article %in% ($inClause)";
+        $updateQ = "UPDATE arsse_label_members set assigned = ?, modified = CURRENT_TIMESTAMP where label = ? and assigned <> ? and article %in% ($inClause) and article not in (select id from arsse_articles where subscription in (select id from arsse_subscriptions where deleted = 1))";
         $updateT = ["bool", "int", "bool", $inTypes];
         $insertQ = "INSERT INTO arsse_label_members(label,article) SELECT ?,a.id from arsse_articles as a join arsse_subscriptions as s on a.subscription = s.id where s.owner = ? and a.id not in (select article from arsse_label_members where label = ?) and a.id in ($inClause)";
         $insertT = ["int", "str", "int", $inTypes];
