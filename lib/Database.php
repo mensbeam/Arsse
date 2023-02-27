@@ -2215,8 +2215,8 @@ class Database {
                             label, 
                             sum(assigned) as articles 
                         from arsse_label_members
-                        join arsse_articles on arsse_articles.id = arsse_label_members.article
-                        join arsse_subscriptions on arsse_articles.subscription = arsse_subscriptions.id and arsse_subscriptions.deleted = 0
+                            join arsse_articles on arsse_articles.id = arsse_label_members.article
+                            join arsse_subscriptions on arsse_articles.subscription = arsse_subscriptions.id and arsse_subscriptions.deleted = 0
                         group by label
                     ) as label_stats on label_stats.label = arsse_labels.id
                     left join (
@@ -2295,8 +2295,8 @@ class Database {
                         sum(hidden) as hidden,
                         sum(case when \"read\" = 1 and hidden = 0 then 1 else 0 end) as marked
                     from arsse_articles
-                    join arsse_subscriptions on arsse_subscriptions.id = arsse_articles.subscription
-                    join arsse_label_members on arsse_label_members.article = arsse_articles.id
+                        join arsse_subscriptions on arsse_subscriptions.id = arsse_articles.subscription
+                        join arsse_label_members on arsse_label_members.article = arsse_articles.id
                     where arsse_subscriptions.owner = ? and arsse_subscriptions.deleted = 0
                     group by label
                 ) as mark_stats on mark_stats.label = arsse_labels.id
@@ -2512,7 +2512,7 @@ class Database {
                             tag, 
                             sum(assigned) as subscriptions 
                         from arsse_tag_members
-                        --join arsse_subscriptions on arsse_subscriptions.id = arsse_tag_members.subscription and arsse_subscriptions.deleted = 0
+                            join arsse_subscriptions on arsse_subscriptions.id = arsse_tag_members.subscription and arsse_subscriptions.deleted = 0
                         group by tag
                     ) as tag_stats on tag_stats.tag = arsse_tags.id
                 WHERE owner = ?
@@ -2528,8 +2528,7 @@ class Database {
      *
      * - "tag_id": The tag's numeric identifier
      * - "tag_name" The tag's textual name
-     * - "subscription_id": The numeric identifier of the associated subscription
-     * - "subscription_name" The subscription's textual name
+     * - "subscription": The numeric identifier of the associated subscription
      *
      * @param string $user The user whose tags are to be listed
      */
@@ -2541,6 +2540,7 @@ class Database {
                 arsse_tag_members.subscription as subscription
             FROM arsse_tag_members
                 join arsse_tags on arsse_tags.id = arsse_tag_members.tag
+                join arsse_subscriptions on arsse_subscriptions.id = arsse_tag_members.subscription and arsse_subscriptions.deleted = 0
             WHERE arsse_tags.owner = ? and assigned = 1",
             ["str"]
         )->run($user);
@@ -2583,10 +2583,19 @@ class Database {
         $type = $byName ? "str" : "int";
         $out = $this->db->prepareArray(
             "SELECT
-                id,name,coalesce(subscriptions,0) as subscriptions
+                id,
+                name,
+                coalesce(subscriptions,0) as subscriptions
             FROM arsse_tags
-                left join (SELECT tag, sum(assigned) as subscriptions from arsse_tag_members group by tag) as tag_stats on tag_stats.tag = arsse_tags.id
-            WHERE $field = ? and owner = ?",
+                left join (
+                    SELECT 
+                        tag, 
+                        sum(assigned) as subscriptions 
+                    from arsse_tag_members
+                        join arsse_subscriptions on arsse_subscriptions.id = arsse_tag_members.subscription and arsse_subscriptions.deleted = 0
+                    group by tag
+                ) as tag_stats on tag_stats.tag = arsse_tags.id
+            WHERE $field = ? and arsse_tags.owner = ?",
             [$type, "str"]
         )->run($id, $user)->getRow();
         if (!$out) {
@@ -2633,9 +2642,18 @@ class Database {
     public function tagSubscriptionsGet(string $user, $id, bool $byName = false): array {
         // just do a syntactic check on the tag ID
         $this->tagValidateId($user, $id, $byName, false);
-        $field = !$byName ? "id" : "name";
+        $field = !$byName ? "t.id" : "t.name";
         $type = !$byName ? "int" : "str";
-        $out = $this->db->prepare("SELECT subscription from arsse_tag_members join arsse_tags on tag = id where assigned = 1 and $field = ? and owner = ? order by subscription", $type, "str")->run($id, $user)->getAll();
+        $out = $this->db->prepare(
+            "SELECT 
+                subscription 
+            from arsse_tag_members as m
+                join arsse_tags as t on m.tag = t.id
+                join arsse_subscriptions as s on m.subscription = s.id and s.deleted = 0
+            where assigned = 1 and $field = ? and t.owner = ?
+            order by subscription",
+            $type, "str"
+        )->run($id, $user)->getAll();
         if (!$out) {
             // if no results were returned, do a full validation on the tag ID
             $this->tagValidateId($user, $id, $byName, true, true);
@@ -2663,7 +2681,7 @@ class Database {
         if (!sizeof($subscriptions)) {
             if ($mode == self::ASSOC_REPLACE) {
                 // replacing with an empty set means setting everything to zero
-                return $this->db->prepare("UPDATE arsse_tag_members set assigned = 0, modified = CURRENT_TIMESTAMP where tag = ? and assigned = 1", "int")->run($id)->changes();
+                return $this->db->prepare("UPDATE arsse_tag_members set assigned = 0, modified = CURRENT_TIMESTAMP where tag = ? and assigned = 1 and subscription not in (select id from arsse_subscriptions where deleted = 1)", "int")->run($id)->changes();
             } else {
                 // adding or removing is a no-op
                 return 0;
@@ -2671,7 +2689,7 @@ class Database {
         }
         // prepare up to three queries: removing requires one, adding two, and replacing three
         [$inClause, $inTypes, $inValues] = $this->generateIn($subscriptions, "int");
-        $updateQ = "UPDATE arsse_tag_members set assigned = ?, modified = CURRENT_TIMESTAMP where tag = ? and assigned <> ? and subscription in (select id from arsse_subscriptions where owner = ? and id %in% ($inClause))";
+        $updateQ = "UPDATE arsse_tag_members set assigned = ?, modified = CURRENT_TIMESTAMP where tag = ? and assigned <> ? and subscription in (select id from arsse_subscriptions where owner = ? and id %in% ($inClause) and id not in (select id from arsse_subscriptions where deleted = 1))";
         $updateT = ["bool", "int", "bool", "str", $inTypes];
         $insertQ = "INSERT INTO arsse_tag_members(tag,subscription) SELECT ?,id from arsse_subscriptions where id not in (select subscription from arsse_tag_members where tag = ?) and owner = ? and id in ($inClause)";
         $insertT = ["int", "int", "str", $inTypes];
