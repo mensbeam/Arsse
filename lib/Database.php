@@ -2507,7 +2507,14 @@ class Database {
                 SELECT
                     id,name,coalesce(subscriptions,0) as subscriptions
                 from arsse_tags 
-                    left join (SELECT tag, sum(assigned) as subscriptions from arsse_tag_members group by tag) as tag_stats on tag_stats.tag = arsse_tags.id
+                    left join (
+                        SELECT 
+                            tag, 
+                            sum(assigned) as subscriptions 
+                        from arsse_tag_members
+                        --join arsse_subscriptions on arsse_subscriptions.id = arsse_tag_members.subscription and arsse_subscriptions.deleted = 0
+                        group by tag
+                    ) as tag_stats on tag_stats.tag = arsse_tags.id
                 WHERE owner = ?
             ) as tag_data
             where subscriptions >= ? order by name",
