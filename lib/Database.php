@@ -1377,24 +1377,15 @@ class Database {
         return true;
     }
 
-    /** Deletes orphaned newsfeeds from the database
-     *
-     * Newsfeeds are orphaned if no users are subscribed to them. Deleting a newsfeed also deletes its articles
-     */
-    public function feedCleanup(): bool {
-        $tr = $this->begin();
-        // first unmark any feeds which are no longer orphaned
-        $this->db->query("WITH active_feeds as (select id from arsse_feeds left join (select feed, count(id) as count from arsse_subscriptions group by feed) as sub_stats on sub_stats.feed = arsse_feeds.id where orphaned is not null and count is not null) UPDATE arsse_feeds set orphaned = null where id in (select id from active_feeds)");
-        // next mark any newly orphaned feeds with the current date and time
-        $this->db->query("WITH orphaned_feeds as (select id from arsse_feeds left join (select feed, count(id) as count from arsse_subscriptions group by feed) as sub_stats on sub_stats.feed = arsse_feeds.id where orphaned is null and count is null) UPDATE arsse_feeds set orphaned = CURRENT_TIMESTAMP where id in (select id from orphaned_feeds)");
-        // finally delete feeds that have been orphaned longer than the retention period, if a a purge threshold has been specified
+    /** Deletes soft-deleted newsfeed subscriptions from the database, subject to the retention period */
+    public function subscriptionCleanup(): bool {
+        // delete subscriptions that have been soft-deleted longer than the retention period, if a a purge threshold has been specified
         if (Arsse::$conf->purgeFeeds) {
             $limit = Date::sub(Arsse::$conf->purgeFeeds);
-            $out = (bool) $this->db->prepare("DELETE from arsse_feeds where orphaned <= ?", "datetime")->run($limit);
+            $out = (bool) $this->db->prepare("DELETE from arsse_subscriptions where deleted = 1 and modified <= ?", "datetime")->run($limit);
         } else {
             $out = false;
         }
-        $tr->commit();
         return $out;
     }
 
@@ -1468,9 +1459,9 @@ class Database {
     public function iconCleanup(): int {
         $tr = $this->begin();
         // first unmark any icons which are no longer orphaned; an icon is considered orphaned if it is not used or only used by feeds which are themselves orphaned
-        $this->db->query("UPDATE arsse_icons set orphaned = null where id in (select distinct icon from arsse_feeds where icon is not null and orphaned is null)");
+        $this->db->query("UPDATE arsse_icons set orphaned = null where id in (select distinct icon from arsse_subscriptions where icon is not null and deleted = 0)");
         // next mark any newly orphaned icons with the current date and time
-        $this->db->query("UPDATE arsse_icons set orphaned = CURRENT_TIMESTAMP where orphaned is null and id not in (select distinct icon from arsse_feeds where icon is not null and orphaned is null)");
+        $this->db->query("UPDATE arsse_icons set orphaned = CURRENT_TIMESTAMP where orphaned is null and id not in (select distinct icon from arsse_subscriptions where icon is not null and delete = 0)");
         // finally delete icons that have been orphaned longer than the feed retention period, if a a purge threshold has been specified
         $out = 0;
         if (Arsse::$conf->purgeFeeds) {
