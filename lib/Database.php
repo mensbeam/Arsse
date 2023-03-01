@@ -2043,40 +2043,18 @@ class Database {
                 from arsse_articles join (
                     SELECT article, max(id) as edition from arsse_editions group by article
                 ) as latest_editions on arsse_articles.id = latest_editions.article 
-                where feed = ? order by edition desc limit ?
-            ),
-            target_articles as (
-                SELECT 
-                    id 
-                from arsse_articles
-                join (
-                    select 
-                        feed, 
-                        count(*) as subs 
-                    from arsse_subscriptions
-                    where feed = ?
-                    group by feed
-                ) as feed_stats on feed_stats.feed = arsse_articles.feed
-                left join (
-                    select 
-                        article, 
-                        sum(case when starred = 1 and hidden = 0 then 1 else 0 end) as starred, 
-                        sum(case when \"read\" = 1 or hidden = 1 then 1 else 0 end) as \"read\", 
-                        max(arsse_marks.modified) as marked_date 
-                    from arsse_marks 
-                    group by article
-                ) as mark_stats on mark_stats.article = arsse_articles.id
-                where
-                    coalesce(starred,0) = 0 
-                    and (
-                        coalesce(marked_date,modified) <= ? 
-                        or (
-                            coalesce(\"read\",0) = coalesce(subs,0) 
-                            and coalesce(marked_date,modified) <= ?
-                        )
-                    )
+                where subscription = ? order by edition desc limit ?
             )
-            DELETE FROM arsse_articles WHERE id not in (select id from exempt_articles) and id in (select id from target_articles)",
+            DELETE FROM 
+                arsse_articles
+            where
+                subscription = ?
+                and starred = 0 
+                and (
+                    coalesce(marked,modified) <= ? 
+                    or (\"read\" = 1 and coalesce(marked,modified) <= ?)
+                )
+                and id not in (select id from exempt_articles)",
             ["int", "int", "int", "datetime", "datetime"]
         );
         $limitRead = null;
@@ -2087,11 +2065,13 @@ class Database {
         if (Arsse::$conf->purgeArticlesUnread) {
             $limitUnread = Date::sub(Arsse::$conf->purgeArticlesUnread);
         }
-        $feeds = $this->db->query("SELECT id, size from arsse_feeds")->getAll();
         $deleted = 0;
+        $tr = $this->begin();
+        $feeds = $this->db->query("SELECT id, size from arsse_subscriptions")->getAll();
         foreach ($feeds as $feed) {
             $deleted += $query->run($feed['id'], $feed['size'], $feed['id'], $limitUnread, $limitRead)->changes();
         }
+        $tr->commit();
         return (bool) $deleted;
     }
 
