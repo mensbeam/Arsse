@@ -2049,10 +2049,10 @@ class Database {
                 arsse_articles
             where
                 subscription = ?
-                and starred = 0 
+                and (starred = 0 or hidden = 1)
                 and (
                     coalesce(marked,modified) <= ? 
-                    or (\"read\" = 1 and coalesce(marked,modified) <= ?)
+                    or (coalesce(marked,modified) <= ? and (\"read\" = 1 or hidden = 1))
                 )
                 and id not in (select id from exempt_articles)",
             ["int", "int", "int", "datetime", "datetime"]

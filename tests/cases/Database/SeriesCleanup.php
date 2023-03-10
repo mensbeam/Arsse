@@ -72,16 +72,18 @@ trait SeriesCleanup {
                 ],
             ],
             'arsse_subscriptions' => [
-                'columns' => ["id", "owner", "feed"],
+                'columns' => ["id", "owner", "url", "size", "icon", "deleted", "modified"],
                 'rows'    => [
-                    // one feed previously marked for deletion has a subscription again, and so should not be deleted
-                    [1,'jane.doe@example.com',1],
-                    // other subscriptions exist for article cleanup tests
-                    [2,'john.doe@example.com',1],
+                    // first two subscriptions are used for article cleanup tests: the latest two articles should be kept
+                    [1,'jane.doe@example.com',"http://example.com/1",2,null,0,$daybefore],
+                    [2,'john.doe@example.com',"http://example.com/1",2,null,0,$daybefore],
+                    // the other subscriptions are used for subscription cleanup
+                    [3,'jane.doe@example.com',"http://example.com/2",0,   2,1,$yesterday],
+
                 ],
             ],
             'arsse_articles' => [
-                'columns' => ["id", "feed", "url_title_hash", "url_content_hash", "title_content_hash", "modified"],
+                'columns' => ["id", "subscription", "url_title_hash", "url_content_hash", "title_content_hash", "modified"],
                 'rows'    => [
                     [1,1,"","","",$weeksago], // is the latest article, thus is kept
                     [2,1,"","","",$weeksago], // is the second latest article, thus is kept
@@ -101,6 +103,11 @@ trait SeriesCleanup {
                     [2,2],
                     [3,3],
                     [4,4],
+                    [5,5],
+                    [6,6],
+                    [7,7],
+                    [8,8],
+                    [9,9],
                     [201,1],
                     [102,2],
                 ],
@@ -125,8 +132,8 @@ trait SeriesCleanup {
         unset($this->data);
     }
 
-    public function testCleanUpOrphanedFeeds(): void {
-        Arsse::$db->feedCleanup();
+    public function testCleanUpDeletedSubscriptions(): void {
+        Arsse::$db->subscriptionCleanup();
         $now = gmdate("Y-m-d H:i:s");
         $state = $this->primeExpectations($this->data, [
             'arsse_feeds' => ["id","orphaned"],
@@ -137,11 +144,11 @@ trait SeriesCleanup {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    public function testCleanUpOrphanedFeedsWithUnlimitedRetention(): void {
+    public function testCleanUpDeletedSubscriptionsWithUnlimitedRetention(): void {
         Arsse::$conf->import([
             'purgeFeeds' => null,
         ]);
-        Arsse::$db->feedCleanup();
+        Arsse::$db->subscriptionCleanup();
         $now = gmdate("Y-m-d H:i:s");
         $state = $this->primeExpectations($this->data, [
             'arsse_feeds' => ["id","orphaned"],
