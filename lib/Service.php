@@ -89,8 +89,8 @@ class Service {
     }
 
     public static function cleanupPre(): bool {
-        // mark unsubscribed feeds as orphaned and delete orphaned feeds that are beyond their retention period
-        Arsse::$db->feedCleanup();
+        // delete soft-deleted subscriptions that are beyond their retention period
+        Arsse::$db->subscriptionCleanup();
         // do the same for icons
         Arsse::$db->iconCleanup();
         // delete expired log-in sessions

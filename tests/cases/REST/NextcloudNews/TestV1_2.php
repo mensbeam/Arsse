@@ -858,17 +858,17 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testCleanUpBeforeUpdate(): void {
-        $this->dbMock->feedCleanup->with()->returns(true);
+        $this->dbMock->subscriptionCleanup->with()->returns(true);
         $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("GET", "/cleanup/before-update"));
-        $this->dbMock->feedCleanup->calledWith();
+        $this->dbMock->subscriptionCleanup->calledWith();
     }
 
     public function testCleanUpBeforeUpdateWithoutAuthority(): void {
         $this->userMock->propertiesGet->returns(['admin' => false]);
         $exp = HTTP::respEmpty(403);
         $this->assertMessage($exp, $this->req("GET", "/cleanup/before-update"));
-        $this->dbMock->feedCleanup->never()->called();
+        $this->dbMock->subscriptionCleanup->never()->called();
     }
 
     public function testCleanUpAfterUpdate(): void {
@@ -882,7 +882,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->userMock->propertiesGet->returns(['admin' => false]);
         $exp = HTTP::respEmpty(403);
         $this->assertMessage($exp, $this->req("GET", "/cleanup/after-update"));
-        $this->dbMock->feedCleanup->never()->called();
+        $this->dbMock->subscriptionCleanup->never()->called();
     }
 
     public function testQueryTheUserStatus(): void {

@@ -1461,7 +1461,7 @@ class Database {
         // first unmark any icons which are no longer orphaned; an icon is considered orphaned if it is not used or only used by feeds which are themselves orphaned
         $this->db->query("UPDATE arsse_icons set orphaned = null where id in (select distinct icon from arsse_subscriptions where icon is not null and deleted = 0)");
         // next mark any newly orphaned icons with the current date and time
-        $this->db->query("UPDATE arsse_icons set orphaned = CURRENT_TIMESTAMP where orphaned is null and id not in (select distinct icon from arsse_subscriptions where icon is not null and delete = 0)");
+        $this->db->query("UPDATE arsse_icons set orphaned = CURRENT_TIMESTAMP where orphaned is null and id not in (select distinct icon from arsse_subscriptions where icon is not null and deleted = 0)");
         // finally delete icons that have been orphaned longer than the feed retention period, if a a purge threshold has been specified
         $out = 0;
         if (Arsse::$conf->purgeFeeds) {

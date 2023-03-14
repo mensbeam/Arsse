@@ -45,7 +45,7 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testPerformPreCleanup(): void {
         $this->assertTrue(Service::cleanupPre());
-        $this->dbMock->feedCleanup->called();
+        $this->dbMock->subscriptionCleanup->called();
         $this->dbMock->iconCleanup->called();
         $this->dbMock->sessionCleanup->called();
     }
@@ -69,7 +69,7 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testRefreshFeeds(): void {
         // set up mock database actions
         $this->dbMock->metaSet->returns(true);
-        $this->dbMock->feedCleanup->returns(true);
+        $this->dbMock->subscriptionCleanup->returns(true);
         $this->dbMock->sessionCleanup->returns(true);
         $this->dbMock->articleCleanup->returns(0);
         $this->dbMock->feedListStale->returns([1,2,3]);
@@ -82,7 +82,7 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
         $d->queue->calledWith(1, 2, 3);
         $d->exec->called();
         $d->clean->called();
-        $this->dbMock->feedCleanup->called();
+        $this->dbMock->subscriptionCleanup->called();
         $this->dbMock->iconCleanup->called();
         $this->dbMock->sessionCleanup->called();
         $this->dbMock->articleCleanup->called();

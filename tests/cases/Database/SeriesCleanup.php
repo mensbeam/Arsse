@@ -62,15 +62,6 @@ trait SeriesCleanup {
                     [3,'http://localhost:8000/Icon/SVG1',null],
                 ],
             ],
-            'arsse_feeds' => [
-                'columns' => ["id", "url", "title", "orphaned", "size", "icon"],
-                'rows'    => [
-                    [1,"http://example.com/1","",$daybefore,2,null],  //latest two articles should be kept
-                    [2,"http://example.com/2","",$yesterday,0,2],
-                    [3,"http://example.com/3","",null,0,1],
-                    [4,"http://example.com/4","",$nowish,0,null],
-                ],
-            ],
             'arsse_subscriptions' => [
                 'columns' => ["id", "owner", "url", "size", "icon", "deleted", "modified"],
                 'rows'    => [
@@ -79,21 +70,31 @@ trait SeriesCleanup {
                     [2,'john.doe@example.com',"http://example.com/1",2,null,0,$daybefore],
                     // the other subscriptions are used for subscription cleanup
                     [3,'jane.doe@example.com',"http://example.com/2",0,   2,1,$yesterday],
+                    [4,'jane.doe@example.com',"http://example.com/4",0,   1,1,$nowish],
 
                 ],
             ],
             'arsse_articles' => [
-                'columns' => ["id", "subscription", "url_title_hash", "url_content_hash", "title_content_hash", "modified"],
+                'columns' => ["id", "subscription", "url_title_hash", "url_content_hash", "title_content_hash", "modified", "read", "starred", "hidden", "marked"],
                 'rows'    => [
-                    [1,1,"","","",$weeksago], // is the latest article, thus is kept
-                    [2,1,"","","",$weeksago], // is the second latest article, thus is kept
-                    [3,1,"","","",$weeksago], // is starred by one user, thus is kept
-                    [4,1,"","","",$weeksago], // does not meet the unread threshold due to a recent mark, thus is kept
-                    [5,1,"","","",$daysago],  // does not meet the unread threshold due to age, thus is kept
-                    [6,1,"","","",$weeksago], // does not meet the read threshold due to a recent mark, thus is kept
-                    [7,1,"","","",$weeksago], // meets the unread threshold without marks, thus is deleted
-                    [8,1,"","","",$weeksago], // meets the unread threshold even with marks, thus is deleted
-                    [9,1,"","","",$weeksago], // meets the read threshold, thus is deleted
+                    [   1,1,"","","",$weeksago,0,0,0,null],      // is the latest article, thus is kept
+                    [   2,1,"","","",$weeksago,0,0,0,null],      // is the second latest article, thus is kept
+                    [   3,1,"","","",$weeksago,0,1,0,$weeksago], // is starred by the user, thus is kept
+                    [   4,1,"","","",$weeksago,1,0,0,$daysago],  // does not meet the unread threshold due to a recent mark, thus is kept
+                    [   5,1,"","","",$daysago, 0,0,0,null],      // does not meet the unread threshold due to age, thus is kept
+                    [   6,1,"","","",$weeksago,1,0,0,$nowish],   // does not meet the read threshold due to a recent mark, thus is kept
+                    [   7,1,"","","",$weeksago,0,0,0,null],      // meets the unread threshold without marks, thus is deleted
+                    [   8,1,"","","",$weeksago,1,0,0,$weeksago], // meets the unread threshold even with marks, thus is deleted
+                    [   9,1,"","","",$weeksago,1,0,0,$daysago],  // meets the read threshold, thus is deleted
+                    [1001,2,"","","",$weeksago,0,0,0,null],      // is the latest article, thus is kept
+                    [1002,2,"","","",$weeksago,0,0,0,null],      // is the second latest article, thus is kept
+                    [1003,2,"","","",$weeksago,0,0,0,null],      // meets the unread threshold without marks, thus is deleted
+                    [1004,2,"","","",$weeksago,0,0,0,null],      // meets the unread threshold without marks, thus is deleted
+                    [1005,2,"","","",$daysago, 0,0,0,null],      // does not meet the unread threshold due to age, thus is kept
+                    [1006,2,"","","",$weeksago,1,0,0,$weeksago], // meets the unread threshold even with marks, thus is deleted
+                    [1007,2,"","","",$weeksago,0,1,1,$weeksago], // hidden overrides starred, thus is deleted
+                    [1008,2,"","","",$weeksago,0,0,0,null],      // meets the unread threshold without marks, thus is deleted
+                    [1009,2,"","","",$weeksago,0,0,1,$daysago],  // meets the read threshold because hidden is equivalent to read, thus is deleted
                 ],
             ],
             'arsse_editions' => [
@@ -110,19 +111,17 @@ trait SeriesCleanup {
                     [9,9],
                     [201,1],
                     [102,2],
-                ],
-            ],
-            'arsse_marks' => [
-                'columns' => ["article", "subscription", "read", "starred", "hidden", "modified"],
-                'rows'    => [
-                    [3,1,0,1,0,$weeksago],
-                    [4,1,1,0,0,$daysago],
-                    [6,1,1,0,0,$nowish],
-                    [6,2,1,0,0,$weeksago],
-                    [7,2,0,1,1,$weeksago], // hidden takes precedence over starred
-                    [8,1,1,0,0,$weeksago],
-                    [9,1,1,0,0,$daysago],
-                    [9,2,0,0,1,$daysago], // hidden is the same as read for the purposes of cleanup
+                    [1001,1001],
+                    [1002,1002],
+                    [1003,1003],
+                    [1004,1004],
+                    [1005,1005],
+                    [1006,1006],
+                    [1007,1007],
+                    [1008,1008],
+                    [1009,1009],
+                    [1201,1001],
+                    [1102,1002],
                 ],
             ],
         ];
@@ -134,13 +133,10 @@ trait SeriesCleanup {
 
     public function testCleanUpDeletedSubscriptions(): void {
         Arsse::$db->subscriptionCleanup();
-        $now = gmdate("Y-m-d H:i:s");
         $state = $this->primeExpectations($this->data, [
-            'arsse_feeds' => ["id","orphaned"],
+            'arsse_subscriptions' => ["id"],
         ]);
-        $state['arsse_feeds']['rows'][0][1] = null;
-        unset($state['arsse_feeds']['rows'][1]);
-        $state['arsse_feeds']['rows'][2][1] = $now;
+        unset($state['arsse_subscriptions']['rows'][2]);
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -149,12 +145,9 @@ trait SeriesCleanup {
             'purgeFeeds' => null,
         ]);
         Arsse::$db->subscriptionCleanup();
-        $now = gmdate("Y-m-d H:i:s");
         $state = $this->primeExpectations($this->data, [
-            'arsse_feeds' => ["id","orphaned"],
+            'arsse_subscriptions' => ["id"],
         ]);
-        $state['arsse_feeds']['rows'][0][1] = null;
-        $state['arsse_feeds']['rows'][2][1] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
