@@ -84,8 +84,9 @@ class Database {
         if ($initialize) {
             if ($ver < self::SCHEMA_VERSION) {
                 $this->db->schemaUpdate(self::SCHEMA_VERSION);
-            } elseif ($ver != self::SCHEMA_VERSION) {
-                throw new Db\Exception("updateSchemaChange");
+            } elseif ($ver != self::SCHEMA_VERSION) {// @codeCoverageIgnore
+                // This will only occur if an old version of the software is used with a newer database schema
+                throw new Db\Exception("updateSchemaDowngrade"); // @codeCoverageIgnore
             }
         }
     }
@@ -1151,7 +1152,6 @@ class Database {
         try {
             $keep = Rule::prep($sub['keep']);
             $block = Rule::prep($sub['block']);
-            $feed = $sub['id'];
         } catch (RuleException $e) { // @codeCoverageIgnore
             // invalid rules should not normally appear in the database, but it's possible
             // in this case we should halt evaluation and just leave things as they are
@@ -1277,13 +1277,17 @@ class Database {
         // prepare the keep and block rules
         try {
             $keep = Rule::prep($f['keep_rule'] ?? "");
-        } catch (RuleException $e) {
-            $keep = "";
+        } catch (RuleException $e) { // @codeCoverageIgnore
+            // invalid rules should not normally appear in the database, but it's possible
+            // in this case we act as if the rule were not defined
+            $keep = ""; // @codeCoverageIgnore
         }
         try {
             $block = Rule::prep($f['block_rule'] ?? "");
-        } catch (RuleException $e) {
-            $block = "";
+        } catch (RuleException $e) { // @codeCoverageIgnore
+            // invalid rules should not normally appear in the database, but it's possible
+            // in this case we act as if the rule were not defined
+            $block = ""; // @codeCoverageIgnore
         }
         // determine if the feed icon needs to be updated, and update it if appropriate
         $tr = $this->db->begin();
@@ -2473,10 +2477,13 @@ class Database {
      * @param boolean $includeEmpty Whether to include (true) or supress (false) tags which have no subscriptions assigned to them
      */
     public function tagList(string $user, bool $includeEmpty = true): Db\Result {
+        $integerType = $this->db->sqlToken("integer");
         return $this->db->prepareArray(
             "SELECT * FROM (
                 SELECT
-                    id,name,coalesce(subscriptions,0) as subscriptions
+                    id,
+                    name,
+                    cast(coalesce(subscriptions,0) as $integerType) as subscriptions -- this cast is required for MySQL for unclear reasons
                 from arsse_tags 
                     left join (
                         SELECT 

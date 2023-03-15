@@ -815,7 +815,7 @@ trait SeriesArticle {
     }
 
     public function testMarkMultipleMissingEditions(): void {
-        $this->assertSame(0, Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editions([500,501])));
+        $this->assertSame(0, Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editions([56458, 1851855])));
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $this->compareExpectations(static::$drv, $state);
     }
