@@ -401,7 +401,6 @@ trait SeriesSubscription {
     }
 
     public function testSetThePropertiesOfASubscription(): void {
-        $this->markTestIncomplete();
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, [
             'title'      => "Ook Ook",
             'folder'     => 3,
@@ -535,11 +534,10 @@ trait SeriesSubscription {
     }
 
     public function testSetTheFilterRulesOfASubscriptionCheckingMarks(): void {
-        $this->markTestIncomplete();
         Arsse::$db->subscriptionPropertiesSet("jack.doe@example.com", 5, ['keep_rule' => "1|B|3|D", 'block_rule' => "4"]);
-        $state = $this->primeExpectations($this->data, ['arsse_marks' => ['article', 'subscription', 'hidden']]);
-        $state['arsse_marks']['rows'][9][2] = 0;
-        $state['arsse_marks']['rows'][10][2] = 1;
+        $state = $this->primeExpectations($this->data, ['arsse_articles' => ['id', 'hidden']]);
+        $state['arsse_articles']['rows'][17][1] = 0;
+        $state['arsse_articles']['rows'][18][1] = 1;
         $this->compareExpectations(static::$drv, $state);
     }
 }

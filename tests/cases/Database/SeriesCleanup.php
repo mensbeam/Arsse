@@ -67,34 +67,34 @@ trait SeriesCleanup {
                 'rows'    => [
                     // first two subscriptions are used for article cleanup tests: the latest two articles should be kept
                     [1,'jane.doe@example.com',"http://example.com/1",2,null,0,$daybefore],
-                    [2,'john.doe@example.com',"http://example.com/1",2,null,0,$daybefore],
+                    [2,'john.doe@example.com',"http://example.com/1",2,   1,0,$daybefore],
                     // the other subscriptions are used for subscription cleanup
                     [3,'jane.doe@example.com',"http://example.com/2",0,   2,1,$yesterday],
-                    [4,'jane.doe@example.com',"http://example.com/4",0,   1,1,$nowish],
+                    [4,'jane.doe@example.com',"http://example.com/4",0,null,1,$nowish],
 
                 ],
             ],
             'arsse_articles' => [
                 'columns' => ["id", "subscription", "url_title_hash", "url_content_hash", "title_content_hash", "modified", "read", "starred", "hidden", "marked"],
                 'rows'    => [
-                    [   1,1,"","","",$weeksago,0,0,0,null],      // is the latest article, thus is kept
-                    [   2,1,"","","",$weeksago,0,0,0,null],      // is the second latest article, thus is kept
-                    [   3,1,"","","",$weeksago,0,1,0,$weeksago], // is starred by the user, thus is kept
-                    [   4,1,"","","",$weeksago,1,0,0,$daysago],  // does not meet the unread threshold due to a recent mark, thus is kept
-                    [   5,1,"","","",$daysago, 0,0,0,null],      // does not meet the unread threshold due to age, thus is kept
-                    [   6,1,"","","",$weeksago,1,0,0,$nowish],   // does not meet the read threshold due to a recent mark, thus is kept
-                    [   7,1,"","","",$weeksago,0,0,0,null],      // meets the unread threshold without marks, thus is deleted
-                    [   8,1,"","","",$weeksago,1,0,0,$weeksago], // meets the unread threshold even with marks, thus is deleted
-                    [   9,1,"","","",$weeksago,1,0,0,$daysago],  // meets the read threshold, thus is deleted
-                    [1001,2,"","","",$weeksago,0,0,0,null],      // is the latest article, thus is kept
-                    [1002,2,"","","",$weeksago,0,0,0,null],      // is the second latest article, thus is kept
-                    [1003,2,"","","",$weeksago,0,0,0,null],      // meets the unread threshold without marks, thus is deleted
-                    [1004,2,"","","",$weeksago,0,0,0,null],      // meets the unread threshold without marks, thus is deleted
-                    [1005,2,"","","",$daysago, 0,0,0,null],      // does not meet the unread threshold due to age, thus is kept
-                    [1006,2,"","","",$weeksago,1,0,0,$weeksago], // meets the unread threshold even with marks, thus is deleted
-                    [1007,2,"","","",$weeksago,0,1,1,$weeksago], // hidden overrides starred, thus is deleted
-                    [1008,2,"","","",$weeksago,0,0,0,null],      // meets the unread threshold without marks, thus is deleted
-                    [1009,2,"","","",$weeksago,0,0,1,$daysago],  // meets the read threshold because hidden is equivalent to read, thus is deleted
+                    [   1,1,"","","",$weeksago,0,0,0,null],       // is the latest article, thus is kept
+                    [   2,1,"","","",$weeksago,0,0,0,null],       // is the second latest article, thus is kept
+                    [   3,1,"","","",$weeksago,0,1,0,$weeksago],  // is starred by the user, thus is kept
+                    [   4,1,"","","",$weeksago,1,0,0,$yesterday], // does not meet the unread threshold due to a recent mark, thus is kept
+                    [   5,1,"","","",$daysago, 0,0,0,null],       // does not meet the unread threshold due to age, thus is kept
+                    [   6,1,"","","",$weeksago,1,0,0,$nowish],    // does not meet the read threshold due to a recent mark, thus is kept
+                    [   7,1,"","","",$weeksago,0,0,0,null],       // meets the unread threshold without marks, thus is deleted
+                    [   8,1,"","","",$weeksago,1,0,0,$weeksago],  // meets the unread threshold even with marks, thus is deleted
+                    [   9,1,"","","",$weeksago,1,0,0,$daysago],   // meets the read threshold, thus is deleted
+                    [1001,2,"","","",$weeksago,0,0,0,null],       // is the latest article, thus is kept
+                    [1002,2,"","","",$weeksago,0,0,0,null],       // is the second latest article, thus is kept
+                    [1003,2,"","","",$weeksago,0,0,0,null],       // meets the unread threshold without marks, thus is deleted
+                    [1004,2,"","","",$weeksago,0,0,0,null],       // meets the unread threshold without marks, thus is deleted
+                    [1005,2,"","","",$daysago, 0,0,0,null],       // does not meet the unread threshold due to age, thus is kept
+                    [1006,2,"","","",$weeksago,1,0,0,$weeksago],  // meets the unread threshold even with marks, thus is deleted
+                    [1007,2,"","","",$weeksago,0,1,1,$weeksago],  // hidden overrides starred, thus is deleted
+                    [1008,2,"","","",$weeksago,0,0,0,null],       // meets the unread threshold without marks, thus is deleted
+                    [1009,2,"","","",$weeksago,0,0,1,$daysago],   // meets the read threshold because hidden is equivalent to read, thus is deleted
                 ],
             ],
             'arsse_editions' => [
@@ -182,8 +182,12 @@ trait SeriesCleanup {
         $state = $this->primeExpectations($this->data, [
             'arsse_articles' => ["id"],
         ]);
-        foreach ([7,8,9] as $id) {
-            unset($state['arsse_articles']['rows'][$id - 1]);
+        $deleted = [7, 8, 9, 1003, 1004, 1006, 1007, 1008, 1009];
+        $stop = sizeof($state['arsse_articles']['rows']);
+        for ($a = 0; $a < $stop; $a++) {
+            if (in_array($state['arsse_articles']['rows'][$a][0], $deleted)) {
+                unset($state['arsse_articles']['rows'][$a]);
+            }
         }
         $this->compareExpectations(static::$drv, $state);
     }
@@ -196,8 +200,12 @@ trait SeriesCleanup {
         $state = $this->primeExpectations($this->data, [
             'arsse_articles' => ["id"],
         ]);
-        foreach ([7,8] as $id) {
-            unset($state['arsse_articles']['rows'][$id - 1]);
+        $deleted = [7, 8, 1003, 1004, 1006, 1007, 1008];
+        $stop = sizeof($state['arsse_articles']['rows']);
+        for ($a = 0; $a < $stop; $a++) {
+            if (in_array($state['arsse_articles']['rows'][$a][0], $deleted)) {
+                unset($state['arsse_articles']['rows'][$a]);
+            }
         }
         $this->compareExpectations(static::$drv, $state);
     }
@@ -210,8 +218,12 @@ trait SeriesCleanup {
         $state = $this->primeExpectations($this->data, [
             'arsse_articles' => ["id"],
         ]);
-        foreach ([9] as $id) {
-            unset($state['arsse_articles']['rows'][$id - 1]);
+        $deleted = [8, 9, 1006, 1007, 1009];
+        $stop = sizeof($state['arsse_articles']['rows']);
+        for ($a = 0; $a < $stop; $a++) {
+            if (in_array($state['arsse_articles']['rows'][$a][0], $deleted)) {
+                unset($state['arsse_articles']['rows'][$a]);
+            }
         }
         $this->compareExpectations(static::$drv, $state);
     }
