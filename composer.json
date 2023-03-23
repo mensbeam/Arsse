@@ -24,9 +24,9 @@
         "ext-hash": "*",
         "ext-filter": "*",
         "ext-dom": "*",
-        "nicolus/picofeed": "dev-bugfix",
+        "nicolus/picofeed": "dev-patch-3",
         "hosteurope/password-generator": "1.*",
-        "docopt/docopt": "dev-master",
+        "docopt/docopt": "1.*",
         "jkingweb/druuid": "3.*",
         "guzzlehttp/psr7": "1.*",
         "laminas/laminas-httphandlerrunner": "1.*"
@@ -35,7 +35,7 @@
         "bamarni/composer-bin-plugin": "*"
     },
     "suggest": {
-        "ext-pcntl": "To respond to signals, particular to reload configuration via SIGHUP"
+        "ext-pcntl": "To respond to signals, particularly to reload configuration via SIGHUP"
     },
     "config": {
         "platform": {
@@ -45,9 +45,11 @@
             "bamarni/composer-bin-plugin": true
         }
     },
-    "scripts": {
-        "post-install-cmd": ["@composer bin all install"],
-        "post-update-cmd": ["@composer bin all update"]
+    "extra": {
+        "bamarni-bin": {
+            "bin-links": false,
+            "forward-command": true
+        }
     },
     "autoload": {
         "psr-4": {
@@ -63,11 +65,7 @@
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/rhukster/picoFeed"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/docopt/docopt.php"
+            "url": "https://github.com/JKingweb/picoFeed-1/"
         }
     ]
 }

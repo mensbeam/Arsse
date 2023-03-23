@@ -4,35 +4,32 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2e8ad0d4821fdfc0d975e98f2e2c3efe",
+    "content-hash": "0020e84a746531294de6556d7b35fa7a",
     "packages": [
         {
             "name": "docopt/docopt",
-            "version": "dev-master",
+            "version": "1.0.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/docopt/docopt.php.git",
-                "reference": "5ad491cb9fc072e8bb0497061a09b0efcf25cbcf"
+                "reference": "0e3db660cf2f2eb07a83253790b7d97cdb398826"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/docopt/docopt.php/zipball/5ad491cb9fc072e8bb0497061a09b0efcf25cbcf",
-                "reference": "5ad491cb9fc072e8bb0497061a09b0efcf25cbcf",
+                "url": "https://api.github.com/repos/docopt/docopt.php/zipball/0e3db660cf2f2eb07a83253790b7d97cdb398826",
+                "reference": "0e3db660cf2f2eb07a83253790b7d97cdb398826",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.3.0"
             },
-            "require-dev": {
-                "phpunit/phpunit": "4.1.*"
-            },
-            "default-branch": true,
             "type": "library",
             "autoload": {
                 "classmap": [
                     "src/docopt.php"
                 ]
             },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -51,10 +48,10 @@
                 "docs"
             ],
             "support": {
-                "source": "https://github.com/docopt/docopt.php/tree/master",
-                "issues": "https://github.com/docopt/docopt.php/issues"
+                "issues": "https://github.com/docopt/docopt.php/issues",
+                "source": "https://github.com/docopt/docopt.php/tree/1.0.5"
             },
-            "time": "2022-05-11T23:52:25+00:00"
+            "time": "2023-03-22T12:31:48+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
@@ -745,16 +742,16 @@
         },
         {
             "name": "nicolus/picofeed",
-            "version": "dev-bugfix",
+            "version": "dev-patch-3",
             "source": {
                 "type": "git",
-                "url": "https://github.com/rhukster/picoFeed.git",
-                "reference": "b8e5e34ce7d0b97f1910b8c574aa72ff768a4078"
+                "url": "https://github.com/JKingweb/picoFeed-1.git",
+                "reference": "536911c180651fea79d6e1894a826fff6ab87a52"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/rhukster/picoFeed/zipball/b8e5e34ce7d0b97f1910b8c574aa72ff768a4078",
-                "reference": "b8e5e34ce7d0b97f1910b8c574aa72ff768a4078",
+                "url": "https://api.github.com/repos/JKingweb/picoFeed-1/zipball/536911c180651fea79d6e1894a826fff6ab87a52",
+                "reference": "536911c180651fea79d6e1894a826fff6ab87a52",
                 "shasum": ""
             },
             "require": {
@@ -803,9 +800,9 @@
             "description": "RSS/Atom parsing library",
             "homepage": "https://github.com/nicolus/picoFeed",
             "support": {
-                "source": "https://github.com/rhukster/picoFeed/tree/bugfix"
+                "source": "https://github.com/JKingweb/picoFeed-1/tree/patch-3"
             },
-            "time": "2022-09-23T17:42:18+00:00"
+            "time": "2023-03-23T01:54:27+00:00"
         },
         {
             "name": "psr/http-client",
@@ -1193,8 +1190,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "nicolus/picofeed": 20,
-        "docopt/docopt": 20
+        "nicolus/picofeed": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,

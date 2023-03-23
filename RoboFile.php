@@ -82,7 +82,7 @@ class RoboFile extends \Robo\Tasks {
 
     /** Runs the coding standards fixer */
     public function clean($opts = ['demo|d' => false]): Result {
-        $t = $this->taskExec(norm(BASE."vendor/bin/php-cs-fixer"));
+        $t = $this->taskExec(norm(BASE."vendor-bin/csfixer/vendor/bin/php-cs-fixer"));
         $t->arg("fix");
         if ($opts['demo']) {
             $t->args("--dry-run", "--diff")->option("--diff-format", "udiff");
@@ -405,7 +405,7 @@ class RoboFile extends \Robo\Tasks {
      * The resultant files are suitable for offline viewing and inclusion into release builds
      */
     public function manual(array $args): Result {
-        $execpath = escapeshellarg(norm(BASE."vendor/bin/daux"));
+        $execpath = escapeshellarg(norm(BASE."vendor-bin/daux/vendor/bin/daux"));
         $t = $this->collectionBuilder();
         $t->taskExec($execpath)->arg("generate")->option("-d", BASE."manual")->args($args);
         $t->taskDeleteDir(BASE."manual/daux_libraries");
@@ -416,7 +416,7 @@ class RoboFile extends \Robo\Tasks {
 
     /** Serves a live view of the manual using the built-in Web server */
     public function manualLive(array $args): Result {
-        $execpath = escapeshellarg(norm(BASE."vendor/bin/daux"));
+        $execpath = escapeshellarg(norm(BASE."vendor-bin/daux/vendor/bin/daux"));
         return $this->taskExec($execpath)->arg("serve")->args($args)->run();
     }
 
