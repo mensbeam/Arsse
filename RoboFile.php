@@ -55,8 +55,8 @@ class RoboFile extends \Robo\Tasks {
      * tests/coverage/. Additional reports may be produced by passing
      * arguments to this task as one would to PHPUnit.
      *
-     * Robo first tries to use pcov and will fall back first to xdebug then
-     * phpdbg. Neither pcov nor xdebug need to be enabled to be used; they
+     * Robo first tries to use pcov and will fall back to xdebug.
+     * Neither pcov nor xdebug need to be enabled to be used; they
      * only need to be present in the extension load path to be used.
      */
     public function coverage(array $args): Result {
@@ -80,7 +80,7 @@ class RoboFile extends \Robo\Tasks {
         return $this->runTests($exec, "typical", array_merge(["--coverage-html", BASE_TEST."coverage"], $args));
     }
 
-    /** Runs the coding standards fixer */
+    /** Runs the coding-style fixer */
     public function clean($opts = ['demo|d' => false]): Result {
         $t = $this->taskExec(norm(BASE."vendor-bin/csfixer/vendor/bin/php-cs-fixer"));
         $t->arg("fix");
@@ -90,9 +90,10 @@ class RoboFile extends \Robo\Tasks {
         return $t->run();
     }
 
+    /** Finds the first suitable means of computing code coverage, either pcov or xdebug. */
     protected function findCoverageEngine(): string {
         $dir = rtrim(ini_get("extension_dir"), "/").\DIRECTORY_SEPARATOR;
-        $ext = IS_WIN ? "dll" : (IS_MAC ? "dylib" : "so");
+        $ext = IS_WIN ? "dll" : "so";
         $php = escapeshellarg(\PHP_BINARY);
         $code = escapeshellarg(BASE."lib");
         if (extension_loaded("pcov")) {
@@ -104,25 +105,27 @@ class RoboFile extends \Robo\Tasks {
         } elseif (file_exists($dir."xdebug.$ext")) {
             return "$php -d zend_extension=xdebug.$ext -d xdebug.mode=coverage";
         } else {
-            if (IS_WIN) {
-                $dbg = dirname(\PHP_BINARY)."\\phpdbg.exe";
-                $dbg = file_exists($dbg) ? $dbg : "";
-            } else {
-                $dbg = trim(`which phpdbg 2>/dev/null`);
-            }
-            if ($dbg) {
-                return escapeshellarg($dbg)." -qrr";
-            } else {
-                return $php;
-            }
+            return $php;
         }
     }
 
+    /** Returns the necessary shell arguments to print error output or all output to the bitbucket
+     *
+     * @param bool $all Whether all output (true) or only error output (false) should be suppressed
+     */
     protected function blackhole(bool $all = false): string {
         $hole = IS_WIN ? "nul" : "/dev/null";
         return $all ? ">$hole 2>&1" : "2>$hole";
     }
 
+    /** Executes PHPUnit, used by the test and coverage tasks.
+     *
+     * This also executes the built-in PHP Web server, which is required to fetch some newsfeeds during tests
+     *
+     * @param string $executor The path to the PHP binary to execute with any required extra arguments. Normally this is either "php" or the result of findCoverageEngine()
+     * @param string $set The set of tests to run, either "typical" (excludes redundant tests), "quick" (excludes redundant and slow tests), "coverage" (excludes tests not needed for coverage), or "full" (all tests)
+     * @param array $args Extra arguments passed by Robo from the command line
+     */
     protected function runTests(string $executor, string $set, array $args): Result {
         switch ($set) {
             case "typical":
@@ -146,6 +149,12 @@ class RoboFile extends \Robo\Tasks {
         return $this->taskExec($executor)->option("-d", "zend.assertions=1")->arg($execpath)->option("-c", $confpath)->args(array_merge($set, $args))->run();
     }
 
+    /** Returns a Git version string for a given Git tree-ish ID
+     *
+     * Returns an array containing the tree-ish string and the version string.
+     *
+     * @param string|null $commit The tree-ish ID. If not supplied the user will be prompted
+     */
     protected function commitVersion(?string $commit): array {
         $target = $commit ?? $this->askDefault("Reference commit:", "HEAD");
         $base = escapeshellarg(BASE);
@@ -158,13 +167,11 @@ class RoboFile extends \Robo\Tasks {
         return [$target, $version];
     }
 
+    /** Checks whether all the supplied terminal commands are available in path */
     protected function toolExists(string ...$binary): bool {
         $blackhole = $this->blackhole(IS_WIN);
         foreach ($binary as $bin) {
-            if (
-                (IS_WIN && (!exec(escapeshellarg($bin)." --help $blackhole", $junk, $status) || $status))
-                || (!IS_WIN && (!exec("which ".escapeshellarg($bin)." $blackhole", $junk, $status) || $status))
-            ) {
+            if (!exec(escapeshellarg($bin)." --help $blackhole", $junk, $status) || $status) {
                 return false;
             }
         }
@@ -400,7 +407,7 @@ class RoboFile extends \Robo\Tasks {
         return $t->run();
     }
 
-    /** Generates static manual pages in the "manual" directory
+    /** Generates static HTML manual pages in the "manual" directory
      *
      * The resultant files are suitable for offline viewing and inclusion into release builds
      */
@@ -470,6 +477,15 @@ class RoboFile extends \Robo\Tasks {
         return $t->run();
     }
 
+    /** Parses the contents of the CHANGELOG file into an array structure
+     *
+     * This is done line-by-line and tends to be quite strict.
+     * The parsed output can be used to generate changelogs in other formats,
+     * such as a Debian changelog or RPM changelog.
+     *
+     * @param string $text The text of the CHANGELOG file
+     * @param string $targetVersion The x.y.z version number of the latest release. This is used to check that version numbers and dates have been updated when preparing a release
+     */
     protected function changelogParse(string $text, string $targetVersion): array {
         $lines = preg_split('/\r?\n/', $text);
         $version = "";
@@ -546,7 +562,18 @@ class RoboFile extends \Robo\Tasks {
         return $out;
     }
 
+    /** Produce a Debian changelog from a parsed CHANGELOG file
+     *
+     * The Debian changelog format is extremely specific with certain tokens
+     * having special meaning and leading whitespace also being significant.
+     * Modifying this function should be done with extreme care.
+     *
+     * @param array $log The parsed chaneglog, output by changelogParse()
+     * @param string $targetVersion The second output of commitVersion()
+     */
     protected function changelogDebian(array $log, string $targetVersion): string {
+        $authorName = "J. King";
+        $authorMail = "jking@jkingweb.ca";
         $latest = $log[0]['version'];
         $baseVersion = preg_replace('/^(\d+(?:\.\d+)*).*/', "$1", $targetVersion);
         if ($baseVersion !== $targetVersion && version_compare($latest, $baseVersion, ">")) {
@@ -582,11 +609,20 @@ class RoboFile extends \Robo\Tasks {
                     $out .= "  * ".trim(preg_replace("/^/m", "    ", $item))."\n";
                 }
             }
-            $out .= "\n -- J. King <jking@jkingweb.ca>  ".\DateTimeImmutable::createFromFormat("Y-m-d", $entry['date'], new \DateTimeZone("UTC"))->format("D, d M Y")." 00:00:00 +0000\n\n";
+            $out .= "\n -- $authorName <$authorMail>  ".\DateTimeImmutable::createFromFormat("Y-m-d", $entry['date'], new \DateTimeZone("UTC"))->format("D, d M Y")." 00:00:00 +0000\n\n";
         }
         return $out;
     }
 
+    /** Produces a Debian "source control" file from various bits of data
+     *
+     * As with a Debian changelog, the output is of a very exacting format,
+     * and this function should be modified with care.
+     *
+     * @param string $dir The path to Debian-specific files, with trailing slash
+     * @param string $version The Debian version string, in the format x.y.z-a
+     * @param array $tarballs An array of paths to the "orig" and "debian" tarball files
+     */
     protected function generateDebianSourceControl(string $dir, string $version, array $tarballs): string {
         // read in control file
         if (!$control = @file_get_contents($dir."control")) {
