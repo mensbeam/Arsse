@@ -122,5 +122,3 @@ Producing release packages is done by running `./robo package`. This performs th
 - Deletes numerous unneeded files
 - Exports the default configuration of The Arsse to a file
 - Compresses the remaining files into a tarball
-- Produces a binary package for Arch Linux, if possible
-- Produces source and binary packages for Debian using [pbuilder](https://pbuilder-team.pages.debian.net/pbuilder/), if possible
