@@ -4,13 +4,13 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Misc;
 
 use JKingWeb\Arsse\Misc\URL;
 
 /** @covers \JKingWeb\Arsse\Misc\URL */
 class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
-
     /** @dataProvider provideNormalizations */
     public function testNormalizeAUrl(string $url, string $exp, string $user = null, string $pass = null): void {
         $this->assertSame($exp, URL::normalize($url, $user, $pass));

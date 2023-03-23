@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\REST;
 
 use JKingWeb\Arsse\Arsse;
@@ -21,7 +22,6 @@ use GuzzleHttp\Psr7\ServerRequest;
 
 /** @covers \JKingWeb\Arsse\REST */
 class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
-
     /** @dataProvider provideApiMatchData */
     public function testMatchAUrlToAnApi($apiList, string $input, array $exp): void {
         $r = new REST($apiList);
@@ -317,13 +317,13 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function provideMockRequests(): iterable {
         return [
-            [new ServerRequest("GET",  "/index.php/apps/news/api/v1-2/feeds"), "GET",  true, NCN::class, "/feeds"],
-            [new ServerRequest("GET",  "/index.php/apps/news/api/v1-2/feeds"), "GET",  true, NCN::class, "/feeds"],
-            [new ServerRequest("get",  "/index.php/apps/news/api/v1-2/feeds"), "GET",  true, NCN::class, "/feeds"],
-            [new ServerRequest("head", "/index.php/apps/news/api/v1-2/feeds"), "GET",  true, NCN::class, "/feeds"],
+            [new ServerRequest("GET", "/index.php/apps/news/api/v1-2/feeds"),  "GET",  true, NCN::class,   "/feeds"],
+            [new ServerRequest("GET", "/index.php/apps/news/api/v1-2/feeds"),  "GET",  true, NCN::class,   "/feeds"],
+            [new ServerRequest("get", "/index.php/apps/news/api/v1-2/feeds"),  "GET",  true, NCN::class,   "/feeds"],
+            [new ServerRequest("head", "/index.php/apps/news/api/v1-2/feeds"), "GET",  true, NCN::class,   "/feeds"],
             [new ServerRequest("POST", "/tt-rss/api/"),                        "POST", true, TTRSS::class, "/"],
             [new ServerRequest("HEAD", "/no/such/api/"),                       "GET",  false],
-            [new ServerRequest("GET",  "/no/such/api/"),                       "GET",  false],
+            [new ServerRequest("GET", "/no/such/api/"),                        "GET",  false],
         ];
     }
 }

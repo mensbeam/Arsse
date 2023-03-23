@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\REST\TinyTinyRSS;
 
 use JKingWeb\Arsse\Arsse;
@@ -1523,11 +1524,11 @@ LONG_STRING;
                 'content'     => '<p>Article content 1</p>',
             ],
             [
-                'id'     => "102",
-                'guid'   => "SHA256:5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7",
-                'title'  => 'Article title 2',
-                'link'   => 'http://example.com/2',
-                'labels' => [],
+                'id'          => "102",
+                'guid'        => "SHA256:5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7",
+                'title'       => 'Article title 2',
+                'link'        => 'http://example.com/2',
+                'labels'      => [],
                 'unread'      => false,
                 'marked'      => false,
                 'published'   => false,

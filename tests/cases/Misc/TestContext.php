@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Misc;
 
 use JKingWeb\Arsse\Context\Context;
@@ -93,7 +94,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             'articleRange'     => [[1, 100],                                         [1, 100]],
             'editionRange'     => [[1, 100],                                         [1, 100]],
         ];
-        foreach($tests as $k => $t) {
+        foreach ($tests as $k => $t) {
             yield $k => array_merge([$k], $t, [false]);
             if (method_exists(ExclusionContext::class, $k)) {
                 yield "$k (not)" => array_merge([$k], $t, [true]);
@@ -169,7 +170,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertTrue(isset($c1[2]));
         $c1[] = $c2;
         $act = [];
-        foreach($c1 as $k => $v) {
+        foreach ($c1 as $k => $v) {
             $act[$k] = $v;
         }
         $exp = [2 => $c3, $c2];

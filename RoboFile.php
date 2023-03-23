@@ -164,7 +164,7 @@ class RoboFile extends \Robo\Tasks {
             if (
                 (IS_WIN && (!exec(escapeshellarg($bin)." --help $blackhole", $junk, $status) || $status))
                 || (!IS_WIN && (!exec("which ".escapeshellarg($bin)." $blackhole", $junk, $status) || $status))
-             ) {
+            ) {
                 return false;
             }
         }

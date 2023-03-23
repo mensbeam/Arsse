@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\REST\TinyTinyRSS\PDO;
 
 /** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\API<extended>

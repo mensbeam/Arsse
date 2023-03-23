@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\Test;
 
 use Eloquent\Phony\Mock\Handle\InstanceHandle;
@@ -61,17 +62,17 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         $defaults = [
             'dbSQLite3File'      => ":memory:",
             'dbSQLite3Timeout'   => 0,
-            'dbPostgreSQLHost'   => $_ENV['ARSSE_TEST_PGSQL_HOST']   ?: "",
-            'dbPostgreSQLPort'   => $_ENV['ARSSE_TEST_PGSQL_PORT']   ?: 5432,
-            'dbPostgreSQLUser'   => $_ENV['ARSSE_TEST_PGSQL_USER']   ?: "arsse_test",
-            'dbPostgreSQLPass'   => $_ENV['ARSSE_TEST_PGSQL_PASS']   ?: "arsse_test",
-            'dbPostgreSQLDb'     => $_ENV['ARSSE_TEST_PGSQL_DB']     ?: "arsse_test",
+            'dbPostgreSQLHost'   => $_ENV['ARSSE_TEST_PGSQL_HOST'] ?: "",
+            'dbPostgreSQLPort'   => $_ENV['ARSSE_TEST_PGSQL_PORT'] ?: 5432,
+            'dbPostgreSQLUser'   => $_ENV['ARSSE_TEST_PGSQL_USER'] ?: "arsse_test",
+            'dbPostgreSQLPass'   => $_ENV['ARSSE_TEST_PGSQL_PASS'] ?: "arsse_test",
+            'dbPostgreSQLDb'     => $_ENV['ARSSE_TEST_PGSQL_DB'] ?: "arsse_test",
             'dbPostgreSQLSchema' => $_ENV['ARSSE_TEST_PGSQL_SCHEMA'] ?: "arsse_test",
-            'dbMySQLHost'        => $_ENV['ARSSE_TEST_MYSQL_HOST']   ?: "localhost",
-            'dbMySQLPort'        => $_ENV['ARSSE_TEST_MYSQL_PORT']   ?: 3306,
-            'dbMySQLUser'        => $_ENV['ARSSE_TEST_MYSQL_USER']   ?: "arsse_test",
-            'dbMySQLPass'        => $_ENV['ARSSE_TEST_MYSQL_PASS']   ?: "arsse_test",
-            'dbMySQLDb'          => $_ENV['ARSSE_TEST_MYSQL_DB']     ?: "arsse_test",
+            'dbMySQLHost'        => $_ENV['ARSSE_TEST_MYSQL_HOST'] ?: "localhost",
+            'dbMySQLPort'        => $_ENV['ARSSE_TEST_MYSQL_PORT'] ?: 3306,
+            'dbMySQLUser'        => $_ENV['ARSSE_TEST_MYSQL_USER'] ?: "arsse_test",
+            'dbMySQLPass'        => $_ENV['ARSSE_TEST_MYSQL_PASS'] ?: "arsse_test",
+            'dbMySQLDb'          => $_ENV['ARSSE_TEST_MYSQL_DB'] ?: "arsse_test",
         ];
         Arsse::$conf = (($force ? null : Arsse::$conf) ?? (new Conf))->import($defaults)->import($conf);
     }

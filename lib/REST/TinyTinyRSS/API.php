@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\REST\TinyTinyRSS;
 
 use JKingWeb\Arsse\Feed;
@@ -999,7 +1000,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             switch ($e->getCode()) {
                 case 10236: // label already exists
                     // retrieve the ID of the existing label; duplicating a label silently returns the existing one
-                     return $this->labelOut(Arsse::$db->labelPropertiesGet(Arsse::$user->id, $in['name'], true)['id']);
+                    return $this->labelOut(Arsse::$db->labelPropertiesGet(Arsse::$user->id, $in['name'], true)['id']);
                 default: // other errors related to input
                     throw new Exception("INCORRECT_USAGE");
             }

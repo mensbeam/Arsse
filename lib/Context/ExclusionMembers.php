@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\Context;
 
 use JKingWeb\Arsse\Misc\ValueInfo;
@@ -242,7 +243,6 @@ trait ExclusionMembers {
         }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
-
 
     public function markedRange($start = null, $end = null) {
         if ($start === null && $end === null) {

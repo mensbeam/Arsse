@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\REST\Miniflux;
 
 use Eloquent\Phony\Mock\Handle\InstanceHandle;
@@ -18,7 +19,6 @@ use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\REST\Miniflux\V1;
-use JKingWeb\Arsse\REST\Miniflux\ErrorResponse;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\ImportExport\Exception as ImportException;
 use JKingWeb\Arsse\ImportExport\OPML;

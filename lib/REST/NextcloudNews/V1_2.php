@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\REST\NextcloudNews;
 
 use JKingWeb\Arsse\Arsse;
@@ -293,7 +294,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             switch ($e->getCode()) {
                 // folder already exists
                 case 10236: return HTTP::respEmpty(409);
-                // folder name not acceptable
+                    // folder name not acceptable
                 case 10231:
                 case 10232: return HTTP::respEmpty(422);
                 // other errors related to input
@@ -324,9 +325,9 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             switch ($e->getCode()) {
                 // folder does not exist
                 case 10239: return HTTP::respEmpty(404);
-                // folder already exists
+                    // folder already exists
                 case 10236: return HTTP::respEmpty(409);
-                // folder name not acceptable
+                    // folder name not acceptable
                 case 10231:
                 case 10232: return HTTP::respEmpty(422);
                 // other errors related to input
@@ -458,7 +459,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             switch ($e->getCode()) {
                 // subscription does not exist
                 case 10239: return HTTP::respEmpty(404);
-                // name is invalid
+                    // name is invalid
                 case 10231:
                 case 10232: return HTTP::respEmpty(422);
                 // other errors related to input

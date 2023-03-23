@@ -2050,7 +2050,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "friendsofphp/php-cs-fixer": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": [],

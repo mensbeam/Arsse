@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\REST\Miniflux;
 
 use JKingWeb\Arsse\Arsse;
@@ -212,7 +213,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     public function __construct() {
     }
-    
+
     public static function respError($data, int $status = 400, array $headers = []): ResponseInterface {
         assert(isset(Arsse::$lang) && Arsse::$lang instanceof \JKingWeb\Arsse\Lang, new \Exception("Language database must be initialized before use"));
         $data = (array) $data;
