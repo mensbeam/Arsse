@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
-<phpunit
+<phpunit 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd"
     colors="true"
     bootstrap="bootstrap.php"
-    cacheTokens="true"
     convertErrorsToExceptions="false"
     convertNoticesToExceptions="false"
     convertWarningsToExceptions="false"
@@ -26,12 +27,11 @@
     <env name="ARSSE_TEST_MYSQL_DB"     value="arsse_test"/>
 </php>
 
-<filter>
-  <whitelist processUncoveredFilesFromWhitelist="true">
-    <directory suffix=".php">../lib</directory>
-  </whitelist>
-</filter>
-
+<coverage processUncoveredFiles="true">
+    <include>
+        <directory suffix=".php">../lib</directory>
+    </include>
+</coverage>
 <testsuites>
     <testsuite name="Exceptions">
         <file>cases/Exception/TestException.php</file>

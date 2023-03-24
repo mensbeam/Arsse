@@ -18,7 +18,7 @@
 
     ],
     "require": {
-        "php": "^7.1 || ^8.0",
+        "php": ">=7.3",
         "ext-intl": "*",
         "ext-json": "*",
         "ext-hash": "*",
@@ -28,8 +28,8 @@
         "hosteurope/password-generator": "1.*",
         "docopt/docopt": "1.*",
         "jkingweb/druuid": "3.*",
-        "guzzlehttp/psr7": "1.*",
-        "laminas/laminas-httphandlerrunner": "1.*"
+        "guzzlehttp/psr7": "2.*",
+        "laminas/laminas-httphandlerrunner": "2.*"
     },
     "require-dev": {
         "bamarni/composer-bin-plugin": "*"
