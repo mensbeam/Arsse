@@ -59,7 +59,10 @@ $rules = [
     // PSR standard to apply
     '@PSR12' => true,
     // house exceptions to PSR rules
-    'braces'                                    => ['position_after_functions_and_oop_constructs' => "same"],
+    'curly_braces_position'                     => [
+        'functions_opening_brace' => "same_line",
+        'classes_opening_brace'   => "same_line",
+    ],
     'function_declaration'                      => ['closure_function_spacing' => "none"],
     'new_with_braces'                           => false, // no option to specify absence of braces
     ];
