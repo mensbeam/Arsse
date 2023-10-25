@@ -1,0 +1,57 @@
+.TH ARSSE 1 "2023\-10\-25" "The Arsse 0.10.4"
+
+.SH NAME
+arsse \- manage an instance of The Advanced RSS Environment (The Arsse)
+
+.SH SYNOPSIS
+
+.SY "arsse user"
+.RB [ list ]
+.SY "arsse user add"
+.RI < username >
+.RI [< password >]
+.RB [ \-\-admin ]
+.SY "arsse user remove"
+.RI < username >
+.SY "arsse user show"
+.RI < username >
+.SY "arsse user set"
+.RI < username >
+.RI < property >
+.RI < value >
+.SY "arsse user unset"
+.RI < username >
+.RI < property >
+.SY "arsse user set\-pass"
+.RI < username >
+.RI [< password >]
+.RB [ \-\-fever ]
+.SY "arsse user unset\-pass"
+.RI < username >
+.RB [ \-\-fever ]
+.SY "arsse user auth"
+.RI < username >
+.RI [< password >]
+.RB [ \-\-fever ]
+.SY "arsse token list"
+.RI < username >
+.SY "arsse token create"
+.RI < username >
+.RI [< label >]
+.SY "arsse token revoke"
+.RI < username >
+.RI [< token >]
+.SY "arsse import"
+.RI < username >
+.RI [< file >]
+.RB [ \-f | \-\-flat ]
+.RB [ \-r | \-\-replace ]
+.SY "arsse export"
+.RI < username >
+.RI [< file >]
+.RB [ \-f | \-\-flat ]
+.SY "arsse export"
+.RI < username >
+.RI [< file >]
+.RB [ \-f | \-\-flat ]
+.YS
