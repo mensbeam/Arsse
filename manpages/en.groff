@@ -1,10 +1,15 @@
-.TH ARSSE 1 "2023\-10\-25" "The Arsse 0.10.4"
-
+.\" This manual was written using stylistic recommendations from the very
+.\" helpful groff_man_style(7) manual page with some suggestions from the
+.\" man-pages(7) manual followed as well. When in doubt those manuals should
+.\" be consulted while making edits to this document.
+.
+.TH ARSSE 1 "2023\-10\-26" "The Arsse 0.10.4"
+.
 .SH NAME
 arsse \- manage an instance of The Advanced RSS Environment (The Arsse)
-
+.
+.
 .SH SYNOPSIS
-
 .SY "arsse user"
 .RB [ list ]
 .SY "arsse user add"
@@ -54,4 +59,351 @@ arsse \- manage an instance of The Advanced RSS Environment (The Arsse)
 .RI < username >
 .RI [< file >]
 .RB [ \-f | \-\-flat ]
+.SY "arsse daemon"
+.RB [ \-\-fork =\c
+.IR pidfile ]
+.SY "arsse feed refresh\-all"
+.SY "arsse feed refresh"
+.RI < n >
+.SY "arsse conf save\-defaults"
+.RI [< file >]
+.SY "arsse \-\-version"
+.SY "arsse"
+.BR \-h | \-\-help
 .YS
+.
+.
+.SH DESCRIPTION
+.P
+.B arsse
+allows a sufficiently privileged user to perform various administrative operations related to The Arsse, including:
+.IP \[bu] 2
+.PD 0
+Adding and removing users and managing their metadata
+.IP \[bu] 2
+Managing passwords and authentication tokens
+.IP \[bu] 2
+Importing and exporting OPML newsfeed-lists
+.PD
+.P
+These are documented in the next section
+.BR COMMANDS .
+Further, seldom-used commands are documented in the following section
+.BR "ADDITIONAL COMMANDS" .
+.
+.
+.SH COMMANDS
+.SS "Managing uses and metadata"
+.TP
+.BR "user " [ list ]
+Displays a simple list of user names with one entry per line
+.TP
+.BR "user add " \c
+.RI < username "> [<" password ">] \c"
+.RB [ \-\-admin ]
+Adds a new user to the database with the specified username and password.
+If
+.I password
+is omitted a random password will be generated and printed.
+.IP
+The 
+.B \-\-admin
+flag may be used to mark the user as an administrator.
+This has no meaning within the context of The Arsse as a whole,
+but it is used control access to certain features in the Miniflux and Nextcloud News protocols. 
+.TP
+.BR "user remove " \c
+.RI < username >
+Immediately removes a user from the database.
+All associated data (folders, subscriptions, etc.) are also removed.
+.TP
+.BR "user show " \c
+.RI < username >
+Displays a table of metadata properties and their assigned values for 
+.IR username .
+These properties are primarily used by the Miniflux protocol.
+Consult the section
+.B USER METADATA
+for details.
+.TP
+.BR "user set " \c
+.RI < username "> \c"
+.RI < property "> \c"
+.RI < value >
+Sets a metadata property for a user.
+These properties are primarily used by the Miniflux protocol.
+Consult the section
+.B "USER METADATA"
+for details.
+.TP
+.BR "user set " \c
+.RI < username "> \c"
+.RI < property >
+Clears a metadata property for a user.
+The property is thereafter set to its default value, which is protocol-dependent.
+.SS "Managing passwords and authentication tokens"
+.TP
+.BR "user set\-pass " \c
+.RI < username "> \c"
+.RI [< password ">] \c"
+.RB [ \-\-fever ]
+Changes a user's password to the specified value.
+If no password is specified, a random password will be generated and printed.
+.IP
+The 
+.B \-\-fever
+option sets a user's Fever protocol password instead of their general password.
+As the Fever protocol requires that passwords be stored insecurely,
+users do not have Fever passwords by default, and logging in to the Fever protocol is disabled until a suitable password is set.
+It is highly recommended that a user's Fever password be different from their general password.
+.TP
+.BR "user set\-pass " \c
+.RI < username "> \c"
+.RB [ \-\-fever ]
+Unsets a user's password, effectively disabling their account.
+As with password setting, the
+.B \-\-fever
+option may be used to operate on a user's Fever password instead of their general password.
+.TP
+.BR "user auth " \c
+.RI < username "> \c"
+.RI [< password ">] \c"
+.RB [ \-\-fever ]
+Tests logging a user in.
+This only checks that the user's password is correctly recognized;
+it has no side effects.
+.IP
+The 
+.B \-\-fever
+option may be used to test the user's Fever protocol password, if any.
+.TP
+.BR "token list " \c
+.RI < username >
+Displays a user's authentication tokens in a simple tabular format.
+These tokens act as an alternative means of authentication for the Miniflux protocol and may be required by some clients.
+They do not expire.
+.TP
+.BR "token create " \c
+.RI < username "> \c"
+.RI [< label >]
+Creates a new random login token and prints it.
+These tokens act as an alternative means of authentication for the Miniflux protocol and may be required by some clients.
+An optional 
+.I label
+may be specified to give the token a meaningful name.
+.TP
+.BR "token revoke " \c
+.RI < username "> \c"
+.RI [< token >]
+Deletes the specified
+.I token
+from the database. The token itself must be supplied, not its label.
+If it is omitted all tokens for
+.I username
+are revoked.
+.SS "Importing and exporting data"
+.TP
+.BR "import " \c
+.RI < username "> \c"
+.RI [< file ">] \c"
+.RB [ \-r | \-\-replace "] \c"
+.RB [ \-f | \-\-flat ]
+Imports the newsfeeds, folders, and tags found in the OPML formatted
+.I file
+into the account of the specified user.
+If no file is specified, data is instead read from standard input.
+Import operations are atomic:
+if any of the newsfeeds listed in the input cannot be retrieved, the entire import operation will fail.
+.IP
+The
+.BR \-\-replace " (or " \-r )
+option interprets the OPML file as the list of 
+.B all
+desired newsfeeds, folders and tags, performing any deletion or moving of existing entries which do not appear in the flle.
+If this option is not specified, the file is assumed to list desired
+.B additions only.
+.IP
+The
+.BR \-\-flat " (or " \-f )
+option can be used to ignore any folder structures in the file, importing any newsfeeds directly into the root folder.
+Combining this with the
+.B \-\-replace
+option is possible.
+.TP
+.BR "export " \c
+.RI < username "> \c"
+.RI [< file ">] \c"
+.RB [ \-f | \-\-flat ]
+Exports a user's newsfeeds, folders, and tags to the OPML file specified by
+.I file\c
+, or standard output if no file is specified.
+Note that due to a limitation of the OPML format, any commas present in tag names will not be retained in the export.
+.IP
+The 
+.BR \-\-flat " (or " \-f )
+option can be used to omit folders from the export.
+Some OPML implementations may not support folders, or arbitrary nesting;
+this option may be used when planning to import into such software.
+.
+.
+.SH "ADDITIONAL COMMANDS"
+.TP
+.BR "daemon" \c
+.RB [ \-\-fork =\c
+.IR pidfile ]
+Starts the newsfeed fetching service.
+Normally this command is only invoked by systemd.
+.IP
+The 
+.B \-\-fork
+option executes an "old-style" fork-then-terminate daemon rather than a "new-style" non-terminating daemon.
+This option should only be employed if using a System V-style init daemon on POSIX systems;
+normally systemd is used. When using this option the daemon will write its process identifier to
+.I pidfile
+after forking.
+.TP
+.BR "feed refresh\-all"
+Performs a one-time fetch of all stale feeds.
+This command can be used as the basis of a
+.B cron
+job to keep newsfeeds up-to-date.
+.TP
+.BR "feed refresh " \c
+.RI < n >
+Performs a one-time fetch of the feed (not subscription) identified by integer
+.IR n .
+This is used internally by the fetching service and should not normally be needed.
+.TP
+.BR "conf save\-defaults " \c
+.RI [< file >]
+Prints default configuration parameters to standard output, or to
+.I file
+if specified.
+Each parameter is annotated with a short description of its purpose and usage.
+.
+.
+.SH "USER METADATA"
+User metadata are primarily used by the Miniflux protocol,
+and most properties have identical or similar names to those used by Miniflux.
+Properties may also affect other protocols, or conversely may have no effect even when using the Miniflux protocol;
+this is noted below when appropriate.
+.P
+Booleans accept any of the values
+.BR true / false ,
+.BR 1 / 0 ,
+.BR yes / no ,
+or
+.BR on / off .
+.P
+The following metadata properties exist for each user:
+.TP
+.BR num " (integer)"
+The numeric identifier of the user. 
+This is assigned at user creation and is read-only.
+.TP
+.BR admin " (boolean)"
+Boolean. Whether the user is an administrator.
+Administrators may manage other users via the Miniflux protocol,
+and also may trigger feed updates manually via the Nextcloud News protocol.
+.TP
+.BR lang " (string)"
+The preferred language of the user as a BCP 47 language tag, for example "en-ca".
+Note that since The Arsse currently only includes English text it is not used by The Arsse itself,
+but clients may use this metadatum in protocols which expose it.
+.TP
+.BR tz " (string)"
+The time zone of the user as a Time Zone Database identifier, for example "America/Los_Angeles".
+.TP
+.BR root_folder_name " (string)"
+The name of the root folder, in protocols which allow it to be renamed.
+.TP
+.BR sort_asc " (boolean)"
+Whether the user prefers ascending sort order for articles.
+Descending order is usually the default,
+but explicitly setting this property false will also make a preference for descending order explicit.
+.TP
+.BR theme " (string)"
+The user's preferred user-interface theme.
+This is not used by The Arsse itself, but clients may use this metadatum in protocols which expose it.
+.TP
+.BR page_size " (integer)"
+The user's preferred page size when listing articles.
+This is not used by The Arsse itself, but clients may use this metadatum in protocols which expose it.
+.TP
+.BR shortcuts " (boolean)"
+Whether to enable keyboard shortcuts.
+This is not used by The Arsse itself, but clients may use this metadatum in protocols which expose it.
+.TP
+.BR gestures " (boolean)"
+Whether to enable touch gestures.
+This is not used by The Arsse itself, but clients may use this metadatum in protocols which expose it.
+.TP
+.BR reading_time " (boolean)"
+Whether to calculate and display the estimated reading time for articles.
+Currently The Arsse does not calculate reading time, so changing this will likely have no effect.
+.TP
+.BR stylesheet " (string)"
+A user stylesheet in CSS format.
+This is not used by The Arsse itself, but clients may use this metadatum in protocols which expose it.
+.
+.
+.SH EXAMPLES
+.IP \[bu] 2
+Add an administrator to the database with an explicit password:
+.EX
+$ arsse user add \-\-admin alice "Curiouser and curiouser!"
+.EE
+.P
+.IP \[bu] 2
+Add a regular user to the database with a random password:
+.EX
+$ arsse user add "Bob the Builder"
+bLS!$_UUZ!iN2i_!\^IC6
+.EE
+.P
+.IP \[bu] 2
+Make Bob the Builder an administrator:
+.EX
+$ arsse user set "Bob the Builder" admin true
+.EE
+.P
+.IP \[bu] 2
+Disable Alice's account by clearing her password:
+.EX
+$ arsse user unset\-pass alice
+.EE
+.P
+.IP \[bu] 2
+Move all of Foobar's newsfeeds to the root folder:
+.EX
+$ arsse export foobar \-f | arsse import \-r foobar
+.EE
+.P
+.IP \[bu] 2
+Fail to log in as Alice:
+.EX
+$ arsse user auth alice "Oh, dear!"
+Authentication failed
+$ echo $?
+1
+.EE
+.P
+.
+.
+.SH "REPORTING BUGS"
+.P
+Any bugs found in The Arsse may be reported on the Web via the
+.UR https://\:code.mensbeam.com/\:MensBeam/\:arsse 
+MensBeam code repository
+.UE \c
+\&. Reports may also be directed to the principal authors by e-mail:
+.IP \[bu] 2
+.UR https://\:jkingweb.ca/
+J. King
+.UE
+.PD 0
+.IP \[bu] 2
+.UR https://\:dustinwilson.com/
+Dustin Wilson
+.UE
+.PD
