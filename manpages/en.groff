@@ -55,10 +55,6 @@ arsse \- manage an instance of The Advanced RSS Environment (The Arsse)
 .RI < username >
 .RI [< file >]
 .RB [ \-f | \-\-flat ]
-.SY "arsse export"
-.RI < username >
-.RI [< file >]
-.RB [ \-f | \-\-flat ]
 .SY "arsse daemon"
 .RB [ \-\-fork =\c
 .IR pidfile ]

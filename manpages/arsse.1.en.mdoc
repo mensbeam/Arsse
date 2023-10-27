@@ -1,0 +1,88 @@
+.Dd October 27, 2023
+.Dt ARSSE 1
+.Os "The Arsse" 0.10.4
+.
+.
+.Sh NAME
+.Nm arsse
+.Nd manage an instance of The Advanced RSS Environment (The Arsse)
+.
+.
+.Sh SYNOPSIS
+.Nm "arsse user"
+.Op Nm list
+.Nm "arsee user add"
+.Ar username
+.Op Ar password
+.Op Fl Fl admin
+.Nm "arsse user remove"
+.Ar username
+.Nm "arsse user show"
+.Ar username
+.Nm "arsse user set"
+.Ar username
+.Ar property
+.Ar value
+.Nm "arsse user unset"
+.Ar username
+.Ar property
+.Nm "arsse user set\-pass"
+.Ar username
+.Op Ar password
+.Op Fl Fl fever
+.Nm "arsse user unset\-pass"
+.Ar username
+.Op Fl Fl fever
+.Nm "arsse user auth"
+.Ar username
+.Op Ar password
+.Op Fl Fl fever
+.Nm "arsse token list"
+.Ar username
+.Nm "arsse token create"
+.Ar username
+.Op Ar label
+.Nm "arsse token revoke"
+.Ar username
+.Op Ar token
+.Nm "arsse import"
+.Ar username
+.Op Ar file
+.Op Fl f | Fl Fl flat
+.Op Fl r | Fl Fl replace
+.Nm "arsse export"
+.Ar username
+.Op Ar file
+.Op Fl f | Fl Fl flat
+.Nm "arsse daemon"
+.Op Fl Fl fork Ns = Ns Ar pidfile
+.Nm "arsse feed refresh\-all"
+.Nm "arsse feed refresh"
+.Ar n
+.Nm "arsse conf save\-defaults"
+.Nm "arsse"
+.Fl Fl version | Fl h | Fl Fl help
+.
+.
+.Sh DESCRIPTION
+.Nm
+allows a sufficiently privileged user to perform various administrative operations related to The Arsse, including:
+.Pp
+.Bl -bullet -compact
+.It
+Adding and removing users and managing their metadata
+.It
+Managing passwords and authentication tokens
+.It
+Importing and exporting OPML newsfeed-lists
+.El
+.Pp
+.Sm off
+These are documented in the next section
+.Sx COMMANDS
+\&. Further, seldom-used commands are documented in the following section
+.Sx "ADDITIONAL COMMANDS"
+\&.
+.Sm on
+.
+.
