@@ -41,7 +41,7 @@ arsse - manage an instance of The Advanced RSS Environment (The Arsse)
 - Managing passwords and authentication tokens
 - Importing and exporting OPML newsfeed-lists
 
-These are documented in the next section **PRIMARY COMMANDS**. Further, seldom-used commands are documented in the following section **ADDITIONAL COMMANDS**.
+These are documented in the next section **PRIMARY COMMANDS**. Further, seldom-used commands are documented in the subsequent section **ADDITIONAL COMMANDS**.
 
 # PRIMARY COMMANDS
 
