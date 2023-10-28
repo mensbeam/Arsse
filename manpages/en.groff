@@ -89,7 +89,7 @@ Further, seldom-used commands are documented in the following section
 .
 .
 .SH COMMANDS
-.SS "Managing uses and metadata"
+.SS "Managing users and metadata"
 .TP
 .BR "user " [ list ]
 Displays a simple list of user names with one entry per line
@@ -132,7 +132,7 @@ Consult the section
 .B "USER METADATA"
 for details.
 .TP
-.BR "user set " \c
+.BR "user unset " \c
 .RI < username "> \c"
 .RI < property >
 Clears a metadata property for a user.
@@ -153,7 +153,7 @@ As the Fever protocol requires that passwords be stored insecurely,
 users do not have Fever passwords by default, and logging in to the Fever protocol is disabled until a suitable password is set.
 It is highly recommended that a user's Fever password be different from their general password.
 .TP
-.BR "user set\-pass " \c
+.BR "user unset\-pass " \c
 .RI < username "> \c"
 .RB [ \-\-fever ]
 Unsets a user's password, effectively disabling their account.
@@ -163,7 +163,7 @@ option may be used to operate on a user's Fever password instead of their genera
 .TP
 .BR "user auth " \c
 .RI < username "> \c"
-.RI [< password ">] \c"
+.RI < password "> \c"
 .RB [ \-\-fever ]
 Tests logging a user in.
 This only checks that the user's password is correctly recognized;
