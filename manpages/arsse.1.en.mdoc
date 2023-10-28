@@ -297,3 +297,46 @@ This is not used by The Arsse itself, but clients may use this metadatum in prot
 .
 .
 .Sh EXAMPLES
+.Bl -tag
+.It Add an administrator to the database with an explicit password:
+.Bd -literal
+$ arsse user add \-\-admin alice "Curiouser and curiouser!"
+.Ed
+.It Add a regular user to the database with a random password:
+.Bd -literal
+$ arsse user add "Bob the Builder"
+bLS!$_UUZ!iN2i_!^IC6
+.Ed
+.It Make Bob the Builder an administrator:
+.Bd -literal
+$ arsse user set "Bob the Builder" admin true
+.Ed
+.It Disable Alice's account by clearing her password:
+.Bd -literal
+$ arsse user unset\-pass alice
+.Ed
+.It Move all of Foobar's newsfeeds to the root folder:
+.Bd -literal
+$ arsse export foobar \-f | arsse import \-r foobar
+.Ed
+.It Fail to log in as Alice:
+.Bd -literal
+$ arsse user auth alice "Oh, dear!"
+Authentication failed
+$ echo $?
+1
+.Ed
+.El
+.
+.
+.Sh REPORTING BUGS
+Any bugs found in The Arsse may be reported on the Web via the
+.Lk https://code.mensbeam.com/MensBeam/arsse "MensBeam code repository"
+or may be directed to the principal authors by e-mail:
+.Pp
+.Bl -bullet -compact
+.It 
+.Lk https://jkingweb.ca/ "J. King"
+.It 
+.Lk https://dustinwilson.com/ "Dustin Wilson"
+.El
