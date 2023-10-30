@@ -7,7 +7,6 @@
 /dist/arch/arsse/
 /dist/arch/src/
 /dist/arch/pkg/
-/dist/man/
 /arsse.db*
 /config.php
 /.php_cs.cache

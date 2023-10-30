@@ -237,17 +237,17 @@ class RoboFile extends \Robo\Tasks {
             }
             // save commit description to VERSION file for reference
             $t->addTask($this->taskWriteToFile($dir."VERSION")->text($version));
-            if (file_exists($dir."docs") || file_exists($dir."manpages")) {
+            if (file_exists($dir."docs") || file_exists($dir."manpages/en.md")) {
                 // perform Composer installation in the temp location with dev dependencies to include Robo and Daux
                 $t->addTask($this->taskExec("composer install")->arg("-q")->dir($dir));
-            }
-            if (file_exists($dir."manpages")) {
-                // generate manpages
-                $t->addTask($this->taskExec("./robo manpage")->dir($dir));
-            }
-            if (file_exists($dir."docs")) {
-                // generate the HTML manual
-                $t->addTask($this->taskExec("./robo manual -q")->dir($dir));
+                if (file_exists($dir."docs")) {
+                    // generate the HTML manual
+                    $t->addTask($this->taskExec("./robo manual -q")->dir($dir));
+                }
+                if (file_exists($dir."manpages/en.md")) {
+                    // generate manpages (NOTE: obsolete process)
+                    $t->addTask($this->taskExec("./robo manpage")->dir($dir));
+                }
             }
             // perform Composer installation in the temp location for final output
             $t->addTask($this->taskExec("composer install")->dir($dir)->arg("--no-dev")->arg("-o")->arg("--no-scripts")->arg("-q"));
@@ -454,29 +454,6 @@ class RoboFile extends \Robo\Tasks {
         return $t->run();
     }
 
-    /** Generates the "arsse" command's manual page (UNIX man page)
-     *
-     * This requires that the Pandoc document converter be installed and
-     * available in $PATH.
-     */
-    public function manpage(): Result {
-        if (!$this->toolExists("pandoc")) {
-            throw new \Exception("Pandoc is required in PATH to generate manual pages");
-        }
-        $t = $this->collectionBuilder();
-        $man = [
-            'en' => "man1/arsse.1",
-        ];
-        foreach ($man as $src => $out) {
-            $src = BASE."manpages/$src.md";
-            $out = BASE."dist/man/$out";
-            $t->addTask($this->taskFilesystemStack()->mkdir(dirname($out), 0755));
-            $t->addTask($this->taskExec("pandoc -s -f markdown-smart -t man -o ".escapeshellarg($out)." ".escapeshellarg($src)));
-            $t->addTask($this->taskReplaceInFile($out)->regex('/\.\n(?!\.)/s')->to(". "));
-        }
-        return $t->run();
-    }
-
     /** Parses the contents of the CHANGELOG file into an array structure
      *
      * This is done line-by-line and tends to be quite strict.
@@ -495,7 +472,7 @@ class RoboFile extends \Robo\Tasks {
         $expected = ["version"];
         for ($a = 0; $a < sizeof($lines);) {
             $l = rtrim($lines[$a++]);
-            if (in_array("version", $expected) && preg_match('/^Version (\d+(?:\.\d+)*) \(([\d\?]{4}-[\d\?]{2}-[\d\?]{2})\)\s*$/D', $l, $m)) {
+            if (in_array("version", $expected) && preg_match('/^Version ([\d\?]+(?:\.[\d\?]+)*) \(([\d\?]{4}-[\d\?]{2}-[\d\?]{2})\)\s*$/D', $l, $m)) {
                 $version = $m[1];
                 if (!preg_match('/^\d{4}-\d{2}-\d{2}$/D', $m[2])) {
                     // uncertain dates are allowed only for the top version, and only if it does not match the target version (otherwise we have forgotten to set the correct date before tagging)
