@@ -11,40 +11,12 @@ use JKingWeb\Arsse\REST\Fever\User as Fever;
 use JKingWeb\Arsse\ImportExport\OPML;
 use JKingWeb\Arsse\REST\Miniflux\Token as Miniflux;
 use JKingWeb\Arsse\Service\Daemon;
+use GetOpt\GetOpt;
+use GetOpt\Command;
+use GetOpt\Operand;
+use GetOpt\Option;
 
 class CLI {
-    public const USAGE = <<<USAGE_TEXT
-Usage:
-    arsse.php user [list]
-    arsse.php user add <username> [<password>] [--admin]
-    arsse.php user remove <username>
-    arsse.php user show <username>
-    arsse.php user set <username> <property> <value>
-    arsse.php user unset <username> <property>
-    arsse.php user set-pass <username> [<password>] [--fever]
-    arsse.php user unset-pass <username> [--fever]
-    arsse.php user auth <username> <password> [--fever]
-    arsse.php token list <username>
-    arsse.php token create <username> [<label>]
-    arsse.php token revoke <username> [<token>]
-    arsse.php import <username> [<file>] [-f|--flat] [-r|--replace]
-    arsse.php export <username> [<file>] [-f|--flat]
-    arsse.php daemon [--fork=PIDFILE]
-    arsse.php feed refresh-all
-    arsse.php feed refresh <n>
-    arsse.php conf save-defaults [<file>]
-    arsse.php --version
-    arsse.php -h|--help
-
-The Arsse command-line interface can be used to perform various administrative
-tasks such as starting the newsfeed refresh service, managing users, and 
-importing or exporting data.
-
-See the manual page for more details:
-
-    man arsse 
-USAGE_TEXT;
-
     protected function usage($prog): string {
         $prog = basename($prog);
         return str_replace("arsse.php", $prog, self::USAGE);
@@ -73,13 +45,67 @@ USAGE_TEXT;
     }
 
     public function dispatch(array $argv = null): int {
-        $argv = $argv ?? $_SERVER['argv'];
-        $argv0 = array_shift($argv);
-        $args = \Docopt::handle($this->usage($argv0), [
-            'argv' => $argv,
-            'help' => false,
+        $cli = new GetOpt("", []);
+        $cli->addOptions([
+            Option::create("h", "help"),
+            Option::create(null, "version"),
+        ]);
+        $cli->addCommands([
+            Command::create("user", [$this, "userList"]),
+            Command::create("user list", [$this, "userList"]),
+            Command::create("user add", [$this, "userAdd"])
+                ->addOperand(Operand::create("username", operand::REQUIRED))
+                ->addOperand(Operand::create("password", Operand::OPTIONAL))
+                ->addOption(Option::create(null, "admin")),
+            Command::create("user remove", [$this, "userRemove"])
+                ->addOperand(Operand::create("username", Operand::REQUIRED)),
+            Command::create("user show", [$this, "userShow"])
+                ->addOperand(Operand::create("username", Operand::REQUIRED)),
+            Command::create("user set", [$this, "userSet"])
+                ->addOperand(Operand::create("username", Operand::REQUIRED))
+                ->addOperand(Operand::create("property", Operand::REQUIRED))
+                ->addOperand(Operand::create("value", Operand::REQUIRED)),
+            Command::create("user unset", [$this, "userUnset"])
+                ->addOperand(Operand::create("username", Operand::REQUIRED))
+                ->addOperand(Operand::create("property", Operand::REQUIRED)),
+            Command::create("user set-pass", [$this, "userSetPass"])
+                ->addOperand(Operand::create("username", operand::REQUIRED))
+                ->addOperand(Operand::create("password", Operand::OPTIONAL))
+                ->addOption(Option::create(null, "fever")),
+            Command::create("user unset-pass", [$this, "userUnsetPass"])
+                ->addOperand(Operand::create("username", operand::REQUIRED))
+                ->addOption(Option::create(null, "fever")),
+            Command::create("user auth", [$this, "userAuth"])
+                ->addOperand(Operand::create("username", operand::REQUIRED))
+                ->addOperand(Operand::create("password", Operand::REQUIRED))
+                ->addOption(Option::create(null, "fever")),
+            Command::create("token list", [$this, "tokenList"])
+                ->addOperand(Operand::create("username", Operand::REQUIRED)),
+            Command::create("token create", [$this, "tokenCreate"])
+                ->addOperand(Operand::create("username", Operand::REQUIRED))
+                ->addOperand(Operand::create("label", Operand::OPTIONAL)),
+            Command::create("token revoke", [$this, "tokenRevoke"])
+                ->addOperand(Operand::create("username", Operand::REQUIRED))
+                ->addOperand(Operand::create("token", Operand::OPTIONAL)),
+            Command::create("import", [$this, "import"])
+                ->addOperand(Operand::create("username", operand::REQUIRED))
+                ->addOperand(Operand::create("file", Operand::OPTIONAL))
+                ->addOption(Option::create("f", "flat"))
+                ->addOption(Option::create("r", "replace")),
+            Command::create("export", [$this, "export"])
+                ->addOperand(Operand::create("username", operand::REQUIRED))
+                ->addOperand(Operand::create("file", Operand::OPTIONAL))
+                ->addOption(Option::create("f", "flat")),
+            Command::create("daemon", [$this, "daemon"])
+                ->addOption(Option::create(null, "fork", GetOpt::REQUIRED_ARGUMENT)->setArgumentName("pidfile")),
+            Command::create("feed refresh-all", [$this, "feedRefreshAll"]),
+            Command::create("feed refresh", [$this, "feedRefresh"])
+                ->addOperand(Operand::create("n", Operand::REQUIRED)),
+            Command::create("conf save-defaults", [$this, "confSaveDefaults"])
+                ->addOperand(Operand::create("file", Operand::OPTIONAL)),
         ]);
         try {
+            $cli
             // ensure the require extensions are loaded
             Arsse::checkExtensions(...Arsse::REQUIRED_EXTENSIONS);
             // reconstitute multi-token commands (e.g. user add) into a single string

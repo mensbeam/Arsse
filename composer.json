@@ -26,10 +26,10 @@
         "ext-dom": "*",
         "nicolus/picofeed": "dev-patch-3",
         "hosteurope/password-generator": "1.*",
-        "docopt/docopt": "1.*",
         "jkingweb/druuid": "3.*",
         "guzzlehttp/psr7": "2.*",
-        "laminas/laminas-httphandlerrunner": "2.*"
+        "laminas/laminas-httphandlerrunner": "2.*",
+        "ulrichsg/getopt-php": "^4.0"
     },
     "require-dev": {
         "bamarni/composer-bin-plugin": "*"
