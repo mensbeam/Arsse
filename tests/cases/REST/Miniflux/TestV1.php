@@ -86,10 +86,10 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->transaction = $this->mock(Transaction::class);
         $this->dbMock = $this->mock(Database::class);
         $this->dbMock->begin->returns($this->transaction->get());
-        // create a mock user manager; we use a PHPUnitmock because Phake for reasons unknown is unable to mock the User class correctly, sometimes
-        Arsse::$user = $this->createMock(User::class);
-        Arsse::$user->method("propertiesGet")->willReturn(['num' => 42, 'admin' => false, 'root_folder_name' => null, 'tz' => "Asia/Gaza"]);
-        Arsse::$user->method("begin")->willReturn($this->transaction->get());
+        // create a mock user manager
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 42, 'admin' => false, 'root_folder_name' => null, 'tz' => "Asia/Gaza"]);
+        \Phake::when(Arsse::$user)->begin->thenReturn($this->transaction->get());
         //initialize a handler
         $this->h = new V1();
     }
@@ -198,32 +198,19 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideUserQueries */
     public function testQueryUsers(bool $admin, string $route, ResponseInterface $exp): void {
         $u = [
+            new ExceptionConflict("doesNotExist"),
             ['num' => 1, 'admin' => true,  'theme' => "custom", 'lang' => "fr_CA", 'tz' => "Asia/Gaza", 'sort_asc' => true, 'page_size' => 200,  'shortcuts' => false, 'reading_time' => false, 'swipe' => false, 'stylesheet' => "p {}"],
             ['num' => 2, 'admin' => false, 'theme' => null,     'lang' => null,    'tz' => null,        'sort_asc' => null, 'page_size' => null, 'shortcuts' => null,  'reading_time' => null,  'swipe' => null,  'stylesheet' => null],
-            new ExceptionConflict("doesNotExist"),
         ];
         $user = $admin ? "john.doe@example.com" : "jane.doe@example.com";
-        // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
-        Arsse::$user = $this->createMock(User::class);
-        Arsse::$user->method("list")->willReturn(["john.doe@example.com", "jane.doe@example.com", "admin@example.com"]);
-        Arsse::$user->method("propertiesGet")->willReturnCallback(function(string $user, bool $includeLerge = true) use ($u) {
-            if ($user === "john.doe@example.com") {
-                return $u[0];
-            } elseif ($user === "jane.doe@example.com") {
-                return $u[1];
-            } else {
-                throw $u[2];
-            }
-        });
-        Arsse::$user->method("lookup")->willReturnCallback(function(int $num) use ($u) {
-            if ($num === 1) {
-                return "john.doe@example.com";
-            } elseif ($num === 2) {
-                return "jane.doe@example.com";
-            } else {
-                throw $u[2];
-            }
-        });
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->list->thenReturn(["john.doe@example.com", "jane.doe@example.com", "admin@example.com"]);
+        \Phake::when(Arsse::$user)->propertiesGet->thenThrow($u[0]);
+        \Phake::when(Arsse::$user)->propertiesGet("john.doe@example.com")->thenReturn($u[1]);
+        \Phake::when(Arsse::$user)->propertiesGet("jane.doe@example.com")->thenReturn($u[2]);
+        \Phake::when(Arsse::$user)->lookup->thenThrow($u[0]);
+        \Phake::when(Arsse::$user)->lookup(1)->thenReturn("john.doe@example.com");
+        \Phake::when(Arsse::$user)->lookup(2)->thenReturn("jane.doe@example.com");
         $this->assertMessage($exp, $this->req("GET", $route, "", [], $user));
     }
 
@@ -251,57 +238,47 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideUserModifications */
     public function testModifyAUser(bool $admin, string $url, array $body, $in1, $out1, $in2, $out2, $in3, $out3, ResponseInterface $exp): void {
-        Arsse::$user = $this->createMock(User::class);
-        Arsse::$user->method("begin")->willReturn($this->transaction->get());
-        Arsse::$user->method("propertiesGet")->willReturnCallback(function(string $u, bool $includeLarge) use ($admin) {
-            if ($u === "john.doe@example.com" || $u === "ook") {
-                return ['num' => 2, 'admin' => $admin];
-            } else {
-                return ['num' => 1, 'admin' => true];
-            }
-        });
-        Arsse::$user->method("lookup")->willReturnCallback(function(int $u) {
-            if ($u === 1) {
-                return "jane.doe@example.com";
-            } elseif ($u === 2) {
-                return "john.doe@example.com";
-            } else {
-                throw new ExceptionConflict("doesNotExist");
-            }
-        });
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->begin->thenReturn($this->transaction->get());
+        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 1, 'admin' => true]);
+        \Phake::when(Arsse::$user)->propertiesGet("john.doe@example.com")->thenReturn(['num' => 2, 'admin' => $admin]);
+        \Phake::when(Arsse::$user)->propertiesGet("ook")->thenReturn(['num' => 2, 'admin' => $admin]);
+        \Phake::when(Arsse::$user)->lookup->thenThrow(new ExceptionConflict("doesNotExist"));
+        \Phake::when(Arsse::$user)->lookup(1)->thenReturn("jane.doe@example.com");
+        \Phake::when(Arsse::$user)->lookup(2)->thenReturn("john.doe@example.com");
         if ($out1 instanceof \Exception) {
-            Arsse::$user->method("rename")->willThrowException($out1);
+            \Phake::when(Arsse::$user)->rename->thenThrow($out1);
         } else {
-            Arsse::$user->method("rename")->willReturn($out1 ?? false);
+            \Phake::when(Arsse::$user)->rename->thenReturn($out1 ?? false);
         }
         if ($out2 instanceof \Exception) {
-            Arsse::$user->method("passwordSet")->willThrowException($out2);
+            \Phake::when(Arsse::$user)->passwordSet->thenThrow($out2);
         } else {
-            Arsse::$user->method("passwordSet")->willReturn($out2 ?? "");
+            \Phake::when(Arsse::$user)->passwordSet->thenReturn($out2 ?? "");
         }
         if ($out3 instanceof \Exception) {
-            Arsse::$user->method("propertiesSet")->willThrowException($out3);
+            \Phake::when(Arsse::$user)->propertiesSet->thenThrow($out3);
         } else {
-            Arsse::$user->method("propertiesSet")->willReturn($out3 ?? []);
+            \Phake::when(Arsse::$user)->propertiesSet->thenReturn($out3 ?? []);
         }
+        $this->assertMessage($exp, $this->req("PUT", $url, $body));
         $user = $url === "/users/1" ? "jane.doe@example.com" : "john.doe@example.com";
         if ($in1 === null) {
-            Arsse::$user->expects($this->exactly(0))->method("rename");
+            \Phake::verify(Arsse::$user, \Phake::never())->rename($this->anything(), $this->anything());
         } else {
-            Arsse::$user->expects($this->exactly(1))->method("rename")->with($user, $in1);
+            \Phake::verify(Arsse::$user)->rename($user, $in1);
             $user = $in1;
         }
         if ($in2 === null) {
-            Arsse::$user->expects($this->exactly(0))->method("passwordSet");
+            \Phake::verify(Arsse::$user, \Phake::never())->passwordSet($this->anything(), $this->anything());
         } else {
-            Arsse::$user->expects($this->exactly(1))->method("passwordSet")->with($user, $in2);
+            \Phake::verify(Arsse::$user)->passwordSet($user, $in2);
         }
         if ($in3 === null) {
-            Arsse::$user->expects($this->exactly(0))->method("propertiesSet");
+            \Phake::verify(Arsse::$user, \Phake::never())->propertiesSet($this->anything(), $this->anything());
         } else {
-            Arsse::$user->expects($this->exactly(1))->method("propertiesSet")->with($user, $in3);
+            \Phake::verify(Arsse::$user)->propertiesSet($user, $in3);
         }
-        $this->assertMessage($exp, $this->req("PUT", $url, $body));
     }
 
     public function provideUserModifications(): iterable {

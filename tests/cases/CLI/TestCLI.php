@@ -158,9 +158,8 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideUserList */
     public function testListUsers(string $cmd, array $list, int $exitStatus, string $output): void {
-        // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
-        Arsse::$user = $this->createMock(User::class);
-        Arsse::$user->method("list")->willReturn($list);
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->list()->thenReturn($list);
         $this->assertConsole($cmd, $exitStatus, $output);
     }
 
@@ -177,16 +176,12 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideUserAdditions */
     public function testAddAUser(string $cmd, int $exitStatus, string $output): void {
-        // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
-        Arsse::$user = $this->createMock(User::class);
-        Arsse::$user->method("add")->will($this->returnCallback(function($user, $pass = null) {
-            switch ($user) {
-                case "john.doe@example.com":
-                    throw new \JKingWeb\Arsse\User\ExceptionConflict("alreadyExists");
-                case "jane.doe@example.com":
-                    return is_null($pass) ? "random password" : $pass;
-            }
-        }));
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->add("john.doe@example.com", $this->anything())->thenThrow(new \JKingWeb\Arsse\User\ExceptionConflict("alreadyExists"));
+        \Phake::when(Arsse::$user)->add("jane.doe@example.com", $this->anything())->thenReturnCallback(function($u, $p) {
+            return $p;
+        });
+        \Phake::when(Arsse::$user)->add("jane.doe@example.com", null)->thenReturn("random password");
         $this->assertConsole($cmd, $exitStatus, $output);
     }
 
@@ -199,24 +194,20 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testAddAUserAsAdministrator(): void {
-        Arsse::$user = $this->createMock(User::class);
-        Arsse::$user->method("add")->willReturn("random password");
-        Arsse::$user->method("propertiesSet")->willReturn([]);
-        Arsse::$user->expects($this->exactly(1))->method("add")->with("jane.doe@example.com", null);
-        Arsse::$user->expects($this->exactly(1))->method("propertiesSet")->with("jane.doe@example.com", ['admin' => true]);
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->add->thenReturn("random password");
+        \Phake::when(Arsse::$user)->propertiesSet->thenReturn([]);
         $this->assertConsole("arsse.php user add jane.doe@example.com --admin", 0, "random password");
+        \Phake::verify(Arsse::$user)->add("jane.doe@example.com", null);
+        \Phake::verify(Arsse::$user)->propertiesSet("jane.doe@example.com", ['admin' => true]);
     }
 
     /** @dataProvider provideUserAuthentication */
     public function testAuthenticateAUser(string $cmd, int $exitStatus, string $output): void {
-        // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
-        Arsse::$user = $this->createMock(User::class);
-        Arsse::$user->method("auth")->will($this->returnCallback(function($user, $pass) {
-            return
-                ($user === "john.doe@example.com" && $pass === "secret") ||
-                ($user === "jane.doe@example.com" && $pass === "superman")
-            ;
-        }));
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->auth->thenReturn(false);
+        \Phake::when(Arsse::$user)->auth("john.doe@example.com", "secret")->thenReturn(true);
+        \Phake::when(Arsse::$user)->auth("jane.doe@example.com", "superman")->thenReturn(true);
         $fever = $this->mock(FeverUser::class);
         $fever->authenticate->returns(false);
         $fever->authenticate->with("john.doe@example.com", "ashalla")->returns(true);
@@ -243,14 +234,9 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideUserRemovals */
     public function testRemoveAUser(string $cmd, int $exitStatus, string $output): void {
-        // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
-        Arsse::$user = $this->createMock(User::class);
-        Arsse::$user->method("remove")->will($this->returnCallback(function($user) {
-            if ($user === "john.doe@example.com") {
-                return true;
-            }
-            throw new \JKingWeb\Arsse\User\ExceptionConflict("doesNotExist");
-        }));
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->remove->thenThrow(new \JKingWeb\Arsse\User\ExceptionConflict("doesNotExist"));
+        \Phake::when(Arsse::$user)->remove("john.doe@example.com")->thenReturn(true);
         $this->assertConsole($cmd, $exitStatus, $output);
     }
 
@@ -438,18 +424,18 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             "reading_time      false",
             "stylesheet        'body {color:gray}'",
         ]);
-        Arsse::$user = $this->createMock(User::class);
-        Arsse::$user->method("propertiesGet")->willReturn($data);
-        Arsse::$user->expects($this->once())->method("propertiesGet")->with("john.doe@example.com", true);
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->propertiesGet->thenReturn($data);
         $this->assertConsole("arsse.php user show john.doe@example.com", 0, $exp);
+        \Phake::verify(Arsse::$user)->propertiesGet("john.doe@example.com");
     }
 
     /** @dataProvider provideMetadataChanges */
     public function testSetMetadataOfAUser(string $cmd, string $user, array $in, array $out, int $exp): void {
-        Arsse::$user = $this->createMock(User::class);
-        Arsse::$user->method("propertiesSet")->willReturn($out);
-        Arsse::$user->expects($this->once())->method("propertiesSet")->with($user, $in);
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->propertiesSet->thenReturn($out);
         $this->assertConsole($cmd, $exp, "");
+        \Phake::verify(Arsse::$user)->propertiesSet($user, $in);
     }
 
     public function provideMetadataChanges(): iterable {
