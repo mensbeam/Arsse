@@ -257,9 +257,8 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
                     return is_null($pass) ? "random password" : $pass;
             }
         };
-        // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
-        Arsse::$user = $this->createMock(User::class);
-        Arsse::$user->method("passwordSet")->will($this->returnCallback($passwordChange));
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->passwordSet->thenReturnCallback($passwordChange);
         $fever = $this->mock(FeverUser::class);
         $fever->register->does($passwordChange);
         $this->objMock->get->with(FeverUser::class)->returns($fever->get());
@@ -287,9 +286,8 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
                     return true;
             }
         };
-        // FIXME: Phake is somehow unable to mock the User class correctly, so we use PHPUnit's mocks instead
-        Arsse::$user = $this->createMock(User::class);
-        Arsse::$user->method("passwordUnset")->will($this->returnCallback($passwordClear));
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->passwordUnset->thenReturnCallback($passwordClear);
         $fever = $this->mock(FeverUser::class);
         $fever->unregister->does($passwordClear);
         $this->objMock->get->with(FeverUser::class)->returns($fever->get());
