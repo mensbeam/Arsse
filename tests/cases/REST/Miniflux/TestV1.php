@@ -206,8 +206,8 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user = \Phake::mock(User::class);
         \Phake::when(Arsse::$user)->list->thenReturn(["john.doe@example.com", "jane.doe@example.com", "admin@example.com"]);
         \Phake::when(Arsse::$user)->propertiesGet->thenThrow($u[0]);
-        \Phake::when(Arsse::$user)->propertiesGet("john.doe@example.com")->thenReturn($u[1]);
-        \Phake::when(Arsse::$user)->propertiesGet("jane.doe@example.com")->thenReturn($u[2]);
+        \Phake::when(Arsse::$user)->propertiesGet("john.doe@example.com", $this->anything())->thenReturn($u[1]);
+        \Phake::when(Arsse::$user)->propertiesGet("jane.doe@example.com", $this->anything())->thenReturn($u[2]);
         \Phake::when(Arsse::$user)->lookup->thenThrow($u[0]);
         \Phake::when(Arsse::$user)->lookup(1)->thenReturn("john.doe@example.com");
         \Phake::when(Arsse::$user)->lookup(2)->thenReturn("jane.doe@example.com");
@@ -241,8 +241,8 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user = \Phake::mock(User::class);
         \Phake::when(Arsse::$user)->begin->thenReturn($this->transaction->get());
         \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 1, 'admin' => true]);
-        \Phake::when(Arsse::$user)->propertiesGet("john.doe@example.com")->thenReturn(['num' => 2, 'admin' => $admin]);
-        \Phake::when(Arsse::$user)->propertiesGet("ook")->thenReturn(['num' => 2, 'admin' => $admin]);
+        \Phake::when(Arsse::$user)->propertiesGet("john.doe@example.com", $this->anything())->thenReturn(['num' => 2, 'admin' => $admin]);
+        \Phake::when(Arsse::$user)->propertiesGet("ook", $this->anything())->thenReturn(['num' => 2, 'admin' => $admin]);
         \Phake::when(Arsse::$user)->lookup->thenThrow(new ExceptionConflict("doesNotExist"));
         \Phake::when(Arsse::$user)->lookup(1)->thenReturn("jane.doe@example.com");
         \Phake::when(Arsse::$user)->lookup(2)->thenReturn("john.doe@example.com");
@@ -307,36 +307,31 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideUserAdditions */
     public function testAddAUser(array $body, $in1, $out1, $in2, $out2, ResponseInterface $exp): void {
-        Arsse::$user = $this->createMock(User::class);
-        Arsse::$user->method("begin")->willReturn($this->transaction->get());
-        Arsse::$user->method("propertiesGet")->willReturnCallback(function(string $u, bool $includeLarge) {
-            if ($u === "john.doe@example.com") {
-                return ['num' => 1, 'admin' => true];
-            } else {
-                return ['num' => 2, 'admin' => false];
-            }
-        });
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->begin->thenReturn($this->transaction->get());
+        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 2, 'admin' => false]);
+        \Phake::when(Arsse::$user)->propertiesGet("john.doe@example.com", $this->anything())->thenReturn(['num' => 1, 'admin' => true]);
         if ($out1 instanceof \Exception) {
-            Arsse::$user->method("add")->willThrowException($out1);
+            \Phake::when(Arsse::$user)->add->thenThrow($out1);
         } else {
-            Arsse::$user->method("add")->willReturn($in1[1] ?? "");
+            \Phake::when(Arsse::$user)->add->thenReturn($in1[1] ?? "");
         }
         if ($out2 instanceof \Exception) {
-            Arsse::$user->method("propertiesSet")->willThrowException($out2);
+            \Phake::when(Arsse::$user)->propertiesSet->thenThrow($out2);
         } else {
-            Arsse::$user->method("propertiesSet")->willReturn($out2 ?? []);
-        }
-        if ($in1 === null) {
-            Arsse::$user->expects($this->exactly(0))->method("add");
-        } else {
-            Arsse::$user->expects($this->exactly(1))->method("add")->with(...($in1 ?? []));
-        }
-        if ($in2 === null) {
-            Arsse::$user->expects($this->exactly(0))->method("propertiesSet");
-        } else {
-            Arsse::$user->expects($this->exactly(1))->method("propertiesSet")->with($body['username'], $in2);
+            \Phake::when(Arsse::$user)->propertiesSet->thenReturn($out2 ?? []);
         }
         $this->assertMessage($exp, $this->req("POST", "/users", $body));
+        if ($in1 === null) {
+            \Phake::verify(Arsse::$user, \Phake::never())->add($this->anything(), $this->anything());
+        } else {
+            \Phake::verify(Arsse::$user)->add(...$in1);
+        }
+        if ($in2 === null) {
+            \Phake::verify(Arsse::$user, \Phake::never())->propertiesSet($this->anything(), $this->anything());
+        } else {
+            \Phake::verify(Arsse::$user)->propertiesSet($body['username'], $in2);
+        }
     }
 
     public function provideUserAdditions(): iterable {
@@ -357,29 +352,29 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testDeleteAUser(): void {
-        Arsse::$user = $this->createMock(User::class);
-        Arsse::$user->method("propertiesGet")->willReturn(['admin' => true]);
-        Arsse::$user->method("lookup")->willReturn("john.doe@example.com");
-        Arsse::$user->method("remove")->willReturn(true);
-        Arsse::$user->expects($this->exactly(1))->method("lookup")->with(2112);
-        Arsse::$user->expects($this->exactly(1))->method("remove")->with("john.doe@example.com");
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['admin' => true]);
+        \Phake::when(Arsse::$user)->lookup->thenReturn("john.doe@example.com");
+        \Phake::when(Arsse::$user)->remove->thenReturn(true);
         $this->assertMessage(HTTP::respEmpty(204), $this->req("DELETE", "/users/2112"));
+        \Phake::verify(Arsse::$user)->lookup(2112);
+        \Phake::verify(Arsse::$user)->remove("john.doe@example.com");
     }
 
     public function testDeleteAMissingUser(): void {
-        Arsse::$user = $this->createMock(User::class);
-        Arsse::$user->method("propertiesGet")->willReturn(['admin' => true]);
-        Arsse::$user->method("lookup")->willThrowException(new ExceptionConflict("doesNotExist"));
-        Arsse::$user->method("remove")->willReturn(true);
-        Arsse::$user->expects($this->exactly(1))->method("lookup")->with(2112);
-        Arsse::$user->expects($this->exactly(0))->method("remove");
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['admin' => true]);
+        \Phake::when(Arsse::$user)->lookup->thenThrow(new ExceptionConflict("doesNotExist"));
+        \Phake::when(Arsse::$user)->remove->thenReturn(true);
         $this->assertMessage(V1::respError("404", 404), $this->req("DELETE", "/users/2112"));
+        \Phake::verify(Arsse::$user)->lookup(2112);
+        \Phake::verify(Arsse::$user, \Phake::never())->remove($this->anything());
     }
 
     public function testDeleteAUserWithoutAuthority(): void {
-        Arsse::$user->expects($this->exactly(0))->method("lookup");
-        Arsse::$user->expects($this->exactly(0))->method("remove");
         $this->assertMessage(V1::respError("403", 403), $this->req("DELETE", "/users/2112"));
+        \Phake::verify(Arsse::$user, \Phake::never())->lookup($this->anything());
+        \Phake::verify(Arsse::$user, \Phake::never())->remove($this->anything());
     }
 
     public function testListCategories(): void {
@@ -395,8 +390,8 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/categories"));
         $this->dbMock->folderList->calledWith("john.doe@example.com", null, false);
         // run test again with a renamed root folder
-        Arsse::$user = $this->createMock(User::class);
-        Arsse::$user->method("propertiesGet")->willReturn(['num' => 47, 'admin' => false, 'root_folder_name' => "Uncategorized"]);
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 47, 'admin' => false, 'root_folder_name' => "Uncategorized"]);
         $exp = HTTP::respJson([
             ['id' => 1,  'title' => "Uncategorized", 'user_id' => 47],
             ['id' => 2,  'title' => "Science",       'user_id' => 47],
@@ -432,15 +427,15 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideCategoryUpdates */
     public function testRenameACategory(int $id, $title, $out, ResponseInterface $exp): void {
-        Arsse::$user->method("propertiesSet")->willReturn(['root_folder_name' => $title]);
+        \Phake::when(Arsse::$user)->propertiesSet->thenReturn(['root_folder_name' => $title]);
         if (is_string($out)) {
             $this->dbMock->folderPropertiesSet->throws(new ExceptionInput($out));
         } else {
             $this->dbMock->folderPropertiesSet->returns($out);
         }
         $times = (int) ($id === 1 && is_string($title) && strlen(trim($title)));
-        Arsse::$user->expects($this->exactly($times))->method("propertiesSet")->with("john.doe@example.com", ['root_folder_name' => $title]);
         $this->assertMessage($exp, $this->req("PUT", "/categories/$id", ['title' => $title]));
+        \Phake::verify(Arsse::$user, \Phake::times($times))->propertiesSet("john.doe@example.com", ['root_folder_name' => $title]);
         $times = (int) ($id !== 1 && is_string($title));
         $this->dbMock->folderPropertiesSet->times($times)->calledWith("john.doe@example.com", $id - 1, ['name' => $title]);
     }
