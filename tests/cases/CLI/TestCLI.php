@@ -15,6 +15,7 @@ use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\CLI;
+use JKingWeb\Arsse\Factory;
 use JKingWeb\Arsse\REST\Fever\User as FeverUser;
 use JKingWeb\Arsse\REST\Miniflux\Token as MinifluxToken;
 use JKingWeb\Arsse\ImportExport\OPML;
@@ -25,16 +26,17 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $cli;
 
     public function setUp(): void {
-        parent::setUp();
-        $this->cli = $this->partialMock(CLI::class);
-        $this->cli->logError->returns(null);
-        $this->cli->loadConf->returns(true);
-        $this->dbMock = $this->mock(Database::class);
+        Arsse::$db = \Phake::mock(Database::class);
+        Arsse::$obj = \Phake::mock(Factory::class);
+        \Phake::when(Arsse::$obj)->get->thenReturnCallback(function($c) {
+            return new $c;
+        });
+        $this->cli = \Phake::partialMock(CLI::class);
+        \Phake::when($this->cli)->logError->thenReturn(null);
+        \Phake::when($this->cli)->loadConf->thenReturn(true);
     }
 
     public function assertConsole(string $command, int $exitStatus, string $output = "", bool $pattern = false): void {
-        Arsse::$obj = $this->objMock->get();
-        Arsse::$db = $this->dbMock->get();
         $argv = \Clue\Arguments\split($command);
         $output = strlen($output) ? $output.\PHP_EOL : "";
         if ($pattern) {
@@ -42,18 +44,18 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         } else {
             $this->expectOutputString($output);
         }
-        $this->assertSame($exitStatus, $this->cli->get()->dispatch($argv));
+        $this->assertSame($exitStatus, $this->cli->dispatch($argv));
     }
 
     public function testPrintVersion(): void {
         $this->assertConsole("arsse.php --version", 0, Arsse::VERSION);
-        $this->cli->loadConf->never()->called();
+        \Phake::verify($this->cli, \Phake::never())->loadConf();
     }
 
     /** @dataProvider provideHelpText */
     public function testPrintHelp(string $cmd, string $name): void {
         $this->assertConsole($cmd, 0, str_replace("arsse.php", $name, CLI::USAGE));
-        $this->cli->loadConf->never()->called();
+        \Phake::verify($this->cli, \Phake::never())->loadConf();
     }
 
     public function provideHelpText(): iterable {
@@ -68,64 +70,64 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testStartTheDaemon(): void {
-        $srv = $this->mock(Service::class);
-        $srv->watch->returns(new \DateTimeImmutable);
-        $this->objMock->get->with(Service::class)->returns($srv->get());
+        $srv = \Phake::mock(Service::class);
+        \Phake::when($srv)->watch->thenReturn(new \DateTimeImmutable);
+        \Phake::when(Arsse::$obj)->get(Service::class)->thenReturn($srv);
         $this->assertConsole("arsse.php daemon", 0);
-        $this->cli->loadConf->called();
-        $srv->watch->calledWith(true);
+        \Phake::verify($this->cli)->loadConf();
+        \Phake::verify($srv)->watch(true);
     }
 
     public function testStartTheForkingDaemon(): void {
         $f = tempnam(sys_get_temp_dir(), "arsse");
-        $srv = $this->mock(Service::class);
-        $srv->watch->returns(new \DateTimeImmutable);
-        $daemon = $this->mock(Daemon::class);
-        $daemon->checkPIDFilePath->returns($f);
-        $daemon->fork->returns(null);
-        $this->objMock->get->with(Service::class)->returns($srv->get());
-        $this->objMock->get->with(Daemon::class)->returns($daemon->get());
+        $srv = \Phake::mock(Service::class);
+        $daemon = \Phake::mock(Daemon::class);
+        \Phake::when($srv)->watch->thenReturn(new \DateTimeImmutable);
+        \Phake::when($daemon)->checkPIDFilePath->thenReturn($f);
+        \Phake::when($daemon)->fork->thenReturn(null);
+        \Phake::when(Arsse::$obj)->get(Service::class)->thenReturn($srv);
+        \Phake::when(Arsse::$obj)->get(Daemon::class)->thenReturn($daemon);
         $this->assertConsole("arsse.php daemon --fork=arsse.pid", 0);
         $this->assertFileDoesNotExist($f);
-        Phony::inOrder(
-            $daemon->checkPIDFilePath->calledWith("arsse.pid"),
-            $daemon->fork->calledWith($f),
-            $this->cli->loadConf->called(),
-            $srv->watch->calledWith(true)
+        \Phake::inOrder(
+            \Phake::verify($daemon)->checkPIDFilePath("arsse.pid"),
+            \Phake::verify($daemon)->fork($f),
+            \Phake::verify($this->cli)->loadConf(),
+            \Phake::verify($srv)->watch(true)
         );
     }
 
     public function testFailToStartTheForkingDaemon(): void {
-        $srv = $this->mock(Service::class);
-        $srv->watch->returns(new \DateTimeImmutable);
-        $daemon = $this->mock(Daemon::class);
-        $daemon->checkPIDFilePath->throws(new Service\Exception("pidDuplicate", ['pid' => 2112]));
-        $daemon->fork->returns(null);
-        $this->objMock->get->with(Service::class)->returns($srv->get());
-        $this->objMock->get->with(Daemon::class)->returns($daemon->get());
+        $srv = \Phake::mock(Service::class);
+        $daemon = \Phake::mock(Daemon::class);
+        \Phake::when($srv)->watch->thenReturns(new \DateTimeImmutable);
+        \Phake::when($daemon)->checkPIDFilePath->throws(new Service\Exception("pidDuplicate", ['pid' => 2112]));
+        \Phake::when($daemon)->fork->returns(null);
+        \Phake::when(Arsse::$obj)->get(Service::class)->returns($srv);
+        \Phake::when(Arsse::$obj)->get(Daemon::class)->returns($daemon);
         $this->assertConsole("arsse.php daemon --fork=arsse.pid", 10809);
-        $daemon->checkPIDFilePath->calledWith("arsse.pid");
-        $daemon->fork->never()->called();
-        $this->cli->loadConf->never()->called();
-        $srv->watch->never()->called();
+        \Phake::verify($daemon)->checkPIDFilePath("arsse.pid");
+        \Phake::verify($daemon, \Phake::never())->fork($this->anything());
+        \Phake::verify($this->cli, \Phake::never())->loadConf();
+        \Phake::verify($srv, \Phake::never())->watch($this->anything());
     }
 
     public function testRefreshAllFeeds(): void {
-        $srv = $this->mock(Service::class);
-        $srv->watch->returns(new \DateTimeImmutable);
-        $this->objMock->get->with(Service::class)->returns($srv->get());
+        $srv = \Phake::mock(Service::class);
+        \Phake::when($srv)->watch->thenReturn(new \DateTimeImmutable);
+        \Phake::when(Arsse::$obj)->get(Service::class)->thenReturn($srv);
         $this->assertConsole("arsse.php feed refresh-all", 0);
-        $this->cli->loadConf->called();
-        $srv->watch->calledWith(false);
+        \Phake::verify($this->cli)->loadConf();
+        \Phake::verify($srv)->watch(false);
     }
 
     /** @dataProvider provideFeedUpdates */
     public function testRefreshAFeed(string $cmd, int $exitStatus, string $output): void {
-        $this->dbMock->feedUpdate->with(1, true)->returns(true);
-        $this->dbMock->feedUpdate->with(2, true)->throws(new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://example.com/"], $this->mockGuzzleException(ClientException::class, "", 404)));
+        \Phake::when(Arsse::$db)->feedUpdate(1, true)->thenReturn(true);
+        \Phake::when(Arsse::$db)->feedUpdate(2, true)->thenThrow(new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://example.com/"], $this->mockGuzzleException(ClientException::class, "", 404)));
         $this->assertConsole($cmd, $exitStatus, $output);
-        $this->cli->loadConf->called();
-        $this->dbMock->feedUpdate->called();
+        \Phake::verify($this->cli)->loadConf();
+        \Phake::verify($this->dbMock)->feedUpdate();
     }
 
     public function provideFeedUpdates(): iterable {
@@ -137,14 +139,14 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideDefaultConfigurationSaves */
     public function testSaveTheDefaultConfiguration(string $cmd, int $exitStatus, string $file): void {
-        $conf = $this->mock(Conf::class);
-        $conf->exportFile->with("php://output", true)->returns(true);
-        $conf->exportFile->with("good.conf", true)->returns(true);
-        $conf->exportFile->with("bad.conf", true)->throws(new \JKingWeb\Arsse\Conf\Exception("fileUnwritable"));
-        $this->objMock->get->with(Conf::class)->returns($conf->get());
+        $conf = \Phake::mock(Conf::class);
+        \Phake::when($conf)->exportFile("php://output", true)->thenReturn(true);
+        \Phake::when($conf)->exportFile("good.conf", true)->thenReturn(true);
+        \Phake::when($conf)->exportFile("bad.conf", true)->thenThrow(new \JKingWeb\Arsse\Conf\Exception("fileUnwritable"));
+        \Phake::when(Arsse::$obj)->get(Conf::class)->thenReturn($conf);
         $this->assertConsole($cmd, $exitStatus);
-        $this->cli->loadConf->never()->called();
-        $conf->exportFile->calledWith($file, true);
+        \Phake::verify($this->cli)->loadConf();
+        \Phake::verify($conf)->exportFile($file, true);
     }
 
     public function provideDefaultConfigurationSaves(): iterable {
@@ -209,10 +211,10 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$user)->auth("john.doe@example.com", "secret")->thenReturn(true);
         \Phake::when(Arsse::$user)->auth("jane.doe@example.com", "superman")->thenReturn(true);
         $fever = $this->mock(FeverUser::class);
-        $fever->authenticate->returns(false);
-        $fever->authenticate->with("john.doe@example.com", "ashalla")->returns(true);
-        $fever->authenticate->with("jane.doe@example.com", "thx1138")->returns(true);
-        $this->objMock->get->with(FeverUser::class)->returns($fever->get());
+        \Phake::when($fever)->authenticate->thenReturn(false);
+        \Phake::when($fever)->authenticate("john.doe@example.com", "ashalla")->thenReturn(true);
+        \Phake::when($fever)->authenticate("jane.doe@example.com", "thx1138")->thenReturn(true);
+        \Phake::when(Arsse::$obj)->get(FeverUser::class)->thenReturn($fever);
         $this->assertConsole($cmd, $exitStatus, $output);
     }
 
@@ -259,9 +261,9 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         };
         Arsse::$user = \Phake::mock(User::class);
         \Phake::when(Arsse::$user)->passwordSet->thenReturnCallback($passwordChange);
-        $fever = $this->mock(FeverUser::class);
-        $fever->register->does($passwordChange);
-        $this->objMock->get->with(FeverUser::class)->returns($fever->get());
+        $fever = \Phake::mock(FeverUser::class);
+        \Phake::when($fever)->register->thenReturnCallback($passwordChange);
+        \Phake::when(Arsse::$obj)->get(FeverUser::class)->returns($fever);
         $this->assertConsole($cmd, $exitStatus, $output);
     }
 
@@ -288,9 +290,9 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         };
         Arsse::$user = \Phake::mock(User::class);
         \Phake::when(Arsse::$user)->passwordUnset->thenReturnCallback($passwordClear);
-        $fever = $this->mock(FeverUser::class);
-        $fever->unregister->does($passwordClear);
-        $this->objMock->get->with(FeverUser::class)->returns($fever->get());
+        $fever = \Phake::mock(FeverUser::class);
+        \Phake::when($fever)->unregister->thenReturnCallback($passwordClear);
+        \Phake::when(Arsse::$obj)->get(FeverUser::class)->thenReturn($fever);
         $this->assertConsole($cmd, $exitStatus, $output);
     }
 
@@ -305,14 +307,14 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideOpmlExports */
     public function testExportToOpml(string $cmd, int $exitStatus, string $file, string $user, bool $flat): void {
-        $opml = $this->mock(OPML::class);
-        $opml->exportFile->with("php://output", $user, $flat)->returns(true);
-        $opml->exportFile->with("good.opml", $user, $flat)->returns(true);
-        $opml->exportFile->with("bad.opml", $user, $flat)->throws(new \JKingWeb\Arsse\ImportExport\Exception("fileUnwritable"));
-        $this->objMock->get->with(OPML::class)->returns($opml->get());
+        $opml = \Phake::mock(OPML::class);
+        \Phake::when($opml)->exportFile("php://output", $user, $flat)->thenReturn(true);
+        \Phake::when($opml)->exportFile("good.opml", $user, $flat)->thenRreturn(true);
+        \Phake::when($opml)->exportFile("bad.opml", $user, $flat)->thenThrow(new \JKingWeb\Arsse\ImportExport\Exception("fileUnwritable"));
+        \Phake::when(Arsse::$obj)->get(OPML::class)->returns($opml);
         $this->assertConsole($cmd, $exitStatus);
-        $this->cli->loadConf->called();
-        $opml->exportFile->calledWith($file, $user, $flat);
+        \Phake::verify($this->cli)->loadConf();
+        \Phake::verify($opml)->exportFile($file, $user, $flat);
     }
 
     public function provideOpmlExports(): iterable {
@@ -346,14 +348,14 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideOpmlImports */
     public function testImportFromOpml(string $cmd, int $exitStatus, string $file, string $user, bool $flat, bool $replace): void {
-        $opml = $this->mock(OPML::class);
-        $opml->importFile->with("php://input", $user, $flat, $replace)->returns(true);
-        $opml->importFile->with("good.opml", $user, $flat, $replace)->returns(true);
-        $opml->importFile->with("bad.opml", $user, $flat, $replace)->throws(new \JKingWeb\Arsse\ImportExport\Exception("fileUnreadable"));
-        $this->objMock->get->with(OPML::class)->returns($opml->get());
+        $opml = \Phake::mock(OPML::class);
+        \Phake::when($opml)->importFile("php://input", $user, $flat, $replace)->thenReturn(true);
+        \Phake::when($opml)->importFile("good.opml", $user, $flat, $replace)->thenReturn(true);
+        \Phake::when($opml)->importFile("bad.opml", $user, $flat, $replace)->thenThrow(new \JKingWeb\Arsse\ImportExport\Exception("fileUnreadable"));
+        \Phake::when(Arsse::$obj)->get(OPML::class)->thenReturn($opml);
         $this->assertConsole($cmd, $exitStatus);
-        $this->cli->loadConf->called();
-        $opml->importFile->calledWith($file, $user, $flat, $replace);
+        \Phake::verify($this->cli)->loadConf();
+        \Phake::verify($opml)->importFile($file, $user, $flat, $replace);
     }
 
     public function provideOpmlImports(): iterable {
@@ -458,38 +460,38 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             "TOKEN 2  Eek",
             "TOKEN 1  Ook",
         ]);
-        $t = $this->mock(MinifluxToken::class);
-        $t->tokenList->returns($data);
-        $this->objMock->get->with(MinifluxToken::class)->returns($t->get());
+        $t = \Phake::mock(MinifluxToken::class);
+        \Phake::when($t)->tokenList->thenReturn($data);
+        \Phake::when(Arsse::$obj)->get(MinifluxToken::class)->thenReturn($t);
         $this->assertConsole("arsse.php token list john", 0, $exp);
-        $t->tokenList->calledWith("john");
+        \Phake::verify($t)->tokenList("john");
     }
 
     public function testCreateToken(): void {
-        $t = $this->mock(MinifluxToken::class);
-        $t->tokenGenerate->returns("RANDOM TOKEN");
-        $this->objMock->get->with(MinifluxToken::class)->returns($t->get());
+        $t = \Phake::mock(MinifluxToken::class);
+        \Phake::when($t)->tokenGenerate->thenReturn("RANDOM TOKEN");
+        \Phake::when(Arsse::$obj)->get(MinifluxToken::class)->thenReturn($t);
         $this->assertConsole("arse.php token create jane", 0, "RANDOM TOKEN");
-        $t->tokenGenerate->calledWith("jane", null);
+        \Phake::verify($t)->tokenGenerate("jane", null);
     }
 
     public function testCreateTokenWithLabel(): void {
-        $t = $this->mock(MinifluxToken::class);
-        $t->tokenGenerate->returns("RANDOM TOKEN");
-        $this->objMock->get->with(MinifluxToken::class)->returns($t->get());
+        $t = \Phake::mock(MinifluxToken::class);
+        \Phake::when($t)->tokenGenerate->thenReturn("RANDOM TOKEN");
+        \Phake::when(Arsse::$obj)->get(MinifluxToken::class)->thenReturn($t);
         $this->assertConsole("arse.php token create jane Ook", 0, "RANDOM TOKEN");
-        $t->tokenGenerate->calledWith("jane", "Ook");
+        \Phake::verify($t)->tokenGenerate("jane", "Ook");
     }
 
     public function testRevokeAToken(): void {
-        $this->dbMock->tokenRevoke->returns(true);
+        \Phake::when(Arsse::$db)->tokenRevoke->thenReturn(true);
         $this->assertConsole("arse.php token revoke jane TOKEN_ID", 0);
-        $this->dbMock->tokenRevoke->calledWith("jane", "miniflux.login", "TOKEN_ID");
+        \Phake::verify(Arsse::$db)->tokenRevoke("jane", "miniflux.login", "TOKEN_ID");
     }
 
     public function testRevokeAllTokens(): void {
-        $this->dbMock->tokenRevoke->returns(true);
+        \Phake::when(Arsse::$db)->tokenRevoke->thenReturn(true);
         $this->assertConsole("arse.php token revoke jane", 0);
-        $this->dbMock->tokenRevoke->calledWith("jane", "miniflux.login", null);
+        \Phake::verify(Arsse::$db)->tokenRevoke("jane", "miniflux.login", null);
     }
 }

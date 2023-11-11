@@ -21,24 +21,12 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $drv;
 
     public function setUp(): void {
-        parent::setUp();
         self::setConf();
         // create a mock database interface
-        $this->dbMock = $this->mock(Database::class);
-        $this->dbMock->begin->returns($this->mock(\JKingWeb\Arsse\Db\Transaction::class));
+        Arsse::$db = \Phake::mock(Database::class);
+        \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(\JKingWeb\Arsse\Db\Transaction::class));
         // create a mock user driver
-        $this->drv = $this->mock(Driver::class);
-    }
-
-    protected function prepTest(?\Closure $partialMockDef = null): User {
-        Arsse::$db = $this->dbMock->get();
-        if ($partialMockDef) {
-            $this->userMock = $this->partialMock(User::class, $this->drv->get());
-            $partialMockDef($this->userMock);
-            return $this->userMock->get();
-        } else {
-            return new User($this->drv->get());
-        }
+        $this->drv = \Phake::mock(Driver::class);
     }
 
     public function testConstruct(): void {
@@ -55,13 +43,13 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testStartATransaction(): void {
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertInstanceOf(Transaction::class, $u->begin());
-        $this->dbMock->begin->calledWith();
+        \Phake::verify(Arsse::$db)->begin();
     }
 
     public function testGeneratePasswords(): void {
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $pass1 = $u->generatePassword();
         $pass2 = $u->generatePassword();
         $this->assertNotEquals($pass1, $pass2);
@@ -70,18 +58,18 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideAuthentication */
     public function testAuthenticateAUser(bool $preAuth, string $user, string $password, bool $exp): void {
         Arsse::$conf->userPreAuth = $preAuth;
-        $this->drv->auth->returns(false);
-        $this->drv->auth->with("john.doe@example.com", "secret")->returns(true);
-        $this->drv->auth->with("jane.doe@example.com", "superman")->returns(true);
-        $this->dbMock->userExists->with("john.doe@example.com")->returns(true);
-        $this->dbMock->userExists->with("jane.doe@example.com")->returns(false);
-        $this->dbMock->userAdd->returns("");
-        $u = $this->prepTest();
+        \Phake::when($this->drv)->auth->thenReturn(false);
+        \Phake::when($this->drv)->auth("john.doe@example.com", "secret")->thenReturn(true);
+        \Phake::when($this->drv)->auth("jane.doe@example.com", "superman")->thenReturn(true);
+        \Phake::when(Arsse::$db)->userExists("john.doe@example.com")->thenReturn(true);
+        \Phake::when(Arsse::$db)->userExists("jane.doe@example.com")->thenReturn(false);
+        \Phake::when(Arsse::$db)->userAdd->thenReturn("");
+        $u = new User($this->drv);
         $this->assertSame($exp, $u->auth($user, $password));
         $this->assertNull($u->id);
-        $this->drv->auth->times((int) !$preAuth)->called();
-        $this->dbMock->userExists->times($exp ? 1 : 0)->calledWith($user);
-        $this->dbMock->userAdd->times($exp && $user === "jane.doe@example.com" ? 1 : 0)->calledWith($user, $password);
+        \Phake::verify($this->drv, \Phake::times((int) !$preAuth))->auth($this->anything(), $this->anything());
+        \Phake::verify(Arsse::$db, \Phake::times($exp ? 1 : 0))->userExists($user);
+        \Phake::verify(Arsse::$db, \Phake::times($exp && $user === "jane.doe@example.com" ? 1 : 0))->userAdd($user, $password);
     }
 
     public function provideAuthentication(): iterable {
@@ -102,7 +90,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testListUsers(): void {
         $exp = ["john.doe@example.com", "jane.doe@example.com"];
         $this->drv->userList->returns(["john.doe@example.com", "jane.doe@example.com"]);
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertSame($exp, $u->list());
         $this->drv->userList->calledWith();
     }
@@ -110,7 +98,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testLookUpAUserByNumber(): void {
         $exp = "john.doe@example.com";
         $this->dbMock->userLookup->returns($exp);
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertSame($exp, $u->lookup(2112));
         $this->dbMock->userLookup->calledWith(2112);
     }
@@ -120,7 +108,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $pass = "secret";
         $this->drv->userAdd->returns($pass);
         $this->dbMock->userExists->returns(true);
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertSame($pass, $u->add($user, $pass));
         $this->drv->userAdd->calledWith($user, $pass);
         $this->dbMock->userExists->calledWith($user);
@@ -131,7 +119,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $pass = "secret";
         $this->drv->userAdd->returns($pass);
         $this->dbMock->userExists->returns(false);
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertSame($pass, $u->add($user, $pass));
         $this->drv->userAdd->calledWith($user, $pass);
         $this->dbMock->userExists->calledWith($user);
@@ -143,7 +131,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $pass = "secret";
         $this->drv->userAdd->throws(new ExceptionConflict("alreadyExists"));
         $this->dbMock->userExists->returns(true);
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertException("alreadyExists", "User", "ExceptionConflict");
         try {
             $u->add($user, $pass);
@@ -158,7 +146,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $pass = "secret";
         $this->drv->userAdd->throws(new ExceptionConflict("alreadyExists"));
         $this->dbMock->userExists->returns(false);
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertException("alreadyExists", "User", "ExceptionConflict");
         try {
             $u->add($user, $pass);
@@ -171,7 +159,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideInvalidUserNames */
     public function testAddAnInvalidUser(string $user): void {
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertException("invalidUsername", "User", "ExceptionInput");
         $u->add($user, "secret");
     }
@@ -208,7 +196,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->userAdd->returns(true);
         $this->dbMock->userRename->returns(true);
         $this->drv->userRename->returns(true);
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $old = "john.doe@example.com";
         $new = "jane.doe@example.com";
         $this->assertTrue($u->rename($old, $new));
@@ -230,7 +218,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->userAdd->returns(true);
         $this->dbMock->userRename->returns(true);
         $this->drv->userRename->returns(true);
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $old = "john.doe@example.com";
         $new = "jane.doe@example.com";
         $this->assertTrue($u->rename($old, $new));
@@ -248,7 +236,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->userAdd->returns(true);
         $this->dbMock->userRename->returns(true);
         $this->drv->userRename->returns(false);
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $old = "john.doe@example.com";
         $this->assertFalse($u->rename($old, $old));
         $this->drv->userRename->calledWith($old, $old);
@@ -256,7 +244,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideInvalidUserNames */
     public function testRenameAUserToAnInvalidName(string $new): void {
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertException("invalidUsername", "User", "ExceptionInput");
         $u->rename("john.doe@example.com", $new);
     }
@@ -265,7 +253,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $user = "john.doe@example.com";
         $this->drv->userRemove->returns(true);
         $this->dbMock->userExists->returns(true);
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertTrue($u->remove($user));
         $this->dbMock->userExists->calledWith($user);
         $this->dbMock->userRemove->calledWith($user);
@@ -276,7 +264,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $user = "john.doe@example.com";
         $this->drv->userRemove->returns(true);
         $this->dbMock->userExists->returns(false);
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertTrue($u->remove($user));
         $this->dbMock->userExists->calledWith($user);
         $this->drv->userRemove->calledWith($user);
@@ -287,7 +275,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $pass = "secret";
         $this->drv->userRemove->throws(new ExceptionConflict("doesNotExist"));
         $this->dbMock->userExists->returns(true);
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         try {
             $u->remove($user);
@@ -303,7 +291,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $pass = "secret";
         $this->drv->userRemove->throws(new ExceptionConflict("doesNotExist"));
         $this->dbMock->userExists->returns(false);
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         try {
             $u->remove($user);
@@ -319,7 +307,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv->userPasswordSet->returns($pass);
         $this->dbMock->userPasswordSet->returns($pass);
         $this->dbMock->userExists->returns(true);
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertSame($pass, $u->passwordSet($user, $pass));
         $this->drv->userPasswordSet->calledWith($user, $pass, null);
         $this->dbMock->userPasswordSet->calledWith($user, $pass);
@@ -350,7 +338,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv->userPasswordSet->returns($pass);
         $this->dbMock->userPasswordSet->returns($pass);
         $this->dbMock->userExists->returns(false);
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertSame($pass, $u->passwordSet($user, $pass));
         $this->drv->userPasswordSet->calledWith($user, $pass, null);
         $this->dbMock->userAdd->calledWith($user, $pass);
@@ -393,7 +381,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv->userPasswordUnset->returns(true);
         $this->dbMock->userPasswordSet->returns(true);
         $this->dbMock->userExists->returns(true);
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertTrue($u->passwordUnset($user));
         $this->drv->userPasswordUnset->calledWith($user, null);
         $this->dbMock->userPasswordSet->calledWith($user, null);
@@ -406,7 +394,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv->userPasswordUnset->returns(true);
         $this->dbMock->userPasswordSet->returns(true);
         $this->dbMock->userExists->returns(false);
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertTrue($u->passwordUnset($user));
         $this->drv->userPasswordUnset->calledWith($user, null);
         $this->dbMock->userExists->calledWith($user);
@@ -415,7 +403,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testUnsetAPasswordForAMissingUser(): void {
         $user = "john.doe@example.com";
         $this->drv->userPasswordUnset->throws(new ExceptionConflict("doesNotExist"));
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         try {
             $u->passwordUnset($user);
@@ -431,7 +419,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->drv->userPropertiesGet->returns($extra);
         $this->dbMock->userPropertiesGet->returns($base);
         $this->dbMock->userExists->returns(true);
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertSame($exp, $u->propertiesGet($user));
         $this->drv->userPropertiesGet->calledWith($user, true);
         $this->dbMock->userPropertiesGet->calledWith($user, true);
@@ -458,7 +446,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->dbMock->userPropertiesGet->returns($base);
         $this->dbMock->userAdd->returns(true);
         $this->dbMock->userExists->returns(false);
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertSame($exp, $u->propertiesGet($user));
         $this->drv->userPropertiesGet->calledWith($user, true);
         $this->dbMock->userPropertiesGet->calledWith($user, true);
@@ -470,7 +458,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testGetThePropertiesOfAMissingUser(): void {
         $user = "john.doe@example.com";
         $this->drv->userPropertiesGet->throws(new ExceptionConflict("doesNotExist"));
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         try {
             $u->propertiesGet($user);
@@ -483,14 +471,14 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testSetThePropertiesOfAUser(array $in, $out): void {
         $user = "john.doe@example.com";
         if ($out instanceof \Exception) {
-            $u = $this->prepTest();
+            $u = new User($this->drv);
             $this->assertException($out);
             $u->propertiesSet($user, $in);
         } else {
             $this->dbMock->userExists->returns(true);
             $this->drv->userPropertiesSet->returns($out);
             $this->dbMock->userPropertiesSet->returns(true);
-            $u = $this->prepTest();
+            $u = new User($this->drv);
             $this->assertSame($out, $u->propertiesSet($user, $in));
             $this->drv->userPropertiesSet->calledWith($user, $in);
             $this->dbMock->userPropertiesSet->calledWith($user, $out);
@@ -502,14 +490,14 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testSetThePropertiesOfAUserWeDoNotKnow(array $in, $out): void {
         $user = "john.doe@example.com";
         if ($out instanceof \Exception) {
-            $u = $this->prepTest();
+            $u = new User($this->drv);
             $this->assertException($out);
             $u->propertiesSet($user, $in);
         } else {
             $this->dbMock->userExists->returns(false);
             $this->drv->userPropertiesSet->returns($out);
             $this->dbMock->userPropertiesSet->returns(true);
-            $u = $this->prepTest();
+            $u = new User($this->drv);
             $this->assertSame($out, $u->propertiesSet($user, $in));
             $this->drv->userPropertiesSet->calledWith($user, $in);
             $this->dbMock->userPropertiesSet->calledWith($user, $out);
@@ -536,7 +524,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $user = "john.doe@example.com";
         $in = ['admin' => true];
         $this->drv->userPropertiesSet->throws(new ExceptionConflict("doesNotExist"));
-        $u = $this->prepTest();
+        $u = new User($this->drv);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         try {
             $u->propertiesSet($user, $in);

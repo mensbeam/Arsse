@@ -21,21 +21,17 @@ class TestArsse extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testLoadExistingData(): void {
-        $lang = $this->mock(Lang::class);
-        $db = $this->mock(Database::class);
-        $user = $this->mock(User::class);
-        $conf1 = $this->mock(Conf::class);
-        Arsse::$lang = $lang->get();
-        Arsse::$db = $db->get();
-        Arsse::$user = $user->get();
-        Arsse::$conf = $conf1->get();
+        Arsse::$conf = \Phake::mock(Conf::class);
+        $lang = Arsse::$lang = \Phake::mock(Lang::class);
+        $db = Arsse::$db = \Phake::mock(Database::class);
+        $user = Arsse::$user = \Phake::mock(User::class);
         $conf2 = (new Conf)->import(['lang' => "test"]);
         Arsse::load($conf2);
         $this->assertSame($conf2, Arsse::$conf);
-        $this->assertSame($lang->get(), Arsse::$lang);
-        $this->assertSame($db->get(), Arsse::$db);
-        $this->assertSame($user->get(), Arsse::$user);
-        $lang->set->calledWith("test");
+        $this->assertSame($lang, Arsse::$lang);
+        $this->assertSame($db, Arsse::$db);
+        $this->assertSame($user, Arsse::$user);
+        \Phake::verify($lang)->set("test");
     }
 
     public function testLoadNewData(): void {
