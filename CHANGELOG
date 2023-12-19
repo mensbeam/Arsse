@@ -3,6 +3,8 @@ Version 0.??.? (????-??-??)
 
 Changes:
 - Require PHP 7.3
+- Default to using php-legacy package on Arch Linux; the new arsse-latest
+  package can be installed to depend on the latest PHP version instead
 - Multiple editorial and stylistic changes to the UNIX manual page
 
 Version 0.10.4 (2023-01-24)

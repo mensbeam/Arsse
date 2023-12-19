@@ -1,24 +1,21 @@
 # Maintainer: J. King <jking@jkingweb.ca>
+_pkgdesc="Multi-protocol RSS/Atom newsfeed synchronization server, bugfix-testing version"
+pkgname=("arsse-git" "arsse-latest-git")
 pkgname="arsse-git"
 pkgver=0.10.4
-pkgrel=1
+pkgrel=2
 epoch=
-pkgdesc="Multi-protocol RSS/Atom newsfeed synchronization server, bugfix-testing version"
 arch=("any")
 url="https://thearsse.com/"
 license=("MIT")
 provides=("arsse")
-conflicts=("arsse")
-depends=("php>=7.3" "php-intl>=7.3" "php-sqlite>=7.3")
-makedepends=("composer" "pandoc")
+makedepends=("php-legacy" "composer" "pandoc")
 checkdepends=()
-optdepends=("nginx: HTTP server"
+_optdepends=("nginx: HTTP server"
             "apache>=2.4: HTTP server"
             "percona-server: Alternate database"
-            "postgresql>=10: Alternate database"
-            "php-pgsql>=7.3: PostgreSQL database support")
-backup=("etc/webapps/arsse/config.php"
-        "etc/php/php-fpm.d/arsse.conf"
+            "postgresql>=10: Alternate database")
+_backup=("etc/webapps/arsse/config.php"
         "etc/webapps/arsse/nginx/example.conf"
         "etc/webapps/arsse/nginx/arsse.conf"
         "etc/webapps/arsse/nginx/arsse-loc.conf"
@@ -26,6 +23,8 @@ backup=("etc/webapps/arsse/config.php"
         "etc/webapps/arsse/apache/example.conf"
         "etc/webapps/arsse/apache/arsse.conf"
         "etc/webapps/arsse/apache/arsse-loc.conf")
+_conflicts=("arsse"
+           "arsse-latest")
 source=("git+https://code.mensbeam.com/MensBeam/arsse/")
 md5sums=("SKIP")
 
@@ -44,12 +43,10 @@ build() {
     rm -r vendor/bin
 }
 
-package() {
-    # define runtime dependencies
-    depends=("php>=7.3" "php-intl>=7.3" "php-sqlite>=7.3" "php-fpm>=7.3")
+_package() {
     # create most directories necessary for the final package
     cd "$pkgdir"
-    mkdir -p "usr/share/webapps/arsse" "usr/share/doc/arsse" "usr/share/licenses/arsse" "usr/lib/systemd/system" "usr/lib/sysusers.d" "usr/lib/tmpfiles.d" "etc/php/php-fpm.d" "etc/webapps/arsse"
+    mkdir -p "usr/share/webapps/arsse" "usr/share/doc/arsse" "usr/share/licenses/arsse" "usr/lib/systemd/system" "usr/lib/sysusers.d" "usr/lib/tmpfiles.d" "etc/$1/php-fpm.d" "etc/webapps/arsse"
     # copy requisite files
     cd "$srcdir/arsse"
     cp -r lib locale sql vendor www CHANGELOG UPGRADING README.md arsse.php "$pkgdir/usr/share/webapps/arsse"
@@ -58,7 +55,7 @@ package() {
     cp dist/systemd/* "$pkgdir/usr/lib/systemd/system"
     cp dist/sysuser.conf "$pkgdir/usr/lib/sysusers.d/arsse.conf"
     cp dist/tmpfiles.conf "$pkgdir/usr/lib/tmpfiles.d/arsse.conf"
-    cp dist/php-fpm.conf "$pkgdir/etc/php/php-fpm.d/arsse.conf"
+    cp dist/php-fpm.conf "$pkgdir/etc/$1/php-fpm.d/arsse.conf"
     cp -r dist/man "$pkgdir/usr/share"
     cp -r dist/nginx dist/apache config.defaults.php "$pkgdir/etc/webapps/arsse"
     cd "$pkgdir"
@@ -68,7 +65,28 @@ package() {
     install -Dm640 dist/config.php "$pkgdir/etc/webapps/arsse"
     # patch generic configuration files to use Arch-specific paths and identifiers
     sed -i -se 's/\/\(etc\|usr\/share\)\/arsse\//\/\1\/webapps\/arsse\//g' "$pkgdir/etc/webapps/arsse/nginx/"* "$pkgdir/etc/webapps/arsse/apache/"* "$pkgdir/usr/lib/tmpfiles.d/arsse.conf" "$pkgdir/usr/lib/systemd/system/"* "$pkgdir/usr/bin/"*
-    sed -i -se 's/\/var\/run\/php\//\/run\/php-fpm\//g' "$pkgdir/etc/webapps/arsse/nginx/"* "$pkgdir/etc/webapps/arsse/apache/"* "$pkgdir/etc/php/php-fpm.d/arsse.conf"
-    sed -i -se 's/www-data/http/g' "$pkgdir/etc/php/php-fpm.d/arsse.conf"
+    sed -i -se 's/\/var\/run\/php\//\/run\/php-fpm\//g' "$pkgdir/etc/webapps/arsse/nginx/"* "$pkgdir/etc/webapps/arsse/apache/"* "$pkgdir/etc/$1/php-fpm.d/arsse.conf"
+    sed -i -se 's/www-data/http/g' "$pkgdir/etc/$1/php-fpm.d/arsse.conf"
     sed -i -e 's/^WorkingDirectory=.*$/WorkingDirectory=\/usr\/share\/webapps\/arsse/g' -e 's/^ConfigurationDirectory=.*$/ConfigurationDirectory=webapps\/arsse/g' "$pkgdir/usr/lib/systemd/system/arsse-fetch.service"
+}
+
+package_arsse() {
+    pkgdesc="${_pkgdesc}"
+    depends=("php-legacy>=7.3" "php-legacy-sqlite>=7.3" "php-legacy-fpm>=7.3")
+    optdepends=("${_optdepends[@]}" "php-legacy-pgsql>=7.3: PostgreSQL database support")
+    backup=("${_backup[@]}" "etc/php-legacy/php-fpm.d/arsse.conf")
+    conflicts=("${_conflicts[@]}" "arsse-latest-git")
+    _package "php-legacy"
+    # perform additional patching for php-legacy
+    sed -i -se 's/\/usr\/bin\/env php/\/usr\/bin\/env php-legacy/' "$pkgdir/usr/bin/arsse"
+    sed -i -se 's/php-fpm/php-fpm-legacy/g' "$pkgdir/etc/webapps/arsse/nginx/"* "$pkgdir/etc/webapps/arsse/apache/"* "$pkgdir/etc/$1/php-fpm.d/arsse.conf"
+}
+
+package_arsse-latest() {
+    pkgdesc="${_pkgdesc} (latest PHP version)"
+    depends=("php>=7.3" "php-sqlite>=7.3" "php-fpm>=7.3")
+    optdepends=("${_optdepends[@]}" "php-pgsql>=7.3: PostgreSQL database support")
+    backup=("${_backup[@]}" "etc/php/php-fpm.d/arsse.conf")
+    conflicts=("${_conflicts[@]}" "arsse-git")
+    _package "php"
 }

@@ -2,7 +2,7 @@
 
 # Downloading The Arsse
 
-Since version 0.9.2 The Arsse is available from the [Arch User Repository](https://aur.archlinux.org/) as packages `arsse` and `arsse-git`. The latter should normally only be used to test bug fixes.
+Since version 0.9.2 The Arsse is available from the [Arch User Repository](https://aur.archlinux.org/) as packages `arsse`, `arsse-latest`, `arsse-git` and `arsse-latest-git`. The latter two should normally only be used to test bug fixes. The base `arsse` package uses the `php-legacy` package rather than the `php` package, to avoid disruptions when new PHP feature versions are released.
 
 Generic release tarballs may also be downloaded [from our Web site](https://thearsse.com), and the `PKGBUILD` file (found under `arsse/dist/arch/`) can then be extracted alongside the tarball and used to build the `arsse` package. Installing directly from the generic release tarball without producing an Arch package is not recommended as the package-building process performs various adjustments to handle Arch peculiarities.
 
@@ -12,15 +12,15 @@ For illustrative purposes, this document assumes the `yay` [AUR helper](https://
 
 ```sh
 # Install the package
-sudo yay -S arsse
+yay -S arsse
 # Enable the necessary PHP extensions; curl is optional but recommended; pdo_sqlite may be used instead of sqlite3, but this is not recommended
-sudo sed -i -e 's/^;\(extension=\(curl\|iconv\|intl\|sqlite3\)\)$/\1/' /etc/php/php.ini
+sudo sed -i -e 's/^;\(extension=\(curl\|iconv\|intl\|sqlite3\)\)$/\1/' /etc/php-legacy/php.ini
 # Enable and start the necessary systemd units
-sudo systemctl enable php-fpm arsse
-sudo systemctl restart php-fpm arsse
+sudo systemctl enable php-legacy-fpm arsse
+sudo systemctl restart php-legacy-fpm arsse
 ```
 
-Note that the above is the most concise process, not necessarily the recommended one. In particular [it is recommended](https://wiki.archlinux.org/title/PHP#Extensions) to use `/etc/php/conf.d/` to enable PHP extensions rather than editing `php.ini` as done above.
+Note that the above is the most concise process, not necessarily the recommended one. In particular [it is recommended](https://wiki.archlinux.org/title/PHP#Extensions) to use `/etc/php-legacy/conf.d/` to enable PHP extensions rather than editing `php.ini` as done above.
 
 # Web server configuration
 
