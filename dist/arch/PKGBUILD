@@ -14,7 +14,7 @@ optdepends=("nginx: HTTP server"
             "apache>=2.4: HTTP server"
             "percona-server: Alternate database"
             "postgresql>=10: Alternate database"
-            "php-pgsql>=7.3: PostgreSQL database support")
+            "php-pgsql-interpreter>=7.3: PostgreSQL database support")
 backup=("etc/webapps/arsse/config.php"
         "etc/php/php-fpm.d/arsse.conf"
         "etc/webapps/arsse/nginx/example.conf"
@@ -23,13 +23,14 @@ backup=("etc/webapps/arsse/config.php"
         "etc/webapps/arsse/nginx/arsse-fcgi.conf"
         "etc/webapps/arsse/apache/example.conf"
         "etc/webapps/arsse/apache/arsse.conf"
+        "etc/webapps/arsse/apache/arsse-fcgi.conf"
         "etc/webapps/arsse/apache/arsse-loc.conf")
 source=("arsse-0.10.4.tar.gz")
 md5sums=("SKIP")
 
 package() {
     # define runtime dependencies
-    depends=("php>=7.3" "php-intl>=7.3" "php-sqlite>=7.3" "php-fpm>=7.3")
+    depends=("php-interpreter>=7.3" "php-sqlite-interpreter>=7.3" "php-fpm-interpreter>=7.3")
     # create most directories necessary for the final package
     cd "$pkgdir"
     mkdir -p "usr/share/webapps/arsse" "usr/share/doc/arsse" "usr/share/licenses/arsse" "usr/lib/systemd/system" "usr/lib/sysusers.d" "usr/lib/tmpfiles.d" "etc/php/php-fpm.d" "etc/webapps/arsse"
@@ -47,11 +48,14 @@ package() {
     cd "$pkgdir"
     # copy files requiring special permissions
     cd "$srcdir/arsse"
-    install -Dm755 dist/arsse "$pkgdir/usr/bin/arsse"
     install -Dm640 dist/config.php "$pkgdir/etc/webapps/arsse"
     # patch generic configuration files to use Arch-specific paths and identifiers
-    sed -i -se 's/\/\(etc\|usr\/share\)\/arsse\//\/\1\/webapps\/arsse\//g' "$pkgdir/etc/webapps/arsse/nginx/"* "$pkgdir/etc/webapps/arsse/apache/"* "$pkgdir/usr/lib/tmpfiles.d/arsse.conf" "$pkgdir/usr/lib/systemd/system/"* "$pkgdir/usr/bin/"*
+    sed -i -se 's/\/\(etc\|usr\/share\)\/arsse\//\/\1\/webapps\/arsse\//g' "$pkgdir/etc/webapps/arsse/nginx/"* "$pkgdir/etc/webapps/arsse/apache/"* "$pkgdir/usr/lib/tmpfiles.d/arsse.conf" "$pkgdir/usr/lib/systemd/system/"*
     sed -i -se 's/\/var\/run\/php\//\/run\/php-fpm\//g' "$pkgdir/etc/webapps/arsse/nginx/"* "$pkgdir/etc/webapps/arsse/apache/"* "$pkgdir/etc/php/php-fpm.d/arsse.conf"
     sed -i -se 's/www-data/http/g' "$pkgdir/etc/php/php-fpm.d/arsse.conf"
     sed -i -e 's/^WorkingDirectory=.*$/WorkingDirectory=\/usr\/share\/webapps\/arsse/g' -e 's/^ConfigurationDirectory=.*$/ConfigurationDirectory=webapps\/arsse/g' "$pkgdir/usr/lib/systemd/system/arsse-fetch.service"
+    # copy Arch-specific versions of files
+    install -Dm755 dist/arch/arsse "$pkgdir/usr/bin/arsse"
+    cp dist/arch/nginx-arsse-fcgi.conf "$pkgdir/etc/webapps/arsse/nginx/arsse-fcgi.conf"
+    cp dist/arch/apache-arsse-fcgi.conf "$pkgdir/etc/webapps/arsse/apache/arsse-fcgi.conf"
 }
