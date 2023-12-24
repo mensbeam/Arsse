@@ -1,0 +1,13 @@
+[Unit]
+Description=The Arsse newsfeed management service
+Documentation=https://thearsse.com/manual/
+Requires=arsse-fetch.service
+Wants=php-fpm.service php-legacy-fpm.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=true
+ExecStart=/usr/bin/true

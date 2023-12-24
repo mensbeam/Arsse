@@ -39,7 +39,6 @@ package() {
     cp -r lib locale sql vendor www CHANGELOG UPGRADING README.md arsse.php "$pkgdir/usr/share/webapps/arsse"
     cp -r manual/* "$pkgdir/usr/share/doc/arsse"
     cp LICENSE AUTHORS "$pkgdir/usr/share/licenses/arsse"
-    cp dist/systemd/* "$pkgdir/usr/lib/systemd/system"
     cp dist/sysuser.conf "$pkgdir/usr/lib/sysusers.d/arsse.conf"
     cp dist/tmpfiles.conf "$pkgdir/usr/lib/tmpfiles.d/arsse.conf"
     cp dist/php-fpm.conf "$pkgdir/etc/php/php-fpm.d/arsse.conf"
@@ -58,4 +57,6 @@ package() {
     install -Dm755 dist/arch/arsse "$pkgdir/usr/bin/arsse"
     cp dist/arch/nginx-arsse-fcgi.conf "$pkgdir/etc/webapps/arsse/nginx/arsse-fcgi.conf"
     cp dist/arch/apache-arsse-fcgi.conf "$pkgdir/etc/webapps/arsse/apache/arsse-fcgi.conf"
+    cp dist/arch/*.service "$pkgdir/usr/lib/systemd/system"
+    cp dist/arch/systemd-environment "$pkgdir/etc/webapps/arsse/systemd-environment"
 }

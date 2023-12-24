@@ -35,6 +35,23 @@ LoadModule proxy_fcgi_module modules/mod_proxy_fcgi.so
 
 No additional set-up is required for Nginx.
 
+# Using an alternative PHP interpreter
+
+The above instructions assume you will be using the `php` package as your PHP interpreter. If you wish to use `php-legacy` (which is always one feature version behind, for compatibility) a few configuration tweaks are required. The follwoing commands are a short summary:
+
+```sh
+# Enable the necessary PHP extensions; curl is optional but recommended; pdo_sqlite may be used instead of sqlite3, but this is not recommended
+sudo sed -i -e 's/^;\(extension=\(curl\|iconv\|intl\|sqlite3\)\)$/\1/' /etc/php-legacy/php.ini
+# Modify the system service's environment
+sudo sed -i -e 's/^ARSSE_PHP=.*/ARSSE_PHP=\/usr\/bin\/php-legacy/' /etc/webapps/arsse/systemd-environment
+# Modify the PAM environment for the administrative CLI
+echo "export ARSSE_PHP=/usr/bin/php-legacy" | sudo tee -a /etc/profile.d/arsse >/dev/null
+# Modify the Nginx and Apache HTTPD configurations
+sudo sed -i -se 's/\/run\/php-fpm\//\/run\/php-fpm-legacy\//' /etc/webapps/arsse/apache/arsse-fcgi.conf /etc/webapps/arsse/nginx/arsse-fcgi.conf
+```
+
+The above procedure can also be applied to use another PHP version from AUR if so desired.
+
 # Next steps
 
 If using a database other than SQLite, you will likely want to [set it up](/en/Getting_Started/Database_Setup) before doing anything else.
