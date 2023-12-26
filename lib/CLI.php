@@ -27,56 +27,56 @@ class CLI {
             Option::create(null, "version"),
         ]);
         $cli->addCommands([
-            Command::create("user list", [$this, "userList"]),
-            Command::create("user add", [$this, "userAdd"])
+            Command::create("user list", null),
+            Command::create("user add", null)
                 ->addOperand(Operand::create("username", operand::REQUIRED))
                 ->addOperand(Operand::create("password", Operand::OPTIONAL))
                 ->addOption(Option::create(null, "admin")),
-            Command::create("user remove", [$this, "userRemove"])
+            Command::create("user remove", null)
                 ->addOperand(Operand::create("username", Operand::REQUIRED)),
-            Command::create("user show", [$this, "userShow"])
+            Command::create("user show", null)
                 ->addOperand(Operand::create("username", Operand::REQUIRED)),
-            Command::create("user set", [$this, "userSet"])
+            Command::create("user set", null)
                 ->addOperand(Operand::create("username", Operand::REQUIRED))
                 ->addOperand(Operand::create("property", Operand::REQUIRED))
                 ->addOperand(Operand::create("value", Operand::REQUIRED)),
-            Command::create("user unset", [$this, "userUnset"])
+            Command::create("user unset", null)
                 ->addOperand(Operand::create("username", Operand::REQUIRED))
                 ->addOperand(Operand::create("property", Operand::REQUIRED)),
-            Command::create("user set-pass", [$this, "userSetPass"])
+            Command::create("user set-pass", null)
                 ->addOperand(Operand::create("username", operand::REQUIRED))
                 ->addOperand(Operand::create("password", Operand::OPTIONAL))
                 ->addOption(Option::create(null, "fever")),
-            Command::create("user unset-pass", [$this, "userUnsetPass"])
+            Command::create("user unset-pass", null)
                 ->addOperand(Operand::create("username", operand::REQUIRED))
                 ->addOption(Option::create(null, "fever")),
-            Command::create("user auth", [$this, "userAuth"])
+            Command::create("user auth", null)
                 ->addOperand(Operand::create("username", operand::REQUIRED))
                 ->addOperand(Operand::create("password", Operand::REQUIRED))
                 ->addOption(Option::create(null, "fever")),
-            Command::create("token list", [$this, "tokenList"])
+            Command::create("token list", null)
                 ->addOperand(Operand::create("username", Operand::REQUIRED)),
-            Command::create("token create", [$this, "tokenCreate"])
+            Command::create("token create", null)
                 ->addOperand(Operand::create("username", Operand::REQUIRED))
                 ->addOperand(Operand::create("label", Operand::OPTIONAL)),
-            Command::create("token revoke", [$this, "tokenRevoke"])
+            Command::create("token revoke", null)
                 ->addOperand(Operand::create("username", Operand::REQUIRED))
                 ->addOperand(Operand::create("token", Operand::OPTIONAL)),
-            Command::create("import", [$this, "import"])
+            Command::create("import", null)
                 ->addOperand(Operand::create("username", operand::REQUIRED))
                 ->addOperand(Operand::create("file", Operand::OPTIONAL))
                 ->addOption(Option::create("f", "flat"))
                 ->addOption(Option::create("r", "replace")),
-            Command::create("export", [$this, "export"])
+            Command::create("export", null)
                 ->addOperand(Operand::create("username", operand::REQUIRED))
                 ->addOperand(Operand::create("file", Operand::OPTIONAL))
                 ->addOption(Option::create("f", "flat")),
-            Command::create("daemon", [$this, "daemon"])
+            Command::create("daemon", null)
                 ->addOption(Option::create(null, "fork", GetOpt::REQUIRED_ARGUMENT)->setArgumentName("pidfile")),
-            Command::create("feed refresh-all", [$this, "feedRefreshAll"]),
-            Command::create("feed refresh", [$this, "feedRefresh"])
+            Command::create("feed refresh-all", null),
+            Command::create("feed refresh", null)
                 ->addOperand(Operand::create("n", Operand::REQUIRED)),
-            Command::create("conf save-defaults", [$this, "confSaveDefaults"])
+            Command::create("conf save-defaults", null)
                 ->addOperand(Operand::create("file", Operand::OPTIONAL)),
         ]);
         $this->cli = $cli;
