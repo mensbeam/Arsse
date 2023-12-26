@@ -22,16 +22,6 @@ class CLI {
         return str_replace("arsse.php", $prog, self::USAGE);
     }
 
-    protected function command($args): string {
-        $out = [];
-        foreach ($args as $k => $v) {
-            if (preg_match("/^[a-z]/", $k) && $v === true) {
-                $out[] = $k;
-            }
-        }
-        return implode(" ", $out);
-    }
-
     /** @codeCoverageIgnore */
     protected function loadConf(): bool {
         Arsse::bootstrap();
@@ -45,13 +35,12 @@ class CLI {
     }
 
     public function dispatch(array $argv = null): int {
-        $cli = new GetOpt("", []);
+        $cli = new GetOpt([], []);
         $cli->addOptions([
             Option::create("h", "help"),
             Option::create(null, "version"),
         ]);
         $cli->addCommands([
-            Command::create("user", [$this, "userList"]),
             Command::create("user list", [$this, "userList"]),
             Command::create("user add", [$this, "userAdd"])
                 ->addOperand(Operand::create("username", operand::REQUIRED))
@@ -105,11 +94,11 @@ class CLI {
                 ->addOperand(Operand::create("file", Operand::OPTIONAL)),
         ]);
         try {
-            $cli
+            $cli->process(array_slice($argv, 1));
             // ensure the require extensions are loaded
             Arsse::checkExtensions(...Arsse::REQUIRED_EXTENSIONS);
-            // reconstitute multi-token commands (e.g. user add) into a single string
-            $cmd = $this->command($args);
+            $cmd = $cli->getCommand();
+            $cmd = $cmd ? $cmd->getName() : "";
             if ($cmd && !in_array($cmd, ["", "conf save-defaults", "daemon"])) {
                 // only certain commands don't require configuration to be loaded; daemon loads configuration after forking (if applicable)
                 $this->loadConf();
@@ -117,81 +106,79 @@ class CLI {
             // run the requested command
             switch ($cmd) {
                 case "":
-                    if ($args['--version']) {
+                    if ($cli->getOption("version")) {
                         echo Arsse::VERSION.\PHP_EOL;
-                    } elseif ($args['--help'] || $args['-h']) {
-                        echo $this->usage($argv0).\PHP_EOL;
+                    } else {
+                        echo $cli->getHelpText();
                     }
                     return 0;
                 case "daemon":
-                    if ($args['--fork'] !== null) {
-                        return $this->serviceFork($args['--fork']);
+                    if (($fork = $cli->getOption("fork")) !== null) {
+                        return $this->serviceFork($fork);
                     } else {
                         $this->loadConf();
                         Arsse::$obj->get(Service::class)->watch(true);
                     }
                     return 0;
                 case "feed refresh":
-                    return (int) !Arsse::$db->feedUpdate((int) $args['<n>'], true);
+                    return (int) !Arsse::$db->feedUpdate((int) $cli->getOperand("n"), true);
                 case "feed refresh-all":
                     Arsse::$obj->get(Service::class)->watch(false);
                     return 0;
                 case "conf save-defaults":
-                    $file = $this->resolveFile($args['<file>'], "w");
+                    $file = $this->resolveFile($cli->getOperand("file"), "w");
                     return (int) !Arsse::$obj->get(Conf::class)->exportFile($file, true);
                 case "export":
-                    $u = $args['<username>'];
-                    $file = $this->resolveFile($args['<file>'], "w");
-                    return (int) !Arsse::$obj->get(OPML::class)->exportFile($file, $u, ($args['--flat'] || $args['-f']));
+                    $u = $cli->getOperand("username");
+                    $file = $this->resolveFile($cli->getOperand("file"), "w");
+                    return (int) !Arsse::$obj->get(OPML::class)->exportFile($file, $u, (bool) $cli->getOption("flat"));
                 case "import":
-                    $u = $args['<username>'];
-                    $file = $this->resolveFile($args['<file>'], "r");
-                    return (int) !Arsse::$obj->get(OPML::class)->importFile($file, $u, ($args['--flat'] || $args['-f']), ($args['--replace'] || $args['-r']));
+                    $u = $cli->getOperand("username");
+                    $file = $this->resolveFile($cli->getOperand("file"), "r");
+                    return (int) !Arsse::$obj->get(OPML::class)->importFile($file, $u, (bool) $cli->getOption("flat"), (bool) $cli->getOption("replace"));
                 case "token list":
-                case "list token": // command reconstruction yields this order for "token list" command
-                    return $this->tokenList($args['<username>']);
+                    $u = $cli->getOperand("username");
                 case "token create":
-                    echo Arsse::$obj->get(Miniflux::class)->tokenGenerate($args['<username>'], $args['<label>']).\PHP_EOL;
+                    echo Arsse::$obj->get(Miniflux::class)->tokenGenerate($cli->getOperand("username"), $cli->getOperand("label")).\PHP_EOL;
                     return 0;
                 case "token revoke":
-                    Arsse::$db->tokenRevoke($args['<username>'], "miniflux.login", $args['<token>']);
+                    Arsse::$db->tokenRevoke($cli->getOperand("username"), "miniflux.login", $cli->getOperand("token"));
                     return 0;
                 case "user add":
-                    $out = $this->userAddOrSetPassword("add", $args["<username>"], $args["<password>"]);
-                    if ($args['--admin']) {
-                        Arsse::$user->propertiesSet($args["<username>"], ['admin' => true]);
+                    $out = $this->userAddOrSetPassword("add", $cli->getOperand("username"), $cli->getOperand("password"));
+                    if ($cli->getOption("admin")) {
+                        Arsse::$user->propertiesSet($cli->getOperand("username"), ['admin' => true]);
                     }
                     return $out;
                 case "user set-pass":
-                    if ($args['--fever']) {
-                        $passwd = Arsse::$obj->get(Fever::class)->register($args["<username>"], $args["<password>"]);
-                        if (is_null($args["<password>"])) {
+                    if ($cli->getOption("fever")) {
+                        $passwd = Arsse::$obj->get(Fever::class)->register($cli->getOperand("username"), $cli->getOperand("password"));
+                        if ($cli->getOperand("password") === null) {
                             echo $passwd.\PHP_EOL;
                         }
                         return 0;
                     } else {
-                        return $this->userAddOrSetPassword("passwordSet", $args["<username>"], $args["<password>"]);
+                        return $this->userAddOrSetPassword("passwordSet", $cli->getOperand("username"), $cli->getOperand("password"));
                     }
                     // no break
                 case "user unset-pass":
-                    if ($args['--fever']) {
-                        Arsse::$obj->get(Fever::class)->unregister($args["<username>"]);
+                    if ($cli->getOption("fever")) {
+                        Arsse::$obj->get(Fever::class)->unregister($cli->getOperand("username"));
                     } else {
-                        Arsse::$user->passwordUnset($args["<username>"]);
+                        Arsse::$user->passwordUnset($cli->getOperand("username"));
                     }
                     return 0;
                 case "user remove":
-                    return (int) !Arsse::$user->remove($args["<username>"]);
+                    return (int) !Arsse::$user->remove($cli->getOperand("username"));
                 case "user show":
-                    return $this->userShowProperties($args["<username>"]);
+                    return $this->userShowProperties($cli->getOperand("username"));
                 case "user set":
-                    return (int) !Arsse::$user->propertiesSet($args["<username>"], [$args["<property>"] => $args["<value>"]]);
+                    return (int) !Arsse::$user->propertiesSet($cli->getOperand("username"), [$cli->getOperand("property") => $cli->getOperand("value")]);
                 case "user unset":
-                    return (int) !Arsse::$user->propertiesSet($args["<username>"], [$args["<property>"] => null]);
+                    return (int) !Arsse::$user->propertiesSet($cli->getOperand("username"), [$cli->getOperand("property") => null]);
                 case "user auth":
-                    return $this->userAuthenticate($args["<username>"], $args["<password>"], $args["--fever"]);
+                    return $this->userAuthenticate($cli->getOperand("username"), $cli->getOperand("password"), (bool) $cli->getOption("fever"));
                 case "user list":
-                case "user":
                     return $this->userList();
                 default:
                     throw new Exception("constantUnknown", $cmd); // @codeCoverageIgnore

@@ -29,7 +29,8 @@
         "jkingweb/druuid": "3.*",
         "guzzlehttp/psr7": "2.*",
         "laminas/laminas-httphandlerrunner": "2.*",
-        "ulrichsg/getopt-php": "^4.0"
+        "ulrichsg/getopt-php": "^4.0",
+        "symfony/polyfill-mbstring": "*"
     },
     "require-dev": {
         "bamarni/composer-bin-plugin": "*"
