@@ -15,26 +15,12 @@ use GetOpt\GetOpt;
 use GetOpt\Command;
 use GetOpt\Operand;
 use GetOpt\Option;
+use GetOpt\ArgumentException;
 
 class CLI {
-    protected function usage($prog): string {
-        $prog = basename($prog);
-        return str_replace("arsse.php", $prog, self::USAGE);
-    }
+    protected $cli;
 
-    /** @codeCoverageIgnore */
-    protected function loadConf(): bool {
-        Arsse::bootstrap();
-        return true;
-    }
-
-    protected function resolveFile($file, string $mode): string {
-        // TODO: checking read/write permissions on the provided path may be useful
-        $stdinOrStdout = in_array($mode, ["r", "r+"]) ? "php://input" : "php://output";
-        return ($file === "-" ? null : $file) ?? $stdinOrStdout;
-    }
-
-    public function dispatch(array $argv = null): int {
+    public function __construct() {
         $cli = new GetOpt([], []);
         $cli->addOptions([
             Option::create("h", "help"),
@@ -93,8 +79,75 @@ class CLI {
             Command::create("conf save-defaults", [$this, "confSaveDefaults"])
                 ->addOperand(Operand::create("file", Operand::OPTIONAL)),
         ]);
+        $this->cli = $cli;
+    }
+
+    public function usage(string $prog, bool $help = false): string {
+        $cli = $this->cli;
+        $out = "Usage:\n";
+        foreach ($cli->getCommands() as $cmd) {
+            $out .= "   $prog ".$cmd->getName();
+            foreach ($cmd->getOperands() as $op) {
+                $rep = "<".$op->getName().">";
+                if (!$op->isRequired()) {
+                    $rep = "[$rep]";
+                }
+                $out .= " $rep";
+            }
+            foreach ($cmd->getOptions() as $op) {
+                $arg = $op->getArgument();
+                $rep = "--".$op->getName()."";
+                if ($op->getMode() === GetOpt::REQUIRED_ARGUMENT) {
+                    $rep = "$rep=".$arg->getName();
+                }
+                if ($short = $op->getShort()) {
+                    $srep = "-$short";
+                    $rep = "$srep|$rep";
+                }
+                $out .= " [$rep]";
+            }
+            $out .= "\n";
+        }
+        foreach ($cli->getOptionObjects() as $op) {
+            $rep = "--".$op->getName()."";
+            if ($short = $op->getShort()) {
+                $srep = "-$short";
+                $rep = "$srep|$rep";
+            }
+            $out .= "   $prog $rep\n";
+        }
+        if ($help) {
+            $out .= <<<HELP_TEXT
+\nThe Arsse command-line interface can be used to perform various administrative
+tasks such as starting the newsfeed refresh service, managing users, and 
+importing or exporting data.
+
+See the manual page for more details:
+
+    man arsse\n
+HELP_TEXT;
+        }
+        return $out;
+    }
+
+    /** @codeCoverageIgnore */
+    protected function loadConf(): bool {
+        Arsse::bootstrap();
+        return true;
+    }
+
+    protected function resolveFile($file, string $mode): string {
+        // TODO: checking read/write permissions on the provided path may be useful
+        $stdinOrStdout = in_array($mode, ["r", "r+"]) ? "php://input" : "php://output";
+        return ($file === "-" ? null : $file) ?? $stdinOrStdout;
+    }
+
+    public function dispatch(array $argv = null): int {
+        $cli = $this->cli;
+        $argv = $argv ?? $_SERVER['argv'];
+        $prog = array_shift($argv);
         try {
-            $cli->process(array_slice($argv, 1));
+            $cli->process($argv);
             // ensure the require extensions are loaded
             Arsse::checkExtensions(...Arsse::REQUIRED_EXTENSIONS);
             $cmd = $cli->getCommand();
@@ -109,7 +162,7 @@ class CLI {
                     if ($cli->getOption("version")) {
                         echo Arsse::VERSION.\PHP_EOL;
                     } else {
-                        echo $cli->getHelpText();
+                        echo $this->usage($prog, (bool) $cli->getOption("help"));
                     }
                     return 0;
                 case "daemon":
@@ -137,7 +190,7 @@ class CLI {
                     $file = $this->resolveFile($cli->getOperand("file"), "r");
                     return (int) !Arsse::$obj->get(OPML::class)->importFile($file, $u, (bool) $cli->getOption("flat"), (bool) $cli->getOption("replace"));
                 case "token list":
-                    $u = $cli->getOperand("username");
+                    return $this->tokenList($cli->getOperand("username"));
                 case "token create":
                     echo Arsse::$obj->get(Miniflux::class)->tokenGenerate($cli->getOperand("username"), $cli->getOperand("label")).\PHP_EOL;
                     return 0;
@@ -183,7 +236,12 @@ class CLI {
                 default:
                     throw new Exception("constantUnknown", $cmd); // @codeCoverageIgnore
             }
+        } catch (ArgumentException $e) {
+            // invalid command was entered
+            $this->logError(trim($this->usage($prog)));
+            return 1;
         } catch (AbstractException $e) {
+            // some other error
             $this->logError($e->getMessage());
             return $e->getCode();
         }

@@ -52,7 +52,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideHelpText */
     public function testPrintHelp(string $cmd, string $name): void {
-        $this->assertConsole($cmd, 0, str_replace("arsse.php", $name, CLI::USAGE));
+        $this->assertConsole($cmd, 0, trim($this->cli->get()->usage($name, true)));
         $this->cli->loadConf->never()->called();
     }
 
@@ -169,9 +169,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         $str = implode(PHP_EOL, $list);
         return [
             ["arsse.php user list", $list, 0, $str],
-            ["arsse.php user",      $list, 0, $str],
             ["arsse.php user list", [],    0, ""],
-            ["arsse.php user",      [],    0, ""],
         ];
     }
 
