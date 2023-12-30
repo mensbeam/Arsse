@@ -1,0 +1,342 @@
+.Dd October 27, 2023
+.Dt ARSSE 1
+.Os "The Arsse" 0.10.4
+.
+.
+.Sh NAME
+.Nm arsse
+.Nd manage an instance of The Advanced RSS Environment (The Arsse)
+.
+.
+.Sh SYNOPSIS
+.Nm "arsse user"
+.Op Nm list
+.Nm "arsse user add"
+.Ar username
+.Op Ar password
+.Op Fl Fl admin
+.Nm "arsse user remove"
+.Ar username
+.Nm "arsse user show"
+.Ar username
+.Nm "arsse user set"
+.Ar username
+.Ar property
+.Ar value
+.Nm "arsse user unset"
+.Ar username
+.Ar property
+.Nm "arsse user set\-pass"
+.Ar username
+.Op Ar password
+.Op Fl Fl fever
+.Nm "arsse user unset\-pass"
+.Ar username
+.Op Fl Fl fever
+.Nm "arsse user auth"
+.Ar username
+.Op Ar password
+.Op Fl Fl fever
+.Nm "arsse token list"
+.Ar username
+.Nm "arsse token create"
+.Ar username
+.Op Ar label
+.Nm "arsse token revoke"
+.Ar username
+.Op Ar token
+.Nm "arsse import"
+.Ar username
+.Op Ar file
+.Op Fl f | Fl Fl flat
+.Op Fl r | Fl Fl replace
+.Nm "arsse export"
+.Ar username
+.Op Ar file
+.Op Fl f | Fl Fl flat
+.Nm "arsse daemon"
+.Op Fl Fl fork Ns = Ns Ar pidfile
+.Nm "arsse feed refresh\-all"
+.Nm "arsse feed refresh"
+.Ar n
+.Nm "arsse conf save\-defaults"
+.Nm "arsse"
+.Fl Fl version | Fl h | Fl Fl help
+.
+.
+.Sh DESCRIPTION
+.Nm
+allows a sufficiently privileged user to perform various administrative operations related to The Arsse, including:
+.Pp
+.Bl -bullet -compact
+.It
+Adding and removing users and managing their metadata
+.It
+Managing passwords and authentication tokens
+.It
+Importing and exporting OPML newsfeed-lists
+.El
+.Pp
+These are documented in the next section
+.Sx COMMANDS Ns No .
+Further, seldom-used commands are documented in the subsequent section
+.Sx ADDITIONAL COMMANDS Ns No .
+.
+.
+.Sh COMMANDS
+.
+.Ss Managing users and metadata
+.Bl -tag
+.It Nm "user" Op Nm list
+Displays a simple list of user names with one entry per line
+.It Nm "user add" Ar username Oo Ar password Oc Oo Fl Fl admin Oc
+Adds a new user to the database with the specified username and password.
+If
+.Ar password
+is omitted a random password will be generated and printed.
+.Pp
+The 
+.Fl Fl admin
+flag may be used to mark the user as an administrator.
+This has no meaning within the context of The Arsse as a whole,
+but it is used control access to certain features in the Miniflux and Nextcloud News protocols. 
+.It Nm "user remove" Ar username
+Immediately removes a user from the database.
+All associated data (folders, subscriptions, etc.) are also removed.
+.It Nm "user show" Ar username
+Displays a table of metadata properties and their assigned values for 
+.Ar username Ns No .
+These properties are primarily used by the Miniflux protocol.
+Consult the section
+.Sx USER METADATA
+for details.
+.It Nm "user set" Ar username Ar property Ar value
+Sets a metadata property for a user.
+These properties are primarily used by the Miniflux protocol.
+Consult the section
+.Sx USER METADATA
+for details.
+.It Nm "user unset" Ar username Ar property
+Clears a metadata property for a user.
+The property is thereafter set to its default value, which is protocol-dependent.
+.El
+.
+.Ss Managing passwords and authentication tokens
+.Bl -tag
+.It Nm "user set\-pass" Ar username Oo Ar password Oc Oo Fl Fl fever Oc
+Changes a user's password to the specified value.
+If no password is specified, a random password will be generated and printed.
+.Pp
+The 
+.Fl Fl fever
+option sets a user's Fever protocol password instead of their general password.
+As the Fever protocol requires that passwords be stored insecurely,
+users do not have Fever passwords by default, and logging in to the Fever protocol is disabled until a suitable password is set.
+It is highly recommended that a user's Fever password be different from their general password.
+.It Nm "user unset\-pass" Ar username Oo Fl Fl fever Oc
+Unsets a user's password, effectively disabling their account.
+As with password setting, the
+.Fl Fl fever
+option may be used to operate on a user's Fever password instead of their general password.
+.It Nm "user auth" Ar username Ar password Oo Fl Fl fever Oc
+Tests logging a user in.
+This only checks that the user's password is correctly recognized;
+it has no side effects.
+.Pp
+The 
+.Fl Fl fever
+option may be used to test the user's Fever protocol password, if any.
+.It Nm "token list" Ar username
+Displays a user's authentication tokens in a simple tabular format.
+These tokens act as an alternative means of authentication for the Miniflux protocol and may be required by some clients.
+They do not expire.
+.It Nm "token create" Ar username Oo Ar label Oc
+Creates a new random login token and prints it.
+These tokens act as an alternative means of authentication for the Miniflux protocol and may be required by some clients.
+An optional 
+.Ar label
+may be specified to give the token a meaningful name.
+.It Nm "token revoke" Ar username Oo Ar token Oc
+Deletes the specified
+.Ar token
+from the database.
+The token itself must be supplied, not its label.
+If it is omitted all tokens for
+.Ar username
+are revoked.
+.El
+.
+.Ss Importing and exporting data
+.Bl -tag
+.It Nm "import" Ar username Oo Ar file Oc Oo Fl r | Fl Fl replace Oc Oo Fl f | Fl Fl flat Oc
+Imports the newsfeeds, folders, and tags found in the OPML formatted
+.Ar file
+into the account of the specified user.
+If no file is specified, data is instead read from standard input.
+Import operations are atomic:
+if any of the newsfeeds listed in the input cannot be retrieved, the entire import operation will fail.
+.Pp
+The
+.Fl Fl replace
+(or
+.Fl r Ns
+) option interprets the OPML file as the list of 
+.Em all
+desired newsfeeds, folders and tags, performing any deletion or moving of existing entries which do not appear in the flle.
+If this option is not specified, the file is assumed to list desired
+.Em additions only Ns No .
+.Pp
+The
+.Fl Fl flat
+(or
+.Fl f Ns
+) option can be used to ignore any folder structures in the file, importing any newsfeeds directly into the root folder.
+Combining this with the
+.Fl Fl replace
+option is possible.
+.It Nm "export" Ar username Oo Ar file Oc Oo Fl f | Fl Fl flat Oc
+Exports a user's newsfeeds, folders, and tags to the OPML file specified by
+.Ar file Ns
+, or standard output if no file is specified.
+Note that due to a limitation of the OPML format, any commas present in tag names will not be retained in the export.
+.Pp
+The 
+.Fl Fl flat
+(or 
+.Fl f Ns
+) option can be used to omit folders from the export.
+Some OPML implementations may not support folders, or arbitrary nesting;
+this option may be used when planning to import into such software.
+.El
+.
+.
+.Sh ADDITIONAL COMMANDS
+.Bl -tag
+.It Nm "daemon" Oo Fl Fl fork Ns = Ns Ar pidfile Oc
+Starts the newsfeed fetching service.
+Normally this command is only invoked by systemd.
+.Pp
+The 
+.Fl Fl fork
+option executes an "old-style" fork-then-terminate daemon rather than a "new-style" non-terminating daemon.
+This option should only be employed if using a System V-style init daemon on POSIX systems;
+normally systemd is used. When using this option the daemon will write its process identifier to
+.Ar pidfile
+after forking.
+.It Nm "feed refresh\-all"
+Performs a one-time fetch of all stale feeds.
+This command can be used as the basis of a
+.Nm cron
+job to keep newsfeeds up-to-date.
+.It Nm "feed refresh" Ar n
+Performs a one-time fetch of the feed (not subscription) identified by integer
+.Ar n Ns No .
+This is used internally by the fetching service and should not normally be needed.
+.It Nm "conf save\-defaults" Oo Ar file Oc
+Prints default configuration parameters to standard output, or to
+.Ar file
+if specified.
+Each parameter is annotated with a short description of its purpose and usage.
+.El
+.
+.
+.Sh USER METADATA
+User metadata are primarily used by the Miniflux protocol,
+and most properties have identical or similar names to those used by Miniflux.
+Properties may also affect other protocols, or conversely may have no effect even when using the Miniflux protocol;
+this is noted below when appropriate.
+.Pp
+Booleans accept any of the values
+.Ar true Ns No / Ns Ar false Ns No ,
+.Ar 1 Ns No / Ns Ar 0 Ns No ,
+.Ar yes Ns No / Ns Ar no Ns No ,
+or
+.Ar on Ns No / Ns Ar off Ns No .
+.Pp
+The following metadata properties exist for each user:
+.Pp
+.Bl -tag
+.It Cm num No (integer)
+The numeric identifier of the user. 
+This is assigned at user creation and is read-only.
+.It Cm admin No (boolean)
+Boolean. Whether the user is an administrator.
+Administrators may manage other users via the Miniflux protocol,
+and also may trigger feed updates manually via the Nextcloud News protocol.
+.It Cm lang No (string)
+The preferred language of the user as a BCP 47 language tag, for example "en-ca".
+Note that since The Arsse currently only includes English text it is not used by The Arsse itself,
+but clients may use this metadatum in protocols which expose it.
+.It Cm tz No (string)
+The time zone of the user as a Time Zone Database identifier, for example "America/Los_Angeles".
+.It Cm root_folder_name No (string)
+The name of the root folder, in protocols which allow it to be renamed.
+.It Cm sort_asc No (boolean)
+Whether the user prefers ascending sort order for articles.
+Descending order is usually the default,
+but explicitly setting this property false will also make a preference for descending order explicit.
+.It Cm theme No (string)
+The user's preferred user-interface theme.
+This is not used by The Arsse itself, but clients may use this metadatum in protocols which expose it.
+.It Cm page_size No (integer)
+The user's preferred page size when listing articles.
+This is not used by The Arsse itself, but clients may use this metadatum in protocols which expose it.
+.It Cm shortcuts No (boolean)
+Whether to enable keyboard shortcuts.
+This is not used by The Arsse itself, but clients may use this metadatum in protocols which expose it.
+.It Cm gestures No (boolean)
+Whether to enable touch gestures.
+This is not used by The Arsse itself, but clients may use this metadatum in protocols which expose it.
+.It Cm reading_time No (boolean)
+Whether to calculate and display the estimated reading time for articles.
+Currently The Arsse does not calculate reading time, so changing this will likely have no effect.
+.It Cm stylesheet No (string)
+A user stylesheet in CSS format.
+This is not used by The Arsse itself, but clients may use this metadatum in protocols which expose it.
+.El
+.
+.
+.Sh EXAMPLES
+.Bl -tag
+.It Add an administrator to the database with an explicit password:
+.Bd -literal
+$ arsse user add \-\-admin alice "Curiouser and curiouser!"
+.Ed
+.It Add a regular user to the database with a random password:
+.Bd -literal
+$ arsse user add "Bob the Builder"
+bLS!$_UUZ!iN2i_!^IC6
+.Ed
+.It Make Bob the Builder an administrator:
+.Bd -literal
+$ arsse user set "Bob the Builder" admin true
+.Ed
+.It Disable Alice's account by clearing her password:
+.Bd -literal
+$ arsse user unset\-pass alice
+.Ed
+.It Move all of Foobar's newsfeeds to the root folder:
+.Bd -literal
+$ arsse export foobar \-f | arsse import \-r foobar
+.Ed
+.It Fail to log in as Alice:
+.Bd -literal
+$ arsse user auth alice "Oh, dear!"
+Authentication failed
+$ echo $?
+1
+.Ed
+.El
+.
+.
+.Sh REPORTING BUGS
+Any bugs found in The Arsse may be reported on the Web via the
+.Lk https://code.mensbeam.com/MensBeam/arsse "MensBeam code repository"
+or may be directed to the principal authors by e-mail:
+.Pp
+.Bl -bullet -compact
+.It 
+.Lk https://jkingweb.ca/ "J. King"
+.It 
+.Lk https://dustinwilson.com/ "Dustin Wilson"
+.El

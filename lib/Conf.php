@@ -5,6 +5,7 @@
 
 /** Conf class */
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse;
 
 use AllowDynamicProperties;
@@ -15,7 +16,7 @@ use JKingWeb\Arsse\Misc\ValueInfo as Value;
  * The Conf class serves both as a means of importing and querying configuration information, as well as a source for default parameters when a configuration file does not specify a value.
  * All public properties are configuration parameters that may be set by the server administrator. */
 #[AllowDynamicProperties]
- class Conf {
+class Conf {
     /** @var string Default language to use for logging and errors */
     public $lang = "en";
 

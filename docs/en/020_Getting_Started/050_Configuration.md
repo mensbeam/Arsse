@@ -363,7 +363,7 @@ The default value is equal to two megabytes.
 |---------|---------|
 | boolean | `true`  |
 
-Whether to allow the possibility of fetching full article contents from an article's source, if a newsfeed only provides excerpts. Whether fetching will actually happen is governed by a per-newsfeed toggle (defaulting to `false`) which currently can only be changed by manually editing the database.
+Whether to allow the possibility of fetching full article contents from an article's source, if a newsfeed only provides excerpts. Whether fetching will actually happen is governed by a per-newsfeed toggle (defaulting to `false`) which currently can only be changed via the Miniflux protocol.
 
 ### fetchUserAgentString
 

@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse;
 
 use JKingWeb\Arsse\Feed\Item;
@@ -16,7 +17,7 @@ use PicoFeed\Reader\Reader;
 use PicoFeed\Reader\Favicon;
 use PicoFeed\Scraper\Scraper;
 
-class Feed {    
+class Feed {
     public $title;
     public $siteUrl;
     public $iconUrl;

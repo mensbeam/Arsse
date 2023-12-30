@@ -1,9 +1,10 @@
-<?php
+ <?php
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse;
 
 const BASE = __DIR__.DIRECTORY_SEPARATOR;
@@ -13,7 +14,10 @@ $paths = [
     BASE."arsse.php",
     BASE."RoboFile.php",
     BASE."lib",
-    BASE."tests",
+    BASE."tests/cases",
+    BASE."tests/lib",
+    BASE."tests/bootstrap.php",
+    BASE."tests/server.php",
 ];
 $rules = [
     // PSR standard to apply
@@ -37,6 +41,7 @@ $rules = [
     'no_blank_lines_after_phpdoc'               => true,
     'no_empty_comment'                          => true,
     'no_empty_phpdoc'                           => true,
+    'no_empty_statement'                        => true,
     'no_extra_blank_lines'                      => true, // this could probably use more configuration
     'no_mixed_echo_print'                       => ['use' => "echo"],
     'no_short_bool_cast'                        => true,
@@ -50,11 +55,14 @@ $rules = [
     'pow_to_exponentiation'                     => true,
     'set_type_to_cast'                          => true,
     'standardize_not_equals'                    => true,
-    'trailing_comma_in_multiline'               => true,
+    'trailing_comma_in_multiline'               => ['elements' => ["arrays"]],
     'unary_operator_spaces'                     => true,
     'yoda_style'                                => false,
     // house exceptions to PSR rules
-    'braces'                                    => ['position_after_functions_and_oop_constructs' => "same"],
+    'curly_braces_position'                     => [
+        'functions_opening_brace' => "same_line",
+        'classes_opening_brace'   => "same_line",
+    ],
     'function_declaration'                      => ['closure_function_spacing' => "none"],
     'new_with_braces'                           => [
         'anonymous_class' => false,

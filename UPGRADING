@@ -11,7 +11,7 @@ usually prudent:
   `composer install -o --no-dev`
 
 
-Upgrading from 0.10.2 to 0.10.3
+Upgrading from 0.10.4 to 0.10.?
 =============================
 
 - PHP 7.3 is now required

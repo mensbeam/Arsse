@@ -2,13 +2,13 @@
 base=`dirname "$0"`
 roboCommand="$1"
 if [ $# -eq 0 ]; then
-    "$base/vendor/bin/robo"
+    "$base/vendor-bin/robo/vendor/bin/robo"
 else
     shift
     ulimit -n 2048
     if [ "$1" = "clean" ]; then
-        "$base/vendor/bin/robo" "$roboCommand" "$@"
+        "$base/vendor-bin/robo/vendor/bin/robo" "$roboCommand" "$@"
     else
-        "$base/vendor/bin/robo" "$roboCommand" -- "$@"
+        "$base/vendor-bin/robo/vendor/bin/robo" "$roboCommand" -- "$@"
     fi
 fi

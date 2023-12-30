@@ -4,10 +4,11 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\Db\PostgreSQL;
 
 class PDOResult extends \JKingWeb\Arsse\Db\PDOResult {
-    // This method exists to transparent handle byte-array results
+    // This method exists to transparently handle byte-array results
 
     public function valid() {
         $this->cur = $this->set->fetch(\PDO::FETCH_ASSOC);

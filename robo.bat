@@ -15,7 +15,7 @@ if "%~1" neq "" (
 if defined args set args=%args:~1%
 
 if "%1"=="clean" (
-    call "%base%vendor\bin\robo" "%roboCommand%" %args%
+    call "%base%vendor-bin\robo\vendor\bin\robo" "%roboCommand%" %args%
 ) else (
-    call "%base%vendor\bin\robo" "%roboCommand%" -- %args%
+    call "%base%vendor-bin\robo\vendor\bin\robo" "%roboCommand%" -- %args%
 )

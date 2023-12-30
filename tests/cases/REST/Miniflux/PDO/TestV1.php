@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\REST\Miniflux\PDO;
 
 /** @covers \JKingWeb\Arsse\REST\Miniflux\V1<extended>
