@@ -18,9 +18,9 @@ else
 fi
 
 if [[ "${UID}" -eq 0 ]]; then
-  runuser -u "arsse" -- "$php" /usr/share/webapps/arsse/arsse.php "$@"
+  runuser -u "arsse" -- "$php" /usr/share/webapps/arsse/arsse "$@"
 else
   check_sudo
-  sudo -u "arsse" "$php" /usr/share/webapps/arsse/arsse.php "$@"
+  sudo -u "arsse" "$php" /usr/share/webapps/arsse/arsse "$@"
 fi
 
