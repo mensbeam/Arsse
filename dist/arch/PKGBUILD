@@ -50,10 +50,10 @@ package() {
     # copy files requiring special permissions
     install -Dm640 dist/config.php "$pkgdir/etc/webapps/arsse"
     # patch generic configuration files to use Arch-specific paths and identifiers
-    sed -i -se 's/\/\(etc\|usr\/share\)\/arsse\//\/\1\/webapps\/arsse\//g' "$pkgdir/etc/webapps/arsse/nginx/"* "$pkgdir/etc/webapps/arsse/apache/"* "$pkgdir/usr/lib/tmpfiles.d/arsse.conf" "$pkgdir/usr/lib/systemd/system/"*
+    sed -i -se 's/\/\(etc\|usr\/share\)\/arsse\//\/\1\/webapps\/arsse\//g' "$pkgdir/etc/webapps/arsse/nginx/"* "$pkgdir/etc/webapps/arsse/apache/"* "$pkgdir/usr/lib/tmpfiles.d/arsse.conf"
     sed -i -se 's/\/var\/run\/php\//\/run\/php-fpm\//g' "$pkgdir/etc/webapps/arsse/nginx/"* "$pkgdir/etc/webapps/arsse/apache/"* "$pkgdir/etc/php/php-fpm.d/arsse.conf"
     sed -i -se 's/www-data/http/g' "$pkgdir/etc/php/php-fpm.d/arsse.conf"
-    sed -i -se 's/^WorkingDirectory=.*$/WorkingDirectory=\/usr\/share\/webapps\/arsse/g' -e 's/^ConfigurationDirectory=.*$/ConfigurationDirectory=webapps\/arsse/g' "$pkgdir/usr/lib/systemd/system/arsse-fetch.service"
+    sed -i -se 's/^WorkingDirectory=.*$/WorkingDirectory=\/usr\/share\/webapps\/arsse/g' -e 's/^ConfigurationDirectory=.*$/ConfigurationDirectory=webapps\/arsse/g'
     # make a duplicate PHP-FPM pool for php-legacy
     sed -se 's/php-fpm/php-fpm-legacy/' "$pkgdir/etc/php/php-fpm.d/arsse.conf" > "$pkgdir/etc/php-legacy/php-fpm.d/arsse.conf"
     # copy Arch-specific versions of files
