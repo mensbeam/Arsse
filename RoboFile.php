@@ -189,8 +189,8 @@ class RoboFile extends \Robo\Tasks {
      * of new tooling.
      */
     public function packageGeneric(string $commit = null): Result {
-        if (!$this->toolExists("git", "pandoc")) {
-            throw new \Exception("Git and Pandoc are required in PATH to produce generic release tarballs");
+        if (!$this->toolExists("git")) {
+            throw new \Exception("Git is required in PATH to produce generic release tarballs");
         }
         // establish which commit to package
         [$commit, $version] = $this->commitVersion($commit);
