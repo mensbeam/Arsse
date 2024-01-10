@@ -517,7 +517,7 @@ class RoboFile extends \Robo\Tasks {
             } elseif (in_array("item", $expected) && preg_match('/^- (\w.*)$/D', $l, $m)) {
                 $entry[$section][] = $m[1];
                 $expected = ["item", "continuation", "blank line"];
-            } elseif (in_array("continuation", $expected) && preg_match('/^  (\w.*)$/D', $l, $m)) {
+            } elseif (in_array("continuation", $expected) && preg_match('/^  (\S.*)$/D', $l, $m)) {
                 $last = sizeof($entry[$section]) - 1;
                 $entry[$section][$last] .= "\n".$m[1];
             } else {
