@@ -1,3 +1,9 @@
+Version 0.??.? (2024-??-??)
+===========================
+
+Bug fixes:
+- Do not hang when language files are missing or corrupted
+
 Version 0.10.5 (2024-01-10)
 ===========================
 
