@@ -198,13 +198,17 @@ class Lang {
             // otherwise start with the strings we already have if we're going from e.g. "fr" to "fr_ca"
             $strings[] = $this->strings;
         }
-        // read files in reverse order
-        $files = array_reverse($files);
-        foreach ($files as $file) {
+        $loaded = array_diff($loaded, $files);
+        $toThrow = null;
+        while ($files) {
+            // read files in reverse order
+            $file = array_pop($files);
             if (!file_exists($this->path."$file.php")) {
-                throw new Lang\Exception("fileMissing", $file);
+                $toThrow = ["fileMissing", $file];
+                break;
             } elseif (!is_readable($this->path."$file.php")) {
-                throw new Lang\Exception("fileUnreadable", $file);
+                $toThrow = ["fileUnreadable", $file];
+                break;
             }
             try {
                 // we use output buffering in case the language file is corrupted
@@ -216,16 +220,22 @@ class Lang {
                 ob_end_clean();
             }
             if (!is_array($arr)) {
-                throw new Lang\Exception("fileCorrupt", $file);
+                $toThrow = ["fileCorrupt", $file];
+                break;
             }
             $strings[] = $arr;
+            $loaded[] = $file;
         }
         // apply the results and return
-        $this->strings = call_user_func_array("array_replace_recursive", $strings);
+        $this->strings = array_replace_recursive(...$strings);
         $this->loaded = $loaded;
         $this->locale = $this->wanted;
         $this->synched = true;
         $this->formatter = null;
+        if ($toThrow) {
+            // if not all requested files could be loaded successfully, throw an exception
+            throw new Lang\Exception(...$toThrow);
+        }
         return true;
     }
 }

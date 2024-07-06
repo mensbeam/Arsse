@@ -43,11 +43,8 @@ trait Setup {
             return Glob::glob($this->path."*.php");
         });
         $this->l = $this->l->get();
-        // create a mock Lang object so as not to create a dependency loop
         self::clearData(false);
-        Arsse::$lang = $this->mock(Lang::class);
-        Arsse::$lang->msg->returns("");
-        Arsse::$lang = Arsse::$lang->get();
+        Arsse::$lang = $this->l;
         // call the additional setup method if it exists
         if (method_exists($this, "setUpSeries")) {
             $this->setUpSeries();
