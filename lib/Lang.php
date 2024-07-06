@@ -161,12 +161,12 @@ class Lang {
         if (!$this->requirementsMet) {
             $this->checkRequirements();
         }
+        $this->synched = true;
+        $this->formatter = null;
         // if we've requested no locale (""), just load the fallback strings and return
         if ($this->wanted === "") {
             $this->strings = self::REQUIRED;
             $this->locale = $this->wanted;
-            $this->synched = true;
-            $this->formatter = null;
             return true;
         }
         // decompose the requested locale from specific to general, building a list of files to load
@@ -191,24 +191,18 @@ class Lang {
             $files[] = $file;
         }
         // if we need to load all files, start with the fallback strings
-        $strings = [];
         if ($files === $loaded) {
-            $strings[] = self::REQUIRED;
-        } else {
-            // otherwise start with the strings we already have if we're going from e.g. "fr" to "fr_ca"
-            $strings[] = $this->strings;
+            $this->strings = self::REQUIRED;
+            $this->locale = "";
         }
-        $loaded = array_diff($loaded, $files);
-        $toThrow = null;
+        $this->loaded = array_diff($loaded, $files);
         while ($files) {
-            // read files in reverse order
+            // read files in reverse order, from most general to most specific
             $file = array_pop($files);
             if (!file_exists($this->path."$file.php")) {
-                $toThrow = ["fileMissing", $file];
-                break;
+                throw new Lang\Exception("fileMissing", $file);
             } elseif (!is_readable($this->path."$file.php")) {
-                $toThrow = ["fileUnreadable", $file];
-                break;
+                throw new Lang\Exception("fileUnreadable", $file);
             }
             try {
                 // we use output buffering in case the language file is corrupted
@@ -220,21 +214,11 @@ class Lang {
                 ob_end_clean();
             }
             if (!is_array($arr)) {
-                $toThrow = ["fileCorrupt", $file];
-                break;
+                throw new Lang\Exception("fileCorrupt", $file);
             }
-            $strings[] = $arr;
-            $loaded[] = $file;
-        }
-        // apply the results and return
-        $this->strings = array_replace_recursive(...$strings);
-        $this->loaded = $loaded;
-        $this->locale = $this->wanted;
-        $this->synched = true;
-        $this->formatter = null;
-        if ($toThrow) {
-            // if not all requested files could be loaded successfully, throw an exception
-            throw new Lang\Exception(...$toThrow);
+            $this->strings = array_replace_recursive($this->strings, $arr);
+            $this->loaded[] = $file;
+            $this->locale = $file;
         }
         return true;
     }
