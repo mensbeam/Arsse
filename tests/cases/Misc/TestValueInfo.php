@@ -315,6 +315,9 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
                 $this->assertNan($act, $msg);
             } elseif (is_scalar($exp)) {
                 $this->assertSame($exp, $act, $msg);
+            } elseif ($exp instanceof \DateInterval && $act instanceof \DateInterval) {
+                $format = "\Py\Ym\Md\D\Th\HiMs\S";
+                $this->assertSame($exp->format($format), $act->format($format), $msg);
             } else {
                 $this->assertEquals($exp, $act, $msg);
             }
@@ -532,6 +535,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [$this->i("P2DT1H"),                    [null,true], [true, false], [(48 + 1) * 60 * 60, false], [1.0 * (48 + 1) * 60 * 60, false], ["P2DT1H",              true],  [[$this->i("P2DT1H")],                   false], [$this->i("P2DT1H"), true]],
             [$this->i("PT0H"),                      [null,true], [true, false], [0,                  false], [0.0,                      false], ["PT0S",                true],  [[$this->i("PT0H")],                     false], [$this->i("PT0H"), true]],
             [$dateDiff,                             [null,true], [true, false], [366 * 24 * 60 * 60, false], [1.0 * 366 * 24 * 60 * 60, false], ["P366D",               true],  [[$dateDiff],                            false], [$dateNorm, true]],
+            ["1 year, 2 days",                      [null,true], [true, false], [0,                  false], [0.0,                      false], ["1 year, 2 days",      true],  [["1 year, 2 days"],                     false], [$this->i("P1Y2D"), false]],
             ["P1Y2D",                               [null,true], [true, false], [0,                  false], [0.0,                      false], ["P1Y2D",               true],  [["P1Y2D"],                              false], [$this->i("P1Y2D"), true]],
         ] as $set) {
             // shift the input value off the set
