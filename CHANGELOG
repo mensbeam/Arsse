@@ -1,8 +1,16 @@
-Version 0.??.? (????-??-??)
+Version 0.??.? (2024-??-??)
+===========================
+
+Bug fixes:
+- Do not hang when language files are missing or corrupted
+
+Version 0.10.5 (2024-01-10)
 ===========================
 
 Changes:
 - Require PHP 7.3
+- Adapt the Arch package to make using alternative PHP interpreters easier
+  (see manual for details)
 - Multiple editorial and stylistic changes to the UNIX manual page
 
 Version 0.10.4 (2023-01-24)
@@ -79,7 +87,7 @@ Bug fixes:
 - Further relax Fever HTTP correctness, to fix more clients
 - Use icons specified in Atom feeds when available
 - Do not return null as subscription unread count
-- Explicitly forbid U+003A COLON and control characters in usernames, for 
+- Explicitly forbid U+003A COLON and control characters in usernames, for
   compatibility with RFC 7617
 - Never return 401 in response to an OPTIONS request
 - Accept "t" and "f" as booleans in Tiny Tiny RSS

@@ -1,14 +1,17 @@
 #! /bin/sh
 base=`dirname "$0"`
-roboCommand="$1"
+command="$1"
+robo="$base/vendor-bin/robo/vendor/bin/robo"
+if [ -z "$ARSSE_PHP" ]; then
+    php="php"
+else
+    php="$ARSSE_PHP"
+fi
+
 if [ $# -eq 0 ]; then
-    "$base/vendor-bin/robo/vendor/bin/robo"
+    "$php" "$robo"
 else
     shift
     ulimit -n 2048
-    if [ "$1" = "clean" ]; then
-        "$base/vendor-bin/robo/vendor/bin/robo" "$roboCommand" "$@"
-    else
-        "$base/vendor-bin/robo/vendor/bin/robo" "$roboCommand" -- "$@"
-    fi
+    "$php" "$robo" "$command" -- "$@"
 fi

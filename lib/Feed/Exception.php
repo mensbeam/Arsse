@@ -31,7 +31,8 @@ class Exception extends \JKingWeb\Arsse\AbstractException {
                 } elseif (preg_match("/^cURL error (\d+):/", $msg, $match)) {
                     $msgID = self::CURL_ERROR_MAP[(int) $match[1]] ?? "internalError";
                 } else {
-                    $msgID = "internalError";
+                    // Fallback  for future Guzzle exceptions we may not know about
+                    $msgID = "internalError"; // @codeCoverageIgnore
                 }
             } elseif ($e instanceof PicoFeedException) {
                 $className = get_class($e);

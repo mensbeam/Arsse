@@ -189,8 +189,8 @@ class RoboFile extends \Robo\Tasks {
      * of new tooling.
      */
     public function packageGeneric(string $commit = null): Result {
-        if (!$this->toolExists("git", "pandoc")) {
-            throw new \Exception("Git and Pandoc are required in PATH to produce generic release tarballs");
+        if (!$this->toolExists("git")) {
+            throw new \Exception("Git is required in PATH to produce generic release tarballs");
         }
         // establish which commit to package
         [$commit, $version] = $this->commitVersion($commit);
@@ -517,7 +517,7 @@ class RoboFile extends \Robo\Tasks {
             } elseif (in_array("item", $expected) && preg_match('/^- (\w.*)$/D', $l, $m)) {
                 $entry[$section][] = $m[1];
                 $expected = ["item", "continuation", "blank line"];
-            } elseif (in_array("continuation", $expected) && preg_match('/^  (\w.*)$/D', $l, $m)) {
+            } elseif (in_array("continuation", $expected) && preg_match('/^  (\S.*)$/D', $l, $m)) {
                 $last = sizeof($entry[$section]) - 1;
                 $entry[$section][$last] .= "\n".$m[1];
             } else {
