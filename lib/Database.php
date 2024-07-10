@@ -86,11 +86,16 @@ class Database {
 
     /** Returns the bare name of the calling context's calling method, when __FUNCTION__ is not appropriate */
     protected function caller(): string {
-        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
-        if ($trace[2]['function'] === "articleQuery") {
-            return $trace[3]['function'];
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
+        $out = "";
+        foreach ($trace as $step) {
+            if (($step['class'] ?? "")  === __CLASS__) {
+                $out = $step['function'];
+            } else {
+                break;
+            }
         }
-        return $trace[2]['function'];
+        return $out;
     }
 
     /** Returns the current (actual) schema version of the database; compared against self::SCHEMA_VERSION to know when an upgrade is required */

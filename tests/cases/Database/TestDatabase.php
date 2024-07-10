@@ -8,8 +8,9 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Database;
 
 use JKingWeb\Arsse\Database;
+use JKingWeb\Arsse\Db\Transaction;
 
-/** @covers \JKingWeb\Arsse\Database */
+/** @coversNothing */
 class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $db = null;
 
@@ -34,7 +35,10 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
         return $m->invoke($this->db, ...$arg);
     }
 
-    /** @dataProvider provideInClauses */
+    /**
+     * @dataProvider provideInClauses
+     * @covers \JKingWeb\Arsse\Database::generateIn
+    */
     public function testGenerateInClause(string $clause, array $values, array $inV, string $inT): void {
         $types = array_fill(0, sizeof($values), $inT);
         $exp = [$clause, $types, $values];
@@ -68,7 +72,10 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideSearchClauses */
+    /**
+     * @dataProvider provideSearchClauses
+     * @covers \JKingWeb\Arsse\Database::generateSearch
+     */
     public function testGenerateSearchClause(string $clause, array $values, array $inV, array $inC, bool $inAny): void {
         // this is not an exhaustive test; integration tests already cover the ins and outs of the functionality
         $types = array_fill(0, sizeof($values), "str");
@@ -90,5 +97,37 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
             ["(".implode(" or ", $clause)." or test like ? escape '^')",  ["%Eh?%"],         array_merge($terms, ["Eh?"]),       ["test"],         true],
             ["(".implode(" or ", $clause)." or test like ? escape '^')",  ["%?%"],           array_merge($terms, ["?"]),         ["test"],         true],
         ];
+    }
+
+    /** @covers \JKingWeb\Arsse\Database::generateSet */
+    public function testGenerateSetClause(): void {
+        $in = [
+            'ook' => true,
+            'ack' => false,
+            'bar' => "Nimoy",
+            'foo' => "Shatner",
+        ];
+        $valid = [
+            'ook' => "bool",
+            'eek' => "int",
+            'foo' => "str",
+            'bar' => "str",
+        ];
+        $exp = [
+            '"ook" = ?, "foo" = ?, "bar" = ?',
+            ["bool", "str", "str"],
+            [true, "Shatner", "Nimoy"],
+        ];
+        $this->assertSame($exp, $this->invoke("generateSet", $in, $valid));
+    }
+
+    /** @covers \JKingWeb\Arsse\Database::begin */
+    public function testBeginATransaction(): void {
+        $this->assertInstanceOf(Transaction::class, $this->invoke("begin"));
+    }
+
+    /** @covers \JKingWeb\Arsse\Database::caller */
+    public function testReportCallingMethod(): void {
+        $this->assertSame("caller", $this->invoke("caller"));
     }
 }

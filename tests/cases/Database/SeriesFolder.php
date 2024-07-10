@@ -99,6 +99,11 @@ trait SeriesFolder {
         unset($this->data);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderAdd
+     * @covers \JKingWeb\Arsse\Database::folderValidateId
+     * @covers \JKingWeb\Arsse\Database::folderValidateName
+     */
     public function testAddARootFolder(): void {
         $user = "john.doe@example.com";
         $folderID = $this->nextID("arsse_folders");
@@ -108,11 +113,21 @@ trait SeriesFolder {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderAdd
+     * @covers \JKingWeb\Arsse\Database::folderValidateId
+     * @covers \JKingWeb\Arsse\Database::folderValidateName
+     */
     public function testAddADuplicateRootFolder(): void {
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         Arsse::$db->folderAdd("john.doe@example.com", ['name' => "Politics"]);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderAdd
+     * @covers \JKingWeb\Arsse\Database::folderValidateId
+     * @covers \JKingWeb\Arsse\Database::folderValidateName
+     */
     public function testAddANestedFolder(): void {
         $user = "john.doe@example.com";
         $folderID = $this->nextID("arsse_folders");
@@ -122,36 +137,70 @@ trait SeriesFolder {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderAdd
+     * @covers \JKingWeb\Arsse\Database::folderValidateId
+     * @covers \JKingWeb\Arsse\Database::folderValidateName
+     */
     public function testAddANestedFolderToAMissingParent(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->folderAdd("john.doe@example.com", ['name' => "Sociology", 'parent' => 2112]);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderAdd
+     * @covers \JKingWeb\Arsse\Database::folderValidateId
+     * @covers \JKingWeb\Arsse\Database::folderValidateName
+     */
     public function testAddANestedFolderToAnInvalidParent(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->folderAdd("john.doe@example.com", ['name' => "Sociology", 'parent' => "stringFolderId"]);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderAdd
+     * @covers \JKingWeb\Arsse\Database::folderValidateId
+     * @covers \JKingWeb\Arsse\Database::folderValidateName
+     */
     public function testAddANestedFolderForTheWrongOwner(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->folderAdd("john.doe@example.com", ['name' => "Sociology", 'parent' => 4]); // folder ID 4 belongs to Jane
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderAdd
+     * @covers \JKingWeb\Arsse\Database::folderValidateId
+     * @covers \JKingWeb\Arsse\Database::folderValidateName
+     */
     public function testAddAFolderWithAMissingName(): void {
         $this->assertException("missing", "Db", "ExceptionInput");
         Arsse::$db->folderAdd("john.doe@example.com", []);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderAdd
+     * @covers \JKingWeb\Arsse\Database::folderValidateId
+     * @covers \JKingWeb\Arsse\Database::folderValidateName
+     */
     public function testAddAFolderWithABlankName(): void {
         $this->assertException("missing", "Db", "ExceptionInput");
         Arsse::$db->folderAdd("john.doe@example.com", ['name' => ""]);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderAdd
+     * @covers \JKingWeb\Arsse\Database::folderValidateId
+     * @covers \JKingWeb\Arsse\Database::folderValidateName
+     */
     public function testAddAFolderWithAWhitespaceName(): void {
         $this->assertException("whitespace", "Db", "ExceptionInput");
         Arsse::$db->folderAdd("john.doe@example.com", ['name' => " "]);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderList
+     * @covers \JKingWeb\Arsse\Database::folderValidateId
+     */
     public function testListRootFolders(): void {
         $exp = [
             ['id' => 5, 'name' => "Politics",   'parent' => null, 'children' => 0, 'feeds' => 2],
@@ -166,6 +215,10 @@ trait SeriesFolder {
         $this->assertResult($exp, Arsse::$db->folderList("admin@example.net", null, false));
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderList
+     * @covers \JKingWeb\Arsse\Database::folderValidateId
+     */
     public function testListFoldersRecursively(): void {
         $exp = [
             ['id' => 5, 'name' => "Politics",   'parent' => null, 'children' => 0, 'feeds' => 2],
@@ -185,16 +238,25 @@ trait SeriesFolder {
         $this->assertResult($exp, Arsse::$db->folderList("jane.doe@example.com", 4, true));
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderList
+     * @covers \JKingWeb\Arsse\Database::folderValidateId
+     */
     public function testListFoldersOfAMissingParent(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->folderList("john.doe@example.com", 2112);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderList
+     * @covers \JKingWeb\Arsse\Database::folderValidateId
+     */
     public function testListFoldersOfTheWrongOwner(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->folderList("john.doe@example.com", 4); // folder ID 4 belongs to Jane
     }
 
+    /** @covers \JKingWeb\Arsse\Database::folderRemove */
     public function testRemoveAFolder(): void {
         $this->assertTrue(Arsse::$db->folderRemove("john.doe@example.com", 6));
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
@@ -202,6 +264,7 @@ trait SeriesFolder {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /** @covers \JKingWeb\Arsse\Database::folderRemove */
     public function testRemoveAFolderTree(): void {
         $this->assertTrue(Arsse::$db->folderRemove("john.doe@example.com", 1));
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
@@ -211,21 +274,25 @@ trait SeriesFolder {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /** @covers \JKingWeb\Arsse\Database::folderRemove */
     public function testRemoveAMissingFolder(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->folderRemove("john.doe@example.com", 2112);
     }
 
+    /** @covers \JKingWeb\Arsse\Database::folderRemove */
     public function testRemoveAnInvalidFolder(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->folderRemove("john.doe@example.com", -1);
     }
 
+    /** @covers \JKingWeb\Arsse\Database::folderRemove */
     public function testRemoveAFolderOfTheWrongOwner(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->folderRemove("john.doe@example.com", 4); // folder ID 4 belongs to Jane
     }
 
+    /** @covers \JKingWeb\Arsse\Database::folderPropertiesGet */
     public function testGetThePropertiesOfAFolder(): void {
         $exp = [
             'id'     => 6,
@@ -235,25 +302,33 @@ trait SeriesFolder {
         $this->assertArraySubset($exp, Arsse::$db->folderPropertiesGet("john.doe@example.com", 6));
     }
 
+    /** @covers \JKingWeb\Arsse\Database::folderPropertiesGet */
     public function testGetThePropertiesOfAMissingFolder(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesGet("john.doe@example.com", 2112);
     }
 
+    /** @covers \JKingWeb\Arsse\Database::folderPropertiesGet */
     public function testGetThePropertiesOfAnInvalidFolder(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesGet("john.doe@example.com", -1);
     }
 
+    /** @covers \JKingWeb\Arsse\Database::folderPropertiesGet */
     public function testGetThePropertiesOfAFolderOfTheWrongOwner(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesGet("john.doe@example.com", 4); // folder ID 4 belongs to Jane
     }
 
+    /** @covers \JKingWeb\Arsse\Database::folderPropertiesSet */
     public function testMakeNoChangesToAFolder(): void {
         $this->assertFalse(Arsse::$db->folderPropertiesSet("john.doe@example.com", 6, []));
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::folderValidateName
+     */
     public function testRenameAFolder(): void {
         $this->assertTrue(Arsse::$db->folderPropertiesSet("john.doe@example.com", 6, ['name' => "Opinion"]));
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
@@ -261,25 +336,45 @@ trait SeriesFolder {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::folderValidateName
+     */
     public function testRenameTheRootFolder(): void {
         $this->assertFalse(Arsse::$db->folderPropertiesSet("john.doe@example.com", null, ['name' => "Opinion"]));
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::folderValidateName
+     */
     public function testRenameAFolderToTheEmptyString(): void {
         $this->assertException("missing", "Db", "ExceptionInput");
         $this->assertTrue(Arsse::$db->folderPropertiesSet("john.doe@example.com", 6, ['name' => ""]));
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::folderValidateName
+     */
     public function testRenameAFolderToWhitespaceOnly(): void {
         $this->assertException("whitespace", "Db", "ExceptionInput");
         $this->assertTrue(Arsse::$db->folderPropertiesSet("john.doe@example.com", 6, ['name' => "   "]));
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::folderValidateName
+     */
     public function testRenameAFolderToAnInvalidValue(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         $this->assertTrue(Arsse::$db->folderPropertiesSet("john.doe@example.com", 6, ['name' => []]));
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::folderValidateMove
+     */
     public function testMoveAFolder(): void {
         $this->assertTrue(Arsse::$db->folderPropertiesSet("john.doe@example.com", 6, ['parent' => 5]));
         $state = $this->primeExpectations($this->data, ['arsse_folders' => ['id','owner', 'parent', 'name']]);
@@ -287,51 +382,83 @@ trait SeriesFolder {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::folderValidateMove
+     */
     public function testMoveTheRootFolder(): void {
         $this->assertException("circularDependence", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", 0, ['parent' => 1]);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::folderValidateMove
+     */
     public function testMoveAFolderToItsDescendant(): void {
         $this->assertException("circularDependence", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", 1, ['parent' => 3]);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::folderValidateMove
+     */
     public function testMoveAFolderToItself(): void {
         $this->assertException("circularDependence", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", 1, ['parent' => 1]);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::folderValidateMove
+     */
     public function testMoveAFolderToAMissingParent(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", 1, ['parent' => 2112]);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::folderValidateMove
+     */
     public function testMoveAFolderToAnInvalidParent(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", 1, ['parent' => "ThisFolderDoesNotExist"]);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::folderValidateMove
+     */
     public function testCauseAFolderCollision(): void {
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", 6, ['parent' => null]);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::folderPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::folderValidateName
+     * @covers \JKingWeb\Arsse\Database::folderValidateMove
+     */
     public function testCauseACompoundFolderCollision(): void {
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", 3, ['parent' => null, 'name' => "Technology"]);
     }
 
+    /** @covers \JKingWeb\Arsse\Database::folderPropertiesSet */
     public function testSetThePropertiesOfAMissingFolder(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", 2112, ['parent' => null]);
     }
 
+    /** @covers \JKingWeb\Arsse\Database::folderPropertiesSet */
     public function testSetThePropertiesOfAnInvalidFolder(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", -1, ['parent' => null]);
     }
 
+    /** @covers \JKingWeb\Arsse\Database::folderPropertiesSet */
     public function testSetThePropertiesOfAFolderForTheWrongOwner(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->folderPropertiesSet("john.doe@example.com", 4, ['parent' => null]); // folder ID 4 belongs to Jane

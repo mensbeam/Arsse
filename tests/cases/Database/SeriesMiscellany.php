@@ -20,12 +20,22 @@ trait SeriesMiscellany {
     protected function tearDownSeriesMiscellany(): void {
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::__construct
+     * @covers \JKingWeb\Arsse\Database::driverSchemaVersion
+     * @covers \JKingWeb\Arsse\Database::driverSchemaUpdate
+     */
     public function testInitializeDatabase(): void {
         static::dbRaze(static::$drv);
         $d = new Database(true);
         $this->assertSame(Database::SCHEMA_VERSION, $d->driverSchemaVersion());
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::__construct
+     * @covers \JKingWeb\Arsse\Database::driverSchemaVersion
+     * @covers \JKingWeb\Arsse\Database::driverSchemaUpdate
+     */
     public function testManuallyInitializeDatabase(): void {
         static::dbRaze(static::$drv);
         $d = new Database(false);
@@ -35,10 +45,12 @@ trait SeriesMiscellany {
         $this->assertFalse($d->driverSchemaUpdate());
     }
 
+    /** @covers \JKingWeb\Arsse\Database::driverCharsetAcceptable */
     public function testCheckCharacterSetAcceptability(): void {
         $this->assertIsBool(Arsse::$db->driverCharsetAcceptable());
     }
 
+    /** @covers \JKingWeb\Arsse\Database::driverMaintenance */
     public function testPerformMaintenance(): void {
         $this->assertTrue(Arsse::$db->driverMaintenance());
     }

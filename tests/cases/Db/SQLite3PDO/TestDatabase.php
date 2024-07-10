@@ -8,7 +8,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
 
 /**
- * @covers \JKingWeb\Arsse\Database<extended>
+ * @coversNothing
  */
 class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\AbstractTest {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\SQLite3PDO;
