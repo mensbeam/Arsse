@@ -413,7 +413,7 @@ class Database {
      * @param string $user The user who owns the session to be destroyed
      * @param string|null $id The identifier of the session to destroy
      */
-    public function sessionDestroy(string $user, string $id = null): bool {
+    public function sessionDestroy(string $user, ?string $id = null): bool {
         if (is_null($id)) {
             // delete all sessions and report success unconditionally if no identifier was specified
             $this->db->prepare("DELETE FROM arsse_sessions where \"user\" = ?", "str")->run($user);
@@ -467,7 +467,7 @@ class Database {
      * @param \DateTimeInterface|null $expires An optional expiry date and time for the token
      * @param string $data Application-specific data associated with a token
      */
-    public function tokenCreate(string $user, string $class, string $id = null, ?\DateTimeInterface $expires = null, string $data = null): string {
+    public function tokenCreate(string $user, string $class, ?string $id = null, ?\DateTimeInterface $expires = null, ?string $data = null): string {
         if (!$this->userExists($user)) {
             throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
@@ -681,7 +681,7 @@ class Database {
     }
 
     /** Ensures an operation to rename and/or move a folder does not result in a conflict or circular dependence, and raises an exception otherwise */
-    protected function folderValidateMove(string $user, $id = null, $parent = null, string $name = null): ?int {
+    protected function folderValidateMove(string $user, $id = null, $parent = null, ?string $name = null): ?int {
         $errData = ["action" => $this->caller(), "field" => "parent", 'id' => $parent];
         if (!$id) {
             // the root cannot be moved
@@ -816,7 +816,7 @@ class Database {
      * @param boolean $recursive Whether to list subscriptions of descendent folders as well as the selected folder
      * @param integer|null $id The numeric identifier of a particular subscription; used internally by subscriptionPropertiesGet
      */
-    public function subscriptionList(string $user, $folder = null, bool $recursive = true, int $id = null): Db\Result {
+    public function subscriptionList(string $user, $folder = null, bool $recursive = true, ?int $id = null): Db\Result {
         // validate inputs
         $folder = $this->folderValidateId($user, $folder)['id'];
         // create a complex query
@@ -1056,7 +1056,7 @@ class Database {
     }
 
     /** Returns the time at which any of a user's subscriptions (or a specific subscription) was last refreshed, as a DateTimeImmutable object */
-    public function subscriptionRefreshed(string $user, int $id = null): ?\DateTimeImmutable {
+    public function subscriptionRefreshed(string $user, ?int $id = null): ?\DateTimeImmutable {
         $q = new Query("SELECT max(arsse_feeds.updated) from arsse_feeds join arsse_subscriptions on arsse_subscriptions.feed = arsse_feeds.id");
         $q->setWhere("arsse_subscriptions.owner = ?", "str", $user);
         if ($id) {
@@ -1646,7 +1646,7 @@ class Database {
         return $q;
     }
 
-    protected function articleFilter(Context $context, QueryFilter $q = null) {
+    protected function articleFilter(Context $context, ?QueryFilter $q = null) {
         $q = $q ?? new QueryFilter;
         $colDefs = $this->articleColumns();
         // handle the simple context options
@@ -1825,7 +1825,7 @@ class Database {
      * @param array $fieldss The columns to return in the result set, any of: id, edition, url, title, author, content, guid, fingerprint, folder, subscription, feed, starred, unread, note, published_date, edited_date, modified_date, marked_date, subscription_title, media_url, media_type
      * @param array $sort The columns to sort the result by eg. "edition desc" in decreasing order of importance
      */
-    public function articleList(string $user, RootContext $context = null, array $fields = ["id"], array $sort = []): Db\Result {
+    public function articleList(string $user, ?RootContext $context = null, array $fields = ["id"], array $sort = []): Db\Result {
         // make a base query based on context and output columns
         $context = $context ?? new Context;
         $q = $this->articleQuery($user, $context, $fields);
@@ -1869,7 +1869,7 @@ class Database {
      * @param string $user The user whose articles are to be counted
      * @param RootContext $context The search context
      */
-    public function articleCount(string $user, RootContext $context = null): int {
+    public function articleCount(string $user, ?RootContext $context = null): int {
         $context = $context ?? new Context;
         $q = $this->articleQuery($user, $context, []);
         return (int) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
@@ -1889,7 +1889,7 @@ class Database {
      * @param RootContext $context The query context to match articles against
      * @param bool $updateTimestamp Whether to also update the timestamp. This should only be false if a mark is changed as a result of an automated action not taken by the user
      */
-    public function articleMark(string $user, array $data, RootContext $context = null, bool $updateTimestamp = true): int {
+    public function articleMark(string $user, array $data, ?RootContext $context = null, bool $updateTimestamp = true): int {
         $data = [
             'read'    => $data['read'] ?? null,
             'starred' => $data['starred'] ?? null,
@@ -2172,7 +2172,7 @@ class Database {
     }
 
     /** Returns the numeric identifier of the most recent edition of an article matching the given context */
-    public function editionLatest(string $user, RootContext $context = null): int {
+    public function editionLatest(string $user, ?RootContext $context = null): int {
         $context = $context ?? new Context;
         $q = $this->articleQuery($user, $context, ["latest_edition"]);
         return (int) $this->db->prepare((string) $q, $q->getTypes())->run($q->getValues())->getValue();

@@ -77,7 +77,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         Arsse::$conf = (($force ? null : Arsse::$conf) ?? (new Conf))->import($defaults)->import($conf);
     }
 
-    protected function serverRequest(string $method, string $url, string $urlPrefix, array $headers = [], array $vars = [], $body = null, string $type = "", $params = [], string $user = null): ServerRequestInterface {
+    protected function serverRequest(string $method, string $url, string $urlPrefix, array $headers = [], array $vars = [], $body = null, string $type = "", $params = [], ?string $user = null): ServerRequestInterface {
         $server = [
             'REQUEST_METHOD' => $method,
             'REQUEST_URI'    => $url,

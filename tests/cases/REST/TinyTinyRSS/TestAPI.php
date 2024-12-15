@@ -150,7 +150,7 @@ LONG_STRING;
         $this->h = new API();
     }
 
-    protected function req($data, string $method = "POST", string $target = "", string $strData = null, string $user = null): ResponseInterface {
+    protected function req($data, string $method = "POST", string $target = "", ?string $strData = null, ?string $user = null): ResponseInterface {
         Arsse::$obj = $this->objMock->get();
         Arsse::$db = $this->dbMock->get();
         Arsse::$user = $this->userMock->get();
@@ -1223,19 +1223,19 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($in));
     }
 
-    protected function filterFolders(int $id = null): array {
+    protected function filterFolders(?int $id = null): array {
         return array_filter($this->folders, function($value) use ($id) {
             return $value['parent'] == $id;
         });
     }
 
-    protected function filterSubs(int $folder = null): array {
+    protected function filterSubs(?int $folder = null): array {
         return array_filter($this->subscriptions, function($value) use ($folder) {
             return $value['folder'] == $folder;
         });
     }
 
-    protected function reduceFolders(int $id = null): int {
+    protected function reduceFolders(?int $id = null): int {
         $out = 0;
         foreach ($this->filterFolders($id) as $f) {
             $out += $this->reduceFolders($f['id']);

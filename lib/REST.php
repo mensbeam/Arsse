@@ -76,11 +76,11 @@ class REST {
     ];
     protected $apis = [];
 
-    public function __construct(array $apis = null) {
+    public function __construct(?array $apis = null) {
         $this->apis = $apis ?? self::API_LIST;
     }
 
-    public function dispatch(ServerRequestInterface $req = null): ResponseInterface {
+    public function dispatch(?ServerRequestInterface $req = null): ResponseInterface {
         try {
             // ensure the require extensions are loaded
             Arsse::checkExtensions(...Arsse::REQUIRED_EXTENSIONS);
@@ -159,12 +159,12 @@ class REST {
         return $req;
     }
 
-    public function challenge(ResponseInterface $res, string $realm = null): ResponseInterface {
+    public function challenge(ResponseInterface $res, ?string $realm = null): ResponseInterface {
         $realm = $realm ?? Arsse::$conf->httpRealm;
         return $res->withAddedHeader("WWW-Authenticate", 'Basic realm="'.$realm.'", charset="UTF-8"');
     }
 
-    public function normalizeResponse(ResponseInterface $res, RequestInterface $req = null): ResponseInterface {
+    public function normalizeResponse(ResponseInterface $res, ?RequestInterface $req = null): ResponseInterface {
         // if the response code is 401, issue an HTTP authentication challenge
         if ($res->getStatusCode() == 401) {
             $res = $this->challenge($res);
@@ -203,7 +203,7 @@ class REST {
         return $res;
     }
 
-    public function corsApply(ResponseInterface $res, RequestInterface $req = null): ResponseInterface {
+    public function corsApply(ResponseInterface $res, ?RequestInterface $req = null): ResponseInterface {
         if ($req && $req->getMethod() === "OPTIONS") {
             if ($res->hasHeader("Allow")) {
                 $res = $res->withHeader("Access-Control-Allow-Methods", $res->getHeaderLine("Allow"));
@@ -218,7 +218,7 @@ class REST {
         return $res->withAddedHeader("Vary", "Origin");
     }
 
-    public function corsNegotiate(RequestInterface $req, string $allowed = null, string $denied = null): bool {
+    public function corsNegotiate(RequestInterface $req, ?string $allowed = null, ?string $denied = null): bool {
         $allowed = trim($allowed ?? Arsse::$conf->httpOriginsAllowed);
         $denied = trim($denied ?? Arsse::$conf->httpOriginsDenied);
         // continue if at least one origin is allowed
@@ -255,7 +255,7 @@ class REST {
         return false;
     }
 
-    public function corsNormalizeOrigin(string $origin, array $ports = null): string {
+    public function corsNormalizeOrigin(string $origin, ?array $ports = null): string {
         $origin = trim($origin);
         if ($origin === "null") {
             // if the origin is the special value "null", use it

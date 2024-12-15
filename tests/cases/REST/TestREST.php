@@ -105,7 +105,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideUnnormalizedOrigins */
-    public function testNormalizeOrigins(string $origin, string $exp, array $ports = null): void {
+    public function testNormalizeOrigins(string $origin, string $exp, ?array $ports = null): void {
         $r = new REST();
         $act = $r->corsNormalizeOrigin($origin, $ports);
         $this->assertSame($exp, $act);
@@ -148,7 +148,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideCorsNegotiations */
-    public function testNegotiateCors($origin, bool $exp, string $allowed = null, string $denied = null): void {
+    public function testNegotiateCors($origin, bool $exp, ?string $allowed = null, ?string $denied = null): void {
         self::setConf();
         $rMock = $this->partialMock(REST::class);
         $rMock->corsNormalizeOrigin->does(function($origin) {
@@ -250,7 +250,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideUnnormalizedResponses */
-    public function testNormalizeHttpResponses(ResponseInterface $res, ResponseInterface $exp, RequestInterface $req = null): void {
+    public function testNormalizeHttpResponses(ResponseInterface $res, ResponseInterface $exp, ?RequestInterface $req = null): void {
         $rMock = $this->partialMock(REST::class);
         $rMock->corsNegotiate->returns(true);
         $rMock->challenge->does(function($res) {

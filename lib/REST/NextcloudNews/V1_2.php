@@ -135,7 +135,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return implode("/", $path);
     }
 
-    protected function normalizeInput(array $data, array $types, string $dateFormat = null, int $mode = 0): array {
+    protected function normalizeInput(array $data, array $types, ?string $dateFormat = null, int $mode = 0): array {
         $out = [];
         foreach ($types as $key => $type) {
             if (isset($data[$key])) {

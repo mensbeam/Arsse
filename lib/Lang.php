@@ -124,7 +124,7 @@ class Lang {
         return $out;
     }
 
-    public function match(string $locale, array $list = null): string {
+    public function match(string $locale, ?array $list = null): string {
         $list = $list ?? $this->listFiles();
         $default = ($this->locale === "") ? self::DEFAULT : $this->locale;
         return \Locale::lookup($list, $locale, true, $default);
