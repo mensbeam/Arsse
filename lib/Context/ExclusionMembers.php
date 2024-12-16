@@ -83,127 +83,127 @@ trait ExclusionMembers {
         return array_values(array_unique($spec, \SORT_REGULAR));
     }
 
-    public function folder(int $spec = null) {
+    public function folder(?int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function folders(array $spec = null) {
+    public function folders(?array $spec = null) {
         if (isset($spec)) {
             $spec = $this->cleanIdArray($spec, true);
         }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function folderShallow(int $spec = null) {
+    public function folderShallow(?int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function foldersShallow(array $spec = null) {
+    public function foldersShallow(?array $spec = null) {
         if (isset($spec)) {
             $spec = $this->cleanIdArray($spec, true);
         }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function tag(int $spec = null) {
+    public function tag(?int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function tags(array $spec = null) {
+    public function tags(?array $spec = null) {
         if (isset($spec)) {
             $spec = $this->cleanIdArray($spec);
         }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function tagName(string $spec = null) {
+    public function tagName(?string $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function tagNames(array $spec = null) {
+    public function tagNames(?array $spec = null) {
         if (isset($spec)) {
             $spec = $this->cleanStringArray($spec);
         }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function subscription(int $spec = null) {
+    public function subscription(?int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function subscriptions(array $spec = null) {
+    public function subscriptions(?array $spec = null) {
         if (isset($spec)) {
             $spec = $this->cleanIdArray($spec);
         }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function edition(int $spec = null) {
+    public function edition(?int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function article(int $spec = null) {
+    public function article(?int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function editions(array $spec = null) {
+    public function editions(?array $spec = null) {
         if (isset($spec)) {
             $spec = $this->cleanIdArray($spec);
         }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function articles(array $spec = null) {
+    public function articles(?array $spec = null) {
         if (isset($spec)) {
             $spec = $this->cleanIdArray($spec);
         }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function label(int $spec = null) {
+    public function label(?int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function labels(array $spec = null) {
+    public function labels(?array $spec = null) {
         if (isset($spec)) {
             $spec = $this->cleanIdArray($spec);
         }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function labelName(string $spec = null) {
+    public function labelName(?string $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function labelNames(array $spec = null) {
+    public function labelNames(?array $spec = null) {
         if (isset($spec)) {
             $spec = $this->cleanStringArray($spec);
         }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function annotationTerms(array $spec = null) {
+    public function annotationTerms(?array $spec = null) {
         if (isset($spec)) {
             $spec = $this->cleanStringArray($spec);
         }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function searchTerms(array $spec = null) {
+    public function searchTerms(?array $spec = null) {
         if (isset($spec)) {
             $spec = $this->cleanStringArray($spec);
         }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function titleTerms(array $spec = null) {
+    public function titleTerms(?array $spec = null) {
         if (isset($spec)) {
             $spec = $this->cleanStringArray($spec);
         }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function authorTerms(array $spec = null) {
+    public function authorTerms(?array $spec = null) {
         if (isset($spec)) {
             $spec = $this->cleanStringArray($spec);
         }
@@ -237,7 +237,7 @@ trait ExclusionMembers {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function modifiedRanges(array $spec = null) {
+    public function modifiedRanges(?array $spec = null) {
         if (isset($spec)) {
             $spec = $this->cleanDateRangeArray($spec);
         }
@@ -253,7 +253,7 @@ trait ExclusionMembers {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function markedRanges(array $spec = null) {
+    public function markedRanges(?array $spec = null) {
         if (isset($spec)) {
             $spec = $this->cleanDateRangeArray($spec);
         }

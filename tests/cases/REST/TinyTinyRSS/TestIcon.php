@@ -29,7 +29,7 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->h = new Icon();
     }
 
-    protected function req(string $target, string $method = "GET", string $user = null): ResponseInterface {
+    protected function req(string $target, string $method = "GET", ?string $user = null): ResponseInterface {
         Arsse::$db = $this->dbMock->get();
         $prefix = "/tt-rss/feed-icons/";
         $url = $prefix.$target;

@@ -1028,7 +1028,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return ['total' => $count, 'entries' => $out];
     }
 
-    protected function findEntry(int $id, Context $c = null): array {
+    protected function findEntry(int $id, ?Context $c = null): array {
         $c = ($c ?? new Context)->article($id);
         $tr = Arsse::$db->begin();
         $meta = $this->userMeta(Arsse::$user->id);

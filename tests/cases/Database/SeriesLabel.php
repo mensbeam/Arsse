@@ -255,6 +255,10 @@ trait SeriesLabel {
         unset($this->data, $this->checkLabels, $this->checkMembers, $this->user);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelAdd
+     * @covers \JKingWeb\Arsse\Database::labelValidateName
+     */
     public function testAddALabel(): void {
         $user = "john.doe@example.com";
         $labelID = $this->nextID("arsse_labels");
@@ -264,26 +268,43 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelAdd
+     * @covers \JKingWeb\Arsse\Database::labelValidateName
+     */
     public function testAddADuplicateLabel(): void {
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         Arsse::$db->labelAdd("john.doe@example.com", ['name' => "Interesting"]);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelAdd
+     * @covers \JKingWeb\Arsse\Database::labelValidateName
+     */
     public function testAddALabelWithAMissingName(): void {
         $this->assertException("missing", "Db", "ExceptionInput");
         Arsse::$db->labelAdd("john.doe@example.com", []);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelAdd
+     * @covers \JKingWeb\Arsse\Database::labelValidateName
+     */
     public function testAddALabelWithABlankName(): void {
         $this->assertException("missing", "Db", "ExceptionInput");
         Arsse::$db->labelAdd("john.doe@example.com", ['name' => ""]);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelAdd
+     * @covers \JKingWeb\Arsse\Database::labelValidateName
+     */
     public function testAddALabelWithAWhitespaceName(): void {
         $this->assertException("whitespace", "Db", "ExceptionInput");
         Arsse::$db->labelAdd("john.doe@example.com", ['name' => " "]);
     }
 
+    /** @covers \JKingWeb\Arsse\Database::labelList */
     public function testListLabels(): void {
         $exp = [
             ['id' => 2, 'name' => "Fascinating", 'articles' => 3, 'read' => 1],
@@ -299,6 +320,10 @@ trait SeriesLabel {
         $this->assertResult($exp, Arsse::$db->labelList("jane.doe@example.com", false));
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelRemove
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testRemoveALabel(): void {
         $this->assertTrue(Arsse::$db->labelRemove("john.doe@example.com", 1));
         $state = $this->primeExpectations($this->data, $this->checkLabels);
@@ -306,6 +331,10 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelRemove
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testRemoveALabelByName(): void {
         $this->assertTrue(Arsse::$db->labelRemove("john.doe@example.com", "Interesting", true));
         $state = $this->primeExpectations($this->data, $this->checkLabels);
@@ -313,26 +342,46 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelRemove
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testRemoveAMissingLabel(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->labelRemove("john.doe@example.com", 2112);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelRemove
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testRemoveAnInvalidLabel(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelRemove("john.doe@example.com", -1);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelRemove
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testRemoveAnInvalidLabelByName(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelRemove("john.doe@example.com", [], true);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelRemove
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testRemoveALabelOfTheWrongOwner(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->labelRemove("john.doe@example.com", 3); // label ID 3 belongs to Jane
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelPropertiesGet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testGetThePropertiesOfALabel(): void {
         $exp = [
             'id'       => 2,
@@ -344,30 +393,56 @@ trait SeriesLabel {
         $this->assertArraySubset($exp, Arsse::$db->labelPropertiesGet("john.doe@example.com", "Fascinating", true));
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelPropertiesGet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testGetThePropertiesOfAMissingLabel(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesGet("john.doe@example.com", 2112);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelPropertiesGet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testGetThePropertiesOfAnInvalidLabel(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesGet("john.doe@example.com", -1);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelPropertiesGet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testGetThePropertiesOfAnInvalidLabelByName(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesGet("john.doe@example.com", [], true);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelPropertiesGet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testGetThePropertiesOfALabelOfTheWrongOwner(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesGet("john.doe@example.com", 3); // label ID 3 belongs to Jane
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     * @covers \JKingWeb\Arsse\Database::labelValidateName
+     */
     public function testMakeNoChangesToALabel(): void {
         $this->assertFalse(Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, []));
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     * @covers \JKingWeb\Arsse\Database::labelValidateName
+     */
     public function testRenameALabel(): void {
         $this->assertTrue(Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, ['name' => "Curious"]));
         $state = $this->primeExpectations($this->data, $this->checkLabels);
@@ -375,6 +450,11 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     * @covers \JKingWeb\Arsse\Database::labelValidateName
+     */
     public function testRenameALabelByName(): void {
         $this->assertTrue(Arsse::$db->labelPropertiesSet("john.doe@example.com", "Interesting", ['name' => "Curious"], true));
         $state = $this->primeExpectations($this->data, $this->checkLabels);
@@ -382,46 +462,90 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     * @covers \JKingWeb\Arsse\Database::labelValidateName
+     */
     public function testRenameALabelToTheEmptyString(): void {
         $this->assertException("missing", "Db", "ExceptionInput");
         $this->assertTrue(Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, ['name' => ""]));
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     * @covers \JKingWeb\Arsse\Database::labelValidateName
+     */
     public function testRenameALabelToWhitespaceOnly(): void {
         $this->assertException("whitespace", "Db", "ExceptionInput");
         $this->assertTrue(Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, ['name' => "   "]));
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     * @covers \JKingWeb\Arsse\Database::labelValidateName
+     */
     public function testRenameALabelToAnInvalidValue(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         $this->assertTrue(Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, ['name' => []]));
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     * @covers \JKingWeb\Arsse\Database::labelValidateName
+     */
     public function testCauseALabelCollision(): void {
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, ['name' => "Fascinating"]);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     * @covers \JKingWeb\Arsse\Database::labelValidateName
+     */
     public function testSetThePropertiesOfAMissingLabel(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesSet("john.doe@example.com", 2112, ['name' => "Exciting"]);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     * @covers \JKingWeb\Arsse\Database::labelValidateName
+     */
     public function testSetThePropertiesOfAnInvalidLabel(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesSet("john.doe@example.com", -1, ['name' => "Exciting"]);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     * @covers \JKingWeb\Arsse\Database::labelValidateName
+     */
     public function testSetThePropertiesOfAnInvalidLabelByName(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesSet("john.doe@example.com", [], ['name' => "Exciting"], true);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelPropertiesSet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     * @covers \JKingWeb\Arsse\Database::labelValidateName
+     */
     public function testSetThePropertiesOfALabelForTheWrongOwner(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesSet("john.doe@example.com", 3, ['name' => "Exciting"]); // label ID 3 belongs to Jane
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelArticlesGet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testListLabelledArticles(): void {
         $exp = [1,19];
         $this->assertEquals($exp, Arsse::$db->labelArticlesGet("john.doe@example.com", 1));
@@ -434,16 +558,28 @@ trait SeriesLabel {
         $this->assertEquals($exp, Arsse::$db->labelArticlesGet("john.doe@example.com", "Lonely", true));
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelArticlesGet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testListLabelledArticlesForAMissingLabel(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->labelArticlesGet("john.doe@example.com", 3);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelArticlesGet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testListLabelledArticlesForAnInvalidLabel(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelArticlesGet("john.doe@example.com", -1);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelArticlesSet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testApplyALabelToArticles(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([2,5]));
         $state = $this->primeExpectations($this->data, $this->checkMembers);
@@ -452,6 +588,10 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelArticlesSet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testClearALabelFromArticles(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([1,5]), Database::ASSOC_REMOVE);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
@@ -459,6 +599,10 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelArticlesSet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testApplyALabelToArticlesByName(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", "Interesting", (new Context)->articles([2,5]), Database::ASSOC_ADD, true);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
@@ -467,6 +611,10 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelArticlesSet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testClearALabelFromArticlesByName(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", "Interesting", (new Context)->articles([1,5]), Database::ASSOC_REMOVE, true);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
@@ -474,18 +622,30 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelArticlesSet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testApplyALabelToNoArticles(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([10000]));
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelArticlesSet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testClearALabelFromNoArticles(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([10000]), Database::ASSOC_REMOVE);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelArticlesSet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testReplaceArticlesOfALabel(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([2,5]), Database::ASSOC_REPLACE);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
@@ -496,6 +656,10 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /**
+     * @covers \JKingWeb\Arsse\Database::labelArticlesSet
+     * @covers \JKingWeb\Arsse\Database::labelValidateId
+     */
     public function testPurgeArticlesOfALabel(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([10000]), Database::ASSOC_REPLACE);
         $state = $this->primeExpectations($this->data, $this->checkMembers);

@@ -60,7 +60,7 @@ class Feed {
         }
     }
 
-    public function __construct(int $feedID = null, string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = '', bool $scrape = false) {
+    public function __construct(?int $feedID, string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = '', bool $scrape = false) {
         // fetch the feed
         [$client, $reader] = self::download($url, $lastModified, $etag, $username, $password);
         // format the HTTP Last-Modified date returned
@@ -288,7 +288,7 @@ class Feed {
         return $out;
     }
 
-    protected function matchToDatabase(int $feedID = null): void {
+    protected function matchToDatabase(?int $feedID = null): void {
         // first perform deduplication on items
         $items = $this->deduplicateItems($this->items);
         // if we haven't been given a database feed ID to check against, all items are new

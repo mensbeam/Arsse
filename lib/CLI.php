@@ -72,7 +72,7 @@ USAGE_TEXT;
         return ($file === "-" ? null : $file) ?? $stdinOrStdout;
     }
 
-    public function dispatch(array $argv = null): int {
+    public function dispatch(?array $argv = null): int {
         $argv = $argv ?? $_SERVER['argv'];
         $argv0 = array_shift($argv);
         $args = \Docopt::handle($this->usage($argv0), [
@@ -198,7 +198,7 @@ USAGE_TEXT;
         return 0;
     }
 
-    protected function userAddOrSetPassword(string $method, string $user, string $password = null, string $oldpass = null): int {
+    protected function userAddOrSetPassword(string $method, string $user, ?string $password = null, ?string $oldpass = null): int {
         $passwd = Arsse::$user->$method(...array_slice(func_get_args(), 1));
         if (is_null($password)) {
             echo $passwd.\PHP_EOL;

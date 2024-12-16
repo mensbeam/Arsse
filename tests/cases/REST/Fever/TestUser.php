@@ -38,7 +38,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider providePasswordCreations */
-    public function testRegisterAUserPassword(string $user, string $password = null, $exp): void {
+    public function testRegisterAUserPassword(string $user, ?string $password, $exp): void {
         $this->userMock->generatePassword->returns("RANDOM_PASSWORD");
         $this->dbMock->tokenCreate->does(function($user, $class, $id = null) {
             return $id ?? "RANDOM_TOKEN";

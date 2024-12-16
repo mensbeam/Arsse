@@ -35,7 +35,7 @@ class User {
     /** @var User\Driver */
     protected $u;
 
-    public function __construct(\JKingWeb\Arsse\User\Driver $driver = null) {
+    public function __construct(?\JKingWeb\Arsse\User\Driver $driver = null) {
         $this->u = $driver ?? new Arsse::$conf->userDriver;
     }
 

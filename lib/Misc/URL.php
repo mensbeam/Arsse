@@ -36,7 +36,7 @@ class URL {
      * @param string $u Username to add to the URL, replacing any existing credentials
      * @param string $p Password to add to the URL, if a username is specified
      */
-    public static function normalize(string $url, string $u = null, string $p = null): string {
+    public static function normalize(string $url, ?string $u = null, ?string $p = null): string {
         extract(parse_url($url));
         $out = "";
         if (isset($scheme)) {

@@ -39,10 +39,10 @@ interface Driver {
     public function savepointCreate(): int;
 
     /** Manually commits either the latest or a specified nested transaction */
-    public function savepointRelease(int $index = null): bool;
+    public function savepointRelease(?int $index = null): bool;
 
     /** Manually rolls back either the latest or a specified nested transaction */
-    public function savepointUndo(int $index = null): bool;
+    public function savepointUndo(?int $index = null): bool;
 
     /** Performs an in-place upgrade of the database schema
      *

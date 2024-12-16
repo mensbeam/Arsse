@@ -131,7 +131,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         }
     }
 
-    public function schemaUpdate(int $to, string $basePath = null): bool {
+    public function schemaUpdate(int $to, ?string $basePath = null): bool {
         if ($to == 1) {
             // if we're initializing the database for the first time, switch to WAL mode
             $this->exec("PRAGMA journal_mode = wal");

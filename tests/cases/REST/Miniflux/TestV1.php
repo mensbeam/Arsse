@@ -169,6 +169,11 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
+    public function testRejectMalformedData(): void {
+        $exp = V1::respError(["InvalidBodyJSON", "Syntax error"], 400);
+        $this->assertMessage($exp, $this->req("POST", "/discover", "{"));
+    }
+
     public function testRejectBadlyTypedData(): void {
         $exp = V1::respError(["InvalidInputType", 'field' => "url", 'expected' => "string", 'actual' => "integer"], 422);
         $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => 2112]));

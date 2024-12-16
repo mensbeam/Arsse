@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+readonly default_php="/usr/bin/php"
+php=""
+
+check_sudo() {
+  if ! command -v sudo > /dev/null; then
+    printf "The sudo command is not available.\n"
+    exit 1
+  fi
+}
+
+# allow overriding the php executable
+if [ -n "${ARSSE_PHP}" ] && command -v "${ARSSE_PHP}" > /dev/null; then
+  php="${ARSSE_PHP}"
+else
+  php="${default_php}"
+fi
+
+if [ "$(whoami)" = "arsse" ]; then
+  "$php" /usr/share/webapps/arsse/arsse "$@"
+elif [ "${UID}" -eq 0 ]; then
+  runuser -u "arsse" -- "$php" /usr/share/webapps/arsse/arsse "$@"
+else
+  check_sudo
+  sudo -u "arsse" "$php" /usr/share/webapps/arsse/arsse "$@"
+fi
+

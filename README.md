@@ -40,7 +40,7 @@ The `/dist/` directory, on the other hand, contains general and system-specific 
 
 The source text for The Arsse's manual can be found in `/docs/`, with pages written in [Markdown](https://spec.commonmark.org/current/) and converted to HTML [with Daux](#building-the-manual). If a static manual is generated its files will appear under `/manual/`.
 
-The Arsse also has a UNIX manual page, also written in Markdown, which can be found under `/manpages/`. [Pandoc](https://pandoc.org/) is needed to convert it to the appropriate format, with the results stored under `/dist/man/`.
+The Arsse also has a UNIX manual page written in [mdoc](https://man.archlinux.org/man/extra/mandoc/mandoc_mdoc.7.en) format, which can be found under `/dist/man/`.
 
 In addition to the manuals the files `/README.md` (this file), `/CHANGELOG`, `/UPGRADING`, `/LICENSE`, and `/AUTHORS` also document various things about the software, rather than the software itself.
 

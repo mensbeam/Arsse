@@ -172,7 +172,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /** @dataProvider provideTokenAuthenticationRequests */
-    public function testAuthenticateAUserToken(bool $httpRequired, bool $tokenEnforced, string $httpUser = null, array $dataPost, array $dataGet, ResponseInterface $exp): void {
+    public function testAuthenticateAUserToken(bool $httpRequired, bool $tokenEnforced, ?string $httpUser, array $dataPost, array $dataGet, ResponseInterface $exp): void {
         self::setConf([
             'userHTTPAuthRequired' => $httpRequired,
             'userSessionEnforced'  => $tokenEnforced,

@@ -192,10 +192,12 @@ trait SeriesFeed {
         unset($this->data, $this->matches);
     }
 
+    /** @covers \JKingWeb\Arsse\Database::feedMatchLatest */
     public function testListLatestItems(): void {
         $this->assertResult($this->matches, Arsse::$db->feedMatchLatest(1, 2));
     }
 
+    /** @covers \JKingWeb\Arsse\Database::feedMatchIds */
     public function testMatchItemsById(): void {
         $this->assertResult($this->matches, Arsse::$db->feedMatchIds(1, ['804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180','db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41']));
         foreach ($this->matches as $m) {
@@ -207,7 +209,10 @@ trait SeriesFeed {
         $this->assertResult([['id' => 1]], Arsse::$db->feedMatchIds(1, ['e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda'])); // this ID appears in both feed 1 and feed 2; only one result should be returned
     }
 
-    /** @dataProvider provideFilterRules */
+    /**
+     * @dataProvider provideFilterRules
+     * @covers \JKingWeb\Arsse\Database::feedRulesGet
+     */
     public function testGetRules(int $in, array $exp): void {
         $this->assertSame($exp, Arsse::$db->feedRulesGet($in));
     }
@@ -222,6 +227,7 @@ trait SeriesFeed {
         ];
     }
 
+    /** @covers \JKingWeb\Arsse\Database::feedUpdate */
     public function testUpdateAFeed(): void {
         // update a valid feed with both new and changed items
         Arsse::$db->feedUpdate(1);
@@ -263,21 +269,25 @@ trait SeriesFeed {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /** @covers \JKingWeb\Arsse\Database::feedUpdate */
     public function testUpdateAMissingFeed(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->feedUpdate(2112);
     }
 
+    /** @covers \JKingWeb\Arsse\Database::feedUpdate */
     public function testUpdateAnInvalidFeed(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->feedUpdate(-1);
     }
 
+    /** @covers \JKingWeb\Arsse\Database::feedUpdate */
     public function testUpdateAFeedThrowingExceptions(): void {
         $this->assertException("invalidUrl", "Feed");
         Arsse::$db->feedUpdate(3, true);
     }
 
+    /** @covers \JKingWeb\Arsse\Database::feedUpdate */
     public function testUpdateAFeedWithEnclosuresAndCategories(): void {
         Arsse::$db->feedUpdate(5);
         $state = $this->primeExpectations($this->data, [
@@ -298,6 +308,7 @@ trait SeriesFeed {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /** @covers \JKingWeb\Arsse\Database::feedListStale */
     public function testListStaleFeeds(): void {
         $this->assertEquals([1,3,4], Arsse::$db->feedListStale());
         Arsse::$db->feedUpdate(3);
@@ -305,6 +316,7 @@ trait SeriesFeed {
         $this->assertEquals([1], Arsse::$db->feedListStale());
     }
 
+    /** @covers \JKingWeb\Arsse\Database::feedUpdate */
     public function testCheckIconDuringFeedUpdate(): void {
         Arsse::$db->feedUpdate(6);
         $state = $this->primeExpectations($this->data, [
@@ -314,6 +326,7 @@ trait SeriesFeed {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /** @covers \JKingWeb\Arsse\Database::feedUpdate */
     public function testAssignIconDuringFeedUpdate(): void {
         Arsse::$db->feedUpdate(7);
         $state = $this->primeExpectations($this->data, [
@@ -324,6 +337,7 @@ trait SeriesFeed {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /** @covers \JKingWeb\Arsse\Database::feedUpdate */
     public function testChangeIconDuringFeedUpdate(): void {
         Arsse::$db->feedUpdate(8);
         $state = $this->primeExpectations($this->data, [
@@ -334,6 +348,7 @@ trait SeriesFeed {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    /** @covers \JKingWeb\Arsse\Database::feedUpdate */
     public function testAddIconDuringFeedUpdate(): void {
         Arsse::$db->feedUpdate(9);
         $state = $this->primeExpectations($this->data, [
@@ -342,6 +357,23 @@ trait SeriesFeed {
         ]);
         $state['arsse_feeds']['rows'][8][1] = 4;
         $state['arsse_icons']['rows'][] = [4,'http://localhost:8000/Icon/SVG2','image/svg+xml','<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><rect width="900" height="600" fill="#ED2939"/><rect width="600" height="600" fill="#fff"/><rect width="300" height="600" fill="#002395"/></svg>'];
+        $this->compareExpectations(static::$drv, $state);
+    }
+
+    /** @covers \JKingWeb\Arsse\Database::feedUpdate */
+    public function testUpdateUnmodifiedFeed(): void {
+        $this->markTestIncomplete("FIXME: there is a bug here around calculation of nextFetch date");
+        $state = $this->primeExpectations($this->data, [
+            'arsse_icons'         => ["id", "url", "type", "data"],
+            'arsse_feeds'         => ["id", "url", "title", "err_count", "err_msg", "modified", "next_fetch", "size", "icon"],
+            'arsse_subscriptions' => ["id", "owner", "feed", "keep_rule", "block_rule"],
+            'arsse_articles'      => ["id", "feed", "url", "title", "author", "published", "edited", "content", "guid", "url_title_hash", "url_content_hash", "title_content_hash", "modified"],
+            'arsse_editions'      => ["id", "article", "modified"],
+            'arsse_marks'         => ["article", "subscription", "read", "starred", "hidden", "modified"],
+            'arsse_enclosures'    => ["article", "url", "type"],
+            'arsse_categories'    => ["article", "name"],
+        ]);
+        Arsse::$db->feedUpdate(4);
         $this->compareExpectations(static::$drv, $state);
     }
 }

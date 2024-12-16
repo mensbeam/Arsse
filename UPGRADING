@@ -11,10 +11,13 @@ usually prudent:
   `composer install -o --no-dev`
     
 
-Upgrading from 0.10.4 to 0.10.?
+Upgrading from 0.10.4 to 0.10.5
 =============================
 
 - PHP 7.3 is now required
+- Web server configuration in the Arch Linux package has been modified to ease
+  the use of alternative PHP interpreters; please review the sample
+  configuration files for changes
 
 
 Upgrading from 0.10.2 to 0.10.3

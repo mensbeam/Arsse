@@ -11,11 +11,11 @@ abstract class RootContext extends AbstractContext {
     public $limit = 0;
     public $offset = 0;
 
-    public function limit(int $spec = null) {
+    public function limit(?int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
-    public function offset(int $spec = null) {
+    public function offset(?int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 }

@@ -11,7 +11,7 @@ namespace JKingWeb\Arsse\TestCase\Db\MySQLPDO;
  * @group slow
  * @group optional
  * @group coverageOptional
- * @covers \JKingWeb\Arsse\Database<extended>
+ * @coversNothing
  */
 class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\AbstractTest {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\MySQLPDO;

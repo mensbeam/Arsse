@@ -10,6 +10,8 @@ namespace JKingWeb\Arsse\Db;
 trait PDODriver {
     use PDOError;
 
+    protected $db;
+
     public function exec(string $query): bool {
         try {
             $this->db->exec($query);
