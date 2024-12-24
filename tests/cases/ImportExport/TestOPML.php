@@ -83,12 +83,11 @@ OPML_EXPORT_SERIALIZATION;
 
     public function setUp(): void {
         parent::setUp();
-        $this->dbMock = $this->mock(Database::class);
-        $this->dbMock->userExists->returns(true);
-        $this->dbMock->folderList->with("john.doe@example.com")->returns(new Result($this->folders));
-        $this->dbMock->subscriptionList->with("john.doe@example.com")->returns(new Result($this->subscriptions));
-        $this->dbMock->tagSummarize->with("john.doe@example.com")->returns(new Result($this->tags));
-        Arsse::$db = $this->dbMock->get();
+        Arsse::$db = \Phake::mock(Database::class);
+        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        \Phake::when(Arsse::$db)->folderList("john.doe@example.com")->thenReturn(new Result($this->folders));
+        \Phake::when(Arsse::$db)->subscriptionList("john.doe@example.com")->thenReturn(new Result($this->subscriptions));
+        \Phake::when(Arsse::$db)->tagSummarize("john.doe@example.com")->thenReturn(new Result($this->tags));
     }
 
     public function testExportToOpml(): void {
@@ -100,7 +99,7 @@ OPML_EXPORT_SERIALIZATION;
     }
 
     public function testExportToOpmlAMissingUser(): void {
-        $this->dbMock->userExists->returns(false);
+        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         (new OPML)->export("john.doe@example.com");
     }

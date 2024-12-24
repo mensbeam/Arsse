@@ -7,8 +7,6 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\Test;
 
-use Eloquent\Phony\Mock\Handle\InstanceHandle;
-use Eloquent\Phony\Phpunit\Phony;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use JKingWeb\Arsse\Exception;
@@ -372,20 +370,12 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     /** Guzzle's exception classes require some fairly complicated construction; this abstracts it all away so that only message and code need be supplied  */
     protected function mockGuzzleException(string $class, ?string $message = null, ?int $code = null, ?\Throwable $e = null): GuzzleException {
         if (is_a($class, RequestException::class, true)) {
-            $req = $this->mock(RequestInterface::class);
-            $res = $this->mock(ResponseInterface::class);
-            $res->getStatusCode->returns($code ?? 0);
-            return new $class($message ?? "", $req->get(), $res->get(), $e);
+            $req = \Phake::mock(RequestInterface::class);
+            $res = \Phake::mock(ResponseInterface::class);
+            \Phake::when($res)->getStatusCode->thenReturn($code ?? 0);
+            return new $class($message ?? "", $req, $res, $e);
         } else {
             return new $class($message ?? "", $code ?? 0, $e);
         }
-    }
-
-    protected function mock(string $class): InstanceHandle {
-        return Phony::mock($class);
-    }
-
-    protected function partialMock(string $class, ...$argument): InstanceHandle {
-        return Phony::partialMock($class, $argument);
     }
 }

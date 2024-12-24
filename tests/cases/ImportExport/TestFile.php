@@ -20,9 +20,9 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         parent::setUp();
         // create a mock Import/Export processor with stubbed underlying import/export routines
-        $this->proc = $this->partialMock(AbstractImportExport::class);
-        $this->proc->export->returns("EXPORT_FILE");
-        $this->proc->import->returns(true);
+        $this->proc = \Phake::partialMock(AbstractImportExport::class);
+        \Phake::when($this->proc)->export->thenReturn("EXPORT_FILE");
+        \Phake::when($this->proc)->import->thenReturn(true);
         $this->vfs = vfsStream::setup("root", null, [
             'exportGoodFile' => "",
             'exportGoodDir'  => [],
@@ -51,13 +51,13 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
         try {
             if ($exp instanceof \JKingWeb\Arsse\AbstractException) {
                 $this->assertException($exp);
-                $this->proc->get()->exportFile($path, $user, $flat);
+                $this->proc->exportFile($path, $user, $flat);
             } else {
-                $this->assertSame($exp, $this->proc->get()->exportFile($path, $user, $flat));
+                $this->assertSame($exp, $this->proc->exportFile($path, $user, $flat));
                 $this->assertSame("EXPORT_FILE", $this->vfs->getChild($file)->getContent());
             }
         } finally {
-            $this->proc->export->calledWith($user, $flat);
+            \Phake::verify($this->proc)->export($user, $flat);
         }
     }
 
@@ -90,12 +90,12 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
         try {
             if ($exp instanceof \JKingWeb\Arsse\AbstractException) {
                 $this->assertException($exp);
-                $this->proc->get()->importFile($path, $user, $flat, $replace);
+                $this->proc->importFile($path, $user, $flat, $replace);
             } else {
-                $this->assertSame($exp, $this->proc->get()->importFile($path, $user, $flat, $replace));
+                $this->assertSame($exp, $this->proc->importFile($path, $user, $flat, $replace));
             }
         } finally {
-            $this->proc->import->times((int) ($exp === true))->calledWith($user, "GOOD_FILE", $flat, $replace);
+            \Phake::verify($this->proc, \Phake::times((int) ($exp === true)))->import($user, "GOOD_FILE", $flat, $replace);
         }
     }
 

@@ -7,7 +7,6 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\TestCase\User;
 
-use Eloquent\Phony\Phpunit\Phony;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\User;

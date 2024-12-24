@@ -44,13 +44,13 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function setUp(): void {
         parent::setUp();
-        $this->daemon = $this->partialMock(Daemon::class);
+        $this->daemon = \Phake::partialMock(Daemon::class);
     }
 
     /** @dataProvider providePathResolutions */
     public function testResolveRelativePaths(string $path, $cwd, $exp): void {
         // set up mock daemon class
-        $this->daemon->cwd->returns($cwd);
+        \Phake::when($this->daemon)->cwd->thenReturn($cwd);
         $daemon = $this->daemon->get();
         // perform the test
         $this->AssertSame($exp, $daemon->resolveRelativePath($path));
@@ -83,7 +83,7 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         chmod($path."errors/write", 0555);
         chmod($path."errors/readwrite", 0111);
         // set up mock daemon class
-        $this->daemon->resolveRelativePath->returns($accessible ? dirname($path.$file) : false);
+        \Phake::when($this->daemon)->resolveRelativePath->thenReturn($accessible ? dirname($path.$file) : false);
         $daemon = $this->daemon->get();
         // perform the test
         if ($exp instanceof \Exception) {
@@ -119,8 +119,8 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         chmod($path."unreadable", 0333);
         chmod($path."unwritable", 0555);
         // set up mock daemon class
-        $this->daemon->processExists->with(2112)->returns(true);
-        $this->daemon->processExists->with(42)->returns(false);
+        \Phake::when($this->daemon)->processExists(2112)->thenReturn(true);
+        \Phake::when($this->daemon)->processExists(42)->thenReturn(false);
         $daemon = $this->daemon->get();
         // perform the test
         try {
@@ -169,8 +169,8 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         chmod($path."unreadable", 0333);
         chmod($path."unwritable", 0555);
         // set up mock daemon class
-        $this->daemon->processExists->with(2112)->returns(true);
-        $this->daemon->processExists->with(42)->returns(false);
+        \Phake::when($this->daemon)->processExists(2112)->thenReturn(true);
+        \Phake::when($this->daemon)->processExists(42)->thenReturn(false);
         $daemon = $this->daemon->get();
         // perform the test
         try {

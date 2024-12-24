@@ -7,7 +7,6 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\TestCase\CLI;
 
-use Eloquent\Phony\Phpunit\Phony;
 use GuzzleHttp\Exception\ClientException;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Conf;
@@ -210,7 +209,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$user)->auth->thenReturn(false);
         \Phake::when(Arsse::$user)->auth("john.doe@example.com", "secret")->thenReturn(true);
         \Phake::when(Arsse::$user)->auth("jane.doe@example.com", "superman")->thenReturn(true);
-        $fever = $this->mock(FeverUser::class);
+        $fever = \Phake::mock(FeverUser::class);
         \Phake::when($fever)->authenticate->thenReturn(false);
         \Phake::when($fever)->authenticate("john.doe@example.com", "ashalla")->thenReturn(true);
         \Phake::when($fever)->authenticate("jane.doe@example.com", "thx1138")->thenReturn(true);

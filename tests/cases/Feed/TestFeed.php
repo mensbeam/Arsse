@@ -12,7 +12,6 @@ use JKingWeb\Arsse\Feed;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Test\Result;
-use Eloquent\Phony\Phpunit\Phony;
 
 /**
  * @covers \JKingWeb\Arsse\Feed
@@ -96,13 +95,12 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->base = self::$host."Feed/";
         parent::setUp();
         self::setConf();
-        $this->dbMock = $this->mock(Database::class);
-        $this->dbMock->feedMatchLatest->with(Phony::wildcard())->returns(new Result([]));
-        $this->dbMock->feedMatchLatest->with(1, Phony::any())->returns(new Result($this->latest));
-        $this->dbMock->feedMatchIds->with(Phony::wildcard())->returns(new Result([]));
-        $this->dbMock->feedMatchIds->with(1, Phony::wildcard())->returns(new Result($this->others));
-        $this->dbMock->feedRulesGet->returns([]);
-        Arsse::$db = $this->dbMock->get();
+        Arsse::$db = \Phake::mock(Database::class);
+        \Phake::when(Arsse::$db)->feedMatchLatest->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Result($this->latest));
+        \Phake::when(Arsse::$db)->feedMatchIds->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->feedMatchIds(1, \Phake::ignoreRemaining())->thenReturn(new Result($this->others));
+        \Phake::when(Arsse::$db)->feedRulesGet->thenReturn([]);
     }
 
     public function testParseAFeed(): void {
@@ -343,10 +341,9 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testMatchLatestArticles(): void {
-        $this->dbMock = $this->mock(Database::class);
-        $this->dbMock->feedMatchLatest->with(Phony::wildcard())->returns(new Result([]));
-        $this->dbMock->feedMatchLatest->with(1, Phony::any())->returns(new Result($this->latest));
-        Arsse::$db = $this->dbMock->get();
+        Arsse::$db = \Phake::mock(Database::class);
+        \Phake::when(Arsse::$db)->feedMatchLatest(\Phake::anyParameters())->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Result($this->latest));
         $f = new Feed(1, $this->base."Matching/1");
         $this->assertCount(0, $f->newItems);
         $this->assertCount(0, $f->changedItems);
@@ -393,7 +390,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
             'jack' => ['new' => [false, true, true,  false, true],  'changed' => [7 => true,  47 => true, 2112 => false, 1 => true,  42 => false]],
             'sam'  => ['new' => [false, true, false, false, false], 'changed' => [7 => false, 47 => true, 2112 => false, 1 => false, 42 => false]],
         ];
-        $this->dbMock->feedMatchIds->returns(new Result([
+        \Phake::when(Arsse::$db)->feedMatchIds->thenReturn(new Result([
             // these are the sixth through tenth entries in the feed; the title hashes have been omitted for brevity
             ['id' => 7,    'guid' => '0f2a218c311e3d8105f1b075142a5d26dabf056ffc61abe77e96c8f071bbf4a7', 'edited' => null, 'url_title_hash' => "", 'url_content_hash' => '', 'title_content_hash' => ''],
             ['id' => 47,   'guid' => '1c19e3b9018bc246b7414ae919ddebc88d0c575129e8c4a57b84b826c00f6db5', 'edited' => null, 'url_title_hash' => "", 'url_content_hash' => '', 'title_content_hash' => ''],
@@ -401,11 +398,10 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 1,    'guid' => '436070cda5713a0d9a8fdc8652c7ab142f0550697acfd5206a16c18aee355039', 'edited' => null, 'url_title_hash' => "", 'url_content_hash' => '', 'title_content_hash' => ''],
             ['id' => 42,   'guid' => '1a731433a1904220ef26e731ada7262e1d5bcecae53e7b5df9e1f5713af6e5d3', 'edited' => null, 'url_title_hash' => "", 'url_content_hash' => '', 'title_content_hash' => ''],
         ]));
-        $this->dbMock->feedRulesGet->returns([
+        \Phake::when(Arsse::$db)->feedRulesGet->thenReturn([
             'jack' => ['keep' => "",         'block' => '`A|W|J|S`u'],
             'sam'  => ['keep' => "`B|T|X`u", 'block' => '`C`u'],
         ]);
-        Arsse::$db = $this->dbMock->get();
         $f = new Feed(5, $this->base."Filtering/1");
         $this->assertSame($exp, $f->filteredItems);
     }

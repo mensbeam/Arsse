@@ -17,8 +17,7 @@ class TestSerial extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         parent::setUp();
         self::setConf();
-        $this->dbMock = $this->mock(Database::class);
-        Arsse::$db = $this->dbMock->get();
+        Arsse::$db = \Phake::mock(Database::class);
     }
 
     public function testConstruct(): void {
@@ -42,8 +41,8 @@ class TestSerial extends \JKingWeb\Arsse\Test\AbstractTest {
         $d = new Driver;
         $d->queue(1, 4, 3);
         $this->assertSame(Arsse::$conf->serviceQueueWidth, $d->exec());
-        $this->dbMock->feedUpdate->calledWith(1);
-        $this->dbMock->feedUpdate->calledWith(4);
-        $this->dbMock->feedUpdate->calledWith(3);
+        \Phake::verify(Arsse::$db)->feedUpdate(1);
+        \Phake::verify(Arsse::$db)->feedUpdate(4);
+        \Phake::verify(Arsse::$db)->feedUpdate(3);
     }
 }

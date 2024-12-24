@@ -62,12 +62,11 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testAuthenticateRequests(array $serverParams, array $expAttr): void {
         $r = new REST();
         // create a mock user manager
-        $this->userMock = $this->mock(User::class);
-        $this->userMock->auth->returns(false);
-        $this->userMock->auth->with("john.doe@example.com", "secret")->returns(true);
-        $this->userMock->auth->with("john.doe@example.com", "")->returns(true);
-        $this->userMock->auth->with("someone.else@example.com", "")->returns(true);
-        Arsse::$user = $this->userMock->get();
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->auth->thenReturn(false);
+        \Phake::when(Arsse::$user)->auth("john.doe@example.com", "secret")->thenReturn(true);
+        \Phake::when(Arsse::$user)->auth("john.doe@example.com", "")->thenReturn(true);
+        \Phake::when(Arsse::$user)->auth("someone.else@example.com", "")->thenReturn(true);
         // create an input server request
         $req = new ServerRequest("GET", "/", [], null, "1.1", $serverParams);
         // create the expected output
@@ -150,13 +149,13 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideCorsNegotiations */
     public function testNegotiateCors($origin, bool $exp, ?string $allowed = null, ?string $denied = null): void {
         self::setConf();
-        $rMock = $this->partialMock(REST::class);
-        $rMock->corsNormalizeOrigin->does(function($origin) {
+        $rMock = \Phake::partialMock(REST::class);
+        \Phake::when($rMock)->corsNormalizeOrigin->thenReturnCallback(function($origin) {
             return $origin;
         });
         $headers = isset($origin) ? ['Origin' => $origin] : [];
         $req = new Request("GET", "", $headers);
-        $act = $rMock->get()->corsNegotiate($req, $allowed, $denied);
+        $act = $rMock->corsNegotiate($req, $allowed, $denied);
         $this->assertSame($exp, $act);
     }
 
@@ -251,15 +250,15 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideUnnormalizedResponses */
     public function testNormalizeHttpResponses(ResponseInterface $res, ResponseInterface $exp, ?RequestInterface $req = null): void {
-        $rMock = $this->partialMock(REST::class);
-        $rMock->corsNegotiate->returns(true);
-        $rMock->challenge->does(function($res) {
+        $rMock = \Phake::partialMock(REST::class);
+        \Phake::when($rMock)->corsNegotiate->thenReturn(true);
+        \Phake::when($rMock)->challenge->thenReturnCallback(function($res) {
             return $res->withHeader("WWW-Authenticate", "Fake Value");
         });
-        $rMock->corsApply->does(function($res) {
+        \Phake::when($rMock)->corsApply->thenReturnCallback(function($res) {
             return $res;
         });
-        $act = $rMock->get()->normalizeResponse($res, $req);
+        $act = $rMock->normalizeResponse($res, $req);
         $this->assertMessage($exp, $act);
     }
 
@@ -287,32 +286,30 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideMockRequests */
     public function testDispatchRequests(ServerRequest $req, string $method, bool $called, string $class = "", string $target = ""): void {
-        $rMock = $this->partialMock(REST::class);
-        $rMock->normalizeResponse->does(function($res) {
+        $rMock = \Phake::partialMock(REST::class);
+        \Phake::when($rMock)->normalizeResponse->thenReturnCallback(function($res) {
             return $res;
         });
-        $rMock->authenticateRequest->does(function($req) {
+        \Phake::when($rMock)->authenticateRequest->thenReturnCallback(function($req) {
             return $req;
         });
         if ($called) {
-            $hMock = $this->mock($class);
-            $hMock->dispatch->returns(HTTP::respEmpty(204));
-            $this->objMock->get->with($class)->returns($hMock);
-            Arsse::$obj = $this->objMock->get();
+            $hMock = \Phake::mock($class);
+            $hMock->dispatch->thenReturn(HTTP::respEmpty(204));
+            \Phake::when(Arsse::$obj)->get($class)->thenReturn($hMock);
         }
-        $out = $rMock->get()->dispatch($req);
+        $out = $rMock->dispatch($req);
         $this->assertInstanceOf(ResponseInterface::class, $out);
         if ($called) {
-            $rMock->authenticateRequest->called();
-            $hMock->dispatch->once()->called();
-            $in = $hMock->dispatch->firstCall()->argument();
+            \Phake::verify($rMock, \Phake::atLeast(1))->authenticateRequest(\Phake::anyParameters());
+            \Phake::verify($hMock)->dispatch(\Phake::capture($in));
             $this->assertSame($method, $in->getMethod());
             $this->assertSame($target, $in->getRequestTarget());
         } else {
             $this->assertSame(501, $out->getStatusCode());
         }
-        $rMock->apiMatch->called();
-        $rMock->normalizeResponse->called();
+        \Phake::verify($rMock)->apiMatch(\Phake::anyParameters());
+        \Phake::verify($rMock)->normalizeResponse(\Phake::anyParameters());
     }
 
     public function provideMockRequests(): iterable {

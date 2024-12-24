@@ -23,3 +23,5 @@ if (function_exists("xdebug_set_filter")) {
         xdebug_set_filter(\XDEBUG_FILTER_CODE_COVERAGE, XDEBUG_PATH_WHITELIST, [BASE."lib/"]);
     }
 }
+
+\Phake::setClient(\Phake::CLIENT_PHPUNIT9);

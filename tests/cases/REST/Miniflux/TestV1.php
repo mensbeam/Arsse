@@ -7,8 +7,6 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\TestCase\REST\Miniflux;
 
-use Eloquent\Phony\Mock\Handle\InstanceHandle;
-use Eloquent\Phony\Phpunit\Phony;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Context\RootContext;
@@ -60,11 +58,6 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $transaction;
 
     protected function req(string $method, string $target, $data = "", array $headers = [], ?string $user = "john.doe@example.com", bool $body = true): ResponseInterface {
-        Arsse::$obj = $this->objMock->get();
-        Arsse::$db = $this->dbMock->get();
-        if ($this->h instanceof InstanceHandle) {
-            $this->h = $this->h->get();
-        }
         $prefix = "/v1";
         $url = $prefix.$target;
         if ($body) {
@@ -80,16 +73,16 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         parent::setUp();
         self::setConf();
+        $this->transaction = \Phake::mock(Transaction::class);
         // create mock timestamps
-        $this->objMock->get->with(\DateTimeImmutable::class)->returns(new \DateTimeImmutable(self::NOW));
+        \Phake::when(Arsse::$obj)->get(\DateTimeImmutable::class)->thenReturn(new \DateTimeImmutable(self::NOW));
         // create a mock database interface
-        $this->transaction = $this->mock(Transaction::class);
-        $this->dbMock = $this->mock(Database::class);
-        $this->dbMock->begin->returns($this->transaction->get());
+        Arsse::$db = \Phake::mock(Database::class);
+        \Phake::when(Arsse::$db)->begin->thenReturn($this->transaction);
         // create a mock user manager
         Arsse::$user = \Phake::mock(User::class);
         \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 42, 'admin' => false, 'root_folder_name' => null, 'tz' => "Asia/Gaza"]);
-        \Phake::when(Arsse::$user)->begin->thenReturn($this->transaction->get());
+        \Phake::when(Arsse::$user)->begin->thenReturn($this->transaction);
         //initialize a handler
         $this->h = new V1();
     }
@@ -114,8 +107,8 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             $headers = [];
         }
         Arsse::$user->id = null;
-        $this->dbMock->tokenLookup->throws(new ExceptionInput("subjectMissing"));
-        $this->dbMock->tokenLookup->with("miniflux.login", self::TOKEN)->returns(['user' => $user]);
+        \Phake::when(Arsse::$db)->tokenLookup->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->tokenLookup("miniflux.login", self::TOKEN)->thenReturn(['user' => $user]);
         $this->assertMessage($exp, $this->req("GET", "/", "", $headers, $auth ? "john.doe@example.com" : null));
         $this->assertSame($success ? $user : null, Arsse::$user->id);
     }
@@ -383,7 +376,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testListCategories(): void {
-        $this->dbMock->folderList->returns(new Result($this->v([
+        \Phake::when(Arsse::$db)->folderList->thenReturn(new Result($this->v([
             ['id' => 1,  'name' => "Science"],
             ['id' => 20, 'name' => "Technology"],
         ])));
@@ -393,7 +386,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 21, 'title' => "Technology", 'user_id' => 42],
         ]);
         $this->assertMessage($exp, $this->req("GET", "/categories"));
-        $this->dbMock->folderList->calledWith("john.doe@example.com", null, false);
+        \Phake::verify(Arsse::$db)->folderList("john.doe@example.com", null, false);
         // run test again with a renamed root folder
         Arsse::$user = \Phake::mock(User::class);
         \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 47, 'admin' => false, 'root_folder_name' => "Uncategorized"]);
@@ -408,13 +401,13 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideCategoryAdditions */
     public function testAddACategory($title, ResponseInterface $exp): void {
         if (!strlen((string) $title)) {
-            $this->dbMock->folderAdd->throws(new ExceptionInput("missing"));
+            \Phake::when(Arsse::$db)->folderAdd->thenThrow(new ExceptionInput("missing"));
         } elseif (!strlen(trim((string) $title))) {
-            $this->dbMock->folderAdd->throws(new ExceptionInput("whitespace"));
+            \Phake::when(Arsse::$db)->folderAdd->thenThrow(new ExceptionInput("whitespace"));
         } elseif ($title === "Duplicate") {
-            $this->dbMock->folderAdd->throws(new ExceptionInput("constraintViolation"));
+            \Phake::when(Arsse::$db)->folderAdd->thenThrow(new ExceptionInput("constraintViolation"));
         } else {
-            $this->dbMock->folderAdd->returns(2111);
+            \Phake::when(Arsse::$db)->folderAdd->thenReturn(2111);
         }
         $this->assertMessage($exp, $this->req("POST", "/categories", ['title' => $title]));
     }
@@ -434,15 +427,15 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testRenameACategory(int $id, $title, $out, ResponseInterface $exp): void {
         \Phake::when(Arsse::$user)->propertiesSet->thenReturn(['root_folder_name' => $title]);
         if (is_string($out)) {
-            $this->dbMock->folderPropertiesSet->throws(new ExceptionInput($out));
+            \Phake::when(Arsse::$db)->folderPropertiesSet->thenThrow(new ExceptionInput($out));
         } else {
-            $this->dbMock->folderPropertiesSet->returns($out);
+            \Phake::when(Arsse::$db)->folderPropertiesSet->thenReturn($out);
         }
         $times = (int) ($id === 1 && is_string($title) && strlen(trim($title)));
         $this->assertMessage($exp, $this->req("PUT", "/categories/$id", ['title' => $title]));
         \Phake::verify(Arsse::$user, \Phake::times($times))->propertiesSet("john.doe@example.com", ['root_folder_name' => $title]);
         $times = (int) ($id !== 1 && is_string($title));
-        $this->dbMock->folderPropertiesSet->times($times)->calledWith("john.doe@example.com", $id - 1, ['name' => $title]);
+        \Phake::verify(Arsse::$db, \Phake::times($times))->folderPropertiesSet("john.doe@example.com", $id - 1, ['name' => $title]);
     }
 
     public function provideCategoryUpdates(): iterable {
@@ -464,90 +457,90 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testDeleteARealCategory(): void {
-        $this->dbMock->folderRemove->returns(true)->throws(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->folderRemove->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
         $this->assertMessage(HTTP::respEmpty(204), $this->req("DELETE", "/categories/2112"));
-        $this->dbMock->folderRemove->calledWith("john.doe@example.com", 2111);
+        \Phake::verify(Arsse::$db)->folderRemove("john.doe@example.com", 2111);
         $this->assertMessage(V1::respError("404", 404), $this->req("DELETE", "/categories/47"));
-        $this->dbMock->folderRemove->calledWith("john.doe@example.com", 46);
+        \Phake::verify(Arsse::$db)->folderRemove("john.doe@example.com", 46);
     }
 
     public function testDeleteTheSpecialCategory(): void {
-        $this->dbMock->subscriptionList->returns(new Result($this->v([
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v([
             ['id' => 1],
             ['id' => 47],
             ['id' => 2112],
         ])));
-        $this->dbMock->subscriptionRemove->returns(true);
+        \Phake::when(Arsse::$db)->subscriptionRemove->thenReturn(true);
         $this->assertMessage(HTTP::respEmpty(204), $this->req("DELETE", "/categories/1"));
-        Phony::inOrder(
-            $this->dbMock->begin->calledWith(),
-            $this->dbMock->subscriptionList->calledWith("john.doe@example.com", null, false),
-            $this->dbMock->subscriptionRemove->calledWith("john.doe@example.com", 1),
-            $this->dbMock->subscriptionRemove->calledWith("john.doe@example.com", 47),
-            $this->dbMock->subscriptionRemove->calledWith("john.doe@example.com", 2112),
-            $this->transaction->commit->called()
+        \Phake::inOrder(
+            \Phake::verify(Arsse::$db)->begin(),
+            \Phake::verify(Arsse::$db)->subscriptionList("john.doe@example.com", null, false),
+            \Phake::verify(Arsse::$db)->subscriptionRemove("john.doe@example.com", 1),
+            \Phake::verify(Arsse::$db)->subscriptionRemove("john.doe@example.com", 47),
+            \Phake::verify(Arsse::$db)->subscriptionRemove("john.doe@example.com", 2112),
+            \Phake::verify($this->transaction)->commit()
         );
     }
 
     public function testListFeeds(): void {
-        $this->dbMock->subscriptionList->returns(new Result($this->v(self::FEEDS)));
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v(self::FEEDS)));
         $exp = HTTP::respJson(self::FEEDS_OUT);
         $this->assertMessage($exp, $this->req("GET", "/feeds"));
     }
 
     public function testListFeedsOfACategory(): void {
-        $this->dbMock->subscriptionList->returns(new Result($this->v(self::FEEDS)));
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v(self::FEEDS)));
         $exp = HTTP::respJson(self::FEEDS_OUT);
         $this->assertMessage($exp, $this->req("GET", "/categories/2112/feeds"));
-        $this->dbMock->subscriptionList->calledWith(Arsse::$user->id, 2111, true);
+        \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id, 2111, true);
     }
 
     public function testListFeedsOfTheRootCategory(): void {
-        $this->dbMock->subscriptionList->returns(new Result($this->v(self::FEEDS)));
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v(self::FEEDS)));
         $exp = HTTP::respJson(self::FEEDS_OUT);
         $this->assertMessage($exp, $this->req("GET", "/categories/1/feeds"));
-        $this->dbMock->subscriptionList->calledWith(Arsse::$user->id, 0, false);
+        \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id, 0, false);
     }
 
     public function testListFeedsOfAMissingCategory(): void {
-        $this->dbMock->subscriptionList->throws(new ExceptionInput("idMissing"));
+        \Phake::when(Arsse::$db)->subscriptionList->thenThrow(new ExceptionInput("idMissing"));
         $exp = V1::respError("404", 404);
         $this->assertMessage($exp, $this->req("GET", "/categories/2112/feeds"));
-        $this->dbMock->subscriptionList->calledWith(Arsse::$user->id, 2111, true);
+        \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id, 2111, true);
     }
 
     public function testGetAFeed(): void {
-        $this->dbMock->subscriptionPropertiesGet->returns($this->v(self::FEEDS[0]))->returns($this->v(self::FEEDS[1]));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn($this->v(self::FEEDS[0]))->thenReturn($this->v(self::FEEDS[1]));
         $this->assertMessage(HTTP::respJson(self::FEEDS_OUT[0]), $this->req("GET", "/feeds/1"));
-        $this->dbMock->subscriptionPropertiesGet->calledWith(Arsse::$user->id, 1);
         $this->assertMessage(HTTP::respJson(self::FEEDS_OUT[1]), $this->req("GET", "/feeds/55"));
-        $this->dbMock->subscriptionPropertiesGet->calledWith(Arsse::$user->id, 55);
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 1);
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 55);
     }
 
     public function testGetAMissingFeed(): void {
-        $this->dbMock->subscriptionPropertiesGet->throws(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenThrow(new ExceptionInput("subjectMissing"));
         $this->assertMessage(V1::respError("404", 404), $this->req("GET", "/feeds/1"));
-        $this->dbMock->subscriptionPropertiesGet->calledWith(Arsse::$user->id, 1);
+        \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 1);
     }
 
     /** @dataProvider provideFeedCreations */
     public function testCreateAFeed(array $in, $out1, $out2, $out3, $out4, ResponseInterface $exp): void {
         if ($out1 instanceof \Exception) {
-            $this->dbMock->feedAdd->throws($out1);
+            \Phake::when(Arsse::$db)->feedAdd->thenThrow($out1);
         } else {
-            $this->dbMock->feedAdd->returns($out1);
+            \Phake::when(Arsse::$db)->feedAdd->thenReturn($out1);
         }
         if ($out2 instanceof \Exception) {
-            $this->dbMock->subscriptionAdd->throws($out2);
+            \Phake::when(Arsse::$db)->subscriptionAdd->thenThrow($out2);
         } else {
-            $this->dbMock->subscriptionAdd->returns($out2);
+            \Phake::when(Arsse::$db)->subscriptionAdd->thenReturn($out2);
         }
         if ($out3 instanceof \Exception) {
-            $this->dbMock->subscriptionPropertiesSet->throws($out3);
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenThrow($out3);
         } elseif ($out4 instanceof \Exception) {
-            $this->dbMock->subscriptionPropertiesSet->returns($out3)->throws($out4);
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn($out3)->thenThrow($out4);
         } else {
-            $this->dbMock->subscriptionPropertiesSet->returns($out3)->returns($out4);
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn($out3)->thenReturn($out4);
         }
         $this->assertMessage($exp, $this->req("POST", "/feeds", $in));
         $in1 = $out1 !== null;
@@ -555,37 +548,37 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $in3 = $out3 !== null;
         $in4 = $out4 !== null;
         if ($in1) {
-            $this->dbMock->feedAdd->calledWith($in['feed_url'], $in['username'] ?? "", $in['password'] ?? "", false, $in['crawler'] ?? false);
+            \Phake::verify(Arsse::$db)->feedAdd($in['feed_url'], $in['username'] ?? "", $in['password'] ?? "", false, $in['crawler'] ?? false);
         } else {
-            $this->dbMock->feedAdd->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->feedAdd(\Phake::anyParameters());
         }
         if ($in2) {
-            $this->dbMock->begin->calledWith();
-            $this->dbMock->subscriptionAdd->calledWith("john.doe@example.com", $in['feed_url'], $in['username'] ?? "", $in['password'] ?? "", false, $in['crawler'] ?? false);
+            \Phake::verify(Arsse::$db)->begin();
+            \Phake::verify(Arsse::$db)->subscriptionAdd("john.doe@example.com", $in['feed_url'], $in['username'] ?? "", $in['password'] ?? "", false, $in['crawler'] ?? false);
         } else {
-            $this->dbMock->begin->never()->called();
-            $this->dbMock->subscriptionAdd->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->begin(\Phake::anyParameters());
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionAdd(\Phake::anyParameters());
         }
         if ($in3) {
             $props = [
                 'folder'     => $in['category_id'] - 1,
                 'scrape'     => $in['crawler'] ?? false,
             ];
-            $this->dbMock->subscriptionPropertiesSet->calledWith("john.doe@example.com", $out2, $props);
+            \Phake::verify(Arsse::$db)->subscriptionPropertiesSet("john.doe@example.com", $out2, $props);
             if (!$out3 instanceof \Exception) {
-                $this->transaction->commit->called();
+                \Phake::verify($this->transaction)->commit();
             }
         } else {
-            $this->dbMock->subscriptionPropertiesSet->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionPropertiesSet(\Phake::anyParameters());
         }
         if ($in4) {
             $rules = [
                 'keep_rule'  => $in['keeplist_rules'] ?? null,
                 'block_rule' => $in['blocklist_rules'] ?? null,
             ];
-            $this->dbMock->subscriptionPropertiesSet->calledWith("john.doe@example.com", $out2, $rules);
+            \Phake::verify(Arsse::$db)->subscriptionPropertiesSet("john.doe@example.com", $out2, $rules);
         } else {
-            $this->dbMock->subscriptionPropertiesSet->atMost(1)->called();
+            \Phake::verify(Arsse::$db, \Phake::atMost(1))->subscriptionPropertiesSet(\Phake::anyParameters());
         }
     }
 
@@ -623,15 +616,15 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideFeedModifications */
     public function testModifyAFeed(array $in, array $data, $out, ResponseInterface $exp): void {
-        $this->h = $this->partialMock(V1::class);
-        $this->h->getFeed->returns(HTTP::respJson(self::FEEDS_OUT[0]));
+        $this->h = \Phake::partialMock(V1::class);
+        \Phake::when($this->h)->getFeed->thenReturn(HTTP::respJson(self::FEEDS_OUT[0]));
         if ($out instanceof \Exception) {
-            $this->dbMock->subscriptionPropertiesSet->throws($out);
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenThrow($out);
         } else {
-            $this->dbMock->subscriptionPropertiesSet->returns($out);
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn($out);
         }
         $this->assertMessage($exp, $this->req("PUT", "/feeds/2112", $in));
-        $this->dbMock->subscriptionPropertiesSet->calledWith(Arsse::$user->id, 2112, $data);
+        \Phake::verify(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 2112, $data);
     }
 
     public function provideFeedModifications(): iterable {
@@ -652,34 +645,34 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testModifyAFeedWithNoBody(): void {
-        $this->h = $this->partialMock(V1::class);
-        $this->h->getFeed->returns(HTTP::respJson(self::FEEDS_OUT[0]));
-        $this->dbMock->subscriptionPropertiesSet->returns(true);
+        $this->h = \Phake::partialMock(V1::class);
+        \Phake::when($this->h)->getFeed->thenReturn(HTTP::respJson(self::FEEDS_OUT[0]));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn(true);
         $this->assertMessage(HTTP::respJson(self::FEEDS_OUT[0], 201), $this->req("PUT", "/feeds/2112", ""));
-        $this->dbMock->subscriptionPropertiesSet->calledWith(Arsse::$user->id, 2112, []);
+        \Phake::verify(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 2112, []);
     }
 
     public function testDeleteAFeed(): void {
-        $this->dbMock->subscriptionRemove->returns(true);
+        \Phake::when(Arsse::$db)->subscriptionRemove->thenReturn(true);
         $this->assertMessage(HTTP::respEmpty(204), $this->req("DELETE", "/feeds/2112"));
-        $this->dbMock->subscriptionRemove->calledWith(Arsse::$user->id, 2112);
+        \Phake::verify(Arsse::$db)->subscriptionRemove(Arsse::$user->id, 2112);
     }
 
     public function testDeleteAMissingFeed(): void {
-        $this->dbMock->subscriptionRemove->throws(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->subscriptionRemove->thenThrow(new ExceptionInput("subjectMissing"));
         $this->assertMessage(V1::respError("404", 404), $this->req("DELETE", "/feeds/2112"));
-        $this->dbMock->subscriptionRemove->calledWith(Arsse::$user->id, 2112);
+        \Phake::verify(Arsse::$db)->subscriptionRemove(Arsse::$user->id, 2112);
     }
 
     /** @dataProvider provideIcons */
     public function testGetTheIconOfASubscription($out, ResponseInterface $exp): void {
         if ($out instanceof \Exception) {
-            $this->dbMock->subscriptionIcon->throws($out);
+            \Phake::when(Arsse::$db)->subscriptionIcon->thenThrow($out);
         } else {
-            $this->dbMock->subscriptionIcon->returns($this->v($out));
+            \Phake::when(Arsse::$db)->subscriptionIcon->thenReturn($this->v($out));
         }
         $this->assertMessage($exp, $this->req("GET", "/feeds/2112/icon"));
-        $this->dbMock->subscriptionIcon->calledWith(Arsse::$user->id, 2112);
+        \Phake::verify(Arsse::$db)->subscriptionIcon(Arsse::$user->id, 2112);
     }
 
     public function provideIcons(): iterable {
@@ -695,28 +688,28 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideEntryQueries */
     public function testGetEntries(string $url, ?RootContext $c, ?array $order, $out, bool $count, ResponseInterface $exp): void {
-        $this->dbMock->subscriptionList->returns(new Result($this->v(self::FEEDS)));
-        $this->dbMock->articleCount->returns(2112);
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v(self::FEEDS)));
+        \Phake::when(Arsse::$db)->articleCount->thenReturn(2112);
         if ($out instanceof \Exception) {
-            $this->dbMock->articleList->throws($out);
+            \Phake::when(Arsse::$db)->articleList->thenThrow($out);
         } else {
-            $this->dbMock->articleList->returns(new Result($this->v($out)));
+            \Phake::when(Arsse::$db)->articleList->thenReturn(new Result($this->v($out)));
         }
         $this->assertMessage($exp, $this->req("GET", $url));
         if ($c) {
-            $this->dbMock->articleList->calledWith(Arsse::$user->id, $this->equalTo($c), array_keys(self::ENTRIES[0]), $order);
+            \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, $this->equalTo($c), array_keys(self::ENTRIES[0]), $order);
         } else {
-            $this->dbMock->articleList->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->articleList(\Phake::anyParameters());
         }
         if ($out && !$out instanceof \Exception) {
-            $this->dbMock->subscriptionList->calledWith(Arsse::$user->id);
+            \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id);
         } else {
-            $this->dbMock->subscriptionList->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionList(\Phake::anyParameters());
         }
         if ($count) {
-            $this->dbMock->articleCount->calledWith(Arsse::$user->id, $this->equalTo((clone $c)->limit(0)->offset(0)));
+            \Phake::verify(Arsse::$db)->articleCount(Arsse::$user->id, $this->equalTo((clone $c)->limit(0)->offset(0)));
         } else {
-            $this->dbMock->articleCount->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->articleCount(\Phake::anyParameters());
         }
     }
 
@@ -786,22 +779,22 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideSingleEntryQueries */
     public function testGetASingleEntry(string $url, Context $c, $out, ResponseInterface $exp): void {
-        $this->dbMock->subscriptionPropertiesGet->returns($this->v(self::FEEDS[1]));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn($this->v(self::FEEDS[1]));
         if ($out instanceof \Exception) {
-            $this->dbMock->articleList->throws($out);
+            \Phake::when(Arsse::$db)->articleList->thenThrow($out);
         } else {
-            $this->dbMock->articleList->returns(new Result($this->v($out)));
+            \Phake::when(Arsse::$db)->articleList->thenReturn(new Result($this->v($out)));
         }
         $this->assertMessage($exp, $this->req("GET", $url));
         if ($c) {
-            $this->dbMock->articleList->calledWith(Arsse::$user->id, $this->equalTo($c), array_keys(self::ENTRIES[0]));
+            \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, $this->equalTo($c), array_keys(self::ENTRIES[0]));
         } else {
-            $this->dbMock->articleList->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->articleList(\Phake::anyParameters());
         }
         if ($out && is_array($out)) {
-            $this->dbMock->subscriptionPropertiesGet->calledWith(Arsse::$user->id, 55);
+            \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 55);
         } else {
-            $this->dbMock->subscriptionList->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionList(\Phake::anyParameters());
         }
     }
 
@@ -825,12 +818,12 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideEntryMarkings */
     public function testMarkEntries(array $in, ?array $data, ResponseInterface $exp): void {
-        $this->dbMock->articleMark->returns(0);
+        \Phake::when(Arsse::$db)->articleMark->thenReturn(0);
         $this->assertMessage($exp, $this->req("PUT", "/entries", $in));
         if ($data) {
-            $this->dbMock->articleMark->calledWith(Arsse::$user->id, $data, (new Context)->articles($in['entry_ids']));
+            \Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $data, (new Context)->articles($in['entry_ids']));
         } else {
-            $this->dbMock->articleMark->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->articleMark(\Phake::anyParameters());
         }
     }
 
@@ -854,15 +847,15 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideMassMarkings */
     public function testMassMarkEntries(string $url, Context $c, $out, ResponseInterface $exp): void {
         if ($out instanceof \Exception) {
-            $this->dbMock->articleMark->throws($out);
+            \Phake::when(Arsse::$db)->articleMark->thenThrow($out);
         } else {
-            $this->dbMock->articleMark->returns($out);
+            \Phake::when(Arsse::$db)->articleMark->thenReturn($out);
         }
         $this->assertMessage($exp, $this->req("PUT", $url));
         if ($out !== null) {
-            $this->dbMock->articleMark->calledWith(Arsse::$user->id, ['read' => true], $this->equalTo($c));
+            \Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, ['read' => true], $this->equalTo($c));
         } else {
-            $this->dbMock->articleMark->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->articleMark(\Phake::anyParameters());
         }
     }
 
@@ -883,27 +876,27 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideBookmarkTogglings */
     public function testToggleABookmark($before, ?bool $after, ResponseInterface $exp): void {
         $c = (new Context)->article(2112);
-        $this->dbMock->articleMark->returns(1);
+        \Phake::when(Arsse::$db)->articleMark->thenReturn(1);
         if ($before instanceof \Exception) {
-            $this->dbMock->articleCount->throws($before);
+            \Phake::when(Arsse::$db)->articleCount->thenThrow($before);
         } else {
-            $this->dbMock->articleCount->returns($before);
+            \Phake::when(Arsse::$db)->articleCount->thenReturn($before);
         }
         $this->assertMessage($exp, $this->req("PUT", "/entries/2112/bookmark"));
         if ($after !== null) {
-            Phony::inOrder(
-                $this->dbMock->begin->calledWith(),
-                $this->dbMock->articleCount->calledWith(Arsse::$user->id, (clone $c)->starred(false)),
-                $this->dbMock->articleMark->calledWith(Arsse::$user->id, ['starred' => $after], $c),
-                $this->transaction->commit->called()
+            \Phake::inOrder(
+                \Phake::verify(Arsse::$db)->begin(),
+                \Phake::verify(Arsse::$db)->articleCount(Arsse::$user->id, (clone $c)->starred(false)),
+                \Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, ['starred' => $after], $c),
+                \Phake::verify($this->transaction)->commit()
             );
         } else {
-            Phony::inOrder(
-                $this->dbMock->begin->calledWith(),
-                $this->dbMock->articleCount->calledWith(Arsse::$user->id, (clone $c)->starred(false))
+            \Phake::inOrder(
+                \Phake::verify(Arsse::$db)->begin(),
+                \Phake::verify(Arsse::$db)->articleCount(Arsse::$user->id, (clone $c)->starred(false))
             );
-            $this->dbMock->articleMark->never()->called();
-            $this->transaction->commit->never()->called();
+            \Phake::verify($this->transaction, \Phake::never())->commit(\Phake::anyParameters());
+            \Phake::verify(Arsse::$db, \Phake::never())->articleMark(\Phake::anyParameters());
         }
     }
 
@@ -917,15 +910,15 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testRefreshAFeed(): void {
-        $this->dbMock->subscriptionPropertiesGet->returns([]);
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn([]);
         $this->assertMessage(HTTP::respEmpty(204), $this->req("PUT", "/feeds/47/refresh"));
-        $this->dbMock->subscriptionPropertiesGet->calledWith(Arsse::$user->id, 47);
+        \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 47);
     }
 
     public function testRefreshAMissingFeed(): void {
-        $this->dbMock->subscriptionPropertiesGet->throws(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenThrow(new ExceptionInput("subjectMissing"));
         $this->assertMessage(V1::respError("404", 404), $this->req("PUT", "/feeds/2112/refresh"));
-        $this->dbMock->subscriptionPropertiesGet->calledWith(Arsse::$user->id, 2112);
+        \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 2112);
     }
 
     public function testRefreshAllFeeds(): void {
@@ -934,12 +927,12 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideImports */
     public function testImport($out, ResponseInterface $exp): void {
-        $opml = $this->mock(OPML::class);
-        $this->objMock->get->with(OPML::class)->returns($opml);
-        $action = ($out instanceof \Exception) ? "throws" : "returns";
-        $opml->import->$action($out);
+        $opml = \Phake::mock(OPML::class);
+        \Phake::when(Arsse::$obj)->get(OPML::class)->thenReturn($opml);
+        $action = ($out instanceof \Exception) ? "thenThrow" : "thenRreturn";
+        \Phake::when($opml)->import->$action($out);
         $this->assertMessage($exp, $this->req("POST", "/import", "IMPORT DATA"));
-        $opml->import->calledWith(Arsse::$user->id, "IMPORT DATA");
+        \Phake::verify($opml)->import(Arsse::$user->id, "IMPORT DATA");
     }
 
     public function provideImports(): iterable {
@@ -956,10 +949,10 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testExport(): void {
-        $opml = $this->mock(OPML::class);
-        $this->objMock->get->with(OPML::class)->returns($opml);
-        $opml->export->returns("<EXPORT_DATA/>");
+        $opml = \Phake::mock(OPML::class);
+        \Phake::when(Arsse::$obj)->get(OPML::class)->thenReturn($opml);
+        \Phake::when($opml)->export->thenReturn("<EXPORT_DATA/>");
         $this->assertMessage(HTTP::respText("<EXPORT_DATA/>", 200, ['Content-Type' => "application/xml"]), $this->req("GET", "/export"));
-        $opml->export->calledWith(Arsse::$user->id);
+        \Phake::verify($opml)->export(Arsse::$user->id);
     }
 }

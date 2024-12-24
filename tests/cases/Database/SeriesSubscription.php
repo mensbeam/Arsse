@@ -211,11 +211,10 @@ trait SeriesSubscription {
     public function testAddASubscriptionToAnExistingFeed(): void {
         $url = "http://example.com/feed1";
         $subID = $this->nextID("arsse_subscriptions");
-        $db = $this->partialMock(Database::class, static::$drv);
-        $db->feedUpdate->returns(true);
-        Arsse::$db = $db->get();
+        Arsse::$db = \Phake::partialMock(Database::class, static::$drv);
+        \Phake::when($db)->feedUpdate->thenReturn(true);
         $this->assertSame($subID, Arsse::$db->subscriptionAdd($this->user, $url));
-        $db->feedUpdate->never()->called();
+        \Phake::verify(Arsse::$db, \Phake::never())->feedUpdate(\Phake::anyParameters());
         $state = $this->primeExpectations($this->data, [
             'arsse_feeds'         => ['id','url','username','password'],
             'arsse_subscriptions' => ['id','owner','feed'],
@@ -232,11 +231,10 @@ trait SeriesSubscription {
         $url = "http://example.org/feed1";
         $feedID = $this->nextID("arsse_feeds");
         $subID = $this->nextID("arsse_subscriptions");
-        $db = $this->partialMock(Database::class, static::$drv);
-        $db->feedUpdate->returns(true);
-        Arsse::$db = $db->get();
+        Arsse::$db = \Phake::partialMock(Database::class, static::$drv);
+        \Phake::when(Arsse::$db)->feedUpdate->thenReturn(true);
         $this->assertSame($subID, Arsse::$db->subscriptionAdd($this->user, $url, "", "", false));
-        $db->feedUpdate->calledWith($feedID, true, false);
+        \Phake::verify($db)->feedUpdate($feedID, true, false);
         $state = $this->primeExpectations($this->data, [
             'arsse_feeds'         => ['id','url','username','password'],
             'arsse_subscriptions' => ['id','owner','feed'],
@@ -255,11 +253,10 @@ trait SeriesSubscription {
         $discovered = "http://localhost:8000/Feed/Discovery/Feed";
         $feedID = $this->nextID("arsse_feeds");
         $subID = $this->nextID("arsse_subscriptions");
-        $db = $this->partialMock(Database::class, static::$drv);
-        $db->feedUpdate->returns(true);
-        Arsse::$db = $db->get();
+        Arsse::$db = \Phake::partialMock(Database::class, static::$drv);
+        \Phake::when(Arsse::$db)->feedUpdate->thenReturn(true);
         $this->assertSame($subID, Arsse::$db->subscriptionAdd($this->user, $url, "", "", true));
-        $db->feedUpdate->calledWith($feedID, true, false);
+        \Phake::verify(Arsse::$db)->feedUpdate($feedID, true, false);
         $state = $this->primeExpectations($this->data, [
             'arsse_feeds'         => ['id','url','username','password'],
             'arsse_subscriptions' => ['id','owner','feed'],
@@ -276,14 +273,13 @@ trait SeriesSubscription {
     public function testAddASubscriptionToAnInvalidFeed(): void {
         $url = "http://example.org/feed1";
         $feedID = $this->nextID("arsse_feeds");
-        $db = $this->partialMock(Database::class, static::$drv);
-        $db->feedUpdate->throws(new FeedException("", ['url' => $url], $this->mockGuzzleException(ClientException::class, "", 404)));
-        Arsse::$db = $db->get();
+        Arsse::$db = \Phake::partialMock(Database::class, static::$drv);
+        \Phake::when(Arsse::$db)->feedUpdate->thenThrow(new FeedException("", ['url' => $url], $this->mockGuzzleException(ClientException::class, "", 404)));
         $this->assertException("invalidUrl", "Feed");
         try {
             Arsse::$db->subscriptionAdd($this->user, $url, "", "", false);
         } finally {
-            $db->feedUpdate->calledWith($feedID, true, false);
+            \Phake::verify(Arsse::$db)->feedUpdate($feedID, true, false);
             $state = $this->primeExpectations($this->data, [
                 'arsse_feeds'         => ['id','url','username','password'],
                 'arsse_subscriptions' => ['id','owner','feed'],

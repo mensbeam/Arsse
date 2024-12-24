@@ -36,14 +36,13 @@ class TestSubprocess extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testRefreshFeeds(): void {
-        $dMock = $this->partialMock(Driver::class);
-        $dMock->execCmd->does(function(string $cmd) {
+        $d = \Phake::partialMock(Driver::class);
+        \Phake::when($d)->execCmd->thenReturnCallback(function(string $cmd) {
             // FIXME: Does this work in Windows?
             return popen("echo ".escapeshellarg($cmd), "r");
         });
-        $d = $dMock->get();
         $this->assertSame(3, $d->queue(1, 4, 3));
         $this->assertSame(Arsse::$conf->serviceQueueWidth, $d->exec());
-        $dMock->execCmd->times(3)->called();
+        \Phake::verify($d, \Phake::times(3))->execCmd(\Phake::anyParameters());
     }
 }
