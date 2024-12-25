@@ -465,7 +465,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testOutputToXml(): void {
-        $this->hMock->processRequest->thenReturn([
+        \Phake::when($this->hMock)->processRequest->thenReturn([
             'items'       => $this->articles['rest'],
             'total_items' => 1024,
         ]);

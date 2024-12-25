@@ -491,9 +491,9 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             'starredCount' => 5,
             'newestItemId' => 4758915,
         ];
-        \Phake::when(Arsse::$db)->subscriptionList($this->userId)->theneturn(new Result([]))->thenReturn(new Result($this->v($this->feeds['db'])));
+        \Phake::when(Arsse::$db)->subscriptionList($this->userId)->thenReturn(new Result([]))->thenReturn(new Result($this->v($this->feeds['db'])));
         \Phake::when(Arsse::$db)->articleStarred($this->userId)->thenReturn($this->v(['total' => 0]))->thenReturn($this->v(['total' => 5]));
-        \Phake::when(Arsse::$db)->editionLatest($this->userId)->thenReturns(0)->thenReturn(4758915);
+        \Phake::when(Arsse::$db)->editionLatest($this->userId)->thenReturn(0)->thenReturn(4758915);
         $exp = HTTP::respJson($exp1);
         $this->assertMessage($exp, $this->req("GET", "/feeds"));
         $exp = HTTP::respJson($exp2);
@@ -777,7 +777,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("PUT", "/items/47/unread"));
         $this->assertMessage($exp, $this->req("PUT", "/items/1/2112/star"));
         $this->assertMessage($exp, $this->req("PUT", "/items/4400/1337/unstar"));
-        \Phake::verify(Arsse::$db, \Phake::times(8))->articleMark($this->userId, \Phake::anyParameters());
+        \Phake::verify(Arsse::$db, \Phake::times(8))->articleMark($this->userId, \Phake::ignoreRemaining());
     }
 
     public function testChangeMarksOfMultipleArticles(): void {

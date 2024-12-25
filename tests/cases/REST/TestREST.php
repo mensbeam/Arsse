@@ -19,6 +19,7 @@ use Psr\Http\Message\ResponseInterface;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\ServerRequest;
+use JKingWeb\Arsse\Factory;
 
 /** @covers \JKingWeb\Arsse\REST */
 class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -294,8 +295,9 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
             return $req;
         });
         if ($called) {
+            Arsse::$obj = \Phake::mock(Factory::class);
             $hMock = \Phake::mock($class);
-            $hMock->dispatch->thenReturn(HTTP::respEmpty(204));
+            \Phake::when($hMock)->dispatch->thenReturn(HTTP::respEmpty(204));
             \Phake::when(Arsse::$obj)->get($class)->thenReturn($hMock);
         }
         $out = $rMock->dispatch($req);

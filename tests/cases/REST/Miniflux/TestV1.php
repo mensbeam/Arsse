@@ -16,6 +16,7 @@ use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\Db\ExceptionInput;
+use JKingWeb\Arsse\Factory;
 use JKingWeb\Arsse\REST\Miniflux\V1;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\ImportExport\Exception as ImportException;
@@ -75,6 +76,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         self::setConf();
         $this->transaction = \Phake::mock(Transaction::class);
         // create mock timestamps
+        Arsse::$obj = \Phake::mock(Factory::class);
         \Phake::when(Arsse::$obj)->get(\DateTimeImmutable::class)->thenReturn(new \DateTimeImmutable(self::NOW));
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
@@ -237,7 +239,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideUserModifications */
     public function testModifyAUser(bool $admin, string $url, array $body, $in1, $out1, $in2, $out2, $in3, $out3, ResponseInterface $exp): void {
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->begin->thenReturn($this->transaction->get());
+        \Phake::when(Arsse::$user)->begin->thenReturn($this->transaction);
         \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 1, 'admin' => true]);
         \Phake::when(Arsse::$user)->propertiesGet("john.doe@example.com", $this->anything())->thenReturn(['num' => 2, 'admin' => $admin]);
         \Phake::when(Arsse::$user)->propertiesGet("ook", $this->anything())->thenReturn(['num' => 2, 'admin' => $admin]);
@@ -306,7 +308,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @dataProvider provideUserAdditions */
     public function testAddAUser(array $body, $in1, $out1, $in2, $out2, ResponseInterface $exp): void {
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->begin->thenReturn($this->transaction->get());
+        \Phake::when(Arsse::$user)->begin->thenReturn($this->transaction);
         \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 2, 'admin' => false]);
         \Phake::when(Arsse::$user)->propertiesGet("john.doe@example.com", $this->anything())->thenReturn(['num' => 1, 'admin' => true]);
         if ($out1 instanceof \Exception) {
@@ -929,7 +931,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testImport($out, ResponseInterface $exp): void {
         $opml = \Phake::mock(OPML::class);
         \Phake::when(Arsse::$obj)->get(OPML::class)->thenReturn($opml);
-        $action = ($out instanceof \Exception) ? "thenThrow" : "thenRreturn";
+        $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
         \Phake::when($opml)->import->$action($out);
         $this->assertMessage($exp, $this->req("POST", "/import", "IMPORT DATA"));
         \Phake::verify($opml)->import(Arsse::$user->id, "IMPORT DATA");

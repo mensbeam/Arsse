@@ -51,7 +51,7 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testResolveRelativePaths(string $path, $cwd, $exp): void {
         // set up mock daemon class
         \Phake::when($this->daemon)->cwd->thenReturn($cwd);
-        $daemon = $this->daemon->get();
+        $daemon = $this->daemon;
         // perform the test
         $this->AssertSame($exp, $daemon->resolveRelativePath($path));
     }
@@ -84,7 +84,7 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         chmod($path."errors/readwrite", 0111);
         // set up mock daemon class
         \Phake::when($this->daemon)->resolveRelativePath->thenReturn($accessible ? dirname($path.$file) : false);
-        $daemon = $this->daemon->get();
+        $daemon = $this->daemon;
         // perform the test
         if ($exp instanceof \Exception) {
             $this->assertException($exp);
@@ -121,7 +121,7 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         // set up mock daemon class
         \Phake::when($this->daemon)->processExists(2112)->thenReturn(true);
         \Phake::when($this->daemon)->processExists(42)->thenReturn(false);
-        $daemon = $this->daemon->get();
+        $daemon = $this->daemon;
         // perform the test
         try {
             if ($exp instanceof \Exception) {
@@ -171,7 +171,7 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         // set up mock daemon class
         \Phake::when($this->daemon)->processExists(2112)->thenReturn(true);
         \Phake::when($this->daemon)->processExists(42)->thenReturn(false);
-        $daemon = $this->daemon->get();
+        $daemon = $this->daemon;
         // perform the test
         try {
             if ($exp instanceof \Exception) {

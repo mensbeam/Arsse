@@ -24,4 +24,6 @@ if (function_exists("xdebug_set_filter")) {
     }
 }
 
-\Phake::setClient(\Phake::CLIENT_PHPUNIT9);
+if (class_exists(\Phake::class)) {
+    \Phake::setClient(\Phake::CLIENT_PHPUNIT9);
+}

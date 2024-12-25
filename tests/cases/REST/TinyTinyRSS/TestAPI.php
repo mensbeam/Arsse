@@ -16,6 +16,7 @@ use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
+use JKingWeb\Arsse\Factory;
 use JKingWeb\Arsse\REST\TinyTinyRSS\API;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use Psr\Http\Message\ResponseInterface;
@@ -129,9 +130,10 @@ LONG_STRING;
     }
 
     public function setUp(): void {
-        parent::setUp();
+        self::clearData();
         self::setConf();
         // create mock timestamps
+        Arsse::$obj = \Phake::mock(Factory::class);
         \Phake::when(Arsse::$obj)->get(\DateTimeImmutable::class)->thenReturn(new \DateTimeImmutable(self::NOW));
         // create a mock user manager
         $this->userId = "john.doe@example.com";
@@ -210,8 +212,8 @@ LONG_STRING;
         \Phake::when(Arsse::$user)->auth->thenReturn(false);
         \Phake::when(Arsse::$user)->auth("john.doe@example.com", "secret")->thenReturn(true);
         \Phake::when(Arsse::$user)->auth("jane.doe@example.com", "superman")->thenReturn(true);
-        \Phake::when(Arsse::$db)->sessionCreate("john.doe@example.com")->thenReturn("PriestsOfSyrinx", "SolarFederation");
-        \Phake::when(Arsse::$db)->sessionCreate("jane.doe@example.com")->thenReturn("ClockworkAngels", "SevenCitiesOfGold");
+        \Phake::when(Arsse::$db)->sessionCreate("john.doe@example.com")->thenReturn("PriestsOfSyrinx")->thenReturn("SolarFederation");
+        \Phake::when(Arsse::$db)->sessionCreate("jane.doe@example.com")->thenReturn("ClockworkAngels")->thenReturn("SevenCitiesOfGold");
         if ($sessions instanceof ResponseInterface) {
             $exp1 = $sessions;
             $exp2 = $sessions;
@@ -709,7 +711,7 @@ LONG_STRING;
         \Phake::when(Arsse::$db)->folderPropertiesGet($this->userId, 42)->thenReturn($this->v(['id' => 42]));
         \Phake::when(Arsse::$db)->folderPropertiesGet($this->userId, 47)->thenReturn($this->v(['id' => 47]));
         \Phake::when(Arsse::$db)->folderPropertiesGet($this->userId, 2112)->thenThrow(new ExceptionInput("subjectMissing"));
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, "*")->thenReturn(true);
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, $this->anything())->thenReturn(true);
         \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 4, $this->anything())->thenThrow(new ExceptionInput("idMissing"));
         \Phake::when(Arsse::$db)->subscriptionList($this->userId)->thenReturn(new Result($this->v($list)));
         $this->assertMessage($exp, $this->req($in));
@@ -832,8 +834,8 @@ LONG_STRING;
         $interval = Arsse::$conf->serviceFrequency;
         $valid = (new \DateTimeImmutable("now", new \DateTimezone("UTC")))->sub($interval);
         $invalid = $valid->sub($interval)->sub($interval);
-        \Phake::when(Arsse::$db)->metaGet("service_last_checkin")->thenReturn(Date::transform($valid, "sql"), Date::transform($invalid, "sql"));
-        \Phake::when(Arsse::$db)->subscriptionCount($this->userId)->thenReturn(12, 2);
+        \Phake::when(Arsse::$db)->metaGet("service_last_checkin")->thenReturn(Date::transform($valid, "sql"))->thenReturn(Date::transform($invalid, "sql"));
+        \Phake::when(Arsse::$db)->subscriptionCount($this->userId)->thenReturn(12)->thenReturn(2);
         $this->assertMessage($this->respGood(['icons_dir' => "feed-icons", 'icons_url' => "feed-icons", 'daemon_is_running' => true, 'num_feeds' => 12]), $this->req($in));
         $this->assertMessage($this->respGood(['icons_dir' => "feed-icons", 'icons_url' => "feed-icons", 'daemon_is_running' => false, 'num_feeds' => 2]), $this->req($in));
     }

@@ -20,7 +20,7 @@ class TestTransaction extends \JKingWeb\Arsse\Test\AbstractTest {
         $drv = \Phake::mock(\JKingWeb\Arsse\Db\SQLite3\Driver::class);
         \Phake::when($drv)->savepointRelease->thenReturn(true);
         \Phake::when($drv)->savepointUndo->thenReturn(true);
-        \Phake::when($drv)->savepointCreate->thenReturn(1, 2);
+        \Phake::when($drv)->savepointCreate->thenReturn(1)->thenReturn(2);
         $this->drv = $drv;
     }
 

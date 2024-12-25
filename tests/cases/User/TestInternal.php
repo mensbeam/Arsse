@@ -17,7 +17,7 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $d;
 
     public function setUp(): void {
-        parent::setUp();
+        self::clearData();
         self::setConf();
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);

@@ -36,7 +36,7 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
         $interval = Arsse::$conf->serviceFrequency;
         $valid = (new \DateTimeImmutable("now", new \DateTimezone("UTC")))->sub($interval);
         $invalid = $valid->sub($interval)->sub($interval);
-        \Phake::when(Arsse::$db)->metaGet("service_last_checkin")->thenReturn(Date::transform($valid, "sql"), Date::transform($invalid, "sql"));
+        \Phake::when(Arsse::$db)->metaGet("service_last_checkin")->thenReturn(Date::transform($valid, "sql"))->thenReturn(Date::transform($invalid, "sql"));
         $this->assertTrue(Service::hasCheckedIn());
         $this->assertFalse(Service::hasCheckedIn());
     }

@@ -99,11 +99,11 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testFailToStartTheForkingDaemon(): void {
         $srv = \Phake::mock(Service::class);
         $daemon = \Phake::mock(Daemon::class);
-        \Phake::when($srv)->watch->thenReturns(new \DateTimeImmutable);
-        \Phake::when($daemon)->checkPIDFilePath->throws(new Service\Exception("pidDuplicate", ['pid' => 2112]));
-        \Phake::when($daemon)->fork->returns(null);
-        \Phake::when(Arsse::$obj)->get(Service::class)->returns($srv);
-        \Phake::when(Arsse::$obj)->get(Daemon::class)->returns($daemon);
+        \Phake::when($srv)->watch->thenReturn(new \DateTimeImmutable);
+        \Phake::when($daemon)->checkPIDFilePath->thenThrow(new Service\Exception("pidDuplicate", ['pid' => 2112]));
+        \Phake::when($daemon)->fork->thenReturn(null);
+        \Phake::when(Arsse::$obj)->get(Service::class)->thenReturn($srv);
+        \Phake::when(Arsse::$obj)->get(Daemon::class)->thenReturn($daemon);
         $this->assertConsole("arsse.php daemon --fork=arsse.pid", 10809);
         \Phake::verify($daemon)->checkPIDFilePath("arsse.pid");
         \Phake::verify($daemon, \Phake::never())->fork($this->anything());
@@ -126,7 +126,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$db)->feedUpdate(2, true)->thenThrow(new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://example.com/"], $this->mockGuzzleException(ClientException::class, "", 404)));
         $this->assertConsole($cmd, $exitStatus, $output);
         \Phake::verify($this->cli)->loadConf();
-        \Phake::verify($this->dbMock)->feedUpdate();
+        \Phake::verify(Arsse::$db)->feedUpdate(\Phake::anyParameters());
     }
 
     public function provideFeedUpdates(): iterable {
@@ -144,7 +144,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when($conf)->exportFile("bad.conf", true)->thenThrow(new \JKingWeb\Arsse\Conf\Exception("fileUnwritable"));
         \Phake::when(Arsse::$obj)->get(Conf::class)->thenReturn($conf);
         $this->assertConsole($cmd, $exitStatus);
-        \Phake::verify($this->cli)->loadConf();
+        \Phake::verify($this->cli, \Phake::never())->loadConf();
         \Phake::verify($conf)->exportFile($file, true);
     }
 
@@ -262,7 +262,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$user)->passwordSet->thenReturnCallback($passwordChange);
         $fever = \Phake::mock(FeverUser::class);
         \Phake::when($fever)->register->thenReturnCallback($passwordChange);
-        \Phake::when(Arsse::$obj)->get(FeverUser::class)->returns($fever);
+        \Phake::when(Arsse::$obj)->get(FeverUser::class)->thenReturn($fever);
         $this->assertConsole($cmd, $exitStatus, $output);
     }
 
@@ -308,9 +308,9 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testExportToOpml(string $cmd, int $exitStatus, string $file, string $user, bool $flat): void {
         $opml = \Phake::mock(OPML::class);
         \Phake::when($opml)->exportFile("php://output", $user, $flat)->thenReturn(true);
-        \Phake::when($opml)->exportFile("good.opml", $user, $flat)->thenRreturn(true);
+        \Phake::when($opml)->exportFile("good.opml", $user, $flat)->thenReturn(true);
         \Phake::when($opml)->exportFile("bad.opml", $user, $flat)->thenThrow(new \JKingWeb\Arsse\ImportExport\Exception("fileUnwritable"));
-        \Phake::when(Arsse::$obj)->get(OPML::class)->returns($opml);
+        \Phake::when(Arsse::$obj)->get(OPML::class)->thenReturn($opml);
         $this->assertConsole($cmd, $exitStatus);
         \Phake::verify($this->cli)->loadConf();
         \Phake::verify($opml)->exportFile($file, $user, $flat);
