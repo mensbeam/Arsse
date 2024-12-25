@@ -16,7 +16,6 @@ use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\Db\ExceptionInput;
-use JKingWeb\Arsse\Factory;
 use JKingWeb\Arsse\REST\Miniflux\V1;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\ImportExport\Exception as ImportException;
@@ -76,7 +75,6 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         self::setConf();
         $this->transaction = \Phake::mock(Transaction::class);
         // create mock timestamps
-        Arsse::$obj = \Phake::mock(Factory::class);
         \Phake::when(Arsse::$obj)->get(\DateTimeImmutable::class)->thenReturn(new \DateTimeImmutable(self::NOW));
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);

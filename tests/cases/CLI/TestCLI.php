@@ -14,7 +14,6 @@ use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\CLI;
-use JKingWeb\Arsse\Factory;
 use JKingWeb\Arsse\REST\Fever\User as FeverUser;
 use JKingWeb\Arsse\REST\Miniflux\Token as MinifluxToken;
 use JKingWeb\Arsse\ImportExport\OPML;
@@ -25,11 +24,8 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $cli;
 
     public function setUp(): void {
+        parent::setup();
         Arsse::$db = \Phake::mock(Database::class);
-        Arsse::$obj = \Phake::mock(Factory::class);
-        \Phake::when(Arsse::$obj)->get->thenReturnCallback(function($c) {
-            return new $c;
-        });
         $this->cli = \Phake::partialMock(CLI::class);
         \Phake::when($this->cli)->logError->thenReturn(null);
         \Phake::when($this->cli)->loadConf->thenReturn(true);

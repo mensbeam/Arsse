@@ -16,7 +16,6 @@ use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
-use JKingWeb\Arsse\Factory;
 use JKingWeb\Arsse\REST\TinyTinyRSS\API;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use Psr\Http\Message\ResponseInterface;
@@ -130,10 +129,9 @@ LONG_STRING;
     }
 
     public function setUp(): void {
-        self::clearData();
+        parent::setUp();
         self::setConf();
         // create mock timestamps
-        Arsse::$obj = \Phake::mock(Factory::class);
         \Phake::when(Arsse::$obj)->get(\DateTimeImmutable::class)->thenReturn(new \DateTimeImmutable(self::NOW));
         // create a mock user manager
         $this->userId = "john.doe@example.com";

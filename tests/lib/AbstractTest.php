@@ -29,6 +29,15 @@ use GuzzleHttp\Psr7\ServerRequest;
 abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     use \DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
 
+    public function setUp(): void {
+        self::clearData();
+        // create the object factory as a mock
+        Arsse::$obj = \Phake::mock(Factory::class);
+        \Phake::when(Arsse::$obj)->get->thenReturnCallback(function(string $class) {
+            return new $class;
+        });
+    }
+
     public static function clearData(bool $loadLang = true): void {
         date_default_timezone_set("America/Toronto");
         $r = new \ReflectionClass(\JKingWeb\Arsse\Arsse::class);
