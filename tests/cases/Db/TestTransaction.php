@@ -54,15 +54,12 @@ class TestTransaction extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testIgnoreRollbackErrors(): void {
-        // FIXME: This test segfaults when both transactions are checked. 
-        //   It appears to be a wonky interaction with Phake, and not a problem
-        //   with the actual code.
         \Phake::when($this->drv)->savepointUndo->thenThrow(new Exception("savepointStale"));
         $tr1 = new Transaction($this->drv);
-        //$tr2 = new Transaction($this->drv);
+        $tr2 = new Transaction($this->drv);
         unset($tr1); // no exception should bubble up
-        //unset($tr2); // no exception should bubble up
+        unset($tr2); // no exception should bubble up
         \Phake::verify($this->drv)->savepointUndo(1);
-        //\Phake::verify($this->drv)->savepointUndo(2);
+        \Phake::verify($this->drv)->savepointUndo(2);
     }
 }
