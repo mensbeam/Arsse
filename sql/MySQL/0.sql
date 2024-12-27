@@ -20,7 +20,7 @@ create table arsse_users(
 ) character set utf8mb4;
 
 create table arsse_users_meta(
-    owner varchar(255) not null references arsse_users(id) on delete cascade on update cascade,
+    owner varchar(255) not null,
     "key" varchar(255) not null,
     value varchar(255),
     primary key(owner,"key")
@@ -28,8 +28,8 @@ create table arsse_users_meta(
 
 create table arsse_folders(
     id serial primary key,
-    owner varchar(255) not null references arsse_users(id) on delete cascade on update cascade,
-    parent bigint references arsse_folders(id) on delete cascade,
+    owner varchar(255) not null,
+    parent bigint,
     name varchar(255) not null,
     modified datetime(0) not null default CURRENT_TIMESTAMP,                                                       --
     unique(owner,name,parent)
@@ -57,20 +57,20 @@ create table arsse_feeds(
 
 create table arsse_subscriptions(
     id serial primary key,
-    owner varchar(255) not null references arsse_users(id) on delete cascade on update cascade,
-    feed bigint not null references arsse_feeds(id) on delete cascade,
+    owner varchar(255) not null,
+    feed bigint not null,
     added datetime(0) not null default CURRENT_TIMESTAMP,
     modified datetime(0) not null default CURRENT_TIMESTAMP,
     title varchar(255),
     order_type boolean not null default 0,
     pinned boolean not null default 0,
-    folder bigint references arsse_folders(id) on delete cascade,
+    folder bigint,
     unique(owner,feed)
 ) character set utf8mb4;
 
 create table arsse_articles(
     id serial primary key,
-    feed bigint not null references arsse_feeds(id) on delete cascade,
+    feed bigint not null,
     url varchar(255),
     title varchar(255),
     author varchar(255),
@@ -85,14 +85,14 @@ create table arsse_articles(
 ) character set utf8mb4;
 
 create table arsse_enclosures(
-    article bigint not null references arsse_articles(id) on delete cascade,
+    article bigint not null,
     url varchar(255),
     type varchar(255)
 ) character set utf8mb4;
 
 create table arsse_marks(
-    article bigint not null references arsse_articles(id) on delete cascade,
-    subscription bigint not null references arsse_subscriptions(id) on delete cascade on update cascade,
+    article bigint not null,
+    subscription bigint not null,
     "read" boolean not null default 0,
     starred boolean not null default 0,
     modified datetime(0) not null default CURRENT_TIMESTAMP,
@@ -101,12 +101,12 @@ create table arsse_marks(
 
 create table arsse_editions(
     id serial primary key,
-    article bigint not null references arsse_articles(id) on delete cascade,
+    article bigint not null,
     modified datetime(0) not null default CURRENT_TIMESTAMP
 ) character set utf8mb4;
 
 create table arsse_categories(
-    article bigint not null references arsse_articles(id) on delete cascade,
+    article bigint not null,
     name varchar(255)
 ) character set utf8mb4;
 
