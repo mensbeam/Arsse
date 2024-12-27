@@ -1,5 +1,5 @@
 {
     "require-dev": {
-        "daux/daux.io": "0.11 - 0.15.1"
+        "daux/daux.io": "^0.22.3"
     }
 }

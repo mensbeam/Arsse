@@ -12,6 +12,10 @@
 
 /* The Arsse overrides */
 
+.DarkModeToggler {
+    display: none;
+}
+
 @font-face {
     font-family: 'League Gothic';
     src: url('fonts/leaguegothic.woff2') format('woff2'),
