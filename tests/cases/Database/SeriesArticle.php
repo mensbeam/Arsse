@@ -15,6 +15,8 @@ use JKingWeb\Arsse\Context\UnionContext;
 use JKingWeb\Arsse\Context\RootContext;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\CoversMethod;
 
 trait SeriesArticle {
     protected $fields;
@@ -428,15 +430,14 @@ trait SeriesArticle {
         unset($this->data, $this->matches, $this->fields, $this->checkTables, $this->user);
     }
 
-    /**
-     * @dataProvider provideContextMatches
-     * @covers \JKingWeb\Arsse\Database::articleList
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+
+    #[CoversMethod(Database::class, "articleList")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
+    #[DataProvider("provideContextMatches")]
     public function testListArticlesCheckingContext(RootContext $c, array $exp): void {
         $ids = array_column($ids = Arsse::$db->articleList("john.doe@example.com", $c, ["id"], ["id"])->getAll(), "id");
         sort($ids);
@@ -556,14 +557,12 @@ trait SeriesArticle {
         ];
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::editionArticle
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "editionArticle")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testRetrieveArticleIdsForEditions(): void {
         $exp = [
             1    => 1,
@@ -601,40 +600,35 @@ trait SeriesArticle {
         $this->assertEquals($exp, Arsse::$db->editionArticle(...range(1, 1001)));
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleList
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+
+    #[CoversMethod(Database::class, "articleList")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testListArticlesOfAMissingFolder(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->articleList($this->user, (new Context)->folder(1));
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleList
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleList")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")] 
     public function testListArticlesOfAMissingSubscription(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->articleList($this->user, (new Context)->subscription(1));
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleList
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleList")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")] 
     public function testListArticlesCheckingProperties(): void {
         $this->user = "john.doe@example.org";
         // check that the different fieldset groups return the expected columns
@@ -648,15 +642,13 @@ trait SeriesArticle {
         $this->assertEquals($this->fields, $test);
     }
 
-    /**
-     * @dataProvider provideOrderedLists
-     * @covers \JKingWeb\Arsse\Database::articleList
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[DataProvider("provideOrderedLists")]
+    #[CoversMethod(Database::class, "articleList")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testListArticlesCheckingOrder(array $sortCols, array $exp): void {
         $act = ValueInfo::normalize(array_column(iterator_to_array(Arsse::$db->articleList("john.doe@example.com", null, ["id"], $sortCols)), "id"), ValueInfo::T_INT | ValueInfo::M_ARRAY);
         $this->assertSame($exp, $act);
@@ -675,26 +667,22 @@ trait SeriesArticle {
         ];
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkNothing(): void {
         $this->assertSame(0, Arsse::$db->articleMark($this->user, []));
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesUnread(): void {
         Arsse::$db->articleMark($this->user, ['read' => false]);
         $now = Date::transform(time(), "sql");
@@ -706,14 +694,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesRead(): void {
         Arsse::$db->articleMark($this->user, ['read' => true]);
         $now = Date::transform(time(), "sql");
@@ -729,14 +715,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesUnstarred(): void {
         Arsse::$db->articleMark($this->user, ['starred' => false]);
         $now = Date::transform(time(), "sql");
@@ -748,14 +732,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesStarred(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true]);
         $now = Date::transform(time(), "sql");
@@ -771,14 +753,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesUnreadAndUnstarred(): void {
         Arsse::$db->articleMark($this->user, ['read' => false,'starred' => false]);
         $now = Date::transform(time(), "sql");
@@ -793,14 +773,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesReadAndStarred(): void {
         Arsse::$db->articleMark($this->user, ['read' => true,'starred' => true]);
         $now = Date::transform(time(), "sql");
@@ -819,14 +797,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesUnreadAndStarred(): void {
         Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true]);
         $now = Date::transform(time(), "sql");
@@ -845,14 +821,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesReadAndUnstarred(): void {
         Arsse::$db->articleMark($this->user, ['read' => true,'starred' => false]);
         $now = Date::transform(time(), "sql");
@@ -871,14 +845,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testSetNoteForAllArticles(): void {
         Arsse::$db->articleMark($this->user, ['note' => "New note"]);
         $now = Date::transform(time(), "sql");
@@ -898,14 +870,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkATreeFolder(): void {
         Arsse::$db->articleMark($this->user, ['read' => true], (new Context)->folder(7));
         $now = Date::transform(time(), "sql");
@@ -917,14 +887,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkALeafFolder(): void {
         Arsse::$db->articleMark($this->user, ['read' => true], (new Context)->folder(8));
         $now = Date::transform(time(), "sql");
@@ -934,14 +902,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAMissingFolder(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->articleMark($this->user, ['read' => true], (new Context)->folder(42));
@@ -956,27 +922,23 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAMissingSubscription(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->articleMark($this->user, ['read' => true], (new Context)->folder(2112));
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAnArticle(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->article(20));
         $now = Date::transform(time(), "sql");
@@ -986,14 +948,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleArticles(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->articles([2,4,7,20]));
         $now = Date::transform(time(), "sql");
@@ -1004,14 +964,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleArticlessUnreadAndStarred(): void {
         Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->articles([2,4,7,20]));
         $now = Date::transform(time(), "sql");
@@ -1025,40 +983,34 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkTooManyMultipleArticles(): void {
         $setSize = (new \ReflectionClassConstant(Database::class, "LIMIT_SET_SIZE"))->getValue();
         $this->assertSame(7, Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->articles(range(1, $setSize * 3))));
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAMissingArticle(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->article(1));
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAnEdition(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->edition(1001));
         $now = Date::transform(time(), "sql");
@@ -1068,14 +1020,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleEditions(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editions([2,4,7,20]));
         $now = Date::transform(time(), "sql");
@@ -1086,28 +1036,24 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleMissingEditions(): void {
         $this->assertSame(0, Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editions([500,501])));
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleEditionsUnread(): void {
         Arsse::$db->articleMark($this->user, ['read' => false], (new Context)->editions([2,4,7,1001]));
         $now = Date::transform(time(), "sql");
@@ -1119,14 +1065,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleEditionsUnreadWithStale(): void {
         Arsse::$db->articleMark($this->user, ['read' => false], (new Context)->editions([2,4,7,20]));
         $now = Date::transform(time(), "sql");
@@ -1136,14 +1080,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleEditionsUnreadAndStarredWithStale(): void {
         Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->editions([2,4,7,20]));
         $now = Date::transform(time(), "sql");
@@ -1156,39 +1098,33 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkTooManyMultipleEditions(): void {
         $this->assertSame(7, Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->editions(range(1, 51))));
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAStaleEditionUnread(): void {
         Arsse::$db->articleMark($this->user, ['read' => false], (new Context)->edition(20)); // no changes occur
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAStaleEditionStarred(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->edition(20));
         $now = Date::transform(time(), "sql");
@@ -1198,14 +1134,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAStaleEditionUnreadAndStarred(): void {
         Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->edition(20)); // only starred is changed
         $now = Date::transform(time(), "sql");
@@ -1215,41 +1149,35 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAStaleEditionUnreadAndUnstarred(): void {
         Arsse::$db->articleMark($this->user, ['read' => false,'starred' => false], (new Context)->edition(20)); // no changes occur
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAMissingEdition(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->edition(2));
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkByOldestEdition(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editionRange(19, null));
         $now = Date::transform(time(), "sql");
@@ -1261,14 +1189,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkByLatestEdition(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editionRange(null, 20));
         $now = Date::transform(time(), "sql");
@@ -1282,14 +1208,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkByLastMarked(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->markedRange('2017-01-01T00:00:00Z', null));
         $now = Date::transform(time(), "sql");
@@ -1301,14 +1225,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkByNotLastMarked(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->markedRange(null, '2000-01-01T00:00:00Z'));
         $now = Date::transform(time(), "sql");
@@ -1318,14 +1240,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleCount
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleCount")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testCountArticles(): void {
         $setSize = (new \ReflectionClassConstant(Database::class, "LIMIT_SET_SIZE"))->getValue();
         $this->assertSame(2, Arsse::$db->articleCount("john.doe@example.com", (new Context)->starred(true)));
@@ -1334,7 +1254,7 @@ trait SeriesArticle {
         $this->assertSame(10, Arsse::$db->articleCount("john.doe@example.com", (new Context)->articles(range(1, $setSize * 3))));
     }
 
-    /** @covers \JKingWeb\Arsse\Database::articleStarred */
+    #[CoversMethod(Database::class, "articleStarred")]
     public function testFetchStarredCounts(): void {
         $exp1 = ['total' => 2, 'unread' => 1, 'read' => 1];
         $exp2 = ['total' => 0, 'unread' => 0, 'read' => 0];
@@ -1342,20 +1262,20 @@ trait SeriesArticle {
         $this->assertEquals($exp2, Arsse::$db->articleStarred("jane.doe@example.com"));
     }
 
-    /** @covers \JKingWeb\Arsse\Database::editionLatest */
+    #[CoversMethod(Database::class, "editionLatest")]
     public function testFetchLatestEdition(): void {
         $this->assertSame(1001, Arsse::$db->editionLatest($this->user));
         $this->assertSame(4, Arsse::$db->editionLatest($this->user, (new Context)->subscription(12)));
         $this->assertSame(5, Arsse::$db->editionLatest("john.doe@example.com", (new Context)->subscription(3)->hidden(false)));
     }
 
-    /** @covers \JKingWeb\Arsse\Database::editionLatest */
+    #[CoversMethod(Database::class, "editionLatest")]
     public function testFetchLatestEditionOfMissingSubscription(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->editionLatest($this->user, (new Context)->subscription(1));
     }
 
-    /** @covers \JKingWeb\Arsse\Database::articleLabelsGet */
+    #[CoversMethod(Database::class, "articleLabelsGet")]
     public function testListTheLabelsOfAnArticle(): void {
         $this->assertEquals([1,2], Arsse::$db->articleLabelsGet("john.doe@example.com", 1));
         $this->assertEquals([2], Arsse::$db->articleLabelsGet("john.doe@example.com", 5));
@@ -1365,13 +1285,13 @@ trait SeriesArticle {
         $this->assertEquals([], Arsse::$db->articleLabelsGet("john.doe@example.com", 2, true));
     }
 
-    /** @covers \JKingWeb\Arsse\Database::articleLabelsGet */
+    #[CoversMethod(Database::class, "articleLabelsGet")]
     public function testListTheLabelsOfAMissingArticle(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->articleLabelsGet($this->user, 101);
     }
 
-    /** @covers \JKingWeb\Arsse\Database::articleCategoriesGet */
+    #[CoversMethod(Database::class, "articleCategoriesGet")]
     public function testListTheCategoriesOfAnArticle(): void {
         $exp = ["Fascinating", "Logical"];
         $this->assertSame($exp, Arsse::$db->articleCategoriesGet($this->user, 19));
@@ -1381,21 +1301,19 @@ trait SeriesArticle {
         $this->assertSame($exp, Arsse::$db->articleCategoriesGet($this->user, 4));
     }
 
-    /** @covers \JKingWeb\Arsse\Database::articleCategoriesGet */
+    #[CoversMethod(Database::class, "articleCategoriesGet")]
     public function testListTheCategoriesOfAMissingArticle(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->articleCategoriesGet($this->user, 101);
     }
 
-    /**
-     * @dataProvider provideArrayContextOptions
-     * @covers \JKingWeb\Arsse\Database::articleList
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[DataProvider("provideArrayContextOptions")]
+    #[CoversMethod(Database::class, "articleList")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testUseTooFewValuesInArrayContext(string $option): void {
         $this->assertException("tooShort", "Db", "ExceptionInput");
         Arsse::$db->articleList($this->user, (new Context)->$option([]));
@@ -1413,14 +1331,12 @@ trait SeriesArticle {
         }
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesNotHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['hidden' => false]);
         $now = Date::transform(time(), "sql");
@@ -1432,14 +1348,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['hidden' => true]);
         $now = Date::transform(time(), "sql");
@@ -1450,14 +1364,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesUnreadAndNotHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => false, 'hidden' => false]);
         $now = Date::transform(time(), "sql");
@@ -1472,14 +1384,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesReadAndHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => true, 'hidden' => true]);
         $now = Date::transform(time(), "sql");
@@ -1492,14 +1402,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesUnreadAndHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => false,'hidden' => true]);
         $now = Date::transform(time(), "sql");
@@ -1513,14 +1421,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesReadAndNotHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => true,'hidden' => false]);
         $now = Date::transform(time(), "sql");
@@ -1534,14 +1440,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleEditionsUnreadAndHiddenWithStale(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => false,'hidden' => true], (new Context)->editions([1,2,19,20]));
         $now = Date::transform(time(), "sql");
@@ -1555,14 +1459,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAStaleEditionHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['hidden' => true], (new Context)->edition(20));
         $now = Date::transform(time(), "sql");
@@ -1572,14 +1474,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAStaleEditionUnreadAndHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => false,'hidden' => true], (new Context)->edition(20)); // only starred is changed
         $now = Date::transform(time(), "sql");
@@ -1589,28 +1489,24 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleMark
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleMark")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAStaleEditionUnreadAndNotHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => false,'hidden' => false], (new Context)->edition(20)); // no changes occur
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleList
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleList")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testSelectScrapedContent(): void {
         $exp = [
             ['id' => 101, 'content' => "<p>Article content 1</p>"],
@@ -1624,14 +1520,12 @@ trait SeriesArticle {
         $this->assertResult($exp, Arsse::$db->articleList("jill.doe@example.com", (new Context)->subscription(15), ["id", "content"]));
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::articleList
-     * @covers \JKingWeb\Arsse\Database::articleQuery
-     * @covers \JKingWeb\Arsse\Database::articleValidateId
-     * @covers \JKingWeb\Arsse\Database::articleValidateEdition
-     * @covers \JKingWeb\Arsse\Database::articleColumns
-     * @covers \JKingWeb\Arsse\Database::articleFilter
-     */
+    #[CoversMethod(Database::class, "articleList")]
+    #[CoversMethod(Database::class, "articleQuery")]
+    #[CoversMethod(Database::class, "articleValidateId")]
+    #[CoversMethod(Database::class, "articleValidateEdition")]
+    #[CoversMethod(Database::class, "articleColumns")]
+    #[CoversMethod(Database::class, "articleFilter")]
     public function testSearchScrapedContent(): void {
         $exp = [
             ['id' => 101, 'content' => "<p>Scraped content 1</p>"],

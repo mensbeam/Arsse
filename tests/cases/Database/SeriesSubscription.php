@@ -12,6 +12,8 @@ use GuzzleHttp\Exception\ClientException;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Test\Database;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
+use PHPUnit\Framework\Attributes\CoversMethod;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 trait SeriesSubscription {
     public function setUpSeriesSubscription(): void {
@@ -205,10 +207,8 @@ trait SeriesSubscription {
         unset($this->data, $this->user);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::subscriptionAdd
-     * @covers \JKingWeb\Arsse\Database::feedAdd
-     */
+    #[CoversMethod(Database::class, "subscriptionAdd")]
+    #[CoversMethod(Database::class, "feedAdd")]
     public function testAddASubscriptionToAnExistingFeed(): void {
         $url = "http://example.com/feed1";
         $subID = $this->nextID("arsse_subscriptions");
@@ -224,10 +224,8 @@ trait SeriesSubscription {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::subscriptionAdd
-     * @covers \JKingWeb\Arsse\Database::feedAdd
-     */
+    #[CoversMethod(Database::class, "subscriptionAdd")]
+    #[CoversMethod(Database::class, "feedAdd")]
     public function testAddASubscriptionToANewFeed(): void {
         $url = "http://example.org/feed1";
         $feedID = $this->nextID("arsse_feeds");
@@ -245,10 +243,8 @@ trait SeriesSubscription {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::subscriptionAdd
-     * @covers \JKingWeb\Arsse\Database::feedAdd
-     */
+    #[CoversMethod(Database::class, "subscriptionAdd")]
+    #[CoversMethod(Database::class, "feedAdd")]
     public function testAddASubscriptionToANewFeedViaDiscovery(): void {
         $url = "http://localhost:8000/Feed/Discovery/Valid";
         $discovered = "http://localhost:8000/Feed/Discovery/Feed";
@@ -267,10 +263,8 @@ trait SeriesSubscription {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::subscriptionAdd
-     * @covers \JKingWeb\Arsse\Database::feedAdd
-     */
+    #[CoversMethod(Database::class, "subscriptionAdd")]
+    #[CoversMethod(Database::class, "feedAdd")]
     public function testAddASubscriptionToAnInvalidFeed(): void {
         $url = "http://example.org/feed1";
         $feedID = $this->nextID("arsse_feeds");
@@ -289,30 +283,24 @@ trait SeriesSubscription {
         }
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::subscriptionAdd
-     * @covers \JKingWeb\Arsse\Database::feedAdd
-     */
+    #[CoversMethod(Database::class, "subscriptionAdd")]
+    #[CoversMethod(Database::class, "feedAdd")]
     public function testAddADuplicateSubscription(): void {
         $url = "http://example.com/feed2";
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         Arsse::$db->subscriptionAdd($this->user, $url);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::subscriptionAdd
-     * @covers \JKingWeb\Arsse\Database::feedAdd
-     */
+    #[CoversMethod(Database::class, "subscriptionAdd")]
+    #[CoversMethod(Database::class, "feedAdd")]
     public function testAddADuplicateSubscriptionWithEquivalentUrl(): void {
         $url = "http://EXAMPLE.COM/feed2";
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         Arsse::$db->subscriptionAdd($this->user, $url);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::subscriptionAdd
-     * @covers \JKingWeb\Arsse\Database::feedAdd
-     */
+    #[CoversMethod(Database::class, "subscriptionAdd")]
+    #[CoversMethod(Database::class, "feedAdd")]
     public function testAddADuplicateSubscriptionViaRedirection(): void {
         $url = "http://localhost:8000/Feed/Parsing/Valid";
         Arsse::$db->subscriptionAdd($this->user, $url);
@@ -321,7 +309,7 @@ trait SeriesSubscription {
         $this->assertSame($subID, Arsse::$db->subscriptionAdd($this->user, $url));
     }
 
-    /** @covers \JKingWeb\Arsse\Database::subscriptionRemove */
+    #[CoversMethod(Database::class, "subscriptionRemove")]
     public function testRemoveASubscription(): void {
         $this->assertTrue(Arsse::$db->subscriptionRemove($this->user, 1));
         $state = $this->primeExpectations($this->data, [
@@ -332,29 +320,27 @@ trait SeriesSubscription {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /** @covers \JKingWeb\Arsse\Database::subscriptionRemove */
+    #[CoversMethod(Database::class, "subscriptionRemove")]
     public function testRemoveAMissingSubscription(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionRemove($this->user, 2112);
     }
 
-    /** @covers \JKingWeb\Arsse\Database::subscriptionRemove */
+    #[CoversMethod(Database::class, "subscriptionRemove")]
     public function testRemoveAnInvalidSubscription(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->subscriptionRemove($this->user, -1);
     }
 
-    /** @covers \JKingWeb\Arsse\Database::subscriptionRemove */
+    #[CoversMethod(Database::class, "subscriptionRemove")]
     public function testRemoveASubscriptionForTheWrongOwner(): void {
         $this->user = "jane.doe@example.com";
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionRemove($this->user, 1);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::subscriptionList
-     * @covers \JKingWeb\Arsse\Database::subscriptionPropertiesGet
-     */
+    #[CoversMethod(Database::class, "subscriptionList")]
+    #[CoversMethod(Database::class, "subscriptionPropertiesGet")]
     public function testListSubscriptions(): void {
         $exp = [
             [
@@ -415,7 +401,7 @@ trait SeriesSubscription {
         $this->assertResult($exp, Arsse::$db->subscriptionList("jill.doe@example.com"));
     }
 
-    /** @covers \JKingWeb\Arsse\Database::subscriptionList */
+    #[CoversMethod(Database::class, "subscriptionList")]
     public function testListSubscriptionsInAFolder(): void {
         $exp = [
             [
@@ -431,7 +417,7 @@ trait SeriesSubscription {
         $this->assertResult($exp, Arsse::$db->subscriptionList($this->user, null, false));
     }
 
-    /** @covers \JKingWeb\Arsse\Database::subscriptionList */
+    #[CoversMethod(Database::class, "subscriptionList")]
     public function testListSubscriptionsWithRecursion(): void {
         $exp = [
             [
@@ -447,41 +433,39 @@ trait SeriesSubscription {
         $this->assertResult($exp, Arsse::$db->subscriptionList($this->user, 2));
     }
 
-    /** @covers \JKingWeb\Arsse\Database::subscriptionList */
+    #[CoversMethod(Database::class, "subscriptionList")]
     public function testListSubscriptionsInAMissingFolder(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionList($this->user, 4);
     }
 
-    /** @covers \JKingWeb\Arsse\Database::subscriptionCount */
+    #[CoversMethod(Database::class, "subscriptionCount")]
     public function testCountSubscriptions(): void {
         $this->assertSame(3, Arsse::$db->subscriptionCount($this->user));
         $this->assertSame(1, Arsse::$db->subscriptionCount($this->user, 2));
     }
 
-    /** @covers \JKingWeb\Arsse\Database::subscriptionCount */
+    #[CoversMethod(Database::class, "subscriptionCount")]
     public function testCountSubscriptionsInAMissingFolder(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionCount($this->user, 4);
     }
 
-    /** @covers \JKingWeb\Arsse\Database::subscriptionPropertiesGet */
+    #[CoversMethod(Database::class, "subscriptionPropertiesGet")]
     public function testGetThePropertiesOfAMissingSubscription(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesGet($this->user, 2112);
     }
 
-    /** @covers \JKingWeb\Arsse\Database::subscriptionPropertiesGet */
+    #[CoversMethod(Database::class, "subscriptionPropertiesGet")]
     public function testGetThePropertiesOfAnInvalidSubscription(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesGet($this->user, -1);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::subscriptionPropertiesSet
-     * @covers \JKingWeb\Arsse\Database::subscriptionValidateId
-     * @covers \JKingWeb\Arsse\Database::subscriptionRulesApply
-     */
+    #[CoversMethod(Database::class, "subscriptionPropertiesSet")]
+    #[CoversMethod(Database::class, "subscriptionValidateId")]
+    #[CoversMethod(Database::class, "subscriptionRulesApply")]
     public function testSetThePropertiesOfASubscription(): void {
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, [
             'title'      => "Ook Ook",
@@ -510,31 +494,25 @@ trait SeriesSubscription {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::subscriptionPropertiesSet
-     * @covers \JKingWeb\Arsse\Database::subscriptionValidateId
-     * @covers \JKingWeb\Arsse\Database::subscriptionRulesApply
-     */
+    #[CoversMethod(Database::class, "subscriptionPropertiesSet")]
+    #[CoversMethod(Database::class, "subscriptionValidateId")]
+    #[CoversMethod(Database::class, "subscriptionRulesApply")]
     public function testMoveASubscriptionToAMissingFolder(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['folder' => 4]);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::subscriptionPropertiesSet
-     * @covers \JKingWeb\Arsse\Database::subscriptionValidateId
-     * @covers \JKingWeb\Arsse\Database::subscriptionRulesApply
-     */
+    #[CoversMethod(Database::class, "subscriptionPropertiesSet")]
+    #[CoversMethod(Database::class, "subscriptionValidateId")]
+    #[CoversMethod(Database::class, "subscriptionRulesApply")]
     public function testMoveASubscriptionToTheRootFolder(): void {
         $this->assertTrue(Arsse::$db->subscriptionPropertiesSet($this->user, 3, ['folder' => null]));
     }
 
-    /**
-     * @dataProvider provideInvalidSubscriptionProperties
-     * @covers \JKingWeb\Arsse\Database::subscriptionPropertiesSet
-     * @covers \JKingWeb\Arsse\Database::subscriptionValidateId
-     * @covers \JKingWeb\Arsse\Database::subscriptionRulesApply
-     */
+    #[DataProvider("provideInvalidSubscriptionProperties")]
+    #[CoversMethod(Database::class, "subscriptionPropertiesSet")]
+    #[CoversMethod(Database::class, "subscriptionValidateId")]
+    #[CoversMethod(Database::class, "subscriptionRulesApply")]
     public function testSetThePropertiesOfASubscriptionToInvalidValues(array $data, string $exp): void {
         $this->assertException($exp, "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, $data);
@@ -552,36 +530,30 @@ trait SeriesSubscription {
         ];
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::subscriptionPropertiesSet
-     * @covers \JKingWeb\Arsse\Database::subscriptionValidateId
-     * @covers \JKingWeb\Arsse\Database::subscriptionRulesApply
-     */
+    #[CoversMethod(Database::class, "subscriptionPropertiesSet")]
+    #[CoversMethod(Database::class, "subscriptionValidateId")]
+    #[CoversMethod(Database::class, "subscriptionRulesApply")]
     public function testRenameASubscriptionToZero(): void {
         $this->assertTrue(Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['title' => 0]));
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::subscriptionPropertiesSet
-     * @covers \JKingWeb\Arsse\Database::subscriptionValidateId
-     * @covers \JKingWeb\Arsse\Database::subscriptionRulesApply
-     */
+    #[CoversMethod(Database::class, "subscriptionPropertiesSet")]
+    #[CoversMethod(Database::class, "subscriptionValidateId")]
+    #[CoversMethod(Database::class, "subscriptionRulesApply")]
     public function testSetThePropertiesOfAMissingSubscription(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesSet($this->user, 2112, ['folder' => null]);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::subscriptionPropertiesSet
-     * @covers \JKingWeb\Arsse\Database::subscriptionValidateId
-     * @covers \JKingWeb\Arsse\Database::subscriptionRulesApply
-     */
+    #[CoversMethod(Database::class, "subscriptionPropertiesSet")]
+    #[CoversMethod(Database::class, "subscriptionValidateId")]
+    #[CoversMethod(Database::class, "subscriptionRulesApply")]
     public function testSetThePropertiesOfAnInvalidSubscription(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesSet($this->user, -1, ['folder' => null]);
     }
 
-    /** @covers \JKingWeb\Arsse\Database::subscriptionIcon */
+    #[CoversMethod(Database::class, "subscriptionIcon")]
     public function testRetrieveTheFaviconOfASubscription(): void {
         $exp = "http://example.com/favicon.ico";
         $this->assertSame($exp, Arsse::$db->subscriptionIcon(null, 1)['url']);
@@ -589,13 +561,13 @@ trait SeriesSubscription {
         $this->assertSame(null, Arsse::$db->subscriptionIcon(null, 6));
     }
 
-    /** @covers \JKingWeb\Arsse\Database::subscriptionIcon */
+    #[CoversMethod(Database::class, "subscriptionIcon")]
     public function testRetrieveTheFaviconOfAMissingSubscription(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionIcon(null, -2112);
     }
 
-    /** @covers \JKingWeb\Arsse\Database::subscriptionIcon */
+    #[CoversMethod(Database::class, "subscriptionIcon")]
     public function testRetrieveTheFaviconOfASubscriptionWithUser(): void {
         $exp = "http://example.com/favicon.ico";
         $user = "john.doe@example.com";
@@ -605,14 +577,14 @@ trait SeriesSubscription {
         $this->assertSame($exp, Arsse::$db->subscriptionIcon($user, 2)['url']);
     }
 
-    /** @covers \JKingWeb\Arsse\Database::subscriptionIcon */
+    #[CoversMethod(Database::class, "subscriptionIcon")]
     public function testRetrieveTheFaviconOfASubscriptionOfTheWrongUser(): void {
         $user = "john.doe@example.com";
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionIcon($user, 2);
     }
 
-    /** @covers \JKingWeb\Arsse\Database::subscriptionTagsGet */
+    #[CoversMethod(Database::class, "subscriptionTagsGet")]
     public function testListTheTagsOfASubscription(): void {
         $this->assertEquals([1,2], Arsse::$db->subscriptionTagsGet("john.doe@example.com", 1));
         $this->assertEquals([2], Arsse::$db->subscriptionTagsGet("john.doe@example.com", 3));
@@ -620,30 +592,28 @@ trait SeriesSubscription {
         $this->assertEquals(["Fascinating"], Arsse::$db->subscriptionTagsGet("john.doe@example.com", 3, true));
     }
 
-    /** @covers \JKingWeb\Arsse\Database::subscriptionTagsGet */
+    #[CoversMethod(Database::class, "subscriptionTagsGet")]
     public function testListTheTagsOfAMissingSubscription(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionTagsGet($this->user, 101);
     }
 
-    /** @covers \JKingWeb\Arsse\Database::subscriptionRefreshed */
+    #[CoversMethod(Database::class, "subscriptionRefreshed")]
     public function testGetRefreshTimeOfASubscription(): void {
         $user = "john.doe@example.com";
         $this->assertTime(strtotime("now + 1 hour"), Arsse::$db->subscriptionRefreshed($user));
         $this->assertTime(strtotime("now - 1 hour"), Arsse::$db->subscriptionRefreshed($user, 1));
     }
 
-    /** @covers \JKingWeb\Arsse\Database::subscriptionRefreshed */
+    #[CoversMethod(Database::class, "subscriptionRefreshed")]
     public function testGetRefreshTimeOfAMissingSubscription(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         $this->assertTime(strtotime("now - 1 hour"), Arsse::$db->subscriptionRefreshed("john.doe@example.com", 2));
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::subscriptionPropertiesSet
-     * @covers \JKingWeb\Arsse\Database::subscriptionValidateId
-     * @covers \JKingWeb\Arsse\Database::subscriptionRulesApply
-     */
+    #[CoversMethod(Database::class, "subscriptionPropertiesSet")]
+    #[CoversMethod(Database::class, "subscriptionValidateId")]
+    #[CoversMethod(Database::class, "subscriptionRulesApply")]
     public function testSetTheFilterRulesOfASubscriptionCheckingMarks(): void {
         Arsse::$db->subscriptionPropertiesSet("jack.doe@example.com", 5, ['keep_rule' => "1|B|3|D", 'block_rule' => "4"]);
         $state = $this->primeExpectations($this->data, ['arsse_marks' => ['article', 'subscription', 'hidden']]);

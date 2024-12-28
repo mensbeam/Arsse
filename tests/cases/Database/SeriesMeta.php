@@ -8,8 +8,9 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\TestCase\Database;
 
-use JKingWeb\Arsse\Test\Database;
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Database;
+use PHPUnit\Framework\Attributes\CoversMethod;
 
 trait SeriesMeta {
     protected function setUpSeriesMeta(): void {
@@ -37,7 +38,7 @@ trait SeriesMeta {
         unset($this->data);
     }
 
-    /** @covers \JKingWeb\Arsse\Database::metaSet */
+    #[CoversMethod(Database::class, "metaSet")]
     public function testAddANewValue(): void {
         $this->assertTrue(Arsse::$db->metaSet("favourite", "Cygnus X-1"));
         $state = $this->primeExpectations($this->data, ['arsse_meta' => ['key','value']]);
@@ -45,7 +46,7 @@ trait SeriesMeta {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /** @covers \JKingWeb\Arsse\Database::metaSet */
+    #[CoversMethod(Database::class, "metaSet")]
     public function testAddANewTypedValue(): void {
         $this->assertTrue(Arsse::$db->metaSet("answer", 42, "int"));
         $this->assertTrue(Arsse::$db->metaSet("true", true, "bool"));
@@ -59,7 +60,7 @@ trait SeriesMeta {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /** @covers \JKingWeb\Arsse\Database::metaSet */
+    #[CoversMethod(Database::class, "metaSet")]
     public function testChangeAnExistingValue(): void {
         $this->assertTrue(Arsse::$db->metaSet("album", "Hemispheres"));
         $state = $this->primeExpectations($this->data, ['arsse_meta' => ['key','value']]);
@@ -67,7 +68,7 @@ trait SeriesMeta {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /** @covers \JKingWeb\Arsse\Database::metaRemove */
+    #[CoversMethod(Database::class, "metaRemove")]
     public function testRemoveAValue(): void {
         $this->assertTrue(Arsse::$db->metaRemove("album"));
         $this->assertFalse(Arsse::$db->metaRemove("album"));
@@ -76,7 +77,7 @@ trait SeriesMeta {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /** @covers \JKingWeb\Arsse\Database::metaGet */
+    #[CoversMethod(Database::class, "metaGet")]
     public function testRetrieveAValue(): void {
         $this->assertSame("".Database::SCHEMA_VERSION, Arsse::$db->metaGet("schema_version"));
         $this->assertSame("A Farewell to Kings", Arsse::$db->metaGet("album"));

@@ -10,6 +10,7 @@ namespace JKingWeb\Arsse\TestCase\Database;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
+use PHPUnit\Framework\Attributes\CoversMethod;
 
 trait SeriesMiscellany {
     protected function setUpSeriesMiscellany(): void {
@@ -21,22 +22,18 @@ trait SeriesMiscellany {
     protected function tearDownSeriesMiscellany(): void {
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::__construct
-     * @covers \JKingWeb\Arsse\Database::driverSchemaVersion
-     * @covers \JKingWeb\Arsse\Database::driverSchemaUpdate
-     */
+    #[CoversMethod(Database::class, "__construct")]
+    #[CoversMethod(Database::class, "driverSchemaVersion")]
+    #[CoversMethod(Database::class, "driverSchemaUpdate")]
     public function testInitializeDatabase(): void {
         static::dbRaze(static::$drv);
         $d = new Database(true);
         $this->assertSame(Database::SCHEMA_VERSION, $d->driverSchemaVersion());
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::__construct
-     * @covers \JKingWeb\Arsse\Database::driverSchemaVersion
-     * @covers \JKingWeb\Arsse\Database::driverSchemaUpdate
-     */
+    #[CoversMethod(Database::class, "__construct")]
+    #[CoversMethod(Database::class, "driverSchemaVersion")]
+    #[CoversMethod(Database::class, "driverSchemaUpdate")]
     public function testManuallyInitializeDatabase(): void {
         static::dbRaze(static::$drv);
         $d = new Database(false);
@@ -46,12 +43,12 @@ trait SeriesMiscellany {
         $this->assertFalse($d->driverSchemaUpdate());
     }
 
-    /** @covers \JKingWeb\Arsse\Database::driverCharsetAcceptable */
+    #[CoversMethod(Database::class, "driverCharsetAcceptable")]
     public function testCheckCharacterSetAcceptability(): void {
         $this->assertIsBool(Arsse::$db->driverCharsetAcceptable());
     }
 
-    /** @covers \JKingWeb\Arsse\Database::driverMaintenance */
+    #[CoversMethod(Database::class, "driverMaintenance")]
     public function testPerformMaintenance(): void {
         $this->assertTrue(Arsse::$db->driverMaintenance());
     }

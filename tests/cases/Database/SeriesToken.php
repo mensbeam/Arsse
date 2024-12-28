@@ -9,6 +9,8 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Database;
 
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Database;
+use PHPUnit\Framework\Attributes\CoversMethod;
 
 trait SeriesToken {
     protected function setUpSeriesToken(): void {
@@ -54,7 +56,7 @@ trait SeriesToken {
         unset($this->data);
     }
 
-    /** @covers \JKingWeb\Arsse\Database::tokenLookup */
+    #[CoversMethod(Database::class, "tokenLookup")]
     public function testLookUpAValidToken(): void {
         $exp1 = [
             'id'    => "80fa94c1a11f11e78667001e673b2560",
@@ -76,25 +78,25 @@ trait SeriesToken {
         $this->assertArraySubset($exp3, Arsse::$db->tokenLookup("class.class", "ab3b3eb8a13311e78667001e673b2560"));
     }
 
-    /** @covers \JKingWeb\Arsse\Database::tokenLookup */
+    #[CoversMethod(Database::class, "tokenLookup")]
     public function testLookUpAMissingToken(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->tokenLookup("class", "thisTokenDoesNotExist");
     }
 
-    /** @covers \JKingWeb\Arsse\Database::tokenLookup */
+    #[CoversMethod(Database::class, "tokenLookup")]
     public function testLookUpAnExpiredToken(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->tokenLookup("fever.login", "27c6de8da13311e78667001e673b2560");
     }
 
-    /** @covers \JKingWeb\Arsse\Database::tokenLookup */
+    #[CoversMethod(Database::class, "tokenLookup")]
     public function testLookUpATokenOfTheWrongClass(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->tokenLookup("some.class", "80fa94c1a11f11e78667001e673b2560");
     }
 
-    /** @covers \JKingWeb\Arsse\Database::tokenCreate */
+    #[CoversMethod(Database::class, "tokenCreate")]
     public function testCreateAToken(): void {
         $user = "jane.doe@example.com";
         $state = $this->primeExpectations($this->data, ['arsse_tokens' => ["id", "class", "expires", "user"]]);
@@ -109,13 +111,13 @@ trait SeriesToken {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /** @covers \JKingWeb\Arsse\Database::tokenCreate */
+    #[CoversMethod(Database::class, "tokenCreate")]
     public function testCreateATokenForAMissingUser(): void {
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         Arsse::$db->tokenCreate("fever.login", "jane.doe@example.biz");
     }
 
-    /** @covers \JKingWeb\Arsse\Database::tokenRevoke */
+    #[CoversMethod(Database::class, "tokenRevoke")]
     public function testRevokeAToken(): void {
         $user = "jane.doe@example.com";
         $id = "80fa94c1a11f11e78667001e673b2560";
@@ -127,7 +129,7 @@ trait SeriesToken {
         $this->assertFalse(Arsse::$db->tokenRevoke($user, "fever.login", $id));
     }
 
-    /** @covers \JKingWeb\Arsse\Database::tokenRevoke */
+    #[CoversMethod(Database::class, "tokenRevoke")]
     public function testRevokeAllTokens(): void {
         $user = "jane.doe@example.com";
         $state = $this->primeExpectations($this->data, ['arsse_tokens' => ["id", "expires", "user"]]);
@@ -142,7 +144,7 @@ trait SeriesToken {
         $this->assertFalse(Arsse::$db->tokenRevoke($user, "unknown.class"));
     }
 
-    /** @covers \JKingWeb\Arsse\Database::tokenList */
+    #[CoversMethod(Database::class, "tokenList")]
     public function testListTokens(): void {
         $user = "jane.doe@example.com";
         $exp = [

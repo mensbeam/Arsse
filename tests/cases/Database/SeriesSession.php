@@ -10,6 +10,8 @@ namespace JKingWeb\Arsse\TestCase\Database;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Database;
+use PHPUnit\Framework\Attributes\CoversMethod;
 
 trait SeriesSession {
     protected function setUpSeriesSession(): void {
@@ -56,10 +58,8 @@ trait SeriesSession {
         unset($this->data);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::sessionResume
-     * @covers \JKingWeb\Arsse\Database::sessionExpiringSoon
-     */
+    #[CoversMethod(Database::class, "sessionResume")]
+    #[CoversMethod(Database::class, "sessionExpiringSoon")]
     public function testResumeAValidSession(): void {
         $exp1 = [
             'id'   => "80fa94c1a11f11e78667001e673b2560",
@@ -78,34 +78,28 @@ trait SeriesSession {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::sessionResume
-     * @covers \JKingWeb\Arsse\Database::sessionExpiringSoon
-     */
+    #[CoversMethod(Database::class, "sessionResume")]
+    #[CoversMethod(Database::class, "sessionExpiringSoon")]
     public function testResumeAMissingSession(): void {
         $this->assertException("invalid", "User", "ExceptionSession");
         Arsse::$db->sessionResume("thisSessionDoesNotExist");
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::sessionResume
-     * @covers \JKingWeb\Arsse\Database::sessionExpiringSoon
-     */
+    #[CoversMethod(Database::class, "sessionResume")]
+    #[CoversMethod(Database::class, "sessionExpiringSoon")]
     public function testResumeAnExpiredSession(): void {
         $this->assertException("invalid", "User", "ExceptionSession");
         Arsse::$db->sessionResume("27c6de8da13311e78667001e673b2560");
     }
 
-    /**
-     * @covers \JKingWeb\Arsse\Database::sessionResume
-     * @covers \JKingWeb\Arsse\Database::sessionExpiringSoon
-     */
+    #[CoversMethod(Database::class, "sessionResume")]
+    #[CoversMethod(Database::class, "sessionExpiringSoon")]
     public function testResumeAStaleSession(): void {
         $this->assertException("invalid", "User", "ExceptionSession");
         Arsse::$db->sessionResume("ab3b3eb8a13311e78667001e673b2560");
     }
 
-    /** @covers \JKingWeb\Arsse\Database::sessionCreate */
+    #[CoversMethod(Database::class, "sessionCreate")]
     public function testCreateASession(): void {
         $user = "jane.doe@example.com";
         $id = Arsse::$db->sessionCreate($user);
@@ -115,7 +109,7 @@ trait SeriesSession {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /** @covers \JKingWeb\Arsse\Database::sessionDestroy */
+    #[CoversMethod(Database::class, "sessionDestroy")]
     public function testDestroyASession(): void {
         $user = "jane.doe@example.com";
         $id = "80fa94c1a11f11e78667001e673b2560";
@@ -127,7 +121,7 @@ trait SeriesSession {
         $this->assertFalse(Arsse::$db->sessionDestroy($user, $id));
     }
 
-    /** @covers \JKingWeb\Arsse\Database::sessionDestroy */
+    #[CoversMethod(Database::class, "sessionDestroy")]
     public function testDestroyAllSessions(): void {
         $user = "jane.doe@example.com";
         $this->assertTrue(Arsse::$db->sessionDestroy($user));
@@ -138,7 +132,7 @@ trait SeriesSession {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    /** @covers \JKingWeb\Arsse\Database::sessionDestroy */
+    #[CoversMethod(Database::class, "sessionDestroy")]
     public function testDestroyASessionForTheWrongUser(): void {
         $user = "john.doe@example.com";
         $id = "80fa94c1a11f11e78667001e673b2560";
