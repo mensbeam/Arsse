@@ -26,7 +26,7 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user = \Phake::mock(User::class);
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
-        $this->h = new Icon();
+        $this->h = new Icon;
     }
 
     protected function req(string $target, string $method = "GET", ?string $user = null): ResponseInterface {

@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -55,7 +56,7 @@ abstract class AbstractTest extends \JKingWeb\Arsse\Test\AbstractTest {
         // but other engines should clean up from potentially interrupted prior tests
         static::setConf();
         try {
-            static::$drv = new static::$dbDriverClass;
+            static::$drv = new static::$dbDriverClass();
         } catch (\JKingWeb\Arsse\Db\Exception $e) {
             static::$failureReason = $e->getMessage();
             return;

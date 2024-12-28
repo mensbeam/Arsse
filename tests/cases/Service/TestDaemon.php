@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -10,8 +11,11 @@ namespace JKingWeb\Arsse\TestCase\Service;
 use JKingWeb\Arsse\Service\Daemon;
 use JKingWeb\Arsse\Service\Exception;
 use org\bovigo\vfs\vfsStream;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 
-/** @covers \JKingWeb\Arsse\Service\Daemon */
+#[CoversClass(\JKingWeb\Arsse\Service\Daemon::class)]
 class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $pidfiles = [
         'errors' => [
@@ -47,7 +51,8 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->daemon = \Phake::partialMock(Daemon::class);
     }
 
-    /** @dataProvider providePathResolutions */
+
+    #[DataProvider('providePathResolutions')]
     public function testResolveRelativePaths(string $path, $cwd, $exp): void {
         // set up mock daemon class
         \Phake::when($this->daemon)->cwd->thenReturn($cwd);
@@ -73,7 +78,8 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider providePidFileChecks */
+
+    #[DataProvider('providePidFileChecks')]
     public function testCheckPidFiles(string $file, bool $accessible, $exp): void {
         $vfs = vfsStream::setup("pidtest", 0777, $this->pidfiles);
         $path = $vfs->url()."/";
@@ -109,7 +115,8 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider providePidReadChecks */
+
+    #[DataProvider('providePidReadChecks')]
     public function testCheckPidReads(string $file, $exp) {
         $vfs = vfsStream::setup("pidtest", 0777, $this->pidfiles);
         $path = $vfs->url()."/pid/";
@@ -155,10 +162,8 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /**
-     * @dataProvider providePidWriteChecks
-     * @requires extension posix
-     */
+    #[DataProvider('providePidWriteChecks')]
+    #[RequiresPhpExtension('posix')]
     public function testCheckPidWrites(string $file, $exp) {
         $pid = (string) posix_getpid();
         $vfs = vfsStream::setup("pidtest", 0777, $this->pidfiles);

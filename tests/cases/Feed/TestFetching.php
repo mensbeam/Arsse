@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -9,10 +10,11 @@ namespace JKingWeb\Arsse\TestCase\Feed;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Feed;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
 
-/**
- * @covers \JKingWeb\Arsse\Feed
- * @group slow */
+#[CoversClass(\JKingWeb\Arsse\Feed::class)]
+#[Group('slow')]
 class TestFetching extends \JKingWeb\Arsse\Test\AbstractTest {
     protected static $host = "http://localhost:8000/";
     protected $base = "";

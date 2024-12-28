@@ -65,6 +65,7 @@ $rules = [
     ],
     'function_declaration'                      => ['closure_function_spacing' => "none"],
     'new_with_braces'                           => false, // no option to specify absence of braces
+    'php_unit_attributes'                       => true,
     ];
 
 $finder = \PhpCsFixer\Finder::create();

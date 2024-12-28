@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -19,10 +20,12 @@ use Psr\Http\Message\ResponseInterface;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\ServerRequest;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
-/** @covers \JKingWeb\Arsse\REST */
+#[CoversClass(\JKingWeb\Arsse\REST::class)]
 class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
-    /** @dataProvider provideApiMatchData */
+    #[DataProvider('provideApiMatchData')]
     public function testMatchAUrlToAnApi($apiList, string $input, array $exp): void {
         $r = new REST($apiList);
         try {
@@ -58,9 +61,10 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideAuthenticableRequests */
+
+    #[DataProvider('provideAuthenticableRequests')]
     public function testAuthenticateRequests(array $serverParams, array $expAttr): void {
-        $r = new REST();
+        $r = new REST;
         // create a mock user manager
         Arsse::$user = \Phake::mock(User::class);
         \Phake::when(Arsse::$user)->auth->thenReturn(false);
@@ -93,7 +97,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testSendAuthenticationChallenges(): void {
         self::setConf();
-        $r = new REST();
+        $r = new REST;
         $in = HTTP::respEmpty(401);
         $exp = $in->withHeader("WWW-Authenticate", 'Basic realm="OOK", charset="UTF-8"');
         $act = $r->challenge($in, "OOK");
@@ -103,9 +107,10 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $act);
     }
 
-    /** @dataProvider provideUnnormalizedOrigins */
+
+    #[DataProvider('provideUnnormalizedOrigins')]
     public function testNormalizeOrigins(string $origin, string $exp, ?array $ports = null): void {
-        $r = new REST();
+        $r = new REST;
         $act = $r->corsNormalizeOrigin($origin, $ports);
         $this->assertSame($exp, $act);
     }
@@ -146,7 +151,8 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideCorsNegotiations */
+
+    #[DataProvider('provideCorsNegotiations')]
     public function testNegotiateCors($origin, bool $exp, ?string $allowed = null, ?string $denied = null): void {
         self::setConf();
         $rMock = \Phake::partialMock(REST::class);
@@ -184,9 +190,10 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideCorsHeaders */
+
+    #[DataProvider('provideCorsHeaders')]
     public function testAddCorsHeaders(string $reqMethod, array $reqHeaders, array $resHeaders, array $expHeaders): void {
-        $r = new REST();
+        $r = new REST;
         $req = new Request($reqMethod, "php://memory", $reqHeaders);
         $res = HTTP::respEmpty(204, $resHeaders);
         $exp = HTTP::respEmpty(204, $expHeaders);
@@ -248,7 +255,8 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideUnnormalizedResponses */
+
+    #[DataProvider('provideUnnormalizedResponses')]
     public function testNormalizeHttpResponses(ResponseInterface $res, ResponseInterface $exp, ?RequestInterface $req = null): void {
         $rMock = \Phake::partialMock(REST::class);
         \Phake::when($rMock)->corsNegotiate->thenReturn(true);
@@ -284,7 +292,8 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideMockRequests */
+
+    #[DataProvider('provideMockRequests')]
     public function testDispatchRequests(ServerRequest $req, string $method, bool $called, string $class = "", string $target = ""): void {
         $rMock = \Phake::partialMock(REST::class);
         \Phake::when($rMock)->normalizeResponse->thenReturnCallback(function($res) {

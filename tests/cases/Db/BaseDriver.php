@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -43,7 +44,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
             "INSERT INTO arsse_meta(\"key\",value) values('schema_version','0')",
         ]);
         // construct a fresh driver for each test
-        $this->drv = new static::$dbDriverClass;
+        $this->drv = new static::$dbDriverClass();
     }
 
     public function tearDown(): void {

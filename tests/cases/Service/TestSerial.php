@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -11,8 +12,9 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Service\Driver as DriverInterface;
 use JKingWeb\Arsse\Service\Serial\Driver;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/** @covers \JKingWeb\Arsse\Service\Serial\Driver */
+#[CoversClass(\JKingWeb\Arsse\Service\Serial\Driver::class)]
 class TestSerial extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         parent::setUp();

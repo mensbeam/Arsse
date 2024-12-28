@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -8,10 +9,12 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Misc;
 
 use JKingWeb\Arsse\Misc\URL;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
-/** @covers \JKingWeb\Arsse\Misc\URL */
+#[CoversClass(\JKingWeb\Arsse\Misc\URL::class)]
 class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
-    /** @dataProvider provideNormalizations */
+    #[DataProvider('provideNormalizations')]
     public function testNormalizeAUrl(string $url, string $exp, ?string $user = null, ?string $pass = null): void {
         $this->assertSame($exp, URL::normalize($url, $user, $pass));
     }
@@ -73,7 +76,8 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideQueries */
+
+    #[DataProvider('provideQueries')]
     public function testAppendQueryParameters(string $url, string $query, string $exp): void {
         $this->assertSame($exp, URL::queryAppend($url, $query));
     }
@@ -89,7 +93,8 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideAbsolutes */
+
+    #[DataProvider('provideAbsolutes')]
     public function testDetermineAbsoluteness(bool $exp, string $url): void {
         $this->assertSame($exp, URL::absolute($url));
     }

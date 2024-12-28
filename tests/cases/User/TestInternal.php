@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -11,8 +12,11 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\User\Driver as DriverInterface;
 use JKingWeb\Arsse\User\Internal\Driver;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 
-/** @covers \JKingWeb\Arsse\User\Internal\Driver */
+#[CoversClass(\JKingWeb\Arsse\User\Internal\Driver::class)]
 class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $d;
 
@@ -33,10 +37,8 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertTrue(strlen(Driver::driverName()) > 0);
     }
 
-    /**
-     * @dataProvider provideAuthentication
-     * @group slow
-     */
+    #[DataProvider('provideAuthentication')]
+    #[Group('slow')]
     public function testAuthenticateAUser(string $user, $password, bool $exp): void {
         \Phake::when(Arsse::$db)->userPasswordGet("john.doe@example.com")->thenReturn('$2y$10$1zbqRJhxM8uUjeSBPp4IhO90xrqK0XjEh9Z16iIYEFRV4U.zeAFom'); // hash of "secret"
         \Phake::when(Arsse::$db)->userPasswordGet("jane.doe@example.com")->thenReturn('$2y$10$bK1ljXfTSyc2D.NYvT.Eq..OpehLRXVbglW.23ihVuyhgwJCd.7Im'); // hash of "superman"

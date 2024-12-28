@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -10,8 +11,9 @@ namespace JKingWeb\Arsse\TestCase\Misc;
 use JKingWeb\Arsse\Misc\ValueInfo as I;
 use JKingWeb\Arsse\Test\Misc\StrClass;
 use JKingWeb\Arsse\Test\Result;
+use PHPUnit\Framework\Attributes\DataProvider;
 
-/** @covers \JKingWeb\Arsse\Misc\ValueInfo */
+#[CoversClass(\JKingWeb\Arsse\Misc\ValueInfo::class)]
 class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testGetIntegerInfo(): void {
         $tests = [
@@ -70,7 +72,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [[],            0],
             ["some string", 0],
             ["           ", 0],
-            [new \StdClass, 0],
+            [new \StdClass(), 0],
             [new StrClass(""),    I::NULL],
             [new StrClass("1"),   I::VALID],
             [new StrClass("0"),   I::VALID | I::ZERO],
@@ -145,7 +147,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [[],            0],
             ["some string", I::VALID],
             ["           ", I::VALID | I::WHITE],
-            [new \StdClass, 0],
+            [new \StdClass(), 0],
             [new StrClass(""),    I::VALID | I::EMPTY],
             [new StrClass("1"),   I::VALID],
             [new StrClass("0"),   I::VALID],
@@ -216,7 +218,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [[],            false, false],
             ["some string", false, false],
             ["           ", false, false],
-            [new \StdClass, false, false],
+            [new \StdClass(), false, false],
             [new StrClass(""),    false, true],
             [new StrClass("1"),   true,  true],
             [new StrClass("0"),   false, true],
@@ -288,7 +290,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [[],            null],
             ["some string", null],
             ["           ", null],
-            [new \StdClass, null],
+            [new \StdClass(), null],
             [new StrClass(""),    false],
             [new StrClass("1"),   true],
             [new StrClass("0"),   false],
@@ -306,7 +308,8 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    /** @dataProvider provideSimpleNormalizationValues */
+
+    #[DataProvider('provideSimpleNormalizationValues')]
     public function testNormalizeSimpleValues($input, string $typeName, $exp, bool $pass, bool $strict, bool $drop): void {
         $assert = function($exp, $act, string $msg) {
             if (is_null($exp)) {
@@ -365,7 +368,8 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    /** @dataProvider provideDateNormalizationValues */
+
+    #[DataProvider('provideDateNormalizationValues')]
     public function testNormalizeDateValues($input, $format, $exp, bool $strict, bool $drop): void {
         if ($strict && $drop) {
             $modeName = "strict drop";
@@ -511,7 +515,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [[],                                    [null,true], [false,false], [0,                  false], [0.0,                      false], ["",                    false], [[],                                     true],  [null, false]],
             ["some string",                         [null,true], [true, false], [0,                  false], [0.0,                      false], ["some string",         true],  [["some string"],                        false], [null, false]],
             ["           ",                         [null,true], [true, false], [0,                  false], [0.0,                      false], ["           ",         true],  [["           "],                        false], [null, false]],
-            [new \StdClass,                         [null,true], [true, false], [0,                  false], [0.0,                      false], ["",                    false], [[new \StdClass],                        false], [null, false]],
+            [new \StdClass(),                         [null,true], [true, false], [0,                  false], [0.0,                      false], ["",                    false], [[new \StdClass()],                        false], [null, false]],
             [new StrClass(""),                      [null,true], [false,true],  [0,                  false], [0.0,                      false], ["",                    true],  [[new StrClass("")],                     false], [null, false]],
             [new StrClass("1"),                     [null,true], [true, true],  [1,                  true],  [1.0,                      true],  ["1",                   true],  [[new StrClass("1")],                    false], [null, false]],
             [new StrClass("0"),                     [null,true], [false,true],  [0,                  true],  [0.0,                      true],  ["0",                   true],  [[new StrClass("0")],                    false], [null, false]],

@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -9,9 +10,10 @@ namespace JKingWeb\Arsse\TestCase\REST\NextcloudNews;
 
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\REST\NextcloudNews\Versions;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Psr\Http\Message\ResponseInterface;
 
-/** @covers \JKingWeb\Arsse\REST\NextcloudNews\Versions */
+#[CoversClass(\JKingWeb\Arsse\REST\NextcloudNews\Versions::class)]
 class TestVersions extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         parent::setUp();

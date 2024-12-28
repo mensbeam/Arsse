@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -427,7 +428,7 @@ trait SeriesArticle {
         unset($this->data, $this->matches, $this->fields, $this->checkTables, $this->user);
     }
 
-    /** 
+    /**
      * @dataProvider provideContextMatches
      * @covers \JKingWeb\Arsse\Database::articleList
      * @covers \JKingWeb\Arsse\Database::articleQuery

@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -24,15 +25,16 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use GuzzleHttp\Psr7\ServerRequest;
+use PHPUnit\Framework\Attributes\CoversNothing;
 
-/** @coversNothing */
+#[CoversNothing]
 abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     public function setUp(): void {
         self::clearData();
         // create the object factory as a mock
         Arsse::$obj = \Phake::mock(Factory::class);
         \Phake::when(Arsse::$obj)->get->thenReturnCallback(function(string $class) {
-            return new $class;
+            return new $class();
         });
     }
 

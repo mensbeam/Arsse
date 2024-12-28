@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -9,9 +10,9 @@ namespace JKingWeb\Arsse\TestCase\Db;
 
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\Db\Exception;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/**
- * @covers \JKingWeb\Arsse\Db\Transaction */
+#[CoversClass(\JKingWeb\Arsse\Db\Transaction::class)]
 class TestTransaction extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $drv;
 

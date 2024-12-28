@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -10,8 +11,10 @@ namespace JKingWeb\Arsse\TestCase\ImportExport;
 use JKingWeb\Arsse\ImportExport\AbstractImportExport;
 use JKingWeb\Arsse\ImportExport\Exception;
 use org\bovigo\vfs\vfsStream;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
-/** @covers \JKingWeb\Arsse\ImportExport\AbstractImportExport */
+#[CoversClass(\JKingWeb\Arsse\ImportExport\AbstractImportExport::class)]
 class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $vfs;
     protected $path;
@@ -45,7 +48,8 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
         parent::tearDown();
     }
 
-    /** @dataProvider provideFileExports */
+
+    #[DataProvider('provideFileExports')]
     public function testExportToAFile(string $file, string $user, bool $flat, $exp): void {
         $path = $this->path.$file;
         try {
@@ -84,7 +88,8 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideFileImports */
+
+    #[DataProvider('provideFileImports')]
     public function testImportFromAFile(string $file, string $user, bool $flat, bool $replace, $exp): void {
         $path = $this->path.$file;
         try {

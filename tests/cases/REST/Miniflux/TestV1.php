@@ -84,7 +84,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 42, 'admin' => false, 'root_folder_name' => null, 'tz' => "Asia/Gaza"]);
         \Phake::when(Arsse::$user)->begin->thenReturn($this->transaction);
         //initialize a handler
-        $this->h = new V1();
+        $this->h = new V1;
     }
 
     protected static function v($value) {

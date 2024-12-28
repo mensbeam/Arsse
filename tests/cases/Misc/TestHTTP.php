@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -10,11 +11,13 @@ namespace JKingWeb\Arsse\TestCase\Misc;
 use JKingWeb\Arsse\Misc\HTTP;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseInterface;
 
-/** @covers \JKingWeb\Arsse\Misc\HTTP */
+#[CoversClass(\JKingWeb\Arsse\Misc\HTTP::class)]
 class TestHTTP extends \JKingWeb\Arsse\Test\AbstractTest {
-    /** @dataProvider provideMediaTypes */
+    #[DataProvider('provideMediaTypes')]
     public function testMatchMediaType(string $header, array $types, bool $exp): void {
         $msg = (new Request("POST", "/"))->withHeader("Content-Type", $header);
         $this->assertSame($exp, HTTP::matchType($msg, ...$types));
@@ -36,7 +39,8 @@ class TestHTTP extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideTypedMessages */
+
+    #[DataProvider('provideTypedMessages')]
     public function testCreateResponses(string $type, array $params, ResponseInterface $exp): void {
         $act = call_user_func(["JKingWeb\\Arsse\\Misc\\HTTP", $type], ...$params);
         $this->assertMessage($exp, $act);

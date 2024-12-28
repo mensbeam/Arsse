@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -11,8 +12,9 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Db\SQLite3\Driver;
 use JKingWeb\Arsse\ImportExport\AbstractImportExport;
 use JKingWeb\Arsse\Test\Database;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/** @covers \JKingWeb\Arsse\ImportExport\AbstractImportExport */
+#[CoversClass(\JKingWeb\Arsse\ImportExport\AbstractImportExport::class)]
 class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $drv;
     protected $proc;

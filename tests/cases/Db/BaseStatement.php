@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -8,6 +9,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Db;
 
 use JKingWeb\Arsse\Db\Statement;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     protected static $interface;
@@ -47,7 +49,8 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertInstanceOf(Statement::class, new $this->statementClass(...$this->makeStatement("SELECT ? as value")));
     }
 
-    /** @dataProvider provideBindings */
+
+    #[DataProvider('provideBindings')]
     public function testBindATypedValue($value, string $type, string $exp): void {
         if ($exp === "null") {
             $query = "SELECT (? is null) as pass";
@@ -60,7 +63,8 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertTrue((bool) $act);
     }
 
-    /** @dataProvider provideBinaryBindings */
+
+    #[DataProvider('provideBinaryBindings')]
     public function testHandleBinaryData($value, string $type, string $exp): void {
         if ($exp === "null") {
             $query = "SELECT (? is null) as pass";

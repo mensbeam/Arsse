@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -9,11 +10,10 @@ namespace JKingWeb\Arsse\TestCase\Misc;
 
 use JKingWeb\Arsse\Misc\Query;
 use JKingWeb\Arsse\Misc\QueryFilter;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/**
- * @covers \JKingWeb\Arsse\Misc\Query
- * @covers \JKingWeb\Arsse\Misc\QueryFilter
- */
+#[CoversClass(\JKingWeb\Arsse\Misc\Query::class)]
+#[CoversClass(\JKingWeb\Arsse\Misc\QueryFilter::class)]
 class TestQuery extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testBasicQuery(): void {
         $q = new Query("select * from table where a = ?", "int", 3);

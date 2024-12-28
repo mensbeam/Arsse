@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -9,8 +10,10 @@ namespace JKingWeb\Arsse\TestCase\Database;
 
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\Transaction;
+use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\DataProvider;
 
-/** @coversNothing */
+#[CoversNothing]
 class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $db = null;
 
@@ -36,9 +39,9 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /**
-     * @dataProvider provideInClauses
      * @covers \JKingWeb\Arsse\Database::generateIn
-    */
+     */
+    #[DataProvider('provideInClauses')]
     public function testGenerateInClause(string $clause, array $values, array $inV, string $inT): void {
         $types = array_fill(0, sizeof($values), $inT);
         $exp = [$clause, $types, $values];
@@ -73,9 +76,9 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     /**
-     * @dataProvider provideSearchClauses
      * @covers \JKingWeb\Arsse\Database::generateSearch
      */
+    #[DataProvider('provideSearchClauses')]
     public function testGenerateSearchClause(string $clause, array $values, array $inV, array $inC, bool $inAny): void {
         // this is not an exhaustive test; integration tests already cover the ins and outs of the functionality
         $types = array_fill(0, sizeof($values), "str");

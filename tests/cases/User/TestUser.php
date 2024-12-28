@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -14,8 +15,10 @@ use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\User\ExceptionConflict;
 use JKingWeb\Arsse\User\ExceptionInput;
 use JKingWeb\Arsse\User\Driver;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
-/** @covers \JKingWeb\Arsse\User */
+#[CoversClass(\JKingWeb\Arsse\User::class)]
 class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $drv;
 
@@ -54,7 +57,8 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertNotEquals($pass1, $pass2);
     }
 
-    /** @dataProvider provideAuthentication */
+
+    #[DataProvider('provideAuthentication')]
     public function testAuthenticateAUser(bool $preAuth, string $user, string $password, bool $exp): void {
         Arsse::$conf->userPreAuth = $preAuth;
         \Phake::when($this->drv)->auth->thenReturn(false);
@@ -156,7 +160,8 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    /** @dataProvider provideInvalidUserNames */
+
+    #[DataProvider('provideInvalidUserNames')]
     public function testAddAnInvalidUser(string $user): void {
         $u = new User($this->drv);
         $this->assertException("invalidUsername", "User", "ExceptionInput");
@@ -240,7 +245,8 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify($this->drv)->userRename($old, $old);
     }
 
-    /** @dataProvider provideInvalidUserNames */
+
+    #[DataProvider('provideInvalidUserNames')]
     public function testRenameAUserToAnInvalidName(string $new): void {
         $u = new User($this->drv);
         $this->assertException("invalidUsername", "User", "ExceptionInput");
@@ -405,7 +411,8 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    /** @dataProvider provideProperties */
+
+    #[DataProvider('provideProperties')]
     public function testGetThePropertiesOfAUser(array $exp, array $base, array $extra): void {
         $user = "john.doe@example.com";
         $exp = array_merge(['num' => null], array_combine(array_keys(User::PROPERTIES), array_fill(0, sizeof(User::PROPERTIES), null)), $exp);
@@ -460,7 +467,8 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    /** @dataProvider providePropertyChanges */
+
+    #[DataProvider('providePropertyChanges')]
     public function testSetThePropertiesOfAUser(array $in, $out): void {
         $user = "john.doe@example.com";
         if ($out instanceof \Exception) {
@@ -479,7 +487,8 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    /** @dataProvider providePropertyChanges */
+
+    #[DataProvider('providePropertyChanges')]
     public function testSetThePropertiesOfAUserWeDoNotKnow(array $in, $out): void {
         $user = "john.doe@example.com";
         if ($out instanceof \Exception) {

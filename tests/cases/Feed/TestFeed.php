@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -12,10 +13,12 @@ use JKingWeb\Arsse\Feed;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Test\Result;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 
-/**
- * @covers \JKingWeb\Arsse\Feed
- * @group slow */
+#[CoversClass(\JKingWeb\Arsse\Feed::class)]
+#[Group('slow')]
 class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
     protected static $host = "http://localhost:8000/";
     protected $base = "";
@@ -224,7 +227,8 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame("http://example.com/1", $f->newItems[0]->url);
     }
 
-    /** @dataProvider provide304ResponseURLs */
+
+    #[DataProvider('provide304ResponseURLs')]
     public function testHandleCacheHeadersOn304(string $url): void {
         // upon 304, the client should re-use the caching header values it supplied to the server
         $t = Date::transform("2010-01-01T00:00:00Z", "unix");
@@ -284,7 +288,8 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    /** @dataProvider provide304Timestamps */
+
+    #[DataProvider('provide304Timestamps')]
     public function testComputeNextFetchFrom304(string $t, string $exp): void {
         $t = $t ? strtotime($t) : "";
         $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));

@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -8,8 +9,9 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Lang;
 
 use JKingWeb\Arsse\Lang as TestClass;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/** @covers \JKingWeb\Arsse\Lang */
+#[CoversClass(\JKingWeb\Arsse\Lang::class)]
 class TestErrors extends \JKingWeb\Arsse\Test\AbstractTest {
     use \JKingWeb\Arsse\Test\Lang\Setup;
 

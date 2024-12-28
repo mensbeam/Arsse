@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -11,8 +12,9 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Service;
 use JKingWeb\Arsse\Misc\Date;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/** @covers \JKingWeb\Arsse\Service */
+#[CoversClass(\JKingWeb\Arsse\Service::class)]
 class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $srv;
 
@@ -20,7 +22,7 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
         parent::setUp();
         self::setConf();
         Arsse::$db = \Phake::mock(Database::class);
-        $this->srv = new Service();
+        $this->srv = new Service;
     }
 
     public function testCheckIn(): void {

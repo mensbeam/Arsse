@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -13,8 +14,10 @@ use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\Lang;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
-/** @covers \JKingWeb\Arsse\Arsse */
+#[CoversClass(\JKingWeb\Arsse\Arsse::class)]
 class TestArsse extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         self::clearData(false);
@@ -46,7 +49,8 @@ class TestArsse extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertInstanceOf(User::class, Arsse::$user);
     }
 
-    /** @dataProvider provideExtensionChecks */
+
+    #[DataProvider('provideExtensionChecks')]
     public function testCheckForExtensions(array $ext, $exp): void {
         if ($exp instanceof \Exception) {
             $this->assertException($exp);

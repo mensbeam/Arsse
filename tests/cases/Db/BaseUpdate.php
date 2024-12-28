@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -33,7 +34,7 @@ class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         parent::setUp();
         self::setConf();
         // construct a fresh driver for each test
-        $this->drv = new static::$dbDriverClass;
+        $this->drv = new static::$dbDriverClass();
         $schemaId = (get_class($this->drv))::schemaID();
         // set up a virtual filesystem for schema files
         $this->vfs = vfsStream::setup("schemata", null, [$schemaId => []]);
