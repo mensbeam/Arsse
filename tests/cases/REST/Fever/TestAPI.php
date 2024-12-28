@@ -16,9 +16,11 @@ use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\Fever\API;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseInterface;
 
-/** @covers \JKingWeb\Arsse\REST\Fever\API<extended> */
+#[CoversClass(\JKingWeb\Arsse\REST\Fever\API::class)]
 class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     /** @var \JKingWeb\Arsse\REST\Fever\API */
     protected $h;
@@ -168,7 +170,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when($this->hMock)->baseResponse->thenReturn([]);
     }
 
-    /** @dataProvider provideTokenAuthenticationRequests */
+    #[DataProvider("provideTokenAuthenticationRequests")]
     public function testAuthenticateAUserToken(bool $httpRequired, bool $tokenEnforced, ?string $httpUser, array $dataPost, array $dataGet, ResponseInterface $exp): void {
         self::setConf([
             'userHTTPAuthRequired' => $httpRequired,
@@ -291,7 +293,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("api&feeds"));
     }
 
-    /** @dataProvider provideItemListContexts */
+    #[DataProvider("provideItemListContexts")]
     public function testListItems(string $url, Context $c, bool $desc): void {
         $fields = ["id", "subscription", "title", "author", "content", "url", "starred", "unread", "published_date"];
         $order = [$desc ? "id desc" : "id"];
@@ -338,7 +340,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("api&links"));
     }
 
-    /** @dataProvider provideMarkingContexts */
+    #[DataProvider("provideMarkingContexts")]
     public function testSetMarks(string $post, Context $c, array $data, array $out): void {
         $saved = [['id' => 1],['id' => 2],['id' => 3]];
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
@@ -355,7 +357,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    /** @dataProvider provideMarkingContexts */
+    #[DataProvider("provideMarkingContexts")]
     public function testSetMarksWithQuery(string $get, Context $c, array $data, array $out): void {
         $saved = [['id' => 1],['id' => 2],['id' => 3]];
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
@@ -410,7 +412,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideInvalidRequests */
+    #[DataProvider("provideInvalidRequests")]
     public function testSendInvalidRequests(string $get, string $post, string $method, ?string $type, ResponseInterface $exp): void {
         $this->assertMessage($exp, $this->req($get, $post, $method, $type));
     }

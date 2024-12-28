@@ -8,11 +8,12 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\TestCase\Db\SQLite3;
 
+use JKingWeb\Arsse\Database;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\CoversNothing;
 
 #[Group('optional')]
-#[CoversNothing]
+#[CoversClass(Database::class)]
 class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\AbstractTest {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\SQLite3;
 

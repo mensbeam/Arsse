@@ -14,8 +14,10 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\User\ExceptionConflict as UserException;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\Fever\User as FeverUser;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
-/** @covers \JKingWeb\Arsse\REST\Fever\User<extended> */
+#[CoversClass(\JKingWeb\Arsse\REST\Fever\User::class)]
 class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $u;
     protected $h;
@@ -33,7 +35,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->h = new FeverUser;
     }
 
-    /** @dataProvider providePasswordCreations */
+    #[DataProvider("providePasswordCreations")]
     public function testRegisterAUserPassword(string $user, ?string $password, $exp): void {
         \Phake::when(Arsse::$user)->generatePassword->thenReturn("RANDOM_PASSWORD");
         \Phake::when(Arsse::$db)->tokenCreate->thenReturnCallback(function($user, $class, $id = null) {
@@ -73,7 +75,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->tokenRevoke("john.doe@example.com", "fever.login");
     }
 
-    /** @dataProvider provideUserAuthenticationRequests */
+    #[DataProvider("provideUserAuthenticationRequests")]
     public function testAuthenticateAUserName(string $user, string $password, bool $exp): void {
         \Phake::when(Arsse::$db)->tokenLookup->thenThrow(new ExceptionInput("constraintViolation"));
         \Phake::when(Arsse::$db)->tokenLookup("fever.login", md5("jane.doe@example.com:secret"))->thenReturn(['user' => "jane.doe@example.com"]);

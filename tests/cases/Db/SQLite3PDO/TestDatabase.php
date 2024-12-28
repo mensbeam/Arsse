@@ -8,9 +8,10 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
 
-use PHPUnit\Framework\Attributes\CoversNothing;
+use JKingWeb\Arsse\Database;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-#[CoversNothing]
+#[CoversClass(Database::class)]
 class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\AbstractTest {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\SQLite3PDO;
 

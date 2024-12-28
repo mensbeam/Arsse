@@ -11,6 +11,7 @@ namespace JKingWeb\Arsse\TestCase\Misc;
 use JKingWeb\Arsse\Misc\ValueInfo as I;
 use JKingWeb\Arsse\Test\Misc\StrClass;
 use JKingWeb\Arsse\Test\Result;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 #[CoversClass(\JKingWeb\Arsse\Misc\ValueInfo::class)]

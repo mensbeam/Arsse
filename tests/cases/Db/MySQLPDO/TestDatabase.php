@@ -8,13 +8,14 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\TestCase\Db\MySQLPDO;
 
+use JKingWeb\Arsse\Database;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\CoversNothing;
 
 #[Group('slow')]
 #[Group('optional')]
 #[Group('coverageOptional')]
-#[CoversNothing]
+#[CoversClass(Database::class)]
 class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\AbstractTest {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\MySQLPDO;
 

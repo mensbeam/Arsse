@@ -22,18 +22,18 @@ trait SeriesMiscellany {
     protected function tearDownSeriesMiscellany(): void {
     }
 
-    #[CoversMethod(Database::class, "__construct")]
-    #[CoversMethod(Database::class, "driverSchemaVersion")]
-    #[CoversMethod(Database::class, "driverSchemaUpdate")]
+    //#[CoversMethod(Database::class, "__construct")]
+    //#[CoversMethod(Database::class, "driverSchemaVersion")]
+    //#[CoversMethod(Database::class, "driverSchemaUpdate")]
     public function testInitializeDatabase(): void {
         static::dbRaze(static::$drv);
         $d = new Database(true);
         $this->assertSame(Database::SCHEMA_VERSION, $d->driverSchemaVersion());
     }
 
-    #[CoversMethod(Database::class, "__construct")]
-    #[CoversMethod(Database::class, "driverSchemaVersion")]
-    #[CoversMethod(Database::class, "driverSchemaUpdate")]
+    //#[CoversMethod(Database::class, "__construct")]
+    //#[CoversMethod(Database::class, "driverSchemaVersion")]
+    //#[CoversMethod(Database::class, "driverSchemaUpdate")]
     public function testManuallyInitializeDatabase(): void {
         static::dbRaze(static::$drv);
         $d = new Database(false);
@@ -43,12 +43,12 @@ trait SeriesMiscellany {
         $this->assertFalse($d->driverSchemaUpdate());
     }
 
-    #[CoversMethod(Database::class, "driverCharsetAcceptable")]
+    //#[CoversMethod(Database::class, "driverCharsetAcceptable")]
     public function testCheckCharacterSetAcceptability(): void {
         $this->assertIsBool(Arsse::$db->driverCharsetAcceptable());
     }
 
-    #[CoversMethod(Database::class, "driverMaintenance")]
+    //#[CoversMethod(Database::class, "driverMaintenance")]
     public function testPerformMaintenance(): void {
         $this->assertTrue(Arsse::$db->driverMaintenance());
     }

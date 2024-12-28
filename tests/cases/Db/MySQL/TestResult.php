@@ -7,11 +7,13 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\TestCase\Db\MySQL;
 
-/**
- * @group slow
- * @covers \JKingWeb\Arsse\Db\MySQL\Result<extended>
- * @covers \JKingWeb\Arsse\Db\MySQL\ExceptionBuilder
- * @covers \JKingWeb\Arsse\Db\SQLState */
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group("slow")]
+#[CoversClass(\JKingWeb\Arsse\Db\MySQL\Result::class)]
+#[CoversClass(\JKingWeb\Arsse\Db\MySQL\ExceptionBuilder::class)]
+#[CoversClass(\JKingWeb\Arsse\Db\SQLState::class)]
 class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\MySQL;
 

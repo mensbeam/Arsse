@@ -13,8 +13,8 @@ use JKingWeb\Arsse\Feed;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 
-#[CoversClass(\JKingWeb\Arsse\Feed::class)]
 #[Group('slow')]
+#[CoversClass(\JKingWeb\Arsse\Feed::class)]
 class TestFetching extends \JKingWeb\Arsse\Test\AbstractTest {
     protected static $host = "http://localhost:8000/";
     protected $base = "";

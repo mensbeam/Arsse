@@ -7,11 +7,13 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\TestCase\Db\PostgreSQLPDO;
 
-/**
- * @group slow
- * @covers \JKingWeb\Arsse\Db\PostgreSQL\PDOStatement<extended>
- * @covers \JKingWeb\Arsse\Db\PDOError
- * @covers \JKingWeb\Arsse\Db\SQLState */
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group("slow")]
+#[CoversClass(\JKingWeb\Arsse\Db\PostgreSQL\PDOStatement::class)]
+#[CoversClass(\JKingWeb\Arsse\Db\PDOError::class)]
+#[CoversClass(\JKingWeb\Arsse\Db\SQLState::class)]
 class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\PostgreSQLPDO;
 

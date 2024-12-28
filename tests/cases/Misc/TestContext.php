@@ -12,17 +12,17 @@ use JKingWeb\Arsse\Context\ExclusionContext;
 use JKingWeb\Arsse\Context\UnionContext;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
-/**
- * @covers \JKingWeb\Arsse\Context\Context<extended>
- * @covers \JKingWeb\Arsse\Context\ExclusionContext<extended>
- * @covers \JKingWeb\Arsse\Context\UnionContext<extended>
- */
+#[CoversClass(\JKingWeb\Arsse\Context\Context::class)]
+#[CoversClass(\JKingWeb\Arsse\Context\ExclusionContext::class)]
+#[CoversClass(\JKingWeb\Arsse\Context\UnionContext::class)]
 class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $ranges = ['modifiedRange', 'markedRange', 'articleRange', 'editionRange'];
     protected $times = ['modifiedRange', 'markedRange'];
 
-    /** @dataProvider provideContextOptions */
+    #[DataProvider("provideContextOptions")]
     public function testSetContextOptions(string $method, array $input, $output, bool $not): void {
         $parent = new Context;
         $c = ($not) ? $parent->not : $parent;

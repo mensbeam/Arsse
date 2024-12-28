@@ -7,11 +7,13 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\TestCase\Db\PostgreSQL;
 
-/**
- * @group slow
- * @covers \JKingWeb\Arsse\Db\PostgreSQL\Driver<extended>
- * @covers \JKingWeb\Arsse\Db\PostgreSQL\Dispatch
- * @covers \JKingWeb\Arsse\Db\SQLState */
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group("slow")]
+#[CoversClass(\JKingWeb\Arsse\Db\PostgreSQL\Driver::class)]
+#[CoversClass(\JKingWeb\Arsse\Db\PostgreSQL\Dispatch::class)]
+#[CoversClass(\JKingWeb\Arsse\Db\SQLState::class)]
 class TestDriver extends \JKingWeb\Arsse\TestCase\Db\BaseDriver {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\PostgreSQL;
 

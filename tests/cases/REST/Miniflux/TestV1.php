@@ -23,9 +23,11 @@ use JKingWeb\Arsse\ImportExport\OPML;
 use JKingWeb\Arsse\User\ExceptionConflict;
 use JKingWeb\Arsse\User\ExceptionInput as UserExceptionInput;
 use JKingWeb\Arsse\Test\Result;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseInterface;
 
-/** @covers \JKingWeb\Arsse\REST\Miniflux\V1<extended> */
+#[CoversClass(\JKingWeb\Arsse\REST\Miniflux\V1::class)]
 class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     protected const NOW = "2020-12-09T22:35:10.023419Z";
     protected const TOKEN = "Tk2o9YubmZIL2fm2w8Z4KlDEQJz532fNSOcTG0s2_xc=";
@@ -97,7 +99,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $act);
     }
 
-    /** @dataProvider provideAuthResponses */
+    #[DataProvider("provideAuthResponses")]
     public function testAuthenticateAUser($token, bool $auth, bool $success): void {
         $exp = $success ? HTTP::respEmpty(404) : V1::respError("401", 401);
         $user = "john.doe@example.com";
@@ -128,7 +130,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideInvalidPaths */
+    #[DataProvider("provideInvalidPaths")]
     public function testRespondToInvalidPaths($path, $method, $code, $allow = null): void {
         $exp = HTTP::respEmpty($code, $allow ? ['Allow' => $allow] : []);
         $this->assertMessage($exp, $this->req($method, $path));
@@ -143,7 +145,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideOptionsRequests */
+    #[DataProvider("provideOptionsRequests")]
     public function testRespondToOptionsRequests(string $url, string $allow, string $accept): void {
         $exp = HTTP::respEmpty(204, [
             'Allow'  => $allow,
@@ -172,7 +174,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => 2112]));
     }
 
-    /** @dataProvider provideDiscoveries */
+    #[DataProvider("provideDiscoveries")]
     public function testDiscoverFeeds($in, ResponseInterface $exp): void {
         $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => $in]));
     }
@@ -193,7 +195,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideUserQueries */
+    #[DataProvider("provideUserQueries")]
     public function testQueryUsers(bool $admin, string $route, ResponseInterface $exp): void {
         $u = [
             new ExceptionConflict("doesNotExist"),
@@ -234,7 +236,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideUserModifications */
+    #[DataProvider("provideUserModifications")]
     public function testModifyAUser(bool $admin, string $url, array $body, $in1, $out1, $in2, $out2, $in3, $out3, ResponseInterface $exp): void {
         Arsse::$user = \Phake::mock(User::class);
         \Phake::when(Arsse::$user)->begin->thenReturn($this->transaction);
@@ -303,7 +305,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideUserAdditions */
+    #[DataProvider("provideUserAdditions")]
     public function testAddAUser(array $body, $in1, $out1, $in2, $out2, ResponseInterface $exp): void {
         Arsse::$user = \Phake::mock(User::class);
         \Phake::when(Arsse::$user)->begin->thenReturn($this->transaction);
@@ -398,7 +400,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/categories"));
     }
 
-    /** @dataProvider provideCategoryAdditions */
+    #[DataProvider("provideCategoryAdditions")]
     public function testAddACategory($title, ResponseInterface $exp): void {
         if (!strlen((string) $title)) {
             \Phake::when(Arsse::$db)->folderAdd->thenThrow(new ExceptionInput("missing"));
@@ -423,7 +425,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideCategoryUpdates */
+    #[DataProvider("provideCategoryUpdates")]
     public function testRenameACategory(int $id, $title, $out, ResponseInterface $exp): void {
         \Phake::when(Arsse::$user)->propertiesSet->thenReturn(['root_folder_name' => $title]);
         if (is_string($out)) {
@@ -523,7 +525,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 1);
     }
 
-    /** @dataProvider provideFeedCreations */
+    #[DataProvider("provideFeedCreations")]
     public function testCreateAFeed(array $in, $out1, $out2, $out3, $out4, ResponseInterface $exp): void {
         if ($out1 instanceof \Exception) {
             \Phake::when(Arsse::$db)->feedAdd->thenThrow($out1);
@@ -614,7 +616,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideFeedModifications */
+    #[DataProvider("provideFeedModifications")]
     public function testModifyAFeed(array $in, array $data, $out, ResponseInterface $exp): void {
         $this->h = \Phake::partialMock(V1::class);
         \Phake::when($this->h)->getFeed->thenReturn(HTTP::respJson(self::FEEDS_OUT[0]));
@@ -664,7 +666,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->subscriptionRemove(Arsse::$user->id, 2112);
     }
 
-    /** @dataProvider provideIcons */
+    #[DataProvider("provideIcons")]
     public function testGetTheIconOfASubscription($out, ResponseInterface $exp): void {
         if ($out instanceof \Exception) {
             \Phake::when(Arsse::$db)->subscriptionIcon->thenThrow($out);
@@ -686,7 +688,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideEntryQueries */
+    #[DataProvider("provideEntryQueries")]
     public function testGetEntries(string $url, ?RootContext $c, ?array $order, $out, bool $count, ResponseInterface $exp): void {
         \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v(self::FEEDS)));
         \Phake::when(Arsse::$db)->articleCount->thenReturn(2112);
@@ -777,7 +779,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideSingleEntryQueries */
+    #[DataProvider("provideSingleEntryQueries")]
     public function testGetASingleEntry(string $url, Context $c, $out, ResponseInterface $exp): void {
         \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn(self::v(self::FEEDS[1]));
         if ($out instanceof \Exception) {
@@ -816,7 +818,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideEntryMarkings */
+    #[DataProvider("provideEntryMarkings")]
     public function testMarkEntries(array $in, ?array $data, ResponseInterface $exp): void {
         \Phake::when(Arsse::$db)->articleMark->thenReturn(0);
         $this->assertMessage($exp, $this->req("PUT", "/entries", $in));
@@ -844,7 +846,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideMassMarkings */
+    #[DataProvider("provideMassMarkings")]
     public function testMassMarkEntries(string $url, Context $c, $out, ResponseInterface $exp): void {
         if ($out instanceof \Exception) {
             \Phake::when(Arsse::$db)->articleMark->thenThrow($out);
@@ -873,7 +875,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideBookmarkTogglings */
+    #[DataProvider("provideBookmarkTogglings")]
     public function testToggleABookmark($before, ?bool $after, ResponseInterface $exp): void {
         $c = (new Context)->article(2112);
         \Phake::when(Arsse::$db)->articleMark->thenReturn(1);
@@ -925,7 +927,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage(HTTP::respEmpty(204), $this->req("PUT", "/feeds/refresh"));
     }
 
-    /** @dataProvider provideImports */
+    #[DataProvider("provideImports")]
     public function testImport($out, ResponseInterface $exp): void {
         $opml = \Phake::mock(OPML::class);
         \Phake::when(Arsse::$obj)->get(OPML::class)->thenReturn($opml);

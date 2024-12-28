@@ -13,9 +13,10 @@ use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\REST\TinyTinyRSS\Icon;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Psr\Http\Message\ResponseInterface;
 
-/** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Icon<extended> */
+#[CoversClass(\JKingWeb\Arsse\REST\TinyTinyRSS\Icon::class)]
 class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $h;
     protected $user = "john.doe@example.com";

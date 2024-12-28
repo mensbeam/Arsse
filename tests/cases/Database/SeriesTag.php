@@ -115,8 +115,8 @@ trait SeriesTag {
         unset($this->data, $this->checkTags, $this->checkMembers, $this->user);
     }
 
-    #[CoversMethod(Database::class, "tagAdd")]
-    #[CoversMethod(Database::class, "tagValidateName")]
+    //#[CoversMethod(Database::class, "tagAdd")]
+    //#[CoversMethod(Database::class, "tagValidateName")]
     public function testAddATag(): void {
         $user = "john.doe@example.com";
         $tagID = $this->nextID("arsse_tags");
@@ -126,35 +126,35 @@ trait SeriesTag {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    #[CoversMethod(Database::class, "tagAdd")]
-    #[CoversMethod(Database::class, "tagValidateName")]
+    //#[CoversMethod(Database::class, "tagAdd")]
+    //#[CoversMethod(Database::class, "tagValidateName")]
     public function testAddADuplicateTag(): void {
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         Arsse::$db->tagAdd("john.doe@example.com", ['name' => "Interesting"]);
     }
 
-    #[CoversMethod(Database::class, "tagAdd")]
-    #[CoversMethod(Database::class, "tagValidateName")]
+    //#[CoversMethod(Database::class, "tagAdd")]
+    //#[CoversMethod(Database::class, "tagValidateName")]
     public function testAddATagWithAMissingName(): void {
         $this->assertException("missing", "Db", "ExceptionInput");
         Arsse::$db->tagAdd("john.doe@example.com", []);
     }
 
-    #[CoversMethod(Database::class, "tagAdd")]
-    #[CoversMethod(Database::class, "tagValidateName")]
+    //#[CoversMethod(Database::class, "tagAdd")]
+    //#[CoversMethod(Database::class, "tagValidateName")]
     public function testAddATagWithABlankName(): void {
         $this->assertException("missing", "Db", "ExceptionInput");
         Arsse::$db->tagAdd("john.doe@example.com", ['name' => ""]);
     }
 
-    #[CoversMethod(Database::class, "tagAdd")]
-    #[CoversMethod(Database::class, "tagValidateName")]
+    //#[CoversMethod(Database::class, "tagAdd")]
+    //#[CoversMethod(Database::class, "tagValidateName")]
     public function testAddATagWithAWhitespaceName(): void {
         $this->assertException("whitespace", "Db", "ExceptionInput");
         Arsse::$db->tagAdd("john.doe@example.com", ['name' => " "]);
     }
 
-    #[CoversMethod(Database::class, "tagList")]
+    //#[CoversMethod(Database::class, "tagList")]
     public function testListTags(): void {
         $exp = [
             ['id' => 2, 'name' => "Fascinating"],
@@ -170,8 +170,8 @@ trait SeriesTag {
         $this->assertResult($exp, Arsse::$db->tagList("jane.doe@example.com", false));
     }
 
-    #[CoversMethod(Database::class, "tagRemove")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagRemove")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testRemoveATag(): void {
         $this->assertTrue(Arsse::$db->tagRemove("john.doe@example.com", 1));
         $state = $this->primeExpectations($this->data, $this->checkTags);
@@ -179,8 +179,8 @@ trait SeriesTag {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    #[CoversMethod(Database::class, "tagRemove")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagRemove")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testRemoveATagByName(): void {
         $this->assertTrue(Arsse::$db->tagRemove("john.doe@example.com", "Interesting", true));
         $state = $this->primeExpectations($this->data, $this->checkTags);
@@ -188,36 +188,36 @@ trait SeriesTag {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    #[CoversMethod(Database::class, "tagRemove")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagRemove")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testRemoveAMissingTag(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->tagRemove("john.doe@example.com", 2112);
     }
 
-    #[CoversMethod(Database::class, "tagRemove")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagRemove")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testRemoveAnInvalidTag(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->tagRemove("john.doe@example.com", -1);
     }
 
-    #[CoversMethod(Database::class, "tagRemove")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagRemove")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testRemoveAnInvalidTagByName(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->tagRemove("john.doe@example.com", [], true);
     }
 
-    #[CoversMethod(Database::class, "tagRemove")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagRemove")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testRemoveATagOfTheWrongOwner(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->tagRemove("john.doe@example.com", 3); // tag ID 3 belongs to Jane
     }
 
-    #[CoversMethod(Database::class, "tagPropertiesGet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagPropertiesGet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testGetThePropertiesOfATag(): void {
         $exp = [
             'id'       => 2,
@@ -227,44 +227,44 @@ trait SeriesTag {
         $this->assertArraySubset($exp, Arsse::$db->tagPropertiesGet("john.doe@example.com", "Fascinating", true));
     }
 
-    #[CoversMethod(Database::class, "tagPropertiesGet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagPropertiesGet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testGetThePropertiesOfAMissingTag(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->tagPropertiesGet("john.doe@example.com", 2112);
     }
 
-    #[CoversMethod(Database::class, "tagPropertiesGet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagPropertiesGet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testGetThePropertiesOfAnInvalidTag(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->tagPropertiesGet("john.doe@example.com", -1);
     }
 
-    #[CoversMethod(Database::class, "tagPropertiesGet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagPropertiesGet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testGetThePropertiesOfAnInvalidTagByName(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->tagPropertiesGet("john.doe@example.com", [], true);
     }
 
-    #[CoversMethod(Database::class, "tagPropertiesGet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagPropertiesGet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testGetThePropertiesOfATagOfTheWrongOwner(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->tagPropertiesGet("john.doe@example.com", 3); // tag ID 3 belongs to Jane
     }
 
-    #[CoversMethod(Database::class, "tagPropertiesSet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
-    #[CoversMethod(Database::class, "tagValidateName")]
+    //#[CoversMethod(Database::class, "tagPropertiesSet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagValidateName")]
     public function testMakeNoChangesToATag(): void {
         $this->assertFalse(Arsse::$db->tagPropertiesSet("john.doe@example.com", 1, []));
     }
 
-    #[CoversMethod(Database::class, "tagPropertiesSet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
-    #[CoversMethod(Database::class, "tagValidateName")]
+    //#[CoversMethod(Database::class, "tagPropertiesSet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagValidateName")]
     public function testRenameATag(): void {
         $this->assertTrue(Arsse::$db->tagPropertiesSet("john.doe@example.com", 1, ['name' => "Curious"]));
         $state = $this->primeExpectations($this->data, $this->checkTags);
@@ -272,9 +272,9 @@ trait SeriesTag {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    #[CoversMethod(Database::class, "tagPropertiesSet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
-    #[CoversMethod(Database::class, "tagValidateName")]
+    //#[CoversMethod(Database::class, "tagPropertiesSet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagValidateName")]
     public function testRenameATagByName(): void {
         $this->assertTrue(Arsse::$db->tagPropertiesSet("john.doe@example.com", "Interesting", ['name' => "Curious"], true));
         $state = $this->primeExpectations($this->data, $this->checkTags);
@@ -282,72 +282,72 @@ trait SeriesTag {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    #[CoversMethod(Database::class, "tagPropertiesSet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
-    #[CoversMethod(Database::class, "tagValidateName")]
+    //#[CoversMethod(Database::class, "tagPropertiesSet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagValidateName")]
     public function testRenameATagToTheEmptyString(): void {
         $this->assertException("missing", "Db", "ExceptionInput");
         $this->assertTrue(Arsse::$db->tagPropertiesSet("john.doe@example.com", 1, ['name' => ""]));
     }
 
-    #[CoversMethod(Database::class, "tagPropertiesSet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
-    #[CoversMethod(Database::class, "tagValidateName")]
+    //#[CoversMethod(Database::class, "tagPropertiesSet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagValidateName")]
     public function testRenameATagToWhitespaceOnly(): void {
         $this->assertException("whitespace", "Db", "ExceptionInput");
         $this->assertTrue(Arsse::$db->tagPropertiesSet("john.doe@example.com", 1, ['name' => "   "]));
     }
 
-    #[CoversMethod(Database::class, "tagPropertiesSet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
-    #[CoversMethod(Database::class, "tagValidateName")]
+    //#[CoversMethod(Database::class, "tagPropertiesSet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagValidateName")]
     public function testRenameATagToAnInvalidValue(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         $this->assertTrue(Arsse::$db->tagPropertiesSet("john.doe@example.com", 1, ['name' => []]));
     }
 
-    #[CoversMethod(Database::class, "tagPropertiesSet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
-    #[CoversMethod(Database::class, "tagValidateName")]
+    //#[CoversMethod(Database::class, "tagPropertiesSet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagValidateName")]
     public function testCauseATagCollision(): void {
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         Arsse::$db->tagPropertiesSet("john.doe@example.com", 1, ['name' => "Fascinating"]);
     }
 
-    #[CoversMethod(Database::class, "tagPropertiesSet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
-    #[CoversMethod(Database::class, "tagValidateName")]
+    //#[CoversMethod(Database::class, "tagPropertiesSet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagValidateName")]
     public function testSetThePropertiesOfAMissingTag(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->tagPropertiesSet("john.doe@example.com", 2112, ['name' => "Exciting"]);
     }
 
-    #[CoversMethod(Database::class, "tagPropertiesSet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
-    #[CoversMethod(Database::class, "tagValidateName")]
+    //#[CoversMethod(Database::class, "tagPropertiesSet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagValidateName")]
     public function testSetThePropertiesOfAnInvalidTag(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->tagPropertiesSet("john.doe@example.com", -1, ['name' => "Exciting"]);
     }
 
-    #[CoversMethod(Database::class, "tagPropertiesSet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
-    #[CoversMethod(Database::class, "tagValidateName")]
+    //#[CoversMethod(Database::class, "tagPropertiesSet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagValidateName")]
     public function testSetThePropertiesOfAnInvalidTagByName(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->tagPropertiesSet("john.doe@example.com", [], ['name' => "Exciting"], true);
     }
 
-    #[CoversMethod(Database::class, "tagPropertiesSet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
-    #[CoversMethod(Database::class, "tagValidateName")]
+    //#[CoversMethod(Database::class, "tagPropertiesSet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagValidateName")]
     public function testSetThePropertiesOfATagForTheWrongOwner(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->tagPropertiesSet("john.doe@example.com", 3, ['name' => "Exciting"]); // tag ID 3 belongs to Jane
     }
 
-    #[CoversMethod(Database::class, "tagSubscriptionsGet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagSubscriptionsGet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testListTaggedSubscriptions(): void {
         $exp = [1,5];
         $this->assertEquals($exp, Arsse::$db->tagSubscriptionsGet("john.doe@example.com", 1));
@@ -360,22 +360,22 @@ trait SeriesTag {
         $this->assertEquals($exp, Arsse::$db->tagSubscriptionsGet("john.doe@example.com", "Lonely", true));
     }
 
-    #[CoversMethod(Database::class, "tagSubscriptionsGet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagSubscriptionsGet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testListTaggedSubscriptionsForAMissingTag(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->tagSubscriptionsGet("john.doe@example.com", 3);
     }
 
-    #[CoversMethod(Database::class, "tagSubscriptionsGet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagSubscriptionsGet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testListTaggedSubscriptionsForAnInvalidTag(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->tagSubscriptionsGet("john.doe@example.com", -1);
     }
 
-    #[CoversMethod(Database::class, "tagSubscriptionsSet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagSubscriptionsSet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testApplyATagToSubscriptions(): void {
         Arsse::$db->tagSubscriptionsSet("john.doe@example.com", 1, [3,4]);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
@@ -384,8 +384,8 @@ trait SeriesTag {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    #[CoversMethod(Database::class, "tagSubscriptionsSet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagSubscriptionsSet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testClearATagFromSubscriptions(): void {
         Arsse::$db->tagSubscriptionsSet("john.doe@example.com", 1, [1,3], Database::ASSOC_REMOVE);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
@@ -393,8 +393,8 @@ trait SeriesTag {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    #[CoversMethod(Database::class, "tagSubscriptionsSet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagSubscriptionsSet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testApplyATagToSubscriptionsByName(): void {
         Arsse::$db->tagSubscriptionsSet("john.doe@example.com", "Interesting", [3,4], Database::ASSOC_ADD, true);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
@@ -403,8 +403,8 @@ trait SeriesTag {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    #[CoversMethod(Database::class, "tagSubscriptionsSet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagSubscriptionsSet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testClearATagFromSubscriptionsByName(): void {
         Arsse::$db->tagSubscriptionsSet("john.doe@example.com", "Interesting", [1,3], Database::ASSOC_REMOVE, true);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
@@ -412,24 +412,24 @@ trait SeriesTag {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    #[CoversMethod(Database::class, "tagSubscriptionsSet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagSubscriptionsSet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testApplyATagToNoSubscriptionsByName(): void {
         Arsse::$db->tagSubscriptionsSet("john.doe@example.com", "Interesting", [], Database::ASSOC_ADD, true);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $this->compareExpectations(static::$drv, $state);
     }
 
-    #[CoversMethod(Database::class, "tagSubscriptionsSet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagSubscriptionsSet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testClearATagFromNoSubscriptionsByName(): void {
         Arsse::$db->tagSubscriptionsSet("john.doe@example.com", "Interesting", [], Database::ASSOC_REMOVE, true);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $this->compareExpectations(static::$drv, $state);
     }
 
-    #[CoversMethod(Database::class, "tagSubscriptionsSet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagSubscriptionsSet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testReplaceSubscriptionsOfATag(): void {
         Arsse::$db->tagSubscriptionsSet("john.doe@example.com", 1, [3,4], Database::ASSOC_REPLACE);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
@@ -440,8 +440,8 @@ trait SeriesTag {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    #[CoversMethod(Database::class, "tagSubscriptionsSet")]
-    #[CoversMethod(Database::class, "tagValidateId")]
+    //#[CoversMethod(Database::class, "tagSubscriptionsSet")]
+    //#[CoversMethod(Database::class, "tagValidateId")]
     public function testPurgeSubscriptionsOfATag(): void {
         Arsse::$db->tagSubscriptionsSet("john.doe@example.com", 1, [], Database::ASSOC_REPLACE);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
@@ -450,7 +450,7 @@ trait SeriesTag {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    #[CoversMethod(Database::class, "tagSummarize")]
+    //#[CoversMethod(Database::class, "tagSummarize")]
     public function testSummarizeTags(): void {
         $exp = [
             ['id' => 1, 'name' => "Interesting", 'subscription' => 1],

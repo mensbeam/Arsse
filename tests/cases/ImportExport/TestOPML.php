@@ -12,8 +12,10 @@ use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Test\Result;
 use JKingWeb\Arsse\ImportExport\OPML;
 use JKingWeb\Arsse\ImportExport\Exception;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
-/** @covers \JKingWeb\Arsse\ImportExport\OPML<extended> */
+#[CoversClass(\JKingWeb\Arsse\ImportExport\OPML::class)]
 class TestOPML extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $folders = [
         ['id' => 5, 'parent' => 3,    'children' => 0, 'feeds' => 1, 'name' => "Local"],
@@ -104,7 +106,7 @@ OPML_EXPORT_SERIALIZATION;
         (new OPML)->export("john.doe@example.com");
     }
 
-    /** @dataProvider provideParserData */
+    #[DataProvider("provideParserData")]
     public function testParseOpmlForImport(string $file, bool $flat, $exp): void {
         $data = file_get_contents(\JKingWeb\Arsse\DOCROOT."Import/OPML/$file");
         // make the ImportExport::parse() method visible

@@ -16,6 +16,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Depends;
 
 #[CoversClass(\JKingWeb\Arsse\AbstractException::class)]
+#[CoversClass(\JKingWeb\Arsse\ExceptionFatal::class)]
 class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         self::clearData(false);
@@ -59,7 +60,6 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
         throw new LangException("testThisExceptionMessageDoesNotExist");
     }
 
-    /** @covers \JKingWeb\Arsse\ExceptionFatal */
     public function testFatalException(): void {
         $this->expectException('JKingWeb\Arsse\ExceptionFatal');
         throw new \JKingWeb\Arsse\ExceptionFatal("");

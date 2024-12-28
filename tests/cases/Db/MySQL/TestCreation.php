@@ -8,11 +8,12 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Db\MySQL;
 
 use JKingWeb\Arsse\Db\MySQL\Driver as Driver;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
 
-/**
- * @group slow
- * @covers \JKingWeb\Arsse\Db\MySQL\Driver<extended>
- * @covers \JKingWeb\Arsse\Db\MySQL\ExceptionBuilder */
+#[Group("slow")]
+#[CoversClass(\JKingWeb\Arsse\Db\MySQL\Driver::class)]
+#[CoversClass(\JKingWeb\Arsse\Db\MySQL\ExceptionBuilder::class)]
 class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         if (!Driver::requirementsMet()) {

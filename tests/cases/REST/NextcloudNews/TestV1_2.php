@@ -17,9 +17,11 @@ use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\NextcloudNews\V1_2;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseInterface;
 
-/** @covers \JKingWeb\Arsse\REST\NextcloudNews\V1_2<extended> */
+#[CoversClass(\JKingWeb\Arsse\REST\NextcloudNews\V1_2::class)]
 class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $h;
     protected $transaction;
@@ -337,7 +339,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/", "", [], false));
     }
 
-    /** @dataProvider provideInvalidPaths */
+    #[DataProvider("provideInvalidPaths")]
     public function testRespondToInvalidPaths($path, $method, $code, $allow = null): void {
         $exp = HTTP::respEmpty($code, $allow ? ['Allow' => $allow] : []);
         $this->assertMessage($exp, $this->req($method, $path));
@@ -378,7 +380,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("PUT", "/folders/1", '<data/>', ['Content-Type' => null]));
     }
 
-    /** @dataProvider provideOptionsRequests */
+    #[DataProvider("provideOptionsRequests")]
     public function testRespondToOptionsRequests(string $url, string $allow, string $accept): void {
         $exp = HTTP::respEmpty(204, [
             'Allow'  => $allow,
@@ -409,7 +411,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/folders"));
     }
 
-    /** @dataProvider provideFolderCreations */
+    #[DataProvider("provideFolderCreations")]
     public function testAddAFolder(array $input, bool $body, $output, ResponseInterface $exp): void {
         if ($output instanceof ExceptionInput) {
             \Phake::when(Arsse::$db)->folderAdd->thenThrow($output);
@@ -450,7 +452,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db, \Phake::times(2))->folderRemove($this->userId, 1);
     }
 
-    /** @dataProvider provideFolderRenamings */
+    #[DataProvider("provideFolderRenamings")]
     public function testRenameAFolder(array $input, int $id, $output, ResponseInterface $exp): void {
         if ($output instanceof ExceptionInput) {
             \Phake::when(Arsse::$db)->folderPropertiesSet->thenThrow($output);
@@ -500,7 +502,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/feeds"));
     }
 
-    /** @dataProvider provideNewSubscriptions */
+    #[DataProvider("provideNewSubscriptions")]
     public function testAddASubscription(array $input, $id, int $latestEdition, array $output, $moveOutcome, ResponseInterface $exp): void {
         if ($id instanceof \Exception) {
             \Phake::when(Arsse::$db)->subscriptionAdd->thenThrow($id);
@@ -663,7 +665,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db, \Phake::never())->feedUpdate(\Phake::anyParameters());
     }
 
-    /** @dataProvider provideArticleQueries */
+    #[DataProvider("provideArticleQueries")]
     public function testListArticles(string $url, array $in, Context $c, $out, ResponseInterface $exp): void {
         if ($out instanceof \Exception) {
             \Phake::when(Arsse::$db)->articleList->thenThrow($out);

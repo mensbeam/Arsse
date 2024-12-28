@@ -18,10 +18,12 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\TinyTinyRSS\API;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseInterface;
 
-/** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\API<extended>
- *  @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Exception */
+#[CoversClass(\JKingWeb\Arsse\REST\TinyTinyRSS\API::class)]
+#[CoversClass(\JKingWeb\Arsse\REST\TinyTinyRSS\Exception::class)]
 class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     protected const NOW = "2020-12-21T23:09:17.189065Z";
 
@@ -203,7 +205,7 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req(null, "POST", "", "")); // lack of data is also an error
     }
 
-    /** @dataProvider provideLoginRequests */
+    #[DataProvider("provideLoginRequests")]
     public function testLogIn(array $conf, $httpUser, array $data, $sessions): void {
         self::$userId = null;
         self::setConf($conf);
@@ -237,7 +239,7 @@ LONG_STRING;
         return self::generateLoginRequests("login");
     }
 
-    /** @dataProvider provideResumeRequests */
+    #[DataProvider("provideResumeRequests")]
     public function testValidateASession(array $conf, $httpUser, string $data, $result): void {
         self::$userId = null;
         self::setConf($conf);
@@ -589,7 +591,7 @@ LONG_STRING;
         $this->assertMessage($exp, $this->req($data));
     }
 
-    /** @dataProvider provideCategoryAdditions */
+    #[DataProvider("provideCategoryAdditions")]
     public function testAddACategory(array $in, array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "addCategory", 'sid' => "PriestsOfSyrinx"], $in);
         $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
@@ -621,7 +623,7 @@ LONG_STRING;
         ];
     }
 
-    /** @dataProvider provideCategoryRemovals */
+    #[DataProvider("provideCategoryRemovals")]
     public function testRemoveACategory(array $in, ?int $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "removeCategory", 'sid' => "PriestsOfSyrinx"], $in);
         $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
@@ -641,7 +643,7 @@ LONG_STRING;
         ];
     }
 
-    /** @dataProvider provideCategoryMoves */
+    #[DataProvider("provideCategoryMoves")]
     public function testMoveACategory(array $in, array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "moveCategory", 'sid' => "PriestsOfSyrinx"], $in);
         $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
@@ -668,7 +670,7 @@ LONG_STRING;
         ];
     }
 
-    /** @dataProvider provideCategoryRenamings */
+    #[DataProvider("provideCategoryRenamings")]
     public function testRenameACategory(array $in, ?array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "renameCategory", 'sid' => "PriestsOfSyrinx"], $in);
         $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
@@ -695,7 +697,7 @@ LONG_STRING;
         ];
     }
 
-    /** @dataProvider provideFeedSubscriptions */
+    #[DataProvider("provideFeedSubscriptions")]
     public function testAddASubscription(array $in, ?array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx"], $in);
         $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
@@ -740,7 +742,7 @@ LONG_STRING;
         ];
     }
 
-    /** @dataProvider provideFeedUnsubscriptions */
+    #[DataProvider("provideFeedUnsubscriptions")]
     public function testRemoveASubscription(array $in, ?array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "unsubscribeFeed", 'sid' => "PriestsOfSyrinx"], $in);
         $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
@@ -762,7 +764,7 @@ LONG_STRING;
         ];
     }
 
-    /** @dataProvider provideFeedMoves */
+    #[DataProvider("provideFeedMoves")]
     public function testMoveAFeed(array $in, ?array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "moveFeed", 'sid' => "PriestsOfSyrinx"], $in);
         $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
@@ -789,7 +791,7 @@ LONG_STRING;
         ];
     }
 
-    /** @dataProvider provideFeedRenamings */
+    #[DataProvider("provideFeedRenamings")]
     public function testRenameAFeed(array $in, ?array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "renameFeed", 'sid' => "PriestsOfSyrinx"], $in);
         $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
@@ -838,7 +840,7 @@ LONG_STRING;
         $this->assertMessage(self::respGood(['icons_dir' => "feed-icons", 'icons_url' => "feed-icons", 'daemon_is_running' => false, 'num_feeds' => 2]), $this->req($in));
     }
 
-    /** @dataProvider provideFeedUpdates */
+    #[DataProvider("provideFeedUpdates")]
     public function testUpdateAFeed(array $in, ?array $data, $out, ?int $id, ResponseInterface $exp): void {
         $in = array_merge(['op' => "updateFeed", 'sid' => "PriestsOfSyrinx"], $in);
         $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
@@ -866,7 +868,7 @@ LONG_STRING;
         ];
     }
 
-    /** @dataProvider provideLabelAdditions */
+    #[DataProvider("provideLabelAdditions")]
     public function testAddALabel(array $in, ?array $data1, $out1, ?array $data2, $out2, ResponseInterface $exp): void {
         $in = array_merge(['op' => "addLabel", 'sid' => "PriestsOfSyrinx"], $in);
         $action = ($out1 instanceof \Exception) ? "thenThrow" : "thenReturn";
@@ -897,7 +899,7 @@ LONG_STRING;
         ];
     }
 
-    /** @dataProvider provideLabelRemovals */
+    #[DataProvider("provideLabelRemovals")]
     public function testRemoveALabel(array $in, ?array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "removeLabel", 'sid' => "PriestsOfSyrinx"], $in);
         $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
@@ -921,7 +923,7 @@ LONG_STRING;
         ];
     }
 
-    /** @dataProvider provideLabelRenamings */
+    #[DataProvider("provideLabelRenamings")]
     public function testRenameALabel(array $in, ?array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "renameLabel", 'sid' => "PriestsOfSyrinx"], $in);
         $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
@@ -949,7 +951,7 @@ LONG_STRING;
         ];
     }
 
-    /** @dataProvider provideCategoryListings */
+    #[DataProvider("provideCategoryListings")]
     public function testRetrieveCategoryLists(array $in, ResponseInterface $exp): void {
         $in = array_merge(['op' => "getCategories", 'sid' => "PriestsOfSyrinx"], $in);
         \Phake::when(Arsse::$db)->folderList($this->anything(), null, true)->thenReturn(new Result(self::v($this->folders)));
@@ -1060,7 +1062,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db)->articleCount(self::$userId, $this->equalTo((new Context)->hidden(false)->unread(true)->modifiedRange(Date::sub("PT24H", self::NOW), null)));
     }
 
-    /** @dataProvider provideLabelListings */
+    #[DataProvider("provideLabelListings")]
     public function testRetrieveTheLabelList(array $in, ResponseInterface $exp): void {
         $in = array_merge(['op' => "getLabels", 'sid' => "PriestsOfSyrinx"], $in);
         \Phake::when(Arsse::$db)->labelList->thenReturn(new Result(self::v($this->labels)));
@@ -1121,7 +1123,7 @@ LONG_STRING;
         ];
     }
 
-    /** @dataProvider provideLabelAssignments */
+    #[DataProvider("provideLabelAssignments")]
     public function testAssignArticlesToALabel(array $in, ?int $label, ?int $operation, ResponseInterface $exp): void {
         $in = array_merge(['op' => "setArticleLabel", 'sid' => "PriestsOfSyrinx"], $in);
         \Phake::when(Arsse::$db)->labelArticlesSet(self::$userId, $this->anything(), $this->anything(), Database::ASSOC_REMOVE)->thenReturn(42)->thenReturn(47);
@@ -1152,7 +1154,7 @@ LONG_STRING;
         \Phake::verify(Arsse::$db, \Phake::times(2))->articleCount(self::$userId, $this->equalTo((new Context)->hidden(false)->unread(true)->modifiedRange(Date::sub("PT24H", self::NOW), null)));
     }
 
-    /** @dataProvider provideMassMarkings */
+    #[DataProvider("provideMassMarkings")]
     public function testMarkFeedsAsRead(array $in, ?Context $c): void {
         $base = ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx"];
         $in = array_merge($base, $in);
@@ -1194,7 +1196,7 @@ LONG_STRING;
         ];
     }
 
-    /** @dataProvider provideFeedListings */
+    #[DataProvider("provideFeedListings")]
     public function testRetrieveFeedList(array $in, ResponseInterface $exp): void {
         $in = array_merge(['op' => "getFeeds", 'sid' => "PriestsOfSyrinx"], $in);
         // statistical mocks
@@ -1353,7 +1355,7 @@ LONG_STRING;
         ];
     }
 
-    /** @dataProvider provideArticleChanges */
+    #[DataProvider("provideArticleChanges")]
     public function testChangeArticles(array $in, ResponseInterface $exp): void {
         $in = array_merge(['op' => "updateArticle", 'sid' => "PriestsOfSyrinx"], $in);
         \Phake::when(Arsse::$db)->articleMark->thenReturn(1);
@@ -1404,7 +1406,7 @@ LONG_STRING;
         ];
     }
 
-    /** @dataProvider provideArticleListings */
+    #[DataProvider("provideArticleListings")]
     public function testListArticles(array $in, ResponseInterface $exp): void {
         $in = array_merge(['op' => "getArticle", 'sid' => "PriestsOfSyrinx"], $in);
         \Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result(self::v($this->labels)));
@@ -1485,7 +1487,7 @@ LONG_STRING;
         ];
     }
 
-    /** @dataProvider provideArticleListingsWithoutLabels */
+    #[DataProvider("provideArticleListingsWithoutLabels")]
     public function testListArticlesWithoutLabels(array $in, ResponseInterface $exp): void {
         $in = array_merge(['op' => "getArticle", 'sid' => "PriestsOfSyrinx"], $in);
         \Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result([]));
@@ -1563,7 +1565,7 @@ LONG_STRING;
         ];
     }
 
-    /** @dataProvider provideHeadlines */
+    #[DataProvider("provideHeadlines")]
     public function testRetrieveHeadlines(bool $full, array $in, $out, Context $c, array $fields, array $order, ResponseInterface $exp): void {
         $base = ['op' => $full ? "getHeadlines" : "getCompactHeadlines", 'sid' => "PriestsOfSyrinx"];
         $in = array_merge($base, $in);

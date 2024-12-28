@@ -7,10 +7,11 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
 
-/**
- * @covers \JKingWeb\Arsse\Db\PDOStatement<extended>
- * @covers \JKingWeb\Arsse\Db\PDOError
- * @covers \JKingWeb\Arsse\Db\SQLState */
+use PHPUnit\Framework\Attributes\CoversClass;
+
+#[CoversClass(\JKingWeb\Arsse\Db\PDOStatement::class)]
+#[CoversClass(\JKingWeb\Arsse\Db\PDOError::class)]
+#[CoversClass(\JKingWeb\Arsse\Db\SQLState::class)]
 class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\SQLite3PDO;
 

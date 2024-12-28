@@ -7,9 +7,10 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\TestCase\Db\SQLite3;
 
-/**
- * @covers \JKingWeb\Arsse\Db\SQLite3\Driver<extended>
- * @covers \JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder */
+use PHPUnit\Framework\Attributes\CoversClass;
+
+#[CoversClass(\JKingWeb\Arsse\Db\SQLite3\Driver::class)]
+#[CoversClass(\JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder::class)]
 class TestUpdate extends \JKingWeb\Arsse\TestCase\Db\BaseUpdate {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\SQLite3;
 

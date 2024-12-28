@@ -12,8 +12,9 @@ use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\Miniflux\Token;
 use JKingWeb\Arsse\Test\Result;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/** @covers \JKingWeb\Arsse\REST\Miniflux\Token<extended> */
+#[CoversClass(\JKingWeb\Arsse\REST\Miniflux\Token::class)]
 class TestToken extends \JKingWeb\Arsse\Test\AbstractTest {
     protected const NOW = "2020-12-09T22:35:10.023419Z";
     protected const TOKEN = "Tk2o9YubmZIL2fm2w8Z4KlDEQJz532fNSOcTG0s2_xc=";
