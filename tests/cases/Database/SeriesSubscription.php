@@ -539,7 +539,7 @@ trait SeriesSubscription {
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, $data);
     }
 
-    public function provideInvalidSubscriptionProperties(): iterable {
+    public static function provideInvalidSubscriptionProperties(): iterable {
         return [
             'Empty title'           => [['title' => ""],       "missing"],
             'Whitespace title'      => [['title' => "    "],   "whitespace"],

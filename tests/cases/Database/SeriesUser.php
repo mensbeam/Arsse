@@ -135,7 +135,7 @@ trait SeriesUser {
         $this->assertSame($exp, Arsse::$db->userPropertiesGet($user, $includeLarge));
     }
 
-    public function provideMetadata(): iterable {
+    public static function provideMetadata(): iterable {
         return [
             ["admin@example.net",    true,  ['num' => 1, 'admin' => 1, 'lang' => "en", 'sort_asc' => "0", 'tz' => "America/Toronto"]],
             ["jane.doe@example.com", true,  ['num' => 2, 'admin' => 0, 'lang' => "fr", 'sort_asc' => "1", 'tz' => "Asia/Kuala_Lumpur"]],

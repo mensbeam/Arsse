@@ -19,7 +19,7 @@ class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
         return [static::$interface, $q, $types];
     }
 
-    protected function decorateTypeSyntax(string $value, string $type): string {
+    protected static function decorateTypeSyntax(string $value, string $type): string {
         switch ($type) {
             case "float":
                 return (substr($value, -2) === ".0") ? "'".substr($value, 0, strlen($value) - 2)."'" : "'$value'";

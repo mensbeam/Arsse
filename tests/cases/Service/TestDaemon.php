@@ -56,7 +56,7 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->AssertSame($exp, $daemon->resolveRelativePath($path));
     }
 
-    public function providePathResolutions(): iterable {
+    public static function providePathResolutions(): iterable {
         return [
             ["/",           "/home/me", "/"],
             ["/.",          "/home/me", "/"],
@@ -94,7 +94,7 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function providePidFileChecks(): iterable {
+    public static function providePidFileChecks(): iterable {
         return [
             ["ok/file",           false, new Exception("pidDirUnresolvable")],
             ["not/found",         true,  new Exception("pidDirMissing")],
@@ -136,7 +136,7 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function providePidReadChecks(): iterable {
+    public static function providePidReadChecks(): iterable {
         return [
             ["current",    new Exception("pidDuplicate")],
             ["malformed1", new Exception("pidCorrupt")],
@@ -190,7 +190,7 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function providePidWriteChecks(): iterable {
+    public static function providePidWriteChecks(): iterable {
         return [
             ["current",    new Exception("pidDuplicate")],
             ["malformed1", new Exception("pidCorrupt")],

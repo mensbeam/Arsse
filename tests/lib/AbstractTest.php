@@ -27,8 +27,6 @@ use GuzzleHttp\Psr7\ServerRequest;
 
 /** @coversNothing */
 abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
-    use \DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
-
     public function setUp(): void {
         self::clearData();
         // create the object factory as a mock
@@ -133,19 +131,24 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         return $req;
     }
 
-    public static function assertMatchesRegularExpression(string $pattern, string $string, string $message = ''): void {
-        if (method_exists(parent::class, "assertMatchesRegularExpression")) {
-            parent::assertMatchesRegularExpression($pattern, $string, $message);
+    public function assertArraySubset($expected, $actual, string $message = ''): void {
+        $this->assertIsArray($actual);
+        if (array_is_list($expected)) {
+            $missing = $actual;
+            $actual = [];
+            foreach ($expected as $k => $v) {
+                $found = array_search($v, $missing, true);
+                if ($found !== false) {
+                    $actual[$k] = $missing[$found];
+                    unset($missing[$found]);
+                }
+            }
+            $this->assertEquals($expected, $actual, $message ?: "Array subset does not match expectation.");
         } else {
-            parent::assertRegExp($pattern, $string, $message);
-        }
-    }
-
-    public static function assertFileDoesNotExist(string $filename, string $message = ''): void {
-        if (method_exists(parent::class, "assertFileDoesNotExist")) {
-            parent::assertFileDoesNotExist($filename, $message);
-        } else {
-            parent::assertFileNotExists($filename, $message);
+            $actual = array_intersect_key($actual, $expected);
+            ksort($actual);
+            ksort($expected);
+            $this->assertEquals($expected, $actual, $message ?: "Array subset does not match expectation.");
         }
     }
 
@@ -344,7 +347,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                 $data = $this->stringify($data);
             }
         }
-        $this->assertCount(sizeof($expected), $data, "Number of result rows (".sizeof($data).") differs from number of expected rows (".sizeof($expected).")");
+        $this->assertSameSize($expected, $data, "Number of result rows (".sizeof($data).") differs from number of expected rows (".sizeof($expected).")");
         if (sizeof($expected)) {
             // make sure the expectations are consistent
             foreach ($expected as $exp) {
@@ -372,7 +375,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                 $found = array_search($row, $expected);
                 unset($expected[$found]);
             }
-            $this->assertArraySubset($expected, [], false, "Expectations not in result set.");
+            $this->assertEmpty($expected, "Expectations not in result set.");
         }
     }
 

@@ -32,7 +32,7 @@ class TestToken extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->h = new Token;
     }
 
-    protected function v($value) {
+    protected static function v($value) {
         return $value;
     }
 
@@ -54,7 +54,7 @@ class TestToken extends \JKingWeb\Arsse\Test\AbstractTest {
             ['label' => "Eek", 'id' => "TOKEN 2"],
             ['label' => "Ack", 'id' => "TOKEN 3"],
         ];
-        \Phake::when(Arsse::$db)->tokenList->thenReturn(new Result($this->v($out)));
+        \Phake::when(Arsse::$db)->tokenList->thenReturn(new Result(self::v($out)));
         \Phake::when(Arsse::$db)->userExists->thenReturn(true);
         $this->assertSame($exp, $this->h->tokenList("john.doe@example.com"));
         \Phake::verify(Arsse::$db)->tokenList("john.doe@example.com", "miniflux.login");

@@ -53,7 +53,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify($this->cli, \Phake::never())->loadConf();
     }
 
-    public function provideHelpText(): iterable {
+    public static function provideHelpText(): iterable {
         return [
             ["arsse.php --help", "arsse.php"],
             ["arsse     --help", "arsse"],
@@ -125,7 +125,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->feedUpdate(\Phake::anyParameters());
     }
 
-    public function provideFeedUpdates(): iterable {
+    public static function provideFeedUpdates(): iterable {
         return [
             ["arsse.php feed refresh 1", 0,     ""],
             ["arsse.php feed refresh 2", 10502, ""],
@@ -144,7 +144,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify($conf)->exportFile($file, true);
     }
 
-    public function provideDefaultConfigurationSaves(): iterable {
+    public static function provideDefaultConfigurationSaves(): iterable {
         return [
             ["arsse.php conf save-defaults",           0,     "php://output"],
             ["arsse.php conf save-defaults -",         0,     "php://output"],
@@ -160,7 +160,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertConsole($cmd, $exitStatus, $output);
     }
 
-    public function provideUserList(): iterable {
+    public static function provideUserList(): iterable {
         $list = ["john.doe@example.com", "jane.doe@example.com"];
         $str = implode(PHP_EOL, $list);
         return [
@@ -182,7 +182,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertConsole($cmd, $exitStatus, $output);
     }
 
-    public function provideUserAdditions(): iterable {
+    public static function provideUserAdditions(): iterable {
         return [
             ["arsse.php user add john.doe@example.com",          10403, ""],
             ["arsse.php user add jane.doe@example.com",          0,     "random password"],
@@ -213,7 +213,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertConsole($cmd, $exitStatus, $output);
     }
 
-    public function provideUserAuthentication(): iterable {
+    public static function provideUserAuthentication(): iterable {
         $l = new \JKingWeb\Arsse\Lang;
         $success = $l("CLI.Auth.Success");
         $failure = $l("CLI.Auth.Failure");
@@ -237,7 +237,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertConsole($cmd, $exitStatus, $output);
     }
 
-    public function provideUserRemovals(): iterable {
+    public static function provideUserRemovals(): iterable {
         return [
             ["arsse.php user remove john.doe@example.com", 0,     ""],
             ["arsse.php user remove jane.doe@example.com", 10402, ""],
@@ -262,7 +262,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertConsole($cmd, $exitStatus, $output);
     }
 
-    public function provideUserPasswordChanges(): iterable {
+    public static function provideUserPasswordChanges(): iterable {
         return [
             ["arsse.php user set-pass john.doe@example.com",                  0,     "random password"],
             ["arsse.php user set-pass john.doe@example.com superman",         0,     ""],
@@ -291,7 +291,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertConsole($cmd, $exitStatus, $output);
     }
 
-    public function provideUserPasswordClearings(): iterable {
+    public static function provideUserPasswordClearings(): iterable {
         return [
             ["arsse.php user unset-pass john.doe@example.com",                  0,     ""],
             ["arsse.php user unset-pass jane.doe@example.com",                  10402, ""],
@@ -312,7 +312,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify($opml)->exportFile($file, $user, $flat);
     }
 
-    public function provideOpmlExports(): iterable {
+    public static function provideOpmlExports(): iterable {
         return [
             ["arsse.php export john.doe@example.com",                  0,     "php://output", "john.doe@example.com", false],
             ["arsse.php export john.doe@example.com -",                0,     "php://output", "john.doe@example.com", false],
@@ -353,7 +353,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify($opml)->importFile($file, $user, $flat, $replace);
     }
 
-    public function provideOpmlImports(): iterable {
+    public static function provideOpmlImports(): iterable {
         return [
             ["arsse.php import john.doe@example.com",                            0,     "php://input", "john.doe@example.com", false, false],
             ["arsse.php import john.doe@example.com -",                          0,     "php://input", "john.doe@example.com", false, false],
@@ -433,7 +433,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$user)->propertiesSet($user, $in);
     }
 
-    public function provideMetadataChanges(): iterable {
+    public static function provideMetadataChanges(): iterable {
         return [
             ["arsse.php user set john admin true", "john", ['admin' => "true"], ['admin' => "true"], 0],
             ["arsse.php user set john bogus 1",    "john", ['bogus' => "1"],    [],                  1],

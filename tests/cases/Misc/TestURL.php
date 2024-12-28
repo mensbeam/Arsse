@@ -16,7 +16,7 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, URL::normalize($url, $user, $pass));
     }
 
-    public function provideNormalizations(): iterable {
+    public static function provideNormalizations(): iterable {
         return [
             ["http://example.com/",           "http://example.com/"],
             ["HTTP://example.com/",           "http://example.com/"],
@@ -78,7 +78,7 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, URL::queryAppend($url, $query));
     }
 
-    public function provideQueries(): iterable {
+    public static function provideQueries(): iterable {
         return [
             ["/", "ook=eek", "/?ook=eek"],
             ["/?", "ook=eek", "/?ook=eek"],
@@ -94,7 +94,7 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, URL::absolute($url));
     }
 
-    public function provideAbsolutes(): array {
+    public static function provideAbsolutes(): array {
         return [
             [true,  "http://example.com/"],
             [true,  "HTTP://example.com/"],

@@ -33,7 +33,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertEquals($exp, $out);
     }
 
-    public function provideApiMatchData(): iterable {
+    public static function provideApiMatchData(): iterable {
         $real = null;
         $fake = [
             'unstripped' => ['match' => "/full/url", 'strip' => "", 'class' => "UnstrippedProtocol"],
@@ -78,7 +78,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $act);
     }
 
-    public function provideAuthenticableRequests(): iterable {
+    public static function provideAuthenticableRequests(): iterable {
         return [
             [['PHP_AUTH_USER' => "john.doe@example.com", 'PHP_AUTH_PW' => "secret"],                                          ['authenticated' => true, 'authenticatedUser' => "john.doe@example.com"]],
             [['PHP_AUTH_USER' => "john.doe@example.com", 'PHP_AUTH_PW' => "secret", 'REMOTE_USER' => "jane.doe@example.com"], ['authenticated' => true, 'authenticatedUser' => "john.doe@example.com"]],
@@ -110,7 +110,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, $act);
     }
 
-    public function provideUnnormalizedOrigins(): iterable {
+    public static function provideUnnormalizedOrigins(): iterable {
         return [
             ["null", "null"],
             ["http://example.com",             "http://example.com"],
@@ -159,7 +159,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, $act);
     }
 
-    public function provideCorsNegotiations(): iterable {
+    public static function provideCorsNegotiations(): iterable {
         return [
             ["http://example",           true                                      ],
             ["http://example",           true,  "http://example",  "*"             ],
@@ -194,7 +194,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $act);
     }
 
-    public function provideCorsHeaders(): iterable {
+    public static function provideCorsHeaders(): iterable {
         return [
             ["GET", ['Origin' => "null"], [], [
                 'Access-Control-Allow-Origin'      => "null",
@@ -262,7 +262,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $act);
     }
 
-    public function provideUnnormalizedResponses(): iterable {
+    public static function provideUnnormalizedResponses(): iterable {
         $stream = fopen("php://memory", "w+b");
         fwrite($stream, "ook");
         return [
@@ -312,7 +312,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify($rMock)->normalizeResponse(\Phake::anyParameters());
     }
 
-    public function provideMockRequests(): iterable {
+    public static function provideMockRequests(): iterable {
         return [
             [new ServerRequest("GET", "/index.php/apps/news/api/v1-2/feeds"),  "GET",  true, NCN::class,   "/feeds"],
             [new ServerRequest("GET", "/index.php/apps/news/api/v1-2/feeds"),  "GET",  true, NCN::class,   "/feeds"],

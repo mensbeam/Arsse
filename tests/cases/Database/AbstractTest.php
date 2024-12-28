@@ -69,7 +69,7 @@ abstract class AbstractTest extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function setUp(): void {
         // get the name of the test's test series
-        $this->series = $this->findTraitofTest($this->getName(false));
+        $this->series = $this->findTraitofTest($this->name());
         static::clearData();
         static::setConf();
         if (strlen(static::$failureReason)) {
@@ -90,7 +90,7 @@ abstract class AbstractTest extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function tearDown(): void {
         // call the series-specific teardown method
-        $this->series = $this->findTraitofTest($this->getName(false));
+        $this->series = $this->findTraitofTest($this->name());
         $tearDown = "tearDown".$this->series;
         $this->$tearDown();
         // clean up

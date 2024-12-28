@@ -45,7 +45,7 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, $this->invoke("generateIn", $inV, $inT));
     }
 
-    public function provideInClauses(): iterable {
+    public static function provideInClauses(): iterable {
         $l = (new \ReflectionClassConstant(Database::class, "LIMIT_SET_SIZE"))->getValue() + 1;
         $strings = array_fill(0, $l, "");
         $ints = range(1, $l);
@@ -83,7 +83,7 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, $this->invoke("generateSearch", $inV, $inC, $inAny));
     }
 
-    public function provideSearchClauses(): iterable {
+    public static function provideSearchClauses(): iterable {
         $setSize = (new \ReflectionClassConstant(Database::class, "LIMIT_SET_SIZE"))->getValue();
         $terms = array_fill(0, $setSize + 1, "a");
         $clause = array_fill(0, $setSize + 1, "test like '%a%' escape '^'");

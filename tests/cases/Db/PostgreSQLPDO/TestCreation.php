@@ -36,7 +36,7 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideConnectionStrings(): iterable {
+    public static function provideConnectionStrings(): iterable {
         return [
             [false, "arsse",           "secret",   "arsse",     "",          5432, "",      "dbname='arsse' password='secret' user='arsse'"],
             [false, "arsse",           "p word",   "arsse",     "",          5432, "",      "dbname='arsse' password='p word' user='arsse'"],

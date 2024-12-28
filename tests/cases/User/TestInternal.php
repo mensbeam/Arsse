@@ -46,7 +46,7 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, $this->d->auth($user, $password));
     }
 
-    public function provideAuthentication(): iterable {
+    public static function provideAuthentication(): iterable {
         $john = "john.doe@example.com";
         $jane = "jane.doe@example.com";
         $owen = "owen.hardy@example.com";

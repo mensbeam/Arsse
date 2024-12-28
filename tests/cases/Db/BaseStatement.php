@@ -14,7 +14,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $statementClass;
 
     abstract protected function makeStatement(string $q, array $types = []): array;
-    abstract protected function decorateTypeSyntax(string $value, string $type): string;
+    abstract protected static function decorateTypeSyntax(string $value, string $type): string;
 
     public static function setUpBeforeClass(): void {
         // establish a clean baseline
@@ -121,7 +121,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $s->runArray(['ook', 'eek']);
     }
 
-    public function provideBindings(): iterable {
+    public static function provideBindings(): iterable {
         $dateMutable = new \DateTime("Noon Today", new \DateTimezone("America/Toronto"));
         $dateImmutable = new \DateTimeImmutable("Noon Today", new \DateTimezone("America/Toronto"));
         $dateUTC = new \DateTime("@".$dateMutable->getTimestamp(), new \DateTimezone("UTC"));
@@ -259,12 +259,12 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
         foreach ($tests as $index => [$value, $type, $exp]) {
             $t = preg_replace("<^strict >", "", $type);
-            $exp = ($exp === "null") ? $exp : $this->decorateTypeSyntax($exp, $t);
+            $exp = ($exp === "null") ? $exp : static::decorateTypeSyntax($exp, $t);
             yield $index => [$value, $type, $exp];
         }
     }
 
-    public function provideBinaryBindings(): iterable {
+    public static function provideBinaryBindings(): iterable {
         $dateMutable = new \DateTime("Noon Today", new \DateTimezone("America/Toronto"));
         $dateImmutable = new \DateTimeImmutable("Noon Today", new \DateTimezone("America/Toronto"));
         $dateUTC = new \DateTime("@".$dateMutable->getTimestamp(), new \DateTimezone("UTC"));
@@ -308,7 +308,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
         foreach ($tests as $index => [$value, $type, $exp]) {
             $t = preg_replace("<^strict >", "", $type);
-            $exp = ($exp === "null") ? $exp : $this->decorateTypeSyntax($exp, $t);
+            $exp = ($exp === "null") ? $exp : static::decorateTypeSyntax($exp, $t);
             yield $index => [$value, $type, $exp];
         }
     }

@@ -71,7 +71,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db, \Phake::times($exp && $user === "jane.doe@example.com" ? 1 : 0))->userAdd($user, $password);
     }
 
-    public function provideAuthentication(): iterable {
+    public static function provideAuthentication(): iterable {
         $john = "john.doe@example.com";
         $jane = "jane.doe@example.com";
         return [
@@ -163,7 +163,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $u->add($user, "secret");
     }
 
-    public function provideInvalidUserNames(): iterable {
+    public static function provideInvalidUserNames(): iterable {
         // output names with control characters
         foreach (array_merge(range(0x00, 0x1F), [0x7F]) as $ord) {
             yield [chr($ord)];
@@ -419,7 +419,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->userExists($user);
     }
 
-    public function provideProperties(): iterable {
+    public static function provideProperties(): iterable {
         $defaults = ['num' => 1, 'admin' => false, 'lang' => null, 'tz' => "Etc/UTC", 'sort_asc' => false];
         return [
             [$defaults, $defaults, []],
@@ -499,7 +499,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function providePropertyChanges(): iterable {
+    public static function providePropertyChanges(): iterable {
         return [
             [['admin' => true],    ['admin' => true]],
             [['admin' => 2],       new ExceptionInput("invalidValue")],

@@ -53,7 +53,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function providePasswordCreations(): iterable {
+    public static function providePasswordCreations(): iterable {
         return [
             ["jane.doe@example.com", "secret", "secret"],
             ["jane.doe@example.com", "superman", "superman"],
@@ -81,7 +81,7 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, $this->h->authenticate($user, $password));
     }
 
-    public function provideUserAuthenticationRequests(): iterable {
+    public static function provideUserAuthenticationRequests(): iterable {
         return [
             ["jane.doe@example.com", "secret",   true],
             ["jane.doe@example.com", "superman", false],

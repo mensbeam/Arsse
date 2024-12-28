@@ -22,7 +22,7 @@ class TestHTTP extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, HTTP::matchType($msg, ...$types));
     }
 
-    public function provideMediaTypes(): array {
+    public static function provideMediaTypes(): array {
         return [
             ["application/json",         ["application/json"],              true],
             ["APPLICATION/JSON",         ["application/json"],              true],
@@ -42,7 +42,7 @@ class TestHTTP extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $act);
     }
 
-    public function provideTypedMessages(): iterable {
+    public static function provideTypedMessages(): iterable {
         return [
             ["respEmpty", [422, ['Content-Length' => "0"]],                                     new Response(422, ['Content-Length' => "0"])],
             ["respText",  ["OOK"],                                                              new Response(200, ['Content-Type' => "text/plain; charset=UTF-8"], "OOK")],

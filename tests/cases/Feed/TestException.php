@@ -24,7 +24,7 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
         throw new FeedException("", ['url' => "https://example.com/"], $e);
     }
 
-    public function provideCurlErrors() {
+    public static function provideCurlErrors() {
         return [
             'CURLE_UNSUPPORTED_PROTOCOL'        => [1,  "invalidUrl"],
             'CURLE_FAILED_INIT'                 => [2,  "internalError"],
@@ -123,7 +123,7 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
         throw new FeedException("", ['url' => "https://example.com/"], $e);
     }
 
-    public function provideHTTPErrors() {
+    public static function provideHTTPErrors() {
         $specials = [
             401 => "unauthorized",
             403 => "forbidden",
@@ -149,7 +149,7 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
         throw new FeedException("", ['url' => "https://example.com/"], $e);
     }
 
-    public function providePicoFeedException() {
+    public static function providePicoFeedException() {
         return [
             'Failed feed discovery' => [new \PicoFeed\Reader\SubscriptionNotFoundException(),  "subscriptionNotFound"],
             'Unsupported format'    => [new \PicoFeed\Reader\UnsupportedFeedFormatException(), "unsupportedFeedFormat"],

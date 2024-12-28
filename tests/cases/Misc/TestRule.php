@@ -35,7 +35,7 @@ class TestRule extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, Rule::apply($keepRule, $blockRule, $title, $categories));
     }
 
-    public function provideApplications(): iterable {
+    public static function provideApplications(): iterable {
         return [
             ["",           "",           "Title",   ["Dummy", "Category"], true],
             ["^Title$",    "",           "Title",   ["Dummy", "Category"], true],

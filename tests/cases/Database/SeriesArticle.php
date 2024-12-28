@@ -443,7 +443,7 @@ trait SeriesArticle {
         $this->assertEquals($exp, $ids);
     }
 
-    public function provideContextMatches(): iterable {
+    public static function provideContextMatches(): iterable {
         $setSize = (new \ReflectionClassConstant(Database::class, "LIMIT_SET_SIZE"))->getValue();
         return [
             'Blank context'                                              => [new Context, [1,2,3,4,5,6,7,8,19,20]],
@@ -661,7 +661,7 @@ trait SeriesArticle {
         $this->assertSame($exp, $act);
     }
 
-    public function provideOrderedLists(): iterable {
+    public static function provideOrderedLists(): iterable {
         return [
             [["id"], [1,2,3,4,5,6,7,8,19,20]],
             [["id asc"], [1,2,3,4,5,6,7,8,19,20]],
@@ -1400,7 +1400,7 @@ trait SeriesArticle {
         Arsse::$db->articleList($this->user, (new Context)->$option([]));
     }
 
-    public function provideArrayContextOptions(): iterable {
+    public static function provideArrayContextOptions(): iterable {
         foreach ([
             "articles", "editions",
             "subscriptions", "foldersShallow", "folders",

@@ -25,7 +25,7 @@ class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
         return [static::$interface, $q, $types];
     }
 
-    protected function decorateTypeSyntax(string $value, string $type): string {
+    protected static function decorateTypeSyntax(string $value, string $type): string {
         return $value;
     }
 }

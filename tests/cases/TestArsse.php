@@ -56,7 +56,7 @@ class TestArsse extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideExtensionChecks(): iterable {
+    public static function provideExtensionChecks(): iterable {
         return [
             [["pcre"],              null],
             [["foo", "bar", "baz"], new Exception("extMissing", ['first' => "foo", 'total' => 3])],

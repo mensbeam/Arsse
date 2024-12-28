@@ -217,7 +217,7 @@ trait SeriesFeed {
         $this->assertSame($exp, Arsse::$db->feedRulesGet($in));
     }
 
-    public function provideFilterRules(): iterable {
+    public static function provideFilterRules(): iterable {
         return [
             [1, ['jane.doe@example.com' => ['keep' => "`^(?i)[a-z]+`u", 'block' => "`3|6`u"], 'john.doe@example.com' => ['keep' => "", 'block' => "`^Sport$`u"]]],
             [2, []],

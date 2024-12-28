@@ -58,7 +58,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertFalse($c->$method(), "Context method did not return false after clearing");
     }
 
-    public function provideContextOptions(): iterable {
+    public static function provideContextOptions(): iterable {
         $tests = [
             'limit'            => [[10],                                             10],
             'offset'           => [[5],                                              5],

@@ -87,7 +87,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->h = new V1();
     }
 
-    protected function v($value) {
+    protected static function v($value) {
         return $value;
     }
 
@@ -113,7 +113,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($success ? $user : null, Arsse::$user->id);
     }
 
-    public function provideAuthResponses(): iterable {
+    public static function provideAuthResponses(): iterable {
         return [
             [null,                   false, false],
             [null,                   true,  true],
@@ -134,7 +134,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req($method, $path));
     }
 
-    public function provideInvalidPaths(): array {
+    public static function provideInvalidPaths(): array {
         return [
             ["/",                  "GET",     404],
             ["/",                  "OPTIONS", 404],
@@ -152,7 +152,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("OPTIONS", $url));
     }
 
-    public function provideOptionsRequests(): array {
+    public static function provideOptionsRequests(): array {
         return [
             ["/feeds",          "HEAD, GET, POST",          "application/json"],
             ["/feeds/2112",     "HEAD, GET, PUT, DELETE",   "application/json"],
@@ -177,7 +177,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("POST", "/discover", ['url' => $in]));
     }
 
-    public function provideDiscoveries(): iterable {
+    public static function provideDiscoveries(): iterable {
         self::clearData();
         $discovered = [
             ['title' => "Feed", 'type' => "rss", 'url' => "http://localhost:8000/Feed/Discovery/Feed"],
@@ -212,7 +212,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", $route, "", [], $user));
     }
 
-    public function provideUserQueries(): iterable {
+    public static function provideUserQueries(): iterable {
         self::clearData();
         return [
             [true,  "/users",                      HTTP::respJson(self::USERS)],
@@ -279,7 +279,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideUserModifications(): iterable {
+    public static function provideUserModifications(): iterable {
         $out1 = ['num' => 2, 'admin' => false];
         $out2 = ['num' => 1, 'admin' => false];
         $resp1 = array_merge(self::USERS[1], ['username' => "john.doe@example.com"]);
@@ -332,7 +332,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideUserAdditions(): iterable {
+    public static function provideUserAdditions(): iterable {
         $resp1 = array_merge(self::USERS[1], ['username' => "ook", 'password' => "eek"]);
         return [
             [[],                                                                   null,           null,                                      null,                   null,                                            V1::respError(["MissingInputValue", 'field' => "username"], 422)],
@@ -376,7 +376,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testListCategories(): void {
-        \Phake::when(Arsse::$db)->folderList->thenReturn(new Result($this->v([
+        \Phake::when(Arsse::$db)->folderList->thenReturn(new Result(self::v([
             ['id' => 1,  'name' => "Science"],
             ['id' => 20, 'name' => "Technology"],
         ])));
@@ -412,7 +412,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("POST", "/categories", ['title' => $title]));
     }
 
-    public function provideCategoryAdditions(): iterable {
+    public static function provideCategoryAdditions(): iterable {
         return [
             ["New",       HTTP::respJson(['id' => 2112, 'title' => "New", 'user_id' => 42], 201)],
             ["Duplicate", V1::respError(["DuplicateCategory", 'title' => "Duplicate"], 409)],
@@ -438,7 +438,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db, \Phake::times($times))->folderPropertiesSet("john.doe@example.com", $id - 1, ['name' => $title]);
     }
 
-    public function provideCategoryUpdates(): iterable {
+    public static function provideCategoryUpdates(): iterable {
         return [
             [3, "New",       "subjectMissing",      V1::respError("404", 404)],
             [2, "New",       true,                  HTTP::respJson(['id' => 2, 'title' => "New", 'user_id' => 42], 201)],
@@ -465,7 +465,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testDeleteTheSpecialCategory(): void {
-        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v([
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v([
             ['id' => 1],
             ['id' => 47],
             ['id' => 2112],
@@ -483,20 +483,20 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testListFeeds(): void {
-        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v(self::FEEDS)));
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v(self::FEEDS)));
         $exp = HTTP::respJson(self::FEEDS_OUT);
         $this->assertMessage($exp, $this->req("GET", "/feeds"));
     }
 
     public function testListFeedsOfACategory(): void {
-        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v(self::FEEDS)));
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v(self::FEEDS)));
         $exp = HTTP::respJson(self::FEEDS_OUT);
         $this->assertMessage($exp, $this->req("GET", "/categories/2112/feeds"));
         \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id, 2111, true);
     }
 
     public function testListFeedsOfTheRootCategory(): void {
-        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v(self::FEEDS)));
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v(self::FEEDS)));
         $exp = HTTP::respJson(self::FEEDS_OUT);
         $this->assertMessage($exp, $this->req("GET", "/categories/1/feeds"));
         \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id, 0, false);
@@ -510,7 +510,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testGetAFeed(): void {
-        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn($this->v(self::FEEDS[0]))->thenReturn($this->v(self::FEEDS[1]));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn(self::v(self::FEEDS[0]))->thenReturn(self::v(self::FEEDS[1]));
         $this->assertMessage(HTTP::respJson(self::FEEDS_OUT[0]), $this->req("GET", "/feeds/1"));
         $this->assertMessage(HTTP::respJson(self::FEEDS_OUT[1]), $this->req("GET", "/feeds/55"));
         \Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 1);
@@ -582,7 +582,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideFeedCreations(): iterable {
+    public static function provideFeedCreations(): iterable {
         self::clearData();
         return [
             [['category_id' => 1],                                                                null,                                       null,                                      null,                            null, V1::respError(["MissingInputValue", 'field' => "feed_url"], 422)],
@@ -627,7 +627,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 2112, $data);
     }
 
-    public function provideFeedModifications(): iterable {
+    public static function provideFeedModifications(): iterable {
         self::clearData();
         $success = HTTP::respJson(self::FEEDS_OUT[0], 201);
         return [
@@ -669,13 +669,13 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         if ($out instanceof \Exception) {
             \Phake::when(Arsse::$db)->subscriptionIcon->thenThrow($out);
         } else {
-            \Phake::when(Arsse::$db)->subscriptionIcon->thenReturn($this->v($out));
+            \Phake::when(Arsse::$db)->subscriptionIcon->thenReturn(self::v($out));
         }
         $this->assertMessage($exp, $this->req("GET", "/feeds/2112/icon"));
         \Phake::verify(Arsse::$db)->subscriptionIcon(Arsse::$user->id, 2112);
     }
 
-    public function provideIcons(): iterable {
+    public static function provideIcons(): iterable {
         return [
             [['id' => 44, 'type' => "image/svg+xml", 'data' => "<svg/>"], HTTP::respJson(['id' => 44, 'data' => "image/svg+xml;base64,PHN2Zy8+", 'mime_type' => "image/svg+xml"])],
             [['id' => 47, 'type' => "",              'data' => "<svg/>"], V1::respError("404", 404)],
@@ -688,12 +688,12 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideEntryQueries */
     public function testGetEntries(string $url, ?RootContext $c, ?array $order, $out, bool $count, ResponseInterface $exp): void {
-        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v(self::FEEDS)));
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v(self::FEEDS)));
         \Phake::when(Arsse::$db)->articleCount->thenReturn(2112);
         if ($out instanceof \Exception) {
             \Phake::when(Arsse::$db)->articleList->thenThrow($out);
         } else {
-            \Phake::when(Arsse::$db)->articleList->thenReturn(new Result($this->v($out)));
+            \Phake::when(Arsse::$db)->articleList->thenReturn(new Result(self::v($out)));
         }
         $this->assertMessage($exp, $this->req("GET", $url));
         if ($c) {
@@ -713,7 +713,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideEntryQueries(): iterable {
+    public static function provideEntryQueries(): iterable {
         self::clearData();
         $c = (new Context)->limit(100);
         $o = ["modified_date"]; // the default sort order
@@ -779,11 +779,11 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     /** @dataProvider provideSingleEntryQueries */
     public function testGetASingleEntry(string $url, Context $c, $out, ResponseInterface $exp): void {
-        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn($this->v(self::FEEDS[1]));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn(self::v(self::FEEDS[1]));
         if ($out instanceof \Exception) {
             \Phake::when(Arsse::$db)->articleList->thenThrow($out);
         } else {
-            \Phake::when(Arsse::$db)->articleList->thenReturn(new Result($this->v($out)));
+            \Phake::when(Arsse::$db)->articleList->thenReturn(new Result(self::v($out)));
         }
         $this->assertMessage($exp, $this->req("GET", $url));
         if ($c) {
@@ -798,7 +798,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideSingleEntryQueries(): iterable {
+    public static function provideSingleEntryQueries(): iterable {
         self::clearData();
         $c = new Context;
         return [
@@ -827,7 +827,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideEntryMarkings(): iterable {
+    public static function provideEntryMarkings(): iterable {
         self::clearData();
         return [
             [['status' => "read"],                           null,                                 V1::respError(["MissingInputValue", 'field' => "entry_ids"], 422)],
@@ -859,7 +859,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideMassMarkings(): iterable {
+    public static function provideMassMarkings(): iterable {
         self::clearData();
         $c = (new Context)->hidden(false);
         return [
@@ -900,7 +900,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideBookmarkTogglings(): iterable {
+    public static function provideBookmarkTogglings(): iterable {
         self::clearData();
         return [
             [1,                                    true,  HTTP::respEmpty(204)],
@@ -935,7 +935,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify($opml)->import(Arsse::$user->id, "IMPORT DATA");
     }
 
-    public function provideImports(): iterable {
+    public static function provideImports(): iterable {
         self::clearData();
         return [
             [new ImportException("invalidSyntax"),                              V1::respError("InvalidBodyXML", 400)],

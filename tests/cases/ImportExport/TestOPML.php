@@ -119,7 +119,7 @@ OPML_EXPORT_SERIALIZATION;
         }
     }
 
-    public function provideParserData(): iterable {
+    public static function provideParserData(): iterable {
         return [
             ["BrokenXML.opml", false, new Exception("invalidSyntax")],
             ["BrokenOPML.1.opml", false, new Exception("invalidSemantics")],

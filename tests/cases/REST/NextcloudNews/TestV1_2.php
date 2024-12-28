@@ -24,7 +24,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $h;
     protected $transaction;
     protected $userId;
-    protected $feeds = [ // expected sample output of a feed list from the database, and the resultant expected transformation by the REST handler
+    protected static $feeds = [ // expected sample output of a feed list from the database, and the resultant expected transformation by the REST handler
         'db' => [
             [
                 'id'         => 2112,
@@ -117,7 +117,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ],
         ],
     ];
-    protected $articles = [
+    protected static $articles = [
         'db' => [
             [
                 'id'             => 101,
@@ -328,7 +328,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->h = new V1_2();
     }
 
-    protected function v($value) {
+    protected static function v($value) {
         return $value;
     }
 
@@ -343,7 +343,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req($method, $path));
     }
 
-    public function provideInvalidPaths(): array {
+    public static function provideInvalidPaths(): array {
         return [
             ["/",                  "GET",     404],
             ["/",                  "POST",    404],
@@ -387,7 +387,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("OPTIONS", $url));
     }
 
-    public function provideOptionsRequests(): array {
+    public static function provideOptionsRequests(): array {
         return [
             ["/feeds",      "HEAD,GET,POST", "application/json"],
             ["/feeds/2112", "DELETE",        "application/json"],
@@ -404,7 +404,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 1,  'name' => "Software"],
             ['id' => 12, 'name' => "Hardware"],
         ];
-        \Phake::when(Arsse::$db)->folderList($this->userId, null, false)->thenReturn(new Result($this->v($list)));
+        \Phake::when(Arsse::$db)->folderList($this->userId, null, false)->thenReturn(new Result(self::v($list)));
         $exp = HTTP::respJson(['folders' => $out]);
         $this->assertMessage($exp, $this->req("GET", "/folders"));
     }
@@ -415,7 +415,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             \Phake::when(Arsse::$db)->folderAdd->thenThrow($output);
         } else {
             \Phake::when(Arsse::$db)->folderAdd->thenReturn($output);
-            \Phake::when(Arsse::$db)->folderPropertiesGet->thenReturn($this->v(['id' => $output, 'name' => $input['name'], 'parent' => null]));
+            \Phake::when(Arsse::$db)->folderPropertiesGet->thenReturn(self::v(['id' => $output, 'name' => $input['name'], 'parent' => null]));
         }
         $act = $this->req("POST", "/folders", $input, [], true, $body);
         $this->assertMessage($exp, $act);
@@ -427,7 +427,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideFolderCreations(): array {
+    public static function provideFolderCreations(): array {
         return [
             [['name' => "Software"], true,  1,                                         HTTP::respJson(['folders' => [['id' => 1, 'name' => "Software"]]])],
             [['name' => "Software"], false, 1,                                         HTTP::respJson(['folders' => [['id' => 1, 'name' => "Software"]]])],
@@ -462,7 +462,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->folderPropertiesSet($this->userId, $id, $input);
     }
 
-    public function provideFolderRenamings(): array {
+    public static function provideFolderRenamings(): array {
         return [
             [['name' => "Software"], 1, true,                                      HTTP::respEmpty(204)],
             [['name' => "Software"], 2, new ExceptionInput("constraintViolation"), HTTP::respEmpty(409)],
@@ -487,12 +487,12 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             'starredCount' => 0,
         ];
         $exp2 = [
-            'feeds'        => $this->feeds['rest'],
+            'feeds'        => self::$feeds['rest'],
             'starredCount' => 5,
             'newestItemId' => 4758915,
         ];
-        \Phake::when(Arsse::$db)->subscriptionList($this->userId)->thenReturn(new Result([]))->thenReturn(new Result($this->v($this->feeds['db'])));
-        \Phake::when(Arsse::$db)->articleStarred($this->userId)->thenReturn($this->v(['total' => 0]))->thenReturn($this->v(['total' => 5]));
+        \Phake::when(Arsse::$db)->subscriptionList($this->userId)->thenReturn(new Result([]))->thenReturn(new Result(self::v(self::$feeds['db'])));
+        \Phake::when(Arsse::$db)->articleStarred($this->userId)->thenReturn(self::v(['total' => 0]))->thenReturn(self::v(['total' => 5]));
         \Phake::when(Arsse::$db)->editionLatest($this->userId)->thenReturn(0)->thenReturn(4758915);
         $exp = HTTP::respJson($exp1);
         $this->assertMessage($exp, $this->req("GET", "/feeds"));
@@ -512,7 +512,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         } else {
             \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn($moveOutcome);
         }
-        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn($this->v($output));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn(self::v($output));
         \Phake::when(Arsse::$db)->editionLatest->thenReturn($latestEdition);
         $act = $this->req("POST", "/feeds", $input);
         $this->assertMessage($exp, $act);
@@ -532,15 +532,15 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideNewSubscriptions(): array {
+    public static function provideNewSubscriptions(): array {
         $feedException = new \JKingWeb\Arsse\Feed\Exception("", [], new \PicoFeed\Reader\SubscriptionNotFoundException);
         return [
-            [['url' => "http://example.com/news.atom", 'folderId' => 3],  2112,                                      0,       $this->feeds['db'][0], new ExceptionInput("idMissing"),     HTTP::respJson(['feeds' => [$this->feeds['rest'][0]]])],
-            [['url' => "http://example.org/news.atom", 'folderId' => 8],  42,                                        4758915, $this->feeds['db'][1], true,                                HTTP::respJson(['feeds' => [$this->feeds['rest'][1]], 'newestItemId' => 4758915])],
-            [['url' => "http://example.com/news.atom", 'folderId' => 3],  new ExceptionInput("constraintViolation"), 0,       $this->feeds['db'][0], new ExceptionInput("idMissing"),     HTTP::respEmpty(409)],
-            [['url' => "http://example.org/news.atom", 'folderId' => 8],  new ExceptionInput("constraintViolation"), 4758915, $this->feeds['db'][1], true,                                HTTP::respEmpty(409)],
+            [['url' => "http://example.com/news.atom", 'folderId' => 3],  2112,                                      0,       self::$feeds['db'][0], new ExceptionInput("idMissing"),     HTTP::respJson(['feeds' => [self::$feeds['rest'][0]]])],
+            [['url' => "http://example.org/news.atom", 'folderId' => 8],  42,                                        4758915, self::$feeds['db'][1], true,                                HTTP::respJson(['feeds' => [self::$feeds['rest'][1]], 'newestItemId' => 4758915])],
+            [['url' => "http://example.com/news.atom", 'folderId' => 3],  new ExceptionInput("constraintViolation"), 0,       self::$feeds['db'][0], new ExceptionInput("idMissing"),     HTTP::respEmpty(409)],
+            [['url' => "http://example.org/news.atom", 'folderId' => 8],  new ExceptionInput("constraintViolation"), 4758915, self::$feeds['db'][1], true,                                HTTP::respEmpty(409)],
             [[],                                                          $feedException,                            0,       [],                    false,                               HTTP::respEmpty(422)],
-            [['url' => "http://example.net/news.atom", 'folderId' => -1], 47,                                        2112,    $this->feeds['db'][2], new ExceptionInput("typeViolation"), HTTP::respJson(['feeds' => [$this->feeds['rest'][2]], 'newestItemId' => 2112])],
+            [['url' => "http://example.net/news.atom", 'folderId' => -1], 47,                                        2112,    self::$feeds['db'][2], new ExceptionInput("typeViolation"), HTTP::respJson(['feeds' => [self::$feeds['rest'][2]], 'newestItemId' => 2112])],
         ];
     }
 
@@ -623,7 +623,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
                 'userId' => "",
             ],
         ];
-        \Phake::when(Arsse::$db)->feedListStale->thenReturn($this->v(array_column($out, "id")));
+        \Phake::when(Arsse::$db)->feedListStale->thenReturn(self::v(array_column($out, "id")));
         $exp = HTTP::respJson(['feeds' => $out]);
         $this->assertMessage($exp, $this->req("GET", "/feeds/all"));
     }
@@ -676,11 +676,11 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->articleList($this->userId, $this->equalTo($c), $columns, [$order]);
     }
 
-    public function provideArticleQueries(): iterable {
+    public static function provideArticleQueries(): iterable {
         $c = (new Context)->hidden(false);
         $t = Date::normalize(time());
-        $out = new Result($this->v($this->articles['db']));
-        $r200 = HTTP::respJson(['items' => $this->articles['rest']]);
+        $out = new Result(self::v(self::$articles['db']));
+        $r200 = HTTP::respJson(['items' => self::$articles['rest']]);
         $r422 = HTTP::respEmpty(422);
         return [
             ["/items",         [],                                                         clone $c,                                     $out,                                $r200],
@@ -901,8 +901,8 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $out2 = ['id' => 2, 'name' => "Hardware"];
         \Phake::when(Arsse::$db)->folderAdd($this->anything(), $this->anything())->thenReturn(2);
         \Phake::when(Arsse::$db)->folderAdd($this->anything(), $in)->thenReturn(1);
-        \Phake::when(Arsse::$db)->folderPropertiesGet($this->userId, 1)->thenReturn($this->v($out1));
-        \Phake::when(Arsse::$db)->folderPropertiesGet($this->userId, 2)->thenReturn($this->v($out2));
+        \Phake::when(Arsse::$db)->folderPropertiesGet($this->userId, 1)->thenReturn(self::v($out1));
+        \Phake::when(Arsse::$db)->folderPropertiesGet($this->userId, 2)->thenReturn(self::v($out2));
         $exp = HTTP::respJson(['folders' => [$out1]]);
         $this->assertMessage($exp, $this->req("POST", $url, json_encode($in)));
     }

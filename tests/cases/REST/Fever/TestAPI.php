@@ -141,7 +141,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         ],
     ];
 
-    protected function v($value) {
+    protected static function v($value) {
         return $value;
     }
 
@@ -187,7 +187,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req($dataGet, $dataPost, "POST", null, "", $httpUser));
     }
 
-    public function provideTokenAuthenticationRequests(): iterable {
+    public static function provideTokenAuthenticationRequests(): iterable {
         $success = HTTP::respJson(['auth' => 1]);
         $failure = HTTP::respJson(['auth' => 0]);
         $denied = HTTP::respEmpty(401);
@@ -305,7 +305,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->articleList($this->userId, $this->equalTo($c), $fields, $order);
     }
 
-    public function provideItemListContexts(): iterable {
+    public static function provideItemListContexts(): iterable {
         $c = (new Context)->limit(50);
         return [
             ["items", (clone $c)->hidden(false), false],
@@ -372,7 +372,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideMarkingContexts(): iterable {
+    public static function provideMarkingContexts(): iterable {
         $markRead = ['read' => true];
         $markUnread = ['read' => false];
         $markSaved = ['starred' => true];
@@ -415,7 +415,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req($get, $post, $method, $type));
     }
 
-    public function provideInvalidRequests(): iterable {
+    public static function provideInvalidRequests(): iterable {
         return [
             'Not an API request'        => ["",    "",                         "POST", null,                                                                                                HTTP::respEmpty(404)],
             'Wrong method'              => ["api", "",                         "PUT",  null,                                                                                                HTTP::respEmpty(405, ['Allow' => "OPTIONS,POST"])],
@@ -476,7 +476,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testListFeedIcons(): void {
         $iconType = (new \ReflectionClassConstant(API::class, "GENERIC_ICON_TYPE"))->getValue();
         $iconData = (new \ReflectionClassConstant(API::class, "GENERIC_ICON_DATA"))->getValue();
-        \Phake::when(Arsse::$db)->iconList->thenReturn(new Result($this->v([
+        \Phake::when(Arsse::$db)->iconList->thenReturn(new Result(self::v([
             ['id' => 42, 'type' => "image/svg+xml", 'data' => "<svg/>"],
             ['id' => 44, 'type' => null,            'data' => "IMAGE DATA"],
             ['id' => 47, 'type' => null,            'data' => null],

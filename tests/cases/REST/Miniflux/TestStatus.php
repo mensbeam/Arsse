@@ -20,7 +20,7 @@ class TestStatus extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $act);
     }
 
-    public function provideRequests(): iterable {
+    public static function provideRequests(): iterable {
         return [
             ["/version",     "GET",     HTTP::respText(V1::VERSION)],
             ["/version",     "POST",    HTTP::respEmpty(405, ['Allow' => "HEAD, GET"])],

@@ -61,7 +61,7 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideFileExports(): iterable {
+    public static function provideFileExports(): iterable {
         $createException = new Exception("fileUncreatable");
         $writeException = new Exception("fileUnwritable");
         return [
@@ -99,7 +99,7 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideFileImports(): iterable {
+    public static function provideFileImports(): iterable {
         $missingException = new Exception("fileMissing");
         $permissionException = new Exception("fileUnreadable");
         return [
