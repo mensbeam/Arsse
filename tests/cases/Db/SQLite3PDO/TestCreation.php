@@ -13,9 +13,6 @@ use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 #[CoversClass(\JKingWeb\Arsse\Db\SQLite3\PDODriver::class)]
-#[CoversClass(\JKingWeb\Arsse\Db\PDODriver::class)]
-#[CoversClass(\JKingWeb\Arsse\Db\PDOError::class)]
-#[CoversClass(\JKingWeb\Arsse\Db\SQLState::class)]
 class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $data;
     protected $drv;

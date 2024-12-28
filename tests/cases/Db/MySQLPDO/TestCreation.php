@@ -13,7 +13,6 @@ use PHPUnit\Framework\Attributes\Group;
 
 #[Group("slow")]
 #[CoversClass(\JKingWeb\Arsse\Db\MySQL\PDODriver::class)]
-#[CoversClass(\JKingWeb\Arsse\Db\MySQL\ExceptionBuilder::class)]
 class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         if (!Driver::requirementsMet()) {

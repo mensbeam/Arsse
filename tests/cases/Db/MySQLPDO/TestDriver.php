@@ -12,10 +12,6 @@ use PHPUnit\Framework\Attributes\Group;
 
 #[Group("slow")]
 #[CoversClass(\JKingWeb\Arsse\Db\MySQL\PDODriver::class)]
-#[CoversClass(\JKingWeb\Arsse\Db\MySQL\ExceptionBuilder::class)]
-#[CoversClass(\JKingWeb\Arsse\Db\PDODriver::class)]
-#[CoversClass(\JKingWeb\Arsse\Db\PDOError::class)]
-#[CoversClass(\JKingWeb\Arsse\Db\SQLState::class)]
 class TestDriver extends \JKingWeb\Arsse\TestCase\Db\BaseDriver {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\MySQLPDO;
 

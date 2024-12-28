@@ -10,9 +10,6 @@ namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 #[CoversClass(\JKingWeb\Arsse\Db\SQLite3\PDODriver::class)]
-#[CoversClass(\JKingWeb\Arsse\Db\PDODriver::class)]
-#[CoversClass(\JKingWeb\Arsse\Db\PDOError::class)]
-#[CoversClass(\JKingWeb\Arsse\Db\SQLState::class)]
 class TestDriver extends \JKingWeb\Arsse\TestCase\Db\BaseDriver {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\SQLite3PDO;
 

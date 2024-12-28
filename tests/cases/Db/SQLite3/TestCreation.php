@@ -13,7 +13,6 @@ use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 #[CoversClass(\JKingWeb\Arsse\Db\SQLite3\Driver::class)]
-#[CoversClass(\JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder::class)]
 class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $data;
     protected $drv;

@@ -12,7 +12,6 @@ use PHPUnit\Framework\Attributes\Group;
 
 #[Group("slow")]
 #[CoversClass(\JKingWeb\Arsse\Db\PostgreSQL\Driver::class)]
-#[CoversClass(\JKingWeb\Arsse\Db\SQLState::class)]
 class TestUpdate extends \JKingWeb\Arsse\TestCase\Db\BaseUpdate {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\PostgreSQL;
 

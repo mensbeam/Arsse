@@ -12,9 +12,6 @@ use PHPUnit\Framework\Attributes\Group;
 
 #[Group("slow")]
 #[CoversClass(\JKingWeb\Arsse\Db\PDOResult::class)]
-#[CoversClass(\JKingWeb\Arsse\Db\MySQL\ExceptionBuilder::class)]
-#[CoversClass(\JKingWeb\Arsse\Db\PDOError::class)]
-#[CoversClass(\JKingWeb\Arsse\Db\SQLState::class)]
 class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\MySQLPDO;
 

@@ -12,8 +12,6 @@ use PHPUnit\Framework\Attributes\Group;
 
 #[Group("slow")]
 #[CoversClass(\JKingWeb\Arsse\Db\MySQL\Driver::class)]
-#[CoversClass(\JKingWeb\Arsse\Db\MySQL\ExceptionBuilder::class)]
-#[CoversClass(\JKingWeb\Arsse\Db\SQLState::class)]
 class TestDriver extends \JKingWeb\Arsse\TestCase\Db\BaseDriver {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\MySQL;
 
