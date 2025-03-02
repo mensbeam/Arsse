@@ -10,7 +10,7 @@
     <dt>API endpoint</dt>
         <dd>/tt-rss/api</dd>
     <dt>Specifications</dt>
-        <dd><a href="https://tt-rss.org/wiki/ApiReference">Main</a>, <a href="https://tt-rss.org/wiki/SearchSyntax">search syntax</a>, <a href="https://github.com/jangernert/FeedReader/blob/master/data/tt-rss-feedreader-plugin/README.md">FeedReader extensions</a>, <a href="https://github.com/hrk/tt-rss-newsplus-plugin/blob/master/README.md">News+ extension</a></dd>
+        <dd><a href="https://tt-rss.org/ApiReference/">Main</a>, <a href="https://tt-rss.org/wiki/SearchSyntax">search syntax</a>, <a href="https://github.com/jangernert/FeedReader/blob/master/data/tt-rss-feedreader-plugin/README.md">FeedReader extensions</a>, <a href="https://github.com/hrk/tt-rss-newsplus-plugin/blob/master/README.md">News+ extension</a></dd>
 </dl>
 
 The Arsse supports not only the Tiny Tiny RSS protocol, but also extensions required by the FeedReader client and the more commonly supported `getCompactHeadlines` extension.
