@@ -198,6 +198,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'ordering'         => "order_type",
             'updateErrorCount' => "err_count",
             'lastUpdateError'  => "err_msg",
+            'nextUpdateTime'   => "next_fetch",
         ]);
         // cast values
         $feed = $this->fieldMapTypes($feed, [
@@ -213,6 +214,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'ordering'         => "int",
             'updateErrorCount' => "int",
             'lastUpdateError'  => "string",
+            'nextUpdateTime'   => "datetime",
         ], $this->dateFormat);
         return $feed;
     }

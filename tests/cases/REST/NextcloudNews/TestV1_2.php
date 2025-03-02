@@ -40,6 +40,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
                 'err_msg'    => '',
                 'order_type' => 0,
                 'added'      => '2017-05-20 13:35:54',
+                'next_fetch' => '2017-05-20 14:35:54',
                 'title'      => 'First example feed',
                 'unread'     => 50048,
             ],
@@ -55,6 +56,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
                 'err_msg'    => '',
                 'order_type' => 2,
                 'added'      => '2017-05-20 13:35:54',
+                'next_fetch' => '2017-05-20 14:35:54',
                 'title'      => 'Second example feed',
                 'unread'     => 23,
             ],
@@ -70,6 +72,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
                 'err_msg'    => null,
                 'order_type' => 1,
                 'added'      => '2017-05-20 13:35:54',
+                'next_fetch' => '2017-05-20 14:35:54',
                 'title'      => 'Third example feed',
                 'unread'     => 0,
             ],
@@ -88,6 +91,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
                 'ordering'         => 0,
                 'updateErrorCount' => 0,
                 'lastUpdateError'  => '',
+                'nextUpdateTime'   => 1495290954,
             ],
             [
                 'id'               => 42,
@@ -102,6 +106,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
                 'ordering'         => 2,
                 'updateErrorCount' => 0,
                 'lastUpdateError'  => '',
+                'nextUpdateTime'   => 1495290954,
             ],
             [
                 'id'               => 47,
@@ -116,6 +121,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
                 'ordering'         => 1,
                 'updateErrorCount' => 0,
                 'lastUpdateError'  => '',
+                'nextUpdateTime'   => 1495290954,
             ],
         ],
     ];
