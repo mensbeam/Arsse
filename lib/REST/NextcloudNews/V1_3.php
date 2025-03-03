@@ -48,7 +48,7 @@ class V1_3 extends V1_2 {
     protected function articleMarkStarred(array $url, array $data): ResponseInterface {
         // initialize the matching context
         $c = new Context;
-        $c->article((int) $url[1]);
+        $c->edition((int) $url[1]);
         // determine whether to mark starred or unstarred
         $set = ($url[2] === "star");
         try {
