@@ -27,7 +27,7 @@ class TestVersions extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testFetchVersionList(): void {
-        $exp = HTTP::respJson(['apiLevels' => ['v1-2']]);
+        $exp = HTTP::respJson(['apiLevels' => ["v1-2", "v1-3"]]);
         $this->assertMessage($exp, $this->req("GET", "/"));
         $this->assertMessage($exp, $this->req("GET", "/"));
         $this->assertMessage($exp, $this->req("GET", "/"));

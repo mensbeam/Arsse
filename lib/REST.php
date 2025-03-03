@@ -21,12 +21,17 @@ class REST {
             'strip' => '/index.php/apps/news/api',
             'class' => REST\NextcloudNews\Versions::class,
         ],
-        'ncn_v1-2' => [ // Nextcloud News v1-2  https://github.com/nextcloud/news/blob/master/docs/externalapi/Legacy.md
+        'ncn_v1-2' => [ // Nextcloud News v1-2  https://github.com/nextcloud/news/blob/master/docs/api/api-v1-2.md
             'match' => '/index.php/apps/news/api/v1-2/',
             'strip' => '/index.php/apps/news/api/v1-2',
             'class' => REST\NextcloudNews\V1_2::class,
         ],
-        'ttrss_api' => [ // Tiny Tiny RSS  https://git.tt-rss.org/git/tt-rss/wiki/ApiReference
+        'ncn_v1-3' => [ // Nextcloud News v1-3  https://github.com/nextcloud/news/blob/master/docs/api/api-v1-3.md
+            'match' => '/index.php/apps/news/api/v1-3/',
+            'strip' => '/index.php/apps/news/api/v1-3',
+            'class' => REST\NextcloudNews\V1_3::class,
+        ],
+        'ttrss_api' => [ // Tiny Tiny RSS  https://tt-rss.org/ApiReference/
             'match' => '/tt-rss/api',
             'strip' => '/tt-rss/api',
             'class' => REST\TinyTinyRSS\API::class,

@@ -20,7 +20,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
-    public const VERSION = "11.0.5";
+    public const VERSION = "25.3.0";
     protected const ACCEPTED_TYPE = "application/json";
 
     protected $dateFormat = "unix";
@@ -625,7 +625,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         // initialize the matching context
         $c = new Context;
         $c->article((int) $url[2]);
-        // determine whether to mark read or unread
+        // determine whether to mark starred or unstarred
         $set = ($url[3] === "star");
         try {
             Arsse::$db->articleMark(Arsse::$user->id, ['starred' => $set], $c);
