@@ -24,10 +24,11 @@
         "ext-hash": "*",
         "ext-filter": "*",
         "ext-dom": "*",
-        "nicolus/picofeed": "dev-php84",
+        "mensbeam/mimesniff": "^0.3.0",
+        "jkingweb/druuid": "3.*",
         "hosteurope/password-generator": "1.*",
         "docopt/docopt": "dev-master",
-        "jkingweb/druuid": "3.*",
+        "nicolus/picofeed": "dev-php84",
         "guzzlehttp/psr7": "2.*",
         "laminas/laminas-xml": "dev-fixup as 1.4.0",
         "laminas/laminas-httphandlerrunner": "2.*"
