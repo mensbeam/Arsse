@@ -69,7 +69,7 @@ class REST {
         // Selfoss              https://github.com/SSilence/selfoss/wiki/Restful-API-for-Apps-or-any-other-external-access
         // NewsBlur             http://www.newsblur.com/api
         // Unclear if clients exist:
-        // Nextcloud News v2    https://github.com/nextcloud/news/blob/master/docs/externalapi/External-Api.md
+        // Nextcloud News v2    https://github.com/nextcloud/news/blob/master/docs/api/api-v2.md
         // BirdReader           https://github.com/glynnbird/birdreader/blob/master/API.md
         // Feedbin v1           https://github.com/feedbin/feedbin-api/commit/86da10aac5f1a57531a6e17b08744e5f9e7db8a9
         // Proprietary (centralized) entities:
@@ -164,15 +164,10 @@ class REST {
         return $req;
     }
 
-    public function challenge(ResponseInterface $res, ?string $realm = null): ResponseInterface {
-        $realm = $realm ?? Arsse::$conf->httpRealm;
-        return $res->withAddedHeader("WWW-Authenticate", 'Basic realm="'.$realm.'", charset="UTF-8"');
-    }
-
     public function normalizeResponse(ResponseInterface $res, ?RequestInterface $req = null): ResponseInterface {
         // if the response code is 401, issue an HTTP authentication challenge
         if ($res->getStatusCode() == 401) {
-            $res = $this->challenge($res);
+            $res = HTTP::challenge($res);
         }
         // set or clear the Content-Length header field
         $body = $res->getBody();

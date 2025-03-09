@@ -388,10 +388,10 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     #[DataProvider("provideOptionsRequests")]
     public function testRespondToOptionsRequests(string $url, string $allow, string $accept): void {
-        $exp = HTTP::respEmpty(204, [
+        $exp = HTTP::challenge(HTTP::respEmpty(204, [
             'Allow'  => $allow,
             'Accept' => $accept,
-        ]);
+        ]));
         $this->assertMessage($exp, $this->req("OPTIONS", $url));
     }
 

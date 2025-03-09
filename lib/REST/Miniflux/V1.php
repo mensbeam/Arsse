@@ -458,10 +458,10 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             if (in_array("GET", $allowed)) {
                 array_unshift($allowed, "HEAD");
             }
-            return HTTP::respEmpty(204, [
+            return HTTP::challenge(HTTP::respEmpty(204, [
                 'Allow'  => implode(", ", $allowed),
                 'Accept' => implode(", ", $url === "/import" ? self::ACCEPTED_TYPES_OPML : self::ACCEPTED_TYPES_JSON),
-            ]);
+            ]));
         } else {
             // if the path is not supported, return 404
             return HTTP::respEmpty(404);

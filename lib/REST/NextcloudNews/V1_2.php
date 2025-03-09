@@ -91,7 +91,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $data = (string) $req->getBody();
         if ($data) {
             // if the entity body is not JSON according to content type, return "415 Unsupported Media Type"
-            if (!HTTP::matchType($req, "", self::ACCEPTED_TYPE)) {
+            if (!HTTP::matchType($req, [self::ACCEPTED_TYPE])) {
                 return HTTP::respEmpty(415, ['Accept' => self::ACCEPTED_TYPE]);
             }
             $data = @json_decode($data, true);
@@ -269,10 +269,10 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             if (in_array("GET", $allowed)) {
                 array_unshift($allowed, "HEAD");
             }
-            return HTTP::respEmpty(204, [
+            return HTTP::challenge(HTTP::respEmpty(204, [
                 'Allow'  => implode(",", $allowed),
                 'Accept' => self::ACCEPTED_TYPE,
-            ]);
+            ]));
         } else {
             // if the path is not supported, return 404
             return HTTP::respEmpty(404);

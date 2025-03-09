@@ -95,18 +95,6 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    public function testSendAuthenticationChallenges(): void {
-        self::setConf();
-        $r = new REST;
-        $in = HTTP::respEmpty(401);
-        $exp = $in->withHeader("WWW-Authenticate", 'Basic realm="OOK", charset="UTF-8"');
-        $act = $r->challenge($in, "OOK");
-        $this->assertMessage($exp, $act);
-        $exp = $in->withHeader("WWW-Authenticate", 'Basic realm="'.Arsse::$conf->httpRealm.'", charset="UTF-8"');
-        $act = $r->challenge($in);
-        $this->assertMessage($exp, $act);
-    }
-
 
     #[DataProvider('provideUnnormalizedOrigins')]
     public function testNormalizeOrigins(string $origin, string $exp, ?array $ports = null): void {
@@ -260,9 +248,6 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testNormalizeHttpResponses(ResponseInterface $res, ResponseInterface $exp, ?RequestInterface $req = null): void {
         $rMock = \Phake::partialMock(REST::class);
         \Phake::when($rMock)->corsNegotiate->thenReturn(true);
-        \Phake::when($rMock)->challenge->thenReturnCallback(function($res) {
-            return $res->withHeader("WWW-Authenticate", "Fake Value");
-        });
         \Phake::when($rMock)->corsApply->thenReturnCallback(function($res) {
             return $res;
         });
@@ -275,7 +260,7 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         fwrite($stream, "ook");
         return [
             [HTTP::respEmpty(204),                                          HTTP::respEmpty(204)],
-            [HTTP::respEmpty(401),                                          HTTP::respEmpty(401, ['WWW-Authenticate' => "Fake Value"])],
+            [HTTP::respEmpty(401),                                          HTTP::challenge(HTTP::respEmpty(401))],
             [HTTP::respEmpty(204, ['Allow' => "PUT"]),                      HTTP::respEmpty(204, ['Allow' => "PUT, OPTIONS"])],
             [HTTP::respEmpty(204, ['Allow' => "PUT, OPTIONS"]),             HTTP::respEmpty(204, ['Allow' => "PUT, OPTIONS"])],
             [HTTP::respEmpty(204, ['Allow' => "PUT,OPTIONS"]),              HTTP::respEmpty(204, ['Allow' => "PUT, OPTIONS"])],

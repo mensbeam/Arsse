@@ -192,10 +192,10 @@ LONG_STRING;
     }
 
     public function testHandleOptionsRequest(): void {
-        $exp = HTTP::respEmpty(204, [
+        $exp = HTTP::challenge(HTTP::respEmpty(204, [
             'Allow'  => "POST",
             'Accept' => "application/json, text/json",
-        ]);
+        ]));
         $this->assertMessage($exp, $this->req(null, "OPTIONS", "", ""));
     }
 

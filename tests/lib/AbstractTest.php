@@ -189,13 +189,13 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             $this->assertSame($exp->getMethod(), $act->getMethod(), $text);
             $this->assertSame($exp->getRequestTarget(), $act->getRequestTarget(), $text);
         }
-        if ($exp instanceof ResponseInterface && HTTP::matchType($exp, "application/json", "text/json", "+json")) {
+        if ($exp instanceof ResponseInterface && HTTP::matchType($exp, ["application/json", "text/json"], false)) {
             $expBody = @json_decode((string) $exp->getBody(), true);
             $actBody = @json_decode((string) $act->getBody(), true);
             $this->assertSame(\JSON_ERROR_NONE, json_last_error(), "Response body is not valid JSON");
             $this->assertEquals($expBody, $actBody, $text);
             $this->assertSame($expBody, $actBody, $text);
-        } elseif ($exp instanceof ResponseInterface && HTTP::matchType($exp, "application/xml", "text/xml", "+xml")) {
+        } elseif ($exp instanceof ResponseInterface && HTTP::matchType($exp, ["application/xml", "text/xml"], false)) {
             $this->assertXmlStringEqualsXmlString((string) $exp->getBody(), (string) $act->getBody(), $text);
         } else {
             $this->assertSame((string) $exp->getBody(), (string) $act->getBody(), $text);
@@ -204,7 +204,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     }
 
     protected function extractMessageJson(MessageInterface $msg) {
-        if (HTTP::matchType($msg, "application/json", "text/json", "+json")) {
+        if (HTTP::matchType($msg, ["application/json", "text/json"], false)) {
             $json = @json_decode((string) $msg->getBody(), true);
             if (json_last_error() === \JSON_ERROR_NONE) {
                 return $json;

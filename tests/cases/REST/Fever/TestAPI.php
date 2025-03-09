@@ -492,10 +492,10 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testAnswerOptionsRequest(): void {
-        $exp = HTTP::respEmpty(204, [
+        $exp = HTTP::challenge(HTTP::respEmpty(204, [
             'Allow'  => "POST",
             'Accept' => "application/x-www-form-urlencoded, multipart/form-data",
-        ]);
+        ]));
         $this->assertMessage($exp, $this->req("api", "", "OPTIONS"));
     }
 }

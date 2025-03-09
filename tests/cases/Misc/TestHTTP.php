@@ -20,9 +20,9 @@ class TestHTTP extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider('provideMediaTypes')]
     public function testMatchMediaType(string $header, array $types, bool $exp): void {
         $msg = (new Request("POST", "/"))->withHeader("Content-Type", $header);
-        $this->assertSame($exp, HTTP::matchType($msg, ...$types));
+        $this->assertSame($exp, HTTP::matchType($msg, $types));
         $msg = (new Response)->withHeader("Content-Type", $header);
-        $this->assertSame($exp, HTTP::matchType($msg, ...$types));
+        $this->assertSame($exp, HTTP::matchType($msg, $types));
     }
 
     public static function provideMediaTypes(): array {
@@ -31,11 +31,8 @@ class TestHTTP extends \JKingWeb\Arsse\Test\AbstractTest {
             ["APPLICATION/JSON",         ["application/json"],              true],
             ["text/JSON",                ["application/json", "text/json"], true],
             ["text/json; charset=utf-8", ["application/json", "text/json"], true],
-            ["",                         ["application/json"],              false],
-            ["",                         ["application/json", ""],          true],
+            ["",                         ["application/json"],              true],
             ["application/json ;",       ["application/json"],              true],
-            ["application/feed+json",    ["application/json", "+json"],     true],
-            ["application/xhtml+xml",    ["application/json", "+json"],     false],
         ];
     }
 
