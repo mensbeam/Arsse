@@ -31,6 +31,11 @@ class REST {
             'strip' => '/index.php/apps/news/api/v1-3',
             'class' => REST\NextcloudNews\V1_3::class,
         ],
+        'ncn_ocs' => [ // Nextcloud user metadata  https://docs.nextcloud.com/server/latest/developer_manual/client_apis/OCS/ocs-api-overview.html#user-metadata
+            'match' => '/ocs/v1.php/cloud/users/',
+            'strip' => '/ocs/v1.php/cloud/users/',
+            'class' => REST\NextcloudNews\OCS::class,
+        ],
         'ttrss_api' => [ // Tiny Tiny RSS  https://tt-rss.org/ApiReference/
             'match' => '/tt-rss/api',
             'strip' => '/tt-rss/api',
