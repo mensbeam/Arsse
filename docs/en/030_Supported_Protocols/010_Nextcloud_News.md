@@ -13,9 +13,10 @@
     <dt>Specifications</dt>
         <dd><a href="https://github.com/nextcloud/news/blob/master/docs/api/api-v1-2.md">Version 1.2</a></dd>
         <dd><a href="https://github.com/nextcloud/news/blob/master/docs/api/api-v1-3.md">Version 1.3</a></dd>
+        <dd><a href="https://docs.nextcloud.com/server/latest/developer_manual/client_apis/OCS/ocs-api-overview.html#user-metadata">OCS user metadata</a></dd>
 </dl>
 
-The Nextcloud News protocol was the first supported by The Arsse, and has been supported in full since version 0.3.0.
+The Nextcloud News protocol was the first supported by The Arsse; version 1.2 of the protocol has been supported in full since The Arsse version 0.3.0, while version 1.3 of the protocol and the OCS user metadata protocol have been supported since The Arsse version 0.11.0.
 
 It allows organizing newsfeeds into single-level folders, and supports a wide range of operations on newsfeeds, folders, and articles.
 
