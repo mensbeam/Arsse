@@ -80,10 +80,12 @@ USAGE_TEXT;
             'help' => false,
         ]);
         try {
-            // ensure the require extensions are loaded
-            Arsse::checkExtensions(...Arsse::REQUIRED_EXTENSIONS);
             // reconstitute multi-token commands (e.g. user add) into a single string
             $cmd = $this->command($args);
+            // ensure the require extensions are loaded, unless we're just generating the default configuration file
+            if ($cmd !== "conf save-defaults") {
+                Arsse::checkExtensions(...Arsse::REQUIRED_EXTENSIONS);
+            }
             if ($cmd && !in_array($cmd, ["", "conf save-defaults", "daemon"])) {
                 // only certain commands don't require configuration to be loaded; daemon loads configuration after forking (if applicable)
                 $this->loadConf();
