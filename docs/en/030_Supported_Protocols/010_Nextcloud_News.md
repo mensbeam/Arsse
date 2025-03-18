@@ -22,6 +22,7 @@ It allows organizing newsfeeds into single-level folders, and supports a wide ra
 
 # Differences
 
+- The Nextcloud single sign-on is not supported; when using the official Nextcloud News client the "manual login" method must be used 
 - Article GUID hashes are not hashes like in NCN; they are integers rendered as strings
 - Article fingerprints are a combination of hashes rather than a single hash
 - When marking articles as starred the feed ID is ignored, as they are not needed to establish uniqueness (v1.2 only)

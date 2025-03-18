@@ -4,6 +4,8 @@ Version 0.11.0 (2025-03-??)
 New Features:
 - Support for version 1.3 of the Nextcloud News protocol
 - Support for Nextcloud user metadata fetching
+- Support for form-data input in the Nextcloud News protocol, to improve
+  compatibility with the official client
 
 Version 0.10.6 (2024-12-27)
 ===========================
