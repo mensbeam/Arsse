@@ -7,10 +7,8 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\REST\NextcloudNews;
 
-use GuzzleHttp\Psr7\Response;
 use MensBeam\Mime\MimeType;
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\User\ExceptionConflict;
 use Psr\Http\Message\ServerRequestInterface;
@@ -108,6 +106,11 @@ class OCS extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'Allow'  => "GET,HEAD",
                 'Vary'   => "Accept",
             ]));
+        } elseif ($req->getMethod() !== "GET") {
+            return HTTP::respEmpty(405, [
+                'Allow'  => "GET,HEAD",
+                'Vary'   => "Accept",
+            ]);
         }
         // try to authenticate
         if ($req->getAttribute("authenticated", false)) {
@@ -152,23 +155,23 @@ class OCS extends \JKingWeb\Arsse\REST\AbstractHandler {
         $body = [
             'ocs' => [
                 'meta' => self::BASE_META[$code],
-                'data' => !$data && !$xml ? new \stdClass : $data, // we need a stdClass for the JSON encoder to return an empty object
+                'data' => !$data && !$xml ? new \stdClass : $data ?? [], // we need a stdClass for the JSON encoder to return an empty object
             ],
         ];
         // the response formatting code was lifted from the Fever implementation, with changes
         if ($xml) {
             $d = new \DOMDocument("1.0", "utf-8");
-            $d->appendChild($this->makeXMLAssoc($data['ocs'], $d->createElement("ocs")));
-            return HTTP::respXml($d->saveXML($d->documentElement, \LIBXML_NOEMPTYTAG), $status);
+            $d->appendChild($this->makeXMLAssoc($body['ocs'], $d->createElement("ocs")));
+            return HTTP::respXml($d->saveXML($d->documentElement, \LIBXML_NOEMPTYTAG), $status, ['Content-Type' => "$type; charset=UTF-8"]);
         } else {
-            return HTTP::respJson($body, $status, [], \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
+            return HTTP::respJson($body, $status, ['Content-Type' => "$type"], \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
         }
     }
 
     protected function makeXMLAssoc(array $data, \DOMElement $p): \DOMElement {
         $d = $p->ownerDocument;
         foreach ($data as $k => $v) {
-            if (!is_array($v) || !$v) {
+            if (!is_array($v)) {
                 $p->appendChild($d->createElement($k, (string) $v));
             } elseif (isset($v[0])) {
                 // this is a very simplistic check for an indexed array
@@ -186,9 +189,9 @@ class OCS extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function makeXMLIndexed(array $data, \DOMElement $p): \DOMElement {
         $d = $p->ownerDocument;
         foreach ($data as $v) {
-            if (!is_array($v) || !$v) {
+            if (!is_array($v)) {
                 $p->appendChild($d->createElement("element", (string) $v));
-            } elseif (isset($v[0])) {
+            } elseif (isset($v[0])) { // @codeCoverageIgnore
                 // this case is never encountered with Nextcloud's output
                 $p->appendChild($this->makeXMLIndexed($v, $d->createElement("element"))); // @codeCoverageIgnore
             } else {

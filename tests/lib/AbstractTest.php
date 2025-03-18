@@ -193,7 +193,6 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             $expBody = @json_decode((string) $exp->getBody(), true);
             $actBody = @json_decode((string) $act->getBody(), true);
             $this->assertSame(\JSON_ERROR_NONE, json_last_error(), "Response body is not valid JSON");
-            $this->assertEquals($expBody, $actBody, $text);
             $this->assertSame($expBody, $actBody, $text);
         } elseif ($exp instanceof ResponseInterface && HTTP::matchType($exp, ["application/xml", "text/xml"], false)) {
             $this->assertXmlStringEqualsXmlString((string) $exp->getBody(), (string) $act->getBody(), $text);

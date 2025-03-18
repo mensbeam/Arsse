@@ -11,6 +11,7 @@ namespace JKingWeb\Arsse\TestCase\Misc;
 use JKingWeb\Arsse\Misc\HTTP;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use JKingWeb\Arsse\Arsse;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseInterface;
@@ -53,5 +54,13 @@ class TestHTTP extends \JKingWeb\Arsse\Test\AbstractTest {
             ["respXml",   ["<html/>"],                                                          new Response(200, ['Content-Type' => "application/xml; charset=UTF-8"], "<html/>")],
             ["respXml",   ["<html/>", 451, ['Content-Type' => "text/plain", 'Vary' => "ETag"]], new Response(451, ['Content-Type' => "text/plain", 'Vary' => "ETag"], "<html/>")],
         ];
+    }
+
+    public function testSendAuthenticationChallenges(): void {
+        self::setConf();
+        $in = new Response();
+        $exp = $in->withHeader("WWW-Authenticate", 'Basic realm="'.Arsse::$conf->httpRealm.'", charset="UTF-8"');
+        $act = HTTP::challenge($in);
+        $this->assertMessage($exp, $act);
     }
 }

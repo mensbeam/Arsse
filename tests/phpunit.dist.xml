@@ -121,6 +121,7 @@
       <file>cases/REST/NextcloudNews/TestVersions.php</file>
       <file>cases/REST/NextcloudNews/TestV1_2.php</file>
       <file>cases/REST/NextcloudNews/TestV1_3.php</file>
+      <file>cases/REST/NextcloudNews/TestOCS.php</file>
       <file>cases/REST/NextcloudNews/PDO/TestV1_2.php</file>
       <file>cases/REST/NextcloudNews/PDO/TestV1_3.php</file>
     </testsuite>
