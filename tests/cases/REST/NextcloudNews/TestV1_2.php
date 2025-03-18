@@ -26,6 +26,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $h;
     protected $transaction;
     protected $userId;
+    protected $prefix = "/index.php/apps/news/api/v1-2";
     protected static $feeds = [ // expected sample output of a feed list from the database, and the resultant expected transformation by the REST handler
         'db' => [
             [
@@ -307,20 +308,6 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         ],
     ];
 
-    protected function req(string $method, string $target, $data = "", array $headers = [], bool $authenticated = true, bool $body = true): ResponseInterface {
-        Arsse::$user->id = $this->userId;
-        $prefix = "/index.php/apps/news/api/v1-2";
-        $url = $prefix.$target;
-        if ($body) {
-            $params = [];
-        } else {
-            $params = $data;
-            $data = [];
-        }
-        $req = $this->serverRequest($method, $url, $prefix, $headers, [], $data, "application/json", $params, $authenticated ? "john.doe@example.com" : "");
-        return $this->h->dispatch($req);
-    }
-
     public function setUp(): void {
         parent::setUp();
         self::setConf();
@@ -329,6 +316,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user = \Phake::mock(User::class);
         \Phake::when(Arsse::$user)->auth->thenReturn(true);
         \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['admin' => true]);
+        Arsse::$user->id = $this->userId;
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
         \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(Transaction::class));
@@ -338,6 +326,24 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     protected static function v($value) {
         return $value;
+    }
+
+    protected function req(string $method, string $target, $data = "", array $headers = [], bool $authenticated = true, bool $body = true): ResponseInterface {
+        $url = $this->prefix.$target;
+        if ($body) {
+            $params = [];
+        } else {
+            $params = $data;
+            $data = [];
+        }
+        $req = $this->serverRequest($method, $url, $this->prefix, $headers, [], $data, "application/json", $params, $authenticated ? $this->userId : "");
+        return $this->h->dispatch($req);
+    }
+
+    protected function reqText(string $method, string $target, string $data, string $type, array $headers = [], bool $authenticated = true): ResponseInterface {
+        $url = $this->prefix.$target;
+        $req = $this->serverRequest($method, $url, $this->prefix, $headers, [], $data, $type, [], $authenticated ? $this->userId : "");
+        return $this->h->dispatch($req);
     }
 
     public function testSendAuthenticationChallenge(): void {
@@ -549,6 +555,38 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             [['url' => "http://example.org/news.atom", 'folderId' => 8],  new ExceptionInput("constraintViolation"), 4758915, self::$feeds['db'][1], true,                                HTTP::respEmpty(409)],
             [[],                                                          $feedException,                            0,       [],                    false,                               HTTP::respEmpty(422)],
             [['url' => "http://example.net/news.atom", 'folderId' => -1], 47,                                        2112,    self::$feeds['db'][2], new ExceptionInput("typeViolation"), HTTP::respJson(['feeds' => [self::$feeds['rest'][2]], 'newestItemId' => 2112])],
+        ];
+    }
+
+    #[DataProvider("provideNewSubscriptionsWithType")]
+    public function testAddSubscriptionsWithDifferentMediaTypes(string $input, string $type, ResponseInterface $exp): void {
+        \Phake::when(Arsse::$db)->subscriptionAdd->thenReturn(42);
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn(true);
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn(self::v(self::$feeds['db'][1]));
+        \Phake::when(Arsse::$db)->editionLatest->thenReturn(4758915);
+        $act = $this->reqText("POST", "/feeds", $input, $type);
+        $this->assertMessage($exp, $act);
+    }
+
+    public static function provideNewSubscriptionsWithType(): iterable {
+        $success = HTTP::respJson(['feeds' => [self::$feeds['rest'][1]], 'newestItemId' => 4758915]);
+        $badType = HTTP::respEmpty(415, ['Accept' => "application/json"]);
+        return [
+            ['{"url":"http://example.org/news.atom","folderId":8}', "application/json",                  $success],
+            ['{"url":"http://example.org/news.atom","folderId":8}', "text/json",                         $success],
+            ['{"url":"http://example.org/news.atom","folderId":8}', "",                                  $success],
+            ['{"url":"http://example.org/news.atom","folderId":8}', "/",                                 $success],
+            ['{"url":"http://example.org/news.atom","folderId":8}', "application/x-www-form-urlencoded", $success],
+            ['{"url":"http://example.org/news.atom","folderId":8}', "application/octet-stream",          $success],
+            ['url=http://example.org/news.atom&folderId=8',         "application/x-www-form-urlencoded", $success],
+            ['url=http://example.org/news.atom&folderId=8',         "",                                  $success],
+            ['{"url":',                                             "application/json",                  HTTP::respEmpty(400)],
+            ['{"url":',                                             "text/json",                         HTTP::respEmpty(400)],
+            ['{"url":',                                             "",                                  HTTP::respEmpty(400)],
+            ['{"url":',                                             "application/x-www-form-urlencoded", HTTP::respEmpty(400)],
+            ['{"url":',                                             "application/octet-stream",          $badType],
+            ['null',                                                "application/json",                  HTTP::respEmpty(400)],
+            ['null',                                                "text/json",                         HTTP::respEmpty(400)],
         ];
     }
 

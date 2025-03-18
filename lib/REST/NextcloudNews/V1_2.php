@@ -16,6 +16,7 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\REST\Exception;
+use MensBeam\Mime\MimeType;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -87,16 +88,51 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } else {
             return HTTP::respEmpty(401);
         }
-        // normalize the input
+        // parse the input
         $data = (string) $req->getBody();
         if ($data) {
-            // if the entity body is not JSON according to content type, return "415 Unsupported Media Type"
-            if (!HTTP::matchType($req, [self::ACCEPTED_TYPE])) {
-                return HTTP::respEmpty(415, ['Accept' => self::ACCEPTED_TYPE]);
-            }
-            $data = @json_decode($data, true);
-            if (json_last_error() !== \JSON_ERROR_NONE) {
-                // if the body could not be parsed as JSON, return "400 Bad Request"
+            // Officially the body, if any, should be JSON. In practice the
+            //   server must also accept application/x-www-form-urlencoded;
+            //   it's also possible that input is mislabelled, so we'll try
+            //   different combinations till something works, or return an
+            //   error status in the end
+            $type = MimeType::extract($req->getHeaderLine("Content-Type"));
+            try {
+                switch ($type->essence ?? "") {
+                    case "application/json":
+                    case "text/json":
+                        $data = $this->parseJson($data);
+                        break;
+                    case "application/x-www-form-urlencoded":
+                        if ($this->guessForm($data)) {
+                            $data = $this->parseForm($data);
+                        } else {
+                            $data = $this->parseJson($data);
+                        }
+                        break;
+                    case "":
+                        if ($this->guessJson($data)) {
+                            $data = $this->parseJson($data);
+                        } elseif ($this->guessForm($data)) {
+                            $data = $this->parseForm($data);
+                        } else {
+                            return HTTP::respEmpty(400);
+                        }
+                        break;
+                    default:
+                        // other media types would normally be rejected, but 
+                        //   if it happens to be mislabelled JSON we can accept
+                        //   it; we will not try form data here, though,
+                        //   because input is really expected to be JSON
+                        if ($this->guessJson($data)) {
+                            try {
+                                $data = $this->parseJson($data);
+                                break;
+                            } catch (\JsonException $e) {}
+                        }
+                        return HTTP::respEmpty(415, ['Accept' => self::ACCEPTED_TYPE]);
+                }
+            } catch (\JsonException $e) {
                 return HTTP::respEmpty(400);
             }
         } else {
@@ -122,6 +158,28 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return HTTP::respEmpty(500);
         }
         // @codeCoverageIgnoreEnd
+    }
+
+    protected function guessJson(string $data): bool {
+        return (bool) preg_match('/^\s*\{\s*"[a-zA-Z]+"\s*:/s', $data);
+    }
+
+    protected function parseJson(string $data): array {
+        $out = json_decode($data, true, 512, \JSON_THROW_ON_ERROR);
+        if (!is_array($out)) {
+            throw new \JsonException("JSON input must be an object");
+        }
+        return $out;
+    }
+
+    protected function guessForm(string $data): bool {
+        return (bool) preg_match('/^\s*[a-zA-Z]+=/s', $data);
+    }
+
+    protected function parseForm(string $data): array {
+        // we assume that, as PHP application, Nextcloud News uses PHP logic for interpreting form data
+        parse_str($data, $out); // this cannot fail as any string can be interpreted into some sort of array
+        return $out;
     }
 
     protected function normalizePathIds(string $url): string {

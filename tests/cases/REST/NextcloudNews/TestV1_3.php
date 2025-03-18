@@ -17,6 +17,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 
 #[CoversClass(V1_3::class)]
 class TestV1_3 extends TestV1_2 {
+    protected $prefix = "/index.php/apps/news/api/v1-3";
 
     public function setUp(): void {
         parent::setUp();
