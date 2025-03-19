@@ -132,7 +132,7 @@ class Lang {
 
     protected function checkRequirements(): bool {
         if (!extension_loaded("intl")) {
-            throw new ExceptionFatal("The \"Intl\" extension is required, but not loaded"); // @codeCoverageIgnore
+            throw new ExceptionFatal("The \"intl\" PHP extension is not installed or not enabled"); // @codeCoverageIgnore
         }
         $this->requirementsMet = true;
         return true;
