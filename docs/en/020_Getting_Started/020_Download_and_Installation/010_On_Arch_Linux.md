@@ -37,7 +37,7 @@ No additional set-up is required for Nginx.
 
 # Using an alternative PHP interpreter
 
-The above instructions assume you will be using the `php` package as your PHP interpreter. If you wish to use `php-legacy` (which is always one feature version behind, for compatibility) a few configuration tweaks are required. The follwoing commands are a short summary:
+The above instructions assume you will be using the `php` package as your PHP interpreter. If you wish to use `php-legacy` (which is always at least one feature version behind, for compatibility) a few configuration tweaks are required. The follwoing commands are a short summary:
 
 ```sh
 # Enable the necessary PHP extensions; curl is optional but recommended; pdo_sqlite may be used instead of sqlite3, but this is not recommended

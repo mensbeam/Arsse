@@ -28,7 +28,7 @@ backup=("etc/webapps/arsse/config.php"
         "etc/webapps/arsse/apache/arsse.conf"
         "etc/webapps/arsse/apache/arsse-fcgi.conf"
         "etc/webapps/arsse/apache/arsse-loc.conf")
-source=("arsse-0.10.4.tar.gz")
+source=("arsse-0.11.0.tar.gz")
 md5sums=("SKIP")
 
 package() {
