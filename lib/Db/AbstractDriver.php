@@ -20,7 +20,7 @@ abstract class AbstractDriver implements Driver {
     abstract protected function unlock(bool $rollback = false): bool;
     abstract protected static function buildEngineException($code, string $msg): array;
 
-    public function schemaUpdate(int $to, string $basePath = null): bool {
+    public function schemaUpdate(int $to, ?string $basePath = null): bool {
         $ver = $this->schemaVersion();
         if (!Arsse::$conf->dbAutoUpdate) {
             throw new Exception("updateManual", ['version' => $ver, 'driver_name' => $this->driverName()]);
@@ -91,7 +91,7 @@ abstract class AbstractDriver implements Driver {
         return $this->transDepth;
     }
 
-    public function savepointRelease(int $index = null): bool {
+    public function savepointRelease(?int $index = null): bool {
         // assume the most recent savepoint if none was specified
         $index = $index ?? $this->transDepth;
         if (array_key_exists($index, $this->transStatus)) {
@@ -150,7 +150,7 @@ abstract class AbstractDriver implements Driver {
         }
     }
 
-    public function savepointUndo(int $index = null): bool {
+    public function savepointUndo(?int $index = null): bool {
         $index = $index ?? $this->transDepth;
         if (array_key_exists($index, $this->transStatus)) {
             switch ($this->transStatus[$index]) {

@@ -10,7 +10,7 @@ namespace JKingWeb\Arsse\Context;
 class ExclusionContext extends AbstractContext {
     use ExclusionMembers;
 
-    public function __construct(Context $parent = null) {
+    public function __construct(?Context $parent = null) {
         $this->parent = $parent;
     }
 

@@ -1,154 +1,153 @@
 <?xml version="1.0"?>
-<phpunit 
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd"
-    colors="true"
-    bootstrap="bootstrap.php"
-    convertErrorsToExceptions="false"
-    convertNoticesToExceptions="false"
-    convertWarningsToExceptions="false"
-    beStrictAboutTestsThatDoNotTestAnything="true"
-    beStrictAboutOutputDuringTests="true"
-    forceCoversAnnotation="true"
-    executionOrder="defects"
+<phpunit
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd"
+  colors="true"
+  bootstrap="bootstrap.php"
+  beStrictAboutTestsThatDoNotTestAnything="true"
+  beStrictAboutOutputDuringTests="true"
+  executionOrder="defects"
+  cacheDirectory=".phpunit.cache"
+  requireCoverageMetadata="true"
 >
-
-<php>
-    <env name="ARSSE_TEST_PGSQL_HOST"   value=""/>
-    <env name="ARSSE_TEST_PGSQL_PORT"   value="5432"/>
-    <env name="ARSSE_TEST_PGSQL_USER"   value="arsse_test"/>
-    <env name="ARSSE_TEST_PGSQL_PASS"   value="arsse_test"/>
-    <env name="ARSSE_TEST_PGSQL_DB"     value="arsse_test"/>
+  <php>
+    <env name="ARSSE_TEST_PGSQL_HOST" value=""/>
+    <env name="ARSSE_TEST_PGSQL_PORT" value="5432"/>
+    <env name="ARSSE_TEST_PGSQL_USER" value="arsse_test"/>
+    <env name="ARSSE_TEST_PGSQL_PASS" value="arsse_test"/>
+    <env name="ARSSE_TEST_PGSQL_DB" value="arsse_test"/>
     <env name="ARSSE_TEST_PGSQL_SCHEMA" value="arsse_test"/>
-    <env name="ARSSE_TEST_MYSQL_HOST"   value="localhost"/>
-    <env name="ARSSE_TEST_MYSQL_PORT"   value="3306"/>
-    <env name="ARSSE_TEST_MYSQL_USER"   value="arsse_test"/>
-    <env name="ARSSE_TEST_MYSQL_PASS"   value="arsse_test"/>
-    <env name="ARSSE_TEST_MYSQL_DB"     value="arsse_test"/>
-</php>
-
-<coverage processUncoveredFiles="true">
+    <env name="ARSSE_TEST_MYSQL_HOST" value="localhost"/>
+    <env name="ARSSE_TEST_MYSQL_PORT" value="3306"/>
+    <env name="ARSSE_TEST_MYSQL_USER" value="arsse_test"/>
+    <env name="ARSSE_TEST_MYSQL_PASS" value="arsse_test"/>
+    <env name="ARSSE_TEST_MYSQL_DB" value="arsse_test"/>
+  </php>
+  <source>
     <include>
-        <directory suffix=".php">../lib</directory>
+      <directory suffix=".php">../lib</directory>
     </include>
-</coverage>
-<testsuites>
+  </source>
+  <testsuites>
     <testsuite name="Exceptions">
-        <file>cases/Exception/TestException.php</file>
+      <file>cases/Exception/TestException.php</file>
     </testsuite>
     <testsuite name="Localization">
-        <file>cases/Lang/TestBasic.php</file>
-        <file>cases/Lang/TestComplex.php</file>
-        <file>cases/Lang/TestErrors.php</file>
+      <file>cases/Lang/TestBasic.php</file>
+      <file>cases/Lang/TestComplex.php</file>
+      <file>cases/Lang/TestErrors.php</file>
     </testsuite>
     <testsuite name="Configuration">
-        <file>cases/Conf/TestConf.php</file>
+      <file>cases/Conf/TestConf.php</file>
     </testsuite>
     <testsuite name="Sundry">
-        <file>cases/Misc/TestFactory.php</file>
-        <file>cases/Misc/TestValueInfo.php</file>
-        <file>cases/Misc/TestDate.php</file>
-        <file>cases/Misc/TestQuery.php</file>
-        <file>cases/Misc/TestContext.php</file>
-        <file>cases/Misc/TestURL.php</file>
-        <file>cases/Misc/TestHTTP.php</file>
-        <file>cases/Misc/TestRule.php</file>
+      <file>cases/Misc/TestFactory.php</file>
+      <file>cases/Misc/TestValueInfo.php</file>
+      <file>cases/Misc/TestDate.php</file>
+      <file>cases/Misc/TestQuery.php</file>
+      <file>cases/Misc/TestContext.php</file>
+      <file>cases/Misc/TestURL.php</file>
+      <file>cases/Misc/TestHTTP.php</file>
+      <file>cases/Misc/TestRule.php</file>
     </testsuite>
     <testsuite name="User management">
-        <file>cases/User/TestInternal.php</file>
-        <file>cases/User/TestUser.php</file>
+      <file>cases/User/TestInternal.php</file>
+      <file>cases/User/TestUser.php</file>
     </testsuite>
     <testsuite name="Feed parser">
-        <file>cases/Feed/TestException.php</file>
-        <file>cases/Feed/TestFetching.php</file>
-        <file>cases/Feed/TestFeed.php</file>
+      <file>cases/Feed/TestException.php</file>
+      <file>cases/Feed/TestFetching.php</file>
+      <file>cases/Feed/TestFeed.php</file>
     </testsuite>
     <testsuite name="Database interface">
-        <file>cases/Db/TestTransaction.php</file>
-        <file>cases/Db/TestResultAggregate.php</file>
-        <file>cases/Db/TestResultEmpty.php</file>
-        <file>cases/Database/TestDatabase.php</file>
+      <file>cases/Db/TestTransaction.php</file>
+      <file>cases/Db/TestResultAggregate.php</file>
+      <file>cases/Db/TestResultEmpty.php</file>
+      <file>cases/Database/TestDatabase.php</file>
     </testsuite>
     <testsuite name="SQLite">
-        <file>cases/Db/SQLite3/TestResult.php</file>
-        <file>cases/Db/SQLite3/TestStatement.php</file>
-        <file>cases/Db/SQLite3/TestCreation.php</file>
-        <file>cases/Db/SQLite3/TestDriver.php</file>
-        <file>cases/Db/SQLite3/TestUpdate.php</file>
-        <file>cases/Db/SQLite3/TestDatabase.php</file>
-        <file>cases/Db/SQLite3PDO/TestResult.php</file>
-        <file>cases/Db/SQLite3PDO/TestStatement.php</file>
-        <file>cases/Db/SQLite3PDO/TestCreation.php</file>
-        <file>cases/Db/SQLite3PDO/TestDriver.php</file>
-        <file>cases/Db/SQLite3PDO/TestUpdate.php</file>
-        <file>cases/Db/SQLite3PDO/TestDatabase.php</file>
+      <file>cases/Db/SQLite3/TestResult.php</file>
+      <file>cases/Db/SQLite3/TestStatement.php</file>
+      <file>cases/Db/SQLite3/TestCreation.php</file>
+      <file>cases/Db/SQLite3/TestDriver.php</file>
+      <file>cases/Db/SQLite3/TestUpdate.php</file>
+      <file>cases/Db/SQLite3/TestDatabase.php</file>
+      <file>cases/Db/SQLite3PDO/TestResult.php</file>
+      <file>cases/Db/SQLite3PDO/TestStatement.php</file>
+      <file>cases/Db/SQLite3PDO/TestCreation.php</file>
+      <file>cases/Db/SQLite3PDO/TestDriver.php</file>
+      <file>cases/Db/SQLite3PDO/TestUpdate.php</file>
+      <file>cases/Db/SQLite3PDO/TestDatabase.php</file>
     </testsuite>
     <testsuite name="PostgreSQL">
-        <file>cases/Db/PostgreSQL/TestResult.php</file>
-        <file>cases/Db/PostgreSQL/TestStatement.php</file>
-        <file>cases/Db/PostgreSQL/TestCreation.php</file>
-        <file>cases/Db/PostgreSQL/TestDriver.php</file>
-        <file>cases/Db/PostgreSQL/TestUpdate.php</file>
-        <file>cases/Db/PostgreSQL/TestDatabase.php</file>
-        <file>cases/Db/PostgreSQLPDO/TestResult.php</file>
-        <file>cases/Db/PostgreSQLPDO/TestStatement.php</file>
-        <file>cases/Db/PostgreSQLPDO/TestCreation.php</file>
-        <file>cases/Db/PostgreSQLPDO/TestDriver.php</file>
-        <file>cases/Db/PostgreSQLPDO/TestUpdate.php</file>
-        <file>cases/Db/PostgreSQLPDO/TestDatabase.php</file>
+      <file>cases/Db/PostgreSQL/TestResult.php</file>
+      <file>cases/Db/PostgreSQL/TestStatement.php</file>
+      <file>cases/Db/PostgreSQL/TestCreation.php</file>
+      <file>cases/Db/PostgreSQL/TestDriver.php</file>
+      <file>cases/Db/PostgreSQL/TestUpdate.php</file>
+      <file>cases/Db/PostgreSQL/TestDatabase.php</file>
+      <file>cases/Db/PostgreSQLPDO/TestResult.php</file>
+      <file>cases/Db/PostgreSQLPDO/TestStatement.php</file>
+      <file>cases/Db/PostgreSQLPDO/TestCreation.php</file>
+      <file>cases/Db/PostgreSQLPDO/TestDriver.php</file>
+      <file>cases/Db/PostgreSQLPDO/TestUpdate.php</file>
+      <file>cases/Db/PostgreSQLPDO/TestDatabase.php</file>
     </testsuite>
     <testsuite name="MySQL">
-        <file>cases/Db/MySQL/TestResult.php</file>
-        <file>cases/Db/MySQL/TestStatement.php</file>
-        <file>cases/Db/MySQL/TestCreation.php</file>
-        <file>cases/Db/MySQL/TestDriver.php</file>
-        <file>cases/Db/MySQL/TestUpdate.php</file>
-        <file>cases/Db/MySQL/TestDatabase.php</file>
-        <file>cases/Db/MySQLPDO/TestResult.php</file>
-        <file>cases/Db/MySQLPDO/TestStatement.php</file>
-        <file>cases/Db/MySQLPDO/TestCreation.php</file>
-        <file>cases/Db/MySQLPDO/TestDriver.php</file>
-        <file>cases/Db/MySQLPDO/TestUpdate.php</file>
-        <file>cases/Db/MySQLPDO/TestDatabase.php</file>
+      <file>cases/Db/MySQL/TestResult.php</file>
+      <file>cases/Db/MySQL/TestStatement.php</file>
+      <file>cases/Db/MySQL/TestCreation.php</file>
+      <file>cases/Db/MySQL/TestDriver.php</file>
+      <file>cases/Db/MySQL/TestUpdate.php</file>
+      <file>cases/Db/MySQL/TestDatabase.php</file>
+      <file>cases/Db/MySQLPDO/TestResult.php</file>
+      <file>cases/Db/MySQLPDO/TestStatement.php</file>
+      <file>cases/Db/MySQLPDO/TestCreation.php</file>
+      <file>cases/Db/MySQLPDO/TestDriver.php</file>
+      <file>cases/Db/MySQLPDO/TestUpdate.php</file>
+      <file>cases/Db/MySQLPDO/TestDatabase.php</file>
     </testsuite>
     <testsuite name="REST">
-        <file>cases/REST/TestREST.php</file>
+      <file>cases/REST/TestREST.php</file>
     </testsuite>
     <testsuite name="Miniflux">
-        <file>cases/REST/Miniflux/TestStatus.php</file>
-        <file>cases/REST/Miniflux/TestV1.php</file>
-        <file>cases/REST/Miniflux/TestToken.php</file>
-        <file>cases/REST/Miniflux/PDO/TestV1.php</file>
-        <file>cases/REST/Miniflux/PDO/TestToken.php</file>
+      <file>cases/REST/Miniflux/TestStatus.php</file>
+      <file>cases/REST/Miniflux/TestV1.php</file>
+      <file>cases/REST/Miniflux/TestToken.php</file>
+      <file>cases/REST/Miniflux/PDO/TestV1.php</file>
+      <file>cases/REST/Miniflux/PDO/TestToken.php</file>
     </testsuite>
     <testsuite name="NCNv1">
-        <file>cases/REST/NextcloudNews/TestVersions.php</file>
-        <file>cases/REST/NextcloudNews/TestV1_2.php</file>
-        <file>cases/REST/NextcloudNews/PDO/TestV1_2.php</file>
+      <file>cases/REST/NextcloudNews/TestVersions.php</file>
+      <file>cases/REST/NextcloudNews/TestV1_2.php</file>
+      <file>cases/REST/NextcloudNews/TestV1_3.php</file>
+      <file>cases/REST/NextcloudNews/TestOCS.php</file>
+      <file>cases/REST/NextcloudNews/PDO/TestV1_2.php</file>
+      <file>cases/REST/NextcloudNews/PDO/TestV1_3.php</file>
     </testsuite>
     <testsuite name="TTRSS">
-        <file>cases/REST/TinyTinyRSS/TestSearch.php</file>
-        <file>cases/REST/TinyTinyRSS/TestAPI.php</file>
-        <file>cases/REST/TinyTinyRSS/TestIcon.php</file>
-        <file>cases/REST/TinyTinyRSS/PDO/TestAPI.php</file>
+      <file>cases/REST/TinyTinyRSS/TestSearch.php</file>
+      <file>cases/REST/TinyTinyRSS/TestAPI.php</file>
+      <file>cases/REST/TinyTinyRSS/TestIcon.php</file>
+      <file>cases/REST/TinyTinyRSS/PDO/TestAPI.php</file>
     </testsuite>
     <testsuite name="Fever">
-        <file>cases/REST/Fever/TestUser.php</file>
-        <file>cases/REST/Fever/TestAPI.php</file>
-        <file>cases/REST/Fever/PDO/TestAPI.php</file>
+      <file>cases/REST/Fever/TestUser.php</file>
+      <file>cases/REST/Fever/TestAPI.php</file>
+      <file>cases/REST/Fever/PDO/TestAPI.php</file>
     </testsuite>
     <testsuite name="Admin tools">
-        <file>cases/Service/TestService.php</file>
-        <file>cases/Service/TestSerial.php</file>
-        <file>cases/Service/TestSubprocess.php</file>
-        <file>cases/Service/TestDaemon.php</file>
-        <file>cases/CLI/TestCLI.php</file>
-        <file>cases/TestArsse.php</file>
+      <file>cases/Service/TestService.php</file>
+      <file>cases/Service/TestSerial.php</file>
+      <file>cases/Service/TestSubprocess.php</file>
+      <file>cases/Service/TestDaemon.php</file>
+      <file>cases/CLI/TestCLI.php</file>
+      <file>cases/TestArsse.php</file>
     </testsuite>
     <testsuite name="Import/Export">
-        <file>cases/ImportExport/TestFile.php</file>
-        <file>cases/ImportExport/TestImportExport.php</file>
-        <file>cases/ImportExport/TestOPML.php</file>
+      <file>cases/ImportExport/TestFile.php</file>
+      <file>cases/ImportExport/TestImportExport.php</file>
+      <file>cases/ImportExport/TestOPML.php</file>
     </testsuite>
-</testsuites>
+  </testsuites>
 </phpunit>

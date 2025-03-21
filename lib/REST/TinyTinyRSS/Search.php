@@ -33,7 +33,7 @@ class Search {
         ""       => "searchTerms",
     ];
 
-    public static function parse(string $search, string $tz, Context $context = null): ?Context {
+    public static function parse(string $search, string $tz, ?Context $context = null): ?Context {
         // normalize the input
         $search = strtolower(trim(preg_replace("<\s+>", " ", $search)));
         // set initial state
@@ -283,7 +283,7 @@ class Search {
         return $context;
     }
 
-    protected static function processToken(Context $c, string $value, string $tag, bool $neg, string $tz = null): Context {
+    protected static function processToken(Context $c, string $value, string $tag, bool $neg, ?string $tz = null): Context {
         if (!strlen($value) && !strlen($tag)) {
             return $c;
         } elseif (!strlen($value)) {

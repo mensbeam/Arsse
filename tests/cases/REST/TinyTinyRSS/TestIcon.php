@@ -13,9 +13,10 @@ use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\REST\TinyTinyRSS\Icon;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Psr\Http\Message\ResponseInterface;
 
-/** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Icon<extended> */
+#[CoversClass(\JKingWeb\Arsse\REST\TinyTinyRSS\Icon::class)]
 class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $h;
     protected $user = "john.doe@example.com";
@@ -23,14 +24,13 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         parent::setUp();
         self::setConf();
-        Arsse::$user = $this->mock(User::class)->get();
+        Arsse::$user = \Phake::mock(User::class);
         // create a mock database interface
-        $this->dbMock = $this->mock(Database::class);
+        Arsse::$db = \Phake::mock(Database::class);
         $this->h = new Icon;
     }
 
-    protected function req(string $target, string $method = "GET", string $user = null): ResponseInterface {
-        Arsse::$db = $this->dbMock->get();
+    protected function req(string $target, string $method = "GET", ?string $user = null): ResponseInterface {
         $prefix = "/tt-rss/feed-icons/";
         $url = $prefix.$target;
         $req = $this->serverRequest($method, $url, $prefix, [], [], null, "", [], $user);
@@ -46,11 +46,11 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testRetrieveFavion(): void {
-        $this->dbMock->subscriptionIcon->returns(['url' => null]);
-        $this->dbMock->subscriptionIcon->with($this->anything(), 1123, false)->throws(new ExceptionInput("subjectMissing"));
-        $this->dbMock->subscriptionIcon->with($this->anything(), 42, false)->returns(['url' => "http://example.com/favicon.ico"]);
-        $this->dbMock->subscriptionIcon->with($this->anything(), 2112, false)->returns(['url' => "http://example.net/logo.png"]);
-        $this->dbMock->subscriptionIcon->with($this->anything(), 1337, false)->returns(['url' => "http://example.org/icon.gif\r\nLocation: http://bad.example.com/"]);
+        \Phake::when(Arsse::$db)->subscriptionIcon->thenReturn(['url' => null]);
+        \Phake::when(Arsse::$db)->subscriptionIcon($this->anything(), 1123, false)->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->subscriptionIcon($this->anything(), 42, false)->thenReturn(['url' => "http://example.com/favicon.ico"]);
+        \Phake::when(Arsse::$db)->subscriptionIcon($this->anything(), 2112, false)->thenReturn(['url' => "http://example.net/logo.png"]);
+        \Phake::when(Arsse::$db)->subscriptionIcon($this->anything(), 1337, false)->thenReturn(['url' => "http://example.org/icon.gif\r\nLocation: http://bad.example.com/"]);
         // these requests should succeed
         $exp = HTTP::respEmpty(301, ['Location' => "http://example.com/favicon.ico"]);
         $this->assertMessage($exp, $this->req("42.ico"));
@@ -72,13 +72,13 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testRetrieveFavionWithHttpAuthentication(): void {
         $url = ['url' => "http://example.org/icon.gif\r\nLocation: http://bad.example.com/"];
-        $this->dbMock->subscriptionIcon->returns(['url' => null]);
-        $this->dbMock->subscriptionIcon->with($this->user, 42, false)->returns($url);
-        $this->dbMock->subscriptionIcon->with("jane.doe", 2112, false)->returns($url);
-        $this->dbMock->subscriptionIcon->with($this->user, 1337, false)->returns($url);
-        $this->dbMock->subscriptionIcon->with(null, 42, false)->returns($url);
-        $this->dbMock->subscriptionIcon->with(null, 2112, false)->returns($url);
-        $this->dbMock->subscriptionIcon->with(null, 1337, false)->returns($url);
+        \Phake::when(Arsse::$db)->subscriptionIcon->thenReturn(['url' => null]);
+        \Phake::when(Arsse::$db)->subscriptionIcon($this->user, 42, false)->thenReturn($url);
+        \Phake::when(Arsse::$db)->subscriptionIcon("jane.doe", 2112, false)->thenReturn($url);
+        \Phake::when(Arsse::$db)->subscriptionIcon($this->user, 1337, false)->thenReturn($url);
+        \Phake::when(Arsse::$db)->subscriptionIcon(null, 42, false)->thenReturn($url);
+        \Phake::when(Arsse::$db)->subscriptionIcon(null, 2112, false)->thenReturn($url);
+        \Phake::when(Arsse::$db)->subscriptionIcon(null, 1337, false)->thenReturn($url);
         // these requests should succeed
         $exp = HTTP::respEmpty(301, ['Location' => "http://example.org/icon.gif"]);
         $this->assertMessage($exp, $this->req("42.ico"));

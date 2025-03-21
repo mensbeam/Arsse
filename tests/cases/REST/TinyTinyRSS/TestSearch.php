@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -9,10 +10,12 @@ namespace JKingWeb\Arsse\TestCase\REST\TinyTinyRSS;
 
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\REST\TinyTinyRSS\Search;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
-/** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Search */
+#[CoversClass(\JKingWeb\Arsse\REST\TinyTinyRSS\Search::class)]
 class TestSearch extends \JKingWeb\Arsse\Test\AbstractTest {
-    public function provideSearchStrings(): iterable {
+    public static function provideSearchStrings(): iterable {
         return [
             'Blank string'                        => ["", new Context],
             'Whitespace only'                     => [" \n  \t", new Context],
@@ -118,7 +121,8 @@ class TestSearch extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideSearchStrings */
+
+    #[DataProvider('provideSearchStrings')]
     public function testApplySearchToContext(string $search, $exp): void {
         $act = Search::parse($search, "UTC");
         $this->assertEquals($exp, $act);

@@ -124,7 +124,7 @@ class Lang {
         return $out;
     }
 
-    public function match(string $locale, array $list = null): string {
+    public function match(string $locale, ?array $list = null): string {
         $list = $list ?? $this->listFiles();
         $default = ($this->locale === "") ? self::DEFAULT : $this->locale;
         return \Locale::lookup($list, $locale, true, $default);
@@ -132,7 +132,7 @@ class Lang {
 
     protected function checkRequirements(): bool {
         if (!extension_loaded("intl")) {
-            throw new ExceptionFatal("The \"Intl\" extension is required, but not loaded"); // @codeCoverageIgnore
+            throw new ExceptionFatal("The \"intl\" PHP extension is not installed or not enabled"); // @codeCoverageIgnore
         }
         $this->requirementsMet = true;
         return true;

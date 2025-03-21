@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -7,8 +8,6 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\Test;
 
-use Eloquent\Phony\Mock\Handle\InstanceHandle;
-use Eloquent\Phony\Phpunit\Phony;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use JKingWeb\Arsse\Exception;
@@ -25,11 +24,10 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use GuzzleHttp\Psr7\ServerRequest;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/** @coversNothing */
+#[CoversClass(Database::class)]
 abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
-    use \DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
-
     protected const COL_DEFS = [
         'arsse_meta' => [
             'key'   => "str",
@@ -166,18 +164,12 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         ],
     ];
 
-    protected $objMock;
-    protected $confMock;
-    protected $langMock;
-    protected $dbMock;
-    protected $userMock;
-
     public function setUp(): void {
         self::clearData();
         // create the object factory as a mock
-        $this->objMock = Arsse::$obj = $this->mock(Factory::class);
-        $this->objMock->get->does(function(string $class) {
-            return new $class;
+        Arsse::$obj = \Phake::mock(Factory::class);
+        \Phake::when(Arsse::$obj)->get->thenReturnCallback(function(string $class) {
+            return new $class();
         });
     }
 
@@ -212,7 +204,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         Arsse::$conf = (($force ? null : Arsse::$conf) ?? (new Conf))->import($defaults)->import($conf);
     }
 
-    protected function serverRequest(string $method, string $url, string $urlPrefix, array $headers = [], array $vars = [], $body = null, string $type = "", $params = [], string $user = null): ServerRequestInterface {
+    protected function serverRequest(string $method, string $url, string $urlPrefix, array $headers = [], array $vars = [], $body = null, string $type = "", $params = [], ?string $user = null): ServerRequestInterface {
         $server = [
             'REQUEST_METHOD' => $method,
             'REQUEST_URI'    => $url,
@@ -276,19 +268,24 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         return $req;
     }
 
-    public static function assertMatchesRegularExpression(string $pattern, string $string, string $message = ''): void {
-        if (method_exists(parent::class, "assertMatchesRegularExpression")) {
-            parent::assertMatchesRegularExpression($pattern, $string, $message);
+    public function assertArraySubset($expected, $actual, string $message = ''): void {
+        $this->assertIsArray($actual);
+        if (array_is_list($expected)) {
+            $missing = $actual;
+            $actual = [];
+            foreach ($expected as $k => $v) {
+                $found = array_search($v, $missing, true);
+                if ($found !== false) {
+                    $actual[$k] = $missing[$found];
+                    unset($missing[$found]);
+                }
+            }
+            $this->assertEquals($expected, $actual, $message ?: "Array subset does not match expectation.");
         } else {
-            parent::assertRegExp($pattern, $string, $message);
-        }
-    }
-
-    public static function assertFileDoesNotExist(string $filename, string $message = ''): void {
-        if (method_exists(parent::class, "assertFileDoesNotExist")) {
-            parent::assertFileDoesNotExist($filename, $message);
-        } else {
-            parent::assertFileNotExists($filename, $message);
+            $actual = array_intersect_key($actual, $expected);
+            ksort($actual);
+            ksort($expected);
+            $this->assertEquals($expected, $actual, $message ?: "Array subset does not match expectation.");
         }
     }
 
@@ -327,13 +324,12 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             $this->assertSame($exp->getMethod(), $act->getMethod(), $text);
             $this->assertSame($exp->getRequestTarget(), $act->getRequestTarget(), $text);
         }
-        if ($exp instanceof ResponseInterface && HTTP::matchType($exp, "application/json", "text/json", "+json")) {
+        if ($exp instanceof ResponseInterface && HTTP::matchType($exp, ["application/json", "text/json"], false)) {
             $expBody = @json_decode((string) $exp->getBody(), true);
             $actBody = @json_decode((string) $act->getBody(), true);
             $this->assertSame(\JSON_ERROR_NONE, json_last_error(), "Response body is not valid JSON");
-            $this->assertEquals($expBody, $actBody, $text);
             $this->assertSame($expBody, $actBody, $text);
-        } elseif ($exp instanceof ResponseInterface && HTTP::matchType($exp, "application/xml", "text/xml", "+xml")) {
+        } elseif ($exp instanceof ResponseInterface && HTTP::matchType($exp, ["application/xml", "text/xml"], false)) {
             $this->assertXmlStringEqualsXmlString((string) $exp->getBody(), (string) $act->getBody(), $text);
         } else {
             $this->assertSame((string) $exp->getBody(), (string) $act->getBody(), $text);
@@ -342,7 +338,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
     }
 
     protected function extractMessageJson(MessageInterface $msg) {
-        if (HTTP::matchType($msg, "application/json", "text/json", "+json")) {
+        if (HTTP::matchType($msg, ["application/json", "text/json"], false)) {
             $json = @json_decode((string) $msg->getBody(), true);
             if (json_last_error() === \JSON_ERROR_NONE) {
                 return $json;
@@ -563,27 +559,19 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                 $found = array_search($row, $expected);
                 unset($expected[$found]);
             }
-            $this->assertArraySubset($expected, [], false, "Expectations not in result set.");
+            $this->assertEmpty($expected, "Expectations not in result set.");
         }
     }
 
     /** Guzzle's exception classes require some fairly complicated construction; this abstracts it all away so that only message and code need be supplied  */
     protected function mockGuzzleException(string $class, ?string $message = null, ?int $code = null, ?\Throwable $e = null): GuzzleException {
         if (is_a($class, RequestException::class, true)) {
-            $req = $this->mock(RequestInterface::class);
-            $res = $this->mock(ResponseInterface::class);
-            $res->getStatusCode->returns($code ?? 0);
-            return new $class($message ?? "", $req->get(), $res->get(), $e);
+            $req = \Phake::mock(RequestInterface::class);
+            $res = \Phake::mock(ResponseInterface::class);
+            \Phake::when($res)->getStatusCode->thenReturn($code ?? 0);
+            return new $class($message ?? "", $req, $res, $e);
         } else {
             return new $class($message ?? "", $code ?? 0, $e);
         }
-    }
-
-    protected function mock(string $class): InstanceHandle {
-        return Phony::mock($class);
-    }
-
-    protected function partialMock(string $class, ...$argument): InstanceHandle {
-        return Phony::partialMock($class, $argument);
     }
 }

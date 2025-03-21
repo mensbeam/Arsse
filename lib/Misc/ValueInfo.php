@@ -60,7 +60,7 @@ class ValueInfo {
         'float'     => ["U.u",                    "U.u"                  ],
     ];
 
-    public static function normalize($value, int $type, string $dateInFormat = null, $dateOutFormat = null) {
+    public static function normalize($value, int $type, ?string $dateInFormat = null, $dateOutFormat = null) {
         $allowNull = ($type & self::M_NULL);
         $strict = ($type & (self::M_STRICT | self::M_DROP));
         $drop = ($type & self::M_DROP);
@@ -511,7 +511,7 @@ class ValueInfo {
         }
     }
 
-    public static function bool($value, bool $default = null): ?bool {
+    public static function bool($value, ?bool $default = null): ?bool {
         if (is_null($value) || ValueInfo::str($value) & ValueInfo::WHITE) {
             return $default;
         }

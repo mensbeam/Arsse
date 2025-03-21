@@ -129,24 +129,29 @@ class RoboFile extends \Robo\Tasks {
     protected function runTests(string $executor, string $set, array $args): Result {
         switch ($set) {
             case "typical":
-                $set = ["--exclude-group", "optional"];
+                $exc = ["optional"];
                 break;
             case "quick":
-                $set = ["--exclude-group", "optional,slow"];
+                $exc = ["optional", "slow"];
                 break;
             case "coverage":
-                $set = ["--exclude-group", "optional,coverageOptional"];
+                $exc = ["optional", "coverageOptional"];
                 break;
             case "full":
-                $set = [];
+                $exc = [];
                 break;
             default:
                 throw new \Exception;
         }
+        $extra = ["--display-phpunit-deprecations"];
+        foreach ($exc as $group) {
+            $extra[] = "--exclude-group";
+            $extra[] = $group;
+        }
         $execpath = norm(BASE."vendor-bin/phpunit/vendor/phpunit/phpunit/phpunit");
         $confpath = realpath(BASE_TEST."phpunit.dist.xml") ?: norm(BASE_TEST."phpunit.xml");
         $this->taskServer(8000)->host("localhost")->dir(BASE_TEST."docroot")->rawArg("-n")->arg(BASE_TEST."server.php")->rawArg($this->blackhole())->background()->run();
-        return $this->taskExec($executor)->option("-d", "zend.assertions=1")->arg($execpath)->option("-c", $confpath)->args(array_merge($set, $args))->run();
+        return $this->taskExec($executor)->option("-d", "zend.assertions=1")->arg($execpath)->option("-c", $confpath)->args(array_merge($extra, $args))->run();
     }
 
     /** Returns a Git version string for a given Git tree-ish ID
@@ -188,7 +193,7 @@ class RoboFile extends \Robo\Tasks {
      * may not be equivalent due to subsequent changes in the exclude list, or because
      * of new tooling.
      */
-    public function packageGeneric(string $commit = null): Result {
+    public function packageGeneric(?string $commit = null): Result {
         if (!$this->toolExists("git")) {
             throw new \Exception("Git is required in PATH to produce generic release tarballs");
         }
@@ -308,7 +313,7 @@ class RoboFile extends \Robo\Tasks {
      * or any commit hash. If none is provided on the command line, Robo will prompt
      * for a commit to package; the default is "HEAD".
      */
-    public function packageDebsrc(string $commit = null): Result {
+    public function packageDebsrc(?string $commit = null): Result {
         // establish which commit to package
         [$commit, $version] = $this->commitVersion($commit);
         $tarball = BASE."release/$version/arsse-$version.tar.gz";
@@ -362,7 +367,7 @@ class RoboFile extends \Robo\Tasks {
      * Build Service instances and with slight modification the Arch User Repository.
      * Use for Launchpad PPAs has not been tested.
      */
-    public function package(string $commit = null): Result {
+    public function package(?string $commit = null): Result {
         if (!$this->toolExists("git")) {
             throw new \Exception("Git is required in PATH to produce packages");
         }

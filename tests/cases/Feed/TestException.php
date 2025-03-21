@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -11,20 +12,22 @@ use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\TooManyRedirectsException;
 use GuzzleHttp\Exception\TransferException;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use PicoFeed\PicoFeedException;
 
-/**
- * @covers \JKingWeb\Arsse\Feed\Exception
- * @group slow */
+#[CoversClass(\JKingWeb\Arsse\Feed\Exception::class)]
+#[Group('slow')]
 class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
-    /** @dataProvider provideCurlErrors */
+    #[DataProvider('provideCurlErrors')]
     public function testHandleCurlErrors(int $code, string $message): void {
         $e = $this->mockGuzzleException(TransferException::class, "cURL error $code: Some message", 0);
         $this->assertException($message, "Feed");
         throw new FeedException("", ['url' => "https://example.com/"], $e);
     }
 
-    public function provideCurlErrors() {
+    public static function provideCurlErrors() {
         return [
             'CURLE_UNSUPPORTED_PROTOCOL'        => [1,  "invalidUrl"],
             'CURLE_FAILED_INIT'                 => [2,  "internalError"],
@@ -116,14 +119,15 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideHTTPErrors */
+
+    #[DataProvider('provideHTTPErrors')]
     public function testHandleHttpErrors(int $code, string $message): void {
         $e = $this->mockGuzzleException(BadResponseException::class, "Irrelevant message", $code);
         $this->assertException($message, "Feed");
         throw new FeedException("", ['url' => "https://example.com/"], $e);
     }
 
-    public function provideHTTPErrors() {
+    public static function provideHTTPErrors() {
         $specials = [
             401 => "unauthorized",
             403 => "forbidden",
@@ -143,13 +147,14 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
         return $out;
     }
 
-    /** @dataProvider providePicoFeedException */
+
+    #[DataProvider('providePicoFeedException')]
     public function testHandlePicofeedException(PicoFeedException $e, string $message) {
         $this->assertException($message, "Feed");
         throw new FeedException("", ['url' => "https://example.com/"], $e);
     }
 
-    public function providePicoFeedException() {
+    public static function providePicoFeedException() {
         return [
             'Failed feed discovery' => [new \PicoFeed\Reader\SubscriptionNotFoundException,  "subscriptionNotFound"],
             'Unsupported format'    => [new \PicoFeed\Reader\UnsupportedFeedFormatException, "unsupportedFeedFormat"],
@@ -171,7 +176,7 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testHandleUnexpectedError() {
-        $e = new \Exception;
+        $e = new \Exception();
         $this->assertException("internalError", "Feed");
         throw new FeedException("", ['url' => "https://example.com/"], $e);
     }

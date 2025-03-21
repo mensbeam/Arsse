@@ -101,7 +101,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         }
     }
 
-    public function savepointRelease(int $index = null): bool {
+    public function savepointRelease(?int $index = null): bool {
         $index = $index ?? $this->transDepth;
         $out = parent::savepointRelease($index);
         if ($index == $this->transStart) {
@@ -111,7 +111,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         return $out;
     }
 
-    public function savepointUndo(int $index = null): bool {
+    public function savepointUndo(?int $index = null): bool {
         $index = $index ?? $this->transDepth;
         $out = parent::savepointUndo($index);
         if ($index == $this->transStart) {

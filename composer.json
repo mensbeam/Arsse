@@ -24,11 +24,13 @@
         "ext-hash": "*",
         "ext-filter": "*",
         "ext-dom": "*",
-        "nicolus/picofeed": "dev-patch-3",
-        "hosteurope/password-generator": "1.*",
-        "docopt/docopt": "1.*",
+        "mensbeam/mimesniff": "^0.3.0",
         "jkingweb/druuid": "3.*",
+        "hosteurope/password-generator": "1.*",
+        "docopt/docopt": "dev-master",
+        "nicolus/picofeed": "dev-php84",
         "guzzlehttp/psr7": "2.*",
+        "laminas/laminas-xml": "dev-fixup as 1.4.0",
         "laminas/laminas-httphandlerrunner": "2.*"
     },
     "require-dev": {
@@ -66,6 +68,15 @@
         {
             "type": "vcs",
             "url": "https://github.com/JKingweb/picoFeed-1/"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/JKingweb/laminas-xml/"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/mensbeam/docopt.php/"
         }
+        
     ]
 }

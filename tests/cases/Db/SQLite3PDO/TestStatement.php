@@ -7,10 +7,9 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
 
-/**
- * @covers \JKingWeb\Arsse\Db\PDOStatement<extended>
- * @covers \JKingWeb\Arsse\Db\PDOError
- * @covers \JKingWeb\Arsse\Db\SQLState */
+use PHPUnit\Framework\Attributes\CoversClass;
+
+#[CoversClass(\JKingWeb\Arsse\Db\PDOStatement::class)]
 class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\SQLite3PDO;
 
@@ -18,7 +17,7 @@ class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
         return [static::$interface, $q, $types];
     }
 
-    protected function decorateTypeSyntax(string $value, string $type): string {
+    protected static function decorateTypeSyntax(string $value, string $type): string {
         if ($type === "float") {
             return (substr($value, -2) === ".0") ? "'".substr($value, 0, strlen($value) - 2)."'" : "'$value'";
         } else {

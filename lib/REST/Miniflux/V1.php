@@ -459,10 +459,10 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             if (in_array("GET", $allowed)) {
                 array_unshift($allowed, "HEAD");
             }
-            return HTTP::respEmpty(204, [
+            return HTTP::challenge(HTTP::respEmpty(204, [
                 'Allow'  => implode(", ", $allowed),
                 'Accept' => implode(", ", $url === "/import" ? self::ACCEPTED_TYPES_OPML : self::ACCEPTED_TYPES_JSON),
-            ]);
+            ]));
         } else {
             // if the path is not supported, return 404
             return HTTP::respEmpty(404);
@@ -1027,7 +1027,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return ['total' => $count, 'entries' => $out];
     }
 
-    protected function findEntry(int $id, Context $c = null): array {
+    protected function findEntry(int $id, ?Context $c = null): array {
         $c = ($c ?? new Context)->article($id);
         $tr = Arsse::$db->begin();
         $meta = $this->userMeta(Arsse::$user->id);

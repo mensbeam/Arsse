@@ -18,15 +18,17 @@ use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\REST\TinyTinyRSS\API;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseInterface;
 
-/** @covers \JKingWeb\Arsse\REST\TinyTinyRSS\API<extended>
- *  @covers \JKingWeb\Arsse\REST\TinyTinyRSS\Exception */
+#[CoversClass(\JKingWeb\Arsse\REST\TinyTinyRSS\API::class)]
+#[CoversClass(\JKingWeb\Arsse\REST\TinyTinyRSS\Exception::class)]
 class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     protected const NOW = "2020-12-21T23:09:17.189065Z";
 
     protected $h;
-    protected $userId = "john.doe@example.com";
+    protected static $userId = "john.doe@example.com";
     protected $folders = [
         ['id' => 5, 'parent' => 3,    'children' => 0, 'feeds' => 1, 'name' => "Local"],
         ['id' => 6, 'parent' => 3,    'children' => 0, 'feeds' => 2, 'name' => "National"],
@@ -101,7 +103,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         ],
     ];
     // text from https://corrigeur.fr/lorem-ipsum-traduction-origine.php
-    protected $richContent = <<<LONG_STRING
+    protected static $richContent = <<<LONG_STRING
 <section>
     <p>
         <b>Pour</b> vous faire mieux
@@ -124,7 +126,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
 </section>
 LONG_STRING;
 
-    protected function v($value) {
+    protected static function v($value) {
         return $value;
     }
 
@@ -132,29 +134,26 @@ LONG_STRING;
         parent::setUp();
         self::setConf();
         // create mock timestamps
-        $this->objMock->get->with(\DateTimeImmutable::class)->returns(new \DateTimeImmutable(self::NOW));
+        \Phake::when(Arsse::$obj)->get(\DateTimeImmutable::class)->thenReturn(new \DateTimeImmutable(self::NOW));
         // create a mock user manager
-        $this->userId = "john.doe@example.com";
-        $this->userMock = $this->mock(User::class);
-        $this->userMock->auth->returns(true);
+        self::$userId = "john.doe@example.com";
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->auth->thenReturn(true);
         // create a mock database interface
-        $this->dbMock = $this->mock(Database::class);
-        $this->dbMock->begin->returns($this->mock(Transaction::class));
-        $this->dbMock->sessionResume->throws(new \JKingWeb\Arsse\User\ExceptionSession("invalid"));
-        $this->dbMock->sessionResume->with("PriestsOfSyrinx")->returns([
+        Arsse::$db = \Phake::mock(Database::class);
+        \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(Transaction::class));
+        \Phake::when(Arsse::$db)->sessionResume->thenThrow(new \JKingWeb\Arsse\User\ExceptionSession("invalid"));
+        \Phake::when(Arsse::$db)->sessionResume("PriestsOfSyrinx")->thenReturn([
             'id'      => "PriestsOfSyrinx",
             'created' => "2000-01-01 00:00:00",
             'expires' => "2112-12-21 21:12:00",
-            'user'    => $this->userId,
+            'user'    => self::$userId,
         ]);
         $this->h = new API;
     }
 
-    protected function req($data, string $method = "POST", string $target = "", string $strData = null, string $user = null): ResponseInterface {
-        Arsse::$obj = $this->objMock->get();
-        Arsse::$db = $this->dbMock->get();
-        Arsse::$user = $this->userMock->get();
-        Arsse::$user->id = $this->userId;
+    protected function req($data, string $method = "POST", string $target = "", ?string $strData = null, ?string $user = null): ResponseInterface {
+        Arsse::$user->id = self::$userId;
         $prefix = "/tt-rss/api";
         $url = $prefix.$target;
         $body = $strData ?? json_encode($data);
@@ -166,7 +165,7 @@ LONG_STRING;
         return $this->req($data, "POST", "", null, $user);
     }
 
-    protected function respGood($content = null, $seq = 0): ResponseInterface {
+    protected static function respGood($content = null, $seq = 0): ResponseInterface {
         return HTTP::respJson([
             'seq'     => $seq,
             'status'  => 0,
@@ -174,7 +173,7 @@ LONG_STRING;
         ]);
     }
 
-    protected function respErr(string $msg, $content = [], $seq = 0): ResponseInterface {
+    protected static function respErr(string $msg, $content = [], $seq = 0): ResponseInterface {
         $err = ['error' => $msg];
         return HTTP::respJson([
             'seq'     => $seq,
@@ -184,7 +183,7 @@ LONG_STRING;
     }
 
     public function testHandleInvalidPaths(): void {
-        $exp = $this->respErr("MALFORMED_INPUT", [], null);
+        $exp = self::respErr("MALFORMED_INPUT", [], null);
         $this->assertMessage($exp, $this->req(null, "POST", "", ""));
         $this->assertMessage($exp, $this->req(null, "POST", "/", ""));
         $this->assertMessage($exp, $this->req(null, "POST", "/index.php", ""));
@@ -193,37 +192,37 @@ LONG_STRING;
     }
 
     public function testHandleOptionsRequest(): void {
-        $exp = HTTP::respEmpty(204, [
+        $exp = HTTP::challenge(HTTP::respEmpty(204, [
             'Allow'  => "POST",
             'Accept' => "application/json, text/json",
-        ]);
+        ]));
         $this->assertMessage($exp, $this->req(null, "OPTIONS", "", ""));
     }
 
     public function testHandleInvalidData(): void {
-        $exp = $this->respErr("MALFORMED_INPUT", [], null);
+        $exp = self::respErr("MALFORMED_INPUT", [], null);
         $this->assertMessage($exp, $this->req(null, "POST", "", "This is not valid JSON data"));
         $this->assertMessage($exp, $this->req(null, "POST", "", "")); // lack of data is also an error
     }
 
-    /** @dataProvider provideLoginRequests */
+    #[DataProvider("provideLoginRequests")]
     public function testLogIn(array $conf, $httpUser, array $data, $sessions): void {
-        $this->userId = null;
+        self::$userId = null;
         self::setConf($conf);
-        $this->userMock->auth->returns(false);
-        $this->userMock->auth->with("john.doe@example.com", "secret")->returns(true);
-        $this->userMock->auth->with("jane.doe@example.com", "superman")->returns(true);
-        $this->dbMock->sessionCreate->with("john.doe@example.com")->returns("PriestsOfSyrinx", "SolarFederation");
-        $this->dbMock->sessionCreate->with("jane.doe@example.com")->returns("ClockworkAngels", "SevenCitiesOfGold");
+        \Phake::when(Arsse::$user)->auth->thenReturn(false);
+        \Phake::when(Arsse::$user)->auth("john.doe@example.com", "secret")->thenReturn(true);
+        \Phake::when(Arsse::$user)->auth("jane.doe@example.com", "superman")->thenReturn(true);
+        \Phake::when(Arsse::$db)->sessionCreate("john.doe@example.com")->thenReturn("PriestsOfSyrinx")->thenReturn("SolarFederation");
+        \Phake::when(Arsse::$db)->sessionCreate("jane.doe@example.com")->thenReturn("ClockworkAngels")->thenReturn("SevenCitiesOfGold");
         if ($sessions instanceof ResponseInterface) {
             $exp1 = $sessions;
             $exp2 = $sessions;
         } elseif ($sessions) {
-            $exp1 = $this->respGood(['session_id' => $sessions[0], 'api_level' => \JKingWeb\Arsse\REST\TinyTinyRSS\API::LEVEL]);
-            $exp2 = $this->respGood(['session_id' => $sessions[1], 'api_level' => \JKingWeb\Arsse\REST\TinyTinyRSS\API::LEVEL]);
+            $exp1 = self::respGood(['session_id' => $sessions[0], 'api_level' => \JKingWeb\Arsse\REST\TinyTinyRSS\API::LEVEL]);
+            $exp2 = self::respGood(['session_id' => $sessions[1], 'api_level' => \JKingWeb\Arsse\REST\TinyTinyRSS\API::LEVEL]);
         } else {
-            $exp1 = $this->respErr("LOGIN_ERROR");
-            $exp2 = $this->respErr("LOGIN_ERROR");
+            $exp1 = self::respErr("LOGIN_ERROR");
+            $exp2 = self::respErr("LOGIN_ERROR");
         }
         $data['op'] = "login";
         $this->assertMessage($exp1, $this->reqAuth($data, $httpUser));
@@ -233,24 +232,24 @@ LONG_STRING;
         }
         $this->assertMessage($exp2, $this->reqAuth($data, $httpUser));
         // logging in should never try to resume a session
-        $this->dbMock->sessionResume->never()->called();
+        \Phake::verify(Arsse::$db, \Phake::never())->sessionResume(\Phake::anyParameters());
     }
 
-    public function provideLoginRequests(): iterable {
-        return $this->generateLoginRequests("login");
+    public static function provideLoginRequests(): iterable {
+        return self::generateLoginRequests("login");
     }
 
-    /** @dataProvider provideResumeRequests */
+    #[DataProvider("provideResumeRequests")]
     public function testValidateASession(array $conf, $httpUser, string $data, $result): void {
-        $this->userId = null;
+        self::$userId = null;
         self::setConf($conf);
-        $this->dbMock->sessionResume->with("PriestsOfSyrinx")->returns([
+        \Phake::when(Arsse::$db)->sessionResume("PriestsOfSyrinx")->thenReturn([
             'id'      => "PriestsOfSyrinx",
             'created' => "2000-01-01 00:00:00",
             'expires' => "2112-12-21 21:12:00",
             'user'    => "john.doe@example.com",
         ]);
-        $this->dbMock->sessionResume->with("ClockworkAngels")->returns([
+        \Phake::when(Arsse::$db)->sessionResume("ClockworkAngels")->thenReturn([
             'id'      => "ClockworkAngels",
             'created' => "2000-01-01 00:00:00",
             'expires' => "2112-12-21 21:12:00",
@@ -264,21 +263,21 @@ LONG_STRING;
             $exp1 = $result;
             $exp2 = null;
         } elseif ($result) {
-            $exp1 = $this->respGood(['status' => true]);
+            $exp1 = self::respGood(['status' => true]);
             $exp2 = $result;
         } else {
-            $exp1 = $this->respErr("NOT_LOGGED_IN");
+            $exp1 = self::respErr("NOT_LOGGED_IN");
             $exp2 = ($httpUser) ? $httpUser : null;
         }
         $this->assertMessage($exp1, $this->reqAuth($data, $httpUser));
         $this->assertSame($exp2, Arsse::$user->id);
     }
 
-    public function provideResumeRequests(): iterable {
-        return $this->generateLoginRequests("isLoggedIn");
+    public static function provideResumeRequests(): iterable {
+        return self::generateLoginRequests("isLoggedIn");
     }
 
-    public function generateLoginRequests(string $type): array {
+    public static function generateLoginRequests(string $type): array {
         $john = "john.doe@example.com";
         $johnGood = [
             'user'     => $john,
@@ -526,10 +525,10 @@ LONG_STRING;
     }
 
     public function testHandleGenericError(): void {
-        $this->userMock->auth->throws(new \JKingWeb\Arsse\Db\ExceptionTimeout("general"));
+        \Phake::when(Arsse::$user)->auth->thenThrow(new \JKingWeb\Arsse\Db\ExceptionTimeout("general"));
         $data = [
             'op'       => "login",
-            'user'     => $this->userId,
+            'user'     => self::$userId,
             'password' => "secret",
         ];
         $exp = HTTP::respEmpty(500);
@@ -537,18 +536,18 @@ LONG_STRING;
     }
 
     public function testLogOut(): void {
-        $this->dbMock->sessionDestroy->returns(true);
+        \Phake::when(Arsse::$db)->sessionDestroy->thenReturn(true);
         $data = [
             'op'       => "logout",
             'sid'      => "PriestsOfSyrinx",
         ];
-        $exp = $this->respGood(['status' => "OK"]);
+        $exp = self::respGood(['status' => "OK"]);
         $this->assertMessage($exp, $this->req($data));
-        $this->dbMock->sessionDestroy->calledWith($this->userId, "PriestsOfSyrinx");
+        \Phake::verify(Arsse::$db)->sessionDestroy(self::$userId, "PriestsOfSyrinx");
     }
 
     public function testHandleUnknownMethods(): void {
-        $exp = $this->respErr("UNKNOWN_METHOD", ['method' => "thisMethodDoesNotExist"]);
+        $exp = self::respErr("UNKNOWN_METHOD", ['method' => "thisMethodDoesNotExist"]);
         $data = [
             'op'       => "thisMethodDoesNotExist",
             'sid'      => "PriestsOfSyrinx",
@@ -561,7 +560,7 @@ LONG_STRING;
             'op'       => "isLoggedIn",
             'sid'      => "PriestsOfSyrinx",
         ];
-        $exp = $this->respGood(['status' => true]);
+        $exp = self::respGood(['status' => true]);
         $this->assertMessage($exp, $this->req($data));
         $data['op'] = "isloggedin";
         $this->assertMessage($exp, $this->req($data));
@@ -576,7 +575,7 @@ LONG_STRING;
             'op'       => "getVersion",
             'sid'      => "PriestsOfSyrinx",
         ];
-        $exp = $this->respGood([
+        $exp = self::respGood([
             'version'       => \JKingWeb\Arsse\REST\TinyTinyRSS\API::VERSION,
             'arsse_version' => Arsse::VERSION,
         ]);
@@ -588,245 +587,245 @@ LONG_STRING;
             'op'       => "getApiLevel",
             'sid'      => "PriestsOfSyrinx",
         ];
-        $exp = $this->respGood(['level' => \JKingWeb\Arsse\REST\TinyTinyRSS\API::LEVEL]);
+        $exp = self::respGood(['level' => \JKingWeb\Arsse\REST\TinyTinyRSS\API::LEVEL]);
         $this->assertMessage($exp, $this->req($data));
     }
 
-    /** @dataProvider provideCategoryAdditions */
+    #[DataProvider("provideCategoryAdditions")]
     public function testAddACategory(array $in, array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "addCategory", 'sid' => "PriestsOfSyrinx"], $in);
-        $action = ($out instanceof \Exception) ? "throws" : "returns";
-        $this->dbMock->folderAdd->$action($out);
-        $this->dbMock->folderList->with("~", null, false)->returns(new Result($this->v([
+        $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
+        \Phake::when(Arsse::$db)->folderAdd->$action($out);
+        \Phake::when(Arsse::$db)->folderList($this->anything(), null, false)->thenReturn(new Result(self::v([
             ['id' => 2, 'name' => "Software", 'parent' => null],
             ['id' => 1, 'name' => "Politics", 'parent' => null],
         ])));
-        $this->dbMock->folderList->with("~", 1, false)->returns(new Result($this->v([
+        \Phake::when(Arsse::$db)->folderList($this->anything(), 1, false)->thenReturn(new Result(self::v([
             ['id' => 3, 'name' => "Hardware", 'parent' => 1],
         ])));
         $this->assertMessage($exp, $this->req($in));
-        $this->dbMock->folderAdd->calledWith($this->userId, $data);
+        \Phake::verify(Arsse::$db)->folderAdd(self::$userId, $data);
         if (!$out instanceof \Exception) {
-            $this->dbMock->folderList->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->folderList(\Phake::anyParameters());
         }
     }
 
-    public function provideCategoryAdditions(): iterable {
+    public static function provideCategoryAdditions(): iterable {
         return [
-            [[],                                             ['name' => null,       'parent' => null], new ExceptionInput("missing"),             $this->respErr("INCORRECT_USAGE")],
-            [['caption' => ""],                              ['name' => "",         'parent' => null], new ExceptionInput("missing"),             $this->respErr("INCORRECT_USAGE")],
-            [['caption' => "   "],                           ['name' => "   ",      'parent' => null], new ExceptionInput("whitespace"),          $this->respErr("INCORRECT_USAGE")],
-            [['caption' => "Software"],                      ['name' => "Software", 'parent' => null], 2,                                         $this->respGood("2")],
-            [['caption' => "Hardware", 'parent_id' => 1],    ['name' => "Hardware", 'parent' => 1],    3,                                         $this->respGood("3")],
-            [['caption' => "Hardware", 'parent_id' => 2112], ['name' => "Hardware", 'parent' => 2112], new ExceptionInput("idMissing"),           $this->respGood(false)],
-            [['caption' => "Software"],                      ['name' => "Software", 'parent' => null], new ExceptionInput("constraintViolation"), $this->respGood("2")],
-            [['caption' => "Hardware", 'parent_id' => 1],    ['name' => "Hardware", 'parent' => 1],    new ExceptionInput("constraintViolation"), $this->respGood("3")],
+            [[],                                             ['name' => null,       'parent' => null], new ExceptionInput("missing"),             self::respErr("INCORRECT_USAGE")],
+            [['caption' => ""],                              ['name' => "",         'parent' => null], new ExceptionInput("missing"),             self::respErr("INCORRECT_USAGE")],
+            [['caption' => "   "],                           ['name' => "   ",      'parent' => null], new ExceptionInput("whitespace"),          self::respErr("INCORRECT_USAGE")],
+            [['caption' => "Software"],                      ['name' => "Software", 'parent' => null], 2,                                         self::respGood("2")],
+            [['caption' => "Hardware", 'parent_id' => 1],    ['name' => "Hardware", 'parent' => 1],    3,                                         self::respGood("3")],
+            [['caption' => "Hardware", 'parent_id' => 2112], ['name' => "Hardware", 'parent' => 2112], new ExceptionInput("idMissing"),           self::respGood(false)],
+            [['caption' => "Software"],                      ['name' => "Software", 'parent' => null], new ExceptionInput("constraintViolation"), self::respGood("2")],
+            [['caption' => "Hardware", 'parent_id' => 1],    ['name' => "Hardware", 'parent' => 1],    new ExceptionInput("constraintViolation"), self::respGood("3")],
         ];
     }
 
-    /** @dataProvider provideCategoryRemovals */
+    #[DataProvider("provideCategoryRemovals")]
     public function testRemoveACategory(array $in, ?int $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "removeCategory", 'sid' => "PriestsOfSyrinx"], $in);
-        $action = ($out instanceof \Exception) ? "throws" : "returns";
-        $this->dbMock->folderRemove->$action($out);
+        $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
+        \Phake::when(Arsse::$db)->folderRemove->$action($out);
         $this->assertMessage($exp, $this->req($in));
         if ($data > 0) {
-            $this->dbMock->folderRemove->calledWith($this->userId, (int) $data);
+            \Phake::verify(Arsse::$db)->folderRemove(self::$userId, (int) $data);
         }
     }
 
-    public function provideCategoryRemovals(): iterable {
+    public static function provideCategoryRemovals(): iterable {
         return [
-            [['category_id' => 42],   42,   true,                                 $this->respGood()],
-            [['category_id' => 2112], 2112, new ExceptionInput("subjectMissing"), $this->respGood()],
-            [[],                      null, null,                                 $this->respErr("INCORRECT_USAGE")],
-            [['category_id' => -1],   null, null,                                 $this->respErr("INCORRECT_USAGE")],
+            [['category_id' => 42],   42,   true,                                 self::respGood()],
+            [['category_id' => 2112], 2112, new ExceptionInput("subjectMissing"), self::respGood()],
+            [[],                      null, null,                                 self::respErr("INCORRECT_USAGE")],
+            [['category_id' => -1],   null, null,                                 self::respErr("INCORRECT_USAGE")],
         ];
     }
 
-    /** @dataProvider provideCategoryMoves */
+    #[DataProvider("provideCategoryMoves")]
     public function testMoveACategory(array $in, array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "moveCategory", 'sid' => "PriestsOfSyrinx"], $in);
-        $action = ($out instanceof \Exception) ? "throws" : "returns";
-        $this->dbMock->folderPropertiesSet->$action($out);
+        $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
+        \Phake::when(Arsse::$db)->folderPropertiesSet->$action($out);
         $this->assertMessage($exp, $this->req($in));
         if ($out !== null) {
-            $this->dbMock->folderPropertiesSet->calledWith(...$data);
+            \Phake::verify(Arsse::$db)->folderPropertiesSet(...$data);
         } else {
-            $this->dbMock->folderPropertiesSet->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->folderPropertiesSet(\Phake::anyParameters());
         }
     }
 
-    public function provideCategoryMoves(): iterable {
+    public static function provideCategoryMoves(): iterable {
         return [
-            [['category_id' => 42,   'parent_id' => 1],  [$this->userId, 42,   ['parent' => 1]],  true,                                      $this->respGood()],
-            [['category_id' => 2112, 'parent_id' => 2],  [$this->userId, 2112, ['parent' => 2]],  new ExceptionInput("subjectMissing"),      $this->respGood()],
-            [['category_id' => 42,   'parent_id' => 0],  [$this->userId, 42,   ['parent' => 0]],  new ExceptionInput("constraintViolation"), $this->respGood()],
-            [['category_id' => 42,   'parent_id' => 47], [$this->userId, 42,   ['parent' => 47]], new ExceptionInput("idMissing"),           $this->respGood()],
-            [['category_id' => -1,   'parent_id' => 1],  [$this->userId, -1,   ['parent' => 1]],  null,                                      $this->respErr("INCORRECT_USAGE")],
-            [['category_id' => 42,   'parent_id' => -1], [$this->userId, 42,   ['parent' => -1]], null,                                      $this->respErr("INCORRECT_USAGE")],
-            [['category_id' => 42],                      [$this->userId, 42,   ['parent' => 0]],  new ExceptionInput("constraintViolation"), $this->respGood()],
-            [['parent_id' => -1],                        [$this->userId, 0,    ['parent' => -1]], null,                                      $this->respErr("INCORRECT_USAGE")],
-            [[],                                         [$this->userId, 0,    ['parent' => 0]],  null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['category_id' => 42,   'parent_id' => 1],  [self::$userId, 42,   ['parent' => 1]],  true,                                      self::respGood()],
+            [['category_id' => 2112, 'parent_id' => 2],  [self::$userId, 2112, ['parent' => 2]],  new ExceptionInput("subjectMissing"),      self::respGood()],
+            [['category_id' => 42,   'parent_id' => 0],  [self::$userId, 42,   ['parent' => 0]],  new ExceptionInput("constraintViolation"), self::respGood()],
+            [['category_id' => 42,   'parent_id' => 47], [self::$userId, 42,   ['parent' => 47]], new ExceptionInput("idMissing"),           self::respGood()],
+            [['category_id' => -1,   'parent_id' => 1],  [self::$userId, -1,   ['parent' => 1]],  null,                                      self::respErr("INCORRECT_USAGE")],
+            [['category_id' => 42,   'parent_id' => -1], [self::$userId, 42,   ['parent' => -1]], null,                                      self::respErr("INCORRECT_USAGE")],
+            [['category_id' => 42],                      [self::$userId, 42,   ['parent' => 0]],  new ExceptionInput("constraintViolation"), self::respGood()],
+            [['parent_id' => -1],                        [self::$userId, 0,    ['parent' => -1]], null,                                      self::respErr("INCORRECT_USAGE")],
+            [[],                                         [self::$userId, 0,    ['parent' => 0]],  null,                                      self::respErr("INCORRECT_USAGE")],
         ];
     }
 
-    /** @dataProvider provideCategoryRenamings */
+    #[DataProvider("provideCategoryRenamings")]
     public function testRenameACategory(array $in, ?array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "renameCategory", 'sid' => "PriestsOfSyrinx"], $in);
-        $action = ($out instanceof \Exception) ? "throws" : "returns";
-        $this->dbMock->folderPropertiesSet->$action($out);
+        $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
+        \Phake::when(Arsse::$db)->folderPropertiesSet->$action($out);
         $this->assertMessage($exp, $this->req($in));
         if ($out !== null) {
-            $this->dbMock->folderPropertiesSet->calledWith(...$data);
+            \Phake::verify(Arsse::$db)->folderPropertiesSet(...$data);
         } else {
-            $this->dbMock->folderPropertiesSet->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->folderPropertiesSet(\Phake::anyParameters());
         }
     }
 
-    public function provideCategoryRenamings(): iterable {
+    public static function provideCategoryRenamings(): iterable {
         return [
-            [['category_id' => 42,   'caption' => "Ook"], [$this->userId, 42,   ['name' => "Ook"]], true,                                      $this->respGood()],
-            [['category_id' => 2112, 'caption' => "Eek"], [$this->userId, 2112, ['name' => "Eek"]], new ExceptionInput("subjectMissing"),      $this->respGood()],
-            [['category_id' => 42,   'caption' => "Eek"], [$this->userId, 42,   ['name' => "Eek"]], new ExceptionInput("constraintViolation"), $this->respGood()],
-            [['category_id' => 42,   'caption' => ""],    null,                                     null,                                      $this->respErr("INCORRECT_USAGE")],
-            [['category_id' => 42,   'caption' => " "],   null,                                     null,                                      $this->respErr("INCORRECT_USAGE")],
-            [['category_id' => -1,   'caption' => "Ook"], null,                                     null,                                      $this->respErr("INCORRECT_USAGE")],
-            [['category_id' => 42],                       null,                                     null,                                      $this->respErr("INCORRECT_USAGE")],
-            [['caption' => "Ook"],                        null,                                     null,                                      $this->respErr("INCORRECT_USAGE")],
-            [[],                                          null,                                     null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['category_id' => 42,   'caption' => "Ook"], [self::$userId, 42,   ['name' => "Ook"]], true,                                      self::respGood()],
+            [['category_id' => 2112, 'caption' => "Eek"], [self::$userId, 2112, ['name' => "Eek"]], new ExceptionInput("subjectMissing"),      self::respGood()],
+            [['category_id' => 42,   'caption' => "Eek"], [self::$userId, 42,   ['name' => "Eek"]], new ExceptionInput("constraintViolation"), self::respGood()],
+            [['category_id' => 42,   'caption' => ""],    null,                                     null,                                      self::respErr("INCORRECT_USAGE")],
+            [['category_id' => 42,   'caption' => " "],   null,                                     null,                                      self::respErr("INCORRECT_USAGE")],
+            [['category_id' => -1,   'caption' => "Ook"], null,                                     null,                                      self::respErr("INCORRECT_USAGE")],
+            [['category_id' => 42],                       null,                                     null,                                      self::respErr("INCORRECT_USAGE")],
+            [['caption' => "Ook"],                        null,                                     null,                                      self::respErr("INCORRECT_USAGE")],
+            [[],                                          null,                                     null,                                      self::respErr("INCORRECT_USAGE")],
         ];
     }
 
-    /** @dataProvider provideFeedSubscriptions */
+    #[DataProvider("provideFeedSubscriptions")]
     public function testAddASubscription(array $in, ?array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx"], $in);
-        $action = ($out instanceof \Exception) ? "throws" : "returns";
+        $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
         $list = [
             ['id' => 1, 'url' => "http://localhost:8000/Feed/Discovery/Feed"],
             ['id' => 2, 'url' => "http://example.com/0"],
             ['id' => 3, 'url' => "http://example.com/3"],
             ['id' => 4, 'url' => "http://example.com/9"],
         ];
-        $this->dbMock->subscriptionAdd->$action($out);
-        $this->dbMock->folderPropertiesGet->with($this->userId, 42)->returns($this->v(['id' => 42]));
-        $this->dbMock->folderPropertiesGet->with($this->userId, 47)->returns($this->v(['id' => 47]));
-        $this->dbMock->folderPropertiesGet->with($this->userId, 2112)->throws(new ExceptionInput("subjectMissing"));
-        $this->dbMock->subscriptionPropertiesSet->with($this->userId, "*")->returns(true);
-        $this->dbMock->subscriptionPropertiesSet->with($this->userId, 4, "~")->throws(new ExceptionInput("idMissing"));
-        $this->dbMock->subscriptionList->with($this->userId)->returns(new Result($this->v($list)));
+        \Phake::when(Arsse::$db)->subscriptionAdd->$action($out);
+        \Phake::when(Arsse::$db)->folderPropertiesGet(self::$userId, 42)->thenReturn(self::v(['id' => 42]));
+        \Phake::when(Arsse::$db)->folderPropertiesGet(self::$userId, 47)->thenReturn(self::v(['id' => 47]));
+        \Phake::when(Arsse::$db)->folderPropertiesGet(self::$userId, 2112)->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(self::$userId, $this->anything())->thenReturn(true);
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(self::$userId, 4, $this->anything())->thenThrow(new ExceptionInput("idMissing"));
+        \Phake::when(Arsse::$db)->subscriptionList(self::$userId)->thenReturn(new Result(self::v($list)));
         $this->assertMessage($exp, $this->req($in));
         if ($data !== null) {
-            $this->dbMock->subscriptionAdd->calledWith(...$data);
+            \Phake::verify(Arsse::$db)->subscriptionAdd(...$data);
         } else {
-            $this->dbMock->subscriptionAdd->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionAdd(\Phake::anyParameters());
         }
-        $this->dbMock->subscriptionPropertiesSet->never()->calledWith($this->userId, 4, ['folder' => 1]);
+        \Phake::verify(Arsse::$db, \Phake::never())->subscriptionPropertiesSet(self::$userId, 4, ['folder' => 1]);
     }
 
-    public function provideFeedSubscriptions(): iterable {
+    public static function provideFeedSubscriptions(): iterable {
         return [
-            [['feed_url' => "http://example.com/0"],                                 [$this->userId, "http://example.com/0", "", ""],                         2,                                         $this->respGood(['code' => 1, 'feed_id' => 2])],
-            [['feed_url' => "http://example.com/1", 'category_id' => 42],            [$this->userId, "http://example.com/1", "", ""],                         new FeedException("unauthorized"),         $this->respGood(['code' => 5, 'message' => (new FeedException("unauthorized"))->getMessage()])],
-            [['feed_url' => "http://example.com/2", 'category_id' => 2112],          null,                                                                    null,                                      $this->respGood(['code' => 1, 'feed_id' => 0])],
-            [['feed_url' => "http://example.com/3"],                                 [$this->userId, "http://example.com/3", "", ""],                         new ExceptionInput("constraintViolation"), $this->respGood(['code' => 0, 'feed_id' => 3])],
-            [['feed_url' => "http://localhost:8000/Feed/Discovery/Valid"],           [$this->userId, "http://localhost:8000/Feed/Discovery/Valid", "", ""],   new ExceptionInput("constraintViolation"), $this->respGood(['code' => 0, 'feed_id' => 1])],
-            [['feed_url' => "http://localhost:8000/Feed/Discovery/Invalid"],         [$this->userId, "http://localhost:8000/Feed/Discovery/Invalid", "", ""], new ExceptionInput("constraintViolation"), $this->respGood(['code' => 3, 'message' => (new FeedException("subscriptionNotFound", ['url' => "http://localhost:8000/Feed/Discovery/Invalid"]))->getMessage()])],
-            [['feed_url' => "http://example.com/6"],                                 [$this->userId, "http://example.com/6", "", ""],                         new FeedException("invalidUrl"),           $this->respGood(['code' => 2, 'message' => (new FeedException("invalidUrl"))->getMessage()])],
-            [['feed_url' => "http://example.com/7"],                                 [$this->userId, "http://example.com/7", "", ""],                         new FeedException("malformedXml"),         $this->respGood(['code' => 6, 'message' => (new FeedException("malformedXml"))->getMessage()])],
-            [['feed_url' => "http://example.com/8", 'category_id' => 47],            [$this->userId, "http://example.com/8", "", ""],                         4,                                         $this->respGood(['code' => 1, 'feed_id' => 4])],
-            [['feed_url' => "http://example.com/9", 'category_id' => 1],             [$this->userId, "http://example.com/9", "", ""],                         new ExceptionInput("constraintViolation"), $this->respGood(['code' => 0, 'feed_id' => 4])],
-            [[],                                                                     null,                                                                    null,                                      $this->respErr("INCORRECT_USAGE")],
-            [['feed_url' => "http://example.com/", 'login' => []],                   null,                                                                    null,                                      $this->respErr("INCORRECT_USAGE")],
-            [['feed_url' => "http://example.com/", 'login' => "", 'password' => []], null,                                                                    null,                                      $this->respErr("INCORRECT_USAGE")],
-            [['feed_url' => "http://example.com/", 'category_id' => -1],             null,                                                                    null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['feed_url' => "http://example.com/0"],                                 [self::$userId, "http://example.com/0", "", ""],                         2,                                         self::respGood(['code' => 1, 'feed_id' => 2])],
+            [['feed_url' => "http://example.com/1", 'category_id' => 42],            [self::$userId, "http://example.com/1", "", ""],                         new FeedException("unauthorized"),         self::respGood(['code' => 5, 'message' => (new FeedException("unauthorized"))->getMessage()])],
+            [['feed_url' => "http://example.com/2", 'category_id' => 2112],          null,                                                                    null,                                      self::respGood(['code' => 1, 'feed_id' => 0])],
+            [['feed_url' => "http://example.com/3"],                                 [self::$userId, "http://example.com/3", "", ""],                         new ExceptionInput("constraintViolation"), self::respGood(['code' => 0, 'feed_id' => 3])],
+            [['feed_url' => "http://localhost:8000/Feed/Discovery/Valid"],           [self::$userId, "http://localhost:8000/Feed/Discovery/Valid", "", ""],   new ExceptionInput("constraintViolation"), self::respGood(['code' => 0, 'feed_id' => 1])],
+            [['feed_url' => "http://localhost:8000/Feed/Discovery/Invalid"],         [self::$userId, "http://localhost:8000/Feed/Discovery/Invalid", "", ""], new ExceptionInput("constraintViolation"), self::respGood(['code' => 3, 'message' => (new FeedException("subscriptionNotFound", ['url' => "http://localhost:8000/Feed/Discovery/Invalid"]))->getMessage()])],
+            [['feed_url' => "http://example.com/6"],                                 [self::$userId, "http://example.com/6", "", ""],                         new FeedException("invalidUrl"),           self::respGood(['code' => 2, 'message' => (new FeedException("invalidUrl"))->getMessage()])],
+            [['feed_url' => "http://example.com/7"],                                 [self::$userId, "http://example.com/7", "", ""],                         new FeedException("malformedXml"),         self::respGood(['code' => 6, 'message' => (new FeedException("malformedXml"))->getMessage()])],
+            [['feed_url' => "http://example.com/8", 'category_id' => 47],            [self::$userId, "http://example.com/8", "", ""],                         4,                                         self::respGood(['code' => 1, 'feed_id' => 4])],
+            [['feed_url' => "http://example.com/9", 'category_id' => 1],             [self::$userId, "http://example.com/9", "", ""],                         new ExceptionInput("constraintViolation"), self::respGood(['code' => 0, 'feed_id' => 4])],
+            [[],                                                                     null,                                                                    null,                                      self::respErr("INCORRECT_USAGE")],
+            [['feed_url' => "http://example.com/", 'login' => []],                   null,                                                                    null,                                      self::respErr("INCORRECT_USAGE")],
+            [['feed_url' => "http://example.com/", 'login' => "", 'password' => []], null,                                                                    null,                                      self::respErr("INCORRECT_USAGE")],
+            [['feed_url' => "http://example.com/", 'category_id' => -1],             null,                                                                    null,                                      self::respErr("INCORRECT_USAGE")],
         ];
     }
 
-    /** @dataProvider provideFeedUnsubscriptions */
+    #[DataProvider("provideFeedUnsubscriptions")]
     public function testRemoveASubscription(array $in, ?array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "unsubscribeFeed", 'sid' => "PriestsOfSyrinx"], $in);
-        $action = ($out instanceof \Exception) ? "throws" : "returns";
-        $this->dbMock->subscriptionRemove->$action($out);
+        $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
+        \Phake::when(Arsse::$db)->subscriptionRemove->$action($out);
         $this->assertMessage($exp, $this->req($in));
         if ($out !== null) {
-            $this->dbMock->subscriptionRemove->calledWith(...$data);
+            \Phake::verify(Arsse::$db)->subscriptionRemove(...$data);
         } else {
-            $this->dbMock->subscriptionRemove->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionRemove(\Phake::anyParameters());
         }
     }
 
-    public function provideFeedUnsubscriptions(): iterable {
+    public static function provideFeedUnsubscriptions(): iterable {
         return [
-            [['feed_id' => 42],   [$this->userId, 42],   true,                                 $this->respGood(['status' => "OK"])],
-            [['feed_id' => 2112], [$this->userId, 2112], new ExceptionInput("subjectMissing"), $this->respErr("FEED_NOT_FOUND")],
-            [['feed_id' => -1],   [$this->userId, -1],   new ExceptionInput("typeViolation"),  $this->respErr("FEED_NOT_FOUND")],
-            [[],                  [$this->userId, 0],    new ExceptionInput("typeViolation"),  $this->respErr("FEED_NOT_FOUND")],
+            [['feed_id' => 42],   [self::$userId, 42],   true,                                 self::respGood(['status' => "OK"])],
+            [['feed_id' => 2112], [self::$userId, 2112], new ExceptionInput("subjectMissing"), self::respErr("FEED_NOT_FOUND")],
+            [['feed_id' => -1],   [self::$userId, -1],   new ExceptionInput("typeViolation"),  self::respErr("FEED_NOT_FOUND")],
+            [[],                  [self::$userId, 0],    new ExceptionInput("typeViolation"),  self::respErr("FEED_NOT_FOUND")],
         ];
     }
 
-    /** @dataProvider provideFeedMoves */
+    #[DataProvider("provideFeedMoves")]
     public function testMoveAFeed(array $in, ?array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "moveFeed", 'sid' => "PriestsOfSyrinx"], $in);
-        $action = ($out instanceof \Exception) ? "throws" : "returns";
-        $this->dbMock->subscriptionPropertiesSet->$action($out);
+        $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet->$action($out);
         $this->assertMessage($exp, $this->req($in));
         if ($out !== null) {
-            $this->dbMock->subscriptionPropertiesSet->calledWith(...$data);
+            \Phake::verify(Arsse::$db)->subscriptionPropertiesSet(...$data);
         } else {
-            $this->dbMock->subscriptionPropertiesSet->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionPropertiesSet(\Phake::anyParameters());
         }
     }
 
-    public function provideFeedMoves(): iterable {
+    public static function provideFeedMoves(): iterable {
         return [
-            [['feed_id' => 42,   'category_id' => 1],  [$this->userId, 42,   ['folder' => 1]],  true,                                      $this->respGood()],
-            [['feed_id' => 2112, 'category_id' => 2],  [$this->userId, 2112, ['folder' => 2]],  new ExceptionInput("subjectMissing"),      $this->respGood()],
-            [['feed_id' => 42,   'category_id' => 0],  [$this->userId, 42,   ['folder' => 0]],  new ExceptionInput("constraintViolation"), $this->respGood()],
-            [['feed_id' => 42,   'category_id' => 47], [$this->userId, 42,   ['folder' => 47]], new ExceptionInput("constraintViolation"), $this->respGood()],
-            [['feed_id' => -1,   'category_id' => 1],  null,                                    null,                                      $this->respErr("INCORRECT_USAGE")],
-            [['feed_id' => 42,   'category_id' => -1], null,                                    null,                                      $this->respErr("INCORRECT_USAGE")],
-            [['feed_id' => 42],                        null,                                    null,                                      $this->respErr("INCORRECT_USAGE")],
-            [['category_id' => -1],                    null,                                    null,                                      $this->respErr("INCORRECT_USAGE")],
-            [[],                                       null,                                    null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['feed_id' => 42,   'category_id' => 1],  [self::$userId, 42,   ['folder' => 1]],  true,                                      self::respGood()],
+            [['feed_id' => 2112, 'category_id' => 2],  [self::$userId, 2112, ['folder' => 2]],  new ExceptionInput("subjectMissing"),      self::respGood()],
+            [['feed_id' => 42,   'category_id' => 0],  [self::$userId, 42,   ['folder' => 0]],  new ExceptionInput("constraintViolation"), self::respGood()],
+            [['feed_id' => 42,   'category_id' => 47], [self::$userId, 42,   ['folder' => 47]], new ExceptionInput("constraintViolation"), self::respGood()],
+            [['feed_id' => -1,   'category_id' => 1],  null,                                    null,                                      self::respErr("INCORRECT_USAGE")],
+            [['feed_id' => 42,   'category_id' => -1], null,                                    null,                                      self::respErr("INCORRECT_USAGE")],
+            [['feed_id' => 42],                        null,                                    null,                                      self::respErr("INCORRECT_USAGE")],
+            [['category_id' => -1],                    null,                                    null,                                      self::respErr("INCORRECT_USAGE")],
+            [[],                                       null,                                    null,                                      self::respErr("INCORRECT_USAGE")],
         ];
     }
 
-    /** @dataProvider provideFeedRenamings */
+    #[DataProvider("provideFeedRenamings")]
     public function testRenameAFeed(array $in, ?array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "renameFeed", 'sid' => "PriestsOfSyrinx"], $in);
-        $action = ($out instanceof \Exception) ? "throws" : "returns";
-        $this->dbMock->subscriptionPropertiesSet->$action($out);
+        $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet->$action($out);
         $this->assertMessage($exp, $this->req($in));
         if ($out !== null) {
-            $this->dbMock->subscriptionPropertiesSet->calledWith(...$data);
+            \Phake::verify(Arsse::$db)->subscriptionPropertiesSet(...$data);
         } else {
-            $this->dbMock->subscriptionPropertiesSet->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionPropertiesSet(\Phake::anyParameters());
         }
     }
 
-    public function provideFeedRenamings(): iterable {
+    public static function provideFeedRenamings(): iterable {
         return [
-            [['feed_id' => 42,   'caption' => "Ook"], [$this->userId, 42,   ['title' => "Ook"]], true,                                      $this->respGood()],
-            [['feed_id' => 2112, 'caption' => "Eek"], [$this->userId, 2112, ['title' => "Eek"]], new ExceptionInput("subjectMissing"),      $this->respGood()],
-            [['feed_id' => 42,   'caption' => "Eek"], [$this->userId, 42,   ['title' => "Eek"]], new ExceptionInput("constraintViolation"), $this->respGood()],
-            [['feed_id' => 42,   'caption' => ""],    null,                                      null,                                      $this->respErr("INCORRECT_USAGE")],
-            [['feed_id' => 42,   'caption' => " "],   null,                                      null,                                      $this->respErr("INCORRECT_USAGE")],
-            [['feed_id' => -1,   'caption' => "Ook"], null,                                      null,                                      $this->respErr("INCORRECT_USAGE")],
-            [['feed_id' => 42],                       null,                                      null,                                      $this->respErr("INCORRECT_USAGE")],
-            [['caption' => "Ook"],                    null,                                      null,                                      $this->respErr("INCORRECT_USAGE")],
-            [[],                                      null,                                      null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['feed_id' => 42,   'caption' => "Ook"], [self::$userId, 42,   ['title' => "Ook"]], true,                                      self::respGood()],
+            [['feed_id' => 2112, 'caption' => "Eek"], [self::$userId, 2112, ['title' => "Eek"]], new ExceptionInput("subjectMissing"),      self::respGood()],
+            [['feed_id' => 42,   'caption' => "Eek"], [self::$userId, 42,   ['title' => "Eek"]], new ExceptionInput("constraintViolation"), self::respGood()],
+            [['feed_id' => 42,   'caption' => ""],    null,                                      null,                                      self::respErr("INCORRECT_USAGE")],
+            [['feed_id' => 42,   'caption' => " "],   null,                                      null,                                      self::respErr("INCORRECT_USAGE")],
+            [['feed_id' => -1,   'caption' => "Ook"], null,                                      null,                                      self::respErr("INCORRECT_USAGE")],
+            [['feed_id' => 42],                       null,                                      null,                                      self::respErr("INCORRECT_USAGE")],
+            [['caption' => "Ook"],                    null,                                      null,                                      self::respErr("INCORRECT_USAGE")],
+            [[],                                      null,                                      null,                                      self::respErr("INCORRECT_USAGE")],
         ];
     }
 
     public function testRetrieveTheGlobalUnreadCount(): void {
         $in = ['op' => "getUnread", 'sid' => "PriestsOfSyrinx"];
-        $this->dbMock->subscriptionList->returns(new Result($this->v([
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v([
             ['id' => 1, 'unread' => 2112],
             ['id' => 2, 'unread' => 42],
             ['id' => 3, 'unread' => 47],
         ])));
-        $exp = $this->respGood(['unread' => (string) (2112 + 42 + 47)]);
+        $exp = self::respGood(['unread' => (string) (2112 + 42 + 47)]);
         $this->assertMessage($exp, $this->req($in));
     }
 
@@ -835,130 +834,130 @@ LONG_STRING;
         $interval = Arsse::$conf->serviceFrequency;
         $valid = (new \DateTimeImmutable("now", new \DateTimezone("UTC")))->sub($interval);
         $invalid = $valid->sub($interval)->sub($interval);
-        $this->dbMock->metaGet->with("service_last_checkin")->returns(Date::transform($valid, "sql"), Date::transform($invalid, "sql"));
-        $this->dbMock->subscriptionCount->with($this->userId)->returns(12, 2);
-        $this->assertMessage($this->respGood(['icons_dir' => "feed-icons", 'icons_url' => "feed-icons", 'daemon_is_running' => true, 'num_feeds' => 12]), $this->req($in));
-        $this->assertMessage($this->respGood(['icons_dir' => "feed-icons", 'icons_url' => "feed-icons", 'daemon_is_running' => false, 'num_feeds' => 2]), $this->req($in));
+        \Phake::when(Arsse::$db)->metaGet("service_last_checkin")->thenReturn(Date::transform($valid, "sql"))->thenReturn(Date::transform($invalid, "sql"));
+        \Phake::when(Arsse::$db)->subscriptionCount(self::$userId)->thenReturn(12)->thenReturn(2);
+        $this->assertMessage(self::respGood(['icons_dir' => "feed-icons", 'icons_url' => "feed-icons", 'daemon_is_running' => true, 'num_feeds' => 12]), $this->req($in));
+        $this->assertMessage(self::respGood(['icons_dir' => "feed-icons", 'icons_url' => "feed-icons", 'daemon_is_running' => false, 'num_feeds' => 2]), $this->req($in));
     }
 
-    /** @dataProvider provideFeedUpdates */
+    #[DataProvider("provideFeedUpdates")]
     public function testUpdateAFeed(array $in, ?array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "updateFeed", 'sid' => "PriestsOfSyrinx"], $in);
-        $action = ($out instanceof \Exception) ? "throws" : "returns";
-        $this->dbMock->subscriptionUpdate->$action($out);
+        $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
+        \Phake::when(Arsse::$db)->subscriptionUpdate->$action($out);
         $this->assertMessage($exp, $this->req($in));
         if ($data !== null) {
-            $this->dbMock->subscriptionUpdate->calledWith(...$data);
+            \Phake::verify(Arsse::$db)->subscriptionUpdate(...$data);
         } else {
-            $this->dbMock->subscriptionUpdate->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionUpdate(\Phake::anyParameters());
         }
     }
 
-    public function provideFeedUpdates(): iterable {
+    public static function provideFeedUpdates(): iterable {
         return [
-            [['feed_id' => 1],  [$this->userId, 1], true,                                 $this->respGood(['status' => "OK"])],
-            [['feed_id' => 2],  [$this->userId, 2], new ExceptionInput("subjectMissing"), $this->respErr("FEED_NOT_FOUND")],
-            [['feed_id' => -1], null,               null,                                 $this->respErr("INCORRECT_USAGE")],
-            [[],                null,               null,                                 $this->respErr("INCORRECT_USAGE")],
+            [['feed_id' => 1],  [self::$userId, 1], true,                                 self::respGood(['status' => "OK"])],
+            [['feed_id' => 2],  [self::$userId, 2], new ExceptionInput("subjectMissing"), self::respErr("FEED_NOT_FOUND")],
+            [['feed_id' => -1], null,               null,                                 self::respErr("INCORRECT_USAGE")],
+            [[],                null,               null,                                 self::respErr("INCORRECT_USAGE")],
         ];
     }
 
-    /** @dataProvider provideLabelAdditions */
+    #[DataProvider("provideLabelAdditions")]
     public function testAddALabel(array $in, ?array $data1, $out1, ?array $data2, $out2, ResponseInterface $exp): void {
         $in = array_merge(['op' => "addLabel", 'sid' => "PriestsOfSyrinx"], $in);
-        $action = ($out1 instanceof \Exception) ? "throws" : "returns";
-        $this->dbMock->labelAdd->$action($out1);
-        $this->dbMock->labelPropertiesGet->returns($out2);
+        $action = ($out1 instanceof \Exception) ? "thenThrow" : "thenReturn";
+        \Phake::when(Arsse::$db)->labelAdd->$action($out1);
+        \Phake::when(Arsse::$db)->labelPropertiesGet->thenReturn($out2);
         $this->assertMessage($exp, $this->req($in));
         if ($out1 !== null) {
-            $this->dbMock->labelAdd->calledWith(...$data1);
+            \Phake::verify(Arsse::$db)->labelAdd(...$data1);
         } else {
-            $this->dbMock->labelAdd->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->labelAdd(\Phake::anyParameters());
         }
         if ($out2 !== null) {
-            $this->dbMock->labelPropertiesGet->calledWith(...$data2);
+            \Phake::verify(Arsse::$db)->labelPropertiesGet(...$data2);
         } else {
-            $this->dbMock->labelPropertiesGet->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->labelPropertiesGet(\Phake::anyParameters());
         }
     }
 
-    public function provideLabelAdditions(): iterable {
+    public static function provideLabelAdditions(): iterable {
         return [
-            [['caption' => "Software"], [$this->userId, ['name' => "Software"]], 2,                                         null,                              null,        $this->respGood(-1026)],
-            [['caption' => "Hardware"], [$this->userId, ['name' => "Hardware"]], 3,                                         null,                              null,        $this->respGood(-1027)],
-            [['caption' => "Software"], [$this->userId, ['name' => "Software"]], new ExceptionInput("constraintViolation"), [$this->userId, "Software", true], ['id' => 2], $this->respGood(-1026)],
-            [['caption' => "Hardware"], [$this->userId, ['name' => "Hardware"]], new ExceptionInput("constraintViolation"), [$this->userId, "Hardware", true], ['id' => 3], $this->respGood(-1027)],
-            [[],                        [$this->userId, ['name' => ""]],         new ExceptionInput("typeViolation"),       null,                              null,        $this->respErr("INCORRECT_USAGE")],
-            [['caption' => ""],         [$this->userId, ['name' => ""]],         new ExceptionInput("typeViolation"),       null,                              null,        $this->respErr("INCORRECT_USAGE")],
-            [['caption' => "   "],      [$this->userId, ['name' => "   "]],      new ExceptionInput("typeViolation"),       null,                              null,        $this->respErr("INCORRECT_USAGE")],
+            [['caption' => "Software"], [self::$userId, ['name' => "Software"]], 2,                                         null,                              null,        self::respGood(-1026)],
+            [['caption' => "Hardware"], [self::$userId, ['name' => "Hardware"]], 3,                                         null,                              null,        self::respGood(-1027)],
+            [['caption' => "Software"], [self::$userId, ['name' => "Software"]], new ExceptionInput("constraintViolation"), [self::$userId, "Software", true], ['id' => 2], self::respGood(-1026)],
+            [['caption' => "Hardware"], [self::$userId, ['name' => "Hardware"]], new ExceptionInput("constraintViolation"), [self::$userId, "Hardware", true], ['id' => 3], self::respGood(-1027)],
+            [[],                        [self::$userId, ['name' => ""]],         new ExceptionInput("typeViolation"),       null,                              null,        self::respErr("INCORRECT_USAGE")],
+            [['caption' => ""],         [self::$userId, ['name' => ""]],         new ExceptionInput("typeViolation"),       null,                              null,        self::respErr("INCORRECT_USAGE")],
+            [['caption' => "   "],      [self::$userId, ['name' => "   "]],      new ExceptionInput("typeViolation"),       null,                              null,        self::respErr("INCORRECT_USAGE")],
         ];
     }
 
-    /** @dataProvider provideLabelRemovals */
+    #[DataProvider("provideLabelRemovals")]
     public function testRemoveALabel(array $in, ?array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "removeLabel", 'sid' => "PriestsOfSyrinx"], $in);
-        $action = ($out instanceof \Exception) ? "throws" : "returns";
-        $this->dbMock->labelRemove->$action($out);
+        $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
+        \Phake::when(Arsse::$db)->labelRemove->$action($out);
         $this->assertMessage($exp, $this->req($in));
         if ($out !== null) {
-            $this->dbMock->labelRemove->calledWith(...$data);
+            \Phake::verify(Arsse::$db)->labelRemove(...$data);
         } else {
-            $this->dbMock->labelRemove->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->labelRemove(\Phake::anyParameters());
         }
     }
 
-    public function provideLabelRemovals(): iterable {
+    public static function provideLabelRemovals(): iterable {
         return [
-            [['label_id' => -1042], [$this->userId, 18],   true,                                 $this->respGood()],
-            [['label_id' => -2112], [$this->userId, 1088], new ExceptionInput("subjectMissing"), $this->respGood()],
-            [['label_id' => 1],     null,                  null,                                 $this->respErr("INCORRECT_USAGE")],
-            [['label_id' => 0],     null,                  null,                                 $this->respErr("INCORRECT_USAGE")],
-            [['label_id' => -10],   null,                  null,                                 $this->respErr("INCORRECT_USAGE")],
-            [[],                    null,                  null,                                 $this->respErr("INCORRECT_USAGE")],
+            [['label_id' => -1042], [self::$userId, 18],   true,                                 self::respGood()],
+            [['label_id' => -2112], [self::$userId, 1088], new ExceptionInput("subjectMissing"), self::respGood()],
+            [['label_id' => 1],     null,                  null,                                 self::respErr("INCORRECT_USAGE")],
+            [['label_id' => 0],     null,                  null,                                 self::respErr("INCORRECT_USAGE")],
+            [['label_id' => -10],   null,                  null,                                 self::respErr("INCORRECT_USAGE")],
+            [[],                    null,                  null,                                 self::respErr("INCORRECT_USAGE")],
         ];
     }
 
-    /** @dataProvider provideLabelRenamings */
+    #[DataProvider("provideLabelRenamings")]
     public function testRenameALabel(array $in, ?array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "renameLabel", 'sid' => "PriestsOfSyrinx"], $in);
-        $action = ($out instanceof \Exception) ? "throws" : "returns";
-        $this->dbMock->labelPropertiesSet->$action($out);
+        $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
+        \Phake::when(Arsse::$db)->labelPropertiesSet->$action($out);
         $this->assertMessage($exp, $this->req($in));
         if ($out !== null) {
-            $this->dbMock->labelPropertiesSet->calledWith(...$data);
+            \Phake::verify(Arsse::$db)->labelPropertiesSet(...$data);
         } else {
-            $this->dbMock->labelPropertiesSet->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->labelPropertiesSet(\Phake::anyParameters());
         }
     }
 
-    public function provideLabelRenamings(): iterable {
+    public static function provideLabelRenamings(): iterable {
         return [
-            [['label_id' => -1042, 'caption' => "Ook"], [$this->userId, 18,   ['name' => "Ook"]], true,                                      $this->respGood()],
-            [['label_id' => -2112, 'caption' => "Eek"], [$this->userId, 1088, ['name' => "Eek"]], new ExceptionInput("subjectMissing"),      $this->respGood()],
-            [['label_id' => -1042, 'caption' => "Eek"], [$this->userId, 18,   ['name' => "Eek"]], new ExceptionInput("constraintViolation"), $this->respGood()],
-            [['label_id' => -1042, 'caption' => ""],    [$this->userId, 18,   ['name' => ""]],    new ExceptionInput("missing"),             $this->respGood()],
-            [['label_id' => -1042, 'caption' => " "],   [$this->userId, 18,   ['name' => " "]],   new ExceptionInput("whitespace"),          $this->respGood()],
-            [['label_id' => -1042],                     [$this->userId, 18,   ['name' => ""]],    new ExceptionInput("missing"),             $this->respGood()],
-            [['label_id' => -1042],                     [$this->userId, 18,   ['name' => ""]],    new ExceptionInput("typeViolation"),       $this->respErr("INCORRECT_USAGE")],
-            [['label_id' => -1,    'caption' => "Ook"], null,                                     null,                                      $this->respErr("INCORRECT_USAGE")],
-            [['caption' => "Ook"],                      null,                                     null,                                      $this->respErr("INCORRECT_USAGE")],
-            [[],                                        null,                                     null,                                      $this->respErr("INCORRECT_USAGE")],
+            [['label_id' => -1042, 'caption' => "Ook"], [self::$userId, 18,   ['name' => "Ook"]], true,                                      self::respGood()],
+            [['label_id' => -2112, 'caption' => "Eek"], [self::$userId, 1088, ['name' => "Eek"]], new ExceptionInput("subjectMissing"),      self::respGood()],
+            [['label_id' => -1042, 'caption' => "Eek"], [self::$userId, 18,   ['name' => "Eek"]], new ExceptionInput("constraintViolation"), self::respGood()],
+            [['label_id' => -1042, 'caption' => ""],    [self::$userId, 18,   ['name' => ""]],    new ExceptionInput("missing"),             self::respGood()],
+            [['label_id' => -1042, 'caption' => " "],   [self::$userId, 18,   ['name' => " "]],   new ExceptionInput("whitespace"),          self::respGood()],
+            [['label_id' => -1042],                     [self::$userId, 18,   ['name' => ""]],    new ExceptionInput("missing"),             self::respGood()],
+            [['label_id' => -1042],                     [self::$userId, 18,   ['name' => ""]],    new ExceptionInput("typeViolation"),       self::respErr("INCORRECT_USAGE")],
+            [['label_id' => -1,    'caption' => "Ook"], null,                                     null,                                      self::respErr("INCORRECT_USAGE")],
+            [['caption' => "Ook"],                      null,                                     null,                                      self::respErr("INCORRECT_USAGE")],
+            [[],                                        null,                                     null,                                      self::respErr("INCORRECT_USAGE")],
         ];
     }
 
-    /** @dataProvider provideCategoryListings */
+    #[DataProvider("provideCategoryListings")]
     public function testRetrieveCategoryLists(array $in, ResponseInterface $exp): void {
         $in = array_merge(['op' => "getCategories", 'sid' => "PriestsOfSyrinx"], $in);
-        $this->dbMock->folderList->with("~", null, true)->returns(new Result($this->v($this->folders)));
-        $this->dbMock->folderList->with("~", null, false)->returns(new Result($this->v($this->topFolders)));
-        $this->dbMock->subscriptionList->returns(new Result($this->v($this->subscriptions)));
-        $this->dbMock->labelList->returns(new Result($this->v($this->labels)));
-        $this->dbMock->articleCount->with("~", $this->equalTo((new Context)->hidden(false)->unread(true)->modifiedRange(Date::sub("PT24H", self::NOW), null)))->returns(7);
-        $this->dbMock->articleStarred->returns($this->v($this->starred));
+        \Phake::when(Arsse::$db)->folderList($this->anything(), null, true)->thenReturn(new Result(self::v($this->folders)));
+        \Phake::when(Arsse::$db)->folderList($this->anything(), null, false)->thenReturn(new Result(self::v($this->topFolders)));
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v($this->subscriptions)));
+        \Phake::when(Arsse::$db)->labelList->thenReturn(new Result(self::v($this->labels)));
+        \Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->hidden(false)->unread(true)->modifiedRange(Date::sub("PT24H", self::NOW), null)))->thenReturn(7);
+        \Phake::when(Arsse::$db)->articleStarred->thenReturn(self::v($this->starred));
         $this->assertMessage($exp, $this->req($in));
     }
 
-    public function provideCategoryListings(): iterable {
+    public static function provideCategoryListings(): iterable {
         $exp = [
             [
                 ['id' => "5", 'title' => "Local",         'unread' => 10, 'order_id' => 1],
@@ -1012,22 +1011,22 @@ LONG_STRING;
             ],
         ];
         return [
-            [['include_empty' => true],                          $this->respGood($exp[0])],
-            [[],                                                 $this->respGood($exp[1])],
-            [['unread_only' => true],                            $this->respGood($exp[2])],
-            [['enable_nested' => true, 'include_empty' => true], $this->respGood($exp[3])],
-            [['enable_nested' => true],                          $this->respGood($exp[4])],
-            [['enable_nested' => true, 'unread_only' => true],   $this->respGood($exp[5])],
+            [['include_empty' => true],                          self::respGood($exp[0])],
+            [[],                                                 self::respGood($exp[1])],
+            [['unread_only' => true],                            self::respGood($exp[2])],
+            [['enable_nested' => true, 'include_empty' => true], self::respGood($exp[3])],
+            [['enable_nested' => true],                          self::respGood($exp[4])],
+            [['enable_nested' => true, 'unread_only' => true],   self::respGood($exp[5])],
         ];
     }
 
     public function testRetrieveCounterList(): void {
         $in = ['op' => "getCounters", 'sid' => "PriestsOfSyrinx"];
-        $this->dbMock->folderList->returns(new Result($this->v($this->folders)));
-        $this->dbMock->subscriptionList->returns(new Result($this->v($this->subscriptions)));
-        $this->dbMock->labelList->with("~", false)->returns(new Result($this->v($this->usedLabels)));
-        $this->dbMock->articleCount->returns(7);
-        $this->dbMock->articleStarred->returns($this->v($this->starred));
+        \Phake::when(Arsse::$db)->folderList->thenReturn(new Result(self::v($this->folders)));
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v($this->subscriptions)));
+        \Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result(self::v($this->usedLabels)));
+        \Phake::when(Arsse::$db)->articleCount->thenReturn(7);
+        \Phake::when(Arsse::$db)->articleStarred->thenReturn(self::v($this->starred));
         $exp = [
             ['id' => "global-unread", 'counter' => 35],
             ['id' => "subscribed-feeds", 'counter' => 6],
@@ -1053,22 +1052,22 @@ LONG_STRING;
             ['id' => 0, 'kind' => "cat", 'counter' => 0],
             ['id' => -2, 'kind' => "cat", 'counter' => 6],
         ];
-        $this->assertMessage($this->respGood($exp), $this->req($in));
-        $this->dbMock->articleCount->calledWith($this->userId, $this->equalTo((new Context)->hidden(false)->unread(true)->modifiedRange(Date::sub("PT24H", self::NOW), null)));
+        $this->assertMessage(self::respGood($exp), $this->req($in));
+        \Phake::verify(Arsse::$db)->articleCount(self::$userId, $this->equalTo((new Context)->hidden(false)->unread(true)->modifiedRange(Date::sub("PT24H", self::NOW), null)));
     }
 
-    /** @dataProvider provideLabelListings */
+    #[DataProvider("provideLabelListings")]
     public function testRetrieveTheLabelList(array $in, ResponseInterface $exp): void {
         $in = array_merge(['op' => "getLabels", 'sid' => "PriestsOfSyrinx"], $in);
-        $this->dbMock->labelList->returns(new Result($this->v($this->labels)));
-        $this->dbMock->articleLabelsGet->with("~", 1)->returns($this->v([1,3]));
-        $this->dbMock->articleLabelsGet->with("~", 2)->returns($this->v([3]));
-        $this->dbMock->articleLabelsGet->with("~", 3)->returns([]);
-        $this->dbMock->articleLabelsGet->with("~", 4)->throws(new ExceptionInput("idMissing"));
+        \Phake::when(Arsse::$db)->labelList->thenReturn(new Result(self::v($this->labels)));
+        \Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 1)->thenReturn(self::v([1,3]));
+        \Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 2)->thenReturn(self::v([3]));
+        \Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 3)->thenReturn([]);
+        \Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 4)->thenThrow(new ExceptionInput("idMissing"));
         $this->assertMessage($exp, $this->req($in));
     }
 
-    public function provideLabelListings(): iterable {
+    public static function provideLabelListings(): iterable {
         $exp = [
             [
                 ['id' => -1027, 'caption' => "Fascinating", 'fg_color' => "", 'bg_color' => "", 'checked' => false],
@@ -1097,37 +1096,37 @@ LONG_STRING;
             ],
         ];
         return [
-            [[],                  $this->respGood($exp[0])],
-            [['article_id' => 1], $this->respGood($exp[1])],
-            [['article_id' => 2], $this->respGood($exp[2])],
-            [['article_id' => 3], $this->respGood($exp[3])],
-            [['article_id' => 4], $this->respGood($exp[4])],
+            [[],                  self::respGood($exp[0])],
+            [['article_id' => 1], self::respGood($exp[1])],
+            [['article_id' => 2], self::respGood($exp[2])],
+            [['article_id' => 3], self::respGood($exp[3])],
+            [['article_id' => 4], self::respGood($exp[4])],
         ];
     }
 
-    public function provideLabelAssignments(): iterable {
+    public static function provideLabelAssignments(): iterable {
         $ids = implode(",", range(1, 100));
         return [
-            [['label_id' => -2112, 'article_ids' => $ids],                   1088, Database::ASSOC_REMOVE, $this->respGood(['status' => "OK", 'updated' => 89])],
-            [['label_id' => -2112, 'article_ids' => $ids, 'assign' => true], 1088, Database::ASSOC_ADD,    $this->respGood(['status' => "OK", 'updated' => 7])],
-            [['label_id' => -2112],                                          null, null,                   $this->respGood(['status' => "OK", 'updated' => 0])],
-            [['label_id' => -42],                                            null, null,                   $this->respErr("INCORRECT_USAGE")],
-            [['label_id' => 42],                                             null, null,                   $this->respErr("INCORRECT_USAGE")],
-            [['label_id' => 0],                                              null, null,                   $this->respErr("INCORRECT_USAGE")],
-            [[],                                                             null, null,                   $this->respErr("INCORRECT_USAGE")],
+            [['label_id' => -2112, 'article_ids' => $ids],                   1088, Database::ASSOC_REMOVE, self::respGood(['status' => "OK", 'updated' => 89])],
+            [['label_id' => -2112, 'article_ids' => $ids, 'assign' => true], 1088, Database::ASSOC_ADD,    self::respGood(['status' => "OK", 'updated' => 7])],
+            [['label_id' => -2112],                                          null, null,                   self::respGood(['status' => "OK", 'updated' => 0])],
+            [['label_id' => -42],                                            null, null,                   self::respErr("INCORRECT_USAGE")],
+            [['label_id' => 42],                                             null, null,                   self::respErr("INCORRECT_USAGE")],
+            [['label_id' => 0],                                              null, null,                   self::respErr("INCORRECT_USAGE")],
+            [[],                                                             null, null,                   self::respErr("INCORRECT_USAGE")],
         ];
     }
 
-    /** @dataProvider provideLabelAssignments */
+    #[DataProvider("provideLabelAssignments")]
     public function testAssignArticlesToALabel(array $in, ?int $label, ?int $operation, ResponseInterface $exp): void {
         $in = array_merge(['op' => "setArticleLabel", 'sid' => "PriestsOfSyrinx"], $in);
-        $this->dbMock->labelArticlesSet->with($this->userId, "~", "~", Database::ASSOC_REMOVE)->returns(42)->returns(47);
-        $this->dbMock->labelArticlesSet->with($this->userId, "~", "~", Database::ASSOC_ADD)->returns(5)->returns(2);
-        $this->dbMock->labelArticlesSet->with($this->userId, "~", $this->equalTo((new Context)->articles([])), "~")->throws(new ExceptionInput("tooShort"));
+        \Phake::when(Arsse::$db)->labelArticlesSet(self::$userId, $this->anything(), $this->anything(), Database::ASSOC_REMOVE)->thenReturn(42)->thenReturn(47);
+        \Phake::when(Arsse::$db)->labelArticlesSet(self::$userId, $this->anything(), $this->anything(), Database::ASSOC_ADD)->thenReturn(5)->thenReturn(2);
+        \Phake::when(Arsse::$db)->labelArticlesSet(self::$userId, $this->anything(), $this->equalTo((new Context)->articles([])), $this->anything())->thenThrow(new ExceptionInput("tooShort"));
         $this->assertMessage($exp, $this->req($in));
         if ($label !== null) {
-            $this->dbMock->labelArticlesSet->calledWith($this->userId, $label, $this->equalTo((new Context)->articles(range(1, 50))), $operation);
-            $this->dbMock->labelArticlesSet->calledWith($this->userId, $label, $this->equalTo((new Context)->articles(range(51, 100))), $operation);
+            \Phake::verify(Arsse::$db)->labelArticlesSet(self::$userId, $label, $this->equalTo((new Context)->articles(range(1, 50))), $operation);
+            \Phake::verify(Arsse::$db)->labelArticlesSet(self::$userId, $label, $this->equalTo((new Context)->articles(range(51, 100))), $operation);
         }
     }
 
@@ -1136,36 +1135,36 @@ LONG_STRING;
             ['op' => "getFeedTree", 'sid' => "PriestsOfSyrinx", 'include_empty' => true],
             ['op' => "getFeedTree", 'sid' => "PriestsOfSyrinx"],
         ];
-        $this->dbMock->folderList->with("~", null, true)->returns(new Result($this->v($this->folders)));
-        $this->dbMock->subscriptionList->returns(new Result($this->v($this->subscriptions)));
-        $this->dbMock->labelList->with("~", true)->returns(new Result($this->v($this->labels)));
-        $this->dbMock->articleCount->returns(7);
-        $this->dbMock->articleStarred->returns($this->v($this->starred));
+        \Phake::when(Arsse::$db)->folderList($this->anything(), null, true)->thenReturn(new Result(self::v($this->folders)));
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v($this->subscriptions)));
+        \Phake::when(Arsse::$db)->labelList($this->anything(), true)->thenReturn(new Result(self::v($this->labels)));
+        \Phake::when(Arsse::$db)->articleCount->thenReturn(7);
+        \Phake::when(Arsse::$db)->articleStarred->thenReturn(self::v($this->starred));
         // the expectations are packed tightly since they're very verbose; one can use var_export() (or convert to JSON) to pretty-print them
         $exp = ['categories' => ['identifier' => 'id','label' => 'name','items' => [['name' => 'Special','id' => 'CAT:-1','bare_id' => -1,'type' => 'category','unread' => 0,'items' => [['name' => 'All articles','id' => 'FEED:-4','bare_id' => -4,'icon' => 'images/folder.png','unread' => 35,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Fresh articles','id' => 'FEED:-3','bare_id' => -3,'icon' => 'images/fresh.png','unread' => 7,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Starred articles','id' => 'FEED:-1','bare_id' => -1,'icon' => 'images/star.png','unread' => 4,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Published articles','id' => 'FEED:-2','bare_id' => -2,'icon' => 'images/feed.png','unread' => 0,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Archived articles','id' => 'FEED:0','bare_id' => 0,'icon' => 'images/archive.png','unread' => 0,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Recently read','id' => 'FEED:-6','bare_id' => -6,'icon' => 'images/time.png','unread' => 0,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => '']]],['name' => 'Labels','id' => 'CAT:-2','bare_id' => -2,'type' => 'category','unread' => 6,'items' => [['name' => 'Fascinating','id' => 'FEED:-1027','bare_id' => -1027,'unread' => 0,'icon' => 'images/label.png','type' => 'feed','auxcounter' => 0,'error' => '','updated' => '','fg_color' => '','bg_color' => ''],['name' => 'Interesting','id' => 'FEED:-1029','bare_id' => -1029,'unread' => 0,'icon' => 'images/label.png','type' => 'feed','auxcounter' => 0,'error' => '','updated' => '','fg_color' => '','bg_color' => ''],['name' => 'Logical','id' => 'FEED:-1025','bare_id' => -1025,'unread' => 0,'icon' => 'images/label.png','type' => 'feed','auxcounter' => 0,'error' => '','updated' => '','fg_color' => '','bg_color' => '']]],['name' => 'Photography','id' => 'CAT:4','bare_id' => 4,'parent_id' => null,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(0 feeds)','items' => []],['name' => 'Politics','id' => 'CAT:3','bare_id' => 3,'parent_id' => null,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(3 feeds)','items' => [['name' => 'Local','id' => 'CAT:5','bare_id' => 5,'parent_id' => 3,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(1 feed)','items' => [['name' => 'Toronto Star','id' => 'FEED:2','bare_id' => 2,'icon' => 'feed-icons/2.ico','error' => 'oops','param' => '2011-11-11T11:11:11Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]],['name' => 'National','id' => 'CAT:6','bare_id' => 6,'parent_id' => 3,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(2 feeds)','items' => [['name' => 'CBC News','id' => 'FEED:4','bare_id' => 4,'icon' => 'feed-icons/4.ico','error' => '','param' => '2017-10-09T15:58:34Z','unread' => 0,'auxcounter' => 0,'checkbox' => false],['name' => 'Ottawa Citizen','id' => 'FEED:5','bare_id' => 5,'icon' => false,'error' => '','param' => '2017-07-07T17:07:17Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]]]],['name' => 'Science','id' => 'CAT:1','bare_id' => 1,'parent_id' => null,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(2 feeds)','items' => [['name' => 'Rocketry','id' => 'CAT:2','bare_id' => 2,'parent_id' => 1,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(1 feed)','items' => [['name' => 'NASA JPL','id' => 'FEED:1','bare_id' => 1,'icon' => false,'error' => '','param' => '2017-09-15T22:54:16Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]],['name' => 'Ars Technica','id' => 'FEED:3','bare_id' => 3,'icon' => 'feed-icons/3.ico','error' => 'argh','param' => '2016-05-23T06:40:02Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]],['name' => 'Uncategorized','id' => 'CAT:0','bare_id' => 0,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'parent_id' => null,'param' => '(1 feed)','items' => [['name' => 'Eurogamer','id' => 'FEED:6','bare_id' => 6,'icon' => 'feed-icons/6.ico','error' => '','param' => '2010-02-12T20:08:47Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]]]]];
-        $this->assertMessage($this->respGood($exp), $this->req($in[0]));
+        $this->assertMessage(self::respGood($exp), $this->req($in[0]));
         $exp = ['categories' => ['identifier' => 'id','label' => 'name','items' => [['name' => 'Special','id' => 'CAT:-1','bare_id' => -1,'type' => 'category','unread' => 0,'items' => [['name' => 'All articles','id' => 'FEED:-4','bare_id' => -4,'icon' => 'images/folder.png','unread' => 35,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Fresh articles','id' => 'FEED:-3','bare_id' => -3,'icon' => 'images/fresh.png','unread' => 7,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Starred articles','id' => 'FEED:-1','bare_id' => -1,'icon' => 'images/star.png','unread' => 4,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Published articles','id' => 'FEED:-2','bare_id' => -2,'icon' => 'images/feed.png','unread' => 0,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Archived articles','id' => 'FEED:0','bare_id' => 0,'icon' => 'images/archive.png','unread' => 0,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => ''],['name' => 'Recently read','id' => 'FEED:-6','bare_id' => -6,'icon' => 'images/time.png','unread' => 0,'type' => 'feed','auxcounter' => 0,'error' => '','updated' => '']]],['name' => 'Labels','id' => 'CAT:-2','bare_id' => -2,'type' => 'category','unread' => 6,'items' => [['name' => 'Fascinating','id' => 'FEED:-1027','bare_id' => -1027,'unread' => 0,'icon' => 'images/label.png','type' => 'feed','auxcounter' => 0,'error' => '','updated' => '','fg_color' => '','bg_color' => ''],['name' => 'Interesting','id' => 'FEED:-1029','bare_id' => -1029,'unread' => 0,'icon' => 'images/label.png','type' => 'feed','auxcounter' => 0,'error' => '','updated' => '','fg_color' => '','bg_color' => ''],['name' => 'Logical','id' => 'FEED:-1025','bare_id' => -1025,'unread' => 0,'icon' => 'images/label.png','type' => 'feed','auxcounter' => 0,'error' => '','updated' => '','fg_color' => '','bg_color' => '']]],['name' => 'Politics','id' => 'CAT:3','bare_id' => 3,'parent_id' => null,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(3 feeds)','items' => [['name' => 'Local','id' => 'CAT:5','bare_id' => 5,'parent_id' => 3,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(1 feed)','items' => [['name' => 'Toronto Star','id' => 'FEED:2','bare_id' => 2,'icon' => 'feed-icons/2.ico','error' => 'oops','param' => '2011-11-11T11:11:11Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]],['name' => 'National','id' => 'CAT:6','bare_id' => 6,'parent_id' => 3,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(2 feeds)','items' => [['name' => 'CBC News','id' => 'FEED:4','bare_id' => 4,'icon' => 'feed-icons/4.ico','error' => '','param' => '2017-10-09T15:58:34Z','unread' => 0,'auxcounter' => 0,'checkbox' => false],['name' => 'Ottawa Citizen','id' => 'FEED:5','bare_id' => 5,'icon' => false,'error' => '','param' => '2017-07-07T17:07:17Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]]]],['name' => 'Science','id' => 'CAT:1','bare_id' => 1,'parent_id' => null,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(2 feeds)','items' => [['name' => 'Rocketry','id' => 'CAT:2','bare_id' => 2,'parent_id' => 1,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'param' => '(1 feed)','items' => [['name' => 'NASA JPL','id' => 'FEED:1','bare_id' => 1,'icon' => false,'error' => '','param' => '2017-09-15T22:54:16Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]],['name' => 'Ars Technica','id' => 'FEED:3','bare_id' => 3,'icon' => 'feed-icons/3.ico','error' => 'argh','param' => '2016-05-23T06:40:02Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]],['name' => 'Uncategorized','id' => 'CAT:0','bare_id' => 0,'type' => 'category','auxcounter' => 0,'unread' => 0,'child_unread' => 0,'checkbox' => false,'parent_id' => null,'param' => '(1 feed)','items' => [['name' => 'Eurogamer','id' => 'FEED:6','bare_id' => 6,'icon' => 'feed-icons/6.ico','error' => '','param' => '2010-02-12T20:08:47Z','unread' => 0,'auxcounter' => 0,'checkbox' => false]]]]]];
-        $this->assertMessage($this->respGood($exp), $this->req($in[1]));
-        $this->dbMock->articleCount->twice()->calledWith($this->userId, $this->equalTo((new Context)->hidden(false)->unread(true)->modifiedRange(Date::sub("PT24H", self::NOW), null)));
+        $this->assertMessage(self::respGood($exp), $this->req($in[1]));
+        \Phake::verify(Arsse::$db, \Phake::times(2))->articleCount(self::$userId, $this->equalTo((new Context)->hidden(false)->unread(true)->modifiedRange(Date::sub("PT24H", self::NOW), null)));
     }
 
-    /** @dataProvider provideMassMarkings */
+    #[DataProvider("provideMassMarkings")]
     public function testMarkFeedsAsRead(array $in, ?Context $c): void {
         $base = ['op' => "catchupFeed", 'sid' => "PriestsOfSyrinx"];
         $in = array_merge($base, $in);
-        $this->dbMock->articleMark->throws(new ExceptionInput("typeViolation"));
+        \Phake::when(Arsse::$db)->articleMark->thenThrow(new ExceptionInput("typeViolation"));
         // create a mock-current time
-        $this->objMock->get->with(\DateTimeImmutable::class)->returns(new \DateTimeImmutable(self::NOW));
+        \Phake::when(Arsse::$obj)->get(\DateTimeImmutable::class)->thenReturn(new \DateTimeImmutable(self::NOW));
         // TT-RSS always responds the same regardless of success or failure
-        $this->assertMessage($this->respGood(['status' => "OK"]), $this->req($in));
+        $this->assertMessage(self::respGood(['status' => "OK"]), $this->req($in));
         if (isset($c)) {
-            $this->dbMock->articleMark->calledWith($this->userId, ['read' => true], $this->equalTo($c));
+            \Phake::verify(Arsse::$db)->articleMark(self::$userId, ['read' => true], $this->equalTo($c));
         } else {
-            $this->dbMock->articleMark->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->articleMark(\Phake::anyParameters());
         }
     }
 
-    public function provideMassMarkings(): iterable {
+    public static function provideMassMarkings(): iterable {
         $c = (new Context)->hidden(false);
         return [
             [[],                                                     null],
@@ -1191,45 +1190,45 @@ LONG_STRING;
         ];
     }
 
-    /** @dataProvider provideFeedListings */
+    #[DataProvider("provideFeedListings")]
     public function testRetrieveFeedList(array $in, ResponseInterface $exp): void {
         $in = array_merge(['op' => "getFeeds", 'sid' => "PriestsOfSyrinx"], $in);
         // statistical mocks
-        $this->dbMock->articleStarred->returns($this->v($this->starred));
-        $this->dbMock->articleCount->with("~", $this->equalTo((new Context)->unread(true)->hidden(false)->modifiedRange(Date::sub("PT24H", self::NOW), null)))->returns(7);
-        $this->dbMock->articleCount->with("~", $this->equalTo((new Context)->unread(true)->hidden(false)))->returns(35);
+        \Phake::when(Arsse::$db)->articleStarred->thenReturn(self::v($this->starred));
+        \Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->unread(true)->hidden(false)->modifiedRange(Date::sub("PT24H", self::NOW), null)))->thenReturn(7);
+        \Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->unread(true)->hidden(false)))->thenReturn(35);
         // label mocks
-        $this->dbMock->labelList->returns(new Result($this->v($this->labels)));
-        $this->dbMock->labelList->with("~", false)->returns(new Result($this->v($this->usedLabels)));
+        \Phake::when(Arsse::$db)->labelList->thenReturn(new Result(self::v($this->labels)));
+        \Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result(self::v($this->usedLabels)));
         // subscription and folder list and unread count mocks
-        $this->dbMock->folderList->throws(new ExceptionInput("subjectMissing"));
-        $this->dbMock->subscriptionList->throws(new ExceptionInput("subjectMissing"));
-        $this->dbMock->folderList->with("~")->returns(new Result($this->v($this->folders)));
-        $this->dbMock->subscriptionList->with("~", null, true)->returns(new Result($this->v($this->subscriptions)));
-        $this->dbMock->subscriptionList->with("~", null, false)->returns(new Result($this->v($this->filterSubs(null))));
-        $this->dbMock->folderList->with("~", null)->returns(new Result($this->v($this->folders)));
-        $this->dbMock->folderList->with("~", null, false)->returns(new Result($this->v($this->filterFolders(null))));
+        \Phake::when(Arsse::$db)->folderList->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->subscriptionList->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->folderList($this->anything())->thenReturn(new Result(self::v($this->folders)));
+        \Phake::when(Arsse::$db)->subscriptionList($this->anything(), null, true)->thenReturn(new Result(self::v($this->subscriptions)));
+        \Phake::when(Arsse::$db)->subscriptionList($this->anything(), null, false)->thenReturn(new Result(self::v($this->filterSubs(null))));
+        \Phake::when(Arsse::$db)->folderList($this->anything(), null)->thenReturn(new Result(self::v($this->folders)));
+        \Phake::when(Arsse::$db)->folderList($this->anything(), null, false)->thenReturn(new Result(self::v($this->filterFolders(null))));
         foreach ($this->folders as $f) {
-            $this->dbMock->folderList->with("~", $f['id'], false)->returns(new Result($this->v($this->filterFolders($f['id']))));
-            $this->dbMock->articleCount->with("~", $this->equalTo((new Context)->unread(true)->hidden(false)->folder($f['id'])))->returns($this->reduceFolders($f['id']));
-            $this->dbMock->subscriptionList->with("~", $f['id'], false)->returns(new Result($this->v($this->filterSubs($f['id']))));
+            \Phake::when(Arsse::$db)->folderList($this->anything(), $f['id'], false)->thenReturn(new Result(self::v($this->filterFolders($f['id']))));
+            \Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->unread(true)->hidden(false)->folder($f['id'])))->thenReturn($this->reduceFolders($f['id']));
+            \Phake::when(Arsse::$db)->subscriptionList($this->anything(), $f['id'], false)->thenReturn(new Result(self::v($this->filterSubs($f['id']))));
         }
         $this->assertMessage($exp, $this->req($in));
     }
 
-    protected function filterFolders(int $id = null): array {
+    protected function filterFolders(?int $id = null): array {
         return array_filter($this->folders, function($value) use ($id) {
             return $value['parent'] == $id;
         });
     }
 
-    protected function filterSubs(int $folder = null): array {
+    protected function filterSubs(?int $folder = null): array {
         return array_filter($this->subscriptions, function($value) use ($folder) {
             return $value['folder'] == $folder;
         });
     }
 
-    protected function reduceFolders(int $id = null): int {
+    protected function reduceFolders(?int $id = null): int {
         $out = 0;
         foreach ($this->filterFolders($id) as $f) {
             $out += $this->reduceFolders($f['id']);
@@ -1242,7 +1241,7 @@ LONG_STRING;
         return $out;
     }
 
-    public function provideFeedListings(): iterable {
+    public static function provideFeedListings(): iterable {
         $exp = [
             [
                 ['id' => 6, 'title' => 'Eurogamer', 'unread' => 0, 'cat_id' => 0, 'feed_url' => " http://example.com/6", 'has_icon' => true, 'last_updated' => 1266005327, 'order_id' => 1],
@@ -1328,93 +1327,93 @@ LONG_STRING;
             ],
         ];
         return [
-            [[],                                           $this->respGood($exp[0])],
-            [['cat_id' => -1],                             $this->respGood($exp[1])],
-            [['cat_id' => -1, 'unread_only' => true],      $this->respGood($exp[2])],
-            [['cat_id' => -2],                             $this->respGood($exp[3])],
-            [['cat_id' => -2, 'unread_only' => true],      $this->respGood($exp[4])],
-            [['cat_id' => -3],                             $this->respGood($exp[5])],
-            [['cat_id' => -3, 'unread_only' => true],      $this->respGood($exp[6])],
-            [['cat_id' => -4],                             $this->respGood($exp[7])],
-            [['cat_id' => -4, 'unread_only' => true],      $this->respGood($exp[8])],
-            [['cat_id' => 6],                              $this->respGood($exp[9])],
-            [['cat_id' => 6, 'limit' => 1],                $this->respGood($exp[10])],
-            [['cat_id' => 6, 'limit' => 1, 'offset' => 1], $this->respGood($exp[11])],
-            [['cat_id' => 1],                              $this->respGood($exp[12])],
-            [['cat_id' => 1, 'include_nested' => true],    $this->respGood($exp[13])],
-            [['cat_id' => 0, 'unread_only' => true],       $this->respGood([])],
-            [['cat_id' => 2112],                           $this->respGood([])],
-            [['cat_id' => 2112, 'include_nested' => true], $this->respGood([])],
-            [['cat_id' => 6, 'limit' => -42],              $this->respGood([])],
-            [['cat_id' => 6, 'offset' => 2],               $this->respGood([])],
+            [[],                                           self::respGood($exp[0])],
+            [['cat_id' => -1],                             self::respGood($exp[1])],
+            [['cat_id' => -1, 'unread_only' => true],      self::respGood($exp[2])],
+            [['cat_id' => -2],                             self::respGood($exp[3])],
+            [['cat_id' => -2, 'unread_only' => true],      self::respGood($exp[4])],
+            [['cat_id' => -3],                             self::respGood($exp[5])],
+            [['cat_id' => -3, 'unread_only' => true],      self::respGood($exp[6])],
+            [['cat_id' => -4],                             self::respGood($exp[7])],
+            [['cat_id' => -4, 'unread_only' => true],      self::respGood($exp[8])],
+            [['cat_id' => 6],                              self::respGood($exp[9])],
+            [['cat_id' => 6, 'limit' => 1],                self::respGood($exp[10])],
+            [['cat_id' => 6, 'limit' => 1, 'offset' => 1], self::respGood($exp[11])],
+            [['cat_id' => 1],                              self::respGood($exp[12])],
+            [['cat_id' => 1, 'include_nested' => true],    self::respGood($exp[13])],
+            [['cat_id' => 0, 'unread_only' => true],       self::respGood([])],
+            [['cat_id' => 2112],                           self::respGood([])],
+            [['cat_id' => 2112, 'include_nested' => true], self::respGood([])],
+            [['cat_id' => 6, 'limit' => -42],              self::respGood([])],
+            [['cat_id' => 6, 'offset' => 2],               self::respGood([])],
         ];
     }
 
-    /** @dataProvider provideArticleChanges */
+    #[DataProvider("provideArticleChanges")]
     public function testChangeArticles(array $in, ResponseInterface $exp): void {
         $in = array_merge(['op' => "updateArticle", 'sid' => "PriestsOfSyrinx"], $in);
-        $this->dbMock->articleMark->returns(1);
-        $this->dbMock->articleMark->with($this->userId, ['starred' => false], $this->equalTo((new Context)->articles([42, 2112])))->returns(2);
-        $this->dbMock->articleMark->with($this->userId, ['starred' =>  true], $this->equalTo((new Context)->articles([42, 2112])))->returns(4);
-        $this->dbMock->articleMark->with($this->userId, ['starred' => false], $this->equalTo((new Context)->articles([42])))->returns(8);
-        $this->dbMock->articleMark->with($this->userId, ['starred' =>  true], $this->equalTo((new Context)->articles([2112])))->returns(16);
-        $this->dbMock->articleMark->with($this->userId, ['read'    =>  true], $this->equalTo((new Context)->articles([42, 2112])))->returns(32); // false is read for TT-RSS
-        $this->dbMock->articleMark->with($this->userId, ['read'    => false], $this->equalTo((new Context)->articles([42, 2112])))->returns(64);
-        $this->dbMock->articleMark->with($this->userId, ['read'    =>  true], $this->equalTo((new Context)->articles([42])))->returns(128);
-        $this->dbMock->articleMark->with($this->userId, ['read'    => false], $this->equalTo((new Context)->articles([2112])))->returns(256);
-        $this->dbMock->articleMark->with($this->userId, ['note'    =>    ""], $this->equalTo((new Context)->articles([42, 2112])))->returns(512);
-        $this->dbMock->articleMark->with($this->userId, ['note'    =>  "eh"], $this->equalTo((new Context)->articles([42, 2112])))->returns(1024);
-        $this->dbMock->articleList->with($this->userId, $this->equalTo((new Context)->articles([42, 2112])->starred(true)), "~")->returns(new Result($this->v([['id' => 42]])));
-        $this->dbMock->articleList->with($this->userId, $this->equalTo((new Context)->articles([42, 2112])->starred(false)), "~")->returns(new Result($this->v([['id' => 2112]])));
-        $this->dbMock->articleList->with($this->userId, $this->equalTo((new Context)->articles([42, 2112])->unread(true)), "~")->returns(new Result($this->v([['id' => 42]])));
-        $this->dbMock->articleList->with($this->userId, $this->equalTo((new Context)->articles([42, 2112])->unread(false)), "~")->returns(new Result($this->v([['id' => 2112]])));
+        \Phake::when(Arsse::$db)->articleMark->thenReturn(1);
+        \Phake::when(Arsse::$db)->articleMark(self::$userId, ['starred' => false], $this->equalTo((new Context)->articles([42, 2112])))->thenReturn(2);
+        \Phake::when(Arsse::$db)->articleMark(self::$userId, ['starred' =>  true], $this->equalTo((new Context)->articles([42, 2112])))->thenReturn(4);
+        \Phake::when(Arsse::$db)->articleMark(self::$userId, ['starred' => false], $this->equalTo((new Context)->articles([42])))->thenReturn(8);
+        \Phake::when(Arsse::$db)->articleMark(self::$userId, ['starred' =>  true], $this->equalTo((new Context)->articles([2112])))->thenReturn(16);
+        \Phake::when(Arsse::$db)->articleMark(self::$userId, ['read'    =>  true], $this->equalTo((new Context)->articles([42, 2112])))->thenReturn(32); // false is read for TT-RSS
+        \Phake::when(Arsse::$db)->articleMark(self::$userId, ['read'    => false], $this->equalTo((new Context)->articles([42, 2112])))->thenReturn(64);
+        \Phake::when(Arsse::$db)->articleMark(self::$userId, ['read'    =>  true], $this->equalTo((new Context)->articles([42])))->thenReturn(128);
+        \Phake::when(Arsse::$db)->articleMark(self::$userId, ['read'    => false], $this->equalTo((new Context)->articles([2112])))->thenReturn(256);
+        \Phake::when(Arsse::$db)->articleMark(self::$userId, ['note'    =>    ""], $this->equalTo((new Context)->articles([42, 2112])))->thenReturn(512);
+        \Phake::when(Arsse::$db)->articleMark(self::$userId, ['note'    =>  "eh"], $this->equalTo((new Context)->articles([42, 2112])))->thenReturn(1024);
+        \Phake::when(Arsse::$db)->articleList(self::$userId, $this->equalTo((new Context)->articles([42, 2112])->starred(true)), $this->anything())->thenReturn(new Result(self::v([['id' => 42]])));
+        \Phake::when(Arsse::$db)->articleList(self::$userId, $this->equalTo((new Context)->articles([42, 2112])->starred(false)), $this->anything())->thenReturn(new Result(self::v([['id' => 2112]])));
+        \Phake::when(Arsse::$db)->articleList(self::$userId, $this->equalTo((new Context)->articles([42, 2112])->unread(true)), $this->anything())->thenReturn(new Result(self::v([['id' => 42]])));
+        \Phake::when(Arsse::$db)->articleList(self::$userId, $this->equalTo((new Context)->articles([42, 2112])->unread(false)), $this->anything())->thenReturn(new Result(self::v([['id' => 2112]])));
         $this->assertMessage($exp, $this->req($in));
     }
 
-    public function provideArticleChanges(): iterable {
+    public static function provideArticleChanges(): iterable {
         return [
-            [[],                                                              $this->respErr("INCORRECT_USAGE")],
-            [['article_ids' => "42, 2112, -1"],                               $this->respGood(['status' => "OK", 'updated' => 2])],
-            [['article_ids' => "42, 2112, -1", 'field' => 0],                 $this->respGood(['status' => "OK", 'updated' => 2])],
-            [['article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 0],    $this->respGood(['status' => "OK", 'updated' => 2])],
-            [['article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 1],    $this->respGood(['status' => "OK", 'updated' => 4])],
-            [['article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 2],    $this->respGood(['status' => "OK", 'updated' => 24])],
-            [['article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 3],    $this->respErr("INCORRECT_USAGE")],
-            [['article_ids' => "42, 2112, -1", 'field' => 1],                 $this->respGood(['status' => "OK", 'updated' => 0])],
-            [['article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 0],    $this->respGood(['status' => "OK", 'updated' => 0])],
-            [['article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 1],    $this->respGood(['status' => "OK", 'updated' => 0])],
-            [['article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 2],    $this->respGood(['status' => "OK", 'updated' => 0])],
-            [['article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 3],    $this->respErr("INCORRECT_USAGE")],
-            [['article_ids' => "42, 2112, -1", 'field' => 2],                 $this->respGood(['status' => "OK", 'updated' => 32])],
-            [['article_ids' => "42, 2112, -1", 'field' => 2, 'mode' => 0],    $this->respGood(['status' => "OK", 'updated' => 32])],
-            [['article_ids' => "42, 2112, -1", 'field' => 2, 'mode' => 1],    $this->respGood(['status' => "OK", 'updated' => 64])],
-            [['article_ids' => "42, 2112, -1", 'field' => 2, 'mode' => 2],    $this->respGood(['status' => "OK", 'updated' => 384])],
-            [['article_ids' => "42, 2112, -1", 'field' => 2, 'mode' => 3],    $this->respErr("INCORRECT_USAGE")],
-            [['article_ids' => "42, 2112, -1", 'field' => 3],                 $this->respGood(['status' => "OK", 'updated' => 512])],
-            [['article_ids' => "42, 2112, -1", 'field' => 3, 'mode' => 0],    $this->respGood(['status' => "OK", 'updated' => 512])],
-            [['article_ids' => "42, 2112, -1", 'field' => 3, 'mode' => 1],    $this->respGood(['status' => "OK", 'updated' => 512])],
-            [['article_ids' => "42, 2112, -1", 'field' => 3, 'mode' => 2],    $this->respGood(['status' => "OK", 'updated' => 512])],
-            [['article_ids' => "42, 2112, -1", 'field' => 3, 'mode' => 3],    $this->respGood(['status' => "OK", 'updated' => 512])],
-            [['article_ids' => "42, 2112, -1", 'field' => 3, 'data' => "eh"], $this->respGood(['status' => "OK", 'updated' => 1024])],
-            [['article_ids' => "42, 2112, -1", 'field' => 4],                 $this->respErr("INCORRECT_USAGE")],
-            [['article_ids' => "0, -1",        'field' => 3],                 $this->respErr("INCORRECT_USAGE")],
+            [[],                                                              self::respErr("INCORRECT_USAGE")],
+            [['article_ids' => "42, 2112, -1"],                               self::respGood(['status' => "OK", 'updated' => 2])],
+            [['article_ids' => "42, 2112, -1", 'field' => 0],                 self::respGood(['status' => "OK", 'updated' => 2])],
+            [['article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 0],    self::respGood(['status' => "OK", 'updated' => 2])],
+            [['article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 1],    self::respGood(['status' => "OK", 'updated' => 4])],
+            [['article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 2],    self::respGood(['status' => "OK", 'updated' => 24])],
+            [['article_ids' => "42, 2112, -1", 'field' => 0, 'mode' => 3],    self::respErr("INCORRECT_USAGE")],
+            [['article_ids' => "42, 2112, -1", 'field' => 1],                 self::respGood(['status' => "OK", 'updated' => 0])],
+            [['article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 0],    self::respGood(['status' => "OK", 'updated' => 0])],
+            [['article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 1],    self::respGood(['status' => "OK", 'updated' => 0])],
+            [['article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 2],    self::respGood(['status' => "OK", 'updated' => 0])],
+            [['article_ids' => "42, 2112, -1", 'field' => 1, 'mode' => 3],    self::respErr("INCORRECT_USAGE")],
+            [['article_ids' => "42, 2112, -1", 'field' => 2],                 self::respGood(['status' => "OK", 'updated' => 32])],
+            [['article_ids' => "42, 2112, -1", 'field' => 2, 'mode' => 0],    self::respGood(['status' => "OK", 'updated' => 32])],
+            [['article_ids' => "42, 2112, -1", 'field' => 2, 'mode' => 1],    self::respGood(['status' => "OK", 'updated' => 64])],
+            [['article_ids' => "42, 2112, -1", 'field' => 2, 'mode' => 2],    self::respGood(['status' => "OK", 'updated' => 384])],
+            [['article_ids' => "42, 2112, -1", 'field' => 2, 'mode' => 3],    self::respErr("INCORRECT_USAGE")],
+            [['article_ids' => "42, 2112, -1", 'field' => 3],                 self::respGood(['status' => "OK", 'updated' => 512])],
+            [['article_ids' => "42, 2112, -1", 'field' => 3, 'mode' => 0],    self::respGood(['status' => "OK", 'updated' => 512])],
+            [['article_ids' => "42, 2112, -1", 'field' => 3, 'mode' => 1],    self::respGood(['status' => "OK", 'updated' => 512])],
+            [['article_ids' => "42, 2112, -1", 'field' => 3, 'mode' => 2],    self::respGood(['status' => "OK", 'updated' => 512])],
+            [['article_ids' => "42, 2112, -1", 'field' => 3, 'mode' => 3],    self::respGood(['status' => "OK", 'updated' => 512])],
+            [['article_ids' => "42, 2112, -1", 'field' => 3, 'data' => "eh"], self::respGood(['status' => "OK", 'updated' => 1024])],
+            [['article_ids' => "42, 2112, -1", 'field' => 4],                 self::respErr("INCORRECT_USAGE")],
+            [['article_ids' => "0, -1",        'field' => 3],                 self::respErr("INCORRECT_USAGE")],
         ];
     }
 
-    /** @dataProvider provideArticleListings */
+    #[DataProvider("provideArticleListings")]
     public function testListArticles(array $in, ResponseInterface $exp): void {
         $in = array_merge(['op' => "getArticle", 'sid' => "PriestsOfSyrinx"], $in);
-        $this->dbMock->labelList->with("~")->returns(new Result($this->v($this->labels)));
-        $this->dbMock->labelList->with("~", false)->returns(new Result($this->v($this->usedLabels)));
-        $this->dbMock->articleLabelsGet->with("~", 101)->returns([]);
-        $this->dbMock->articleLabelsGet->with("~", 102)->returns($this->v([1,3]));
-        $this->dbMock->articleList->with("~", $this->equalTo((new Context)->articles([101, 102])), "~")->returns(new Result($this->v($this->articles)));
-        $this->dbMock->articleList->with("~", $this->equalTo((new Context)->articles([101])), "~")->returns(new Result($this->v([$this->articles[0]])));
-        $this->dbMock->articleList->with("~", $this->equalTo((new Context)->articles([102])), "~")->returns(new Result($this->v([$this->articles[1]])));
+        \Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result(self::v($this->labels)));
+        \Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result(self::v($this->usedLabels)));
+        \Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 101)->thenReturn([]);
+        \Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 102)->thenReturn(self::v([1,3]));
+        \Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((new Context)->articles([101, 102])), $this->anything())->thenReturn(new Result(self::v($this->articles)));
+        \Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((new Context)->articles([101])), $this->anything())->thenReturn(new Result(self::v([$this->articles[0]])));
+        \Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((new Context)->articles([102])), $this->anything())->thenReturn(new Result(self::v([$this->articles[1]])));
         $this->assertMessage($exp, $this->req($in));
     }
 
-    public function provideArticleListings(): iterable {
+    public static function provideArticleListings(): iterable {
         $exp = [
             [
                 'id'          => "101",
@@ -1472,30 +1471,30 @@ LONG_STRING;
             ],
         ];
         return [
-            [[],                          $this->respErr("INCORRECT_USAGE")],
-            [['article_id' => 0],         $this->respErr("INCORRECT_USAGE")],
-            [['article_id' => -1],        $this->respErr("INCORRECT_USAGE")],
-            [['article_id' => "0,-1"],    $this->respErr("INCORRECT_USAGE")],
-            [['article_id' => "101,102"], $this->respGood($exp)],
-            [['article_id' => "101"],     $this->respGood([$exp[0]])],
-            [['article_id' => "102"],     $this->respGood([$exp[1]])],
+            [[],                          self::respErr("INCORRECT_USAGE")],
+            [['article_id' => 0],         self::respErr("INCORRECT_USAGE")],
+            [['article_id' => -1],        self::respErr("INCORRECT_USAGE")],
+            [['article_id' => "0,-1"],    self::respErr("INCORRECT_USAGE")],
+            [['article_id' => "101,102"], self::respGood($exp)],
+            [['article_id' => "101"],     self::respGood([$exp[0]])],
+            [['article_id' => "102"],     self::respGood([$exp[1]])],
         ];
     }
 
-    /** @dataProvider provideArticleListingsWithoutLabels */
+    #[DataProvider("provideArticleListingsWithoutLabels")]
     public function testListArticlesWithoutLabels(array $in, ResponseInterface $exp): void {
         $in = array_merge(['op' => "getArticle", 'sid' => "PriestsOfSyrinx"], $in);
-        $this->dbMock->labelList->with("~")->returns(new Result([]));
-        $this->dbMock->labelList->with("~", false)->returns(new Result([]));
-        $this->dbMock->articleLabelsGet->with("~", 101)->returns([]);
-        $this->dbMock->articleLabelsGet->with("~", 102)->returns($this->v([1,3]));
-        $this->dbMock->articleList->with("~", $this->equalTo((new Context)->articles([101, 102])), "~")->returns(new Result($this->v($this->articles)));
-        $this->dbMock->articleList->with("~", $this->equalTo((new Context)->articles([101])), "~")->returns(new Result($this->v([$this->articles[0]])));
-        $this->dbMock->articleList->with("~", $this->equalTo((new Context)->articles([102])), "~")->returns(new Result($this->v([$this->articles[1]])));
+        \Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 101)->thenReturn([]);
+        \Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 102)->thenReturn(self::v([1,3]));
+        \Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((new Context)->articles([101, 102])), $this->anything())->thenReturn(new Result(self::v($this->articles)));
+        \Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((new Context)->articles([101])), $this->anything())->thenReturn(new Result(self::v([$this->articles[0]])));
+        \Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((new Context)->articles([102])), $this->anything())->thenReturn(new Result(self::v([$this->articles[1]])));
         $this->assertMessage($exp, $this->req($in));
     }
 
-    public function provideArticleListingsWithoutLabels(): iterable {
+    public static function provideArticleListingsWithoutLabels(): iterable {
         $exp = [
             [
                 'id'          => "101",
@@ -1550,64 +1549,64 @@ LONG_STRING;
             ],
         ];
         return [
-            [[],                          $this->respErr("INCORRECT_USAGE")],
-            [['article_id' => 0],         $this->respErr("INCORRECT_USAGE")],
-            [['article_id' => -1],        $this->respErr("INCORRECT_USAGE")],
-            [['article_id' => "0,-1"],    $this->respErr("INCORRECT_USAGE")],
-            [['article_id' => "101,102"], $this->respGood($exp)],
-            [['article_id' => "101"],     $this->respGood([$exp[0]])],
-            [['article_id' => "102"],     $this->respGood([$exp[1]])],
+            [[],                          self::respErr("INCORRECT_USAGE")],
+            [['article_id' => 0],         self::respErr("INCORRECT_USAGE")],
+            [['article_id' => -1],        self::respErr("INCORRECT_USAGE")],
+            [['article_id' => "0,-1"],    self::respErr("INCORRECT_USAGE")],
+            [['article_id' => "101,102"], self::respGood($exp)],
+            [['article_id' => "101"],     self::respGood([$exp[0]])],
+            [['article_id' => "102"],     self::respGood([$exp[1]])],
         ];
     }
 
-    /** @dataProvider provideHeadlines */
+    #[DataProvider("provideHeadlines")]
     public function testRetrieveHeadlines(bool $full, array $in, $out, Context $c, array $fields, array $order, ResponseInterface $exp): void {
         $base = ['op' => $full ? "getHeadlines" : "getCompactHeadlines", 'sid' => "PriestsOfSyrinx"];
         $in = array_merge($base, $in);
-        $action = ($out instanceof \Exception) ? "throws" : "returns";
-        $this->objMock->get->with(\DateTimeImmutable::class)->returns(new \DateTimeImmutable(self::NOW));
-        $this->dbMock->labelList->returns(new Result($this->v($this->labels)));
-        $this->dbMock->labelList->with("~", false)->returns(new Result($this->v($this->usedLabels)));
-        $this->dbMock->articleLabelsGet->returns([]);
-        $this->dbMock->articleLabelsGet->with("~", 2112)->returns($this->v([1,3]));
-        $this->dbMock->articleCategoriesGet->returns([]);
-        $this->dbMock->articleCategoriesGet->with("~", 2112)->returns(["Boring","Illogical"]);
-        $this->dbMock->articleCount->returns(2);
-        $this->dbMock->articleList->$action($out);
+        $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
+        \Phake::when(Arsse::$obj)->get(\DateTimeImmutable::class)->thenReturn(new \DateTimeImmutable(self::NOW));
+        \Phake::when(Arsse::$db)->labelList->thenReturn(new Result(self::v($this->labels)));
+        \Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result(self::v($this->usedLabels)));
+        \Phake::when(Arsse::$db)->articleLabelsGet->thenReturn([]);
+        \Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 2112)->thenReturn(self::v([1,3]));
+        \Phake::when(Arsse::$db)->articleCategoriesGet->thenReturn([]);
+        \Phake::when(Arsse::$db)->articleCategoriesGet($this->anything(), 2112)->thenReturn(["Boring","Illogical"]);
+        \Phake::when(Arsse::$db)->articleCount->thenReturn(2);
+        \Phake::when(Arsse::$db)->articleList->$action($out);
         $this->assertMessage($exp, $this->req($in));
         if ($out) {
-            $this->dbMock->articleList->calledWith($this->userId, $this->equalTo($c), $fields, $order);
+            \Phake::verify(Arsse::$db)->articleList(self::$userId, $this->equalTo($c), $fields, $order);
         } else {
-            $this->dbMock->articleList->never()->called();
+            \Phake::verify(Arsse::$db, \Phake::never())->articleList(\Phake::anyParameters());
         }
     }
 
-    public function provideHeadlines(): iterable {
+    public static function provideHeadlines(): iterable {
         $t = Date::normalize(self::NOW);
         $c = (new Context)->hidden(false)->limit(200);
-        $out = $this->generateHeadlines(47);
+        $out = self::generateHeadlines(47);
         $gone = new ExceptionInput("idMissing");
-        $comp = new Result($this->v([['id' => 47], ['id' => 2112]]));
-        $expFull = $this->outputHeadlines(47);
-        $expComp = $this->respGood([['id' => 47], ['id' => 2112]]);
+        $comp = new Result(self::v([['id' => 47], ['id' => 2112]]));
+        $expFull = self::outputHeadlines(47);
+        $expComp = self::respGood([['id' => 47], ['id' => 2112]]);
         $fields = ["id", "guid", "title", "author", "url", "unread", "starred", "edited_date", "published_date", "subscription", "subscription_title", "note"];
         $sort = ["edited_date desc"];
         return [
-            [true,  [],                                                                     null,  $c,                                                                                                [],      [],                   $this->respErr("INCORRECT_USAGE")],
-            [true,  ['feed_id' => 0],                                                       null,  $c,                                                                                                [],      [],                   $this->respGood([])],
+            [true,  [],                                                                     null,  $c,                                                                                                [],      [],                   self::respErr("INCORRECT_USAGE")],
+            [true,  ['feed_id' => 0],                                                       null,  $c,                                                                                                [],      [],                   self::respGood([])],
             [true,  ['feed_id' => -1],                                                      $out,  (clone $c)->starred(true),                                                                         $fields, ["marked_date desc"], $expFull],
-            [true,  ['feed_id' => -2],                                                      null,  $c,                                                                                                [],      [],                   $this->respGood([])],
+            [true,  ['feed_id' => -2],                                                      null,  $c,                                                                                                [],      [],                   self::respGood([])],
             [true,  ['feed_id' => -4],                                                      $out,  $c,                                                                                                $fields, $sort,                $expFull],
-            [true,  ['feed_id' => 2112],                                                    $gone, (clone $c)->subscription(2112),                                                                    $fields, $sort,                $this->respGood([])],
+            [true,  ['feed_id' => 2112],                                                    $gone, (clone $c)->subscription(2112),                                                                    $fields, $sort,                self::respGood([])],
             [true,  ['feed_id' => -2112],                                                   $out,  (clone $c)->label(1088),                                                                           $fields, $sort,                $expFull],
             [true,  ['feed_id' => -4, 'view_mode' => "adaptive"],                           $out,  (clone $c)->unread(true),                                                                          $fields, $sort,                $expFull],
-            [true,  ['feed_id' => -4, 'view_mode' => "published"],                          null,  $c,                                                                                                [],      [],                   $this->respGood([])],
+            [true,  ['feed_id' => -4, 'view_mode' => "published"],                          null,  $c,                                                                                                [],      [],                   self::respGood([])],
             [true,  ['feed_id' => -2112, 'view_mode' => "adaptive"],                        $out,  (clone $c)->label(1088)->unread(true),                                                             $fields, $sort,                $expFull],
             [true,  ['feed_id' => -2112, 'view_mode' => "unread"],                          $out,  (clone $c)->label(1088)->unread(true),                                                             $fields, $sort,                $expFull],
             [true,  ['feed_id' => 42, 'view_mode' => "marked"],                             $out,  (clone $c)->subscription(42)->starred(true),                                                       $fields, $sort,                $expFull],
             [true,  ['feed_id' => 42, 'view_mode' => "has_note"],                           $out,  (clone $c)->subscription(42)->annotated(true),                                                     $fields, $sort,                $expFull],
-            [true,  ['feed_id' => 42, 'view_mode' => "unread", 'search' => "unread:false"], null,  $c,                                                                                                [],      [],                   $this->respGood([])],
-            [true,  ['feed_id' => 42, 'search' => "pub:true"],                              null,  $c,                                                                                                [],      [],                   $this->respGood([])],
+            [true,  ['feed_id' => 42, 'view_mode' => "unread", 'search' => "unread:false"], null,  $c,                                                                                                [],      [],                   self::respGood([])],
+            [true,  ['feed_id' => 42, 'search' => "pub:true"],                              null,  $c,                                                                                                [],      [],                   self::respGood([])],
             [true,  ['feed_id' => -4, 'limit' => 5],                                        $out,  (clone $c)->limit(5),                                                                              $fields, $sort,                $expFull],
             [true,  ['feed_id' => -4, 'skip' => 2],                                         $out,  (clone $c)->offset(2),                                                                             $fields, $sort,                $expFull],
             [true,  ['feed_id' => -4, 'limit' => 5, 'skip' => 2],                           $out,  (clone $c)->limit(5)->offset(2),                                                                   $fields, $sort,                $expFull],
@@ -1615,7 +1614,7 @@ LONG_STRING;
             [true,  ['feed_id' => -3, 'is_cat' => true],                                    $out,  $c,                                                                                                $fields, $sort,                $expFull],
             [true,  ['feed_id' => -4, 'is_cat' => true],                                    $out,  $c,                                                                                                $fields, $sort,                $expFull],
             [true,  ['feed_id' => -2, 'is_cat' => true],                                    $out,  (clone $c)->labelled(true),                                                                        $fields, $sort,                $expFull],
-            [true,  ['feed_id' => -1, 'is_cat' => true],                                    null,  $c,                                                                                                [],      [],                   $this->respGood([])],
+            [true,  ['feed_id' => -1, 'is_cat' => true],                                    null,  $c,                                                                                                [],      [],                   self::respGood([])],
             [true,  ['feed_id' => 0, 'is_cat' => true],                                     $out,  (clone $c)->folderShallow(0),                                                                      $fields, $sort,                $expFull],
             [true,  ['feed_id' => 0, 'is_cat' => true, 'include_nested' => true],           $out,  (clone $c)->folderShallow(0),                                                                      $fields, $sort,                $expFull],
             [true,  ['feed_id' => 42, 'is_cat' => true],                                    $out,  (clone $c)->folderShallow(42),                                                                     $fields, $sort,                $expFull],
@@ -1624,18 +1623,18 @@ LONG_STRING;
             [true,  ['feed_id' => -4, 'order_by' => "date_reverse"],                        $out,  $c,                                                                                                $fields, ["edited_date"],      $expFull],
             [true,  ['feed_id' => 42, 'search' => "interesting"],                           $out,  (clone $c)->subscription(42)->searchTerms(["interesting"]),                                        $fields, $sort,                $expFull],
             [true,  ['feed_id' => -6],                                                      $out,  (clone $c)->unread(false)->markedRange(Date::sub("PT24H", $t), null),                              $fields, ["marked_date desc"], $expFull],
-            [true,  ['feed_id' => -6, 'view_mode' => "unread"],                             null,  $c,                                                                                                $fields, $sort,                $this->respGood([])],
+            [true,  ['feed_id' => -6, 'view_mode' => "unread"],                             null,  $c,                                                                                                $fields, $sort,                self::respGood([])],
             [true,  ['feed_id' => -3],                                                      $out,  (clone $c)->unread(true)->modifiedRange(Date::sub("PT24H", $t), null),                             $fields, $sort,                $expFull],
             [true,  ['feed_id' => -3, 'view_mode' => "marked"],                             $out,  (clone $c)->unread(true)->starred(true)->modifiedRange(Date::sub("PT24H", $t), null),              $fields, $sort,                $expFull],
-            [false, [],                                                                     null,  (clone $c)->limit(null),                                                                           [],      [],                   $this->respErr("INCORRECT_USAGE")],
-            [false, ['feed_id' => 0],                                                       null,  (clone $c)->limit(null),                                                                           [],      [],                   $this->respGood([])],
+            [false, [],                                                                     null,  (clone $c)->limit(null),                                                                           [],      [],                   self::respErr("INCORRECT_USAGE")],
+            [false, ['feed_id' => 0],                                                       null,  (clone $c)->limit(null),                                                                           [],      [],                   self::respGood([])],
             [false, ['feed_id' => -1],                                                      $comp, (clone $c)->limit(null)->starred(true),                                                            ["id"],  ["marked_date desc"], $expComp],
-            [false, ['feed_id' => -2],                                                      null,  (clone $c)->limit(null),                                                                           [],      [],                   $this->respGood([])],
+            [false, ['feed_id' => -2],                                                      null,  (clone $c)->limit(null),                                                                           [],      [],                   self::respGood([])],
             [false, ['feed_id' => -4],                                                      $comp, (clone $c)->limit(null),                                                                           ["id"],  $sort,                $expComp],
-            [false, ['feed_id' => 2112],                                                    $gone, (clone $c)->limit(null)->subscription(2112),                                                       ["id"],  $sort,                $this->respGood([])],
+            [false, ['feed_id' => 2112],                                                    $gone, (clone $c)->limit(null)->subscription(2112),                                                       ["id"],  $sort,                self::respGood([])],
             [false, ['feed_id' => -2112],                                                   $comp, (clone $c)->limit(null)->label(1088),                                                              ["id"],  $sort,                $expComp],
             [false, ['feed_id' => -4, 'view_mode' => "adaptive"],                           $comp, (clone $c)->limit(null)->unread(true),                                                             ["id"],  $sort,                $expComp],
-            [false, ['feed_id' => -4, 'view_mode' => "published"],                          null,  (clone $c)->limit(null),                                                                           [],      [],                   $this->respGood([])],
+            [false, ['feed_id' => -4, 'view_mode' => "published"],                          null,  (clone $c)->limit(null),                                                                           [],      [],                   self::respGood([])],
             [false, ['feed_id' => -2112, 'view_mode' => "adaptive"],                        $comp, (clone $c)->limit(null)->label(1088)->unread(true),                                                ["id"],  $sort,                $expComp],
             [false, ['feed_id' => -2112, 'view_mode' => "unread"],                          $comp, (clone $c)->limit(null)->label(1088)->unread(true),                                                ["id"],  $sort,                $expComp],
             [false, ['feed_id' => 42, 'view_mode' => "marked"],                             $comp, (clone $c)->limit(null)->subscription(42)->starred(true),                                          ["id"],  $sort,                $expComp],
@@ -1645,7 +1644,7 @@ LONG_STRING;
             [false, ['feed_id' => -4, 'limit' => 5, 'skip' => 2],                           $comp, (clone $c)->limit(5)->offset(2),                                                                   ["id"],  $sort,                $expComp],
             [false, ['feed_id' => -4, 'since_id' => 47],                                    $comp, (clone $c)->limit(null)->articleRange(48, null),                                                   ["id"],  $sort,                $expComp],
             [false, ['feed_id' => -6],                                                      $comp, (clone $c)->limit(null)->unread(false)->markedRange(Date::sub("PT24H", $t), null),                 ["id"],  ["marked_date desc"], $expComp],
-            [false, ['feed_id' => -6, 'view_mode' => "unread"],                             null,  (clone $c)->limit(null),                                                                           ["id"],  $sort,                $this->respGood([])],
+            [false, ['feed_id' => -6, 'view_mode' => "unread"],                             null,  (clone $c)->limit(null),                                                                           ["id"],  $sort,                self::respGood([])],
             [false, ['feed_id' => -3],                                                      $comp, (clone $c)->limit(null)->unread(true)->modifiedRange(Date::sub("PT24H", $t), null),                ["id"],  $sort,                $expComp],
             [false, ['feed_id' => -3, 'view_mode' => "marked"],                             $comp, (clone $c)->limit(null)->unread(true)->starred(true)->modifiedRange(Date::sub("PT24H", $t), null), ["id"],  $sort,                $expComp],
         ];
@@ -1666,23 +1665,23 @@ LONG_STRING;
             ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => 42, 'skip' => 47, 'include_header' => true, 'order_by' => "date_reverse"],
             ['op' => "getHeadlines", 'sid' => "PriestsOfSyrinx", 'feed_id' => -4, 'show_excerpt' => true],
         ];
-        $this->dbMock->labelList->with("~")->returns(new Result($this->v($this->labels)));
-        $this->dbMock->labelList->with("~", false)->returns(new Result($this->v($this->usedLabels)));
-        $this->dbMock->articleLabelsGet->returns([]);
-        $this->dbMock->articleLabelsGet->with("~", 2112)->returns($this->v([1,3]));
-        $this->dbMock->articleCategoriesGet->returns([]);
-        $this->dbMock->articleCategoriesGet->with("~", 2112)->returns(["Boring","Illogical"]);
-        $this->dbMock->articleList->returns($this->generateHeadlines(1));
-        $this->dbMock->articleCount->returns(0);
-        $this->dbMock->articleCount->with("~", $this->equalTo((new Context)->unread(true)->hidden(false)))->returns(1);
+        \Phake::when(Arsse::$db)->labelList($this->anything())->thenReturn(new Result(self::v($this->labels)));
+        \Phake::when(Arsse::$db)->labelList($this->anything(), false)->thenReturn(new Result(self::v($this->usedLabels)));
+        \Phake::when(Arsse::$db)->articleLabelsGet->thenReturn([]);
+        \Phake::when(Arsse::$db)->articleLabelsGet($this->anything(), 2112)->thenReturn(self::v([1,3]));
+        \Phake::when(Arsse::$db)->articleCategoriesGet->thenReturn([]);
+        \Phake::when(Arsse::$db)->articleCategoriesGet($this->anything(), 2112)->thenReturn(["Boring","Illogical"]);
+        \Phake::when(Arsse::$db)->articleList->thenReturn(self::generateHeadlines(1));
+        \Phake::when(Arsse::$db)->articleCount->thenReturn(0);
+        \Phake::when(Arsse::$db)->articleCount($this->anything(), $this->equalTo((new Context)->unread(true)->hidden(false)))->thenReturn(1);
         // sanity check; this makes sure extra fields are not included in default situations
         $test = $this->req($in[0]);
-        $this->assertMessage($this->outputHeadlines(1), $test);
+        $this->assertMessage(self::outputHeadlines(1), $test);
         // test 'show_content'
         $test = $this->req($in[1]);
         $this->assertArrayHasKey("content", $this->extractMessageJson($test)['content'][0]);
         $this->assertArrayHasKey("content", $this->extractMessageJson($test)['content'][1]);
-        foreach ($this->generateHeadlines(1) as $key => $row) {
+        foreach (self::generateHeadlines(1) as $key => $row) {
             $this->assertSame($row['content'], $this->extractMessageJson($test)['content'][$key]['content']);
         }
         // test 'include_attachments'
@@ -1705,53 +1704,53 @@ LONG_STRING;
         $this->assertSame($exp, $this->extractMessageJson($test)['content'][1]['attachments']);
         // test 'include_header'
         $test = $this->req($in[3]);
-        $exp = $this->respGood([
+        $exp = self::respGood([
             ['id' => -4, 'is_cat' => false, 'first_id' => 1],
-            $this->extractMessageJson($this->outputHeadlines(1))['content'],
+            $this->extractMessageJson(self::outputHeadlines(1))['content'],
         ]);
         $this->assertMessage($exp, $test);
         // test 'include_header' with a category
         $test = $this->req($in[4]);
-        $exp = $this->respGood([
+        $exp = self::respGood([
             ['id' => -3, 'is_cat' => true, 'first_id' => 1],
-            $this->extractMessageJson($this->outputHeadlines(1))['content'],
+            $this->extractMessageJson(self::outputHeadlines(1))['content'],
         ]);
         $this->assertMessage($exp, $test);
         // test 'include_header' with an empty result
         $test = $this->req($in[5]);
-        $exp = $this->respGood([
+        $exp = self::respGood([
             ['id' => -1, 'is_cat' => true, 'first_id' => 0],
             [],
         ]);
         $this->assertMessage($exp, $test);
         // test 'include_header' with an erroneous result
-        $this->dbMock->articleList->with("~", $this->equalTo((new Context)->limit(200)->subscription(2112)->hidden(false)), "~", ["edited_date desc"])->throws(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((new Context)->limit(200)->subscription(2112)->hidden(false)), $this->anything(), ["edited_date desc"])->thenThrow(new ExceptionInput("subjectMissing"));
         $test = $this->req($in[6]);
-        $exp = $this->respGood([
+        $exp = self::respGood([
             ['id' => 2112, 'is_cat' => false, 'first_id' => 0],
             [],
         ]);
         $this->assertMessage($exp, $test);
         // test 'include_header' with ascending order
         $test = $this->req($in[7]);
-        $exp = $this->respGood([
+        $exp = self::respGood([
             ['id' => -4, 'is_cat' => false, 'first_id' => 0],
-            $this->extractMessageJson($this->outputHeadlines(1))['content'],
+            $this->extractMessageJson(self::outputHeadlines(1))['content'],
         ]);
         $this->assertMessage($exp, $test);
         // test 'include_header' with skip
-        $this->dbMock->articleList->with("~", $this->equalTo((new Context)->limit(1)->subscription(42)->hidden(false)), "~", ["edited_date desc"])->returns($this->generateHeadlines(1867));
+        \Phake::when(Arsse::$db)->articleList($this->anything(), $this->equalTo((new Context)->limit(1)->subscription(42)->hidden(false)), $this->anything(), ["edited_date desc"])->thenReturn(self::generateHeadlines(1867));
         $test = $this->req($in[8]);
-        $exp = $this->respGood([
+        $exp = self::respGood([
             ['id' => 42, 'is_cat' => false, 'first_id' => 1867],
-            $this->extractMessageJson($this->outputHeadlines(1))['content'],
+            $this->extractMessageJson(self::outputHeadlines(1))['content'],
         ]);
         $this->assertMessage($exp, $test);
         // test 'include_header' with skip and ascending order
         $test = $this->req($in[9]);
-        $exp = $this->respGood([
+        $exp = self::respGood([
             ['id' => 42, 'is_cat' => false, 'first_id' => 0],
-            $this->extractMessageJson($this->outputHeadlines(1))['content'],
+            $this->extractMessageJson(self::outputHeadlines(1))['content'],
         ]);
         $this->assertMessage($exp, $test);
         // test 'show_excerpt'
@@ -1764,8 +1763,8 @@ LONG_STRING;
         $this->assertSame($exp2, $this->extractMessageJson($test)['content'][1]['excerpt']);
     }
 
-    protected function generateHeadlines(int $id): Result {
-        return new Result($this->v([
+    protected static function generateHeadlines(int $id): Result {
+        return new Result(self::v([
             [
                 'id'                 => $id,
                 'url'                => 'http://example.com/1',
@@ -1792,7 +1791,7 @@ LONG_STRING;
                 'title'              => 'Article title 2',
                 'subscription_title' => "Feed 11",
                 'author'             => 'J. King',
-                'content'            => $this->richContent,
+                'content'            => self::$richContent,
                 'guid'               => '5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7',
                 'published_date'     => '2000-01-02 00:00:00',
                 'edited_date'        => '2000-01-02 00:00:02',
@@ -1809,8 +1808,8 @@ LONG_STRING;
         ]));
     }
 
-    protected function outputHeadlines(int $id): ResponseInterface {
-        return $this->respGood([
+    protected static function outputHeadlines(int $id): ResponseInterface {
+        return self::respGood([
             [
                 'id'                         => $id,
                 'guid'                       => '',

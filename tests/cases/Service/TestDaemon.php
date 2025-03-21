@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -10,8 +11,11 @@ namespace JKingWeb\Arsse\TestCase\Service;
 use JKingWeb\Arsse\Service\Daemon;
 use JKingWeb\Arsse\Service\Exception;
 use org\bovigo\vfs\vfsStream;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 
-/** @covers \JKingWeb\Arsse\Service\Daemon */
+#[CoversClass(\JKingWeb\Arsse\Service\Daemon::class)]
 class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $pidfiles = [
         'errors' => [
@@ -44,19 +48,20 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function setUp(): void {
         parent::setUp();
-        $this->daemon = $this->partialMock(Daemon::class);
+        $this->daemon = \Phake::partialMock(Daemon::class);
     }
 
-    /** @dataProvider providePathResolutions */
+
+    #[DataProvider('providePathResolutions')]
     public function testResolveRelativePaths(string $path, $cwd, $exp): void {
         // set up mock daemon class
-        $this->daemon->cwd->returns($cwd);
-        $daemon = $this->daemon->get();
+        \Phake::when($this->daemon)->cwd->thenReturn($cwd);
+        $daemon = $this->daemon;
         // perform the test
         $this->AssertSame($exp, $daemon->resolveRelativePath($path));
     }
 
-    public function providePathResolutions(): iterable {
+    public static function providePathResolutions(): iterable {
         return [
             ["/",           "/home/me", "/"],
             ["/.",          "/home/me", "/"],
@@ -73,7 +78,8 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider providePidFileChecks */
+
+    #[DataProvider('providePidFileChecks')]
     public function testCheckPidFiles(string $file, bool $accessible, $exp): void {
         $vfs = vfsStream::setup("pidtest", 0777, $this->pidfiles);
         $path = $vfs->url()."/";
@@ -83,8 +89,8 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         chmod($path."errors/write", 0555);
         chmod($path."errors/readwrite", 0111);
         // set up mock daemon class
-        $this->daemon->resolveRelativePath->returns($accessible ? dirname($path.$file) : false);
-        $daemon = $this->daemon->get();
+        \Phake::when($this->daemon)->resolveRelativePath->thenReturn($accessible ? dirname($path.$file) : false);
+        $daemon = $this->daemon;
         // perform the test
         if ($exp instanceof \Exception) {
             $this->assertException($exp);
@@ -94,7 +100,7 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function providePidFileChecks(): iterable {
+    public static function providePidFileChecks(): iterable {
         return [
             ["ok/file",           false, new Exception("pidDirUnresolvable")],
             ["not/found",         true,  new Exception("pidDirMissing")],
@@ -109,7 +115,8 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider providePidReadChecks */
+
+    #[DataProvider('providePidReadChecks')]
     public function testCheckPidReads(string $file, $exp) {
         $vfs = vfsStream::setup("pidtest", 0777, $this->pidfiles);
         $path = $vfs->url()."/pid/";
@@ -119,9 +126,9 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         chmod($path."unreadable", 0333);
         chmod($path."unwritable", 0555);
         // set up mock daemon class
-        $this->daemon->processExists->with(2112)->returns(true);
-        $this->daemon->processExists->with(42)->returns(false);
-        $daemon = $this->daemon->get();
+        \Phake::when($this->daemon)->processExists(2112)->thenReturn(true);
+        \Phake::when($this->daemon)->processExists(42)->thenReturn(false);
+        $daemon = $this->daemon;
         // perform the test
         try {
             if ($exp instanceof \Exception) {
@@ -136,7 +143,7 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function providePidReadChecks(): iterable {
+    public static function providePidReadChecks(): iterable {
         return [
             ["current",    new Exception("pidDuplicate")],
             ["malformed1", new Exception("pidCorrupt")],
@@ -155,10 +162,8 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /**
-     * @dataProvider providePidWriteChecks
-     * @requires extension posix
-     */
+    #[DataProvider('providePidWriteChecks')]
+    #[RequiresPhpExtension('posix')]
     public function testCheckPidWrites(string $file, $exp) {
         $pid = (string) posix_getpid();
         $vfs = vfsStream::setup("pidtest", 0777, $this->pidfiles);
@@ -169,9 +174,9 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         chmod($path."unreadable", 0333);
         chmod($path."unwritable", 0555);
         // set up mock daemon class
-        $this->daemon->processExists->with(2112)->returns(true);
-        $this->daemon->processExists->with(42)->returns(false);
-        $daemon = $this->daemon->get();
+        \Phake::when($this->daemon)->processExists(2112)->thenReturn(true);
+        \Phake::when($this->daemon)->processExists(42)->thenReturn(false);
+        $daemon = $this->daemon;
         // perform the test
         try {
             if ($exp instanceof \Exception) {
@@ -190,7 +195,7 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function providePidWriteChecks(): iterable {
+    public static function providePidWriteChecks(): iterable {
         return [
             ["current",    new Exception("pidDuplicate")],
             ["malformed1", new Exception("pidCorrupt")],

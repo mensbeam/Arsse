@@ -1,8 +1,21 @@
-Version 0.??.? (2024-??-??)
+Version 0.11.0 (2025-03-18)
+===========================
+
+New features:
+- Support for version 1.3 of the Nextcloud News protocol
+- Support for Nextcloud user metadata fetching
+- Support for form-data input in the Nextcloud News protocol, to improve
+  compatibility with the official client
+
+Version 0.10.6 (2024-12-27)
 ===========================
 
 Bug fixes:
 - Do not hang when language files are missing or corrupted
+
+Changes:
+- Support PHP 8.4
+- Support MySQL 9.0
 
 Version 0.10.5 (2024-01-10)
 ===========================

@@ -11,20 +11,23 @@ usually prudent:
   `composer install -o --no-dev`
 
 
+Upgrading from 0.10.6 to 0.11.0
+===============================
+
+- Web server configuration has changed to accommodate new Nextcloud
+  functionality which replaces deprecated Nextcloud News functionality; the
+  following URL paths are affected:
+    - /ocs/v1.php/
+  You may need to restart your Web server for changes to take effect
+    
+
 Upgrading from 0.10.4 to 0.10.5
-=============================
+===============================
 
 - PHP 7.3 is now required
 - Web server configuration in the Arch Linux package has been modified to ease
   the use of alternative PHP interpreters; please review the sample
   configuration files for changes
-
-
-Upgrading from 0.10.2 to 0.10.3
-=============================
-
-- The following Composer dependencies have been removed:
-    - laminas/laminas-diactoros
 
 
 Upgrading from 0.8.5 to 0.9.0
@@ -37,6 +40,7 @@ Upgrading from 0.8.5 to 0.9.0
     - /v1/
     - /version
     - /healthcheck
+  You may need to restart your Web server for changes to take effect
 - Icons for existing feeds in Miniflux and Fever will only appear once the
   feeds in question have been fetched and parsed after upgrade. This may take
   some time to occur depending on how often the feed is updated
@@ -58,14 +62,6 @@ Upgrading from 0.8.2 to 0.8.3
 =============================
 
 - PHP 7.1 is now required
-- The following Composer dependencies have been added:
-    - nicolus/picofeed
-    - laminas/laminas-diactoros
-    - laminas/laminas-httphandlerrunner
-- The following Composer dependencies have been removed:
-    - p3k/picofeed
-    - zendframework/zend-diactoros
-    - zendframework/zend-httphandlerrunner
     
 
 Upgrading from 0.8.1 to 0.8.2
@@ -83,9 +79,7 @@ Upgrading from 0.7.1 to 0.8.0
 - Web server configuration has changed to accommodate Fever; the following URL
   paths are affected:
     - /fever/
-- The following Composer dependencies have been added:
-    - zendframework/zend-diactoros (version 2.x)
-    - zendframework/zend-httphandlerrunner
+  You may need to restart your Web server for changes to take effect
 
 
 Upgrading from 0.5.1 to 0.6.0
@@ -95,14 +89,6 @@ Upgrading from 0.5.1 to 0.6.0
   manually, apply the 3.sql file
 - Configuration is now validated for type and semantics: some previously 
   working configurations may no longer be accepted
-
-
-Upgrading from 0.2.1 to 0.3.0
-=============================
-
-- The following Composer dependencies have been added:
-    - zendframework/zend-diactoros
-    - psr/http-message
 
 
 Upgrading from 0.2.0 to 0.2.1
@@ -122,5 +108,4 @@ Upgrading from 0.1.x to 0.2.0
     - /tt-rss/api/
     - /tt-rss/feed-icons/
     - /tt-rss/images/
-- The following Composer dependencies have been added:
-    - jkingweb/druuid
+  You may need to restart your Web server for changes to take effect

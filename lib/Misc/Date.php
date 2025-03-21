@@ -8,7 +8,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Misc;
 
 abstract class Date {
-    public static function transform($date, string $outFormat = null, string $inFormat = null) {
+    public static function transform($date, ?string $outFormat = null, ?string $inFormat = null) {
         $date = ValueInfo::normalize($date, ValueInfo::T_DATE, $inFormat);
         if (!$date) {
             return null;
@@ -22,7 +22,7 @@ abstract class Date {
         return $out;
     }
 
-    public static function normalize($date, string $inFormat = null): ?\DateTimeImmutable {
+    public static function normalize($date, ?string $inFormat = null): ?\DateTimeImmutable {
         return ValueInfo::normalize($date, ValueInfo::T_DATE, $inFormat);
     }
 

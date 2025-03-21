@@ -24,7 +24,7 @@ interface Driver {
      * @param string $user The username to create
      * @param string|null $password The cleartext password to assign to the user, or null to generate a random password
      */
-    public function userAdd(string $user, string $password = null): ?string;
+    public function userAdd(string $user, ?string $password = null): ?string;
 
     /** Renames a user
      *
@@ -50,14 +50,14 @@ interface Driver {
      * @param string|null $password The cleartext password to assign to the user, or null to generate a random password
      * @param string|null $oldPassword The user's previous password, if known
      */
-    public function userPasswordSet(string $user, ?string $newPassword, string $oldPassword = null): ?string;
+    public function userPasswordSet(string $user, ?string $newPassword, ?string $oldPassword = null): ?string;
 
     /** Removes a user's password; this makes authentication fail unconditionally
      *
      * @param string $user The user for whom to change the password
      * @param string|null $oldPassword The user's previous password, if known
      */
-    public function userPasswordUnset(string $user, string $oldPassword = null): bool;
+    public function userPasswordUnset(string $user, ?string $oldPassword = null): bool;
 
     /** Retrieves metadata about a user
      *

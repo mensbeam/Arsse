@@ -7,9 +7,9 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\TestCase\Db\SQLite3;
 
-/**
- * @covers \JKingWeb\Arsse\Db\SQLite3\Statement<extended>
- * @covers \JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder */
+use PHPUnit\Framework\Attributes\CoversClass;
+
+#[CoversClass(\JKingWeb\Arsse\Db\SQLite3\Statement::class)]
 class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\SQLite3;
 
@@ -25,7 +25,7 @@ class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
         return [static::$interface, $q, $types];
     }
 
-    protected function decorateTypeSyntax(string $value, string $type): string {
+    protected static function decorateTypeSyntax(string $value, string $type): string {
         return $value;
     }
 }

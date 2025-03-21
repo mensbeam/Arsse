@@ -11,7 +11,7 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Db\ExceptionInput;
 
 class User {
-    public function register(string $user, string $password = null): string {
+    public function register(string $user, ?string $password = null): string {
         $password = $password ?? Arsse::$user->generatePassword();
         $hash = md5("$user:$password");
         $tr = Arsse::$db->begin();

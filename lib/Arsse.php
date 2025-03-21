@@ -8,7 +8,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse;
 
 class Arsse {
-    public const VERSION = "0.10.5";
+    public const VERSION = "0.11.0";
     public const REQUIRED_EXTENSIONS = [
         "intl",      // as this extension is required to prepare formatted messages, its absence will throw a distinct English-only exception
         "dom",
@@ -19,15 +19,15 @@ class Arsse {
         "iconv",     // required by PicoFeed only
     ];
 
-    /** @var Factory */
+    /** @var Factory|\Phake\IMock */
     public static $obj;
-    /** @var Lang */
+    /** @var Lang|\Phake\IMock */
     public static $lang;
-    /** @var Conf  */
+    /** @var Conf|\Phake\IMock */
     public static $conf;
-    /** @var Database */
+    /** @var Database|\Phake\IMock */
     public static $db;
-    /** @var User */
+    /** @var User|\Phake\IMock */
     public static $user;
 
     /** @codeCoverageIgnore */

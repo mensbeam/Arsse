@@ -1,10 +1,9 @@
 {
     "require-dev": {
-        "phpunit/phpunit": "^9.0",
-        "dms/phpunit-arraysubset-asserts": "^0.1 || ^0.2",
+        "phpunit/phpunit": "^11.0",
         "clue/arguments": "^2.0",
         "mikey179/vfsstream": "^1.6",
         "webmozart/glob": "^4.1",
-        "eloquent/phony-phpunit": "^6.0 || ^7.0"
+        "phake/phake": "^4.4"
     }
 }

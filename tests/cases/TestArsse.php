@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -13,29 +14,27 @@ use JKingWeb\Arsse\Conf;
 use JKingWeb\Arsse\Lang;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
-/** @covers \JKingWeb\Arsse\Arsse */
+#[CoversClass(\JKingWeb\Arsse\Arsse::class)]
 class TestArsse extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         self::clearData(false);
     }
 
     public function testLoadExistingData(): void {
-        $lang = $this->mock(Lang::class);
-        $db = $this->mock(Database::class);
-        $user = $this->mock(User::class);
-        $conf1 = $this->mock(Conf::class);
-        Arsse::$lang = $lang->get();
-        Arsse::$db = $db->get();
-        Arsse::$user = $user->get();
-        Arsse::$conf = $conf1->get();
+        Arsse::$conf = \Phake::mock(Conf::class);
+        $lang = Arsse::$lang = \Phake::mock(Lang::class);
+        $db = Arsse::$db = \Phake::mock(Database::class);
+        $user = Arsse::$user = \Phake::mock(User::class);
         $conf2 = (new Conf)->import(['lang' => "test"]);
         Arsse::load($conf2);
         $this->assertSame($conf2, Arsse::$conf);
-        $this->assertSame($lang->get(), Arsse::$lang);
-        $this->assertSame($db->get(), Arsse::$db);
-        $this->assertSame($user->get(), Arsse::$user);
-        $lang->set->calledWith("test");
+        $this->assertSame($lang, Arsse::$lang);
+        $this->assertSame($db, Arsse::$db);
+        $this->assertSame($user, Arsse::$user);
+        \Phake::verify($lang)->set("test");
     }
 
     public function testLoadNewData(): void {
@@ -50,7 +49,8 @@ class TestArsse extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertInstanceOf(User::class, Arsse::$user);
     }
 
-    /** @dataProvider provideExtensionChecks */
+
+    #[DataProvider('provideExtensionChecks')]
     public function testCheckForExtensions(array $ext, $exp): void {
         if ($exp instanceof \Exception) {
             $this->assertException($exp);
@@ -60,7 +60,7 @@ class TestArsse extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideExtensionChecks(): iterable {
+    public static function provideExtensionChecks(): iterable {
         return [
             [["pcre"],              null],
             [["foo", "bar", "baz"], new Exception("extMissing", ['first' => "foo", 'total' => 3])],

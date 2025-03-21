@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -12,11 +13,12 @@ use JKingWeb\Arsse\Feed;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Test\Result;
-use Eloquent\Phony\Phpunit\Phony;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 
-/**
- * @covers \JKingWeb\Arsse\Feed
- * @group slow */
+#[CoversClass(\JKingWeb\Arsse\Feed::class)]
+#[Group('slow')]
 class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
     protected static $host = "http://localhost:8000/";
     protected $base = "";
@@ -96,12 +98,11 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->base = self::$host."Feed/";
         parent::setUp();
         self::setConf();
-        $this->dbMock = $this->mock(Database::class);
-        $this->dbMock->feedMatchLatest->with(Phony::wildcard())->returns(new Result([]));
-        $this->dbMock->feedMatchLatest->with(1, Phony::any())->returns(new Result($this->latest));
-        $this->dbMock->feedMatchIds->with(Phony::wildcard())->returns(new Result([]));
-        $this->dbMock->feedMatchIds->with(1, Phony::wildcard())->returns(new Result($this->others));
-        Arsse::$db = $this->dbMock->get();
+        Arsse::$db = \Phake::mock(Database::class);
+        \Phake::when(Arsse::$db)->feedMatchLatest->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Result($this->latest));
+        \Phake::when(Arsse::$db)->feedMatchIds->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->feedMatchIds(1, \Phake::ignoreRemaining())->thenReturn(new Result($this->others));
     }
 
     public function testParseAFeed(): void {
@@ -225,7 +226,8 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame("http://example.com/1", $f->newItems[0]->url);
     }
 
-    /** @dataProvider provide304ResponseURLs */
+
+    #[DataProvider('provide304ResponseURLs')]
     public function testHandleCacheHeadersOn304(string $url): void {
         // upon 304, the client should re-use the caching header values it supplied to the server
         $t = Date::transform("2010-01-01T00:00:00Z", "unix");
@@ -235,7 +237,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($e, $f->etag);
     }
 
-    public function provide304ResponseURLs() {
+    public static function provide304ResponseURLs() {
         return [
             'Control'                   => ["Caching/304Conditional"],
             'Random last-mod and ETag'  => ["Caching/304Random"],
@@ -285,7 +287,8 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    /** @dataProvider provide304Timestamps */
+
+    #[DataProvider('provide304Timestamps')]
     public function testComputeNextFetchFrom304(string $t, string $exp): void {
         $t = $t ? strtotime($t) : "";
         $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
@@ -293,7 +296,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertTime($exp, $f->nextFetch);
     }
 
-    public function provide304Timestamps(): iterable {
+    public static function provide304Timestamps(): iterable {
         return [
             'less than half an hour 1'     => ["now",                      "now + 15 minutes"],
             'less than half an hour 2'     => ["now - 29 minutes",         "now + 15 minutes"],
@@ -342,10 +345,9 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testMatchLatestArticles(): void {
-        $this->dbMock = $this->mock(Database::class);
-        $this->dbMock->feedMatchLatest->with(Phony::wildcard())->returns(new Result([]));
-        $this->dbMock->feedMatchLatest->with(1, Phony::any())->returns(new Result($this->latest));
-        Arsse::$db = $this->dbMock->get();
+        Arsse::$db = \Phake::mock(Database::class);
+        \Phake::when(Arsse::$db)->feedMatchLatest(\Phake::anyParameters())->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Result($this->latest));
         $f = new Feed(1, $this->base."Matching/1");
         $this->assertCount(0, $f->newItems);
         $this->assertCount(0, $f->changedItems);

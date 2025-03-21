@@ -7,10 +7,11 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\TestCase\Db\PostgreSQLPDO;
 
-/**
- * @group slow
- * @covers \JKingWeb\Arsse\Db\PostgreSQL\PDOResult<extended>
- */
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group("slow")]
+#[CoversClass(\JKingWeb\Arsse\Db\PostgreSQL\PDOResult::class)]
 class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\PostgreSQLPDO;
 

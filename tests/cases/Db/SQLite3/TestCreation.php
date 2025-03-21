@@ -10,10 +10,9 @@ namespace JKingWeb\Arsse\TestCase\Db\SQLite3;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Db\SQLite3\Driver;
 use org\bovigo\vfs\vfsStream;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/**
- * @covers \JKingWeb\Arsse\Db\SQLite3\Driver<extended>
- * @covers \JKingWeb\Arsse\Db\SQLite3\ExceptionBuilder */
+#[CoversClass(\JKingWeb\Arsse\Db\SQLite3\Driver::class)]
 class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $data;
     protected $drv;

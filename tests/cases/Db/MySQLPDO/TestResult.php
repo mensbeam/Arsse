@@ -7,12 +7,11 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\TestCase\Db\MySQLPDO;
 
-/**
- * @group slow
- * @covers \JKingWeb\Arsse\Db\PDOResult<extended>
- * @covers \JKingWeb\Arsse\Db\MySQL\ExceptionBuilder
- * @covers \JKingWeb\Arsse\Db\PDOError
- * @covers \JKingWeb\Arsse\Db\SQLState */
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group("slow")]
+#[CoversClass(\JKingWeb\Arsse\Db\PDOResult::class)]
 class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\MySQLPDO;
 

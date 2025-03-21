@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -22,4 +23,8 @@ if (function_exists("xdebug_set_filter")) {
     } else {
         xdebug_set_filter(\XDEBUG_FILTER_CODE_COVERAGE, XDEBUG_PATH_WHITELIST, [BASE."lib/"]);
     }
+}
+
+if (class_exists(\Phake::class)) {
+    \Phake::setClient(\Phake::CLIENT_PHPUNIT9);
 }

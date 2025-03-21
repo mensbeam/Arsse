@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -8,15 +9,17 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Misc;
 
 use JKingWeb\Arsse\Misc\URL;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
-/** @covers \JKingWeb\Arsse\Misc\URL */
+#[CoversClass(\JKingWeb\Arsse\Misc\URL::class)]
 class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
-    /** @dataProvider provideNormalizations */
-    public function testNormalizeAUrl(string $url, string $exp, string $user = null, string $pass = null): void {
+    #[DataProvider('provideNormalizations')]
+    public function testNormalizeAUrl(string $url, string $exp, ?string $user = null, ?string $pass = null): void {
         $this->assertSame($exp, URL::normalize($url, $user, $pass));
     }
 
-    public function provideNormalizations(): iterable {
+    public static function provideNormalizations(): iterable {
         return [
             ["http://example.com/",           "http://example.com/"],
             ["HTTP://example.com/",           "http://example.com/"],
@@ -73,12 +76,13 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideQueries */
+
+    #[DataProvider('provideQueries')]
     public function testAppendQueryParameters(string $url, string $query, string $exp): void {
         $this->assertSame($exp, URL::queryAppend($url, $query));
     }
 
-    public function provideQueries(): iterable {
+    public static function provideQueries(): iterable {
         return [
             ["/", "ook=eek", "/?ook=eek"],
             ["/?", "ook=eek", "/?ook=eek"],
@@ -89,12 +93,13 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideAbsolutes */
+
+    #[DataProvider('provideAbsolutes')]
     public function testDetermineAbsoluteness(bool $exp, string $url): void {
         $this->assertSame($exp, URL::absolute($url));
     }
 
-    public function provideAbsolutes(): array {
+    public static function provideAbsolutes(): array {
         return [
             [true,  "http://example.com/"],
             [true,  "HTTP://example.com/"],

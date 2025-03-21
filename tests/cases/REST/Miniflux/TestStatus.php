@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -10,17 +11,19 @@ namespace JKingWeb\Arsse\TestCase\REST\Miniflux;
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\REST\Miniflux\Status;
 use JKingWeb\Arsse\REST\Miniflux\V1;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseInterface;
 
-/** @covers \JKingWeb\Arsse\REST\Miniflux\Status */
+#[CoversClass(\JKingWeb\Arsse\REST\Miniflux\Status::class)]
 class TestStatus extends \JKingWeb\Arsse\Test\AbstractTest {
-    /** @dataProvider provideRequests */
+    #[DataProvider('provideRequests')]
     public function testAnswerStatusRequests(string $url, string $method, ResponseInterface $exp): void {
         $act = (new Status)->dispatch($this->serverRequest($method, $url, ""));
         $this->assertMessage($exp, $act);
     }
 
-    public function provideRequests(): iterable {
+    public static function provideRequests(): iterable {
         return [
             ["/version",     "GET",     HTTP::respText(V1::VERSION)],
             ["/version",     "POST",    HTTP::respEmpty(405, ['Allow' => "HEAD, GET"])],

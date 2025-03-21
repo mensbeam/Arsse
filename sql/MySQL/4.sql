@@ -6,15 +6,15 @@
 
 create table arsse_tags(
     id serial primary key,
-    owner varchar(255) not null references arsse_users(id) on delete cascade on update cascade,
+    owner varchar(255) not null,
     name varchar(255) not null,
     modified datetime(0) not null default CURRENT_TIMESTAMP,
     unique(owner,name)
 ) character set utf8mb4 collate utf8mb4_unicode_ci;
 
 create table arsse_tag_members(
-    tag bigint not null references arsse_tags(id) on delete cascade,
-    subscription bigint not null references arsse_subscriptions(id) on delete cascade,
+    tag bigint not null,
+    subscription bigint not null,
     assigned boolean not null default 1,
     modified datetime(0) not null default CURRENT_TIMESTAMP,
     primary key(tag,subscription)
@@ -23,7 +23,7 @@ create table arsse_tag_members(
 create table arsse_tokens(
     id varchar(255) not null,
     class varchar(255) not null,
-    "user" varchar(255) not null references arsse_users(id) on delete cascade on update cascade,
+    "user" varchar(255) not null,
     created datetime(0) not null default CURRENT_TIMESTAMP,
     expires datetime(0),
     primary key(id,class)

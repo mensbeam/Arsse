@@ -70,7 +70,8 @@ $rules = [
     ],
     'single_blank_line_before_namespace'        => false,
     'blank_line_after_opening_tag'              => false,
-    ];
+    'php_unit_attributes'                       => true,
+];
 
 $finder = \PhpCsFixer\Finder::create();
 foreach ($paths as $path) {

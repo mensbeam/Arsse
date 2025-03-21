@@ -10,12 +10,9 @@ namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Db\SQLite3\PDODriver as Driver;
 use org\bovigo\vfs\vfsStream;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/**
- * @covers \JKingWeb\Arsse\Db\SQLite3\PDODriver<extended>
- * @covers \JKingWeb\Arsse\Db\PDODriver
- * @covers \JKingWeb\Arsse\Db\PDOError
- * @covers \JKingWeb\Arsse\Db\SQLState */
+#[CoversClass(\JKingWeb\Arsse\Db\SQLite3\PDODriver::class)]
 class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $data;
     protected $drv;

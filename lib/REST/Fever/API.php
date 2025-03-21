@@ -64,10 +64,10 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         switch ($req->getMethod()) {
             case "OPTIONS":
-                return HTTP::respEmpty(204, [
+                return HTTP::challenge(HTTP::respEmpty(204, [
                     'Allow'  => "POST",
                     'Accept' => implode(", ", self::ACCEPTED_TYPES),
-                ]);
+                ]));
             case "GET": // HTTP violation required for client "Unread" on iOS
             case "POST":
                 $out = [
@@ -180,7 +180,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($xml) {
             $d = new \DOMDocument("1.0", "utf-8");
             $d->appendChild($this->makeXMLAssoc($data, $d->createElement("response")));
-            return HTTP::respXml($d->saveXML());
+            return HTTP::respXml($d->saveXML($d->documentElement, \LIBXML_NOEMPTYTAG));
         } else {
             return HTTP::respJson($data, 200, [], \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
         }

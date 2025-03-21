@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -8,8 +9,10 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Misc;
 
 use JKingWeb\Arsse\Rule\Rule;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
-/** @covers \JKingWeb\Arsse\Rule\Rule */
+#[CoversClass(\JKingWeb\Arsse\Rule\Rule::class)]
 class TestRule extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testPrepareAPattern(): void {
         $exp = "`\\`..\\`..\\`..\\\\\\`..`u";
@@ -28,14 +31,15 @@ class TestRule extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame("", Rule::prep(""));
     }
 
-    /** @dataProvider provideApplications */
+
+    #[DataProvider('provideApplications')]
     public function testApplyRules(string $keepRule, string $blockRule, string $title, array $categories, $exp): void {
         $keepRule = Rule::prep($keepRule);
         $blockRule = Rule::prep($blockRule);
         $this->assertSame($exp, Rule::apply($keepRule, $blockRule, $title, $categories));
     }
 
-    public function provideApplications(): iterable {
+    public static function provideApplications(): iterable {
         return [
             ["",           "",           "Title",   ["Dummy", "Category"], true],
             ["^Title$",    "",           "Title",   ["Dummy", "Category"], true],

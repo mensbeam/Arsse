@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -9,6 +10,8 @@ namespace JKingWeb\Arsse\TestCase\Database;
 
 use JKingWeb\Arsse\Arsse;
 use DateTimeImmutable as Date;
+use JKingWeb\Arsse\Database;
+use PHPUnit\Framework\Attributes\CoversMethod;
 
 trait SeriesCleanup {
     protected static $drv;
@@ -132,6 +135,7 @@ trait SeriesCleanup {
         unset($this->data);
     }
 
+    //#[CoversMethod(Database::class, "subscriptionCleanup")]
     public function testCleanUpDeletedSubscriptions(): void {
         Arsse::$db->subscriptionCleanup();
         $state = $this->primeExpectations($this->data, [
@@ -141,6 +145,7 @@ trait SeriesCleanup {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    //#[CoversMethod(Database::class, "subscriptionCleanup")]
     public function testCleanUpDeletedSubscriptionsWithUnlimitedRetention(): void {
         Arsse::$conf->import([
             'purgeFeeds' => null,
@@ -152,6 +157,7 @@ trait SeriesCleanup {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    //#[CoversMethod(Database::class, "iconCleanup")]
     public function testCleanUpOrphanedIcons(): void {
         Arsse::$db->iconCleanup();
         $now = gmdate("Y-m-d H:i:s");
@@ -164,6 +170,7 @@ trait SeriesCleanup {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    //#[CoversMethod(Database::class, "iconCleanup")]
     public function testCleanUpOrphanedIconsWithUnlimitedRetention(): void {
         Arsse::$conf->import([
             'purgeFeeds' => null,
@@ -178,6 +185,7 @@ trait SeriesCleanup {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    //#[CoversMethod(Database::class, "articleCleanup")]
     public function testCleanUpOldArticlesWithStandardRetention(): void {
         Arsse::$db->articleCleanup();
         $state = $this->primeExpectations($this->data, [
@@ -193,6 +201,7 @@ trait SeriesCleanup {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    //#[CoversMethod(Database::class, "articleCleanup")]
     public function testCleanUpOldArticlesWithUnlimitedReadRetention(): void {
         Arsse::$conf->import([
             'purgeArticlesRead' => null,
@@ -211,6 +220,7 @@ trait SeriesCleanup {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    //#[CoversMethod(Database::class, "articleCleanup")]
     public function testCleanUpOldArticlesWithUnlimitedUnreadRetention(): void {
         Arsse::$conf->import([
             'purgeArticlesUnread' => null,
@@ -229,6 +239,7 @@ trait SeriesCleanup {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    //#[CoversMethod(Database::class, "articleCleanup")]
     public function testCleanUpOldArticlesWithUnlimitedRetention(): void {
         Arsse::$conf->import([
             'purgeArticlesRead'   => null,
@@ -241,6 +252,7 @@ trait SeriesCleanup {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    //#[CoversMethod(Database::class, "sessionCleanup")]
     public function testCleanUpExpiredSessions(): void {
         Arsse::$db->sessionCleanup();
         $state = $this->primeExpectations($this->data, [
@@ -252,6 +264,7 @@ trait SeriesCleanup {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    //#[CoversMethod(Database::class, "tokenCleanup")]
     public function testCleanUpExpiredTokens(): void {
         Arsse::$db->tokenCleanup();
         $state = $this->primeExpectations($this->data, [

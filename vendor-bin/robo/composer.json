@@ -1,6 +1,6 @@
 {
     "require-dev": {
-        "consolidation/robo": "^3.0",
+        "consolidation/robo": "^5.0",
         "pear/archive_tar": "^1.4"
     }
 }

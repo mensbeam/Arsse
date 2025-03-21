@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -11,8 +12,9 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Db\SQLite3\Driver;
 use JKingWeb\Arsse\ImportExport\AbstractImportExport;
 use JKingWeb\Arsse\Test\Database;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/** @covers \JKingWeb\Arsse\ImportExport\AbstractImportExport */
+#[CoversClass(\JKingWeb\Arsse\ImportExport\AbstractImportExport::class)]
 class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $drv;
     protected $proc;
@@ -28,9 +30,9 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         parent::setUp();
         // create a mock user manager
-        Arsse::$user = $this->mock(\JKingWeb\Arsse\User::class)->get();
+        Arsse::$user = \Phake::mock(\JKingWeb\Arsse\User::class);
         // create a mock Import/Export processor
-        $this->proc = $this->partialMock(AbstractImportExport::class);
+        $this->proc = \Phake::partialMock(AbstractImportExport::class);
         // initialize an SQLite memeory database
         static::setConf();
         try {
@@ -111,7 +113,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testImportForAMissingUser(): void {
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
-        $this->proc->get()->import("no.one@example.com", "", false, false);
+        $this->proc->import("no.one@example.com", "", false, false);
     }
 
     public function testImportWithInvalidFolder(): void {
@@ -119,9 +121,9 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         ], [1 =>
             ['id' => 1, 'name' => "", 'parent' => 0],
         ]];
-        $this->proc->parse->returns($in);
+        \Phake::when($this->proc)->parse->thenReturn($in);
         $this->assertException("invalidFolderName", "ImportExport");
-        $this->proc->get()->import("john.doe@example.com", "", false, false);
+        $this->proc->import("john.doe@example.com", "", false, false);
     }
 
     public function testImportWithDuplicateFolder(): void {
@@ -130,9 +132,9 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 1, 'name' => "New", 'parent' => 0],
             ['id' => 2, 'name' => "New", 'parent' => 0],
         ]];
-        $this->proc->parse->returns($in);
+        \Phake::when($this->proc)->parse->thenReturn($in);
         $this->assertException("invalidFolderCopy", "ImportExport");
-        $this->proc->get()->import("john.doe@example.com", "", false, false);
+        $this->proc->import("john.doe@example.com", "", false, false);
     }
 
     public function testMakeNoEffectiveChanges(): void {
@@ -151,11 +153,11 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 5, 'name' => "Local",       'parent' => 4],
             ['id' => 6, 'name' => "National",    'parent' => 4],
         ]];
-        $this->proc->parse->returns($in);
+        \Phake::when($this->proc)->parse->thenReturn($in);
         $exp = $this->primeExpectations($this->data, $this->checkTables);
-        $this->proc->get()->import("john.doe@example.com", "", false, false);
+        $this->proc->import("john.doe@example.com", "", false, false);
         $this->compareExpectations($this->drv, $exp);
-        $this->proc->get()->import("john.doe@example.com", "", false, true);
+        $this->proc->import("john.doe@example.com", "", false, true);
         $this->compareExpectations($this->drv, $exp);
     }
 
@@ -176,8 +178,8 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 6, 'name' => "National",    'parent' => 4],
             ['id' => 7, 'name' => "Nature",      'parent' => 0], // new folder
         ]];
-        $this->proc->parse->returns($in);
-        $this->proc->get()->import("john.doe@example.com", "", false, true);
+        \Phake::when($this->proc)->parse->thenReturn($in);
+        $this->proc->import("john.doe@example.com", "", false, true);
         $exp = $this->primeExpectations($this->data, $this->checkTables);
         $exp['arsse_subscriptions']['rows'][3] = [4, "john.doe@example.com", null, "CBC News", "CBC", "http://localhost:8000/Import/cbc", 0];
         $exp['arsse_folders']['rows'][] = [7, "john.doe@example.com", null, "Nature"];
@@ -188,8 +190,8 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         $in = [[
             ['url' => "http://localhost:8000/Import/some-feed", 'title' => "Some Feed", 'folder' => 0, 'tags' => ["frequent", "cryptic"]], //one existing tag and one new one
         ], []];
-        $this->proc->parse->returns($in);
-        $this->proc->get()->import("john.doe@example.com", "", false, false);
+        \Phake::when($this->proc)->parse->thenReturn($in);
+        $this->proc->import("john.doe@example.com", "", false, false);
         $exp = $this->primeExpectations($this->data, $this->checkTables);
         $exp['arsse_subscriptions']['rows'][] = [7, "john.doe@example.com", null, "Some feed", "Some Feed", "http://localhost:8000/Import/some-feed", 0];
         $exp['arsse_tags']['rows'][] = [7, "john.doe@example.com", "cryptic"];
@@ -202,9 +204,9 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         $in = [[
             ['url' => "http://localhost:8000/Import/some-feed", 'title' => "Some Feed", 'folder' => 0, 'tags' => [""]],
         ], []];
-        $this->proc->parse->returns($in);
+        \Phake::when($this->proc)->parse->thenReturn($in);
         $this->assertException("invalidTagName", "ImportExport");
-        $this->proc->get()->import("john.doe@example.com", "", false, false);
+        $this->proc->import("john.doe@example.com", "", false, false);
     }
 
     public function testReplaceData(): void {
@@ -213,8 +215,8 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         ], [1 =>
             ['id' => 1, 'name' => "Photography", 'parent' => 0],
         ]];
-        $this->proc->parse->returns($in);
-        $this->proc->get()->import("john.doe@example.com", "", false, true);
+        \Phake::when($this->proc)->parse->thenReturn($in);
+        $this->proc->import("john.doe@example.com", "", false, true);
         $exp = $this->primeExpectations($this->data, $this->checkTables);
         $exp['arsse_subscriptions']['rows'] = [
             [7, "john.doe@example.com", 4,    "Some feed", "Some Feed", "http://localhost:8000/Import/some-feed", 0],

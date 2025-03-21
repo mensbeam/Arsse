@@ -10,21 +10,23 @@ namespace JKingWeb\Arsse\Misc;
 use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\ResponseInterface;
 use GuzzleHttp\Psr7\Response;
+use JKingWeb\Arsse\Arsse;
+use MensBeam\Mime\MimeType;
 
 class HTTP {
-    public static function matchType(MessageInterface $msg, string ...$type): bool {
-        $header = $msg->getHeaderLine("Content-Type") ?? "";
-        foreach ($type as $t) {
-            if (($t[0] ?? "") === "+") {
-                $pattern = "/^[^+;,\s]*".preg_quote(trim($t), "/")."\s*($|;|,)/Di";
-            } else {
-                $pattern = "/^".preg_quote(trim($t), "/")."\s*($|;|,)/Di";
-            }
-            if (preg_match($pattern, $header)) {
-                return true;
-            }
+    public static function matchType(MessageInterface $msg, array $types, bool $allowEmpty = true): bool {
+        $header = MimeType::extract($msg->getHeaderLine("Content-Type"));
+        if (!$header) {
+            return $allowEmpty;
+        } elseif (MimeType::negotiate([(string) $header], $types) !== null) {
+            return true;
         }
         return false;
+    }
+
+    public static function challenge(ResponseInterface $res): ResponseInterface {
+        $realm = Arsse::$conf ? Arsse::$conf->httpRealm : "The Advanced RSS Environment";
+        return $res->withAddedHeader("WWW-Authenticate", 'Basic realm="'.$realm.'", charset="UTF-8"');
     }
 
     public static function respEmpty(int $status, ?array $headers = []): ResponseInterface {

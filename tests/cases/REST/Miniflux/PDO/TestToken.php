@@ -7,8 +7,11 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\TestCase\REST\Miniflux\PDO;
 
-/** @covers \JKingWeb\Arsse\REST\Miniflux\Token<extended>
- * @group optional */
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group("optional")]
+#[CoversClass(\JKingWeb\Arsse\REST\Miniflux\Token::class)]
 class TestToken extends \JKingWeb\Arsse\TestCase\REST\Miniflux\TestV1 {
     use \JKingWeb\Arsse\Test\PDOTest;
 }

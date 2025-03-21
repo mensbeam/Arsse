@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -23,7 +24,7 @@ trait MySQL {
         if (!class_exists("mysqli")) {
             return null;
         }
-        $drv = new \mysqli_driver;
+        $drv = new \mysqli_driver();
         $drv->report_mode = \MYSQLI_REPORT_OFF;
         $d = mysqli_init();
         $d->options(\MYSQLI_OPT_INT_AND_FLOAT_NATIVE, true);

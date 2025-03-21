@@ -1,4 +1,5 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -8,13 +9,14 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Db;
 
 use JKingWeb\Arsse\Db\Statement;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
     protected static $interface;
     protected $statementClass;
 
     abstract protected function makeStatement(string $q, array $types = []): array;
-    abstract protected function decorateTypeSyntax(string $value, string $type): string;
+    abstract protected static function decorateTypeSyntax(string $value, string $type): string;
 
     public static function setUpBeforeClass(): void {
         // establish a clean baseline
@@ -47,7 +49,8 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertInstanceOf(Statement::class, new $this->statementClass(...$this->makeStatement("SELECT ? as value")));
     }
 
-    /** @dataProvider provideBindings */
+
+    #[DataProvider('provideBindings')]
     public function testBindATypedValue($value, string $type, string $exp): void {
         if ($exp === "null") {
             $query = "SELECT (? is null) as pass";
@@ -60,7 +63,8 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertTrue((bool) $act);
     }
 
-    /** @dataProvider provideBinaryBindings */
+
+    #[DataProvider('provideBinaryBindings')]
     public function testHandleBinaryData($value, string $type, string $exp): void {
         if ($exp === "null") {
             $query = "SELECT (? is null) as pass";
@@ -121,7 +125,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $s->runArray(['ook', 'eek']);
     }
 
-    public function provideBindings(): iterable {
+    public static function provideBindings(): iterable {
         $dateMutable = new \DateTime("Noon Today", new \DateTimezone("America/Toronto"));
         $dateImmutable = new \DateTimeImmutable("Noon Today", new \DateTimezone("America/Toronto"));
         $dateUTC = new \DateTime("@".$dateMutable->getTimestamp(), new \DateTimezone("UTC"));
@@ -259,12 +263,12 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
         foreach ($tests as $index => [$value, $type, $exp]) {
             $t = preg_replace("<^strict >", "", $type);
-            $exp = ($exp === "null") ? $exp : $this->decorateTypeSyntax($exp, $t);
+            $exp = ($exp === "null") ? $exp : static::decorateTypeSyntax($exp, $t);
             yield $index => [$value, $type, $exp];
         }
     }
 
-    public function provideBinaryBindings(): iterable {
+    public static function provideBinaryBindings(): iterable {
         $dateMutable = new \DateTime("Noon Today", new \DateTimezone("America/Toronto"));
         $dateImmutable = new \DateTimeImmutable("Noon Today", new \DateTimezone("America/Toronto"));
         $dateUTC = new \DateTime("@".$dateMutable->getTimestamp(), new \DateTimezone("UTC"));
@@ -308,7 +312,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
         foreach ($tests as $index => [$value, $type, $exp]) {
             $t = preg_replace("<^strict >", "", $type);
-            $exp = ($exp === "null") ? $exp : $this->decorateTypeSyntax($exp, $t);
+            $exp = ($exp === "null") ? $exp : static::decorateTypeSyntax($exp, $t);
             yield $index => [$value, $type, $exp];
         }
     }

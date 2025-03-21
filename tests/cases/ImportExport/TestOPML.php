@@ -12,8 +12,10 @@ use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Test\Result;
 use JKingWeb\Arsse\ImportExport\OPML;
 use JKingWeb\Arsse\ImportExport\Exception;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
-/** @covers \JKingWeb\Arsse\ImportExport\OPML<extended> */
+#[CoversClass(\JKingWeb\Arsse\ImportExport\OPML::class)]
 class TestOPML extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $folders = [
         ['id' => 5, 'parent' => 3,    'children' => 0, 'feeds' => 1, 'name' => "Local"],
@@ -83,12 +85,11 @@ OPML_EXPORT_SERIALIZATION;
 
     public function setUp(): void {
         parent::setUp();
-        $this->dbMock = $this->mock(Database::class);
-        $this->dbMock->userExists->returns(true);
-        $this->dbMock->folderList->with("john.doe@example.com")->returns(new Result($this->folders));
-        $this->dbMock->subscriptionList->with("john.doe@example.com")->returns(new Result($this->subscriptions));
-        $this->dbMock->tagSummarize->with("john.doe@example.com")->returns(new Result($this->tags));
-        Arsse::$db = $this->dbMock->get();
+        Arsse::$db = \Phake::mock(Database::class);
+        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        \Phake::when(Arsse::$db)->folderList("john.doe@example.com")->thenReturn(new Result($this->folders));
+        \Phake::when(Arsse::$db)->subscriptionList("john.doe@example.com")->thenReturn(new Result($this->subscriptions));
+        \Phake::when(Arsse::$db)->tagSummarize("john.doe@example.com")->thenReturn(new Result($this->tags));
     }
 
     public function testExportToOpml(): void {
@@ -100,12 +101,12 @@ OPML_EXPORT_SERIALIZATION;
     }
 
     public function testExportToOpmlAMissingUser(): void {
-        $this->dbMock->userExists->returns(false);
+        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         (new OPML)->export("john.doe@example.com");
     }
 
-    /** @dataProvider provideParserData */
+    #[DataProvider("provideParserData")]
     public function testParseOpmlForImport(string $file, bool $flat, $exp): void {
         $data = file_get_contents(\JKingWeb\Arsse\DOCROOT."Import/OPML/$file");
         // make the ImportExport::parse() method visible
@@ -120,7 +121,7 @@ OPML_EXPORT_SERIALIZATION;
         }
     }
 
-    public function provideParserData(): iterable {
+    public static function provideParserData(): iterable {
         return [
             ["BrokenXML.opml", false, new Exception("invalidSyntax")],
             ["BrokenOPML.1.opml", false, new Exception("invalidSemantics")],

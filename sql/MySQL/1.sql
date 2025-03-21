@@ -8,21 +8,21 @@ create table arsse_sessions (
     id varchar(255) primary key,
     created datetime(0) not null default CURRENT_TIMESTAMP,
     expires datetime(0) not null,
-    "user" varchar(255) not null references arsse_users(id) on delete cascade on update cascade
+    "user" varchar(255) not null
 ) character set utf8mb4;
 
 create table arsse_labels (
     id serial primary key,
-    owner varchar(255) not null references arsse_users(id) on delete cascade on update cascade,
+    owner varchar(255) not null,
     name varchar(255) not null,
     modified datetime(0) not null default CURRENT_TIMESTAMP,
     unique(owner,name)
 ) character set utf8mb4;
 
 create table arsse_label_members (
-    label bigint not null references arsse_labels(id) on delete cascade,
-    article bigint not null references arsse_articles(id) on delete cascade,
-    subscription bigint not null references arsse_subscriptions(id) on delete cascade,
+    label bigint not null,
+    article bigint not null,
+    subscription bigint not null,
     assigned boolean not null default 1,
     modified datetime(0) not null default CURRENT_TIMESTAMP,
     primary key(label,article)

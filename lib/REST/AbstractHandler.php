@@ -27,6 +27,7 @@ abstract class AbstractHandler implements Handler {
     protected function fieldMapNames(array $data, array $map): array {
         $out = [];
         foreach ($map as $to => $from) {
+            // we ignore missing keys because Tiny Tiny RSS is sometimes inconsistent about arrays of objects all having the same keys
             if (array_key_exists($from, $data)) {
                 $out[$to] = $data[$from];
             }
@@ -36,6 +37,7 @@ abstract class AbstractHandler implements Handler {
 
     protected function fieldMapTypes(array $data, array $map, string $dateFormat = "sql"): array {
         foreach ($map as $key => $type) {
+            // we ignore missing keys because Tiny Tiny RSS is sometimes inconsistent about arrays of objects all having the same keys
             if (array_key_exists($key, $data)) {
                 if ($type === "datetime" && $dateFormat !== "sql") {
                     $data[$key] = Date::transform($data[$key], $dateFormat, "sql");

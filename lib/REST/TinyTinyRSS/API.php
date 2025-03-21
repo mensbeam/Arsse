@@ -100,10 +100,10 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         if ($req->getMethod() === "OPTIONS") {
             // respond to OPTIONS rquests; the response is a fib, as we technically accept any type or method
-            return HTTP::respEmpty(204, [
+            return HTTP::challenge(HTTP::respEmpty(204, [
                 'Allow'  => "POST",
                 'Accept' => implode(", ", self::ACCEPTED_TYPES),
-            ]);
+            ]));
         }
         $data = (string) $req->getBody();
         if ($data) {
