@@ -130,6 +130,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             'keep_rule'  => "str",
             'block_rule' => "str",
             'deleted'    => "bool",
+            'user_agent' => "str",
         ],
         'arsse_folders' => [
             'id'       => "int",
@@ -409,6 +410,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             }, $info['columns']);
             $cols = implode(",", $cols);
             $bindings = array_map(function($c) use ($table) {
+                assert(isset(self::COL_DEFS[$table][$c]), new \Exception("Type for column $table.$c is not defined in ".__FILE__));
                 return self::COL_DEFS[$table][$c];
             }, $info['columns']);
             $params = implode(",", array_fill(0, sizeof($info['columns']), "?"));

@@ -77,4 +77,15 @@ class TestFetching extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertException("timeout", "Feed");
         new Feed(null, $this->base."Fetching/Timeout");
     }
+
+    public function testFetchWithCustomUserAgent(): void {
+        $f = new Feed(null, $this->base."Fetching/UserAgent", "", "", "Custom");
+        $this->assertSame("Custom", $f->title);
+        $this->assertSame("<p>Partial content</p>", $f->items[0]->content);
+        // Scraping should also use the custom UA
+        $f = new Feed(null, $this->base."Fetching/UserAgent", "", "", "Custom", true);
+        $this->assertSame("Custom", $f->title);
+        $this->assertSame("Custom", $f->items[0]->scrapedContent);
+        
+    }
 }

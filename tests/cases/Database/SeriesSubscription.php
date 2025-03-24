@@ -49,15 +49,15 @@ trait SeriesSubscription {
                 ],
             ],
             'arsse_subscriptions' => [
-                'columns' => ["id", "owner", "url", "feed_title", "updated", "next_fetch", "icon", "title", "folder", "pinned", "order_type", "keep_rule", "block_rule", "scrape", "deleted", "modified"],
+                'columns' => ["id", "owner", "url", "feed_title", "updated", "next_fetch", "icon", "title", "folder", "pinned", "order_type", "keep_rule", "block_rule", "scrape", "deleted", "modified", "user_agent"],
                 'rows'    => [
-                    [1, "john.doe@example.com", "http://example.com/feed2", "eek", Date::transform("now - 1 hour", "sql"), Date::transform("now - 1 hour", "sql"), 1,    null,  null, 1, 2, null, null,  0, 0, Date::transform("now - 1 hour", "sql")],
-                    [2, "jane.doe@example.com", "http://example.com/feed2", "eek", Date::transform("now - 1 hour", "sql"), Date::transform("now - 1 hour", "sql"), 1,    null,  null, 0, 0, null, null,  0, 0, Date::transform("now - 1 hour", "sql")],
-                    [3, "john.doe@example.com", "http://example.com/feed3", "Ack", Date::transform("now + 1 hour", "sql"), Date::transform("now + 1 hour", "sql"), 2,    "Ook", 2,    0, 1, null, null,  0, 0, Date::transform("now - 1 hour", "sql")],
-                    [4, "jill.doe@example.com", "http://example.com/feed2", "eek", Date::transform("now - 1 hour", "sql"), Date::transform("now - 1 hour", "sql"), 1,    null,  null, 0, 0, null, null,  0, 0, Date::transform("now - 1 hour", "sql")],
-                    [5, "jack.doe@example.com", "http://example.com/feed2", "eek", Date::transform("now - 1 hour", "sql"), Date::transform("now - 1 hour", "sql"), 1,    null,  null, 1, 2, "",   "3|E", 0, 0, Date::transform("now - 1 hour", "sql")],
-                    [6, "john.doe@example.com", "http://example.com/feed4", "Foo", Date::transform("now + 1 hour", "sql"), Date::transform("now + 1 hour", "sql"), null, "Bar", 3,    0, 0, null, null,  0, 0, Date::transform("now - 1 hour", "sql")],
-                    [7, "john.doe@example.com", "http://example.com/feed1", "ook", Date::transform("now + 6 hour", "sql"), Date::transform("now - 1 hour", "sql"), null, null,  null, 0, 0, null, null,  0, 1, Date::transform("now - 1 hour", "sql")],
+                    [1, "john.doe@example.com", "http://example.com/feed2", "eek", Date::transform("now - 1 hour", "sql"), Date::transform("now - 1 hour", "sql"), 1,    null,  null, 1, 2, null, null,  0, 0, Date::transform("now - 1 hour", "sql"), null],
+                    [2, "jane.doe@example.com", "http://example.com/feed2", "eek", Date::transform("now - 1 hour", "sql"), Date::transform("now - 1 hour", "sql"), 1,    null,  null, 0, 0, null, null,  0, 0, Date::transform("now - 1 hour", "sql"), null],
+                    [3, "john.doe@example.com", "http://example.com/feed3", "Ack", Date::transform("now + 1 hour", "sql"), Date::transform("now + 1 hour", "sql"), 2,    "Ook", 2,    0, 1, null, null,  0, 0, Date::transform("now - 1 hour", "sql"), "Ook"],
+                    [4, "jill.doe@example.com", "http://example.com/feed2", "eek", Date::transform("now - 1 hour", "sql"), Date::transform("now - 1 hour", "sql"), 1,    null,  null, 0, 0, null, null,  0, 0, Date::transform("now - 1 hour", "sql"), "Eek"],
+                    [5, "jack.doe@example.com", "http://example.com/feed2", "eek", Date::transform("now - 1 hour", "sql"), Date::transform("now - 1 hour", "sql"), 1,    null,  null, 1, 2, "",   "3|E", 0, 0, Date::transform("now - 1 hour", "sql"), null],
+                    [6, "john.doe@example.com", "http://example.com/feed4", "Foo", Date::transform("now + 1 hour", "sql"), Date::transform("now + 1 hour", "sql"), null, "Bar", 3,    0, 0, null, null,  0, 0, Date::transform("now - 1 hour", "sql"), null],
+                    [7, "john.doe@example.com", "http://example.com/feed1", "ook", Date::transform("now + 6 hour", "sql"), Date::transform("now - 1 hour", "sql"), null, null,  null, 0, 0, null, null,  0, 1, Date::transform("now - 1 hour", "sql"), null],
                 ],
             ],
             'arsse_tags' => [
@@ -302,6 +302,7 @@ trait SeriesSubscription {
                 'order_type'      => 2,
                 'icon_url'        => "http://example.com/favicon.ico",
                 'icon_id'         => 1,
+                'user_agent'      => null,
             ],
             [
                 'url'             => "http://example.com/feed3",
@@ -315,6 +316,7 @@ trait SeriesSubscription {
                 'order_type'      => 1,
                 'icon_url'        => "http://example.net/favicon.ico",
                 'icon_id'         => null,
+                'user_agent'      => "Ook",
             ],
             [
                 'url'             => "http://example.com/feed4",
@@ -328,6 +330,7 @@ trait SeriesSubscription {
                 'order_type'      => 0,
                 'icon_url'        => null,
                 'icon_id'         => null,
+                'user_agent'      => null,
             ],
         ];
         $this->assertResult($exp, Arsse::$db->subscriptionList($this->user));
@@ -343,6 +346,7 @@ trait SeriesSubscription {
                 'unread'     => 5,
                 'pinned'     => 0,
                 'order_type' => 0,
+                'user_agent' => "Eek",
             ],
         ];
         $this->assertResult($exp, Arsse::$db->subscriptionList("jill.doe@example.com"));
@@ -359,6 +363,7 @@ trait SeriesSubscription {
                 'unread'     => 4,
                 'pinned'     => 1,
                 'order_type' => 2,
+                'user_agent' => null,
             ],
         ];
         $this->assertResult($exp, Arsse::$db->subscriptionList($this->user, null, false));
@@ -375,6 +380,7 @@ trait SeriesSubscription {
                 'unread'     => 2,
                 'pinned'     => 0,
                 'order_type' => 1,
+                'user_agent' => "Ook",
             ],
         ];
         $this->assertResult($exp, Arsse::$db->subscriptionList($this->user, 2));
@@ -427,18 +433,20 @@ trait SeriesSubscription {
             'order_type' => 0,
             'keep_rule'  => "ook",
             'block_rule' => "eek",
+            'user_agent' => "Test/2112"
         ]);
         $state = $this->primeExpectations($this->data, [
-            'arsse_subscriptions' => ['id','owner','feed_title', 'title','folder','pinned','order_type','keep_rule','block_rule','scrape'],
+            'arsse_subscriptions' => ['id','owner','feed_title', 'title','folder','pinned','order_type','keep_rule','block_rule','scrape','user_agent'],
         ]);
-        $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com","eek","Ook Ook",3,0,0,"ook","eek",1];
+        $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com","eek","Ook Ook",3,0,0,"ook","eek",1,"Test/2112"];
         $this->compareExpectations(static::$drv, $state);
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, [
             'title'      => null,
             'keep_rule'  => null,
             'block_rule' => null,
+            'user_agent' => null,
         ]);
-        $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com","eek",null,3,0,0,null,null,1];
+        $state['arsse_subscriptions']['rows'][0] = [1,"john.doe@example.com","eek",null,3,0,0,null,null,1,null];
         $this->compareExpectations(static::$drv, $state);
         // making no changes is a valid result
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['unhinged' => true]);

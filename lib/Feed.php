@@ -48,9 +48,9 @@ class Feed {
         return $out;
     }
 
-    public static function discoverAll(string $url, string $username = '', string $password = ''): array {
+    public static function discoverAll(string $url, ?string $userAgent = null): array {
         // fetch the candidate feed
-        [$client, $reader] = self::download($url, "", "", $username, $password);
+        [$client, $reader] = self::download($url, "", "", $userAgent);
         if ($reader->detectFormat($client->getContent())) {
             // if the prospective URL is a feed, use it
             return [$url];
@@ -59,9 +59,9 @@ class Feed {
         }
     }
 
-    public function __construct(?int $feedID, string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = '', bool $scrape = false) {
+    public function __construct(?int $feedID, string $url, string $lastModified = '', string $etag = '', ?string $userAgent = null, bool $scrape = false) {
         // fetch the feed
-        [$client, $reader] = self::download($url, $lastModified, $etag, $username, $password);
+        [$client, $reader] = self::download($url, $lastModified, $etag, $userAgent);
         // format the HTTP Last-Modified date returned
         $lastMod = $client->getLastModified();
         if (strlen($lastMod ?? "")) {
@@ -85,7 +85,7 @@ class Feed {
             } else {
                 // if requested, scrape full content for any new and changed items
                 if ($scrape) {
-                    $this->scrape();
+                    $this->scrape($userAgent);
                 }
             }
         }
@@ -93,8 +93,8 @@ class Feed {
         $this->nextFetch = $this->computeNextFetch();
     }
 
-    protected static function configure(): Config {
-        $userAgent = Arsse::$conf->fetchUserAgentString ?? sprintf(
+    protected static function configure(?string $userAgent): Config {
+        $userAgent = $userAgent ?? Arsse::$conf->fetchUserAgentString ?? sprintf(
             'Arsse/%s (%s %s; %s; https://thearsse.com/)',
             Arsse::VERSION, // Arsse version
             php_uname('s'), // OS
@@ -110,10 +110,10 @@ class Feed {
         return $config;
     }
 
-    protected static function download(string $url, string $lastModified, string $etag, string $username, string $password): array {
+    protected static function download(string $url, string $lastModified, string $etag, ?string $userAgent = null): array {
         try {
-            $reader = new Reader(self::configure());
-            $client = $reader->download($url, $lastModified, $etag, $username, $password);
+            $reader = new Reader(self::configure($userAgent));
+            $client = $reader->download($url, $lastModified, $etag, "", "");
             return [$client, $reader];
         } catch (PicoFeedException $e) {
             throw new Feed\Exception("", ['url' => $url], $e); // @codeCoverageIgnore
@@ -452,8 +452,8 @@ class Feed {
         return $dates;
     }
 
-    protected function scrape(): void {
-        $scraper = new Scraper(self::configure());
+    protected function scrape(?string $userAgent = null): void {
+        $scraper = new Scraper(self::configure($userAgent));
         foreach (array_merge($this->newItems, $this->changedItems) as $item) {
             $scraper->setUrl($item->url);
             $scraper->execute();

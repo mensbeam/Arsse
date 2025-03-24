@@ -158,6 +158,7 @@ create table arsse_subscriptions_new(
     scrape int not null default 0,                                                          -- whether the user has requested scraping content from source articles
     keep_rule text,                                                                         -- Regular expression the subscription's articles must match to avoid being hidden
     block_rule text,                                                                        -- Regular expression the subscription's articles must not match to avoid being hidden
+    user_agent text,                                                                        -- An override HTTP User-Agent value to use when fetching feeds
     unique(owner,url)                                                                       -- a URL with particular credentials should only appear once
 );
 insert into arsse_subscriptions_new
@@ -184,7 +185,8 @@ insert into arsse_subscriptions_new
         s.pinned,
         s.scrape,
         s.keep_rule,
-        s.block_rule
+        s.block_rule,
+        null
     from arsse_subscriptions as s left join arsse_feeds as f on s.feed = f.id;
 
 -- Delete the old tables and rename the new ones

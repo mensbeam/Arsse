@@ -167,6 +167,9 @@ alter table arsse_subscriptions alter column url set not null;
 alter table arsse_subscriptions add unique(owner,url);
 alter table arsse_subscriptions drop column feed;
 
+-- Add new columns to the subscriptions table
+alter table arsse_subscriptions add column user_agent text;
+
 -- Delete unneeded table
 drop table arsse_articles_map;
 drop table arsse_marks;

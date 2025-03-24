@@ -175,6 +175,9 @@ alter table arsse_subscriptions drop constraint arsse_subscriptions_ibfk_2;
 alter table arsse_subscriptions drop constraint owner;
 alter table arsse_subscriptions drop column feed;
 
+-- Add new columns to the subscriptions table
+alter table arsse_subscriptions add column user_agent longtext;
+
 -- Delete unneeded table
 drop table arsse_articles_map;
 drop table arsse_marks;

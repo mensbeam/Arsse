@@ -875,6 +875,7 @@ class Database {
      * - "order_type": Whether articles should be sorted in reverse cronological order (2), chronological order (1), or the default (0)
      * - "keep_rule": The subscription's "keep" filter rule; articles which do not match this are hidden
      * - "block_rule": The subscription's "block" filter rule; articles which match this are hidden
+     * - "user_agent": An HTTP User-Agent value to use when fetching the feed rather than the default
      * - "added": The date and time at which the subscription was added
      * - "updated": The date and time at which the newsfeed was last updated in the database
      * - "edited": The date and time at which the newsfeed was last modified by its authors
@@ -905,7 +906,7 @@ class Database {
             select
                 s.id as id,
                 s.id as feed,
-                s.url,source,pinned,err_count,err_msg,order_type,added,keep_rule,block_rule,s.etag,s.scrape,
+                s.url,source,pinned,err_count,err_msg,order_type,added,keep_rule,block_rule,user_agent,s.etag,s.scrape,
                 s.updated as updated,
                 s.modified as edited,
                 s.modified as modified,
@@ -1023,6 +1024,7 @@ class Database {
      * - "order_type": Whether articles should be sorted in reverse cronological order (2), chronological order (1), or the default (0)
      * - "keep_rule": The subscription's "keep" filter rule; articles which do not match this are hidden
      * - "block_rule": The subscription's "block" filter rule; articles which match this are hidden
+     * - "user_agent": An HTTP User-Agent value to use when fetching the feed rather than the default
      *
      * @param string $user The user whose subscription is to be modified
      * @param integer $id the numeric identifier of the subscription to modfify
@@ -1071,6 +1073,7 @@ class Database {
             'keep_rule'  => "str",
             'block_rule' => "str",
             'scrape'     => "strict bool",
+            'user_agent' => "str",
         ];
         [$setClause, $setTypes, $setValues] = $this->generateSet($data, $valid);
         if (!$setClause) {
@@ -1227,7 +1230,7 @@ class Database {
         }
         $f = $this->db->prepareArray(
             "SELECT 
-                url, last_mod as modified, etag, err_count, scrape as scrapers, keep_rule, block_rule
+                url, last_mod as modified, etag, err_count, scrape as scrapers, keep_rule, block_rule, user_agent
             FROM arsse_subscriptions
             where id = ? and owner = coalesce(?, owner)",
             ["int", "str"]
@@ -1241,7 +1244,7 @@ class Database {
         // here. When an exception is thrown it should update the database with the
         // error instead of failing; if other exceptions are thrown, we should simply roll back
         try {
-            $feed = new Feed((int) $subID, $f['url'], (string) Date::transform($f['modified'], "http", "sql"), $f['etag'], "", "", $scrape);
+            $feed = new Feed((int) $subID, $f['url'], (string) Date::transform($f['modified'], "http", "sql"), $f['etag'], $f['user_agent'], $scrape);
             if (!$feed->modified) {
                 // if the feed hasn't changed, just compute the next fetch time and record it
                 $this->db->prepare("UPDATE arsse_subscriptions SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id = ?", 'datetime', 'int')->run($feed->nextFetch, $subID);
