@@ -1017,6 +1017,7 @@ class Database {
      *
      * The $data array must contain one or more of the following keys:
      *
+     * - "url": The URL of the subscription's newsfeed
      * - "title": The title of the subscription
      * - "folder": The numeric identifier (or null) of the subscription's folder
      * - "pinned": Whether the subscription is pinned
@@ -1025,6 +1026,8 @@ class Database {
      * - "keep_rule": The subscription's "keep" filter rule; articles which do not match this are hidden
      * - "block_rule": The subscription's "block" filter rule; articles which match this are hidden
      * - "user_agent": An HTTP User-Agent value to use when fetching the feed rather than the default
+     * - "username": The username to present to the foreign server when fetching the feed; this is intergrated into the URL
+     * - "password": The password to present to the foreign server when fetching the feed; this is intergrated into the URL
      *
      * @param string $user The user whose subscription is to be modified
      * @param integer $id the numeric identifier of the subscription to modfify
@@ -1064,6 +1067,23 @@ class Database {
                 throw new Db\ExceptionInput("invalidValue", ["action" => __FUNCTION__, "field" => "block_rule"]);
             }
         }
+        // construct the new feed URL from components, if applicable; we have
+        //   to do this because we store any username and password within the
+        //   URL itself, an arrangement which simplifies indexing in MySQL
+        //   among other considerations
+        if (isset($data['url']) || isset($data['username']) || isset($data['password'])) {
+            // we can't practically check if the URL actually points to a feed
+            //   (we risk a database deadlock if we take too long with the
+            //   transaction), but we can at least check if it is
+            //   syntactically an absolute URI
+            if (isset($data['url']) && !URL::absolute($data['url'])) {
+                throw new Db\ExceptionInput("invalidValue", ["action" => __FUNCTION__, "field" => "url"]);
+            }
+            $url = $this->db->prepare("SELECT url from arsse_subscriptions where id = ? and owner = ?", "int", "str")->run($id, $user)->getValue();
+            // the URL from the database can be assumed to be a string because the subscription ID is already validated above
+            $data['url'] = URL::normalize($data['url'] ?? $url, $data['username'] ?? null, $data['password'] ?? null);
+
+        }
         // perform the update
         $valid = [
             'title'      => "str",
@@ -1074,6 +1094,9 @@ class Database {
             'block_rule' => "str",
             'scrape'     => "strict bool",
             'user_agent' => "str",
+            'url'        => "strict str",
+            // "username" doesn't apply because it is part of the URL
+            // "password" doesn't apply because it is part of the URL
         ];
         [$setClause, $setTypes, $setValues] = $this->generateSet($data, $valid);
         if (!$setClause) {

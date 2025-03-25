@@ -496,6 +496,37 @@ trait SeriesSubscription {
         $this->assertTrue(Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['title' => 0]));
     }
 
+    public function testSetTheUrlOfASubscription(): void {
+        $state = $this->primeExpectations($this->data, [
+            'arsse_subscriptions' => ["id", "owner", "url", "feed_title", "icon", "title", "folder", "pinned", "order_type", "keep_rule", "block_rule", "scrape", "user_agent"],
+        ]);
+        // set just the URL
+        $this->assertTrue(Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['url' => "http://example.com/NEW"]));
+        $state['arsse_subscriptions']['rows'][0] = [1, "john.doe@example.com", "http://example.com/NEW", "eek", 1, null, null, 1, 2, null, null, 0, null];
+        $this->compareExpectations(static::$drv, $state);
+        // set the URL, user, and password
+        $this->assertTrue(Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['url' => "http://example.com/RESTRICTED", 'username' => "john", 'password' => "secret"]));
+        $state['arsse_subscriptions']['rows'][0] = [1, "john.doe@example.com", "http://john:secret@example.com/RESTRICTED", "eek", 1, null, null, 1, 2, null, null, 0, null];
+        $this->compareExpectations(static::$drv, $state);
+        // set just the user name
+        $this->assertTrue(Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['username' => "JOHN"]));
+        $state['arsse_subscriptions']['rows'][0] = [1, "john.doe@example.com", "http://JOHN:secret@example.com/RESTRICTED", "eek", 1, null, null, 1, 2, null, null, 0, null];
+        $this->compareExpectations(static::$drv, $state);
+        // set just the password
+        $this->assertTrue(Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['password' => "SECRET"]));
+        $state['arsse_subscriptions']['rows'][0] = [1, "john.doe@example.com", "http://JOHN:SECRET@example.com/RESTRICTED", "eek", 1, null, null, 1, 2, null, null, 0, null];
+        $this->compareExpectations(static::$drv, $state);
+        // change the URL again without credentials
+        $this->assertTrue(Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['url' => "http://example.com/NEW"]));
+        $state['arsse_subscriptions']['rows'][0] = [1, "john.doe@example.com", "http://example.com/NEW", "eek", 1, null, null, 1, 2, null, null, 0, null];
+        $this->compareExpectations(static::$drv, $state);
+    }
+
+    public function testSetTheUrlOfASubscriptionToARelativeLocation(): void {
+        $this->assertException("invalidValue", "Db", "ExceptionInput");
+        Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['url' => "NEW"]);
+    }
+
     //#[CoversMethod(Database::class, "subscriptionPropertiesSet")]
     //#[CoversMethod(Database::class, "subscriptionValidateId")]
     //#[CoversMethod(Database::class, "subscriptionRulesApply")]
