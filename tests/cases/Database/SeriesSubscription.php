@@ -518,13 +518,30 @@ trait SeriesSubscription {
         $this->compareExpectations(static::$drv, $state);
         // change the URL again without credentials
         $this->assertTrue(Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['url' => "http://example.com/NEW"]));
-        $state['arsse_subscriptions']['rows'][0] = [1, "john.doe@example.com", "http://example.com/NEW", "eek", 1, null, null, 1, 2, null, null, 0, null];
+        $state['arsse_subscriptions']['rows'][0] = [1, "john.doe@example.com", "http://JOHN:SECRET@example.com/NEW", "eek", 1, null, null, 1, 2, null, null, 0, null];
+        $this->compareExpectations(static::$drv, $state);
+        // change the URL again with embedded credentials
+        $this->assertTrue(Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['url' => "http://john:secret@example.com/NEW"]));
+        $state['arsse_subscriptions']['rows'][0] = [1, "john.doe@example.com", "http://john:secret@example.com/NEW", "eek", 1, null, null, 1, 2, null, null, 0, null];
+        $this->compareExpectations(static::$drv, $state);
+        // change the URL again with embedded username only
+        $this->assertTrue(Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['url' => "http://john@example.com/NEW"]));
+        $state['arsse_subscriptions']['rows'][0] = [1, "john.doe@example.com", "http://john@example.com/NEW", "eek", 1, null, null, 1, 2, null, null, 0, null];
+        $this->compareExpectations(static::$drv, $state);
+        // set the URL, user, and password, overriding embedded credentials
+        $this->assertTrue(Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['url' => "http://john:secret@example.com/RESTRICTED", 'username' => "JOHN", 'password' => "SECRET"]));
+        $state['arsse_subscriptions']['rows'][0] = [1, "john.doe@example.com", "http://JOHN:SECRET@example.com/RESTRICTED", "eek", 1, null, null, 1, 2, null, null, 0, null];
         $this->compareExpectations(static::$drv, $state);
     }
 
     public function testSetTheUrlOfASubscriptionToARelativeLocation(): void {
         $this->assertException("invalidValue", "Db", "ExceptionInput");
         Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['url' => "NEW"]);
+    }
+
+    public function testSetTheUrlOfASubscriptionWithInvalidUsername(): void {
+        $this->assertException("invalidValue", "Db", "ExceptionInput");
+        Arsse::$db->subscriptionPropertiesSet($this->user, 1, ['url' => "http://example.com/NEW", 'username' => "bad:dates"]);
     }
 
     //#[CoversMethod(Database::class, "subscriptionPropertiesSet")]

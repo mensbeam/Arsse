@@ -1072,17 +1072,38 @@ class Database {
         //   URL itself, an arrangement which simplifies indexing in MySQL
         //   among other considerations
         if (isset($data['url']) || isset($data['username']) || isset($data['password'])) {
-            // we can't practically check if the URL actually points to a feed
-            //   (we risk a database deadlock if we take too long with the
-            //   transaction), but we can at least check if it is
-            //   syntactically an absolute URI
-            if (isset($data['url']) && !URL::absolute($data['url'])) {
-                throw new Db\ExceptionInput("invalidValue", ["action" => __FUNCTION__, "field" => "url"]);
+            // if we're setting the URL we must check it and extract credentials from it
+            if (isset($data['url'])) {
+                // we can't practically check if the URL actually points to a
+                //   feed (we risk a database deadlock if we take too long with
+                //   the transaction), but we can at least check if it is
+                //   syntactically an absolute URI
+                if (!URL::absolute($data['url'])) {
+                    throw new Db\ExceptionInput("invalidValue", ["action" => __FUNCTION__, "field" => "url"]);
+                }
+                $u = parse_url($data['url'], \PHP_URL_USER);
+                $p = parse_url($data['url'], \PHP_URL_PASS);
+                // if there is a username in the URL, use these credentials
+                //   unless they are explicitly supplied; this prevents
+                //   existing credentials in the current URL from taking
+                //   precedence when they shouldn't
+                if (strlen($u ?? "")) {
+                    $data['username'] = $data['username'] ?? $u;
+                    $data['password'] = $data['password'] ?? $p ?? "";
+                }
             }
-            $url = $this->db->prepare("SELECT url from arsse_subscriptions where id = ? and owner = ?", "int", "str")->run($id, $user)->getValue();
+            // ensure the username does not contain any U+003A COLON or control characters, as
+            //   this is incompatible with HTTP Basic authentication
+            if (isset($data['username']) && preg_match("/[\x{00}-\x{1F}\x{7F}:]/", $data['username'])) {
+                throw new Db\ExceptionInput("invalidValue", ["action" => __FUNCTION__, "field" => "password"]);
+            }
+            // retrieve the current values for the URL, username, and password
             // the URL from the database can be assumed to be a string because the subscription ID is already validated above
-            $data['url'] = URL::normalize($data['url'] ?? $url, $data['username'] ?? null, $data['password'] ?? null);
-
+            $url = $this->db->prepare("SELECT url from arsse_subscriptions where id = ? and owner = ?", "int", "str")->run($id, $user)->getValue();
+            $u = parse_url($url, \PHP_URL_USER);
+            $p = parse_url($url, \PHP_URL_PASS);
+            // construct the new URL
+            $data['url'] = URL::normalize($data['url'] ?? $url, $data['username'] ?? $u, $data['password'] ?? $p);
         }
         // perform the update
         $valid = [
