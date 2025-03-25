@@ -30,11 +30,13 @@ class URL {
      * - Generic percent-encoding normalization
      * - Fragment discarding
      *
-     * It does NOT drop trailing slashes from paths, nor does it perform Unicode normalization or context-aware percent-encoding normalization
+     * It does NOT drop trailing slashes from paths, nor does it perform Unicode normalization or context-aware percent-encoding normalization.
+     *
+     * For maximum flexibility the username and password can be set independently. When in doubt, set both.
      *
      * @param string $url The URL to normalize
-     * @param string $u Username to add to the URL, replacing any existing credentials
-     * @param string $p Password to add to the URL, if a username is specified
+     * @param ?string $u Username to add to the URL, replacing any existing credentials; passing null will using the existing value, while passing an empty string will clear it
+     * @param ?string $p Password to add to the URL, if a username is specified; passing null will using the existing value, while passing an empty string will clear it
      */
     public static function normalize(string $url, ?string $u = null, ?string $p = null): string {
         extract(parse_url($url));
@@ -44,16 +46,10 @@ class URL {
         }
         if (isset($host)) {
             $out .= "//";
-            if (strlen($u ?? "")) {
-                $out .= self::normalizeEncoding(rawurlencode($u));
-                if (strlen($p ?? "")) {
-                    $out .= ":".self::normalizeEncoding(rawurlencode($p));
-                }
-                $out .= "@";
-            } elseif (strlen($user ?? "")) {
-                $out .= self::normalizeEncoding($user);
-                if (strlen($pass ?? "")) {
-                    $out .= ":".self::normalizeEncoding($pass);
+            if (strlen($u ?? $user ?? "")) {
+                $out .= self::normalizeEncoding(rawurlencode($u ?? $user));
+                if (strlen($p ?? $pass ?? "")) {
+                    $out .= ":".self::normalizeEncoding(rawurlencode($p ?? $pass));
                 }
                 $out .= "@";
             }
