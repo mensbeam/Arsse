@@ -1,3 +1,11 @@
+Version 0.12.0 (2025-??-??)
+===========================
+
+New features:
+- Implementations of previously missing Miniflux features:
+  - Custom User-Agent during feed fetching
+  - Modifying the URL, username, and password of a feed
+
 Version 0.11.0 (2025-03-18)
 ===========================
 
