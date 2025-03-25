@@ -149,4 +149,8 @@ abstract class AbstractException extends \Exception {
     public function getParams(): array {
         return $this->params;
     }
+
+    public function getParam(string $key): mixed {
+        return $this->params[$key] ?? null;
+    }
 }

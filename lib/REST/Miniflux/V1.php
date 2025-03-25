@@ -93,29 +93,29 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
      *
      * Miniflux also allows changing the following properties:
      *
-     *  - feed_url
-     *  - username
-     *  - password
-     *  - user_agent
      *  - scraper_rules
      *  - rewrite_rules
      *  - disabled
      *  - ignore_http_cache
      *  - fetch_via_proxy
      *
-     *  These either do not apply because we have no cache or proxy,
-     *  or cannot be changed because feeds are deduplicated and changing
-     *  how they are fetched is not practical with our implementation.
+     *  These do not apply because we do not implement required underlying
+     *  functionality like a cache or proxy, nor have the facility to rewrite
+     *  the data fetched by the feed parser.
      *  The properties are still checked for type and syntactic validity
      *  where practical, on the assumption Miniflux would also reject
      *  invalid values.
      */
     protected const FEED_META_MAP = [
+        'feed_url'        => "url",
+        'username'        => "username",
+        'password'        => "password",
         'title'           => "title",
         'category_id'     => "folder",
         'crawler'         => "scrape",
         'keeplist_rules'  => "keep_rule",
         'blocklist_rules' => "block_rule",
+        'user_agent'      => "user_agent",
     ];
     protected const ARTICLE_COLUMNS = [
         "id", "url", "title", "subscription",
@@ -857,6 +857,10 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, (int) $path[1], $in);
         } catch (ExceptionInput $e) {
             switch ($e->getCode()) {
+                case 10230:
+                    $field = $e->getParam("field");
+                    $field = ($field === "url") ? "feed_url" : $field;
+                    return self::respError(["InvalidInputValue", 'field' => $field], 422);
                 case 10231:
                 case 10232:
                     return self::respError("InvalidTitle", 422);
@@ -864,6 +868,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                     return self::respError("MissingCategory", 422);
                 case 10239:
                     return self::respError("404", 404);
+                default:
+                    throw $e; // @codeCoverageIgnore
             }
         }
         return $this->getFeed($path)->withStatus(201);
@@ -1204,7 +1210,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                     return self::respError("InvalidImportLabel", 422);
             }
         } catch (FeedException $e) {
-            return self::respError(["FailedImportFeed", 'url' => $e->getParams()['url'], 'code' => $e->getCode()], 502);
+            return self::respError(["FailedImportFeed", 'url' => $e->getParam("url"), 'code' => $e->getCode()], 502);
         }
         return HTTP::respJson(['message' => Arsse::$lang->msg("API.Miniflux.ImportSuccess")]);
     }

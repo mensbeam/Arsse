@@ -74,4 +74,9 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
         $e = new LangException("stringMissing", ['msgID' => "OOK"]);
         $this->assertSame(['msgID' => "OOK"], $e->getParams());
     }
+
+    public function testGetNamedExceptionParam(): void {
+        $e = new LangException("stringMissing", ['msgID' => "OOK"]);
+        $this->assertSame("OOK", $e->getParam("msgID"));
+    }
 }
