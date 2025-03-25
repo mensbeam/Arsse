@@ -197,6 +197,11 @@ trait SeriesSubscription {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    public function testReserveASubscriptionWithInvalidUsername(): void {
+        $this->assertException("invalidValue", "Db", "ExceptionInput");
+        Arsse::$db->subscriptionReserve($this->user, "http://example.com/feed5", "john:doe", "secret", false);
+    }
+
     public function testReserveADuplicateSubscription(): void {
         $url = "http://example.com/feed2";
         $this->assertException("constraintViolation", "Db", "ExceptionInput");

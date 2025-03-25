@@ -821,6 +821,11 @@ class Database {
      * @param boolean $discover Whether to perform newsfeed discovery if $url points to an HTML document
      */
     public function subscriptionReserve(string $user, string $url, string $fetchUser = "", string $fetchPassword = "", bool $discover = true): int {
+        // ensure the username does not contain any U+003A COLON or control characters, as
+        //   this is incompatible with HTTP Basic authentication
+        if (preg_match("/[\x{00}-\x{1F}\x{7F}:]/", $fetchUser)) {
+            throw new Db\ExceptionInput("invalidValue", ["action" => __FUNCTION__, "field" => "fetchUser"]);
+        }
         // normalize the input URL
         $url = URL::normalize($url, $fetchUser, $fetchPassword);
         // if discovery is enabled, check to see if the feed already exists; this will save us some network latency if it does
@@ -862,7 +867,7 @@ class Database {
      *
      * - "id": The numeric identifier of the subscription
      * - "feed": The numeric identifier of the subscription (historical)
-     * - "url": The URL of the newsfeed, after discovery and HTTP redirects
+     * - "url": The URL of the newsfeed, after discovery and HTTP redirects, with username and password embedded where applicable
      * - "title": The title of the newsfeed
      * - "source": The URL of the source of the newsfeed i.e. its parent Web site
      * - "icon_id": The numeric identifier of an icon representing the newsfeed or its source
@@ -1095,7 +1100,7 @@ class Database {
             // ensure the username does not contain any U+003A COLON or control characters, as
             //   this is incompatible with HTTP Basic authentication
             if (isset($data['username']) && preg_match("/[\x{00}-\x{1F}\x{7F}:]/", $data['username'])) {
-                throw new Db\ExceptionInput("invalidValue", ["action" => __FUNCTION__, "field" => "password"]);
+                throw new Db\ExceptionInput("invalidValue", ["action" => __FUNCTION__, "field" => "username"]);
             }
             // retrieve the current values for the URL, username, and password
             // the URL from the database can be assumed to be a string because the subscription ID is already validated above
