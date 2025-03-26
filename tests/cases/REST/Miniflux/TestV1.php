@@ -596,16 +596,21 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
         $success = HTTP::respJson(self::FEEDS_OUT[0], 201);
         return [
-            [[],                                     [],                                    true,                                 $success],
-            [[],                                     [],                                    new ExceptionInput("subjectMissing"), V1::respError("404", 404)],
-            [['title' => ""],                        ['title' => ""],                       new ExceptionInput("missing"),        V1::respError("InvalidTitle", 422)],
-            [['title' => " "],                       ['title' => " "],                      new ExceptionInput("whitespace"),     V1::respError("InvalidTitle", 422)],
-            [['title' => " "],                       ['title' => " "],                      new ExceptionInput("whitespace"),     V1::respError("InvalidTitle", 422)],
-            [['category_id' => 47],                  ['folder' => 46],                      new ExceptionInput("idMissing"),      V1::respError("MissingCategory", 422)],
-            [['crawler' => false],                   ['scrape' => false],                   true,                                 $success],
-            [['keeplist_rules' => ""],               ['keep_rule' => ""],                   true,                                 $success],
-            [['blocklist_rules' => "ook"],           ['block_rule' => "ook"],               true,                                 $success],
-            [['title' => "Ook!", 'crawler' => true], ['title' => "Ook!", 'scrape' => true], true,                                 $success],
+            [[],                                     [],                                    true,                                                        $success],
+            [[],                                     [],                                    new ExceptionInput("subjectMissing"),                        V1::respError("404", 404)],
+            [['title' => ""],                        ['title' => ""],                       new ExceptionInput("missing"),                               V1::respError("InvalidTitle", 422)],
+            [['title' => " "],                       ['title' => " "],                      new ExceptionInput("whitespace"),                            V1::respError("InvalidTitle", 422)],
+            [['title' => " "],                       ['title' => " "],                      new ExceptionInput("whitespace"),                            V1::respError("InvalidTitle", 422)],
+            [['category_id' => 47],                  ['folder' => 46],                      new ExceptionInput("idMissing"),                             V1::respError("MissingCategory", 422)],
+            [['crawler' => false],                   ['scrape' => false],                   true,                                                        $success],
+            [['keeplist_rules' => ""],               ['keep_rule' => ""],                   true,                                                        $success],
+            [['blocklist_rules' => "ook"],           ['block_rule' => "ook"],               true,                                                        $success],
+            [['title' => "Ook!", 'crawler' => true], ['title' => "Ook!", 'scrape' => true], true,                                                        $success],
+            [['feed_url' => "http://example.com"],   ['url' => "http://example.com"],       true,                                                        $success],
+            [['username' => "ook"],                  ['username' => "ook"],                 true,                                                        $success],
+            [['password' => "ook"],                  ['password' => "ook"],                 true,                                                        $success],
+            [['user_agent' => "ook"],                ['user_agent' => "ook"],               true,                                                        $success],
+            [['username' => "ook:eek"],              ['username' => "ook:eek"],             new ExceptionInput("invalidValue", ['field' => "username"]), V1::respError(["InvalidInputValue", 'field' => "username"], 422)],
         ];
     }
 

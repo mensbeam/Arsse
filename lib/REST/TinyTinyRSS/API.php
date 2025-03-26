@@ -823,10 +823,11 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return $out;
     }
 
-    protected function feedError(FeedException $e): array {
+    protected function feedError(AbstractException $e): array {
         // N.B.: we don't return code 4 (multiple feeds discovered); we simply pick the first feed discovered
         switch ($e->getCode()) {
             case 10502: // invalid URL
+            case 10230: // relative URL or bad username
                 return ['code' => 2, 'message' => $e->getMessage()];
             case 10521: // no feeds discovered
                 return ['code' => 3, 'message' => $e->getMessage()];
@@ -860,6 +861,10 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             $id = Arsse::$db->subscriptionAdd(Arsse::$user->id, $url, $fetchUser, $fetchPassword);
         } catch (ExceptionInput $e) {
+            // if the exception is not about a constraint violation, handle it elsewhere
+            if ($e->getCode() !== 10236) {
+                return $this->feedError($e);
+            }
             // subscription already exists; retrieve the existing ID and return that with the correct code
             for ($triedDiscovery = 0; $triedDiscovery <= 1; $triedDiscovery++) {
                 $subs = Arsse::$db->subscriptionList(Arsse::$user->id);

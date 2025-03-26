@@ -553,7 +553,8 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             [['url' => "http://example.org/news.atom", 'folderId' => 8],  42,                                        4758915, self::$feeds['db'][1], true,                                HTTP::respJson(['feeds' => [self::$feeds['rest'][1]], 'newestItemId' => 4758915])],
             [['url' => "http://example.com/news.atom", 'folderId' => 3],  new ExceptionInput("constraintViolation"), 0,       self::$feeds['db'][0], new ExceptionInput("idMissing"),     HTTP::respEmpty(409)],
             [['url' => "http://example.org/news.atom", 'folderId' => 8],  new ExceptionInput("constraintViolation"), 4758915, self::$feeds['db'][1], true,                                HTTP::respEmpty(409)],
-            [[],                                                          $feedException,                            0,       [],                    false,                               HTTP::respEmpty(422)],
+            [['url' => "http://example.com/bad"],                         $feedException,                            0,       [],                    false,                               HTTP::respEmpty(422)],
+            [['url' => "relative"],                                       new ExceptionInput("invalidValue"),        0,       [],                    false,                               HTTP::respEmpty(422)],
             [['url' => "http://example.net/news.atom", 'folderId' => -1], 47,                                        2112,    self::$feeds['db'][2], new ExceptionInput("typeViolation"), HTTP::respJson(['feeds' => [self::$feeds['rest'][2]], 'newestItemId' => 2112])],
         ];
     }

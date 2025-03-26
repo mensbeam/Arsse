@@ -459,8 +459,12 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             $id = Arsse::$db->subscriptionAdd(Arsse::$user->id, (string) $data['url']);
         } catch (ExceptionInput $e) {
-            // feed already exists
-            return HTTP::respEmpty(409);
+            if ($e->getCode() === 10236) {
+                // feed already exists
+                return HTTP::respEmpty(409);
+            }
+            // Bad URL or feed username
+            return HTTP::respEmpty(422);
         } catch (FeedException $e) {
             // feed could not be retrieved
             return HTTP::respEmpty(422);

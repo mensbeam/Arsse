@@ -859,7 +859,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             switch ($e->getCode()) {
                 case 10230:
                     $field = $e->getParam("field");
-                    $field = ($field === "url") ? "feed_url" : $field;
+                    $field = ($field === "url") ? "feed_url" : $field; // this case is not encountered in practice because we validate URLs as part of general input validation
                     return self::respError(["InvalidInputValue", 'field' => $field], 422);
                 case 10231:
                 case 10232:

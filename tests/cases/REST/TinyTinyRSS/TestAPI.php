@@ -739,6 +739,7 @@ LONG_STRING;
             [['feed_url' => "http://example.com/", 'login' => []],                   null,                                                                    null,                                      self::respErr("INCORRECT_USAGE")],
             [['feed_url' => "http://example.com/", 'login' => "", 'password' => []], null,                                                                    null,                                      self::respErr("INCORRECT_USAGE")],
             [['feed_url' => "http://example.com/", 'category_id' => -1],             null,                                                                    null,                                      self::respErr("INCORRECT_USAGE")],
+            [['feed_url' => "relative"],                                             [self::$userId, "relative", "", ""],                                     new ExceptionInput("invalidValue"),        self::respGood(['code' => 2, 'message' => (new ExceptionInput("invalidValue"))->getMessage()])],
         ];
     }
 
