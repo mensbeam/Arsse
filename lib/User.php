@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse;
 
+use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\User\ExceptionConflict as Conflict;
 use PasswordGenerator\Generator as PassGen;
@@ -85,10 +86,9 @@ class User {
     }
 
     public function add(string $user, ?string $password = null): string {
-        // ensure the user name does not contain any U+003A COLON or control characters, as
-        // this is incompatible with HTTP Basic authentication
-        if (preg_match("/[\x{00}-\x{1F}\x{7F}:]/", $user, $m)) {
-            $c = ord($m[0]);
+        // validate the username
+        if ($c = HTTP::userInvalid($user)) {
+            $c = ord($c);
             throw new User\ExceptionInput("invalidUsername", "U+".str_pad((string) $c, 4, "0", \STR_PAD_LEFT)." ".\IntlChar::charName($c, \IntlChar::EXTENDED_CHAR_NAME));
         }
         try {

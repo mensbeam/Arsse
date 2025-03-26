@@ -14,6 +14,7 @@ use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Context\UnionContext;
 use JKingWeb\Arsse\Context\RootContext;
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Misc\QueryFilter;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\Misc\URL;
@@ -783,12 +784,12 @@ class Database {
      *
      * @param string $user The user who will own the subscription
      * @param string $url The URL of the newsfeed or discovery source
-     * @param string $fetchUser The user name required to access the newsfeed, if applicable
-     * @param string $fetchPassword The password required to fetch the newsfeed, if applicable; this will be stored in cleartext
+     * @param ?string $fetchUser The user name required to access the newsfeed, if applicable
+     * @param ?string $fetchPassword The password required to fetch the newsfeed, if applicable; this will be stored in cleartext
      * @param boolean $discover Whether to perform newsfeed discovery if $url points to an HTML document
      * @param array $properties An associative array of properties accepted by the `subscriptionPropertiesSet` function
      */
-    public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = "", bool $discover = true, array $properties = []): int {
+    public function subscriptionAdd(string $user, string $url, ?string $fetchUser = null, ?string $fetchPassword = null, bool $discover = true, array $properties = []): int {
         $id = $this->subscriptionReserve($user, $url, $fetchUser, $fetchPassword, $discover);
         try {
             if ($properties) {
@@ -816,14 +817,13 @@ class Database {
      *
      * @param string $user The user who will own the subscription
      * @param string $url The URL of the newsfeed or discovery source
-     * @param string $fetchUser The user name required to access the newsfeed, if applicable
-     * @param string $fetchPassword The password required to fetch the newsfeed, if applicable; this will be stored in cleartext
+     * @param ?string $fetchUser The user name required to access the newsfeed, if applicable
+     * @param ?string $fetchPassword The password required to fetch the newsfeed, if applicable; this will be stored in cleartext
      * @param boolean $discover Whether to perform newsfeed discovery if $url points to an HTML document
      */
-    public function subscriptionReserve(string $user, string $url, string $fetchUser = "", string $fetchPassword = "", bool $discover = true): int {
-        // ensure the username does not contain any U+003A COLON or control characters, as
-        //   this is incompatible with HTTP Basic authentication
-        if (preg_match("/[\x{00}-\x{1F}\x{7F}:]/", $fetchUser)) {
+    public function subscriptionReserve(string $user, string $url, ?string $fetchUser = null, ?string $fetchPassword = null, bool $discover = true): int {
+        // validate the username
+        if (HTTP::userInvalid($fetchUser ?? "")) {
             throw new Db\ExceptionInput("invalidValue", ["action" => __FUNCTION__, "field" => "fetchUser"]);
         }
         // normalize the input URL
@@ -1097,9 +1097,8 @@ class Database {
                     $data['password'] = $data['password'] ?? $p ?? "";
                 }
             }
-            // ensure the username does not contain any U+003A COLON or control characters, as
-            //   this is incompatible with HTTP Basic authentication
-            if (isset($data['username']) && preg_match("/[\x{00}-\x{1F}\x{7F}:]/", $data['username'])) {
+            // validate the username
+            if (isset($data['username']) && HTTP::userInvalid($data['username'])) {
                 throw new Db\ExceptionInput("invalidValue", ["action" => __FUNCTION__, "field" => "username"]);
             }
             // retrieve the current values for the URL, username, and password
