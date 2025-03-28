@@ -6,6 +6,10 @@ New features:
   - Custom User-Agent during feed fetching
   - Modifying the URL, username, and password of a feed
 
+Bug fixes:
+- Always present enclosures as an array in the Miniflux protocol; this restores
+  synchronization with the Newsflash client
+
 Version 0.11.0 (2025-03-18)
 ===========================
 

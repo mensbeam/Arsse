@@ -980,7 +980,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 ],
             ];
         } else {
-            $enclosures = null;
+            $enclosures = [];
         }
         return [
             'id'           => (int) $entry['id'],
