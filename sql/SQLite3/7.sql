@@ -159,6 +159,7 @@ create table arsse_subscriptions_new(
     keep_rule text,                                                                         -- Regular expression the subscription's articles must match to avoid being hidden
     block_rule text,                                                                        -- Regular expression the subscription's articles must not match to avoid being hidden
     user_agent text,                                                                        -- An override HTTP User-Agent value to use when fetching feeds
+    cookie text,                                                                            -- Cookie HTTP header field to send when fetching feeds
     unique(owner,url)                                                                       -- a URL with particular credentials should only appear once
 );
 insert into arsse_subscriptions_new
@@ -186,6 +187,7 @@ insert into arsse_subscriptions_new
         s.scrape,
         s.keep_rule,
         s.block_rule,
+        null,
         null
     from arsse_subscriptions as s left join arsse_feeds as f on s.feed = f.id;
 

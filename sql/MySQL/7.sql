@@ -177,6 +177,7 @@ alter table arsse_subscriptions drop column feed;
 
 -- Add new columns to the subscriptions table
 alter table arsse_subscriptions add column user_agent longtext;
+alter table arsse_subscriptions add column cookie longtext;
 
 -- Delete unneeded table
 drop table arsse_articles_map;

@@ -131,6 +131,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             'block_rule' => "str",
             'deleted'    => "bool",
             'user_agent' => "str",
+            'cookie'     => "str",
         ],
         'arsse_folders' => [
             'id'       => "int",

@@ -374,7 +374,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $exp = "<p>Partial content</p>";
         $this->assertSame($exp, $f->newItems[0]->content);
         // now try to scrape and get different content
-        $f = new Feed(null, $this->base."Scraping/Feed", "", "", null, true);
+        $f = new Feed(null, $this->base."Scraping/Feed", "", "", null, null, true);
         $exp = "<p>Partial content, followed by more content</p>";
         $this->assertSame($exp, $f->newItems[0]->scrapedContent);
         $exp = "<p>Partial content</p>";

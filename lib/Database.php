@@ -784,13 +784,11 @@ class Database {
      *
      * @param string $user The user who will own the subscription
      * @param string $url The URL of the newsfeed or discovery source
-     * @param ?string $fetchUser The user name required to access the newsfeed, if applicable
-     * @param ?string $fetchPassword The password required to fetch the newsfeed, if applicable; this will be stored in cleartext
      * @param boolean $discover Whether to perform newsfeed discovery if $url points to an HTML document
      * @param array $properties An associative array of properties accepted by the `subscriptionPropertiesSet` function
      */
-    public function subscriptionAdd(string $user, string $url, ?string $fetchUser = null, ?string $fetchPassword = null, bool $discover = true, array $properties = []): int {
-        $id = $this->subscriptionReserve($user, $url, $fetchUser, $fetchPassword, $discover);
+    public function subscriptionAdd(string $user, string $url, bool $discover = true, array $properties = []): int {
+        $id = $this->subscriptionReserve($user, $url, $discover, $properties);
         try {
             if ($properties) {
                 $this->subscriptionPropertiesSet($user, $id, $properties);
@@ -817,23 +815,22 @@ class Database {
      *
      * @param string $user The user who will own the subscription
      * @param string $url The URL of the newsfeed or discovery source
-     * @param ?string $fetchUser The user name required to access the newsfeed, if applicable
-     * @param ?string $fetchPassword The password required to fetch the newsfeed, if applicable; this will be stored in cleartext
      * @param boolean $discover Whether to perform newsfeed discovery if $url points to an HTML document
+     * @param array $properties An associative array of properties accepted by the `subscriptionPropertiesSet` function
      */
-    public function subscriptionReserve(string $user, string $url, ?string $fetchUser = null, ?string $fetchPassword = null, bool $discover = true): int {
-        // validate the username
-        if (HTTP::userInvalid($fetchUser ?? "")) {
+    public function subscriptionReserve(string $user, string $url, bool $discover = true, array $properties = []): int {
+        // validate the feed username
+        if (HTTP::userInvalid($properties['username'] ?? "")) {
             throw new Db\ExceptionInput("invalidValue", ["action" => __FUNCTION__, "field" => "fetchUser"]);
         }
         // normalize the input URL
-        $url = URL::normalize($url, $fetchUser, $fetchPassword);
+        $url = URL::normalize($url, $properties['username'] ?? null, $properties['password'] ?? null);
         // if discovery is enabled, check to see if the feed already exists; this will save us some network latency if it does
         if ($discover) {
             $id = $this->db->prepare("SELECT id from arsse_subscriptions where owner = ? and url = ?", "str", "str")->run($user, $url)->getValue();
             if (!$id) {
                 // if it doesn't exist, perform discovery
-                $url = Feed::discover($url);
+                $url = Feed::discover($url, $properties['user_agent'] ?? null, $properties['cookie'] ?? null);
             }
         }
         try {
@@ -911,11 +908,23 @@ class Database {
             select
                 s.id as id,
                 s.id as feed,
-                s.url,source,pinned,err_count,err_msg,order_type,added,keep_rule,block_rule,user_agent,s.etag,s.scrape,
+                s.url,
+                s.source,
+                s.pinned,
+                s.err_count,
+                s.err_msg,
+                s.order_type,
+                s.added,
+                s.keep_rule,
+                s.block_rule,
+                s.user_agent,
+                s.cookie,
+                s.etag,
                 s.updated as updated,
                 s.modified as edited,
                 s.modified as modified,
                 s.next_fetch,
+                s.scrape,
                 case when i.data is not null then i.id end as icon_id,
                 i.url as icon_url,
                 folder, t.top as top_folder, d.name as folder_name, dt.name as top_folder_name,
@@ -1020,7 +1029,7 @@ class Database {
 
     /** Modifies the properties of a subscription
      *
-     * The $data array must contain one or more of the following keys:
+     * The $data array may contain one or more of the following keys:
      *
      * - "url": The URL of the subscription's newsfeed
      * - "title": The title of the subscription
@@ -1031,6 +1040,7 @@ class Database {
      * - "keep_rule": The subscription's "keep" filter rule; articles which do not match this are hidden
      * - "block_rule": The subscription's "block" filter rule; articles which match this are hidden
      * - "user_agent": An HTTP User-Agent value to use when fetching the feed rather than the default
+     * - "cookie": An HTTP cookie to send when fetching feeds; this is not currently used
      * - "username": The username to present to the foreign server when fetching the feed; this is intergrated into the URL
      * - "password": The password to present to the foreign server when fetching the feed; this is intergrated into the URL
      *
@@ -1120,6 +1130,7 @@ class Database {
             'scrape'     => "strict bool",
             'user_agent' => "str",
             'url'        => "strict str",
+            'cookie'     => "str",
             // "username" doesn't apply because it is part of the URL
             // "password" doesn't apply because it is part of the URL
         ];
@@ -1278,7 +1289,7 @@ class Database {
         }
         $f = $this->db->prepareArray(
             "SELECT 
-                url, last_mod as modified, etag, err_count, scrape as scrapers, keep_rule, block_rule, user_agent
+                url, last_mod as modified, etag, err_count, scrape, keep_rule, block_rule, user_agent, cookie
             FROM arsse_subscriptions
             where id = ? and owner = coalesce(?, owner)",
             ["int", "str"]
@@ -1287,12 +1298,12 @@ class Database {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $subID]);
         }
         // determine whether the feed's items should be scraped for full content from the source Web site
-        $scrape = (Arsse::$conf->fetchEnableScraping && ($scrapeOverride ?? $f['scrapers']));
+        $scrape = (Arsse::$conf->fetchEnableScraping && $f['scrape']);
         // the Feed object throws an exception when there are problems, but that isn't ideal
         // here. When an exception is thrown it should update the database with the
         // error instead of failing; if other exceptions are thrown, we should simply roll back
         try {
-            $feed = new Feed((int) $subID, $f['url'], (string) Date::transform($f['modified'], "http", "sql"), $f['etag'], $f['user_agent'], $scrape);
+            $feed = new Feed((int) $subID, $f['url'], (string) Date::transform($f['modified'], "http", "sql"), $f['etag'], $f['user_agent'], $f['cookie'], $scrape);
             if (!$feed->modified) {
                 // if the feed hasn't changed, just compute the next fetch time and record it
                 $this->db->prepare("UPDATE arsse_subscriptions SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id = ?", 'datetime', 'int')->run($feed->nextFetch, $subID);

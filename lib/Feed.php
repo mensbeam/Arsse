@@ -9,7 +9,6 @@ namespace JKingWeb\Arsse;
 
 use JKingWeb\Arsse\Feed\Item;
 use JKingWeb\Arsse\Misc\Date;
-use JKingWeb\Arsse\Rule\Rule;
 use PicoFeed\PicoFeedException;
 use PicoFeed\Config\Config;
 use PicoFeed\Client\Client;
@@ -31,9 +30,9 @@ class Feed {
     public $newItems = [];
     public $changedItems = [];
 
-    public static function discover(string $url, string $username = '', string $password = ''): string {
+    public static function discover(string $url, ?string $userAgent = null, ?string $cookie = null): string {
         // fetch the candidate feed
-        [$client, $reader] = self::download($url, "", "", $username, $password);
+        [$client, $reader] = self::download($url, "", "", $userAgent, $cookie);
         if ($reader->detectFormat($client->getContent())) {
             // if the prospective URL is a feed, use it
             $out = $url;
@@ -48,9 +47,9 @@ class Feed {
         return $out;
     }
 
-    public static function discoverAll(string $url, ?string $userAgent = null): array {
+    public static function discoverAll(string $url, ?string $userAgent = null, ?string $cookie = null): array {
         // fetch the candidate feed
-        [$client, $reader] = self::download($url, "", "", $userAgent);
+        [$client, $reader] = self::download($url, "", "", $userAgent, $cookie);
         if ($reader->detectFormat($client->getContent())) {
             // if the prospective URL is a feed, use it
             return [$url];
@@ -59,9 +58,9 @@ class Feed {
         }
     }
 
-    public function __construct(?int $feedID, string $url, string $lastModified = '', string $etag = '', ?string $userAgent = null, bool $scrape = false) {
+    public function __construct(?int $feedID, string $url, string $lastModified = '', string $etag = '', ?string $userAgent = null, ?string $cookie = null, bool $scrape = false) {
         // fetch the feed
-        [$client, $reader] = self::download($url, $lastModified, $etag, $userAgent);
+        [$client, $reader] = self::download($url, $lastModified, $etag, $userAgent, $cookie);
         // format the HTTP Last-Modified date returned
         $lastMod = $client->getLastModified();
         if (strlen($lastMod ?? "")) {
@@ -85,7 +84,7 @@ class Feed {
             } else {
                 // if requested, scrape full content for any new and changed items
                 if ($scrape) {
-                    $this->scrape($userAgent);
+                    $this->scrape($userAgent, $cookie);
                 }
             }
         }
@@ -93,7 +92,7 @@ class Feed {
         $this->nextFetch = $this->computeNextFetch();
     }
 
-    protected static function configure(?string $userAgent): Config {
+    protected static function configure(?string $userAgent, ?string $cookie): Config {
         $userAgent = $userAgent ?? Arsse::$conf->fetchUserAgentString ?? sprintf(
             'Arsse/%s (%s %s; %s; https://thearsse.com/)',
             Arsse::VERSION, // Arsse version
@@ -107,12 +106,13 @@ class Feed {
         $config->setGrabberTimeout(Arsse::$conf->fetchTimeout);
         $config->setClientUserAgent($userAgent);
         $config->setGrabberUserAgent($userAgent);
+        $config->setClientHeaders(['Cookie' => $cookie]);
         return $config;
     }
 
-    protected static function download(string $url, string $lastModified, string $etag, ?string $userAgent = null): array {
+    protected static function download(string $url, string $lastModified, string $etag, ?string $userAgent = null, ?string $cookie = null): array {
         try {
-            $reader = new Reader(self::configure($userAgent));
+            $reader = new Reader(self::configure($userAgent, $cookie));
             $client = $reader->download($url, $lastModified, $etag, "", "");
             return [$client, $reader];
         } catch (PicoFeedException $e) {
@@ -452,8 +452,8 @@ class Feed {
         return $dates;
     }
 
-    protected function scrape(?string $userAgent = null): void {
-        $scraper = new Scraper(self::configure($userAgent));
+    protected function scrape(?string $userAgent = null, ?string $cookie = null): void {
+        $scraper = new Scraper(self::configure($userAgent, $cookie));
         foreach (array_merge($this->newItems, $this->changedItems) as $item) {
             $scraper->setUrl($item->url);
             $scraper->execute();

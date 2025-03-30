@@ -75,6 +75,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'fetch_via_proxy'   => "boolean",
         'entry_ids'         => "array", // this is a special case: it is an array of integers
         'status'            => "string",
+        'cookie'            => "string",
     ];
     protected const USER_META_MAP = [
         // Miniflux ID             // Arsse ID        Default value
@@ -116,6 +117,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'keeplist_rules'  => "keep_rule",
         'blocklist_rules' => "block_rule",
         'user_agent'      => "user_agent",
+        'cookie'          => "cookie",
     ];
     protected const ARTICLE_COLUMNS = [
         "id", "url", "title", "subscription",
@@ -527,7 +529,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function discoverSubscriptions(array $data): ResponseInterface {
         try {
-            $list = Feed::discoverAll((string) $data['url'], (string) $data['username'], (string) $data['password']);
+            $url = URL::normalize((string) $data['url'], $data['username'], $data['password']);
+            $list = Feed::discoverAll($url, $data['user_agent'], $data['cookie']);
         } catch (FeedException $e) {
             $msg = [
                 10502 => "Fetch404",
@@ -820,9 +823,13 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'scrape' => (bool) $data['crawler'], 
             'keep_rule' => $data['keeplist_rules'], 
             'block_rule' => $data['blocklist_rules'],
+            'username' => $data['username'],
+            'password' => $data['password'],
+            'user_agent' => $data['user_agent'],
+            'cookie'   => $data['cookie'],
         ];
         try {
-            $id = Arsse::$db->subscriptionAdd(Arsse::$user->id, $data['feed_url'], (string) $data['username'], (string) $data['password'], false, $properties);
+            $id = Arsse::$db->subscriptionAdd(Arsse::$user->id, $data['feed_url'], false, $properties);
         } catch (FeedException $e) {
             $msg = [
                 10502 => "Fetch404",

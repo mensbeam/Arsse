@@ -83,9 +83,18 @@ class TestFetching extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame("Custom", $f->title);
         $this->assertSame("<p>Partial content</p>", $f->items[0]->content);
         // Scraping should also use the custom UA
-        $f = new Feed(null, $this->base."Fetching/UserAgent", "", "", "Custom", true);
+        $f = new Feed(null, $this->base."Fetching/UserAgent", "", "", "Custom", null, true);
         $this->assertSame("Custom", $f->title);
         $this->assertSame("Custom", $f->items[0]->scrapedContent);
-        
+    }
+
+    public function testFetchWithCookie(): void {
+        $f = new Feed(null, $this->base."Fetching/Cookie", "", "", null, "a=b; c=d");
+        $this->assertSame('{"a":"b","c":"d"}', $f->title);
+        $this->assertSame("<p>Partial content</p>", $f->items[0]->content);
+        // Scraping should also use the cookie
+        $f = new Feed(null, $this->base."Fetching/Cookie", "", "", null, "a=b; c=d", true);
+        $this->assertSame('{"a":"b","c":"d"}', $f->title);
+        $this->assertSame(htmlspecialchars('{"a":"b","c":"d"}'), $f->items[0]->scrapedContent);
     }
 }
