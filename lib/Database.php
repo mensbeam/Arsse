@@ -878,6 +878,7 @@ class Database {
      * - "keep_rule": The subscription's "keep" filter rule; articles which do not match this are hidden
      * - "block_rule": The subscription's "block" filter rule; articles which match this are hidden
      * - "user_agent": An HTTP User-Agent value to use when fetching the feed rather than the default
+     * - "cookie": The cookie value, if any, which is sent when fetching feeds
      * - "added": The date and time at which the subscription was added
      * - "updated": The date and time at which the newsfeed was last updated in the database
      * - "edited": The date and time at which the newsfeed was last modified by its authors
@@ -1040,7 +1041,7 @@ class Database {
      * - "keep_rule": The subscription's "keep" filter rule; articles which do not match this are hidden
      * - "block_rule": The subscription's "block" filter rule; articles which match this are hidden
      * - "user_agent": An HTTP User-Agent value to use when fetching the feed rather than the default
-     * - "cookie": An HTTP cookie to send when fetching feeds; this is not currently used
+     * - "cookie": An HTTP cookie to send when fetching feeds
      * - "username": The username to present to the foreign server when fetching the feed; this is intergrated into the URL
      * - "password": The password to present to the foreign server when fetching the feed; this is intergrated into the URL
      *

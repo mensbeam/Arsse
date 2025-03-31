@@ -157,6 +157,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         '/entries/1'                     => [
             'GET'                        => ["getEntry",              false, true,  false, false, []],
         ],
+        '/entries/1/fetch-content'       => [
+            'GET'                        => ["scrapeEntry",           false, true,  false, false, []],
+        ],
         '/entries/1/bookmark'            => [
             'PUT'                        => ["toggleEntryBookmark",   false, true,  false, false, []],
         ],
@@ -1224,5 +1227,14 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function opmlExport(): ResponseInterface {
         return HTTP::respText(Arsse::$obj->get(OPML::class)->export(Arsse::$user->id), 200, ['Content-Type' => "application/xml"]);
+    }
+
+    protected function scrapeEntry(array $path): ResponseInterface {
+        try {
+            $c = (new Context)->article((int) $path[1]);
+            $entry = Arsse::$db->articleList(Arsse::$user->id, $c, ["url", "subscription"])->getRow();
+            $sub = Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, (int) $entry['subscription']);
+            return HTTP::respJson(['content' => Feed::scrapeSingle($entry['url'])]);
+        } catch (ExceptionInput $e) {}
     }
 }

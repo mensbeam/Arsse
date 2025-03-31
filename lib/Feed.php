@@ -462,4 +462,14 @@ class Feed {
             }
         }
     }
+
+    public static function scrapeSingle(string $url, ?string $userAgent = null, ?string $cookie = null): string {
+        $scraper = new Scraper(self::configure($userAgent, $cookie));
+        $scraper->setUrl($url);
+        $scraper->execute();
+        if ($scraper->hasRelevantContent()) {
+            return $scraper->getFilteredContent();
+        }
+        return "";
+    }
 }
