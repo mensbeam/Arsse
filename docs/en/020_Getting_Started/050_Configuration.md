@@ -374,7 +374,7 @@ Whether to allow the possibility of fetching full article contents from an artic
 The [user agent](https://tools.ietf.org/html/rfc7231#section-5.5.3) The Arsse will identify as when fetching newsfeeds. The special value null will use an identifier similar to the following:
 
 ```
-Arsse/0.6.0 (Linux 4.15.0; x86_64; https://thearsse.com/)
+Arsse/0.6.0
 ```
 
 ## Housekeeping settings
