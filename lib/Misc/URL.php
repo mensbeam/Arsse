@@ -163,4 +163,24 @@ class URL {
         }
         return substr($url, 0, $insPos).$glue.$data.substr($url, $insPos);
     }
+
+    /** Reads credentials from the souce URL and inserts them into the destination URL, if origins match. 
+     * 
+     * If there are no credentials or the origins do not match, the destination URL is returned without modification
+     */
+    public static function credentialsApply(string $destination, string $source): string {
+        $s = parse_url(self::normalize($source));
+        if (strlen($s['user'] ?? "")) {
+            $d = parse_url(self::normalize($destination));
+            // the origin constitutes a security boundary
+            if (
+                ($d['scheme'] ?? "") === ($s['scheme'] ?? "")
+                && ($d['host'] ?? "") === ($s['host'] ?? "")
+                && ($d['port'] ?? null) === ($s['port'] ?? null)
+            ) {
+                return self::normalize($destination, $s['user'], $s['pass'] ?? "");
+            }
+        }
+        return $destination;
+    }
 }

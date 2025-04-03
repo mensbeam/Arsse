@@ -9,6 +9,8 @@ namespace JKingWeb\Arsse;
 
 use JKingWeb\Arsse\Feed\Item;
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Misc\URL;
+use GuzzleHttp\Exception\GuzzleException;
 use PicoFeed\PicoFeedException;
 use PicoFeed\Config\Config;
 use PicoFeed\Client\Client;
@@ -84,7 +86,7 @@ class Feed {
             } else {
                 // if requested, scrape full content for any new and changed items
                 if ($scrape) {
-                    $this->scrape($userAgent, $cookie);
+                    $this->scrape($url, $userAgent, $cookie);
                 }
             }
         }
@@ -115,9 +117,7 @@ class Feed {
             $reader = new Reader(self::configure($userAgent, $cookie));
             $client = $reader->download($url, $lastModified, $etag, "", "");
             return [$client, $reader];
-        } catch (PicoFeedException $e) {
-            throw new Feed\Exception("", ['url' => $url], $e); // @codeCoverageIgnore
-        } catch (\GuzzleHttp\Exception\GuzzleException $e) {
+        } catch (PicoFeedException|GuzzleException $e) {
             throw new Feed\Exception("", ['url' => $url], $e);
         }
     }
@@ -129,10 +129,8 @@ class Feed {
                 $client->getContent(),
                 $client->getEncoding()
             )->execute();
-        } catch (PicoFeedException $e) {
+        } catch (PicoFeedException|GuzzleException $e) {
             throw new Feed\Exception("", ['url' => $client->getUrl()], $e);
-        } catch (\GuzzleHttp\Exception\GuzzleException $e) { // @codeCoverageIgnore
-            throw new Feed\Exception("", ['url' => $client->getUrl()], $e); // @codeCoverageIgnore
         }
 
         // Grab the favicon for the feed, or null if no valid icon is found
@@ -452,24 +450,34 @@ class Feed {
         return $dates;
     }
 
-    protected function scrape(?string $userAgent = null, ?string $cookie = null): void {
+    protected function scrape(string $feedUrl, ?string $userAgent = null, ?string $cookie = null): void {
         $scraper = new Scraper(self::configure($userAgent, $cookie));
         foreach (array_merge($this->newItems, $this->changedItems) as $item) {
-            $scraper->setUrl($item->url);
-            $scraper->execute();
-            if ($scraper->hasRelevantContent()) {
-                $item->scrapedContent = $scraper->getFilteredContent();
+            try {
+                $url = URL::credentialsApply($item->url, $feedUrl);
+                $scraper->setUrl($url);
+                $scraper->execute();
+                if ($scraper->hasRelevantContent()) {
+                    $item->scrapedContent = $scraper->getFilteredContent();
+                }
+            } catch (PicoFeedException|GuzzleException $e) {
+                continue;
             }
         }
     }
 
-    public static function scrapeSingle(string $url, ?string $userAgent = null, ?string $cookie = null): string {
-        $scraper = new Scraper(self::configure($userAgent, $cookie));
-        $scraper->setUrl($url);
-        $scraper->execute();
-        if ($scraper->hasRelevantContent()) {
-            return $scraper->getFilteredContent();
+    public static function scrapeSingle(string $url, ?string $feedUrl, ?string $userAgent = null, ?string $cookie = null): string {
+        $url = URL::credentialsApply($url, $feedUrl ?? "");
+        try {
+            $scraper = new Scraper(self::configure($userAgent, $cookie));
+            $scraper->setUrl($url);
+            $scraper->execute();
+            if ($scraper->hasRelevantContent()) {
+                return $scraper->getFilteredContent();
+            }
+            return "";
+        } catch (PicoFeedException|GuzzleException $e) {
+            throw new Feed\Exception("", ['url' => $url], $e);
         }
-        return "";
     }
 }

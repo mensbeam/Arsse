@@ -5,10 +5,13 @@ New features:
 - Implementations of previously missing Miniflux features:
   - Custom User-Agent during feed fetching
   - Modifying the URL, username, and password of a feed
+- Updated Miniflux implementation in line with Miniflux 2.2.6
 
 Bug fixes:
 - Always present enclosures as an array in the Miniflux protocol; this restores
   synchronization with the Newsflash client
+- Handle errors during article scraping gracefully
+- Use authentication while scraping where appropriate
 
 Version 0.11.0 (2025-03-18)
 ===========================

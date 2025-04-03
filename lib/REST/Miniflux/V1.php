@@ -1231,10 +1231,23 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function scrapeEntry(array $path): ResponseInterface {
         try {
+            $tr = Arsse::$db->begin();
             $c = (new Context)->article((int) $path[1]);
             $entry = Arsse::$db->articleList(Arsse::$user->id, $c, ["url", "subscription"])->getRow();
+            if (!$entry) {
+                return $this->respError("404", 404);
+            }
             $sub = Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, (int) $entry['subscription']);
-            return HTTP::respJson(['content' => Feed::scrapeSingle($entry['url'])]);
-        } catch (ExceptionInput $e) {}
+            return HTTP::respJson(['content' => Feed::scrapeSingle($entry['url'], $sub['url'], $sub['user_agent'], $sub['cookie'])]);
+        } catch (FeedException $e) {
+            $msg = [
+                10502 => "Fetch404",
+                10506 => "Fetch403",
+                10507 => "Fetch401",
+                10521 => "Fetch404",
+                10522 => "FetchFormat",
+            ][$e->getCode()] ?? "FetchOther";
+            return self::respError($msg, 502);
+        }
     }
 }

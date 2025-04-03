@@ -11,6 +11,7 @@ namespace JKingWeb\Arsse\TestCase\Feed;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Feed;
 use JKingWeb\Arsse\Database;
+use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Test\Result;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -379,6 +380,33 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, $f->newItems[0]->scrapedContent);
         $exp = "<p>Partial content</p>";
         $this->assertSame($exp, $f->newItems[0]->content);
+    }
+
+    public function testScrapeFullContentWithError(): void {
+        // this should not throw any exceptions
+        $f = new Feed(null, $this->base."Scraping/Partial", "", "", null, null, true);
+        $exp1 = "<p>Partial content, followed by more content</p>";
+        $exp2 = "<p>Partial content</p>";
+        $this->assertSame($exp1, $f->newItems[1]->scrapedContent);
+        $this->assertSame($exp2, $f->newItems[1]->content);
+        $this->assertSame(null, $f->newItems[0]->scrapedContent);
+        $this->assertSame($exp2, $f->newItems[0]->content);
+    }
+
+    public function testScrapeFullExplicitly(): void {
+        $act = Feed::scrapeSingle($this->base."Scraping/Document", $this->base."Scraping/Document");
+        $exp = "<p>Partial content, followed by more content</p>";
+        $this->assertSame($exp, $act);
+    }
+
+    public function testScrapeFullExplicitlyWithoutContent(): void {
+        $act = Feed::scrapeSingle($this->base."Discovery/Valid", $this->base."Scraping/Document");
+        $this->assertSame("", $act);
+    }
+
+    public function testScrapeFullExplicitlyWithError(): void {
+        $this->expectException(FeedException::class);
+        Feed::scrapeSingle($this->base."Fetching/Error?code=404", $this->base."Scraping/Partial");
     }
 
     public function testFetchWithIcon(): void {

@@ -930,4 +930,28 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage(HTTP::respText("<EXPORT_DATA/>", 200, ['Content-Type' => "application/xml"]), $this->req("GET", "/export"));
         \Phake::verify($opml)->export(Arsse::$user->id);
     }
+
+    #[DataProvider("provideScrapings")]
+    public function testScrapeAnEntry(array $entry, array $sub, ResponseInterface $exp): void {
+        \Phake::when(Arsse::$db)->articleList->thenReturn(new Result(self::v($entry)));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn($sub);
+        $this->assertMessage($exp, $this->req("GET", "/entries/2112/fetch-content"));
+        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, $this->equalTo((new Context)->article(2112)), ["url", "subscription"]);
+        if ($entry) {
+            \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, (int) $entry[0]['subscription']);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionPropertiesGet(\Phake::anyParameters());
+        }
+    }
+
+    public static function provideScrapings(): iterable {
+        $base = "http://localhost:8000/Feed";
+        $basePW = "http://user:pass@localhost:8000/Feed";
+        return [
+            [[],                                                             [], V1::respError("404", 404)],
+            [[['url' => "$base/Scraping/Document", 'subscription' => 4400]], ['url' => "$base/Scraping/Feed",     'user_agent' => null, 'cookie' => null], HTTP::respJson(['content'=> "<p>Partial content, followed by more content</p>"])],
+            [[['url' => "$base/Scraping/DocumentPW", 'subscription' => 1]],  ['url' => "$basePW/Scraping/FeedPW", 'user_agent' => null, 'cookie' => null], HTTP::respJson(['content'=> "<p>Partial content, followed by more content</p>"])],
+            [[['url' => "$base/Scraping/DocumentPW", 'subscription' => 1]],  ['url' => "$base/Scraping/FeedPW",   'user_agent' => null, 'cookie' => null], V1::respError("Fetch401", 502)],
+        ];
+    }
 }

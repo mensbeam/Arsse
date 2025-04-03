@@ -114,4 +114,23 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
             [false, "http:///example"],
         ];
     }
+
+    #[DataProvider("provideCredentials")]
+    public function testApplyCredentials(string $src, string $dst, string $exp): void {
+        $this->assertSame($exp, URL::credentialsApply($dst, $src));
+    }
+
+    public static function provideCredentials(): iterable {
+        return [
+            ["http://example.com/src",        "http://example.com/dst", "http://example.com/dst"],
+            ["http://u:p@example.com/src",    "http://example.com/dst", "http://u:p@example.com/dst"],
+            ["HTTP://u:p@EXAMPLE.COM/src",    "http://example.com/dst", "http://u:p@example.com/dst"],
+            ["https://example.com/src",       "http://example.com/dst", "http://example.com/dst"],
+            ["https://u:p@example.com/src",   "http://example.com/dst", "http://example.com/dst"],
+            ["http://u:p@example.net/src",    "http://example.com/dst", "http://example.com/dst"],
+            ["http://u:p@example.com:80/src", "http://example.com/dst", "http://example.com/dst"],
+            ["//u:p@example.com/src",         "http://example.com/dst", "http://example.com/dst"],
+            ["/src",                          "http://example.com/dst", "http://example.com/dst"],
+        ];
+    }
 }
