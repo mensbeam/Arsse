@@ -36,6 +36,7 @@ return [
     'API.Miniflux.Error.DuplicateImportCategory'                           => 'Payload contains the same category name twice',
     'API.Miniflux.Error.FailedImportFeed'                                  => 'Unable to import feed at URL "{url}" (code {code})',
     'API.Miniflux.Error.InvalidImportLabel'                                => 'Payload contains an invalid label name',
+    'API.Miniflux.Error.NoIntegrations'                                    => 'no third-party integration enabled',
 
     'API.TTRSS.Category.Uncategorized'                                     => 'Uncategorized',
     'API.TTRSS.Category.Special'                                           => 'Special',

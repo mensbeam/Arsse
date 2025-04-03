@@ -160,6 +160,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         '/entries/1/fetch-content'       => [
             'GET'                        => ["scrapeEntry",           false, true,  false, false, []],
         ],
+        '/entries/1/save'                => [
+            'POST'                       => ["saveEntry",             false, false, false, false, []],
+        ],
         '/entries/1/bookmark'            => [
             'PUT'                        => ["toggleEntryBookmark",   false, true,  false, false, []],
         ],
@@ -1250,4 +1253,12 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return self::respError($msg, 502);
         }
     }
+
+    protected function saveEntry(): ResponseInterface {
+        // NOTE: This is a no-op because we do not support any third-party
+        //   integrations; Miniflux does not report 404 if no integrations
+        //   exist, returning 400 even for fictitious entries
+        return self::respError("NoIntegrations", 400);
+    }
+
 }

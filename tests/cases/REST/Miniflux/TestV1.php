@@ -954,4 +954,8 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             [[['url' => "$base/Scraping/DocumentPW", 'subscription' => 1]],  ['url' => "$base/Scraping/FeedPW",   'user_agent' => null, 'cookie' => null], V1::respError("Fetch401", 502)],
         ];
     }
+
+    public function testSaveAnArticle(): void {
+        $this->assertMessage(V1::respError("NoIntegrations", 400), $this->req("POST", "/entries/2112/save"));
+    }
 }
