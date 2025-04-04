@@ -196,6 +196,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         '/feeds/1/refresh'               => [
             'PUT'                        => ["refreshFeed",           false, true,  false, false, []],
         ],
+        '/feeds/counters'                => [
+            'GET'                        => ["getFeedCounters",       false, false, false, false, []],
+        ],
         '/feeds/refresh'                 => [
             'PUT'                        => ["refreshAllFeeds",       false, false, false, false, []],
         ],
@@ -802,6 +805,21 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $r) {
             $out[] = $this->transformFeed($r, $meta['num'], $meta['root'], $meta['tz']);
         }
+        return HTTP::respJson($out);
+    }
+
+    protected function getFeedCounters(): ResponseInterface {
+        $out = ['reads' => [], 'unreads' => []];
+        foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $r) {
+            $out['reads'][$r['id']] = $r['read'];
+            $out['unreads'][$r['id']] = $r['unread'];
+        }
+        // if there are no subscriptions, ensure the empty arrays are
+        //   serialized as objects
+        // NOTE: We can be sure that any non-empty arrays will serialize as
+        //   objects because zero is never a valid subscription ID
+        $out['reads'] = $out['reads'] ?: new \stdClass;
+        $out['unreads'] = $out['unreads'] ?: new \stdClass;
         return HTTP::respJson($out);
     }
 

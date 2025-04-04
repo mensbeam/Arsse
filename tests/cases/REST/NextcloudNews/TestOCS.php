@@ -94,7 +94,7 @@ class TestOCS extends \JKingWeb\Arsse\Test\AbstractTest {
         $user = "jane.doe@example.com";
         $exp = HTTP::respXml("<ocs><meta><status>failure</status><statuscode>998</statuscode><message></message></meta><data></data></ocs>", 404);
         $this->assertMessage($exp, $this->req("GET", $user));
-        $exp = HTTP::respJson(['ocs' => ['meta' => ['status' => "failure", 'statuscode' => 998, 'message' => ""], 'data' => []]], 404);
+        $exp = HTTP::respJson(['ocs' => ['meta' => ['status' => "failure", 'statuscode' => 998, 'message' => ""], 'data' => new \stdClass]], 404);
         $this->assertMessage($exp, $this->req("GET", $user, "", ['Accept' => "application/json"]));
     }
 
@@ -102,7 +102,7 @@ class TestOCS extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$user)->propertiesGet("oops", $this->anything())->thenThrow(new ExceptionConflict());
         $exp = HTTP::respXml("<ocs><meta><status>failure</status><statuscode>404</statuscode><message>User does not exist</message></meta><data></data></ocs>", 404);
         $this->assertMessage($exp, $this->req("GET", "oops"));
-        $exp = HTTP::respJson(['ocs' => ['meta' => ['status' => "failure", 'statuscode' => 404, 'message' => "User does not exist"], 'data' => []]], 404);
+        $exp = HTTP::respJson(['ocs' => ['meta' => ['status' => "failure", 'statuscode' => 404, 'message' => "User does not exist"], 'data' => new \stdClass]], 404);
         $this->assertMessage($exp, $this->req("GET", "oops", "", ['Accept' => "application/json"]));
     }
 }

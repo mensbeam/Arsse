@@ -36,8 +36,8 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ['id' => 2, 'username' => "jane.doe@example.com", 'last_login_at' => self::NOW, 'google_id' => "", 'openid_connect_id' => "", 'is_admin' => false, 'theme' => "light_serif", 'language' => "en_US", 'timezone' => "UTC",       'entry_sorting_direction' => "desc", 'entries_per_page' => 100, 'keyboard_shortcuts' => true,  'show_reading_time' => true,  'entry_swipe' => true,  'stylesheet' => ""],
     ];
     protected const FEEDS = [
-        ['id' => 1,  'feed' => 12, 'url' => "http://example.com/ook",                      'title' => "Ook", 'source' => "http://example.com/", 'icon_id' => 47,   'icon_url' => "http://example.com/icon", 'folder' => 2112, 'top_folder' => 5,    'folder_name' => "Cat Eek", 'top_folder_name' => "Cat Ook", 'pinned' => 0, 'err_count' => 1, 'err_msg' => "Oopsie", 'order_type' => 0, 'keep_rule' => "this|that", 'block_rule' => "both", 'added' => "2020-12-21 21:12:00", 'updated' => "2021-01-05 13:51:32", 'edited' => "2021-01-01 00:00:00", 'modified' => "2020-11-30 04:08:52", 'next_fetch' => "2021-01-20 00:00:00", 'etag' => "OOKEEK", 'scrape' => 0, 'unread' => 42],
-        ['id' => 55, 'feed' => 12, 'url' => "http://j%20k:super%20secret@example.com/eek", 'title' => "Eek", 'source' => "http://example.com/", 'icon_id' => null, 'icon_url' => null,                      'folder' => null, 'top_folder' => null, 'folder_name' => null,      'top_folder_name' => null,      'pinned' => 0, 'err_count' => 0, 'err_msg' => null,     'order_type' => 0, 'keep_rule' => null,        'block_rule' => null,   'added' => "2020-12-21 21:12:00", 'updated' => "2021-01-05 13:51:32", 'edited' => null,                  'modified' => "2020-11-30 04:08:52", 'next_fetch' => null,                  'etag' => null,     'scrape' => 1, 'unread' => 0],
+        ['id' => 1,  'feed' => 1,  'url' => "http://example.com/ook",                      'title' => "Ook", 'source' => "http://example.com/", 'icon_id' => 47,   'icon_url' => "http://example.com/icon", 'folder' => 2112, 'top_folder' => 5,    'folder_name' => "Cat Eek", 'top_folder_name' => "Cat Ook", 'pinned' => 0, 'err_count' => 1, 'err_msg' => "Oopsie", 'order_type' => 0, 'keep_rule' => "this|that", 'block_rule' => "both", 'added' => "2020-12-21 21:12:00", 'updated' => "2021-01-05 13:51:32", 'edited' => "2021-01-01 00:00:00", 'modified' => "2020-11-30 04:08:52", 'next_fetch' => "2021-01-20 00:00:00", 'etag' => "OOKEEK", 'scrape' => 0, 'unread' => 42, 'read' => 5],
+        ['id' => 55, 'feed' => 55, 'url' => "http://j%20k:super%20secret@example.com/eek", 'title' => "Eek", 'source' => "http://example.com/", 'icon_id' => null, 'icon_url' => null,                      'folder' => null, 'top_folder' => null, 'folder_name' => null,      'top_folder_name' => null,      'pinned' => 0, 'err_count' => 0, 'err_msg' => null,     'order_type' => 0, 'keep_rule' => null,        'block_rule' => null,   'added' => "2020-12-21 21:12:00", 'updated' => "2021-01-05 13:51:32", 'edited' => null,                  'modified' => "2020-11-30 04:08:52", 'next_fetch' => null,                  'etag' => null,     'scrape' => 1, 'unread' => 0,  'read' => 2112],
     ];
     protected const FEEDS_OUT = [
         ['id' => 1,  'user_id' => 42, 'feed_url' => "http://example.com/ook", 'site_url' => "http://example.com/", 'title' => "Ook", 'checked_at' => "2021-01-05T15:51:32.000000+02:00", 'next_check_at' => "2021-01-20T02:00:00.000000+02:00", 'etag_header' => "OOKEEK", 'last_modified_header' => "Fri, 01 Jan 2021 00:00:00 GMT", 'parsing_error_message' => "Oopsie", 'parsing_error_count' => 1, 'scraper_rules' => "", 'rewrite_rules' => "", 'crawler' => false, 'blocklist_rules' => "both", 'keeplist_rules' => "this|that", 'user_agent' => "", 'username' => "",    'password' => "",             'disabled' => false, 'ignore_http_cache' => false, 'fetch_via_proxy' => false, 'category' => ['id' => 6, 'title' => "Cat Ook", 'user_id' => 42], 'icon' => ['feed_id' => 1,'icon_id' => 47]],
@@ -282,6 +282,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public static function provideUserModifications(): iterable {
+        self::clearData();
         $out1 = ['num' => 2, 'admin' => false];
         $out2 = ['num' => 1, 'admin' => false];
         $resp1 = array_merge(self::USERS[1], ['username' => "john.doe@example.com"]);
@@ -415,6 +416,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public static function provideCategoryAdditions(): iterable {
+        self::clearData();
         return [
             ["New",       HTTP::respJson(['id' => 2112, 'title' => "New", 'user_id' => 42], 201)],
             ["Duplicate", V1::respError(["DuplicateCategory", 'title' => "Duplicate"], 409)],
@@ -441,6 +443,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public static function provideCategoryUpdates(): iterable {
+        self::clearData();
         return [
             [3, "New",       "subjectMissing",      V1::respError("404", 404)],
             [2, "New",       true,                  HTTP::respJson(['id' => 2, 'title' => "New", 'user_id' => 42], 201)],
@@ -651,6 +654,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public static function provideIcons(): iterable {
+        self::clearData();
         return [
             [['id' => 44, 'type' => "image/svg+xml", 'data' => "<svg/>"], HTTP::respJson(['id' => 44, 'data' => "image/svg+xml;base64,PHN2Zy8+", 'mime_type' => "image/svg+xml"])],
             [['id' => 47, 'type' => "",              'data' => "<svg/>"], V1::respError("404", 404)],
@@ -978,7 +982,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage(HTTP::respEmpty(202), $this->req("DELETE", "/flush-history"));
     }
 
-    #[DataProvider("provideSingleIcons")]
+    #[DataProvider("provideIconsById")]
     public function testGetAnIcon(int $id, $out, ResponseInterface $exp): void {
         if ($out instanceof \Exception) {
             \Phake::when(Arsse::$db)->iconPropertiesGet->thenThrow($out);
@@ -989,12 +993,37 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->iconPropertiesGet(Arsse::$user->id, $id);
     }
 
-    public static function provideSingleIcons(): iterable {
+    public static function provideIconsById(): iterable {
+        self::clearData();
         return [
             [4400, ['id' => 4400,   'type' => 'image/gif', 'data' => "OOK"], HTTP::respJson(['id' => 4400, 'mime_type' => "image/gif",                'data' => "image/gif;base64,".base64_encode("OOK")])],
             [2112, ['id' => "2112", 'type' => null, 'data' => "OOK"],        HTTP::respJson(['id' => 2112, 'mime_type' => "application/octet-stream", 'data' => "application/octet-stream;base64,".base64_encode("OOK")])],
             [1701, ['id' => 1701,   'type' => null, 'data' => null],         V1::respError("404", 404)],
             [1234, new ExceptionInput("subjectMissing"),                     V1::respError("404", 404)],
         ];
+    }
+
+    public function testRetrieveCounters(): void {
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v(self::FEEDS)));
+        $exp = HTTP::respJson([
+            'reads' => [
+                1  => 5,
+                55 => 2112,
+            ],
+            'unreads' => [
+                1  => 42,
+                55 => 0,
+            ],
+        ]);
+        $this->assertMessage($exp, $this->req("GET", "/feeds/counters"));
+    }
+
+    public function testRetrieveCountersWithNoFeeds(): void {
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result([]));
+        $exp = HTTP::respJson([
+            'reads' => new \stdClass,
+            'unreads' => new \stdClass,
+        ]);
+        $this->assertMessage($exp, $this->req("GET", "/feeds/counters"));
     }
 }
