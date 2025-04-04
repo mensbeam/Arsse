@@ -29,6 +29,7 @@ Miniflux version 2.2.6 is emulated, though not all features are implemented
 - Only the first enclosure of an article is retained
 - Comment URLs of articles are not exposed
 - The `/v1/entries/{entryID}/save` endpoint does nothing because we do not interface with third-party services
+- The `/v1/flush-history` endpoint does nothing because we do not track history; the API does not seem to expose the history
 
 # Differences
 

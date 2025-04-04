@@ -199,6 +199,10 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         '/feeds/refresh'                 => [
             'PUT'                        => ["refreshAllFeeds",       false, false, false, false, []],
         ],
+        '/flush-history'                 => [
+            'PUT'                        => ["flushHistory",          false, false,  false, false, []],
+            'DELETE'                     => ["flushHistory",          false, false,  false, false, []],
+        ],
         '/import'                        => [
             'POST'                       => ["opmlImport",            false, false, true,  false, []],
         ],
@@ -1265,6 +1269,12 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         //   integrations; Miniflux does not report 404 if no integrations
         //   exist, returning 400 even for fictitious entries
         return self::respError("NoIntegrations", 400);
+    }
+
+    protected function flushHistory(): ResponseInterface {
+        // NOTE: This is a no-op: we do not track history, and the API doesn't
+        //   seem to have a means of displaying it in any case
+        return HTTP::respEmpty(202);
     }
 
     protected function getVersion(): ResponseInterface {

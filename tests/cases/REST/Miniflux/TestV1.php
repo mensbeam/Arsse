@@ -972,4 +972,9 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ]);
         $this->assertMessage($exp, $this->req("GET", "/version"));
     }
+
+    public function testFlushHistory(): void {
+        $this->assertMessage(HTTP::respEmpty(202), $this->req("PUT", "/flush-history"));
+        $this->assertMessage(HTTP::respEmpty(202), $this->req("DELETE", "/flush-history"));
+    }
 }
