@@ -535,7 +535,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("POST", "/feeds", $in));
         if ($out) {
             $props = [
-                'folder'     => $in['category_id'] - 1,
+                'folder'     => ($in['category_id'] ?? 1) - 1,
                 'scrape'     => $in['crawler'] ?? false,
                 'keep_rule'  => $in['keeplist_rules'] ?? null,
                 'block_rule' => $in['blocklist_rules'] ?? null,
@@ -555,7 +555,6 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
         return [
             [['category_id' => 1],                                                                null,                                       V1::respError(["MissingInputValue", 'field' => "feed_url"], 422)],
-            [['feed_url' => "http://example.com/"],                                               null,                                       V1::respError(["MissingInputValue", 'field' => "category_id"], 422)],
             [['feed_url' => "http://example.com/", 'category_id' => "1"],                         null,                                       V1::respError(["InvalidInputType", 'field' => "category_id", 'expected' => "integer", 'actual' => "string"], 422)],
             [['feed_url' => "Not a URL", 'category_id' => 1],                                     null,                                       V1::respError(["InvalidInputValue", 'field' => "feed_url"], 422)],
             [['feed_url' => "http://example.com/", 'category_id' => 0],                           null,                                       V1::respError(["InvalidInputValue", 'field' => "category_id"], 422)],
@@ -578,6 +577,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             [['feed_url' => "http://example.com/", 'category_id' => 1],                           new ExceptionInput("constraintViolation"),  V1::respError("DuplicateFeed", 409)],
             [['feed_url' => "http://example.com/", 'category_id' => 1],                           new ExceptionInput("idMissing"),            V1::respError("MissingCategory", 422)],
             [['feed_url' => "http://example.com/", 'category_id' => 1],                           44,                                         HTTP::respJson(['feed_id' => 44], 201)],
+            [['feed_url' => "http://example.com/"],                                               44,                                         HTTP::respJson(['feed_id' => 44], 201)],
             [['feed_url' => "http://example.com/", 'category_id' => 1, 'crawler' => true],        44,                                         HTTP::respJson(['feed_id' => 44], 201)],
             [['feed_url' => "http://example.com/", 'category_id' => 1, 'keeplist_rules' => "^A"], 44,                                         HTTP::respJson(['feed_id' => 44], 201)],
             [['feed_url' => "http://example.com/", 'category_id' => 1, 'blocklist_rules' => "A"], 44,                                         HTTP::respJson(['feed_id' => 44], 201)],

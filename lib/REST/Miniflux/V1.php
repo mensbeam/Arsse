@@ -174,7 +174,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         ],
         '/feeds'                         => [
             'GET'                        => ["getFeeds",              false, false, false, false, []],
-            'POST'                       => ["createFeed",            false, false, true,  false, ["feed_url", "category_id"]],
+            'POST'                       => ["createFeed",            false, false, true,  false, ["feed_url"]],
         ],
         '/feeds/1'                       => [
             'GET'                        => ["getFeed",               false, true,  false, false, []],
@@ -838,7 +838,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function createFeed(array $data): ResponseInterface {
         $properties = [
-            'folder' => $data['category_id'] - 1, 
+            'folder' => ($data['category_id'] ?? 1) - 1, 
             'scrape' => (bool) $data['crawler'], 
             'keep_rule' => $data['keeplist_rules'], 
             'block_rule' => $data['blocklist_rules'],

@@ -36,6 +36,7 @@ Miniflux version 2.2.6 is emulated, though not all features are implemented
 - Various error codes and messages differ due to significant implementation differences
 - The "All" category is treated specially (see below for details)
 - Feed and category titles consisting only of whitespace are rejected along with the empty string
+- Feeds created without a category are placed in the "All" category rather than the most recently modified category
 - Filtering rules may not function identically (see below for details)
 - The `checked_at` field of feeds indicates when the feed was last updated rather than when it was last checked
 - Search strings will match partial words
