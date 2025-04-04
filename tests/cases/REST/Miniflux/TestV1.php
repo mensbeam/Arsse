@@ -958,4 +958,18 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testSaveAnArticle(): void {
         $this->assertMessage(V1::respError("NoIntegrations", 400), $this->req("POST", "/entries/2112/save"));
     }
+
+    public function testGetVersion(): void {
+        $exp = HTTP::respJson([
+            'version'       => V1::VERSION,
+            'commit'        => V1::COMMIT,
+            'build_date'    => V1::BUILD_DATE,
+            'go_version'    => V1::GO_VERSION,
+            'compiler'      => "gc",
+            'arch'          => php_uname("m"),
+            'os'            => php_uname("s"),
+            'arsse_version' => Arsse::VERSION,
+        ]);
+        $this->assertMessage($exp, $this->req("GET", "/version"));
+    }
 }

@@ -31,7 +31,10 @@ use Psr\Http\Message\ResponseInterface;
 use GuzzleHttp\Psr7\Uri;
 
 class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
-    public const VERSION = "2.0.28";
+    public const VERSION = "2.2.6";
+    public const COMMIT = "600f19cc875ed360c541d2690e456f46fecca3a6";
+    public const BUILD_DATE = "2025-02-22-16:25:31";
+    public const GO_VERSION = "go1.24.0";
 
     protected const ACCEPTED_TYPES_OPML = ["application/xml", "text/xml", "text/x-opml"];
     protected const ACCEPTED_TYPES_JSON = ["application/json"];
@@ -216,6 +219,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         ],
         '/users/*'                       => [
             'GET'                        => ["getUserById",           true,  true,  false, false, []],
+        ],
+        '/version'                       => [
+            'GET'                        => ["getVersion",            false, false,  false, false, []],
         ],
     ];
 
@@ -1261,4 +1267,18 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return self::respError("NoIntegrations", 400);
     }
 
+    protected function getVersion(): ResponseInterface {
+        // NOTE: Commit, build date, Go version, and compiler are synthetic
+        //   data taken from the Arch package for the 2.2.6 release of Miniflux
+        return HTTP::respJson([
+            'version'       => self::VERSION,
+            'commit'        => self::COMMIT,
+            'build_date'    => self::BUILD_DATE,
+            'go_version'    => self::GO_VERSION,
+            'compiler'      => "gc",
+            'arch'          => php_uname("m"),
+            'os'            => php_uname("s"),
+            'arsse_version' => Arsse::VERSION,
+        ]);
+    }
 }
