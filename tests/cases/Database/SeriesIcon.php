@@ -66,4 +66,24 @@ trait SeriesIcon {
         ];
         $this->assertResult($exp, Arsse::$db->iconList("jane.doe@example.com"));
     }
+
+    public function testGetThePropertiesOfAnIcon(): void {
+        $exp = ['id' => 2,'url' => 'http://localhost:8000/Icon/GIF', 'type' => 'image/gif', 'data' => base64_decode("R0lGODlhAQABAIABAAAAAP///yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==")];
+        $this->assertEquals($exp, Arsse::$db->iconPropertiesGet("john.doe@example.com", 2));
+    }
+
+    public function testGetThePropertiesOfAnArbitraryIcon(): void {
+        $exp = ['id' => 2,'url' => 'http://localhost:8000/Icon/GIF', 'type' => 'image/gif', 'data' => base64_decode("R0lGODlhAQABAIABAAAAAP///yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==")];
+        $this->assertEquals($exp, Arsse::$db->iconPropertiesGet(null, 2));
+    }
+
+    public function testGetThePropertiesOfAMissingIcon(): void {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        Arsse::$db->iconPropertiesGet(null, 5);
+    }
+
+    public function testGetThePropertiesOfAnInvalidIcon(): void {
+        $this->assertException("typeViolation", "Db", "ExceptionInput");
+        Arsse::$db->iconPropertiesGet(null, 0);
+    }
 }

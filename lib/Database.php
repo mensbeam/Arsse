@@ -1525,6 +1525,34 @@ class Database {
         return $this->db->prepare("SELECT distinct i.id, i.url, i.type, i.data from arsse_icons as i join arsse_subscriptions as s on s.icon = i.id where s.owner = ? and s.deleted = 0", "str")->run($user);
     }
 
+    /** Retrieve data on a single icon, but its ID
+     *
+     * The returned information for the icon is identical to `iconList` above
+     *
+     * @param ?string $user The user whose subscription icon is to be retrieved, which may be omitted when necessary
+     * @param int $id The numeric identifier of the icon
+     */
+    public function iconPropertiesGet(?string $user, int $id): array {
+        if (!V::id($id)) {
+            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "icon", 'type' => "int > 0"]);
+        }
+        $out = $this->db->prepare(
+            "SELECT distinct
+                i.id, i.url, i.type, i.data
+            from arsse_icons as i
+            join arsse_subscriptions as s on s.icon = i.id
+            where
+                s.owner = coalesce(?, s.owner)
+                and s.deleted = 0
+                and i.id = ?",
+            "str", "int"
+        )->run($user, $id)->getRow();
+        if (!$out) {
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "icon", 'id' => $id]);
+        }
+        return $out;
+    }
+
     /** Deletes orphaned icons from the database
      *
      * Icons are orphaned if no subscribed newsfeed uses them.
