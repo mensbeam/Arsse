@@ -886,6 +886,7 @@ class Database {
      * - "next_fetch": The date and time and which the feed will next be fetched
      * - "etag": The ETag header-field in the last fetch response
      * - "scrape": Whether the user wants scrape full-article content
+     * - "read": The number of read articles associated with the subscription
      * - "unread": The number of unread articles associated with the subscription
      *
      * @param string $user The user whose subscriptions are to be listed
@@ -930,7 +931,8 @@ class Database {
                 i.url as icon_url,
                 folder, t.top as top_folder, d.name as folder_name, dt.name as top_folder_name,
                 coalesce(s.title, s.feed_title) as title,
-                cast(coalesce((articles - hidden - marked), coalesce(articles,0)) as $integerType) as unread -- this cast is required for MySQL for unclear reasons
+                cast(coalesce((articles - hidden - marked), coalesce(articles,0)) as $integerType) as unread, -- this cast is required for MySQL for unclear reasons
+                cast(coalesce(marked,0) as $integerType) as \"read\" -- this cast is required for MySQL for unclear reasons
             from arsse_subscriptions as s
                 left join topmost as t on t.f_id = s.folder
                 left join arsse_folders as d on s.folder = d.id
@@ -938,14 +940,14 @@ class Database {
                 left join arsse_icons as i on i.id = s.icon
                 left join (
                     select 
-                        subscription, 
-                        count(*) as articles 
-                    from arsse_articles 
+                        subscription,
+                        count(*) as articles
+                    from arsse_articles
                     group by subscription
                 ) as article_stats on article_stats.subscription = s.id
                 left join (
-                    select 
-                        subscription, 
+                    select
+                        subscription,
                         sum(hidden) as hidden,
                         sum(case when \"read\" = 1 and hidden = 0 then 1 else 0 end) as marked
                     from arsse_articles group by subscription
