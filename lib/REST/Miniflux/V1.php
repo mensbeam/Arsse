@@ -200,8 +200,11 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'PUT'                        => ["refreshAllFeeds",       false, false, false, false, []],
         ],
         '/flush-history'                 => [
-            'PUT'                        => ["flushHistory",          false, false,  false, false, []],
-            'DELETE'                     => ["flushHistory",          false, false,  false, false, []],
+            'PUT'                        => ["flushHistory",          false, false, false, false, []],
+            'DELETE'                     => ["flushHistory",          false, false, false, false, []],
+        ],
+        '/icons/1'                       => [
+            'GET'                        => ["getIcon",               false, true,  false, false, []],
         ],
         '/import'                        => [
             'POST'                       => ["opmlImport",            false, false, true,  false, []],
@@ -1289,6 +1292,26 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'arch'          => php_uname("m"),
             'os'            => php_uname("s"),
             'arsse_version' => Arsse::VERSION,
+        ]);
+    }
+
+    protected function getIcon(array $path): ResponseInterface {
+        try {
+            $icon = Arsse::$db->iconPropertiesGet(Arsse::$user->id, (int) $path[1]);
+        } catch (ExceptionInput $e) {
+            return self::respError("404", 404);
+        }
+        if (!$icon['data']) {
+            // This case is not likely, but may occur for installations which
+            //   happen to upgrade directly from 0.7.1 or earlier and
+            //   immediately use Miniflux
+            return self::respError("404", 404);
+        }
+        $type = $icon['type'] ?: "application/octet-stream";
+        return HTTP::respJson([
+            'id'   => (int) $icon['id'],
+            'mime_type' => $type,
+            'data' => $type.";base64,".base64_encode($icon['data']),
         ]);
     }
 }

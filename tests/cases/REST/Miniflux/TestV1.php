@@ -977,4 +977,24 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage(HTTP::respEmpty(202), $this->req("PUT", "/flush-history"));
         $this->assertMessage(HTTP::respEmpty(202), $this->req("DELETE", "/flush-history"));
     }
+
+    #[DataProvider("provideSingleIcons")]
+    public function testGetAnIcon(int $id, $out, ResponseInterface $exp): void {
+        if ($out instanceof \Exception) {
+            \Phake::when(Arsse::$db)->iconPropertiesGet->thenThrow($out);
+        } else {
+            \Phake::when(Arsse::$db)->iconPropertiesGet->thenReturn($out);
+        }
+        $this->assertMessage($exp, $this->req("GET", "/icons/$id"));
+        \Phake::verify(Arsse::$db)->iconPropertiesGet(Arsse::$user->id, $id);
+    }
+
+    public static function provideSingleIcons(): iterable {
+        return [
+            [4400, ['id' => 4400,   'type' => 'image/gif', 'data' => "OOK"], HTTP::respJson(['id' => 4400, 'mime_type' => "image/gif",                'data' => "image/gif;base64,".base64_encode("OOK")])],
+            [2112, ['id' => "2112", 'type' => null, 'data' => "OOK"],        HTTP::respJson(['id' => 2112, 'mime_type' => "application/octet-stream", 'data' => "application/octet-stream;base64,".base64_encode("OOK")])],
+            [1701, ['id' => 1701,   'type' => null, 'data' => null],         V1::respError("404", 404)],
+            [1234, new ExceptionInput("subjectMissing"),                     V1::respError("404", 404)],
+        ];
+    }
 }
