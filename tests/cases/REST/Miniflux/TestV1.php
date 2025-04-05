@@ -49,11 +49,17 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ['id' => 47,   'url' => "http://example.com/47",   'title' => "Title 47",   'subscription' => 55, 'author' => null,             'fingerprint' => "FINGERPRINT", 'published_date' => "2021-01-22 02:21:12", 'modified_date' => "2021-01-22 13:44:47", 'starred' => 0, 'unread' => 1, 'hidden' => 1, 'content' => "Content 47",   'media_url' => "http://example.com/47/enclosure",   'media_type' => ""],
         ['id' => 2112, 'url' => "http://example.com/2112", 'title' => "Title 2112", 'subscription' => 55, 'author' => null,             'fingerprint' => "FINGERPRINT", 'published_date' => "2021-01-22 02:21:12", 'modified_date' => "2021-01-22 13:44:47", 'starred' => 0, 'unread' => 0, 'hidden' => 1, 'content' => "Content 2112", 'media_url' => "http://example.com/2112/enclosure", 'media_type' => "image/png"],
     ];
+    protected const TAGS = [
+        42   => ["History", "Canada"],
+        44   => [],
+        47   => ["News", "Tech"],
+        2112 => ["Travel"],
+    ];
     protected const ENTRIES_OUT = [
-        ['id' => 42,   'user_id' => 42, 'feed_id' => 55, 'status' => "read",    'hash' => "FINGERPRINT", 'title' => "Title 42",   'url' => "http://example.com/42",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 42",   'author' => "Thomas Costain", 'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => [], 'feed' => self::FEEDS_OUT[1]],
-        ['id' => 44,   'user_id' => 42, 'feed_id' => 55, 'status' => "unread",  'hash' => "FINGERPRINT", 'title' => "Title 44",   'url' => "http://example.com/44",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 44",   'author' => "",               'share_code' => "", 'starred' => true,  'reading_time' => 0, 'enclosures' => [['id' => 44,   'user_id' => 42, 'entry_id' => 44,   'url' => "http://example.com/44/enclosure",   'mime_type' => "application/octet-stream", 'size' => 0]], 'feed' => self::FEEDS_OUT[1]],
-        ['id' => 47,   'user_id' => 42, 'feed_id' => 55, 'status' => "removed", 'hash' => "FINGERPRINT", 'title' => "Title 47",   'url' => "http://example.com/47",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 47",   'author' => "",               'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => [['id' => 47,   'user_id' => 42, 'entry_id' => 47,   'url' => "http://example.com/47/enclosure",   'mime_type' => "application/octet-stream", 'size' => 0]], 'feed' => self::FEEDS_OUT[1]],
-        ['id' => 2112, 'user_id' => 42, 'feed_id' => 55, 'status' => "removed", 'hash' => "FINGERPRINT", 'title' => "Title 2112", 'url' => "http://example.com/2112", 'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 2112", 'author' => "",               'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => [['id' => 2112, 'user_id' => 42, 'entry_id' => 2112, 'url' => "http://example.com/2112/enclosure", 'mime_type' => "image/png",                'size' => 0]], 'feed' => self::FEEDS_OUT[1]],
+        ['id' => 42,   'user_id' => 42, 'feed_id' => 55, 'status' => "read",    'hash' => "FINGERPRINT", 'title' => "Title 42",   'url' => "http://example.com/42",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 42",   'author' => "Thomas Costain", 'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => [],                                                                                                                                                          'feed' => self::FEEDS_OUT[1], 'tags' => self::TAGS[42]],
+        ['id' => 44,   'user_id' => 42, 'feed_id' => 55, 'status' => "unread",  'hash' => "FINGERPRINT", 'title' => "Title 44",   'url' => "http://example.com/44",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 44",   'author' => "",               'share_code' => "", 'starred' => true,  'reading_time' => 0, 'enclosures' => [['id' => 44,   'user_id' => 42, 'entry_id' => 44,   'url' => "http://example.com/44/enclosure",   'mime_type' => "application/octet-stream", 'size' => 0]], 'feed' => self::FEEDS_OUT[1], 'tags' => self::TAGS[44]],
+        ['id' => 47,   'user_id' => 42, 'feed_id' => 55, 'status' => "removed", 'hash' => "FINGERPRINT", 'title' => "Title 47",   'url' => "http://example.com/47",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 47",   'author' => "",               'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => [['id' => 47,   'user_id' => 42, 'entry_id' => 47,   'url' => "http://example.com/47/enclosure",   'mime_type' => "application/octet-stream", 'size' => 0]], 'feed' => self::FEEDS_OUT[1], 'tags' => self::TAGS[47]],
+        ['id' => 2112, 'user_id' => 42, 'feed_id' => 55, 'status' => "removed", 'hash' => "FINGERPRINT", 'title' => "Title 2112", 'url' => "http://example.com/2112", 'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 2112", 'author' => "",               'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => [['id' => 2112, 'user_id' => 42, 'entry_id' => 2112, 'url' => "http://example.com/2112/enclosure", 'mime_type' => "image/png",                'size' => 0]], 'feed' => self::FEEDS_OUT[1], 'tags' => self::TAGS[2112]],
     ];
 
     protected $h;
@@ -669,6 +675,9 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testGetEntries(string $url, ?RootContext $c, ?array $order, $out, bool $count, ResponseInterface $exp): void {
         \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v(self::FEEDS)));
         \Phake::when(Arsse::$db)->articleCount->thenReturn(2112);
+        \Phake::when(Arsse::$db)->articleCategoriesGet->thenReturnCallback(function($user, $id) {
+            return self::TAGS[$id] ?? [];
+        });
         if ($out instanceof \Exception) {
             \Phake::when(Arsse::$db)->articleList->thenThrow($out);
         } else {
@@ -759,6 +768,9 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider("provideSingleEntryQueries")]
     public function testGetASingleEntry(string $url, Context $c, $out, ResponseInterface $exp): void {
         \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn(self::v(self::FEEDS[1]));
+        \Phake::when(Arsse::$db)->articleCategoriesGet->thenReturnCallback(function($user, $id) {
+            return self::TAGS[$id] ?? [];
+        });
         if ($out instanceof \Exception) {
             \Phake::when(Arsse::$db)->articleList->thenThrow($out);
         } else {
@@ -781,17 +793,17 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
         $c = new Context;
         return [
-            ["/entries/42",                 (clone $c)->article(42),                     [self::ENTRIES[1]],                   HTTP::respJson(self::ENTRIES_OUT[1])],
+            ["/entries/42",                 (clone $c)->article(42),                     [self::ENTRIES[0]],                   HTTP::respJson(self::ENTRIES_OUT[0])],
             ["/entries/2112",               (clone $c)->article(2112),                   new ExceptionInput("subjectMissing"), V1::respError("404", 404)],
-            ["/feeds/47/entries/42",        (clone $c)->subscription(47)->article(42),   [self::ENTRIES[1]],                   HTTP::respJson(self::ENTRIES_OUT[1])],
+            ["/feeds/47/entries/42",        (clone $c)->subscription(47)->article(42),   [self::ENTRIES[0]],                   HTTP::respJson(self::ENTRIES_OUT[0])],
             ["/feeds/47/entries/44",        (clone $c)->subscription(47)->article(44),   [],                                   V1::respError("404", 404)],
             ["/feeds/47/entries/2112",      (clone $c)->subscription(47)->article(2112), new ExceptionInput("subjectMissing"), V1::respError("404", 404)],
             ["/feeds/2112/entries/47",      (clone $c)->subscription(2112)->article(47), new ExceptionInput("idMissing"),      V1::respError("404", 404)],
-            ["/categories/47/entries/42",   (clone $c)->folder(46)->article(42),         [self::ENTRIES[1]],                   HTTP::respJson(self::ENTRIES_OUT[1])],
+            ["/categories/47/entries/42",   (clone $c)->folder(46)->article(42),         [self::ENTRIES[0]],                   HTTP::respJson(self::ENTRIES_OUT[0])],
             ["/categories/47/entries/44",   (clone $c)->folder(46)->article(44),         [],                                   V1::respError("404", 404)],
             ["/categories/47/entries/2112", (clone $c)->folder(46)->article(2112),       new ExceptionInput("subjectMissing"), V1::respError("404", 404)],
             ["/categories/2112/entries/47", (clone $c)->folder(2111)->article(47),       new ExceptionInput("idMissing"),      V1::respError("404", 404)],
-            ["/categories/1/entries/42",    (clone $c)->folderShallow(0)->article(42),   [self::ENTRIES[1]],                   HTTP::respJson(self::ENTRIES_OUT[1])],
+            ["/categories/1/entries/42",    (clone $c)->folderShallow(0)->article(42),   [self::ENTRIES[0]],                   HTTP::respJson(self::ENTRIES_OUT[0])],
         ];
     }
 
@@ -1027,7 +1039,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/feeds/counters"));
     }
 
-    public function testGetIntegrationStation(): void {
+    public function testGetIntegrationStatus(): void {
         $exp = HTTP::respJson(['has_integrations' => false]);
         $this->assertMessage($exp, $this->req("GET", "/integrations/status"));
     }

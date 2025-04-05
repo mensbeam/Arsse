@@ -1066,13 +1066,14 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $r) {
                 $feeds[(int) $r['id']] = $this->transformFeed($r, $meta['num'], $meta['root'], $meta['tz']);
             }
-            // add the feed objects to each entry
-            // NOTE: If ever we implement multiple enclosure, this would be the right place to add them
+            // add the feed objects and tags to each entry
+            // NOTE: If ever we implement multiple enclosures, this would be the right place to add them
             for ($a = 0; $a < sizeof($out); $a++) {
                 $out[$a]['feed'] = $feeds[$out[$a]['feed_id']];
+                $out[$a]['tags'] = Arsse::$db->articleCategoriesGet(Arsse::$user->id, $out[$a]['id']);
             }
         }
-        // finally compute the total number of entries match the query, where necessary
+        // finally compute the total number of entries matching the query, where necessary
         $count = sizeof($out);
         if ($c->offset || ($c->limit && $count >= $c->limit)) {
             $count = Arsse::$db->articleCount(Arsse::$user->id, (clone $c)->limit(0)->offset(0));
@@ -1092,6 +1093,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $out = $this->transformEntry($entry, $meta['num'], $meta['tz']);
         // next transform the parent feed of the entry
         $out['feed'] = $this->transformFeed(Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, $out['feed_id']), $meta['num'], $meta['root'], $meta['tz']);
+        // add the article categories
+        $out['tags'] = Arsse::$db->articleCategoriesGet(Arsse::$user->id, $id);
         return $out;
     }
 

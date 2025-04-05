@@ -1914,7 +1914,7 @@ class Database {
      *
      * @param string $user The user whose articles are to be listed
      * @param RootContext $context The search context
-     * @param array $fieldss The columns to return in the result set, any of: id, edition, url, title, author, content, guid, fingerprint, folder, subscription, feed, starred, unread, note, published_date, edited_date, modified_date, marked_date, subscription_title, media_url, media_type
+     * @param array $fields The columns to return in the result set, any of: id, edition, url, title, author, content, guid, fingerprint, folder, subscription, feed, starred, unread, note, published_date, edited_date, modified_date, marked_date, subscription_title, media_url, media_type
      * @param array $sort The columns to sort the result by eg. "edition desc" in decreasing order of importance
      */
     public function articleList(string $user, ?RootContext $context = null, array $fields = ["id"], array $sort = []): Db\Result {
