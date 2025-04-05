@@ -52,7 +52,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'after'           => V::T_DATE, // Unix timestamp
         'before_entry_id' => V::T_INT,
         'after_entry_id'  => V::T_INT,
-        'starred'         => V::T_MIXED, // the presence of the starred key is the only thing considered by Miniflux
+        'starred'         => V::T_BOOL,
         'search'          => V::T_STRING,
         'category_id'     => V::T_INT,
     ];
@@ -447,11 +447,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                     return self::respError(["DuplicateInputValue", 'field' => $k], 400);
                 }
                 $seen[$k] = true;
-                if ($k === "starred") {
-                    // the starred key is a special case in that Miniflux only considers the presence of the key
-                    $out[$k] = true;
-                    continue;
-                } elseif ($v === "") {
+                if ($v === "") {
                     // if the value is empty we can discard the value, but subsequent values for the same non-array key are still considered duplicates
                     continue;
                 } elseif ($a) {
