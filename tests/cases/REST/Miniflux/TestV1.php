@@ -1026,4 +1026,9 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ]);
         $this->assertMessage($exp, $this->req("GET", "/feeds/counters"));
     }
+
+    public function testGetIntegrationStation(): void {
+        $exp = HTTP::respJson(['has_integrations' => false]);
+        $this->assertMessage($exp, $this->req("GET", "/integrations/status"));
+    }
 }

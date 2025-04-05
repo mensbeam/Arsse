@@ -212,6 +212,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         '/import'                        => [
             'POST'                       => ["opmlImport",            false, false, true,  false, []],
         ],
+        '/integrations/status'           => [
+            'GET'                        => ["getIntegrations",       false, false, false, false, []],
+        ],
         '/me'                            => [
             'GET'                        => ["getCurrentUser",        false, false, false, false, []],
         ],
@@ -1331,5 +1334,10 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'mime_type' => $type,
             'data' => $type.";base64,".base64_encode($icon['data']),
         ]);
+    }
+
+    protected function getIntegrations(): ResponseInterface {
+        // NOTE: This is a stub: we do not support integrations
+        return HTTP::respJson(['has_integrations' => false]);
     }
 }
