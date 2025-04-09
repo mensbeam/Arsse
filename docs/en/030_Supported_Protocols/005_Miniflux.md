@@ -22,14 +22,16 @@ Miniflux version 2.2.6 is emulated, though not all features are implemented
 - JSON Feed format is not suported
 - Various feed-related features are not supported; attempting to use them has no effect
     - Rewrite rules and scraper rules
-    - The `disabled`, `ignore_http_cache`, and `fetch_via_proxy` flags
+    - The `disabled`, `hide_globally`, `ignore_http_cache`, and `fetch_via_proxy` flags
     - Manually refreshing feeds
+- Third-party integrations features are not supported; attempting to use them has no effect
+  - Saving entries to third-party services
+  - Integrations status (this will always return `false`)
 - Titles and types are not available during feed discovery and are filled with generic data
 - Reading time is not calculated and will always be zero
 - Only the first enclosure of an article is retained
 - Comment URLs of articles are not exposed
-- The `/v1/entries/{entryID}/save` endpoint does nothing because we do not interface with third-party services
-- The `/v1/flush-history` endpoint does nothing because we do not track history; the API does not seem to expose the history
+- The "Flush history" feature does nothing because the API does not seem to expose the history
 
 # Differences
 
@@ -44,7 +46,7 @@ Miniflux version 2.2.6 is emulated, though not all features are implemented
 
 # Behaviour of filtering (block and keep) rules
 
-The Miniflux documentation gives only a brief example of a pattern for its filtering rules; the allowed syntax is described in full [in Google's documentation for RE2](https://github.com/google/re2/wiki/Syntax). Being a PHP application, The Arsse instead accepts [PCRE syntax](http://www.pcre.org/original/doc/html/pcresyntax.html) (or since PHP 7.3 [PCRE2 syntax](https://www.pcre.org/current/doc/html/pcre2syntax.html)), specifically in UTF-8 mode. Delimiters should not be included, and slashes should not be escaped; anchors may be used if desired. For example `^(?i)RE/MAX$` is a valid pattern.
+Miniflux accepts [Google's RE2 regular expression syntax](https://github.com/google/re2/wiki/Syntax) for filter rules. Being a PHP application, The Arsse instead accepts [PCRE2 syntax](https://www.pcre.org/current/doc/html/pcre2syntax.html)), specifically in UTF-8 mode. Delimiters should not be included, and slashes should not be escaped; anchors may be used if desired. For example `^(?i)RE/MAX$` is a valid pattern.
 
 For convenience the patterns are tested after collapsing whitespace. Unlike Miniflux, The Arsse tests the patterns against an article's author-supplied categories if they do not match its title. Also unlike Miniflux, when filter rules are modified they are re-evaluated against all applicable articles immediately.
 

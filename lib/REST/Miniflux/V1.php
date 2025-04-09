@@ -74,6 +74,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'keeplist_rules'    => "string",
         'blocklist_rules'   => "string",
         'disabled'          => "boolean",
+        'hide_globally'     => "boolean",
         'ignore_http_cache' => "boolean",
         'fetch_via_proxy'   => "boolean",
         'entry_ids'         => "array", // this is a special case: it is an array of integers
@@ -97,18 +98,19 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
      *
      * Miniflux also allows changing the following properties:
      *
-     *  - scraper_rules
-     *  - rewrite_rules
-     *  - disabled
-     *  - ignore_http_cache
-     *  - fetch_via_proxy
+     * - scraper_rules
+     * - rewrite_rules
+     * - disabled
+     * - hide_globally
+     * - ignore_http_cache
+     * - fetch_via_proxy
      *
-     *  These do not apply because we do not implement required underlying
-     *  functionality like a cache or proxy, nor have the facility to rewrite
-     *  the data fetched by the feed parser.
-     *  The properties are still checked for type and syntactic validity
-     *  where practical, on the assumption Miniflux would also reject
-     *  invalid values.
+     * These do not apply because we do not implement required underlying
+     * functionality like a cache or proxy, nor have the facility to rewrite
+     * the data fetched by the feed parser.
+     * The properties are still checked for type and syntactic validity
+     * where practical, on the assumption Miniflux would also reject
+     * invalid values.
      */
     protected const FEED_META_MAP = [
         'feed_url'        => "url",
@@ -121,6 +123,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'blocklist_rules' => "block_rule",
         'user_agent'      => "user_agent",
         'cookie'          => "cookie",
+    ];
+    protected const CATEGORY_META_MAP = [
+        'title' => "name",
     ];
     protected const ARTICLE_COLUMNS = [
         "id", "url", "title", "subscription",
@@ -135,7 +140,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'POST'                       => ["createCategory",        false, false, true,  false, ["title"]],
         ],
         '/categories/1'                  => [
-            'PUT'                        => ["updateCategory",        false, true,  true,  false, ["title"]], // title is effectively required since no other field can be changed
+            'PUT'                        => ["updateCategory",        false, true,  true,  false, []],
             'DELETE'                     => ["deleteCategory",        false, true,  false, false, []],
         ],
         '/categories/1/entries'          => [
@@ -693,11 +698,21 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $out = [];
         // add the root folder as a category
         $meta = $this->userMeta(Arsse::$user->id);
-        $out[] = ['id' => 1, 'title' => $meta['root'], 'user_id' => $meta['num']];
+        $out[] = [
+            'id' => 1,
+            'title' => $meta['root'],
+            'user_id' => $meta['num'],
+            'hide_globally' => false,
+        ];
         // add other top folders as categories
         foreach (Arsse::$db->folderList(Arsse::$user->id, null, false) as $f) {
             // always add 1 to the ID since the root folder will always be 1 instead of 0.
-            $out[] = ['id' => $f['id'] + 1, 'title' => $f['name'], 'user_id' => $meta['num']];
+            $out[] = [
+                'id'            => $f['id'] + 1,
+                'title'         => $f['name'],
+                'user_id'       => $meta['num'],
+                'hide_globally' => false,
+            ];
         }
         return HTTP::respJson($out);
     }
@@ -713,34 +728,56 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
-        return HTTP::respJson(['id' => $id + 1, 'title' => $data['title'], 'user_id' => $meta['num']], 201);
+        return HTTP::respJson([
+            // always add 1 to the ID since the root folder will always be 1 instead of 0.
+            'id'            => $id + 1,
+            'title'         => $data['title'],
+            'user_id'       => $meta['num'],
+            'hide_globally' => false,
+        ], 201);
     }
 
     protected function updateCategory(array $path, array $data): ResponseInterface {
         // category IDs in Miniflux are always greater than 1; we have folder 0, so we decrement category IDs by 1 to get the folder ID
         $folder = $path[1] - 1;
-        $title = $data['title'] ?? "";
+        $in = [];
+        foreach (self::CATEGORY_META_MAP as $from => $to) {
+            if (isset($data[$from])) {
+                $in[$to] = $data[$from];
+            }
+        }
         try {
-            if ($folder === 0) {
-                // folder 0 doesn't actually exist in the database, so its name is kept as user metadata
-                if (!strlen(trim($title))) {
+            if ($folder === 0 && isset($in['name'])) {
+                // NOTE: Folder 0 doesn't actually exist in the database, so
+                //   its name is kept as user metadata and we have to handle it
+                //   separately. One of the implications of this is that the
+                //   root folder may share a name with a top-level concrete
+                //   folder and not cause a conflict
+                if (!strlen(trim($in['name']))) {
                     throw new ExceptionInput("whitespace", ['field' => "title", 'action' => __FUNCTION__]);
                 }
-                $title = Arsse::$user->propertiesSet(Arsse::$user->id, ['root_folder_name' => $title])['root_folder_name'];
-            } else {
-                Arsse::$db->folderPropertiesSet(Arsse::$user->id, $folder, ['name' => $title]);
+                Arsse::$user->propertiesSet(Arsse::$user->id, ['root_folder_name' => $in['name']]);
+                unset($in['name']);
             }
+            Arsse::$db->folderPropertiesSet(Arsse::$user->id, $folder, $in);
         } catch (ExceptionInput $e) {
             if ($e->getCode() === 10236) {
-                return self::respError(["DuplicateCategory", 'title' => $title], 409);
+                return self::respError(["DuplicateCategory", 'title' => $in['name']], 409);
             } elseif (in_array($e->getCode(), [10237, 10239])) {
                 return self::respError("404", 404);
             } else {
-                return self::respError(["InvalidCategory", 'title' => $title], 422);
+                return self::respError(["InvalidCategory", 'title' => $in['name'] ?? ""], 422);
             }
         }
-        $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
-        return HTTP::respJson(['id' => (int) $path[1], 'title' => $title, 'user_id' => $meta['num']], 201);
+        // retrieve the current information about the folder and return it
+        $meta = $this->userMeta(Arsse::$user->id);
+        $title = ($folder === 0) ? $meta['root'] : Arsse::$db->folderPropertiesGet(Arsse::$user->id, $folder)['name'];
+        return HTTP::respJson([
+            'id'            => $folder + 1,
+            'title'         => $title,
+            'user_id'       => $meta['num'],
+            'hide_globally' => false,
+        ], 201);
     }
 
     protected function deleteCategory(array $path): ResponseInterface {
@@ -786,12 +823,14 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'username'              => rawurldecode(explode(":", $url->getUserInfo(), 2)[0] ?? ""),
             'password'              => rawurldecode(explode(":", $url->getUserInfo(), 2)[1] ?? ""),
             'disabled'              => false,
+            'hide_globally'         => false,
             'ignore_http_cache'     => false,
             'fetch_via_proxy'       => false,
             'category'              => [
-                'id'      => (int) $sub['top_folder'] + 1,
-                'title'   => $sub['top_folder_name'] ?? $rootName,
-                'user_id' => $uid,
+                'id'            => (int) $sub['top_folder'] + 1,
+                'title'         => $sub['top_folder_name'] ?? $rootName,
+                'user_id'       => $uid,
+                'hide_globally' => false,
             ],
             'icon'                  => $sub['icon_id'] ? ['feed_id' => (int) $sub['id'], 'icon_id' => (int) $sub['icon_id']] : null,
         ];

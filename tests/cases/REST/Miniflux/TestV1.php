@@ -40,8 +40,8 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ['id' => 55, 'feed' => 55, 'url' => "http://j%20k:super%20secret@example.com/eek", 'title' => "Eek", 'source' => "http://example.com/", 'icon_id' => null, 'icon_url' => null,                      'folder' => null, 'top_folder' => null, 'folder_name' => null,      'top_folder_name' => null,      'pinned' => 0, 'err_count' => 0, 'err_msg' => null,     'order_type' => 0, 'keep_rule' => null,        'block_rule' => null,   'added' => "2020-12-21 21:12:00", 'updated' => "2021-01-05 13:51:32", 'edited' => null,                  'modified' => "2020-11-30 04:08:52", 'next_fetch' => null,                  'etag' => null,     'scrape' => 1, 'unread' => 0,  'read' => 2112],
     ];
     protected const FEEDS_OUT = [
-        ['id' => 1,  'user_id' => 42, 'feed_url' => "http://example.com/ook", 'site_url' => "http://example.com/", 'title' => "Ook", 'checked_at' => "2021-01-05T15:51:32.000000+02:00", 'next_check_at' => "2021-01-20T02:00:00.000000+02:00", 'etag_header' => "OOKEEK", 'last_modified_header' => "Fri, 01 Jan 2021 00:00:00 GMT", 'parsing_error_message' => "Oopsie", 'parsing_error_count' => 1, 'scraper_rules' => "", 'rewrite_rules' => "", 'crawler' => false, 'blocklist_rules' => "both", 'keeplist_rules' => "this|that", 'user_agent' => "", 'username' => "",    'password' => "",             'disabled' => false, 'ignore_http_cache' => false, 'fetch_via_proxy' => false, 'category' => ['id' => 6, 'title' => "Cat Ook", 'user_id' => 42], 'icon' => ['feed_id' => 1,'icon_id' => 47]],
-        ['id' => 55, 'user_id' => 42, 'feed_url' => "http://example.com/eek", 'site_url' => "http://example.com/", 'title' => "Eek", 'checked_at' => "2021-01-05T15:51:32.000000+02:00", 'next_check_at' => "0001-01-01T00:00:00Z",             'etag_header' => "",       'last_modified_header' => "",                              'parsing_error_message' => "",       'parsing_error_count' => 0, 'scraper_rules' => "", 'rewrite_rules' => "", 'crawler' => true,  'blocklist_rules' => "",     'keeplist_rules' => "",          'user_agent' => "", 'username' => "j k", 'password' => "super secret", 'disabled' => false, 'ignore_http_cache' => false, 'fetch_via_proxy' => false, 'category' => ['id' => 1,'title'  => "All",     'user_id' => 42], 'icon' => null],
+        ['id' => 1,  'user_id' => 42, 'feed_url' => "http://example.com/ook", 'site_url' => "http://example.com/", 'title' => "Ook", 'checked_at' => "2021-01-05T15:51:32.000000+02:00", 'next_check_at' => "2021-01-20T02:00:00.000000+02:00", 'etag_header' => "OOKEEK", 'last_modified_header' => "Fri, 01 Jan 2021 00:00:00 GMT", 'parsing_error_message' => "Oopsie", 'parsing_error_count' => 1, 'scraper_rules' => "", 'rewrite_rules' => "", 'crawler' => false, 'blocklist_rules' => "both", 'keeplist_rules' => "this|that", 'user_agent' => "", 'username' => "",    'password' => "",             'disabled' => false, 'hide_globally' => false, 'ignore_http_cache' => false, 'fetch_via_proxy' => false, 'category' => ['id' => 6, 'title' => "Cat Ook", 'user_id' => 42, 'hide_globally' => false], 'icon' => ['feed_id' => 1,'icon_id' => 47]],
+        ['id' => 55, 'user_id' => 42, 'feed_url' => "http://example.com/eek", 'site_url' => "http://example.com/", 'title' => "Eek", 'checked_at' => "2021-01-05T15:51:32.000000+02:00", 'next_check_at' => "0001-01-01T00:00:00Z",             'etag_header' => "",       'last_modified_header' => "",                              'parsing_error_message' => "",       'parsing_error_count' => 0, 'scraper_rules' => "", 'rewrite_rules' => "", 'crawler' => true,  'blocklist_rules' => "",     'keeplist_rules' => "",          'user_agent' => "", 'username' => "j k", 'password' => "super secret", 'disabled' => false, 'hide_globally' => false, 'ignore_http_cache' => false, 'fetch_via_proxy' => false, 'category' => ['id' => 1,'title'  => "All",     'user_id' => 42, 'hide_globally' => false], 'icon' => null],
     ];
     protected const ENTRIES = [
         ['id' => 42,   'url' => "http://example.com/42",   'title' => "Title 42",   'subscription' => 55, 'author' => "Thomas Costain", 'fingerprint' => "FINGERPRINT", 'published_date' => "2021-01-22 02:21:12", 'modified_date' => "2021-01-22 13:44:47", 'starred' => 0, 'unread' => 0, 'hidden' => 0, 'content' => "Content 42",   'media_url' => null,                                'media_type' => null],
@@ -390,9 +390,9 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 20, 'name' => "Technology"],
         ])));
         $exp = HTTP::respJson([
-            ['id' => 1,  'title' => "All",        'user_id' => 42],
-            ['id' => 2,  'title' => "Science",    'user_id' => 42],
-            ['id' => 21, 'title' => "Technology", 'user_id' => 42],
+            ['id' => 1,  'title' => "All",        'user_id' => 42, 'hide_globally' => false],
+            ['id' => 2,  'title' => "Science",    'user_id' => 42, 'hide_globally' => false],
+            ['id' => 21, 'title' => "Technology", 'user_id' => 42, 'hide_globally' => false],
         ]);
         $this->assertMessage($exp, $this->req("GET", "/categories"));
         \Phake::verify(Arsse::$db)->folderList("john.doe@example.com", null, false);
@@ -400,9 +400,9 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user = \Phake::mock(User::class);
         \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 47, 'admin' => false, 'root_folder_name' => "Uncategorized"]);
         $exp = HTTP::respJson([
-            ['id' => 1,  'title' => "Uncategorized", 'user_id' => 47],
-            ['id' => 2,  'title' => "Science",       'user_id' => 47],
-            ['id' => 21, 'title' => "Technology",    'user_id' => 47],
+            ['id' => 1,  'title' => "Uncategorized", 'user_id' => 47, 'hide_globally' => false],
+            ['id' => 2,  'title' => "Science",       'user_id' => 47, 'hide_globally' => false],
+            ['id' => 21, 'title' => "Technology",    'user_id' => 47, 'hide_globally' => false],
         ]);
         $this->assertMessage($exp, $this->req("GET", "/categories"));
     }
@@ -424,7 +424,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public static function provideCategoryAdditions(): iterable {
         self::clearData();
         return [
-            ["New",       HTTP::respJson(['id' => 2112, 'title' => "New", 'user_id' => 42], 201)],
+            ["New",       HTTP::respJson(['id' => 2112, 'title' => "New", 'user_id' => 42, 'hide_globally' => false], 201)],
             ["Duplicate", V1::respError(["DuplicateCategory", 'title' => "Duplicate"], 409)],
             ["",          V1::respError(["InvalidCategory", 'title' => ""], 422)],
             [" ",         V1::respError(["InvalidCategory", 'title' => " "], 422)],
@@ -433,37 +433,69 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    #[DataProvider("provideCategoryUpdates")]
+    #[DataProvider("provideCategoryRenamings")]
     public function testRenameACategory(int $id, $title, $out, ResponseInterface $exp): void {
-        \Phake::when(Arsse::$user)->propertiesSet->thenReturn(['root_folder_name' => $title]);
+        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 42, 'root_folder_name' => $title]);
+        \Phake::when(Arsse::$db)->folderPropertiesGet->thenReturn(['name' => $title]);
         if (is_string($out)) {
             \Phake::when(Arsse::$db)->folderPropertiesSet->thenThrow(new ExceptionInput($out));
         } else {
             \Phake::when(Arsse::$db)->folderPropertiesSet->thenReturn($out);
         }
-        $times = (int) ($id === 1 && is_string($title) && strlen(trim($title)));
         $this->assertMessage($exp, $this->req("PUT", "/categories/$id", ['title' => $title]));
-        \Phake::verify(Arsse::$user, \Phake::times($times))->propertiesSet("john.doe@example.com", ['root_folder_name' => $title]);
-        $times = (int) ($id !== 1 && is_string($title));
-        \Phake::verify(Arsse::$db, \Phake::times($times))->folderPropertiesSet("john.doe@example.com", $id - 1, ['name' => $title]);
+        if ($id === 1 && strlen(trim((string) $title))) {
+            \Phake::verify(Arsse::$user)->propertiesSet("john.doe@example.com", ['root_folder_name' => $title]);
+            \Phake::verify(Arsse::$db)->folderPropertiesSet("john.doe@example.com", $id - 1, []);
+        } else {
+            \Phake::verify(Arsse::$user, \Phake::never())->propertiesSet(\Phake::anyParameters());
+            if (($id === 1 && strlen(trim((string) $title))) || ($id !== 1 && $title !== false)) {
+                \Phake::verify(Arsse::$db)->folderPropertiesSet("john.doe@example.com", $id - 1, ['name' => $title]);
+            } else {
+                \Phake::verify(Arsse::$db, \Phake::never())->folderPropertiesSet(\Phake::anyParameters());
+            }
+        }
     }
 
-    public static function provideCategoryUpdates(): iterable {
+    public static function provideCategoryRenamings(): iterable {
         self::clearData();
         return [
             [3, "New",       "subjectMissing",      V1::respError("404", 404)],
-            [2, "New",       true,                  HTTP::respJson(['id' => 2, 'title' => "New", 'user_id' => 42], 201)],
+            [2, "New",       true,                  HTTP::respJson(['id' => 2, 'title' => "New", 'user_id' => 42, 'hide_globally' => false], 201)],
             [2, "Duplicate", "constraintViolation", V1::respError(["DuplicateCategory", 'title' => "Duplicate"], 409)],
             [2, "",          "missing",             V1::respError(["InvalidCategory", 'title' => ""], 422)],
             [2, " ",         "whitespace",          V1::respError(["InvalidCategory", 'title' => " "], 422)],
-            [2, null,        "missing",             V1::respError(["MissingInputValue", 'field' => "title"], 422)],
             [2, false,       "subjectMissing",      V1::respError(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 422)],
-            [1, "New",       true,                  HTTP::respJson(['id' => 1, 'title' => "New", 'user_id' => 42], 201)],
-            [1, "Duplicate", "constraintViolation", HTTP::respJson(['id' => 1, 'title' => "Duplicate", 'user_id' => 42], 201)], // This is allowed because the name of the root folder is only a duplicate in circumstances where it is used
+            [1, "New",       true,                  HTTP::respJson(['id' => 1, 'title' => "New", 'user_id' => 42, 'hide_globally' => false], 201)],
             [1, "",          "missing",             V1::respError(["InvalidCategory", 'title' => ""], 422)],
             [1, " ",         "whitespace",          V1::respError(["InvalidCategory", 'title' => " "], 422)],
-            [1, null,        "missing",             V1::respError(["MissingInputValue", 'field' => "title"], 422)],
             [1, false,       false,                 V1::respError(["InvalidInputType", 'field' => "title", 'actual' => "boolean", 'expected' => "string"], 422)],
+        ];
+    }
+
+    #[DataProvider("provideCategoryModifications")]
+    public function testModifyACategory(int $id, array $in, array $dbIn, $out, ResponseInterface $exp): void {
+        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 42, 'root_folder_name' => $in['title'] ?? "All"]);
+        \Phake::when(Arsse::$db)->folderPropertiesGet->thenReturn(['name' => $in['title'] ?? "Existing"]);
+        if (is_string($out)) {
+            \Phake::when(Arsse::$db)->folderPropertiesSet->thenThrow(new ExceptionInput($out));
+        } else {
+            \Phake::when(Arsse::$db)->folderPropertiesSet->thenReturn($out);
+        }
+        $this->assertMessage($exp, $this->req("PUT", "/categories/$id", $in));
+        if ($id === 1 && isset($in['title'])) {
+            \Phake::verify(Arsse::$user)->propertiesSet("john.doe@example.com", ['root_folder_name' => $in['title']]);
+        } else {
+            \Phake::verify(Arsse::$user, \Phake::never())->propertiesSet(\Phake::anyParameters());
+        }
+        \Phake::verify(Arsse::$db)->folderPropertiesSet("john.doe@example.com", $id - 1, $dbIn);
+    }
+
+    public static function provideCategoryModifications(): iterable {
+        self::clearData();
+        return [
+            [3, [],                        [],                "subjectMissing", V1::respError("404", 404)],
+            [3, ['title' => "New"],        ['name' => "New"], true,             HTTP::respJson(['id' => 3, 'title' => "New", 'user_id' => 42, 'hide_globally' => false], 201)],
+            [3, ['hide_globally' => true], [],                false,            HTTP::respJson(['id' => 3, 'title' => "Existing", 'user_id' => 42, 'hide_globally' => false], 201)],
         ];
     }
 
@@ -729,7 +761,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             ["/entries?status=removed&status=read&status=removed", new UnionContext((clone $c)->unread(false), (clone $c)->hidden(true)), $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
             ["/entries?status=removed&status=read&status=unread",  $c,                                                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
             ["/entries?starred=true",                              (clone $c)->starred(true),                                             $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?starred=false",                             (clone $c)->starred(false),                                             $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?starred=false",                             (clone $c)->starred(false),                                            $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
             ["/entries?after=0",                                   (clone $c)->modifiedRange(0, null),                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
             ["/entries?before=0",                                  $c,                                                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
             ["/entries?before=1",                                  (clone $c)->modifiedRange(null, 1),                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
