@@ -436,7 +436,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider("provideCategoryRenamings")]
     public function testRenameACategory(int $id, $title, $out, ResponseInterface $exp): void {
         \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 42, 'root_folder_name' => $title]);
-        \Phake::when(Arsse::$db)->folderPropertiesGet->thenReturn(['name' => $title]);
+        \Phake::when(Arsse::$db)->folderPropertiesGet->thenReturn(['id' => $id - 1, 'name' => $title]);
         if (is_string($out)) {
             \Phake::when(Arsse::$db)->folderPropertiesSet->thenThrow(new ExceptionInput($out));
         } else {
@@ -475,7 +475,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider("provideCategoryModifications")]
     public function testModifyACategory(int $id, array $in, array $dbIn, $out, ResponseInterface $exp): void {
         \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 42, 'root_folder_name' => $in['title'] ?? "All"]);
-        \Phake::when(Arsse::$db)->folderPropertiesGet->thenReturn(['name' => $in['title'] ?? "Existing"]);
+        \Phake::when(Arsse::$db)->folderPropertiesGet->thenReturn(['id' => $id -1, 'name' => $in['title'] ?? "Existing"]);
         if (is_string($out)) {
             \Phake::when(Arsse::$db)->folderPropertiesSet->thenThrow(new ExceptionInput($out));
         } else {
@@ -694,7 +694,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public static function provideIcons(): iterable {
         self::clearData();
         return [
-            [['id' => 44, 'type' => "image/svg+xml", 'data' => "<svg/>"], HTTP::respJson(['id' => 44, 'data' => "image/svg+xml;base64,PHN2Zy8+", 'mime_type' => "image/svg+xml"])],
+            [['id' => 44, 'type' => "image/svg+xml", 'data' => "<svg/>"], HTTP::respJson(['id' => 44, 'mime_type' => "image/svg+xml", 'data' => "image/svg+xml;base64,PHN2Zy8+"])],
             [['id' => 47, 'type' => "",              'data' => "<svg/>"], V1::respError("404", 404)],
             [['id' => 47, 'type' => null,            'data' => "<svg/>"], V1::respError("404", 404)],
             [['id' => 47, 'type' => null,            'data' => null],     V1::respError("404", 404)],

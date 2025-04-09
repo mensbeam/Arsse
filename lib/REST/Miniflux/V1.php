@@ -497,6 +497,101 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
     }
 
+    protected function transformCategory(array $folder, int $uid): array {
+        return [
+            // always add 1 to the ID since the root folder will always be 1 instead of 0.
+            'id'            => ((int) $folder['id']) + 1,
+            'title'         => $folder['name'],
+            'user_id'       => $uid,
+            'hide_globally' => false,
+        ];
+    }
+
+    protected function transformFeed(array $sub, int $uid, string $rootName, \DateTimeZone $tz): array {
+        $url = new Uri($sub['url']);
+        return [
+            'id'                    => (int) $sub['id'],
+            'user_id'               => $uid,
+            'feed_url'              => (string) $url->withUserInfo(""),
+            'site_url'              => (string) $sub['source'],
+            'title'                 => (string) $sub['title'],
+            'checked_at'            => Date::normalize($sub['updated'], "sql")->setTimezone($tz)->format(self::DATE_FORMAT_MICRO),
+            'next_check_at'         => $sub['next_fetch'] ? Date::normalize($sub['next_fetch'], "sql")->setTimezone($tz)->format(self::DATE_FORMAT_MICRO) : "0001-01-01T00:00:00Z",
+            'etag_header'           => (string) $sub['etag'],
+            'last_modified_header'  => (string) Date::transform($sub['edited'], "http", "sql"),
+            'parsing_error_message' => (string) $sub['err_msg'],
+            'parsing_error_count'   => (int) $sub['err_count'],
+            'scraper_rules'         => "",
+            'rewrite_rules'         => "",
+            'crawler'               => (bool) $sub['scrape'],
+            'blocklist_rules'       => (string) $sub['block_rule'],
+            'keeplist_rules'        => (string) $sub['keep_rule'],
+            'user_agent'            => "",
+            'username'              => rawurldecode(explode(":", $url->getUserInfo(), 2)[0] ?? ""),
+            'password'              => rawurldecode(explode(":", $url->getUserInfo(), 2)[1] ?? ""),
+            'disabled'              => false,
+            'hide_globally'         => false,
+            'ignore_http_cache'     => false,
+            'fetch_via_proxy'       => false,
+            'category'              => $this->transformCategory(['id' => $sub['top_folder'], 'name' => $sub['top_folder_name'] ?? $rootName], $uid),
+            'icon'                  => $sub['icon_id'] ? ['feed_id' => (int) $sub['id'], 'icon_id' => (int) $sub['icon_id']] : null,
+        ];
+    }
+
+    protected function transformEntry(array $entry, int $uid, \DateTimeZone $tz): array {
+        if ($entry['hidden']) {
+            $status = "removed";
+        } elseif ($entry['unread']) {
+            $status = "unread";
+        } else {
+            $status = "read";
+        }
+        if ($entry['media_url']) {
+            $enclosures = [$this->transformEnclosure((int) $entry['id'], $entry['media_url'], $entry['media_type'], $uid)];
+        } else {
+            $enclosures = [];
+        }
+        return [
+            'id'           => (int) $entry['id'],
+            'user_id'      => $uid,
+            'feed_id'      => (int) $entry['subscription'],
+            'status'       => $status,
+            'hash'         => $entry['fingerprint'],
+            'title'        => $entry['title'],
+            'url'          => $entry['url'],
+            'comments_url' => "",
+            'published_at' => Date::normalize($entry['published_date'], "sql")->setTimezone($tz)->format(self::DATE_FORMAT_SEC),
+            'created_at'   => Date::normalize($entry['modified_date'], "sql")->setTimezone($tz)->format(self::DATE_FORMAT_MICRO),
+            'content'      => $entry['content'],
+            'author'       => (string) $entry['author'],
+            'share_code'   => "",
+            'starred'      => (bool) $entry['starred'],
+            'reading_time' => 0,
+            'enclosures'   => $enclosures,
+            'feed'         => null,
+        ];
+    }
+
+    protected function transformEnclosure(int $id, string $url, ?string $type, int $uid): array {
+        return [
+            'id'        => $id,
+            'user_id'   => $uid,
+            'entry_id'  => $id, // NOTE: We don't have IDs for enclosures, but we also only have one enclosure per entry, so we can just re-use the same ID
+            'url'       => $url,
+            'mime_type' => $type ?: "application/octet-stream",
+            'size'      => 0,
+        ];
+    }
+
+    protected function transformIcon(array $icon): array {
+        $type = $icon['type'] ?: "application/octet-stream";
+        return [
+            'id'        => (int) $icon['id'],
+            'mime_type' => $type,
+            'data'      => $type.";base64,".base64_encode($icon['data']),
+        ];
+    }
+
     protected function listUsers(array $users, bool $reportMissing): array {
         $out = [];
         $now = Date::transform($this->now(), "iso8601m");
@@ -698,28 +793,23 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $out = [];
         // add the root folder as a category
         $meta = $this->userMeta(Arsse::$user->id);
-        $out[] = [
-            'id' => 1,
-            'title' => $meta['root'],
-            'user_id' => $meta['num'],
-            'hide_globally' => false,
-        ];
+        $out[] = $this->transformCategory(['id' => null, 'name' => $meta['root']], $meta['num']);
         // add other top folders as categories
         foreach (Arsse::$db->folderList(Arsse::$user->id, null, false) as $f) {
-            // always add 1 to the ID since the root folder will always be 1 instead of 0.
-            $out[] = [
-                'id'            => $f['id'] + 1,
-                'title'         => $f['name'],
-                'user_id'       => $meta['num'],
-                'hide_globally' => false,
-            ];
+            $out[] = $this->transformCategory($f, $meta['num']);
         }
         return HTTP::respJson($out);
     }
 
     protected function createCategory(array $data): ResponseInterface {
+        $in = [];
+        foreach (self::CATEGORY_META_MAP as $from => $to) {
+            if (isset($data[$from])) {
+                $in[$to] = $data[$from];
+            }
+        }
         try {
-            $id = Arsse::$db->folderAdd(Arsse::$user->id, ['name' => (string) $data['title']]);
+            $id = Arsse::$db->folderAdd(Arsse::$user->id, $in);
         } catch (ExceptionInput $e) {
             if ($e->getCode() === 10236) {
                 return self::respError(["DuplicateCategory", 'title' => $data['title']], 409);
@@ -728,13 +818,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
-        return HTTP::respJson([
-            // always add 1 to the ID since the root folder will always be 1 instead of 0.
-            'id'            => $id + 1,
-            'title'         => $data['title'],
-            'user_id'       => $meta['num'],
-            'hide_globally' => false,
-        ], 201);
+        $in['id'] = $id;
+        return HTTP::respJson($this->transformCategory($in, $meta['num']), 201);
     }
 
     protected function updateCategory(array $path, array $data): ResponseInterface {
@@ -771,13 +856,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // retrieve the current information about the folder and return it
         $meta = $this->userMeta(Arsse::$user->id);
-        $title = ($folder === 0) ? $meta['root'] : Arsse::$db->folderPropertiesGet(Arsse::$user->id, $folder)['name'];
-        return HTTP::respJson([
-            'id'            => $folder + 1,
-            'title'         => $title,
-            'user_id'       => $meta['num'],
-            'hide_globally' => false,
-        ], 201);
+        $f = ($folder === 0) ? ['id' => null, 'name' => $meta['root']] : Arsse::$db->folderPropertiesGet(Arsse::$user->id, $folder);
+        return HTTP::respJson($this->transformCategory($f, $meta['num']), 201);
     }
 
     protected function deleteCategory(array $path): ResponseInterface {
@@ -798,42 +878,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return self::respError("404", 404);
         }
         return HTTP::respEmpty(204);
-    }
-
-    protected function transformFeed(array $sub, int $uid, string $rootName, \DateTimeZone $tz): array {
-        $url = new Uri($sub['url']);
-        return [
-            'id'                    => (int) $sub['id'],
-            'user_id'               => $uid,
-            'feed_url'              => (string) $url->withUserInfo(""),
-            'site_url'              => (string) $sub['source'],
-            'title'                 => (string) $sub['title'],
-            'checked_at'            => Date::normalize($sub['updated'], "sql")->setTimezone($tz)->format(self::DATE_FORMAT_MICRO),
-            'next_check_at'         => $sub['next_fetch'] ? Date::normalize($sub['next_fetch'], "sql")->setTimezone($tz)->format(self::DATE_FORMAT_MICRO) : "0001-01-01T00:00:00Z",
-            'etag_header'           => (string) $sub['etag'],
-            'last_modified_header'  => (string) Date::transform($sub['edited'], "http", "sql"),
-            'parsing_error_message' => (string) $sub['err_msg'],
-            'parsing_error_count'   => (int) $sub['err_count'],
-            'scraper_rules'         => "",
-            'rewrite_rules'         => "",
-            'crawler'               => (bool) $sub['scrape'],
-            'blocklist_rules'       => (string) $sub['block_rule'],
-            'keeplist_rules'        => (string) $sub['keep_rule'],
-            'user_agent'            => "",
-            'username'              => rawurldecode(explode(":", $url->getUserInfo(), 2)[0] ?? ""),
-            'password'              => rawurldecode(explode(":", $url->getUserInfo(), 2)[1] ?? ""),
-            'disabled'              => false,
-            'hide_globally'         => false,
-            'ignore_http_cache'     => false,
-            'fetch_via_proxy'       => false,
-            'category'              => [
-                'id'            => (int) $sub['top_folder'] + 1,
-                'title'         => $sub['top_folder_name'] ?? $rootName,
-                'user_id'       => $uid,
-                'hide_globally' => false,
-            ],
-            'icon'                  => $sub['icon_id'] ? ['feed_id' => (int) $sub['id'], 'icon_id' => (int) $sub['icon_id']] : null,
-        ];
     }
 
     protected function getFeeds(): ResponseInterface {
@@ -975,11 +1019,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         if (!$icon || !$icon['type'] || !$icon['data']) {
             return self::respError("404", 404);
         }
-        return HTTP::respJson([
-            'id'        => (int) $icon['id'],
-            'data'      => $icon['type'].";base64,".base64_encode($icon['data']),
-            'mime_type' => $icon['type'],
-        ]);
+        return HTTP::respJson($this->transformIcon($icon));
     }
 
     protected function computeContext(array $query, Context $c): RootContext {
@@ -1040,49 +1080,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } else {
             return [self::DEFAULT_ORDER_COL.$desc];
         }
-    }
-
-    protected function transformEntry(array $entry, int $uid, \DateTimeZone $tz): array {
-        if ($entry['hidden']) {
-            $status = "removed";
-        } elseif ($entry['unread']) {
-            $status = "unread";
-        } else {
-            $status = "read";
-        }
-        if ($entry['media_url']) {
-            $enclosures = [
-                [
-                    'id'        => (int) $entry['id'], // NOTE: We don't have IDs for enclosures, but we also only have one enclosure per entry, so we can just re-use the same ID
-                    'user_id'   => $uid,
-                    'entry_id'  => (int) $entry['id'],
-                    'url'       => $entry['media_url'],
-                    'mime_type' => $entry['media_type'] ?: "application/octet-stream",
-                    'size'      => 0,
-                ],
-            ];
-        } else {
-            $enclosures = [];
-        }
-        return [
-            'id'           => (int) $entry['id'],
-            'user_id'      => $uid,
-            'feed_id'      => (int) $entry['subscription'],
-            'status'       => $status,
-            'hash'         => $entry['fingerprint'],
-            'title'        => $entry['title'],
-            'url'          => $entry['url'],
-            'comments_url' => "",
-            'published_at' => Date::normalize($entry['published_date'], "sql")->setTimezone($tz)->format(self::DATE_FORMAT_SEC),
-            'created_at'   => Date::normalize($entry['modified_date'], "sql")->setTimezone($tz)->format(self::DATE_FORMAT_MICRO),
-            'content'      => $entry['content'],
-            'author'       => (string) $entry['author'],
-            'share_code'   => "",
-            'starred'      => (bool) $entry['starred'],
-            'reading_time' => 0,
-            'enclosures'   => $enclosures,
-            'feed'         => null,
-        ];
     }
 
     protected function listEntries(array $query, Context $c): array {
@@ -1366,12 +1363,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             //   immediately use Miniflux
             return self::respError("404", 404);
         }
-        $type = $icon['type'] ?: "application/octet-stream";
-        return HTTP::respJson([
-            'id'   => (int) $icon['id'],
-            'mime_type' => $type,
-            'data' => $type.";base64,".base64_encode($icon['data']),
-        ]);
+        return HTTP::respJson($this->transformIcon($icon));
     }
 
     protected function getIntegrations(): ResponseInterface {
