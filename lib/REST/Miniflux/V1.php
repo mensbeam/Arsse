@@ -158,6 +158,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         '/discover'                      => [
             'POST'                       => ["discoverSubscriptions", false, false, true,  false, ["url"]],
         ],
+        '/enclosures/1'                  => [
+            'GET'                        => ["getEnclosure",          false, true,  false, false, []],
+        ],
         '/entries'                       => [
             'GET'                        => ["getEntries",            false, false, false, true,  []],
             'PUT'                        => ["updateEntries",         false, false, true,  false, ["entry_ids", "status"]],
@@ -574,12 +577,13 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function transformEnclosure(array $entry, int $uid): array {
         return [
-            'id'        => $entry['id'], // NOTE: We don't have IDs for enclosures, but we also only have one enclosure per entry, so we can just re-use the same ID
-            'user_id'   => $uid,
-            'entry_id'  => $entry['id'],
-            'url'       => $entry['media_url'],
-            'mime_type' => $entry['media_type'] ?: "application/octet-stream",
-            'size'      => 0,
+            'id'                => $entry['id'], // NOTE: We don't have IDs for enclosures, but we also only have one enclosure per entry, so we can just re-use the same ID
+            'user_id'           => $uid,
+            'entry_id'          => $entry['id'],
+            'url'               => $entry['media_url'],
+            'mime_type'         => $entry['media_type'] ?: "application/octet-stream",
+            'size'              => 0,
+            'media_progression' => 0,
         ];
     }
 
@@ -1113,12 +1117,13 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return ['total' => $count, 'entries' => $out];
     }
 
-    protected function findEntry(int $id, ?Context $c = null): array {
+    protected function findEntry(int $id, Context $c): array {
         $c = ($c ?? new Context)->article($id);
         $tr = Arsse::$db->begin();
         $meta = $this->userMeta(Arsse::$user->id);
-        // find the entry we want
+        // find the entry we want; this will throw an exception if the entry is missing
         $entry = Arsse::$db->articleList(Arsse::$user->id, $c, self::ARTICLE_COLUMNS)->getRow();
+        // there can fail to be an entry returned without an exception if one specifies a valid feed/category ID and valid entry ID while the entry does not belong to the feed/category
         if (!$entry) {
             throw new ExceptionInput("idMissing", ['id' => $id, 'field' => 'entry']);
         }
@@ -1159,7 +1164,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function getEntry(array $path): ResponseInterface {
         try {
-            return HTTP::respJson($this->findEntry((int) $path[1]));
+            return HTTP::respJson($this->findEntry((int) $path[1], new Context));
         } catch (ExceptionInput $e) {
             return self::respError("404", 404);
         }
@@ -1306,11 +1311,10 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $tr = Arsse::$db->begin();
             $c = (new Context)->article((int) $path[1]);
             $entry = Arsse::$db->articleList(Arsse::$user->id, $c, ["url", "subscription"])->getRow();
-            if (!$entry) {
-                return $this->respError("404", 404);
-            }
             $sub = Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, (int) $entry['subscription']);
             return HTTP::respJson(['content' => Feed::scrapeSingle($entry['url'], $sub['url'], $sub['user_agent'], $sub['cookie'])]);
+        } catch (ExceptionInput $e) {
+            return $this->respError("404", 404);
         } catch (FeedException $e) {
             $msg = [
                 10502 => "Fetch404",
@@ -1354,14 +1358,13 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function getIcon(array $path): ResponseInterface {
         try {
             $icon = Arsse::$db->iconPropertiesGet(Arsse::$user->id, (int) $path[1]);
-        } catch (ExceptionInput $e) {
-            return self::respError("404", 404);
-        }
-        if (!$icon['data']) {
-            // This case is not likely, but may occur for installations which
-            //   happen to upgrade directly from 0.7.1 or earlier and
-            //   immediately use Miniflux
-            return self::respError("404", 404);
+        } finally {
+            // Missing icon data is not likely, but may occur for installations
+            //  of The Arsse which happen to upgrade directly from 0.7.1
+            //   or earlier and immediately use Miniflux
+            if (!isset($icon) || !$icon['data']) {
+                return self::respError("404", 404);
+            }
         }
         return HTTP::respJson($this->transformIcon($icon));
     }
@@ -1369,5 +1372,23 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function getIntegrations(): ResponseInterface {
         // NOTE: This is a stub: we do not support integrations
         return HTTP::respJson(['has_integrations' => false]);
+    }
+
+    protected function getEnclosure(array $path): ResponseInterface {
+        // NOTE: Enclosures currently have no ID and are limited to one per
+        //   article, so we're simply using the article ID as the enclosure ID
+        //   for now and querying the article's data
+        $c = (new Context)->article((int) $path[1]);
+        try {
+            $entry = Arsse::$db->articleList(Arsse::$user->id, $c, ["id", "media_url", "media_type"])->getRow();
+        } finally {
+            // Return 404 if either the article with the ID doesn't exist, or
+            //   the article has no enclosure
+            if (!isset($entry) || !$entry['media_url']) {
+                return self::respError("404", 404);
+            }
+        }
+        $meta = $this->userMeta(Arsse::$user->id);
+        return HTTP::respJson($this->transformEnclosure($entry, $meta['num']));
     }
 }

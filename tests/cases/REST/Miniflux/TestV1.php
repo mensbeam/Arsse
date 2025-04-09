@@ -56,10 +56,10 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         2112 => ["Travel"],
     ];
     protected const ENTRIES_OUT = [
-        ['id' => 42,   'user_id' => 42, 'feed_id' => 55, 'status' => "read",    'hash' => "FINGERPRINT", 'title' => "Title 42",   'url' => "http://example.com/42",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 42",   'author' => "Thomas Costain", 'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => [],                                                                                                                                                          'feed' => self::FEEDS_OUT[1], 'tags' => self::TAGS[42]],
-        ['id' => 44,   'user_id' => 42, 'feed_id' => 55, 'status' => "unread",  'hash' => "FINGERPRINT", 'title' => "Title 44",   'url' => "http://example.com/44",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 44",   'author' => "",               'share_code' => "", 'starred' => true,  'reading_time' => 0, 'enclosures' => [['id' => 44,   'user_id' => 42, 'entry_id' => 44,   'url' => "http://example.com/44/enclosure",   'mime_type' => "application/octet-stream", 'size' => 0]], 'feed' => self::FEEDS_OUT[1], 'tags' => self::TAGS[44]],
-        ['id' => 47,   'user_id' => 42, 'feed_id' => 55, 'status' => "removed", 'hash' => "FINGERPRINT", 'title' => "Title 47",   'url' => "http://example.com/47",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 47",   'author' => "",               'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => [['id' => 47,   'user_id' => 42, 'entry_id' => 47,   'url' => "http://example.com/47/enclosure",   'mime_type' => "application/octet-stream", 'size' => 0]], 'feed' => self::FEEDS_OUT[1], 'tags' => self::TAGS[47]],
-        ['id' => 2112, 'user_id' => 42, 'feed_id' => 55, 'status' => "removed", 'hash' => "FINGERPRINT", 'title' => "Title 2112", 'url' => "http://example.com/2112", 'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 2112", 'author' => "",               'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => [['id' => 2112, 'user_id' => 42, 'entry_id' => 2112, 'url' => "http://example.com/2112/enclosure", 'mime_type' => "image/png",                'size' => 0]], 'feed' => self::FEEDS_OUT[1], 'tags' => self::TAGS[2112]],
+        ['id' => 42,   'user_id' => 42, 'feed_id' => 55, 'status' => "read",    'hash' => "FINGERPRINT", 'title' => "Title 42",   'url' => "http://example.com/42",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 42",   'author' => "Thomas Costain", 'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => [],                                                                                                                                                                                    'feed' => self::FEEDS_OUT[1], 'tags' => self::TAGS[42]],
+        ['id' => 44,   'user_id' => 42, 'feed_id' => 55, 'status' => "unread",  'hash' => "FINGERPRINT", 'title' => "Title 44",   'url' => "http://example.com/44",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 44",   'author' => "",               'share_code' => "", 'starred' => true,  'reading_time' => 0, 'enclosures' => [['id' => 44,   'user_id' => 42, 'entry_id' => 44,   'url' => "http://example.com/44/enclosure",   'mime_type' => "application/octet-stream", 'size' => 0, 'media_progression' => 0]], 'feed' => self::FEEDS_OUT[1], 'tags' => self::TAGS[44]],
+        ['id' => 47,   'user_id' => 42, 'feed_id' => 55, 'status' => "removed", 'hash' => "FINGERPRINT", 'title' => "Title 47",   'url' => "http://example.com/47",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 47",   'author' => "",               'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => [['id' => 47,   'user_id' => 42, 'entry_id' => 47,   'url' => "http://example.com/47/enclosure",   'mime_type' => "application/octet-stream", 'size' => 0, 'media_progression' => 0]], 'feed' => self::FEEDS_OUT[1], 'tags' => self::TAGS[47]],
+        ['id' => 2112, 'user_id' => 42, 'feed_id' => 55, 'status' => "removed", 'hash' => "FINGERPRINT", 'title' => "Title 2112", 'url' => "http://example.com/2112", 'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 2112", 'author' => "",               'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => [['id' => 2112, 'user_id' => 42, 'entry_id' => 2112, 'url' => "http://example.com/2112/enclosure", 'mime_type' => "image/png",                'size' => 0, 'media_progression' => 0]], 'feed' => self::FEEDS_OUT[1], 'tags' => self::TAGS[2112]],
     ];
 
     protected $h;
@@ -978,12 +978,16 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     #[DataProvider("provideScrapings")]
-    public function testScrapeAnEntry(array $entry, array $sub, ResponseInterface $exp): void {
-        \Phake::when(Arsse::$db)->articleList->thenReturn(new Result(self::v($entry)));
+    public function testScrapeAnEntry($entry, array $sub, ResponseInterface $exp): void {
+        if ($entry instanceof \Exception) {
+            \Phake::when(Arsse::$db)->articleList->thenThrow($entry);
+        } else {
+            \Phake::when(Arsse::$db)->articleList->thenReturn(new Result(self::v($entry)));
+        }
         \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn($sub);
         $this->assertMessage($exp, $this->req("GET", "/entries/2112/fetch-content"));
         \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, $this->equalTo((new Context)->article(2112)), ["url", "subscription"]);
-        if ($entry) {
+        if (!$entry instanceof \Exception) {
             \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, (int) $entry[0]['subscription']);
         } else {
             \Phake::verify(Arsse::$db, \Phake::never())->subscriptionPropertiesGet(\Phake::anyParameters());
@@ -994,7 +998,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $base = "http://localhost:8000/Feed";
         $basePW = "http://user:pass@localhost:8000/Feed";
         return [
-            [[],                                                             [], V1::respError("404", 404)],
+            [new ExceptionInput("subjectMissing"),                           [],                                                                           V1::respError("404", 404)],
             [[['url' => "$base/Scraping/Document", 'subscription' => 4400]], ['url' => "$base/Scraping/Feed",     'user_agent' => null, 'cookie' => null], HTTP::respJson(['content'=> "<p>Partial content, followed by more content</p>"])],
             [[['url' => "$base/Scraping/DocumentPW", 'subscription' => 1]],  ['url' => "$basePW/Scraping/FeedPW", 'user_agent' => null, 'cookie' => null], HTTP::respJson(['content'=> "<p>Partial content, followed by more content</p>"])],
             [[['url' => "$base/Scraping/DocumentPW", 'subscription' => 1]],  ['url' => "$base/Scraping/FeedPW",   'user_agent' => null, 'cookie' => null], V1::respError("Fetch401", 502)],
@@ -1072,5 +1076,26 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testGetIntegrationStatus(): void {
         $exp = HTTP::respJson(['has_integrations' => false]);
         $this->assertMessage($exp, $this->req("GET", "/integrations/status"));
+    }
+
+    #[DataProvider("provideEnclosures")]
+    public function testGetAnEnclosure(int $id, $out, ResponseInterface $exp): void {
+        if ($out instanceof \Exception) {
+            \Phake::when(Arsse::$db)->articleList->thenThrow($out);
+        } else {
+            \Phake::when(Arsse::$db)->articleList->thenReturn(new Result($this->v([$out])));
+        }
+        $this->assertMessage($exp, $this->req("GET", "/enclosures/$id"));
+        \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->article($id), ["id", "media_url", "media_type"]);
+    }
+
+    public static function provideEnclosures(): iterable {
+        self::clearData();
+        return [
+            [1,    new ExceptionInput("subjectMissing"),                                                 V1::respError("404", 404)],
+            [2112, ['id' => 2112, 'media_url' => null, 'media_type' => null],                            V1::respError("404", 404)],
+            [4400, ['id' => 4400, 'media_url' => "http://example.com/ook", 'media_type' => "audio/ogg"], HTTP::respJson(['id' => 4400, 'user_id' => 42, 'entry_id' => 4400, 'url' => "http://example.com/ook", 'mime_type' => "audio/ogg",                'size' => 0, 'media_progression' => 0], 200)],
+            [4400, ['id' => 4400, 'media_url' => "http://example.com/ook", 'media_type' => null],        HTTP::respJson(['id' => 4400, 'user_id' => 42, 'entry_id' => 4400, 'url' => "http://example.com/ook", 'mime_type' => "application/octet-stream", 'size' => 0, 'media_progression' => 0], 200)],
+        ];
     }
 }
