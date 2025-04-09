@@ -36,12 +36,50 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ['id' => 2, 'username' => "jane.doe@example.com", 'last_login_at' => self::NOW, 'google_id' => "", 'openid_connect_id' => "", 'is_admin' => false, 'theme' => "light_serif", 'language' => "en_US", 'timezone' => "UTC",       'entry_sorting_direction' => "desc", 'entries_per_page' => 100, 'keyboard_shortcuts' => true,  'show_reading_time' => true,  'entry_swipe' => true,  'stylesheet' => ""],
     ];
     protected const FEEDS = [
-        ['id' => 1,  'feed' => 1,  'url' => "http://example.com/ook",                      'title' => "Ook", 'source' => "http://example.com/", 'icon_id' => 47,   'icon_url' => "http://example.com/icon", 'folder' => 2112, 'top_folder' => 5,    'folder_name' => "Cat Eek", 'top_folder_name' => "Cat Ook", 'pinned' => 0, 'err_count' => 1, 'err_msg' => "Oopsie", 'order_type' => 0, 'keep_rule' => "this|that", 'block_rule' => "both", 'added' => "2020-12-21 21:12:00", 'updated' => "2021-01-05 13:51:32", 'edited' => "2021-01-01 00:00:00", 'modified' => "2020-11-30 04:08:52", 'next_fetch' => "2021-01-20 00:00:00", 'etag' => "OOKEEK", 'scrape' => 0, 'unread' => 42, 'read' => 5],
-        ['id' => 55, 'feed' => 55, 'url' => "http://j%20k:super%20secret@example.com/eek", 'title' => "Eek", 'source' => "http://example.com/", 'icon_id' => null, 'icon_url' => null,                      'folder' => null, 'top_folder' => null, 'folder_name' => null,      'top_folder_name' => null,      'pinned' => 0, 'err_count' => 0, 'err_msg' => null,     'order_type' => 0, 'keep_rule' => null,        'block_rule' => null,   'added' => "2020-12-21 21:12:00", 'updated' => "2021-01-05 13:51:32", 'edited' => null,                  'modified' => "2020-11-30 04:08:52", 'next_fetch' => null,                  'etag' => null,     'scrape' => 1, 'unread' => 0,  'read' => 2112],
+        ['id' => 1,  'feed' => 1,  'url' => "http://example.com/ook",                      'title' => "Ook", 'source' => "http://example.com/", 'icon_id' => 47,   'icon_url' => "http://example.com/icon", 'folder' => 2112, 'top_folder' => 5,    'folder_name' => "Cat Eek", 'top_folder_name' => "Cat Ook", 'pinned' => 0, 'err_count' => 1, 'err_msg' => "Oopsie", 'order_type' => 0, 'keep_rule' => "this|that", 'block_rule' => "both", 'added' => "2020-12-21 21:12:00", 'updated' => "2021-01-05 13:51:32", 'edited' => "2021-01-01 00:00:00", 'modified' => "2020-11-30 04:08:52", 'next_fetch' => "2021-01-20 00:00:00", 'etag' => "OOKEEK", 'scrape' => 0, 'user_agent' => null,             'cookie' => null,  'unread' => 42, 'read' => 5],
+        ['id' => 55, 'feed' => 55, 'url' => "http://j%20k:super%20secret@example.com/eek", 'title' => "Eek", 'source' => "http://example.com/", 'icon_id' => null, 'icon_url' => null,                      'folder' => null, 'top_folder' => null, 'folder_name' => null,      'top_folder_name' => null,      'pinned' => 0, 'err_count' => 0, 'err_msg' => null,     'order_type' => 0, 'keep_rule' => null,        'block_rule' => null,   'added' => "2020-12-21 21:12:00", 'updated' => "2021-01-05 13:51:32", 'edited' => null,                  'modified' => "2020-11-30 04:08:52", 'next_fetch' => null,                  'etag' => null,     'scrape' => 1, 'user_agent' => "Miniflux/2.2.7", 'cookie' => "a=b", 'unread' => 0,  'read' => 2112],
     ];
     protected const FEEDS_OUT = [
-        ['id' => 1,  'user_id' => 42, 'feed_url' => "http://example.com/ook", 'site_url' => "http://example.com/", 'title' => "Ook", 'checked_at' => "2021-01-05T15:51:32.000000+02:00", 'next_check_at' => "2021-01-20T02:00:00.000000+02:00", 'etag_header' => "OOKEEK", 'last_modified_header' => "Fri, 01 Jan 2021 00:00:00 GMT", 'parsing_error_message' => "Oopsie", 'parsing_error_count' => 1, 'scraper_rules' => "", 'rewrite_rules' => "", 'crawler' => false, 'blocklist_rules' => "both", 'keeplist_rules' => "this|that", 'user_agent' => "", 'username' => "",    'password' => "",             'disabled' => false, 'hide_globally' => false, 'ignore_http_cache' => false, 'fetch_via_proxy' => false, 'category' => ['id' => 6, 'title' => "Cat Ook", 'user_id' => 42, 'hide_globally' => false], 'icon' => ['feed_id' => 1,'icon_id' => 47]],
-        ['id' => 55, 'user_id' => 42, 'feed_url' => "http://example.com/eek", 'site_url' => "http://example.com/", 'title' => "Eek", 'checked_at' => "2021-01-05T15:51:32.000000+02:00", 'next_check_at' => "0001-01-01T00:00:00Z",             'etag_header' => "",       'last_modified_header' => "",                              'parsing_error_message' => "",       'parsing_error_count' => 0, 'scraper_rules' => "", 'rewrite_rules' => "", 'crawler' => true,  'blocklist_rules' => "",     'keeplist_rules' => "",          'user_agent' => "", 'username' => "j k", 'password' => "super secret", 'disabled' => false, 'hide_globally' => false, 'ignore_http_cache' => false, 'fetch_via_proxy' => false, 'category' => ['id' => 1,'title'  => "All",     'user_id' => 42, 'hide_globally' => false], 'icon' => null],
+        ['id' => 1,  'user_id' => 42, 'feed_url' => "http://example.com/ook", 'site_url' => "http://example.com/", 'title' => "Ook", 'checked_at' => "2021-01-05T15:51:32.000000+02:00", 'next_check_at' => "2021-01-20T02:00:00.000000+02:00", 'etag_header' => "OOKEEK", 'last_modified_header' => "Fri, 01 Jan 2021 00:00:00 GMT", 'parsing_error_message' => "Oopsie", 'parsing_error_count' => 1, 'crawler' => false, 'blocklist_rules' => "both", 'keeplist_rules' => "this|that", 'user_agent' => "",               'cookie' => "",    'username' => "",    'password' => "",             'disabled' => false, 'category' => ['id' => 6, 'title' => "Cat Ook", 'user_id' => 42, 'hide_globally' => false], 'icon' => ['feed_id' => 1,  'icon_id' => 47, 'external_icon_id' => "47"]],
+        ['id' => 55, 'user_id' => 42, 'feed_url' => "http://example.com/eek", 'site_url' => "http://example.com/", 'title' => "Eek", 'checked_at' => "2021-01-05T15:51:32.000000+02:00", 'next_check_at' => "0001-01-01T00:00:00Z",             'etag_header' => "",       'last_modified_header' => "",                              'parsing_error_message' => "",       'parsing_error_count' => 0, 'crawler' => true,  'blocklist_rules' => "",     'keeplist_rules' => "",          'user_agent' => "Miniflux/2.2.7", 'cookie' => "a=b", 'username' => "j k", 'password' => "super secret", 'disabled' => false, 'category' => ['id' => 1,'title'  => "All",     'user_id' => 42, 'hide_globally' => false], 'icon' => ['feed_id' => 55, 'icon_id' => 0,  'external_icon_id' => ""]],
+    ];
+    protected const FEED_OUT_STATIC = [
+        'id'                             => null,
+        'user_id'                        => null,
+        'feed_url'                       => null,
+        'site_url'                       => null,
+        'title'                          => null,
+        'description'                    => "",
+        'checked_at'                     => null,
+        'next_check_at'                  => null,
+        'etag_header'                    => null,
+        'last_modified_header'           => null,
+        'parsing_error_message'          => null,
+        'parsing_error_count'            => null,
+        'scraper_rules'                  => "",
+        'rewrite_rules'                  => "",
+        'crawler'                        => null,
+        'blocklist_rules'                => null,
+        'keeplist_rules'                 => null,
+        'urlrewrite_rules'               => "",
+        'user_agent'                     => null,
+        'cookie'                         => null,
+        'username'                       => null,
+        'password'                       => null,
+        'disabled'                       => false,
+        'no_media_player'                => false,
+        'ignore_http_cache'              => false,
+        'allow_self_signed_certificates' => false,
+        'fetch_via_proxy'                => false,
+        'hide_globally'                  => false,
+        'disable_http2'                  => false,
+        'apprise_service_urls'           => "",
+        'webhook_url'                    => "",
+        'ntfy_enabled'                   => false,
+        'ntfy_priority'                  => 3,
+        'ntfy_topic'                     => "",
+        'category'                       => null,
+        'icon'                           => null,
     ];
     protected const ENTRIES = [
         ['id' => 42,   'url' => "http://example.com/42",   'title' => "Title 42",   'subscription' => 55, 'author' => "Thomas Costain", 'fingerprint' => "FINGERPRINT", 'published_date' => "2021-01-22 02:21:12", 'modified_date' => "2021-01-22 13:44:47", 'starred' => 0, 'unread' => 0, 'hidden' => 0, 'content' => "Content 42",   'media_url' => null,                                'media_type' => null],
@@ -56,10 +94,10 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         2112 => ["Travel"],
     ];
     protected const ENTRIES_OUT = [
-        ['id' => 42,   'user_id' => 42, 'feed_id' => 55, 'status' => "read",    'hash' => "FINGERPRINT", 'title' => "Title 42",   'url' => "http://example.com/42",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 42",   'author' => "Thomas Costain", 'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => [],                                                                                                                                                                                    'feed' => self::FEEDS_OUT[1], 'tags' => self::TAGS[42]],
-        ['id' => 44,   'user_id' => 42, 'feed_id' => 55, 'status' => "unread",  'hash' => "FINGERPRINT", 'title' => "Title 44",   'url' => "http://example.com/44",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 44",   'author' => "",               'share_code' => "", 'starred' => true,  'reading_time' => 0, 'enclosures' => [['id' => 44,   'user_id' => 42, 'entry_id' => 44,   'url' => "http://example.com/44/enclosure",   'mime_type' => "application/octet-stream", 'size' => 0, 'media_progression' => 0]], 'feed' => self::FEEDS_OUT[1], 'tags' => self::TAGS[44]],
-        ['id' => 47,   'user_id' => 42, 'feed_id' => 55, 'status' => "removed", 'hash' => "FINGERPRINT", 'title' => "Title 47",   'url' => "http://example.com/47",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 47",   'author' => "",               'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => [['id' => 47,   'user_id' => 42, 'entry_id' => 47,   'url' => "http://example.com/47/enclosure",   'mime_type' => "application/octet-stream", 'size' => 0, 'media_progression' => 0]], 'feed' => self::FEEDS_OUT[1], 'tags' => self::TAGS[47]],
-        ['id' => 2112, 'user_id' => 42, 'feed_id' => 55, 'status' => "removed", 'hash' => "FINGERPRINT", 'title' => "Title 2112", 'url' => "http://example.com/2112", 'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 2112", 'author' => "",               'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => [['id' => 2112, 'user_id' => 42, 'entry_id' => 2112, 'url' => "http://example.com/2112/enclosure", 'mime_type' => "image/png",                'size' => 0, 'media_progression' => 0]], 'feed' => self::FEEDS_OUT[1], 'tags' => self::TAGS[2112]],
+        ['id' => 42,   'user_id' => 42, 'feed_id' => 55, 'status' => "read",    'hash' => "FINGERPRINT", 'title' => "Title 42",   'url' => "http://example.com/42",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 42",   'author' => "Thomas Costain", 'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => [],                                                                                                                                                                                    'feed' => 1, 'tags' => self::TAGS[42]],
+        ['id' => 44,   'user_id' => 42, 'feed_id' => 55, 'status' => "unread",  'hash' => "FINGERPRINT", 'title' => "Title 44",   'url' => "http://example.com/44",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 44",   'author' => "",               'share_code' => "", 'starred' => true,  'reading_time' => 0, 'enclosures' => [['id' => 44,   'user_id' => 42, 'entry_id' => 44,   'url' => "http://example.com/44/enclosure",   'mime_type' => "application/octet-stream", 'size' => 0, 'media_progression' => 0]], 'feed' => 1, 'tags' => self::TAGS[44]],
+        ['id' => 47,   'user_id' => 42, 'feed_id' => 55, 'status' => "removed", 'hash' => "FINGERPRINT", 'title' => "Title 47",   'url' => "http://example.com/47",   'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 47",   'author' => "",               'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => [['id' => 47,   'user_id' => 42, 'entry_id' => 47,   'url' => "http://example.com/47/enclosure",   'mime_type' => "application/octet-stream", 'size' => 0, 'media_progression' => 0]], 'feed' => 1, 'tags' => self::TAGS[47]],
+        ['id' => 2112, 'user_id' => 42, 'feed_id' => 55, 'status' => "removed", 'hash' => "FINGERPRINT", 'title' => "Title 2112", 'url' => "http://example.com/2112", 'comments_url' => "", 'published_at' => "2021-01-22T04:21:12+02:00", 'created_at' => "2021-01-22T15:44:47.000000+02:00", 'content' => "Content 2112", 'author' => "",               'share_code' => "", 'starred' => false, 'reading_time' => 0, 'enclosures' => [['id' => 2112, 'user_id' => 42, 'entry_id' => 2112, 'url' => "http://example.com/2112/enclosure", 'mime_type' => "image/png",                'size' => 0, 'media_progression' => 0]], 'feed' => 1, 'tags' => self::TAGS[2112]],
     ];
 
     protected $h;
@@ -527,20 +565,26 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testListFeeds(): void {
         \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v(self::FEEDS)));
-        $exp = HTTP::respJson(self::FEEDS_OUT);
+        $exp = HTTP::respJson(array_map(function($v) {
+            return array_merge(self::FEED_OUT_STATIC, $v);
+        }, self::FEEDS_OUT));
         $this->assertMessage($exp, $this->req("GET", "/feeds"));
     }
 
     public function testListFeedsOfACategory(): void {
         \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v(self::FEEDS)));
-        $exp = HTTP::respJson(self::FEEDS_OUT);
+        $exp = HTTP::respJson(array_map(function($v) {
+            return array_merge(self::FEED_OUT_STATIC, $v);
+        }, self::FEEDS_OUT));
         $this->assertMessage($exp, $this->req("GET", "/categories/2112/feeds"));
         \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id, 2111, true);
     }
 
     public function testListFeedsOfTheRootCategory(): void {
         \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v(self::FEEDS)));
-        $exp = HTTP::respJson(self::FEEDS_OUT);
+        $exp = HTTP::respJson(array_map(function($v) {
+            return array_merge(self::FEED_OUT_STATIC, $v);
+        }, self::FEEDS_OUT));
         $this->assertMessage($exp, $this->req("GET", "/categories/1/feeds"));
         \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id, 0, false);
     }
@@ -554,8 +598,8 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testGetAFeed(): void {
         \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn(self::v(self::FEEDS[0]))->thenReturn(self::v(self::FEEDS[1]));
-        $this->assertMessage(HTTP::respJson(self::FEEDS_OUT[0]), $this->req("GET", "/feeds/1"));
-        $this->assertMessage(HTTP::respJson(self::FEEDS_OUT[1]), $this->req("GET", "/feeds/55"));
+        $this->assertMessage(HTTP::respJson(array_merge(self::FEED_OUT_STATIC, self::FEEDS_OUT[0])), $this->req("GET", "/feeds/1"));
+        $this->assertMessage(HTTP::respJson(array_merge(self::FEED_OUT_STATIC, self::FEEDS_OUT[1])), $this->req("GET", "/feeds/55"));
         \Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 1);
         \Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 55);
     }
@@ -628,7 +672,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider("provideFeedModifications")]
     public function testModifyAFeed(array $in, array $data, $out, ResponseInterface $exp): void {
         $this->h = \Phake::partialMock(V1::class);
-        \Phake::when($this->h)->getFeed->thenReturn(HTTP::respJson(self::FEEDS_OUT[0]));
+        \Phake::when($this->h)->getFeed->thenReturn(HTTP::respJson(array_merge(self::FEED_OUT_STATIC, self::FEEDS_OUT[0])));
         if ($out instanceof \Exception) {
             \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenThrow($out);
         } else {
@@ -640,7 +684,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public static function provideFeedModifications(): iterable {
         self::clearData();
-        $success = HTTP::respJson(self::FEEDS_OUT[0], 201);
+        $success = HTTP::respJson(array_merge(self::FEED_OUT_STATIC, self::FEEDS_OUT[0]), 201);
         return [
             [[],                                     [],                                    true,                                                        $success],
             [[],                                     [],                                    new ExceptionInput("subjectMissing"),                        V1::respError("404", 404)],
@@ -662,9 +706,10 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testModifyAFeedWithNoBody(): void {
         $this->h = \Phake::partialMock(V1::class);
-        \Phake::when($this->h)->getFeed->thenReturn(HTTP::respJson(self::FEEDS_OUT[0]));
+        $feedOut = array_merge(self::FEED_OUT_STATIC, self::FEEDS_OUT[0]);
+        \Phake::when($this->h)->getFeed->thenReturn(HTTP::respJson($feedOut));
         \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn(true);
-        $this->assertMessage(HTTP::respJson(self::FEEDS_OUT[0], 201), $this->req("PUT", "/feeds/2112", ""));
+        $this->assertMessage(HTTP::respJson($feedOut, 201), $this->req("PUT", "/feeds/2112", ""));
         \Phake::verify(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 2112, []);
     }
 
@@ -735,6 +780,10 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public static function provideEntryQueries(): iterable {
         self::clearData();
+        $entriesOut = array_map(function($v) {
+            $v['feed'] = array_merge(self::FEED_OUT_STATIC, self::FEEDS_OUT[$v['feed']]);
+            return $v;
+        }, self::ENTRIES_OUT);
         $c = (new Context)->limit(100);
         $o = ["modified_date"]; // the default sort order
         return [
@@ -749,48 +798,48 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             ["/entries?order=false",                               null,                                                                  null,                      [],                              false, V1::respError(["InvalidInputValue", 'field' => "order"], 400)],
             ["/entries?starred=true&starred=true",                 null,                                                                  null,                      [],                              false, V1::respError(["DuplicateInputValue", 'field' => "starred"], 400)],
             ["/entries?after&after=0",                             null,                                                                  null,                      [],                              false, V1::respError(["DuplicateInputValue", 'field' => "after"], 400)],
-            ["/entries",                                           $c,                                                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?category_id=47",                            (clone $c)->folder(46),                                                $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?category_id=1",                             (clone $c)->folderShallow(0),                                          $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=unread",                             (clone $c)->unread(true)->hidden(false),                               $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=read",                               (clone $c)->unread(false)->hidden(false),                              $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=removed",                            (clone $c)->hidden(true),                                              $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=unread&status=read",                 (clone $c)->hidden(false),                                             $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=unread&status=removed",              new UnionContext((clone $c)->unread(true), (clone $c)->hidden(true)),  $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=removed&status=read",                new UnionContext((clone $c)->unread(false), (clone $c)->hidden(true)), $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=removed&status=read&status=removed", new UnionContext((clone $c)->unread(false), (clone $c)->hidden(true)), $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?status=removed&status=read&status=unread",  $c,                                                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?starred=true",                              (clone $c)->starred(true),                                             $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?starred=false",                             (clone $c)->starred(false),                                            $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?after=0",                                   (clone $c)->modifiedRange(0, null),                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?before=0",                                  $c,                                                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?before=1",                                  (clone $c)->modifiedRange(null, 1),                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?before=1&after=0",                          (clone $c)->modifiedRange(0, 1),                                       $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?after_entry_id=42",                         (clone $c)->articleRange(43, null),                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?before_entry_id=47",                        (clone $c)->articleRange(null, 46),                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?search=alpha%20beta",                       (clone $c)->searchTerms(["alpha", "beta"]),                            $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?limit=4",                                   (clone $c)->limit(4),                                                  $o,                        self::ENTRIES,                   true,  HTTP::respJson(['total' => 2112, 'entries' => self::ENTRIES_OUT])],
+            ["/entries",                                           $c,                                                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?category_id=47",                            (clone $c)->folder(46),                                                $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?category_id=1",                             (clone $c)->folderShallow(0),                                          $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?status=unread",                             (clone $c)->unread(true)->hidden(false),                               $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?status=read",                               (clone $c)->unread(false)->hidden(false),                              $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?status=removed",                            (clone $c)->hidden(true),                                              $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?status=unread&status=read",                 (clone $c)->hidden(false),                                             $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?status=unread&status=removed",              new UnionContext((clone $c)->unread(true), (clone $c)->hidden(true)),  $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?status=removed&status=read",                new UnionContext((clone $c)->unread(false), (clone $c)->hidden(true)), $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?status=removed&status=read&status=removed", new UnionContext((clone $c)->unread(false), (clone $c)->hidden(true)), $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?status=removed&status=read&status=unread",  $c,                                                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?starred=true",                              (clone $c)->starred(true),                                             $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?starred=false",                             (clone $c)->starred(false),                                            $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?after=0",                                   (clone $c)->modifiedRange(0, null),                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?before=0",                                  $c,                                                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?before=1",                                  (clone $c)->modifiedRange(null, 1),                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?before=1&after=0",                          (clone $c)->modifiedRange(0, 1),                                       $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?after_entry_id=42",                         (clone $c)->articleRange(43, null),                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?before_entry_id=47",                        (clone $c)->articleRange(null, 46),                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?search=alpha%20beta",                       (clone $c)->searchTerms(["alpha", "beta"]),                            $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?limit=4",                                   (clone $c)->limit(4),                                                  $o,                        self::ENTRIES,                   true,  HTTP::respJson(['total' => 2112, 'entries' => $entriesOut])],
             ["/entries?offset=20",                                 (clone $c)->offset(20),                                                $o,                        [],                              true,  HTTP::respJson(['total' => 2112, 'entries' => []])],
-            ["/entries?direction=asc",                             $c,                                                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?order=id",                                  $c,                                                                    ["id"],                    self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?order=published_at",                        $c,                                                                    ["modified_date"],         self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?order=category_id",                         $c,                                                                    ["top_folder"],            self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?order=category_title",                      $c,                                                                    ["top_folder_name"],       self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?order=status",                              $c,                                                                    ["hidden", "unread desc"], self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?direction=desc",                            $c,                                                                    ["modified_date desc"],    self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?order=id&direction=desc",                   $c,                                                                    ["id desc"],               self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?order=published_at&direction=desc",         $c,                                                                    ["modified_date desc"],    self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?order=category_id&direction=desc",          $c,                                                                    ["top_folder desc"],       self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?order=category_title&direction=desc",       $c,                                                                    ["top_folder_name desc"],  self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/entries?order=status&direction=desc",               $c,                                                                    ["hidden desc", "unread"], self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/entries?direction=asc",                             $c,                                                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?order=id",                                  $c,                                                                    ["id"],                    self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?order=published_at",                        $c,                                                                    ["modified_date"],         self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?order=category_id",                         $c,                                                                    ["top_folder"],            self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?order=category_title",                      $c,                                                                    ["top_folder_name"],       self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?order=status",                              $c,                                                                    ["hidden", "unread desc"], self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?direction=desc",                            $c,                                                                    ["modified_date desc"],    self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?order=id&direction=desc",                   $c,                                                                    ["id desc"],               self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?order=published_at&direction=desc",         $c,                                                                    ["modified_date desc"],    self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?order=category_id&direction=desc",          $c,                                                                    ["top_folder desc"],       self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?order=category_title&direction=desc",       $c,                                                                    ["top_folder_name desc"],  self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?order=status&direction=desc",               $c,                                                                    ["hidden desc", "unread"], self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
             ["/entries?category_id=2112",                          (clone $c)->folder(2111),                                              $o,                        new ExceptionInput("idMissing"), false, V1::respError("MissingCategory")],
-            ["/feeds/42/entries",                                  (clone $c)->subscription(42),                                          $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/feeds/42/entries?category_id=47",                   (clone $c)->subscription(42)->folder(46),                              $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/feeds/42/entries",                                  (clone $c)->subscription(42),                                          $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/feeds/42/entries?category_id=47",                   (clone $c)->subscription(42)->folder(46),                              $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
             ["/feeds/2112/entries",                                (clone $c)->subscription(2112),                                        $o,                        new ExceptionInput("idMissing"), false, V1::respError("404", 404)],
-            ["/categories/42/entries",                             (clone $c)->folder(41),                                                $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/categories/42/entries?category_id=47",              (clone $c)->folder(41),                                                $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/categories/42/entries?starred=true",                (clone $c)->folder(41)->starred(true),                                 $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
-            ["/categories/1/entries",                              (clone $c)->folderShallow(0),                                          $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof(self::ENTRIES_OUT), 'entries' => self::ENTRIES_OUT])],
+            ["/categories/42/entries",                             (clone $c)->folder(41),                                                $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/categories/42/entries?category_id=47",              (clone $c)->folder(41),                                                $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/categories/42/entries?starred=true",                (clone $c)->folder(41)->starred(true),                                 $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/categories/1/entries",                              (clone $c)->folderShallow(0),                                          $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
             ["/categories/2112/entries",                           (clone $c)->folder(2111),                                              $o,                        new ExceptionInput("idMissing"), false, V1::respError("404", 404)],
         ];
     }
@@ -821,19 +870,21 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public static function provideSingleEntryQueries(): iterable {
         self::clearData();
+        $entryOut = self::ENTRIES_OUT[0];
+        $entryOut['feed'] = array_merge(self::FEED_OUT_STATIC, self::FEEDS_OUT[$entryOut['feed']]);
         $c = new Context;
         return [
-            ["/entries/42",                 (clone $c)->article(42),                     [self::ENTRIES[0]],                   HTTP::respJson(self::ENTRIES_OUT[0])],
+            ["/entries/42",                 (clone $c)->article(42),                     [self::ENTRIES[0]],                   HTTP::respJson($entryOut)],
             ["/entries/2112",               (clone $c)->article(2112),                   new ExceptionInput("subjectMissing"), V1::respError("404", 404)],
-            ["/feeds/47/entries/42",        (clone $c)->subscription(47)->article(42),   [self::ENTRIES[0]],                   HTTP::respJson(self::ENTRIES_OUT[0])],
+            ["/feeds/47/entries/42",        (clone $c)->subscription(47)->article(42),   [self::ENTRIES[0]],                   HTTP::respJson($entryOut)],
             ["/feeds/47/entries/44",        (clone $c)->subscription(47)->article(44),   [],                                   V1::respError("404", 404)],
             ["/feeds/47/entries/2112",      (clone $c)->subscription(47)->article(2112), new ExceptionInput("subjectMissing"), V1::respError("404", 404)],
             ["/feeds/2112/entries/47",      (clone $c)->subscription(2112)->article(47), new ExceptionInput("idMissing"),      V1::respError("404", 404)],
-            ["/categories/47/entries/42",   (clone $c)->folder(46)->article(42),         [self::ENTRIES[0]],                   HTTP::respJson(self::ENTRIES_OUT[0])],
+            ["/categories/47/entries/42",   (clone $c)->folder(46)->article(42),         [self::ENTRIES[0]],                   HTTP::respJson($entryOut)],
             ["/categories/47/entries/44",   (clone $c)->folder(46)->article(44),         [],                                   V1::respError("404", 404)],
             ["/categories/47/entries/2112", (clone $c)->folder(46)->article(2112),       new ExceptionInput("subjectMissing"), V1::respError("404", 404)],
             ["/categories/2112/entries/47", (clone $c)->folder(2111)->article(47),       new ExceptionInput("idMissing"),      V1::respError("404", 404)],
-            ["/categories/1/entries/42",    (clone $c)->folderShallow(0)->article(42),   [self::ENTRIES[0]],                   HTTP::respJson(self::ENTRIES_OUT[0])],
+            ["/categories/1/entries/42",    (clone $c)->folderShallow(0)->article(42),   [self::ENTRIES[0]],                   HTTP::respJson($entryOut)],
         ];
     }
 
