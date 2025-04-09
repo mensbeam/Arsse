@@ -547,7 +547,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $status = "read";
         }
         if ($entry['media_url']) {
-            $enclosures = [$this->transformEnclosure((int) $entry['id'], $entry['media_url'], $entry['media_type'], $uid)];
+            $enclosures = [$this->transformEnclosure($entry, $uid)];
         } else {
             $enclosures = [];
         }
@@ -572,13 +572,13 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         ];
     }
 
-    protected function transformEnclosure(int $id, string $url, ?string $type, int $uid): array {
+    protected function transformEnclosure(array $entry, int $uid): array {
         return [
-            'id'        => $id,
+            'id'        => $entry['id'], // NOTE: We don't have IDs for enclosures, but we also only have one enclosure per entry, so we can just re-use the same ID
             'user_id'   => $uid,
-            'entry_id'  => $id, // NOTE: We don't have IDs for enclosures, but we also only have one enclosure per entry, so we can just re-use the same ID
-            'url'       => $url,
-            'mime_type' => $type ?: "application/octet-stream",
+            'entry_id'  => $entry['id'],
+            'url'       => $entry['media_url'],
+            'mime_type' => $entry['media_type'] ?: "application/octet-stream",
             'size'      => 0,
         ];
     }
