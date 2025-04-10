@@ -129,10 +129,10 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     ];
     protected const ARTICLE_COLUMNS = [
         "id", "url", "title", "subscription",
-        "author", "fingerprint",
-        "published_date", "modified_date",
+        "author", "fingerprint", "published_date",
+        "added_date", "modified_date",
         "starred", "unread", "hidden",
-        "content", "media_url", "media_type",
+        "content", "media_url", "media_type"
     ];
     protected const CALLS = [                // handler method        Admin  Path   Body   Query  Required fields
         '/categories'                    => [
@@ -579,7 +579,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'url'          => $entry['url'],
             'comments_url' => "",
             'published_at' => Date::normalize($entry['published_date'], "sql")->setTimezone($tz)->format(self::DATE_FORMAT_SEC),
-            'created_at'   => Date::normalize($entry['modified_date'], "sql")->setTimezone($tz)->format(self::DATE_FORMAT_MICRO),
+            'created_at'   => Date::normalize($entry['added_date'], "sql")->setTimezone($tz)->format(self::DATE_FORMAT_MICRO),
+            'changed_at'   => Date::normalize($entry['modified_date'], "sql")->setTimezone($tz)->format(self::DATE_FORMAT_MICRO),
             'content'      => $entry['content'],
             'author'       => (string) $entry['author'],
             'share_code'   => "",
