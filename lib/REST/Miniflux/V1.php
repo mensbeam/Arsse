@@ -471,7 +471,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 (in_array($k, ["category_id", "before_entry_id", "after_entry_id"]) && $v < 1)
                 || (in_array($k, ["limit", "offset"]) && $v < 0)
                 || ($k === "direction" && !in_array($v, ["asc", "desc"]))
-                || ($k === "order" && !in_array($v, ["id", "status", "published_at", "category_title", "category_id"]))
+                || ($k === "order" && !in_array($v, ["id", "status", "published_at", "category_title", "category_id", "title", "author"]))
                 || ($k === "status" && !in_array($v, ["read", "unread", "removed"]))
             ) {
                 return self::respError(["InvalidInputValue", 'field' => $k], 400);
@@ -1097,6 +1097,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return ["top_folder_name".$desc];
         } elseif ($query['order'] === "category_id") {
             return ["top_folder".$desc];
+        } elseif (in_array($query['order'], ["title", "author"])) {
+            return [$query['order'].$desc];
         } else {
             return [self::DEFAULT_ORDER_COL.$desc];
         }
